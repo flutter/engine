@@ -25,6 +25,8 @@ import 'package:sky/widgets/tabs.dart';
 import 'package:sky/widgets/theme.dart';
 import 'package:sky/widgets/tool_bar.dart';
 import 'package:sky/widgets/widget.dart';
+import 'package:vector_math/vector_math.dart';
+import 'package:sky/animation/curves.dart';
 
 import 'stock_data.dart';
 import 'stock_list.dart';
@@ -35,6 +37,19 @@ typedef void ModeUpdater(StockMode mode);
 
 const Duration _kSnackbarSlideDuration = const Duration(milliseconds: 200);
 
+class AnimatedMatrix4 extends AnimatedType<Matrix4> {
+  AnimatedMatrix4(Matrix4 begin, { Matrix4 end, Curve curve: linear })
+    : super(begin, end: end, curve: curve);
+
+  void setFraction(double t) {
+    if (t == 1.0) {
+      value = end;
+      return;
+    }
+    Vector3 trans = begin.getTranslation()*(1.0 - t) + end.getTranslation() * t;
+    value = new Matrix4.identity()..translate(trans);
+  }
+}
 class StockHome extends AnimatedComponent {
 
   StockHome(this.navigator, this.stocks, this.stockMode, this.modeUpdater);
@@ -54,7 +69,7 @@ class StockHome extends AnimatedComponent {
   bool _isSearching = false;
   String _searchQuery;
 
-  AnimationType<Point> _snackbarPosition;
+  AnimatedType<Matrix4> _snackbarPosition;
 
   void _handleSearchBegin() {
     navigator.pushState(this, (_) {
@@ -280,9 +295,10 @@ class StockHome extends AnimatedComponent {
 
   void _handleStockPurchased() {
     setState(() {
-      Matrix4 offScreen = new Matrix4.identity()..translate(0.0, 45.0);
+      Matrix4 offScreen = new Matrix4.identity();
+      offScreen.translate(0.0, 45.0);
       Matrix4 onScreen = new Matrix4.identity();
-      _snackbarPosition = new AnimatedType<Matrix4>(offScreen, onScreen);
+      _snackbarPosition = new AnimatedMatrix4(offScreen, end: onScreen);
       var performance = new AnimationPerformance()
         ..duration = _kSnackbarSlideDuration
         ..variable = _snackbarPosition;
