@@ -4,9 +4,23 @@
 
 import 'dart:sky';
 
-num lerpNum(num a, num b, double t) => a + (b - a) * t;
+num lerpNum(num a, num b, double t) {
+  if (a == null && b == null)
+    return null;
+  if (a == null)
+    a = 0.0;
+  if (b == null)
+    b = 0.0;
+  return a + (b - a) * t;
+}
 
 Color lerpColor(Color a, Color b, double t) {
+  if (a == null && b == null)
+    return null;
+  if (a == null)
+    return b.scaleAlpha(t);
+  if (b == null)
+    return a.scaleAlpha(1.0 - t);
   return new Color.fromARGB(
       lerpNum(a.alpha, b.alpha, t).toInt(),
       lerpNum(a.red, b.red, t).toInt(),
@@ -15,5 +29,11 @@ Color lerpColor(Color a, Color b, double t) {
 }
 
 Offset lerpOffset(Offset a, Offset b, double t) {
+  if (a == null && b == null)
+    return null;
+  if (a == null)
+    return b * t;
+  if (b == null)
+    return a * (1.0 - t);
   return new Offset(lerpNum(a.dx, b.dx, t), lerpNum(a.dy, b.dy, t));
 }
