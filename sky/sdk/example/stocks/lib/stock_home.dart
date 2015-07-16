@@ -54,7 +54,7 @@ class StockHome extends AnimatedComponent {
   bool _isSearching = false;
   String _searchQuery;
 
-  AnimationBuilder _snackbarTransform;
+  AnimationType<Point> _snackbarPosition;
 
   void _handleSearchBegin() {
     navigator.pushState(this, (_) {
@@ -263,15 +263,16 @@ class StockHome extends AnimatedComponent {
 
   void _handleUndo() {
     setState(() {
-      _snackbarTransform = null;
+      _snackbarPosition = null;
     });
   }
 
   Widget buildSnackBar() {
-    if (_snackbarTransform == null)
+    if (_snackbarPosition == null)
       return null;
-    return _snackbarTransform.build(
-      new SnackBar(
+    return new Transform(
+      transform: _snackbarPosition.value,
+      child: new SnackBar(
         content: new Text("Stock purchased!"),
         actions: [new SnackBarAction(label: "UNDO", onPressed: _handleUndo)]
       ));
@@ -279,10 +280,12 @@ class StockHome extends AnimatedComponent {
 
   void _handleStockPurchased() {
     setState(() {
-      _snackbarTransform = new AnimationBuilder()
-        ..position = new AnimatedType<Point>(const Point(0.0, 45.0), end: Point.origin);
-      var performance = _snackbarTransform.createPerformance(
-          [_snackbarTransform.position], duration: _kSnackbarSlideDuration);
+      Matrix4 offScreen = new Matrix4.identity()..translate(0.0, 45.0);
+      Matrix4 onScreen = new Matrix4.identity();
+      _snackbarPosition = new AnimatedType<Matrix4>(offScreen, onScreen);
+      var performance = new AnimationPerformance()
+        ..duration = _kSnackbarSlideDuration
+        ..variable = _snackbarPosition;
       watch(performance);
       performance.play();
     });
@@ -294,8 +297,8 @@ class StockHome extends AnimatedComponent {
       backgroundColor: colors.RedAccent[200],
       onPressed: _handleStockPurchased
     );
-    if (_snackbarTransform != null)
-      widget = _snackbarTransform.build(widget);
+    if (_snackbarPosition != null)
+      widget = new Transform(transform: _snackbarPosition.value, child: widget);
     return widget;
   }
 
