@@ -273,21 +273,23 @@ class StockHome extends AnimatedComponent {
 
   bool _isSnackbarShowing = false;
   Widget buildSnackBar() {
-    if (!_isSnackbarShowing)
-      return null;
+    var widget = null;
+    if (_isSnackbarShowing) {
+      widget = new SnackBar(
+        content: new Text("Stock purchased!"),
+        actions: [new SnackBarAction(label: "UNDO", onPressed: _handleUndo)]
+      );
+    }
     return new AnimatedContainer(
       duration: _kSnackbarSlideDuration,
       transform: _snackbarPosition,
-      child: new SnackBar(
-        content: new Text("Stock purchased!"),
-        actions: [new SnackBarAction(label: "UNDO", onPressed: _handleUndo)]
-      ));
+      child: widget);
   }
 
   void _handleStockPurchased() {
     setState(() {
       _isSnackbarShowing = true;
-      _snackbarPosition = new Matrix4.identity()..translate(0.0, -45.0);
+      _snackbarPosition = new Matrix4.identity()..translate(0.0, -50.0);
     });
   }
 
@@ -297,9 +299,7 @@ class StockHome extends AnimatedComponent {
       backgroundColor: colors.RedAccent[200],
       onPressed: _handleStockPurchased
     );
-//    if (_snackbarPosition != null)
-      widget = new AnimatedContainer(debug: true,duration: _kSnackbarSlideDuration, transform: _snackbarPosition, child: widget);
-    print("Building: $_snackbarPosition");
+    widget = new AnimatedContainer(duration: _kSnackbarSlideDuration, transform: _snackbarPosition, child: widget);
     return widget;
   }
 

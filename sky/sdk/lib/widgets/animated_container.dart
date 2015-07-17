@@ -62,7 +62,6 @@ class AnimatedMatrix4 extends AnimatedType<Matrix4> {
       return;
     }
     Vector3 trans = begin.getTranslation()*(1.0 - t) + end.getTranslation() * t;
-    print("animating: $trans");
     value = new Matrix4.identity()..translate(trans);
   }
 }
@@ -133,6 +132,7 @@ this.debug: false,
     decoration = source.decoration;
     margin = source.margin;
     padding = source.padding;
+    transform = source.transform;
     width = source.width;
     height = source.height;
     _updateFields();
@@ -184,8 +184,6 @@ this.debug: false,
   }
 
   void _updateTransform() {
-    if (debug)
-      print("updating field: ${transform} vs ${_transform}");
     _updateField(transform, _transform, () {
       _transform = new ImplicitlyAnimatedValue<Matrix4>(new AnimatedMatrix4(transform), duration);
       watch(_transform.performance);
@@ -211,8 +209,6 @@ this.debug: false,
   }
 
   Widget build() {
-    if (debug)
-      print("BUIlding: $transform");
     return new Container(
       child: child,
       constraints:  _getValue(constraints, _constraints),
