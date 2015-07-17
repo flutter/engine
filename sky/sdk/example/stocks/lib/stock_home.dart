@@ -303,7 +303,7 @@ class StockHome extends AnimatedComponent {
         ..duration = _kSnackbarSlideDuration
         ..variable = _snackbarPosition;
       watch(performance);
-      performance.play();
+      performance.play().then((_) { unwatch(performance); });
     });
   }
 
