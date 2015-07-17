@@ -40,29 +40,52 @@ class SnackBar extends AnimatedComponent {
   SnackBar({
     String key,
     this.content,
-    this.actions
+    this.actions,
+    this.showing,
+    this.onHidden
   }) : super(key: key) {
     assert(content != null);
   }
 
   Widget content;
   List<SnackBarAction> actions;
+  bool showing;
+  Function onHidden;
 
   void syncFields(SnackBar source) {
     content = source.content;
     actions = source.actions;
+    onHidden = source.onHidden;
+    if (showing != source.showing) {
+      showing = source.showing;
+      showing ? _show() : _hide();
+    }
   }
 
   AnimatedType<Point> _position;
   AnimationPerformance _performance;
 
   void initState() {
-    _position = new AnimatedType<Point>(new Point(0.0, 48.0), end: Point.origin);
+    _position = new AnimatedType<Point>(new Point(0.0, 50.0), end: Point.origin);
     _performance = new AnimationPerformance()
       ..duration = _kSlideInDuration
-      ..variable = _position;
+      ..variable = _position
+      ..addListener(_checkCompleted);
     watch(_performance);
+    if (showing)
+      _show();
+  }
+
+  void _show() {
     _performance.play();
+  }
+  void _hide() {
+    _performance.reverse();
+  }
+  void _checkCompleted() {
+    if (!_performance.isAnimating && _performance.isDismissed && onHidden != null) {
+      onHidden();
+    }
   }
 
   Widget build() {

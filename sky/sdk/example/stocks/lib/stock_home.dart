@@ -51,7 +51,8 @@ class StockHome extends StatefulComponent {
   bool _isSearching = false;
   String _searchQuery;
 
-  bool _isShowingSnackBar = false;
+  bool _isSnackBarLive = false; // Is it on screen at all (maybe dismissing)?
+  bool _isSnackBarShowing = false; // Should it be showing?
 
   void _handleSearchBegin() {
     navigator.pushState(this, (_) {
@@ -261,22 +262,25 @@ class StockHome extends StatefulComponent {
 
   void _handleUndo() {
     setState(() {
-      _isShowingSnackBar = false;
+      _isSnackBarShowing = false;
     });
   }
 
   Widget buildSnackBar() {
-    if (!_isShowingSnackBar)
+    if (!_isSnackBarLive)
       return null;
     return new SnackBar(
+      showing: _isSnackBarShowing,
       content: new Text("Stock purchased!"),
-      actions: [new SnackBarAction(label: "UNDO", onPressed: _handleUndo)]
+      actions: [new SnackBarAction(label: "UNDO", onPressed: _handleUndo)],
+      onHidden: () { setState(() { _isSnackBarLive = false; }); }
     );
   }
 
   void _handleStockPurchased() {
     setState(() {
-      _isShowingSnackBar = true;
+      _isSnackBarShowing = true;
+      _isSnackBarLive = true;
     });
   }
 
