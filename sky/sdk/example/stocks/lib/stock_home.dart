@@ -38,7 +38,7 @@ typedef void ModeUpdater(StockMode mode);
 
 const Duration _kSnackbarSlideDuration = const Duration(milliseconds: 200);
 
-class StockHome extends AnimatedComponent {
+class StockHome extends StatefulComponent {
 
   StockHome(this.navigator, this.stocks, this.stockMode, this.modeUpdater);
 
