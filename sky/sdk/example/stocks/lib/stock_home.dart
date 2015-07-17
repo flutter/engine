@@ -266,6 +266,8 @@ class StockHome extends AnimatedComponent {
 
   void _handleUndo() {
     setState(() {
+      // TODO(mpcomplete): ideally this will continue showing the snackbar
+      // until the animation is finished, but we have no notification of that.
       _isSnackbarShowing = false;
       _snackbarPosition = new Matrix4.identity();
     });
