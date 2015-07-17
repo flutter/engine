@@ -59,6 +59,16 @@ class StockHome extends AnimatedComponent {
   StockMode stockMode;
   ModeUpdater modeUpdater;
 
+  void initState() {
+    Matrix4 offScreen = new Matrix4.identity()..translate(0.0, 45.0);
+    Matrix4 onScreen = new Matrix4.identity();
+    _snackBarPosition = new AnimatedMatrix4(offScreen, end: onScreen);
+    _snackBarAnimation = new AnimationPerformance()
+      ..duration = _kSnackbarSlideDuration
+      ..variable = _snackBarPosition;
+    watch(_snackBarAnimation);
+  }
+
   void syncFields(StockHome source) {
     navigator = source.navigator;
     stocks = source.stocks;
@@ -69,7 +79,9 @@ class StockHome extends AnimatedComponent {
   bool _isSearching = false;
   String _searchQuery;
 
-  AnimatedType<Matrix4> _snackbarPosition;
+  bool _isShowingSnackBar = false;
+  AnimatedMatrix4 _snackBarPosition;
+  AnimationPerformance _snackBarAnimation;
 
   void _handleSearchBegin() {
     navigator.pushState(this, (_) {
@@ -278,15 +290,17 @@ class StockHome extends AnimatedComponent {
 
   void _handleUndo() {
     setState(() {
-      _snackbarPosition = null;
+      _snackBarAnimation.reverse().then((_) {
+      _isShowingSnackBar = false;
+});
     });
   }
 
   Widget buildSnackBar() {
-    if (_snackbarPosition == null)
+    if (!_isShowingSnackBar)
       return null;
     return new Transform(
-      transform: _snackbarPosition.value,
+      transform: _snackBarPosition.value,
       child: new SnackBar(
         content: new Text("Stock purchased!"),
         actions: [new SnackBarAction(label: "UNDO", onPressed: _handleUndo)]
@@ -295,14 +309,9 @@ class StockHome extends AnimatedComponent {
 
   void _handleStockPurchased() {
     setState(() {
-      Matrix4 offScreen = new Matrix4.identity()..translate(0.0, 45.0);
-      Matrix4 onScreen = new Matrix4.identity();
-      _snackbarPosition = new AnimatedMatrix4(offScreen, end: onScreen);
-      var performance = new AnimationPerformance()
-        ..duration = _kSnackbarSlideDuration
-        ..variable = _snackbarPosition;
-      watch(performance);
-      performance.play().then((_) { unwatch(performance); });
+      _isShowingSnackBar = true;
+      _snackBarAnimation.progress = 0.0;
+      _snackBarAnimation.play();
     });
   }
 
@@ -312,8 +321,8 @@ class StockHome extends AnimatedComponent {
       backgroundColor: colors.RedAccent[200],
       onPressed: _handleStockPurchased
     );
-    if (_snackbarPosition != null)
-      widget = new Transform(transform: _snackbarPosition.value, child: widget);
+    if (_isShowingSnackBar)
+      widget = new Transform(transform: _snackBarPosition.value, child: widget);
     return widget;
   }
 
