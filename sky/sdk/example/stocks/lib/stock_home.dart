@@ -298,8 +298,8 @@ class StockHome extends AnimatedComponent {
       onPressed: _handleStockPurchased
     );
 //    if (_snackbarPosition != null)
+      widget = new AnimatedContainer(debug: true,duration: _kSnackbarSlideDuration, transform: _snackbarPosition, child: widget);
     print("Building: $_snackbarPosition");
-      widget = new AnimatedContainer(duration: _kSnackbarSlideDuration, transform: _snackbarPosition, child: widget);
     return widget;
   }
 
