@@ -283,12 +283,14 @@ class StockHome extends AnimatedComponent {
     return new AnimatedContainer(
       duration: _kSnackbarSlideDuration,
       transform: _snackbarPosition,
-      child: widget);
+      child: widget
+    );
   }
 
   void _handleStockPurchased() {
     setState(() {
       _isSnackbarShowing = true;
+      // TODO(mpcomplete): should use actual snackbar height somehow.
       _snackbarPosition = new Matrix4.identity()..translate(0.0, -50.0);
     });
   }

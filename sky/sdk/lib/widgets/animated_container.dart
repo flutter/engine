@@ -61,6 +61,7 @@ class AnimatedMatrix4 extends AnimatedType<Matrix4> {
       value = end;
       return;
     }
+    // TODO(mpcomplete): lerp the whole matrix (can we just lerp each cell?).
     Vector3 trans = begin.getTranslation()*(1.0 - t) + end.getTranslation() * t;
     value = new Matrix4.identity()..translate(trans);
   }
