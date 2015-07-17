@@ -3,9 +3,6 @@
 // found in the LICENSE file.
 
 import 'package:sky/editing/input.dart';
-import 'package:sky/animation/animation_performance.dart';
-import 'package:sky/widgets/animated_component.dart';
-import 'package:sky/widgets/animation_builder.dart';
 import 'package:sky/theme/colors.dart' as colors;
 import 'package:sky/widgets/basic.dart';
 import 'package:sky/widgets/drawer.dart';
@@ -25,8 +22,6 @@ import 'package:sky/widgets/tabs.dart';
 import 'package:sky/widgets/theme.dart';
 import 'package:sky/widgets/tool_bar.dart';
 import 'package:sky/widgets/widget.dart';
-import 'package:vector_math/vector_math.dart';
-import 'package:sky/animation/curves.dart';
 
 import 'stock_data.dart';
 import 'stock_list.dart';
@@ -37,20 +32,7 @@ typedef void ModeUpdater(StockMode mode);
 
 const Duration _kSnackbarSlideDuration = const Duration(milliseconds: 200);
 
-class AnimatedMatrix4 extends AnimatedType<Matrix4> {
-  AnimatedMatrix4(Matrix4 begin, { Matrix4 end, Curve curve: linear })
-    : super(begin, end: end, curve: curve);
-
-  void setFraction(double t) {
-    if (t == 1.0) {
-      value = end;
-      return;
-    }
-    Vector3 trans = begin.getTranslation()*(1.0 - t) + end.getTranslation() * t;
-    value = new Matrix4.identity()..translate(trans);
-  }
-}
-class StockHome extends AnimatedComponent {
+class StockHome extends StatefulComponent {
 
   StockHome(this.navigator, this.stocks, this.stockMode, this.modeUpdater);
 
@@ -58,16 +40,6 @@ class StockHome extends AnimatedComponent {
   List<Stock> stocks;
   StockMode stockMode;
   ModeUpdater modeUpdater;
-
-  void initState() {
-    Matrix4 offScreen = new Matrix4.identity()..translate(0.0, 45.0);
-    Matrix4 onScreen = new Matrix4.identity();
-    _snackBarPosition = new AnimatedMatrix4(offScreen, end: onScreen);
-    _snackBarAnimation = new AnimationPerformance()
-      ..duration = _kSnackbarSlideDuration
-      ..variable = _snackBarPosition;
-    watch(_snackBarAnimation);
-  }
 
   void syncFields(StockHome source) {
     navigator = source.navigator;
@@ -80,8 +52,6 @@ class StockHome extends AnimatedComponent {
   String _searchQuery;
 
   bool _isShowingSnackBar = false;
-  AnimatedMatrix4 _snackBarPosition;
-  AnimationPerformance _snackBarAnimation;
 
   void _handleSearchBegin() {
     navigator.pushState(this, (_) {
@@ -166,6 +136,7 @@ class StockHome extends AnimatedComponent {
   Drawer buildDrawer() {
     if (_drawerStatus == DrawerStatus.inactive)
       return null;
+    assert(_drawerShowing); // TODO(mpcomplete): this is always true
     return new Drawer(
       level: 3,
       showing: _drawerShowing,
@@ -290,40 +261,31 @@ class StockHome extends AnimatedComponent {
 
   void _handleUndo() {
     setState(() {
-      _snackBarAnimation.reverse().then((_) {
       _isShowingSnackBar = false;
-});
     });
   }
 
   Widget buildSnackBar() {
     if (!_isShowingSnackBar)
       return null;
-    return new Transform(
-      transform: _snackBarPosition.value,
-      child: new SnackBar(
-        content: new Text("Stock purchased!"),
-        actions: [new SnackBarAction(label: "UNDO", onPressed: _handleUndo)]
-      ));
+    return new SnackBar(
+      content: new Text("Stock purchased!"),
+      actions: [new SnackBarAction(label: "UNDO", onPressed: _handleUndo)]
+    );
   }
 
   void _handleStockPurchased() {
     setState(() {
       _isShowingSnackBar = true;
-      _snackBarAnimation.progress = 0.0;
-      _snackBarAnimation.play();
     });
   }
 
   Widget buildFloatingActionButton() {
-    var widget = new FloatingActionButton(
+    return new FloatingActionButton(
       child: new Icon(type: 'content/add', size: 24),
       backgroundColor: colors.RedAccent[200],
       onPressed: _handleStockPurchased
     );
-    if (_isShowingSnackBar)
-      widget = new Transform(transform: _snackBarPosition.value, child: widget);
-    return widget;
   }
 
   void addMenuToOverlays(List<Widget> overlays) {
