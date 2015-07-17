@@ -295,8 +295,7 @@ class StockHome extends AnimatedComponent {
 
   void _handleStockPurchased() {
     setState(() {
-      Matrix4 offScreen = new Matrix4.identity();
-      offScreen.translate(0.0, 45.0);
+      Matrix4 offScreen = new Matrix4.identity()..translate(0.0, 45.0);
       Matrix4 onScreen = new Matrix4.identity();
       _snackbarPosition = new AnimatedMatrix4(offScreen, end: onScreen);
       var performance = new AnimationPerformance()
