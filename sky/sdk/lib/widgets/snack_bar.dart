@@ -6,7 +6,6 @@ import 'package:sky/animation/animation_performance.dart';
 import 'package:sky/painting/text_style.dart';
 import 'package:sky/theme/typography.dart' as typography;
 import 'package:sky/widgets/animated_component.dart';
-import 'package:sky/widgets/animated_container.dart';
 import 'package:sky/widgets/basic.dart';
 import 'package:sky/widgets/default_text_style.dart';
 import 'package:sky/widgets/material.dart';
@@ -36,7 +35,7 @@ class SnackBarAction extends Component {
   }
 }
 
-class SnackBar extends Component {
+class SnackBar extends AnimatedComponent {
 
   SnackBar({
     String key,
@@ -53,8 +52,41 @@ class SnackBar extends Component {
   bool showing;
   Function onHidden;
 
-  Point get _position =>
-    showing ? Point.origin : new Point(0.0, 50.0);
+  void syncFields(SnackBar source) {
+    content = source.content;
+    actions = source.actions;
+    onHidden = source.onHidden;
+    if (showing != source.showing) {
+      showing = source.showing;
+      showing ? _show() : _hide();
+    }
+  }
+
+  AnimatedType<Point> _position;
+  AnimationPerformance _performance;
+
+  void initState() {
+    _position = new AnimatedType<Point>(new Point(0.0, 50.0), end: Point.origin);
+    _performance = new AnimationPerformance()
+      ..duration = _kSlideInDuration
+      ..variable = _position
+      ..addListener(_checkCompleted);
+    watch(_performance);
+    if (showing)
+      _show();
+  }
+
+  void _show() {
+    _performance.play();
+  }
+  void _hide() {
+    _performance.reverse();
+  }
+  void _checkCompleted() {
+    if (!_performance.isAnimating && _performance.isDismissed && onHidden != null) {
+      onHidden();
+    }
+  }
 
   Widget build() {
     List<Widget> children = [
@@ -70,13 +102,10 @@ class SnackBar extends Component {
     ]..addAll(actions);
 
     Matrix4 transform = new Matrix4.identity();
-    transform.translate(_position.x, _position.y);
-    print("transform: $_position");
-    return new AnimatedContainer(
-      director: director,
-      transform: transform,
-      duration: _kSlideInDuration,
-      child: new Material(
+    transform.translate(_position.value.x, _position.value.y);
+    return new Transform(
+       transform: transform,
+       child: new Material(
         level: 2,
         color: const Color(0xFF323232),
         type: MaterialType.canvas,
