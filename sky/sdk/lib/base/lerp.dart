@@ -14,13 +14,17 @@ num lerpNum(num a, num b, double t) {
   return a + (b - a) * t;
 }
 
+Color _scaleAlpha(Color a, double factor) {
+  return a.withAlpha((a.alpha * factor).round());
+}
+
 Color lerpColor(Color a, Color b, double t) {
   if (a == null && b == null)
     return null;
   if (a == null)
-    return b.scaleAlpha(t);
+    return _scaleAlpha(b, t);
   if (b == null)
-    return a.scaleAlpha(1.0 - t);
+    return _scaleAlpha(b, 1.0 - t);
   return new Color.fromARGB(
       lerpNum(a.alpha, b.alpha, t).toInt(),
       lerpNum(a.red, b.red, t).toInt(),

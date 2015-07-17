@@ -22,8 +22,20 @@ class Color {
 
   bool operator ==(other) => other is Color && _value == other._value;
 
-  Color scaleAlpha(double factor) {
-    return new Color.fromARGB((alpha * factor).round(), red, green, blue);
+  Color withAlpha(int a) {
+    return new Color.fromARGB(a, red, green, blue);
+  }
+
+  Color withRed(int r) {
+    return new Color.fromARGB(alpha, r, green, blue);
+  }
+
+  Color withGreen(int g) {
+    return new Color.fromARGB(alpha, red, g, blue);
+  }
+
+  Color withBlue(int b) {
+    return new Color.fromARGB(alpha, red, green, b);
   }
 
   int get hashCode => _value.hashCode;

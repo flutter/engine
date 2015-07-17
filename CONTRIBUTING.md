@@ -39,6 +39,7 @@ target.
 ### Android
 
 * (Only the first time) `./build/install-build-deps-android.sh`
+* (Only the first time) `./tools/android/download_android_tools.py`
 * `./sky/tools/gn --android`
 * `ninja -C out/android_Debug`
 * `./sky/tools/shelldb start out/android_Debug/ sky/sdk/example/hello_world/lib/main.dart`
@@ -48,7 +49,8 @@ target.
 * (Only the first time) `./build/install-build-deps.sh`
 * `./sky/tools/gn`
 * `ninja -C out/Debug`
-* `./mojo/tools/mojodb start out/Debug sky/sdk/example/hello_world/lib/main.dart`
+* `./out/Debug/sky_shell --package-root=out/Debug/gen/dart-pkg/packages sky/sdk/example/hello_world/lib/main.dart`
+  Note: Because Linux is headless, you won't see any UI. You can use `print` to generate console output or you can interact with the DartVM via observatory at [http://localhost:8181/](http://localhost:8181/).
 
 Contributing code
 -----------------

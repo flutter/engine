@@ -182,9 +182,8 @@ class AnimatedContainer extends AnimatedComponent {
   }
 
   void _updateTransform() {
-    print("updating field: ${transform} vs ${_transform}");
     _updateField(transform, _transform, () {
-      _transform = new ImplicitlyAnimatedValue<Matrix4>(new AnimatedMatrix4(transform), duration);
+      _transform = new ImplicitlyAnimatedValue<Matrix4>(new AnimatedType<Matrix4>(transform), duration);
       watch(_transform.performance);
     });
   }
@@ -204,6 +203,22 @@ class AnimatedContainer extends AnimatedComponent {
   }
 
   dynamic _getValue(dynamic value, ImplicitlyAnimatedValue animatedValue) {
+    return animatedValue == null ? value : animatedValue.value;
+  }
+
+  Widget build() {
+    return new Container(
+      child: child,
+      constraints:  _getValue(constraints, _constraints),
+      decoration: _getValue(decoration, _decoration),
+      margin: _getValue(margin, _margin),
+      padding: _getValue(padding, _padding),
+      transform: _getValue(transform, _transform),
+      width: _getValue(width, _width),
+      height: _getValue(height, _height)
+    );
+  }
+}
     return animatedValue == null ? value : animatedValue.value;
   }
 
