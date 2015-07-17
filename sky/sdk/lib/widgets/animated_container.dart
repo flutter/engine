@@ -52,6 +52,21 @@ class AnimatedEdgeDimsValue extends AnimatedType<EdgeDims> {
   }
 }
 
+class AnimatedMatrix4 extends AnimatedType<Matrix4> {
+  AnimatedMatrix4(Matrix4 begin, { Matrix4 end, Curve curve: linear })
+    : super(begin, end: end, curve: curve);
+
+  void setFraction(double t) {
+    if (t == 1.0) {
+      value = end;
+      return;
+    }
+    Vector3 trans = begin.getTranslation()*(1.0 - t) + end.getTranslation() * t;
+    print("animating: $trans");
+    value = new Matrix4.identity()..translate(trans);
+  }
+}
+
 class ImplicitlyAnimatedValue<T> {
   final AnimationPerformance performance = new AnimationPerformance();
   final AnimatedType<T> _variable;
@@ -167,8 +182,9 @@ class AnimatedContainer extends AnimatedComponent {
   }
 
   void _updateTransform() {
+    print("updating field: ${transform} vs ${_transform}");
     _updateField(transform, _transform, () {
-      _transform = new ImplicitlyAnimatedValue<Matrix4>(new AnimatedType<Matrix4>(transform), duration);
+      _transform = new ImplicitlyAnimatedValue<Matrix4>(new AnimatedMatrix4(transform), duration);
       watch(_transform.performance);
     });
   }
@@ -192,6 +208,7 @@ class AnimatedContainer extends AnimatedComponent {
   }
 
   Widget build() {
+    print("BUIlding: $transform");
     return new Container(
       child: child,
       constraints:  _getValue(constraints, _constraints),

@@ -5,6 +5,7 @@
 import 'package:sky/editing/input.dart';
 import 'package:sky/animation/animation_performance.dart';
 import 'package:sky/widgets/animated_component.dart';
+import 'package:sky/widgets/animated_container.dart';
 import 'package:sky/widgets/animation_builder.dart';
 import 'package:sky/theme/colors.dart' as colors;
 import 'package:sky/widgets/basic.dart';
@@ -37,19 +38,6 @@ typedef void ModeUpdater(StockMode mode);
 
 const Duration _kSnackbarSlideDuration = const Duration(milliseconds: 200);
 
-class AnimatedMatrix4 extends AnimatedType<Matrix4> {
-  AnimatedMatrix4(Matrix4 begin, { Matrix4 end, Curve curve: linear })
-    : super(begin, end: end, curve: curve);
-
-  void setFraction(double t) {
-    if (t == 1.0) {
-      value = end;
-      return;
-    }
-    Vector3 trans = begin.getTranslation()*(1.0 - t) + end.getTranslation() * t;
-    value = new Matrix4.identity()..translate(trans);
-  }
-}
 class StockHome extends AnimatedComponent {
 
   StockHome(this.navigator, this.stocks, this.stockMode, this.modeUpdater);
@@ -69,7 +57,7 @@ class StockHome extends AnimatedComponent {
   bool _isSearching = false;
   String _searchQuery;
 
-  AnimatedType<Matrix4> _snackbarPosition;
+  Matrix4 _snackbarPosition = new Matrix4.identity();
 
   void _handleSearchBegin() {
     navigator.pushState(this, (_) {
@@ -278,15 +266,18 @@ class StockHome extends AnimatedComponent {
 
   void _handleUndo() {
     setState(() {
-      _snackbarPosition = null;
+      _isSnackbarShowing = false;
+      _snackbarPosition = new Matrix4.identity()..translate(0.0, 45.0);
     });
   }
 
+  bool _isSnackbarShowing = false;
   Widget buildSnackBar() {
-    if (_snackbarPosition == null)
+    if (!_isSnackbarShowing)
       return null;
-    return new Transform(
-      transform: _snackbarPosition.value,
+    return new AnimatedContainer(
+      duration: _kSnackbarSlideDuration,
+      transform: _snackbarPosition,
       child: new SnackBar(
         content: new Text("Stock purchased!"),
         actions: [new SnackBarAction(label: "UNDO", onPressed: _handleUndo)]
@@ -295,15 +286,8 @@ class StockHome extends AnimatedComponent {
 
   void _handleStockPurchased() {
     setState(() {
-      Matrix4 offScreen = new Matrix4.identity();
-      offScreen.translate(0.0, 45.0);
-      Matrix4 onScreen = new Matrix4.identity();
-      _snackbarPosition = new AnimatedMatrix4(offScreen, end: onScreen);
-      var performance = new AnimationPerformance()
-        ..duration = _kSnackbarSlideDuration
-        ..variable = _snackbarPosition;
-      watch(performance);
-      performance.play();
+      _isSnackbarShowing = true;
+      _snackbarPosition = new Matrix4.identity();
     });
   }
 
@@ -313,8 +297,9 @@ class StockHome extends AnimatedComponent {
       backgroundColor: colors.RedAccent[200],
       onPressed: _handleStockPurchased
     );
-    if (_snackbarPosition != null)
-      widget = new Transform(transform: _snackbarPosition.value, child: widget);
+//    if (_snackbarPosition != null)
+    print("Building: $_snackbarPosition");
+      widget = new AnimatedContainer(duration: _kSnackbarSlideDuration, transform: _snackbarPosition, child: widget);
     return widget;
   }
 
