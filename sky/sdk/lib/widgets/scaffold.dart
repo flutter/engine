@@ -117,19 +117,17 @@ class RenderScaffold extends RenderBox {
       assert(body.parentData is BoxParentData);
       body.parentData.position = new Point(0.0, bodyPosition);
     }
-    double snackBarHeight = 0.0;
     if (_slots[ScaffoldSlots.snackBar] != null) {
       RenderBox snackBar = _slots[ScaffoldSlots.snackBar];
       // TODO(jackson): On tablet/desktop, minWidth = 288, maxWidth = 568
       snackBar.layout(new BoxConstraints(minWidth: size.width, maxWidth: size.width, minHeight: 0.0, maxHeight: size.height),
                       parentUsesSize: true);
       assert(snackBar.parentData is BoxParentData);
-      snackBar.parentData.position = new Point(0.0, size.height - snackBar.size.height);
-      snackBarHeight = snackBar.size.height;
+      snackBar.parentData.position = new Point(0.0, size.height);
     }
     if (_slots[ScaffoldSlots.floatingActionButton] != null) {
       RenderBox floatingActionButton = _slots[ScaffoldSlots.floatingActionButton];
-      Size area = new Size(size.width - kButtonX, size.height - kButtonY - snackBarHeight);
+      Size area = new Size(size.width - kButtonX, size.height - kButtonY);
       floatingActionButton.layout(new BoxConstraints.loose(area), parentUsesSize: true);
       assert(floatingActionButton.parentData is BoxParentData);
       floatingActionButton.parentData.position = (area - floatingActionButton.size).toPoint();

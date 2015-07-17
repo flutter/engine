@@ -100,7 +100,7 @@ class AnimatedContainer extends AnimatedComponent {
     this.height,
     this.margin,
     this.padding,
-this.debug,
+this.debug: false,
     this.transform
   }) : super(key: key);
 

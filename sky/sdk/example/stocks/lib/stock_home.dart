@@ -267,7 +267,7 @@ class StockHome extends AnimatedComponent {
   void _handleUndo() {
     setState(() {
       _isSnackbarShowing = false;
-      _snackbarPosition = new Matrix4.identity()..translate(0.0, 45.0);
+      _snackbarPosition = new Matrix4.identity();
     });
   }
 
@@ -287,7 +287,7 @@ class StockHome extends AnimatedComponent {
   void _handleStockPurchased() {
     setState(() {
       _isSnackbarShowing = true;
-      _snackbarPosition = new Matrix4.identity();
+      _snackbarPosition = new Matrix4.identity()..translate(0.0, -45.0);
     });
   }
 
