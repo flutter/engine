@@ -20,12 +20,6 @@ abstract class AnimatedComponent extends StatefulComponent {
       performance.addListener(scheduleBuild);
   }
 
-  void unwatch(AnimationPerformance performance) {
-    assert(_watchedPerformances.contains(performance));
-    _watchedPerformances.remove(performance);
-    performance.removeListener(scheduleBuild);
-  }
-
   void didMount() {
     for (AnimationPerformance performance in _watchedPerformances)
       performance.addListener(scheduleBuild);
