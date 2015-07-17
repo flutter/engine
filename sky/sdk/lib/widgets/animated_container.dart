@@ -34,6 +34,22 @@ class AnimatedBoxDecorationValue extends AnimatedType<BoxDecoration> {
   }
 }
 
+
+class AnimatedMatrix4 extends AnimatedType<Matrix4> {
+  AnimatedMatrix4(Matrix4 begin, { Matrix4 end, Curve curve: linear })
+    : super(begin, end: end, curve: curve);
+
+  void setFraction(double t) {
+    if (t == 1.0) {
+      value = end;
+      return;
+    }
+    // TODO(mpcomplete): lerp the whole matrix (can we just lerp each cell?).
+    Vector3 trans = begin.getTranslation()*(1.0 - t) + end.getTranslation() * t;
+    value = new Matrix4.identity()..translate(trans);
+  }
+}
+
 class AnimatedEdgeDimsValue extends AnimatedType<EdgeDims> {
   AnimatedEdgeDimsValue(EdgeDims begin, { EdgeDims end, Curve curve: linear })
     : super(begin, end: end, curve: curve);
@@ -116,6 +132,7 @@ class AnimatedContainer extends AnimatedComponent {
     decoration = source.decoration;
     margin = source.margin;
     padding = source.padding;
+    transform = source.transform;
     width = source.width;
     height = source.height;
     _updateFields();
@@ -167,8 +184,10 @@ class AnimatedContainer extends AnimatedComponent {
   }
 
   void _updateTransform() {
+    if (transform != null)
+      print("AC transform: $transform vs $_transform");
     _updateField(transform, _transform, () {
-      _transform = new ImplicitlyAnimatedValue<Matrix4>(new AnimatedType<Matrix4>(transform), duration);
+      _transform = new ImplicitlyAnimatedValue<Matrix4>(new AnimatedMatrix4(transform), duration);
       watch(_transform.performance);
     });
   }
