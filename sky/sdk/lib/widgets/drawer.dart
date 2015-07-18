@@ -5,10 +5,11 @@
 import 'dart:sky' as sky;
 
 import 'package:sky/animation/animation_performance.dart';
+import 'package:sky/animation/curves.dart';
+import 'package:sky/base/lerp.dart';
 import 'package:sky/theme/shadows.dart';
 import 'package:sky/theme/colors.dart' as colors;
 import 'package:sky/widgets/animated_component.dart';
-import 'package:sky/widgets/animation_builder.dart';
 import 'package:sky/widgets/basic.dart';
 import 'package:sky/widgets/navigator.dart';
 import 'package:sky/widgets/scrollable_viewport.dart';
@@ -43,6 +44,16 @@ enum DrawerStatus {
 }
 
 typedef void DrawerStatusChangedCallback(DrawerStatus status);
+
+// TODO(mpcomplete): find a better place for this.
+class AnimatedColor extends AnimatedType<Color> {
+  AnimatedColor(Color begin, { Color end, Curve curve: linear })
+    : super(begin, end: end, curve: curve);
+
+  void setFraction(double t) {
+    value = lerpColor(begin, end, t);
+  }
+}
 
 class Drawer extends AnimatedComponent {
   Drawer({
