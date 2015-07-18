@@ -30,7 +30,7 @@ import 'package:vector_math/vector_math.dart';
 
 const double _kWidth = 304.0;
 const double _kMinFlingVelocity = 365.0;
-const double _kFlingVelocityScale = 1.0/300.0;
+const double _kFlingVelocityScale = 1.0 / 300.0;
 const Duration _kBaseSettleDuration = const Duration(milliseconds: 246);
 const Point _kOpenPosition = Point.origin;
 const Point _kClosedPosition = const Point(-_kWidth, 0.0);

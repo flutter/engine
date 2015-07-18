@@ -5,6 +5,7 @@
 import 'package:sky/editing/input.dart';
 import 'package:sky/animation/animation_performance.dart';
 import 'package:sky/widgets/animated_component.dart';
+import 'package:sky/widgets/animated_container.dart';
 import 'package:sky/widgets/animation_builder.dart';
 import 'package:sky/theme/colors.dart' as colors;
 import 'package:sky/widgets/basic.dart';
@@ -25,6 +26,8 @@ import 'package:sky/widgets/tabs.dart';
 import 'package:sky/widgets/theme.dart';
 import 'package:sky/widgets/tool_bar.dart';
 import 'package:sky/widgets/widget.dart';
+import 'package:vector_math/vector_math.dart';
+import 'package:sky/animation/curves.dart';
 
 import 'stock_data.dart';
 import 'stock_list.dart';
@@ -35,7 +38,7 @@ typedef void ModeUpdater(StockMode mode);
 
 const Duration _kSnackbarSlideDuration = const Duration(milliseconds: 200);
 
-class StockHome extends AnimatedComponent {
+class StockHome extends StatefulComponent {
 
   StockHome(this.navigator, this.stocks, this.stockMode, this.modeUpdater);
 
@@ -54,7 +57,7 @@ class StockHome extends AnimatedComponent {
   bool _isSearching = false;
   String _searchQuery;
 
-  AnimationBuilder _snackbarTransform;
+  Matrix4 _snackbarPosition = new Matrix4.identity();
 
   void _handleSearchBegin() {
     navigator.pushState(this, (_) {
@@ -263,28 +266,34 @@ class StockHome extends AnimatedComponent {
 
   void _handleUndo() {
     setState(() {
-      _snackbarTransform = null;
+      // TODO(mpcomplete): ideally this will continue showing the snackbar
+      // until the animation is finished, but we have no notification of that.
+      _isSnackbarShowing = false;
+      _snackbarPosition = new Matrix4.identity();
     });
   }
 
+  bool _isSnackbarShowing = false;
   Widget buildSnackBar() {
-    if (_snackbarTransform == null)
-      return null;
-    return _snackbarTransform.build(
-      new SnackBar(
+    var widget = null;
+    if (_isSnackbarShowing) {
+      widget = new SnackBar(
         content: new Text("Stock purchased!"),
         actions: [new SnackBarAction(label: "UNDO", onPressed: _handleUndo)]
-      ));
+      );
+    }
+    return new AnimatedContainer(
+      duration: _kSnackbarSlideDuration,
+      transform: _snackbarPosition,
+      child: widget
+    );
   }
 
   void _handleStockPurchased() {
     setState(() {
-      _snackbarTransform = new AnimationBuilder()
-        ..position = new AnimatedType<Point>(const Point(0.0, 45.0), end: Point.origin);
-      var performance = _snackbarTransform.createPerformance(
-          [_snackbarTransform.position], duration: _kSnackbarSlideDuration);
-      watch(performance);
-      performance.play();
+      _isSnackbarShowing = true;
+      // TODO(mpcomplete): should use actual snackbar height somehow.
+      _snackbarPosition = new Matrix4.identity()..translate(0.0, -50.0);
     });
   }
 
@@ -294,8 +303,7 @@ class StockHome extends AnimatedComponent {
       backgroundColor: colors.RedAccent[200],
       onPressed: _handleStockPurchased
     );
-    if (_snackbarTransform != null)
-      widget = _snackbarTransform.build(widget);
+    widget = new AnimatedContainer(duration: _kSnackbarSlideDuration, transform: _snackbarPosition, child: widget);
     return widget;
   }
 
