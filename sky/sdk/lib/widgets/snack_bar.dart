@@ -13,6 +13,13 @@ import 'package:sky/widgets/theme.dart';
 
 import 'package:vector_math/vector_math.dart';
 
+enum SnackBarStatus {
+  active,
+  inactive,
+}
+
+typedef void SnackBarStatusChangedCallback(SnackBarStatus status);
+
 const Duration _kSlideInDuration = const Duration(milliseconds: 200);
 
 class SnackBarAction extends Component {
@@ -42,7 +49,7 @@ class SnackBar extends AnimatedComponent {
     this.content,
     this.actions,
     this.showing,
-    this.onHidden
+    this.onStatusChanged
   }) : super(key: key) {
     assert(content != null);
   }
@@ -50,12 +57,12 @@ class SnackBar extends AnimatedComponent {
   Widget content;
   List<SnackBarAction> actions;
   bool showing;
-  Function onHidden;
+  SnackBarStatusChangedCallback onStatusChanged;
 
   void syncFields(SnackBar source) {
     content = source.content;
     actions = source.actions;
-    onHidden = source.onHidden;
+    onStatusChanged = source.onStatusChanged;
     if (showing != source.showing) {
       showing = source.showing;
       showing ? _show() : _hide();
@@ -70,7 +77,7 @@ class SnackBar extends AnimatedComponent {
     _performance = new AnimationPerformance()
       ..duration = _kSlideInDuration
       ..variable = _position
-      ..addListener(_checkCompleted);
+      ..addListener(_checkStatusChanged);
     watch(_performance);
     if (showing)
       _show();
@@ -79,14 +86,20 @@ class SnackBar extends AnimatedComponent {
   void _show() {
     _performance.play();
   }
+
   void _hide() {
     _performance.reverse();
   }
-  void _checkCompleted() {
-    if (!_performance.isAnimating && _performance.isDismissed && onHidden != null) {
-      onHidden();
-    }
+
+  SnackBarStatus _lastStatus;
+  void _checkStatusChanged() {
+    SnackBarStatus status = _status;
+    if (_lastStatus != null && status != _lastStatus && onStatusChanged != null)
+      onStatusChanged(status);
+    _lastStatus = status;
   }
+
+  SnackBarStatus get _status => _performance.isDismissed ? SnackBarStatus.inactive : SnackBarStatus.active;
 
   Widget build() {
     List<Widget> children = [
