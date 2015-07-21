@@ -29,7 +29,7 @@ def to_gn_args(args):
     gn_args = {}
 
     gn_args["is_debug"] = args.debug
-    gn_args["is_clang"] = args.target_os not in ['android']
+    gn_args["is_clang"] = args.clang and args.target_os not in ['android']
 
     if args.target_os == 'android':
         gn_args["target_os"] = "android"
@@ -37,9 +37,9 @@ def to_gn_args(args):
         gn_args["target_os"] = "ios"
         gn_args["ios_deployment_target"] = "7.0"
         gn_args["clang_use_chrome_plugins"] = False
-        if config.simulator:
+        if args.simulator:
             gn_args["use_libjpeg_turbo"] = False
-        gn_args["use_ios_simulator"] = config.simulator
+        gn_args["use_ios_simulator"] = args.simulator
     else:
         gn_args["use_aura"] = False
         gn_args["use_glib"] = False
@@ -78,6 +78,9 @@ def main():
 
   parser.add_argument('--goma', default=True, action='store_true')
   parser.add_argument('--no-goma', dest='goma', action='store_false')
+
+  parser.add_argument('--clang', default=True, action='store_true')
+  parser.add_argument('--no-clang', dest='clang', action='store_false')
 
   args = parser.parse_args()
 
