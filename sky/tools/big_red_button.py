@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 import distutils.util
-
+import tempfile
 
 CONFIRM_MESSAGE = """This tool is destructive and will revert your current branch to
 upstream/master among other things.  Are you sure you wish to continue?"""
@@ -73,6 +73,20 @@ def upload_artifacts(dist_root, config, commit_hash):
         run(dist_root, ['gsutil', 'cp', '-z', z, src, dst])
 
 
+def copy_package(src_dir, dst_dir, ignore=None):
+    # Removes existing destination directory.
+    shutil.rmtree(dst_dir, True)
+    shutil.copytree(src_dir, dst_dir, symlinks=False, ignore=ignore)
+
+
+def publish(pub_path, package_name, package_dir):
+    temp_dir = tempfile.mkdtemp(prefix='sky_pub_packages-')
+    src_dir = package_dir
+    dst_dir = os.path.join(temp_dir, package)
+    copy_package(src_dir, dst_dir, ignore)
+    run(dst_dir, [pub_path, 'publish', '--force'])
+
+
 def main():
     parser = argparse.ArgumentParser(description='Deploy!')
     parser.add_argument('sky_engine_root', help='Path to sky_engine/src')
@@ -96,9 +110,10 @@ def main():
     pub_path = os.path.join(dart_sdk_root, 'bin/pub')
     android_dist_root = os.path.join(sky_engine_root, 'out/android_Release/dist')
     linux_dist_root = os.path.join(sky_engine_root, 'out/Release/dist')
-    sky_package_root = os.path.join(sky_engine_root, 'sky/packages/sky')
-    sky_engine_package_root = os.path.join(android_dist_root, 'packages/sky_engine/sky_engine')
-    sky_services_package_root = os.path.join(android_dist_root, 'packages/sky_services/sky_services')
+    dart_pkg_root = os.path.join(sky_engine_root, 'out/Release/gen/dart-pkg')
+    sky_package_root = os.path.join(dart_pkg_root, 'sky')
+    sky_engine_package_root = os.path.join(dart_pkg_root, 'sky_engine')
+    sky_services_package_root = os.path.join(dart_pkg_root, 'sky_services')
 
     run(sky_engine_root, ['git', 'fetch', 'upstream'])
     run(sky_engine_root, ['git', 'reset', 'upstream/master', '--hard'])
@@ -118,9 +133,9 @@ def main():
     upload_artifacts(linux_dist_root, 'linux-x64', commit_hash)
 
     if args.publish:
-        run(sky_engine_package_root, [pub_path, 'publish', '--force'])
-        run(sky_services_package_root, [pub_path, 'publish', '--force'])
-        run(sky_package_root, [pub_path, 'publish', '--force'])
+        publish(pub_path, 'sky', sky_package_root)
+        publish(pub_path, 'sky_engine', sky_engine_package_root)
+        publish(pub_path, 'sky_services', sky_services_package_root)
 
 
 if __name__ == '__main__':
