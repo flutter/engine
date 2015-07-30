@@ -11,32 +11,17 @@ abstract class AnimatedComponent extends StatefulComponent {
 
   void syncFields(AnimatedComponent source) { }
 
-  final List<AnimationPerformance> _watchedPerformances = new List<AnimationPerformance>();
+  void watch(AnimationPerformance performance) {
+    performance.addListener(_performanceChanged);
+  }
 
   void _performanceChanged() {
-    setState(() {
-      // We don't actually have any state to change, per se,
-      // we just know that we have in fact changed state.
-    });
-  }
-
-  void watch(AnimationPerformance performance) {
-    assert(!_watchedPerformances.contains(performance));
-    _watchedPerformances.add(performance);
-    if (mounted)
-      performance.addListener(_performanceChanged);
-  }
-
-  void didMount() {
-    for (AnimationPerformance performance in _watchedPerformances)
-      performance.addListener(_performanceChanged);
-    super.didMount();
-  }
-
-  void didUnmount() {
-    for (AnimationPerformance performance in _watchedPerformances)
-      performance.removeListener(_performanceChanged);
-    super.didUnmount();
+    if (mounted) {
+      setState(() {
+        // We don't actually have any state to change, per se,
+        // we just know that we have in fact changed state.
+      });
+    }
   }
 
 }
