@@ -72,7 +72,7 @@ Shell::~Shell() {
 
 void Shell::Init(scoped_ptr<ServiceProviderContext> service_provider_context) {
   CHECK(base::i18n::InitializeICU());
-#if !defined(OS_LINUX)
+#if defined(OS_ANDROID)
   CHECK(gfx::GLSurface::InitializeOneOff());
 #endif
   base::DiscardableMemoryAllocator::SetInstance(&g_discardable.Get());
