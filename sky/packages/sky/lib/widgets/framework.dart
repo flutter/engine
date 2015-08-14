@@ -10,6 +10,7 @@ import 'package:sky/base/hit_test.dart';
 import 'package:sky/base/scheduler.dart' as scheduler;
 import 'package:sky/mojo/activity.dart' as activity;
 import 'package:sky/rendering/box.dart';
+import 'package:sky/rendering/drag.dart';
 import 'package:sky/rendering/object.dart';
 import 'package:sky/rendering/sky_binding.dart';
 
@@ -489,6 +490,11 @@ class Listener extends TagNode  {
     PointerEventListener onPointerDown,
     PointerEventListener onPointerMove,
     PointerEventListener onPointerUp,
+    EventListener onDragStart,
+    EventListener onDragEnter,
+    EventListener onDragLeave,
+    EventListener onDrag,
+    EventListener onDrop,
     Map<String, EventListener> custom
   }) : listeners = _createListeners(
          onWheel: onWheel,
@@ -504,6 +510,11 @@ class Listener extends TagNode  {
          onPointerDown: onPointerDown,
          onPointerMove: onPointerMove,
          onPointerUp: onPointerUp,
+         onDragStart: onDragStart,
+         onDragEnter: onDragEnter,
+         onDragLeave: onDragLeave,
+         onDrag: onDrag,
+         onDrop: onDrop,
          custom: custom
        ),
        super(child, key: key);
@@ -524,6 +535,11 @@ class Listener extends TagNode  {
     PointerEventListener onPointerDown,
     PointerEventListener onPointerMove,
     PointerEventListener onPointerUp,
+    EventListener onDragStart,
+    EventListener onDragEnter,
+    EventListener onDragLeave,
+    EventListener onDrag,
+    EventListener onDrop,
     Map<String, EventListener> custom
   }) {
     var listeners = custom != null ?
@@ -556,6 +572,16 @@ class Listener extends TagNode  {
       listeners['pointermove'] = onPointerMove;
     if (onPointerUp != null)
       listeners['pointerup'] = onPointerUp;
+    if (onDragStart != null)
+      listeners['dragstart'] = onDragStart;
+    if (onDragEnter != null)
+      listeners['dragenter'] = onDragEnter;
+    if (onDragLeave != null)
+      listeners['dragleave'] = onDragLeave;
+    if (onDrag != null)
+      listeners['drag'] = onDrag;
+    if (onDrop != null)
+      listeners['drop'] = onDrop;
 
     return listeners;
   }
