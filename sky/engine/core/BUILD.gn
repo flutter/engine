@@ -8,6 +8,11 @@ import("//mojo/dart/embedder/embedder.gni")
 
 visibility = [ "//sky/engine/*" ]
 
+declare_args() {
+  enable_observatory = true
+}
+
+
 rel_sky_core_gen_dir = rebase_path(sky_core_output_dir, root_build_dir)
 
 source_set("libraries") {
@@ -49,9 +54,6 @@ source_set("prerequisites") {
 }
 
 dart_embedder_resources("generate_sky_embedder_service_isolate_resources_cc") {
-  deps = [
-    "//mojo/dart/embedder:deploy_observatory",
-  ]
   inputs = [
     "//sky/engine/core/script/dart_service_isolate/loader.dart",
     "//sky/engine/core/script/dart_service_isolate/main.dart",
@@ -59,9 +61,15 @@ dart_embedder_resources("generate_sky_embedder_service_isolate_resources_cc") {
     "//sky/engine/core/script/dart_service_isolate/server.dart",
   ]
   root_prefix = "//sky/engine/core/script/"
-  input_directory = "$root_out_dir/observatory/deployed/web/"
   output = "$target_gen_dir/sky_embedder_service_isolate_resources.cc"
   table_name = "sky_embedder_service_isolate"
+
+  if (enable_observatory) {
+    input_directory = "$root_out_dir/observatory/deployed/web/"
+    deps = [
+      "//mojo/dart/embedder:deploy_observatory",
+    ]
+  }
 }
 
 static_library("core") {
