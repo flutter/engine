@@ -39,6 +39,8 @@ def to_gn_args(args):
 
     gn_args['is_debug'] = args.debug
     gn_args['is_clang'] = args.clang and args.target_os not in ['android']
+    gn_args['enable_profiling'] = args.profiling
+    gn_args['enable_observatory'] = args.debug or args.profiling
 
     if args.target_os == 'android':
         gn_args['target_os'] = 'android'
@@ -89,6 +91,9 @@ def parse_args(args):
 
   parser.add_argument('--clang', default=True, action='store_true')
   parser.add_argument('--no-clang', dest='clang', action='store_false')
+
+  parser.add_argument('--profiling', default=True, action='store_true')
+  parser.add_argument('--no-profiling', dest='profiling', action='store_false')
 
   return parser.parse_args(args)
 
