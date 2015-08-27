@@ -56,7 +56,7 @@ class Gesture extends StatefulComponent {
 
   void _detectGesture(sky.PointerEvent event, GestureRecognizer recognizer, GestureListener listener) {
     GestureManager gestureManager = SkyBinding.instance.gestureManager;
-    _subscriptions.add(gestureManager.detectGesture(event.pointer, recognizer, listener));
+    _subscriptions.add(gestureManager.addGestureRecognizer(event.pointer, recognizer, listener));
   }
 
   EventDisposition _handlePointerDown(sky.PointerEvent event) {

@@ -6,11 +6,6 @@ import 'dart:sky' as sky;
 
 import 'package:sky/base/hit_test.dart';
 
-class GestureEvent {
-}
-
-typedef void GestureListener(GestureEvent event);
-
 enum GestureDisposition {
   possible,
   accepted,
@@ -18,41 +13,15 @@ enum GestureDisposition {
 }
 
 abstract class GestureRecognizer {
-  const GestureRecognizer();
+  GestureRecognizer(this.manager);
 
-  GestureState createGestureState();
-  GestureDisposition observeEvent(GestureState state, sky.Event event);
-  void notifyListeners(GestureState state, GestureDisposition disposition);
-}
+  final GestureManager manager;
 
-class GestureState {
-  void addListener(GestureListener listener) {
-    _listeners.add(listener);
-  }
+  void handlePointerDown(sky.PointerEvent event);
+  void dispose();
 
-  void removeListener(GestureListener listener) {
-    _listeners.remove(listener);
-  }
-
-  void notifyListeners(GestureEvent event) {
-    for (GestureListener listener in new List<GestureListener>.from(_listeners))
-      listener(event);
-  }
-
-  final List<GestureListener> _listeners = new List<GestureListener>();
-}
-
-class GestureSubscription {
-  GestureSubscription._(this._gestureState, this._listener);
-  GestureSubscription._ignored() : _gestureState = null, _listener = null;
-
-  final GestureState _gestureState;
-  final GestureListener _listener;
-
-  void cancel() {
-    if (_gestureState != null)
-      _gestureState.removeListener(_listener);
-  }
+  GestureDisposition observeEvent(sky.Event event);
+  void notifyListeners(GestureDisposition disposition);
 }
 
 int _getPointer(sky.Event event) {
@@ -63,74 +32,75 @@ int _getPointer(sky.Event event) {
   return null;
 }
 
-class PointerState {
-  final Map<GestureRecognizer, GestureState> _recognizers = new Map<GestureRecognizer, GestureState>();
-  GestureRecognizer _choosenRecognizer;
-  GestureState _choosenGestureState;
+class GestureSubscription {
+  PointerState _state;
+  GestureRecognizer _recognizer;
 
-  GestureSubscription detectGesture(GestureRecognizer recognizer, GestureListener listener) {
-    if (_choosenRecognizer == recognizer) {
-      assert(_recognizers.isEmpty);
-      _choosenGestureState.addListener(listener);
-      return new GestureSubscription._(_choosenGestureState, listener);
-    }
+  GestureSubscription._(this._state, this._recognizer);
+
+  void cancel() {
+    if (_state != null)
+      _state._recognizers.remove(_recognizer);
+  }
+}
+
+class PointerState {
+  final List<GestureRecognizer> _recognizers = new List<GestureRecognizer>();
+  GestureRecognizer _choosenRecognizer;
+
+  GestureSubscription detectGesture(GestureRecognizer recognizer) {
     if (_choosenRecognizer != null) {
       assert(_recognizers.isEmpty);
-      return new GestureSubscription._ignored();
+      return new GestureSubscription._(null, null);
     }
-    GestureState gestureState = _recognizers.putIfAbsent(recognizer, () => recognizer.createGestureState());
-    assert(gestureState != null);
-    gestureState.addListener(listener);
-    return new GestureSubscription._(gestureState, listener);
+    assert(!_recognizers.contains(recognizer));
+    _recognizers.add(recognizer);
+    return new GestureSubscription._(this, recognizer);
   }
 
-  void _forEachRecognizer(void f(GestureRecognizer r, GestureState s)) {
-    new Map<GestureRecognizer, GestureState>.from(_recognizers).forEach(f);
-  }
-
-  void _attemptToChooseRecognizer(sky.Event event) {
+  GestureRecognizer _attemptToChooseRecognizer(sky.Event event) {
     assert(_choosenRecognizer == null);
-    _forEachRecognizer((GestureRecognizer recognizer, GestureState state) {
-      if (_choosenRecognizer != null)
-        return;
-      GestureDisposition disposition = recognizer.observeEvent(state, event);
+    for (GestureRecognizer recognizer in new List<GestureRecognizer>.from(_recognizers)) {
+      GestureDisposition disposition = recognizer.observeEvent(event);
       if (disposition == GestureDisposition.accepted) {
-        _choosenRecognizer = recognizer;
+        return recognizer;
       } else if (disposition == GestureDisposition.rejected) {
-        recognizer.notifyListeners(state, GestureDisposition.rejected);
+        recognizer.notifyListeners(GestureDisposition.rejected);
         _recognizers.remove(recognizer);
       }
-    });
-    if (_choosenRecognizer == null && _recognizers.length == 1)
-      _choosenRecognizer = _recognizers.keys.first;
-    if (_choosenRecognizer == null)
-      return;
-    _choosenGestureState = _recognizers[_choosenRecognizer];
-    _forEachRecognizer((GestureRecognizer recognizer, GestureState state) {
-      if (recognizer == _choosenRecognizer)
-        return;
-      recognizer.notifyListeners(state, GestureDisposition.rejected);
-    });
+    }
+    assert(_choosenRecognizer == null);
+    if (_recognizers.length == 1)
+      return _recognizers.first;
+    return null;
+  }
+
+  void _rejectRemainingRecognizers() {
+    for (GestureRecognizer recognizer in _recognizers) {
+      if (recognizer != _choosenRecognizer)
+        recognizer.notifyListeners(GestureDisposition.rejected);
+    }
     _recognizers.clear();
   }
 
   void _notifyRecognizers(sky.Event event) {
     if (_choosenRecognizer != null) {
       assert(_recognizers.isEmpty);
-      assert(_choosenGestureState != null);
-      _choosenRecognizer.notifyListeners(_choosenGestureState, GestureDisposition.accepted);
+      _choosenRecognizer.notifyListeners(GestureDisposition.accepted);
     } else {
-      _forEachRecognizer((GestureRecognizer recognizer, GestureState state) {
-        recognizer.notifyListeners(state, GestureDisposition.possible);
-      });
+      for (GestureRecognizer recognizer in _recognizers) {
+        recognizer.notifyListeners(GestureDisposition.possible);
+      }
     }
   }
 
   void handleEvent(sky.Event event) {
     if (_choosenRecognizer == null) {
-      _attemptToChooseRecognizer(event);
+      _choosenRecognizer = _attemptToChooseRecognizer(event);
+      if (_choosenRecognizer != null)
+        _rejectRemainingRecognizers();
     } else {
-      _choosenRecognizer.observeEvent(_choosenGestureState, event);
+      _choosenRecognizer.observeEvent(event);
     }
     _notifyRecognizers(event);
   }
@@ -139,12 +109,11 @@ class PointerState {
 class GestureManager extends HitTestTarget {
   final Map<int, PointerState> _pointers = new Map<int, PointerState>();
 
-  GestureSubscription detectGesture(int pointer, GestureRecognizer recognizer, GestureListener listener) {
+  GestureSubscription addGestureRecognizer(int pointer, GestureRecognizer recognizer) {
     assert(pointer != null);
     assert(recognizer != null);
-    assert(listener != null);
     PointerState pointerState = _pointers.putIfAbsent(pointer, () => new PointerState());
-    return pointerState.detectGesture(recognizer, listener);
+    return pointerState.detectGesture(recognizer);
   }
 
   EventDisposition handleEvent(sky.Event event, HitTestEntry entry) {
@@ -155,10 +124,6 @@ class GestureManager extends HitTestTarget {
     if (pointerState == null)
       return EventDisposition.ignored;
     pointerState.handleEvent(event);
-    // TODO(abarth): When should we remove pointerState? It's tempting to remove
-    // it when we see the pointerup, but we still might get gesture events from
-    // the platform recognizer that we need to process. We probably need some
-    // event that marks the end of the gesture packet.
     return EventDisposition.processed;
   }
 

@@ -6,21 +6,60 @@ import 'dart:sky' as sky;
 
 import 'package:sky/base/gesture_manager.dart';
 
-class _GestureEventState extends GestureState {
-  final List<sky.GestureEvent> _bufferedEvents = new List<sky.GestureEvent>();
-}
+typedef void GestureTapCallback();
 
-abstract class _GestureEventRecognizer extends GestureRecognizer {
-  const _GestureEventRecognizer();
+abstract class TapGestureRecognizer extends GestureRecognizer {
+  TapGestureRecognizer(GestureManager manager, { this.onTap }) : super(manager);
 
-  GestureState createGestureState() {
-    return new _GestureEventState();
+  GestureTapCallback onTap;
+  final List<GestureSubscription> _subscriptions = new List<GestureSubscription>();
+
+  void handlePointerDown(sky.PointerEvent event) {
+    _subscriptions.add(manager.addGestureRecognizer(event.pointer, this));
   }
 
-  void notifyListeners(_GestureEventState state, GestureDisposition disposition) {
+  void dispose() {
+    for (GestureSubscription subscription in _subscriptions)
+      subscription.cancel();
+    _subscriptions.clear();
+  }
+
+  GestureDisposition observeEvent(sky.Event event) {
+    if (event.type == 'gesturetap')
+      return GestureDisposition.accepted;
+    return GestureDisposition.possible;
+  }
+
+  void notifyListeners(GestureDisposition disposition) {
+    if (disposition == GestureDisposition.accepted)
+      onTap();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+abstract class _GestureEventRecognizer extends GestureRecognizer {
+  _GestureEventRecognizer(GestureManager manager) : super(manager);
+
+  sky.GestureEvent _bufferedEvents;
+
+  void notifyListeners(GestureDisposition disposition) {
     if (disposition == GestureDisposition.rejected)
       return;
-    for (sky.GestureEvent event in state._bufferedEvents)
+    for (sky.GestureEvent event in _bufferedEvents)
       state.notifyListeners(_convertEvent(event));
     state._bufferedEvents.clear();
   }
