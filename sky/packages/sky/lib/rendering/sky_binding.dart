@@ -93,7 +93,7 @@ class SkyBinding {
     }
   }
 
-  final GestureManager gestureManager = new GestureManager();
+  final GestureArena gestureManager = new GestureArena();
 
   Map<int, PointerState> _stateForPointer = new Map<int, PointerState>();
 
