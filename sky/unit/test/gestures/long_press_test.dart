@@ -46,6 +46,37 @@ void main() {
     longPress.dispose();
   });
 
+  test('Should recognize two long presses in a row', () {
+    PointerRouter router = new PointerRouter();
+    TestPointer pointer = new TestPointer(5);
+    LongPressGestureRecognizer longPress = new LongPressGestureRecognizer(router: router);
+
+    bool longPressRecognized = false;
+    longPress.onLongPress = () {
+      longPressRecognized = true;
+    };
+
+    void checkLongPress(async) {
+      TestPointerEvent down = pointer.down(new Point(10.0, 10.0));
+      longPress.addPointer(down);
+      GestureArena.instance.close(5);
+      expect(longPressRecognized, isFalse);
+      router.route(down);
+      async.elapse(new Duration(milliseconds: 1000));
+      expect(longPressRecognized, isTrue);
+      longPressRecognized = false;
+      router.route(pointer.up());
+    }
+
+    new FakeAsync().run((async) {
+      checkLongPress(async);
+      async.elapse(new Duration(milliseconds: 100));
+      checkLongPress(async);
+    });
+
+    longPress.dispose();
+  });
+
   test('Up cancels long press', () {
     PointerRouter router = new PointerRouter();
     LongPressGestureRecognizer longPress = new LongPressGestureRecognizer(router: router);
