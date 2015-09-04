@@ -8,19 +8,21 @@
 #include "base/macros.h"
 #include "sky/compositor/layer.h"
 #include "third_party/skia/include/core/SkMultiPictureDraw.h"
+#include "third_party/skia/include/gpu/GrContext.h"
 
 namespace sky {
 class PictureTable;
 
 class PictureRasterizer {
  public:
-  explicit PictureRasterizer(PictureTable* picture_table);
+  PictureRasterizer(GrContext* context, PictureTable* picture_table);
   ~PictureRasterizer();
 
   void Visit(PictureLayer* layer);
   void Rasterize();
 
  private:
+  GrContext* context_;
   PictureTable* picture_table_;
   SkMultiPictureDraw drawer_;
 

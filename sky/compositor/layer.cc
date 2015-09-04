@@ -23,7 +23,10 @@ PictureLayer::~PictureLayer() {
 void PictureLayer::Paint(SkCanvas* canvas) {
   canvas->save();
   canvas->translate(offset_.x(), offset_.y());
-  canvas->drawPicture(picture_.get());
+  if (cached_image_)
+    canvas->drawImage(cached_image_.get());
+  else
+    canvas->drawPicture(picture_.get());
   canvas->restore();
 }
 

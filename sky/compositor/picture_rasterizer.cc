@@ -9,8 +9,9 @@
 
 namespace sky {
 
-PictureRasterizer::PictureRasterizer(PictureTable* picture_table)
-  : picture_table_(picture_table) {
+PictureRasterizer::PictureRasterizer(GrContext* context,
+                                     PictureTable* picture_table)
+  : context_(context), picture_table_(picture_table) {
 }
 
 PictureRasterizer::~PictureRasterizer() {
@@ -26,6 +27,15 @@ void PictureRasterizer::Visit(PictureLayer* layer) {
 
   if (!state->ShouldRasterize())
     return;
+
+  GrTextureProvider* texture_provider = context_->textureProvider();
+
+  GrSurfaceDesc desc;
+  desc.fFlags = kRenderTarget_GrSurfaceFlag;
+  desc.fWidth = 300;
+  desc.fHeight = 400;
+
+  GrTexture* texture = adoptRef(texture_provider->createTexture(desc, false));
 }
 
 void PictureRasterizer::Rasterize() {
