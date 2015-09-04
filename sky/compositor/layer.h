@@ -35,7 +35,9 @@ class Layer {
   void set_parent(ContainerLayer* parent) { parent_ = parent; }
 
   const SkRect& paint_bounds() const { return paint_bounds_; }
-  void set_paint_bounds(const SkRect& paint_bounds) { paint_bounds_ = paint_bounds; }
+  void set_paint_bounds(const SkRect& paint_bounds) {
+    paint_bounds_ = paint_bounds;
+  }
 
  private:
   ContainerLayer* parent_;
@@ -54,9 +56,14 @@ class PictureLayer : public Layer {
   void set_offset(const SkPoint& offset) { offset_ = offset; }
   void set_picture(PassRefPtr<SkPicture> picture) { picture_ = picture; }
 
+  void set_cached_image(PassRefPtr<SkImage> cached_image) {
+    cached_image_ = cached_image;
+  }
+
  private:
   SkPoint offset_;
   RefPtr<SkPicture> picture_;
+  RefPtr<SkImage> cached_image_;
 
   DISALLOW_COPY_AND_ASSIGN(PictureLayer);
 };
@@ -159,7 +166,9 @@ class ColorFilterLayer : public ContainerLayer {
   void Paint(SkCanvas* canvas) override;
 
   void set_color(SkColor color) { color_ = color; }
-  void set_transfer_mode(SkXfermode::Mode transfer_mode) { transfer_mode_ = transfer_mode; }
+  void set_transfer_mode(SkXfermode::Mode transfer_mode) {
+    transfer_mode_ = transfer_mode;
+  }
 
  private:
   SkColor color_;
