@@ -47,8 +47,7 @@ public:
 
     void setDisplayMetrics(const SkyDisplayMetrics& metrics);
     void handleInputEvent(PassRefPtr<Event> event);
-    std::unique_ptr<sky::compositor::LayerTree> beginFrame(
-        base::TimeTicks frameTime);
+    std::unique_ptr<sky::LayerTree> beginFrame(base::TimeTicks frameTime);
 
 private:
     explicit View(const base::Closure& scheduleFrameCallback);
