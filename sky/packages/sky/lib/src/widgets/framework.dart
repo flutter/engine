@@ -820,7 +820,7 @@ abstract class Component extends Widget {
       _debugIsBuilding = true;
       _debugPreviousComponent = _debugLastComponent;
       if (_debugLastComponent != null)
-        _debugLastComponent = "$_debugPreviousComponent -> ${this.toStringName()}";
+        _debugLastComponent = "$_debugPreviousComponent \n ${this.toStringName()}";
       else
         _debugLastComponent = "Build chain: ${this.toStringName()}";
       return true;
