@@ -135,5 +135,6 @@ main(List<String> argv) async {
   }
 
   File outputFile = new File(args['output-file']);
-  await outputFile.writeAsBytes(new ZipEncoder().encode(archive));
+  await outputFile.writeAsString('#!mojo mojo:sky_viewer\n');
+  await outputFile.writeAsBytes(new ZipEncoder().encode(archive), mode: FileMode.APPEND);
 }
