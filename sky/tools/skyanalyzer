@@ -23,13 +23,12 @@ _IGNORED_PATTERNS = [
   re.compile(r'^$'),
   re.compile(r'^Analyzing \['),
   re.compile(r'^No issues found'),
+  re.compile(r'^[0-9]+ errors? and [0-9]+ warnings? found.'),
+  re.compile(r'^[0-9]+ errors(, [0-9]+ warnings)? and [0-9]+ hints found.'),
+  re.compile(r'^([0-9]+|No) (error|warning|issue)s? found.'),
 
-  # Ignore analyzer status output.
-  re.compile(r'^[0-9]+ (error|warning|hint).*found[.]'),
-
+  # Skip any packages that are not being locally developed
   # TODO: Fix all the warnings in the mojo packages
-  re.compile(r'.*pub-cache.*\.mojom\.dart'),
-
   # It'd be nice if the other packages we used didn't have warnings, too...
   re.compile(r'.*pub-cache/hosted/pub.dartlang.org/'),
 ]
