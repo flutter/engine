@@ -6,9 +6,10 @@
 #define SKY_ENGINE_PUBLIC_SKY_SKY_HEADLESS_H_
 
 #include "base/basictypes.h"
-#include "dart/runtime/include/dart_api.h"
 #include "sky/engine/wtf/OwnPtr.h"
 #include "sky/engine/wtf/text/WTFString.h"
+
+typedef struct _Dart_Isolate* Dart_Isolate;
 
 namespace blink {
 class DartController;
