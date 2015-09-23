@@ -48,16 +48,16 @@ enum ScreenOrientation {
 //               figure out how to rationalize this interface across platforms.
 interface Activity {
   GetUserFeedback(UserFeedback& user_feedback);
+  GetFileSystem(FileSystem& file_system);
 
   StartActivity(Intent intent);
   FinishCurrentActivity();
   SetTaskDescription(TaskDescription description);
   SetSystemUIVisibility(SystemUIVisibility visibility);
   SetRequestedOrientation(ScreenOrientation orientation);
+};
 
-  // These are stored off the Activity on Android, but probably belong in a
-  // separate FileSystem service.
-
+interface FileSystem {
   // Where to store long-term files.
   GetFilesDir() => (string path);
 

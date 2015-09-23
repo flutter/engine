@@ -37,6 +37,15 @@ UserFeedbackProxy _initUserFeedbackProxy() {
 final UserFeedbackProxy _userFeedbackProxy = _initUserFeedbackProxy();
 final UserFeedback userFeedback = _userFeedbackProxy.ptr;
 
+FileSystemProxy _initFileSystemProxy() {
+  FileSystemProxy proxy = new FileSystemProxy.unbound();
+  _activityProxy.ptr.getFileSystem(proxy);
+  return proxy;
+}
+
+final FileSystemProxy _fileSystemProxy = _initFileSystemProxy();
+final FileSystem fileSystem = _fileSystemProxy.ptr;
+
 Color _cachedPrimaryColor;
 String _cachedLabel;
 
@@ -55,5 +64,5 @@ void updateTaskDescription(String label, Color color) {
   _activityProxy.ptr.setTaskDescription(description);
 }
 
-Future<String> getFilesDir() async => (await _activityProxy.ptr.getFilesDir()).path;
-Future<String> getCacheDir() async => (await _activityProxy.ptr.getCacheDir()).path;
+Future<String> getFilesDir() async => (await _fileSystemProxy.ptr.getFilesDir()).path;
+Future<String> getCacheDir() async => (await _fileSystemProxy.ptr.getCacheDir()).path;
