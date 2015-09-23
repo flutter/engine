@@ -2,16 +2,28 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 //import 'package:mojo/mojo/url_response.mojom.dart';
 //import 'package:sky/material.dart';
 //import 'package:sky/rendering.dart';
 import 'package:sky/services.dart';
+import 'package:path/path.dart' as path;
 //import 'package:sky/widgets.dart';
 
 class UpdateTask {
   UpdateTask() {}
 
   String toString() => "UpdateTask()";
+}
+
+String cachedDataFilePath = null;
+Future<String> dataFilePath() async {
+  if (cachedDataFilePath == null) {
+    String dataDir = await getFilesDir();
+    cachedDataFilePath = path.join(dataDir, 'sky.yaml');
+  }
+  return cachedDataFilePath;
 }
 
 // parse local manifest; get update_url
@@ -28,6 +40,8 @@ class UpdateTask {
 
 runTest() async {
   print("Fetching...");
+  String path = await dataFilePath();
+  print("path: $path");
 //  String data = await fetchString("http://mpcomplete.org");
 //  print("fetched: $data");
 }
