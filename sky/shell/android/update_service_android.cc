@@ -10,6 +10,7 @@
 #include "sky/engine/bindings/updater_snapshot.h"
 #include "sky/engine/public/sky/sky_headless.h"
 #include "sky/shell/shell.h"
+#include "sky/shell/ui/internals.h"
 
 namespace sky {
 namespace shell {
@@ -25,7 +26,7 @@ bool RegisterUpdateService(JNIEnv* env) {
 }
 
 UpdateTaskAndroid::UpdateTaskAndroid(JNIEnv* env, jobject update_service)
-    : headless_(new blink::SkyHeadless) {
+    : headless_(new blink::SkyHeadless(this)) {
   update_service_.Reset(env, update_service);
 }
 
@@ -36,6 +37,12 @@ void UpdateTaskAndroid::Start() {
   Shell::Shared().ui_task_runner()->PostTask(
       FROM_HERE, base::Bind(&UpdateTaskAndroid::RunDartOnUIThread,
                             base::Unretained(this)));
+}
+
+void UpdateTaskAndroid::DidCreateIsolate(Dart_Isolate isolate) {
+  Internals::Create(isolate, CreateServiceProvider(
+                                 Shell::Shared().service_provider_context()),
+                    nullptr);
 }
 
 void UpdateTaskAndroid::RunDartOnUIThread() {
