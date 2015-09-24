@@ -6,6 +6,6 @@ homepage: http://flutter.io
 dependencies:
   mojo: ^0.0.21
   sky: ^0.0.25
-  sky_services: ^0.0.48
+  sky_services: ^0.0.26
 environment:
   sdk: '>=1.12.0 <2.0.0'

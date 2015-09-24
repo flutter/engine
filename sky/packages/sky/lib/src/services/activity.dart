@@ -37,14 +37,21 @@ UserFeedbackProxy _initUserFeedbackProxy() {
 final UserFeedbackProxy _userFeedbackProxy = _initUserFeedbackProxy();
 final UserFeedback userFeedback = _userFeedbackProxy.ptr;
 
-FileSystemProxy _initFileSystemProxy() {
-  FileSystemProxy proxy = new FileSystemProxy.unbound();
-  _activityProxy.ptr.getFileSystem(proxy);
+PathUtilsProxy _initPathUtilsProxy() {
+  print("initProxy WTFFFF");
+  PathUtilsProxy proxy = new PathUtilsProxy.unbound();
+  print("gettingProxy $proxy");
+  try {
+    shell.requestService('mojo:sky_viewer', proxy);
+  } catch(e) {
+    print("bad sstuff: $e");
+  }
+  print("gotProxy $proxy");
   return proxy;
 }
 
-final FileSystemProxy _fileSystemProxy = _initFileSystemProxy();
-final FileSystem fileSystem = _fileSystemProxy.ptr;
+final PathUtilsProxy _pathUtilsProxy = _initPathUtilsProxy();
+final PathUtils pathUtils = _pathUtilsProxy.ptr;
 
 Color _cachedPrimaryColor;
 String _cachedLabel;
@@ -64,5 +71,8 @@ void updateTaskDescription(String label, Color color) {
   _activityProxy.ptr.setTaskDescription(description);
 }
 
-Future<String> getFilesDir() async => (await _fileSystemProxy.ptr.getFilesDir()).path;
-Future<String> getCacheDir() async => (await _fileSystemProxy.ptr.getCacheDir()).path;
+Future<String> getFilesDir() async {
+  print("GETFILES");
+  return (await _pathUtilsProxy.ptr.getFilesDir()).path;
+}
+Future<String> getCacheDir() async => (await _pathUtilsProxy.ptr.getCacheDir()).path;

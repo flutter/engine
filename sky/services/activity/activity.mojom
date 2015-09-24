@@ -48,7 +48,6 @@ enum ScreenOrientation {
 //               figure out how to rationalize this interface across platforms.
 interface Activity {
   GetUserFeedback(UserFeedback& user_feedback);
-  GetFileSystem(FileSystem& file_system);
 
   StartActivity(Intent intent);
   FinishCurrentActivity();
@@ -57,7 +56,7 @@ interface Activity {
   SetRequestedOrientation(ScreenOrientation orientation);
 };
 
-interface FileSystem {
+interface PathUtils {
   // Where to store long-term files.
   GetFilesDir() => (string path);
 

@@ -15,7 +15,6 @@ import org.chromium.mojo.bindings.InterfaceRequest;
 import org.chromium.mojo.system.MojoException;
 import org.chromium.mojom.activity.Activity;
 import org.chromium.mojom.activity.ComponentName;
-import org.chromium.mojom.activity.FileSystem;
 import org.chromium.mojom.activity.Intent;
 import org.chromium.mojom.activity.ScreenOrientation;
 import org.chromium.mojom.activity.StringExtra;
@@ -74,11 +73,6 @@ public class ActivityImpl implements Activity {
     public void getUserFeedback(InterfaceRequest<UserFeedback> request) {
         View view = sCurrentActivity.getWindow().getDecorView();
         UserFeedback.MANAGER.bind(new UserFeedbackImpl(view), request);
-    }
-
-    @Override
-    public void getFileSystem(InterfaceRequest<FileSystem> request) {
-        FileSystem.MANAGER.bind(new FileSystemImpl(), request);
     }
 
     @Override
