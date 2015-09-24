@@ -86,30 +86,12 @@ Future<String> getDataDir() async {
   return cachedDataDir;
 }
 
-// parse local manifest; get update_url
-// fetch remote manifest
-// compare versions
-// download new app.skyx
+// download new app.skyx to file
 // replace old app.skyx
 // notify caller we're done
 //
 // need:
-// local data_dir (for manifest)
-// local tmp_dir (for downloads)
 // method for notifying caller. native? mojo?
-
-runTest() async {
-  String dataDir = await getDataDir();
-  String manifestPath = path.join(dataDir, 'sky.yaml');
-  String manifestData = await new File(manifestPath).readAsString();
-  print("manifestData: $manifestData");
-  var manifestYaml = yaml.loadYaml(manifestData, sourceUrl: manifestPath);
-  print('yaml: $doc');
-  print(doc['update_url']);
-
-//  String data = await fetchString("http://mpcomplete.org");
-//  print("fetched: $data");
-}
 
 void main() {
   var task = new UpdateTask();
