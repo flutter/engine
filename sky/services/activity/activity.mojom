@@ -56,7 +56,7 @@ interface Activity {
   SetRequestedOrientation(ScreenOrientation orientation);
 };
 
-interface PathUtils {
+interface PathService {
   // Where to store long-term files.
   GetFilesDir() => (string path);
 

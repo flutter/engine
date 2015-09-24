@@ -6,18 +6,18 @@ package org.domokit.activity;
 
 import android.content.Context;
 import org.chromium.mojo.system.MojoException;
-import org.chromium.mojom.activity.PathUtils;
+import org.chromium.mojom.activity.PathService;
 import android.util.Log;
 
 /**
- * Android implementation of PathUtils.
+ * Android implementation of PathService.
  */
-public class PathUtilsImpl implements PathUtils {
-    private static final String TAG = "PathUtilsImpl";
+public class PathServiceImpl implements PathService {
+    private static final String TAG = "PathServiceImpl";
     private static android.content.Context sCurrentContext;
 
-    public PathUtilsImpl() {
-        Log.e("MP", "PathUtilsImpl");
+    public PathServiceImpl() {
+        Log.e("MP", "PathServiceImpl");
     }
 
     public static void setCurrentContext(android.content.Context context) {

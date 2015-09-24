@@ -37,9 +37,9 @@ UserFeedbackProxy _initUserFeedbackProxy() {
 final UserFeedbackProxy _userFeedbackProxy = _initUserFeedbackProxy();
 final UserFeedback userFeedback = _userFeedbackProxy.ptr;
 
-PathUtilsProxy _initPathUtilsProxy() {
+PathServiceProxy _initPathServiceProxy() {
   print("initProxy WTFFFF");
-  PathUtilsProxy proxy = new PathUtilsProxy.unbound();
+  PathServiceProxy proxy = new PathServiceProxy.unbound();
   print("gettingProxy $proxy");
   try {
     shell.requestService('mojo:sky_viewer', proxy);
@@ -50,8 +50,8 @@ PathUtilsProxy _initPathUtilsProxy() {
   return proxy;
 }
 
-final PathUtilsProxy _pathUtilsProxy = _initPathUtilsProxy();
-final PathUtils pathUtils = _pathUtilsProxy.ptr;
+final PathServiceProxy _pathServiceProxy = _initPathServiceProxy();
+final PathService pathService = _pathServiceProxy.ptr;
 
 Color _cachedPrimaryColor;
 String _cachedLabel;
@@ -73,6 +73,6 @@ void updateTaskDescription(String label, Color color) {
 
 Future<String> getFilesDir() async {
   print("GETFILES");
-  return (await _pathUtilsProxy.ptr.getFilesDir()).path;
+  return (await _pathServiceProxy.ptr.getFilesDir()).path;
 }
-Future<String> getCacheDir() async => (await _pathUtilsProxy.ptr.getCacheDir()).path;
+Future<String> getCacheDir() async => (await _pathServiceProxy.ptr.getCacheDir()).path;

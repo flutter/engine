@@ -9,7 +9,7 @@ import android.util.Log;
 
 import org.chromium.base.JNINamespace;
 import org.chromium.mojo.system.impl.CoreImpl;
-import org.domokit.activity.PathUtilsImpl;
+import org.domokit.activity.PathServiceImpl;
 
 /**
  * A class to intialize the native code.
@@ -32,7 +32,7 @@ public class SkyMain {
         }
         try {
             SkyApplication app = (SkyApplication) applicationContext;
-            PathUtilsImpl.setCurrentContext(applicationContext);
+            PathServiceImpl.setCurrentContext(applicationContext);
             app.getResourceExtractor().waitForCompletion();
             nativeInit(applicationContext, args);
             // Create the mojo run loop.

@@ -25,6 +25,7 @@ action("updater") {
   ]
 
   deps = [
+    "//sky/services/activity:interfaces",
     "//sky/tools/sky_snapshot($host_toolchain)",
   ]
 }
