@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 //import 'package:mojo/mojo/url_response.mojom.dart';
 //import 'package:sky/material.dart';
@@ -13,10 +14,69 @@ import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart' as yaml;
 //import 'package:sky/widgets.dart';
 
+class Version {
+  Version(String versionStr) :
+    _parts = versionStr.split('.').map((val) => int.parse(val)).toList();
+
+  List<int> _parts;
+
+  bool operator<(Version other) => _compare(other) < 0;
+  bool operator==(Version other) => _compare(other) == 0;
+  bool operator>(Version other) => _compare(other) > 0;
+
+  int _compare(Version other) {
+    int length = min(_parts.length, other._parts.length);
+    for (int i = 0; i < length; ++i) {
+      if (_parts[i] < other._parts[i])
+        return -1;
+      if (_parts[i] > other._parts[i])
+        return 1;
+    }
+    return _parts.length - other._parts.length;  // results in 1.0.0 < 1.0
+  }
+}
+
 class UpdateTask {
   UpdateTask() {}
 
-  String toString() => "UpdateTask()";
+  run() async {
+    await _readLocalManifest();
+    yaml.YamlMap remoteManifest = await _fetchManifest();
+    if (_shouldUpdate(remoteManifest)) {
+      print("Update skipped. No new version.");
+      return;
+    }
+    await _fetchBundle();
+  }
+
+  _readLocalManifest() async {
+    String dataDir = await getDataDir();
+    String manifestPath = path.join(dataDir, 'sky.yaml');
+    String manifestData = await new File(manifestPath).readAsString();
+    print("manifestData: $manifestData");
+    _currentManifest = yaml.loadYaml(manifestData, sourceUrl: manifestPath);
+  }
+
+  Future<yaml.YamlMap> _fetchManifest() async {
+    String manifestUrl = _currentManifest['update_url'] + '/sky.yaml';
+    String manifestData = await fetchString(manifestUrl);
+    print("remote manifestData: $manifestData");
+    return yaml.loadYaml(manifestData, sourceUrl: manifestUrl);
+  }
+
+  bool _shouldUpdate(yaml.YamlMap remoteManifest) {
+    Version currentVersion = new Version(_currentManifest['version']);
+    Version remoteVersion = new Version(remoteManifest['version']);
+    return (currentVersion < remoteVersion);
+  }
+
+  _fetchBundle() async {
+    String bundleUrl = _currentManifest['update_url'] + '/app.skyx';
+    var data = await fetchBody(bundleUrl);
+    print("Got: ${data.body.lengthInBytes}");
+  }
+
+  yaml.YamlMap _currentManifest;
 }
 
 String cachedDataDir = null;
@@ -43,7 +103,7 @@ runTest() async {
   String manifestPath = path.join(dataDir, 'sky.yaml');
   String manifestData = await new File(manifestPath).readAsString();
   print("manifestData: $manifestData");
-  var doc = yaml.loadYaml(manifestData, sourceUrl: manifestPath);
+  var manifestYaml = yaml.loadYaml(manifestData, sourceUrl: manifestPath);
   print('yaml: $doc');
   print(doc['update_url']);
 
@@ -52,7 +112,6 @@ runTest() async {
 }
 
 void main() {
-  var x = new UpdateTask();
-  print("Success: $x");
-  runTest();
+  var task = new UpdateTask();
+  task.run();
 }
