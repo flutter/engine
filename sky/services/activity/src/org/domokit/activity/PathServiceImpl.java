@@ -5,9 +5,9 @@
 package org.domokit.activity;
 
 import android.content.Context;
+import org.chromium.base.PathUtils;
 import org.chromium.mojo.system.MojoException;
 import org.chromium.mojom.activity.PathService;
-import android.util.Log;
 
 /**
  * Android implementation of PathService.
@@ -25,6 +25,11 @@ public class PathServiceImpl implements PathService {
 
     @Override
     public void onConnectionError(MojoException e) {}
+
+    @Override
+    public void getAppDataDir(GetAppDataDirResponse callback) {
+        callback.call(PathUtils.getDataDirectory(context));
+    }
 
     @Override
     public void getFilesDir(GetFilesDirResponse callback) {

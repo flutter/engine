@@ -3,12 +3,14 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:io';
 
 //import 'package:mojo/mojo/url_response.mojom.dart';
 //import 'package:sky/material.dart';
 //import 'package:sky/rendering.dart';
 import 'package:sky/services.dart';
 import 'package:path/path.dart' as path;
+import 'package:yaml/yaml.dart' as yaml;
 //import 'package:sky/widgets.dart';
 
 class UpdateTask {
@@ -17,13 +19,11 @@ class UpdateTask {
   String toString() => "UpdateTask()";
 }
 
-String cachedDataFilePath = null;
-Future<String> dataFilePath() async {
-  if (cachedDataFilePath == null) {
-    String dataDir = await getFilesDir();
-    cachedDataFilePath = path.join(dataDir, 'sky.yaml');
-  }
-  return cachedDataFilePath;
+String cachedDataDir = null;
+Future<String> getDataDir() async {
+  if (cachedDataDir == null)
+    cachedDataDir = await getAppDataDir();
+  return cachedDataDir;
 }
 
 // parse local manifest; get update_url
@@ -39,9 +39,14 @@ Future<String> dataFilePath() async {
 // method for notifying caller. native? mojo?
 
 runTest() async {
-  print("Fetching...");
-  String path = await dataFilePath();
-  print("path: $path");
+  String dataDir = await getDataDir();
+  String manifestPath = path.join(dataDir, 'sky.yaml');
+  String manifestData = await new File(manifestPath).readAsString();
+  print("manifestData: $manifestData");
+  var doc = yaml.loadYaml(manifestData, sourceUrl: manifestPath);
+  print('yaml: $doc');
+  print(doc['update_url']);
+
 //  String data = await fetchString("http://mpcomplete.org");
 //  print("fetched: $data");
 }

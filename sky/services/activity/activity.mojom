@@ -57,6 +57,9 @@ interface Activity {
 };
 
 interface PathService {
+  // Where the application files are.
+  GetAppDataDir() => (string path);
+
   // Where to store long-term files.
   GetFilesDir() => (string path);
 

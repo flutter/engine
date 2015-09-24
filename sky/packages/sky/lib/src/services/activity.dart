@@ -64,5 +64,6 @@ void updateTaskDescription(String label, Color color) {
   _activityProxy.ptr.setTaskDescription(description);
 }
 
+Future<String> getAppDataDir() async => (await _pathServiceProxy.ptr.getAppDataDir()).path;
 Future<String> getFilesDir() async => (await _pathServiceProxy.ptr.getFilesDir()).path;
 Future<String> getCacheDir() async => (await _pathServiceProxy.ptr.getCacheDir()).path;
