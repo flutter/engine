@@ -79,7 +79,7 @@ public class SkyApplication extends BaseChromiumApplication {
         registry.register(PathService.MANAGER.getName(), new ServiceFactory() {
             @Override
             public void connectToService(Context context, Core core, MessagePipeHandle pipe) {
-                PathService.MANAGER.bind(new PathServiceImpl(), pipe);
+                PathService.MANAGER.bind(new PathServiceImpl(getApplicationContext()), pipe);
             }
         });
 

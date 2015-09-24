@@ -14,13 +14,10 @@ import android.util.Log;
  */
 public class PathServiceImpl implements PathService {
     private static final String TAG = "PathServiceImpl";
-    private static android.content.Context sCurrentContext;
+    private static android.content.Context context;
 
-    public PathServiceImpl() {
-    }
-
-    public static void setCurrentContext(android.content.Context context) {
-        sCurrentContext = context;
+    public PathServiceImpl(android.content.Context context) {
+      this.context = context;
     }
 
     @Override
@@ -31,17 +28,11 @@ public class PathServiceImpl implements PathService {
 
     @Override
     public void getFilesDir(GetFilesDirResponse callback) {
-        String path = null;
-        if (sCurrentContext != null)
-            path = sCurrentContext.getFilesDir().getPath();
-        callback.call(path);
+        callback.call(context.getFilesDir().getPath());
     }
 
     @Override
     public void getCacheDir(GetCacheDirResponse callback) {
-        String path = null;
-        if (sCurrentContext != null)
-            path = sCurrentContext.getCacheDir().getPath();
-        callback.call(path);
+        callback.call(context.getCacheDir().getPath());
     }
 }
