@@ -38,15 +38,8 @@ final UserFeedbackProxy _userFeedbackProxy = _initUserFeedbackProxy();
 final UserFeedback userFeedback = _userFeedbackProxy.ptr;
 
 PathServiceProxy _initPathServiceProxy() {
-  print("initProxy WTFFFF");
   PathServiceProxy proxy = new PathServiceProxy.unbound();
-  print("gettingProxy $proxy");
-  try {
-    shell.requestService('mojo:sky_viewer', proxy);
-  } catch(e) {
-    print("bad sstuff: $e");
-  }
-  print("gotProxy $proxy");
+  shell.requestService(null, proxy);
   return proxy;
 }
 
@@ -71,8 +64,5 @@ void updateTaskDescription(String label, Color color) {
   _activityProxy.ptr.setTaskDescription(description);
 }
 
-Future<String> getFilesDir() async {
-  print("GETFILES");
-  return (await _pathServiceProxy.ptr.getFilesDir()).path;
-}
+Future<String> getFilesDir() async => (await _pathServiceProxy.ptr.getFilesDir()).path;
 Future<String> getCacheDir() async => (await _pathServiceProxy.ptr.getCacheDir()).path;

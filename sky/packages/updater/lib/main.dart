@@ -20,7 +20,6 @@ class UpdateTask {
 String cachedDataFilePath = null;
 Future<String> dataFilePath() async {
   if (cachedDataFilePath == null) {
-    print("uncached");
     String dataDir = await getFilesDir();
     cachedDataFilePath = path.join(dataDir, 'sky.yaml');
   }

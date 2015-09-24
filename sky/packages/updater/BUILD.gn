@@ -25,6 +25,9 @@ action("updater") {
   ]
 
   deps = [
+    # TODO(mpcomplete): We also depend on
+    # //sky/packages/sky/lib/src/services/activity.dart, but I don't know how
+    # to tell GN that.
     "//sky/services/activity:interfaces",
     "//sky/tools/sky_snapshot($host_toolchain)",
   ]

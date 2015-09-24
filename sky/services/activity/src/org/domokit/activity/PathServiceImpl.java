@@ -17,28 +17,21 @@ public class PathServiceImpl implements PathService {
     private static android.content.Context sCurrentContext;
 
     public PathServiceImpl() {
-        Log.e("MP", "PathServiceImpl");
     }
 
     public static void setCurrentContext(android.content.Context context) {
-        Log.e("MP", "setCC");
         sCurrentContext = context;
     }
 
     @Override
-    public void close() {
-        Log.e("MP", "close");
-    }
+    public void close() {}
 
     @Override
-    public void onConnectionError(MojoException e) {
-        Log.e("MP", "connectionError");
-    }
+    public void onConnectionError(MojoException e) {}
 
     @Override
     public void getFilesDir(GetFilesDirResponse callback) {
-        Log.e("MP", "getFilesDir");
-        String path = "hi";
+        String path = null;
         if (sCurrentContext != null)
             path = sCurrentContext.getFilesDir().getPath();
         callback.call(path);
@@ -46,7 +39,6 @@ public class PathServiceImpl implements PathService {
 
     @Override
     public void getCacheDir(GetCacheDirResponse callback) {
-        Log.e("MP", "getCacheDir");
         String path = null;
         if (sCurrentContext != null)
             path = sCurrentContext.getCacheDir().getPath();
