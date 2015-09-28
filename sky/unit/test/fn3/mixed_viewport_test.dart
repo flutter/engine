@@ -1,65 +1,50 @@
-import 'package:sky/widgets.dart';
+import 'package:sky/src/fn3.dart';
 import 'package:test/test.dart';
 
 import 'widget_tester.dart';
-
-class TestComponent extends StatefulComponent {
-  TestComponent(this.viewport);
-  MixedViewport viewport;
-  void syncConstructorArguments(TestComponent source) {
-    viewport = source.viewport;
-  }
-  bool _flag = true;
-  void go(bool flag) {
-    setState(() {
-      _flag = flag;
-    });
-  }
-  Widget build() {
-    return _flag ? viewport : new Text('Not Today');
-  }
-}
+import 'test_widgets.dart';
 
 void main() {
   test('MixedViewport mount/dismount smoke test', () {
     WidgetTester tester = new WidgetTester();
-
-    MixedViewportLayoutState layoutState = new MixedViewportLayoutState();
 
     List<int> callbackTracker = <int>[];
 
     // the root view is 800x600 in the test environment
     // so if our widget is 100 pixels tall, it should fit exactly 6 times.
 
-    TestComponent testComponent;
     Widget builder() {
-      testComponent = new TestComponent(new MixedViewport(
-        builder: (int i) {
-          callbackTracker.add(i);
-          return new Container(
-            key: new ValueKey<int>(i),
-            height: 100.0,
-            child: new Text("$i")
-          );
-        },
-        startOffset: 0.0,
-        layoutState: layoutState
-      ));
-      return testComponent;
+      return new FlipComponent(
+        left: new MixedViewport(
+          builder: (BuildContext context, int i) {
+            callbackTracker.add(i);
+            return new Container(
+              key: new ValueKey<int>(i),
+              height: 100.0,
+              child: new Text("$i")
+            );
+          },
+          startOffset: 0.0
+        ),
+        right: new Text('Not Today')
+      );
     }
 
-    tester.pumpFrame(builder);
+    tester.pumpFrame(builder());
+
+    StatefulComponentElement element = tester.findElement((element) => element.widget is FlipComponent);
+    FlipComponentState testComponent = element.state;
 
     expect(callbackTracker, equals([0, 1, 2, 3, 4, 5]));
 
     callbackTracker.clear();
-    testComponent.go(false);
+    testComponent.flip();
     tester.pumpFrameWithoutChange();
 
     expect(callbackTracker, equals([]));
 
     callbackTracker.clear();
-    testComponent.go(true);
+    testComponent.flip();
     tester.pumpFrameWithoutChange();
 
     expect(callbackTracker, equals([0, 1, 2, 3, 4, 5]));
@@ -69,8 +54,6 @@ void main() {
   test('MixedViewport vertical', () {
     WidgetTester tester = new WidgetTester();
 
-    MixedViewportLayoutState layoutState = new MixedViewportLayoutState();
-
     List<int> callbackTracker = <int>[];
 
     // the root view is 800x600 in the test environment
@@ -79,7 +62,7 @@ void main() {
 
     double offset = 300.0;
 
-    IndexedBuilder itemBuilder = (int i) {
+    IndexedBuilder itemBuilder = (BuildContext context, int i) {
       callbackTracker.add(i);
       return new Container(
         key: new ValueKey<int>(i),
@@ -89,17 +72,17 @@ void main() {
       );
     };
 
-    TestComponent testComponent;
     Widget builder() {
-      testComponent = new TestComponent(new MixedViewport(
-        builder: itemBuilder,
-        startOffset: offset,
-        layoutState: layoutState
-      ));
-      return testComponent;
+      return new FlipComponent(
+        left: new MixedViewport(
+          builder: itemBuilder,
+          startOffset: offset
+        ),
+        right: new Text('Not Today')
+      );
     }
 
-    tester.pumpFrame(builder);
+    tester.pumpFrame(builder());
 
     // 0 is built to find its width
     expect(callbackTracker, equals([0, 1, 2, 3, 4]));
@@ -108,7 +91,7 @@ void main() {
 
     offset = 400.0; // now only 3 should fit, numbered 2-4.
 
-    tester.pumpFrame(builder);
+    tester.pumpFrame(builder());
 
     // 0 and 1 aren't built, we know their size and nothing else changed
     expect(callbackTracker, equals([2, 3, 4]));
@@ -120,8 +103,6 @@ void main() {
   test('MixedViewport horizontal', () {
     WidgetTester tester = new WidgetTester();
 
-    MixedViewportLayoutState layoutState = new MixedViewportLayoutState();
-
     List<int> callbackTracker = <int>[];
 
     // the root view is 800x600 in the test environment
@@ -130,7 +111,7 @@ void main() {
 
     double offset = 300.0;
 
-    IndexedBuilder itemBuilder = (int i) {
+    IndexedBuilder itemBuilder = (BuildContext context, int i) {
       callbackTracker.add(i);
       return new Container(
         key: new ValueKey<int>(i),
@@ -140,18 +121,18 @@ void main() {
       );
     };
 
-    TestComponent testComponent;
     Widget builder() {
-      testComponent = new TestComponent(new MixedViewport(
-        builder: itemBuilder,
-        startOffset: offset,
-        layoutState: layoutState,
-        direction: ScrollDirection.horizontal
-      ));
-      return testComponent;
+      return new FlipComponent(
+        left: new MixedViewport(
+          builder: itemBuilder,
+          startOffset: offset,
+          direction: ScrollDirection.horizontal
+        ),
+        right: new Text('Not Today')
+      );
     }
 
-    tester.pumpFrame(builder);
+    tester.pumpFrame(builder());
 
     // 0 is built to find its width
     expect(callbackTracker, equals([0, 1, 2, 3, 4, 5]));
@@ -160,7 +141,7 @@ void main() {
 
     offset = 400.0; // now only 4 should fit, numbered 2-5.
 
-    tester.pumpFrame(builder);
+    tester.pumpFrame(builder());
 
     // 0 and 1 aren't built, we know their size and nothing else changed
     expect(callbackTracker, equals([2, 3, 4, 5]));

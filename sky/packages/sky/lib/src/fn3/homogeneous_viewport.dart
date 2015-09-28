@@ -8,7 +8,7 @@ import 'package:sky/rendering.dart';
 import 'package:sky/src/fn3/framework.dart';
 import 'package:sky/src/fn3/basic.dart';
 
-typedef List<Widget> ListBuilder(int startIndex, int count, BuildContext context);
+typedef List<Widget> ListBuilder(BuildContext context, int startIndex, int count);
 
 class HomogeneousViewport extends RenderObjectWidget {
   HomogeneousViewport({
@@ -30,11 +30,11 @@ class HomogeneousViewport extends RenderObjectWidget {
   final ScrollDirection direction;
   final double startOffset;
 
-  RenderObjectElement createElement() => new HomogeneousViewportElement(this);
+  HomogeneousViewportElement createElement() => new HomogeneousViewportElement(this);
 
   // we don't pass constructor arguments to the RenderBlockViewport() because until
   // we know our children, the constructor arguments we could give have no effect
-  RenderObject createRenderObject() => new RenderBlockViewport();
+  RenderBlockViewport createRenderObject() => new RenderBlockViewport();
 
   bool isLayoutDifferentThan(HomogeneousViewport oldWidget) {
     return itemsWrap != oldWidget.itemsWrap ||
@@ -52,7 +52,6 @@ class HomogeneousViewportElement extends RenderObjectElement<HomogeneousViewport
   HomogeneousViewportElement(HomogeneousViewport widget) : super(widget);
 
   List<Element> _children = const <Element>[];
-  bool _layoutDirty = true;
   int _layoutFirstIndex;
   int _layoutItemCount;
 
@@ -91,12 +90,14 @@ class HomogeneousViewportElement extends RenderObjectElement<HomogeneousViewport
   }
 
   void layout(BoxConstraints constraints) {
-    // we lock the framework state (meaning that no elements can call markNeedsBuild()) because we are
-    // in the middle of layout and if we allowed people to set state, they'd expect to have that state
-    // reflected immediately, which, if we were to try to honour it, would potentially result in
-    // assertions since you can't normally mutate the render object tree during layout. (If there was
-    // a way to limit this to only descendants of this, it'd be ok, since we are exempt from that
-    // assert since we are actively doing our own layout still.)
+    // We enter a build scope (meaning that markNeedsBuild() is forbidden)
+    // because we are in the middle of layout and if we allowed people to set
+    // state, they'd expect to have that state reflected immediately, which, if
+    // we were to try to honour it, would potentially result in assertions
+    // because you can't normally mutate the render object tree during layout.
+    // (If there were a way to limit these writes to descendants of this, it'd
+    // be ok because we are exempt from that assert since we are still actively
+    // doing our own layout.)
     BuildableElement.lockState(() {
       double mainAxisExtent = widget.direction == ScrollDirection.vertical ? constraints.maxHeight : constraints.maxWidth;
       double offset;
@@ -137,7 +138,7 @@ class HomogeneousViewportElement extends RenderObjectElement<HomogeneousViewport
     assert(_layoutItemCount != null);
     List<Widget> newWidgets;
     if (_layoutItemCount > 0)
-      newWidgets = widget.builder(_layoutFirstIndex, _layoutItemCount, this);
+      newWidgets = widget.builder(this, _layoutFirstIndex, _layoutItemCount);
     else
       newWidgets = <Widget>[];
     _children = updateChildren(_children, newWidgets);
@@ -163,7 +164,8 @@ class HomogeneousViewportElement extends RenderObjectElement<HomogeneousViewport
     renderObject.add(child, before: nextSibling);
   }
 
-  void moveChildRenderObject(RenderObject child, dynamic slot) {
+  void moveChildRenderObject(RenderObject child, Element slot) {
+    assert(child.parent == renderObject);
     RenderObject nextSibling = slot?.renderObject;
     renderObject.move(child, before: nextSibling);
   }

@@ -4,9 +4,18 @@
 
 import 'package:sky/material.dart';
 import 'package:sky/rendering.dart';
-import 'package:sky/widgets.dart';
+import 'package:sky/src/fn3.dart';
 
-class ScaleApp extends App {
+class ScaleApp extends StatefulComponent {
+  ScaleAppState createState() => new ScaleAppState();
+}
+
+class ScaleAppState extends State<ScaleApp> {
+  void initState(BuildContext context) {
+    super.initState(context);
+    _offset = Offset.zero;
+    _zoom = 1.0;
+  }
 
   Point _startingFocalPoint;
 
@@ -15,11 +24,6 @@ class ScaleApp extends App {
 
   double _previousZoom;
   double _zoom;
-
-  void initState() {
-    _offset = Offset.zero;
-    _zoom = 1.0;
-  }
 
   void _handleScaleStart(Point focalPoint) {
     setState(() {
@@ -48,7 +52,7 @@ class ScaleApp extends App {
     canvas.drawCircle(center, radius, paint);
   }
 
-  Widget build() {
+  Widget build(BuildContext context) {
     return new Theme(
       data: new ThemeData.dark(),
       child: new Scaffold(

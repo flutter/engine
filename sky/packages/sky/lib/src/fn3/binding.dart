@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:sky/animation.dart';
 import 'package:sky/rendering.dart';
 import 'package:sky/src/fn3/framework.dart';
 
-class WidgetFlutterBinding extends SkyBinding {
+class WidgetFlutterBinding extends FlutterBinding {
 
   WidgetFlutterBinding() {
     BuildableElement.scheduleBuildFor = scheduleBuildFor;
@@ -14,14 +16,14 @@ class WidgetFlutterBinding extends SkyBinding {
     _renderViewElement.mount(null, null);
   }
 
-  /// Ensures that there is a SkyBinding object instantiated.
-  static void initBinding() {
-    if (SkyBinding.instance == null)
+  /// Ensures that there is a FlutterBinding object instantiated.
+  static void ensureInitialized() {
+    if (FlutterBinding.instance == null)
       new WidgetFlutterBinding();
-    assert(SkyBinding.instance is WidgetFlutterBinding);
+    assert(FlutterBinding.instance is WidgetFlutterBinding);
   }
 
-  static WidgetFlutterBinding get instance => SkyBinding.instance;
+  static WidgetFlutterBinding get instance => FlutterBinding.instance;
 
   /// The [Element] that is at the root of the hierarchy (and which wraps the
   /// [RenderView] object at the root of the rendering hierarchy).
@@ -38,16 +40,14 @@ class WidgetFlutterBinding extends SkyBinding {
   void beginFrame(double timeStamp) {
     buildDirtyElements();
     super.beginFrame(timeStamp);
+    scheduleMicrotask(GlobalKey.checkForDuplicatesAndNotifyListeners);
   }
 
-  final List<BuildableElement> _dirtyElements = new List<BuildableElement>();
-
-  int _debugBuildingAtDepth;
+  List<BuildableElement> _dirtyElements = new List<BuildableElement>();
 
   /// Adds an element to the dirty elements list so that it will be rebuilt
   /// when buildDirtyElements is called.
   void scheduleBuildFor(BuildableElement element) {
-    assert(_debugBuildingAtDepth == null || element.depth > _debugBuildingAtDepth);
     assert(!_dirtyElements.contains(element));
     assert(element.dirty);
     if (_dirtyElements.isEmpty)
@@ -55,46 +55,30 @@ class WidgetFlutterBinding extends SkyBinding {
     _dirtyElements.add(element);
   }
 
-  void _absorbDirtyElements(List<BuildableElement> list) {
-    assert(_debugBuildingAtDepth != null);
-    assert(!_dirtyElements.any((element) => element.depth <= _debugBuildingAtDepth));
-    _dirtyElements.sort((BuildableElement a, BuildableElement b) => a.depth - b.depth);
-    list.addAll(_dirtyElements);
-    _dirtyElements.clear();
-  }
-
   /// Builds all the elements that were marked as dirty using schedule(), in depth order.
   /// If elements are marked as dirty while this runs, they must be deeper than the algorithm
   /// has yet reached.
   /// This is called by beginFrame().
   void buildDirtyElements() {
-    assert(_debugBuildingAtDepth == null);
     if (_dirtyElements.isEmpty)
       return;
-    assert(() { _debugBuildingAtDepth = 0; return true; });
-    List<BuildableElement> sortedDirtyElements = new List<BuildableElement>();
-    int index = 0;
-    do {
-      _absorbDirtyElements(sortedDirtyElements);
-      for (; index < sortedDirtyElements.length; index += 1) {
-        BuildableElement element = sortedDirtyElements[index];
-        assert(() {
-          if (element.depth > _debugBuildingAtDepth)
-            _debugBuildingAtDepth = element.depth;
-          return element.depth == _debugBuildingAtDepth;
-        });
+    BuildableElement.lockState(() {
+      _dirtyElements.sort((BuildableElement a, BuildableElement b) => a.depth - b.depth);
+      for (BuildableElement element in _dirtyElements)
         element.rebuild();
-      }
-    } while (_dirtyElements.isNotEmpty);
-    assert(() { _debugBuildingAtDepth = null; return true; });
+      _dirtyElements.clear();
+    });
+    assert(_dirtyElements.isEmpty);
   }
 }
 
 void runApp(Widget app) {
-  WidgetFlutterBinding.initBinding();
-  WidgetFlutterBinding.instance.renderViewElement.update(
-    WidgetFlutterBinding.instance.describeApp(app)
-  );
+  WidgetFlutterBinding.ensureInitialized();
+  BuildableElement.lockState(() {
+    WidgetFlutterBinding.instance.renderViewElement.update(
+      WidgetFlutterBinding.instance.describeApp(app)
+    );
+  });
 }
 
 /// This class provides a bridge from a RenderObject to an Element tree. The

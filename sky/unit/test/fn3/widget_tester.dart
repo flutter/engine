@@ -6,11 +6,10 @@ import 'package:sky/src/fn3.dart';
 import '../engine/mock_events.dart';
 
 class RootComponent extends StatefulComponent {
-  RootComponentState createState() => new RootComponentState(this);
+  RootComponentState createState() => new RootComponentState();
 }
 
-class RootComponentState extends ComponentState<RootComponent> {
-  RootComponentState(RootComponent widget) : super(widget);
+class RootComponentState extends State<RootComponent> {
   Widget _child = new DecoratedBox(decoration: new BoxDecoration());
   Widget get child => _child;
   void set child(Widget value) {
@@ -25,14 +24,29 @@ class RootComponentState extends ComponentState<RootComponent> {
 
 class WidgetTester {
 
-  void pumpFrame(Widget widget) {
+  void pumpFrame(Widget widget, [ double frameTimeMs = 0.0 ]) {
     runApp(widget);
-    WidgetFlutterBinding.instance.beginFrame(0.0); // TODO(ianh): https://github.com/flutter/engine/issues/1084
+    WidgetFlutterBinding.instance.beginFrame(frameTimeMs); // TODO(ianh): https://github.com/flutter/engine/issues/1084
   }
 
-  void pumpFrameWithoutChange() {
-    WidgetFlutterBinding.instance.beginFrame(0.0); // TODO(ianh): https://github.com/flutter/engine/issues/1084
+  void pumpFrameWithoutChange([ double frameTimeMs = 0.0 ]) {
+    WidgetFlutterBinding.instance.beginFrame(frameTimeMs); // TODO(ianh): https://github.com/flutter/engine/issues/1084
   }
+
+
+  List<Layer> _layers(Layer layer) {
+    List<Layer> result = [layer];
+    if (layer is ContainerLayer) {
+      ContainerLayer root = layer;
+      Layer child = root.firstChild;
+      while(child != null) {
+        result.addAll(_layers(child));
+        child = child.nextSibling;
+      }
+    }
+    return result;
+  }
+  List<Layer> get layers => _layers(FlutterBinding.instance.renderView.layer);
 
 
   void walkElements(ElementVisitor visitor) {
@@ -65,6 +79,19 @@ class WidgetTester {
     });
   }
 
+  State findStateOfType(Type type) {
+    StatefulComponentElement element = findElement((Element element) {
+      return element is StatefulComponentElement && element.state.runtimeType == type;
+    });
+    return element?.state;
+  }
+
+  State findStateByConfig(Widget config) {
+    StatefulComponentElement element = findElement((Element element) {
+      return element is StatefulComponentElement && element.state.config == config;
+    });
+    return element?.state;
+  }
 
   Point getCenter(Element element) {
     return _getElementPoint(element, (Size size) => size.center(Point.origin));
@@ -102,6 +129,18 @@ class WidgetTester {
     HitTestResult result = _hitTest(location);
     TestPointer p = new TestPointer(pointer);
     _dispatchEvent(p.down(location), result);
+    _dispatchEvent(p.up(), result);
+  }
+
+  void scroll(Element element, Offset offset, { int pointer: 1 }) {
+    Point startLocation = getCenter(element);
+    Point endLocation = startLocation + offset;
+    TestPointer p = new TestPointer(pointer);
+    // Events for the entire press-drag-release gesture are dispatched
+    // to the widgets "hit" by the pointer down event.
+    HitTestResult result = _hitTest(startLocation);
+    _dispatchEvent(p.down(startLocation), result);
+    _dispatchEvent(p.move(endLocation), result);
     _dispatchEvent(p.up(), result);
   }
 

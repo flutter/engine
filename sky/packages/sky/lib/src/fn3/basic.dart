@@ -530,7 +530,7 @@ class Flex extends MultiChildRenderObjectWidget {
   final FlexAlignItems alignItems;
   final TextBaseline textBaseline;
 
-  RenderFlex createRenderObject() => new RenderFlex(direction: direction);
+  RenderFlex createRenderObject() => new RenderFlex(direction: direction, justifyContent: justifyContent, alignItems: alignItems, textBaseline: textBaseline);
 
   void updateRenderObject(RenderFlex renderObject, Flex oldWidget) {
     renderObject.direction = direction;
@@ -724,11 +724,12 @@ class ImageListener extends StatefulComponent {
   final ImageFit fit;
   final ImageRepeat repeat;
 
-  ImageListenerState createState() => new ImageListenerState(this);
+  ImageListenerState createState() => new ImageListenerState();
 }
 
-class ImageListenerState extends ComponentState<ImageListener> {
-  ImageListenerState(ImageListener config) : super(config) {
+class ImageListenerState extends State<ImageListener> {
+  void initState(BuildContext context) {
+    super.initState(context);
     config.image.addListener(_handleImageChanged);
   }
 
@@ -742,6 +743,7 @@ class ImageListenerState extends ComponentState<ImageListener> {
 
   void dispose() {
     config.image.removeListener(_handleImageChanged);
+    super.dispose();
   }
 
   void didUpdateConfig(ImageListener oldConfig) {

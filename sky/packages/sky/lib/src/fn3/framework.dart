@@ -44,7 +44,6 @@ class ObjectKey extends Key {
   int get hashCode => identityHashCode(value);
 }
 
-typedef void GlobalKeyUpdateListener(GlobalKey key, Element element);
 typedef void GlobalKeyRemoveListener(GlobalKey key);
 
 /// A GlobalKey is one that must be unique across the entire application. It is
@@ -59,12 +58,9 @@ abstract class GlobalKey extends Key {
 
   static final Map<GlobalKey, Element> _registry = new Map<GlobalKey, Element>();
   static final Map<GlobalKey, int> _debugDuplicates = new Map<GlobalKey, int>();
-  static final Map<GlobalKey, Set<GlobalKeyUpdateListener>> _updateListeners = new Map<GlobalKey, Set<GlobalKeyUpdateListener>>();
   static final Map<GlobalKey, Set<GlobalKeyRemoveListener>> _removeListeners = new Map<GlobalKey, Set<GlobalKeyRemoveListener>>();
-  static final Set<GlobalKey> _updatedKeys = new Set<GlobalKey>();
   static final Set<GlobalKey> _removedKeys = new Set<GlobalKey>();
 
-  // TODO(ianh): call this
   void _register(Element element) {
     assert(() {
       if (_registry.containsKey(this)) {
@@ -77,7 +73,6 @@ abstract class GlobalKey extends Key {
     _registry[this] = element;
   }
 
-  // TODO(ianh): call this
   void _unregister(Element element) {
     assert(() {
       if (_registry.containsKey(this) && _debugDuplicates.containsKey(this)) {
@@ -97,26 +92,13 @@ abstract class GlobalKey extends Key {
     }
   }
 
-  // TODO(ianh): call this
-  void _didUpdate() {
-    _updatedKeys.add(this);
-  }
-
-  static void registerUpdateListener(GlobalKey key, GlobalKeyUpdateListener listener) {
-    assert(key != null);
-    Set<GlobalKeyUpdateListener> listeners =
-        _updateListeners.putIfAbsent(key, () => new Set<GlobalKeyUpdateListener>());
-    bool added = listeners.add(listener);
-    assert(added);
-  }
-
-  static void unregisterUpdateListener(GlobalKey key, GlobalKeyUpdateListener listener) {
-    assert(key != null);
-    assert(_updateListeners.containsKey(key));
-    bool removed = _updateListeners[key].remove(listener);
-    if (_updateListeners[key].isEmpty)
-      _updateListeners.remove(key);
-    assert(removed);
+  Element get currentElement => _registry[this];
+  Widget get currentWidget => currentElement?.widget;
+  State get currentState {
+    Element element = currentElement;
+    if (element is StatefulComponentElement)
+      return element.state;
+    return null;
   }
 
   static void registerRemoveListener(GlobalKey key, GlobalKeyRemoveListener listener) {
@@ -136,13 +118,7 @@ abstract class GlobalKey extends Key {
     assert(removed);
   }
 
-  static Element getElement(GlobalKey key) {
-    assert(key != null);
-    return _registry[key];
-  }
-
-  // TODO(ianh): call this
-  static void _notifyListeners() {
+  static void checkForDuplicatesAndNotifyListeners() {
     assert(() {
       String message = '';
       for (GlobalKey key in _debugDuplicates.keys) {
@@ -153,17 +129,9 @@ abstract class GlobalKey extends Key {
         throw message;
       return true;
     });
-    if (_updatedKeys.isEmpty && _removedKeys.isEmpty)
+    if (_removedKeys.isEmpty)
       return;
     try {
-      for (GlobalKey key in _updatedKeys) {
-        Element element = _registry[key];
-        if (element != null && _updateListeners.containsKey(key)) {
-          Set<GlobalKeyUpdateListener> localListeners = new Set<GlobalKeyUpdateListener>.from(_updateListeners[key]);
-          for (GlobalKeyUpdateListener listener in localListeners)
-            listener(key, element);
-        }
-      }
       for (GlobalKey key in _removedKeys) {
         if (!_registry.containsKey(key) && _removeListeners.containsKey(key)) {
           Set<GlobalKeyRemoveListener> localListeners = new Set<GlobalKeyRemoveListener>.from(_removeListeners[key]);
@@ -173,7 +141,6 @@ abstract class GlobalKey extends Key {
       }
     } finally {
       _removedKeys.clear();
-      _updatedKeys.clear();
     }
   }
 
@@ -289,8 +256,8 @@ abstract class StatelessComponent extends Widget {
 }
 
 /// StatefulComponents provide the configuration for
-/// [StatefulComponentElement]s, which wrap [ComponentState]s, which hold
-/// mutable state and can dynamically and spontaneously ask to be rebuilt.
+/// [StatefulComponentElement]s, which wrap [State]s, which hold mutable state
+/// and can dynamically and spontaneously ask to be rebuilt.
 abstract class StatefulComponent extends Widget {
   const StatefulComponent({ Key key }) : super(key: key);
 
@@ -300,49 +267,76 @@ abstract class StatefulComponent extends Widget {
 
   /// Returns an instance of the state to which this StatefulComponent is
   /// related, using this object as the configuration. Subclasses should
-  /// override this to return a new instance of the ComponentState class
-  /// associated with this StatefulComponent class, like this:
+  /// override this to return a new instance of the State class associated with
+  /// this StatefulComponent class, like this:
   ///
-  ///   MyComponentState createState() => new MyComponentState(this);
-  ComponentState createState();
+  ///   MyState createState() => new MyState(this);
+  State createState();
+}
+
+enum _StateLifecycle {
+  created,
+  initialized,
+  ready,
+  defunct,
 }
 
 /// The logic and internal state for a StatefulComponent.
-abstract class ComponentState<T extends StatefulComponent> {
-  ComponentState(this._config);
-
-  StatefulComponentElement _element;
-
-  /// Whenever you need to change internal state for a ComponentState object,
-  /// make the change in a function that you pass to setState(), as in:
-  ///
-  ///    setState(() { myState = newValue });
-  ///
-  /// If you just change the state directly without calling setState(), then
-  /// the component will not be scheduled for rebuilding, meaning that its
-  /// rendering will not be updated.
-  void setState(void fn()) {
-    fn();
-    _element.markNeedsBuild();
-  }
-
+abstract class State<T extends StatefulComponent> {
   /// The current configuration (an instance of the corresponding
   /// StatefulComponent class).
   T get config => _config;
   T _config;
 
+  /// This is used to verify that State objects move through life in an orderly fashion.
+  _StateLifecycle _debugLifecycleState = _StateLifecycle.created;
+
+  /// Pointer to the owner Element object
+  StatefulComponentElement _element;
+
+  /// The context in which this object will be built
+  BuildContext get context => _element;
+
+  bool get mounted => _element != null;
+
+  /// Called when this object is inserted into the tree. Override this function
+  /// to perform initialization that depends on the location at which this
+  /// object was inserted into the tree or on the widget configuration object.
+  ///
+  /// If you override this, make sure your method starts with a call to
+  /// super.initState(context).
+  void initState(BuildContext context) {
+    assert(_debugLifecycleState == _StateLifecycle.created);
+    assert(() { _debugLifecycleState = _StateLifecycle.initialized; return true; });
+  }
+
   /// Called whenever the configuration changes. Override this method to update
   /// additional state when the config field's value is changed.
   void didUpdateConfig(T oldConfig) { }
 
-  /// Called when this object is inserted into the tree. Override this function
-  /// to perform initialization that depends on the location at which this
-  /// object was inserted into the tree.
-  void initState(BuildContext context) { }
+  /// Whenever you need to change internal state for a State object, make the
+  /// change in a function that you pass to setState(), as in:
+  ///
+  ///    setState(() { myState = newValue });
+  ///
+  /// If you just change the state directly without calling setState(), then the
+  /// component will not be scheduled for rebuilding, meaning that its rendering
+  /// will not be updated.
+  void setState(void fn()) {
+    assert(_debugLifecycleState != _StateLifecycle.defunct);
+    fn();
+    _element.markNeedsBuild();
+  }
 
   /// Called when this object is removed from the tree. Override this to clean
   /// up any resources allocated by this object.
-  void dispose() { }
+  ///
+  /// If you override this, make sure to end your method with a call to
+  /// super.dispose().
+  void dispose() {
+    assert(_debugLifecycleState == _StateLifecycle.ready);
+    assert(() { _debugLifecycleState = _StateLifecycle.defunct; return true; });
+  }
 
   /// Returns another Widget out of which this StatefulComponent is built.
   /// Typically that Widget will have been configured with further children,
@@ -401,6 +395,9 @@ typedef void ElementVisitor(Element element);
 
 abstract class BuildContext {
   InheritedWidget inheritedWidgetOfType(Type targetType);
+  RenderObject findRenderObject();
+
+  void visitAncestorElements(bool visitor(Element element));
 }
 
 /// Elements are the instantiations of Widget configurations.
@@ -419,6 +416,7 @@ abstract class Element<T extends Widget> implements BuildContext {
   ///
   /// Subclasses of Element that only have one child should use null for
   /// the slot for that child.
+  dynamic get slot => _slot;
   dynamic _slot;
 
   /// An integer that is guaranteed to be greater than the parent's, if any.
@@ -488,12 +486,12 @@ abstract class Element<T extends Widget> implements BuildContext {
     }
     if (child != null) {
       if (child.widget == newWidget) {
-        if (child._slot != newSlot)
+        if (child.slot != newSlot)
           updateSlotForChild(child, newSlot);
         return child;
       }
       if (_canUpdate(child.widget, newWidget)) {
-        if (child._slot != newSlot)
+        if (child.slot != newSlot)
           updateSlotForChild(child, newSlot);
         child.update(newWidget);
         assert(child.widget == newWidget);
@@ -517,11 +515,15 @@ abstract class Element<T extends Widget> implements BuildContext {
     assert(widget != null);
     assert(_parent == null);
     assert(parent == null || parent._debugLifecycleState == _ElementLifecycle.mounted);
-    assert(_slot == null);
+    assert(slot == null);
     assert(depth == null);
     _parent = parent;
     _slot = newSlot;
     _depth = _parent != null ? _parent.depth + 1 : 1;
+    if (widget.key is GlobalKey) {
+      final GlobalKey key = widget.key;
+      key._register(this);
+    }
     assert(() { _debugLifecycleState = _ElementLifecycle.mounted; return true; });
   }
 
@@ -587,6 +589,10 @@ abstract class Element<T extends Widget> implements BuildContext {
     assert(_debugLifecycleState == _ElementLifecycle.mounted);
     assert(widget != null);
     assert(depth != null);
+    if (widget.key is GlobalKey) {
+      final GlobalKey key = widget.key;
+      key._unregister(this);
+    }
     assert(() { _debugLifecycleState = _ElementLifecycle.defunct; return true; });
   }
 
@@ -599,6 +605,14 @@ abstract class Element<T extends Widget> implements BuildContext {
     while (ancestor != null && ancestor.widget.runtimeType != targetType)
       ancestor = ancestor._parent;
     return ancestor?.widget;
+  }
+
+  RenderObject findRenderObject() => renderObject;
+
+  void visitAncestorElements(bool visitor(Element element)) {
+    Element ancestor = _parent;
+    while (ancestor != null && visitor(ancestor))
+      ancestor = ancestor._parent;
   }
 
   void dependenciesChanged() {
@@ -625,6 +639,17 @@ abstract class BuildableElement<T extends Widget> extends Element<T> {
   bool get dirty => _dirty;
   bool _dirty = true;
 
+  // We to let component authors call setState from initState, didUpdateConfig,
+  // and build even when state is locked because its convenient and a no-op
+  // anyway. This flag ensures that this convenience is only allowed on the
+  // element currently undergoing initState, didUpdateConfig, or build.
+  bool _debugAllowIgnoredCallsToMarkNeedsBuild = false;
+  bool _debugSetAllowIgnoredCallsToMarkNeedsBuild(bool value) {
+    assert(_debugAllowIgnoredCallsToMarkNeedsBuild == !value);
+    _debugAllowIgnoredCallsToMarkNeedsBuild = value;
+    return true;
+  }
+
   void mount(Element parent, dynamic newSlot) {
     super.mount(parent, newSlot);
     assert(_child == null);
@@ -633,33 +658,40 @@ abstract class BuildableElement<T extends Widget> extends Element<T> {
   }
 
   /// Reinvokes the build() method of the StatelessComponent object (for
-  /// stateless components) or the ComponentState object (for stateful
-  /// components) and then updates the widget tree.
+  /// stateless components) or the State object (for stateful components) and
+  /// then updates the widget tree.
   ///
   /// Called automatically during mount() to generate the first build, by the
   /// binding when scheduleBuild() has been called to mark this element dirty,
   /// and by update() when the Widget has changed.
   void rebuild() {
-    assert(_debugLifecycleState == _ElementLifecycle.mounted);
+    assert(_debugLifecycleState != _ElementLifecycle.initial);
     if (!_dirty)
       return;
-    _dirty = false;
+    assert(_debugLifecycleState == _ElementLifecycle.mounted);
+    assert(_debugStateLocked);
+    assert(_debugSetAllowIgnoredCallsToMarkNeedsBuild(true));
     Widget built;
     try {
       built = _builder(this);
       assert(built != null);
     } catch (e, stack) {
-      _debugReportException('building $this', e, stack);
+      _debugReportException('building ${_widget}', e, stack);
       built = new ErrorWidget();
+    } finally {
+      // We delay marking the element as clean until after calling _builder so
+      // that attempts to markNeedsBuild() during build() will be ignored.
+      _dirty = false;
+      assert(_debugSetAllowIgnoredCallsToMarkNeedsBuild(false));
     }
 
     try {
-      _child = updateChild(_child, built, _slot);
+      _child = updateChild(_child, built, slot);
       assert(_child != null);
     } catch (e, stack) {
-      _debugReportException('building $this', e, stack);
+      _debugReportException('building ${_widget}', e, stack);
       built = new ErrorWidget();
-      _child = updateChild(null, built, _slot);
+      _child = updateChild(null, built, slot);
     }
   }
 
@@ -668,12 +700,16 @@ abstract class BuildableElement<T extends Widget> extends Element<T> {
   static int _debugStateLockLevel = 0;
   static bool get _debugStateLocked => _debugStateLockLevel > 0;
 
-  /// Calls the callback argument synchronously, but in a context where calls to
-  /// ComponentState.setState() will fail. Use this when it is possible that you
-  /// will trigger code in components but want to make sure that there is no
-  /// possibility that any components will be marked dirty, for example because
-  /// you are in the middle of layout and you are not going to be flushing the
-  /// build queue (since that could mutate the layout tree).
+  /// Establishes a scope in which component build functions can run.
+  ///
+  /// Inside a build scope, component build functions are allowed to run, but
+  /// State.setState() is forbidden. This mechanism prevents build functions
+  /// from transitively requiring other build functions to run, potentially
+  /// causing infinite loops.
+  ///
+  /// After unwinding the last build scope on the stack, the framework verifies
+  /// that each global key is used at most once and notifies listeners about
+  /// changes to global keys.
   static void lockState(void callback()) {
     _debugStateLockLevel += 1;
     try {
@@ -691,10 +727,12 @@ abstract class BuildableElement<T extends Widget> extends Element<T> {
   /// components dirty during event handlers before the frame begins, not during
   /// the build itself.
   void markNeedsBuild() {
-    assert(!_debugStateLocked);
-    assert(_debugLifecycleState == _ElementLifecycle.mounted);
+    assert(_debugLifecycleState != _ElementLifecycle.defunct);
+    assert(!_debugStateLocked || (_debugAllowIgnoredCallsToMarkNeedsBuild && _dirty));
     if (_dirty)
       return;
+    assert(_debugLifecycleState == _ElementLifecycle.mounted);
+    assert(!_debugStateLocked);
     _dirty = true;
     assert(scheduleBuildFor != null);
     scheduleBuildFor(this);
@@ -734,27 +772,60 @@ class StatelessComponentElement<T extends StatelessComponent> extends BuildableE
 class StatefulComponentElement extends BuildableElement<StatefulComponent> {
   StatefulComponentElement(StatefulComponent widget)
     : _state = widget.createState(), super(widget) {
-    assert(_state._config == widget);
+    assert(_state._element == null);
     _state._element = this;
+    assert(_builder == null);
     _builder = _state.build;
+    assert(_state._config == null);
+    _state._config = widget;
+    assert(_state._debugLifecycleState == _StateLifecycle.created);
+    try {
+      _debugSetAllowIgnoredCallsToMarkNeedsBuild(true);
+      _state.initState(this);
+    } finally {
+      _debugSetAllowIgnoredCallsToMarkNeedsBuild(false);
+    }
+    assert(() {
+      if (_state._debugLifecycleState == _StateLifecycle.initialized)
+        return true;
+      print('${_state.runtimeType}.initState failed to call super.initState');
+      return false;
+    });
+    assert(() { _state._debugLifecycleState = _StateLifecycle.ready; return true; });
   }
 
-  ComponentState get state => _state;
-  ComponentState _state;
+  State get state => _state;
+  State _state;
 
   void update(StatefulComponent newWidget) {
     super.update(newWidget);
     assert(widget == newWidget);
     StatefulComponent oldConfig = _state._config;
-    _state._config = widget;
-    _state.didUpdateConfig(oldConfig);
+    // Notice that we mark ourselves as dirty before calling didUpdateConfig to
+    // let authors call setState from within didUpdateConfig without triggering
+    // asserts.
     _dirty = true;
+    _state._config = widget;
+    try {
+      _debugSetAllowIgnoredCallsToMarkNeedsBuild(true);
+      _state.didUpdateConfig(oldConfig);
+    } finally {
+      _debugSetAllowIgnoredCallsToMarkNeedsBuild(false);
+    }
     rebuild();
   }
 
   void unmount() {
     super.unmount();
     _state.dispose();
+    assert(() {
+      if (_state._debugLifecycleState == _StateLifecycle.defunct)
+        return true;
+      print('${_state.runtimeType}.dispose failed to call super.dispose');
+      return false;
+    });
+    assert(!_dirty); // See BuildableElement.unmount for why this is important.
+    _state._element = null;
     _state = null;
   }
 }
@@ -1016,6 +1087,7 @@ abstract class RenderObjectElement<T extends RenderObjectWidget> extends Element
 
   void unmount() {
     super.unmount();
+    assert(!renderObject.attached);
     widget.didUnmountRenderObject(renderObject);
   }
 
@@ -1024,10 +1096,10 @@ abstract class RenderObjectElement<T extends RenderObjectWidget> extends Element
   }
 
   void _updateSlot(dynamic newSlot) {
-    assert(_slot != newSlot);
+    assert(slot != newSlot);
     super._updateSlot(newSlot);
-    assert(_slot == newSlot);
-    _ancestorRenderObjectElement.moveChildRenderObject(renderObject, _slot);
+    assert(slot == newSlot);
+    _ancestorRenderObjectElement.moveChildRenderObject(renderObject, slot);
   }
 
   void detachRenderObject() {
@@ -1179,9 +1251,8 @@ typedef void WidgetsExceptionHandler(String context, dynamic exception, StackTra
 /// the exception occurred, and may include additional details such as
 /// descriptions of the objects involved. The 'exception' argument contains the
 /// object that was thrown, and the 'stack' argument contains the stack trace.
-/// The callback is invoked after the information is printed to the console, and
-/// could be used to print additional information, such as from
-/// [debugDumpApp()].
+/// If no callback is set, then a default behaviour consisting of dumping the
+/// context, exception, and stack trace to the console is used instead.
 WidgetsExceptionHandler debugWidgetsExceptionHandler;
 void _debugReportException(String context, dynamic exception, StackTrace stack) {
   if (debugWidgetsExceptionHandler != null) {
