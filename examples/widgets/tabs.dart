@@ -37,7 +37,7 @@ class TabbedNavigatorAppState extends State<TabbedNavigatorApp> {
       .map((text) {
         return new TabNavigatorView(
           label: new TabLabel(text: text),
-          builder: (BuildContext context) => _buildContent(text)
+          child: _buildContent(text)
         );
       });
     return _buildTabNavigator(n, views.toList(), const ValueKey<String>('textLabelsTabNavigator'));
@@ -48,7 +48,7 @@ class TabbedNavigatorAppState extends State<TabbedNavigatorApp> {
       .map((icon_name) {
         return new TabNavigatorView(
           label: new TabLabel(icon: "action/${icon_name}"),
-          builder: (BuildContext context) => _buildContent(icon_name)
+          child: _buildContent(icon_name)
         );
       });
     return _buildTabNavigator(n, views.toList(), const ValueKey<String>('iconLabelsTabNavigator'));
@@ -58,15 +58,15 @@ class TabbedNavigatorAppState extends State<TabbedNavigatorApp> {
     List<TabNavigatorView> views = <TabNavigatorView>[
       new TabNavigatorView(
         label: const TabLabel(text: 'STOCKS', icon: 'action/list'),
-        builder: (BuildContext context) => _buildContent("Stocks")
+        child: _buildContent("Stocks")
       ),
       new TabNavigatorView(
         label: const TabLabel(text: 'PORTFOLIO', icon: 'action/account_circle'),
-        builder: (BuildContext context) => _buildContent("Portfolio")
+        child: _buildContent("Portfolio")
       ),
       new TabNavigatorView(
         label: const TabLabel(text: 'SUMMARY', icon: 'action/assessment'),
-        builder: (BuildContext context) => _buildContent("Summary")
+        child: _buildContent("Summary")
       )
     ];
     return _buildTabNavigator(n, views, const ValueKey<String>('textAndIconLabelsTabNavigator'));
@@ -88,7 +88,7 @@ class TabbedNavigatorAppState extends State<TabbedNavigatorApp> {
       .map((text) {
         return new TabNavigatorView(
           label: new TabLabel(text: text),
-          builder: (BuildContext context) => _buildContent(text)
+          child: _buildContent(text)
         );
       });
     return _buildTabNavigator(n, views.toList(), const ValueKey<String>('scrollableTabNavigator'), isScrollable: true);
@@ -107,19 +107,19 @@ class TabbedNavigatorAppState extends State<TabbedNavigatorApp> {
     List<TabNavigatorView> views = <TabNavigatorView>[
       new TabNavigatorView(
         label: const TabLabel(text: 'TEXT'),
-        builder: (BuildContext context) => _buildCard(context, _buildTextLabelsTabNavigator(0))
+        child: _buildCard(context, _buildTextLabelsTabNavigator(0))
       ),
       new TabNavigatorView(
         label: const TabLabel(text: 'ICONS'),
-        builder: (BuildContext context) => _buildCard(context, _buildIconLabelsTabNavigator(1))
+        child: _buildCard(context, _buildIconLabelsTabNavigator(1))
       ),
       new TabNavigatorView(
         label: const TabLabel(text: 'BOTH'),
-        builder: (BuildContext context) => _buildCard(context, _buildTextAndIconLabelsTabNavigator(2))
+        child: _buildCard(context, _buildTextAndIconLabelsTabNavigator(2))
       ),
       new TabNavigatorView(
         label: const TabLabel(text: 'SCROLL'),
-        builder: (BuildContext context) => _buildCard(context, _buildScrollableTabNavigator(3))
+        child: _buildCard(context, _buildScrollableTabNavigator(3))
       )
     ];
 

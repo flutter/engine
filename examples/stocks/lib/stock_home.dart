@@ -178,27 +178,30 @@ class StockHomeState extends State<StockHome> {
     return stocks.where((stock) => stock.symbol.contains(regexp));
   }
 
-  Widget buildMarketStockList(BuildContext context) {
-    return new Stocklist(stocks: _filterBySearchQuery(config.stocks).toList());
-  }
-
-  Widget buildPortfolioStocklist(BuildContext context) {
-    return new Stocklist(stocks: _filterBySearchQuery(_filterByPortfolio(config.stocks)).toList());
+  Widget buildStockList(BuildContext context, Iterable<Stock> stocks) {
+    return new Stocklist(
+      stocks: stocks.toList(),
+      onAction: (Stock stock) {
+        setState(() {
+          stock.percentChange = 100.0 * (1.0 / stock.lastSale);
+          stock.lastSale += 1.0;
+        });
+      }
+    );
   }
 
   Widget buildTabNavigator() {
-    List<TabNavigatorView> views = <TabNavigatorView>[
-      new TabNavigatorView(
-        label: const TabLabel(text: 'MARKET'),
-        builder: buildMarketStockList
-      ),
-      new TabNavigatorView(
-        label: const TabLabel(text: 'PORTFOLIO'),
-        builder: buildPortfolioStocklist
-      )
-    ];
     return new TabNavigator(
-      views: views,
+      views: <TabNavigatorView>[
+        new TabNavigatorView(
+          label: const TabLabel(text: 'MARKET'),
+          child: buildStockList(context, _filterBySearchQuery(config.stocks))
+        ),
+        new TabNavigatorView(
+          label: const TabLabel(text: 'PORTFOLIO'),
+          child: buildStockList(context, _filterByPortfolio(config.stocks))
+        )
+      ],
       selectedIndex: selectedTabIndex,
       onChanged: (tabIndex) {
         setState(() { selectedTabIndex = tabIndex; } );

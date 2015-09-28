@@ -572,17 +572,10 @@ class TabBarState extends ScrollableState<TabBar> {
 }
 
 class TabNavigatorView {
-  TabNavigatorView({ this.label, this.builder });
+  TabNavigatorView({ this.label, this.child });
 
   final TabLabel label;
-  final WidgetBuilder builder;
-
-  Widget buildContent(BuildContext context) {
-    assert(builder != null);
-    Widget content = builder(context);
-    assert(content != null);
-    return content;
-  }
+  final Widget child;
 }
 
 class TabNavigator extends StatelessComponent {
@@ -607,15 +600,14 @@ class TabNavigator extends StatelessComponent {
   Widget build(BuildContext context) {
     assert(views != null && views.isNotEmpty);
     assert(selectedIndex >= 0 && selectedIndex < views.length);
-
-    TabBar tabBar = new TabBar(
-      labels: views.map((view) => view.label),
-      onChanged: _handleSelectedIndexChanged,
-      selectedIndex: selectedIndex,
-      isScrollable: isScrollable
-    );
-
-    Widget content = views[selectedIndex].buildContent(context);
-    return new Column([tabBar, new Flexible(child: content)]);
+    return new Column([
+      new TabBar(
+        labels: views.map((view) => view.label),
+        onChanged: _handleSelectedIndexChanged,
+        selectedIndex: selectedIndex,
+        isScrollable: isScrollable
+      ),
+      new Flexible(child: views[selectedIndex].child)
+    ]);
   }
 }
