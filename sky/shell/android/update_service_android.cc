@@ -46,14 +46,9 @@ void UpdateTaskAndroid::DidCreateIsolate(Dart_Isolate isolate) {
 }
 
 void UpdateTaskAndroid::RunDartOnUIThread() {
-  // TODO(mpcomplete): pass variables into main.
-
   headless_->Init("sky:updater");
   headless_->RunFromSnapshotBuffer(kUpdaterSnapshotBuffer,
                                    kUpdaterSnapshotBufferSize);
-
-  // TODO(mpcomplete): Have Dart notify us when done so we can notify Java
-  // and be deleted. Or can Dart talk to Java directly?
 }
 
 void UpdateTaskAndroid::Destroy(JNIEnv* env, jobject jcaller) {
