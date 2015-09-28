@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:math';
+
 // This class represents a dot-separated version string. Used for comparing
 // versions.
 // Usage: assert(new Version('1.1.0') < new Version('1.2.1'));

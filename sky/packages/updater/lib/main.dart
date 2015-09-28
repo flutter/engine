@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:io';
-//import 'dart:math';
 
 import 'package:mojo/core.dart';
 import 'package:sky/services.dart';
@@ -35,6 +34,7 @@ class UpdateTask {
       return;
     }
     await _replaceBundle();
+    print("Update success.");
   }
 
   yaml.YamlMap _currentManifest;
