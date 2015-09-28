@@ -9,6 +9,7 @@ import 'dart:math';
 //import 'package:mojo/mojo/url_response.mojom.dart';
 //import 'package:sky/material.dart';
 //import 'package:sky/rendering.dart';
+import 'package:mojo/core.dart';
 import 'package:sky/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart' as yaml;
@@ -36,6 +37,55 @@ class Version {
   }
 }
 
+class PipeToFile {
+  MojoDataPipeConsumer _consumer;
+  MojoEventStream _eventStream;
+  File _outputFile;
+
+  DataPipeDrainer(this._consumer, String outputPath) {
+    _eventStream = new MojoEventStream(_consumer.handle);
+    _outputFile = new File(outputPath);
+  }
+
+  Future<MojoResult> _doRead() async {
+    ByteData thisRead = _consumer.beginRead();
+    if (thisRead == null) {
+      throw 'Data pipe beginRead failed: ${_consumer.status}';
+    }
+    await _outputFile.writeAsBytes(thisRead.buffer.asUint8List());
+    return _consumer.endRead(thisRead.lengthInBytes);
+  }
+
+  Future<MojoResult> drain() {
+    var completer = new Completer();
+    _eventStream.listen((List<int> event) {
+      var mojoSignals = new MojoHandleSignals(event[1]);
+      if (mojoSignals.isReadable) {
+        var result = _doRead();
+        if (!result.isOk) {
+          _eventStream.close();
+          _eventStream = null;
+          completer.complete(result);
+        } else {
+          _eventStream.enableReadEvents();
+        }
+      } else if (mojoSignals.isPeerClosed) {
+        _eventStream.close();
+        _eventStream = null;
+        completer.complete(MojoResult.OK);
+      } else {
+        throw 'Unexpected handle event: $mojoSignals';
+      }
+    });
+    return completer.future;
+  }
+
+  static Future<MojoResult> copyToFile(MojoDataPipeConsumer consumer, String outputPath) {
+    var drainer = new DataPipeDrainer(consumer, outputPath);
+    return drainer.drain();
+  }
+}
+
 class UpdateTask {
   UpdateTask() {}
 
@@ -46,7 +96,12 @@ class UpdateTask {
       print("Update skipped. No new version.");
       return;
     }
-    await _fetchBundle();
+    MojoResult result = await _fetchBundle();
+    if (!result.isOk) {
+      print("Update failed while fetching new skyx bundle.");
+      return;
+    }
+    await _replaceBundle();
   }
 
   _readLocalManifest() async {
@@ -70,10 +125,17 @@ class UpdateTask {
     return (currentVersion < remoteVersion);
   }
 
-  _fetchBundle() async {
+  Future<MojoResult> _fetchBundle() async {
     String bundleUrl = _currentManifest['update_url'] + '/app.skyx';
-    var data = await fetchBody(bundleUrl);
-    print("Got: ${data.body.lengthInBytes}");
+    var response = await fetchUrl(bundleUrl);
+    String outputPath = path.join(dataDir, 'tmp.skyx');
+    return PipeToFile.copyToFile(response.body, outputPath);
+  }
+
+  _replaceBundle() async {
+    String fromPath = path.join(dataDir, 'tmp.skyx');
+    String toPath = path.join(dataDir, 'app.skyx');
+    await new File(fromPath).rename(toPath);
   }
 
   yaml.YamlMap _currentManifest;
