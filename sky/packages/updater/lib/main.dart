@@ -16,6 +16,14 @@ import 'pipe_to_file.dart';
 const String kManifestFile = 'sky.yaml';
 const String kBundleFile = 'app.skyx';
 
+UpdateServiceProxy _initUpdateService() {
+  UpdateServiceProxy updateService = new UpdateServiceProxy.unbound();
+  shell.requestService(null, updateService);
+  return updateService;
+}
+
+final UpdateServiceProxy _updateService = _initUpdateService();
+
 class UpdateTask {
   UpdateTask() {}
 
@@ -35,6 +43,7 @@ class UpdateTask {
     }
     await _replaceBundle();
     print("Update success.");
+    _updateService.ptr.notifyUpdateCheckComplete();
   }
 
   yaml.YamlMap _currentManifest;

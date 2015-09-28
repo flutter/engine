@@ -20,7 +20,6 @@ class UpdateTaskAndroid : public blink::SkyHeadless::Client {
   virtual ~UpdateTaskAndroid();
 
   void Start();
-  void Finish();
 
   // This C++ object is owned by the Java UpdateTask. This is called by
   // UpdateTask when it is destroyed.

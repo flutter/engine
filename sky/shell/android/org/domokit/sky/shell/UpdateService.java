@@ -15,18 +15,21 @@ import java.io.File;
 import org.chromium.base.CalledByNative;
 import org.chromium.base.JNINamespace;
 import org.chromium.base.PathUtils;
+import org.chromium.mojo.system.MojoException;
 
 /**
  * A class that schedules and runs periodic autoupdate checks.
  */
 @JNINamespace("sky::shell")
-public class UpdateService extends Service {
+public class UpdateService extends Service implements org.chromium.mojom.activity.UpdateService {
     private static final String TAG = "UpdateService";
     private static final int REQUEST_CODE = 0;  // Not sure why this is needed.
     private static final boolean ENABLED = false;
     private static final boolean TESTING = true;
 
     private long mNativePtr = 0;
+
+    public static UpdateService sCurrentUpdateService = null;
 
     public static void init(Context context) {
         if (ENABLED || TESTING)
@@ -53,6 +56,7 @@ public class UpdateService extends Service {
 
     @Override
     public void onCreate() {
+        sCurrentUpdateService = this;
         super.onCreate();
         SkyMain.ensureInitialized(getApplicationContext(), null);
     }
@@ -62,6 +66,7 @@ public class UpdateService extends Service {
         if (mNativePtr != 0)
             nativeDestroy(mNativePtr);
         mNativePtr = 0;
+        sCurrentUpdateService = null;
     }
 
     @Override
@@ -79,6 +84,18 @@ public class UpdateService extends Service {
     @CalledByNative
     public void onUpdateFinished() {
         stopSelf();
+    }
+
+    // Mojo UpdateService:
+    @Override
+    public void close() {}
+
+    @Override
+    public void onConnectionError(MojoException e) {}
+
+    @Override
+    public void notifyUpdateCheckComplete() {
+      stopSelf();
     }
 
     private native long nativeCheckForUpdates();

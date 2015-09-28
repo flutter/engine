@@ -56,13 +56,8 @@ void UpdateTaskAndroid::RunDartOnUIThread() {
   // and be deleted. Or can Dart talk to Java directly?
 }
 
-void UpdateTaskAndroid::Finish() {
-  // The Java side is responsible for deleting us when finished.
-  Java_UpdateService_onUpdateFinished(base::android::AttachCurrentThread(),
-                                      update_service_.obj());
-}
-
 void UpdateTaskAndroid::Destroy(JNIEnv* env, jobject jcaller) {
+  Shell::Shared().ui_task_runner()->DeleteSoon(FROM_HERE, headless_.release());
   delete this;
 }
 

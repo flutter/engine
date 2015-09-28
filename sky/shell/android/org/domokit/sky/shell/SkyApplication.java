@@ -76,6 +76,15 @@ public class SkyApplication extends BaseChromiumApplication {
             }
         });
 
+        registry.register(org.chromium.mojom.activity.UpdateService.MANAGER.getName(),
+                          new ServiceFactory() {
+            @Override
+            public void connectToService(Context context, Core core, MessagePipeHandle pipe) {
+                org.chromium.mojom.activity.UpdateService.MANAGER.bind(
+                    UpdateService.sCurrentUpdateService, pipe);
+            }
+        });
+
         registry.register(PathService.MANAGER.getName(), new ServiceFactory() {
             @Override
             public void connectToService(Context context, Core core, MessagePipeHandle pipe) {
