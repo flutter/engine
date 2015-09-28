@@ -24,10 +24,22 @@ UpdateServiceProxy _initUpdateService() {
 
 final UpdateServiceProxy _updateService = _initUpdateService();
 
+String cachedDataDir = null;
+Future<String> getDataDir() async {
+  if (cachedDataDir == null)
+    cachedDataDir = await getAppDataDir();
+  return cachedDataDir;
+}
+
 class UpdateTask {
   UpdateTask() {}
 
   run() async {
+    await _runImpl();
+    _updateService.ptr.notifyUpdateCheckComplete();
+  }
+
+  _runImpl() async {
     _dataDir = await getDataDir();
 
     await _readLocalManifest();
@@ -43,7 +55,6 @@ class UpdateTask {
     }
     await _replaceBundle();
     print("Update success.");
-    _updateService.ptr.notifyUpdateCheckComplete();
   }
 
   yaml.YamlMap _currentManifest;
@@ -81,15 +92,6 @@ class UpdateTask {
     await new File(_tempPath).rename(bundlePath);
   }
 }
-
-String cachedDataDir = null;
-Future<String> getDataDir() async {
-  if (cachedDataDir == null)
-    cachedDataDir = await getAppDataDir();
-  return cachedDataDir;
-}
-
-// TODO(mpcomplete): method for notifying caller. native? mojo?
 
 void main() {
   var task = new UpdateTask();
