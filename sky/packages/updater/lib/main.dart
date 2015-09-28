@@ -12,6 +12,9 @@ import 'package:sky/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart' as yaml;
 
+const String kManifestFile = 'sky.yaml';
+const String kBundleFile = 'app.skyx';
+
 class Version {
   Version(String versionStr) :
     _parts = versionStr.split('.').map((val) => int.parse(val)).toList();
@@ -89,8 +92,6 @@ class PipeToFile {
 }
 
 class UpdateTask {
-  String _dataDir;
-
   UpdateTask() {}
 
   run() async {
@@ -110,17 +111,19 @@ class UpdateTask {
     await _replaceBundle();
   }
 
+  yaml.YamlMap _currentManifest;
+  String _dataDir;
+  String _tempPath;
+
   _readLocalManifest() async {
-    String manifestPath = path.join(_dataDir, 'sky.yaml');
+    String manifestPath = path.join(_dataDir, kManifestFile);
     String manifestData = await new File(manifestPath).readAsString();
-    print("manifestData: $manifestData");
     _currentManifest = yaml.loadYaml(manifestData, sourceUrl: manifestPath);
   }
 
   Future<yaml.YamlMap> _fetchManifest() async {
-    String manifestUrl = _currentManifest['update_url'] + '/sky.yaml';
+    String manifestUrl = _currentManifest['update_url'] + '/' + kManifestFile;
     String manifestData = await fetchString(manifestUrl);
-    print("remote manifestData: $manifestData");
     return yaml.loadYaml(manifestData, sourceUrl: manifestUrl);
   }
 
@@ -131,19 +134,17 @@ class UpdateTask {
   }
 
   Future<MojoResult> _fetchBundle() async {
-    String bundleUrl = _currentManifest['update_url'] + '/app.skyx';
+    String bundleUrl = _currentManifest['update_url'] + '/' + kBundleFile;
     var response = await fetchUrl(bundleUrl);
-    String outputPath = path.join(_dataDir, 'tmp.skyx');
-    return PipeToFile.copyToFile(response.body, outputPath);
+    // TODO(mpcomplete): Use the cache dir. We need an equivalent of mkstemp().
+    _tempPath = path.join(_dataDir, 'tmp.skyx');
+    return PipeToFile.copyToFile(response.body, _tempPath);
   }
 
   _replaceBundle() async {
-    String fromPath = path.join(_dataDir, 'tmp.skyx');
-    String toPath = path.join(_dataDir, 'app.skyx');
-    await new File(fromPath).rename(toPath);
+    String bundlePath = path.join(_dataDir, kBundleFile);
+    await new File(_tempPath).rename(bundlePath);
   }
-
-  yaml.YamlMap _currentManifest;
 }
 
 String cachedDataDir = null;
