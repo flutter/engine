@@ -33,7 +33,7 @@ class Version {
       if (_parts[i] > other._parts[i])
         return 1;
     }
-    return _parts.length - other._parts.length;  // results in 1.0.0 < 1.0
+    return _parts.length - other._parts.length;  // results in 1.0 < 1.0.0
   }
 }
 
