@@ -4,92 +4,18 @@
 
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
-import 'dart:typed_data';
+//import 'dart:math';
 
 import 'package:mojo/core.dart';
 import 'package:sky/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart' as yaml;
 
+import 'version.dart';
+import 'pipe_to_file.dart';
+
 const String kManifestFile = 'sky.yaml';
 const String kBundleFile = 'app.skyx';
-
-class Version {
-  Version(String versionStr) :
-    _parts = versionStr.split('.').map((val) => int.parse(val)).toList();
-
-  List<int> _parts;
-
-  bool operator<(Version other) => _compare(other) < 0;
-  bool operator==(Version other) => _compare(other) == 0;
-  bool operator>(Version other) => _compare(other) > 0;
-
-  int _compare(Version other) {
-    int length = min(_parts.length, other._parts.length);
-    for (int i = 0; i < length; ++i) {
-      if (_parts[i] < other._parts[i])
-        return -1;
-      if (_parts[i] > other._parts[i])
-        return 1;
-    }
-    return _parts.length - other._parts.length;  // results in 1.0 < 1.0.0
-  }
-}
-
-class PipeToFile {
-  MojoDataPipeConsumer _consumer;
-  MojoEventStream _eventStream;
-  IOSink _outputStream;
-
-  PipeToFile(this._consumer, String outputPath) {
-    _eventStream = new MojoEventStream(_consumer.handle);
-    _outputStream = new File(outputPath).openWrite();
-  }
-
-  Future<MojoResult> _doRead() async {
-    ByteData thisRead = _consumer.beginRead();
-    if (thisRead == null) {
-      throw 'Data pipe beginRead failed: ${_consumer.status}';
-    }
-    // TODO(mpcomplete): Should I worry about the _eventStream listen callback
-    // being invoked again before this completes?
-    await _outputStream.add(thisRead.buffer.asUint8List());
-    return _consumer.endRead(thisRead.lengthInBytes);
-  }
-
-  Future<MojoResult> drain() async {
-    var completer = new Completer();
-    // TODO(mpcomplete): Is it legit to pass an async callback to listen?
-    _eventStream.listen((List<int> event) async {
-      var mojoSignals = new MojoHandleSignals(event[1]);
-      if (mojoSignals.isReadable) {
-        var result = await _doRead();
-        if (!result.isOk) {
-          _eventStream.close();
-          _eventStream = null;
-          _outputStream.close();
-          completer.complete(result);
-        } else {
-          _eventStream.enableReadEvents();
-        }
-      } else if (mojoSignals.isPeerClosed) {
-        _eventStream.close();
-        _eventStream = null;
-        _outputStream.close();
-        completer.complete(MojoResult.OK);
-      } else {
-        throw 'Unexpected handle event: $mojoSignals';
-      }
-    });
-    return completer.future;
-  }
-
-  static Future<MojoResult> copyToFile(MojoDataPipeConsumer consumer, String outputPath) {
-    var drainer = new PipeToFile(consumer, outputPath);
-    return drainer.drain();
-  }
-}
 
 class UpdateTask {
   UpdateTask() {}
@@ -134,10 +60,10 @@ class UpdateTask {
   }
 
   Future<MojoResult> _fetchBundle() async {
-    String bundleUrl = _currentManifest['update_url'] + '/' + kBundleFile;
-    var response = await fetchUrl(bundleUrl);
     // TODO(mpcomplete): Use the cache dir. We need an equivalent of mkstemp().
     _tempPath = path.join(_dataDir, 'tmp.skyx');
+    String bundleUrl = _currentManifest['update_url'] + '/' + kBundleFile;
+    UrlResponse response = await fetchUrl(bundleUrl);
     return PipeToFile.copyToFile(response.body, _tempPath);
   }
 
