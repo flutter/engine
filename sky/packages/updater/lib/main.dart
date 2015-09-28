@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 //import 'package:mojo/mojo/url_response.mojom.dart';
 //import 'package:sky/material.dart';
@@ -40,11 +41,11 @@ class Version {
 class PipeToFile {
   MojoDataPipeConsumer _consumer;
   MojoEventStream _eventStream;
-  File _outputFile;
+  IOSink _outputStream;
 
-  DataPipeDrainer(this._consumer, String outputPath) {
+  PipeToFile(this._consumer, String outputPath) {
     _eventStream = new MojoEventStream(_consumer.handle);
-    _outputFile = new File(outputPath);
+    _outputStream = new File(outputPath).openWrite();
   }
 
   Future<MojoResult> _doRead() async {
@@ -52,19 +53,23 @@ class PipeToFile {
     if (thisRead == null) {
       throw 'Data pipe beginRead failed: ${_consumer.status}';
     }
-    await _outputFile.writeAsBytes(thisRead.buffer.asUint8List());
+    // TODO(mpcomplete): Should I worry about the _eventStream listen callback
+    // being invoked again before this completes?
+    await _outputStream.add(thisRead.buffer.asUint8List());
     return _consumer.endRead(thisRead.lengthInBytes);
   }
 
-  Future<MojoResult> drain() {
+  Future<MojoResult> drain() async {
     var completer = new Completer();
-    _eventStream.listen((List<int> event) {
+    // TODO(mpcomplete): Is it legit to pass an async callback to listen?
+    _eventStream.listen((List<int> event) async {
       var mojoSignals = new MojoHandleSignals(event[1]);
       if (mojoSignals.isReadable) {
-        var result = _doRead();
+        var result = await _doRead();
         if (!result.isOk) {
           _eventStream.close();
           _eventStream = null;
+          _outputStream.close();
           completer.complete(result);
         } else {
           _eventStream.enableReadEvents();
@@ -72,6 +77,7 @@ class PipeToFile {
       } else if (mojoSignals.isPeerClosed) {
         _eventStream.close();
         _eventStream = null;
+        _outputStream.close();
         completer.complete(MojoResult.OK);
       } else {
         throw 'Unexpected handle event: $mojoSignals';
@@ -81,18 +87,22 @@ class PipeToFile {
   }
 
   static Future<MojoResult> copyToFile(MojoDataPipeConsumer consumer, String outputPath) {
-    var drainer = new DataPipeDrainer(consumer, outputPath);
+    var drainer = new PipeToFile(consumer, outputPath);
     return drainer.drain();
   }
 }
 
 class UpdateTask {
+  String _dataDir;
+
   UpdateTask() {}
 
   run() async {
+    _dataDir = await getDataDir();
+
     await _readLocalManifest();
     yaml.YamlMap remoteManifest = await _fetchManifest();
-    if (_shouldUpdate(remoteManifest)) {
+    if (!_shouldUpdate(remoteManifest)) {
       print("Update skipped. No new version.");
       return;
     }
@@ -105,8 +115,7 @@ class UpdateTask {
   }
 
   _readLocalManifest() async {
-    String dataDir = await getDataDir();
-    String manifestPath = path.join(dataDir, 'sky.yaml');
+    String manifestPath = path.join(_dataDir, 'sky.yaml');
     String manifestData = await new File(manifestPath).readAsString();
     print("manifestData: $manifestData");
     _currentManifest = yaml.loadYaml(manifestData, sourceUrl: manifestPath);
@@ -128,13 +137,13 @@ class UpdateTask {
   Future<MojoResult> _fetchBundle() async {
     String bundleUrl = _currentManifest['update_url'] + '/app.skyx';
     var response = await fetchUrl(bundleUrl);
-    String outputPath = path.join(dataDir, 'tmp.skyx');
+    String outputPath = path.join(_dataDir, 'tmp.skyx');
     return PipeToFile.copyToFile(response.body, outputPath);
   }
 
   _replaceBundle() async {
-    String fromPath = path.join(dataDir, 'tmp.skyx');
-    String toPath = path.join(dataDir, 'app.skyx');
+    String fromPath = path.join(_dataDir, 'tmp.skyx');
+    String toPath = path.join(_dataDir, 'app.skyx');
     await new File(fromPath).rename(toPath);
   }
 
