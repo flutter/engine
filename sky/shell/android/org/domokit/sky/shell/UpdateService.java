@@ -80,12 +80,6 @@ public class UpdateService extends Service implements org.chromium.mojom.activit
       return null;
     }
 
-    @SuppressWarnings("unused")
-    @CalledByNative
-    public void onUpdateFinished() {
-        stopSelf();
-    }
-
     // Mojo UpdateService:
     @Override
     public void close() {}
