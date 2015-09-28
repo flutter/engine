@@ -35,8 +35,13 @@ class UpdateTask {
   UpdateTask() {}
 
   run() async {
-    await _runImpl();
-    _updateService.ptr.notifyUpdateCheckComplete();
+    try {
+      await _runImpl();
+    } catch(e) {
+      print('Update failed: $e');
+    } finally {
+      _updateService.ptr.notifyUpdateCheckComplete();
+    }
   }
 
   _runImpl() async {
@@ -45,16 +50,16 @@ class UpdateTask {
     await _readLocalManifest();
     yaml.YamlMap remoteManifest = await _fetchManifest();
     if (!_shouldUpdate(remoteManifest)) {
-      print("Update skipped. No new version.");
+      print('Update skipped. No new version.');
       return;
     }
     MojoResult result = await _fetchBundle();
     if (!result.isOk) {
-      print("Update failed while fetching new skyx bundle.");
+      print('Update failed while fetching new skyx bundle.');
       return;
     }
     await _replaceBundle();
-    print("Update success.");
+    print('Update success.');
   }
 
   yaml.YamlMap _currentManifest;
