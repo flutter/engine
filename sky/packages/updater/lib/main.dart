@@ -7,14 +7,10 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-//import 'package:mojo/mojo/url_response.mojom.dart';
-//import 'package:sky/material.dart';
-//import 'package:sky/rendering.dart';
 import 'package:mojo/core.dart';
 import 'package:sky/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart' as yaml;
-//import 'package:sky/widgets.dart';
 
 class Version {
   Version(String versionStr) :
@@ -157,12 +153,7 @@ Future<String> getDataDir() async {
   return cachedDataDir;
 }
 
-// download new app.skyx to file
-// replace old app.skyx
-// notify caller we're done
-//
-// need:
-// method for notifying caller. native? mojo?
+// TODO(mpcomplete): method for notifying caller. native? mojo?
 
 void main() {
   var task = new UpdateTask();
