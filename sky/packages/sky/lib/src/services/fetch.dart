@@ -47,23 +47,31 @@ Future<UrlResponse> fetch(UrlRequest request) async {
   }
 }
 
-Future<UrlResponse> fetchUrl(String relativeUrl) async {
-  String url = Uri.base.resolve(relativeUrl).toString();
-  UrlRequest request = new UrlRequest()
-    ..url = url
-    ..autoFollowRedirects = true;
-  return fetch(request);
+class UrlFetcher {
+  static Uri baseUri = Uri.base;
+
+  static Future<UrlResponse> fetchUrl(String relativeUrl) async {
+    String url = baseUri.resolve(relativeUrl).toString();
+    UrlRequest request = new UrlRequest()
+      ..url = url
+      ..autoFollowRedirects = true;
+    return fetch(request);
+  }
+
+  static Future<Response> fetchBody(String relativeUrl) async {
+    UrlResponse response = await fetchUrl(relativeUrl);
+    if (response.body == null) return new Response(null);
+
+    ByteData data = await core.DataPipeDrainer.drainHandle(response.body);
+    return new Response(data);
+  }
+
+  static Future<String> fetchString(String relativeUrl) async {
+    Response response = await fetchBody(relativeUrl);
+    return response.bodyAsString();
+  }
 }
 
-Future<Response> fetchBody(String relativeUrl) async {
-  UrlResponse response = await fetchUrl(relativeUrl);
-  if (response.body == null) return new Response(null);
-
-  ByteData data = await core.DataPipeDrainer.drainHandle(response.body);
-  return new Response(data);
-}
-
-Future<String> fetchString(String relativeUrl) async {
-  Response response = await fetchBody(relativeUrl);
-  return response.bodyAsString();
-}
+Future<UrlResponse> fetchUrl(url) async => UrlFetcher.fetchUrl(url);
+Future<Response> fetchBody(String url) async => UrlFetcher.fetchBody(url);
+Future<String> fetchString(String url) async => UrlFetcher.fetchString(url);
