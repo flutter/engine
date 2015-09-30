@@ -56,15 +56,21 @@ interface Activity {
   SetTaskDescription(TaskDescription description);
   SetSystemUIVisibility(SystemUiVisibility visibility);
   SetRequestedOrientation(ScreenOrientation orientation);
+};
 
-  // These are stored off the Activity on Android, but probably belong in a
-  // separate FileSystem service.
+interface PathService {
+  // Where the application files are.
+  GetAppDataDir() => (string path);
 
   // Where to store long-term files.
   GetFilesDir() => (string path);
 
   // Where to store short-term files.
   GetCacheDir() => (string path);
+};
+
+interface UpdateService {
+  NotifyUpdateCheckComplete();
 };
 
 enum HapticFeedbackType {

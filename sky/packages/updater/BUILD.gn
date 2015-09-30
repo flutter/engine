@@ -19,12 +19,16 @@ action("updater") {
 
   args = [
     "--compiler", rebase_path("$sky_snapshot_dir/sky_snapshot", root_build_dir),
-    "--package-root", rebase_path("packages", root_build_dir),
+    "--package-root", rebase_path("//sky/packages/workbench/packages", root_build_dir),
     "--snapshot", rebase_path(snapshot, root_build_dir),
     "--main", rebase_path(main_dart, root_build_dir),
   ]
 
   deps = [
+    # TODO(mpcomplete): We also depend on
+    # //sky/packages/sky/lib/src/services/activity.dart, but I don't know how
+    # to tell GN that.
+    "//sky/services/activity:interfaces",
     "//sky/tools/sky_snapshot($host_toolchain)",
   ]
 }
