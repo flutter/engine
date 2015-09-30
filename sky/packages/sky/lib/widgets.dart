@@ -52,4 +52,4 @@ export 'package:sky/src/widgets/title.dart';
 export 'package:sky/src/widgets/tool_bar.dart';
 export 'package:sky/src/widgets/transitions.dart';
 
-export 'package:vector_math/vector_math.dart' show Matrix4;
+export 'package:vector_math/vector_math_64.dart' show Matrix4;

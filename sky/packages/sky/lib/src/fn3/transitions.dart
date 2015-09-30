@@ -5,7 +5,7 @@
 import 'package:sky/animation.dart';
 import 'package:sky/src/fn3/basic.dart';
 import 'package:sky/src/fn3/framework.dart';
-import 'package:vector_math/vector_math.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 export 'package:sky/animation.dart' show Direction;
 
