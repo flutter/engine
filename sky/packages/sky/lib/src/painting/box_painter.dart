@@ -71,6 +71,13 @@ class EdgeDims {
                         left - other.left);
   }
 
+  EdgeDims operator*(double scale) {
+    return new EdgeDims(top * scale,
+                        right * scale,
+                        bottom * scale,
+                        left * scale);
+  }
+
   /// An EdgeDims with zero offsets in each direction
   static const EdgeDims zero = const EdgeDims(0.0, 0.0, 0.0, 0.0);
 
