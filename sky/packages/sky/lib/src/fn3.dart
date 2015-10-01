@@ -51,4 +51,4 @@ export 'fn3/tool_bar.dart';
 export 'fn3/transitions.dart';
 export 'fn3/unique_component.dart';
 
-export 'package:vector_math/vector_math.dart' show Matrix4;
+export 'package:vector_math/vector_math_64.dart' show Matrix4;
