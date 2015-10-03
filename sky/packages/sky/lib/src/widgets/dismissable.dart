@@ -6,9 +6,10 @@ import 'dart:sky' as sky;
 
 import 'package:sky/animation.dart';
 import 'package:sky/src/widgets/basic.dart';
-import 'package:sky/src/widgets/transitions.dart';
+import 'package:sky/src/widgets/binding.dart';
 import 'package:sky/src/widgets/framework.dart';
 import 'package:sky/src/widgets/gesture_detector.dart';
+import 'package:sky/src/widgets/transitions.dart';
 
 const Duration _kCardDismissFadeout = const Duration(milliseconds: 200);
 const Duration _kCardDismissResize = const Duration(milliseconds: 300);
@@ -212,6 +213,7 @@ class DismissableState extends State<Dismissable> {
   void _handleSizeChanged(Size newSize) {
     setState(() {
       _size = new Size.copy(newSize);
+      WidgetFlutterBinding.instance.rebuildAndRelayoutAllOverAgainBeforePainting(this);
     });
   }
 

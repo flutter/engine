@@ -46,6 +46,7 @@ class PageableListAppState extends State<PageableListApp> {
   void updatePageSize(Size newSize) {
     setState(() {
       pageSize = newSize;
+      WidgetFlutterBinding.instance.rebuildAndRelayoutAllOverAgainBeforePainting(this);
     });
   }
 
