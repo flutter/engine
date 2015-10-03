@@ -4,6 +4,7 @@
 
 import 'package:sky/rendering.dart';
 import 'package:sky/src/widgets/basic.dart';
+import 'package:sky/src/widgets/binding.dart';
 import 'package:sky/src/widgets/framework.dart';
 
 class MimicableKey {
@@ -70,6 +71,7 @@ class MimicableState extends State<Mimicable> {
   void _handleSizeChanged(Size size) {
     setState(() {
       _size = size;
+      WidgetFlutterBinding.instance.rebuildAndRelayoutAllOverAgainBeforePainting(this);
     });
   }
 

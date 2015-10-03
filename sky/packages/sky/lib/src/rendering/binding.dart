@@ -77,12 +77,47 @@ class FlutterBinding extends HitTestTarget {
     _renderView.rootConstraints = _createConstraints();
   }
 
-  /// Pump the rendering pipeline to generate a frame for the given time stamp
+  /// Returns true if the current frame is going to be restarted.
+  bool get willRedoFrame => _willRedoFrame;
+  bool _willRedoFrame = false;
+  bool _debugDoingFrame = false;
+
+  /// Pump the rendering pipeline to generate a frame for the given time stamp.
   void beginFrame(double timeStamp) {
+    assert(!_debugDoingFrame);
+    assert(() { _debugDoingFrame = true; return true; });
+    try {
+      do {
+        _willRedoFrame = false;
+        doFrame(timeStamp);
+      } while (willRedoFrame);
+      assert(_debugDoingFrame);
+    } finally {
+      assert(() { _debugDoingFrame = false; return true; });
+    }
+    assert(!_debugDoingFrame);
+    assert(!willRedoFrame);
+  }
+
+  /// Runs through the phases of the rendering pipeline, aborting after any step
+  /// during which redoFrame() was called.
+  void doFrame(double timeStamp) {
     RenderObject.flushLayout();
+    if (willRedoFrame)
+      return;
     _renderView.updateCompositingBits();
+    if (willRedoFrame)
+      return;
     RenderObject.flushPaint();
+    if (willRedoFrame)
+      return;
     _renderView.compositeFrame();
+  }
+
+  /// Abort the rendering pipeline at the end of the current phase, and begin it
+  /// again. If this is called between frames, it will be safely ignored.
+  void redoFrame() {
+    _willRedoFrame = true;
   }
 
   final List<EventListener> _eventListeners = new List<EventListener>();

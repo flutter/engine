@@ -295,6 +295,7 @@ class CardCollectionAppState extends State<CardCollectionApp> {
   void _updateCardCollectionSize(Size newSize) {
     setState(() {
       _cardCollectionSize = newSize;
+      WidgetFlutterBinding.instance.rebuildAndRelayoutAllOverAgainBeforePainting(this);
     });
   }
 

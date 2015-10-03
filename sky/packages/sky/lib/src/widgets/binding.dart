@@ -35,9 +35,32 @@ class WidgetFlutterBinding extends FlutterBinding {
     );
   }
 
-  void beginFrame(double timeStamp) {
-    buildDirtyElements();
-    super.beginFrame(timeStamp);
+  bool _inFrame = false;
+  Set<State> _expensiveComponentStates = new Set<State>();
+  void rebuildAndRelayoutAllOverAgainBeforePainting(State state) {
+    assert(_inFrame);
+    _expensiveComponentStates.add(state);
+  }
+
+  void doFrame(double timeStamp) {
+    _inFrame = true;
+    try {
+      buildDirtyElements();
+      // We don't check willRedoFrame here because our build phase can extend into
+      // layout, so we always let the rendering layer's binding do layout and let
+      // it check if we should redo the frame then.
+      super.doFrame(timeStamp);
+      if (_expensiveComponentStates.length > 0) {
+        for (State state in _expensiveComponentStates)
+          state.setState(() { });
+        _expensiveComponentStates.clear();
+        redoFrame();
+      }
+      if (willRedoFrame)
+        return;
+    } finally {
+      _inFrame = false;
+    }
     Element.finalizeTree();
   }
 
@@ -56,7 +79,7 @@ class WidgetFlutterBinding extends FlutterBinding {
   /// Builds all the elements that were marked as dirty using schedule(), in depth order.
   /// If elements are marked as dirty while this runs, they must be deeper than the algorithm
   /// has yet reached.
-  /// This is called by beginFrame().
+  /// This is called by doFrame().
   void buildDirtyElements() {
     if (_dirtyElements.isEmpty)
       return;
