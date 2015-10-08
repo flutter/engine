@@ -3,13 +3,24 @@
 // found in the LICENSE file.
 
 #include "base/bind.h"
-#include "base/message_loop/message_loop.h"
+#include "base/threading/worker_pool.h"
 #include "sky/engine/core/loader/CanvasImageDecoder.h"
 #include "sky/engine/core/painting/CanvasImage.h"
 #include "sky/engine/platform/SharedBuffer.h"
 #include "sky/engine/platform/image-decoders/ImageDecoder.h"
 
 namespace blink {
+
+class ImageDecoderJob : public base::RefCountedThreadSafe<ImageDecoderJob> {
+ public:
+  explicit ImageDecoderJob(PassRefPtr<SharedBuffer> buffer);
+  ~ImageDecoderJob();
+  void DecodeImage();
+  PassRefPtr<SkImage> decoded_image() { return decoded_image_; }
+ private:
+  RefPtr<SharedBuffer> buffer_;
+  RefPtr<SkImage> decoded_image_;
+};
 
 PassRefPtr<CanvasImageDecoder> CanvasImageDecoder::create(
     PassOwnPtr<ImageDecoderCallback> callback) {
@@ -41,9 +52,7 @@ void CanvasImageDecoder::initWithList(const Uint8List& list) {
   CHECK(!drainer_);
 
   OnDataAvailable(list.data(), list.num_elements());
-  base::MessageLoop::current()->PostTask(
-      FROM_HERE, base::Bind(&CanvasImageDecoder::OnDataComplete,
-                            weak_factory_.GetWeakPtr()));
+  OnDataComplete();
 }
 
 void CanvasImageDecoder::OnDataAvailable(const void* data, size_t num_bytes) {
@@ -51,25 +60,42 @@ void CanvasImageDecoder::OnDataAvailable(const void* data, size_t num_bytes) {
 }
 
 void CanvasImageDecoder::OnDataComplete() {
+  job_ = new ImageDecoderJob(buffer_.release());
+  base::WorkerPool::PostTaskAndReply(FROM_HERE,
+                                     base::Bind(&ImageDecoderJob::DecodeImage, job_.get()),
+                                     base::Bind(&CanvasImageDecoder::OnDecodeComplete, weak_factory_.GetWeakPtr()),
+                                     /* task_is_slow */ true);
+}
+
+ImageDecoderJob::ImageDecoderJob(PassRefPtr<SharedBuffer> buffer)
+    : buffer_(buffer) {
+  CHECK(buffer_->hasOneRef());
+}
+
+ImageDecoderJob::~ImageDecoderJob() {
+}
+
+void ImageDecoderJob::DecodeImage() {
   OwnPtr<ImageDecoder> decoder =
       ImageDecoder::create(*buffer_.get(), ImageSource::AlphaPremultiplied,
                            ImageSource::GammaAndColorProfileIgnored);
   // decoder can be null if the buffer we was empty and we couldn't even guess
   // what type of image to decode.
   if (!decoder) {
-    callback_->handleEvent(nullptr);
     return;
   }
   decoder->setData(buffer_.get(), true);
   if (decoder->failed() || decoder->frameCount() == 0) {
-    callback_->handleEvent(nullptr);
     return;
   }
 
-  RefPtr<CanvasImage> resultImage = CanvasImage::create();
   ImageFrame* imageFrame = decoder->frameBufferAtIndex(0);
-  RefPtr<SkImage> skImage = adoptRef(SkImage::NewFromBitmap(imageFrame->getSkBitmap()));
-  resultImage->setImage(skImage.release());
+  decoded_image_ = adoptRef(SkImage::NewFromBitmap(imageFrame->getSkBitmap()));
+}
+
+void CanvasImageDecoder::OnDecodeComplete() {
+  RefPtr<CanvasImage> resultImage = CanvasImage::create();
+  resultImage->setImage(job_->decoded_image());
   callback_->handleEvent(resultImage.get());
 }
 

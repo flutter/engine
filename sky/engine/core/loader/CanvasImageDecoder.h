@@ -17,6 +17,8 @@
 
 namespace blink {
 
+class ImageDecoderJob;
+
 class CanvasImageDecoder : public mojo::common::DataPipeDrainer::Client,
                            public RefCounted<CanvasImageDecoder>,
                            public DartWrappable {
@@ -36,10 +38,13 @@ class CanvasImageDecoder : public mojo::common::DataPipeDrainer::Client,
   CanvasImageDecoder(PassOwnPtr<ImageDecoderCallback> callback);
 
   void RejectCallback();
+  void DecodeImage();
+  void OnDecodeComplete();
 
   OwnPtr<mojo::common::DataPipeDrainer> drainer_;
   RefPtr<SharedBuffer> buffer_;
   OwnPtr<ImageDecoderCallback> callback_;
+  scoped_refptr<ImageDecoderJob> job_;
 
   base::WeakPtrFactory<CanvasImageDecoder> weak_factory_;
 };
