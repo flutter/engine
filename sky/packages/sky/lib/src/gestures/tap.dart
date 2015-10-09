@@ -5,17 +5,23 @@
 import 'dart:sky' as sky;
 
 import 'package:sky/src/gestures/arena.dart';
+import 'package:sky/src/gestures/constants.dart';
 import 'package:sky/src/gestures/recognizer.dart';
 
 typedef void GestureTapCallback();
 
 class TapGestureRecognizer extends PrimaryPointerGestureRecognizer {
   TapGestureRecognizer({ PointerRouter router, this.onTap })
-    : super(router: router);
+    : super(router: router, deadline: kTapTimeout);
 
   GestureTapCallback onTap;
   GestureTapCallback onTapDown;
   GestureTapCallback onTapCancel;
+
+  void didExceedDeadline() {
+    stopTrackingPointer(primaryPointer);
+    resolve(GestureDisposition.rejected);
+  }
 
   void handlePrimaryPointer(sky.PointerEvent event) {
     if (event.type == 'pointerdown') {

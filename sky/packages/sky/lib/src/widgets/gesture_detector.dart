@@ -14,6 +14,7 @@ class GestureDetector extends StatefulComponent {
     Key key,
     this.child,
     this.onTap,
+    this.onDoubleTap,
     this.onTapDown,
     this.onTapCancel,
     this.onShowPress,
@@ -37,6 +38,7 @@ class GestureDetector extends StatefulComponent {
   final GestureTapCallback onTap;
   final GestureTapCallback onTapDown;
   final GestureTapCallback onTapCancel;
+  final GestureTapListener onDoubleTap;
 
   final GestureShowPressCallback onShowPress;
   final GestureLongPressCallback onLongPress;
@@ -64,6 +66,7 @@ class _GestureDetectorState extends State<GestureDetector> {
   final PointerRouter _router = FlutterBinding.instance.pointerRouter;
 
   TapGestureRecognizer _tap;
+  DoubleTapGestureRecognizer _doubleTap;
   ShowPressGestureRecognizer _showPress;
   LongPressGestureRecognizer _longPress;
   VerticalDragGestureRecognizer _verticalDrag;
@@ -82,6 +85,7 @@ class _GestureDetectorState extends State<GestureDetector> {
 
   void dispose() {
     _tap = _ensureDisposed(_tap);
+    _doubleTap = _ensureDisposed(_doubleTap);
     _showPress = _ensureDisposed(_showPress);
     _longPress = _ensureDisposed(_longPress);
     _verticalDrag = _ensureDisposed(_verticalDrag);
@@ -93,6 +97,7 @@ class _GestureDetectorState extends State<GestureDetector> {
 
   void _syncAll() {
     _syncTap();
+    _syncDoubleTap();
     _syncShowPress();
     _syncLongPress();
     _syncVerticalDrag();
@@ -111,6 +116,13 @@ class _GestureDetectorState extends State<GestureDetector> {
         ..onTapDown = config.onTapDown
         ..onTapCancel = config.onTapCancel;
     }
+  }
+
+  void _syncDoubleTap() {
+    if (config.onDoubleTap == null)
+      _doubleTap = _ensureDisposed(_doubleTap);
+    else
+      _ensureDoubleTap().onDoubleTap = config.onDoubleTap;
   }
 
   void _syncShowPress() {
@@ -189,6 +201,8 @@ class _GestureDetectorState extends State<GestureDetector> {
   void _handlePointerDown(sky.PointerEvent event) {
     if (_tap != null)
       _tap.addPointer(event);
+    if (_doubleTap != null)
+      _doubleTap.addPointer(event);
     if (_showPress != null)
       _showPress.addPointer(event);
     if (_longPress != null)
