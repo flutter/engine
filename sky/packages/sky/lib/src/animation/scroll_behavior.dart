@@ -116,8 +116,6 @@ Simulation _createFlingScrollSimulation(double position, double velocity, double
   double endDistance = 0.5 * ui.view.devicePixelRatio;
 
   SpringDescription spring = new SpringDescription.withDampingRatio(mass: 1.0, springConstant: 170.0, ratio: 1.1);
-  print("new ScrollSimulation($position, $startVelocity, $minScrollOffset, $maxScrollOffset, $spring, $_kScrollDrag)");
-  print("new Tolerance(velocity: ${endVelocity.abs()}, distance: ${endDistance}");
   ScrollSimulation simulation =
       new ScrollSimulation(position, startVelocity, minScrollOffset, maxScrollOffset, spring, _kScrollDrag)
     ..tolerance = new Tolerance(velocity: endVelocity.abs(), distance: endDistance);
