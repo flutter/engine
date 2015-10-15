@@ -97,8 +97,9 @@ class SimulationStepper {
 
   void _tick(Duration elapsed) {
     double elapsedInSeconds = elapsed.inMicroseconds.toDouble() / Duration.MICROSECONDS_PER_SECOND;
+    bool simulationIsDone = _simulation.isDone(elapsedInSeconds);
     _value = _simulation.x(elapsedInSeconds);
-    if (_simulation.isDone(elapsedInSeconds))
+    if (simulationIsDone)
       stop();
     _onTick(_value);
   }
