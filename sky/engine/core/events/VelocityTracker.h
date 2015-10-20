@@ -155,13 +155,6 @@ struct BitSet32 {
 class VelocityTracker : public RefCounted<VelocityTracker>, public DartWrappable {
     DEFINE_WRAPPERTYPEINFO();
 public:
-  enum {
-    // The maximum number of pointers to use when computing the velocity.
-    // Note that the supplied PointerEvent may expose more than 16 pointers, but
-    // at most |MAX_POINTERS| will be used.
-    MAX_POINTERS = 16,
-  };
-
   enum Strategy {
     // 1st order least squares.  Quality: POOR.
     // Frequently underfits the touch data especially when the finger
@@ -247,36 +240,21 @@ public:
   // Gets the active pointer id, or -1 if none.
   inline int32_t GetActivePointerId() const { return active_pointer_id_; }
 
-  // Gets a bitset containing all pointer ids from the most recent movement.
-  inline BitSet32 GetCurrentPointerIdBits() const {
-    return current_pointer_id_bits_;
-  }
-
  private:
-  // Resets the velocity tracker state for specific pointers.
-  // Call this method when some pointers have changed and may be reusing
-  // an id that was assigned to a different pointer earlier.
-  void ClearPointers(BitSet32 id_bits);
-
-  // Adds movement information for a set of pointers.
-  // The id_bits bitfield specifies the pointer ids of the pointers whose
-  // positions
-  // are included in the movement.
-  // The positions array contains position information for each pointer in order
-  // by
-  // increasing id.  Its size should be equal to the number of one bits in
-  // id_bits.
+  // Adds movement information for a pointer.
+  // The id specifies the pointer id of the pointer whose position is included
+  // in the movement.
+  // position specifies the position information for the pointer.
   void AddMovement(const base::TimeTicks& event_time,
-                   BitSet32 id_bits,
-                   const PointerXY* positions);
+                   int32_t id,
+                   const PointerXY &position);
 
   // Gets an estimator for the recent movements of the specified pointer id.
   // Returns false and clears the estimator if there is no information available
   // about the pointer.
-  bool GetEstimator(uint32_t id, Estimator* out_estimator) const;
+  bool GetEstimator(int32_t id, Estimator* out_estimator) const;
 
   base::TimeTicks last_event_time_;
-  BitSet32 current_pointer_id_bits_;
   int32_t active_pointer_id_;
   scoped_ptr<VelocityTrackerStrategy> strategy_;
 
