@@ -23,19 +23,14 @@ class VelocityTrackerStrategy {
 
   virtual void Clear() = 0;
   virtual void AddMovement(const base::TimeTicks& event_time,
-                           int32_t id,
                            const PointerXY &position) = 0;
-  virtual bool GetEstimator(int32_t id, Estimator* out_estimator) const = 0;
+  virtual bool GetEstimator(Estimator* out_estimator) const = 0;
 
  protected:
   VelocityTrackerStrategy() {}
 };
 
 namespace {
-
-// From platform/frameworks/native/include/input/MotionPointer.h
-enum { MAX_POINTER_ID = 31, MAX_TOUCH_POINT_COUNT = 16 };
-//COMPILE_ASSERT(MotionEvent::MAX_POINTER_ID < 32, max_pointer_id_too_large);
 
 // Threshold between ACTION_MOVE events for determining that a pointer has
 // stopped moving. Some input devices do not send ACTION_MOVE events in the case
@@ -120,9 +115,8 @@ class LeastSquaresVelocityTrackerStrategy : public VelocityTrackerStrategy {
 
   void Clear() override;
   void AddMovement(const TimeTicks& event_time,
-                   int32_t id,
                    const PointerXY& position) override;
-  bool GetEstimator(int32_t id, Estimator* out_estimator) const override;
+  bool GetEstimator(Estimator* out_estimator) const override;
 
  private:
   // Sample horizon.
@@ -132,12 +126,7 @@ class LeastSquaresVelocityTrackerStrategy : public VelocityTrackerStrategy {
 
   struct Movement {
     TimeTicks event_time;
-    int32_t id;
     PointerXY position;
-
-    inline const PointerXY& GetPointerXY(uint32_t pointer_id) const {
-      return position;
-    }
   };
 
   float ChooseWeight(uint32_t index) const;
@@ -157,9 +146,8 @@ class IntegratingVelocityTrackerStrategy : public VelocityTrackerStrategy {
 
   void Clear() override;
   void AddMovement(const TimeTicks& event_time,
-                   int32_t id,
                    const PointerXY& position) override;
-  bool GetEstimator(int32_t id, Estimator* out_estimator) const override;
+  bool GetEstimator(Estimator* out_estimator) const override;
 
  private:
   // Current state estimate for a particular pointer.
@@ -171,8 +159,8 @@ class IntegratingVelocityTrackerStrategy : public VelocityTrackerStrategy {
     float ypos, yvel, yaccel;
   };
 
+  bool initialized;
   const uint32_t degree_;
-  int32_t pointer_id_;
   State mPointerState;
 
   void InitState(State& state,
@@ -216,16 +204,16 @@ VelocityTrackerStrategy* CreateStrategy(VelocityTracker::Strategy strategy) {
 
 // --- VelocityTracker.idl implementation ---
 
-void VelocityTracker::addPosition(int timeStamp, int pointerId, float x, float y) {
+void VelocityTracker::addPosition(int timeStamp, float x, float y) {
   TimeTicks event_time(TimeTicks::FromInternalValue(timeStamp));
   PointerXY position = {x, y};
-  AddMovement(event_time, pointerId, position);
+  AddMovement(event_time, position);
 }
 
-PassRefPtr<GestureVelocity> VelocityTracker::getVelocity(int pointerId) {
+PassRefPtr<GestureVelocity> VelocityTracker::getVelocity() {
   float vx = 0;
   float vy = 0;
-  bool result = GetVelocity(pointerId, &vx, &vy);
+  bool result = GetVelocity(&vx, &vy);
   return GestureVelocity::create(result, vx, vy);
 }
 
@@ -236,25 +224,20 @@ void VelocityTracker::reset() {
 // --- VelocityTracker ---
 
 VelocityTracker::VelocityTracker()
-    : active_pointer_id_(-1),
-      strategy_(CreateStrategy(STRATEGY_DEFAULT)) {}
+    : strategy_(CreateStrategy(STRATEGY_DEFAULT)) {}
 
 VelocityTracker::VelocityTracker(Strategy strategy)
-    : active_pointer_id_(-1),
-      strategy_(CreateStrategy(strategy)) {}
+    : strategy_(CreateStrategy(strategy)) {}
 
 VelocityTracker::~VelocityTracker() {}
 
 void VelocityTracker::Clear() {
-  active_pointer_id_ = -1;
   strategy_->Clear();
 }
 
 void VelocityTracker::AddMovement(const TimeTicks& event_time,
-                                  int32_t id,
                                   const PointerXY& position) {
-  if ((active_pointer_id_ == id) &&
-      (event_time - last_event_time_) >=
+  if ((event_time - last_event_time_) >=
           base::TimeDelta::FromMilliseconds(kAssumePointerMoveStoppedTimeMs)) {
     // We have not received any movements for too long. Assume that all pointers
     // have stopped.
@@ -262,16 +245,13 @@ void VelocityTracker::AddMovement(const TimeTicks& event_time,
   }
   last_event_time_ = event_time;
 
-  active_pointer_id_ = id;
-
-  strategy_->AddMovement(event_time, id, position);
+  strategy_->AddMovement(event_time, position);
 }
 
-bool VelocityTracker::GetVelocity(uint32_t id,
-                                  float* out_vx,
+bool VelocityTracker::GetVelocity(float* out_vx,
                                   float* out_vy) const {
   Estimator estimator;
-  if (GetEstimator(id, &estimator) && estimator.degree >= 1) {
+  if (GetEstimator(&estimator) && estimator.degree >= 1) {
     *out_vx = estimator.xcoeff[1];
     *out_vy = estimator.ycoeff[1];
     return true;
@@ -283,7 +263,6 @@ bool VelocityTracker::GetVelocity(uint32_t id,
 
 void LeastSquaresVelocityTrackerStrategy::AddMovement(
     const TimeTicks& event_time,
-    int32_t id,
     const PointerXY& position) {
   if (++index_ == kHistorySize) {
     index_ = 0;
@@ -291,13 +270,11 @@ void LeastSquaresVelocityTrackerStrategy::AddMovement(
 
   Movement& movement = movements_[index_];
   movement.event_time = event_time;
-  movement.id = id;
   movement.position = position;
 }
 
-bool VelocityTracker::GetEstimator(int32_t id,
-                                   Estimator* out_estimator) const {
-  return strategy_->GetEstimator(id, out_estimator);
+bool VelocityTracker::GetEstimator(Estimator* out_estimator) const {
+  return strategy_->GetEstimator(out_estimator);
 }
 
 // --- LeastSquaresVelocityTrackerStrategy ---
@@ -314,7 +291,6 @@ LeastSquaresVelocityTrackerStrategy::~LeastSquaresVelocityTrackerStrategy() {}
 
 void LeastSquaresVelocityTrackerStrategy::Clear() {
   index_ = -1;
-  movements_[0].id = -1;
 }
 
 /**
@@ -473,7 +449,6 @@ static bool SolveLeastSquares(const float* x,
 }
 
 bool LeastSquaresVelocityTrackerStrategy::GetEstimator(
-    int32_t id,
     Estimator* out_estimator) const {
   out_estimator->Clear();
 
@@ -488,14 +463,12 @@ bool LeastSquaresVelocityTrackerStrategy::GetEstimator(
   const Movement& newest_movement = movements_[index_];
   do {
     const Movement& movement = movements_[index];
-    if (movement.id != id)
-      break;
 
     TimeDelta age = newest_movement.event_time - movement.event_time;
     if (age > horizon)
       break;
 
-    const PointerXY& position = movement.GetPointerXY(id);
+    const PointerXY& position = movement.position;
     x[m] = position.x;
     y[m] = position.y;
     w[m] = ChooseWeight(index);
@@ -604,38 +577,28 @@ float LeastSquaresVelocityTrackerStrategy::ChooseWeight(uint32_t index) const {
 
 IntegratingVelocityTrackerStrategy::IntegratingVelocityTrackerStrategy(
     uint32_t degree)
-    : degree_(degree) {
+    : initialized(false), degree_(degree) {
   DCHECK_LT(degree_, static_cast<uint32_t>(Estimator::kMaxDegree));
 }
 
 IntegratingVelocityTrackerStrategy::~IntegratingVelocityTrackerStrategy() {}
 
-void IntegratingVelocityTrackerStrategy::Clear() { pointer_id_ = -1; }
+void IntegratingVelocityTrackerStrategy::Clear() { initialized = false; }
 
 void IntegratingVelocityTrackerStrategy::AddMovement(
     const TimeTicks& event_time,
-    int32_t id,
     const PointerXY &position) {
-  if (pointer_id_ == id)
+  if (initialized)
     UpdateState(mPointerState, event_time, position.x, position.y);
   else
     InitState(mPointerState, event_time, position.x, position.y);
-
-  pointer_id_ = id;
 }
 
 bool IntegratingVelocityTrackerStrategy::GetEstimator(
-    int32_t id,
     Estimator* out_estimator) const {
   out_estimator->Clear();
-
-  if (pointer_id_ == id) {
-    const State& state = mPointerState;
-    PopulateEstimator(state, out_estimator);
-    return true;
-  }
-
-  return false;
+  PopulateEstimator(mPointerState, out_estimator);
+  return true;
 }
 
 void IntegratingVelocityTrackerStrategy::InitState(State& state,
