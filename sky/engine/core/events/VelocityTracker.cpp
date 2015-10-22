@@ -290,7 +290,8 @@ LeastSquaresVelocityTrackerStrategy::LeastSquaresVelocityTrackerStrategy(
 LeastSquaresVelocityTrackerStrategy::~LeastSquaresVelocityTrackerStrategy() {}
 
 void LeastSquaresVelocityTrackerStrategy::Clear() {
-  index_ = -1;
+  index_ = 0;
+  movements_[0].time_stamp = 0;
 }
 
 /**
