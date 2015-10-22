@@ -291,7 +291,7 @@ LeastSquaresVelocityTrackerStrategy::~LeastSquaresVelocityTrackerStrategy() {}
 
 void LeastSquaresVelocityTrackerStrategy::Clear() {
   index_ = 0;
-  movements_[0].time_stamp = 0;
+  movements_[0].event_time = TimeTicks();
 }
 
 /**
@@ -464,6 +464,9 @@ bool LeastSquaresVelocityTrackerStrategy::GetEstimator(
   const Movement& newest_movement = movements_[index_];
   do {
     const Movement& movement = movements_[index];
+
+    if (movement.event_time.is_null())
+      break;
 
     TimeDelta age = newest_movement.event_time - movement.event_time;
     if (age > horizon)
