@@ -15,8 +15,6 @@
 #include "mojo/public/cpp/application/connect.h"
 #include "mojo/public/cpp/system/data_pipe.h"
 #include "mojo/public/interfaces/application/shell.mojom.h"
-#include "mojo/services/surfaces/cpp/surfaces_utils.h"
-#include "mojo/services/surfaces/interfaces/quads.mojom.h"
 #include "services/asset_bundle/asset_unpacker_job.h"
 #include "services/sky/compositor/layer_host.h"
 #include "services/sky/compositor/rasterizer_bitmap.h"
@@ -48,88 +46,45 @@ DocumentView::DocumentView(
     mojo::InterfaceRequest<mojo::ServiceProvider> exported_services,
     mojo::ServiceProviderPtr imported_services,
     mojo::URLResponsePtr response,
-    mojo::Shell* shell)
+    mojo::Shell* shell,
+    const mojo::ui::ViewProvider::CreateViewCallback& callback)
     : response_(response.Pass()),
       exported_services_(exported_services.Pass()),
       imported_services_(imported_services.Pass()),
       shell_(shell),
       bitmap_rasterizer_(nullptr),
-      event_dispatcher_binding_(this),
+      view_binding_(this),
+      device_pixel_ratio_(0),
       weak_factory_(this) {
+  mojo::ServiceProviderPtr view_manager_provider;
+  shell_->ConnectToApplication("mojo:view_manager_service",
+                               mojo::GetProxy(&view_manager_provider), nullptr);
+  mojo::ConnectToService(view_manager_provider.get(), &view_manager_);
+  view_manager_.set_connection_error_handler(
+      base::Bind(&DocumentView::OnViewConnectionError, base::Unretained(this)));
+
+  mojo::ui::ViewPtr view;
+  view_binding_.Bind(mojo::GetProxy(&view));
+  view_manager_->RegisterView(view.Pass(), mojo::GetProxy(&view_host_),
+                              callback);
+
   InitServiceRegistry();
-  InitViewport();
+  Load(response_.Pass());
 }
 
-DocumentView::~DocumentView() {
-}
+DocumentView::~DocumentView() {}
 
 base::WeakPtr<DocumentView> DocumentView::GetWeakPtr() {
   return weak_factory_.GetWeakPtr();
 }
 
-void DocumentView::InitViewport() {
-  mojo::ServiceProviderPtr viewport_service_provider;
-  shell_->ConnectToApplication("mojo:native_viewport_service",
-                               mojo::GetProxy(&viewport_service_provider),
-                               nullptr);
-  mojo::ConnectToService(viewport_service_provider.get(), &viewport_service_);
-  viewport_service_.set_connection_error_handler(
-      base::Bind(&DocumentView::OnViewportConnectionError,
-                 base::Unretained(this)));
-
-  mojo::NativeViewportEventDispatcherPtr dispatcher;
-  event_dispatcher_binding_.Bind(GetProxy(&dispatcher));
-  viewport_service_->SetEventDispatcher(dispatcher.Pass());
-
-  // Match the Nexus 5 aspect ratio initially.
-  auto size = mojo::Size::New();
-  size->width = 320;
-  size->height = 640;
-
-  auto requested_configuration = mojo::SurfaceConfiguration::New();
-
-  viewport_service_->Create(size.Clone(),
-                            requested_configuration.Pass(),
-                            base::Bind(&DocumentView::OnViewportCreated,
-                                       base::Unretained(this)));
-}
-
-void DocumentView::OnViewportConnectionError() {
+void DocumentView::OnViewConnectionError() {
   delete this;
 }
 
-void DocumentView::OnViewportCreated(mojo::ViewportMetricsPtr metrics) {
-  viewport_service_->Show();
-  mojo::ContextProviderPtr onscreen_context_provider;
-  viewport_service_->GetContextProvider(GetProxy(&onscreen_context_provider));
-
-  mojo::ServiceProviderPtr surfaces_service_provider;
-  shell_->ConnectToApplication("mojo:surfaces_service",
-                               mojo::GetProxy(&surfaces_service_provider),
-                               nullptr);
-  mojo::DisplayFactoryPtr display_factory;
-  mojo::ConnectToService(surfaces_service_provider.get(), &display_factory);
-  display_factory->Create(onscreen_context_provider.Pass(),
-                          nullptr, GetProxy(&display_));
-
-  Load(response_.Pass());
-  UpdateViewportMetrics(metrics.Pass());
-  RequestUpdatedViewportMetrics();
-}
-
-void DocumentView::OnViewportMetricsChanged(mojo::ViewportMetricsPtr metrics) {
-  UpdateViewportMetrics(metrics.Pass());
-  RequestUpdatedViewportMetrics();
-}
-
-void DocumentView::RequestUpdatedViewportMetrics() {
-  viewport_service_->RequestMetrics(
-      base::Bind(&DocumentView::OnViewportMetricsChanged,
-                 base::Unretained(this)));
-}
-
 void DocumentView::LoadFromSnapshotStream(
-    String name, mojo::ScopedDataPipeConsumerHandle snapshot) {
+    String name,
+    mojo::ScopedDataPipeConsumerHandle snapshot) {
   if (sky_view_) {
     sky_view_->RunFromSnapshot(name, snapshot.Pass());
   }
@@ -144,9 +99,9 @@ void DocumentView::Load(mojo::URLResponsePtr response) {
 
   String name = String::fromUTF8(response->url);
   sky_view_->CreateView(name);
-  AssetUnpackerJob* unpacker = new AssetUnpackerJob(
-      mojo::GetProxy(&root_bundle_),
-      base::MessageLoop::current()->task_runner());
+  AssetUnpackerJob* unpacker =
+      new AssetUnpackerJob(mojo::GetProxy(&root_bundle_),
+                           base::MessageLoop::current()->task_runner());
   unpacker->Unpack(response->body.Pass());
   root_bundle_->GetAsStream(kSnapshotKey,
                             base::Bind(&DocumentView::LoadFromSnapshotStream,
@@ -195,7 +150,8 @@ mojo::Shell* DocumentView::GetShell() {
 
 void DocumentView::BeginFrame(base::TimeTicks frame_time) {
   if (sky_view_) {
-    std::unique_ptr<compositor::LayerTree> layer_tree = sky_view_->BeginFrame(frame_time);
+    std::unique_ptr<compositor::LayerTree> layer_tree =
+        sky_view_->BeginFrame(frame_time);
     if (layer_tree)
       current_layer_tree_ = std::move(layer_tree);
     root_layer_->SetSize(sky_view_->display_metrics().physical_size);
@@ -203,29 +159,12 @@ void DocumentView::BeginFrame(base::TimeTicks frame_time) {
 }
 
 void DocumentView::OnSurfaceIdAvailable(mojo::SurfaceIdPtr surface_id) {
-  mojo::FramePtr frame = mojo::Frame::New();
-  frame->resources.resize(0u);
-
-  mojo::Rect bounds;
-  bounds.width = viewport_metrics_->size->width;
-  bounds.height = viewport_metrics_->size->height;
-  mojo::PassPtr pass = mojo::CreateDefaultPass(1, bounds);
-  pass->shared_quad_states.push_back(mojo::CreateDefaultSQS(
-      *viewport_metrics_->size));
-
-  mojo::QuadPtr quad = mojo::Quad::New();
-  quad->material = mojo::Material::SURFACE_CONTENT;
-  quad->rect = bounds.Clone();
-  quad->opaque_rect = bounds.Clone();
-  quad->visible_rect = bounds.Clone();
-  quad->shared_quad_state_index = 0u;
-  quad->surface_quad_state = mojo::SurfaceQuadState::New();
-  quad->surface_quad_state->surface = surface_id.Pass();
-
-  pass->quads.push_back(quad.Pass());
-  frame->passes.push_back(pass.Pass());
-
-  display_->SubmitFrame(frame.Pass(), base::Bind(&base::DoNothing));
+  surface_id_ = surface_id.Pass();
+  if (pending_layout_callback_.is_null()) {
+    view_host_->RequestLayout();
+  } else {
+    FinishLayout();
+  }
 }
 
 void DocumentView::PaintContents(SkCanvas* canvas, const gfx::Rect& clip) {
@@ -244,32 +183,42 @@ mojo::NavigatorHost* DocumentView::NavigatorHost() {
   return navigator_host_.get();
 }
 
-void DocumentView::UpdateViewportMetrics(
-    mojo::ViewportMetricsPtr viewport_metrics) {
-  viewport_metrics_ = viewport_metrics.Pass();
+void DocumentView::OnLayout(mojo::ui::ViewLayoutParamsPtr layout_params,
+                            mojo::Array<uint32_t> children_needing_layout,
+                            const OnLayoutCallback& callback) {
+  DCHECK(sky_view_);
 
-  if (sky_view_) {
-    blink::SkyDisplayMetrics metrics;
-    metrics.physical_size = blink::WebSize(
-        viewport_metrics_->size->width,
-        viewport_metrics_->size->height);
-    metrics.device_pixel_ratio = viewport_metrics_->device_pixel_ratio;
-    sky_view_->SetDisplayMetrics(metrics);
-  }
+  size_.width = layout_params->constraints->max_width;
+  size_.height = layout_params->constraints->max_height;
+  device_pixel_ratio_ = layout_params->device_pixel_ratio;
+
+  blink::SkyDisplayMetrics metrics;
+  metrics.physical_size = blink::WebSize(size_.width, size_.height);
+  metrics.device_pixel_ratio = layout_params->device_pixel_ratio;
+  sky_view_->SetDisplayMetrics(metrics);
+
+  pending_layout_callback_ = callback;
+  FinishLayout();
 }
 
-void DocumentView::OnEvent(mojo::EventPtr event,
-                           const mojo::Callback<void()>& callback) {
-  HandleInputEvent(event.Pass());
-  callback.Run();
+void DocumentView::FinishLayout() {
+  if (pending_layout_callback_.is_null() || !surface_id_.get())
+    return;
+
+  mojo::ui::ViewLayoutInfoPtr info = mojo::ui::ViewLayoutInfo::New();
+  info->size = size_.Clone();
+  info->surface_id = surface_id_->Clone();
+  pending_layout_callback_.Run(info.Pass());
+  pending_layout_callback_.reset();
 }
+
+void DocumentView::OnChildUnavailable(
+    uint32_t child_key,
+    const OnChildUnavailableCallback& callback) {}
 
 void DocumentView::HandleInputEvent(mojo::EventPtr event) {
-  if (!viewport_metrics_)
-    return;
-  float device_pixel_ratio = viewport_metrics_->device_pixel_ratio;
   scoped_ptr<blink::WebInputEvent> web_event =
-      ConvertEvent(event, device_pixel_ratio);
+      ConvertEvent(event, device_pixel_ratio_);
   if (!web_event)
     return;
 

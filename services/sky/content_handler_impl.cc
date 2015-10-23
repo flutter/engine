@@ -5,13 +5,56 @@
 #include "services/sky/content_handler_impl.h"
 
 #include "base/bind.h"
+#include "mojo/common/binding_set.h"
 #include "mojo/public/cpp/application/connect.h"
+#include "mojo/public/cpp/application/service_provider_impl.h"
 #include "mojo/public/cpp/bindings/strong_binding.h"
 #include "mojo/public/cpp/utility/run_loop.h"
 #include "mojo/services/network/interfaces/network_service.mojom.h"
+#include "mojo/services/ui/views/interfaces/view_provider.mojom.h"
 #include "services/sky/document_view.h"
 
 namespace sky {
+
+class SkyViewProvider : public mojo::InterfaceFactory<mojo::ui::ViewProvider>,
+                        public mojo::ui::ViewProvider {
+ public:
+  SkyViewProvider(mojo::InterfaceRequest<mojo::ServiceProvider> services,
+                  mojo::URLResponsePtr response,
+                  mojo::Shell* shell)
+      : service_provider_(services.Pass()),
+        response_(response.Pass()),
+        shell_(shell) {
+    service_provider_.AddService(this);
+  }
+
+  ~SkyViewProvider() override {}
+
+  // InterfaceFactory:
+  void Create(mojo::ApplicationConnection* connection,
+              mojo::InterfaceRequest<mojo::ui::ViewProvider> request) override {
+    bindings_.AddBinding(this, request.Pass());
+  }
+
+  // ViewProvider:
+  void CreateView(mojo::InterfaceRequest<mojo::ServiceProvider> services,
+                  mojo::ServiceProviderPtr exposed_services,
+                  const CreateViewCallback& callback) override {
+    // TODO(jeffbrown): We shouldn't crash if a second request to create
+    // a view comes in.  Ideally we should just be able to make a second
+    // instance of the view using the same content we just downloaded from
+    // the network.  Fix this later.
+    DCHECK(response_.get());
+    new DocumentView(services.Pass(), exposed_services.Pass(), response_.Pass(),
+                     shell_, callback);
+  }
+
+ private:
+  mojo::ServiceProviderImpl service_provider_;
+  mojo::URLResponsePtr response_;
+  mojo::Shell* shell_;
+  mojo::BindingSet<mojo::ui::ViewProvider> bindings_;
+};
 
 class SkyApplication : public mojo::Application {
  public:
@@ -56,9 +99,7 @@ class SkyApplication : public mojo::Application {
     }
   }
 
-  void RequestQuit() override {
-    mojo::RunLoop::current()->Quit();
-  }
+  void RequestQuit() override { mojo::RunLoop::current()->Quit(); }
 
  private:
   void OnResponseReceived(
@@ -66,8 +107,7 @@ class SkyApplication : public mojo::Application {
       mojo::InterfaceRequest<mojo::ServiceProvider> services,
       mojo::ServiceProviderPtr exposed_services,
       mojo::URLResponsePtr response) {
-    new DocumentView(services.Pass(), exposed_services.Pass(), response.Pass(),
-                     shell_.get());
+    new SkyViewProvider(services.Pass(), response.Pass(), shell_.get());
   }
 
   mojo::StrongBinding<mojo::Application> binding_;
@@ -78,11 +118,9 @@ class SkyApplication : public mojo::Application {
 
 ContentHandlerImpl::ContentHandlerImpl(
     mojo::InterfaceRequest<mojo::ContentHandler> request)
-    : binding_(this, request.Pass()) {
-}
+    : binding_(this, request.Pass()) {}
 
-ContentHandlerImpl::~ContentHandlerImpl() {
-}
+ContentHandlerImpl::~ContentHandlerImpl() {}
 
 void ContentHandlerImpl::StartApplication(
     mojo::InterfaceRequest<mojo::Application> application,
