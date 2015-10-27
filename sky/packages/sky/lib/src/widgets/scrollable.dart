@@ -16,6 +16,7 @@ import 'framework.dart';
 import 'gesture_detector.dart';
 import 'homogeneous_viewport.dart';
 import 'mixed_viewport.dart';
+import 'navigator.dart';
 
 // The gesture velocity properties are pixels/second, config min,max limits are pixels/ms
 const double _kMillisecondsPerSecond = 1000.0;
@@ -54,15 +55,25 @@ abstract class Scrollable extends StatefulComponent {
 abstract class ScrollableState<T extends Scrollable> extends State<T> {
   void initState() {
     super.initState();
-    if (config.initialScrollOffset is double)
-      _scrollOffset = config.initialScrollOffset;
     _animation = new SimulationStepper(_setScrollOffset);
+    if (config.key != null) {
+      _route = Route.of(context);
+      if (_route != null) {
+        double lastOffset = _route.readState(config.key);
+        if (lastOffset != null)
+          _scrollOffset = lastOffset;
+      }
+    }
+    if (_scrollOffset == null && config.initialScrollOffset != null)
+      _scrollOffset = config.initialScrollOffset;
   }
+
+  Route _route;
 
   SimulationStepper _animation;
 
-  double _scrollOffset = 0.0;
   double get scrollOffset => _scrollOffset;
+  double _scrollOffset = 0.0;
 
   Offset get scrollOffsetVector {
     if (config.scrollDirection == ScrollDirection.horizontal)
@@ -178,6 +189,8 @@ abstract class ScrollableState<T extends Scrollable> extends State<T> {
     setState(() {
       _scrollOffset = newScrollOffset;
     });
+    if (_route != null)
+      _route.writeState(config.key, _scrollOffset);
     dispatchOnScroll();
   }
 
