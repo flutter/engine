@@ -13,6 +13,7 @@ class StockList extends StatelessComponent {
 
   Widget build(BuildContext context) {
     return new ScrollableList<Stock>(
+      key: new Key('stock_list'),
       items: stocks,
       itemExtent: StockRow.kHeight,
       itemBuilder: (BuildContext context, Stock stock) {

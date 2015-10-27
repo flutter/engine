@@ -13,7 +13,7 @@ void main() {
         new MaterialApp(
           routes: <String, RouteBuilder>{
             '/': (RouteArguments args) {
-              navigator = args.navigator;
+              navigator = Navigator.of(args.context);
               return new Container();
             }
           }
@@ -42,7 +42,7 @@ void main() {
         new MaterialApp(
           routes: <String, RouteBuilder>{
             '/': (RouteArguments args) {
-              navigator = args.navigator;
+              navigator = Navigator.of(args.context);
               return new Container();
             }
           }

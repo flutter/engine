@@ -12,7 +12,7 @@ import 'theme.dart';
 class Radio<T> extends StatelessComponent {
   Radio({
     Key key,
-    this.enabled,
+    this.enabled: true,
     this.value,
     this.groupValue,
     this.onChanged

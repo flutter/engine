@@ -7,9 +7,8 @@ part of stocks;
 typedef void ModeUpdater(StockMode mode);
 
 class StockHome extends StatefulComponent {
-  StockHome(this.navigator, this.stocks, this.symbols, this.stockMode, this.modeUpdater);
+  StockHome(this.stocks, this.symbols, this.stockMode, this.modeUpdater);
 
-  final NavigatorState navigator;
   final Map<String, Stock> stocks;
   final List<String> symbols;
   final StockMode stockMode;
@@ -25,7 +24,7 @@ class StockHomeState extends State<StockHome> {
   String _searchQuery;
 
   void _handleSearchBegin() {
-    config.navigator.pushState(this, (_) {
+    Navigator.of(context).pushState(this, (_) {
       setState(() {
         _isSearching = false;
         _searchQuery = null;
@@ -38,10 +37,10 @@ class StockHomeState extends State<StockHome> {
 
   void _handleSearchEnd() {
     assert(() {
-      final StateRoute currentRoute = config.navigator.currentRoute;
+      final StateRoute currentRoute = Navigator.of(context).currentRoute;
       return currentRoute.owner == this;
     });
-    config.navigator.pop();
+    Navigator.of(context).pop();
   }
 
   void _handleSearchQueryChanged(String query) {
@@ -93,13 +92,13 @@ class StockHomeState extends State<StockHome> {
                     child: new Text('USE IT'),
                     enabled: false,
                     onPressed: () {
-                      config.navigator.pop(false);
+                      Navigator.of(context).pop(false);
                     }
                   ),
                   new FlatButton(
                     child: new Text('OH WELL'),
                     onPressed: () {
-                      config.navigator.pop(false);
+                      Navigator.of(context).pop(false);
                     }
                   ),
                 ]
@@ -143,8 +142,8 @@ class StockHomeState extends State<StockHome> {
   }
 
   void _handleShowSettings() {
-    config.navigator.pop();
-    config.navigator.pushNamed('/settings');
+    Navigator.of(context).pop();
+    Navigator.of(context).pushNamed('/settings');
   }
 
   Widget buildToolBar() {
@@ -194,7 +193,7 @@ class StockHomeState extends State<StockHome> {
       onOpen: (Stock stock, Key arrowKey) {
         Set<Key> mostValuableKeys = new Set<Key>();
         mostValuableKeys.add(arrowKey);
-        config.navigator.pushNamed('/stock/${stock.symbol}', mostValuableKeys: mostValuableKeys);
+        Navigator.of(context).pushNamed('/stock/${stock.symbol}', mostValuableKeys: mostValuableKeys);
       }
     );
   }
@@ -240,7 +239,7 @@ class StockHomeState extends State<StockHome> {
   }
 
   void _handleUndo() {
-    config.navigator.pop();
+    Navigator.of(context).pop();
   }
 
   void _handleStockPurchased() {
