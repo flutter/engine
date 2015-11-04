@@ -5,9 +5,9 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:flutter/http.dart';
 import 'package:mojo/mojo/url_response.mojom.dart';
 
-import 'fetch.dart';
 import 'image_decoder.dart';
 import 'image_resource.dart';
 
