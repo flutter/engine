@@ -3,9 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:mojo/core.dart' as mojo;
+import 'package:mojo/mojo/http_header.mojom.dart' as mojo;
 import 'package:mojo/mojo/url_request.mojom.dart' as mojo;
 import 'package:mojo/mojo/url_response.mojom.dart' as mojo;
 import 'package:mojo_services/mojo/network_service.mojom.dart' as mojo;
@@ -28,8 +30,13 @@ Future<mojo.UrlResponse> fetchUrl(String url, { String method: "GET", String bod
   mojo.UrlRequest request = new mojo.UrlRequest()
     ..url = Uri.base.resolve(url).toString()
     ..method = method
-    ..body = body
     ..autoFollowRedirects = true;
+  if (body != null) {
+    mojo.MojoDataPipe pipe = new mojo.MojoDataPipe();
+    request.body = <mojo.MojoDataPipeConsumer>[pipe.consumer];
+    ByteData data = new ByteData.view(UTF8.encode(body).buffer);
+    mojo.DataPipeFiller.fillHandle(pipe.producer, data);
+  }
   try {
     _networkService.ptr.createUrlLoader(loader);
     return (await loader.ptr.start(request)).response;
