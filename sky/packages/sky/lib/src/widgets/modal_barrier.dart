@@ -39,8 +39,8 @@ class ModalBarrier extends StatelessComponent {
   }
 }
 
-class _AnimatedModalBarrier extends StatelessComponent {
-  _AnimatedModalBarrier({
+class AnimatedModalBarrier extends StatelessComponent {
+  AnimatedModalBarrier({
     Key key,
     this.color,
     this.performance
@@ -103,20 +103,20 @@ class ModalPosition {
 }
 
 abstract class ModalRoute extends TransitionRoute {
+
   ModalPosition get position => null;
   Color get barrierColor => _kTransparent;
-  Widget buildModalWidget(BuildContext context);
 
-  Widget _buildModalBarrier(BuildContext context) {
-    return new _AnimatedModalBarrier(
-      color: new AnimatedColorValue(_kTransparent, end: barrierColor, curve: Curves.ease),
-      performance: performance
-    );
+  Widget buildModalBarrier(BuildContext context) {
+    return new ModalBarrier(color: barrierColor);
   }
 
-  Widget _buildModalScope(BuildContext context) {
+  Widget buildModalScope(BuildContext context) {
     return new _ModalScope(route: this, child: buildModalWidget(context));
   }
 
-  List<WidgetBuilder> get builders => <WidgetBuilder>[ _buildModalBarrier, _buildModalScope ];
+  Widget buildModalWidget(BuildContext context);
+
+  List<WidgetBuilder> get builders => <WidgetBuilder>[ buildModalBarrier, buildModalScope ];
+
 }

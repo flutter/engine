@@ -11,6 +11,8 @@ import 'navigator.dart';
 import 'page_storage.dart';
 import 'transitions.dart';
 
+const Color _kTransparent = const Color(0x00000000);
+
 class _PageTransition extends TransitionWithChild {
   _PageTransition({
     Key key,
@@ -105,6 +107,14 @@ class PageRoute extends ModalRoute {
 
   String get name => settings.name;
   Duration get transitionDuration => const Duration(milliseconds: 150);
+
+  Widget buildModalBarrier(BuildContext context) {
+    return new AnimatedModalBarrier(
+      color: new AnimatedColorValue(_kTransparent, end: barrierColor, curve: Curves.ease),
+      performance: performance
+    );
+  }
+
   Widget buildModalWidget(BuildContext context) => new _Page(key: pageKey, route: this);
 
   final PageStorageBucket _storageBucket = new PageStorageBucket();
