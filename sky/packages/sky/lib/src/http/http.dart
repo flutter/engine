@@ -5,7 +5,6 @@
 /// A [Future]-based library for making HTTP requests. It's based on
 /// Dart's `http` package, but we've removed the dependency on mirrors
 /// and added a `mojo`-based HTTP client.
-library http;
 
 import 'dart:async';
 import 'dart:convert';
@@ -16,19 +15,11 @@ import 'response.dart';
 
 /// Sends an HTTP HEAD request with the given headers to the given URL, which
 /// can be a [Uri] or a [String].
-///
-/// This automatically initializes a new [Client] and closes that client once
-/// the request is complete. If you're planning on making multiple requests to
-/// the same server, you should use a single [Client] for all of those requests.
 Future<Response> head(url) =>
   _withClient((client) => client.head(url));
 
 /// Sends an HTTP GET request with the given headers to the given URL, which can
 /// be a [Uri] or a [String].
-///
-/// This automatically initializes a new [Client] and closes that client once
-/// the request is complete. If you're planning on making multiple requests to
-/// the same server, you should use a single [Client] for all of those requests.
 Future<Response> get(url) =>
   _withClient((client) => client.get(url));
 
@@ -36,49 +27,25 @@ Future<Response> get(url) =>
 /// which can be a [Uri] or a [String].
 ///
 /// [body] sets the body of the request.
-Future<Response> post(url, {body}) =>
+Future<Response> post(url, { String body }) =>
   _withClient((client) => client.post(url, body: body));
 
 /// Sends an HTTP PUT request with the given headers and body to the given URL,
 /// which can be a [Uri] or a [String].
 ///
-/// [body] sets the body of the request. It can be a [String], a [List<int>] or
-/// a [Map<String, String>]. If it's a String, it's encoded using [encoding] and
-/// used as the body of the request. The content-type of the request will
-/// default to "text/plain".
-Future<Response> put(url, {String body}) =>
+/// [body] sets the body of the request.
+Future<Response> put(url, { String body }) =>
   _withClient((client) => client.put(url, body: body));
 
 /// Sends an HTTP PATCH request with the given headers and body to the given
 /// URL, which can be a [Uri] or a [String].
 ///
-/// [body] sets the body of the request. It can be a [String], a [List<int>] or
-/// a [Map<String, String>]. If it's a String, it's encoded using [encoding] and
-/// used as the body of the request. The content-type of the request will
-/// default to "text/plain".
-///
-/// If [body] is a List, it's used as a list of bytes for the body of the
-/// request.
-///
-/// If [body] is a Map, it's encoded as form fields using [encoding]. The
-/// content-type of the request will be set to
-/// `"application/x-www-form-urlencoded"`; this cannot be overridden.
-///
-/// [encoding] defaults to [UTF8].
-///
-/// For more fine-grained control over the request, use [Request] or
-/// [StreamedRequest] instead.
-Future<Response> patch(url, { body }) =>
+/// [body] sets the body of the request.
+Future<Response> patch(url, { String body }) =>
   _withClient((client) => client.patch(url, body: body));
 
 /// Sends an HTTP DELETE request with the given headers to the given URL, which
 /// can be a [Uri] or a [String].
-///
-/// This automatically initializes a new [Client] and closes that client once
-/// the request is complete. If you're planning on making multiple requests to
-/// the same server, you should use a single [Client] for all of those requests.
-///
-/// For more fine-grained control over the request, use [Request] instead.
 Future<Response> delete(url) =>
   _withClient((client) => client.delete(url));
 
@@ -88,13 +55,6 @@ Future<Response> delete(url) =>
 ///
 /// The Future will emit a [ClientException] if the response doesn't have a
 /// success status code.
-///
-/// This automatically initializes a new [Client] and closes that client once
-/// the request is complete. If you're planning on making multiple requests to
-/// the same server, you should use a single [Client] for all of those requests.
-///
-/// For more fine-grained control over the request and response, use [Request]
-/// instead.
 Future<String> read(url) =>
   _withClient((client) => client.read(url));
 
@@ -104,13 +64,6 @@ Future<String> read(url) =>
 ///
 /// The Future will emit a [ClientException] if the response doesn't have a
 /// success status code.
-///
-/// This automatically initializes a new [Client] and closes that client once
-/// the request is complete. If you're planning on making multiple requests to
-/// the same server, you should use a single [Client] for all of those requests.
-///
-/// For more fine-grained control over the request and response, use [Request]
-/// instead.
 Future<Uint8List> readBytes(url) =>
   _withClient((client) => client.readBytes(url));
 

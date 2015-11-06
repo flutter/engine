@@ -12,4 +12,5 @@
 library http;
 
 export 'src/http/http.dart';
+export 'src/http/mojo_client.dart';
 export 'src/http/response.dart';
