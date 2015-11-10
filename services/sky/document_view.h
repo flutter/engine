@@ -8,16 +8,17 @@
 #include "base/callback.h"
 #include "base/memory/weak_ptr.h"
 #include "mojo/public/cpp/application/lazy_interface_ptr.h"
-#include "mojo/public/cpp/application/service_provider_impl.h"
 #include "mojo/public/cpp/bindings/strong_binding.h"
 #include "mojo/public/interfaces/application/application.mojom.h"
 #include "mojo/services/asset_bundle/interfaces/asset_bundle.mojom.h"
 #include "mojo/services/content_handler/interfaces/content_handler.mojom.h"
-#include "mojo/services/native_viewport/interfaces/native_viewport.mojom.h"
+#include "mojo/services/input_events/interfaces/input_events.mojom.h"
 #include "mojo/services/navigation/interfaces/navigation.mojom.h"
 #include "mojo/services/network/interfaces/url_loader.mojom.h"
 #include "mojo/services/service_registry/interfaces/service_registry.mojom.h"
-#include "mojo/services/surfaces/interfaces/display.mojom.h"
+#include "mojo/services/ui/views/interfaces/views.mojom.h"
+#include "mojo/services/ui/views/interfaces/view_manager.mojom.h"
+#include "mojo/services/ui/views/interfaces/view_provider.mojom.h"
 #include "services/sky/compositor/layer_client.h"
 #include "services/sky/compositor/layer_host_client.h"
 #include "sky/compositor/layer_tree.h"
@@ -34,14 +35,15 @@ class TextureLayer;
 
 class DocumentView : public blink::ServiceProvider,
                      public blink::SkyViewClient,
-                     public mojo::NativeViewportEventDispatcher,
+                     public mojo::ui::View,
                      public sky::LayerClient,
                      public sky::LayerHostClient {
  public:
   DocumentView(mojo::InterfaceRequest<mojo::ServiceProvider> exported_services,
                mojo::ServiceProviderPtr imported_services,
                mojo::URLResponsePtr response,
-               mojo::Shell* shell);
+               mojo::Shell* shell,
+               const mojo::ui::ViewProvider::CreateViewCallback& callback);
   ~DocumentView() override;
 
   base::WeakPtr<DocumentView> GetWeakPtr();
@@ -75,14 +77,15 @@ class DocumentView : public blink::ServiceProvider,
   // Services methods:
   mojo::NavigatorHost* NavigatorHost() override;
 
-  // NativeViewportEventDispatcher methods:
-  void OnEvent(mojo::EventPtr event,
-               const mojo::Callback<void()>& callback) override;
+  // View methods:
+  void OnLayout(mojo::ui::ViewLayoutParamsPtr layout_params,
+                mojo::Array<uint32_t> children_needing_layout,
+                const OnLayoutCallback& callback) override;
+  void OnChildUnavailable(uint32_t child_key,
+                          const OnChildUnavailableCallback& callback) override;
 
-  void OnViewportConnectionError();
-  void OnViewportCreated(mojo::ViewportMetricsPtr metrics);
-  void OnViewportMetricsChanged(mojo::ViewportMetricsPtr metrics);
-  void RequestUpdatedViewportMetrics();
+  void OnViewConnectionError();
+  void FinishLayout();
 
   void Load(mojo::URLResponsePtr response);
   float GetDevicePixelRatio() const;
@@ -91,17 +94,13 @@ class DocumentView : public blink::ServiceProvider,
   void LoadFromSnapshotStream(String name,
                               mojo::ScopedDataPipeConsumerHandle snapshot);
 
-  void UpdateViewportMetrics(mojo::ViewportMetricsPtr viewport_metrics);
-
   void HandleInputEvent(mojo::EventPtr event);
 
   void InitServiceRegistry();
-  void InitViewport();
 
   mojo::URLResponsePtr response_;
-  mojo::ServiceProviderImpl exported_services_;
+  mojo::InterfaceRequest<mojo::ServiceProvider> exported_services_;
   mojo::ServiceProviderPtr imported_services_;
-  mojo::NativeViewportPtr viewport_service_;
   mojo::Shell* shell_;
   mojo::asset_bundle::AssetBundlePtr root_bundle_;
   mojo::NavigatorHostPtr navigator_host_;
@@ -109,13 +108,20 @@ class DocumentView : public blink::ServiceProvider,
   scoped_ptr<DartLibraryProviderImpl> library_provider_;
   scoped_ptr<LayerHost> layer_host_;
   scoped_refptr<TextureLayer> root_layer_;
-  std::unique_ptr<compositor::LayerTree> current_layer_tree_;  // TODO(abarth): Integrate //sky/compositor and //services/sky/compositor.
+  std::unique_ptr<compositor::LayerTree>
+      current_layer_tree_;  // TODO(abarth): Integrate //sky/compositor and
+                            // //services/sky/compositor.
   compositor::PaintContext paint_context_;
   RasterizerBitmap* bitmap_rasterizer_;  // Used for pixel tests.
   mojo::ServiceRegistryPtr service_registry_;
-  mojo::Binding<NativeViewportEventDispatcher> event_dispatcher_binding_;
-  mojo::ViewportMetricsPtr viewport_metrics_;
-  mojo::DisplayPtr display_;
+
+  mojo::Binding<mojo::ui::View> view_binding_;
+  mojo::ui::ViewManagerPtr view_manager_;
+  mojo::ui::ViewHostPtr view_host_;
+  OnLayoutCallback pending_layout_callback_;
+  mojo::Size size_;
+  float device_pixel_ratio_;
+  mojo::SurfaceIdPtr surface_id_;
 
   base::WeakPtrFactory<DocumentView> weak_factory_;
 
