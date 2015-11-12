@@ -1,0 +1,10 @@
+name: mojo_tools
+version: 0.0.1
+description: Tools for building Mojo applications in Dart
+homepage: https://github.com/domokit/mojo
+author: Chromium Authors <mojo-dev@googlegroups.com>
+dependencies:
+  args: ^0.13.0
+  path: ^1.3.0
+  yaml: ^2.1.3
+  test: ^0.12.0

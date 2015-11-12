@@ -1,0 +1,10 @@
+author: Chromium Authors <mojo-dev@googlegroups.com>
+dependencies:
+  mojo: any
+  test: ^0.12.3+7
+description: Test harness for mojo applications
+environment:
+  sdk: '>=1.9.0 <2.0.0'
+homepage: https://github.com/domokit/mojo
+name: mojo_apptest
+version: 0.2.8
