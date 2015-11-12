@@ -1,0 +1,28 @@
+# Copyright 2015 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//mojo/public/dart/rules.gni")
+
+dart_pkg("mojom") {
+  libs = [
+    "bin/mojom.dart",
+    "lib/src/generate.dart",
+    "lib/src/command_runner.dart",
+    "lib/src/commands/check.dart",
+    "lib/src/commands/gen.dart",
+    "lib/src/commands/mojom_command.dart",
+    "lib/src/commands/single.dart",
+    "lib/src/utils.dart",
+    "test/generate_test.dart",
+  ]
+  sources = [
+    "CHANGELOG.md",
+    "README.md",
+    "lib/src/mojom_finder.dart",
+    "pubspec.yaml",
+  ]
+  deps = [
+    "//mojo/public/dart",
+  ]
+}
