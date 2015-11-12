@@ -43,6 +43,7 @@ template("sky_precompilation_sdk") {
       "//sky/build/sdk_xcode_harness/FlutterApplication",
       "//sky/build/sdk_xcode_harness/FlutterApplication.xcodeproj",
       "//sky/build/sdk_xcode_harness/Runner",
+      "//sky/build/sdk_xcode_harness/.gitignore",
     ]
     outputs = [  "$sdk_dir/{{source_file_part}}"  ]
   }
@@ -81,7 +82,8 @@ template("sky_precompilation_sdk") {
     variables = "target_arch=$target_cpu"
   }
 
-  group(target_name) {
+  copy_all_gen_target_name = target_name + "_copyall"
+  group(copy_all_gen_target_name) {
     deps = [
       ":$snapshotter_copy_gen_target_name",
       ":embedder_entry_points",
@@ -91,5 +93,31 @@ template("sky_precompilation_sdk") {
       ":copy_sdk_xcode_harness",
       ":$copy_config_gen_target_name",
     ]
+  }
+
+  sdk_zip_gen_target_name = target_name + "_zip"
+  action(sdk_zip_gen_target_name) {
+    zip_path = "$root_out_dir/$sdk_name.zip"
+    script = "//sky/build/zip_xcodeproj.py"
+    depfile = "$target_gen_dir/$sdk_zip_gen_target_name.d"
+    outputs = [
+      depfile,
+      zip_path,
+    ]
+    args = [
+      "--depfile",
+      rebase_path(depfile, root_build_dir),
+      "--input",
+      rebase_path(sdk_dir),
+      "--output",
+      rebase_path(zip_path),
+      "--basepath",
+      rebase_path(sdk_dir),
+    ]
+    deps = [  ":$copy_all_gen_target_name"  ]
+  }
+
+  group(target_name) {
+    deps = [  ":$sdk_zip_gen_target_name"  ]
   }
 }
