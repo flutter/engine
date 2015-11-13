@@ -1,0 +1,8 @@
+author: Chromium Authors <mojo-dev@googlegroups.com>
+dependencies:
+  mojo: any
+  mojom: any
+description: Generated bindings for mojo services
+homepage: https://github.com/domokit/mojo
+name: mojo_services
+version: 0.4.5
