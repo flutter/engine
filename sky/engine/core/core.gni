@@ -263,6 +263,7 @@ core_dart_files = get_path_info([
                                   "dart/hooks.dart",
                                   "dart/natives.dart",
                                   "dart/lerp.dart",
+                                  "dart/lifecycle_hooks.dart",
                                   "dart/painting.dart",
                                   "dart/text.dart",
                                   "dart/tracing.dart",

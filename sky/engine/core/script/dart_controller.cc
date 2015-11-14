@@ -68,6 +68,16 @@ DartController::~DartController() {
   if (dom_dart_state_) {
     // Don't use a DartIsolateScope here since we never exit the isolate.
     Dart_EnterIsolate(dom_dart_state_->isolate());
+
+    // Run the framework's shutdown handler.
+    {
+      DartApiScope dart_api_scope;
+      Dart_Handle ui_library = Dart_LookupLibrary(ToDart("dart:ui"));
+      if (!LogIfError(ui_library)) {
+        DartInvokeField(ui_library, "_onShutdown", {});
+      }
+    }
+
     Dart_ShutdownIsolate();
     dom_dart_state_->SetIsolate(nullptr);
     dom_dart_state_ = nullptr;
