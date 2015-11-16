@@ -34,3 +34,9 @@ void _beginFrame(int microseconds) {
   if (window.onBeginFrame != null)
     window.onBeginFrame(new Duration(microseconds: microseconds));
 }
+
+void _onShutdown() {
+  if (lifecycleHooks.onShutdown != null) {
+    lifecycleHooks.onShutdown();
+  }
+}
