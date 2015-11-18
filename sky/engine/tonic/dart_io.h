@@ -13,7 +13,16 @@ class DartIO {
  public:
   static void InitForIsolate();
 
+  static void SetCaptureStdout(bool value);
+  static void SetCaptureStderr(bool value);
+
+  static bool capture_stdout() {
+    return capture_stdout_;
+  }
+
  private:
+  static bool capture_stdout_;
+
   DISALLOW_IMPLICIT_CONSTRUCTORS(DartIO);
 };
 

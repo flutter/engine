@@ -44,6 +44,16 @@ extern const uint8_t* observatory_assets_archive;
 }  // namespace observatory
 }  // namespace dart
 
+namespace dart {
+namespace bin {
+
+extern bool capture_stdio;
+extern bool capture_stdout;
+extern bool capture_stderr;
+
+}  // namespace bin
+}  // namespace dart
+
 namespace blink {
 
 Dart_Handle DartLibraryTagHandler(Dart_LibraryTag tag,
@@ -194,6 +204,32 @@ Dart_Handle GetVMServiceAssetsArchiveCallback() {
       ::dart::observatory::observatory_assets_archive_len);
 }
 
+static const char* kStdoutStreamId = "Stdout";
+static const char* kStderrStreamId = "Stderr";
+
+static bool ServiceStreamListenCallback(const char* stream_id) {
+  if (strcmp(stream_id, kStdoutStreamId) == 0) {
+    dart::bin::capture_stdio = true;
+    dart::bin::capture_stdout = true;
+    return true;
+  } else if (strcmp(stream_id, kStderrStreamId) == 0) {
+    dart::bin::capture_stdio = true;
+    dart::bin::capture_stderr = true;
+    return true;
+  }
+  return false;
+}
+
+static void ServiceStreamCancelCallback(const char* stream_id) {
+  if (strcmp(stream_id, kStdoutStreamId) == 0) {
+    dart::bin::capture_stdout = false;
+  } else if (strcmp(stream_id, kStderrStreamId) == 0) {
+    dart::bin::capture_stderr = false;
+  }
+  dart::bin::capture_stdio =
+      (dart::bin::capture_stdout || dart::bin::capture_stderr);
+}
+
 }  // namespace
 
 #if DART_ALLOW_DYNAMIC_RESOLUTION
@@ -290,6 +326,10 @@ void InitDartVM() {
           nullptr,
           // VM service assets archive
           GetVMServiceAssetsArchiveCallback) == nullptr);
+
+  Dart_SetServiceStreamCallbacks(&ServiceStreamListenCallback,
+                                 &ServiceStreamCancelCallback);
+
   // Wait for load port- ensures handle watcher and service isolates are
   // running.
   Dart_ServiceWaitForLoadPort();
