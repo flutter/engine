@@ -37,9 +37,9 @@ def git_revision(cwd):
 
 
 class Artifact(object):
-    def __init__(self, category, name):
+    def __init__(self, category, path):
         self.category = category
-        self.name = name
+        self.path = path
 
 
 GS_URL = 'gs://mojo/sky/%(category)s/%(config)s/%(commit_hash)s/%(name)s'
@@ -47,31 +47,43 @@ GS_URL = 'gs://mojo/sky/%(category)s/%(config)s/%(commit_hash)s/%(name)s'
 
 ARTIFACTS = {
     'android-arm': [
-        Artifact('shell', 'SkyShell.apk'),
-        Artifact('shell', 'flutter.mojo'),
-        Artifact('shell', 'libflutter_library.so'),
+        Artifact('shell', 'chromium-debug.keystore'),
+        Artifact('shell', 'icudtl.dat'),
+        Artifact('shell', 'dist/shell/SkyShell.apk'),
+        Artifact('shell', 'dist/shell/flutter.mojo'),
+        Artifact('shell', 'dist/shell/libflutter_library.so'),
+        Artifact('shell', 'gen/sky/shell/shell/classes.dex'),
+        Artifact('shell', 'gen/sky/shell/shell/shell/libs/armeabi-v7a/libsky_shell.so'),
     ],
     'linux-x64': [
-        Artifact('shell', 'icudtl.dat'),
-        Artifact('shell', 'sky_shell'),
-        Artifact('shell', 'sky_snapshot'),
-        Artifact('shell', 'flutter.mojo'),
-        Artifact('shell', 'libflutter_library.so'),
+        Artifact('shell', 'dist/shell/icudtl.dat'),
+        Artifact('shell', 'dist/shell/sky_shell'),
+        Artifact('shell', 'dist/shell/sky_snapshot'),
+        Artifact('shell', 'dist/shell/flutter.mojo'),
+        Artifact('shell', 'dist/shell/libflutter_library.so'),
     ]
 }
 
 
+def find_missing_artifacts(config, config_root):
+    result = []
+    for artifact in ARTIFACTS[config]:
+        artifact_path = os.path.join(config_root, artifact.path)
+        if not os.path.exists(artifact_path):
+            result.append(artifact_path)
+    return result
+
+
 def upload_artifacts(dist_root, config, commit_hash):
     for artifact in ARTIFACTS[config]:
-        src = os.path.join(artifact.category, artifact.name)
         dst = GS_URL % {
             'category': artifact.category,
             'config': config,
             'commit_hash': commit_hash,
-            'name': artifact.name,
+            'name': os.path.basename(artifact.path),
         }
-        z = ','.join([ 'mojo', 'dat' ])
-        run(dist_root, ['gsutil', 'cp', '-z', z, src, dst])
+        z = ','.join([ 'mojo', 'dat', 'so', 'dex' ])
+        run(dist_root, ['gsutil', 'cp', '-z', z, artifact.path, dst])
 
 
 def main():
@@ -99,10 +111,10 @@ def main():
     # Derived paths:
     dart_sdk_root = os.path.join(engine_root, 'third_party/dart-sdk/dart-sdk')
     pub_path = os.path.join(dart_sdk_root, 'bin/pub')
-    android_dist_root = os.path.join(engine_root, 'out/android_Release/dist')
-    linux_dist_root = os.path.join(engine_root, 'out/Release/dist')
-    sky_engine_package_root = os.path.join(android_dist_root, 'packages/sky_engine/sky_engine')
-    sky_services_package_root = os.path.join(android_dist_root, 'packages/sky_services/sky_services')
+    android_out_root = os.path.join(engine_root, 'out/android_Release')
+    linux_out_root = os.path.join(engine_root, 'out/Release')
+    sky_engine_package_root = os.path.join(android_out_root, 'dist/packages/sky_engine/sky_engine')
+    sky_services_package_root = os.path.join(android_out_root, 'dist/packages/sky_services/sky_services')
     sky_engine_revision_file = os.path.join(sky_engine_package_root, 'lib', 'REVISION')
 
     run(engine_root, ['sky/tools/gn', '--android', '--release'])
@@ -114,8 +126,19 @@ def main():
     with open(sky_engine_revision_file, 'w') as stream:
         stream.write(commit_hash)
 
-    upload_artifacts(android_dist_root, 'android-arm', commit_hash)
-    upload_artifacts(linux_dist_root, 'linux-x64', commit_hash)
+    configs = [('android-arm', android_out_root),
+               ('linux-x64', linux_out_root)]
+
+    missing_artifacts = []
+    for config, config_root in configs:
+        missing_artifacts.extend(find_missing_artifacts(config, config_root))
+    if missing_artifacts:
+        print ('Build is missing files:\n%s' %
+               '\n'.join('\t%s' % path for path in missing_artifacts))
+        return 1
+
+    for config, config_root in configs:
+        upload_artifacts(config_root, config, commit_hash)
 
     run(sky_engine_package_root, [pub_path, 'publish', '--force'])
     run(sky_services_package_root, [pub_path, 'publish', '--force'])
