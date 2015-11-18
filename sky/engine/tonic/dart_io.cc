@@ -8,16 +8,6 @@
 #include "dart/runtime/include/dart_api.h"
 #include "sky/engine/tonic/dart_converter.h"
 
-namespace dart {
-namespace bin {
-
-extern bool capture_stdio;
-extern bool capture_stdout;
-extern bool capture_stderr;
-
-}  // namespace bin
-}  // namespace dart
-
 namespace blink {
 
 void DartIO::InitForIsolate() {
