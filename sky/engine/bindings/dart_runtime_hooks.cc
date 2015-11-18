@@ -13,12 +13,14 @@
 #include "base/macros.h"
 #include "base/time/time.h"
 #include "dart/runtime/include/dart_api.h"
+#include "dart/runtime/include/dart_tools_api.h"
 #include "sky/engine/core/dom/Microtask.h"
 #include "sky/engine/core/script/dom_dart_state.h"
 #include "sky/engine/tonic/dart_api_scope.h"
 #include "sky/engine/tonic/dart_converter.h"
 #include "sky/engine/tonic/dart_error.h"
 #include "sky/engine/tonic/dart_invoke.h"
+#include "sky/engine/tonic/dart_io.h"
 #include "sky/engine/tonic/dart_isolate_scope.h"
 #include "sky/engine/tonic/dart_library_natives.h"
 #include "sky/engine/tonic/dart_state.h"
@@ -36,6 +38,14 @@ extern "C" {
 extern void syslog(int, const char *, ...);
 }
 #endif
+
+namespace dart {
+namespace bin {
+
+extern bool capture_stdout;
+
+}  // namespace bin
+}  // namespace dart
 
 namespace blink {
 
@@ -151,6 +161,13 @@ void Logger_PrintString(Dart_NativeArguments args) {
 #elif __APPLE__
     syslog(1 /* LOG_ALERT */, "%.*s", (int)length, chars);
 #endif
+    if (dart::bin::capture_stdout) {
+      // For now we report print output on the Stdout stream.
+      uint8_t newline[] = { '\n' };
+      Dart_ServiceSendDataEvent("Stdout", "WriteEvent", chars, length);
+      Dart_ServiceSendDataEvent("Stdout", "WriteEvent",
+                                newline, sizeof(newline));
+    }
   }
 }
 
