@@ -10,6 +10,7 @@
 #include "sky/services/ns_net/network_service_impl.h"
 
 #if TARGET_OS_IPHONE
+#include "sky/services/firebase/ios/firebase_impl.h"
 #include "sky/services/keyboard/ios/keyboard_service_impl.h"
 #include "sky/services/media/ios/media_service_impl.h"
 #include "sky/services/media/ios/media_player_impl.h"
@@ -35,6 +36,7 @@ class PlatformServiceProvider : public mojo::ServiceProvider {
   mojo::StrongBinding<mojo::ServiceProvider> binding_;
   mojo::NetworkServiceFactory network_;
 #if TARGET_OS_IPHONE
+  sky::services::firebase::FirebaseFactory firebase_;
   sky::services::keyboard::KeyboardServiceFactory keyboard_;
   sky::services::media::MediaPlayerFactory media_player_;
   sky::services::media::MediaServiceFactory media_service_;
