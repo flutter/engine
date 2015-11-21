@@ -9,6 +9,7 @@
 #include "mojo/public/c/gpu/MGL/mgl_onscreen.h"
 #include "mojo/skia/gl_bindings_skia.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/utils/SkMatrix44.h"
 
 namespace sky {
 namespace shell {
@@ -43,6 +44,12 @@ void RasterizerMojo::Draw(scoped_ptr<compositor::LayerTree> layer_tree) {
   MGLResizeSurface(layer_tree->frame_size().width(),
                    layer_tree->frame_size().height());
   SkCanvas* canvas = ganesh_canvas_.GetCanvas(0, layer_tree->frame_size());
+#if defined(FNL_MUSL)
+  SkMatrix44 matrix;
+  matrix.preTranslate(0, layer_tree->frame_size().height(), 0);
+  matrix.preScale(1, -1, 1);
+  canvas->setMatrix(matrix);
+#endif
   sky::compositor::PaintContext::ScopedFrame frame =
       paint_context_.AcquireFrame(*canvas);
   canvas->clear(SK_ColorBLACK);
