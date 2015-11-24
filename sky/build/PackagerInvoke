@@ -22,6 +22,9 @@ AssertExists() {
 }
 
 PackageProject() {
+
+  local PATH=${DART_SDK}/bin:${PATH}
+
   # Check that the project path was specified
   if [[ -z "$1" ]]; then
     EchoError "Project path not specified"
