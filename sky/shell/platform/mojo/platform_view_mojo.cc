@@ -172,7 +172,7 @@ void PlatformViewMojo::Create(
     GetProxy(&keyboard_service_provider),
     nullptr);
 
-#if defined(OS_LINUX)
+#if defined(OS_LINUX) || defined(FNL_MUSL)
   keyboard::KeyboardServiceFactoryPtr factory;
   mojo::ConnectToService(keyboard_service_provider.get(), &factory);
   factory->CreateKeyboardService(GetProxy(&key_event_dispatcher_), request.Pass());
