@@ -334,7 +334,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\npushd ${FLUTTER_APPLICATION_PATH}\npub get\npopd\n";
+			shellScript = "set -e\npushd ${FLUTTER_APPLICATION_PATH}\n${DART_SDK}/bin/pub get\npopd\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -476,12 +476,13 @@
 		9E07CF8F1BE7F4D200BCD8DE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				DART_SDK = "${SRCROOT}/../../../third_party/dart-sdk/dart-sdk";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FLUTTER_APPLICATION_PATH = path/to/application;
-				FLUTTER_ROOT = path/to/flutter/repo;
+				FLUTTER_APPLICATION_PATH = "${SRCROOT}/../../../../../flutter/examples/hello_world/";
+				FLUTTER_ROOT = "${SRCROOT}/../../../../../flutter";
 				INFOPLIST_FILE = FlutterApplication/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
@@ -495,12 +496,13 @@
 		9E07CF901BE7F4D200BCD8DE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				DART_SDK = "${SRCROOT}/../../../third_party/dart-sdk/dart-sdk";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FLUTTER_APPLICATION_PATH = path/to/application;
-				FLUTTER_ROOT = path/to/flutter/repo;
+				FLUTTER_APPLICATION_PATH = "${SRCROOT}/../../../../../flutter/examples/hello_world/";
+				FLUTTER_ROOT = "${SRCROOT}/../../../../../flutter";
 				INFOPLIST_FILE = FlutterApplication/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
