@@ -44,4 +44,10 @@ mojo_native_application("mojo") {
     "//third_party/icu",
     "//url",
   ]
+
+  if (is_android) {
+    deps += [
+      "//mojo/services/android/interfaces",
+    ]
+  }
 }

@@ -10,6 +10,7 @@
 #include "mojo/public/interfaces/application/service_provider.mojom.h"
 #include "mojo/public/interfaces/application/shell.mojom.h"
 #include "mojo/services/asset_bundle/interfaces/asset_bundle.mojom.h"
+#include "mojo/services/android/interfaces/activity.mojom.h"
 #include "mojo/services/keyboard/interfaces/keyboard.mojom.h"
 #include "mojo/services/native_viewport/interfaces/native_viewport.mojom.h"
 #include "sky/shell/platform_view.h"
@@ -19,7 +20,8 @@ namespace shell {
 
 class PlatformViewMojo : public PlatformView,
                          public mojo::NativeViewportEventDispatcher,
-                         public mojo::InterfaceFactory<::keyboard::KeyboardService> {
+                         public mojo::InterfaceFactory<activity::Activity>,
+                         public mojo::InterfaceFactory<keyboard::KeyboardService> {
  public:
   explicit PlatformViewMojo(const Config& config);
   ~PlatformViewMojo() override;
@@ -39,10 +41,15 @@ class PlatformViewMojo : public PlatformView,
 
   pointer::PointerPtr CreateEvent(pointer::PointerType type, mojo::Event* event, mojo::PointerData* data);
 
-  // |mojo::InterfaceFactory<mojo::asset_bundle::AssetUnpacker>| implementation:
+  // |mojo::InterfaceFactory<activity::Activity>| implementation:
   void Create(
       mojo::ApplicationConnection* connection,
-      mojo::InterfaceRequest<::keyboard::KeyboardService>) override;
+      mojo::InterfaceRequest<activity::Activity>) override;
+
+  // |mojo::InterfaceFactory<keyboard::KeyboardService>| implementation:
+  void Create(
+      mojo::ApplicationConnection* connection,
+      mojo::InterfaceRequest<keyboard::KeyboardService>) override;
 
   mojo::ApplicationConnectorPtr connector_;
 

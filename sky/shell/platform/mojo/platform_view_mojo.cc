@@ -99,6 +99,9 @@ void PlatformViewMojo::Run(const mojo::String& url,
   mojo::ServiceProviderPtr services_provided_by_embedder;
   service_provider_.Bind(GetProxy(&services_provided_by_embedder));
   service_provider_.AddService<keyboard::KeyboardService>(this);
+#if defined(OS_ANDROID)
+  service_provider_.AddService<activity::Activity>(this);
+#endif
   services->services_provided_by_embedder = services_provided_by_embedder.Pass();
 
   sky_engine_->SetServices(services.Pass());
@@ -191,6 +194,23 @@ pointer::PointerPtr PlatformViewMojo::CreateEvent(pointer::PointerType type, moj
       event->action != mojo::EventType::POINTER_CANCEL)
     pointer_positions_[data->pointer_id] = { data->x, data->y };
   return pointer.Pass();
+}
+
+void PlatformViewMojo::Create(
+    mojo::ApplicationConnection* connection,
+    mojo::InterfaceRequest<activity::Activity> request) {
+
+#if defined(OS_ANDROID)
+  mojo::ServiceProviderPtr activity_service_provider;
+  connector_->ConnectToApplication(
+    "mojo:android",
+    GetProxy(&activity_service_provider),
+    nullptr);
+
+  activity_service_provider->ConnectToService(
+    activity::Activity::Name_,
+    request.PassMessagePipe());
+#endif
 }
 
 void PlatformViewMojo::Create(
