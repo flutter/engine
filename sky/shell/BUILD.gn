@@ -245,6 +245,7 @@ if (is_android) {
 
     deps = [
       "//mojo/edk/system",
+      "//sky/services/firebase",
       "//sky/services/keyboard",
       "//sky/services/media",
       "//sky/services/ns_net",

@@ -23,6 +23,10 @@ void PlatformServiceProvider::ConnectToService(
                                  client_handle.Pass()));
   }
 #if TARGET_OS_IPHONE
+  if (service_name == ::firebase::Firebase::Name_) {
+    firebase_.Create(nullptr, mojo::MakeRequest<::firebase::Firebase>(
+                                  client_handle.Pass()));
+  }
   if (service_name == ::keyboard::KeyboardService::Name_) {
     keyboard_.Create(nullptr, mojo::MakeRequest<::keyboard::KeyboardService>(
                                   client_handle.Pass()));
