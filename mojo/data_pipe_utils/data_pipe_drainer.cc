@@ -29,10 +29,8 @@ void DataPipeDrainer::ReadData() {
     WaitForData();
   } else if (rv == MOJO_RESULT_SHOULD_WAIT) {
     WaitForData();
-  } else if (rv == MOJO_RESULT_FAILED_PRECONDITION) {
-    client_->OnDataComplete();
   } else {
-    DCHECK(false) << "Unhandled MojoResult: " << rv;
+    client_->OnDataComplete();
   }
 }
 
