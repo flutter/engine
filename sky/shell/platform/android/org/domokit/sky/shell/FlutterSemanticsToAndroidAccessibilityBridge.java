@@ -95,16 +95,14 @@ public class FlutterSemanticsToAndroidAccessibilityBridge extends AccessibilityN
             result.addAction(AccessibilityNodeInfo.ACTION_LONG_CLICK);
             result.setLongClickable(true);
         }
-        if ((node.canBeScrolledHorizontally && !node.canBeScrolledVertically) ||
-            (!node.canBeScrolledHorizontally && node.canBeScrolledVertically)) {
+
+        // TODO: expose ACTION_SCROLL_{LEFT,UP,RIGHT,DOWN} on SDK v23 and higher.
+        // On previous APIs, just default to scrolling vertically because these
+        // are just discrete scrolling actions; the user can always use two
+        // fingers to scroll in any direction as a fallback.
+        if (node.canBeScrolledHorizontally || node.canBeScrolledVertically) {
             result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
             result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
-        }
-        if (node.canBeScrolledHorizontally || node.canBeScrolledVertically) {
-            // TODO(ianh): Figure out how to enable panning. SDK v23
-            // has AccessibilityAction.ACTION_SCROLL_LEFT and company,
-            // but earlier versions do not. Right now we only forward
-            // scroll actions if it's unidirectional.
             result.setScrollable(true);
         }
 
@@ -117,6 +115,8 @@ public class FlutterSemanticsToAndroidAccessibilityBridge extends AccessibilityN
         // the views should be ordered top-to-bottom, tie-breaking
         // left-to-right (right-to-left in rtl environments), height,
         // width, and finally by list order.
+        // (What about something like a two-column layout? How likely is it that the
+        // natural view order isn't the right relative order of the views?)
 
         // Accessibility Focus
         if (mFocusedNode != null && mFocusedNode.id == virtualViewId) {
@@ -228,6 +228,8 @@ public class FlutterSemanticsToAndroidAccessibilityBridge extends AccessibilityN
             event.setPackageName(mOwner.getContext().getPackageName());
             event.setSource(mOwner, virtualViewId);
             mOwner.getParent().requestSendAccessibilityEvent(mOwner, event);
+            // TODO: You probably want to call event.setText here even though
+            // it's redundant. Other fields are needed for text editing.
         }
     }
 
@@ -248,6 +250,7 @@ public class FlutterSemanticsToAndroidAccessibilityBridge extends AccessibilityN
         assert mTreeNodes.get(node.id).parent == null;
         mTreeNodes.remove(node.id);
         if (mFocusedNode == node) {
+            // TODO: probably need to send an event to clear accessibility focus?
             mFocusedNode = null;
         }
         if (mHoveredNode == node) {
