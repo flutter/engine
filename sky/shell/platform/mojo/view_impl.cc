@@ -19,9 +19,13 @@ ViewImpl::ViewImpl(ServicesDataPtr services,
 
   mojo::ui::ViewHostPtr view_host;
 
+  // Once we're done invoking |Shell|, we put it back inside |services| and pass
+  // it off.
+  mojo::ShellPtr shell = mojo::ShellPtr::Create(services->shell.Pass());
+
   // Views
   mojo::ConnectToService(
-      services->shell.get(), "mojo:view_manager_service", &view_manager_);
+      shell.get(), "mojo:view_manager_service", &view_manager_);
   mojo::ui::ViewPtr view;
   binding_.Bind(mojo::GetProxy(&view));
   view_manager_->RegisterView(
@@ -44,8 +48,10 @@ ViewImpl::ViewImpl(ServicesDataPtr services,
   shell_view_.reset(new ShellView(Shell::Shared()));
   shell_view_->view()->ConnectToEngine(GetProxy(&engine_));
   mojo::ApplicationConnectorPtr connector;
-  services->shell->CreateApplicationConnector(mojo::GetProxy(&connector));
+  shell->CreateApplicationConnector(mojo::GetProxy(&connector));
   platform_view()->InitRasterizer(connector.Pass(), scene.Pass());
+
+  services->shell = shell.Pass();
   engine_->SetServices(services.Pass());
 }
 

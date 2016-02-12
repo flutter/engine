@@ -26,11 +26,11 @@ ApplicationImpl::~ApplicationImpl() {
   }
 }
 
-void ApplicationImpl::Initialize(mojo::ShellPtr shell,
+void ApplicationImpl::Initialize(mojo::InterfaceHandle<mojo::Shell> shell,
                                  mojo::Array<mojo::String> args,
                                  const mojo::String& url) {
   DCHECK(initial_response_);
-  shell_ = shell.Pass();
+  shell_ = mojo::ShellPtr::Create(shell.Pass());
   url_ = url;
   UnpackInitialResponse(shell_.get());
 }
@@ -38,7 +38,7 @@ void ApplicationImpl::Initialize(mojo::ShellPtr shell,
 void ApplicationImpl::AcceptConnection(
     const mojo::String& requestor_url,
     mojo::InterfaceRequest<mojo::ServiceProvider> outgoing_services,
-    mojo::ServiceProviderPtr incoming_services,
+    mojo::InterfaceHandle<mojo::ServiceProvider> incoming_services,
     const mojo::String& resolved_url) {
   service_provider_bindings_.AddBinding(this, outgoing_services.Pass());
 
@@ -46,8 +46,10 @@ void ApplicationImpl::AcceptConnection(
   // get it from the first incomming application connection, which happens to
   // work for our current use cases, but it's fragile and unsatifying. We'll
   // probably need to re-think service registry once more of the system exists.
-  if (incoming_services && !initial_service_registry_)
-    mojo::ConnectToService(incoming_services.get(), &initial_service_registry_);
+  if (incoming_services && !initial_service_registry_) {
+    auto incoming_services_ptr = mojo::ServiceProviderPtr::Create(incoming_services.Pass());
+    mojo::ConnectToService(incoming_services_ptr.get(), &initial_service_registry_);
+  }
 }
 
 void ApplicationImpl::RequestQuit() {
@@ -63,7 +65,7 @@ void ApplicationImpl::ConnectToService(const mojo::String& service_name,
 
 void ApplicationImpl::CreateView(
     mojo::InterfaceRequest<mojo::ServiceProvider> outgoing_services,
-    mojo::ServiceProviderPtr incoming_services,
+    mojo::InterfaceHandle<mojo::ServiceProvider> incoming_services,
     const mojo::ui::ViewProvider::CreateViewCallback& callback) {
   if (view_created_) {
     LOG(ERROR) << "We only support creating one view.";

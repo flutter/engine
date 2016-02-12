@@ -52,6 +52,9 @@ class Internals
   mojo::ServiceProviderPtr service_provider_;
   mojo::ServiceProviderImpl service_provider_impl_;
 
+  // This is extracted out of services_
+  mojo::ServiceProviderPtr services_provided_by_embedder_;
+
   // We need to hold this object to work around
   // https://github.com/domokit/mojo/issues/536
   mojo::ServiceProviderPtr services_from_dart_;

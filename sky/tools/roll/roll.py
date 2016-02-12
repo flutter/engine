@@ -72,9 +72,8 @@ dirs_from_mojo = [
     'mojo/icu',
     'mojo/java',
     'mojo/message_pump',
-    'mojo/gpu',
-    #'mojo/services',
-    #'services/asset_bundle',
+    'mojo/services',
+    'services/asset_bundle',
     'services/sensors',
 ]
 
