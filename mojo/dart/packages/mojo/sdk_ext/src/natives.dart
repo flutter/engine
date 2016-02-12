@@ -20,14 +20,9 @@ class MojoHandleNatives {
   static HashMap<int, _OpenHandle> _openHandles = new HashMap();
 
   static void addOpenHandle(int handle, {String description}) {
-    // We only remember a stack trace when in checked mode.
     var stack;
-    try {
-      // This will only throw when running in checked mode.
-      assert(false);
-    } catch (_, s) {
-      stack = s;
-    }
+    // We only remember a stack trace when in checked mode.
+    assert((stack = StackTrace.current) != null);
     var openHandle = new _OpenHandle(stack, description: description);
     _openHandles[handle] = openHandle;
   }
@@ -43,7 +38,8 @@ class MojoHandleNatives {
       sb.writeln('HANDLE LEAK: description: ${openHandle.description}');
     }
     if (openHandle.stack != null) {
-      sb.writeln('HANDLE LEAK: creation stack trace: ${openHandle.stack}');
+      sb.writeln('HANDLE LEAK: creation stack trace:');
+      sb.writeln(openHandle.stack);
     } else {
       sb.writeln('HANDLE LEAK: creation stack trace available in strict mode.');
     }
