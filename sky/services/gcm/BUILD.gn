@@ -12,8 +12,8 @@ group("gcm") {
     ":interfaces",
   ]
 
-  if (is_android) {
-    deps += [ ":gcm_lib", ":interfaces_java" ]
+  if (is_android || is_ios) {
+    deps += [ ":gcm_lib" ]
   }
 }
 
@@ -41,6 +41,26 @@ if (is_android) {
       "//mojo/public/java:system",
       ":interfaces_java",
       google_play_services_library,
+    ]
+  }
+}
+
+if (is_ios) {
+  shared_library("gcm_lib") {
+    output_name = "gcm"
+
+    libs = [
+      "UIKit.framework",
+    ]
+
+    sources = [
+      "src/gcm_impl.cc",
+      "src/gcm_impl.h",
+    ]
+    deps = [
+      "//base:base", # for LOG
+      "//sky/services/dynamic:dylib",
+      ":interfaces",
     ]
   }
 }
