@@ -8,6 +8,8 @@ import 'dart:async';
 
 import 'package:mojo/bindings.dart' as bindings;
 import 'package:mojo/core.dart' as core;
+import 'package:mojo/mojo/bindings/types/mojom_types.mojom.dart' as mojom_types;
+import 'package:mojo/mojo/bindings/types/service_describer.mojom.dart' as service_describer;
 
 
 
@@ -66,10 +68,20 @@ class _ServiceProviderConnectToServiceParams extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeString(interfaceName, 8, false);
-    
-    encoder0.encodeMessagePipeHandle(pipe, 16, false);
+    try {
+      encoder0.encodeString(interfaceName, 8, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "interfaceName of struct _ServiceProviderConnectToServiceParams: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeMessagePipeHandle(pipe, 16, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "pipe of struct _ServiceProviderConnectToServiceParams: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -84,7 +96,23 @@ class _ServiceProviderConnectToServiceParams extends bindings.Struct {
   }
 }
 
+
+
+
 const int _ServiceProvider_connectToServiceName = 0;
+
+
+
+class _ServiceProviderServiceDescription implements service_describer.ServiceDescription {
+  dynamic getTopLevelInterface([Function responseFactory]) =>
+      responseFactory(null);
+
+  dynamic getTypeDefinition(String typeKey, [Function responseFactory]) =>
+      responseFactory(null);
+
+  dynamic getAllTypeDefinitions([Function responseFactory]) =>
+      responseFactory(null);
+}
 
 abstract class ServiceProvider {
   static const String serviceName = null;
@@ -106,6 +134,9 @@ class _ServiceProviderProxyImpl extends bindings.Proxy {
     assert(endpoint.setDescription("For _ServiceProviderProxyImpl"));
     return new _ServiceProviderProxyImpl.fromEndpoint(endpoint);
   }
+
+  service_describer.ServiceDescription get serviceDescription =>
+    new _ServiceProviderServiceDescription();
 
   void handleResponse(bindings.ServiceMessage message) {
     switch (message.header.type) {
@@ -251,6 +282,15 @@ class ServiceProviderStub extends bindings.Stub {
   }
 
   int get version => 0;
+
+  static service_describer.ServiceDescription _cachedServiceDescription;
+  static service_describer.ServiceDescription get serviceDescription {
+    if (_cachedServiceDescription == null) {
+      _cachedServiceDescription = new _ServiceProviderServiceDescription();
+    }
+    return _cachedServiceDescription;
+  }
 }
+
 
 

@@ -104,8 +104,9 @@ Internals::Internals(ServicesDataPtr services,
     root_bundle_(root_bundle.Pass()),
     service_provider_impl_(GetProxy(&service_provider_)) {
   if (services_ && services_->services_provided_by_embedder) {
+    services_provided_by_embedder_ = mojo::ServiceProviderPtr::Create(services_->services_provided_by_embedder.Pass());
     service_provider_impl_.set_fallback_service_provider(
-        services_->services_provided_by_embedder.get());
+        services_provided_by_embedder_.get());
   }
   service_provider_impl_.AddService<mojo::asset_bundle::AssetUnpacker>(this);
   if (services_ && services_->services_provided_to_embedder.is_pending()) {
@@ -126,19 +127,19 @@ void Internals::Create(
 }
 
 mojo::Handle Internals::TakeShellProxy() {
-  return services_ ? services_->shell.PassInterface().PassHandle().release() : mojo::Handle();
+  return services_ ? services_->shell.PassHandle().release() : mojo::Handle();
 }
 
 mojo::Handle Internals::TakeServiceRegistry() {
-  return services_ ? services_->service_registry.PassInterface().PassHandle().release() : mojo::Handle();
+  return services_ ? services_->service_registry.PassHandle().release() : mojo::Handle();
 }
 
 mojo::Handle Internals::TakeServicesProvidedByEmbedder() {
-  return service_provider_.PassInterface().PassHandle().release();
+  return service_provider_.PassInterfaceHandle().PassHandle().release();
 }
 
 mojo::Handle Internals::TakeRootBundleHandle() {
-  return root_bundle_.PassInterface().PassHandle().release();
+  return root_bundle_.PassInterfaceHandle().PassHandle().release();
 }
 
 mojo::Handle Internals::TakeServicesProvidedToEmbedder() {
@@ -146,7 +147,7 @@ mojo::Handle Internals::TakeServicesProvidedToEmbedder() {
 }
 
 mojo::Handle Internals::TakeViewHostHandle() {
-  return services_ ? services_->view_host.PassInterface().PassHandle().release() : mojo::Handle();
+  return services_ ? services_->view_host.PassHandle().release() : mojo::Handle();
 }
 
 }  // namespace shell

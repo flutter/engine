@@ -9,6 +9,8 @@ import 'dart:async';
 import 'package:mojo/bindings.dart' as bindings;
 import 'package:mojo/core.dart' as core;
 
+
+
 class SimpleType extends bindings.MojoEnum {
   static const SimpleType bool = const SimpleType._(0);
   static const SimpleType double = const SimpleType._(1);
@@ -116,11 +118,15 @@ class SimpleType extends bindings.MojoEnum {
         return 'SimpleType.uint32';
       case uint64:
         return 'SimpleType.uint64';
+      default:
+        return null;
     }
   }
 
   int toJson() => mojoEnumValue;
 }
+
+
 
 class BuiltinConstantValue extends bindings.MojoEnum {
   static const BuiltinConstantValue doubleInfinity = const BuiltinConstantValue._(0);
@@ -194,11 +200,15 @@ class BuiltinConstantValue extends bindings.MojoEnum {
         return 'BuiltinConstantValue.floatNegativeInfinity';
       case floatNan:
         return 'BuiltinConstantValue.floatNan';
+      default:
+        return null;
     }
   }
 
   int toJson() => mojoEnumValue;
 }
+
+
 
 
 
@@ -252,8 +262,13 @@ class StringType extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeBool(nullable, 8, 0);
+    try {
+      encoder0.encodeBool(nullable, 8, 0);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "nullable of struct StringType: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -267,6 +282,8 @@ class StringType extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class HandleTypeKind extends bindings.MojoEnum {
@@ -334,11 +351,15 @@ class HandleTypeKind extends bindings.MojoEnum {
         return 'HandleTypeKind.dataPipeProducer';
       case sharedBuffer:
         return 'HandleTypeKind.sharedBuffer';
+      default:
+        return null;
     }
   }
 
   int toJson() => mojoEnumValue;
 }
+
+
 
 class HandleType extends bindings.Struct {
   static const List<bindings.StructDataHeader> kVersions = const [
@@ -399,10 +420,20 @@ class HandleType extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeBool(nullable, 8, 0);
-    
-    encoder0.encodeEnum(kind, 12);
+    try {
+      encoder0.encodeBool(nullable, 8, 0);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "nullable of struct HandleType: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeEnum(kind, 12);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "kind of struct HandleType: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -418,6 +449,8 @@ class HandleType extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class ArrayType extends bindings.Struct {
@@ -484,12 +517,27 @@ class ArrayType extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeBool(nullable, 8, 0);
-    
-    encoder0.encodeInt32(fixedLength, 12);
-    
-    encoder0.encodeUnion(elementType, 16, false);
+    try {
+      encoder0.encodeBool(nullable, 8, 0);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "nullable of struct ArrayType: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeInt32(fixedLength, 12);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "fixedLength of struct ArrayType: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUnion(elementType, 16, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "elementType of struct ArrayType: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -507,6 +555,8 @@ class ArrayType extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class MapType extends bindings.Struct {
@@ -577,12 +627,27 @@ class MapType extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeBool(nullable, 8, 0);
-    
-    encoder0.encodeUnion(keyType, 16, false);
-    
-    encoder0.encodeUnion(valueType, 32, false);
+    try {
+      encoder0.encodeBool(nullable, 8, 0);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "nullable of struct MapType: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUnion(keyType, 16, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "keyType of struct MapType: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUnion(valueType, 32, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "valueType of struct MapType: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -600,6 +665,8 @@ class MapType extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class TypeReference extends bindings.Struct {
@@ -667,14 +734,34 @@ class TypeReference extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeBool(nullable, 8, 0);
-    
-    encoder0.encodeBool(isInterfaceRequest, 8, 1);
-    
-    encoder0.encodeString(identifier, 16, true);
-    
-    encoder0.encodeString(typeKey, 24, true);
+    try {
+      encoder0.encodeBool(nullable, 8, 0);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "nullable of struct TypeReference: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeBool(isInterfaceRequest, 8, 1);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "isInterfaceRequest of struct TypeReference: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeString(identifier, 16, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "identifier of struct TypeReference: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeString(typeKey, 24, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "typeKey of struct TypeReference: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -694,6 +781,8 @@ class TypeReference extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class StructField extends bindings.Struct {
@@ -766,14 +855,34 @@ class StructField extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeStruct(declData, 8, true);
-    
-    encoder0.encodeUnion(type, 16, false);
-    
-    encoder0.encodeUnion(defaultValue, 32, true);
-    
-    encoder0.encodeInt32(offset, 48);
+    try {
+      encoder0.encodeStruct(declData, 8, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "declData of struct StructField: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUnion(type, 16, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "type of struct StructField: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUnion(defaultValue, 32, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "defaultValue of struct StructField: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeInt32(offset, 48);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "offset of struct StructField: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -793,6 +902,8 @@ class StructField extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class DefaultKeyword extends bindings.Struct {
@@ -851,6 +962,8 @@ class DefaultKeyword extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class StructVersion extends bindings.Struct {
@@ -913,12 +1026,27 @@ class StructVersion extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeUint32(versionNumber, 8);
-    
-    encoder0.encodeUint32(numFields, 12);
-    
-    encoder0.encodeUint32(numBytes, 16);
+    try {
+      encoder0.encodeUint32(versionNumber, 8);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "versionNumber of struct StructVersion: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUint32(numFields, 12);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "numFields of struct StructVersion: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUint32(numBytes, 16);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "numBytes of struct StructVersion: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -936,6 +1064,8 @@ class StructVersion extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class MojomStruct extends bindings.Struct {
@@ -1019,27 +1149,40 @@ class MojomStruct extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeStruct(declData, 8, true);
-    
-    if (fields == null) {
-      encoder0.encodeNullPointer(16, false);
-    } else {
-      var encoder1 = encoder0.encodePointerArray(fields.length, 16, bindings.kUnspecifiedArrayLength);
-      for (int i0 = 0; i0 < fields.length; ++i0) {
-        
-        encoder1.encodeStruct(fields[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
-      }
+    try {
+      encoder0.encodeStruct(declData, 8, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "declData of struct MojomStruct: $e";
+      rethrow;
     }
-    
-    if (versionInfo == null) {
-      encoder0.encodeNullPointer(24, true);
-    } else {
-      var encoder1 = encoder0.encodePointerArray(versionInfo.length, 24, bindings.kUnspecifiedArrayLength);
-      for (int i0 = 0; i0 < versionInfo.length; ++i0) {
-        
-        encoder1.encodeStruct(versionInfo[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+    try {
+      if (fields == null) {
+        encoder0.encodeNullPointer(16, false);
+      } else {
+        var encoder1 = encoder0.encodePointerArray(fields.length, 16, bindings.kUnspecifiedArrayLength);
+        for (int i0 = 0; i0 < fields.length; ++i0) {
+          encoder1.encodeStruct(fields[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+        }
       }
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "fields of struct MojomStruct: $e";
+      rethrow;
+    }
+    try {
+      if (versionInfo == null) {
+        encoder0.encodeNullPointer(24, true);
+      } else {
+        var encoder1 = encoder0.encodePointerArray(versionInfo.length, 24, bindings.kUnspecifiedArrayLength);
+        for (int i0 = 0; i0 < versionInfo.length; ++i0) {
+          encoder1.encodeStruct(versionInfo[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+        }
+      }
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "versionInfo of struct MojomStruct: $e";
+      rethrow;
     }
   }
 
@@ -1058,6 +1201,8 @@ class MojomStruct extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class UnionField extends bindings.Struct {
@@ -1125,12 +1270,27 @@ class UnionField extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeStruct(declData, 8, true);
-    
-    encoder0.encodeUnion(type, 16, false);
-    
-    encoder0.encodeUint32(tag, 32);
+    try {
+      encoder0.encodeStruct(declData, 8, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "declData of struct UnionField: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUnion(type, 16, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "type of struct UnionField: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUint32(tag, 32);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "tag of struct UnionField: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -1148,6 +1308,8 @@ class UnionField extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class MojomUnion extends bindings.Struct {
@@ -1215,17 +1377,26 @@ class MojomUnion extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeStruct(declData, 8, true);
-    
-    if (fields == null) {
-      encoder0.encodeNullPointer(16, false);
-    } else {
-      var encoder1 = encoder0.encodePointerArray(fields.length, 16, bindings.kUnspecifiedArrayLength);
-      for (int i0 = 0; i0 < fields.length; ++i0) {
-        
-        encoder1.encodeStruct(fields[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+    try {
+      encoder0.encodeStruct(declData, 8, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "declData of struct MojomUnion: $e";
+      rethrow;
+    }
+    try {
+      if (fields == null) {
+        encoder0.encodeNullPointer(16, false);
+      } else {
+        var encoder1 = encoder0.encodePointerArray(fields.length, 16, bindings.kUnspecifiedArrayLength);
+        for (int i0 = 0; i0 < fields.length; ++i0) {
+          encoder1.encodeStruct(fields[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+        }
       }
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "fields of struct MojomUnion: $e";
+      rethrow;
     }
   }
 
@@ -1242,6 +1413,8 @@ class MojomUnion extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class EnumValue extends bindings.Struct {
@@ -1310,14 +1483,34 @@ class EnumValue extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeStruct(declData, 8, true);
-    
-    encoder0.encodeString(enumTypeKey, 16, false);
-    
-    encoder0.encodeUnion(initializerValue, 24, true);
-    
-    encoder0.encodeInt32(intValue, 40);
+    try {
+      encoder0.encodeStruct(declData, 8, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "declData of struct EnumValue: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeString(enumTypeKey, 16, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "enumTypeKey of struct EnumValue: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUnion(initializerValue, 24, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "initializerValue of struct EnumValue: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeInt32(intValue, 40);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "intValue of struct EnumValue: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -1337,6 +1530,8 @@ class EnumValue extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class MojomEnum extends bindings.Struct {
@@ -1404,17 +1599,26 @@ class MojomEnum extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeStruct(declData, 8, true);
-    
-    if (values == null) {
-      encoder0.encodeNullPointer(16, false);
-    } else {
-      var encoder1 = encoder0.encodePointerArray(values.length, 16, bindings.kUnspecifiedArrayLength);
-      for (int i0 = 0; i0 < values.length; ++i0) {
-        
-        encoder1.encodeStruct(values[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+    try {
+      encoder0.encodeStruct(declData, 8, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "declData of struct MojomEnum: $e";
+      rethrow;
+    }
+    try {
+      if (values == null) {
+        encoder0.encodeNullPointer(16, false);
+      } else {
+        var encoder1 = encoder0.encodePointerArray(values.length, 16, bindings.kUnspecifiedArrayLength);
+        for (int i0 = 0; i0 < values.length; ++i0) {
+          encoder1.encodeStruct(values[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+        }
       }
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "values of struct MojomEnum: $e";
+      rethrow;
     }
   }
 
@@ -1431,6 +1635,8 @@ class MojomEnum extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class MojomMethod extends bindings.Struct {
@@ -1501,14 +1707,34 @@ class MojomMethod extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeStruct(declData, 8, true);
-    
-    encoder0.encodeStruct(parameters, 16, false);
-    
-    encoder0.encodeStruct(responseParams, 24, true);
-    
-    encoder0.encodeUint32(ordinal, 32);
+    try {
+      encoder0.encodeStruct(declData, 8, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "declData of struct MojomMethod: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeStruct(parameters, 16, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "parameters of struct MojomMethod: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeStruct(responseParams, 24, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "responseParams of struct MojomMethod: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUint32(ordinal, 32);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "ordinal of struct MojomMethod: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -1530,12 +1756,14 @@ class MojomMethod extends bindings.Struct {
 }
 
 
+
+
 class MojomInterface extends bindings.Struct {
   static const List<bindings.StructDataHeader> kVersions = const [
     const bindings.StructDataHeader(32, 0)
   ];
   DeclarationData declData = null;
-  String interfaceName = null;
+  String serviceName_ = null;
   Map<int, MojomMethod> methods = null;
 
   MojomInterface() : super(kVersions.last.size);
@@ -1580,7 +1808,7 @@ class MojomInterface extends bindings.Struct {
     }
     if (mainDataHeader.version >= 0) {
       
-      result.interfaceName = decoder0.decodeString(16, false);
+      result.serviceName_ = decoder0.decodeString(16, true);
     }
     if (mainDataHeader.version >= 0) {
       
@@ -1615,46 +1843,61 @@ class MojomInterface extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeStruct(declData, 8, true);
-    
-    encoder0.encodeString(interfaceName, 16, false);
-    
-    if (methods == null) {
-      encoder0.encodeNullPointer(24, false);
-    } else {
-      var encoder1 = encoder0.encoderForMap(24);
-      int size0 = methods.length;
-      var keys0 = methods.keys.toList();
-      var values0 = methods.values.toList();
-      
-      encoder1.encodeUint32Array(keys0, bindings.ArrayDataHeader.kHeaderSize, bindings.kNothingNullable, bindings.kUnspecifiedArrayLength);
-      
-      {
-        var encoder2 = encoder1.encodePointerArray(values0.length, bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize, bindings.kUnspecifiedArrayLength);
-        for (int i1 = 0; i1 < values0.length; ++i1) {
-          
-          encoder2.encodeStruct(values0[i1], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i1, false);
+    try {
+      encoder0.encodeStruct(declData, 8, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "declData of struct MojomInterface: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeString(serviceName_, 16, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "serviceName_ of struct MojomInterface: $e";
+      rethrow;
+    }
+    try {
+      if (methods == null) {
+        encoder0.encodeNullPointer(24, false);
+      } else {
+        var encoder1 = encoder0.encoderForMap(24);
+        int size0 = methods.length;
+        var keys0 = methods.keys.toList();
+        var values0 = methods.values.toList();
+        encoder1.encodeUint32Array(keys0, bindings.ArrayDataHeader.kHeaderSize, bindings.kNothingNullable, bindings.kUnspecifiedArrayLength);
+        
+        {
+          var encoder2 = encoder1.encodePointerArray(values0.length, bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize, bindings.kUnspecifiedArrayLength);
+          for (int i1 = 0; i1 < values0.length; ++i1) {
+            encoder2.encodeStruct(values0[i1], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i1, false);
+          }
         }
       }
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "methods of struct MojomInterface: $e";
+      rethrow;
     }
   }
 
   String toString() {
     return "MojomInterface("
            "declData: $declData" ", "
-           "interfaceName: $interfaceName" ", "
+           "serviceName_: $serviceName_" ", "
            "methods: $methods" ")";
   }
 
   Map toJson() {
     Map map = new Map();
     map["declData"] = declData;
-    map["interfaceName"] = interfaceName;
+    map["serviceName_"] = serviceName_;
     map["methods"] = methods;
     return map;
   }
 }
+
+
 
 
 class UserValueReference extends bindings.Struct {
@@ -1717,12 +1960,27 @@ class UserValueReference extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeString(identifier, 8, false);
-    
-    encoder0.encodeString(valueKey, 16, true);
-    
-    encoder0.encodeUnion(resolvedConcreteValue, 24, true);
+    try {
+      encoder0.encodeString(identifier, 8, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "identifier of struct UserValueReference: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeString(valueKey, 16, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "valueKey of struct UserValueReference: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUnion(resolvedConcreteValue, 24, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "resolvedConcreteValue of struct UserValueReference: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -1740,6 +1998,8 @@ class UserValueReference extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class DeclaredConstant extends bindings.Struct {
@@ -1811,12 +2071,27 @@ class DeclaredConstant extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeStruct(declData, 8, false);
-    
-    encoder0.encodeUnion(type, 16, false);
-    
-    encoder0.encodeUnion(value, 32, false);
+    try {
+      encoder0.encodeStruct(declData, 8, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "declData of struct DeclaredConstant: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUnion(type, 16, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "type of struct DeclaredConstant: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUnion(value, 32, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "value of struct DeclaredConstant: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -1834,6 +2109,8 @@ class DeclaredConstant extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class Attribute extends bindings.Struct {
@@ -1895,10 +2172,20 @@ class Attribute extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeString(key, 8, false);
-    
-    encoder0.encodeUnion(value, 16, false);
+    try {
+      encoder0.encodeString(key, 8, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "key of struct Attribute: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUnion(value, 16, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "value of struct Attribute: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -1914,6 +2201,8 @@ class Attribute extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class DeclarationData extends bindings.Struct {
@@ -2019,32 +2308,76 @@ class DeclarationData extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    if (attributes == null) {
-      encoder0.encodeNullPointer(8, true);
-    } else {
-      var encoder1 = encoder0.encodePointerArray(attributes.length, 8, bindings.kUnspecifiedArrayLength);
-      for (int i0 = 0; i0 < attributes.length; ++i0) {
-        
-        encoder1.encodeStruct(attributes[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+    try {
+      if (attributes == null) {
+        encoder0.encodeNullPointer(8, true);
+      } else {
+        var encoder1 = encoder0.encodePointerArray(attributes.length, 8, bindings.kUnspecifiedArrayLength);
+        for (int i0 = 0; i0 < attributes.length; ++i0) {
+          encoder1.encodeStruct(attributes[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+        }
       }
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "attributes of struct DeclarationData: $e";
+      rethrow;
     }
-    
-    encoder0.encodeInt32(minVersion, 16);
-    
-    encoder0.encodeInt32(declaredOrdinal, 20);
-    
-    encoder0.encodeString(shortName, 24, true);
-    
-    encoder0.encodeString(fullIdentifier, 32, true);
-    
-    encoder0.encodeInt32(declarationOrder, 40);
-    
-    encoder0.encodeStruct(sourceFileInfo, 48, true);
-    
-    encoder0.encodeStruct(containedDeclarations, 56, true);
-    
-    encoder0.encodeString(containerTypeKey, 64, true);
+    try {
+      encoder0.encodeInt32(minVersion, 16);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "minVersion of struct DeclarationData: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeInt32(declaredOrdinal, 20);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "declaredOrdinal of struct DeclarationData: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeString(shortName, 24, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "shortName of struct DeclarationData: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeString(fullIdentifier, 32, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "fullIdentifier of struct DeclarationData: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeInt32(declarationOrder, 40);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "declarationOrder of struct DeclarationData: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeStruct(sourceFileInfo, 48, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "sourceFileInfo of struct DeclarationData: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeStruct(containedDeclarations, 56, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "containedDeclarations of struct DeclarationData: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeString(containerTypeKey, 64, true);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "containerTypeKey of struct DeclarationData: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -2074,6 +2407,8 @@ class DeclarationData extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class SourceFileInfo extends bindings.Struct {
@@ -2136,12 +2471,27 @@ class SourceFileInfo extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    encoder0.encodeString(fileName, 8, false);
-    
-    encoder0.encodeUint32(lineNumber, 16);
-    
-    encoder0.encodeUint32(columnNumber, 20);
+    try {
+      encoder0.encodeString(fileName, 8, false);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "fileName of struct SourceFileInfo: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUint32(lineNumber, 16);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "lineNumber of struct SourceFileInfo: $e";
+      rethrow;
+    }
+    try {
+      encoder0.encodeUint32(columnNumber, 20);
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "columnNumber of struct SourceFileInfo: $e";
+      rethrow;
+    }
   }
 
   String toString() {
@@ -2159,6 +2509,8 @@ class SourceFileInfo extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 class ContainedDeclarations extends bindings.Struct {
@@ -2236,25 +2588,33 @@ class ContainedDeclarations extends bindings.Struct {
 
   void encode(bindings.Encoder encoder) {
     var encoder0 = encoder.getStructEncoderAtOffset(kVersions.last);
-    
-    if (enums == null) {
-      encoder0.encodeNullPointer(8, true);
-    } else {
-      var encoder1 = encoder0.encodePointerArray(enums.length, 8, bindings.kUnspecifiedArrayLength);
-      for (int i0 = 0; i0 < enums.length; ++i0) {
-        
-        encoder1.encodeString(enums[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+    try {
+      if (enums == null) {
+        encoder0.encodeNullPointer(8, true);
+      } else {
+        var encoder1 = encoder0.encodePointerArray(enums.length, 8, bindings.kUnspecifiedArrayLength);
+        for (int i0 = 0; i0 < enums.length; ++i0) {
+          encoder1.encodeString(enums[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+        }
       }
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "enums of struct ContainedDeclarations: $e";
+      rethrow;
     }
-    
-    if (constants == null) {
-      encoder0.encodeNullPointer(16, true);
-    } else {
-      var encoder1 = encoder0.encodePointerArray(constants.length, 16, bindings.kUnspecifiedArrayLength);
-      for (int i0 = 0; i0 < constants.length; ++i0) {
-        
-        encoder1.encodeString(constants[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+    try {
+      if (constants == null) {
+        encoder0.encodeNullPointer(16, true);
+      } else {
+        var encoder1 = encoder0.encodePointerArray(constants.length, 16, bindings.kUnspecifiedArrayLength);
+        for (int i0 = 0; i0 < constants.length; ++i0) {
+          encoder1.encodeString(constants[i0], bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize * i0, false);
+        }
       }
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "constants of struct ContainedDeclarations: $e";
+      rethrow;
     }
   }
 
@@ -2271,6 +2631,8 @@ class ContainedDeclarations extends bindings.Struct {
     return map;
   }
 }
+
+
 
 
 
@@ -2430,27 +2792,21 @@ class Type extends bindings.Union {
     encoder0.encodeUint32(_tag_to_int[_tag], offset + 4);
     switch (_tag) {
       case TypeTag.simpleType:
-        
         encoder0.encodeEnum(simpleType, offset + 8);
         break;
       case TypeTag.stringType:
-        
         encoder0.encodeStruct(stringType, offset + 8, false);
         break;
       case TypeTag.arrayType:
-        
         encoder0.encodeStruct(arrayType, offset + 8, false);
         break;
       case TypeTag.mapType:
-        
         encoder0.encodeStruct(mapType, offset + 8, false);
         break;
       case TypeTag.handleType:
-        
         encoder0.encodeStruct(handleType, offset + 8, false);
         break;
       case TypeTag.typeReference:
-        
         encoder0.encodeStruct(typeReference, offset + 8, false);
         break;
       default:
@@ -2486,6 +2842,8 @@ class Type extends bindings.Union {
     return result;
   }
 }
+
+
 
 
 enum UserDefinedTypeTag {
@@ -2603,19 +2961,15 @@ class UserDefinedType extends bindings.Union {
     encoder0.encodeUint32(_tag_to_int[_tag], offset + 4);
     switch (_tag) {
       case UserDefinedTypeTag.enumType:
-        
         encoder0.encodeStruct(enumType, offset + 8, false);
         break;
       case UserDefinedTypeTag.structType:
-        
         encoder0.encodeStruct(structType, offset + 8, false);
         break;
       case UserDefinedTypeTag.unionType:
-        
         encoder0.encodeStruct(unionType, offset + 8, false);
         break;
       case UserDefinedTypeTag.interfaceType:
-        
         encoder0.encodeStruct(interfaceType, offset + 8, false);
         break;
       default:
@@ -2645,6 +2999,8 @@ class UserDefinedType extends bindings.Union {
     return result;
   }
 }
+
+
 
 
 enum DefaultFieldValueTag {
@@ -2726,7 +3082,6 @@ class DefaultFieldValue extends bindings.Union {
         encoder0.encodeNestedUnion(value, offset + 8, false);
         break;
       case DefaultFieldValueTag.defaultKeyword:
-        
         encoder0.encodeStruct(defaultKeyword, offset + 8, false);
         break;
       default:
@@ -2750,6 +3105,8 @@ class DefaultFieldValue extends bindings.Union {
     return result;
   }
 }
+
+
 
 
 enum ValueTag {
@@ -2853,11 +3210,9 @@ class Value extends bindings.Union {
         encoder0.encodeNestedUnion(literalValue, offset + 8, false);
         break;
       case ValueTag.userValueReference:
-        
         encoder0.encodeStruct(userValueReference, offset + 8, false);
         break;
       case ValueTag.builtinValue:
-        
         encoder0.encodeEnum(builtinValue, offset + 8);
         break;
       default:
@@ -2884,6 +3239,8 @@ class Value extends bindings.Union {
     return result;
   }
 }
+
+
 
 
 enum LiteralValueTag {
@@ -3141,51 +3498,39 @@ class LiteralValue extends bindings.Union {
     encoder0.encodeUint32(_tag_to_int[_tag], offset + 4);
     switch (_tag) {
       case LiteralValueTag.boolValue:
-        
         encoder0.encodeBool(boolValue, offset + 8, 0);
         break;
       case LiteralValueTag.doubleValue:
-        
         encoder0.encodeDouble(doubleValue, offset + 8);
         break;
       case LiteralValueTag.floatValue:
-        
         encoder0.encodeFloat(floatValue, offset + 8);
         break;
       case LiteralValueTag.int8Value:
-        
         encoder0.encodeInt8(int8Value, offset + 8);
         break;
       case LiteralValueTag.int16Value:
-        
         encoder0.encodeInt16(int16Value, offset + 8);
         break;
       case LiteralValueTag.int32Value:
-        
         encoder0.encodeInt32(int32Value, offset + 8);
         break;
       case LiteralValueTag.int64Value:
-        
         encoder0.encodeInt64(int64Value, offset + 8);
         break;
       case LiteralValueTag.stringValue:
-        
         encoder0.encodeString(stringValue, offset + 8, false);
         break;
       case LiteralValueTag.uint8Value:
-        
         encoder0.encodeUint8(uint8Value, offset + 8);
         break;
       case LiteralValueTag.uint16Value:
-        
         encoder0.encodeUint16(uint16Value, offset + 8);
         break;
       case LiteralValueTag.uint32Value:
-        
         encoder0.encodeUint32(uint32Value, offset + 8);
         break;
       case LiteralValueTag.uint64Value:
-        
         encoder0.encodeUint64(uint64Value, offset + 8);
         break;
       default:
@@ -3239,6 +3584,8 @@ class LiteralValue extends bindings.Union {
     return result;
   }
 }
+
+
 
 
 enum UserDefinedValueTag {
@@ -3318,11 +3665,9 @@ class UserDefinedValue extends bindings.Union {
     encoder0.encodeUint32(_tag_to_int[_tag], offset + 4);
     switch (_tag) {
       case UserDefinedValueTag.enumValue:
-        
         encoder0.encodeStruct(enumValue, offset + 8, false);
         break;
       case UserDefinedValueTag.declaredConstant:
-        
         encoder0.encodeStruct(declaredConstant, offset + 8, false);
         break;
       default:
@@ -3346,4 +3691,8 @@ class UserDefinedValue extends bindings.Union {
     return result;
   }
 }
+
+
+
+
 
