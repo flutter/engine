@@ -11,6 +11,7 @@ WORKSPACE=${TARGET_TEMP_DIR}/tmp/flutter_build_workspace
 DEPOT_WORKSPACE=${TARGET_TEMP_DIR}/tmp/flutter_depot_tools
 SERVICES_SDK_DIR=FlutterServicesSDK
 SERVICES_ARCHIVE=${SERVICES_SDK_DIR}.zip
+FLUTTER_MAC_ZIP=FlutterMac.zip
 
 function NukeWorkspace {
   rm -rf ${WORKSPACE}
@@ -61,9 +62,21 @@ ninja -C out/ios_sim_Release ${GOMA_FLAGS}
 sky/tools/gn --ios --release
 ninja -C out/ios_Release ${GOMA_FLAGS}
 
-pushd out/
+# Configure and build the Mac Desktop target
+sky/tools/gn --release
+ninja -C out/Release ${GOMA_FLAGS}
+
+# Zip up the SkyShell.app
+
+pushd out/Release/
+
+zip -r ${FLUTTER_MAC_ZIP} SkyShell.app
+
+popd # Out of the out/Release/ directory
 
 # Package up the services SDK
+
+pushd out/
 
 mkdir -p ${SERVICES_SDK_DIR}/include/mojo/public
 mkdir -p ${SERVICES_SDK_DIR}/lib
@@ -114,6 +127,7 @@ if [[ ! -z ${BUCKET_KEY_FILE} ]]; then
   gcloud auth activate-service-account --key-file ${BUCKET_KEY_FILE}
   gsutil cp FlutterXcode.zip gs://flutter_infra/flutter/${ENGINE_SHA}/ios/FlutterXcode.zip
   gsutil cp ../${SERVICES_ARCHIVE} gs://flutter_infra/flutter/${ENGINE_SHA}/ios/${SERVICES_ARCHIVE}
+  gsutil cp ../Release/${FLUTTER_MAC_ZIP} gs://flutter_infra/flutter/${ENGINE_SHA}/mac/${FLUTTER_MAC_ZIP}
 fi
 
 popd # Out of the Xcode project
