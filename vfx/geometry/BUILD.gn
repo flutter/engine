@@ -1,0 +1,25 @@
+# Copyright 2016 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("geometry") {
+  sources = [
+    "color.h",
+    "cuboid.h",
+    "matrix.cc",
+    "matrix.h",
+    "offset.cc",
+    "offset.h",
+    "plane.cc",
+    "plane.h",
+    "point.cc",
+    "point.h",
+    "quad.cc",
+    "quad.h",
+    "sphere.h",
+    "triangle.cc",
+    "triangle.h",
+    "wedge.cc",
+    "wedge.h",
+  ]
+}
