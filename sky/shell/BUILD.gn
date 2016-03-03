@@ -34,7 +34,12 @@ source_set("common") {
     "//base",
     "//base:i18n",
     "//build/config/sanitizers:deps",
-    "//dart/runtime:libdart",
+    # Note: The target name `libdart_precompiled_runtime` might make it seem
+    # like we don't want this on environments where we need the interpreter.
+    # The target only gets rid of the machinery to "generate" a precompilation
+    # snapshot. It is still able to run in interpreted code. So its fine on
+    # Android.
+    "//dart/runtime:libdart_precompiled_runtime",
     "//flow",
     "//mojo/common",
     "//mojo/data_pipe_utils",
