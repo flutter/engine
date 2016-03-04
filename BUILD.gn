@@ -8,6 +8,7 @@ group("default") {
   deps = [
     "//sky",
     "//sky/services/dynamic:sdk_lib",
+    "//vfx",
   ]
 }
 
