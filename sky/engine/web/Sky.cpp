@@ -38,7 +38,6 @@
 #include "sky/engine/platform/LayoutTestSupport.h"
 #include "sky/engine/platform/Logging.h"
 #include "sky/engine/public/platform/Platform.h"
-#include "sky/engine/tonic/dart_microtask_queue.h"
 #include "sky/engine/wtf/Assertions.h"
 #include "sky/engine/wtf/CryptographicallyRandomNumber.h"
 #include "sky/engine/wtf/MainThread.h"
@@ -48,61 +47,6 @@
 #include "base/trace_event/trace_event.h"
 
 namespace blink {
-
-namespace {
-
-void willProcessTask()
-{
-}
-
-void didProcessTask()
-{
-    DartMicrotaskQueue::RunMicrotasks();
-    // FIXME: Report memory usage to dart?
-}
-
-class TaskObserver : public base::MessageLoop::TaskObserver {
-public:
-    void WillProcessTask(const base::PendingTask& pending_task) override { willProcessTask(); }
-    void DidProcessTask(const base::PendingTask& pending_task) override { didProcessTask(); }
-};
-
-class SignalObserver : public mojo::common::MessagePumpMojo::Observer {
-public:
-    void WillSignalHandler() override { willProcessTask(); }
-    void DidSignalHandler() override { didProcessTask(); }
-};
-
-static TaskObserver* s_taskObserver = 0;
-static SignalObserver* s_signalObserver = 0;
-
-void addMessageLoopObservers()
-{
-    ASSERT(!s_taskObserver);
-    s_taskObserver = new TaskObserver;
-
-    ASSERT(!s_signalObserver);
-    s_signalObserver = new SignalObserver;
-
-    base::MessageLoop::current()->AddTaskObserver(s_taskObserver);
-    mojo::common::MessagePumpMojo::current()->AddObserver(s_signalObserver);
-}
-
-void removeMessageLoopObservers()
-{
-    base::MessageLoop::current()->RemoveTaskObserver(s_taskObserver);
-    mojo::common::MessagePumpMojo::current()->RemoveObserver(s_signalObserver);
-
-    ASSERT(s_taskObserver);
-    delete s_taskObserver;
-    s_taskObserver = 0;
-
-    ASSERT(s_signalObserver);
-    delete s_signalObserver;
-    s_signalObserver = 0;
-}
-
-} // namespace
 
 // Make sure we are not re-initialized in the same address space.
 // Doing so may cause hard to reproduce crashes.
@@ -140,14 +84,10 @@ void initialize(Platform* platform)
     WTF::UTF8Encoding();
 
     InitDartVM();
-
-    addMessageLoopObservers();
 }
 
 void shutdown()
 {
-    removeMessageLoopObservers();
-
     // FIXME: Shutdown dart?
 
     CoreInitializer::shutdown();

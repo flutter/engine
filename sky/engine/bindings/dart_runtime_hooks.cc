@@ -22,7 +22,6 @@
 #include "sky/engine/tonic/dart_invoke.h"
 #include "sky/engine/tonic/dart_isolate_scope.h"
 #include "sky/engine/tonic/dart_library_natives.h"
-#include "sky/engine/tonic/dart_microtask_queue.h"
 #include "sky/engine/tonic/dart_state.h"
 #include "sky/engine/wtf/text/WTFString.h"
 
@@ -48,7 +47,6 @@ namespace blink {
 // the Mojo embedder dart, such as printing, and file I/O.
 #define BUILTIN_NATIVE_LIST(V) \
   V(Logger_PrintString, 1)     \
-  V(ScheduleMicrotask, 1)      \
   V(GetBaseURLString, 0)
 
 BUILTIN_NATIVE_LIST(DECLARE_FUNCTION);
@@ -111,16 +109,10 @@ static void InitDartCore(Dart_Handle builtin) {
 static void InitDartAsync(Dart_Handle builtin_library,
                           DartRuntimeHooks::IsolateType isolate_type) {
   Dart_Handle schedule_microtask;
-  if (isolate_type == DartRuntimeHooks::MainIsolate) {
-    schedule_microtask =
-        GetClosure(builtin_library, "_getScheduleMicrotaskClosure");
-  } else {
-    CHECK(isolate_type == DartRuntimeHooks::SecondaryIsolate);
-    Dart_Handle isolate_lib = Dart_LookupLibrary(ToDart("dart:isolate"));
-    Dart_Handle method_name =
-        Dart_NewStringFromCString("_getIsolateScheduleImmediateClosure");
-    schedule_microtask = Dart_Invoke(isolate_lib, method_name, 0, NULL);
-  }
+  Dart_Handle isolate_lib = Dart_LookupLibrary(ToDart("dart:isolate"));
+  Dart_Handle method_name =
+      Dart_NewStringFromCString("_getIsolateScheduleImmediateClosure");
+  schedule_microtask = Dart_Invoke(isolate_lib, method_name, 0, NULL);
   Dart_Handle async_library = Dart_LookupLibrary(ToDart("dart:async"));
   Dart_Handle set_schedule_microtask = ToDart("_setScheduleImmediateClosure");
   DART_CHECK_VALID(Dart_Invoke(async_library, set_schedule_microtask, 1,
@@ -177,13 +169,6 @@ void Logger_PrintString(Dart_NativeArguments args) {
     Dart_ServiceSendDataEvent("Stdout", "WriteEvent",
                               newline, sizeof(newline));
   }
-}
-
-void ScheduleMicrotask(Dart_NativeArguments args) {
-  Dart_Handle closure = Dart_GetNativeArgument(args, 0);
-  if (LogIfError(closure) || !Dart_IsClosure(closure))
-    return;
-  DartMicrotaskQueue::ScheduleMicrotask(closure);
 }
 
 void GetBaseURLString(Dart_NativeArguments args) {

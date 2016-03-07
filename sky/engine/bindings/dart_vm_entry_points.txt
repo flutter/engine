@@ -8,7 +8,6 @@ dart:ui,::,_getCreateTimerClosure
 dart:ui,::,_getGetBaseURLClosure
 dart:ui,::,_getMainClosure
 dart:ui,::,_getPrintClosure
-dart:ui,::,_getScheduleMicrotaskClosure
 dart:ui,::,_onAppLifecycleStateChanged
 dart:ui,::,_popRoute
 dart:ui,::,_pushRoute

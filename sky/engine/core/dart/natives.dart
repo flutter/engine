@@ -19,12 +19,10 @@ _setupHooks() {
   VMLibraryHooks.timerMillisecondClock = MojoCoreNatives.timerMillisecondClock;
 }
 
-void _scheduleMicrotask(void callback()) native "ScheduleMicrotask";
 String _getBaseURLString() native "GetBaseURLString";
 Uri _getBaseURL() => Uri.parse(_getBaseURLString());
 
 _getPrintClosure() => _print;
-_getScheduleMicrotaskClosure() => _scheduleMicrotask;
 _getGetBaseURLClosure() => _getBaseURL;
 
 // Though the "main" symbol is not included in any of the libraries imported
