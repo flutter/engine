@@ -8,7 +8,16 @@
 
 @end
 
-@implementation FlutterView
+@implementation FlutterView {
+  NSArray* _accessibleElements;
+}
+
+- (void)updateAccessibleElements:(NSArray*)accessibleElements {
+  if (_accessibleElements != nil) {
+    [_accessibleElements release];
+  }
+  _accessibleElements = [accessibleElements retain];
+}
 
 - (void)layoutSubviews {
   CGFloat screenScale = [UIScreen mainScreen].scale;
@@ -28,6 +37,27 @@
 
 - (BOOL)enableInputClicksWhenVisible {
   return YES;
+}
+
+/* The container itself is not accessible but contains accessible elements. */
+- (BOOL)isAccessibilityElement {
+  return NO;
+}
+
+- (NSArray*)accessibleElements {
+  return _accessibleElements;
+}
+
+- (NSInteger)accessibilityElementCount {
+  return [[self accessibleElements] count];
+}
+
+- (id)accessibilityElementAtIndex:(NSInteger)index {
+  return [[self accessibleElements] objectAtIndex:index];
+}
+
+- (NSInteger)indexOfAccessibilityElement:(id)element {
+  return [[self accessibleElements] indexOfObject:element];
 }
 
 @end

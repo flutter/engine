@@ -7,13 +7,16 @@
 
 #include "base/mac/scoped_nsautorelease_pool.h"
 #include "base/trace_event/trace_event.h"
+#include "mojo/public/cpp/application/connect.h"
 #include "sky/engine/wtf/MakeUnique.h"
 #include "sky/services/engine/sky_engine.mojom.h"
 #include "sky/services/platform/ios/system_chrome_impl.h"
+#include "sky/services/semantics/semantics.mojom.h"
 #include "sky/shell/platform/ios/flutter_touch_mapper.h"
 #include "sky/shell/platform/ios/FlutterDartProject_Internal.h"
 #include "sky/shell/platform/ios/FlutterDynamicServiceLoader.h"
 #include "sky/shell/platform/ios/FlutterView.h"
+#include "sky/shell/platform/ios/semantics_listener_impl.h"
 #include "sky/shell/platform/mac/platform_mac.h"
 #include "sky/shell/platform/mac/platform_view_mac.h"
 #include "sky/shell/platform/mac/platform_service_provider.h"
@@ -30,6 +33,7 @@
   sky::shell::TouchMapper _touchMapper;
   std::unique_ptr<sky::shell::ShellView> _shellView;
   sky::SkyEnginePtr _engine;
+  semantics::SemanticsServerPtr _semanticsServer;
   BOOL _initialized;
 }
 
@@ -183,16 +187,26 @@ static void DynamicServiceResolve(void* baton,
   mojo::ServiceProviderPtr viewServiceProvider;
   new sky::shell::ViewServiceProvider(mojo::GetProxy(&viewServiceProvider));
 
+  mojo::ServiceProviderPtr outgoingServiceProvider;
+
   sky::ServicesDataPtr services = sky::ServicesData::New();
   services->incoming_services = serviceProvider.Pass();
+  services->outgoing_services = mojo::GetProxy(&outgoingServiceProvider);
   services->view_services = viewServiceProvider.Pass();
   _engine->SetServices(services.Pass());
+
+  semantics::SemanticsServerPtr semantics_server;
+  mojo::ConnectToService(outgoingServiceProvider.get(), &semantics_server);
+  _semanticsServer = semantics_server.Pass();
 }
 
 #pragma mark - Loading the view
 
 - (void)loadView {
   FlutterView* surface = [[FlutterView alloc] init];
+
+  // Construct the listener implementation
+  new sky::shell::SemanticsListenerImpl(surface, _semanticsServer.Pass());
 
   self.view = surface;
   self.view.multipleTouchEnabled = YES;
