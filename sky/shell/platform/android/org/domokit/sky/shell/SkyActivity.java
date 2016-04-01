@@ -45,6 +45,10 @@ public class SkyActivity extends Activity {
         if (intent.getBooleanExtra("start-paused", false)) {
             args.add("--start-paused");
         }
+        String dartFlags = intent.getStringExtra("dart-flags");
+        if (dartFlags != null) {
+          args.add("--dart-flags=\"" + dartFlags + "\"");
+        }
         if (!args.isEmpty()) {
             String[] argsArray = new String[args.size()];
             return args.toArray(argsArray);
