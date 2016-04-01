@@ -4,10 +4,12 @@
 
 #include "sky/shell/tracing_controller.h"
 
+#include "base/threading/platform_thread.h"
 #include "base/trace_event/trace_event.h"
 #include "dart/runtime/include/dart_tools_api.h"
 #include "sky/engine/core/script/dart_init.h"
 #include "sky/engine/wtf/MakeUnique.h"
+#include "sky/shell/shell.h"
 
 #include <string>
 
@@ -148,6 +150,32 @@ static void BaseTraceEventCallback(base::TraceTicks timestamp,
   }
 }
 
+static void TraceThreadMetadataToObservatory() {
+  const char* name = base::PlatformThread::GetName();
+  if (name == nullptr) {
+    return;
+  }
+  const char* arg_names[] = {"name"};
+  const char* arg_values[] = {name};
+
+  Dart_TimelineEvent("thread_name",                 // label
+                     Dart_TimelineGetMicros(),      // timestamp0
+                     0,                             // timestamp1,
+                     Dart_Timeline_Event_Metadata,  // event type
+                     1,                             // arg count
+                     arg_names, arg_values          // args
+                     );
+}
+
+static void AddTraceMetadata() {
+  Shell::Shared().gpu_task_runner()->PostTask(
+      FROM_HERE, base::Bind(&TraceThreadMetadataToObservatory));
+  Shell::Shared().ui_task_runner()->PostTask(
+      FROM_HERE, base::Bind(&TraceThreadMetadataToObservatory));
+  Shell::Shared().io_task_runner()->PostTask(
+      FROM_HERE, base::Bind(&TraceThreadMetadataToObservatory));
+}
+
 void TracingController::StartTracing() {
   if (tracing_active_) {
     return;
@@ -157,6 +185,8 @@ void TracingController::StartTracing() {
 
   StartDartTracing();
   StartBaseTracing();
+
+  AddTraceMetadata();
 }
 
 void TracingController::StartDartTracing() {
