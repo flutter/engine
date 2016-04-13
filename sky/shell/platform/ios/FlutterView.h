@@ -9,8 +9,6 @@
 
 @interface FlutterView : UIView
 
-- (void)updateAccessibleElements:(NSArray*)accessibleElements;
-
 @end
 
 #endif  // FLUTTER_FLUTTERVIEW_H_

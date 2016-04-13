@@ -6,17 +6,18 @@
 #import "sky/shell/platform/ios/public/FlutterViewController.h"
 
 #include "base/mac/scoped_nsautorelease_pool.h"
+#include "base/memory/weak_ptr.h"
 #include "base/trace_event/trace_event.h"
 #include "mojo/public/cpp/application/connect.h"
 #include "sky/engine/wtf/MakeUnique.h"
 #include "sky/services/engine/sky_engine.mojom.h"
 #include "sky/services/platform/ios/system_chrome_impl.h"
 #include "sky/services/semantics/semantics.mojom.h"
+#include "sky/shell/platform/ios/accessibility_bridge.h"
 #include "sky/shell/platform/ios/flutter_touch_mapper.h"
 #include "sky/shell/platform/ios/FlutterDartProject_Internal.h"
 #include "sky/shell/platform/ios/FlutterDynamicServiceLoader.h"
 #include "sky/shell/platform/ios/FlutterView.h"
-#include "sky/shell/platform/ios/semantics_listener_impl.h"
 #include "sky/shell/platform/mac/platform_mac.h"
 #include "sky/shell/platform/mac/platform_view_mac.h"
 #include "sky/shell/platform/mac/platform_service_provider.h"
@@ -34,6 +35,7 @@
   std::unique_ptr<sky::shell::ShellView> _shellView;
   sky::SkyEnginePtr _engine;
   semantics::SemanticsServerPtr _semanticsServer;
+  base::WeakPtr<sky::shell::a11y::AccessibilityBridge> _a11yBridge;
   BOOL _initialized;
 }
 
@@ -177,6 +179,8 @@ static void DynamicServiceResolve(void* baton,
   mojo::ServiceProviderPtr serviceProvider;
 
   auto serviceProviderProxy = mojo::GetProxy(&serviceProvider);
+  // TODO(eseidel): this unretained reference might not be safe since
+  // the engine could outlive this controller
   auto serviceResolutionCallback = base::Bind(
       &DynamicServiceResolve,
       base::Unretained(reinterpret_cast<void*>(_dynamicServiceLoader)));
@@ -205,8 +209,12 @@ static void DynamicServiceResolve(void* baton,
 - (void)loadView {
   FlutterView* surface = [[FlutterView alloc] init];
 
-  // Construct the listener implementation
-  new sky::shell::SemanticsListenerImpl(surface, _semanticsServer.Pass());
+  // TODO(tvolkert): Check to make sure the surface isn't cleaned up before we
+  // expect (the bridge expects the surface reference to remain valid during the
+  // bridge's lifetime).
+  auto a11yBridge =
+      new sky::shell::a11y::AccessibilityBridge(surface, _semanticsServer);
+  _a11yBridge = a11yBridge->AsWeakPtr();
 
   self.view = surface;
   self.view.multipleTouchEnabled = YES;
@@ -446,6 +454,9 @@ static inline PointerTypeMapperPhase PointerTypePhaseFromUITouchPhase(
 
   [_dynamicServiceLoader release];
   [_dartProject release];
+
+  delete _a11yBridge.get();
+  _a11yBridge.reset();
 
   [super dealloc];
 }
