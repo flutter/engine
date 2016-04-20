@@ -44,11 +44,20 @@
 namespace dart {
 namespace observatory {
 
+#ifdef FLUTTER_DEVELOP_MODE
+
 // These two symbols are defined in |observatory_archive.cc| which is generated
 // by the |//dart/runtime/observatory:archive_observatory| rule. Both of these
 // symbols will be part of the data segment and therefore are read only.
 extern unsigned int observatory_assets_archive_len;
 extern const uint8_t* observatory_assets_archive;
+
+#else
+
+unsigned int observatory_assets_archive_len = 0;
+const uint8_t* observatory_assets_archive = nullptr;
+
+#endif
 
 }  // namespace observatory
 }  // namespace dart
@@ -437,12 +446,16 @@ void InitDartVM() {
   }
   CHECK(Dart_SetVMFlags(args.size(), args.data()));
 
+  auto service_assets_callback = GetVMServiceAssetsArchiveCallback;
+
 #ifdef FLUTTER_DEVELOP_MODE
   {
     TRACE_EVENT0("flutter", "DartDebugger::InitDebugger");
     // This should be called before calling Dart_Initialize.
     DartDebugger::InitDebugger();
   }
+#else
+  service_assets_callback = nullptr;
 #endif
 
   DartUI::InitForGlobal();
@@ -471,7 +484,7 @@ void InitDartVM() {
                           // Entroy source
                           nullptr,
                           // VM service assets archive
-                          GetVMServiceAssetsArchiveCallback) == nullptr);
+                          service_assets_callback) == nullptr);
   }
 
   // Allow streaming of stdout and stderr by the Dart vm.
