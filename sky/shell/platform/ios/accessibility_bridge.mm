@@ -37,12 +37,12 @@ base::WeakPtr<AccessibilityBridge> AccessibilityBridge::AsWeakPtr() {
   return weak_factory_.GetWeakPtr();
 }
 
-std::shared_ptr<Node> AccessibilityBridge::UpdateNode(
+NodePtr AccessibilityBridge::UpdateNode(
     const semantics::SemanticsNodePtr& node) {
   NodePtr persistentNode;
   NodeMap::iterator iter = nodes_.find(node->id);
   if (iter == nodes_.end()) {
-    persistentNode.reset(new Node(this, node));
+    persistentNode = new Node(this, node);
     nodes_.insert(NodeMap::value_type(node->id, persistentNode));
   } else {
     persistentNode = iter->second;
@@ -52,7 +52,7 @@ std::shared_ptr<Node> AccessibilityBridge::UpdateNode(
   return persistentNode;
 }
 
-void AccessibilityBridge::RemoveNode(std::shared_ptr<Node> node) {
+void AccessibilityBridge::RemoveNode(NodePtr node) {
   assert(nodes_.find(node->id_) != nodes_.end());
   assert(nodes_.at(node->id_)->parent_ == nullptr);
   nodes_.erase(node->id_);

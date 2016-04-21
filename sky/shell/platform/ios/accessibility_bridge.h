@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "base/macros.h"
+#include "base/memory/ref_counted.h"
 #include "base/memory/weak_ptr.h"
 #include "mojo/public/cpp/bindings/array.h"
 #include "mojo/public/cpp/bindings/strong_binding.h"
@@ -26,7 +27,7 @@ namespace a11y {
 
 class Node;
 
-typedef std::shared_ptr<Node> NodePtr;
+typedef scoped_refptr<Node> NodePtr;
 
 // Class that listens for updates to the semantic tree from Dart code and issues
 // corresponding updates to the FlutterView's accessibility elements.
@@ -129,21 +130,21 @@ struct Geometry {
 
 // Class that holds information about accessibility nodes, which are used
 // to construct iOS accessibility elements
-class Node final {
+class Node final : public base::RefCounted<Node> {
  public:
   static const uint32_t kUninitializedNodeId = -1;
-
-  ~Node();
 
   void Update(const semantics::SemanticsNodePtr& node);
   void PopulateAccessibleElements(NSMutableArray* accessibleElements);
 
  private:
+  friend class base::RefCounted<Node>;
   friend class AccessibilityBridge;
   typedef std::vector<NodePtr> NodeList;
 
   Node() = delete;
   Node(AccessibilityBridge*, const semantics::SemanticsNodePtr&);
+  ~Node();
 
   void ValidateGlobalRect();
   void ValidateGlobalTransform();
