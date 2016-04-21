@@ -8,8 +8,7 @@
 
 @end
 
-@implementation FlutterView {
-}
+@implementation FlutterView
 
 - (void)layoutSubviews {
   CGFloat screenScale = [UIScreen mainScreen].scale;
