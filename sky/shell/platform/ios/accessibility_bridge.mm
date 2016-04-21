@@ -62,7 +62,8 @@ void AccessibilityBridge::RemoveNode(std::shared_ptr<Node> node) {
   }
 }
 
-NSArray* AccessibilityBridge::CreateAccessibleElements() const {
+NSArray* AccessibilityBridge::CreateAccessibleElements() const
+    NS_RETURNS_RETAINED {
   NSMutableArray* accessibleElements = [[NSMutableArray alloc] init];
   for (const auto& iter : nodes_) {
     // TODO(tvolkert): n>1 roots will cause unstable sort here.

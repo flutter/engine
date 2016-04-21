@@ -48,7 +48,7 @@ class AccessibilityBridge final : public semantics::SemanticsListener {
   NodePtr UpdateNode(const semantics::SemanticsNodePtr& node);
   void RemoveNode(NodePtr node);
 
-  NSArray* CreateAccessibleElements() const;
+  NSArray* CreateAccessibleElements() const NS_RETURNS_RETAINED;
 
   // We expect to have the same lifetime as the view
   FlutterView* view_;
@@ -63,14 +63,16 @@ class AccessibilityBridge final : public semantics::SemanticsListener {
 
 struct Flags {
   Flags()
-      : can_be_tapped(FALSE),
-        can_be_long_pressed(FALSE),
-        can_be_scrolled_horizontally(FALSE),
-        can_be_scrolled_vertically(FALSE),
-        has_checked_state(FALSE),
-        is_checked(FALSE) {}
+      : can_be_tapped(false),
+        can_be_long_pressed(false),
+        can_be_scrolled_horizontally(false),
+        can_be_scrolled_vertically(false),
+        has_checked_state(false),
+        is_checked(false) {}
 
-  // Assigns the specified flags to this struct iff it is non-null
+  // Assigns the specified flags to this struct iff it is non-null.
+  // It is important not to update our flags when the semantic flags
+  // are null, because a null update from Dart means "nothing to update"
   Flags& operator=(const semantics::SemanticFlagsPtr& other) {
     if (!other.is_null()) {
       can_be_tapped = other->canBeTapped;
@@ -93,6 +95,8 @@ struct Flags {
 
 struct Strings {
   // Assigns the specified strings to this struct iff it is non-null
+  // It is important not to update our strings when the semantic strings
+  // are null, because a null update from Dart means "nothing to update"
   Strings& operator=(const semantics::SemanticStringsPtr& other) {
     if (!other.is_null()) {
       if (!other->label.is_null()) {
@@ -107,6 +111,8 @@ struct Strings {
 
 struct Geometry {
   // Assigns the specified geometry to this struct iff it is non-null
+  // It is important not to update our values when the semantic geometry
+  // is null, because a null update from Dart means "nothing to update"
   Geometry& operator=(const semantics::SemanticGeometryPtr& other) {
     if (!other.is_null()) {
       if (!other->transform.is_null()) {
