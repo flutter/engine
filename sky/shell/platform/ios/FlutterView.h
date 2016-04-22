@@ -5,9 +5,13 @@
 #ifndef FLUTTER_FLUTTERVIEW_H_
 #define FLUTTER_FLUTTERVIEW_H_
 
+#include "sky/services/semantics/semantics.mojom.h"
+
 #include <UIKit/UIKit.h>
 
 @interface FlutterView : UIView
+
+- (instancetype)initWithSemantics:(semantics::SemanticsServer*)semantics;
 
 @end
 

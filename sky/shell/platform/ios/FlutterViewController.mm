@@ -6,14 +6,12 @@
 #import "sky/shell/platform/ios/public/FlutterViewController.h"
 
 #include "base/mac/scoped_nsautorelease_pool.h"
-#include "base/memory/weak_ptr.h"
 #include "base/trace_event/trace_event.h"
 #include "mojo/public/cpp/application/connect.h"
 #include "sky/engine/wtf/MakeUnique.h"
 #include "sky/services/engine/sky_engine.mojom.h"
 #include "sky/services/platform/ios/system_chrome_impl.h"
 #include "sky/services/semantics/semantics.mojom.h"
-#include "sky/shell/platform/ios/accessibility_bridge.h"
 #include "sky/shell/platform/ios/flutter_touch_mapper.h"
 #include "sky/shell/platform/ios/FlutterDartProject_Internal.h"
 #include "sky/shell/platform/ios/FlutterDynamicServiceLoader.h"
@@ -35,7 +33,6 @@
   std::unique_ptr<sky::shell::ShellView> _shellView;
   sky::SkyEnginePtr _engine;
   semantics::SemanticsServerPtr _semanticsServer;
-  base::WeakPtr<sky::shell::a11y::AccessibilityBridge> _a11yBridge;
   BOOL _initialized;
 }
 
@@ -207,14 +204,8 @@ static void DynamicServiceResolve(void* baton,
 #pragma mark - Loading the view
 
 - (void)loadView {
-  FlutterView* surface = [[FlutterView alloc] init];
-
-  // TODO(tvolkert): Check to make sure the surface isn't cleaned up before we
-  // expect (the bridge expects the surface reference to remain valid during the
-  // bridge's lifetime).
-  auto a11yBridge =
-      new sky::shell::a11y::AccessibilityBridge(surface, _semanticsServer);
-  _a11yBridge = a11yBridge->AsWeakPtr();
+  FlutterView* surface =
+      [[FlutterView alloc] initWithSemantics:_semanticsServer.get()];
 
   self.view = surface;
   self.view.multipleTouchEnabled = YES;
@@ -454,9 +445,6 @@ static inline PointerTypeMapperPhase PointerTypePhaseFromUITouchPhase(
 
   [_dynamicServiceLoader release];
   [_dartProject release];
-
-  delete _a11yBridge.get();
-  _a11yBridge.reset();
 
   [super dealloc];
 }

@@ -31,13 +31,17 @@ typedef scoped_refptr<Node> NodePtr;
 
 // Class that listens for updates to the semantic tree from Dart code and issues
 // corresponding updates to the FlutterView's accessibility elements.
+//
+// The bridge is owned by the FlutterView that created it. It maintains a raw
+// pointer back to the view to enable bidirectional communication with the view
+// without introducing a circular reference. Since the strong binding herein may
+// destroy the bridge, the FlutterView maintains its ownership via a weak
+// pointer reference.
 class AccessibilityBridge final : public semantics::SemanticsListener {
  public:
-  AccessibilityBridge(FlutterView*, semantics::SemanticsServerPtr&);
+  AccessibilityBridge(FlutterView*, semantics::SemanticsServer*);
   ~AccessibilityBridge() override;
 
-  // Listener method invoked from Dart that signals that the specified semantic
-  // nodes have been updated in the render tree.
   void UpdateSemanticsTree(mojo::Array<semantics::SemanticsNodePtr>) override;
 
   base::WeakPtr<AccessibilityBridge> AsWeakPtr();
@@ -51,7 +55,7 @@ class AccessibilityBridge final : public semantics::SemanticsListener {
 
   NSArray* CreateAccessibleElements() const NS_RETURNS_RETAINED;
 
-  // We expect to have the same lifetime as the view
+  // See class docs above about ownership relationship
   FlutterView* view_;
   NodeMap nodes_;
 

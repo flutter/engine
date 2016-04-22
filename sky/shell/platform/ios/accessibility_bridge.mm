@@ -12,7 +12,7 @@ namespace a11y {
 
 AccessibilityBridge::AccessibilityBridge(
     FlutterView* view,
-    semantics::SemanticsServerPtr& semanticsServer)
+    semantics::SemanticsServer* semanticsServer)
     : view_(view), binding_(this), weak_factory_(this) {
   mojo::InterfaceHandle<semantics::SemanticsListener> listener;
   binding_.Bind(&listener);
