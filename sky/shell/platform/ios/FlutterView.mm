@@ -11,15 +11,13 @@
 @end
 
 @implementation FlutterView {
-  base::WeakPtr<sky::shell::a11y::AccessibilityBridge> _a11yBridge;
+  base::WeakPtr<sky::shell::AccessibilityBridge> _accessibilityBridge;
 }
 
-- (instancetype)initWithSemantics:(semantics::SemanticsServer*)semantics {
-  if ((self = [super init])) {
-    auto bridge = new sky::shell::a11y::AccessibilityBridge(self, semantics);
-    _a11yBridge = bridge->AsWeakPtr();
-  }
-  return self;
+- (void)setSemanticsServer:(semantics::SemanticsServerPtr)semanticsServer {
+  auto bridge =
+      new sky::shell::AccessibilityBridge(self, semanticsServer.Pass());
+  _accessibilityBridge = bridge->AsWeakPtr();
 }
 
 - (void)layoutSubviews {
@@ -71,8 +69,8 @@
 }
 
 - (void)dealloc {
-  delete _a11yBridge.get();
-  _a11yBridge.reset();
+  delete _accessibilityBridge.get();
+  _accessibilityBridge.reset();
 
   [super dealloc];
 }

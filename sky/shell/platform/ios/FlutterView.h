@@ -11,7 +11,7 @@
 
 @interface FlutterView : UIView
 
-- (instancetype)initWithSemantics:(semantics::SemanticsServer*)semantics;
+- (void)setSemanticsServer:(semantics::SemanticsServerPtr)semanticsServer;
 
 @end
 

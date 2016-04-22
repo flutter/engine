@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #import "sky/shell/platform/ios/public/FlutterViewController.h"
-#import "sky/shell/platform/ios/public/FlutterViewController.h"
 
 #include "base/mac/scoped_nsautorelease_pool.h"
 #include "base/trace_event/trace_event.h"
@@ -204,8 +203,11 @@ static void DynamicServiceResolve(void* baton,
 #pragma mark - Loading the view
 
 - (void)loadView {
-  FlutterView* surface =
-      [[FlutterView alloc] initWithSemantics:_semanticsServer.get()];
+  FlutterView* surface = [[FlutterView alloc] init];
+
+  // Transfer ownership of the semantics server to the view
+  surface.semanticsServer = _semanticsServer.Pass();
+  _semanticsServer.reset();
 
   self.view = surface;
   self.view.multipleTouchEnabled = YES;
