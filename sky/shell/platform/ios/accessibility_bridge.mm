@@ -90,18 +90,23 @@ void AccessibilityBridge::Node::Update(
   }
 
   if (!node->children.is_null()) {
-    const std::vector<scoped_refptr<Node>> oldChildren = children_;
-    children_.clear();
-    for (scoped_refptr<Node> child : oldChildren) {
+    // Mark children for removal
+    for (scoped_refptr<Node> child : children_) {
       DCHECK(child->parent_ != nullptr);
       child->parent_ = nullptr;
     }
+
+    // Set the new list of children
+    std::vector<scoped_ptr<Node>> children;
     for (const semantics::SemanticsNodePtr& childNode : node->children) {
       scoped_refptr<Node> child = bridge_->UpdateNode(childNode);
       child->parent_ = this;
-      children_.push_back(child);
+      children.push_back(child);
     }
-    for (scoped_refptr<Node> child : oldChildren) {
+    children.swap(children_);
+
+    // Remove those children that are still marked for removal
+    for (scoped_refptr<Node> child : children) {
       if (child->parent_ == nullptr) {
         bridge_->RemoveNode(child);
       }
