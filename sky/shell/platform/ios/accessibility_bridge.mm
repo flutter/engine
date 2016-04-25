@@ -97,7 +97,7 @@ void AccessibilityBridge::Node::Update(
     }
 
     // Set the new list of children
-    std::vector<scoped_ptr<Node>> children;
+    std::vector<scoped_refptr<Node>> children;
     for (const semantics::SemanticsNodePtr& childNode : node->children) {
       scoped_refptr<Node> child = bridge_->UpdateNode(childNode);
       child->parent_ = this;
