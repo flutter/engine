@@ -183,12 +183,9 @@ void AccessibilityBridge::Node::PopulateAccessibleElements(
 
 AccessibilityBridge::Node::~Node() {}
 
-AccessibilityBridge::AccessibilityBridge(
-    FlutterView* view,
-    mojo::ServiceProvider* serviceProvider)
-    : view_(view),
-      binding_(this),
-      weak_factory_(this) {
+AccessibilityBridge::AccessibilityBridge(FlutterView* view,
+                                         mojo::ServiceProvider* serviceProvider)
+    : view_(view), binding_(this), weak_factory_(this) {
   mojo::ConnectToService(serviceProvider, &semantics_server_);
   mojo::InterfaceHandle<semantics::SemanticsListener> listener;
   binding_.Bind(&listener);
