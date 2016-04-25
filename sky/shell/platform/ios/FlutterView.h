@@ -5,13 +5,13 @@
 #ifndef FLUTTER_FLUTTERVIEW_H_
 #define FLUTTER_FLUTTERVIEW_H_
 
-#include "sky/services/semantics/semantics.mojom.h"
+#include "mojo/public/interfaces/application/service_provider.mojom.h"
 
 #include <UIKit/UIKit.h>
 
 @interface FlutterView : UIView
 
-- (void)setSemanticsServer:(semantics::SemanticsServerPtr)semanticsServer;
+- (void)withAccessibility:(mojo::ServiceProvider*)serviceProvider;
 
 @end
 

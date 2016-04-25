@@ -14,9 +14,8 @@
   base::WeakPtr<sky::shell::AccessibilityBridge> _accessibilityBridge;
 }
 
-- (void)setSemanticsServer:(semantics::SemanticsServerPtr)semanticsServer {
-  auto bridge =
-      new sky::shell::AccessibilityBridge(self, semanticsServer.Pass());
+- (void)withAccessibility:(mojo::ServiceProvider*)serviceProvider {
+  auto bridge = new sky::shell::AccessibilityBridge(self, serviceProvider);
   _accessibilityBridge = bridge->AsWeakPtr();
 }
 

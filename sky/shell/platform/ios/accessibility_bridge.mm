@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "mojo/public/cpp/application/connect.h"
 #include "sky/shell/platform/ios/accessibility_bridge.h"
 
 #include <UIKit/UIKit.h>
@@ -184,11 +185,11 @@ AccessibilityBridge::Node::~Node() {}
 
 AccessibilityBridge::AccessibilityBridge(
     FlutterView* view,
-    semantics::SemanticsServerPtr semanticsServer)
+    mojo::ServiceProvider* serviceProvider)
     : view_(view),
-      semantics_server_(semanticsServer.Pass()),
       binding_(this),
       weak_factory_(this) {
+  mojo::ConnectToService(serviceProvider, &semantics_server_);
   mojo::InterfaceHandle<semantics::SemanticsListener> listener;
   binding_.Bind(&listener);
   semantics_server_->AddSemanticsListener(listener.Pass());

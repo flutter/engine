@@ -15,6 +15,7 @@
 #include "base/memory/weak_ptr.h"
 #include "mojo/public/cpp/bindings/array.h"
 #include "mojo/public/cpp/bindings/strong_binding.h"
+#include "mojo/public/interfaces/application/service_provider.mojom.h"
 #include "sky/engine/platform/geometry/FloatRect.h"
 #include "sky/services/semantics/semantics.mojom.h"
 #include "sky/shell/platform/ios/FlutterView.h"
@@ -31,13 +32,9 @@ namespace shell {
 // pointer back to the view to enable bidirectional communication with the view
 // without introducing a circular reference. Since the strong binding herein may
 // destroy the bridge, the view maintains its ownership via a weak reference.
-//
-// The bridge maintains ownership of the semantics server that's passed to it
-// during construction, so the message pipe will automatically be closed when
-// this class is destroyed.
 class AccessibilityBridge final : public semantics::SemanticsListener {
  public:
-  AccessibilityBridge(FlutterView*, semantics::SemanticsServerPtr);
+  AccessibilityBridge(FlutterView*, mojo::ServiceProvider*);
   ~AccessibilityBridge() override;
 
   void UpdateSemanticsTree(mojo::Array<semantics::SemanticsNodePtr>) override;

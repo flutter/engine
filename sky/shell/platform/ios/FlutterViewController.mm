@@ -6,7 +6,7 @@
 
 #include "base/mac/scoped_nsautorelease_pool.h"
 #include "base/trace_event/trace_event.h"
-#include "mojo/public/cpp/application/connect.h"
+#include "mojo/public/interfaces/application/service_provider.mojom.h"
 #include "sky/engine/wtf/MakeUnique.h"
 #include "sky/services/engine/sky_engine.mojom.h"
 #include "sky/services/platform/ios/system_chrome_impl.h"
@@ -31,7 +31,7 @@
   sky::shell::TouchMapper _touchMapper;
   std::unique_ptr<sky::shell::ShellView> _shellView;
   sky::SkyEnginePtr _engine;
-  semantics::SemanticsServerPtr _semanticsServer;
+  mojo::ServiceProviderPtr _outgoingServiceProvider;
   BOOL _initialized;
 }
 
@@ -187,27 +187,19 @@ static void DynamicServiceResolve(void* baton,
   mojo::ServiceProviderPtr viewServiceProvider;
   new sky::shell::ViewServiceProvider(mojo::GetProxy(&viewServiceProvider));
 
-  mojo::ServiceProviderPtr outgoingServiceProvider;
-
+  DCHECK(!_outgoingServiceProvider.is_bound());
   sky::ServicesDataPtr services = sky::ServicesData::New();
   services->incoming_services = serviceProvider.Pass();
-  services->outgoing_services = mojo::GetProxy(&outgoingServiceProvider);
+  services->outgoing_services = mojo::GetProxy(&_outgoingServiceProvider);
   services->view_services = viewServiceProvider.Pass();
   _engine->SetServices(services.Pass());
-
-  semantics::SemanticsServerPtr semantics_server;
-  mojo::ConnectToService(outgoingServiceProvider.get(), &semantics_server);
-  _semanticsServer = semantics_server.Pass();
 }
 
 #pragma mark - Loading the view
 
 - (void)loadView {
   FlutterView* surface = [[FlutterView alloc] init];
-
-  // Transfer ownership of the semantics server to the view
-  surface.semanticsServer = _semanticsServer.Pass();
-  _semanticsServer.reset();
+  [surface withAccessibility:_outgoingServiceProvider.get()];
 
   self.view = surface;
   self.view.multipleTouchEnabled = YES;
