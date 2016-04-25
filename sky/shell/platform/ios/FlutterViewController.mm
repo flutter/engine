@@ -31,7 +31,7 @@
   sky::shell::TouchMapper _touchMapper;
   std::unique_ptr<sky::shell::ShellView> _shellView;
   sky::SkyEnginePtr _engine;
-  mojo::ServiceProviderPtr _outgoingServiceProvider;
+  mojo::ServiceProviderPtr _dartServices;
   BOOL _initialized;
 }
 
@@ -187,10 +187,10 @@ static void DynamicServiceResolve(void* baton,
   mojo::ServiceProviderPtr viewServiceProvider;
   new sky::shell::ViewServiceProvider(mojo::GetProxy(&viewServiceProvider));
 
-  DCHECK(!_outgoingServiceProvider.is_bound());
+  DCHECK(!_dartServices.is_bound());
   sky::ServicesDataPtr services = sky::ServicesData::New();
   services->incoming_services = serviceProvider.Pass();
-  services->outgoing_services = mojo::GetProxy(&_outgoingServiceProvider);
+  services->outgoing_services = mojo::GetProxy(&_dartServices);
   services->view_services = viewServiceProvider.Pass();
   _engine->SetServices(services.Pass());
 }
@@ -199,7 +199,7 @@ static void DynamicServiceResolve(void* baton,
 
 - (void)loadView {
   FlutterView* surface = [[FlutterView alloc] init];
-  [surface withAccessibility:_outgoingServiceProvider.get()];
+  [surface withAccessibility:_dartServices.get()];
 
   self.view = surface;
   self.view.multipleTouchEnabled = YES;

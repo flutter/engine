@@ -126,16 +126,8 @@ void AccessibilityBridge::Node::ValidateGlobalTransform() {
     global_transform_.reset(new SkMatrix44(geometry_.transform));
   } else {
     parent_->ValidateGlobalTransform();
-    const std::unique_ptr<SkMatrix44>& parentTransform =
-        parent_->global_transform_;
-    if (geometry_.transform.isIdentity()) {
-      global_transform_.reset(new SkMatrix44(*parentTransform));
-    } else if (parentTransform->isIdentity()) {
-      global_transform_.reset(new SkMatrix44(geometry_.transform));
-    } else {
-      global_transform_.reset(
-          new SkMatrix44(geometry_.transform * *parentTransform));
-    }
+    global_transform_.reset(
+        new SkMatrix44(geometry_.transform * *(parent_->global_transform_)));
   }
 }
 
