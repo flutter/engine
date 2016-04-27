@@ -18,6 +18,7 @@ struct SemanticsNode {
 struct SemanticFlags {
   // This is intended to just be booleans, so that it can be extended
   // over time yet still be packed tightly.
+  bool isRootNode = false;
   bool canBeTapped = false;
   bool canBeLongPressed = false;
   bool canBeScrolledHorizontally = false;
