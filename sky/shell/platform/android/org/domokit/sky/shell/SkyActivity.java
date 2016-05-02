@@ -31,7 +31,6 @@ import java.util.ArrayList;
  * Base class for activities that use Sky.
  */
 public class SkyActivity extends Activity {
-    private TracingController mTracingController;
     private FlutterView mView;
 
     private String[] getArgsFromIntent(Intent intent) {
@@ -76,7 +75,6 @@ public class SkyActivity extends Activity {
         mView = new FlutterView(this);
         ActivityImpl.setCurrentActivity(this);
         setContentView(mView);
-        mTracingController = new TracingController(this);
 
         onSkyReady();
     }
@@ -90,7 +88,6 @@ public class SkyActivity extends Activity {
             mView.destroy();
         }
         // Do we need to shut down Sky too?
-        mTracingController.stop();
         super.onDestroy();
     }
 
