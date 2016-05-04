@@ -62,8 +62,8 @@ Building and running the code
 Run the following steps, from the `src` directory created in the steps above:
 
  * `gclient sync` to update your dependencies.
- * `./sky/tools/gn --android` to prepare your build files.
- * `ninja -C out/android_Debug` to build an Android Debug binary.
+ * `./sky/tools/gn --android` to prepare your build files to build an Android Debug binary.
+ * `ninja -C out/android_Debug` to actually build an Android Debug binary.
 
 To run an example with your locally built binary, you'll also need to clone
 [the main Flutter repository](https://github.com/flutter/flutter). See
@@ -87,10 +87,28 @@ connected Android device, from that directory you would run:
 
  * `flutter run --engine-src-path /path/to/engine/src -t tabs.dart`
 
+You can replace `--engine-src-path /path/to/engine/src` with just
+`--engine-debug` if you place the Flutter engine repository in the
+`.../engine/src` directory and the Flutter framework ("flutter")
+repository in the `.../flutter` directory, so that `engine` and
+`flutter` are peers.
+
 If you're going to be debugging crashes in the engine, make sure you add
 `android:debuggable="true"` to the `<application>` element in the
 `android/AndroidManifest.xml` file for the Flutter app you are using
 to test the engine.
+
+To build a release engine, run the following steps, again from the
+`src` directory created in the steps above:
+
+ * `gclient sync` to update your dependencies.
+ * `./sky/tools/gn --android --release` to prepare your build files to build an Android Release binary.
+ * `ninja -C out/android_Release` to actually build an Android Release binary.
+
+To use this engine, pass `--engine-release` to the `flutter` tool
+instead of `--engine-debug`. (If you use `--engine-src-path`, then
+pass that _and_ `--engine-release`.)
+
 
 ### iOS
 
