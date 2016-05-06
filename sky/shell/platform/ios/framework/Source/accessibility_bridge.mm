@@ -122,7 +122,7 @@ struct Geometry {
 - (NSString*)accessibilityLabel {
   return (_strings.is_null() || _strings->label.get().empty())
              ? nil
-             : [NSString stringWithUTF8String:_strings->label.data()];
+             : @(_string->label.data());
 }
 
 - (UIAccessibilityTraits)accessibilityTraits {

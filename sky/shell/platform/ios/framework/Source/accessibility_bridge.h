@@ -30,21 +30,21 @@ class AccessibilityBridge;
 
 @interface AccessibilityNode : NSObject
 
-/*
+/**
  * The globally unique identifier for this node.
  */
-@property(assign, nonatomic, readonly) uint32_t uid;
+@property(nonatomic, readonly) uint32_t uid;
 
-/*
+/**
  * The parent of this node in the node tree. Will be nil for the root node and
  * during transient state changes.
  */
-@property(assign, nonatomic, readonly) AccessibilityNode* parent;
+@property(nonatomic, readonly) AccessibilityNode* parent;
 
-/*
+/**
  * This node's children in the node tree.
  */
-@property(assign, nonatomic, readonly) NSArray<AccessibilityNode*>* children;
+@property(nonatomic, readonly) NSArray<AccessibilityNode*>* children;
 
 - (instancetype)init __attribute__((unavailable("Use initWithBridge instead")));
 - (instancetype)initWithBridge:(sky::shell::AccessibilityBridge*)bridge
