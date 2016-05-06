@@ -18,9 +18,10 @@ class ClipboardImpl : public ::editing::Clipboard {
  public:
   explicit ClipboardImpl(mojo::InterfaceRequest<::editing::Clipboard> request);
   ~ClipboardImpl() override;
-  void SetClipData(::editing::ClipDataPtr clip) override;
-  void GetClipData(
-     const ::editing::Clipboard::GetClipDataCallback& callback) override;
+  void SetClipboardData(::editing::ClipboardDataPtr clip) override;
+  void GetClipboardData(
+      const mojo::String& format,
+      const ::editing::Clipboard::GetClipboardDataCallback& callback) override;
 
  private:
   mojo::StrongBinding<::editing::Clipboard> binding_;

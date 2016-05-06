@@ -10,6 +10,12 @@
 #include <UIKit/UIKit.h>
 #include <unicode/utf16.h>
 
+namespace {
+
+static const char kTextPlainFormat[] = "text/plain";
+
+}  // namespace
+
 namespace sky {
 namespace services {
 namespace editing {
@@ -21,20 +27,20 @@ ClipboardImpl::ClipboardImpl(
 ClipboardImpl::~ClipboardImpl() {
 }
 
-void ClipboardImpl::SetClipData(::editing::ClipDataPtr clip) {
+void ClipboardImpl::SetClipboardData(::editing::ClipboardDataPtr clip) {
   UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
-  pasteboard.string = [NSString stringWithUTF8String:clip->text.data()];
+  pasteboard.string = @(clip->text.data());
 }
 
-void ClipboardImpl::GetClipData(
-    const ::editing::Clipboard::GetClipDataCallback& callback) {
-  ::editing::ClipDataPtr clip;
+void ClipboardImpl::GetClipboardData(
+    const mojo::String& format,
+    const ::editing::Clipboard::GetClipboardDataCallback& callback) {
+  ::editing::ClipboardDataPtr clip;
 
   UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
-  NSString* str = pasteboard.string;
-  if (str) {
-    clip = ::editing::ClipData::New();
-    clip->text = str.UTF8String;
+  if ((format.is_null() || format == kTextPlainFormat) && pasteboard.string) {
+    clip = ::editing::ClipboardData::New();
+    clip->text = pasteboard.string.UTF8String;
   }
 
   callback.Run(clip.Pass());
