@@ -48,3 +48,13 @@ interface Keyboard {
   Show();
   Hide();
 };
+
+struct ClipData {
+  string text;
+};
+
+[ServiceName="editing::Clipboard"]
+interface Clipboard {
+  SetClipData(ClipData clip);
+  GetClipData() => (ClipData? clip);
+};
