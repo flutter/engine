@@ -49,12 +49,12 @@ interface Keyboard {
   Hide();
 };
 
-struct ClipData {
+struct ClipboardData {
   string text;
 };
 
 [ServiceName="editing::Clipboard"]
 interface Clipboard {
-  SetClipData(ClipData clip);
-  GetClipData() => (ClipData? clip);
+  SetClipboardData(ClipboardData clip);
+  GetClipboardData(string format) => (ClipboardData? clip);
 };
