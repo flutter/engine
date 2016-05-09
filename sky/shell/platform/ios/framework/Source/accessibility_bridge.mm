@@ -191,7 +191,7 @@ struct Geometry {
 }
 
 - (BOOL)accessibilityScroll:(UIAccessibilityScrollDirection)direction {
-  BOOL canBeScrolled;
+  BOOL canBeScrolled = NO;
   switch (direction) {
     case UIAccessibilityScrollDirectionRight:
     case UIAccessibilityScrollDirectionLeft:
@@ -229,8 +229,8 @@ struct Geometry {
       DCHECK(false) << "Unsupported scroll direction: " << direction;
   }
 
-  // TODO(tvolkert): provide meaningful string (e.g. page 2 of 5)
-  UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, @"");
+  // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
+  UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, nil);
   return YES;
 }
 
