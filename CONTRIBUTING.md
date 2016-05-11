@@ -63,7 +63,7 @@ Run the following steps, from the `src` directory created in the steps above:
 
  * `gclient sync` to update your dependencies.
  * `./sky/tools/gn --android --unoptimized` to prepare your build files.
- * `ninja -C out/android_debug_unopt` to build an Android binary.
+ * `ninja -C out/android_debug_unopt` to actually build the Android binary.
 
 This builds a debug-enabled ("unoptimized") binary configured to run Dart in
 checked mode ("debug"). There are other versions, [discussed on the wiki](https://github.com/flutter/flutter/wiki/Flutter's-modes).
@@ -135,7 +135,7 @@ sky/tools/gn --android --runtime-mode=profile
 sky/tools/gn --android --runtime-mode=release
 
 cd out
-ls | xargs -n 1 ninja -j1024 -l20 -C
+ls | xargs -n 1 ninja -C
 
 flutter update-packages --upgrade
 ```
