@@ -675,7 +675,9 @@ abstract class Paragraph extends NativeFieldWrapperClass2 {
   }
   List<int> _getPositionForOffset(Offset offset) native "Paragraph_getPositionForOffset";
 
-  /// Returns the [start, end] of the word at the given offset.
+  /// Returns the [start, end] of the word at the given offset. Characters not
+  /// part of a word, such as spaces, symbols, and punctuation, have word breaks
+  /// on both sides. In such cases, this method will return [offset, offset+1].
   List<int> getWordBoundary(int offset) native "Paragraph_getWordBoundary";
 }
 
