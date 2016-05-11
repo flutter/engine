@@ -674,6 +674,9 @@ abstract class Paragraph extends NativeFieldWrapperClass2 {
     return new TextPosition(offset: encoded[0], affinity: TextAffinity.values[encoded[1]]);
   }
   List<int> _getPositionForOffset(Offset offset) native "Paragraph_getPositionForOffset";
+
+  /// Returns the [start, end] of the word at the given offset.
+  List<int> getWordBoundary(int offset) native "Paragraph_getWordBoundary";
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.
