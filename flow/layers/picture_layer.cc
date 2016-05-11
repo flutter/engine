@@ -29,6 +29,7 @@ void PictureLayer::Preroll(PrerollContext* context,
 
 void PictureLayer::Paint(PaintContext& context) {
   DCHECK(picture_);
+  TRACE_EVENT0("flutter", "PictureLayer::Paint");
 
   if (image_) {
     SkRect rect = picture_->cullRect().makeOffset(offset_.x(), offset_.y());
