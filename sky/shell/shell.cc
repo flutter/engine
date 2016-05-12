@@ -143,6 +143,10 @@ void Shell::InitStandalone(std::string icu_data_path) {
   Init();
 }
 
+bool Shell::IsInitialized() {
+  return g_shell != nullptr;
+}
+
 void Shell::Init() {
   base::DiscardableMemoryAllocator::SetInstance(&g_discardable.Get());
   DCHECK(!g_shell);

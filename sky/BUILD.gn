@@ -50,3 +50,23 @@ group("sky") {
     deps += [ "//third_party/google_sign_in" ]
   }
 }
+
+source_set("sky_test") {
+  testonly = true
+
+  sources = [
+    "test/run_all_tests.cc",
+    "test/test_suite.cc",
+    "test/test_suite.h",
+  ]
+
+  deps = [
+    "//base/test:test_support",
+  ]
+
+  if (is_mac) {
+    deps += [
+      "//sky/shell:mac_scaffolding",
+    ]
+  }
+}

@@ -4,6 +4,7 @@
 
 import("//build/config/ui.gni")
 import("//mojo/dart/embedder/embedder.gni")
+import("//testing/test.gni")
 
 dart_embedder_resources("generate_sky_embedder_diagnostic_server_resources_cc") {
   inputs = [
@@ -434,7 +435,6 @@ if (is_android) {
 
   source_set("mac_scaffolding") {
     sources = [
-      "platform/mac/main_mac.mm",
       "platform/mac/platform_mac.h",
       "platform/mac/platform_mac.mm",
       "platform/mac/platform_service_provider.cc",
@@ -463,6 +463,18 @@ if (is_android) {
     ]
   }
 
+  source_set("mac_entry") {
+    sources = [
+      "platform/mac/main_mac.mm",
+    ]
+
+    deps = [
+      ":common",
+      ":mac_scaffolding",
+      ":testing",
+    ]
+  }
+
   mac_app("shell") {
     app_name = "SkyShell"
     info_plist = "platform/mac/Info.plist"
@@ -477,10 +489,21 @@ if (is_android) {
     }
 
     deps = [
+      ":mac_entry",
       ":mac_scaffolding",
       ":sky_resources",
     ]
   }
 } else {
   assert(false, "Unsupported platform")
+}
+
+test("shell_test") {
+  sources = [
+    "shell_test.cc",
+  ]
+
+  deps = [
+    "//sky:sky_test",
+  ]
 }
