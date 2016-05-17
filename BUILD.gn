@@ -15,6 +15,12 @@ group("default") {
       "//sky/shell:flutter_framework",
     ]
   }
+
+  if (is_mac) {
+    deps += [
+      "//sky/shell:shell_test",
+    ]
+  }
 }
 
 group("dist") {

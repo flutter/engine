@@ -27,6 +27,8 @@ class Shell {
   // Init the shell to run inside MojoShell.
   static void Init();
 
+  static bool IsInitialized();
+
   static Shell& Shared();
 
   base::SingleThreadTaskRunner* gpu_task_runner() const {
