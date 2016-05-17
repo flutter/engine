@@ -45,6 +45,7 @@ lib_deps = [
 ]
 
 static_library("sdk_lib_archive") {
+  complete_static_lib = true
   output_name = "FlutterService"
   sources = lib_sources
   deps = lib_deps
