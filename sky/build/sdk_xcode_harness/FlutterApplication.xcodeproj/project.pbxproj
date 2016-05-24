@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		977A86B61CF4CD4700432945 /* app.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 977A86B41CF4CD4700432945 /* app.a */; };
+		9707A0011CF50D0600D0751C /* app.so in Frameworks */ = {isa = PBXBuildFile; fileRef = 9707A0001CF50D0600D0751C /* app.so */; };
+		9707A0021CF50D2B00D0751C /* app.so in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 9707A0001CF50D0600D0751C /* app.so */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		977A86B71CF4CD4700432945 /* app.flx in Resources */ = {isa = PBXBuildFile; fileRef = 977A86B51CF4CD4700432945 /* app.flx */; };
 		97950E411CDC05A500964A31 /* Flutter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 97F908AF1CDC02C500D4520F /* Flutter.framework */; };
 		97950E421CDC05A500964A31 /* Flutter.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 97F908AF1CDC02C500D4520F /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -23,6 +24,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				9707A0021CF50D2B00D0751C /* app.so in Embed Frameworks */,
 				97950E421CDC05A500964A31 /* Flutter.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
@@ -31,8 +33,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		9707A0001CF50D0600D0751C /* app.so */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = app.so; path = FlutterApplication/Generated/app.so; sourceTree = "<group>"; };
 		977A86B11CF4C36100432945 /* BuildFlutterApp */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = BuildFlutterApp; sourceTree = "<group>"; };
-		977A86B41CF4CD4700432945 /* app.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = app.a; path = FlutterApplication/Generated/app.a; sourceTree = "<group>"; };
 		977A86B51CF4CD4700432945 /* app.flx */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = app.flx; path = FlutterApplication/Generated/app.flx; sourceTree = "<group>"; };
 		97F908AF1CDC02C500D4520F /* Flutter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Flutter.framework; path = ../common/Flutter.framework; sourceTree = "<group>"; };
 		9E07CF9A1BE8280A00BCD8DE /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -50,7 +52,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				97950E411CDC05A500964A31 /* Flutter.framework in Frameworks */,
-				977A86B61CF4CD4700432945 /* app.a in Frameworks */,
+				9707A0011CF50D0600D0751C /* app.so in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -68,7 +70,7 @@
 		977A86B31CF4CD0200432945 /* Generated */ = {
 			isa = PBXGroup;
 			children = (
-				977A86B41CF4CD4700432945 /* app.a */,
+				9707A0001CF50D0600D0751C /* app.so */,
 				977A86B51CF4CD4700432945 /* app.flx */,
 			);
 			name = Generated;
@@ -208,7 +210,7 @@
 			inputPaths = (
 			);
 			outputPaths = (
-				"$(SOURCE_ROOT)/FlutterApplication/Generated/app.a",
+				"$(SOURCE_ROOT)/FlutterApplication/Generated/app.so",
 				"$(SOURCE_ROOT)/FlutterApplication/Generated/app.flx",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
