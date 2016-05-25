@@ -31,21 +31,14 @@
 #include "sky/shell/shell.h"
 #include "sky/shell/shell_view.h"
 
+@interface FlutterViewController() <UIAlertViewDelegate>
+@end
+
 void FlutterInit(int argc, const char* argv[]) {
   NSBundle* bundle = [NSBundle bundleForClass:[FlutterViewController class]];
   NSString* icuDataPath = [bundle pathForResource:@"icudtl" ofType:@"dat"];
   sky::shell::PlatformMacMain(argc, argv, icuDataPath.UTF8String);
 }
-
-@interface LaunchErrorDelegate : NSObject<UIAlertViewDelegate>
-@end
-
-@implementation LaunchErrorDelegate
-- (void)alertView:(UIAlertView*)alertView
-    clickedButtonAtIndex:(NSInteger)buttonIndex {
-  exit(0);
-}
-@end
 
 @implementation FlutterViewController {
   base::scoped_nsprotocol<FlutterDartProject*> _dartProject;
@@ -151,6 +144,11 @@ void FlutterInit(int argc, const char* argv[]) {
 
 #pragma mark - Initializing the engine
 
+- (void)alertView:(UIAlertView*)alertView
+clickedButtonAtIndex:(NSInteger)buttonIndex {
+  exit(0);
+}
+
 - (void)connectToEngineAndLoad {
   TRACE_EVENT0("flutter", "connectToEngineAndLoad");
 
@@ -163,21 +161,20 @@ void FlutterInit(int argc, const char* argv[]) {
                                ? VMTypePrecompilation
                                : VMTypeInterpreter;
 
-  [_dartProject
-      launchInEngine:_engine
-      embedderVMType:type
-              result:^(BOOL success, NSString* message) {
-              if (!success) {
-                UIAlertView* alert = [[UIAlertView alloc]
-                        initWithTitle:@"Launch Error"
-                              message:message
-                             delegate:[[LaunchErrorDelegate alloc] init]
-                    cancelButtonTitle:@"OK"
-                    otherButtonTitles:nil];
-                [alert show];
-                [alert release];
-              }
-            }];
+  [_dartProject launchInEngine:_engine
+                embedderVMType:type
+                        result:^(BOOL success, NSString* message) {
+                          if (!success) {
+                            UIAlertView* alert = [[UIAlertView alloc]
+                                    initWithTitle:@"Launch Error"
+                                          message:message
+                                         delegate:self
+                                cancelButtonTitle:@"OK"
+                                otherButtonTitles:nil];
+                            [alert show];
+                            [alert release];
+                          }
+                        }];
 
   DCHECK(_dartServices);
   mojo::ConnectToService(_dartServices.get(), mojo::GetProxy(&_appMessageSender));
