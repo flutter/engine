@@ -4,6 +4,8 @@
 
 #include "sky/shell/platform/mojo/dart_trace_provider.h"
 
+#include <sstream>
+
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
 #include "base/logging.h"
@@ -92,11 +94,12 @@ void DartTraceProvider::SplitAndRecord(char* data, size_t length) {
   const size_t kMinChunkLength = 1024 * 1024;  // 1MB.
 
   // The data from the VM is null-terminated content of a JSON array without its
-  // enclosing square brackets. Remove the trailing "\0" and add the enclosing
-  // brackets to make JSON parser happy.
-  std::string json_data = "[" + std::string(data, length -1) + "]";
+  // enclosing square brackets. Add the enclosing brackets to make JSON parser
+  // happy.
+  std::stringstream string_builder;
+  string_builder << "[" << data << "]";
   base::JSONReader reader;
-  scoped_ptr<base::Value> trace_data = reader.ReadToValue(json_data);
+  scoped_ptr<base::Value> trace_data = reader.ReadToValue(string_builder.str());
   if (!trace_data) {
     LOG(ERROR) << "Dart tracing failed to parse the JSON string: "
                << reader.GetErrorMessage();
