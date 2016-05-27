@@ -1,23 +1,18 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SKY_SHELL_PLATFORM_MOJO_DART_TRACING_H_
-#define SKY_SHELL_PLATFORM_MOJO_DART_TRACING_H_
+#ifndef SKY_SHELL_PLATFORM_MOJO_DART_TRACE_PROVIDER_H_
+#define SKY_SHELL_PLATFORM_MOJO_DART_TRACE_PROVIDER_H_
 
-#include "base/trace_event/trace_event.h"
-#include "mojo/common/tracing_impl.h"
+#include "base/macros.h"
+#include "mojo/public/cpp/bindings/binding.h"
+#include "mojo/public/cpp/bindings/interface_handle.h"
 #include "mojo/public/cpp/bindings/interface_request.h"
 #include "mojo/services/tracing/interfaces/tracing.mojom.h"
 
-namespace dart {
-
-class DartTimelineController {
- public:
-  static void Enable(const mojo::String& categories);
-  static void EnableAll();
-  static void Disable();
-};
+namespace sky {
+namespace shell {
 
 class DartTraceProvider : public tracing::TraceProvider {
  public:
@@ -41,21 +36,7 @@ class DartTraceProvider : public tracing::TraceProvider {
   DISALLOW_COPY_AND_ASSIGN(DartTraceProvider);
 };
 
-class DartTracingImpl {
- public:
-  DartTracingImpl();
-  ~DartTracingImpl();
+}  // namespace shell
+}  // namespace sky
 
-  // This connects to the tracing service and registers ourselves to provide
-  // tracing data on demand.
-  void Initialize(mojo::ApplicationImpl* app);
-
- private:
-  DartTraceProvider provider_impl_;
-
-  DISALLOW_COPY_AND_ASSIGN(DartTracingImpl);
-};
-
-}  // namespace dart
-
-#endif  // SKY_SHELL_PLATFORM_MOJO_DART_TRACING_H_
+#endif  // SKY_SHELL_PLATFORM_MOJO_DART_TRACE_PROVIDER_H_

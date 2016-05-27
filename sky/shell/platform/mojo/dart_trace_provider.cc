@@ -1,38 +1,41 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sky/shell/platform/mojo/dart_tracing.h"
-
-#include <utility>
+#include "sky/shell/platform/mojo/dart_trace_provider.h"
 
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
+#include "base/logging.h"
+#include "base/values.h"
 #include "dart/runtime/include/dart_tools_api.h"
-#include "mojo/public/cpp/application/application_impl.h"
-#include "mojo/public/cpp/application/connect.h"
 #include "mojo/public/cpp/bindings/interface_handle.h"
 #include "mojo/public/cpp/bindings/interface_request.h"
 #include "mojo/services/tracing/interfaces/trace_provider_registry.mojom.h"
 
-namespace dart {
+namespace sky {
+namespace shell {
 
-void DartTimelineController::Enable(const mojo::String& categories) {
-  if (categories == mojo::String("Dart")) {
-    Dart_GlobalTimelineSetRecordedStreams(DART_TIMELINE_STREAM_DART);
-  } else {
-    // TODO(johnmccutchan): Respect |categories|.
-    EnableAll();
-  }
-}
+namespace {
 
-void DartTimelineController::EnableAll() {
+void EnableTracingAllCategories() {
   Dart_GlobalTimelineSetRecordedStreams(DART_TIMELINE_STREAM_ALL);
 }
 
-void DartTimelineController::Disable() {
+void EnableTracingForCategories(const mojo::String& categories) {
+  if (categories == mojo::String("Dart")) {
+    Dart_GlobalTimelineSetRecordedStreams(DART_TIMELINE_STREAM_DART);
+  } else {
+    // TODO(ppi): Respect |categories|.
+    LOG(WARNING) << "Ignoring categories for dart tracing.";
+    EnableTracingAllCategories();
+  }
+}
+
+void DisableTracing() {
   Dart_GlobalTimelineSetRecordedStreams(DART_TIMELINE_STREAM_DISABLE);
 }
+}  // namespace
 
 DartTraceProvider::DartTraceProvider()
     : binding_(this) {
@@ -56,7 +59,7 @@ void DartTraceProvider::StartTracing(
     mojo::InterfaceHandle<tracing::TraceRecorder> recorder) {
   DCHECK(!recorder_.get());
   recorder_ = tracing::TraceRecorderPtr::Create(std::move(recorder));
-  DartTimelineController::Enable(categories);
+  EnableTracingForCategories(categories);
 }
 
 static void AppendStreamConsumer(Dart_StreamConsumer_State state,
@@ -146,7 +149,7 @@ void DartTraceProvider::SplitAndRecord(char* data, size_t length) {
 // tracing::TraceProvider implementation:
 void DartTraceProvider::StopTracing() {
   DCHECK(recorder_);
-  DartTimelineController::Disable();
+  DisableTracing();
   std::vector<uint8_t> data;
   bool got_trace = Dart_GlobalTimelineGetTrace(AppendStreamConsumer, &data);
   if (got_trace) {
@@ -155,18 +158,5 @@ void DartTraceProvider::StopTracing() {
   recorder_.reset();
 }
 
-DartTracingImpl::DartTracingImpl() {
-}
-
-DartTracingImpl::~DartTracingImpl() {
-}
-
-void DartTracingImpl::Initialize(mojo::ApplicationImpl* app) {
-  tracing::TraceProviderRegistryPtr registry;
-  ConnectToService(app->shell(), "mojo:tracing", GetProxy(&registry));
-  mojo::InterfaceHandle<tracing::TraceProvider> provider;
-  provider_impl_.Bind(GetProxy(&provider));
-  registry->RegisterTraceProvider(provider.Pass());
-}
-
-}  // namespace dart
+}  // namespace shell
+}  // namespace sky
