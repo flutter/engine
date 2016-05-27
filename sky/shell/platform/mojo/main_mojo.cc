@@ -16,6 +16,7 @@
 #include "sky/engine/public/platform/sky_settings.h"
 #include "sky/shell/shell.h"
 #include "sky/shell/platform/mojo/content_handler_impl.h"
+#include "sky/shell/platform/mojo/dart_tracing_impl.h"
 
 namespace sky {
 namespace shell {
@@ -35,7 +36,10 @@ class MojoApp : public mojo::ApplicationDelegate,
   // Overridden from ApplicationDelegate:
   void Initialize(mojo::ApplicationImpl* app) override {
     mojo::icu::Initialize(app);
+    // Tracing of content handler.
     tracing_.Initialize(app);
+    // Tracing of isolates and VM.
+    dart_tracing_.Initialize(app);
 
     blink::SkySettings settings;
     settings.enable_observatory = true;
@@ -58,6 +62,7 @@ class MojoApp : public mojo::ApplicationDelegate,
   }
 
   mojo::TracingImpl tracing_;
+  DartTracingImpl dart_tracing_;
 
   DISALLOW_COPY_AND_ASSIGN(MojoApp);
 };
