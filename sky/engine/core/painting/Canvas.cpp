@@ -53,6 +53,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Canvas);
   V(Canvas, drawImageNine) \
   V(Canvas, drawPicture) \
   V(Canvas, drawParagraph) \
+  V(Canvas, drawPoints) \
   V(Canvas, drawVertices) \
   V(Canvas, drawAtlas)
 
@@ -327,6 +328,22 @@ void Canvas::drawParagraph(Paragraph* paragraph, double x, double y) {
         return;
     DCHECK(paragraph);
     paragraph->paint(this, x, y);
+}
+
+void Canvas::drawPoints(SkCanvas::PointMode pointMode,
+                        const Float32List& points,
+                        const Paint& paint) {
+  if (!m_canvas)
+    return;
+
+  static_assert(sizeof(SkPoint) == sizeof(float) * 2, "SkPoint doesn't use floats.");
+
+  m_canvas->drawPoints(
+    pointMode,
+    points.num_elements(),
+    reinterpret_cast<const SkPoint*>(points.data()),
+    *paint.paint()
+  );
 }
 
 void Canvas::drawVertices(

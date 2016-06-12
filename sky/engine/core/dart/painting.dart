@@ -433,11 +433,27 @@ class ImageShader extends Shader {
 }
 
 /// Defines how a list of points is interpreted when drawing a set of triangles.
-/// See Skia or OpenGL documentation for more details.
 enum VertexMode {
+  /// Draw each sequence of three points as the vertices of a triangle.
   triangles,
+
+  /// Draw each sliding window of three points as the vertices of a triangle.
   triangleStrip,
+
+  /// Draw the first point and each sliding window of two points as the vertices of a triangle.
   triangleFan,
+}
+
+/// Defines how a list of points is interpreted when drawing a set of points.
+enum PointMode {
+  // Draw each point separately.
+  points,
+
+  // Draw each sequence of two points as a line segment.
+  lines,
+
+  // Draw the entire sequence of point as the vetices of a polygon.
+  polygon,
 }
 
 /// An interface for recording graphical operations.
@@ -741,6 +757,12 @@ class Canvas extends NativeFieldWrapperClass2 {
     _drawParagraph(paragraph, offset.dx, offset.dy);
   }
   void _drawParagraph(Paragraph paragraph, double x, double y) native "Canvas_drawParagraph";
+
+  /// Draws a sequence of points according to the given [PointMode].
+  void drawPoints(PointMode pointMode, List<Point> points, Paint paint) {
+    _drawPoints(pointMode.index, _encodePointList(points), paint);
+  }
+  void _drawPoints(int pointMode, Float32List points, Paint paint) native "Canvas_drawPoints";
 
   void drawVertices(VertexMode vertexMode,
                     List<Point> vertices,
