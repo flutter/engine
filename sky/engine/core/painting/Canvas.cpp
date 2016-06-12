@@ -340,7 +340,7 @@ void Canvas::drawPoints(SkCanvas::PointMode pointMode,
 
   m_canvas->drawPoints(
     pointMode,
-    points.num_elements(),
+    points.num_elements() / 2,  // SkPoints have two floats.
     reinterpret_cast<const SkPoint*>(points.data()),
     *paint.paint()
   );
@@ -370,7 +370,7 @@ void Canvas::drawVertices(
 
   m_canvas->drawVertices(
     vertexMode,
-    vertices.num_elements(),
+    vertices.num_elements() / 2,  // SkPoints have two floats.
     reinterpret_cast<const SkPoint*>(vertices.data()),
     reinterpret_cast<const SkPoint*>(textureCoordinates.data()),
     reinterpret_cast<const SkColor*>(colors.data()),
@@ -402,7 +402,7 @@ void Canvas::drawAtlas(
     reinterpret_cast<const SkRSXform*>(transforms.data()),
     reinterpret_cast<const SkRect*>(rects.data()),
     reinterpret_cast<const SkColor*>(colors.data()),
-    rects.num_elements(),
+    rects.num_elements() / 4,  // SkRect have four floats.
     static_cast<SkXfermode::Mode>(transferMode),
     reinterpret_cast<const SkRect*>(cullRect.data()),
     paint.paint()
