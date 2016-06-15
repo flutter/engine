@@ -17,7 +17,7 @@ GLVersionInfo::GLVersionInfo(const char* version_str, const char* renderer_str)
       minor_version(0),
       is_es3(false) {
   if (version_str) {
-    std::string lstr(base::StringToLowerASCII(std::string(version_str)));
+    std::string lstr(base::ToLowerASCII(std::string(version_str)));
     is_es = (lstr.length() > 12) && (lstr.substr(0, 9) == "opengl es");
     if (is_es)
       lstr = lstr.substr(10, 3);

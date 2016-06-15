@@ -101,7 +101,7 @@ static_library("core") {
     rebase_path("//dart/runtime"),
   ]
 
-  forward_dependent_configs_from = [ ":libraries" ]
+  public_deps = [ ":libraries" ]
 
   # core and core_generated are really the same thing.
   allow_circular_includes_from = [
