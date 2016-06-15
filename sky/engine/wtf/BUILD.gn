@@ -229,6 +229,9 @@ source_set("wtf") {
 
   deps = [
     "//base",
+  ]
+
+  public_deps = [
     "//third_party/icu",
   ]
 
