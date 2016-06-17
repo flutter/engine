@@ -391,7 +391,7 @@ void* _DartSymbolLookup(const char* symbol_name) {
 
     void* symbol = ::mmap(NULL, asset_size, mmap_flags, MAP_PRIVATE, fd, 0);
     if (symbol == MAP_FAILED) {
-      HANDLE_EINTR(::close(fd));
+      IGNORE_EINTR(::close(fd));
       return nullptr;
     }
 
