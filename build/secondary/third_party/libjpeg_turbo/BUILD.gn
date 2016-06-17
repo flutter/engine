@@ -204,7 +204,9 @@ source_set("libjpeg") {
     "NO_GETENV",
   ]
 
-  configs += [ ":libjpeg_config" ]
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+
   public_configs = [ ":libjpeg_config" ]
 
   # MemorySanitizer doesn't support assembly code, so keep it disabled in
