@@ -77,7 +77,8 @@ void RasterizerDirect::Draw(uint64_t layer_tree_ptr,
 
   auto view = view_delegate_.get();
 
-  if (view == nullptr || !layer_tree->root_layer()) {
+  if (view == nullptr || !view->ContextMakeCurrent() ||
+      !layer_tree->root_layer()) {
     callback.Run();
     return;
   }
@@ -90,8 +91,8 @@ void RasterizerDirect::Draw(uint64_t layer_tree_ptr,
   compositor_context_.engine_time().SetLapTime(layer_tree->construction_time());
 
   {
-    SkCanvas* canvas = ganesh_canvas_.GetCanvas(
-        0 /* Default window bounds framebuffer */, layer_tree->frame_size());
+    SkCanvas* canvas = ganesh_canvas_.GetCanvas(view->DefaultFramebuffer(),
+                                                layer_tree->frame_size());
     flow::CompositorContext::ScopedFrame frame =
         compositor_context_.AcquireFrame(ganesh_canvas_.gr_context(), *canvas);
     canvas->clear(SK_ColorBLACK);
