@@ -30,7 +30,8 @@ GaneshCanvas::~GaneshCanvas() {
 void GaneshCanvas::SetupGrGLInterface() {
   sk_surface_ = nullptr;
   gr_context_ = skia::AdoptRef(GrContext::Create(
-      kOpenGL_GrBackend, reinterpret_cast<GrBackendContext>(nullptr)));
+      kOpenGL_GrBackend,
+      reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface())));
   DCHECK(gr_context_);
   gr_context_->setResourceCacheLimits(kMaxGaneshResourceCacheCount,
                                       kMaxGaneshResourceCacheBytes);
