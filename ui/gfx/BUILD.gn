@@ -17,8 +17,6 @@ source_set("gfx_export") {
 component("gfx") {
   sources = [
     "native_widget_types.h",
-    "ui_gfx_exports.cc",
-    "vsync_provider.h",
   ]
 
   defines = [ "GFX_IMPLEMENTATION" ]
