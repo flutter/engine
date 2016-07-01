@@ -43,6 +43,7 @@ void RasterizerDirect::ConnectToRasterizer(
 
 // sky::shell::Rasterizer override.
 void RasterizerDirect::Setup(base::WeakPtr<PlatformView> delegate) {
+  ganesh_canvas_.SetupGrGLInterface();
   view_delegate_ = delegate;
 }
 
@@ -63,7 +64,9 @@ void RasterizerDirect::Draw(uint64_t layer_tree_ptr,
   std::unique_ptr<flow::LayerTree> layer_tree(
       reinterpret_cast<flow::LayerTree*>(layer_tree_ptr));
 
-  if (!layer_tree->root_layer()) {
+  auto view = view_delegate_.get();
+
+  if (view == nullptr || !layer_tree->root_layer()) {
     callback.Run();
     return;
   }
@@ -84,7 +87,7 @@ void RasterizerDirect::Draw(uint64_t layer_tree_ptr,
     layer_tree->Raster(frame);
     canvas->flush();
 
-    // FIXME: Swap buffers
+    view->SwapBuffers();
   }
 
   // Trace to a file if necessary
