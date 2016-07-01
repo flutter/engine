@@ -10,10 +10,9 @@
 
 #if defined(__OBJC__)
 @class NSOpenGLView;
-#else  // __OBJC__
+#else   // __OBJC__
 class NSOpenGLView;
-#endif // __OBJC__
-
+#endif  // __OBJC__
 
 namespace sky {
 namespace shell {
