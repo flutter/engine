@@ -17,8 +17,6 @@ source_set("gfx_export") {
 
 component("gfx") {
   sources = [
-    "codec/png_codec.cc",
-    "codec/png_codec.h",
     "native_widget_types.h",
     "skia_util.cc",
     "skia_util.h",
