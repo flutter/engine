@@ -92,21 +92,6 @@ source_set("gl") {
 
     deps += [ "//third_party/glfw" ]
   }
-  if (use_x11) {
-    sources += [
-      "gl_context_osmesa_x11.cc",
-      "gl_surface_osmesa_x11.cc",
-      "gl_surface_osmesa_x11.h",
-    ]
-
-    configs += [
-      "//build/config/linux:x11",
-      "//build/config/linux:xcomposite",
-      "//build/config/linux:xext",
-    ]
-
-    deps += [ "//ui/gfx/x" ]
-  }
   if (is_android) {
     sources += [
       "android/gl_jni_registrar.cc",

@@ -51,8 +51,4 @@ component("gfx") {
   if (is_linux) {
     configs += [ "//build/config/linux:fontconfig" ]
   }
-
-  if (use_x11) {
-    deps += [ "//ui/gfx/x" ]
-  }
 }
