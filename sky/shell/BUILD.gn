@@ -75,7 +75,6 @@ source_set("common") {
     "//sky/services/rasterizer:interfaces",
     "//sky/services/semantics:interfaces",
     "//sky/shell/dart",
-    "//ui/gfx",
   ]
 }
 
