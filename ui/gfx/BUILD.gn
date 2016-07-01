@@ -17,12 +17,6 @@ source_set("gfx_export") {
 component("gfx") {
   sources = [
     "native_widget_types.h",
-    "skia_util.cc",
-    "skia_util.h",
-    "transform.cc",
-    "transform.h",
-    "transform_util.cc",
-    "transform_util.h",
     "ui_gfx_exports.cc",
     "vsync_provider.h",
   ]
