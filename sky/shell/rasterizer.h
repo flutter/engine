@@ -12,6 +12,7 @@
 #include "flow/layers/layer_tree.h"
 #include "mojo/public/cpp/bindings/binding.h"
 #include "sky/services/rasterizer/rasterizer.mojom.h"
+#include "sky/shell/platform_view.h"
 
 namespace sky {
 namespace shell {
@@ -19,9 +20,15 @@ namespace shell {
 class Rasterizer : public rasterizer::Rasterizer {
  public:
   ~Rasterizer() override;
+
   virtual void ConnectToRasterizer(
       mojo::InterfaceRequest<rasterizer::Rasterizer> request) = 0;
-  virtual base::WeakPtr<::sky::shell::Rasterizer> GetWeakRasterizerPtr() = 0;
+
+  virtual void Setup(base::WeakPtr<PlatformView> delegate) = 0;
+
+  virtual void Teardown() = 0;
+
+  virtual base::WeakPtr<sky::shell::Rasterizer> GetWeakRasterizerPtr() = 0;
 
   virtual flow::LayerTree* GetLastLayerTree() = 0;
 

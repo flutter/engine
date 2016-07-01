@@ -70,8 +70,7 @@ static inline pointer::PointerType EventTypeFromNSEventPhase(
   auto shell_view = new sky::shell::ShellView(sky::shell::Shell::Shared());
   _shell_view.reset(shell_view);
 
-  auto widget = reinterpret_cast<gfx::AcceleratedWidget>(self.renderSurface);
-  self.platformView->SurfaceCreated(widget);
+  self.platformView->NotifyCreated();
 }
 
 // TODO(eseidel): This does not belong in sky_window!
@@ -200,7 +199,7 @@ static inline pointer::PointerType EventTypeFromNSEventPhase(
 }
 
 - (void)dealloc {
-  self.platformView->SurfaceDestroyed();
+  self.platformView->NotifyDestroyed();
   [super dealloc];
 }
 

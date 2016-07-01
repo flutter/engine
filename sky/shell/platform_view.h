@@ -7,11 +7,13 @@
 
 #include "base/macros.h"
 #include "base/memory/weak_ptr.h"
+#include "base/synchronization/waitable_event.h"
 #include "sky/shell/ui_delegate.h"
-#include "sky/shell/rasterizer.h"
 
 namespace sky {
 namespace shell {
+
+class Rasterizer;
 
 class PlatformView {
  public:
@@ -30,6 +32,18 @@ class PlatformView {
   virtual ~PlatformView();
 
   void ConnectToEngine(mojo::InterfaceRequest<SkyEngine> request);
+
+  void NotifyCreated(base::WaitableEvent* did_draw = nullptr);
+
+  void NotifyDestroyed();
+
+  virtual base::WeakPtr<sky::shell::PlatformView> GetWeakViewPtr() = 0;
+
+  virtual uint64_t DefaultFramebuffer() const = 0;
+
+  virtual bool ContextMakeCurrent() = 0;
+
+  virtual bool SwapBuffers() = 0;
 
  protected:
   explicit PlatformView(const Config& config);

@@ -16,6 +16,7 @@ dart_embedder_resources("generate_sky_embedder_diagnostic_server_resources_cc") 
 
 source_set("common") {
   sources = [
+    "$target_gen_dir/sky_embedder_diagnostic_server_resources.cc",
     "diagnostic/diagnostic_server.cc",
     "diagnostic/diagnostic_server.h",
     "gpu/picture_serializer.cc",
@@ -42,7 +43,6 @@ source_set("common") {
     "ui/platform_impl.h",
     "ui_delegate.cc",
     "ui_delegate.h",
-    "$target_gen_dir/sky_embedder_diagnostic_server_resources.cc",
   ]
 
   public_deps = [
@@ -81,16 +81,13 @@ source_set("common") {
 
 source_set("gpu_direct") {
   sources = [
-    "gpu/direct/surface_notifications_direct.cc",
-    "gpu/direct/surface_notifications_direct.h",
-    "gpu/direct/rasterizer_direct.cc",
-    "gpu/direct/rasterizer_direct.h",
     "gpu/direct/ganesh_canvas.cc",
     "gpu/direct/ganesh_canvas.h",
+    "gpu/direct/rasterizer_direct.cc",
+    "gpu/direct/rasterizer_direct.h",
   ]
 
   deps = [
-    "//ui/gl",
     ":common",
   ]
 }
@@ -455,7 +452,6 @@ if (is_android) {
       "//mojo/edk/base_edk",
       "//mojo/edk/system",
       "//sky/services/ns_net",
-      "//ui/gl",
       ":common",
       ":gpu_direct",
       ":testing",

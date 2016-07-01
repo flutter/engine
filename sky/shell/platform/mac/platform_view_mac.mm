@@ -4,8 +4,6 @@
 
 #include "sky/shell/platform/mac/platform_view_mac.h"
 
-#include "sky/shell/gpu/direct/surface_notifications_direct.h"
-
 namespace sky {
 namespace shell {
 
@@ -14,20 +12,30 @@ PlatformView* PlatformView::Create(const Config& config) {
 }
 
 PlatformViewMac::PlatformViewMac(const Config& config)
-    : PlatformView(config), window_(gfx::kNullAcceleratedWidget) {}
+    : PlatformView(config), weak_factory_(this) {}
 
-PlatformViewMac::~PlatformViewMac() {}
-
-void PlatformViewMac::SurfaceCreated(gfx::AcceleratedWidget widget) {
-  DCHECK(window_ == gfx::kNullAcceleratedWidget);
-  window_ = widget;
-  SurfaceNotificationsDirect::NotifyCreated(config_, window_, nullptr);
+PlatformViewMac::~PlatformViewMac() {
+  weak_factory_.InvalidateWeakPtrs();
 }
 
-void PlatformViewMac::SurfaceDestroyed() {
-  DCHECK(window_ != gfx::kNullAcceleratedWidget);
-  window_ = gfx::kNullAcceleratedWidget;
-  SurfaceNotificationsDirect::NotifyDestroyed(config_);
+base::WeakPtr<sky::shell::PlatformView>
+PlatformViewMac::GetWeakViewPtr() {
+  return weak_factory_.GetWeakPtr();
+}
+
+uint64_t PlatformViewMac::DefaultFramebuffer() const {
+  CHECK(false);
+  return 0;
+}
+
+bool PlatformViewMac::ContextMakeCurrent() {
+  CHECK(false);
+  return false;
+}
+
+bool PlatformViewMac::SwapBuffers() {
+  CHECK(false);
+  return false;
 }
 
 }  // namespace shell

@@ -15,10 +15,6 @@ source_set("gfx_export") {
 }
 
 component("gfx") {
-  sources = [
-    "native_widget_types.h",
-  ]
-
   defines = [ "GFX_IMPLEMENTATION" ]
 
   deps = [
