@@ -70,7 +70,10 @@ static inline pointer::PointerType EventTypeFromNSEventPhase(
   auto shell_view = new sky::shell::ShellView(sky::shell::Shell::Shared());
   _shell_view.reset(shell_view);
 
-  self.platformView->NotifyCreated();
+  auto platformViewMac = self.platformView;
+
+  platformViewMac->SetOpenGLView(self.renderSurface);
+  platformViewMac->NotifyCreated();
 }
 
 // TODO(eseidel): This does not belong in sky_window!

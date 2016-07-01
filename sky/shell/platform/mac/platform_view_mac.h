@@ -8,6 +8,13 @@
 #include "base/memory/weak_ptr.h"
 #include "sky/shell/platform_view.h"
 
+#if defined(__OBJC__)
+@class NSOpenGLView;
+#else  // __OBJC__
+class NSOpenGLView;
+#endif // __OBJC__
+
+
 namespace sky {
 namespace shell {
 
@@ -16,6 +23,8 @@ class PlatformViewMac : public PlatformView {
   explicit PlatformViewMac(const Config& config);
 
   ~PlatformViewMac() override;
+
+  void SetOpenGLView(NSOpenGLView* view);
 
   base::WeakPtr<sky::shell::PlatformView> GetWeakViewPtr() override;
 
@@ -26,7 +35,10 @@ class PlatformViewMac : public PlatformView {
   bool SwapBuffers() override;
 
  private:
+  NSOpenGLView* opengl_view_;
   base::WeakPtrFactory<PlatformViewMac> weak_factory_;
+
+  bool IsValid() const;
 
   DISALLOW_COPY_AND_ASSIGN(PlatformViewMac);
 };

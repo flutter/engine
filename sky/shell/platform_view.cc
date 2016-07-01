@@ -27,7 +27,7 @@ void PlatformView::ConnectToEngine(mojo::InterfaceRequest<SkyEngine> request) {
                             base::Passed(&request)));
 }
 
-void PlatformView::NotifyCreated(base::WaitableEvent* did_draw) {
+void PlatformView::NotifyCreated() {
   // Tell the delegate that the output surface was created. As an argument,
   // for the gpu_continuation parameter, configure a closure that sets up the
   // completes the rasterizer connection.

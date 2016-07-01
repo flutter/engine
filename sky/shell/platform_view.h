@@ -33,7 +33,7 @@ class PlatformView {
 
   void ConnectToEngine(mojo::InterfaceRequest<SkyEngine> request);
 
-  void NotifyCreated(base::WaitableEvent* did_draw = nullptr);
+  void NotifyCreated();
 
   void NotifyDestroyed();
 

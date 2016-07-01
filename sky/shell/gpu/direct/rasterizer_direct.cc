@@ -43,7 +43,18 @@ void RasterizerDirect::ConnectToRasterizer(
 
 // sky::shell::Rasterizer override.
 void RasterizerDirect::Setup(base::WeakPtr<PlatformView> delegate) {
+  auto view = delegate.get();
+
+  CHECK(view) << "Must be able to acquire the view.";
+
+  // The context needs to be made current before the GrGL interface can be
+  // setup.
+  bool success = view->ContextMakeCurrent();
+
+  CHECK(success) << "Could not make the context current for initial GL setup";
+
   ganesh_canvas_.SetupGrGLInterface();
+
   view_delegate_ = delegate;
 }
 
