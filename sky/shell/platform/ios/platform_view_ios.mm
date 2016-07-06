@@ -26,12 +26,8 @@ struct GLintSize {
       : width(static_cast<GLint>(size.width)),
         height(static_cast<GLint>(size.height)) {}
 
-  bool operator==(const GLintSize& other) {
+  bool operator==(const GLintSize& other) const {
     return width == other.width && height == other.height;
-  }
-
-  bool operator!=(const GLintSize& other) {
-    return width != other.width || height != other.height;
   }
 };
 
@@ -157,7 +153,7 @@ class IOSGLContext {
   GLuint framebuffer() const { return framebuffer_; }
 
   bool MakeCurrent() {
-    return UpdateStorageSizeInNecessary() &&
+    return UpdateStorageSizeIfNecessary() &&
            [EAGLContext setCurrentContext:context_.get()];
   }
 
@@ -173,7 +169,7 @@ class IOSGLContext {
 
   GLintSize storage_size_;
 
-  bool UpdateStorageSizeInNecessary() {
+  bool UpdateStorageSizeIfNecessary() {
     GLintSize size([layer_.get() bounds].size);
 
     if (size == storage_size_) {
