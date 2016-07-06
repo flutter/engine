@@ -16,8 +16,9 @@ PlatformView::Config::Config() {}
 
 PlatformView::Config::~Config() {}
 
-PlatformView::PlatformView(const PlatformView::Config& config)
-    : config_(config) {}
+PlatformView::PlatformView(const PlatformView::Config& config,
+                           SurfaceConfig surface_config)
+    : config_(config), surface_config_(surface_config) {}
 
 PlatformView::~PlatformView() {}
 

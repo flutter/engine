@@ -253,6 +253,8 @@ if (is_android) {
       "platform/ios/framework/Source/accessibility_bridge.mm",
       "platform/ios/framework/Source/application_messages_impl.h",
       "platform/ios/framework/Source/application_messages_impl.mm",
+      "platform/ios/framework/Source/flutter_touch_mapper.h",
+      "platform/ios/framework/Source/flutter_touch_mapper.mm",
       "platform/ios/framework/Source/FlutterAppDelegate.mm",
       "platform/ios/framework/Source/FlutterDartProject.mm",
       "platform/ios/framework/Source/FlutterDartProject_Internal.h",
@@ -263,8 +265,8 @@ if (is_android) {
       "platform/ios/framework/Source/FlutterView.h",
       "platform/ios/framework/Source/FlutterView.mm",
       "platform/ios/framework/Source/FlutterViewController.mm",
-      "platform/ios/framework/Source/flutter_touch_mapper.h",
-      "platform/ios/framework/Source/flutter_touch_mapper.mm",
+      "platform/ios/platform_view_ios.h",
+      "platform/ios/platform_view_ios.mm",
     ]
 
     set_sources_assignment_filter([])
@@ -273,8 +275,6 @@ if (is_android) {
       "platform/mac/platform_mac.mm",
       "platform/mac/platform_service_provider.cc",
       "platform/mac/platform_service_provider.h",
-      "platform/mac/platform_view_mac.h",
-      "platform/mac/platform_view_mac.mm",
       "platform/mac/view_service_provider.cc",
       "platform/mac/view_service_provider.h",
     ]
@@ -291,7 +291,6 @@ if (is_android) {
       "//sky/services/ns_net",
       "//sky/services/semantics",
       "//sky/services/vsync",
-      "//ui/gl",
       ":common",
       ":gpu_direct",
     ]

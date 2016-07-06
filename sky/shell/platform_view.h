@@ -26,8 +26,18 @@ class PlatformView {
     scoped_refptr<base::SingleThreadTaskRunner> ui_task_runner;
   };
 
+  struct SurfaceConfig {
+    uint8_t red_bits = 8;
+    uint8_t green_bits = 8;
+    uint8_t blue_bits = 8;
+    uint8_t alpha_bits = 8;
+    uint8_t depth_bits = 0;
+    uint8_t stencil_bits = 0;
+  };
+
   // Implemented by each platform.
-  static PlatformView* Create(const Config& config);
+  static PlatformView* Create(const Config& config,
+                              SurfaceConfig surface_configuration);
 
   virtual ~PlatformView();
 
@@ -46,9 +56,10 @@ class PlatformView {
   virtual bool SwapBuffers() = 0;
 
  protected:
-  explicit PlatformView(const Config& config);
+  explicit PlatformView(const Config& config, SurfaceConfig surface_config);
 
   Config config_;
+  SurfaceConfig surface_config_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(PlatformView);
