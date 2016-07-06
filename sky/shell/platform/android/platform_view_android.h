@@ -8,10 +8,9 @@
 #include "base/synchronization/waitable_event.h"
 #include "sky/shell/platform_view.h"
 
-struct ANativeWindow;
-
 namespace sky {
 namespace shell {
+
 class ShellView;
 
 class PlatformViewAndroid : public PlatformView {
