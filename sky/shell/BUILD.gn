@@ -153,7 +153,6 @@ if (is_android) {
       "//mojo/android:libsystem_java",
       "//mojo/edk/base_edk",
       "//mojo/edk/system",
-      "//ui/gl",
     ]
 
     ldflags = [
