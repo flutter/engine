@@ -44,11 +44,15 @@ class IOSGLContext {
     CHECK(layer_ != nullptr);
     CHECK(context_ != nullptr);
 
+    bool context_current = [EAGLContext setCurrentContext:context_];
+
+    DCHECK(context_current);
     DCHECK(glGetError() == GL_NO_ERROR);
 
     // Generate the framebuffer
 
     glGenFramebuffers(1, &framebuffer_);
+    DCHECK(glGetError() == GL_NO_ERROR);
     DCHECK(framebuffer_ != GL_NONE);
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_);
@@ -175,6 +179,10 @@ class IOSGLContext {
     if (size == storage_size_) {
       // Nothing to since the stoage size is already consistent with the layer.
       return true;
+    }
+
+    if (![EAGLContext setCurrentContext:context_]) {
+      return false;
     }
 
     DCHECK(glGetError() == GL_NO_ERROR);
