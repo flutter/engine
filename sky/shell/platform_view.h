@@ -45,6 +45,8 @@ class PlatformView {
 
   void NotifyCreated();
 
+  void NotifyCreated(base::Closure continuation);
+
   void NotifyDestroyed();
 
   virtual base::WeakPtr<sky::shell::PlatformView> GetWeakViewPtr() = 0;

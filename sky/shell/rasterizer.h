@@ -24,7 +24,8 @@ class Rasterizer : public rasterizer::Rasterizer {
   virtual void ConnectToRasterizer(
       mojo::InterfaceRequest<rasterizer::Rasterizer> request) = 0;
 
-  virtual void Setup(base::WeakPtr<PlatformView> delegate) = 0;
+  virtual void Setup(base::WeakPtr<PlatformView> delegate,
+                     base::Closure continuation) = 0;
 
   virtual void Teardown() = 0;
 

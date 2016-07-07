@@ -42,7 +42,8 @@ void RasterizerDirect::ConnectToRasterizer(
 }
 
 // sky::shell::Rasterizer override.
-void RasterizerDirect::Setup(base::WeakPtr<PlatformView> delegate) {
+void RasterizerDirect::Setup(base::WeakPtr<PlatformView> delegate,
+                             base::Closure continuation) {
   auto view = delegate.get();
 
   CHECK(view) << "Must be able to acquire the view.";
@@ -56,6 +57,8 @@ void RasterizerDirect::Setup(base::WeakPtr<PlatformView> delegate) {
   ganesh_canvas_.SetupGrGLInterface();
 
   view_delegate_ = delegate;
+
+  continuation.Run();
 }
 
 // sky::shell::Rasterizer override.

@@ -26,7 +26,8 @@ class RasterizerDirect : public Rasterizer {
       mojo::InterfaceRequest<rasterizer::Rasterizer> request) override;
 
   // sky::shell::Rasterizer override.
-  void Setup(base::WeakPtr<PlatformView> delegate) override;
+  void Setup(base::WeakPtr<PlatformView> delegate,
+             base::Closure continuation) override;
 
   // sky::shell::Rasterizer override.
   void Teardown() override;
@@ -36,6 +37,7 @@ class RasterizerDirect : public Rasterizer {
 
   // sky::shell::Rasterizer override.
   flow::LayerTree* GetLastLayerTree() override;
+
  private:
   skia::RefPtr<const GrGLInterface> gr_gl_interface_;
   GaneshCanvas ganesh_canvas_;

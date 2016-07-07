@@ -5,6 +5,7 @@
 #include "sky/shell/platform_view.h"
 
 #include "base/bind.h"
+#include "base/bind_helpers.h"
 #include "base/location.h"
 #include "base/single_thread_task_runner.h"
 #include "sky/shell/rasterizer.h"
@@ -29,6 +30,10 @@ void PlatformView::ConnectToEngine(mojo::InterfaceRequest<SkyEngine> request) {
 }
 
 void PlatformView::NotifyCreated() {
+  PlatformView::NotifyCreated(base::Bind(&base::DoNothing));
+}
+
+void PlatformView::NotifyCreated(base::Closure continuation) {
   // Tell the delegate that the output surface was created. As an argument,
   // for the gpu_continuation parameter, configure a closure that sets up the
   // completes the rasterizer connection.
@@ -40,7 +45,7 @@ void PlatformView::NotifyCreated() {
   auto weak_this = GetWeakViewPtr();
   auto gpu_continuation = base::Bind(&Rasterizer::Setup,  // method
                                      rasterizer,          // target
-                                     weak_this);
+                                     weak_this, continuation);
   config_.ui_task_runner->PostTask(
       FROM_HERE, base::Bind(&UIDelegate::OnOutputSurfaceCreated, delegate,
                             gpu_continuation));
