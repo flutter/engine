@@ -14,7 +14,7 @@ namespace sky {
 namespace shell {
 
 class ShellView;
-class ScopedAndroidNativeWindow;
+class AndroidGLContext;
 
 class PlatformViewAndroid : public PlatformView {
  public:
@@ -54,7 +54,7 @@ class PlatformViewAndroid : public PlatformView {
   // ownership and have the shell_view owned by Java. We reset this pointer in
   // |Detach|, which will eventually cause |~PlatformViewAndroid|.
   std::unique_ptr<ShellView> shell_view_;
-  std::unique_ptr<ScopedAndroidNativeWindow> window_;
+  std::unique_ptr<AndroidGLContext> context_;
   base::WeakPtrFactory<PlatformViewAndroid> weak_factory_;
 
   DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroid);

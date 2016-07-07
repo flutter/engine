@@ -4,8 +4,12 @@
 
 #include "sky/shell/platform/android/platform_view_android.h"
 
+#include <EGL/egl.h>
+
 #include <android/input.h>
 #include <android/native_window_jni.h>
+
+#include <utility>
 
 #include "base/bind.h"
 #include "base/location.h"
@@ -18,41 +22,221 @@
 namespace sky {
 namespace shell {
 
-class ScopedAndroidNativeWindow {
+class AndroidNativeWindow {
  public:
-  explicit ScopedAndroidNativeWindow(ANativeWindow* window) : window_(window) {
+  using Handle = ANativeWindow*;
+
+  explicit AndroidNativeWindow(Handle window) : window_(window) {
     if (window_ != nullptr) {
       ANativeWindow_acquire(window_);
     }
   }
 
-  ScopedAndroidNativeWindow(ScopedAndroidNativeWindow&& other)
-      : window_(other.window_) {
+  AndroidNativeWindow(AndroidNativeWindow&& other) : window_(other.window_) {
     other.window_ = nullptr;
   }
 
-  ~ScopedAndroidNativeWindow() {
+  ~AndroidNativeWindow() {
     if (window_ != nullptr) {
       ANativeWindow_release(window_);
       window_ = nullptr;
     }
   }
 
- private:
-  ANativeWindow* window_;
+  bool IsValid() const { return window_ != nullptr; }
 
-  DISALLOW_COPY_AND_ASSIGN(ScopedAndroidNativeWindow);
+  Handle handle() const { return window_; }
+
+ private:
+  Handle window_;
+
+  DISALLOW_COPY_AND_ASSIGN(AndroidNativeWindow);
 };
 
-// class AndroidGLContext() {
-//  public:
-//   AndroidGLContext();
+class AndroidGLContext {
+ public:
+  explicit AndroidGLContext(AndroidNativeWindow::Handle window_handle,
+                            PlatformView::SurfaceConfig config)
+      : window_(window_handle),
+        display_(EGL_NO_DISPLAY),
+        config_(nullptr),
+        valid_(false) {
+    if (!window_.IsValid()) {
+      // We always require a valid window since we are only going to deal
+      // with window surfaces.
+      return;
+    }
 
-//   ~AndroidGLContext();
+    bool success = false;
 
-//  private:
-//   DISALLOW_COPY_AND_ASSIGN(AndroidGLContext);
-// }
+    // Setup the display connection.
+
+    std::tie(success, display_) = SetupDisplayConnection();
+
+    if (!success) {
+      return;
+    }
+
+    // Choose a valid configuration.
+
+    std::tie(success, config_) = ChooseWindowConfiguration(display_, config);
+
+    if (!success) {
+      return;
+    }
+
+    // Create a window surface for the configuration.
+
+    std::tie(success, surface_) =
+        CreateWindowSurface(display_, config_, window_.handle());
+
+    if (!success) {
+      return;
+    }
+
+    // Create a context for the configuration.
+
+    std::tie(success, context_) = CreateContext(display_, config_);
+
+    if (!success) {
+      return;
+    }
+
+    // All done!
+    valid_ = true;
+  }
+
+  ~AndroidGLContext() {
+    if (!TeardownContext(display_, context_)) {
+      LOG(INFO)
+          << "Could not tear down the EGL context. Possible resource leak.";
+    }
+
+    if (!TeardownSurface(display_, surface_)) {
+      LOG(INFO)
+          << "Could not tear down the EGL surface. Possible resource leak.";
+    }
+
+    if (!TeardownDisplayConnection(display_)) {
+      LOG(INFO) << "Could not tear down the EGL display connection. Possible "
+                   "resource leak.";
+    }
+  }
+
+  bool IsValid() const { return valid_; }
+
+  bool ContextMakeCurrent() {
+    return eglMakeCurrent(display_, surface_, surface_, context_) == EGL_TRUE;
+  }
+
+  bool SwapBuffers() { return eglSwapBuffers(display_, surface_); }
+
+ private:
+  AndroidNativeWindow window_;
+  EGLDisplay display_;
+  EGLConfig config_;
+  EGLSurface surface_;
+  EGLContext context_;
+
+  bool valid_;
+
+  template <class T>
+  using EGLResult = std::pair<bool, T>;
+
+  static EGLResult<EGLDisplay> SetupDisplayConnection() {
+    // Get the display.
+    EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+
+    if (display == EGL_NO_DISPLAY) {
+      return {false, EGL_NO_DISPLAY};
+    }
+
+    // Initialize the display connection.
+    if (eglInitialize(display, nullptr, nullptr) != EGL_TRUE) {
+      return {false, EGL_NO_DISPLAY};
+    }
+
+    return {true, display};
+  }
+
+  static bool TeardownDisplayConnection(EGLDisplay display) {
+    if (display != EGL_NO_DISPLAY) {
+      return eglTerminate(display) == EGL_TRUE;
+    }
+
+    return false;
+  }
+
+  static bool TeardownContext(EGLDisplay display, EGLContext context) {
+    if (context != EGL_NO_CONTEXT) {
+      return eglDestroyContext(display, context) == EGL_TRUE;
+    }
+
+    return true;
+  }
+
+  static bool TeardownSurface(EGLDisplay display, EGLSurface surface) {
+    if (surface != EGL_NO_SURFACE) {
+      return eglDestroySurface(display, surface) == EGL_TRUE;
+    }
+
+    return true;
+  }
+
+  static EGLResult<EGLConfig> ChooseWindowConfiguration(
+      EGLDisplay display,
+      PlatformView::SurfaceConfig config) {
+    EGLint attributes[] = {
+        // clang-format off
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+        EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
+        EGL_RED_SIZE,        config.red_bits,
+        EGL_GREEN_SIZE,      config.green_bits,
+        EGL_BLUE_SIZE,       config.blue_bits,
+        EGL_ALPHA_SIZE,      config.alpha_bits,
+        EGL_DEPTH_SIZE,      config.depth_bits,
+        EGL_STENCIL_SIZE,    config.stencil_bits,
+        EGL_NONE,            // termination sentinel
+        // clang-format on
+    };
+
+    EGLint config_count = 0;
+    EGLConfig egl_config = nullptr;
+
+    if (eglChooseConfig(display, attributes, &egl_config, 1, &config_count) !=
+        EGL_TRUE) {
+      return {false, nullptr};
+    }
+
+    bool success = config_count > 0 && egl_config != nullptr;
+
+    return {success, success ? egl_config : nullptr};
+  }
+
+  static EGLResult<EGLSurface> CreateWindowSurface(
+      EGLDisplay display,
+      EGLConfig config,
+      AndroidNativeWindow::Handle window_handle) {
+    // The configurations are only required when dealing with extensions or VG.
+    // We do neither.
+    EGLSurface surface = eglCreateWindowSurface(
+        display, config, reinterpret_cast<EGLNativeWindowType>(window_handle),
+        nullptr);
+    return {surface != EGL_NO_SURFACE, surface};
+  }
+
+  static EGLResult<EGLSurface> CreateContext(EGLDisplay display,
+                                             EGLConfig config) {
+    EGLint attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
+
+    EGLContext context =
+        eglCreateContext(display, config, EGL_NO_CONTEXT, attributes);
+
+    return {context != EGL_NO_CONTEXT, context};
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(AndroidGLContext);
+};
 
 static jlong Attach(JNIEnv* env, jclass clazz, jint skyEngineHandle) {
   ShellView* shell_view = new ShellView(Shell::Shared());
@@ -106,7 +290,11 @@ void PlatformViewAndroid::SurfaceCreated(JNIEnv* env,
   {
     base::android::ScopedJavaLocalFrame scoped_local_reference_frame(env);
     ANativeWindow* window = ANativeWindow_fromSurface(env, jsurface);
-    window_ = WTF::MakeUnique<ScopedAndroidNativeWindow>(window);
+    auto context = WTF::MakeUnique<AndroidGLContext>(window, surface_config_);
+    if (context->IsValid()) {
+      DLOG(INFO) << "Could not create a valid window context.";
+      context_ = std::move(context);
+    }
     ANativeWindow_release(window);
   }
 
@@ -114,7 +302,7 @@ void PlatformViewAndroid::SurfaceCreated(JNIEnv* env,
 }
 
 void PlatformViewAndroid::SurfaceDestroyed(JNIEnv* env, jobject obj) {
-  window_ = nullptr;
+  context_ = nullptr;
   NotifyDestroyed();
 }
 
@@ -127,9 +315,13 @@ uint64_t PlatformViewAndroid::DefaultFramebuffer() const {
   return 0;
 }
 
-bool PlatformViewAndroid::ContextMakeCurrent() {}
+bool PlatformViewAndroid::ContextMakeCurrent() {
+  return context_ != nullptr ? context_->ContextMakeCurrent() : false;
+}
 
-bool PlatformViewAndroid::SwapBuffers() {}
+bool PlatformViewAndroid::SwapBuffers() {
+  return context_ != nullptr ? context_->SwapBuffers() : false;
+}
 
 }  // namespace shell
 }  // namespace sky
