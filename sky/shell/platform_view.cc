@@ -38,8 +38,9 @@ void PlatformView::NotifyCreated() {
   auto delegate = config_.ui_delegate;
   auto rasterizer = config_.rasterizer->GetWeakRasterizerPtr();
   auto weak_this = GetWeakViewPtr();
-  auto gpu_continuation =
-      base::Bind(&Rasterizer::Setup, rasterizer, weak_this);
+  auto gpu_continuation = base::Bind(&Rasterizer::Setup,  // method
+                                     rasterizer,          // target
+                                     weak_this);
   config_.ui_task_runner->PostTask(
       FROM_HERE, base::Bind(&UIDelegate::OnOutputSurfaceCreated, delegate,
                             gpu_continuation));

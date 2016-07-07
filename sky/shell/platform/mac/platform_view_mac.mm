@@ -9,12 +9,14 @@
 namespace sky {
 namespace shell {
 
-PlatformView* PlatformView::Create(const Config& config) {
-  return new PlatformViewMac(config);
+PlatformView* PlatformView::Create(const Config& config,
+                                   SurfaceConfig surface_config) {
+  return new PlatformViewMac(config, surface_config);
 }
 
-PlatformViewMac::PlatformViewMac(const Config& config)
-    : PlatformView(config), opengl_view_(nullptr), weak_factory_(this) {}
+PlatformViewMac::PlatformViewMac(const Config& config,
+                                 SurfaceConfig surface_config)
+    : PlatformView(config, surface_config), weak_factory_(this) {}
 
 PlatformViewMac::~PlatformViewMac() {
   weak_factory_.InvalidateWeakPtrs();
@@ -25,7 +27,7 @@ base::WeakPtr<sky::shell::PlatformView> PlatformViewMac::GetWeakViewPtr() {
 }
 
 void PlatformViewMac::SetOpenGLView(NSOpenGLView* view) {
-  opengl_view_ = view;
+  opengl_view_ = decltype(opengl_view_){view};
 }
 
 uint64_t PlatformViewMac::DefaultFramebuffer() const {
@@ -37,7 +39,7 @@ bool PlatformViewMac::ContextMakeCurrent() {
     return false;
   }
 
-  [opengl_view_.openGLContext makeCurrentContext];
+  [opengl_view_.get().openGLContext makeCurrentContext];
   return true;
 }
 
@@ -46,7 +48,7 @@ bool PlatformViewMac::SwapBuffers() {
     return false;
   }
 
-  [opengl_view_.openGLContext flushBuffer];
+  [opengl_view_.get().openGLContext flushBuffer];
   return true;
 }
 
@@ -55,7 +57,7 @@ bool PlatformViewMac::IsValid() const {
     return false;
   }
 
-  auto context = opengl_view_.openGLContext;
+  auto context = opengl_view_.get().openGLContext;
 
   if (context == nullptr) {
     return false;

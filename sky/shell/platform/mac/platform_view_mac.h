@@ -7,19 +7,16 @@
 
 #include "base/memory/weak_ptr.h"
 #include "sky/shell/platform_view.h"
+#include "base/mac/scoped_nsobject.h"
 
-#if defined(__OBJC__)
 @class NSOpenGLView;
-#else   // __OBJC__
-class NSOpenGLView;
-#endif  // __OBJC__
 
 namespace sky {
 namespace shell {
 
 class PlatformViewMac : public PlatformView {
  public:
-  explicit PlatformViewMac(const Config& config);
+  explicit PlatformViewMac(const Config& config, SurfaceConfig surface_config);
 
   ~PlatformViewMac() override;
 
@@ -34,7 +31,7 @@ class PlatformViewMac : public PlatformView {
   bool SwapBuffers() override;
 
  private:
-  NSOpenGLView* opengl_view_;
+  base::scoped_nsobject<NSOpenGLView> opengl_view_;
   base::WeakPtrFactory<PlatformViewMac> weak_factory_;
 
   bool IsValid() const;
