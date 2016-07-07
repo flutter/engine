@@ -32,7 +32,7 @@ class PlatformView {
     uint8_t blue_bits = 8;
     uint8_t alpha_bits = 8;
     uint8_t depth_bits = 0;
-    uint8_t stencil_bits = 0;
+    uint8_t stencil_bits = 8;
   };
 
   // Implemented by each platform.
