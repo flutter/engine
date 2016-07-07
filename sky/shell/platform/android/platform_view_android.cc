@@ -60,6 +60,8 @@ class AndroidGLContext {
       : window_(window_handle),
         display_(EGL_NO_DISPLAY),
         config_(nullptr),
+        surface_(EGL_NO_SURFACE),
+        context_(EGL_NO_CONTEXT),
         valid_(false) {
     if (!window_.IsValid()) {
       // We always require a valid window since we are only going to deal

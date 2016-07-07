@@ -156,8 +156,9 @@ if (is_android) {
     ]
 
     ldflags = [
-      "-lGLESv2",
+      "-landroid",
       "-lEGL",
+      "-lGLESv2",
     ]
   }
 
