@@ -166,7 +166,7 @@ class AndroidGLContext {
       return eglTerminate(display) == EGL_TRUE;
     }
 
-    return false;
+    return true;
   }
 
   static bool TeardownContext(EGLDisplay display, EGLContext context) {
