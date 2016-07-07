@@ -31,11 +31,12 @@ class RasterizerMojo : public Rasterizer {
       mojo::InterfaceRequest<rasterizer::Rasterizer> request) override;
 
   // sky::shell::rasterizer::Rasterizer override
-  void Setup(base::WeakPtr<PlatformView> delegate,
-             base::Closure continuation) override;
+  void Setup(PlatformView* platform_view,
+             base::Closure rasterizer_continuation,
+             base::WaitableEvent* setup_completion_event) override;
 
   // sky::shell::rasterizer::Rasterizer override
-  void Teardown() override;
+  void Teardown(base::WaitableEvent* teardown_completion_event) override;
 
   // sky::shell::rasterizer::Rasterizer override
   base::WeakPtr<Rasterizer> GetWeakRasterizerPtr() override;

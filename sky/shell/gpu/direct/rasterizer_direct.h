@@ -17,7 +17,7 @@ namespace shell {
 
 class RasterizerDirect : public Rasterizer {
  public:
-  explicit RasterizerDirect();
+  RasterizerDirect();
 
   ~RasterizerDirect() override;
 
@@ -26,11 +26,12 @@ class RasterizerDirect : public Rasterizer {
       mojo::InterfaceRequest<rasterizer::Rasterizer> request) override;
 
   // sky::shell::Rasterizer override.
-  void Setup(base::WeakPtr<PlatformView> delegate,
-             base::Closure continuation) override;
+  void Setup(PlatformView* platform_view,
+             base::Closure continuation,
+             base::WaitableEvent* setup_completion_event) override;
 
   // sky::shell::Rasterizer override.
-  void Teardown() override;
+  void Teardown(base::WaitableEvent* teardown_completion_event) override;
 
   // sky::shell::Rasterizer override.
   base::WeakPtr<sky::shell::Rasterizer> GetWeakRasterizerPtr() override;
@@ -44,7 +45,7 @@ class RasterizerDirect : public Rasterizer {
   flow::CompositorContext compositor_context_;
   mojo::Binding<rasterizer::Rasterizer> binding_;
   std::unique_ptr<flow::LayerTree> last_layer_tree_;
-  base::WeakPtr<PlatformView> view_delegate_;
+  PlatformView* platform_view_;
   base::WeakPtrFactory<RasterizerDirect> weak_factory_;
 
   // sky::services::rasterizer::Rasterizer (from rasterizer.mojom) override.

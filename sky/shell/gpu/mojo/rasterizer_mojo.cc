@@ -57,16 +57,16 @@ void RasterizerMojo::Init(mojo::ApplicationConnectorPtr connector,
   scene_ = scene.Pass();
 }
 
-void RasterizerMojo::Setup(base::WeakPtr<PlatformView> delegate,
-                           base::Closure continuation) {
-  if (delegate == nullptr) {
-    return;
-  }
-
-  continuation.Run();
+void RasterizerMojo::Setup(PlatformView* platform_view,
+                           base::Closure rasterizer_continuation,
+                           base::WaitableEvent* setup_completion_event) {
+  rasterizer_continuation.Run();
+  setup_completion_event->Signal();
 }
 
-void RasterizerMojo::Teardown() {}
+void RasterizerMojo::Teardown(base::WaitableEvent* teardown_completion_event) {
+  teardown_completion_event->Signal();
+}
 
 void RasterizerMojo::Draw(uint64_t layer_tree_ptr,
                           const DrawCallback& callback) {

@@ -9,6 +9,7 @@
 #include "sky/engine/wtf/PassRefPtr.h"
 #include "sky/engine/wtf/RefPtr.h"
 #include "sky/shell/gpu/picture_serializer.h"
+#include "sky/shell/platform_view.h"
 #include "sky/shell/shell.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -42,28 +43,31 @@ void RasterizerDirect::ConnectToRasterizer(
 }
 
 // sky::shell::Rasterizer override.
-void RasterizerDirect::Setup(base::WeakPtr<PlatformView> delegate,
-                             base::Closure continuation) {
-  auto view = delegate.get();
-
-  CHECK(view) << "Must be able to acquire the view.";
+void RasterizerDirect::Setup(PlatformView* platform_view,
+                             base::Closure continuation,
+                             base::WaitableEvent* setup_completion_event) {
+  CHECK(platform_view) << "Must be able to acquire the view.";
 
   // The context needs to be made current before the GrGL interface can be
   // setup.
-  bool success = view->ContextMakeCurrent();
+  bool success = platform_view->ContextMakeCurrent();
 
   CHECK(success) << "Could not make the context current for initial GL setup";
 
   ganesh_canvas_.SetupGrGLInterface();
 
-  view_delegate_ = delegate;
+  platform_view_ = platform_view;
 
   continuation.Run();
+
+  setup_completion_event->Signal();
 }
 
 // sky::shell::Rasterizer override.
-void RasterizerDirect::Teardown() {
-  view_delegate_.reset();
+void RasterizerDirect::Teardown(
+    base::WaitableEvent* teardown_completion_event) {
+  platform_view_ = nullptr;
+  teardown_completion_event->Signal();
 }
 
 // sky::shell::Rasterizer override.
@@ -78,9 +82,7 @@ void RasterizerDirect::Draw(uint64_t layer_tree_ptr,
   std::unique_ptr<flow::LayerTree> layer_tree(
       reinterpret_cast<flow::LayerTree*>(layer_tree_ptr));
 
-  auto view = view_delegate_.get();
-
-  if (view == nullptr || !view->ContextMakeCurrent() ||
+  if (platform_view_ == nullptr || !platform_view_->ContextMakeCurrent() ||
       !layer_tree->root_layer()) {
     callback.Run();
     return;
@@ -94,15 +96,15 @@ void RasterizerDirect::Draw(uint64_t layer_tree_ptr,
   compositor_context_.engine_time().SetLapTime(layer_tree->construction_time());
 
   {
-    SkCanvas* canvas = ganesh_canvas_.GetCanvas(view->DefaultFramebuffer(),
-                                                layer_tree->frame_size());
+    SkCanvas* canvas = ganesh_canvas_.GetCanvas(
+        platform_view_->DefaultFramebuffer(), layer_tree->frame_size());
     flow::CompositorContext::ScopedFrame frame =
         compositor_context_.AcquireFrame(ganesh_canvas_.gr_context(), *canvas);
     canvas->clear(SK_ColorBLACK);
     layer_tree->Raster(frame);
     canvas->flush();
 
-    view->SwapBuffers();
+    platform_view_->SwapBuffers();
   }
 
   // Trace to a file if necessary

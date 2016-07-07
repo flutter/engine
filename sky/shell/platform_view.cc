@@ -33,36 +33,43 @@ void PlatformView::NotifyCreated() {
   PlatformView::NotifyCreated(base::Bind(&base::DoNothing));
 }
 
-void PlatformView::NotifyCreated(base::Closure continuation) {
-  // Tell the delegate that the output surface was created. As an argument,
-  // for the gpu_continuation parameter, configure a closure that sets up the
-  // completes the rasterizer connection.
-
+void PlatformView::NotifyCreated(base::Closure rasterizer_continuation) {
   CHECK(config_.rasterizer != nullptr);
 
   auto delegate = config_.ui_delegate;
   auto rasterizer = config_.rasterizer->GetWeakRasterizerPtr();
-  auto weak_this = GetWeakViewPtr();
-  auto gpu_continuation = base::Bind(&Rasterizer::Setup,  // method
-                                     rasterizer,          // target
-                                     weak_this, continuation);
+
+  base::WaitableEvent latch(false, false);
+
+  auto delegate_continuation =
+      base::Bind(&Rasterizer::Setup,  // method
+                 rasterizer,          // target
+                 base::Unretained(this), rasterizer_continuation,
+                 base::Unretained(&latch));
+
   config_.ui_task_runner->PostTask(
       FROM_HERE, base::Bind(&UIDelegate::OnOutputSurfaceCreated, delegate,
-                            gpu_continuation));
+                            delegate_continuation));
+
+  latch.Wait();
 }
 
 void PlatformView::NotifyDestroyed() {
-  // Tell the delegate that the output surface was destroyed. As an argument,
-  // for the gpu_continuation parameter, configure a closure that tears down the
-  // the rasterizer.
   CHECK(config_.rasterizer != nullptr);
 
   auto delegate = config_.ui_delegate;
   auto rasterizer = config_.rasterizer->GetWeakRasterizerPtr();
-  auto gpu_continuation = base::Bind(&Rasterizer::Teardown, rasterizer);
+
+  base::WaitableEvent latch(false, false);
+
+  auto delegate_continuation =
+      base::Bind(&Rasterizer::Teardown, rasterizer, base::Unretained(&latch));
+
   config_.ui_task_runner->PostTask(
       FROM_HERE, base::Bind(&UIDelegate::OnOutputSurfaceDestroyed, delegate,
-                            gpu_continuation));
+                            delegate_continuation));
+
+  latch.Wait();
 }
 
 }  // namespace shell
