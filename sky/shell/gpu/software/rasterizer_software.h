@@ -2,23 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SKY_SHELL_GPU_DIRECT_RASTERIZER_DIRECT_H_
-#define SKY_SHELL_GPU_DIRECT_RASTERIZER_DIRECT_H_
+#ifndef SKY_SHELL_GPU_SOFTWARE_RASTERIZER_SOFTWARE_H_
+#define SKY_SHELL_GPU_SOFTWARE_RASTERIZER_SOFTWARE_H_
 
 #include "base/memory/weak_ptr.h"
 #include "base/synchronization/waitable_event.h"
 #include "flow/compositor_context.h"
-#include "sky/shell/gpu/direct/ganesh_canvas.h"
 #include "sky/shell/rasterizer.h"
 
 namespace sky {
 namespace shell {
 
-class RasterizerDirect : public Rasterizer {
+class RasterizerSoftware : public Rasterizer {
  public:
-  RasterizerDirect();
+  RasterizerSoftware();
 
-  ~RasterizerDirect() override;
+  ~RasterizerSoftware() override;
 
   // sky::shell::Rasterizer override.
   void ConnectToRasterizer(
@@ -39,20 +38,19 @@ class RasterizerDirect : public Rasterizer {
   flow::LayerTree* GetLastLayerTree() override;
 
  private:
-  GaneshCanvas ganesh_canvas_;
   flow::CompositorContext compositor_context_;
   mojo::Binding<rasterizer::Rasterizer> binding_;
   std::unique_ptr<flow::LayerTree> last_layer_tree_;
   PlatformView* platform_view_;
-  base::WeakPtrFactory<RasterizerDirect> weak_factory_;
+  base::WeakPtrFactory<RasterizerSoftware> weak_factory_;
 
   // sky::services::rasterizer::Rasterizer (from rasterizer.mojom) override.
   void Draw(uint64_t layer_tree_ptr, const DrawCallback& callback) override;
 
-  DISALLOW_COPY_AND_ASSIGN(RasterizerDirect);
+  DISALLOW_COPY_AND_ASSIGN(RasterizerSoftware);
 };
 
 }  // namespace shell
 }  // namespace sky
 
-#endif  // SKY_SHELL_GPU_DIRECT_RASTERIZER_DIRECT_H_
+#endif  // SKY_SHELL_GPU_SOFTWARE_RASTERIZER_SOFTWARE_H_
