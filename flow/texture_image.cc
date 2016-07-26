@@ -52,7 +52,7 @@ sk_sp<SkImage> TextureImageCreate(GrContext* context,
 
   // Update unpack alignment based on format.
   glPixelStorei(GL_UNPACK_ALIGNMENT,
-                format == TextureImageFormat::RGBA ? 4 : 2);
+                dataFormat == TextureImageDataFormat::UnsignedByte ? 4 : 2);
 
   GLint gl_format = ToGLFormat(format);
 
