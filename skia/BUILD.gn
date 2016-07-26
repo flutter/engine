@@ -168,6 +168,11 @@ config("skia_library_config") {
     }
   }
 
+  if (current_cpu == "arm64") {
+    # All 64-bit ARM variants have NEON.
+    defines += [ "SK_ARM_HAS_NEON" ]
+  }
+
   # Settings for text blitting, chosen to approximate the system browser.
   if (is_linux) {
     defines += [
@@ -543,7 +548,7 @@ source_set("skia_opts") {
     }
   } else if (current_cpu == "arm64") {
     # TODO(1841): NEON sources are not currently used on arm64.
-    sources = gypi_skia_opts.none_sources
+    sources = gypi_skia_opts.armv7_sources + gypi_skia_opts.neon_sources
   } else if (current_cpu == "mipsel") {
     cflags += [ "-fomit-frame-pointer" ]
 
