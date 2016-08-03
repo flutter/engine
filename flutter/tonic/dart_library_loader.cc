@@ -11,7 +11,7 @@
 #include "flutter/tonic/dart_api_scope.h"
 #include "lib/tonic/converter/dart_converter.h"
 #include "flutter/tonic/dart_dependency_catcher.h"
-#include "flutter/tonic/dart_error.h"
+#include "lib/tonic/logging/dart_error.h"
 #include "flutter/tonic/dart_isolate_reloader.h"
 #include "flutter/tonic/dart_isolate_scope.h"
 #include "flutter/tonic/dart_library_provider.h"

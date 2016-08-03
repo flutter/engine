@@ -13,10 +13,6 @@ source_set("tonic") {
     "dart_class_provider.h",
     "dart_dependency_catcher.cc",
     "dart_dependency_catcher.h",
-    "dart_error.cc",
-    "dart_error.h",
-    "dart_invoke.cc",
-    "dart_invoke.h",
     "dart_io.cc",
     "dart_io.h",
     "dart_isolate_reloader.cc",
@@ -56,6 +52,7 @@ source_set("tonic") {
     "//dart/runtime:libdart",
     "//dart/runtime/vm:libdart_platform",
     "//lib/tonic/converter",
+    "//lib/tonic/logging",
     "//lib/tonic/typed_data",
   ]
 }

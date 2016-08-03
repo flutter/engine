@@ -7,12 +7,13 @@
 #include "base/callback.h"
 #include "base/trace_event/trace_event.h"
 #include "flutter/tonic/dart_api_scope.h"
-#include "flutter/tonic/dart_error.h"
+#include "lib/tonic/logging/dart_error.h"
 #include "flutter/tonic/dart_isolate_scope.h"
 #include "flutter/tonic/dart_state.h"
 #include "lib/tonic/converter/dart_converter.h"
 
 using mojo::common::DataPipeDrainer;
+using tonic::LogIfError;
 
 namespace blink {
 
