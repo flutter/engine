@@ -45,8 +45,8 @@ void DartMessageHandler::OnMessage(DartState* dart_state) {
 }
 
 void DartMessageHandler::OnHandleMessage(DartState* dart_state) {
-  DartIsolateScope scope(dart_state->isolate());
-  DartApiScope dart_api_scope;
+  tonic::DartIsolateScope scope(dart_state->isolate());
+  tonic::DartApiScope dart_api_scope;
 
   bool error = false;
 

@@ -4,7 +4,6 @@
 
 source_set("tonic") {
   sources = [
-    "dart_api_scope.h",
     "dart_args.h",
     "dart_binding_macros.h",
     "dart_class_library.cc",
@@ -17,8 +16,6 @@ source_set("tonic") {
     "dart_io.h",
     "dart_isolate_reloader.cc",
     "dart_isolate_reloader.h",
-    "dart_isolate_scope.cc",
-    "dart_isolate_scope.h",
     "dart_library_loader.cc",
     "dart_library_loader.h",
     "dart_library_natives.cc",
@@ -53,6 +50,7 @@ source_set("tonic") {
     "//dart/runtime/vm:libdart_platform",
     "//lib/tonic/converter",
     "//lib/tonic/logging",
+    "//lib/tonic/scopes",
     "//lib/tonic/typed_data",
   ]
 }

@@ -19,12 +19,12 @@
 #include "base/trace_event/trace_event.h"
 #include "dart/runtime/bin/embedded_dart_io.h"
 #include "dart/runtime/include/dart_mirrors_api.h"
-#include "flutter/tonic/dart_api_scope.h"
+#include "lib/tonic/scopes/dart_api_scope.h"
 #include "flutter/tonic/dart_class_library.h"
 #include "flutter/tonic/dart_dependency_catcher.h"
 #include "lib/tonic/logging/dart_error.h"
 #include "flutter/tonic/dart_io.h"
-#include "flutter/tonic/dart_isolate_scope.h"
+#include "lib/tonic/scopes/dart_isolate_scope.h"
 #include "flutter/tonic/dart_library_loader.h"
 #include "flutter/tonic/dart_snapshot_loader.h"
 #include "flutter/tonic/dart_state.h"
@@ -189,7 +189,7 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
   FTL_CHECK(Dart_IsServiceIsolate(isolate));
   FTL_CHECK(!LogIfError(Dart_SetLibraryTagHandler(DartLibraryTagHandler)));
   {
-    DartApiScope dart_api_scope;
+    tonic::DartApiScope dart_api_scope;
     DartIO::InitForIsolate();
     DartUI::InitForIsolate();
     DartMojoInternal::InitForIsolate();
@@ -253,7 +253,7 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
   FTL_CHECK(!LogIfError(Dart_SetLibraryTagHandler(DartLibraryTagHandler)));
 
   {
-    DartApiScope dart_api_scope;
+    tonic::DartApiScope dart_api_scope;
     DartIO::InitForIsolate();
     DartUI::InitForIsolate();
     DartMojoInternal::InitForIsolate();

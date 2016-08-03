@@ -6,9 +6,9 @@
 
 #include "base/callback.h"
 #include "base/trace_event/trace_event.h"
-#include "flutter/tonic/dart_api_scope.h"
+#include "lib/tonic/scopes/dart_api_scope.h"
 #include "lib/tonic/logging/dart_error.h"
-#include "flutter/tonic/dart_isolate_scope.h"
+#include "lib/tonic/scopes/dart_isolate_scope.h"
 #include "flutter/tonic/dart_state.h"
 #include "lib/tonic/converter/dart_converter.h"
 
@@ -39,8 +39,8 @@ void DartSnapshotLoader::OnDataComplete() {
   TRACE_EVENT_ASYNC_END0("flutter", "DartSnapshotLoader::LoadSnapshot", this);
 
   {
-    DartIsolateScope scope(dart_state_->isolate());
-    DartApiScope api_scope;
+    tonic::DartIsolateScope scope(dart_state_->isolate());
+    tonic::DartApiScope api_scope;
 
     LogIfError(Dart_LoadScriptFromSnapshot(buffer_.data(), buffer_.size()));
   }
