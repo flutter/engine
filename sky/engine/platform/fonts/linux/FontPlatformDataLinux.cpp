@@ -30,7 +30,6 @@
 
 #include "sky/engine/public/platform/Platform.h"
 
-#include "sky/engine/platform/LayoutTestSupport.h"
 #include "sky/engine/platform/fonts/FontPlatformData.h"
 #include "sky/engine/platform/graphics/GraphicsContext.h"
 #include "sky/engine/public/platform/linux/WebFontRenderStyle.h"
@@ -84,7 +83,7 @@ void FontPlatformData::setupPaint(SkPaint* paint, GraphicsContext* context)
         || (context && context->deviceScaleFactor() > 1.0f);
 
     // TestRunner specifically toggles the subpixel positioning flag.
-    if (useSubpixelText && !LayoutTestSupport::isRunningLayoutTest())
+    if (useSubpixelText)
         paint->setSubpixelText(true);
     else
         paint->setSubpixelText(m_style.useSubpixelPositioning);
@@ -121,8 +120,7 @@ void FontPlatformData::querySystemForRenderStyle(bool useSkiaSubpixelPositioning
         m_style.useSubpixelRendering = useSkiaSubpixelRendering;
 
     // TestRunner specifically toggles the subpixel positioning flag.
-    if (m_style.useSubpixelPositioning == FontRenderStyle::NoPreference
-        || LayoutTestSupport::isRunningLayoutTest())
+    if (m_style.useSubpixelPositioning == FontRenderStyle::NoPreference)
         m_style.useSubpixelPositioning = useSkiaSubpixelPositioning;
 }
 

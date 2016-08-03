@@ -36,7 +36,6 @@
 #include "mojo/message_pump/message_pump_mojo.h"
 #include "sky/engine/core/Init.h"
 #include "sky/engine/core/script/dart_init.h"
-#include "sky/engine/platform/LayoutTestSupport.h"
 #include "sky/engine/public/platform/Platform.h"
 #include "sky/engine/wtf/Assertions.h"
 #include "sky/engine/wtf/MainThread.h"
@@ -144,26 +143,6 @@ void shutdown()
     CoreInitializer::shutdown();
     WTF::shutdown();
     Platform::shutdown();
-}
-
-void setLayoutTestMode(bool value)
-{
-    LayoutTestSupport::setIsRunningLayoutTest(value);
-}
-
-bool layoutTestMode()
-{
-    return LayoutTestSupport::isRunningLayoutTest();
-}
-
-void setFontAntialiasingEnabledForTest(bool value)
-{
-    LayoutTestSupport::setFontAntialiasingEnabledForTest(value);
-}
-
-bool fontAntialiasingEnabledForTest()
-{
-    return LayoutTestSupport::isFontAntialiasingEnabledForTest();
 }
 
 } // namespace blink

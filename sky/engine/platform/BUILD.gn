@@ -14,8 +14,6 @@ source_set("platform") {
     "FloatConversion.h",
     "Language.cpp",
     "Language.h",
-    "LayoutTestSupport.cpp",
-    "LayoutTestSupport.h",
     "LayoutUnit.h",
     "Length.cpp",
     "Length.h",
