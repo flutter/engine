@@ -17,7 +17,6 @@ source_set("platform_headers") {
     "platform/WebCString.h",
     "platform/WebCommon.h",
     "platform/WebDiscardableMemory.h",
-    "platform/WebPrivateOwnPtr.h",
     "platform/WebPrivatePtr.h",
     "platform/WebString.h",
     "platform/WebVector.h",
