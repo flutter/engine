@@ -35,8 +35,6 @@ component("wtf") {
     "CheckedArithmetic.h",
     "Compiler.h",
     "Complex.h",
-    "CryptographicallyRandomNumber.cpp",
-    "CryptographicallyRandomNumber.h",
     "DataLog.cpp",
     "DataLog.h",
     "DefaultAllocator.cpp",
