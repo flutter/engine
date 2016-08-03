@@ -18,7 +18,6 @@ source_set("platform_headers") {
     "platform/WebCommon.h",
     "platform/WebDiscardableMemory.h",
     "platform/WebPrivatePtr.h",
-    "platform/WebString.h",
     "platform/WebVector.h",
     "platform/linux/WebFallbackFont.h",
     "platform/linux/WebFontInfo.h",

@@ -43,7 +43,6 @@ source_set("platform") {
     "exported/sky_settings.cc",
     "exported/WebCString.cpp",
     "exported/WebCommon.cpp",
-    "exported/WebString.cpp",
     "exported/linux/WebFontInfo.cpp",
     "exported/linux/WebFontRenderStyle.cpp",
     "fonts/AlternateFontFamily.h",

@@ -31,8 +31,9 @@
 #ifndef SKY_ENGINE_PUBLIC_PLATFORM_PLATFORM_H_
 #define SKY_ENGINE_PUBLIC_PLATFORM_PLATFORM_H_
 
+#include <string>
+
 #include "sky/engine/public/platform/WebCommon.h"
-#include "sky/engine/public/platform/WebString.h"
 #include "sky/engine/public/platform/WebVector.h"
 
 namespace base {
@@ -63,7 +64,7 @@ public:
     // System --------------------------------------------------------------
 
     // Returns a value such as "en-US".
-    virtual WebString defaultLocale() { return WebString(); }
+    virtual std::string defaultLocale() { return std::string(); }
 
     virtual base::SingleThreadTaskRunner* GetUITaskRunner() { return 0; }
     virtual base::SingleThreadTaskRunner* GetIOTaskRunner() { return 0; }
