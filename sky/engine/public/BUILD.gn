@@ -17,23 +17,13 @@ source_set("platform_headers") {
     "platform/WebCString.h",
     "platform/WebCommon.h",
     "platform/WebDiscardableMemory.h",
-    "platform/WebInputEvent.h",
-    "platform/WebNonCopyable.h",
-    "platform/WebPoint.h",
     "platform/WebPrivateOwnPtr.h",
     "platform/WebPrivatePtr.h",
-    "platform/WebRect.h",
-    "platform/WebReferrerPolicy.h",
-    "platform/WebRenderingStats.h",
-    "platform/WebSelectionBound.h",
-    "platform/WebSize.h",
     "platform/WebString.h",
     "platform/WebVector.h",
-    "platform/android/WebSandboxSupport.h",
     "platform/linux/WebFallbackFont.h",
     "platform/linux/WebFontInfo.h",
     "platform/linux/WebFontRenderStyle.h",
-    "platform/linux/WebSandboxSupport.h",
   ]
 }
 

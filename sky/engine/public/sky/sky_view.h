@@ -29,7 +29,6 @@ class DartLibraryProvider;
 class Scene;
 class SkyViewClient;
 class View;
-class WebInputEvent;
 class Window;
 
 class SkyView : public WindowClient, public IsolateClient {

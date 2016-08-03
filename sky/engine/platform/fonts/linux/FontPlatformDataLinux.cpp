@@ -34,7 +34,6 @@
 #include "sky/engine/platform/fonts/FontPlatformData.h"
 #include "sky/engine/platform/graphics/GraphicsContext.h"
 #include "sky/engine/public/platform/linux/WebFontRenderStyle.h"
-#include "sky/engine/public/platform/linux/WebSandboxSupport.h"
 #include "third_party/skia/include/core/SkTypeface.h"
 
 namespace blink {
@@ -100,17 +99,7 @@ void FontPlatformData::setupPaint(SkPaint* paint, GraphicsContext* context)
 void FontPlatformData::querySystemForRenderStyle(bool useSkiaSubpixelPositioning)
 {
     WebFontRenderStyle style;
-#if OS(ANDROID)
     style.setDefaults();
-#else
-    // If the font name is missing (i.e. probably a web font) or the sandbox is disabled, use the system defaults.
-    if (!m_family.length() || !Platform::current()->sandboxSupport()) {
-        style.setDefaults();
-    } else {
-        const int sizeAndStyle = (((int)m_textSize) << 2) | (m_typeface->style() & 3);
-        Platform::current()->sandboxSupport()->getRenderStyleForStrike(m_family.data(), sizeAndStyle, &style);
-    }
-#endif
     style.toFontRenderStyle(&m_style);
 
     // Fix FontRenderStyle::NoPreference to actual styles.

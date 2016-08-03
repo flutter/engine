@@ -41,7 +41,6 @@ class SingleThreadTaskRunner;
 
 namespace blink {
 class WebDiscardableMemory;
-class WebSandboxSupport;
 
 class Platform {
 public:
@@ -51,9 +50,6 @@ public:
     BLINK_PLATFORM_EXPORT static void initialize(Platform*);
     BLINK_PLATFORM_EXPORT static void shutdown();
     BLINK_PLATFORM_EXPORT static Platform* current();
-
-    // May return null if sandbox support is not necessary
-    virtual WebSandboxSupport* sandboxSupport() { return 0; }
 
 
     // Allocates discardable memory. May return 0, even if the platform supports
