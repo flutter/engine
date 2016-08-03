@@ -30,7 +30,6 @@
 
 #include "sky/engine/platform/PlatformThreadData.h"
 
-#include "sky/engine/platform/ThreadTimers.h"
 #include "sky/engine/wtf/PassOwnPtr.h"
 #include "sky/engine/wtf/ThreadSpecific.h"
 
@@ -39,7 +38,6 @@ namespace blink {
 static ThreadSpecific<PlatformThreadData>* s_data;
 
 PlatformThreadData::PlatformThreadData()
-    : m_threadTimers(adoptPtr(new ThreadTimers))
 {
 }
 
@@ -49,7 +47,6 @@ PlatformThreadData::~PlatformThreadData()
 
 void PlatformThreadData::destroy()
 {
-    m_threadTimers.clear();
 }
 
 PlatformThreadData& PlatformThreadData::current()

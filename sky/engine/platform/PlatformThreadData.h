@@ -37,21 +37,14 @@
 
 namespace blink {
 
-class ThreadTimers;
-
 class PLATFORM_EXPORT PlatformThreadData {
     WTF_MAKE_NONCOPYABLE(PlatformThreadData);
 public:
     PlatformThreadData();
     ~PlatformThreadData();
 
-    ThreadTimers& threadTimers() { return *m_threadTimers; }
-
     static PlatformThreadData& current();
     void destroy();
-
-private:
-    OwnPtr<ThreadTimers> m_threadTimers;
 };
 
 } // namespace blink

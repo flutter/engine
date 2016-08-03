@@ -57,7 +57,6 @@ PLATFORM_EXPORT extern WTFLogChannel LogArchives;
 PLATFORM_EXPORT extern WTFLogChannel LogProgress;
 PLATFORM_EXPORT extern WTFLogChannel LogFileAPI;
 PLATFORM_EXPORT extern WTFLogChannel LogScriptedAnimationController;
-PLATFORM_EXPORT extern WTFLogChannel LogTimers;
 
 PLATFORM_EXPORT WTFLogChannel* getChannelFromName(const String& channelName);
 
