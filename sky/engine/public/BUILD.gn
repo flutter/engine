@@ -14,7 +14,6 @@ source_set("platform_headers") {
   public = [
     "platform/Platform.h",
     "platform/ServiceProvider.h",
-    "platform/WebArrayBuffer.h",
     "platform/WebBlendMode.h",
     "platform/WebCString.h",
     "platform/WebCallbacks.h",
