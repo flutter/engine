@@ -35,7 +35,6 @@
 #include "sky/engine/platform/graphics/GraphicsContext.h"
 #include "sky/engine/platform/graphics/GraphicsContextStateSaver.h"
 #include "sky/engine/public/platform/Platform.h"
-#include "sky/engine/public/platform/WebData.h"
 #include "sky/engine/wtf/MainThread.h"
 #include "sky/engine/wtf/StdLibExtras.h"
 
