@@ -37,7 +37,6 @@
 #include "sky/engine/core/Init.h"
 #include "sky/engine/core/script/dart_init.h"
 #include "sky/engine/platform/LayoutTestSupport.h"
-#include "sky/engine/platform/Logging.h"
 #include "sky/engine/public/platform/Platform.h"
 #include "sky/engine/wtf/Assertions.h"
 #include "sky/engine/wtf/MainThread.h"
@@ -165,15 +164,6 @@ void setFontAntialiasingEnabledForTest(bool value)
 bool fontAntialiasingEnabledForTest()
 {
     return LayoutTestSupport::isFontAntialiasingEnabledForTest();
-}
-
-void enableLogChannel(const char* name)
-{
-#if !LOG_DISABLED
-    WTFLogChannel* channel = getChannelFromName(name);
-    if (channel)
-        channel->state = WTFLogChannelOn;
-#endif // !LOG_DISABLED
 }
 
 } // namespace blink

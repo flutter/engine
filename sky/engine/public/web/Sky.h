@@ -54,9 +54,6 @@ BLINK_EXPORT bool layoutTestMode();
 BLINK_EXPORT void setFontAntialiasingEnabledForTest(bool);
 BLINK_EXPORT bool fontAntialiasingEnabledForTest();
 
-// Enables the named log channel. See WebCore/platform/Logging.h for details.
-BLINK_EXPORT void enableLogChannel(const char*);
-
 } // namespace blink
 
 #endif  // SKY_ENGINE_PUBLIC_WEB_SKY_H_

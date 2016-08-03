@@ -49,7 +49,6 @@ source_set("platform_headers") {
     "platform/WebSelectionBound.h",
     "platform/WebSize.h",
     "platform/WebString.h",
-    "platform/WebThread.h",
     "platform/WebVector.h",
     "platform/android/WebSandboxSupport.h",
     "platform/linux/WebFallbackFont.h",
