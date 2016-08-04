@@ -49,7 +49,6 @@ static inline pointer::PointerType EventTypeFromNSEventPhase(
 }
 
 @implementation SkyWindow {
-  sky::SkyEnginePtr _sky_engine;
   std::unique_ptr<sky::shell::PlatformViewMac> _platform_view;
 }
 
@@ -69,15 +68,12 @@ static inline pointer::PointerType EventTypeFromNSEventPhase(
       << "The platform view must not already be set.";
 
   _platform_view.reset(new sky::shell::PlatformViewMac(self.renderSurface));
-  _platform_view->SetupResourceContextOnIOThread();
   _platform_view->NotifyCreated();
 }
 
 // TODO(eseidel): This does not belong in sky_window!
 // Probably belongs in NSApplicationDelegate didFinishLaunching.
 - (void)setupAndLoadDart {
-  _platform_view->ConnectToEngine(mojo::GetProxy(&_sky_engine));
-
   mojo::ServiceProviderPtr service_provider;
   new sky::shell::PlatformServiceProvider(mojo::GetProxy(&service_provider),
                                           base::Bind(DynamicServiceResolve));
@@ -89,9 +85,11 @@ static inline pointer::PointerType EventTypeFromNSEventPhase(
   sky::ServicesDataPtr services = sky::ServicesData::New();
   services->incoming_services = service_provider.Pass();
   services->view_services = view_service_provider.Pass();
-  _sky_engine->SetServices(services.Pass());
 
-  if (sky::shell::AttemptLaunchFromCommandLineSwitches(_sky_engine)) {
+  auto& engine = _platform_view->GetEnginePtr();
+  engine->SetServices(services.Pass());
+
+  if (sky::shell::AttemptLaunchFromCommandLineSwitches(engine)) {
     // This attempts launching from an FLX bundle that does not contain a
     // dart snapshot.
     return;
@@ -103,7 +101,7 @@ static inline pointer::PointerType EventTypeFromNSEventPhase(
       command_line.GetSwitchValueASCII(sky::shell::switches::kFLX);
   if (!bundle_path.empty()) {
     std::string script_uri = std::string("file://") + bundle_path;
-    _sky_engine->RunFromBundle(script_uri, bundle_path);
+    engine->RunFromBundle(script_uri, bundle_path);
     return;
   }
 
@@ -111,7 +109,7 @@ static inline pointer::PointerType EventTypeFromNSEventPhase(
   if (args.size() > 0) {
     auto packages =
         command_line.GetSwitchValueASCII(sky::shell::switches::kPackages);
-    _sky_engine->RunFromFile(args[0], packages, "");
+    engine->RunFromFile(args[0], packages, "");
     return;
   }
 }
@@ -128,7 +126,7 @@ static inline pointer::PointerType EventTypeFromNSEventPhase(
   metrics->physical_width = size.width;
   metrics->physical_height = size.height;
   metrics->device_pixel_ratio = 1.0;
-  _sky_engine->OnViewportMetricsChanged(metrics.Pass());
+  _platform_view->GetEnginePtr()->OnViewportMetricsChanged(metrics.Pass());
 }
 
 - (void)setupSurfaceIfNecessary {
@@ -177,7 +175,7 @@ static inline pointer::PointerType EventTypeFromNSEventPhase(
 
   auto pointer_packet = pointer::PointerPacket::New();
   pointer_packet->pointers.push_back(pointer_data.Pass());
-  _sky_engine->OnPointerPacket(pointer_packet.Pass());
+  _platform_view->GetEnginePtr()->OnPointerPacket(pointer_packet.Pass());
 }
 
 - (void)mouseDown:(NSEvent*)event {

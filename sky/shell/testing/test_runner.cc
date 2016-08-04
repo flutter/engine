@@ -18,14 +18,12 @@ namespace shell {
 
 TestRunner::TestRunner()
     : platform_view_(new PlatformViewTest()), weak_ptr_factory_(this) {
-  platform_view_->ConnectToEngine(GetProxy(&sky_engine_));
-
   ViewportMetricsPtr metrics = ViewportMetrics::New();
 
   metrics->physical_width = 800;
   metrics->physical_height = 600;
 
-  sky_engine_->OnViewportMetricsChanged(metrics.Pass());
+  platform_view_->GetEnginePtr()->OnViewportMetricsChanged(metrics.Pass());
 }
 
 TestRunner::~TestRunner() = default;
@@ -38,7 +36,7 @@ TestRunner& TestRunner::Shared() {
 }
 
 void TestRunner::Run(const TestDescriptor& test) {
-  sky_engine_->RunFromFile(test.path, test.packages, "");
+  platform_view_->GetEnginePtr()->RunFromFile(test.path, test.packages, "");
 }
 
 }  // namespace shell

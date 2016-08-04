@@ -6,6 +6,7 @@
 #define SKY_SHELL_PLATFORM_VIEW_H_
 
 #include <memory>
+#include <type_traits>
 
 #include "base/macros.h"
 #include "base/memory/weak_ptr.h"
@@ -14,6 +15,7 @@
 #include "sky/shell/shell.h"
 #include "sky/shell/ui/engine.h"
 #include "sky/shell/ui_delegate.h"
+#include "sky/services/engine/sky_engine.mojom.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
@@ -43,13 +45,11 @@ class PlatformView {
     uint8_t stencil_bits = 8;
   };
 
-  void SetupResourceContextOnIOThread();
-
   static base::ThreadLocalStorage::StaticSlot ResourceContext;
 
   virtual ~PlatformView();
 
-  void ConnectToEngine(mojo::InterfaceRequest<SkyEngine> request);
+  SkyEnginePtr& GetEnginePtr();
 
   void NotifyCreated();
 
@@ -77,10 +77,13 @@ class PlatformView {
 
   std::unique_ptr<Rasterizer> rasterizer_;
   std::unique_ptr<Engine> engine_;
+  SkyEnginePtr engine_ptr_;
 
   SkISize size_;
 
   explicit PlatformView();
+
+  void SetupResourceContextOnIOThread();
 
   void SetupResourceContextOnIOThreadPerform(base::WaitableEvent* event);
 
