@@ -32,13 +32,13 @@ PlatformView::PlatformView()
   engine_config.gpu_task_runner = shell.gpu_task_runner();
 
   rasterizer::RasterizerPtr rasterizer;
-  mojo::InterfaceRequest<rasterizer::Rasterizer> request =
+  mojo::InterfaceRequest<rasterizer::Rasterizer> rasterizer_request =
       mojo::GetProxy(&rasterizer);
 
   shell.gpu_task_runner()->PostTask(
-      FROM_HERE,
-      base::Bind(&Rasterizer::ConnectToRasterizer,
-                 rasterizer_->GetWeakRasterizerPtr(), base::Passed(&request)));
+      FROM_HERE, base::Bind(&Rasterizer::ConnectToRasterizer,
+                            rasterizer_->GetWeakRasterizerPtr(),
+                            base::Passed(&rasterizer_request)));
 
   engine_.reset(new Engine(engine_config, rasterizer.Pass()));
 
@@ -46,6 +46,13 @@ PlatformView::PlatformView()
   config_.ui_task_runner = shell.ui_task_runner();
   config_.ui_delegate = engine_->GetWeakPtr();
   config_.rasterizer = rasterizer_.get();
+
+  // Setup the engine ptr connection.
+  mojo::InterfaceRequest<SkyEngine> engine_request =
+      mojo::GetProxy(&engine_ptr_);
+  config_.ui_task_runner->PostTask(
+      FROM_HERE, base::Bind(&UIDelegate::ConnectToEngine, config_.ui_delegate,
+                            base::Passed(&engine_request)));
 }
 
 PlatformView::~PlatformView() {
@@ -58,16 +65,8 @@ PlatformView::~PlatformView() {
   shell.ui_task_runner()->DeleteSoon(FROM_HERE, engine_.release());
 }
 
-void PlatformView::ConnectToEngine(mojo::InterfaceRequest<SkyEngine> request) {
-  config_.ui_task_runner->PostTask(
-      FROM_HERE, base::Bind(&UIDelegate::ConnectToEngine, config_.ui_delegate,
-                            base::Passed(&request)));
-  Shell& shell = Shell::Shared();
-  shell.ui_task_runner()->PostTask(
-      FROM_HERE,
-      base::Bind(&Shell::AddPlatformView,
-                 base::Unretained(&shell),
-                 GetWeakViewPtr()));
+SkyEnginePtr& PlatformView::GetEnginePtr() {
+  return engine_ptr_;
 }
 
 void PlatformView::NotifyCreated() {
@@ -75,12 +74,12 @@ void PlatformView::NotifyCreated() {
 }
 
 void PlatformView::NotifyCreated(base::Closure rasterizer_continuation) {
+  // Setup the rasterizer.
+  base::WaitableEvent latch(false, false);
   CHECK(config_.rasterizer != nullptr);
 
   auto delegate = config_.ui_delegate;
   auto rasterizer = config_.rasterizer->GetWeakRasterizerPtr();
-
-  base::WaitableEvent latch(false, false);
 
   auto delegate_continuation =
       base::Bind(&Rasterizer::Setup,  // method
@@ -91,8 +90,16 @@ void PlatformView::NotifyCreated(base::Closure rasterizer_continuation) {
   config_.ui_task_runner->PostTask(
       FROM_HERE, base::Bind(&UIDelegate::OnOutputSurfaceCreated, delegate,
                             delegate_continuation));
-
   latch.Wait();
+
+  // Register with the shell.
+  Shell& shell = Shell::Shared();
+  config_.ui_task_runner->PostTask(
+      FROM_HERE, base::Bind(&Shell::AddPlatformView, base::Unretained(&shell),
+                            GetWeakViewPtr()));
+
+  // Setup the resource context if necessary.
+  SetupResourceContextOnIOThread();
 }
 
 void PlatformView::NotifyDestroyed() {
