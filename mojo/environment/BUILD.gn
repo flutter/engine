@@ -32,24 +32,3 @@ source_set("chromium") {
     "//mojo/public/cpp/system",
   ]
 }
-
-# TODO(vtl): Just build this as an executable/non-apptest for now. (This
-# requires depending //mojo/edk/test:run_all_perftests, which is undesirable.
-# However, we don't have a good way to automatically run perf tests that are
-# apptests and extract results.)
-test("mojo_environment_perftests") {
-  sources = [
-    "async_wait_perftest.cc",
-  ]
-
-  deps = [
-    ":chromium",
-    "//base",
-    "//base/test:test_support",
-    "//mojo/edk/test:run_all_perftests",
-    "//mojo/message_pump",
-    "//mojo/public/c/environment/tests:perftest_helpers",
-    "//mojo/public/cpp/environment",
-    "//testing/gtest",
-  ]
-}

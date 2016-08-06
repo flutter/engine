@@ -21,6 +21,7 @@ if (is_android) {
 
     deps = [
       "//base:base_java",
+      "//mojo/public/cpp/bindings:utility",
       "//mojo/public/java:bindings",
       "//mojo/public/java:system",
       "//mojo/services/vsync/interfaces:interfaces_java",
@@ -48,6 +49,7 @@ if (is_ios || is_mac) {
     deps = [
       "//base:base",
       "//mojo/public/cpp/application",
+      "//mojo/public/cpp/bindings:utility",
       "//mojo/services/vsync/interfaces",
     ]
   }
