@@ -43,26 +43,19 @@ struct MessageLoopHolder {
 
 }  // namespace
 
-static jlong CreateBaseRunLoop(JNIEnv* env,
-                               const JavaParamRef<jobject>& jcaller) {
+static jlong CreateBaseRunLoop(JNIEnv* env, jobject jcaller) {
   return reinterpret_cast<uintptr_t>(new MessageLoopHolder());
 }
 
-static void Run(JNIEnv* env,
-                const JavaParamRef<jobject>& jcaller,
-                jlong runLoopID) {
+static void Run(JNIEnv* env, jobject jcaller, jlong runLoopID) {
   reinterpret_cast<MessageLoopHolder*>(runLoopID)->message_loop->Run();
 }
 
-static void RunUntilIdle(JNIEnv* env,
-                         const JavaParamRef<jobject>& jcaller,
-                         jlong runLoopID) {
+static void RunUntilIdle(JNIEnv* env, jobject jcaller, jlong runLoopID) {
   reinterpret_cast<MessageLoopHolder*>(runLoopID)->message_loop->RunUntilIdle();
 }
 
-static void Quit(JNIEnv* env,
-                 const JavaParamRef<jobject>& jcaller,
-                 jlong runLoopID) {
+static void Quit(JNIEnv* env, jobject jcaller, jlong runLoopID) {
   reinterpret_cast<MessageLoopHolder*>(runLoopID)->message_loop->Quit();
 }
 
@@ -73,9 +66,9 @@ static void RunJavaRunnable(
 }
 
 static void PostDelayedTask(JNIEnv* env,
-                            const JavaParamRef<jobject>& jcaller,
+                            jobject jcaller,
                             jlong runLoopID,
-                            const JavaParamRef<jobject>& runnable,
+                            jobject runnable,
                             jlong delay) {
   base::android::ScopedJavaGlobalRef<jobject> runnable_ref;
   // ScopedJavaGlobalRef do not hold onto the env reference, so it is safe to
@@ -88,9 +81,7 @@ static void PostDelayedTask(JNIEnv* env,
           base::TimeDelta::FromMicroseconds(delay));
 }
 
-static void DeleteMessageLoop(JNIEnv* env,
-                              const JavaParamRef<jobject>& jcaller,
-                              jlong runLoopID) {
+static void DeleteMessageLoop(JNIEnv* env, jobject jcaller, jlong runLoopID) {
   MessageLoopHolder* native_loop =
       reinterpret_cast<MessageLoopHolder*>(runLoopID);
   delete native_loop;
@@ -102,3 +93,5 @@ bool RegisterBaseRunLoop(JNIEnv* env) {
 
 }  // namespace android
 }  // namespace mojo
+
+
