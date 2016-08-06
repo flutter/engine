@@ -100,6 +100,8 @@ source_set("gpu_mojo") {
     "gpu/mojo/gl_texture_recycler.h",
     "gpu/mojo/rasterizer_mojo.cc",
     "gpu/mojo/rasterizer_mojo.h",
+    "gpu/software/rasterizer_software.cc",
+    "gpu/software/rasterizer_software.h",
   ]
 
   deps = [
