@@ -11,7 +11,7 @@
 #include "flutter/common/threads.h"
 #include "flutter/glue/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
-#include "flutter/sky/engine/bindings/dart_mojo_internal.h"
+#include "flutter/lib/mojo/dart_mojo_internal.h"
 #include "flutter/sky/engine/bindings/dart_runtime_hooks.h"
 #include "flutter/sky/engine/bindings/dart_ui.h"
 #include "flutter/sky/engine/core/script/dart_init.h"
