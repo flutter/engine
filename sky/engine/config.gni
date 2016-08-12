@@ -38,6 +38,8 @@ if (flutter_runtime_mode == "debug") {
   feature_defines_list += [ "FLUTTER_RUNTIME_MODE=2" ]
 } else if (flutter_runtime_mode == "release") {
   feature_defines_list += [ "FLUTTER_RUNTIME_MODE=3" ]
+} else {
+  feature_defines_list += [ "FLUTTER_RUNTIME_MODE=0" ]
 }
 
 if (is_debug) {
@@ -53,10 +55,6 @@ if (!is_mac) {
 
 if (sky_asserts_always_on) {
   feature_defines_list += [ "ENABLE_ASSERT=1" ]
-}
-
-if (flutter_runtime_mode == "debug") {
-  feature_defines_list += [ "ENABLE_DART_STRICT=1" ]
 }
 
 if (flutter_aot) {

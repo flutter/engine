@@ -503,7 +503,7 @@ static bool ShouldEnableCheckedMode() {
     return false;
   }
 
-#if ENABLE(DART_STRICT)
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   return true;
 #else
   return Settings::Get().enable_dart_checked_mode;
