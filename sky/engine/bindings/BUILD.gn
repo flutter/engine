@@ -4,8 +4,6 @@
 
 source_set("bindings") {
   sources = [
-    "dart_runtime_hooks.cc",
-    "dart_runtime_hooks.h",
     "dart_ui.cc",
     "dart_ui.h",
     "flutter_dart_state.cc",
@@ -16,7 +14,6 @@ source_set("bindings") {
 
   deps = [
     "//dart/runtime:libdart",
-    "//dart/runtime/bin:embedded_dart_io",
     "//flutter/assets",
     "//flutter/lib/ui",
     "//flutter/services/engine:interfaces",
