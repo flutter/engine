@@ -8,6 +8,8 @@ source_set("flow") {
     "compositor_context.h",
     "instrumentation.cc",
     "instrumentation.h",
+    "latch.cc",
+    "latch.h",
     "layers/backdrop_filter_layer.cc",
     "layers/backdrop_filter_layer.h",
     "layers/child_scene_layer.cc",
@@ -36,10 +38,14 @@ source_set("flow") {
     "layers/shader_mask_layer.h",
     "layers/transform_layer.cc",
     "layers/transform_layer.h",
+    "pipeline.cc",
+    "pipeline.h",
     "raster_cache.cc",
     "raster_cache.h",
     "bitmap_image.cc",
     "bitmap_image.h",
+    "semaphore.cc",
+    "semaphore.h",
     "texture_image.h",
   ]
 
