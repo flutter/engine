@@ -49,6 +49,7 @@ namespace {
 void willProcessTask() {}
 
 void didProcessTask() {
+  TRACE_EVENT0("flutter", "RunMicrotasks");
   tonic::DartMicrotaskQueue::RunMicrotasks();
   // FIXME: Report memory usage to dart?
 }

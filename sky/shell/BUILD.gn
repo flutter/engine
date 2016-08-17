@@ -61,7 +61,6 @@ source_set("common") {
     "//flutter/services/engine:interfaces",
     "//flutter/services/platform",
     "//flutter/services/pointer:interfaces",
-    "//flutter/services/rasterizer:interfaces",
     "//flutter/services/semantics:interfaces",
     "//flutter/skia",
     "//flutter/sky/engine",
