@@ -82,7 +82,7 @@ struct SymbolLookup {
   const char* switch_name;
 };
 
-static SymbolLookup g_symbol_lookups[] = {
+static constexpr SymbolLookup g_symbol_lookups[] = {
     {blink::kDartIsolateSnapshotBufferName, switches::kAotIsolateSnapshot},
     {blink::kDartVmIsolateSnapshotBufferName, switches::kAotVmIsolateSnapshot},
     {blink::kInstructionsSnapshotName, switches::kAotInstructionsBlob},
