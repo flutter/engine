@@ -64,18 +64,13 @@ import org.domokit.vsync.VSyncProviderImpl;
 public class FlutterMain {
     private static final String TAG = "FlutterMain";
 
-    // Resource names that can be used for the the FLX application bundle.
-    // TODO(tvolkert): Move over to use config properties
-    public static final String[] APP_BUNDLE_RESOURCES = {
-        "app.flx", "app_profile.flx", "app_release.flx"
-    };
-
     // Must match values in sky::shell::switches
     private static final String AOT_SNAPSHOT_PATH_KEY = "aot-snapshot-path";
     private static final String AOT_ISOLATE_KEY = "isolate-snapshot";
     private static final String AOT_VM_ISOLATE_KEY = "vm-isolate-snapshot";
     private static final String AOT_INSTRUCTIONS_KEY = "instructions-blob";
     private static final String AOT_RODATA_KEY = "rodata-blob";
+    private static final String FLX_KEY = "flx";
 
     // XML Attribute keys supported in AndroidManifest.xml
     public static final String PUBLIC_AOT_ISOLATE_KEY =
@@ -86,12 +81,15 @@ public class FlutterMain {
         FlutterMain.class.getName() + '.' + AOT_INSTRUCTIONS_KEY;
     public static final String PUBLIC_AOT_RODATA_KEY =
         FlutterMain.class.getName() + '.' + AOT_RODATA_KEY;
+    public static final String PUBLIC_FLX_KEY =
+        FlutterMain.class.getName() + '.' + FLX_KEY;
 
     // Resource names used for components of the precompiled snapshot.
     private static final String DEFAULT_AOT_ISOLATE = "snapshot_aot_isolate";
     private static final String DEFAULT_AOT_VM_ISOLATE = "snapshot_aot_vmisolate";
     private static final String DEFAULT_AOT_INSTRUCTIONS = "snapshot_aot_instr";
     private static final String DEFAULT_AOT_RODATA = "snapshot_aot_rodata";
+    private static final String DEFAULT_FLX = "app.flx";
 
     private static final String MANIFEST = "flutter.yaml";
     private static final String SERVICES = "services.json";
@@ -100,7 +98,6 @@ public class FlutterMain {
     private static final Set<String> SKY_RESOURCES = ImmutableSetBuilder.<String>newInstance()
         .add("icudtl.dat")
         .add(MANIFEST)
-        .add(APP_BUNDLE_RESOURCES)
         .build();
 
     // Mutable because default values can be overridden via config properties
@@ -108,6 +105,7 @@ public class FlutterMain {
     private static String sAotVmIsolate = DEFAULT_AOT_VM_ISOLATE;
     private static String sAotInstructions = DEFAULT_AOT_INSTRUCTIONS;
     private static String sAotRodata = DEFAULT_AOT_RODATA;
+    private static String sFlx = DEFAULT_FLX;
 
     private static boolean sInitialized = false;
     private static ResourceExtractor sResourceExtractor;
@@ -350,6 +348,7 @@ public class FlutterMain {
                 sAotInstructions = metadata.getString(PUBLIC_AOT_INSTRUCTIONS_KEY,
                     DEFAULT_AOT_INSTRUCTIONS);
                 sAotRodata = metadata.getString(PUBLIC_AOT_RODATA_KEY, DEFAULT_AOT_RODATA);
+                sFlx = metadata.getString(PUBLIC_FLX_KEY, DEFAULT_FLX);
             }
         } catch (PackageManager.NameNotFoundException e) {
             throw new RuntimeException(e);
@@ -370,6 +369,7 @@ public class FlutterMain {
             .addResource(sAotVmIsolate)
             .addResource(sAotInstructions)
             .addResource(sAotRodata)
+            .addResource(sFlx)
             .start();
     }
 
@@ -415,11 +415,7 @@ public class FlutterMain {
 
     public static String findAppBundlePath(Context applicationContext) {
         String dataDirectory = PathUtils.getDataDirectory(applicationContext);
-        for (String appBundleResource : APP_BUNDLE_RESOURCES) {
-            File appBundle = new File(dataDirectory, appBundleResource);
-            if (appBundle.exists())
-                return appBundle.getPath();
-        }
-        return null;
+        File appBundle = new File(dataDirectory, sFlx);
+        return appBundle.exists() ? appBundle.getPath() : null;
     }
 }
