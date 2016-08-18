@@ -98,7 +98,7 @@ std::string LookupFileNameForSymbolNameHook(const char* symbol_name) {
       continue;
 
     if (command_line.HasSwitch(symbol_lookup.switch_name)) {
-      result = command_line.GetSwitchValueASCII(symbol_lookup.switch_name).c_str();
+      result = command_line.GetSwitchValueASCII(symbol_lookup.switch_name);
       break;
     }
   }
