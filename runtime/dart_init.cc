@@ -125,8 +125,6 @@ bool g_service_isolate_initialized = false;
 ServiceIsolateHook g_service_isolate_hook = nullptr;
 RegisterNativeServiceProtocolExtensionHook
     g_register_native_service_protocol_extensions_hook = nullptr;
-LookupFileNameForSymbolNameHook
-    g_lookup_file_name_for_symbol_name_hook = nullptr;
 
 void IsolateShutdownCallback(void* callback_data) {
   tonic::DartState* dart_state = static_cast<tonic::DartState*>(callback_data);
@@ -392,14 +390,19 @@ struct SymbolAsset {
   const char* symbol_name;
   const char* file_name;
   bool is_executable;
+  size_t settings_offset;
   void* mapping;
 };
 
 static SymbolAsset g_symbol_assets[] = {
-    {kDartVmIsolateSnapshotBufferName, "snapshot_aot_vmisolate", false},
-    {kDartIsolateSnapshotBufferName, "snapshot_aot_isolate", false},
-    {kInstructionsSnapshotName, "snapshot_aot_instr", true},
-    {kDataSnapshotName, "snapshot_aot_rodata", false},
+    {kDartVmIsolateSnapshotBufferName, "snapshot_aot_vmisolate", false,
+     offsetof(Settings, aot_vm_isolate_snapshot_file_name)},
+    {kDartIsolateSnapshotBufferName, "snapshot_aot_isolate", false,
+     offsetof(Settings, aot_isolate_snapshot_file_name)},
+    {kInstructionsSnapshotName, "snapshot_aot_instr", true,
+     offsetof(Settings, aot_instructions_blob_file_name)},
+    {kDataSnapshotName, "snapshot_aot_rodata", false,
+     offsetof(Settings, aot_rodata_blob_file_name)},
 };
 
 // Resolve a precompiled snapshot symbol by mapping the corresponding asset
@@ -413,15 +416,15 @@ void* _DartSymbolLookup(const char* symbol_name) {
       return symbol_asset.mapping;
     }
 
-    const std::string& aot_snapshot_path = Settings::Get().aot_snapshot_path;
+    const Settings& settings = Settings::Get();
+    const std::string& aot_snapshot_path = settings.aot_snapshot_path;
     FTL_CHECK(!aot_snapshot_path.empty());
 
     const char* file_name = symbol_asset.file_name;
-    if (g_lookup_file_name_for_symbol_name_hook) {
-      std::string lookup = g_lookup_file_name_for_symbol_name_hook(symbol_name);
-      if (!lookup.empty())
-        file_name = lookup.c_str();
-    }
+    const std::string* settings_override = reinterpret_cast<const std::string*>(
+        reinterpret_cast<const uint8_t*>(&settings) + symbol_asset.settings_offset);
+    if (!settings_override->empty())
+      file_name = settings_override->c_str();
 
     std::string asset_path = aot_snapshot_path + "/" + file_name;
     struct stat info;
@@ -512,12 +515,6 @@ void SetRegisterNativeServiceProtocolExtensionHook(
     RegisterNativeServiceProtocolExtensionHook hook) {
   FTL_CHECK(!g_service_isolate_initialized);
   g_register_native_service_protocol_extensions_hook = hook;
-}
-
-void SetLookupFileNameForSymbolNameHook(
-    LookupFileNameForSymbolNameHook hook) {
-  FTL_CHECK(!g_service_isolate_initialized);
-  g_lookup_file_name_for_symbol_name_hook = hook;
 }
 
 static bool ShouldEnableCheckedMode() {

@@ -47,7 +47,6 @@ using EmbedderTracingCallback = ftl::Closure;
 
 typedef void (*ServiceIsolateHook)(bool);
 typedef void (*RegisterNativeServiceProtocolExtensionHook)(bool);
-typedef std::string (*LookupFileNameForSymbolNameHook)(const char*);
 
 struct EmbedderTracingCallbacks {
   EmbedderTracingCallback start_tracing_callback;
@@ -70,11 +69,6 @@ void SetServiceIsolateHook(ServiceIsolateHook hook);
 // extensions.
 void SetRegisterNativeServiceProtocolExtensionHook(
     RegisterNativeServiceProtocolExtensionHook hook);
-
-// Provide a function that will be called to lookup the name of the asset
-// file that holds the named part of the precompiled snapshot.
-void SetLookupFileNameForSymbolNameHook(
-    LookupFileNameForSymbolNameHook hook);
 
 }  // namespace blink
 

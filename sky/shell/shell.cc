@@ -77,35 +77,6 @@ void ServiceIsolateHook(bool running_precompiled) {
   }
 }
 
-struct SymbolLookup {
-  const char* symbol_name;
-  const char* switch_name;
-};
-
-static constexpr SymbolLookup g_symbol_lookups[] = {
-    {blink::kDartIsolateSnapshotBufferName, switches::kAotIsolateSnapshot},
-    {blink::kDartVmIsolateSnapshotBufferName, switches::kAotVmIsolateSnapshot},
-    {blink::kInstructionsSnapshotName, switches::kAotInstructionsBlob},
-    {blink::kDataSnapshotName, switches::kAotRodataBlob},
-};
-
-std::string LookupFileNameForSymbolNameHook(const char* symbol_name) {
-  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
-  std::string result;
-
-  for (const SymbolLookup& symbol_lookup : g_symbol_lookups) {
-    if (strcmp(symbol_name, symbol_lookup.symbol_name))
-      continue;
-
-    if (command_line.HasSwitch(symbol_lookup.switch_name)) {
-      result = command_line.GetSwitchValueASCII(symbol_lookup.switch_name);
-      break;
-    }
-  }
-
-  return result;
-}
-
 }  // namespace
 
 Shell::Shell() {
@@ -137,7 +108,6 @@ Shell::Shell() {
   blink::SetServiceIsolateHook(ServiceIsolateHook);
   blink::SetRegisterNativeServiceProtocolExtensionHook(
       PlatformViewServiceProtocol::RegisterHook);
-  blink::SetLookupFileNameForSymbolNameHook(LookupFileNameForSymbolNameHook);
 }
 
 Shell::~Shell() {}
@@ -184,10 +154,16 @@ void Shell::InitStandalone(std::string icu_data_path) {
   settings.trace_startup = command_line.HasSwitch(switches::kTraceStartup);
   settings.aot_snapshot_path =
       command_line.GetSwitchValueASCII(switches::kAotSnapshotPath);
-  if (command_line.HasSwitch(switches::kCacheDirPath)) {
-    settings.temp_directory_path =
-        command_line.GetSwitchValueASCII(switches::kCacheDirPath);
-  }
+  settings.aot_isolate_snapshot_file_name =
+      command_line.GetSwitchValueASCII(switches::kAotIsolateSnapshot);
+  settings.aot_vm_isolate_snapshot_file_name =
+      command_line.GetSwitchValueASCII(switches::kAotVmIsolateSnapshot);
+  settings.aot_instructions_blob_file_name =
+      command_line.GetSwitchValueASCII(switches::kAotInstructionsBlob);
+  settings.aot_rodata_blob_file_name =
+      command_line.GetSwitchValueASCII(switches::kAotRodataBlob);
+  settings.temp_directory_path =
+      command_line.GetSwitchValueASCII(switches::kCacheDirPath);
 
   if (command_line.HasSwitch(switches::kDartFlags)) {
     std::stringstream stream(
