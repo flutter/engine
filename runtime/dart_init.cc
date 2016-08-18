@@ -341,10 +341,10 @@ DartJniIsolateData* GetDartJniDataForCurrentIsolate() {
 
 #if DART_ALLOW_DYNAMIC_RESOLUTION
 
-const char kDartVmIsolateSnapshotBufferName[] = "kDartVmIsolateSnapshotBuffer";
-const char kDartIsolateSnapshotBufferName[] = "kDartIsolateSnapshotBuffer";
-const char kInstructionsSnapshotName[] = "kInstructionsSnapshot";
-const char kDataSnapshotName[] = "kDataSnapshot";
+constexpr char kDartVmIsolateSnapshotBufferName[] = "kDartVmIsolateSnapshotBuffer";
+constexpr char kDartIsolateSnapshotBufferName[] = "kDartIsolateSnapshotBuffer";
+constexpr char kInstructionsSnapshotName[] = "kInstructionsSnapshot";
+constexpr char kDataSnapshotName[] = "kDataSnapshot";
 
 #if OS(IOS)
 
