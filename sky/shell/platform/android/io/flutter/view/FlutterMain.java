@@ -6,12 +6,13 @@ package io.flutter.view;
 
 import android.content.Context;
 import android.util.Log;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.os.Bundle;
 import android.os.SystemClock;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -70,22 +70,22 @@ public class FlutterMain {
         "app.flx", "app_profile.flx", "app_release.flx"
     };
 
-    // Asset file names ending in this string will be treated as candidates
-    // for the Flutter config properties file.
-    private static final String FLUTTER_CONFIG = "flutter_config.properties";
-
     // Must match values in sky::shell::switches
     private static final String AOT_SNAPSHOT_PATH_KEY = "aot-snapshot-path";
     private static final String AOT_ISOLATE_KEY = "isolate-snapshot";
     private static final String AOT_VM_ISOLATE_KEY = "vm-isolate-snapshot";
     private static final String AOT_INSTRUCTIONS_KEY = "instructions-blob";
     private static final String AOT_RODATA_KEY = "rodata-blob";
-    private static final Set<String> CONFIG_FLAGS = ImmutableSetBuilder.<String>newInstance()
-        .add(AOT_ISOLATE_KEY)
-        .add(AOT_VM_ISOLATE_KEY)
-        .add(AOT_INSTRUCTIONS_KEY)
-        .add(AOT_RODATA_KEY)
-        .build();
+
+    // XML Attribute keys supported in AndroidManifest.xml
+    public static final String PUBLIC_AOT_ISOLATE_KEY =
+        FlutterMain.class.getName() + '.' + AOT_ISOLATE_KEY;
+    public static final String PUBLIC_AOT_VM_ISOLATE_KEY =
+        FlutterMain.class.getName() + '.' + AOT_VM_ISOLATE_KEY;
+    public static final String PUBLIC_AOT_INSTRUCTIONS_KEY =
+        FlutterMain.class.getName() + '.' + AOT_INSTRUCTIONS_KEY;
+    public static final String PUBLIC_AOT_RODATA_KEY =
+        FlutterMain.class.getName() + '.' + AOT_RODATA_KEY;
 
     // Resource names used for components of the precompiled snapshot.
     private static final String DEFAULT_AOT_ISOLATE = "snapshot_aot_isolate";
@@ -145,12 +145,11 @@ public class FlutterMain {
      */
     public static void startInitialization(Context applicationContext) {
         long initStartTimestampMillis = SystemClock.uptimeMillis();
-        Set<String> assets = listRootAssets(applicationContext);
-        initConfig(applicationContext, assets);
+        initConfig(applicationContext);
         initJavaUtils(applicationContext);
         initResources(applicationContext);
         initNative(applicationContext);
-        initAot(applicationContext, assets);
+        initAot(applicationContext);
 
         // We record the initialization time using SystemClock because at the start of the
         // initialization we have not yet loaded the native library to call into dart_tools_api.h.
@@ -337,59 +336,22 @@ public class FlutterMain {
     }
 
     /**
-     * Returns a list of the file names at the root of the application's asset
-     * path.
+     * Initialize our Flutter config values by obtaining them from the
+     * manifest XML file, falling back to default values.
      */
-    private static Set<String> listRootAssets(Context applicationContext) {
-        AssetManager manager = applicationContext.getResources().getAssets();
+    private static void initConfig(Context applicationContext) {
         try {
-            return ImmutableSetBuilder.<String>newInstance()
-                .add(manager.list(""))
-                .build();
-        } catch (IOException e) {
-            Log.e(TAG, "Unable to list assets", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Initialize our Flutter config values by searching for a .properties file
-     * containing properties for our configuration variables. If no such
-     * properties file is found in our assets folder, the configuration
-     * variables will retain their default values.
-     */
-    private static void initConfig(Context applicationContext, Set<String> assets) {
-        AssetManager manager = applicationContext.getResources().getAssets();
-        try {
-            for (String filename : assets) {
-                if (!filename.endsWith(FLUTTER_CONFIG)) {
-                    continue;
-                }
-
-                InputStream inputStream = null;
-                try {
-                    inputStream = manager.open(filename);
-                    Properties config = new Properties();
-                    config.load(inputStream);
-
-                    if (!config.stringPropertyNames().containsAll(CONFIG_FLAGS)) {
-                        // This properties file isn't our flutter config properties
-                        continue;
-                    }
-
-                    sAotIsolate = config.getProperty(AOT_ISOLATE_KEY, DEFAULT_AOT_ISOLATE);
-                    sAotVmIsolate = config.getProperty(AOT_VM_ISOLATE_KEY, DEFAULT_AOT_VM_ISOLATE);
-                    sAotInstructions = config.getProperty(AOT_INSTRUCTIONS_KEY,
-                        DEFAULT_AOT_INSTRUCTIONS);
-                    sAotRodata = config.getProperty(AOT_RODATA_KEY, DEFAULT_AOT_RODATA);
-                } finally {
-                    if (inputStream != null) {
-                        inputStream.close();
-                    }
-                }
+            Bundle metadata = applicationContext.getPackageManager().getApplicationInfo(
+                applicationContext.getPackageName(), PackageManager.GET_META_DATA).metaData;
+            if (metadata != null) {
+                sAotIsolate = metadata.getString(PUBLIC_AOT_ISOLATE_KEY, DEFAULT_AOT_ISOLATE);
+                sAotVmIsolate = metadata.getString(PUBLIC_AOT_VM_ISOLATE_KEY,
+                    DEFAULT_AOT_VM_ISOLATE);
+                sAotInstructions = metadata.getString(PUBLIC_AOT_INSTRUCTIONS_KEY,
+                    DEFAULT_AOT_INSTRUCTIONS);
+                sAotRodata = metadata.getString(PUBLIC_AOT_RODATA_KEY, DEFAULT_AOT_RODATA);
             }
-        } catch (IOException e) {
-            Log.e(TAG, "Unable to access Flutter config properties", e);
+        } catch (PackageManager.NameNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
@@ -421,7 +383,24 @@ public class FlutterMain {
         }
     }
 
-    private static void initAot(Context applicationContext, Set<String> assets) {
+    /**
+     * Returns a list of the file names at the root of the application's asset
+     * path.
+     */
+    private static Set<String> listRootAssets(Context applicationContext) {
+        AssetManager manager = applicationContext.getResources().getAssets();
+        try {
+            return ImmutableSetBuilder.<String>newInstance()
+                .add(manager.list(""))
+                .build();
+        } catch (IOException e) {
+            Log.e(TAG, "Unable to list assets", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void initAot(Context applicationContext) {
+        Set<String> assets = listRootAssets(applicationContext);
         sIsPrecompiled = assets.containsAll(Arrays.asList(
             sAotIsolate,
             sAotVmIsolate,
