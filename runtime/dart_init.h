@@ -18,7 +18,10 @@ namespace blink {
 
 #if DART_ALLOW_DYNAMIC_RESOLUTION
 
+extern const char* kDartVmIsolateSnapshotBufferName;
 extern const char* kDartIsolateSnapshotBufferName;
+extern const char* kInstructionsSnapshotName;
+extern const char* kDataSnapshotName;
 
 void* _DartSymbolLookup(const char* symbol_name);
 
@@ -44,6 +47,7 @@ using EmbedderTracingCallback = ftl::Closure;
 
 typedef void (*ServiceIsolateHook)(bool);
 typedef void (*RegisterNativeServiceProtocolExtensionHook)(bool);
+typedef std::string (*LookupFileNameForSymbolNameHook)(const char*);
 
 struct EmbedderTracingCallbacks {
   EmbedderTracingCallback start_tracing_callback;
@@ -66,6 +70,11 @@ void SetServiceIsolateHook(ServiceIsolateHook hook);
 // extensions.
 void SetRegisterNativeServiceProtocolExtensionHook(
     RegisterNativeServiceProtocolExtensionHook hook);
+
+// Provide a function that will be called to lookup the name of the asset
+// file that holds the named part of the precompiled snapshot.
+void SetLookupFileNameForSymbolNameHook(
+    LookupFileNameForSymbolNameHook hook);
 
 }  // namespace blink
 

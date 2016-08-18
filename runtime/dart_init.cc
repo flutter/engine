@@ -125,6 +125,8 @@ bool g_service_isolate_initialized = false;
 ServiceIsolateHook g_service_isolate_hook = nullptr;
 RegisterNativeServiceProtocolExtensionHook
     g_register_native_service_protocol_extensions_hook = nullptr;
+LookupFileNameForSymbolNameHook
+    g_lookup_file_name_for_symbol_name_hook = nullptr;
 
 void IsolateShutdownCallback(void* callback_data) {
   tonic::DartState* dart_state = static_cast<tonic::DartState*>(callback_data);
@@ -414,7 +416,14 @@ void* _DartSymbolLookup(const char* symbol_name) {
     const std::string& aot_snapshot_path = Settings::Get().aot_snapshot_path;
     FTL_CHECK(!aot_snapshot_path.empty());
 
-    std::string asset_path = aot_snapshot_path + "/" + symbol_asset.file_name;
+    const char* file_name = symbol_asset.file_name;
+    if (g_lookup_file_name_for_symbol_name_hook) {
+      std::string lookup = g_lookup_file_name_for_symbol_name_hook(symbol_name);
+      if (!lookup.empty())
+        file_name = lookup.c_str();
+    }
+
+    std::string asset_path = aot_snapshot_path + "/" + file_name;
     struct stat info;
     if (stat(asset_path.c_str(), &info) < 0)
       return nullptr;
@@ -503,6 +512,12 @@ void SetRegisterNativeServiceProtocolExtensionHook(
     RegisterNativeServiceProtocolExtensionHook hook) {
   FTL_CHECK(!g_service_isolate_initialized);
   g_register_native_service_protocol_extensions_hook = hook;
+}
+
+void SetLookupFileNameForSymbolNameHook(
+    LookupFileNameForSymbolNameHook hook) {
+  FTL_CHECK(!g_service_isolate_initialized);
+  g_lookup_file_name_for_symbol_name_hook = hook;
 }
 
 static bool ShouldEnableCheckedMode() {

@@ -77,6 +77,35 @@ void ServiceIsolateHook(bool running_precompiled) {
   }
 }
 
+struct SymbolLookup {
+  const char* symbol_name;
+  const char* switch_name;
+};
+
+static SymbolLookup g_symbol_lookups[] = {
+    {blink::kDartIsolateSnapshotBufferName, switches::kAotIsolateSnapshot},
+    {blink::kDartVmIsolateSnapshotBufferName, switches::kAotVmIsolateSnapshot},
+    {blink::kInstructionsSnapshotName, switches::kAotInstructionsBlob},
+    {blink::kDataSnapshotName, switches::kAotRodataBlob},
+};
+
+std::string LookupFileNameForSymbolNameHook(const char* symbol_name) {
+  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
+  std::string result;
+
+  for (const SymbolLookup& symbol_lookup : g_symbol_lookups) {
+    if (strcmp(symbol_name, symbol_lookup.symbol_name))
+      continue;
+
+    if (command_line.HasSwitch(symbol_lookup.switch_name)) {
+      result = command_line.GetSwitchValueASCII(symbol_lookup.switch_name).c_str();
+      break;
+    }
+  }
+
+  return result;
+}
+
 }  // namespace
 
 Shell::Shell() {
@@ -108,6 +137,7 @@ Shell::Shell() {
   blink::SetServiceIsolateHook(ServiceIsolateHook);
   blink::SetRegisterNativeServiceProtocolExtensionHook(
       PlatformViewServiceProtocol::RegisterHook);
+  blink::SetLookupFileNameForSymbolNameHook(LookupFileNameForSymbolNameHook);
 }
 
 Shell::~Shell() {}

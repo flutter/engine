@@ -11,6 +11,7 @@ import android.os.SystemClock;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,6 +19,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -56,45 +59,89 @@ import org.domokit.vsync.VSyncProviderImpl;
 
 /**
  * A class to intialize the Flutter engine.
- **/
+ */
 @JNINamespace("sky::shell")
 public class FlutterMain {
     private static final String TAG = "FlutterMain";
 
     // Resource names that can be used for the the FLX application bundle.
+    // TODO(tvolkert): Move over to use config properties
     public static final String[] APP_BUNDLE_RESOURCES = {
         "app.flx", "app_profile.flx", "app_release.flx"
     };
 
+    // Must match values in sky::shell::switches
+    private static final String AOT_SNAPSHOT_PATH_KEY = "aot-snapshot-path";
+    private static final String AOT_ISOLATE_KEY = "isolate-snapshot";
+    private static final String AOT_VM_ISOLATE_KEY = "vm-isolate-snapshot";
+    private static final String AOT_INSTRUCTIONS_KEY = "instructions-blob";
+    private static final String AOT_RODATA_KEY = "rodata-blob";
+    private static final Set<String> CONFIG_FLAGS = ImmutableSetBuilder.<String>newInstance()
+        .add(AOT_ISOLATE_KEY)
+        .add(AOT_VM_ISOLATE_KEY)
+        .add(AOT_INSTRUCTIONS_KEY)
+        .add(AOT_RODATA_KEY)
+        .build();
+
     // Resource names used for components of the precompiled snapshot.
-    private static final String AOT_INSTR = "snapshot_aot_instr";
-    private static final String AOT_ISOLATE = "snapshot_aot_isolate";
-    private static final String AOT_RODATA = "snapshot_aot_rodata";
-    private static final String AOT_VM_ISOLATE = "snapshot_aot_vmisolate";
-    private static final String[] AOT_RESOURCES = {
-        AOT_INSTR, AOT_ISOLATE, AOT_RODATA, AOT_VM_ISOLATE
-    };
+    private static final String DEFAULT_AOT_ISOLATE = "snapshot_aot_isolate";
+    private static final String DEFAULT_AOT_VM_ISOLATE = "snapshot_aot_vmisolate";
+    private static final String DEFAULT_AOT_INSTRUCTIONS = "snapshot_aot_instr";
+    private static final String DEFAULT_AOT_RODATA = "snapshot_aot_rodata";
 
     private static final String MANIFEST = "flutter.yaml";
     private static final String SERVICES = "services.json";
     private static final String PRIVATE_DATA_DIRECTORY_SUFFIX = "sky_shell";
 
-    private static final List<String> SKY_RESOURCES = new ArrayList<String>();
-    static {
-        Collections.addAll(SKY_RESOURCES, "icudtl.dat", MANIFEST);
-        Collections.addAll(SKY_RESOURCES, APP_BUNDLE_RESOURCES);
-        Collections.addAll(SKY_RESOURCES, AOT_RESOURCES);
-    }
+    private static final Set<String> SKY_RESOURCES = ImmutableSetBuilder.<String>newInstance()
+        .add("icudtl.dat")
+        .add(MANIFEST)
+        .add(APP_BUNDLE_RESOURCES)
+        .build();
+
+    // Mutable because default values can be overridden via config properties
+    private static String sAotIsolate = DEFAULT_AOT_ISOLATE;
+    private static String sAotVmIsolate = DEFAULT_AOT_VM_ISOLATE;
+    private static String sAotInstructions = DEFAULT_AOT_INSTRUCTIONS;
+    private static String sAotRodata = DEFAULT_AOT_RODATA;
 
     private static boolean sInitialized = false;
     private static ResourceExtractor sResourceExtractor;
     private static boolean sIsPrecompiled;
 
+    private static final class ImmutableSetBuilder<T> {
+        static <T> ImmutableSetBuilder<T> newInstance() {
+            return new ImmutableSetBuilder<>();
+        }
+
+        HashSet<T> set = new HashSet<>();
+
+        private ImmutableSetBuilder() {}
+
+        ImmutableSetBuilder<T> add(T element) {
+            set.add(element);
+            return this;
+        }
+
+        @SafeVarargs
+        final ImmutableSetBuilder<T> add(T... elements) {
+            for (T element : elements) {
+                set.add(element);
+            }
+            return this;
+        }
+
+        Set<T> build() {
+            return Collections.unmodifiableSet(set);
+        }
+    }
+
     /**
      * Starts initialization of the native system.
-     **/
+     */
     public static void startInitialization(Context applicationContext) {
         long initStartTimestampMillis = SystemClock.uptimeMillis();
+        initConfig(applicationContext);
         initJavaUtils(applicationContext);
         initResources(applicationContext);
         initNative(applicationContext);
@@ -113,7 +160,7 @@ public class FlutterMain {
 
     /**
      * Blocks until initialization of the native system has completed.
-     **/
+     */
     public static void ensureInitializationComplete(Context applicationContext, String[] args) {
         if (sInitialized) {
             return;
@@ -121,16 +168,23 @@ public class FlutterMain {
         try {
             sResourceExtractor.waitForCompletion();
 
-            String[] shellArgs = (args != null) ? Arrays.copyOf(args, args.length + 1) : new String[1];
+            List<String> shellArgs = new ArrayList<>();
+            if (args != null) {
+                Collections.addAll(shellArgs, args);
+            }
             if (sIsPrecompiled) {
-                shellArgs[shellArgs.length - 1] =
-                    "--aot-snapshot-path=" + PathUtils.getDataDirectory(applicationContext);
+                shellArgs.add("--" + AOT_SNAPSHOT_PATH_KEY + "=" +
+                    PathUtils.getDataDirectory(applicationContext));
+                shellArgs.add("--" + AOT_ISOLATE_KEY + "=" + sAotIsolate);
+                shellArgs.add("--" + AOT_VM_ISOLATE_KEY + "=" + sAotVmIsolate);
+                shellArgs.add("--" + AOT_INSTRUCTIONS_KEY + "=" + sAotInstructions);
+                shellArgs.add("--" + AOT_RODATA_KEY + "=" + sAotRodata);
             } else {
-                shellArgs[shellArgs.length - 1] =
-                    "--cache-dir-path=" + PathUtils.getCacheDirectory(applicationContext);
+                shellArgs.add("--cache-dir-path=" +
+                    PathUtils.getCacheDirectory(applicationContext));
             }
 
-            nativeInit(applicationContext, shellArgs);
+            nativeInit(applicationContext, shellArgs.toArray(new String[0]));
 
             // Create the mojo run loop.
             CoreImpl.getInstance().createDefaultRunLoop();
@@ -277,22 +331,69 @@ public class FlutterMain {
         });
     }
 
+    /**
+     * Initialize our Flutter config values by searching for a .properties file
+     * containing properties for our configuration variables. If no such
+     * properties file is found in our assets folder, the configuration
+     * variables will retain their default values.
+     */
+    private static void initConfig(Context applicationContext) {
+        AssetManager manager = applicationContext.getResources().getAssets();
+        try {
+            for (String filename : manager.list("")) {
+                if (!filename.endsWith(".properties")) {
+                    continue;
+                }
+
+                InputStream inputStream = null;
+                try {
+                    inputStream = manager.open(filename);
+                    Properties config = new Properties();
+                    config.load(inputStream);
+
+                    if (!config.stringPropertyNames().containsAll(CONFIG_FLAGS)) {
+                        // This properties file isn't our flutter config properties
+                        continue;
+                    }
+
+                    sAotIsolate = config.getProperty(AOT_ISOLATE_KEY, DEFAULT_AOT_ISOLATE);
+                    sAotVmIsolate = config.getProperty(AOT_VM_ISOLATE_KEY, DEFAULT_AOT_VM_ISOLATE);
+                    sAotInstructions = config.getProperty(AOT_INSTRUCTIONS_KEY,
+                        DEFAULT_AOT_INSTRUCTIONS);
+                    sAotRodata = config.getProperty(AOT_RODATA_KEY, DEFAULT_AOT_RODATA);
+                } finally {
+                    if (inputStream != null) {
+                        inputStream.close();
+                    }
+                }
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Unable to access Flutter config properties", e);
+            throw new RuntimeException(e);
+        }
+    }
+
     private static void initJavaUtils(Context applicationContext) {
         PathUtils.setPrivateDataDirectorySuffix(PRIVATE_DATA_DIRECTORY_SUFFIX,
-                                                applicationContext);
+            applicationContext);
     }
 
     private static void initResources(Context applicationContext) {
         Context context = applicationContext;
         new ResourceCleaner(context).start();
-        sResourceExtractor = new ResourceExtractor(context);
-        sResourceExtractor.addResources(SKY_RESOURCES);
-        sResourceExtractor.start();
+        sResourceExtractor = new ResourceExtractor(context)
+            .addResources(SKY_RESOURCES)
+            .addResource(sAotIsolate)
+            .addResource(sAotVmIsolate)
+            .addResource(sAotInstructions)
+            .addResource(sAotRodata)
+            .start();
     }
 
     private static void initNative(Context applicationContext) {
         try {
-            LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER).ensureInitialized(applicationContext);
+            LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER)
+                .ensureInitialized(applicationContext);
         } catch (ProcessInitException e) {
             Log.e(TAG, "Unable to load Sky Engine binary.", e);
             throw new RuntimeException(e);
@@ -304,9 +405,14 @@ public class FlutterMain {
         try {
             HashSet<String> assets = new HashSet<String>();
             Collections.addAll(assets, manager.list(""));
-            sIsPrecompiled = assets.containsAll(Arrays.asList(AOT_RESOURCES));
+            sIsPrecompiled = assets.containsAll(Arrays.asList(
+                sAotIsolate,
+                sAotVmIsolate,
+                sAotInstructions,
+                sAotRodata
+            ));
         } catch (IOException e) {
-            Log.e(TAG, "Unable to access Flutter resources", e);
+            Log.e(TAG, "Unable to access Flutter assets", e);
             throw new RuntimeException(e);
         }
     }
