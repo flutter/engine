@@ -34,7 +34,7 @@ class Pipeline : public ftl::RefCountedThreadSafe<Pipeline<R>> {
   /// preparing a completed pipeline resource.
   class ProducerContinuation {
    public:
-    ProducerContinuation() {}
+    ProducerContinuation() = default;
 
     ProducerContinuation(ProducerContinuation&& other)
         : continuation_(other.continuation_) {
@@ -74,7 +74,7 @@ class Pipeline : public ftl::RefCountedThreadSafe<Pipeline<R>> {
 
   explicit Pipeline(uint32_t depth) : empty_(depth), available_(0) {}
 
-  ~Pipeline() {}
+  ~Pipeline() = default;
 
   bool IsValid() const { return empty_.IsValid() && available_.IsValid(); }
 

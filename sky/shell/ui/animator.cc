@@ -43,16 +43,26 @@ void Animator::Start() {
 void Animator::BeginFrame(int64_t time_stamp) {
   pending_frame_semaphore_.Signal();
 
-  producer_continuation_ = layer_tree_pipeline_->Produce();
-
   if (!producer_continuation_) {
-    // The pipeline is currently full because the pipeline consumer is too slow.
-    // Try again at the next frame interval.
-    TRACE_EVENT_INSTANT0("flutter", "ConsumerSlowDefer",
-                         TRACE_EVENT_SCOPE_PROCESS);
-    RequestFrame();
-    return;
+    // We may already have a valid pipeline continuation in case a previous
+    // begin frame did not result in an Animation::Render. Simply reuse that
+    // instead of asking the pipeline for a fresh continuation.
+    producer_continuation_ = layer_tree_pipeline_->Produce();
+
+    if (!producer_continuation_) {
+      // If we still don't have valid continuation, the pipeline is currently
+      // full because the consumer is being too slow. Try again at the next
+      // frame interval.
+      TRACE_EVENT_INSTANT0("flutter", "ConsumerSlowDefer",
+                           TRACE_EVENT_SCOPE_PROCESS);
+      RequestFrame();
+      return;
+    }
   }
+
+  // We have acquired a valid continuation from the pipeline and are ready
+  // to service potential frame.
+  DCHECK(producer_continuation_);
 
   engine_->BeginFrame(ftl::TimePoint::Now());
 }
