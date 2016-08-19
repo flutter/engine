@@ -43,24 +43,25 @@ void Animator::Start() {
 void Animator::BeginFrame(int64_t time_stamp) {
   pending_frame_semaphore_.Signal();
 
-  LayerTreePipeline::Producer producer = [this]() {
-    renderable_tree_.reset();
-    ftl::Stopwatch stopwatch;
-    stopwatch.Start();
-    engine_->BeginFrame(ftl::TimePoint::Now());
-    if (renderable_tree_) {
-      renderable_tree_->set_construction_time(stopwatch.Elapsed());
-    }
-    return std::move(renderable_tree_);
-  };
+  producer_continuation_ = layer_tree_pipeline_->Produce();
 
-  if (!layer_tree_pipeline_->Produce(producer)) {
+  if (!producer_continuation_) {
+    // The pipeline is currently full because the pipeline consumer is too slow.
+    // Try again at the next frame interval.
     TRACE_EVENT_INSTANT0("flutter", "ConsumerSlowDefer",
                          TRACE_EVENT_SCOPE_PROCESS);
     RequestFrame();
     return;
   }
 
+  engine_->BeginFrame(ftl::TimePoint::Now());
+}
+
+void Animator::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
+  // Commit the pending continuation.
+  producer_continuation_.Complete(std::move(layer_tree));
+
+  // Notify the rasterizer that the pipeline has items it may consume.
   auto weak_rasterizer = rasterizer_->GetWeakRasterizerPtr();
   auto pipeline = layer_tree_pipeline_;
 
@@ -70,10 +71,6 @@ void Animator::BeginFrame(int64_t time_stamp) {
     }
     weak_rasterizer->Draw(pipeline);
   });
-}
-
-void Animator::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
-  renderable_tree_ = std::move(layer_tree);
 }
 
 void Animator::RequestFrame() {
