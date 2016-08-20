@@ -33,10 +33,10 @@ class PlatformView {
   };
 
   struct SurfaceConfig {
-    uint8_t red_bits = 8;
-    uint8_t green_bits = 8;
-    uint8_t blue_bits = 8;
-    uint8_t alpha_bits = 8;
+    uint8_t red_bits = 5;
+    uint8_t green_bits = 6;
+    uint8_t blue_bits = 5;
+    uint8_t alpha_bits = 0;
     uint8_t depth_bits = 0;
     uint8_t stencil_bits = 8;
   };
