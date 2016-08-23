@@ -4,6 +4,8 @@
 
 source_set("synchronization") {
   sources = [
+    "latch.cc",
+    "latch.h",
     "pipeline.cc",
     "pipeline.h",
     "semaphore.cc",
