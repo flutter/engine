@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/common/config.gni")
+
 vmservice_sources_gypi =
   exec_script("//build/gypi_to_gn.py",
       [ rebase_path("//dart/runtime/bin/vmservice/vmservice_sources.gypi") ],
@@ -70,9 +72,14 @@ source_set("runtime") {
     "//flutter/skia",
     "//lib/ftl",
     "//lib/tonic",
-    "//lib/tonic/debugger",
     "//mojo/public/platform/dart:mojo_internal_impl",
   ]
+
+  if (flutter_runtime_mode != "release") {
+    deps += [
+      "//lib/tonic/debugger",
+    ]
+  }
 
   if (is_android) {
     deps += [
