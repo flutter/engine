@@ -378,6 +378,7 @@ PlatformViewAndroid::PlatformViewAndroid()
 PlatformViewAndroid::~PlatformViewAndroid() = default;
 
 void PlatformViewAndroid::Detach(JNIEnv* env, jobject obj) {
+  ReleaseSurface();
   delete this;
 }
 
@@ -404,8 +405,14 @@ void PlatformViewAndroid::SurfaceCreated(JNIEnv* env,
 }
 
 void PlatformViewAndroid::SurfaceDestroyed(JNIEnv* env, jobject obj) {
-  NotifyDestroyed();
-  context_ = nullptr;
+  ReleaseSurface();
+}
+
+void PlatformViewAndroid::ReleaseSurface() {
+  if (context_) {
+    NotifyDestroyed();
+    context_ = nullptr;
+  }
 }
 
 ftl::WeakPtr<sky::shell::PlatformView> PlatformViewAndroid::GetWeakViewPtr() {
