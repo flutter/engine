@@ -34,21 +34,24 @@ class Pipeline : public ftl::RefCountedThreadSafe<Pipeline<R>> {
   /// preparing a completed pipeline resource.
   class ProducerContinuation {
    public:
-    ProducerContinuation() = default;
+    ProducerContinuation() : trace_id_(0) {}
 
     ProducerContinuation(ProducerContinuation&& other)
-        : continuation_(other.continuation_) {
+        : continuation_(other.continuation_), trace_id_(other.trace_id_) {
       other.continuation_ = nullptr;
+      other.trace_id_ = 0;
     }
 
     ProducerContinuation& operator=(ProducerContinuation&& other) {
       std::swap(continuation_, other.continuation_);
+      std::swap(trace_id_, other.trace_id_);
       return *this;
     }
 
     ~ProducerContinuation() {
       if (continuation_) {
         continuation_(nullptr);
+        TRACE_EVENT_ASYNC_END0("flutter", "PipelineProduce", trace_id_);
       }
     }
 
@@ -56,6 +59,7 @@ class Pipeline : public ftl::RefCountedThreadSafe<Pipeline<R>> {
       if (continuation_) {
         continuation_(std::move(resource));
         continuation_ = nullptr;
+        TRACE_EVENT_ASYNC_END0("flutter", "PipelineProduce", trace_id_);
       }
     }
 
@@ -65,14 +69,19 @@ class Pipeline : public ftl::RefCountedThreadSafe<Pipeline<R>> {
     friend class Pipeline;
 
     std::function<void(ResourcePtr)> continuation_;
+    size_t trace_id_;
 
-    ProducerContinuation(std::function<void(ResourcePtr)> continuation)
-        : continuation_(continuation) {}
+    ProducerContinuation(std::function<void(ResourcePtr)> continuation,
+                         size_t trace_id)
+        : continuation_(continuation), trace_id_(trace_id) {
+      TRACE_EVENT_ASYNC_BEGIN0("flutter", "PipelineProduce", trace_id_);
+    }
 
     FTL_DISALLOW_COPY_AND_ASSIGN(ProducerContinuation);
   };
 
-  explicit Pipeline(uint32_t depth) : empty_(depth), available_(0) {}
+  explicit Pipeline(uint32_t depth)
+      : empty_(depth), available_(0), last_trace_id_(0) {}
 
   ~Pipeline() = default;
 
@@ -83,7 +92,10 @@ class Pipeline : public ftl::RefCountedThreadSafe<Pipeline<R>> {
       return {};
     }
 
-    return {std::bind(&Pipeline::ProducerCommit, this, std::placeholders::_1)};
+    return ProducerContinuation{
+        std::bind(&Pipeline::ProducerCommit, this,
+                  std::placeholders::_1),  // continuation
+        ++last_trace_id_};                 // trace id
   }
 
   using Consumer = std::function<void(ResourcePtr)>;
@@ -124,6 +136,7 @@ class Pipeline : public ftl::RefCountedThreadSafe<Pipeline<R>> {
   Semaphore available_;
   ftl::Mutex queue_mutex_;
   std::queue<ResourcePtr> queue_;
+  std::atomic_size_t last_trace_id_;
 
   void ProducerCommit(ResourcePtr resource) {
     {
