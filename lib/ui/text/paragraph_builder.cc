@@ -135,11 +135,7 @@ ParagraphBuilder::ParagraphBuilder() {
   m_renderView->addChild(m_currentRenderObject);
 }
 
-ParagraphBuilder::~ParagraphBuilder() {
-  PassOwnPtr<RenderView> renderView = m_renderView.release();
-  Threads::UI()->PostTask(
-      [renderView]() { /* renderView's destructor runs. */ });
-}
+ParagraphBuilder::~ParagraphBuilder() { }
 
 void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  const std::string& fontFamily,

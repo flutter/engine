@@ -41,11 +41,7 @@ DART_BIND_ALL(Paragraph, FOR_EACH_BINDING)
 Paragraph::Paragraph(PassOwnPtr<RenderView> renderView)
     : m_renderView(renderView) {}
 
-Paragraph::~Paragraph() {
-  PassOwnPtr<RenderView> renderView = m_renderView.release();
-  Threads::UI()->PostTask(
-      [renderView]() { /* renderView's destructor runs. */ });
-}
+Paragraph::~Paragraph() { }
 
 double Paragraph::width() {
   return firstChildBox()->width();
