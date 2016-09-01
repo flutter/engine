@@ -4,6 +4,7 @@
 
 #include "flutter/sky/shell/platform/mac/platform_view_mac.h"
 
+#include <Foundation/Foundation.h>
 #include <AppKit/AppKit.h>
 
 #include "base/command_line.h"
