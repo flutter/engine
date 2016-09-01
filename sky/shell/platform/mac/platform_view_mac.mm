@@ -31,8 +31,10 @@ PlatformViewMac::PlatformViewMac(NSOpenGLView* gl_view)
       weak_factory_(this) {
   NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
                                                        NSUserDomainMask, YES);
-  sky::shell::Shell::Shared().tracing_controller().set_traces_base_path(
-      [paths.firstObject UTF8String]);
+  if (paths.count > 0) {
+    sky::shell::Shell::Shared().tracing_controller().set_traces_base_path(
+        [[paths objectAtIndex:0] UTF8String]);
+  }
 }
 
 PlatformViewMac::~PlatformViewMac() = default;
