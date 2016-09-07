@@ -7,6 +7,8 @@
 #include "base/bind_helpers.h"
 #include "base/logging.h"
 #include "base/mac/scoped_nsautorelease_pool.h"
+#include "flutter/services/ns_net/allocation_builder.h"
+#include "flutter/services/ns_net/data_pipe_flusher.h"
 #include "mojo/data_pipe_utils/data_pipe_drainer.h"
 
 #import <Foundation/Foundation.h>
@@ -54,6 +56,7 @@ static mojo::URLResponsePtr MojoNetworkResponse(
 @implementation URLLoaderConnectionDelegate {
   mojo::DataPipe _pipe;
   mojo::URLLoader::StartCallback _startCallback;
+  mojo::AllocationBuilder _responseBuilder;
 }
 
 - (instancetype)initWithStartCallback:
@@ -80,18 +83,43 @@ static mojo::URLResponsePtr MojoNetworkResponse(
 }
 
 - (void)connection:(NSURLConnection*)connection didReceiveData:(NSData*)data {
-  uint32_t length = data.length;
-  // TODO(eseidel): This can't work. The data pipe could be full, we need to
-  // write an async writter for filling the pipe and use it here.
-  MojoResult result = WriteDataRaw(_pipe.producer_handle.get(), data.bytes,
-                                   &length, MOJO_WRITE_DATA_FLAG_ALL_OR_NONE);
-  // FIXME(csg): Handle buffers in case of failures
-  DCHECK(result == MOJO_RESULT_OK);
-  DCHECK(length == data.length);
+  // Collect the data that needs to be flushed down the pipe.
+  if (_responseBuilder.Append(reinterpret_cast<const uint8_t*>(data.bytes),
+                              static_cast<uint32_t>(data.length))) {
+    return;
+  }
+
+  _pipe.producer_handle.reset();
+  auto mojo_oom_response =
+      MojoErrorResponse(connection.originalRequest.URL, @"Out of memory.");
+  [self invokeStartCallback:mojo_oom_response.Pass()];
+}
+
+static void OnFlushDone(mojo::DataPipeFlusher* flusher, bool result) {
+  // The result is unused since an error while flushing on our end indicates
+  // an error on the consumers side. There is nothing we can do about it. Just
+  // get rid of the flusher.
+  delete flusher;
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection*)connection {
-  _pipe.producer_handle.reset();
+  auto data_length = _responseBuilder.Size();
+
+  if (data_length == 0) {
+    _pipe.producer_handle.reset();
+  } else {
+    mojo::DataPipeFlusher::Allocation allocation(
+        _responseBuilder.Take(), data_length, false /* don't copy */);
+
+    if (!allocation.IsReady()) {
+      _pipe.producer_handle.reset();
+    }
+
+    auto flusher = new mojo::DataPipeFlusher(
+        _pipe.producer_handle.Pass(), std::move(allocation),
+        std::bind(&OnFlushDone, std::placeholders::_1, std::placeholders::_2));
+    flusher->Start();
+  }
 }
 
 - (void)connection:(NSURLConnection*)connection
