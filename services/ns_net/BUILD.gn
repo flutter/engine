@@ -4,10 +4,6 @@
 
 source_set("ns_net") {
   sources = [
-    "allocation_builder.cc",
-    "allocation_builder.h",
-    "data_pipe_flusher.cc",
-    "data_pipe_flusher.h",
     "network_service_impl.h",
     "network_service_impl.mm",
     "url_loader_impl.h",
@@ -16,9 +12,8 @@ source_set("ns_net") {
 
   deps = [
     "//base:base",
-    "//lib/ftl",
+    "//flutter/glue",
     "//mojo/data_pipe_utils",
-    "//mojo/message_pump:message_pump",
     "//mojo/public/cpp/application",
     "//mojo/public/cpp/bindings:utility",
     "//mojo/services/network/interfaces",

@@ -7,8 +7,8 @@
 #include "base/bind_helpers.h"
 #include "base/logging.h"
 #include "base/mac/scoped_nsautorelease_pool.h"
-#include "flutter/services/ns_net/allocation_builder.h"
-#include "flutter/services/ns_net/data_pipe_flusher.h"
+#include "flutter/glue/allocation_builder.h"
+#include "flutter/glue/data_pipe_flusher.h"
 #include "mojo/data_pipe_utils/data_pipe_drainer.h"
 
 #import <Foundation/Foundation.h>
@@ -56,7 +56,7 @@ static mojo::URLResponsePtr MojoNetworkResponse(
 @implementation URLLoaderConnectionDelegate {
   mojo::DataPipe _pipe;
   mojo::URLLoader::StartCallback _startCallback;
-  mojo::AllocationBuilder _responseBuilder;
+  glue::AllocationBuilder _responseBuilder;
 }
 
 - (instancetype)initWithStartCallback:
@@ -95,7 +95,7 @@ static mojo::URLResponsePtr MojoNetworkResponse(
   [self invokeStartCallback:mojo_oom_response.Pass()];
 }
 
-static void OnFlushDone(mojo::DataPipeFlusher* flusher, bool result) {
+static void OnFlushDone(glue::DataPipeFlusher* flusher, bool result) {
   // The result is unused since an error while flushing on our end indicates
   // an error on the consumers side. There is nothing we can do about it. Just
   // get rid of the flusher.
@@ -108,14 +108,14 @@ static void OnFlushDone(mojo::DataPipeFlusher* flusher, bool result) {
   if (data_length == 0) {
     _pipe.producer_handle.reset();
   } else {
-    mojo::DataPipeFlusher::Allocation allocation(
+    glue::DataPipeFlusher::Allocation allocation(
         _responseBuilder.Take(), data_length, false /* don't copy */);
 
     if (!allocation.IsReady()) {
       _pipe.producer_handle.reset();
     }
 
-    auto flusher = new mojo::DataPipeFlusher(
+    auto flusher = new glue::DataPipeFlusher(
         _pipe.producer_handle.Pass(), std::move(allocation),
         std::bind(&OnFlushDone, std::placeholders::_1, std::placeholders::_2));
     flusher->Start();

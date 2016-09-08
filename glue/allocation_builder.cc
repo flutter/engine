@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/services/ns_net/allocation_builder.h"
+#include "flutter/glue/allocation_builder.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-namespace mojo {
+namespace glue {
 
 AllocationBuilder::AllocationBuilder()
     : buffer_(nullptr), buffer_length_(0), data_length_(0) {}
@@ -74,4 +74,4 @@ bool AllocationBuilder::Reserve(uint32_t resized_length) {
   return true;
 }
 
-}  // namespace mojo
+}  // namespace glue

@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SERVICES_NS_NET_DATA_PIPE_FLUSHER_H_
-#define FLUTTER_SERVICES_NS_NET_DATA_PIPE_FLUSHER_H_
+#ifndef FLUTTER_GLUE_DATA_PIPE_FLUSHER_H_
+#define FLUTTER_GLUE_DATA_PIPE_FLUSHER_H_
 
 #include "lib/ftl/macros.h"
 #include "base/memory/weak_ptr.h"
-#include "mojo/message_pump/handle_watcher.h"
+#include "mojo/public/cpp/environment/async_waiter.h"
 #include "mojo/public/cpp/system/data_pipe.h"
 
-namespace mojo {
+namespace glue {
 
 class DataPipeFlusher {
  public:
@@ -60,7 +60,7 @@ class DataPipeFlusher {
  private:
   mojo::ScopedDataPipeProducerHandle producer_;
   Allocation allocation_;
-  mojo::common::HandleWatcher handle_watcher_;
+  std::unique_ptr<mojo::AsyncWaiter> handle_waiter_;
   CompletionCallback callback_;
   base::WeakPtrFactory<DataPipeFlusher> weak_ptr_factory_;
 
@@ -71,6 +71,6 @@ class DataPipeFlusher {
   FTL_DISALLOW_COPY_AND_ASSIGN(DataPipeFlusher);
 };
 
-}  // namespace mojo
+}  // namespace glue
 
-#endif  // FLUTTER_SERVICES_NS_NET_DATA_PIPE_FLUSHER_H_
+#endif  // FLUTTER_GLUE_DATA_PIPE_FLUSHER_H_

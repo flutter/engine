@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SERVICES_NS_NET_ALLOCATION_BUILDER_H_
-#define FLUTTER_SERVICES_NS_NET_ALLOCATION_BUILDER_H_
+#ifndef FLUTTER_GLUE_ALLOCATION_BUILDER_H_
+#define FLUTTER_GLUE_ALLOCATION_BUILDER_H_
 
 #include "lib/ftl/macros.h"
 #include "lib/ftl/compiler_specific.h"
@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <inttypes.h>
 
-namespace mojo {
+namespace glue {
 
 class AllocationBuilder {
  public:
@@ -37,6 +37,6 @@ class AllocationBuilder {
   FTL_DISALLOW_COPY_AND_ASSIGN(AllocationBuilder);
 };
 
-}  // namespace mojo
+}  // namespace glue
 
-#endif  // FLUTTER_SERVICES_NS_NET_ALLOCATION_BUILDER_H_
+#endif  // FLUTTER_GLUE_ALLOCATION_BUILDER_H_

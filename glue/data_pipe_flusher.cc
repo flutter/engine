@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/services/ns_net/data_pipe_flusher.h"
+#include "flutter/glue/data_pipe_flusher.h"
 
 #include "base/bind.h"
 #include "lib/ftl/logging.h"
 
-namespace mojo {
+namespace glue {
 
 DataPipeFlusher::Allocation::Allocation(uint8_t* data,
                                         uint32_t length,
@@ -91,6 +91,8 @@ void DataPipeFlusher::Start() {
 }
 
 void DataPipeFlusher::TryWrite(MojoResult) {
+  handle_waiter_.reset();
+
   auto write_head = allocation_.NextWriteHead();
 
   MojoResult write_result =
@@ -119,11 +121,11 @@ void DataPipeFlusher::WaitForWrite() {
   auto callback =
       base::Bind(&DataPipeFlusher::TryWrite, weak_ptr_factory_.GetWeakPtr());
 
-  handle_watcher_.Start(producer_.get(),              // handle
-                        MOJO_HANDLE_SIGNAL_WRITABLE,  // signals
-                        MOJO_DEADLINE_INDEFINITE,     // deadline
-                        callback                      // callback
-                        );
+  handle_waiter_.reset(
+      new mojo::AsyncWaiter(producer_.get(),              // handle
+                            MOJO_HANDLE_SIGNAL_WRITABLE,  // signals
+                            callback)                     // callback
+      );
 }
 
 void DataPipeFlusher::FulfillCallback(bool result) {
@@ -134,4 +136,4 @@ void DataPipeFlusher::FulfillCallback(bool result) {
   }
 }
 
-}  // namespace mojo
+}  // namespace glue
