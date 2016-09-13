@@ -4,6 +4,10 @@
 
 source_set("glue") {
   sources = [
+    "allocation_builder.cc",
+    "allocation_builder.h",
+    "data_pipe_flusher.cc",
+    "data_pipe_flusher.h",
     "data_pipe_utils.cc",
     "data_pipe_utils.h",
     "drain_data_pipe_job.h",
