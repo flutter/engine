@@ -289,6 +289,7 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
     if (!snapshot_data.empty()) {
       FTL_CHECK(!LogIfError(Dart_LoadScriptFromSnapshot(snapshot_data.data(),
                                                         snapshot_data.size())));
+      FTL_CHECK(!LogIfError(Dart_FinalizeLoading(false)));
     }
 
     dart_state->isolate_client()->DidCreateSecondaryIsolate(isolate);
