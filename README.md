@@ -7,7 +7,8 @@ Flutter is optimized for today's, and tomorrow's, mobile devices. We are
 focused on low-latency input and high frame rates on Android and iOS.
 
 The Flutter Engine is the runtime environment for hosting Flutter applications.
-Most developers will interact with Flutter via the Flutter Framework and APIs.
+Most developers will interact with Flutter via the Flutter Framework and APIs,
+which run inside the engine.
 
 _Flutter is an early-stage open-source project._ We are still adding
 features. However,
