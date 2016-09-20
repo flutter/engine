@@ -21,6 +21,7 @@
 #include "mojo/public/cpp/application/run_application.h"
 #include "mojo/public/cpp/application/service_provider_impl.h"
 #include "mojo/services/content_handler/interfaces/content_handler.mojom.h"
+#include "mojo/services/tracing/cpp/tracing_client.h"
 
 namespace flutter_content_handler {
 namespace {
@@ -33,8 +34,10 @@ class App : public mojo::ApplicationImplBase {
  public:
   App() {}
   ~App() override {
-    if (initialized_)
+    if (initialized_) {
       StopThreads();
+      mojo::tracing::DestroyTracer();
+    }
   }
 
   // Overridden from ApplicationDelegate:
@@ -50,6 +53,10 @@ class App : public mojo::ApplicationImplBase {
 
     ftl::RefPtr<ftl::TaskRunner> io_task_runner;
     io_thread_ = mtl::CreateThread(&io_task_runner);
+
+    tracing::TraceProviderRegistryPtr registry;
+    ConnectToService(shell(), "mojo:tracing", GetProxy(&registry));
+    mojo::tracing::InitializeTracer(std::move(registry));
 
     blink::Threads::Set(
         blink::Threads(gpu_task_runner, ui_task_runner, io_task_runner));
