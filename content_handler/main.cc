@@ -45,6 +45,10 @@ class App : public mojo::ApplicationImplBase {
     FTL_DCHECK(!initialized_);
     initialized_ = true;
 
+    tracing::TraceProviderRegistryPtr registry;
+    ConnectToService(shell(), "mojo:tracing", GetProxy(&registry));
+    mojo::tracing::InitializeTracer(std::move(registry));
+
     ftl::RefPtr<ftl::TaskRunner> gpu_task_runner;
     gpu_thread_ = mtl::CreateThread(&gpu_task_runner);
 
@@ -53,10 +57,6 @@ class App : public mojo::ApplicationImplBase {
 
     ftl::RefPtr<ftl::TaskRunner> io_task_runner;
     io_thread_ = mtl::CreateThread(&io_task_runner);
-
-    tracing::TraceProviderRegistryPtr registry;
-    ConnectToService(shell(), "mojo:tracing", GetProxy(&registry));
-    mojo::tracing::InitializeTracer(std::move(registry));
 
     blink::Threads::Set(
         blink::Threads(gpu_task_runner, ui_task_runner, io_task_runner));
