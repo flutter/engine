@@ -17,11 +17,6 @@ source_set("glue") {
     "//lib/ftl",
     "//mojo/public/cpp/environment",
     "//mojo/public/cpp/system",
-    "//mojo/services/tracing/cpp",
-  ]
-
-  public_deps = [
-    "//mojo/public/c",
   ]
 
   if (is_fuchsia) {
@@ -33,6 +28,10 @@ source_set("glue") {
 
     deps += [
       "//lib/mtl",
+    ]
+
+    public_deps = [
+      "//mojo/services/tracing/cpp",
     ]
   } else {
     sources += [
