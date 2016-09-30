@@ -23,14 +23,10 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkXfermode.h"
 
-namespace mojo {
-namespace gfx {
-namespace composition {
+namespace mozart {
 class SceneUpdate;
 class Node;
-}  // composition
-}  // namespace gfx
-}  // namespace mojo
+}  // namespace mozart
 
 namespace flow {
 
@@ -55,8 +51,8 @@ class Layer {
   };
 
   virtual void Paint(PaintContext& context) = 0;
-  virtual void UpdateScene(mojo::gfx::composition::SceneUpdate* update,
-                           mojo::gfx::composition::Node* container);
+  virtual void UpdateScene(mozart::SceneUpdate* update,
+                           mozart::Node* container);
 
   ContainerLayer* parent() const { return parent_; }
 

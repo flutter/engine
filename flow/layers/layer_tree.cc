@@ -32,8 +32,8 @@ void LayerTree::Raster(CompositorContext::ScopedFrame& frame,
   }
 }
 
-void LayerTree::UpdateScene(mojo::gfx::composition::SceneUpdate* update,
-                            mojo::gfx::composition::Node* container) {
+void LayerTree::UpdateScene(mozart::SceneUpdate* update,
+                            mozart::Node* container) {
   TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
   root_layer_->UpdateScene(update, container);
 }

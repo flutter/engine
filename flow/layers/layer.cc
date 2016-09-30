@@ -14,7 +14,7 @@ Layer::~Layer() {}
 
 void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}
 
-void Layer::UpdateScene(mojo::gfx::composition::SceneUpdate* update,
-                        mojo::gfx::composition::Node* container) {}
+void Layer::UpdateScene(mozart::SceneUpdate* update,
+                        mozart::Node* container) {}
 
 }  // namespace flow

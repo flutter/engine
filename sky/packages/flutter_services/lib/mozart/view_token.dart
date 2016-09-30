@@ -2,5 +2,5 @@
 /// Use of this source code is governed by a BSD-style license that can be
 /// found in the LICENSE file.
 
-import 'package:mojo_services/mojo/ui/view_token.mojom.dart';
-export 'package:mojo_services/mojo/ui/view_token.mojom.dart';
+import 'package:mozart_services/mozart/views/view_token.mojom.dart';
+export 'package:mozart_services/mozart/views/view_token.mojom.dart';

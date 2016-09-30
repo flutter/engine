@@ -44,11 +44,11 @@ source_set("flow") {
   ]
 
   deps = [
+    "//apps/mozart/services/composition/interfaces",
     "//flutter/glue",
     "//flutter/skia",
     "//flutter/synchronization",
     "//lib/ftl",
-    "//mojo/services/gfx/composition/interfaces",
   ]
 
   if (is_fuchsia) {

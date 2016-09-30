@@ -203,8 +203,8 @@ void SceneBuilder::addChildScene(double dx,
   layer->set_offset(SkPoint::Make(dx, dy));
   layer->set_device_pixel_ratio(devicePixelRatio);
   layer->set_physical_size(SkISize::Make(physicalWidth, physicalHeight));
-  mojo::gfx::composition::SceneTokenPtr token =
-      mojo::gfx::composition::SceneToken::New();
+  mozart::SceneTokenPtr token =
+      mozart::SceneToken::New();
   token->value = sceneToken;
   layer->set_scene_token(token.Pass());
   m_currentLayer->Add(std::move(layer));
