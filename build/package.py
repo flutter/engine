@@ -41,6 +41,7 @@ def main():
 
   env = os.environ.copy()
   env['LD_LIBRARY_PATH'] = args.root
+  env['FLUTTER_ALREADY_LOCKED'] = 'true';
 
   result = subprocess.call([
     args.dart,
