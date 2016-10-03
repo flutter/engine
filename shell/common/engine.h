@@ -25,6 +25,8 @@
 
 namespace shell {
 class Animator;
+class PlatformService;
+
 using PointerDataPacket = blink::PointerDataPacket;
 
 class Engine : public UIDelegate,
@@ -50,6 +52,10 @@ class Engine : public UIDelegate,
   std::string GetUIIsolateName();
 
   void DispatchPointerDataPacket(const PointerDataPacket& packet);
+
+  void set_platform_service(class PlatformService* platform_service) {
+    platform_service_ = platform_service;
+  }
 
  private:
   // UIDelegate implementation:
@@ -81,6 +87,8 @@ class Engine : public UIDelegate,
   void ScheduleFrame() override;
   void Render(std::unique_ptr<flow::LayerTree> layer_tree) override;
   void UpdateSemantics(std::vector<blink::SemanticsNode> update) override;
+  void PlatformService(std::string data,
+                       std::function<void(std::string)> callback) override;
   void DidCreateMainIsolate(Dart_Isolate isolate) override;
   void DidCreateSecondaryIsolate(Dart_Isolate isolate) override;
 
@@ -102,6 +110,8 @@ class Engine : public UIDelegate,
   mojo::ServiceProviderImpl service_provider_impl_;
   mojo::ServiceProviderPtr incoming_services_;
   mojo::BindingSet<mojo::ServiceProvider> service_provider_bindings_;
+
+  class PlatformService* platform_service_;
 
   mojo::asset_bundle::AssetBundlePtr root_bundle_;
   std::unique_ptr<blink::RuntimeController> runtime_;

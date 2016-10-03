@@ -20,6 +20,7 @@
 #include "flutter/runtime/dart_init.h"
 #include "flutter/runtime/runtime_init.h"
 #include "flutter/shell/common/animator.h"
+#include "flutter/shell/common/platform_service.h"
 #include "flutter/sky/engine/public/web/Sky.h"
 #include "lib/ftl/files/path.h"
 #include "mojo/public/cpp/application/connect.h"
@@ -80,6 +81,7 @@ blink::PointerData::DeviceKind GetDeviceKindFromPointerKind(
 
 Engine::Engine(Rasterizer* rasterizer)
     : animator_(new Animator(rasterizer, this)),
+      platform_service_(nullptr),
       binding_(this),
       activity_running_(false),
       have_surface_(false),
@@ -401,5 +403,11 @@ void Engine::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
 }
 
 void Engine::UpdateSemantics(std::vector<blink::SemanticsNode> update) {}
+
+void Engine::PlatformService(std::string data,
+                             std::function<void(std::string)> callback) {
+  if (platform_service_)
+    platform_service_->Process(std::move(data), std::move(callback));
+}
 
 }  // namespace shell

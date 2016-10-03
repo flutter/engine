@@ -10,16 +10,17 @@
 #include "flutter/lib/ui/mojo_services.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/gradient.h"
+#include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_decoding.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/image_shader.h"
-#include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/mask_filter.h"
 #include "flutter/lib/ui/painting/path.h"
-#include "flutter/lib/ui/painting/picture_recorder.h"
 #include "flutter/lib/ui/painting/picture.h"
-#include "flutter/lib/ui/text/paragraph_builder.h"
+#include "flutter/lib/ui/painting/picture_recorder.h"
+#include "flutter/lib/ui/platform/platform.h"
 #include "flutter/lib/ui/text/paragraph.h"
+#include "flutter/lib/ui/text/paragraph_builder.h"
 #include "flutter/lib/ui/window/window.h"
 #include "lib/ftl/build_config.h"
 #include "lib/tonic/converter/dart_converter.h"
@@ -61,6 +62,7 @@ void DartUI::InitForGlobal() {
     ParagraphBuilder::RegisterNatives(g_natives);
     Picture::RegisterNatives(g_natives);
     PictureRecorder::RegisterNatives(g_natives);
+    Platform::RegisterNatives(g_natives);
     Scene::RegisterNatives(g_natives);
     SceneBuilder::RegisterNatives(g_natives);
     Window::RegisterNatives(g_natives);

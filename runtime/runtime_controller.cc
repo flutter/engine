@@ -112,6 +112,12 @@ void RuntimeController::UpdateSemantics(SemanticsUpdate* update) {
     client_->UpdateSemantics(update->takeNodes());
 }
 
+void RuntimeController::PlatformService(
+    std::string data,
+    std::function<void(std::string)> callback) {
+  client_->PlatformService(std::move(data), std::move(callback));
+}
+
 void RuntimeController::DidCreateSecondaryIsolate(Dart_Isolate isolate) {
   client_->DidCreateSecondaryIsolate(isolate);
 }

@@ -279,12 +279,14 @@ PlatformViewIOS::PlatformViewIOS(CAEAGLLayer* layer)
                                                        NSUserDomainMask, YES);
   shell::Shell::Shared().tracing_controller().set_traces_base_path(
       [paths.firstObject UTF8String]);
+
+  engine_->set_platform_service(&platform_service_);
 }
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
 sky::SkyEnginePtr& PlatformViewIOS::engineProxy() {
-  return engine_;
+  return sky_engine_;
 }
 
 flutter::platform::ApplicationMessagesPtr& PlatformViewIOS::AppMessageSender() {
@@ -307,7 +309,7 @@ void PlatformViewIOS::ToggleAccessibility(UIView* view, bool enable) {
 }
 
 void PlatformViewIOS::ConnectToEngineAndSetupServices() {
-  ConnectToEngine(mojo::GetProxy(&engine_));
+  ConnectToEngine(mojo::GetProxy(&sky_engine_));
 
   mojo::ServiceProviderPtr service_provider;
 
@@ -333,7 +335,7 @@ void PlatformViewIOS::ConnectToEngineAndSetupServices() {
   services->incoming_services = service_provider.Pass();
   services->outgoing_services = mojo::GetProxy(&dart_services_);
   services->view_services = viewServiceProvider.Pass();
-  engine_->SetServices(services.Pass());
+  sky_engine_->SetServices(services.Pass());
 
   mojo::ConnectToService(dart_services_.get(),
                          mojo::GetProxy(&app_message_sender_));
@@ -344,7 +346,7 @@ void PlatformViewIOS::SetupAndLoadFromSource(
     const std::string& packages,
     const std::string& assets_directory) {
   ConnectToEngineAndSetupServices();
-  engine_->RunFromFile(main, packages, assets_directory);
+  sky_engine_->RunFromFile(main, packages, assets_directory);
 }
 
 ftl::WeakPtr<PlatformView> PlatformViewIOS::GetWeakViewPtr() {

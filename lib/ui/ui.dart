@@ -30,6 +30,7 @@ part 'lerp.dart';
 part 'mojo_services.dart';
 part 'natives.dart';
 part 'painting.dart';
+part 'platform.dart';
 part 'pointer.dart';
 part 'semantics.dart';
 part 'text.dart';

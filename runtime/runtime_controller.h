@@ -54,9 +54,12 @@ class RuntimeController : public WindowClient, public IsolateClient {
 
   Window* GetWindow();
 
+  // WindowClient implementation.
   void ScheduleFrame() override;
   void Render(Scene* scene) override;
   void UpdateSemantics(SemanticsUpdate* update) override;
+  void PlatformService(std::string data,
+                       std::function<void(std::string)> callback) override;
 
   void DidCreateSecondaryIsolate(Dart_Isolate isolate) override;
 
