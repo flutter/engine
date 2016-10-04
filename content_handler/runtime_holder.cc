@@ -25,13 +25,13 @@ namespace {
 
 constexpr char kSnapshotKey[] = "snapshot_blob.bin";
 constexpr int kPipelineDepth = 3;
-constexpr ftl::TimeDelta kTargetFrameInterval =
-    ftl::TimeDelta::FromMilliseconds(16);
 
 }  // namespace
 
 RuntimeHolder::RuntimeHolder()
-    : viewport_metrics_(sky::ViewportMetrics::New()), weak_factory_(this) {}
+    : viewport_metrics_(sky::ViewportMetrics::New()),
+      view_listener_binding_(this),
+      weak_factory_(this) {}
 
 RuntimeHolder::~RuntimeHolder() {
   blink::Threads::Gpu()->PostTask(
@@ -40,28 +40,43 @@ RuntimeHolder::~RuntimeHolder() {
       }));
 }
 
-void RuntimeHolder::Init(mojo::ApplicationConnectorPtr connector) {
+void RuntimeHolder::Init(mojo::ApplicationConnectorPtr connector,
+                         std::vector<char> bundle) {
   FTL_DCHECK(!rasterizer_);
   rasterizer_.reset(new Rasterizer());
-  mojo::ConnectToService(connector.get(), "mojo:framebuffer",
-                         mojo::GetProxy(&framebuffer_provider_));
-  framebuffer_provider_->Create(ftl::MakeRunnable([self = GetWeakPtr()](
-      mojo::InterfaceHandle<mojo::Framebuffer> framebuffer,
-      mojo::FramebufferInfoPtr info) {
-    if (self)
-      self->DidCreateFramebuffer(std::move(framebuffer), std::move(info));
-  }));
+  InitRootBundle(std::move(bundle));
+
+  mojo::ConnectToService(connector.get(), "mojo:view_manager_service",
+                         mojo::GetProxy(&view_manager_));
 }
 
-void RuntimeHolder::Run(const std::string& script_uri,
-                        std::vector<char> bundle) {
-  InitRootBundle(std::move(bundle));
+void RuntimeHolder::CreateView(
+    const std::string& script_uri,
+    mojo::InterfaceRequest<mozart::ViewOwner> view_owner_request,
+    mojo::InterfaceRequest<mojo::ServiceProvider> services) {
+  if (view_listener_binding_.is_bound()) {
+    // TODO(jeffbrown): Support multiple view instances (or not).
+    FTL_LOG(ERROR) << "The view has already been created.";
+    return;
+  }
 
   std::vector<uint8_t> snapshot;
   if (!asset_store_->GetAsBuffer(kSnapshotKey, &snapshot)) {
     FTL_LOG(ERROR) << "Unable to load snapshot from root bundle.";
     return;
   }
+
+  mozart::ViewListenerPtr view_listener;
+  view_listener_binding_.Bind(mojo::GetProxy(&view_listener));
+  view_manager_->CreateView(mojo::GetProxy(&view_),
+                            std::move(view_owner_request),
+                            std::move(view_listener), script_uri);
+
+  mozart::ScenePtr scene;
+  view_->CreateScene(mojo::GetProxy(&scene));
+  blink::Threads::Gpu()->PostTask(ftl::MakeCopyable([
+    rasterizer = rasterizer_.get(), scene = std::move(scene)
+  ]() mutable { rasterizer->SetScene(std::move(scene)); }));
 
   runtime_ = blink::RuntimeController::Create(this);
   runtime_->CreateDartController(script_uri);
@@ -71,25 +86,20 @@ void RuntimeHolder::Run(const std::string& script_uri,
 }
 
 void RuntimeHolder::ScheduleFrame() {
-  if (runtime_requested_frame_)
+  if (pending_invalidation_)
     return;
-  runtime_requested_frame_ = true;
-
-  FTL_DCHECK(!did_defer_frame_request_);
-  ++outstanding_requests_;
-
-  if (outstanding_requests_ >= kPipelineDepth) {
-    did_defer_frame_request_ = true;
-    return;
-  }
-
-  ScheduleDelayedFrame();
+  pending_invalidation_ = true;
+  view_->Invalidate();
 }
 
 void RuntimeHolder::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
   if (!is_ready_to_draw_)
     return;  // Only draw once per frame.
   is_ready_to_draw_ = false;
+
+  layer_tree->set_frame_size(SkISize::Make(viewport_metrics_->physical_width,
+                                           viewport_metrics_->physical_height));
+  layer_tree->set_scene_version(scene_version_);
 
   blink::Threads::Gpu()->PostTask(ftl::MakeCopyable([
     rasterizer = rasterizer_.get(), layer_tree = std::move(layer_tree),
@@ -129,42 +139,44 @@ blink::UnzipperProvider RuntimeHolder::GetUnzipperProviderForRootBundle() {
   };
 }
 
-void RuntimeHolder::DidCreateFramebuffer(
-    mojo::InterfaceHandle<mojo::Framebuffer> framebuffer,
-    mojo::FramebufferInfoPtr info) {
-  viewport_metrics_->physical_width = info->size->width;
-  viewport_metrics_->physical_height = info->size->height;
-  if (runtime_)
-    runtime_->SetViewportMetrics(viewport_metrics_);
+void RuntimeHolder::OnInvalidation(mozart::ViewInvalidationPtr invalidation,
+                                   const OnInvalidationCallback& callback) {
+  FTL_DCHECK(invalidation);
+  pending_invalidation_ = false;
 
-  blink::Threads::Gpu()->PostTask(ftl::MakeCopyable([
-    rasterizer = rasterizer_.get(), framebuffer = std::move(framebuffer),
-    info = std::move(info)
-  ]() mutable {
-    rasterizer->SetFramebuffer(std::move(framebuffer), std::move(info));
-  }));
+  // Apply view property changes.
+  if (invalidation->properties) {
+    view_properties_ = std::move(invalidation->properties);
+    viewport_metrics_->physical_width =
+        view_properties_->view_layout->size->width;
+    viewport_metrics_->physical_height =
+        view_properties_->view_layout->size->height;
+    viewport_metrics_->device_pixel_ratio =
+        view_properties_->display_metrics->device_pixel_ratio;
+    runtime_->SetViewportMetrics(viewport_metrics_);
+  }
+
+  // Remember the scene version for rendering.
+  scene_version_ = invalidation->scene_version;
+
+  // TODO(jeffbrown): Flow the frame time through the rendering pipeline.
+  if (outstanding_requests_ >= kPipelineDepth) {
+    did_defer_frame_request_ = true;
+  } else {
+    ++outstanding_requests_;
+    BeginFrame();
+  }
+
+  callback.Run();
 }
 
 ftl::WeakPtr<RuntimeHolder> RuntimeHolder::GetWeakPtr() {
   return weak_factory_.GetWeakPtr();
 }
 
-void RuntimeHolder::ScheduleDelayedFrame() {
-  // TODO(abarth): We should align with vsync or with our own timer pulse.
-  blink::Threads::UI()->PostDelayedTask(
-      [self = GetWeakPtr()]() {
-        if (self)
-          self->BeginFrame();
-      },
-      kTargetFrameInterval);
-}
-
 void RuntimeHolder::BeginFrame() {
   FTL_DCHECK(outstanding_requests_ > 0);
   FTL_DCHECK(outstanding_requests_ <= kPipelineDepth) << outstanding_requests_;
-
-  FTL_DCHECK(runtime_requested_frame_);
-  runtime_requested_frame_ = false;
 
   FTL_DCHECK(!is_ready_to_draw_);
   is_ready_to_draw_ = true;
@@ -185,7 +197,7 @@ void RuntimeHolder::OnFrameComplete() {
 
   if (did_defer_frame_request_) {
     did_defer_frame_request_ = false;
-    ScheduleDelayedFrame();
+    view_->Invalidate();
   }
 }
 
