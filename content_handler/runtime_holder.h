@@ -49,6 +49,7 @@ class RuntimeHolder : public blink::RuntimeDelegate, mozart::ViewListener {
 
   void BeginFrame();
   void OnFrameComplete();
+  void Invalidate();
 
   std::vector<char> root_bundle_data_;
   ftl::RefPtr<blink::ZipAssetStore> asset_store_;
@@ -65,7 +66,7 @@ class RuntimeHolder : public blink::RuntimeDelegate, mozart::ViewListener {
   uint32_t scene_version_ = mozart::kSceneVersionNone;
 
   bool pending_invalidation_ = false;
-  bool did_defer_frame_request_ = false;
+  OnInvalidationCallback deferred_invalidation_callback_;
   bool is_ready_to_draw_ = false;
   int outstanding_requests_ = 0;
 

@@ -24,7 +24,13 @@ namespace flutter_content_handler {
 namespace {
 
 constexpr char kSnapshotKey[] = "snapshot_blob.bin";
-constexpr int kPipelineDepth = 3;
+
+// Maximum number of frames in flight.
+constexpr int kMaxPipelineDepth = 3;
+
+// When the max pipeline depth is exceeded, drain to this number of frames
+// to recover before acknowleding the invalidation and scheduling more frames.
+constexpr int kRecoveryPipelineDepth = 1;
 
 }  // namespace
 
@@ -55,7 +61,8 @@ void RuntimeHolder::CreateView(
     mojo::InterfaceRequest<mozart::ViewOwner> view_owner_request,
     mojo::InterfaceRequest<mojo::ServiceProvider> services) {
   if (view_listener_binding_.is_bound()) {
-    // TODO(jeffbrown): Support multiple view instances (or not).
+    // TODO(jeffbrown): Refactor this to support multiple view instances
+    // sharing the same underlying root bundle (but with different runtimes).
     FTL_LOG(ERROR) << "The view has already been created.";
     return;
   }
@@ -86,7 +93,7 @@ void RuntimeHolder::CreateView(
 }
 
 void RuntimeHolder::ScheduleFrame() {
-  if (pending_invalidation_)
+  if (pending_invalidation_ || !deferred_invalidation_callback_.is_null())
     return;
   pending_invalidation_ = true;
   view_->Invalidate();
@@ -160,13 +167,19 @@ void RuntimeHolder::OnInvalidation(mozart::ViewInvalidationPtr invalidation,
   scene_version_ = invalidation->scene_version;
 
   // TODO(jeffbrown): Flow the frame time through the rendering pipeline.
-  if (outstanding_requests_ >= kPipelineDepth) {
-    did_defer_frame_request_ = true;
-  } else {
-    ++outstanding_requests_;
-    BeginFrame();
+  if (outstanding_requests_ >= kMaxPipelineDepth) {
+    FTL_DCHECK(deferred_invalidation_callback_.is_null());
+    deferred_invalidation_callback_ = callback;
+    return;
   }
 
+  ++outstanding_requests_;
+  BeginFrame();
+
+  // TODO(jeffbrown): Consider running the callback earlier.
+  // Note that this may result in the view processing stale view properties
+  // (such as size) if it prematurely acks the frame but takes too long
+  // to handle it.
   callback.Run();
 }
 
@@ -176,7 +189,8 @@ ftl::WeakPtr<RuntimeHolder> RuntimeHolder::GetWeakPtr() {
 
 void RuntimeHolder::BeginFrame() {
   FTL_DCHECK(outstanding_requests_ > 0);
-  FTL_DCHECK(outstanding_requests_ <= kPipelineDepth) << outstanding_requests_;
+  FTL_DCHECK(outstanding_requests_ <= kMaxPipelineDepth)
+      << outstanding_requests_;
 
   FTL_DCHECK(!is_ready_to_draw_);
   is_ready_to_draw_ = true;
@@ -195,9 +209,15 @@ void RuntimeHolder::OnFrameComplete() {
   FTL_DCHECK(outstanding_requests_ > 0);
   --outstanding_requests_;
 
-  if (did_defer_frame_request_) {
-    did_defer_frame_request_ = false;
-    view_->Invalidate();
+  if (!deferred_invalidation_callback_.is_null() &&
+      outstanding_requests_ <= kRecoveryPipelineDepth) {
+    // Schedule frame first to avoid potentially generating a second
+    // invalidation in case the view manager already has one pending
+    // awaiting acknowledgement of the deferred invalidation.
+    OnInvalidationCallback callback = deferred_invalidation_callback_;
+    deferred_invalidation_callback_.reset();
+    ScheduleFrame();
+    callback.Run();
   }
 }
 
