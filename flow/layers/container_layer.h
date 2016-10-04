@@ -22,8 +22,10 @@ class ContainerLayer : public Layer {
 
   void PaintChildren(PaintContext& context) const;
 
+#if defined(OS_FUCHSIA)
   void UpdateScene(mozart::SceneUpdate* update,
                    mozart::Node* container) override;
+#endif
 
   const std::vector<std::unique_ptr<Layer>>& layers() const { return layers_; }
 

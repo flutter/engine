@@ -4,7 +4,6 @@
 
 module sky;
 
-import "apps/mozart/services/views/interfaces/views.mojom";
 import "flutter/services/engine/input_event.mojom";
 import "flutter/services/pointer/pointer.mojom";
 import "mojo/public/interfaces/application/service_provider.mojom";
@@ -31,7 +30,6 @@ struct ServicesData {
   mojo.Shell? shell;
   mojo.ServiceProvider? incoming_services;
   mojo.ServiceProvider&? outgoing_services;
-  mozart.View? view;
   mojo.ServiceProvider? view_services;
 };
 

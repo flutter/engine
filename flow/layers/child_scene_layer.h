@@ -25,9 +25,7 @@ class ChildSceneLayer : public Layer {
     physical_size_ = physical_size;
   }
 
-  void set_scene_token(mozart::SceneTokenPtr scene_token) {
-    scene_token_ = scene_token.Pass();
-  }
+  void set_scene_token(uint32_t scene_token) { scene_token_ = scene_token; }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) override;
@@ -38,7 +36,7 @@ class ChildSceneLayer : public Layer {
   SkPoint offset_;
   float device_pixel_ratio_;
   SkISize physical_size_;
-  mozart::SceneTokenPtr scene_token_;
+  uint32_t scene_token_;
   SkMatrix transform_;
 
   FTL_DISALLOW_COPY_AND_ASSIGN(ChildSceneLayer);

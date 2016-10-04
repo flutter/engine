@@ -11,8 +11,6 @@ mojom("interfaces") {
   ]
 
   deps = [
-    "//apps/mozart/services/composition/interfaces",
-    "//apps/mozart/services/views/interfaces",
     "//flutter/services/pointer:interfaces",
     "//mojo/public/interfaces/application",
     "//mojo/services/asset_bundle/interfaces",

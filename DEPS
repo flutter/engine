@@ -53,9 +53,6 @@ deps = {
    # build. Eventually, we'll manage these dependencies together with Fuchsia
    # and not have to specific specific hashes.
 
-  'src/apps/mozart':
-   Var('fuchsia_git') + '/mozart' + '@' + '496cc8a179d06b74f37c08382efe139831b0f0a5',
-
   'src/lib/ftl':
    Var('fuchsia_git') + '/ftl' + '@' + '0bb3a02301c8a88b494e58c6636fa509525adaa8',
 

@@ -56,7 +56,8 @@ void ChildSceneLayer::UpdateScene(mozart::SceneUpdate* update,
 
   auto child_resource = mozart::Resource::New();
   child_resource->set_scene(mozart::SceneResource::New());
-  child_resource->get_scene()->scene_token = scene_token_.Clone();
+  child_resource->get_scene()->scene_token = mozart::SceneToken::New();
+  child_resource->get_scene()->scene_token->value = scene_token_;
   update->resources.insert(id, child_resource.Pass());
 
   auto child_node = mozart::Node::New();

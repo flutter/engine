@@ -18,6 +18,7 @@
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/painting/shader.h"
+#include "lib/ftl/build_config.h"
 #include "lib/tonic/dart_args.h"
 #include "lib/tonic/dart_binding_macros.h"
 #include "lib/tonic/converter/dart_converter.h"
@@ -197,17 +198,16 @@ void SceneBuilder::addChildScene(double dx,
                                  int physicalWidth,
                                  int physicalHeight,
                                  uint32_t sceneToken) {
+#if defined(OS_FUCHSIA)
   if (!m_currentLayer)
     return;
   std::unique_ptr<flow::ChildSceneLayer> layer(new flow::ChildSceneLayer());
   layer->set_offset(SkPoint::Make(dx, dy));
   layer->set_device_pixel_ratio(devicePixelRatio);
   layer->set_physical_size(SkISize::Make(physicalWidth, physicalHeight));
-  mozart::SceneTokenPtr token =
-      mozart::SceneToken::New();
-  token->value = sceneToken;
-  layer->set_scene_token(token.Pass());
+  layer->set_scene_token(sceneToken);
   m_currentLayer->Add(std::move(layer));
+#endif
 }
 
 void SceneBuilder::addPerformanceOverlay(uint64_t enabledOptions,
