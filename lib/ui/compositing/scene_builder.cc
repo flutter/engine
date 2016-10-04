@@ -5,7 +5,6 @@
 #include "flutter/lib/ui/compositing/scene_builder.h"
 
 #include "flutter/flow/layers/backdrop_filter_layer.h"
-#include "flutter/flow/layers/child_scene_layer.h"
 #include "flutter/flow/layers/clip_path_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/clip_rrect_layer.h"
@@ -24,6 +23,10 @@
 #include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_library_natives.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
+
+#if defined(OS_FUCHSIA)
+#include "flutter/flow/layers/child_scene_layer.h"
+#endif
 
 namespace blink {
 
