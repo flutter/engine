@@ -19,6 +19,8 @@ class RuntimeDelegate {
   virtual void ScheduleFrame() = 0;
   virtual void Render(std::unique_ptr<flow::LayerTree> layer_tree) = 0;
   virtual void UpdateSemantics(std::vector<SemanticsNode> update) = 0;
+  virtual void PlatformService(std::string data,
+                               std::function<void(std::string)> callback) = 0;
 
   virtual void DidCreateMainIsolate(Dart_Isolate isolate);
   virtual void DidCreateSecondaryIsolate(Dart_Isolate isolate);

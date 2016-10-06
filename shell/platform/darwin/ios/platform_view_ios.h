@@ -11,9 +11,10 @@
 #include "lib/ftl/memory/weak_ptr.h"
 #include "base/mac/scoped_nsobject.h"
 #include "flutter/services/platform/app_messages.mojom.h"
+#include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/application_messages_impl.h"
-#include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/platform/darwin/ios/platform_service_ios.h"
 
 @class CAEAGLLayer;
 @class UIView;
@@ -53,17 +54,18 @@ class PlatformViewIOS : public PlatformView {
                      const std::string& assets_directory) override;
 
  private:
+  void SetupAndLoadFromSource(const std::string& main,
+                              const std::string& packages,
+                              const std::string& assets_directory);
+
+  PlatformServiceIOS platform_service_;
   std::unique_ptr<IOSGLContext> context_;
-  sky::SkyEnginePtr engine_;
+  sky::SkyEnginePtr sky_engine_;
   mojo::ServiceProviderPtr dart_services_;
   flutter::platform::ApplicationMessagesPtr app_message_sender_;
   ApplicationMessagesImpl app_message_receiver_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
   ftl::WeakPtrFactory<PlatformViewIOS> weak_factory_;
-
-  void SetupAndLoadFromSource(const std::string& main,
-                              const std::string& packages,
-                              const std::string& assets_directory);
 
   FTL_DISALLOW_COPY_AND_ASSIGN(PlatformViewIOS);
 };

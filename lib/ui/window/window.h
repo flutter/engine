@@ -23,6 +23,8 @@ class WindowClient {
   virtual void ScheduleFrame() = 0;
   virtual void Render(Scene* scene) = 0;
   virtual void UpdateSemantics(SemanticsUpdate* update) = 0;
+  virtual void PlatformService(std::string data,
+                               std::function<void(std::string)> callback) = 0;
 
  protected:
   virtual ~WindowClient();

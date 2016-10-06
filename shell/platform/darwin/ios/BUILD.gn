@@ -38,6 +38,8 @@ shared_library("flutter_framework_dylib") {
     "framework/Source/FlutterViewController.mm",
     "platform_view_ios.h",
     "platform_view_ios.mm",
+    "platform_service_ios.mm",
+    "platform_service_ios.h",
   ]
 
 
