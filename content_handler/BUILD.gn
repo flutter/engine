@@ -17,6 +17,10 @@ executable("content_handler") {
     "rasterizer.h",
     "runtime_holder.cc",
     "runtime_holder.h",
+    "software_rasterizer.cc",
+    "software_rasterizer.h",
+    "vulkan_rasterizer.cc",
+    "vulkan_rasterizer.h",
   ]
 
   deps = [
@@ -37,11 +41,13 @@ executable("content_handler") {
     "//flutter/lib/ui",
     "//flutter/runtime",
     "//flutter/sky/engine/platform",
+    "//flutter/vulkan",
     "//lib/fidl/dart/sdk_ext",
     "//lib/ftl",
     "//lib/mtl",
     "//lib/tonic/mx",
     "//lib/zip",
+    "//magma:vulkan",
     "//third_party/rapidjson",
     "//third_party/skia",
 
