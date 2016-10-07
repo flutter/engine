@@ -21,7 +21,7 @@ class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
   /// rendering.
   // MakeRefCounted
   AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
-                   AndroidNativeWindow window,
+                   ftl::RefPtr<AndroidNativeWindow> window,
                    PlatformView::SurfaceConfig config,
                    const AndroidContextGL* share_context = nullptr);
 
@@ -50,7 +50,7 @@ class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
 
  private:
   ftl::RefPtr<AndroidEnvironmentGL> environment_;
-  AndroidNativeWindow window_;
+  ftl::RefPtr<AndroidNativeWindow> window_;
   EGLConfig config_;
   EGLSurface surface_;
   EGLContext context_;

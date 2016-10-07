@@ -3,31 +3,20 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/platform_view_android.h"
-
-#include <android/native_window.h>
 #include <android/native_window_jni.h>
 #include <sys/resource.h>
 #include <sys/time.h>
-#include <sys/types.h>
-
-#include <memory>
 #include <utility>
-
-#include "base/android/jni_android.h"
+#include <vector>
 #include "base/android/jni_array.h"
 #include "base/android/jni_string.h"
-#include "base/bind.h"
-#include "base/location.h"
-#include "base/trace_event/trace_event.h"
 #include "flutter/common/threads.h"
-#include "flutter/flow/compositor_context.h"
 #include "flutter/runtime/dart_service_isolate.h"
-#include "flutter/shell/common/engine.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/gpu/gpu_rasterizer.h"
+#include "flutter/shell/platform/android/android_surface_gl.h"
+#include "flutter/shell/platform/android/android_surface_vulkan.h"
 #include "jni/FlutterView_jni.h"
 #include "lib/ftl/functional/make_copyable.h"
-#include "third_party/skia/include/core/SkSurface.h"
 
 namespace shell {
 namespace {
@@ -75,12 +64,50 @@ void PlatformViewAndroid::SurfaceCreated(JNIEnv* env,
                                          jobject obj,
                                          jobject jsurface,
                                          jint backgroundColor) {
+  android_surface_.reset();
   // Note: This frame ensures that any local references used by
   // ANativeWindow_fromSurface are released immediately. This is needed as a
   // workaround for https://code.google.com/p/android/issues/detail?id=68174
   base::android::ScopedJavaLocalFrame scoped_local_reference_frame(env);
-  ANativeWindow* window = ANativeWindow_fromSurface(env, jsurface);
 
+  auto native_window = ftl::MakeRefCounted<AndroidNativeWindow>(
+      ANativeWindow_fromSurface(env, jsurface));
+
+  if (InitializeGPUSurface((native_window))) {
+    FTL_DCHECK(android_surface_);
+    NotifyCreated(android_surface_->CreateGPUSurface(), [this, backgroundColor,
+                                                         native_window] {
+      rasterizer().Clear(backgroundColor, native_window->GetSize());
+    });
+    UpdateThreadPriorities();
+  }
+}
+
+bool PlatformViewAndroid::InitializeGPUSurface(
+    ftl::RefPtr<AndroidNativeWindow> native_window) {
+  if (android_surface_) {
+    return true;
+  }
+
+  if (!native_window || !native_window->IsValid()) {
+    return false;
+  }
+
+  // Attempt to initialize a vulkan surface from the window.
+  if (InitializeVulkanSurface(native_window)) {
+    return true;
+  }
+
+  // Fallback to intialization of OpenGL ES.
+  if (InitializeGLSurface(native_window)) {
+    return true;
+  }
+
+  return false;
+}
+
+bool PlatformViewAndroid::InitializeGLSurface(
+    ftl::RefPtr<AndroidNativeWindow> native_window) {
   // Use the default onscreen configuration.
   PlatformView::SurfaceConfig onscreen_config;
 
@@ -89,37 +116,41 @@ void PlatformViewAndroid::SurfaceCreated(JNIEnv* env,
   PlatformView::SurfaceConfig offscreen_config;
   offscreen_config.stencil_bits = 0;
 
-  auto surface = std::make_unique<AndroidSurfaceGL>(window, onscreen_config,
-                                                    offscreen_config);
+  auto android_surface = std::make_unique<AndroidSurfaceGL>(
+      native_window, onscreen_config, offscreen_config);
 
-  if (surface->IsValid()) {
-    surface_gl_ = std::move(surface);
-  } else {
-    LOG(INFO) << "Could not create the OpenGL Android Surface.";
+  if (android_surface->IsValid()) {
+    android_surface_ = std::move(android_surface);
   }
 
-  ANativeWindow_release(window);
+  if (android_surface_ != nullptr) {
+    // The separate resource context only makes sense for the OpenGL backend.
+    SetupResourceContextOnIOThread();
+    return true;
+  }
 
-  auto gl_surface = std::make_unique<GPUSurfaceGL>(surface_gl_.get());
-  NotifyCreated(std::move(gl_surface), [this, backgroundColor] {
-    if (surface_gl_)
-      rasterizer().Clear(backgroundColor, surface_gl_->OnScreenSurfaceSize());
-  });
+  return false;
+}
 
-  SetupResourceContextOnIOThread();
-  UpdateThreadPriorities();
+bool PlatformViewAndroid::InitializeVulkanSurface(
+    ftl::RefPtr<AndroidNativeWindow> native_window) {
+  auto android_surface = std::make_unique<AndroidSurfaceVulkan>(native_window);
+
+  if (android_surface->IsValid()) {
+    android_surface_ = std::move(android_surface);
+  }
+
+  return android_surface_ != nullptr;
 }
 
 void PlatformViewAndroid::SurfaceChanged(JNIEnv* env,
                                          jobject obj,
                                          jint width,
                                          jint height) {
-  if (!surface_gl_) {
-    return;
-  }
-
   blink::Threads::Gpu()->PostTask([this, width, height]() {
-    surface_gl_->OnScreenSurfaceResize(SkISize::Make(width, height));
+    if (android_surface_) {
+      android_surface_->OnScreenSurfaceResize(SkISize::Make(width, height));
+    }
   });
 }
 
@@ -254,14 +285,13 @@ void PlatformViewAndroid::SetSemanticsEnabled(JNIEnv* env,
 }
 
 void PlatformViewAndroid::ReleaseSurface() {
-  if (surface_gl_) {
-    NotifyDestroyed();
-    surface_gl_ = nullptr;
-  }
+  android_surface_ = nullptr;
+  NotifyDestroyed();
 }
 
 bool PlatformViewAndroid::ResourceContextMakeCurrent() {
-  return surface_gl_ ? surface_gl_->GLOffscreenContextMakeCurrent() : false;
+  return android_surface_ ? android_surface_->ResourceContextMakeCurrent()
+                          : false;
 }
 
 void PlatformViewAndroid::UpdateSemantics(

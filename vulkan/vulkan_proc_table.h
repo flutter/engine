@@ -5,8 +5,10 @@
 #ifndef FLUTTER_VULKAN_VULKAN_PROC_TABLE_H_
 #define FLUTTER_VULKAN_VULKAN_PROC_TABLE_H_
 
+#include "flutter/vulkan/vulkan_interface.h"
 #include "lib/ftl/macros.h"
-#include "vulkan_interface.h"
+#include "third_party/skia/include/core/SkRefCnt.h"
+#include "third_party/skia/include/gpu/vk/GrVkInterface.h"
 
 namespace vulkan {
 
@@ -40,6 +42,10 @@ class VulkanProcTable {
 
   bool IsValid() const;
 
+  SkAutoTUnref<GrVkInterface> SkiaInterface() const;
+
+  void* AcquireProcByName(const char* proc_name) const;
+
   Proc<PFN_vkCreateInstance> createInstance;
   Proc<PFN_vkDestroyInstance> destroyInstance;
   Proc<PFN_vkEnumeratePhysicalDevices> enumeratePhysicalDevices;
@@ -65,6 +71,18 @@ class VulkanProcTable {
   Proc<PFN_vkCreateFence> createFence;
   Proc<PFN_vkDestroyFence> destroyFence;
   Proc<PFN_vkWaitForFences> waitForFences;
+  Proc<PFN_vkResetFences> resetFences;
+  Proc<PFN_vkAcquireNextImageKHR> acquireNextImageKHR;
+  Proc<PFN_vkQueuePresentKHR> queuePresentKHR;
+  Proc<PFN_vkResetCommandBuffer> resetCommandBuffer;
+  Proc<PFN_vkBeginCommandBuffer> beginCommandBuffer;
+  Proc<PFN_vkCmdPipelineBarrier> cmdPipelineBarrier;
+  Proc<PFN_vkEndCommandBuffer> endCommandBuffer;
+  Proc<PFN_vkQueueSubmit> queueSubmit;
+  Proc<PFN_vkGetPhysicalDeviceQueueFamilyProperties>
+      getPhysicalDeviceQueueFamilyProperties;
+  Proc<PFN_vkDeviceWaitIdle> deviceWaitIdle;
+  Proc<PFN_vkGetPhysicalDeviceFeatures> getPhysicalDeviceFeatures;
 
 #if OS_ANDROID
   Proc<PFN_vkCreateAndroidSurfaceKHR> createAndroidSurfaceKHR;

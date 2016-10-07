@@ -15,28 +15,28 @@ namespace shell {
 
 class SurfaceFrame {
  public:
-  SurfaceFrame();
+  using SubmitCallback = std::function<bool(SkCanvas* canvas)>;
 
-  virtual ~SurfaceFrame();
+  SurfaceFrame(sk_sp<SkSurface> surface, SubmitCallback submit_callback);
+
+  ~SurfaceFrame();
 
   bool Submit();
 
-  virtual SkCanvas* SkiaCanvas() = 0;
+  SkCanvas* SkiaCanvas();
 
  private:
   bool submitted_;
+  sk_sp<SkSurface> surface_;
+  SubmitCallback submit_callback_;
 
-  virtual bool PerformSubmit() = 0;
+  bool PerformSubmit();
 
   FTL_DISALLOW_COPY_AND_ASSIGN(SurfaceFrame);
 };
 
 class Surface {
  public:
-  Surface();
-
-  virtual ~Surface();
-
   virtual bool Setup() = 0;
 
   virtual bool IsValid() = 0;
@@ -44,9 +44,6 @@ class Surface {
   virtual std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) = 0;
 
   virtual GrContext* GetContext() = 0;
-
- private:
-  FTL_DISALLOW_COPY_AND_ASSIGN(Surface);
 };
 
 }  // namespace shell

@@ -10,25 +10,28 @@
 #include "flutter/shell/platform/android/android_context_gl.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
 #include "flutter/shell/platform/android/android_native_window.h"
+#include "flutter/shell/platform/android/android_surface.h"
 #include "lib/ftl/macros.h"
 
 namespace shell {
 
-class AndroidSurfaceGL : public GPUSurfaceGLDelegate {
+class AndroidSurfaceGL : public GPUSurfaceGLDelegate, public AndroidSurface {
  public:
-  AndroidSurfaceGL(AndroidNativeWindow window,
+  AndroidSurfaceGL(ftl::RefPtr<AndroidNativeWindow> window,
                    PlatformView::SurfaceConfig onscreen_config,
                    PlatformView::SurfaceConfig offscreen_config);
 
   ~AndroidSurfaceGL();
 
-  bool IsValid() const;
+  bool IsValid() const override;
 
-  SkISize OnScreenSurfaceSize() const;
+  std::unique_ptr<Surface> CreateGPUSurface() override;
 
-  bool OnScreenSurfaceResize(const SkISize& size) const;
+  SkISize OnScreenSurfaceSize() const override;
 
-  bool GLOffscreenContextMakeCurrent();
+  bool OnScreenSurfaceResize(const SkISize& size) const override;
+
+  bool ResourceContextMakeCurrent() override;
 
   bool GLContextMakeCurrent() override;
 

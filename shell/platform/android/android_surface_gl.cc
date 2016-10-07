@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <utility>
 #include "flutter/shell/platform/android/android_surface_gl.h"
+#include <utility>
 #include "lib/ftl/logging.h"
 #include "lib/ftl/memory/ref_ptr.h"
 
@@ -40,7 +40,7 @@ static ftl::RefPtr<AndroidContextGL> GlobalResourceLoadingContext(
   return global_context;
 }
 
-AndroidSurfaceGL::AndroidSurfaceGL(AndroidNativeWindow window,
+AndroidSurfaceGL::AndroidSurfaceGL(ftl::RefPtr<AndroidNativeWindow> window,
                                    PlatformView::SurfaceConfig onscreen_config,
                                    PlatformView::SurfaceConfig offscreen_config)
     : valid_(false) {
@@ -70,6 +70,11 @@ bool AndroidSurfaceGL::IsValid() const {
   return valid_;
 }
 
+std::unique_ptr<Surface> AndroidSurfaceGL::CreateGPUSurface() {
+  return std::make_unique<GPUSurfaceGL>(
+      static_cast<GPUSurfaceGLDelegate*>(this));
+}
+
 SkISize AndroidSurfaceGL::OnScreenSurfaceSize() const {
   FTL_DCHECK(valid_);
   return onscreen_context_->GetSize();
@@ -80,7 +85,7 @@ bool AndroidSurfaceGL::OnScreenSurfaceResize(const SkISize& size) const {
   return onscreen_context_->Resize(size);
 }
 
-bool AndroidSurfaceGL::GLOffscreenContextMakeCurrent() {
+bool AndroidSurfaceGL::ResourceContextMakeCurrent() {
   FTL_DCHECK(valid_);
   return offscreen_context_->MakeCurrent();
 }

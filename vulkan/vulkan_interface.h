@@ -10,7 +10,9 @@
 #include "lib/ftl/build_config.h"
 
 #if OS_ANDROID
+#ifndef VK_USE_PLATFORM_ANDROID_KHR
 #define VK_USE_PLATFORM_ANDROID_KHR 1
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 #endif  // OS_ANDROID
 
 #include "third_party/vulkan/src/vulkan/vulkan.h"

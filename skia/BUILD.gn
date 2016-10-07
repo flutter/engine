@@ -92,6 +92,7 @@ config("skia_config") {
     "//third_party/skia/include/pipe",
     "//third_party/skia/include/ports",
     "//third_party/skia/include/utils",
+    "//third_party/vulkan/src",
     "config",
     "ext",
   ]
@@ -101,18 +102,19 @@ config("skia_config") {
 config("skia_library_config") {
   include_dirs = [
     "config",
-    "//third_party/skia/include/private",
     "//third_party/skia/include/codec",
+    "//third_party/skia/include/private",
     "//third_party/skia/src/codec",
     "//third_party/skia/src/core",
+    "//third_party/skia/src/gpu",
     "//third_party/skia/src/image",
     "//third_party/skia/src/lazy",
     "//third_party/skia/src/opts",
     "//third_party/skia/src/pdf",
     "//third_party/skia/src/ports",
     "//third_party/skia/src/sfnt",
+    "//third_party/skia/src/sksl",
     "//third_party/skia/src/utils",
-    "//third_party/skia/src/gpu",
   ]
 
   if (is_mac || is_ios) {
@@ -312,6 +314,13 @@ component("skia") {
 
   sources += gypi_skia_gpu.skgpu_sources
   sources += gypi_skia_gpu.skgpu_null_gl_sources
+
+  # Enable Vulkan support.
+  if (is_android) {
+    defines = [ "SK_VULKAN" ]
+    sources += gypi_skia_gpu.skgpu_vk_sources
+    sources += gypi_skia_sources.sksl_sources
+  }
 
   # Remove unused util files include in utils.gypi
   sources -= [

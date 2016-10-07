@@ -27,7 +27,7 @@ class GPUSurfaceGL : public Surface {
  public:
   GPUSurfaceGL(GPUSurfaceGLDelegate* delegate);
 
-  ~GPUSurfaceGL() override;
+  ~GPUSurfaceGL();
 
   bool Setup() override;
 
@@ -52,26 +52,6 @@ class GPUSurfaceGL : public Surface {
   bool SelectPixelConfig(GrPixelConfig* config);
 
   FTL_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
-};
-
-class GPUSurfaceFrameGL : public SurfaceFrame {
- public:
-  using SubmitCallback = std::function<bool(SkCanvas* canvas)>;
-
-  GPUSurfaceFrameGL(sk_sp<SkSurface> surface, SubmitCallback submit_callback);
-
-  ~GPUSurfaceFrameGL();
-
-  SkCanvas* SkiaCanvas() override;
-
- private:
-  FLUTTER_THREAD_CHECKER_DECLARE(checker_);
-  sk_sp<SkSurface> surface_;
-  SubmitCallback submit_callback_;
-
-  bool PerformSubmit() override;
-
-  FTL_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceFrameGL);
 };
 
 }  // namespace shell

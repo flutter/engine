@@ -7,26 +7,36 @@
 
 #include <android/native_window.h>
 #include "lib/ftl/macros.h"
+#include "lib/ftl/memory/ref_counted.h"
+#include "lib/ftl/memory/ref_ptr.h"
+#include "third_party/skia/include/core/SkSize.h"
 
 namespace shell {
 
-class AndroidNativeWindow {
+class AndroidNativeWindow
+    : public ftl::RefCountedThreadSafe<AndroidNativeWindow> {
  public:
   using Handle = ANativeWindow*;
 
+ private:
+  /// Creates a native window with the given handle. Handle ownership is assumed
+  /// by this instance of the native window.
   AndroidNativeWindow(Handle window);
-
-  AndroidNativeWindow(AndroidNativeWindow&& other);
 
   ~AndroidNativeWindow();
 
+ public:
   bool IsValid() const;
 
   Handle handle() const;
 
+  SkISize GetSize() const;
+
  private:
   Handle window_;
 
+  FRIEND_MAKE_REF_COUNTED(AndroidNativeWindow);
+  FRIEND_REF_COUNTED_THREAD_SAFE(AndroidNativeWindow);
   FTL_DISALLOW_COPY_AND_ASSIGN(AndroidNativeWindow);
 };
 
