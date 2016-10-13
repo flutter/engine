@@ -64,6 +64,23 @@ void _SendPlatformMessage(Dart_NativeArguments args) {
   tonic::DartCallStatic(&SendPlatformMessage, args);
 }
 
+void RespondToPlatformMessage(Dart_Handle window,
+                              int response_id,
+                              const tonic::DartByteData& data) {
+  UIDartState* dart_state = UIDartState::Current();
+  const char* buffer = static_cast<const char*>(data.data());
+  auto message = ftl::MakeRefCounted<blink::PlatformMessage>(
+      name, std::vector<char>(buffer, buffer + data.length_in_bytes()),
+      tonic::DartPersistentValue(dart_state, callback));
+
+  UIDartState::Current()->window()->client()->HandlePlatformMessage(
+      std::move(message));
+}
+
+void _RespondToPlatformMessage(Dart_NativeArguments args) {
+  tonic::DartCallStatic(&RespondToPlatformMessage, args);
+}
+
 }  // namespace
 
 WindowClient::~WindowClient() {}
@@ -200,6 +217,7 @@ void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
       {"Window_scheduleFrame", ScheduleFrame, 1, true},
       {"Window_sendPlatformMessage", _SendPlatformMessage, 4, true},
+      {"Window_respondToPlatformMessage", _RespondToPlatformMessage, 3, true},
       {"Window_render", Render, 2, true},
       {"Window_updateSemantics", UpdateSemantics, 2, true},
   });
