@@ -107,11 +107,15 @@ VulkanDevice::VulkanDevice(const VulkanProcTable& p_vk,
 }
 
 VulkanDevice::~VulkanDevice() {
-  vk.deviceWaitIdle(device_);
+  FTL_ALLOW_UNUSED_LOCAL(WaitIdle());
 }
 
 bool VulkanDevice::IsValid() const {
   return valid_;
+}
+
+bool VulkanDevice::WaitIdle() const {
+  return vk.deviceWaitIdle(device_) == VK_SUCCESS;
 }
 
 const VulkanHandle<VkDevice>& VulkanDevice::Handle() const {

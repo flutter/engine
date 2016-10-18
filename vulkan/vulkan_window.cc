@@ -177,7 +177,9 @@ bool VulkanWindow::SwapBuffers() {
 }
 
 bool VulkanWindow::RecreateSwapchain() {
-  swapchain_.reset();
+  // This way, we always lose our reference to the old swapchain. Even if we
+  // cannot create a new one to replace it.
+  auto old_swapchain = std::move(swapchain_);
 
   if (!vk.IsValid()) {
     return false;
@@ -196,7 +198,8 @@ bool VulkanWindow::RecreateSwapchain() {
   }
 
   auto swapchain = std::make_unique<VulkanSwapchain>(
-      vk, *logical_device_, *surface_, skia_gr_context_.get());
+      vk, *logical_device_, *surface_, skia_gr_context_.get(),
+      std::move(old_swapchain));
 
   if (!swapchain->IsValid()) {
     return false;

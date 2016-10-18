@@ -16,7 +16,8 @@ namespace vulkan {
 VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
                                  const VulkanDevice& device,
                                  const VulkanSurface& surface,
-                                 GrContext* skia_context)
+                                 GrContext* skia_context,
+                                 std::unique_ptr<VulkanSwapchain> old_swapchain)
     : vk(p_vk),
       device_(device),
       capabilities_(),
@@ -44,6 +45,14 @@ VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
 
   // Construct the Swapchain
 
+  VkSwapchainKHR old_swapchain_handle = VK_NULL_HANDLE;
+
+  if (old_swapchain != nullptr && old_swapchain->IsValid()) {
+    old_swapchain_handle = old_swapchain->swapchain_;
+    // The unique pointer to the swapchain will go out of scope here
+    // and its handle collected after the appropriate device wait.
+  }
+
   const VkSwapchainCreateInfoKHR create_info = {
       .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
       .pNext = nullptr,
@@ -62,7 +71,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
       .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
       .presentMode = present_mode_,
       .clipped = VK_FALSE,
-      .oldSwapchain = VK_NULL_HANDLE,
+      .oldSwapchain = old_swapchain_handle,
   };
 
   VkSwapchainKHR swapchain = VK_NULL_HANDLE;
@@ -73,6 +82,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
   }
 
   swapchain_ = {swapchain, [this](VkSwapchainKHR swapchain) {
+                  FTL_ALLOW_UNUSED_LOCAL(device_.WaitIdle());
                   vk.destroySwapchainKHR(device_.Handle(), swapchain, nullptr);
                 }};
 

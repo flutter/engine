@@ -25,7 +25,8 @@ class VulkanSwapchain {
   VulkanSwapchain(const VulkanProcTable& vk,
                   const VulkanDevice& device,
                   const VulkanSurface& surface,
-                  GrContext* skia_context);
+                  GrContext* skia_context,
+                  std::unique_ptr<VulkanSwapchain> old_swapchain);
 
   ~VulkanSwapchain();
 

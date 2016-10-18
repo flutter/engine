@@ -60,6 +60,9 @@ class VulkanDevice {
                    const std::vector<VkCommandBuffer>& command_buffers,
                    const VulkanHandle<VkFence>& fence) const;
 
+  FTL_WARN_UNUSED_RESULT
+  bool WaitIdle() const;
+
  private:
   const VulkanProcTable& vk;
   VulkanHandle<VkPhysicalDevice> physical_device_;
