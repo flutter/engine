@@ -101,6 +101,7 @@ bool VulkanProcTable::AcquireProcs() {
   ACQUIRE_PROC(deviceWaitIdle, "vkDeviceWaitIdle");
   ACQUIRE_PROC(getPhysicalDeviceFeatures, "vkGetPhysicalDeviceFeatures");
   ACQUIRE_PROC(queuePresentKHR, "vkQueuePresentKHR");
+  ACQUIRE_PROC(destroySwapchainKHR, "vkDestroySwapchainKHR");
 
 #if OS_ANDROID
   ACQUIRE_PROC(createAndroidSurfaceKHR, "vkCreateAndroidSurfaceKHR");
