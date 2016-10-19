@@ -61,7 +61,6 @@ shared_library("sky_shell") {
     "-landroid",
     "-lEGL",
     "-lGLESv2",
-    "-lvulkan",
   ]
 }
 

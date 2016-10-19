@@ -95,7 +95,7 @@ sk_sp<GrContext> VulkanWindow::CreateSkiaGrContext() const {
 sk_sp<const GrVkBackendContext> VulkanWindow::CreateSkiaBackendContext() const {
   auto interface = vk.SkiaInterface();
 
-  if (interface == nullptr || !interface->validate()) {
+  if (interface == nullptr || !interface->validate(0)) {
     return nullptr;
   }
 
