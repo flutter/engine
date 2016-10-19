@@ -8,12 +8,13 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-
+#include <vector>
 #include "base/android/jni_android.h"
 #include "base/android/jni_weak_ref.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/android/android_surface_gl.h"
+#include "flutter/shell/platform/android/android_native_window.h"
+#include "flutter/shell/platform/android/android_surface.h"
 #include "lib/ftl/memory/weak_ptr.h"
 
 namespace shell {
@@ -78,9 +79,8 @@ class PlatformViewAndroid : public PlatformView {
   }
 
  private:
-  std::unique_ptr<AndroidSurfaceGL> surface_gl_;
+  std::unique_ptr<AndroidSurface> android_surface_;
   JavaObjectWeakGlobalRef flutter_view_;
-
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;
   std::unordered_map<int, ftl::RefPtr<blink::PlatformMessageResponse>>
@@ -93,6 +93,12 @@ class PlatformViewAndroid : public PlatformView {
   void GetBitmapGpuTask(ftl::AutoResetWaitableEvent* latch,
                         jobject* pixels_out,
                         SkISize* size_out);
+
+  bool InitializeGPUSurface(ftl::RefPtr<AndroidNativeWindow> native_window);
+
+  bool InitializeGLSurface(ftl::RefPtr<AndroidNativeWindow> native_window);
+
+  bool InitializeVulkanSurface(ftl::RefPtr<AndroidNativeWindow> native_window);
 
   FTL_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroid);
 };

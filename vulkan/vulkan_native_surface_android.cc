@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "vulkan_surface_android.h"
+#include "flutter/vulkan/vulkan_native_surface_android.h"
+#include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
 
 namespace vulkan {
 
-VulkanSurfaceAndroid::VulkanSurfaceAndroid(ANativeWindow* native_window)
+VulkanNativeSurfaceAndroid::VulkanNativeSurfaceAndroid(
+    ANativeWindow* native_window)
     : native_window_(native_window) {
   if (native_window_ == nullptr) {
     return;
@@ -14,20 +16,24 @@ VulkanSurfaceAndroid::VulkanSurfaceAndroid(ANativeWindow* native_window)
   ANativeWindow_acquire(native_window_);
 }
 
-VulkanSurfaceAndroid::~VulkanSurfaceAndroid() {
+VulkanNativeSurfaceAndroid::~VulkanNativeSurfaceAndroid() {
   if (native_window_ == nullptr) {
     return;
   }
   ANativeWindow_release(native_window_);
 }
 
-const char* VulkanSurfaceAndroid::ExtensionName() {
+const char* VulkanNativeSurfaceAndroid::ExtensionName() const {
   return VK_KHR_ANDROID_SURFACE_EXTENSION_NAME;
 }
 
-VkSurfaceKHR VulkanSurfaceAndroid::CreateSurfaceHandle(
+uint32_t VulkanNativeSurfaceAndroid::SkiaExtensionName() const {
+  return kKHR_android_surface_GrVkExtensionFlag;
+}
+
+VkSurfaceKHR VulkanNativeSurfaceAndroid::CreateSurfaceHandle(
     VulkanProcTable& vk,
-    VulkanHandle<VkInstance>& instance) {
+    const VulkanHandle<VkInstance>& instance) const {
   if (!vk.IsValid() || !instance) {
     return VK_NULL_HANDLE;
   }
@@ -49,8 +55,15 @@ VkSurfaceKHR VulkanSurfaceAndroid::CreateSurfaceHandle(
   return surface;
 }
 
-bool VulkanSurfaceAndroid::IsValid() const {
+bool VulkanNativeSurfaceAndroid::IsValid() const {
   return native_window_ != nullptr;
+}
+
+SkISize VulkanNativeSurfaceAndroid::GetSize() const {
+  return native_window_ == nullptr
+             ? SkISize::Make(0, 0)
+             : SkISize::Make(ANativeWindow_getWidth(native_window_),
+                             ANativeWindow_getHeight(native_window_));
 }
 
 }  // namespace vulkan

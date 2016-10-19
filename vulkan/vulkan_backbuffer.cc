@@ -2,30 +2,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "vulkan_backbuffer.h"
-
 #include <limits>
+#include "flutter/vulkan/vulkan_backbuffer.h"
+#include "flutter/vulkan/vulkan_proc_table.h"
+#include "third_party/skia/include/gpu/vk/GrVkTypes.h"
+#include "third_party/skia/src/gpu/vk/GrVkUtil.h"
 
 namespace vulkan {
 
-VulkanBackbuffer::VulkanBackbuffer(VulkanProcTable& p_vk,
-                                   VulkanHandle<VkDevice>& device,
-                                   VulkanHandle<VkCommandPool>& pool,
-                                   VulkanHandle<VkImage> image)
+VulkanBackbuffer::VulkanBackbuffer(const VulkanProcTable& p_vk,
+                                   const VulkanHandle<VkDevice>& device,
+                                   const VulkanHandle<VkCommandPool>& pool)
     : vk(p_vk),
       device_(device),
-      pool_(pool),
-      image_(std::move(image)),
+      usage_command_buffer_(p_vk, device, pool),
+      render_command_buffer_(p_vk, device, pool),
       valid_(false) {
-  if (!device_ || !pool_ || !image_) {
+  if (!usage_command_buffer_.IsValid() || !render_command_buffer_.IsValid()) {
     return;
   }
 
   if (!CreateSemaphores()) {
-    return;
-  }
-
-  if (!CreateTransitionBuffers()) {
     return;
   }
 
@@ -37,7 +34,7 @@ VulkanBackbuffer::VulkanBackbuffer(VulkanProcTable& p_vk,
 }
 
 VulkanBackbuffer::~VulkanBackbuffer() {
-  WaitFences();
+  FTL_ALLOW_UNUSED_LOCAL(WaitFences());
 }
 
 bool VulkanBackbuffer::IsValid() const {
@@ -69,33 +66,6 @@ bool VulkanBackbuffer::CreateSemaphores() {
   return true;
 }
 
-bool VulkanBackbuffer::CreateTransitionBuffers() {
-  const VkCommandBufferAllocateInfo allocate_info = {
-      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-      .pNext = nullptr,
-      .commandPool = pool_,
-      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-      .commandBufferCount = 1,
-  };
-
-  auto buffer_collect = [this](VkCommandBuffer buffer) {
-    vk.freeCommandBuffers(device_, pool_, 1, &buffer);
-  };
-
-  for (size_t i = 0; i < transition_buffers_.size(); i++) {
-    VkCommandBuffer buffer = VK_NULL_HANDLE;
-
-    if (vk.allocateCommandBuffers(device_, &allocate_info, &buffer) !=
-        VK_SUCCESS) {
-      return false;
-    }
-
-    transition_buffers_[i] = {buffer, buffer_collect};
-  }
-
-  return true;
-}
-
 bool VulkanBackbuffer::CreateFences() {
   const VkFenceCreateInfo create_info = {
       .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
@@ -120,15 +90,51 @@ bool VulkanBackbuffer::CreateFences() {
   return true;
 }
 
-void VulkanBackbuffer::WaitFences() {
+bool VulkanBackbuffer::WaitFences() {
   VkFence fences[use_fences_.size()];
 
   for (size_t i = 0; i < use_fences_.size(); i++) {
     fences[i] = use_fences_[i];
   }
 
-  vk.waitForFences(device_, static_cast<uint32_t>(use_fences_.size()), fences,
-                   true, std::numeric_limits<uint64_t>::max());
+  return vk.waitForFences(device_, static_cast<uint32_t>(use_fences_.size()),
+                          fences, true,
+                          std::numeric_limits<uint64_t>::max()) == VK_SUCCESS;
+}
+
+bool VulkanBackbuffer::ResetFences() {
+  VkFence fences[use_fences_.size()];
+
+  for (size_t i = 0; i < use_fences_.size(); i++) {
+    fences[i] = use_fences_[i];
+  }
+
+  return vk.resetFences(device_, static_cast<uint32_t>(use_fences_.size()),
+                        fences) == VK_SUCCESS;
+}
+
+const VulkanHandle<VkFence>& VulkanBackbuffer::UsageFence() const {
+  return use_fences_[0];
+}
+
+const VulkanHandle<VkFence>& VulkanBackbuffer::RenderFence() const {
+  return use_fences_[1];
+}
+
+const VulkanHandle<VkSemaphore>& VulkanBackbuffer::UsageSemaphore() const {
+  return semaphores_[0];
+}
+
+const VulkanHandle<VkSemaphore>& VulkanBackbuffer::RenderSemaphore() const {
+  return semaphores_[1];
+}
+
+VulkanCommandBuffer& VulkanBackbuffer::UsageCommandBuffer() {
+  return usage_command_buffer_;
+}
+
+VulkanCommandBuffer& VulkanBackbuffer::RenderCommandBuffer() {
+  return render_command_buffer_;
 }
 
 }  // namespace vulkan

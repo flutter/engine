@@ -3,14 +3,21 @@
 # found in the LICENSE file.
 
 source_set("gpu") {
+  is_vulkan_supported = is_android
+
   sources = [
     "gpu_rasterizer.cc",
     "gpu_rasterizer.h",
     "gpu_surface_gl.cc",
     "gpu_surface_gl.h",
-    "gpu_surface_vulkan.cc",
-    "gpu_surface_vulkan.h",
   ]
+
+  if (is_vulkan_supported) {
+    sources += [
+      "gpu_surface_vulkan.cc",
+      "gpu_surface_vulkan.h",
+    ]
+  }
 
   deps = [
     "../common",
@@ -22,4 +29,10 @@ source_set("gpu") {
     "//lib/ftl",
     "//mojo/public/cpp/system",
   ]
+
+  if (is_vulkan_supported) {
+    deps += [
+      "//flutter/vulkan",
+    ]
+  }
 }
