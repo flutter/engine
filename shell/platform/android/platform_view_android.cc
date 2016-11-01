@@ -316,10 +316,7 @@ void PlatformViewAndroid::SetSemanticsEnabled(JNIEnv* env,
 }
 
 void PlatformViewAndroid::ReleaseSurface() {
-  if (surface_gl_) {
-    NotifyDestroyed();
-    surface_gl_ = nullptr;
-  }
+  NotifyDestroyed();
 }
 
 VsyncWaiter* PlatformViewAndroid::GetVsyncWaiter() {
