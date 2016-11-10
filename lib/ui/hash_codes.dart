@@ -28,95 +28,68 @@ int hashValues(
   Object arg16 = _hashEnd, Object arg17 = _hashEnd, Object arg18 = _hashEnd,
   Object arg19 = _hashEnd, Object arg20 = _hashEnd ]) {
   int result = 373;
-  assert(arg01 is! Iterable);
-  result = 37 * result + arg01.hashCode;
-  assert(arg02 is! Iterable);
-  result = 37 * result + arg02.hashCode;
-  if (arg03 != _hashEnd) {
-    assert(arg03 is! Iterable);
-    result = 37 * result + arg03.hashCode;
-    if (arg04 != _hashEnd) {
-      assert(arg04 is! Iterable);
-      result = 37 * result + arg04.hashCode;
-      if (arg05 != _hashEnd) {
-        assert(arg05 is! Iterable);
-        result = 37 * result + arg05.hashCode;
-        if (arg06 != _hashEnd) {
-          assert(arg06 is! Iterable);
-          result = 37 * result + arg06.hashCode;
-          if (arg07 != _hashEnd) {
-            assert(arg07 is! Iterable);
-            result = 37 * result + arg07.hashCode;
-            if (arg08 != _hashEnd) {
-              assert(arg08 is! Iterable);
-              result = 37 * result + arg08.hashCode;
-              if (arg09 != _hashEnd) {
-                assert(arg09 is! Iterable);
-                result = 37 * result + arg09.hashCode;
-                if (arg10 != _hashEnd) {
-                  assert(arg10 is! Iterable);
-                  result = 37 * result + arg10.hashCode;
-                  if (arg11 != _hashEnd) {
-                    assert(arg11 is! Iterable);
-                    result = 37 * result + arg11.hashCode;
-                    if (arg12 != _hashEnd) {
-                      assert(arg12 is! Iterable);
-                      result = 37 * result + arg12.hashCode;
-                      if (arg13 != _hashEnd) {
-                        assert(arg13 is! Iterable);
-                        result = 37 * result + arg13.hashCode;
-                        if (arg14 != _hashEnd) {
-                          assert(arg14 is! Iterable);
-                          result = 37 * result + arg14.hashCode;
-                          if (arg15 != _hashEnd) {
-                            assert(arg15 is! Iterable);
-                            result = 37 * result + arg15.hashCode;
-                            if (arg16 != _hashEnd) {
-                              assert(arg16 is! Iterable);
-                              result = 37 * result + arg16.hashCode;
-                              if (arg17 != _hashEnd) {
-                                assert(arg17 is! Iterable);
-                                result = 37 * result + arg17.hashCode;
-                                if (arg18 != _hashEnd) {
-                                  assert(arg18 is! Iterable);
-                                  result = 37 * result + arg18.hashCode;
-                                  if (arg19 != _hashEnd) {
-                                    assert(arg19 is! Iterable);
-                                    result = 37 * result + arg19.hashCode;
-                                    if (arg20 != _hashEnd) {
-                                      assert(arg20 is! Iterable);
-                                      result = 37 * result + arg20.hashCode;
-                                      // I can see my house from here!
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+  void append(Object o) {
+    assert(o is! Iterable);
+    result = 0x1fffffff & (result + o.hashCode);
+    result = 0x1fffffff & (result + ((0x0007ffff & result) << 10));
+    result = result ^ (result >> 6);
   }
+  append(arg01);
+  append(arg02);
+  if (arg03 == _hashEnd) return result;
+  append(arg03);
+  if (arg04 == _hashEnd) return result;
+  append(arg04);
+  if (arg05 == _hashEnd) return result;
+  append(arg05);
+  if (arg06 == _hashEnd) return result;
+  append(arg06);
+  if (arg07 == _hashEnd) return result;
+  append(arg07);
+  if (arg08 == _hashEnd) return result;
+  append(arg08);
+  if (arg09 == _hashEnd) return result;
+  append(arg09);
+  if (arg10 == _hashEnd) return result;
+  append(arg10);
+  if (arg11 == _hashEnd) return result;
+  append(arg11);
+  if (arg12 == _hashEnd) return result;
+  append(arg12);
+  if (arg13 == _hashEnd) return result;
+  append(arg13);
+  if (arg14 == _hashEnd) return result;
+  append(arg14);
+  if (arg15 == _hashEnd) return result;
+  append(arg15);
+  if (arg16 == _hashEnd) return result;
+  append(arg16);
+  if (arg17 == _hashEnd) return result;
+  append(arg17);
+  if (arg18 == _hashEnd) return result;
+  append(arg18);
+  if (arg19 == _hashEnd) return result;
+  append(arg19);
+  if (arg20 == _hashEnd) return result;
+  append(arg20);
   return result;
 }
+
 
 /// Combine the hashCodes of an arbitrary number of values from an Iterable into
 /// one value. This function will return the same value if given "null" as if
 /// given an empty list.
 int hashList(Iterable<Object> args) {
   int result = 373;
+  void append(Object o) {
+    assert(o is! Iterable);
+    result = 0x1fffffff & (result + o.hashCode);
+    result = 0x1fffffff & (result + ((0x0007ffff & result) << 10));
+    result = result ^ (result >> 6);
+  }
   if (args != null) {
     for (Object arg in args) {
-      assert(arg is! Iterable);
-      result = 37 * result + arg.hashCode;
+      append(arg);
     }
   }
   return result;
