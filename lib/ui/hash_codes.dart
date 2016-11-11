@@ -7,6 +7,24 @@ part of dart_ui;
 class _HashEnd { const _HashEnd(); }
 const _HashEnd _hashEnd = const _HashEnd();
 
+/// Jenkins hash function, optimized for small integers.
+///
+/// Borrowed from the dart sdk: sdk/lib/math/jenkins_smi_hash.dart.
+class _Jenkins {
+  static int combine(int hash, Object o) {
+    assert(o is! Iterable);
+    hash = 0x1fffffff & (hash + o.hashCode);
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  static int finish(int hash) {
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+}
+
 /// Combine up to twenty values' hashCodes into one value.
 ///
 /// If you only need to handle one value's hashCode, then just refer to its
@@ -28,69 +46,75 @@ int hashValues(
   Object arg16 = _hashEnd, Object arg17 = _hashEnd, Object arg18 = _hashEnd,
   Object arg19 = _hashEnd, Object arg20 = _hashEnd ]) {
   int result = 373;
-  void append(Object o) {
-    assert(o is! Iterable);
-    result = 0x1fffffff & (result + o.hashCode);
-    result = 0x1fffffff & (result + ((0x0007ffff & result) << 10));
-    result = result ^ (result >> 6);
+  result = _Jenkins.combine(result, arg01);
+  result = _Jenkins.combine(result, arg02);
+  if (arg03 != _hashEnd) {
+    result = _Jenkins.combine(result, arg03);
+    if (arg04 != _hashEnd) {
+      result = _Jenkins.combine(result, arg04);
+      if (arg05 != _hashEnd) {
+        result = _Jenkins.combine(result, arg05);
+        if (arg06 != _hashEnd) {
+          result = _Jenkins.combine(result, arg06);
+          if (arg07 != _hashEnd) {
+            result = _Jenkins.combine(result, arg07);
+            if (arg08 != _hashEnd) {
+              result = _Jenkins.combine(result, arg08);
+              if (arg09 != _hashEnd) {
+                result = _Jenkins.combine(result, arg09);
+                if (arg10 != _hashEnd) {
+                  result = _Jenkins.combine(result, arg10);
+                  if (arg11 != _hashEnd) {
+                    result = _Jenkins.combine(result, arg11);
+                    if (arg12 != _hashEnd) {
+                      result = _Jenkins.combine(result, arg12);
+                      if (arg13 != _hashEnd) {
+                        result = _Jenkins.combine(result, arg13);
+                        if (arg14 != _hashEnd) {
+                          result = _Jenkins.combine(result, arg14);
+                          if (arg15 != _hashEnd) {
+                            result = _Jenkins.combine(result, arg15);
+                            if (arg16 != _hashEnd) {
+                              result = _Jenkins.combine(result, arg16);
+                              if (arg17 != _hashEnd) {
+                                result = _Jenkins.combine(result, arg17);
+                                if (arg18 != _hashEnd) {
+                                  result = _Jenkins.combine(result, arg18);
+                                  if (arg19 != _hashEnd) {
+                                    result = _Jenkins.combine(result, arg19);
+                                    if (arg20 != _hashEnd) {
+                                      result = _Jenkins.combine(result, arg20);
+                                      // I can see my house from here!
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
-  append(arg01);
-  append(arg02);
-  if (arg03 == _hashEnd) return result;
-  append(arg03);
-  if (arg04 == _hashEnd) return result;
-  append(arg04);
-  if (arg05 == _hashEnd) return result;
-  append(arg05);
-  if (arg06 == _hashEnd) return result;
-  append(arg06);
-  if (arg07 == _hashEnd) return result;
-  append(arg07);
-  if (arg08 == _hashEnd) return result;
-  append(arg08);
-  if (arg09 == _hashEnd) return result;
-  append(arg09);
-  if (arg10 == _hashEnd) return result;
-  append(arg10);
-  if (arg11 == _hashEnd) return result;
-  append(arg11);
-  if (arg12 == _hashEnd) return result;
-  append(arg12);
-  if (arg13 == _hashEnd) return result;
-  append(arg13);
-  if (arg14 == _hashEnd) return result;
-  append(arg14);
-  if (arg15 == _hashEnd) return result;
-  append(arg15);
-  if (arg16 == _hashEnd) return result;
-  append(arg16);
-  if (arg17 == _hashEnd) return result;
-  append(arg17);
-  if (arg18 == _hashEnd) return result;
-  append(arg18);
-  if (arg19 == _hashEnd) return result;
-  append(arg19);
-  if (arg20 == _hashEnd) return result;
-  append(arg20);
-  return result;
+  return _Jenkins.finish(result);
 }
-
 
 /// Combine the hashCodes of an arbitrary number of values from an Iterable into
 /// one value. This function will return the same value if given "null" as if
 /// given an empty list.
 int hashList(Iterable<Object> args) {
   int result = 373;
-  void append(Object o) {
-    assert(o is! Iterable);
-    result = 0x1fffffff & (result + o.hashCode);
-    result = 0x1fffffff & (result + ((0x0007ffff & result) << 10));
-    result = result ^ (result >> 6);
-  }
   if (args != null) {
     for (Object arg in args) {
-      append(arg);
+      result = _Jenkins.combine(result, arg);
     }
   }
-  return result;
+  return _Jenkins.finish(result);
 }
