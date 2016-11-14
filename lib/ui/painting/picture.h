@@ -13,7 +13,6 @@ class DartLibraryNatives;
 }  // namespace tonic
 
 namespace blink {
-class Canvas;
 
 class Picture : public ftl::RefCountedThreadSafe<Picture>,
                 public tonic::DartWrappable {
@@ -22,18 +21,21 @@ class Picture : public ftl::RefCountedThreadSafe<Picture>,
 
  public:
   ~Picture() override;
-  static ftl::RefPtr<Picture> Create(sk_sp<SkPicture> picture);
+  static ftl::RefPtr<Picture> Create(sk_sp<SkPicture> picture,
+                                     SkRect picture_bounds);
 
   const sk_sp<SkPicture>& picture() const { return picture_; }
+  const SkRect& picture_bounds() const { return picture_bounds_; }
 
   void dispose();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  explicit Picture(sk_sp<SkPicture> picture);
+  explicit Picture(sk_sp<SkPicture> picture, SkRect picture_bounds);
 
   sk_sp<SkPicture> picture_;
+  SkRect picture_bounds_;
 };
 
 }  // namespace blink

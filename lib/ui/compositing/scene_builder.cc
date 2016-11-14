@@ -192,7 +192,7 @@ void SceneBuilder::addPicture(double dx,
 
   std::unique_ptr<flow::PictureLayer> layer(new flow::PictureLayer());
   layer->set_offset(SkPoint::Make(dx, dy));
-  layer->set_picture(picture->picture());
+  layer->set_picture(picture->picture(), picture->picture_bounds());
   layer->set_is_complex(!!(hints & 1));
   layer->set_will_change(!!(hints & 2));
   m_currentLayer->Add(std::move(layer));

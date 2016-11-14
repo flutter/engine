@@ -161,18 +161,23 @@ class Canvas : public ftl::RefCountedThreadSafe<Canvas>,
                  const tonic::Float32List& cull_rect);
 
   SkCanvas* canvas() const { return canvas_; }
+  const SkRect& picture_bounds() const { return picture_bounds_; }
+
   void Clear();
   bool IsRecording() const;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  explicit Canvas(SkCanvas* canvas);
+  explicit Canvas(SkCanvas* canvas, SkRect initial_picture_bounds);
 
   // The SkCanvas is supplied by a call to SkPictureRecorder::beginRecording,
   // which does not transfer ownership.  For this reason, we hold a raw
   // pointer and manually set to null in Clear.
   SkCanvas* canvas_;
+  SkRect picture_bounds_;
+
+  void AccomodatePictureBounds(const SkRect& rect, const SkPaint* paint);
 };
 
 }  // namespace blink

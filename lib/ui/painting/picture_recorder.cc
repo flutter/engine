@@ -6,9 +6,9 @@
 
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/picture.h"
+#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_args.h"
 #include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_library_natives.h"
 
 namespace blink {
@@ -50,8 +50,8 @@ SkCanvas* PictureRecorder::BeginRecording(SkRect bounds) {
 ftl::RefPtr<Picture> PictureRecorder::endRecording() {
   if (!isRecording())
     return nullptr;
-  ftl::RefPtr<Picture> picture =
-      Picture::Create(picture_recorder_.finishRecordingAsPicture());
+  ftl::RefPtr<Picture> picture = Picture::Create(
+      picture_recorder_.finishRecordingAsPicture(), canvas_->picture_bounds());
   canvas_->Clear();
   canvas_->ClearDartWrapper();
   canvas_ = nullptr;

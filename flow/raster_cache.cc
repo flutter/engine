@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 
+#include <utility>
 #include <vector>
 
 #include "flutter/common/threads.h"
@@ -19,6 +20,11 @@
 namespace flow {
 
 static const int kRasterThreshold = 3;
+
+RasterCacheImage::RasterCacheImage(sk_sp<SkImage> p_image, SkRect p_bounds)
+    : image_(std::move(p_image)), bounds_(p_bounds) {}
+
+RasterCacheImage::~RasterCacheImage() = default;
 
 static bool isWorthRasterizing(SkPicture* picture) {
   // TODO(abarth): We should find a better heuristic here that lets us avoid
@@ -76,18 +82,18 @@ RasterCache::Entry::Entry() {
 
 RasterCache::Entry::~Entry() {}
 
-sk_sp<SkImage> RasterCache::GetPrerolledImage(GrContext* context,
-                                              SkPicture* picture,
-                                              const SkMatrix& ctm,
-                                              bool is_complex,
-                                              bool will_change) {
+ftl::RefPtr<RasterCacheImage> RasterCache::GetPrerolledImage(
+    GrContext* context,
+    SkPicture* picture,
+    const SkRect& picture_bounds,
+    const SkMatrix& ctm,
+    bool is_complex,
+    bool will_change) {
   SkScalar scaleX = ctm.getScaleX();
   SkScalar scaleY = ctm.getScaleY();
 
-  SkRect rect = picture->cullRect();
-
-  SkISize physical_size =
-      SkISize::Make(rect.width() * scaleX, rect.height() * scaleY);
+  SkISize physical_size = SkISize::Make(picture_bounds.width() * scaleX,
+                                        picture_bounds.height() * scaleY);
 
   if (physical_size.isEmpty())
     return nullptr;
@@ -122,12 +128,13 @@ sk_sp<SkImage> RasterCache::GetPrerolledImage(GrContext* context,
         SkCanvas* canvas = surface->getCanvas();
         canvas->clear(SK_ColorTRANSPARENT);
         canvas->scale(scaleX, scaleY);
-        canvas->translate(-rect.left(), -rect.top());
+        canvas->translate(-picture_bounds.left(), -picture_bounds.top());
         canvas->drawPicture(picture);
         if (checkerboard_images_) {
-          DrawCheckerboard(canvas, rect);
+          DrawCheckerboard(canvas, picture_bounds);
         }
-        entry.image = surface->makeImageSnapshot();
+        entry.image = ftl::MakeRefCounted<RasterCacheImage>(
+            surface->makeImageSnapshot(), picture_bounds);
       }
     }
   }

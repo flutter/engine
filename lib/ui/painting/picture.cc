@@ -6,9 +6,9 @@
 
 #include "flutter/common/threads.h"
 #include "flutter/lib/ui/painting/canvas.h"
+#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_args.h"
 #include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_library_natives.h"
 
 namespace blink {
@@ -19,11 +19,13 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
 DART_BIND_ALL(Picture, FOR_EACH_BINDING)
 
-ftl::RefPtr<Picture> Picture::Create(sk_sp<SkPicture> picture) {
-  return ftl::MakeRefCounted<Picture>(std::move(picture));
+ftl::RefPtr<Picture> Picture::Create(sk_sp<SkPicture> picture,
+                                     SkRect picture_bounds) {
+  return ftl::MakeRefCounted<Picture>(std::move(picture), picture_bounds);
 }
 
-Picture::Picture(sk_sp<SkPicture> picture) : picture_(std::move(picture)) {}
+Picture::Picture(sk_sp<SkPicture> picture, SkRect picture_bounds)
+    : picture_(std::move(picture)), picture_bounds_(picture_bounds) {}
 
 Picture::~Picture() {
   // Skia objects must be deleted on the IO thread so that any associated GL

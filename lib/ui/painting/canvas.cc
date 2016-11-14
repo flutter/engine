@@ -70,13 +70,17 @@ ftl::RefPtr<Canvas> Canvas::Create(PictureRecorder* recorder,
                                    double bottom) {
   FTL_DCHECK(recorder);
   FTL_DCHECK(!recorder->isRecording());
+
+  SkRect cull_rect = SkRect::MakeLTRB(left, top, right, bottom);
   ftl::RefPtr<Canvas> canvas = ftl::MakeRefCounted<Canvas>(
-      recorder->BeginRecording(SkRect::MakeLTRB(left, top, right, bottom)));
+      recorder->BeginRecording(cull_rect), cull_rect);
   recorder->set_canvas(canvas);
+
   return canvas;
 }
 
-Canvas::Canvas(SkCanvas* canvas) : canvas_(canvas) {}
+Canvas::Canvas(SkCanvas* canvas, SkRect initial_picture_bounds)
+    : canvas_(canvas), picture_bounds_(initial_picture_bounds) {}
 
 Canvas::~Canvas() {}
 
@@ -202,7 +206,9 @@ void Canvas::drawRect(double left,
                       const PaintData& paint_data) {
   if (!canvas_)
     return;
-  canvas_->drawRect(SkRect::MakeLTRB(left, top, right, bottom), *paint.paint());
+  SkRect rect = SkRect::MakeLTRB(left, top, right, bottom);
+  canvas_->drawRect(rect, *paint.paint());
+  AccomodatePictureBounds(rect, paint.paint());
 }
 
 void Canvas::drawRRect(const RRect& rrect,
@@ -410,6 +416,34 @@ void Canvas::Clear() {
 
 bool Canvas::IsRecording() const {
   return !!canvas_;
+}
+
+void Canvas::AccomodatePictureBounds(const SkRect& rect, const SkPaint* paint) {
+  if (rect.isEmpty()) {
+    return;
+  }
+
+  picture_bounds_.join(rect);
+
+  if (paint == nullptr) {
+    return;
+  }
+
+  if (paint->canComputeFastBounds()) {
+    SkRect storage;
+    picture_bounds_.join(paint->computeFastBounds(rect, &storage));
+    return;
+  }
+
+  SkPath source_path;
+  source_path.addRect(rect);
+
+  SkPath dest_path;
+  if (!paint->getFillPath(source_path, &dest_path)) {
+    return;
+  }
+
+  picture_bounds_.join(dest_path.getBounds());
 }
 
 }  // namespace blink
