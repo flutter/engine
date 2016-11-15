@@ -45,7 +45,7 @@ int hashValues(
   Object arg13 = _hashEnd, Object arg14 = _hashEnd, Object arg15 = _hashEnd,
   Object arg16 = _hashEnd, Object arg17 = _hashEnd, Object arg18 = _hashEnd,
   Object arg19 = _hashEnd, Object arg20 = _hashEnd ]) {
-  int result = 373;
+  int result = 0;
   result = _Jenkins.combine(result, arg01);
   result = _Jenkins.combine(result, arg02);
   if (arg03 != _hashEnd) {
@@ -110,11 +110,9 @@ int hashValues(
 /// one value. This function will return the same value if given "null" as if
 /// given an empty list.
 int hashList(Iterable<Object> args) {
-  int result = 373;
+  int result = 0;
   if (args != null) {
-    for (Object arg in args) {
-      result = _Jenkins.combine(result, arg);
-    }
+    for (Object arg in args) result = _Jenkins.combine(result, arg);
   }
   return _Jenkins.finish(result);
 }
