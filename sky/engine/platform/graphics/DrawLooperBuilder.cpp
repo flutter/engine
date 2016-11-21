@@ -83,10 +83,10 @@ void DrawLooperBuilder::addShadow(const FloatSize& offset, float blur, const Col
 
     switch (shadowAlphaMode) {
     case ShadowRespectsAlpha:
-        info.fColorMode = SkBlendMode::kDst;
+        info.fColorMode = SkXfermode::kDst_Mode;
         break;
     case ShadowIgnoresAlpha:
-        info.fColorMode = SkBlendMode::kSrc;
+        info.fColorMode = SkXfermode::kSrc_Mode;
         break;
     default:
         ASSERT_NOT_REACHED();
@@ -108,7 +108,7 @@ void DrawLooperBuilder::addShadow(const FloatSize& offset, float blur, const Col
         paint->setMaskFilter(SkBlurMaskFilter::Make(kNormal_SkBlurStyle, sigma, mfFlags));
     }
 
-    paint->setColorFilter(SkColorFilter::MakeModeFilter(skColor, SkBlendMode::kSrcIn));
+    paint->setColorFilter(SkColorFilter::MakeModeFilter(skColor, SkXfermode::kSrcIn_Mode));
 }
 
 } // namespace blink
