@@ -42,7 +42,7 @@ void ChildSceneLayer::UpdateScene(SceneUpdateContext& context,
   resource->get_scene()->scene_token->value = scene_token_;
 
   auto node = mozart::Node::New();
-  if (!hittable_) {
+  if (!hit_testable_) {
     node->hit_test_behavior = mozart::HitTestBehavior::New();
     node->hit_test_behavior->prune = true;
   }
