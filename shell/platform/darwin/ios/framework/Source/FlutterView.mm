@@ -70,17 +70,21 @@ void SnapshotRasterizer(ftl::WeakPtr<shell::Rasterizer> rasterizer,
   SkAutoLockPixels pixel_lock(bitmap, true);
 
   SkCanvas canvas(bitmap);
-  flow::CompositorContext compositor_context;
-  auto frame = compositor_context.AcquireFrame(nullptr, &canvas,
-                                               false /* instrumentation */);
-  layer_tree->Raster(frame, false /* ignore raster cache. */);
+
+  {
+    flow::CompositorContext compositor_context;
+    auto frame = compositor_context.AcquireFrame(nullptr, &canvas,
+                                                 false /* instrumentation */);
+    layer_tree->Raster(frame, false /* ignore raster cache. */);
+  }
+
   canvas.flush();
 
   // Draw the bitmap to the system provided snapshotting context.
   SkCGDrawBitmap(context, bitmap, 0, 0);
 }
 
-void ShapshotContents(CGContextRef context, bool is_opaque) {
+void SnapshotContents(CGContextRef context, bool is_opaque) {
   // TODO(chinmaygarde): Currently, there is no way to get the rasterizer for
   // a particular platform view from the shell. But, for now, we only have one
   // platform view. So use that. Once we support multiple platform views, the
@@ -102,7 +106,7 @@ void SnapshotContentsSync(CGContextRef context, UIView* view) {
 
   ftl::AutoResetWaitableEvent latch;
   gpu_thread->PostTask([&latch, context, view]() {
-    ShapshotContents(context, [view isOpaque]);
+    SnapshotContents(context, [view isOpaque]);
     latch.Signal();
   });
   latch.Wait();
