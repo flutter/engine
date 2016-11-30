@@ -7,6 +7,7 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'dart:io' as system;
+import 'dart:math' as math;
 
 import 'filesystem.dart' as fs;
 import 'licenses.dart';
@@ -15,12 +16,15 @@ import 'patterns.dart';
 
 // REPOSITORY OBJECTS
 
-abstract class RepositoryEntry {
+abstract class RepositoryEntry implements Comparable<RepositoryEntry> {
   RepositoryEntry(this.parent, this.io);
   final RepositoryDirectory parent;
   final fs.IoNode io;
   String get name => io.name;
   String get libraryName;
+
+  @override
+  int compareTo(RepositoryEntry other) => toString().compareTo(other.toString());
 
   @override
   String toString() => io.fullName;
@@ -54,7 +58,7 @@ class RepositorySourceFile extends RepositoryLicensedFile {
   static final RegExp _readmeNamePattern = new RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
   static final RegExp _buildTimePattern = new RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|vms_make\.com|pom\.xml|\.project|source\.properties)$', caseSensitive: false);
   static final RegExp _docsPattern = new RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|.+\.spec(?:\.in)?)$', caseSensitive: false);
-  static final RegExp _devPattern = new RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~)$', caseSensitive: false);
+  static final RegExp _devPattern = new RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines)$', caseSensitive: false);
   static final RegExp _testsPattern = new RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
 
   @override
@@ -92,6 +96,7 @@ class RepositorySourceFile extends RepositoryLicensedFile {
       if (_licenses == null || _licenses.isEmpty)
         throw 'file has no detectable license and no in-scope default license file';
     }
+    _licenses.sort();
     _licenses.forEach((License license) => license.markUsed(io.fullName, libraryName));
     assert(_licenses != null && _licenses.isNotEmpty);
     return _licenses;
@@ -1152,8 +1157,7 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
 
   Set<License> getLicenses(Progress progress) {
     Set<License> result = new Set<License>();
-    _subdirectories.shuffle();
-    for (RepositoryDirectory directory in _subdirectories/*.reversed*/)
+    for (RepositoryDirectory directory in _subdirectories)
       result.addAll(directory.getLicenses(progress));
     for (RepositoryLicensedFile file in _files) {
       if (file.isIncludedInBuildProducts) {
@@ -1266,12 +1270,14 @@ class RepositoryAndroidSdkPlatformsWithJarDirectory extends RepositoryDirectory 
   @override
   List<License> nearestLicensesFor(String name) => _jarLicense;
 
+  @override
   License nearestLicenseOfType(LicenseType type) {
     if (_jarLicense.single.type == type)
       return _jarLicense.single;
     return null;
   }
 
+  @override
   License nearestLicenseWithName(String name, { String authors }) {
     return null;
   }
@@ -1349,6 +1355,7 @@ class RepositoryAndroidNdkPlatformsDirectory extends RepositoryDirectory {
 class RepositoryAndroidNdkSourcesAndroidSupportDirectory extends RepositoryDirectory {
   RepositoryAndroidNdkSourcesAndroidSupportDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
+  @override
   RepositoryFile createFile(fs.IoNode entry) {
     if (entry.name == 'NOTICE' && entry is fs.TextFile) {
       return new RepositoryGeneralSingleLicenseFile.fromLicense(
@@ -1570,6 +1577,7 @@ class RepositoryFreetypeSrcGZipDirectory extends RepositoryDirectory {
     return super.nearestLicensesFor(name);
   }
 
+  @override
   License nearestLicenseOfType(LicenseType type) {
     if (type == LicenseType.zlib) {
       License result = nearestLicenseWithName('zlib.h');
@@ -1604,14 +1612,15 @@ class RepositoryFreetypeDirectory extends RepositoryDirectory {
   List<License> nearestLicensesFor(String name) {
     List<License> result = super.nearestLicensesFor(name);
     if (result == null) {
-      License FTL = nearestLicenseWithName('LICENSE.TXT');
-      assert(FTL != null);
-      if (FTL != null)
-        return <License>[FTL];
+      License license = nearestLicenseWithName('LICENSE.TXT');
+      assert(license != null);
+      if (license != null)
+        return <License>[license];
     }
     return result;
   }
 
+  @override
   License nearestLicenseOfType(LicenseType type) {
     if (type == LicenseType.freetype) {
       License result = nearestLicenseWithName('FTL.TXT');
@@ -2039,14 +2048,47 @@ class RepositoryDartDirectory extends RepositoryDirectory {
   }
 }
 
-class RepositoryRoot extends RepositoryDirectory {
-  RepositoryRoot(fs.Directory io) : super(null, io);
+class RepositoryFlutterDirectory extends RepositoryDirectory {
+  RepositoryFlutterDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
   String get libraryName => 'engine';
 
   @override
   bool get isLicenseRoot => true;
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'testing'
+        && entry.name != 'tools'
+        && entry.name != 'examples'
+        && entry.name != 'build'
+        && entry.name != 'travis'
+        && super.shouldRecurse(entry);
+  }
+
+  @override
+  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'sky')
+      return new RepositoryExcludeSubpathDirectory(this, entry, const <String>['packages', 'sky_engine', 'LICENSE']); // that's the output of this script!
+    return super.createSubdirectory(entry);
+  }
+}
+
+class RepositoryRoot extends RepositoryDirectory {
+  RepositoryRoot(fs.Directory io) : super(null, io);
+
+  @override
+  String get libraryName {
+    assert(false);
+    return 'engine';
+  }
+
+  @override
+  bool get isLicenseRoot => true;
+
+  @override
+  bool get subdirectoriesAreLicenseRoots => true;
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
@@ -2066,10 +2108,8 @@ class RepositoryRoot extends RepositoryDirectory {
       return new RepositoryBaseDirectory(this, entry);
     if (entry.name == 'dart')
       return new RepositoryDartDirectory(this, entry);
-    // if (entry.name == 'mojo')
-    //   return new RepositoryMojoDirectory(this, entry);
     if (entry.name == 'flutter')
-      return new RepositoryExcludeSubpathDirectory(this, entry, const <String>['sky', 'packages', 'sky_engine', 'LICENSE']); // that's the output of this script!
+      return new RepositoryFlutterDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
@@ -2085,8 +2125,12 @@ class Progress {
   String get label => _label;
   String _label = '';
   set label(String value) {
-    _label = value;
-    update();
+    if (value.length > 50)
+      value = '.../' + value.substring(math.max(0, value.lastIndexOf('/', value.length - 45) + 1));
+    if (_label != value) {
+      _label = value;
+      update();
+    }
   }
   void advance(bool success) {
     if (success)
@@ -2095,8 +2139,14 @@ class Progress {
       _withoutLicense += 1;
     update();
   }
+  Stopwatch _lastUpdate;
   void update() {
-    system.stderr.write('$this\r');
+    if (_lastUpdate == null || _lastUpdate.elapsedMilliseconds > 90) {
+      _lastUpdate ??= new Stopwatch();
+      system.stderr.write('\r$this');
+      _lastUpdate.reset();
+      _lastUpdate.start();
+    }
   }
   bool get hadErrors => _withoutLicense > 0;
   @override
@@ -2116,7 +2166,7 @@ void main(List<String> arguments) {
   }
 
   try {
-    system.stderr.writeln('Preparing data structures...');
+    system.stderr.writeln('Finding files...');
     final RepositoryDirectory root = new RepositoryRoot(new fs.FileSystemDirectory.fromPath(arguments.single));
     system.stderr.writeln('Collecting licenses...');
     Progress progress = new Progress(root.fileCount);
@@ -2126,7 +2176,12 @@ void main(List<String> arguments) {
     List<License> usedLicenses = licenses.where((License license) => license.isUsed).toList();
     assert(() {
       print('UNUSED LICENSES:\n');
-      print(licenses.where((License license) => !license.isUsed).join('\n\n'));
+      List<String> unusedLicenses = licenses
+        .where((License license) => !license.isUsed)
+        .map((License license) => license.toString())
+        .toList();
+      unusedLicenses.sort();
+      print(unusedLicenses.join('\n\n'));
       print('~' * 80);
       print('USED LICENSES:\n');
       List<String> output = usedLicenses.map((License license) => license.toString()).toList();

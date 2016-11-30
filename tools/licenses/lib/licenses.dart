@@ -92,7 +92,7 @@ abstract class LicenseSource {
   License nearestLicenseWithName(String name, { String authors });
 }
 
-abstract class License {
+abstract class License implements Comparable<License> {
   factory License.unique(String body, LicenseType type, { bool reformatted: false, String origin, bool yesWeKnowWhatItLooksLikeButItIsNot: false }) {
     if (!reformatted)
       body = _reformat(body);
@@ -343,6 +343,9 @@ abstract class License {
   }
 
   Iterable<License> expandTemplate(String copyright, { String origin });
+
+  @override
+  int compareTo(License other) => toString().compareTo(other.toString());
 
   @override
   String toString() {
@@ -932,5 +935,6 @@ class BlankLicense extends License {
   }
   @override
   String toStringBody() => '<THIS BLOCK INTENTIONALLY LEFT BLANK>';
+  @override
   String toStringFormal() => null;
 }

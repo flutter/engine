@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:convert';
+import 'dart:collection';
 import 'dart:io' as io;
 
 import 'package:path/path.dart' as path;
@@ -49,7 +50,6 @@ FileType identifyFile(String name, Reader reader) {
   if ((path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/extra/uconv/README') || // This specific ICU README isn't in UTF-8.
       (path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/samples/uresb/sr.txt') || // This specific sample contains non-UTF-8 data (unlike other sr.txt files).
       (path.split(name).reversed.take(2).toList().reversed.join('/') == 'builds/detect.mk') || // This specific freetype sample contains non-UTF-8 data (unlike other .mk files).
-      (path.split(name).reversed.take(5).toList().reversed.join('/') == 'third_party/freetype-android/src/docs/FTL.TXT') || // This file has a copyright symbol in Latin1 in it
       (path.split(name).reversed.take(4).toList().reversed.join('/') == 'third_party/freetype2/docs/FTL.TXT')) // This file has a copyright symbol in Latin1 in it
     return FileType.latin1Text;
   if (path.split(name).reversed.take(6).toList().reversed.join('/') == 'dart/runtime/tests/vm/dart/bad_snapshot' || // Not any particular format
@@ -407,7 +407,9 @@ class FileSystemDirectory extends IoNode implements Directory {
 
   @override
   Iterable<IoNode> get walk sync* {
-    for (io.FileSystemEntity entity in _directory.listSync()) {
+    List<io.FileSystemEntity> list = _directory.listSync().toList();
+    list.sort((io.FileSystemEntity a, io.FileSystemEntity b) => a.path.compareTo(b.path));
+    for (io.FileSystemEntity entity in list) {
       if (entity is io.Directory) {
         yield new FileSystemDirectory(entity);
       } else if (entity is io.Link) {
@@ -497,7 +499,7 @@ class ArchiveDirectory extends IoNode implements Directory {
   @override
   final String name;
 
-  Map<String, ArchiveDirectory> _subdirectories = <String, ArchiveDirectory>{};
+  Map<String, ArchiveDirectory> _subdirectories = new SplayTreeMap<String, ArchiveDirectory>();
   List<ArchiveFile> _files = <ArchiveFile>[];
 
   void _add(a.ArchiveFile entry, List<String> remainingPath) {
