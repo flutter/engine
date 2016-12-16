@@ -33,7 +33,7 @@ vars = {
   'dart_observatory_packages_revision': '26aad88f1c1915d39bbcbff3cad589e2402fdcf1',
   'dart_root_certificates_revision': 'aed07942ce98507d2be28cbd29e879525410c7fc',
 
-  'buildtools_revision': '1f4c1c3bd3bd4c991e6565a0dc509c8d8a3f90b4',
+  'buildtools_revision': 'a5bbbcf1a6405f91ed9c301ae508f799ecc364f9',
 }
 
 # Only these hosts are allowed for dependencies in this DEPS file.
