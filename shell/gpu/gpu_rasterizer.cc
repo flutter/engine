@@ -16,7 +16,8 @@
 
 namespace shell {
 
-GPURasterizer::GPURasterizer() : weak_factory_(this) {
+GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info)
+    : compositor_context_(std::move(info)), weak_factory_(this) {
   auto weak_ptr = weak_factory_.GetWeakPtr();
   blink::Threads::Gpu()->PostTask(
       [weak_ptr]() { Shell::Shared().AddRasterizer(weak_ptr); });
@@ -65,7 +66,10 @@ void GPURasterizer::Clear(SkColor color, const SkISize& size) {
 
 void GPURasterizer::Teardown(
     ftl::AutoResetWaitableEvent* teardown_completion_event) {
-  surface_.reset();
+  if (surface_) {
+    surface_->Teardown();
+    surface_.reset();
+  }
   last_layer_tree_.reset();
   compositor_context_.OnGrContextDestroyed();
   teardown_completion_event->Signal();
