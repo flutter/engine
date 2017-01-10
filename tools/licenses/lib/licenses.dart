@@ -13,7 +13,7 @@ const int kMaxSize = 5 * 1024; // only look for copyrights and licenses at the t
 
 class FetchedContentsOf extends Key { FetchedContentsOf(dynamic value) : super(value); }
 
-enum LicenseType { unknown, bsd, gpl, lgpl, mpl, afl, mit, freetype, apache, apacheNotice, eclipse, ijg, zlib, icu, apsl, libpng }
+enum LicenseType { unknown, bsd, gpl, lgpl, mpl, afl, mit, freetype, apache, apacheNotice, eclipse, ijg, zlib, icu, apsl, libpng, openssl }
 
 LicenseType convertLicenseNameToType(String name) {
   switch (name) {
@@ -36,6 +36,8 @@ LicenseType convertLicenseNameToType(String name) {
       return LicenseType.icu;
     case 'Apple Public Source License':
       return LicenseType.apsl;
+    case 'OpenSSL':
+      return LicenseType.openssl;
     // common file names that don't say what the type is
     case 'COPYING':
     case 'COPYING.txt':
@@ -166,6 +168,7 @@ abstract class License implements Comparable<License> {
         case LicenseType.eclipse:
         case LicenseType.ijg:
         case LicenseType.apsl:
+        case LicenseType.openssl:
           return new MessageLicense._(body, type, origin: origin);
         case LicenseType.libpng:
           return new BlankLicense._(body, type, origin: origin);
@@ -278,6 +281,7 @@ abstract class License implements Comparable<License> {
           case LicenseType.eclipse:
           case LicenseType.ijg:
           case LicenseType.apsl:
+          case LicenseType.openssl:
             assert(this is MessageLicense);
             break;
           case LicenseType.libpng:
