@@ -756,13 +756,17 @@ Iterable<_LicenseMatch> _tryReferenceByFilename(String body, LicenseFileReferenc
   }
 }
 
-Iterable<_LicenseMatch> _tryReferenceByType(String body, RegExp pattern, LicenseSource parentDirectory, { String origin }) sync* {
-  for (_PartialLicenseMatch match in _findLicenseBlocks(body, pattern, 1, 2)) {
+Iterable<_LicenseMatch> _tryReferenceByType(String body, RegExp pattern, LicenseSource parentDirectory, { String origin, bool needsCopyright: true }) sync* {
+  for (_PartialLicenseMatch match in _findLicenseBlocks(body, pattern, 1, 2, needsCopyright: needsCopyright)) {
     final LicenseType type = convertLicenseNameToType(match.group(3));
     final License template = parentDirectory.nearestLicenseOfType(type);
     if (template == null)
       throw 'failed to find accompanying $type license in $parentDirectory';
-    assert(_reformat(match.getCopyrights()) != '');
+    assert(() {
+      String copyrights = _reformat(match.getCopyrights());
+      assert(needsCopyright && copyrights.isNotEmpty || !needsCopyright && copyrights.isEmpty);
+      return true;
+    });
     yield* _expand(template, match.getCopyrights(), match.start, match.end, debug: '_tryReferenceByType', origin: origin);
   }
 }
@@ -821,6 +825,7 @@ List<License> determineLicensesFor(String fileContents, String filename, License
   results.addAll(csAttribution.expand((RegExp pattern) => _tryAttribution(fileContents, pattern, origin: origin)));
   results.addAll(csReferencesByFilename.expand((LicenseFileReferencePattern pattern) => _tryReferenceByFilename(fileContents, pattern, parentDirectory, origin: origin)));
   results.addAll(csReferencesByType.expand((RegExp pattern) => _tryReferenceByType(fileContents, pattern, parentDirectory, origin: origin)));
+  results.addAll(csReferencesByTypeNoCopyright.expand((RegExp pattern) => _tryReferenceByType(fileContents, pattern, parentDirectory, origin: origin, needsCopyright: false)));
   results.addAll(csReferencesByUrl.expand((MultipleVersionedLicenseReferencePattern pattern) => _tryReferenceByUrl(fileContents, pattern, parentDirectory, origin: origin)));
   results.addAll(csLicenses.expand((RegExp pattern) => _tryInline(fileContents, pattern, needsCopyright: true, origin: origin)));
   results.addAll(csNotices.expand((RegExp pattern) => _tryInline(fileContents, pattern, needsCopyright: false, origin: origin)));
