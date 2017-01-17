@@ -501,7 +501,7 @@ class ParagraphStyle {
              'lineCount: ${   _encoded[0] & 0x10 == 0x10 ? _encoded[4]                      : "unspecified"}, '
              'fontFamily: ${  _encoded[0] & 0x20 == 0x20 ? _fontFamily                      : "unspecified"}, '
              'fontSize: ${    _encoded[0] & 0x40 == 0x40 ? _fontSize                        : "unspecified"}, '
-             'lineHeight: ${  _encoded[0] & 0x80 == 0x80 ? ${_lineHeight}x                  : "unspecified"}, '
+             'lineHeight: ${  _encoded[0] & 0x80 == 0x80 ? "${_lineHeight}x"                : "unspecified"}, '
              'maxLines: ${    _encoded[0] & 0x100 == 0x100 ? _maxLines                      : "unspecified"}, '
              'ellipsis: ${    _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""               : "unspecified"}'
            ')';
