@@ -856,8 +856,9 @@ void RenderParagraph::layoutRunsAndFloatsInRange(LineLayoutState& layoutState,
     bool checkForEndLineMatch = layoutState.endLine();
     RenderTextInfo renderTextInfo;
     VerticalPositionCache verticalPositionCache;
-
     LineBreaker lineBreaker(this);
+
+    m_didExceedMaxLines = false;
 
     while (!endOfLine.atEnd()) {
         // FIXME: Is this check necessary before the first iteration or can it be moved to the end?
