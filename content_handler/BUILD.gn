@@ -4,8 +4,14 @@
 
 assert(is_fuchsia)
 
+declare_args() {
+  flutter_enable_vulkan = false
+}
+
 executable("content_handler") {
   output_name = "flutter_runner"
+
+  defines = []
 
   sources = [
     "app.cc",
@@ -19,8 +25,6 @@ executable("content_handler") {
     "runtime_holder.h",
     "software_rasterizer.cc",
     "software_rasterizer.h",
-    "vulkan_rasterizer.cc",
-    "vulkan_rasterizer.h",
   ]
 
   deps = [
@@ -33,6 +37,10 @@ executable("content_handler") {
     "//apps/mozart/services/views",
     "//apps/tracing/lib/trace:provider",
     "//dart/runtime:libdart",
+
+    # TODO(abarth): We shouldn't need to depend on libdart_builtin but we fail
+    # to link otherwise.
+    "//dart/runtime/bin:libdart_builtin",
     "//dart/runtime/vm:libdart_platform",
     "//flutter/assets",
     "//flutter/common",
@@ -41,18 +49,26 @@ executable("content_handler") {
     "//flutter/lib/ui",
     "//flutter/runtime",
     "//flutter/sky/engine/platform",
-    "//flutter/vulkan",
     "//lib/fidl/dart/sdk_ext",
     "//lib/ftl",
     "//lib/mtl",
     "//lib/tonic/mx",
     "//lib/zip",
-    "//magma:vulkan",
     "//third_party/rapidjson",
     "//third_party/skia",
-
-    # TODO(abarth): We shouldn't need to depend on libdart_builtin but we fail
-    # to link otherwise.
-    "//dart/runtime/bin:libdart_builtin",
   ]
+
+  if (flutter_enable_vulkan) {
+    defines += [ "FLUTTER_ENABLE_VULKAN" ]
+
+    sources += [
+      "vulkan_rasterizer.cc",
+      "vulkan_rasterizer.h",
+    ]
+
+    deps += [
+      "//flutter/vulkan",
+      "//magma:vulkan",
+    ]
+  }
 }

@@ -5,13 +5,17 @@
 #include "flutter/content_handler/rasterizer.h"
 
 #include "flutter/content_handler/software_rasterizer.h"
+
+#if FLUTTER_ENABLE_VULKAN
 #include "flutter/content_handler/vulkan_rasterizer.h"
+#endif  // FLUTTER_ENABLE_VULKAN
 
 namespace flutter_runner {
 
 Rasterizer::~Rasterizer() = default;
 
 std::unique_ptr<Rasterizer> Rasterizer::Create() {
+#if FLUTTER_ENABLE_VULKAN
   auto vulkan_rasterizer = std::make_unique<VulkanRasterizer>();
 
   if (!vulkan_rasterizer->IsValid()) {
@@ -23,6 +27,9 @@ std::unique_ptr<Rasterizer> Rasterizer::Create() {
   FTL_DLOG(INFO) << "Successfully initialized a valid vulkan rasterizer.";
 
   return vulkan_rasterizer;
+#else  // FLUTTER_ENABLE_VULKAN
+  return std::make_unique<SoftwareRasterizer>();
+#endif  // FLUTTER_ENABLE_VULKAN
 }
 
 }  // namespace flutter_runner
