@@ -342,14 +342,16 @@ static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(
 }
 
 - (void)viewDidLayoutSubviews {
-  CGSize size = self.view.bounds.size;
+  CGSize viewSize = self.view.bounds.size;
+  CGSize statusBarSize = [UIApplication sharedApplication].statusBarFrame.size;
+  CGFloat viewOffset = self.view.frame.origin.y;
   CGFloat scale = [UIScreen mainScreen].scale;
 
   _viewportMetrics.device_pixel_ratio = scale;
-  _viewportMetrics.physical_width = size.width * scale;
-  _viewportMetrics.physical_height = size.height * scale;
+  _viewportMetrics.physical_width = viewSize.width * scale;
+  _viewportMetrics.physical_height = viewSize.height * scale;
   _viewportMetrics.physical_padding_top =
-      [UIApplication sharedApplication].statusBarFrame.size.height * scale;
+      (statusBarSize.height - viewOffset) * scale;
   [self updateViewportMetrics];
 }
 
