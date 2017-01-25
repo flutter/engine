@@ -347,6 +347,11 @@ static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(
 }
 
 - (CGFloat)statusBarPadding {
+  // If we're a child of a containing view, let the container apply padding.
+  if (self.parentViewController != nil) {
+    return 0.0;
+  }
+
   // If not fullscreen, assume we don't want padding.
   if (![self isWindowFullscreen]) {
     return 0.0;
