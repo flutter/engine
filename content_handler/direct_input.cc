@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/content_handler/direct_input.h"
+
 #include <dirent.h>
 #include <fcntl.h>
 #include <hid/acer12.h>
@@ -12,10 +13,12 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+
 #include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "lib/fidl/cpp/waiter/default.h"
 #include "lib/ftl/time/time_point.h"
 
@@ -102,6 +105,7 @@ void DirectInput::CancelWaitForReadAvailability() {
   }
 
   fidl::GetDefaultAsyncWaiter()->CancelWait(last_wait_);
+  last_wait_ = 0;
 }
 
 void DirectInput::OnReadAvailable() {
