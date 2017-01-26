@@ -30,6 +30,7 @@ using tonic::ToDart;
 namespace flutter_runner {
 namespace {
 
+constexpr char kKernelKey[] = "kernel_blob.bin";
 constexpr char kSnapshotKey[] = "snapshot_blob.bin";
 constexpr char kAssetChannel[] = "flutter/assets";
 
@@ -107,10 +108,13 @@ void RuntimeHolder::CreateView(
     return;
   }
 
+  std::vector<uint8_t> kernel;
   std::vector<uint8_t> snapshot;
-  if (!asset_store_->GetAsBuffer(kSnapshotKey, &snapshot)) {
-    FTL_LOG(ERROR) << "Unable to load snapshot from root bundle.";
-    return;
+  if (!asset_store_->GetAsBuffer(kKernelKey, &kernel)) {
+    if (!asset_store_->GetAsBuffer(kSnapshotKey, &snapshot)) {
+      FTL_LOG(ERROR) << "Unable to load kernel or snapshot from root bundle.";
+      return;
+    }
   }
 
   mozart::ViewListenerPtr view_listener;
@@ -146,8 +150,13 @@ void RuntimeHolder::CreateView(
   runtime_ = blink::RuntimeController::Create(this);
   runtime_->CreateDartController(script_uri);
   runtime_->SetViewportMetrics(viewport_metrics_);
-  runtime_->dart_controller()->RunFromSnapshot(snapshot.data(),
-                                               snapshot.size());
+  if (kernel) {
+    runtime_->dart_controller()->RunFromKernel(kernel.data(),
+                                               kernel.size());
+  } else {
+    runtime_->dart_controller()->RunFromSnapshot(snapshot.data(),
+                                                 snapshot.size());
+  }
 }
 
 void RuntimeHolder::ScheduleFrame() {
