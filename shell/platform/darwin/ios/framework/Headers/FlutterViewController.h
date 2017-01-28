@@ -35,6 +35,8 @@ FLUTTER_EXPORT
 
 - (void)removeAsyncMessageListener:(NSObject<FlutterAsyncMessageListener>*)listener;
 
+- (void)handleStatusBarTouches:(UIEvent *)event;
+
 @end
 
 __BEGIN_DECLS
