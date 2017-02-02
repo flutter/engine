@@ -30,7 +30,9 @@ static sk_sp<SkShader> CreateCheckerboardShader(SkColor c1,
                                                 SkColor c2,
                                                 int size) {
   SkBitmap bm;
-  bm.allocN32Pixels(2 * size, 2 * size);
+  SkImageInfo info = SkImageInfo::MakeS32(2 * size, 2 * size,
+                                          kPremul_SkAlphaType);
+  bm.allocPixels(info);
   bm.eraseColor(c1);
   bm.eraseArea(SkIRect::MakeLTRB(0, 0, size, size), c2);
   bm.eraseArea(SkIRect::MakeLTRB(size, size, 2 * size, 2 * size), c2);
@@ -115,7 +117,9 @@ sk_sp<SkImage> RasterCache::GetPrerolledImage(GrContext* context,
         (is_complex || isWorthRasterizing(picture))) {
       TRACE_EVENT2("flutter", "Rasterize picture layer", "width",
                    physical_size.width(), "height", physical_size.height());
-      SkImageInfo info = SkImageInfo::MakeN32Premul(physical_size);
+      SkImageInfo info = SkImageInfo::MakeS32(physical_size.width(),
+                                              physical_size.height(),
+                                              kPremul_SkAlphaType);
       sk_sp<SkSurface> surface =
           SkSurface::MakeRenderTarget(context, SkBudgeted::kYes, info);
       if (surface) {
