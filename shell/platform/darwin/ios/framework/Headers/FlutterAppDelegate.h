@@ -17,8 +17,8 @@
  *     FlutterViewController, in order to trigger scroll to top.
  *
  * App delegates for Flutter applications are *not* required to inherit from
- * this class. Developers should copy and paste code implementing any desired
- * behavior from this class into their own app delegate class.
+ * this class. Developers of custom app delegate classes should copy and paste
+ * code as necessary from FlutterAppDelegate.mm.
  */
 FLUTTER_EXPORT
 @interface FlutterAppDelegate : UIResponder<UIApplicationDelegate>
