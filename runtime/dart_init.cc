@@ -309,7 +309,7 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
                                              std::move(jni_class_provider));
 #endif
 
-    if (kernel_data && !kernel_data.empty()) {
+    if (!kernel_data.empty()) {
       // We are running kernel code.
       FTL_CHECK(!LogIfError(Dart_LoadKernel(Dart_ReadKernelBinary(kernel_data.data(),
                                                                   kernel_data.size()))));
