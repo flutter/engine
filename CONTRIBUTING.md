@@ -80,6 +80,7 @@ dependency_overrides:
 Run the following steps, from the `src` directory created in the steps above:
 
  * `gclient sync` to update your dependencies.
+ * `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
  * `./flutter/tools/gn --android --unoptimized` to prepare your build files.
  * `ninja -C out/android_debug_unopt` to actually build the Android binary.
 
@@ -122,6 +123,7 @@ to test the engine.
 
 * Make sure you have Xcode 7.3.0+ installed.
 * `gclient sync` to update dependencies.
+* `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
 * `./flutter/tools/gn --ios --unoptimized` to prepare build files.
   * For a discussion on the various flags and modes, [read this discussion](https://github.com/flutter/flutter/wiki/Flutter's-modes).
 * `ninja -C out/ios_debug_unopt` to build iOS artifacts.
@@ -137,6 +139,7 @@ Once the artifacts are built, you can start using them in your application by fo
 ### Desktop (Mac and Linux), for tests
 
  * `gclient sync` to update your dependencies.
+ * `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
  * `./flutter/tools/gn --unoptimized` to prepare your build files.
  * `ninja -C out/host_debug_unopt` to build a desktop unoptimized binary.
  * `--unoptimized` disables C++ compiler optimizations and does not strip debug symbols. You may skip the flag and invoke `ninja -C out/host_debug` if you would rather have the native components optimized.
