@@ -478,6 +478,12 @@ class Point {
 
 /// An immutable 2D, axis-aligned, floating-point rectangle whose coordinates
 /// are relative to an origin point.
+///
+/// In addition to its constructors a Rect can be created with a [Point] and
+/// a [Size] using the `&` operator:
+/// ```dart
+/// Rect myRect = const Point(1.0, 2.0) & const Size(3.0, 4.0);
+///```
 class Rect {
   Rect._();
 
