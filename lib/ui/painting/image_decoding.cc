@@ -5,8 +5,6 @@
 #include "flutter/lib/ui/painting/image_decoding.h"
 
 #include "flutter/common/threads.h"
-#include "flutter/flow/bitmap_image.h"
-#include "flutter/flow/texture_image.h"
 #include "flutter/glue/trace_event.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/resource_context.h"
@@ -41,14 +39,18 @@ sk_sp<SkImage> DecodeImage(std::vector<uint8_t> buffer) {
   if (generator == nullptr)
     return nullptr;
 
-  // First, try to create a texture image from the generator.
-  GrContext* context = ResourceContext::Get();
-  if (sk_sp<SkImage> image = flow::TextureImageCreate(context, *generator))
-    return image;
+  SkBitmap bitmap;
+  if (!generator->tryGenerateBitmap(&bitmap))
+    return nullptr;
 
-  // Then, as a fallback, try to create a regular Skia managed image. These
-  // don't require a context ready.
-  return flow::BitmapImageCreate(*generator);
+  auto image = SkImage::MakeFromBitmap(bitmap);
+  if (!image)
+    return nullptr;
+
+  if (auto context = ResourceContext::Get())
+    image->preroll(context);
+
+  return image;
 }
 
 void InvokeImageCallback(sk_sp<SkImage> image,
