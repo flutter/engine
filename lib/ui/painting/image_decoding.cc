@@ -35,20 +35,20 @@ sk_sp<SkImage> DecodeImage(std::vector<uint8_t> buffer) {
   if (sk_data == nullptr)
     return nullptr;
 
-  std::unique_ptr<SkImageGenerator> generator(
-      SkImageGenerator::NewFromEncoded(sk_data.get()));
+  sk_sp<SkImage> image = SkImage::MakeFromEncoded(std::move(sk_data));
 
-  if (generator == nullptr)
+  if (image == nullptr)
     return nullptr;
 
-  // First, try to create a texture image from the generator.
+  // Force an upload so we get a texture backed image
   GrContext* context = ResourceContext::Get();
-  if (sk_sp<SkImage> image = flow::TextureImageCreate(context, *generator))
-    return image;
+  sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
+  if (sk_sp<SkImage> textureImage = image->makeTextureImage(context, srgb.get()))
+    return textureImage;
 
-  // Then, as a fallback, try to create a regular Skia managed image. These
+  // As a fallback, return the regular Skia managed image. These
   // don't require a context ready.
-  return flow::BitmapImageCreate(*generator);
+  return image;
 }
 
 void InvokeImageCallback(sk_sp<SkImage> image,

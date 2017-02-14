@@ -11,6 +11,7 @@
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "lib/ftl/functional/make_copyable.h"
+#include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
 namespace shell {
@@ -164,9 +165,12 @@ void PlatformView::SetupResourceContextOnIOThreadPerform(
     return;
   }
 
+  GrContextOptions options;
+  options.fDisableGpuYUVConversion = true;
   blink::ResourceContext::Set(GrContext::Create(
       GrBackend::kOpenGL_GrBackend,
-      reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface())));
+      reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface()),
+      options));
   latch->Signal();
 }
 
