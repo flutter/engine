@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <memory>
 #include <sstream>
+#include <vector>
 
 #include "base/bind.h"
 #include "base/command_line.h"
@@ -43,16 +44,22 @@ bool IsViewInvalid(const ftl::WeakPtr<PlatformView>& platform_view) {
 }
 
 template <typename T>
-bool GetSwitchValue(const base::CommandLine& command_line,
+bool GetSwitchValue(const ftl::CommandLine& command_line,
                     Switch sw,
                     T* result) {
-  auto port_string = command_line.GetSwitchValueASCII(FlagForSwitch(sw));
-  std::stringstream stream(port_string);
+  std::string switch_string;
+
+  if (!command_line.GetOptionValue(FlagForSwitch(sw), &switch_string)) {
+    return false;
+  }
+
+  std::stringstream stream(switch_string);
   T value = 0;
   if (stream >> value) {
     *result = value;
     return true;
   }
+
   return false;
 }
 
@@ -87,7 +94,8 @@ void ServiceIsolateHook(bool running_precompiled) {
 
 }  // namespace
 
-Shell::Shell() {
+Shell::Shell(ftl::CommandLine command_line)
+    : command_line_(std::move(command_line)) {
   DCHECK(!g_shell);
 
   base::Thread::Options options;
@@ -121,7 +129,8 @@ Shell::Shell() {
 
 Shell::~Shell() {}
 
-void Shell::InitStandalone(std::string icu_data_path,
+void Shell::InitStandalone(ftl::CommandLine command_line,
+                           std::string icu_data_path,
                            std::string application_library_path) {
   TRACE_EVENT0("flutter", "Shell::InitStandalone");
 
@@ -138,17 +147,15 @@ void Shell::InitStandalone(std::string icu_data_path,
     icu_fd.reset();
   }
 
-  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
-
   blink::Settings settings;
   settings.application_library_path = application_library_path;
 
   // Enable Observatory
   settings.enable_observatory =
-      !command_line.HasSwitch(FlagForSwitch(Switch::DisableObservatory));
+      !command_line.HasOption(FlagForSwitch(Switch::DisableObservatory));
 
   // Set Observatory Port
-  if (command_line.HasSwitch(FlagForSwitch(Switch::DeviceObservatoryPort))) {
+  if (command_line.HasOption(FlagForSwitch(Switch::DeviceObservatoryPort))) {
     if (!GetSwitchValue(command_line, Switch::DeviceObservatoryPort,
                         &settings.observatory_port)) {
       FTL_LOG(INFO)
@@ -159,12 +166,12 @@ void Shell::InitStandalone(std::string icu_data_path,
 
   // Checked mode overrides.
   settings.dart_non_checked_mode =
-      command_line.HasSwitch(FlagForSwitch(Switch::DartNonCheckedMode));
+      command_line.HasOption(FlagForSwitch(Switch::DartNonCheckedMode));
 
   settings.enable_diagnostic =
-      !command_line.HasSwitch(FlagForSwitch(Switch::DisableDiagnostic));
+      !command_line.HasOption(FlagForSwitch(Switch::DisableDiagnostic));
 
-  if (command_line.HasSwitch(FlagForSwitch(Switch::DeviceDiagnosticPort))) {
+  if (command_line.HasOption(FlagForSwitch(Switch::DeviceDiagnosticPort))) {
     if (!GetSwitchValue(command_line, Switch::DeviceDiagnosticPort,
                         &settings.diagnostic_port)) {
       FTL_LOG(INFO)
@@ -174,58 +181,59 @@ void Shell::InitStandalone(std::string icu_data_path,
   }
 
   settings.start_paused =
-      command_line.HasSwitch(FlagForSwitch(Switch::StartPaused));
+      command_line.HasOption(FlagForSwitch(Switch::StartPaused));
 
   settings.enable_dart_profiling =
-      command_line.HasSwitch(FlagForSwitch(Switch::EnableDartProfiling));
+      command_line.HasOption(FlagForSwitch(Switch::EnableDartProfiling));
 
   settings.endless_trace_buffer =
-      command_line.HasSwitch(FlagForSwitch(Switch::EndlessTraceBuffer));
+      command_line.HasOption(FlagForSwitch(Switch::EndlessTraceBuffer));
 
   settings.trace_startup =
-      command_line.HasSwitch(FlagForSwitch(Switch::TraceStartup));
+      command_line.HasOption(FlagForSwitch(Switch::TraceStartup));
 
   settings.force_software_rendering =
-      command_line.HasSwitch(FlagForSwitch(Switch::ForceSoftwareRendering));
+      command_line.HasOption(FlagForSwitch(Switch::ForceSoftwareRendering));
 
-  settings.aot_snapshot_path =
-      command_line.GetSwitchValueASCII(FlagForSwitch(Switch::AotSnapshotPath));
-  settings.aot_vm_snapshot_data_filename = command_line.GetSwitchValueASCII(
-      FlagForSwitch(Switch::AotVmSnapshotData));
-  settings.aot_vm_snapshot_instr_filename = command_line.GetSwitchValueASCII(
-      FlagForSwitch(Switch::AotVmSnapshotInstructions));
-  settings.aot_isolate_snapshot_data_filename =
-      command_line.GetSwitchValueASCII(
-          FlagForSwitch(Switch::AotIsolateSnapshotData));
-  settings.aot_isolate_snapshot_instr_filename =
-      command_line.GetSwitchValueASCII(
-          FlagForSwitch(Switch::AotIsolateSnapshotInstructions));
+  command_line.GetOptionValue(FlagForSwitch(Switch::AotSnapshotPath),
+                              &settings.aot_snapshot_path);
 
-  settings.temp_directory_path =
-      command_line.GetSwitchValueASCII(FlagForSwitch(Switch::CacheDirPath));
+  command_line.GetOptionValue(FlagForSwitch(Switch::AotVmSnapshotData),
+                              &settings.aot_vm_snapshot_data_filename);
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::AotVmSnapshotInstructions),
+                              &settings.aot_vm_snapshot_instr_filename);
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::AotIsolateSnapshotData),
+                              &settings.aot_isolate_snapshot_data_filename);
+
+  command_line.GetOptionValue(
+      FlagForSwitch(Switch::AotIsolateSnapshotInstructions),
+      &settings.aot_isolate_snapshot_instr_filename);
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::CacheDirPath),
+                              &settings.temp_directory_path);
 
   settings.use_test_fonts =
-      command_line.HasSwitch(FlagForSwitch(Switch::UseTestFonts));
+      command_line.HasOption(FlagForSwitch(Switch::UseTestFonts));
 
-  if (command_line.HasSwitch(FlagForSwitch(Switch::DartFlags))) {
-    std::stringstream stream(
-        command_line.GetSwitchValueNative(FlagForSwitch(Switch::DartFlags)));
+  std::string all_dart_flags;
+  if (command_line.GetOptionValue(FlagForSwitch(Switch::DartFlags),
+                                  &all_dart_flags)) {
+    std::stringstream stream(all_dart_flags);
     std::istream_iterator<std::string> end;
     for (std::istream_iterator<std::string> it(stream); it != end; ++it)
       settings.dart_flags.push_back(*it);
   }
 
-  if (command_line.HasSwitch(FlagForSwitch(Switch::LogTag))) {
-    settings.log_tag =
-        command_line.GetSwitchValueASCII(FlagForSwitch(Switch::LogTag));
-  }
+  command_line.GetOptionValue(FlagForSwitch(Switch::LogTag), &settings.log_tag);
 
   blink::Settings::Set(settings);
 
-  Init();
+  Init(std::move(command_line));
 }
 
-void Shell::Init() {
+void Shell::Init(ftl::CommandLine command_line) {
   base::DiscardableMemoryAllocator::SetInstance(&g_discardable.Get());
 
 #if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
@@ -233,13 +241,17 @@ void Shell::Init() {
 #endif
 
   FTL_DCHECK(!g_shell);
-  g_shell = new Shell();
+  g_shell = new Shell(std::move(command_line));
   blink::Threads::UI()->PostTask(Engine::Init);
 }
 
 Shell& Shell::Shared() {
   FTL_DCHECK(g_shell);
   return *g_shell;
+}
+
+const ftl::CommandLine& Shell::GetCommandLine() const {
+  return command_line_;
 }
 
 TracingController& Shell::tracing_controller() {

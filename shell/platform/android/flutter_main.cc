@@ -10,8 +10,6 @@
 #include "base/android/jni_array.h"
 #include "base/android/jni_string.h"
 #include "base/at_exit.h"
-#include "base/bind.h"
-#include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/lazy_instance.h"
 #include "base/logging.h"
@@ -23,6 +21,7 @@
 #include "flutter/runtime/start_up.h"
 #include "flutter/shell/common/shell.h"
 #include "jni/FlutterMain_jni.h"
+#include "lib/ftl/command_line.h"
 #include "lib/ftl/macros.h"
 
 using base::LazyInstance;
@@ -33,17 +32,6 @@ namespace {
 
 LazyInstance<std::unique_ptr<base::MessageLoop>> g_java_message_loop =
     LAZY_INSTANCE_INITIALIZER;
-
-void InitializeLogging() {
-  logging::LoggingSettings settings;
-  settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
-  logging::InitLogging(settings);
-  // To view log output with IDs and timestamps use "adb logcat -v threadtime".
-  logging::SetLogItems(false,   // Process ID
-                       false,   // Thread ID
-                       false,   // Timestamp
-                       false);  // Tick count
-}
 
 void InitializeTracing() {
   base::FilePath path;
@@ -64,19 +52,15 @@ static void Init(JNIEnv* env,
       env, env->NewLocalRef(context));
   base::android::InitApplicationContext(env, scoped_context);
 
-  std::vector<std::string> args;
-  args.push_back("sky_shell");
-  base::android::AppendJavaStringArrayToStringVector(env, jargs, &args);
-
-  base::CommandLine::Init(0, nullptr);
-  base::CommandLine::ForCurrentProcess()->InitFromArgv(args);
-
-  InitializeLogging();
-
   g_java_message_loop.Get().reset(new base::MessageLoopForUI);
   base::MessageLoopForUI::current()->Start();
 
-  Shell::InitStandalone();
+  // Prepare command line arguments and initialize the shell.
+  std::vector<std::string> args;
+  args.push_back("sky_shell");
+  base::android::AppendJavaStringArrayToStringVector(env, jargs, &args);
+  Shell::InitStandalone(
+      ftl::CommandLineFromIterators(args.begin(), args.end()));
 
   InitializeTracing();
 }

@@ -7,6 +7,7 @@
 
 #include "base/threading/thread.h"
 #include "flutter/shell/common/tracing_controller.h"
+#include "lib/ftl/command_line.h"
 #include "lib/ftl/macros.h"
 #include "lib/ftl/memory/ref_ptr.h"
 #include "lib/ftl/memory/weak_ptr.h"
@@ -22,11 +23,13 @@ class Shell {
  public:
   ~Shell();
 
-  static void InitStandalone(std::string icu_data_path = "",
+  static void InitStandalone(ftl::CommandLine command_line,
+                             std::string icu_data_path = "",
                              std::string application_library_path = "");
-  static void Init();
 
   static Shell& Shared();
+
+  const ftl::CommandLine& GetCommandLine() const;
 
   TracingController& tracing_controller();
 
@@ -65,7 +68,9 @@ class Shell {
                          std::string* isolate_name);
 
  private:
-  Shell();
+  static void Init(ftl::CommandLine command_line);
+
+  Shell(ftl::CommandLine command_line);
 
   void InitGpuThread();
   void InitUIThread();
@@ -82,6 +87,8 @@ class Shell {
                                  int64_t* dart_isolate_id,
                                  std::string* isolate_name,
                                  ftl::AutoResetWaitableEvent* latch);
+
+  ftl::CommandLine command_line_;
 
   std::unique_ptr<base::Thread> gpu_thread_;
   std::unique_ptr<base::Thread> ui_thread_;
