@@ -3,8 +3,14 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/android_context_gl.h"
-
+#include "third_party/skia/include/gpu/GrContext.h"
+#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 #include <utility>
+
+// TODO: A newer version of eglext.h should recognize these extensions?
+// #include <EGL/eglext.h>
+#define EGL_GL_COLORSPACE_KHR 0x309D
+#define EGL_GL_COLORSPACE_SRGB_KHR 0x3089
 
 namespace shell {
 
@@ -112,43 +118,86 @@ static bool TeardownSurface(EGLDisplay display, EGLSurface surface) {
 }
 
 // For onscreen rendering.
-static EGLResult<EGLSurface> CreateWindowSurface(
-    EGLDisplay display,
-    EGLConfig config,
-    AndroidNativeWindow::Handle window_handle) {
+bool AndroidContextGL::CreateWindowSurface(
+    ftl::RefPtr<AndroidNativeWindow> window,
+    bool* srgb_support) {
   // The configurations are only required when dealing with extensions or VG.
   // We do neither.
+
+  window_ = std::move(window);
+  EGLDisplay display = environment_->Display();
+
+  EGLint srgb_attributes[] = {
+      EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR,
+      EGL_NONE,
+  };
+
+  EGLint attributes[] = {
+      EGL_NONE,
+  };
+
+  if (*srgb_support) {
+    EGLSurface srgb_surface = eglCreateWindowSurface(
+        display, config_,
+        reinterpret_cast<EGLNativeWindowType>(window_->handle()),
+        srgb_attributes);
+    if (srgb_surface != EGL_NO_SURFACE) {
+      surface_ = srgb_surface;
+      return true;
+    }
+  }
+
+  *srgb_support = false;
   EGLSurface surface = eglCreateWindowSurface(
-      display, config, reinterpret_cast<EGLNativeWindowType>(window_handle),
-      nullptr);
-  return {surface != EGL_NO_SURFACE, surface};
+      display, config_,
+      reinterpret_cast<EGLNativeWindowType>(window_->handle()),
+      attributes);
+
+  surface_ = surface;
+  return surface != EGL_NO_SURFACE;
 }
 
 // For offscreen rendering.
-static EGLResult<EGLSurface> CreatePBufferSurface(EGLDisplay display,
-                                                  EGLConfig config) {
+bool AndroidContextGL::CreatePBufferSurface(
+    bool* srgb_support) {
   // We only ever create pbuffer surfaces for background resource loading
   // contexts. We never bind the pbuffer to anything.
-  const EGLint attribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
-  EGLSurface surface = eglCreatePbufferSurface(display, config, attribs);
-  return {surface != EGL_NO_SURFACE, surface};
-}
 
-static EGLResult<EGLSurface> CreateSurface(
-    EGLDisplay display,
-    EGLConfig config,
-    ftl::RefPtr<AndroidNativeWindow> window) {
-  return window && window->IsValid()
-             ? CreateWindowSurface(display, config, window->handle())
-             : CreatePBufferSurface(display, config);
+  EGLDisplay display = environment_->Display();
+
+  const EGLint srgb_attribs[] = {
+      EGL_WIDTH, 1,
+      EGL_HEIGHT, 1,
+      EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR,
+      EGL_NONE
+  };
+  const EGLint attribs[] = {
+      EGL_WIDTH, 1,
+      EGL_HEIGHT, 1,
+      EGL_NONE
+  };
+
+  if (*srgb_support) {
+    EGLSurface srgb_surface = eglCreatePbufferSurface(display, config_,
+                                                      srgb_attribs);
+    if (srgb_surface != EGL_NO_SURFACE) {
+      surface_ = srgb_surface;
+      return true;
+    }
+  }
+
+  *srgb_support = false;
+  EGLSurface surface = eglCreatePbufferSurface(display, config_, attribs);
+
+  surface_ = surface;
+  return surface != EGL_NO_SURFACE;
 }
 
 AndroidContextGL::AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
-                                   ftl::RefPtr<AndroidNativeWindow> window,
                                    PlatformView::SurfaceConfig config,
                                    const AndroidContextGL* share_context)
     : environment_(env),
-      window_(window),
+      window_(nullptr),
       config_(nullptr),
       surface_(EGL_NO_SURFACE),
       context_(EGL_NO_CONTEXT),
@@ -170,17 +219,6 @@ AndroidContextGL::AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
     return;
   }
 
-  // Create a surface for the configuration.
-
-  std::tie(success, surface_) =
-      CreateSurface(environment_->Display(), config_, window_);
-
-  if (!success) {
-    FTL_LOG(ERROR) << "Could not create the EGL surface.";
-    LogLastEGLError();
-    return;
-  }
-
   // Create a context for the configuration.
 
   std::tie(success, context_) = CreateContext(
@@ -197,11 +235,6 @@ AndroidContextGL::AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
   valid_ = true;
 }
 
-AndroidContextGL::AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
-                                   PlatformView::SurfaceConfig config,
-                                   const AndroidContextGL* share_context)
-    : AndroidContextGL(env, nullptr, config, share_context) {}
-
 AndroidContextGL::~AndroidContextGL() {
   if (!TeardownContext(environment_->Display(), context_)) {
     FTL_LOG(ERROR) << "Could not tear down the EGL context. Possible resource leak.";
@@ -212,6 +245,16 @@ AndroidContextGL::~AndroidContextGL() {
     FTL_LOG(ERROR) << "Could not tear down the EGL surface. Possible resource leak.";
     LogLastEGLError();
   }
+}
+
+sk_sp<GrContext> AndroidContextGL::CreateGrContext() {
+  this->MakeCurrent();
+  auto backend_context =
+      reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface());
+  GrContext* gr_context = GrContext::Create(kOpenGL_GrBackend, backend_context);
+  this->ClearCurrent();
+
+  return sk_sp<GrContext>(gr_context);
 }
 
 ftl::RefPtr<AndroidEnvironmentGL> AndroidContextGL::Environment() const {
@@ -261,7 +304,7 @@ SkISize AndroidContextGL::GetSize() {
   return SkISize::Make(width, height);
 }
 
-bool AndroidContextGL::Resize(const SkISize& size) {
+bool AndroidContextGL::Resize(const SkISize& size, bool* srgb_support) {
   if (size == GetSize()) {
     return true;
   }
@@ -270,16 +313,12 @@ bool AndroidContextGL::Resize(const SkISize& size) {
 
   TeardownSurface(environment_->Display(), surface_);
 
-  bool success = false;
-  std::tie(success, surface_) =
-      CreateSurface(environment_->Display(), config_, window_);
-
-  MakeCurrent();
-
-  if (!success) {
+  if (!this->CreateWindowSurface(window_, srgb_support)) {
     FTL_LOG(ERROR) << "Unable to create EGL window surface on resize.";
     return false;
   }
+
+  MakeCurrent();
 
   return true;
 }

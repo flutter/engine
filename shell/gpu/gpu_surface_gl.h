@@ -22,6 +22,14 @@ class GPUSurfaceGLDelegate {
   virtual bool GLContextPresent() = 0;
 
   virtual intptr_t GLContextFBO() const = 0;
+
+  virtual sk_sp<GrContext> GetGrContext() const {
+    return nullptr;
+  }
+
+  virtual bool SupportsSRGB() const {
+    return false;
+  }
 };
 
 class GPUSurfaceGL : public Surface {
@@ -43,6 +51,7 @@ class GPUSurfaceGL : public Surface {
   sk_sp<GrContext> context_;
   sk_sp<SkSurface> cached_surface_;
   ftl::WeakPtrFactory<GPUSurfaceGL> weak_factory_;
+  bool srgb_support_;
 
   sk_sp<SkSurface> CreateSurface(const SkISize& size);
 

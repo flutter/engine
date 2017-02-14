@@ -38,6 +38,7 @@ RasterCache::Entry::~Entry() {}
 sk_sp<SkImage> RasterCache::GetPrerolledImage(GrContext* context,
                                               SkPicture* picture,
                                               const SkMatrix& ctm,
+                                              SkColorSpace* dst_color_space,
                                               bool is_complex,
                                               bool will_change) {
   SkScalar scaleX = ctm.getScaleX();
@@ -75,7 +76,9 @@ sk_sp<SkImage> RasterCache::GetPrerolledImage(GrContext* context,
       TRACE_EVENT2("flutter", "Rasterize picture layer", "width",
                    std::to_string(physical_size.width()).c_str(), "height",
                    std::to_string(physical_size.height()).c_str());
-      SkImageInfo info = SkImageInfo::MakeN32Premul(physical_size);
+      SkImageInfo info = SkImageInfo::MakeN32Premul(
+          physical_size.width(), physical_size.height(),
+          sk_ref_sp(dst_color_space));
       sk_sp<SkSurface> surface =
           SkSurface::MakeRenderTarget(context, SkBudgeted::kYes, info);
       if (surface) {
