@@ -38,6 +38,7 @@
 #include "third_party/skia/include/core/SkClipStack.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkDevice.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
@@ -267,7 +268,7 @@ bool GraphicsContext::getTransformedClipBounds(FloatRect* bounds) const
     if (contextDisabled())
         return false;
     SkIRect skIBounds;
-    if (!m_canvas->getDeviceClipBounds(&skIBounds))
+    if (!m_canvas->getClipDeviceBounds(&skIBounds))
         return false;
     SkRect skBounds = SkRect::Make(skIBounds);
     *bounds = FloatRect(skBounds);
@@ -1141,7 +1142,7 @@ void GraphicsContext::clipOutRoundedRect(const RoundedRect& rect)
     if (contextDisabled())
         return;
 
-    clipRoundedRect(rect, SkClipOp::kDifference);
+    clipRoundedRect(rect, kDifference_SkClipOp);
 }
 
 void GraphicsContext::canvasClip(const Path& pathToClip, WindRule clipRule)
