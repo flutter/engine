@@ -166,6 +166,10 @@ void PlatformView::SetupResourceContextOnIOThreadPerform(
   }
 
   GrContextOptions options;
+  // There is currently a bug with doing GPU YUV to RGB conversions on the IO thread.
+  // The necessary work isn't being flushed or synchronized with the other threads
+  // correctly, so the textures end up blank.  For now, suppress that feature, which
+  // will cause texture uploads to do CPU YUV conversion.
   options.fDisableGpuYUVConversion = true;
   blink::ResourceContext::Set(GrContext::Create(
       GrBackend::kOpenGL_GrBackend,

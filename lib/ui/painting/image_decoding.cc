@@ -30,7 +30,7 @@ sk_sp<SkImage> DecodeImage(std::vector<uint8_t> buffer) {
   if (buffer.empty())
     return nullptr;
 
-  sk_sp<SkData> sk_data = SkData::MakeWithoutCopy(buffer.data(), buffer.size());
+  sk_sp<SkData> sk_data = SkData::MakeWithCopy(buffer.data(), buffer.size());
 
   if (sk_data == nullptr)
     return nullptr;
