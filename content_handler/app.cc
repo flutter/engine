@@ -26,7 +26,7 @@ void QuitMessageLoop() {
 }  // namespace
 
 App::App() {
-  context_ = modular::ApplicationContext::CreateFromStartupInfo();
+  context_ = app::ApplicationContext::CreateFromStartupInfo();
 
   tracing::InitializeTracer(context_.get(), {});
 
@@ -46,14 +46,16 @@ App::App() {
                                      ui_task_runner,   // UI
                                      io_task_runner    // IO
                                      ));
-  blink::Settings::Set(blink::Settings());
+  blink::Settings settings;
+  settings.enable_observatory = true;
+  blink::Settings::Set(settings);
   blink::InitRuntime();
 
   blink::SetFontProvider(
       context_->ConnectToEnvironmentService<fonts::FontProvider>());
 
-  context_->outgoing_services()->AddService<modular::ApplicationRunner>(
-      [this](fidl::InterfaceRequest<modular::ApplicationRunner> request) {
+  context_->outgoing_services()->AddService<app::ApplicationRunner>(
+      [this](fidl::InterfaceRequest<app::ApplicationRunner> request) {
         runner_bindings_.AddBinding(this, std::move(request));
       });
 }
@@ -64,9 +66,9 @@ App::~App() {
 }
 
 void App::StartApplication(
-    modular::ApplicationPackagePtr application,
-    modular::ApplicationStartupInfoPtr startup_info,
-    fidl::InterfaceRequest<modular::ApplicationController> controller) {
+    app::ApplicationPackagePtr application,
+    app::ApplicationStartupInfoPtr startup_info,
+    fidl::InterfaceRequest<app::ApplicationController> controller) {
   std::unique_ptr<ApplicationControllerImpl> impl =
       std::make_unique<ApplicationControllerImpl>(this, std::move(application),
                                                   std::move(startup_info),

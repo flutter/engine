@@ -8,7 +8,7 @@ Things you will need
 
  * Linux or Mac OS X. (Windows is not yet supported.)
  * git (used for source version control).
- * An IDE. We recommend [IntelliJ with the Flutter plugin](https://flutter.io/intellij-ide/).
+ * An IDE. We recommend [IntelliJ with the Flutter plugin](https://flutter.io/intellij-ide/) or Xcode.
  * An ssh client (used to authenticate with GitHub).
  * Chromium's [depot_tools](http://www.chromium.org/developers/how-tos/install-depot-tools) (make sure it's in your path). We use the `gclient` tool from depot_tools.
  * Python (used by many of our tools, including 'gclient').
@@ -53,7 +53,7 @@ target_os = ["android"]
  * If you're on Mac, install Oracle's Java JDK, version 1.7 or later.
  * If you're on Mac, install `ant`: `brew install ant`
  * If you're planning on working on the [buildroot](https://github.com/flutter/buildroot) repository as well, and have a local checkout of that repository, run the following commands in the `src` directory to update your git remotes accordingly:
- 
+
  ```bash
  git remote rename origin upstream
  git remote add origin git@github.com:<your_name_here>/buildroot.git
@@ -74,14 +74,16 @@ dependency_overrides:
   sky_services:
     path: /path/to/flutter/engine/out/host_debug/gen/dart-pkg/sky_services
 ```
+Depending on the platform you choose below, you will need to replace `host_debug` with the appropriate directory.
 
 ### Android (cross-compiling from Mac or Linux)
 
 Run the following steps, from the `src` directory created in the steps above:
 
- * `gclient sync` to update your dependencies.
- * `./flutter/tools/gn --android --unoptimized` to prepare your build files.
- * `ninja -C out/android_debug_unopt` to actually build the Android binary.
+* `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
+* `gclient sync` to update your dependencies.
+* `./flutter/tools/gn --android --unoptimized` to prepare your build files (or `--android --android_cpu [x86|x64] --unoptimized` for x86/x64 emulators) .
+* `ninja -C out/android_debug_unopt` to actually build the Android binary (or `out/android_debug_unopt_x64 for x86/x64 emulators).
 
 This builds a debug-enabled ("unoptimized") binary configured to run Dart in
 checked mode ("debug"). There are other versions, [discussed on the wiki](https://github.com/flutter/flutter/wiki/Flutter's-modes).
@@ -100,7 +102,7 @@ sure you have a device connected over USB and debugging enabled on that device:
 
  * `cd /path/to/flutter/examples/hello_world`
  * `pub get`
- * `../../bin/flutter run --local-engine-src-path /path/to/engine/src --local-engine=android_debug_unopt`
+ * `../../bin/flutter run --local-engine-src-path /path/to/engine/src --local-engine=android_debug_unopt` or `--local-engine=android_debug_unopt_x64`
 
 If you put the `engine` and `flutter` directories side-by-side, you can skip the
 tedious `--local-engine-src-path` option and the `flutter` tool will
@@ -121,25 +123,28 @@ to test the engine.
 ### iOS (cross-compiling from Mac)
 
 * Make sure you have Xcode 7.3.0+ installed.
+* `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
 * `gclient sync` to update dependencies.
-* `./flutter/tools/gn --ios --unoptimized` to prepare build files.
+* `./flutter/tools/gn --ios --unoptimized` to prepare build files (or `--ios --simulator --unoptimized` for simulator).
   * For a discussion on the various flags and modes, [read this discussion](https://github.com/flutter/flutter/wiki/Flutter's-modes).
-* `ninja -C out/ios_debug_unopt` to build iOS artifacts.
+  * This also produces an Xcode project for working with the engine source code at `out/ios_debug_unopt`
+* `ninja -C out/ios_debug_unopt` to build iOS artifacts (or `out/ios_debug_sim_unopt` for simulator).
 
 Once the artifacts are built, you can start using them in your application by following these steps:
 * `cd /path/to/flutter/examples/hello_world`
 * `pub get`
-* `../../bin/flutter run --local-engine-src-path /path/to/engine/src --local-engine=ios_debug_unopt`
-  * Depending on the configuration you built, modify the `local-engine` flag.
-* If you are debugging crashes in the engine, you can connect the `LLDB` debugger from `Xcode` by opening `ios/Runner.xcodeproj` and starting the application by clicking the Run button (CMD + R).
+* `../../bin/flutter run --local-engine-src-path /path/to/engine/src --local-engine=ios_debug_unopt` or `--local-engine=ios_debug_sim_unopt` for simulator
+  * If you are debugging crashes in the engine, you can connect the `LLDB` debugger from `Xcode` by opening `ios/Runner.xcworkspace` and starting the application by clicking the Run button (CMD + R).
+  * To debug non crashing code, open Xcode with `ios/Runner.xcworkspace`, expand Flutter->Runner->Supporting Files->main.m in the Runner project. Put a breakpoint in main() then set your desired breakpoint in the engine in lldb via `breakpoint set -...`.
 
 
 ### Desktop (Mac and Linux), for tests
 
- * `gclient sync` to update your dependencies.
- * `./flutter/tools/gn --unoptimized` to prepare your build files.
- * `ninja -C out/host_debug_unopt` to build a desktop unoptimized binary.
- * `--unoptimized` disables C++ compiler optimizations and does not strip debug symbols. You may skip the flag and invoke `ninja -C out/host_debug` if you would rather have the native components optimized.
+* `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
+* `gclient sync` to update your dependencies.
+* `./flutter/tools/gn --unoptimized` to prepare your build files.
+* `ninja -C out/host_debug_unopt` to build a desktop unoptimized binary.
+* `--unoptimized` disables C++ compiler optimizations and does not strip debug symbols. You may skip the flag and invoke `ninja -C out/host_debug` if you would rather have the native components optimized.
 
 To run the tests, you'll also need to clone [the main Flutter repository](https://github.com/flutter/flutter).
 See [the instructions for contributing](https://github.com/flutter/flutter/blob/master/CONTRIBUTING.md)

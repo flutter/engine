@@ -79,16 +79,16 @@ const char kSnapshotAssetKey[] = "snapshot_blob.bin";
 
 namespace {
 
-static const char* kDartMirrorsArgs[] = {
+// Arguments passed to the Dart VM in all configurations.
+static const char* kDartLanguageArgs[] = {
     "--enable_mirrors=false",
+    "--background_compilation",
+    "--await_is_keyword",
+    "--assert_initializer",
 };
 
 static const char* kDartPrecompilationArgs[] = {
     "--precompilation",
-};
-
-static const char* kDartBackgroundCompilationArgs[] = {
-    "--background_compilation",
 };
 
 static const char* kDartWriteProtectCodeArgs[] FTL_ALLOW_UNUSED_TYPE = {
@@ -200,9 +200,9 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
   Dart_Isolate isolate = Dart_CreateIsolate(
       script_uri, "main",
       reinterpret_cast<const uint8_t*>(DART_SYMBOL(kDartIsolateSnapshotData)),
-      reinterpret_cast<const uint8_t*>(DART_SYMBOL(kDartIsolateSnapshotInstructions)),
-      nullptr,
-      dart_state, error);
+      reinterpret_cast<const uint8_t*>(
+          DART_SYMBOL(kDartIsolateSnapshotInstructions)),
+      nullptr, dart_state, error);
   FTL_CHECK(isolate) << error;
   dart_state->SetIsolate(isolate);
   FTL_CHECK(Dart_IsServiceIsolate(isolate));
@@ -283,8 +283,7 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
       script_uri, main,
       reinterpret_cast<uint8_t*>(DART_SYMBOL(kDartIsolateSnapshotData)),
       reinterpret_cast<uint8_t*>(DART_SYMBOL(kDartIsolateSnapshotInstructions)),
-      nullptr,
-      dart_state, error);
+      nullptr, dart_state, error);
   FTL_CHECK(isolate) << error;
   dart_state->SetIsolate(isolate);
   FTL_CHECK(!LogIfError(
@@ -341,7 +340,7 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
 }
 
 Dart_Handle GetVMServiceAssetsArchiveCallback() {
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE || defined(OS_FUCHSIA)
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
   return nullptr;
 #else   // FLUTTER_RUNTIME_MODE
   return tonic::DartConverter<tonic::Uint8List>::ToDart(
@@ -385,9 +384,11 @@ DartJniIsolateData* GetDartJniDataForCurrentIsolate() {
 #if DART_ALLOW_DYNAMIC_RESOLUTION
 
 constexpr char kDartVmSnapshotDataName[] = "kDartVmSnapshotData";
-constexpr char kDartVmSnapshotInstructionsName[] = "kDartVmSnapshotInstructions";
+constexpr char kDartVmSnapshotInstructionsName[] =
+    "kDartVmSnapshotInstructions";
 constexpr char kDartIsolateSnapshotDataName[] = "kDartIsolateSnapshotData";
-constexpr char kDartIsolateSnapshotInstructionsName[] = "kDartIsolateSnapshotInstructions";
+constexpr char kDartIsolateSnapshotInstructionsName[] =
+    "kDartIsolateSnapshotInstructions";
 
 #if OS(IOS)
 
@@ -614,9 +615,7 @@ void InitDartVM() {
     args.push_back(profiler_flag);
   }
 
-  PushBackAll(&args, kDartMirrorsArgs, arraysize(kDartMirrorsArgs));
-  PushBackAll(&args, kDartBackgroundCompilationArgs,
-              arraysize(kDartBackgroundCompilationArgs));
+  PushBackAll(&args, kDartLanguageArgs, arraysize(kDartLanguageArgs));
 
   if (IsRunningPrecompiledCode()) {
     PushBackAll(&args, kDartPrecompilationArgs,
@@ -630,7 +629,8 @@ void InitDartVM() {
 #else
   // Enable checked mode if we are not running precompiled code. We run non-
   // precompiled code only in the debug product mode.
-  const bool use_checked_mode = !IsRunningPrecompiledCode();
+  const bool use_checked_mode =
+      !IsRunningPrecompiledCode() && !settings.dart_non_checked_mode;
 #endif
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG

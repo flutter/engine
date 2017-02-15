@@ -15,11 +15,13 @@ executable("linux") {
 
   deps = [
     "//base",
+    "//dart/runtime/bin:embedded_dart_io",
     "//flutter/common",
     "//flutter/shell/common",
     "//flutter/shell/gpu",
     "//flutter/shell/testing",
     "//lib/ftl",
+    "//lib/tonic",
 
     # Required by FontCacheLinux. Not Skia. Skia uses a custom font manager
     # that delegates to us.

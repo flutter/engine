@@ -6,7 +6,7 @@
 
 #include <utility>
 
-#include "apps/modular/lib/app/connect.h"
+#include "application/lib/app/connect.h"
 #include "dart/runtime/include/dart_api.h"
 #include "flutter/assets/zip_asset_store.h"
 #include "flutter/common/threads.h"
@@ -82,8 +82,8 @@ RuntimeHolder::~RuntimeHolder() {
 }
 
 void RuntimeHolder::Init(
-    fidl::InterfaceHandle<modular::ApplicationEnvironment> environment,
-    fidl::InterfaceRequest<modular::ServiceProvider> outgoing_services,
+    fidl::InterfaceHandle<app::ApplicationEnvironment> environment,
+    fidl::InterfaceRequest<app::ServiceProvider> outgoing_services,
     std::vector<char> bundle) {
   FTL_DCHECK(!rasterizer_);
   rasterizer_ = Rasterizer::Create();
@@ -100,7 +100,7 @@ void RuntimeHolder::Init(
 void RuntimeHolder::CreateView(
     const std::string& script_uri,
     fidl::InterfaceRequest<mozart::ViewOwner> view_owner_request,
-    fidl::InterfaceRequest<modular::ServiceProvider> services) {
+    fidl::InterfaceRequest<app::ServiceProvider> services) {
   if (view_listener_binding_.is_bound()) {
     // TODO(jeffbrown): Refactor this to support multiple view instances
     // sharing the same underlying root bundle (but with different runtimes).
@@ -123,7 +123,7 @@ void RuntimeHolder::CreateView(
                             std::move(view_owner_request),
                             std::move(view_listener), script_uri);
 
-  modular::ServiceProviderPtr view_services;
+  app::ServiceProviderPtr view_services;
   view_->GetServiceProvider(GetProxy(&view_services));
 
   // Listen for input events.
@@ -150,6 +150,9 @@ void RuntimeHolder::CreateView(
   runtime_ = blink::RuntimeController::Create(this);
   runtime_->CreateDartController(script_uri);
   runtime_->SetViewportMetrics(viewport_metrics_);
+#if FLUTTER_ENABLE_VULKAN
+  direct_input_->SetViewportMetrics(viewport_metrics_);
+#endif  // FLUTTER_ENABLE_VULKAN
   if (!kernel.empty()) {
     runtime_->dart_controller()->RunFromKernel(kernel.data(),
                                                kernel.size());
@@ -206,7 +209,7 @@ void RuntimeHolder::DidCreateMainIsolate(Dart_Isolate isolate) {
 }
 
 void RuntimeHolder::InitFidlInternal() {
-  fidl::InterfaceHandle<modular::ApplicationEnvironment> environment;
+  fidl::InterfaceHandle<app::ApplicationEnvironment> environment;
   environment_->Duplicate(GetProxy(&environment));
 
   Dart_Handle fidl_internal = Dart_LookupLibrary(ToDart("dart:fidl.internal"));
@@ -350,6 +353,11 @@ void RuntimeHolder::OnInvalidation(mozart::ViewInvalidationPtr invalidation,
     // TODO(abarth): Use view_properties_->display_metrics->device_pixel_ratio
     // once that's reasonable.
     runtime_->SetViewportMetrics(viewport_metrics_);
+#if FLUTTER_ENABLE_VULKAN
+    if (direct_input_) {
+      direct_input_->SetViewportMetrics(viewport_metrics_);
+    }
+#endif  // FLUTTER_ENABLE_VULKAN
   }
 
   // Remember the scene version for rendering.

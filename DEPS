@@ -23,11 +23,11 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   'github_git': 'https://github.com',
   'base_revision': 'b2412302ed4e45bfb47d7b5c0c3418077009e1ce',
-  'skia_revision': '130a118cc68f8f9973e9572356011de378463fea',
+  'skia_revision': '246a3c269d8dc91a47ff27f7b71508bf9e74edf5',
 
   # Note: When updating the Dart revision, ensure that all entries that are
   # dependencies of dart are also updated
-  'dart_revision': 'ed00447138f95ea4ba612509a244ca8205735372',
+  'dart_revision': '9a7a04525f638b57a746706c3575df66cf02bc2d',
   'dart_boringssl_gen_revision': '1a810313a0290e1caace9da73fa3ab89995ad2c7',
   'dart_boringssl_revision': 'd519bf6be0b447fb80fbc539d4bff4479b5482a2',
   'dart_observatory_packages_revision': '26aad88f1c1915d39bbcbff3cad589e2402fdcf1',
@@ -46,7 +46,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '62de2ab9a1e6ffdaec93b74f6e0b4adf57c3f571',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '3c2e6f318c48685d20b69a9bf4f42fb40b4ff1fc',
 
    # Fuchsia compatibility
    #
@@ -58,7 +58,7 @@ deps = {
    Var('fuchsia_git') + '/ftl' + '@' + 'bb82d5f52ecca65650817a1c31c1f49eca54237a',
 
   'src/lib/tonic':
-   Var('fuchsia_git') + '/tonic' + '@' + '4214b35e02a1286a5fb98895d0c480fa0da10f6d',
+   Var('fuchsia_git') + '/tonic' + '@' + 'a7d3dd8a809097c0e2be1a2893ba73c83f84d776',
 
   'src/lib/zip':
    Var('fuchsia_git') + '/zip' + '@' + '92dc87ca645fe8e9f5151ef6dac86d8311a7222f',

@@ -249,6 +249,7 @@ source_set("platform") {
     "//flutter/common",
     "//flutter/sky/engine/wtf",
     "//third_party/skia",
+    "//third_party/skia:effects",
     "//third_party/skia:gpu",
   ]
 
@@ -263,17 +264,12 @@ source_set("platform") {
     sources += [ "fonts/apple/FontPlatformDataApple.cpp" ]
   }
 
-  if (is_ios) {
-    deps += [ "//base" ]
-    sources += [ "fonts/apple/FontCacheIOS.mm" ]
-  }
-
   if (is_mac && !is_ios) {
     sources += [ "fonts/apple/FontCacheMac.cpp" ]
   }
 
-  if (is_android) {
-    sources += [ "fonts/android/FontCacheAndroid.cpp" ]
+  if (is_android || is_ios) {
+    sources += [ "fonts/mobile/FontCacheMobile.cpp" ]
   }
 
   if (is_linux && !is_android) {
