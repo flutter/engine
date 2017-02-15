@@ -150,7 +150,7 @@ void RuntimeHolder::CreateView(
   runtime_ = blink::RuntimeController::Create(this);
   runtime_->CreateDartController(script_uri);
   runtime_->SetViewportMetrics(viewport_metrics_);
-  if (kernel) {
+  if (!kernel.empty()) {
     runtime_->dart_controller()->RunFromKernel(kernel.data(),
                                                kernel.size());
   } else {
