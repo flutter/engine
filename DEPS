@@ -23,7 +23,7 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   'github_git': 'https://github.com',
   'base_revision': 'b2412302ed4e45bfb47d7b5c0c3418077009e1ce',
-  'skia_revision': '246a3c269d8dc91a47ff27f7b71508bf9e74edf5',
+  'skia_revision': 'c43559e6e6bd403c5f3abc46a33e996498eef63f',
 
   # Note: When updating the Dart revision, ensure that all entries that are
   # dependencies of dart are also updated
