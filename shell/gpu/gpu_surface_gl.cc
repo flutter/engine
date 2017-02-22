@@ -110,7 +110,8 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
 
 bool GPUSurfaceGL::SelectPixelConfig(GrPixelConfig* config) {
   if (srgb_support_) {
-    SkASSERT(context_->caps()->isConfigRenderable(kSRGBA_8888_GrPixelConfig, false));
+    FTL_DCHECK(context_->caps()->isConfigRenderable(kSRGBA_8888_GrPixelConfig,
+                                                    false));
     *config = kSRGBA_8888_GrPixelConfig;
     return true;
   }

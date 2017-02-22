@@ -19,9 +19,9 @@ class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
  public:
 
   bool CreateWindowSurface(ftl::RefPtr<AndroidNativeWindow> window,
-                           bool* srgb_support);
+                           bool use_srgb);
 
-  bool CreatePBufferSurface(bool* srgb_support);
+  bool CreatePBufferSurface(bool use_srgb);
 
   sk_sp<GrContext> CreateGrContext();
 
@@ -37,7 +37,9 @@ class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
 
   SkISize GetSize();
 
-  bool Resize(const SkISize& size, bool* srgb_support);
+  bool Resize(const SkISize& size, bool use_srgb);
+
+  bool SupportsSRGB() const;
 
  private:
   ftl::RefPtr<AndroidEnvironmentGL> environment_;
@@ -45,6 +47,7 @@ class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
   EGLConfig config_;
   EGLSurface surface_;
   EGLContext context_;
+  bool srgb_support_;
   bool valid_;
 
   AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,

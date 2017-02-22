@@ -52,14 +52,14 @@ class AndroidSurfaceGL : public GPUSurfaceGLDelegate, public AndroidSurface {
   }
 
   bool SupportsSRGB() const override {
-    return srgb_support_;
+    return use_srgb_;
   }
 
  private:
   ftl::RefPtr<AndroidContextGL> onscreen_context_;
   ftl::RefPtr<AndroidContextGL> offscreen_context_;
   sk_sp<GrContext> gr_context_;
-  bool srgb_support_;
+  bool use_srgb_;
 
   FTL_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGL);
 };

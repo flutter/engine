@@ -60,12 +60,12 @@ AndroidSurfaceGL::AndroidSurfaceGL(
     return;
   }
 
-  // Check if the GrContext supports sRGB transfer function.  On its own, this
-  // is not sufficient to ensure sRGB support.  We also need to verify that we
-  // have proper EGL support.
-  srgb_support_ = gr_context_->caps()->srgbSupport();
+  // Check if the GrContext supports sRGB transfer function.  This, along
+  // with EGL support, means that we can use sRGB mode.
+  use_srgb_ = gr_context_->caps()->srgbSupport() &&
+              offscreen_context_->SupportsSRGB();
 
-  if (!offscreen_context_->CreatePBufferSurface(&srgb_support_)) {
+  if (!offscreen_context_->CreatePBufferSurface(use_srgb_)) {
     FTL_LOG(ERROR) << "Could not create the EGL surface.";
     offscreen_context_ = nullptr;
   }
@@ -114,10 +114,7 @@ SkISize AndroidSurfaceGL::OnScreenSurfaceSize() const {
 
 bool AndroidSurfaceGL::OnScreenSurfaceResize(const SkISize& size) const {
   FTL_DCHECK(onscreen_context_ && onscreen_context_->IsValid());
-  bool srgb_support = srgb_support_;
-  bool success = onscreen_context_->Resize(size, &srgb_support);
-  FTL_DCHECK(srgb_support == srgb_support_);
-  return success;
+  return onscreen_context_->Resize(size, use_srgb_);
 }
 
 bool AndroidSurfaceGL::ResourceContextMakeCurrent() {
@@ -146,8 +143,7 @@ bool AndroidSurfaceGL::SetNativeWindow(ftl::RefPtr<AndroidNativeWindow> window,
     return false;
   }
 
-  if (!onscreen_context_->CreateWindowSurface(std::move(window),
-                                              &srgb_support_)) {
+  if (!onscreen_context_->CreateWindowSurface(std::move(window), use_srgb_)) {
     onscreen_context_ = nullptr;
     return false;
   }

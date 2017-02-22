@@ -5,12 +5,16 @@
 #include "flutter/shell/platform/android/android_context_gl.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
+#include <EGL/eglext.h>
 #include <utility>
 
-// TODO: A newer version of eglext.h should recognize these extensions?
-// #include <EGL/eglext.h>
+#ifndef EGL_GL_COLORSPACE_KHR
 #define EGL_GL_COLORSPACE_KHR 0x309D
+#endif
+
+#ifndef EGL_GL_COLORSPACE_SRGB_KHR
 #define EGL_GL_COLORSPACE_SRGB_KHR 0x3089
+#endif
 
 namespace shell {
 
@@ -120,46 +124,38 @@ static bool TeardownSurface(EGLDisplay display, EGLSurface surface) {
 // For onscreen rendering.
 bool AndroidContextGL::CreateWindowSurface(
     ftl::RefPtr<AndroidNativeWindow> window,
-    bool* srgb_support) {
+    bool use_srgb) {
+  FTL_DCHECK(!use_srgb || srgb_support_);
+
   // The configurations are only required when dealing with extensions or VG.
   // We do neither.
 
   window_ = std::move(window);
   EGLDisplay display = environment_->Display();
 
-  EGLint srgb_attributes[] = {
+  const EGLint srgb_attribs[] = {
       EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR,
-      EGL_NONE,
+      EGL_NONE
+  };
+  const EGLint default_attribs[] = {
+      EGL_NONE
   };
 
-  EGLint attributes[] = {
-      EGL_NONE,
-  };
-
-  if (*srgb_support) {
-    EGLSurface srgb_surface = eglCreateWindowSurface(
-        display, config_,
-        reinterpret_cast<EGLNativeWindowType>(window_->handle()),
-        srgb_attributes);
-    if (srgb_surface != EGL_NO_SURFACE) {
-      surface_ = srgb_surface;
-      return true;
-    }
+  const EGLint* attribs = default_attribs;
+  if (use_srgb) {
+    attribs = srgb_attribs;
   }
 
-  *srgb_support = false;
-  EGLSurface surface = eglCreateWindowSurface(
+  surface_ = eglCreateWindowSurface(
       display, config_,
-      reinterpret_cast<EGLNativeWindowType>(window_->handle()),
-      attributes);
-
-  surface_ = surface;
-  return surface != EGL_NO_SURFACE;
+      reinterpret_cast<EGLNativeWindowType>(window_->handle()), attribs);
+  return surface_ != EGL_NO_SURFACE;
 }
 
 // For offscreen rendering.
-bool AndroidContextGL::CreatePBufferSurface(
-    bool* srgb_support) {
+bool AndroidContextGL::CreatePBufferSurface(bool use_srgb) {
+  FTL_DCHECK(!use_srgb || srgb_support_);
+
   // We only ever create pbuffer surfaces for background resource loading
   // contexts. We never bind the pbuffer to anything.
 
@@ -171,26 +167,19 @@ bool AndroidContextGL::CreatePBufferSurface(
       EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR,
       EGL_NONE
   };
-  const EGLint attribs[] = {
+  const EGLint default_attribs[] = {
       EGL_WIDTH, 1,
       EGL_HEIGHT, 1,
       EGL_NONE
   };
 
-  if (*srgb_support) {
-    EGLSurface srgb_surface = eglCreatePbufferSurface(display, config_,
-                                                      srgb_attribs);
-    if (srgb_surface != EGL_NO_SURFACE) {
-      surface_ = srgb_surface;
-      return true;
-    }
+  const EGLint* attribs = default_attribs;
+  if (use_srgb) {
+    attribs = srgb_attribs;
   }
 
-  *srgb_support = false;
-  EGLSurface surface = eglCreatePbufferSurface(display, config_, attribs);
-
-  surface_ = surface;
-  return surface != EGL_NO_SURFACE;
+  surface_ = eglCreatePbufferSurface(display, config_, attribs);
+  return surface_ != EGL_NO_SURFACE;
 }
 
 AndroidContextGL::AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
@@ -230,6 +219,12 @@ AndroidContextGL::AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
     LogLastEGLError();
     return;
   }
+
+  // On its own, this is not enough to guarantee that we will render in
+  // sRGB mode. We also need to query GL using the GrContext.
+
+  const char* exts = eglQueryString(environment_->Display(), EGL_EXTENSIONS);
+  srgb_support_ = strstr(exts, "EGL_KHR_gl_colorspace");
 
   // All done!
   valid_ = true;
@@ -304,7 +299,7 @@ SkISize AndroidContextGL::GetSize() {
   return SkISize::Make(width, height);
 }
 
-bool AndroidContextGL::Resize(const SkISize& size, bool* srgb_support) {
+bool AndroidContextGL::Resize(const SkISize& size, bool use_srgb) {
   if (size == GetSize()) {
     return true;
   }
@@ -313,7 +308,7 @@ bool AndroidContextGL::Resize(const SkISize& size, bool* srgb_support) {
 
   TeardownSurface(environment_->Display(), surface_);
 
-  if (!this->CreateWindowSurface(window_, srgb_support)) {
+  if (!this->CreateWindowSurface(window_, use_srgb)) {
     FTL_LOG(ERROR) << "Unable to create EGL window surface on resize.";
     return false;
   }
@@ -321,6 +316,10 @@ bool AndroidContextGL::Resize(const SkISize& size, bool* srgb_support) {
   MakeCurrent();
 
   return true;
+}
+
+bool AndroidContextGL::SupportsSRGB() const {
+  return srgb_support_;
 }
 
 }  // namespace shell
