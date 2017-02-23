@@ -5,8 +5,6 @@
 #include "flutter/lib/ui/painting/image_decoding.h"
 
 #include "flutter/common/threads.h"
-#include "flutter/flow/bitmap_image.h"
-#include "flutter/flow/texture_image.h"
 #include "flutter/glue/trace_event.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/resource_context.h"
@@ -24,31 +22,28 @@ using tonic::ToDart;
 namespace blink {
 namespace {
 
-sk_sp<SkImage> DecodeImage(std::vector<uint8_t> buffer) {
+sk_sp<SkImage> DecodeImage(sk_sp<SkData> buffer) {
   TRACE_EVENT0("blink", "DecodeImage");
 
-  if (buffer.empty())
+  if (buffer == nullptr || buffer->isEmpty()) {
     return nullptr;
+  }
 
-  sk_sp<SkData> sk_data = SkData::MakeWithoutCopy(buffer.data(), buffer.size());
+  auto raster_image = SkImage::MakeFromEncoded(std::move(buffer));
 
-  if (sk_data == nullptr)
+  if (raster_image == nullptr) {
     return nullptr;
+  }
 
-  std::unique_ptr<SkImageGenerator> generator(
-      SkImageGenerator::NewFromEncoded(sk_data.get()));
+  if (auto context = ResourceContext::Get()) {
+    auto colorspace = SkColorSpace::MakeSRGB();
+    if (auto texture_image =
+            raster_image->makeTextureImage(context, colorspace.get())) {
+      return texture_image;
+    }
+  }
 
-  if (generator == nullptr)
-    return nullptr;
-
-  // First, try to create a texture image from the generator.
-  GrContext* context = ResourceContext::Get();
-  if (sk_sp<SkImage> image = flow::TextureImageCreate(context, *generator))
-    return image;
-
-  // Then, as a fallback, try to create a regular Skia managed image. These
-  // don't require a context ready.
-  return flow::BitmapImageCreate(*generator);
+  return raster_image;
 }
 
 void InvokeImageCallback(sk_sp<SkImage> image,
@@ -68,7 +63,7 @@ void InvokeImageCallback(sk_sp<SkImage> image,
 
 void DecodeImageAndInvokeImageCallback(
     std::unique_ptr<DartPersistentValue> callback,
-    std::vector<uint8_t> buffer) {
+    sk_sp<SkData> buffer) {
   sk_sp<SkImage> image = DecodeImage(std::move(buffer));
   Threads::UI()->PostTask(
       ftl::MakeCopyable([ callback = std::move(callback), image ]() mutable {
@@ -92,8 +87,7 @@ void DecodeImageFromList(Dart_NativeArguments args) {
     return;
   }
 
-  const uint8_t* bytes = reinterpret_cast<const uint8_t*>(list.data());
-  std::vector<uint8_t> buffer(bytes, bytes + list.num_elements());
+  auto buffer = SkData::MakeWithCopy(list.data(), list.num_elements());
 
   Threads::IO()->PostTask(ftl::MakeCopyable([
     callback = std::make_unique<DartPersistentValue>(

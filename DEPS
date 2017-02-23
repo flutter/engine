@@ -23,11 +23,11 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   'github_git': 'https://github.com',
   'base_revision': 'b2412302ed4e45bfb47d7b5c0c3418077009e1ce',
-  'skia_revision': '246a3c269d8dc91a47ff27f7b71508bf9e74edf5',
+  'skia_revision': '1c8e82b72bfeb1a02297688cf082c365b62705f7',
 
   # Note: When updating the Dart revision, ensure that all entries that are
   # dependencies of dart are also updated
-  'dart_revision': '9a7a04525f638b57a746706c3575df66cf02bc2d',
+  'dart_revision': '1ed4c27c01de6680766593b88a531ef86883a117',
   'dart_boringssl_gen_revision': '1a810313a0290e1caace9da73fa3ab89995ad2c7',
   'dart_boringssl_revision': 'd519bf6be0b447fb80fbc539d4bff4479b5482a2',
   'dart_observatory_packages_revision': '26aad88f1c1915d39bbcbff3cad589e2402fdcf1',
