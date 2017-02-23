@@ -313,7 +313,7 @@ void RuntimeHolder::OnEvent(mozart::InputEventPtr event,
     if (keyboard->phase == mozart::KeyboardEvent::Phase::PRESSED)
       type = "keydown";
     else if (keyboard->phase == mozart::KeyboardEvent::Phase::REPEAT)
-      type = "keydown";
+      type = "keydown";  // TODO change this to keyrepeat
     else if (keyboard->phase == mozart::KeyboardEvent::Phase::RELEASED)
       type = "keyup";
 
