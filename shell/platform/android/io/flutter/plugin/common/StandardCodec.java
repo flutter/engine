@@ -74,16 +74,17 @@ final class StandardCodec implements MessageCodec {
     private static final byte NULL = 0;
     private static final byte TRUE = 1;
     private static final byte FALSE = 2;
-    private static final byte INT32 = 3;
-    private static final byte INT64 = 4;
+    private static final byte INT = 3;
+    private static final byte LONG = 4;
     private static final byte BIGINT = 5;
-    // static final byte FLOAT32 = 6; // Not currently used.
-    private static final byte FLOAT64 = 7;
-    private static final byte STRING = 8;
-    // private static final byte REPEATED_STRING = 9; // Not currently used.
-    private static final byte BYTES = 10;
-    private static final byte LIST = 11;
-    private static final byte MAP = 12;
+    private static final byte DOUBLE = 6;
+    private static final byte STRING = 7;
+    private static final byte BYTE_ARRAY = 8;
+    private static final byte INT_ARRAY = 9;
+    private static final byte LONG_ARRAY = 10;
+    private static final byte DOUBLE_ARRAY = 11;
+    private static final byte LIST = 12;
+    private static final byte MAP = 13;
 
     private static void writeSize(ByteArrayOutputStream stream, int value) {
         assert 0 <= value;
@@ -117,13 +118,22 @@ final class StandardCodec implements MessageCodec {
         stream.write((byte) value);
     }
 
-    private static void writeBytes(ByteArrayOutputStream stream, byte[] bytes) {
-        writeBytes(stream, bytes, 0, bytes.length);
+    private static void writeDouble(ByteArrayOutputStream stream, double value) {
+        writeLong(stream, Double.doubleToLongBits(value));
     }
 
-    private static void writeBytes(ByteArrayOutputStream stream, byte[] bytes, int offset, int length) {
-        writeSize(stream, length);
-        stream.write(bytes, offset, length);
+    private static void writeBytes(ByteArrayOutputStream stream, byte[] bytes) {
+        writeSize(stream, bytes.length);
+        stream.write(bytes, 0, bytes.length);
+    }
+
+    private static void writeAlignment(ByteArrayOutputStream stream, int alignment) {
+        final int mod = stream.size() % alignment;
+        if (mod != 0) {
+            for (int i = 0; i < alignment - mod; i++) {
+                stream.write(0);
+            }
+        }
     }
 
     private static void writeValue(ByteArrayOutputStream stream, Object value) {
@@ -135,41 +145,49 @@ final class StandardCodec implements MessageCodec {
             stream.write(FALSE);
         } else if (value instanceof Number) {
             if (value instanceof Float || value instanceof Double) {
-                stream.write(FLOAT64);
-                writeLong(stream, Double.doubleToLongBits(((Number) value).doubleValue()));
+                stream.write(DOUBLE);
+                writeDouble(stream, ((Number) value).doubleValue());
             } else if (value instanceof BigInteger) {
                 stream.write(BIGINT);
                 writeBytes(stream,
                     ((BigInteger) value).toString(16).getBytes(StandardCharsets.UTF_8));
             } else if (value instanceof Long) {
-                stream.write(INT64);
+                stream.write(LONG);
                 writeLong(stream, (long) value);
             } else {
-                stream.write(INT32);
+                stream.write(INT);
                 writeInt(stream, ((Number) value).intValue());
             }
         } else if (value instanceof String) {
             stream.write(STRING);
             writeBytes(stream, ((String) value).getBytes(StandardCharsets.UTF_8));
         } else if (value instanceof byte[]) {
-            stream.write(BYTES);
+            stream.write(BYTE_ARRAY);
             writeBytes(stream, (byte[]) value);
-        } else if (value instanceof ByteBuffer) {
-            stream.write(BYTES);
-            final ByteBuffer buffer = (ByteBuffer) value;
-            final byte[] bytes;
-            final int offset;
-            final int length = buffer.remaining();
-            if (buffer.hasArray()) {
-                bytes = buffer.array();
-                offset = buffer.arrayOffset();
+        } else if (value instanceof int[]) {
+            stream.write(INT_ARRAY);
+            final int[] array = (int[]) value;
+            writeSize(stream, array.length);
+            writeAlignment(stream, 4);
+            for (final int n : array) {
+                writeInt(stream, n);
             }
-            else {
-                bytes = new byte[length];
-                buffer.get(bytes);
-                offset = 0;
+        } else if (value instanceof long[]) {
+            stream.write(LONG_ARRAY);
+            final long[] array = (long[]) value;
+            writeSize(stream, array.length);
+            writeAlignment(stream, 8);
+            for (final long n : array) {
+                writeLong(stream, n);
             }
-            writeBytes(stream, bytes, offset, length);
+        } else if (value instanceof double[]) {
+            stream.write(DOUBLE_ARRAY);
+            final double[] array = (double[]) value;
+            writeSize(stream, array.length);
+            writeAlignment(stream, 8);
+            for (final double d : array) {
+                writeDouble(stream, d);
+            }
         } else if (value instanceof List) {
             stream.write(LIST);
             final List<?> list = (List) value;
@@ -208,6 +226,20 @@ final class StandardCodec implements MessageCodec {
         }
     }
 
+    private static byte[] readBytes(ByteBuffer buffer) {
+        final int length = readSize(buffer);
+        final byte[] bytes = new byte[length];
+        buffer.get(bytes);
+        return bytes;
+    }
+
+    private static void readAlignment(ByteBuffer buffer, int alignment) {
+        final int mod = buffer.position() % alignment;
+        if (mod != 0) {
+            buffer.position(buffer.position() + alignment - mod);
+        }
+    }
+
     private static Object readValue(ByteBuffer buffer) {
         if (!buffer.hasRemaining()) {
             throw new IllegalArgumentException("Message corrupted");
@@ -223,38 +255,56 @@ final class StandardCodec implements MessageCodec {
             case FALSE:
                 result = false;
                 break;
-            case INT32:
+            case INT:
                 result = buffer.getInt();
                 break;
-            case INT64:
+            case LONG:
                 result = buffer.getLong();
                 break;
             case BIGINT: {
-                final int length = readSize(buffer);
-                final byte[] hex = new byte[length];
-                buffer.get(hex);
+                final byte[] hex = readBytes(buffer);
                 result = new BigInteger(new String(hex, StandardCharsets.UTF_8), 16);
                 break;
             }
-            case FLOAT64:
+            case DOUBLE:
                 result = buffer.getDouble();
                 break;
             case STRING: {
-                final int length = readSize(buffer);
-                final byte[] bytes = new byte[length];
-                buffer.get(bytes);
+                final byte[] bytes = readBytes(buffer);
                 result = new String(bytes, StandardCharsets.UTF_8);
                 break;
             }
-            case BYTES: {
+            case BYTE_ARRAY: {
+                result = readBytes(buffer);
+                break;
+            }
+            case INT_ARRAY: {
                 final int length = readSize(buffer);
-                result = buffer.slice().limit(length);
-                buffer.position(buffer.position() + length);
+                final int[] array = new int[length];
+                readAlignment(buffer, 4);
+                result = buffer.asIntBuffer().get(array);
+                buffer.position(buffer.position() + 4 * length);
+                break;
+            }
+            case LONG_ARRAY: {
+                final int length = readSize(buffer);
+                final long[] array = new long[length];
+                readAlignment(buffer, 8);
+                result = buffer.asLongBuffer().get(array);
+                buffer.position(buffer.position() + 8 * length);
+                break;
+            }
+            case DOUBLE_ARRAY: {
+                final int length = readSize(buffer);
+                final double[] array = new double[length];
+                readAlignment(buffer, 8);
+                result = buffer.asDoubleBuffer().get(array);
+                buffer.position(buffer.position() + 8 * length);
                 break;
             }
             case LIST: {
                 final int size = readSize(buffer);
-                final List<Object> list = new ArrayList<Object>(size);
+                final List<Object> list = new ArrayList<>(size);
                 for (int i = 0; i < size; i++) {
                     list.add(readValue(buffer));
                 }
@@ -263,7 +313,7 @@ final class StandardCodec implements MessageCodec {
             }
             case MAP: {
                 final int size = readSize(buffer);
-                final Map<Object, Object> map = new HashMap<Object, Object>();
+                final Map<Object, Object> map = new HashMap<>();
                 for (int i = 0; i < size; i++) {
                     map.put(readValue(buffer), readValue(buffer));
                 }
@@ -277,7 +327,7 @@ final class StandardCodec implements MessageCodec {
     }
 
     private static final class ExposedByteArrayOutputStream extends ByteArrayOutputStream {
-        public byte[] buffer() {
+        byte[] buffer() {
             return buf;
         }
     }
