@@ -10,6 +10,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.Window;
 import android.view.WindowManager;
+import io.flutter.plugin.common.FlutterChannel;
+import io.flutter.plugin.common.MessageCodec;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 import io.flutter.view.FlutterView;
@@ -150,5 +152,29 @@ public class FlutterActivity extends Activity {
      */
     public FlutterView getFlutterView() {
       return flutterView;
+    }
+
+    /**
+     * Returns a named channel for communicating with the Flutter application.
+     *
+     * @param name The logical name String of the channel.
+     * @return a {@link FlutterChannel} using the {@link MessageCodec#STANDARD} message codec.
+     *
+     * @see MessageCodec#STANDARD for the message values supported.
+     */
+    public FlutterChannel createFlutterChannel(String name) {
+        return createFlutterChannel(name, MessageCodec.STANDARD);
+    }
+
+    /**
+     * Returns a named channel for communicating with the Flutter application using the specified
+     * message codec.
+     *
+     * @param name The logical name String of the channel.
+     * @param codec The {@link MessageCodec} to use for message encoding and decoding.
+     * @return a {@link FlutterChannel}.
+     */
+    public FlutterChannel createFlutterChannel(String name, MessageCodec codec) {
+        return new FlutterChannel(flutterView, name, codec);
     }
 }
