@@ -13,9 +13,9 @@
 #include "base/lazy_instance.h"
 #include "base/mac/scoped_nsautorelease_pool.h"
 #include "base/message_loop/message_loop.h"
-#include "base/trace_event/trace_event.h"
 #include "dart/runtime/include/dart_tools_api.h"
 #include "flutter/common/threads.h"
+#include "flutter/fml/trace_event.h"
 #include "flutter/runtime/start_up.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
@@ -64,15 +64,6 @@ class EmbedderState {
     auto command_line = InitializedCommandLine();
 
     RedirectIOConnectionsToSyslog(command_line);
-
-    if (command_line.HasOption(FlagForSwitch(Switch::TraceStartup))) {
-      // Usually, all tracing within flutter is managed via the tracing
-      // controller The tracing controller is accessed via the shell instance.
-      // This means that tracing can only be enabled once that instance is
-      // created. Traces early in startup are lost. This enables tracing only in
-      // base manually till the tracing controller takes over.
-      shell::TracingController::StartBaseTracing();
-    }
 
     // This is about as early as tracing of any kind can start. Add an instant
     // marker that can be used as a reference for startup.

@@ -9,8 +9,8 @@
 #include <utility>
 
 #include "base/mac/scoped_nsautorelease_pool.h"
-#include "base/trace_event/trace_event.h"
 #include "flutter/common/threads.h"
+#include "flutter/fml/trace_event.h"
 #include "flutter/shell/gpu/gpu_rasterizer.h"
 #include "flutter/shell/platform/darwin/common/process_info_mac.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"

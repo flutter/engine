@@ -108,6 +108,7 @@ source_set("common") {
     "//flutter/assets",
     "//flutter/common",
     "//flutter/flow",
+    "//flutter/fml",
     "//flutter/glue",
     "//flutter/lib/ui",
     "//flutter/runtime",

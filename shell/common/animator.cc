@@ -4,10 +4,9 @@
 
 #include "flutter/shell/common/animator.h"
 
-#include "base/bind.h"
 #include "base/message_loop/message_loop.h"
-#include "base/trace_event/trace_event.h"
 #include "flutter/common/threads.h"
+#include "flutter/fml/trace_event.h"
 #include "lib/ftl/time/stopwatch.h"
 
 namespace shell {
