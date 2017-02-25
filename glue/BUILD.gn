@@ -25,6 +25,9 @@ source_set("glue") {
       "task_runner_adaptor.h",
     ]
 
-    deps += [ "//base" ]
+    deps += [
+      "//base",
+      "//flutter/fml",
+    ]
   }
 }

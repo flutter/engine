@@ -8,4 +8,8 @@ source_set("fml") {
   if (is_ios || is_mac) {
     public_deps += [ "platform/darwin" ]
   }
+
+  sources = [
+    "trace_event.h",
+  ]
 }

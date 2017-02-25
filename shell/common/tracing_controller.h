@@ -20,12 +20,6 @@ class TracingController {
 
   void StopTracing();
 
-  // Enables tracing in base. Only use this if an instance of a tracing
-  // controller cannot be obtained (can happen early in the lifecycle of the
-  // process). In most cases, the |StartTracing| method on an instance of the
-  // tracing controller should be used.
-  static void StartBaseTracing();
-
   std::string PictureTracingPathForCurrentTime() const;
   std::string PictureTracingPathForCurrentTime(
       const std::string& directory) const;
@@ -46,8 +40,6 @@ class TracingController {
   std::string traces_base_path_;
   bool picture_tracing_enabled_;
   bool tracing_active_;
-
-  void StopBaseTracing();
 
   std::string TracePathWithExtension(const std::string& directory,
                                      const std::string& extension) const;

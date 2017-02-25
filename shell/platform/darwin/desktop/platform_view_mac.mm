@@ -7,14 +7,14 @@
 #include <AppKit/AppKit.h>
 #include <Foundation/Foundation.h>
 
-#include "base/command_line.h"
-#include "base/trace_event/trace_event.h"
 #include "flutter/common/threads.h"
+#include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/gpu/gpu_rasterizer.h"
 #include "flutter/shell/platform/darwin/common/platform_mac.h"
 #include "flutter/shell/platform/darwin/common/process_info_mac.h"
 #include "flutter/shell/platform/darwin/desktop/vsync_waiter_mac.h"
+#include "lib/ftl/command_line.h"
 #include "lib/ftl/synchronization/waitable_event.h"
 
 namespace shell {
@@ -47,10 +47,10 @@ void PlatformViewMac::SetupAndLoadDart() {
     return;
   }
 
-  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
+  const auto& command_line = shell::Shell::Shared().GetCommandLine();
 
   std::string bundle_path =
-      command_line.GetSwitchValueASCII(FlagForSwitch(Switch::FLX));
+      command_line.GetOptionValueWithDefault(FlagForSwitch(Switch::FLX), "");
   if (!bundle_path.empty()) {
     blink::Threads::UI()->PostTask(
         [ engine = engine().GetWeakPtr(), bundle_path ] {
@@ -60,11 +60,11 @@ void PlatformViewMac::SetupAndLoadDart() {
     return;
   }
 
-  auto args = command_line.GetArgs();
+  auto args = command_line.positional_args();
   if (args.size() > 0) {
     std::string main = args[0];
-    std::string packages =
-        command_line.GetSwitchValueASCII(FlagForSwitch(Switch::Packages));
+    std::string packages = command_line.GetOptionValueWithDefault(
+        FlagForSwitch(Switch::Packages), "");
     blink::Threads::UI()->PostTask(
         [ engine = engine().GetWeakPtr(), main, packages ] {
           if (engine)
