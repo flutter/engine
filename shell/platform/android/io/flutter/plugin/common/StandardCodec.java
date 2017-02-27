@@ -11,9 +11,31 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * A {@link MessageCodec} using binary messages in Flutter standard encoding.
+ * MessageCodec using the Flutter standard binary message encoding.
+ *
+ * The standard codec is guaranteed to be compatible with the corresponding codec available for
+ * PlatformChannels on the Flutter side; these two parts of the Flutter SDK are evolved
+ * synchronously.
+ *
+ * Supported messages are acyclic values of these forms:
+ *
+ * <ul>
+ *     <li>null</li>
+ *     <li>Booleans</li>
+ *     <li>Bytes, Shorts, Integers, Longs, BigIntegers</li>
+ *     <li>Floats, Doubles</li>
+ *     <li>Strings</li>
+ *     <li>byte arrays and ByteBuffers</li>
+ *     <li>Lists of supported values</li>
+ *     <li>Maps with supported keys and values</li>
+ * </ul>
  */
-final class StandardCodec implements MessageCodec {
+public final class StandardCodec implements MethodCodec {
+    public static final StandardCodec INSTANCE = new StandardCodec();
+
+    private StandardCodec() {
+    }
+
     @Override
     public ByteBuffer encodeMessage(Object message) {
         if (message == null) {

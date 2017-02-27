@@ -27,7 +27,7 @@ import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
-import io.flutter.plugin.common.ByteBufferTools;
+import io.flutter.plugin.common.StringCodec;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -745,11 +745,11 @@ public class FlutterView extends SurfaceView
      * @param callback Callback that receives a reply from the application.
      */
     public void sendToFlutter(String channel, String message, final MessageReplyCallback callback) {
-        sendToFlutter(channel, ByteBufferTools.extractBytes(message),
+        sendToFlutter(channel, StringCodec.INSTANCE.encodeMessage(message),
             callback == null ? null : new BinaryMessageReplyCallback() {
                 @Override
                 public void onReply(ByteBuffer reply) {
-                    callback.onReply(ByteBufferTools.extractString(reply));
+                    callback.onReply(StringCodec.INSTANCE.decodeMessage(reply));
                 }
             });
     }
@@ -797,8 +797,8 @@ public class FlutterView extends SurfaceView
             @Override
             public void onMessage(FlutterView view, ByteBuffer message,
                 BinaryMessageResponse response) {
-                response.send(ByteBufferTools.extractBytes(listener.onMessage(
-                    view, ByteBufferTools.extractString(message))));
+                response.send(StringCodec.INSTANCE.encodeMessage(listener.onMessage(
+                    view, StringCodec.INSTANCE.decodeMessage(message))));
             }
         });
     }
@@ -814,10 +814,10 @@ public class FlutterView extends SurfaceView
             @Override
             public void onMessage(FlutterView view, ByteBuffer message,
                 final BinaryMessageResponse response) {
-                listener.onMessage(view, ByteBufferTools.extractString(message), new MessageResponse() {
+                listener.onMessage(view, StringCodec.INSTANCE.decodeMessage(message), new MessageResponse() {
                     @Override
                     public void send(String reply) {
-                        response.send(ByteBufferTools.extractBytes(reply));
+                        response.send(StringCodec.INSTANCE.encodeMessage(reply));
                     }
                 });
             }

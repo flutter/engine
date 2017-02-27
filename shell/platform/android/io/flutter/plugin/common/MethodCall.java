@@ -3,7 +3,7 @@ package io.flutter.plugin.common;
 import java.util.Objects;
 
 /**
- * Command object representing a method call on a {@link FlutterChannel}.
+ * Command object representing a method call on a {@link FlutterMessageChannel}.
  */
 public final class MethodCall {
     /**

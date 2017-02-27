@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * A named channel for communicating with the Flutter application using semi-structured messages.
  *
  * Messages are encoded into binary before being sent, and binary messages received are decoded
- * into Java objects. The {@link MessageCodec} used must be compatible with the
+ * into Java objects. The {@link MethodCodec} used must be compatible with the
  * one used by the Flutter application. This can be achieved by creating a PlatformChannel
  * counterpart of this channel on the Dart side. The static Java type of messages sent and received
  * is Object, but only values supported by the specified {@link MessageCodec} can be used.
@@ -22,63 +22,37 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * invocations, and emitting event streams. All communication is asynchronous.
  *
  * Identically named channels may interfere with each other's communication.
- *
- * Instances may be created using
- * {@link io.flutter.app.FlutterActivity#createFlutterChannel(String)}.
  */
-public class FlutterChannel {
-    private static final String TAG = "FlutterChannel#";
+public class FlutterMethodChannel {
+    private static final String TAG = "FlutterMethodChannel#";
 
     private final FlutterView view;
     private final String name;
-    private final MessageCodec codec;
+    private final MethodCodec codec;
 
     /**
      * Creates a new channel associated with the specified {@link FlutterView} and with the
-     * specified name and {@link MessageCodec}.
+     * specified name and the standard {@link MethodCodec}.
      *
-     * @see io.flutter.app.FlutterActivity#createFlutterChannel(String)
+     * @param view a {@link FlutterView}.
+     * @param name a channel name String.
+     */
+    public FlutterMethodChannel(FlutterView view, String name) {
+        this(view, name, StandardCodec.INSTANCE);
+    }
+
+    /**
+     * Creates a new channel associated with the specified {@link FlutterView} and with the
+     * specified name and {@link MethodCodec}.
      *
      * @param view a {@link FlutterView}.
      * @param name a channel name String.
      * @param codec a {@link MessageCodec}.
      */
-    public FlutterChannel(FlutterView view, String name, MessageCodec codec) {
+    public FlutterMethodChannel(FlutterView view, String name, MethodCodec codec) {
         this.view = Objects.requireNonNull(view);
         this.name = Objects.requireNonNull(name);
         this.codec = Objects.requireNonNull(codec);
-    }
-
-    /**
-     * Sends the specified message to the Flutter application on this channel.
-     *
-     * @param message the message, possibly null.
-     */
-    public void send(Object message) {
-        send(message, null);
-    }
-
-    /**
-     * Sends the specified message to the Flutter application, optionally expecting a reply.
-     *
-     * @param message the message, possibly null.
-     * @param handler a {@link ReplyHandler} call-back, possibly null.
-     */
-    public void send(Object message, final ReplyHandler handler) {
-        view.sendToFlutter(name, codec.encodeMessage(message),
-            handler == null ? null : new ReplyCallback(handler));
-    }
-
-    /**
-     * Registers a message handler on this channel.
-     *
-     * Overrides any existing handler registration (for messages, method calls, or streams).
-     *
-     * @param handler a {@link MessageHandler}, or null to deregister.
-     */
-    public void setMessageHandler(final MessageHandler handler) {
-        view.addOnBinaryMessageListenerAsync(name,
-            handler == null ? null : new MessageListener(handler));
     }
 
     /**
@@ -103,32 +77,6 @@ public class FlutterChannel {
     public void setStreamHandler(final StreamHandler handler) {
         view.addOnBinaryMessageListenerAsync(name,
             handler == null ? null : new StreamListener(handler));
-    }
-
-    /**
-     * A call-back interface for handling replies to outgoing messages.
-     */
-    public interface ReplyHandler {
-        /**
-         * Handle the specified reply.
-         *
-         * @param reply the reply, possibly null.
-         */
-        void onReply(Object reply);
-    }
-
-    /**
-     * A call-back interface for handling incoming messages.
-     */
-    public interface MessageHandler {
-
-        /**
-         * Handles the specified message.
-         *
-         * @param message The message, possibly null.
-         * @param response A {@link Response} for providing a single message reply.
-         */
-        void onMessage(Object message, Response response);
     }
 
     /**
@@ -197,60 +145,6 @@ public class FlutterChannel {
         void done();
     }
 
-    private final class ReplyCallback implements BinaryMessageReplyCallback {
-        private final ReplyHandler handler;
-
-        private ReplyCallback(ReplyHandler handler) {
-            this.handler = handler;
-        }
-
-        @Override
-        public void onReply(ByteBuffer reply) {
-            handler.onReply(codec.decodeMessage(reply));
-        }
-    }
-
-    private final class MessageListener implements OnBinaryMessageListenerAsync {
-        private final MessageHandler handler;
-
-        private MessageListener(MessageHandler handler) {
-            this.handler = handler;
-        }
-
-        @Override
-        public void onMessage(FlutterView view, ByteBuffer message,
-            final BinaryMessageResponse response) {
-            try {
-                handler.onMessage(codec.decodeMessage(message), new Response() {
-                    private boolean done = false;
-
-                    @Override
-                    public void success(Object result) {
-                        checkDone();
-                        response.send(codec.encodeMessage(result));
-                        done = true;
-                    }
-
-                    @Override
-                    public void error(String errorCode, String errorMessage, Object errorDetails) {
-                        checkDone();
-                        response.send(null);
-                        done = true;
-                    }
-
-                    private void checkDone() {
-                        if (done) {
-                            throw new IllegalStateException("Call result already provided");
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                Log.e(TAG + name, "Failed to handle message", e);
-                response.send(null);
-            }
-        }
-    }
-
     private final class MethodCallListener implements OnBinaryMessageListenerAsync {
         private final MethodCallHandler handler;
 
@@ -314,7 +208,7 @@ public class FlutterChannel {
                             if (cancelled.get()) {
                                 return;
                             }
-                            FlutterChannel.this.view.sendToFlutter(
+                            FlutterMethodChannel.this.view.sendToFlutter(
                                 name,
                                 codec.encodeSuccessEnvelope(event),
                                 null);
@@ -326,7 +220,7 @@ public class FlutterChannel {
                             if (cancelled.get()) {
                                 return;
                             }
-                            FlutterChannel.this.view.sendToFlutter(
+                            FlutterMethodChannel.this.view.sendToFlutter(
                                 name,
                                 codec.encodeErrorEnvelope(errorCode, errorMessage, errorDetails),
                                 null);
@@ -337,7 +231,7 @@ public class FlutterChannel {
                             if (cancelled.get()) {
                                 return;
                             }
-                            FlutterChannel.this.view.sendToFlutter(name,null);
+                            FlutterMethodChannel.this.view.sendToFlutter(name,null);
                         }
                     });
                     response.send(codec.encodeSuccessEnvelope(null));

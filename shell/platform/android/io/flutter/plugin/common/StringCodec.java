@@ -1,0 +1,45 @@
+package io.flutter.plugin.common;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
+/**
+ * A {@link MessageCodec} using UTF-8 encoded String messages.
+ */
+public final class StringCodec implements MessageCodec<String> {
+    public static final StringCodec INSTANCE = new StringCodec();
+
+    private StringCodec() {
+    }
+
+    @Override
+    public ByteBuffer encodeMessage(String message) {
+        if (message == null) {
+            return null;
+        }
+        final byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+        final ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+        buffer.put(bytes);
+        return buffer;
+
+    }
+
+    @Override
+    public String decodeMessage(ByteBuffer message) {
+        if (message == null) {
+            return null;
+        }
+        final byte[] bytes;
+        final int offset;
+        final int length = message.remaining();
+        if (message.hasArray()) {
+            bytes = message.array();
+            offset = message.arrayOffset();
+        } else {
+            bytes = new byte[length];
+            message.get(bytes);
+            offset = 0;
+        }
+        return new String(bytes, offset, length, StandardCharsets.UTF_8);
+    }
+}
