@@ -1,3 +1,7 @@
+// Copyright 2017 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.plugin.common;
 
 import java.nio.ByteBuffer;
@@ -7,6 +11,7 @@ import java.nio.charset.StandardCharsets;
  * A {@link MessageCodec} using UTF-8 encoded String messages.
  */
 public final class StringCodec implements MessageCodec<String> {
+    // This codec must match the Dart codec of the same name in package flutter/services.
     public static final StringCodec INSTANCE = new StringCodec();
 
     private StringCodec() {

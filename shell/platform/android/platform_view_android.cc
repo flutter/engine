@@ -250,7 +250,7 @@ void PlatformViewAndroid::DispatchPlatformMessage(JNIEnv* env,
   }
 
   PlatformView::DispatchPlatformMessage(
-      ftl::MakeRefCounted<blink::PlatformMessage>(std::move(name), message,
+      ftl::MakeRefCounted<blink::PlatformMessage>(std::move(name), std::move(message),
                                                   std::move(response)));
 }
 
@@ -287,7 +287,7 @@ void PlatformViewAndroid::InvokePlatformMessageResponseCallback(
   }
   auto message_response = std::move(it->second);
   pending_responses_.erase(it);
-  message_response->Complete(response);
+  message_response->Complete(std::move(response));
 }
 
 void PlatformViewAndroid::HandlePlatformMessage(

@@ -1,3 +1,7 @@
+// Copyright 2017 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.plugin.common;
 
 import java.nio.ByteBuffer;
@@ -11,6 +15,7 @@ import org.json.JSONTokener;
  * as {@link JSONObject#wrap(Object)}.
  */
 public final class JSONCodec implements MethodCodec {
+    // This codec must match the Dart codec of the same name in package flutter/services.
     public static final JSONCodec INSTANCE = new JSONCodec();
 
     private JSONCodec() {

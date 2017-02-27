@@ -1,3 +1,7 @@
+// Copyright 2017 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.plugin.common;
 
 import java.io.ByteArrayOutputStream;
@@ -25,12 +29,13 @@ import java.util.Map.Entry;
  *     <li>Bytes, Shorts, Integers, Longs, BigIntegers</li>
  *     <li>Floats, Doubles</li>
  *     <li>Strings</li>
- *     <li>byte arrays and ByteBuffers</li>
+ *     <li>byte[], int[], long[], double[]</li>
  *     <li>Lists of supported values</li>
  *     <li>Maps with supported keys and values</li>
  * </ul>
  */
 public final class StandardCodec implements MethodCodec {
+    // This codec must match the Dart codec of the same name in package flutter/services.
     public static final StandardCodec INSTANCE = new StandardCodec();
 
     private StandardCodec() {
@@ -166,19 +171,21 @@ public final class StandardCodec implements MethodCodec {
         } else if (value == Boolean.FALSE) {
             stream.write(FALSE);
         } else if (value instanceof Number) {
-            if (value instanceof Float || value instanceof Double) {
+            if (value instanceof Integer || value instanceof Short || value instanceof Byte) {
+                stream.write(INT);
+                writeInt(stream, ((Number) value).intValue());
+            } else if (value instanceof Long) {
+                stream.write(LONG);
+                writeLong(stream, (long) value);
+            } else if (value instanceof Float || value instanceof Double) {
                 stream.write(DOUBLE);
                 writeDouble(stream, ((Number) value).doubleValue());
             } else if (value instanceof BigInteger) {
                 stream.write(BIGINT);
                 writeBytes(stream,
                     ((BigInteger) value).toString(16).getBytes(StandardCharsets.UTF_8));
-            } else if (value instanceof Long) {
-                stream.write(LONG);
-                writeLong(stream, (long) value);
             } else {
-                stream.write(INT);
-                writeInt(stream, ((Number) value).intValue());
+                throw new IllegalArgumentException("Unsupported Number type: " + value.getClass());
             }
         } else if (value instanceof String) {
             stream.write(STRING);
