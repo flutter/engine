@@ -809,14 +809,16 @@ public class FlutterView extends SurfaceView
      */
     @Deprecated
     public void addOnMessageListener(String channel, final OnMessageListener listener) {
-        mMessageListeners.put(channel, listener == null ? null : new OnBinaryMessageListenerAsync() {
-            @Override
-            public void onMessage(FlutterView view, ByteBuffer message,
-                BinaryMessageResponse response) {
-                response.send(StringMessageCodec.INSTANCE.encodeMessage(listener.onMessage(
-                    view, StringMessageCodec.INSTANCE.decodeMessage(message))));
+        addOnBinaryMessageListenerAsync(channel,
+            listener == null ? null : new OnBinaryMessageListenerAsync() {
+                @Override
+                public void onMessage(FlutterView view, ByteBuffer message,
+                    BinaryMessageResponse response) {
+                    response.send(StringMessageCodec.INSTANCE.encodeMessage(listener.onMessage(
+                        view, StringMessageCodec.INSTANCE.decodeMessage(message))));
+                }
             }
-        });
+        );
     }
 
     /**
@@ -829,18 +831,22 @@ public class FlutterView extends SurfaceView
      */
     @Deprecated
     public void addOnMessageListenerAsync(String channel, final OnMessageListenerAsync listener) {
-        mMessageListeners.put(channel, listener == null ? null : new OnBinaryMessageListenerAsync() {
-            @Override
-            public void onMessage(FlutterView view, ByteBuffer message,
-                final BinaryMessageResponse response) {
-                listener.onMessage(view, StringMessageCodec.INSTANCE.decodeMessage(message), new MessageResponse() {
-                    @Override
-                    public void send(String reply) {
-                        response.send(StringMessageCodec.INSTANCE.encodeMessage(reply));
-                    }
-                });
+        addOnBinaryMessageListenerAsync(channel,
+            listener == null ? null : new OnBinaryMessageListenerAsync() {
+                @Override
+                public void onMessage(FlutterView view, ByteBuffer message,
+                    final BinaryMessageResponse response) {
+                    listener.onMessage(view, StringMessageCodec.INSTANCE.decodeMessage(message),
+                        new MessageResponse() {
+                            @Override
+                            public void send(String reply) {
+                                response.send(StringMessageCodec.INSTANCE.encodeMessage(reply));
+                            }
+                        }
+                    );
+                }
             }
-        });
+        );
     }
 
     /**
