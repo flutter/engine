@@ -13,18 +13,18 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * A named channel for communicating with the Flutter application using semi-structured messages.
+ * A named channel for communicating with the Flutter application using asynchronous
+ * method calls and event streams.
  *
- * Messages are encoded into binary before being sent, and binary messages received are decoded
- * into Java objects. The {@link MethodCodec} used must be compatible with the
- * one used by the Flutter application. This can be achieved by creating a PlatformChannel
- * counterpart of this channel on the Dart side. The static Java type of messages sent and received
- * is Object, but only values supported by the specified {@link MessageCodec} can be used.
+ * Incoming method calls are decoded from binary on receipt, and Java results are encoded
+ * into binary before being transmitted back to Flutter. The {@link MethodCodec} used must be
+ * compatible with the one used by the Flutter application. This can be achieved
+ * by creating a PlatformMethodChannel counterpart of this channel on the
+ * Flutter side. The Java type of method call arguments and results is Object,
+ * but only values supported by the specified {@link MethodCodec} can be used.
  *
- * The channel supports basic message send/receive operations, handling incoming method
- * invocations, and emitting event streams. All communication is asynchronous.
- *
- * Identically named channels may interfere with each other's communication.
+ * The identity of the channel is given by its name, so other uses of that name
+ * with may interfere with this channel's communication.
  */
 public final class FlutterMethodChannel {
     private static final String TAG = "FlutterMethodChannel#";
