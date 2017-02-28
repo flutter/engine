@@ -278,7 +278,8 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
                 final int length = readSize(buffer);
                 final int[] array = new int[length];
                 readAlignment(buffer, 4);
-                result = buffer.asIntBuffer().get(array);
+                buffer.asIntBuffer().get(array);
+                result = array;
                 buffer.position(buffer.position() + 4 * length);
                 break;
             }
@@ -286,7 +287,8 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
                 final int length = readSize(buffer);
                 final long[] array = new long[length];
                 readAlignment(buffer, 8);
-                result = buffer.asLongBuffer().get(array);
+                buffer.asLongBuffer().get(array);
+                result = array;
                 buffer.position(buffer.position() + 8 * length);
                 break;
             }
@@ -294,7 +296,8 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
                 final int length = readSize(buffer);
                 final double[] array = new double[length];
                 readAlignment(buffer, 8);
-                result = buffer.asDoubleBuffer().get(array);
+                buffer.asDoubleBuffer().get(array);
+                result = array;
                 buffer.position(buffer.position() + 8 * length);
                 break;
             }
