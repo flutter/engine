@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * Identically named channels may interfere with each other's communication.
  */
-public class FlutterMethodChannel {
+public final class FlutterMethodChannel {
     private static final String TAG = "FlutterMethodChannel#";
 
     private final FlutterView view;
@@ -211,7 +211,7 @@ public class FlutterMethodChannel {
                             if (cancelled.get()) {
                                 return;
                             }
-                            FlutterMethodChannel.this.view.sendToFlutter(
+                            FlutterMethodChannel.this.view.sendBinaryMessage(
                                 name,
                                 codec.encodeSuccessEnvelope(event),
                                 null);
@@ -223,7 +223,7 @@ public class FlutterMethodChannel {
                             if (cancelled.get()) {
                                 return;
                             }
-                            FlutterMethodChannel.this.view.sendToFlutter(
+                            FlutterMethodChannel.this.view.sendBinaryMessage(
                                 name,
                                 codec.encodeErrorEnvelope(errorCode, errorMessage, errorDetails),
                                 null);

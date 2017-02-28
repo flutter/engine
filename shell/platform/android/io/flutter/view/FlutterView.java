@@ -27,7 +27,7 @@ import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
-import io.flutter.plugin.common.StringCodec;
+import io.flutter.plugin.common.StringMessageCodec;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -732,7 +732,10 @@ public class FlutterView extends SurfaceView
      * @param channel Name of the channel that will receive this message.
      * @param message Message payload.
      * @param callback Callback that receives a reply from the application.
+     * @deprecated Use {@link io.flutter.plugin.common.FlutterMessageChannel}
+     * with {@link StringMessageCodec} instead.
      */
+    @Deprecated
     public void sendPlatformMessage(String channel, String message, MessageReplyCallback callback) {
         sendToFlutter(channel, message, callback);
     }
@@ -743,30 +746,37 @@ public class FlutterView extends SurfaceView
      * @param channel Name of the channel that will receive this message.
      * @param message Message payload.
      * @param callback Callback that receives a reply from the application.
+     * @deprecated Use {@link io.flutter.plugin.common.FlutterMessageChannel}
+     * with {@link StringMessageCodec} instead.
      */
+    @Deprecated
     public void sendToFlutter(String channel, String message, final MessageReplyCallback callback) {
-        sendToFlutter(channel, StringCodec.INSTANCE.encodeMessage(message),
+        sendBinaryMessage(channel, StringMessageCodec.INSTANCE.encodeMessage(message),
             callback == null ? null : new BinaryMessageReplyCallback() {
                 @Override
                 public void onReply(ByteBuffer reply) {
-                    callback.onReply(StringCodec.INSTANCE.decodeMessage(reply));
+                    callback.onReply(StringMessageCodec.INSTANCE.decodeMessage(reply));
                 }
             });
     }
 
+    /** @deprecated Use {@link io.flutter.plugin.common.FlutterMessageChannel}
+     * with {@link StringMessageCodec} instead.
+     */
+    @Deprecated
     public void sendToFlutter(String channel, String message) {
         sendToFlutter(channel, message, null);
     }
 
     /**
-     * Send a binary message to the Flutter application.  The Flutter Dart code can register a
+     * Send a binary message to the Flutter application. The Flutter Dart code can register a
      * platform message handler that will receive these messages.
      * @param channel Name of the channel that will receive this message.
      * @param message Message payload, a {@link ByteBuffer} with the message bytes between position
      * zero and current position, or null.
-     * @param callback Callback that receives a reply from the application.
+     * @param callback Callback that receives a reply from the Flutter application.
      */
-    public void sendToFlutter(String channel, ByteBuffer message, BinaryMessageReplyCallback callback) {
+    public void sendBinaryMessage(String channel, ByteBuffer message, BinaryMessageReplyCallback callback) {
         int responseId = 0;
         if (callback != null) {
             responseId = mNextResponseId++;
@@ -776,12 +786,15 @@ public class FlutterView extends SurfaceView
             message == null ? 0 : message.position(), responseId);
     }
 
-    /** Callback invoked when the app replies to a String message sent with sendToFlutter. */
+    /** Callback invoked when the app replies to a String message sent with sendToFlutter.
+     * @deprecated Use {@link io.flutter.plugin.common.FlutterMessageChannel}
+     * with {@link StringMessageCodec} instead.
+     */
     public interface MessageReplyCallback {
         void onReply(String reply);
     }
 
-    /** Callback invoked when the app replies to a binary message sent with sendToFlutter. */
+    /** Callback invoked when the app replies to a binary message sent with sendBinaryMessage. */
     public interface BinaryMessageReplyCallback {
         void onReply(ByteBuffer reply);
     }
@@ -791,14 +804,17 @@ public class FlutterView extends SurfaceView
      * to its host.
      * @param channel Name of the channel used by the application.
      * @param listener Called when messages arrive.
+     * @deprecated Use {@link io.flutter.plugin.common.FlutterMessageChannel}
+     * with {@link StringMessageCodec} instead.
      */
+    @Deprecated
     public void addOnMessageListener(String channel, final OnMessageListener listener) {
         mMessageListeners.put(channel, listener == null ? null : new OnBinaryMessageListenerAsync() {
             @Override
             public void onMessage(FlutterView view, ByteBuffer message,
                 BinaryMessageResponse response) {
-                response.send(StringCodec.INSTANCE.encodeMessage(listener.onMessage(
-                    view, StringCodec.INSTANCE.decodeMessage(message))));
+                response.send(StringMessageCodec.INSTANCE.encodeMessage(listener.onMessage(
+                    view, StringMessageCodec.INSTANCE.decodeMessage(message))));
             }
         });
     }
@@ -808,16 +824,19 @@ public class FlutterView extends SurfaceView
      * to its host.  The reply to the message can be provided asynchronously.
      * @param channel Name of the channel used by the application.
      * @param listener Called when messages arrive.
+     * @deprecated Use {@link io.flutter.plugin.common.FlutterMessageChannel}
+     * with {@link StringMessageCodec} instead.
      */
+    @Deprecated
     public void addOnMessageListenerAsync(String channel, final OnMessageListenerAsync listener) {
         mMessageListeners.put(channel, listener == null ? null : new OnBinaryMessageListenerAsync() {
             @Override
             public void onMessage(FlutterView view, ByteBuffer message,
                 final BinaryMessageResponse response) {
-                listener.onMessage(view, StringCodec.INSTANCE.decodeMessage(message), new MessageResponse() {
+                listener.onMessage(view, StringMessageCodec.INSTANCE.decodeMessage(message), new MessageResponse() {
                     @Override
                     public void send(String reply) {
-                        response.send(StringCodec.INSTANCE.encodeMessage(reply));
+                        response.send(StringMessageCodec.INSTANCE.encodeMessage(reply));
                     }
                 });
             }
@@ -838,6 +857,11 @@ public class FlutterView extends SurfaceView
         }
     }
 
+    /**
+     * @deprecated Use {@link io.flutter.plugin.common.FlutterMessageChannel}
+     * with {@link StringMessageCodec} instead.
+     */
+    @Deprecated
     public interface OnMessageListener {
         /**
          * Called when a message is received from the Flutter app.
@@ -848,6 +872,11 @@ public class FlutterView extends SurfaceView
         String onMessage(FlutterView view, String message);
     }
 
+    /**
+     * @deprecated Use {@link io.flutter.plugin.common.FlutterMessageChannel}
+     * with {@link StringMessageCodec} instead.
+     */
+    @Deprecated
     public interface OnMessageListenerAsync {
         /**
          * Called when a message is received from the Flutter app.
@@ -868,6 +897,11 @@ public class FlutterView extends SurfaceView
         void onMessage(FlutterView view, ByteBuffer message, BinaryMessageResponse response);
     }
 
+    /**
+     * @deprecated Use {@link io.flutter.plugin.common.FlutterMessageChannel}
+     * with {@link StringMessageCodec} instead.
+     */
+    @Deprecated
     public interface MessageResponse {
         void send(String reply);
     }

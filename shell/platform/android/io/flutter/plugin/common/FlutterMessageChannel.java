@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * Identically named channels may interfere with each other's communication.
  */
-public class FlutterMessageChannel<T> {
+public final class FlutterMessageChannel<T> {
     private static final String TAG = "FlutterMessageChannel#";
 
     private final FlutterView view;
@@ -64,7 +64,7 @@ public class FlutterMessageChannel<T> {
      * @param handler a {@link ReplyHandler} call-back, possibly null.
      */
     public void send(T message, final ReplyHandler<T> handler) {
-        view.sendToFlutter(name, codec.encodeMessage(message),
+        view.sendBinaryMessage(name, codec.encodeMessage(message),
             handler == null ? null : new ReplyCallback(handler));
     }
 

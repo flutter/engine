@@ -5,7 +5,6 @@
 package io.flutter.plugin.common;
 
 import java.nio.ByteBuffer;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -27,7 +26,7 @@ public final class JSONMessageCodec implements MessageCodec<Object> {
         if (message == null) {
             return null;
         }
-        return StringCodec.INSTANCE.encodeMessage(JSONObject.wrap(message).toString());
+        return StringMessageCodec.INSTANCE.encodeMessage(JSONObject.wrap(message).toString());
     }
 
     @Override
@@ -36,7 +35,7 @@ public final class JSONMessageCodec implements MessageCodec<Object> {
             return null;
         }
         try {
-            final String json = StringCodec.INSTANCE.decodeMessage(message);
+            final String json = StringMessageCodec.INSTANCE.decodeMessage(message);
             final JSONTokener tokener = new JSONTokener(json);
             final Object value = tokener.nextValue();
             if (tokener.more()) {

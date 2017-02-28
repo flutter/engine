@@ -10,7 +10,7 @@ import org.json.JSONObject;
  * Values supported as methods arguments and result payloads are those supported by
  * {@link JSONMessageCodec}.
  */
-public class JSONMethodCodec implements MethodCodec {
+public final class JSONMethodCodec implements MethodCodec {
   public static final JSONMethodCodec INSTANCE = new JSONMethodCodec();
 
   private JSONMethodCodec() {
