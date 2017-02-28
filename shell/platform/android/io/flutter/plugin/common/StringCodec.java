@@ -22,11 +22,11 @@ public final class StringCodec implements MessageCodec<String> {
         if (message == null) {
             return null;
         }
+        // TODO(mravn): Avoid the extra copy below.
         final byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
         final ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
         buffer.put(bytes);
         return buffer;
-
     }
 
     @Override
@@ -41,6 +41,7 @@ public final class StringCodec implements MessageCodec<String> {
             bytes = message.array();
             offset = message.arrayOffset();
         } else {
+            // TODO(mravn): Avoid the extra copy below.
             bytes = new byte[length];
             message.get(bytes);
             offset = 0;

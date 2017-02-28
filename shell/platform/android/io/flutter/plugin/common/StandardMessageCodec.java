@@ -15,10 +15,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * MessageCodec using the Flutter standard binary message encoding.
+ * MessageCodec using the Flutter standard binary encoding.
  *
- * The standard codec is guaranteed to be compatible with the corresponding codec available for
- * PlatformChannels on the Flutter side; these two parts of the Flutter SDK are evolved
+ * The standard encoding is guaranteed to be compatible with the corresponding standard codec
+ * for PlatformMessageChannels on the Flutter side. These parts of the Flutter SDK are evolved
  * synchronously.
  *
  * Supported messages are acyclic values of these forms:
@@ -34,11 +34,11 @@ import java.util.Map.Entry;
  *     <li>Maps with supported keys and values</li>
  * </ul>
  */
-public final class StandardCodec implements MethodCodec {
+public final class StandardMessageCodec implements MessageCodec<Object> {
     // This codec must match the Dart codec of the same name in package flutter/services.
-    public static final StandardCodec INSTANCE = new StandardCodec();
+    public static final StandardMessageCodec INSTANCE = new StandardMessageCodec();
 
-    private StandardCodec() {
+    private StandardMessageCodec() {
     }
 
     @Override
@@ -63,39 +63,6 @@ public final class StandardCodec implements MethodCodec {
             throw new IllegalArgumentException("Message corrupted");
         }
         return value;
-    }
-
-    @Override
-    public MethodCall decodeMethodCall(ByteBuffer methodCall) {
-        final Object method = readValue(methodCall);
-        final Object arguments = readValue(methodCall);
-        if (method instanceof String) {
-            return new MethodCall((String) method, arguments);
-        }
-        throw new IllegalArgumentException("Method call corrupted");
-    }
-
-    @Override
-    public ByteBuffer encodeSuccessEnvelope(Object result) {
-        final ExposedByteArrayOutputStream stream = new ExposedByteArrayOutputStream();
-        stream.write(0);
-        writeValue(stream, result);
-        final ByteBuffer buffer = ByteBuffer.allocateDirect(stream.size());
-        buffer.put(stream.buffer(), 0, stream.size());
-        return buffer;
-    }
-
-    @Override
-    public ByteBuffer encodeErrorEnvelope(String errorCode, String errorMessage,
-        Object errorDetails) {
-        final ExposedByteArrayOutputStream stream = new ExposedByteArrayOutputStream();
-        stream.write(1);
-        writeValue(stream, errorCode);
-        writeValue(stream, errorMessage);
-        writeValue(stream, errorDetails);
-        final ByteBuffer buffer = ByteBuffer.allocateDirect(stream.size());
-        buffer.put(stream.buffer(), 0, stream.size());
-        return buffer;
     }
 
     private static final byte NULL = 0;
@@ -163,7 +130,7 @@ public final class StandardCodec implements MethodCodec {
         }
     }
 
-    private static void writeValue(ByteArrayOutputStream stream, Object value) {
+    static void writeValue(ByteArrayOutputStream stream, Object value) {
         if (value == null) {
             stream.write(NULL);
         } else if (value == Boolean.TRUE) {
@@ -269,7 +236,7 @@ public final class StandardCodec implements MethodCodec {
         }
     }
 
-    private static Object readValue(ByteBuffer buffer) {
+    static Object readValue(ByteBuffer buffer) {
         if (!buffer.hasRemaining()) {
             throw new IllegalArgumentException("Message corrupted");
         }
@@ -355,7 +322,7 @@ public final class StandardCodec implements MethodCodec {
         return result;
     }
 
-    private static final class ExposedByteArrayOutputStream extends ByteArrayOutputStream {
+    static final class ExposedByteArrayOutputStream extends ByteArrayOutputStream {
         byte[] buffer() {
             return buf;
         }

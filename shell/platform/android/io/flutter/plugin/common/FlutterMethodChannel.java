@@ -6,7 +6,6 @@ package io.flutter.plugin.common;
 
 import android.util.Log;
 import io.flutter.view.FlutterView;
-import io.flutter.view.FlutterView.BinaryMessageReplyCallback;
 import io.flutter.view.FlutterView.BinaryMessageResponse;
 import io.flutter.view.FlutterView.OnBinaryMessageListenerAsync;
 import java.nio.ByteBuffer;
@@ -42,7 +41,7 @@ public class FlutterMethodChannel {
      * @param name a channel name String.
      */
     public FlutterMethodChannel(FlutterView view, String name) {
-        this(view, name, StandardCodec.INSTANCE);
+        this(view, name, StandardMethodCodec.INSTANCE);
     }
 
     /**
