@@ -23,11 +23,11 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   'github_git': 'https://github.com',
   'base_revision': 'b2412302ed4e45bfb47d7b5c0c3418077009e1ce',
-  'skia_revision': '1c8e82b72bfeb1a02297688cf082c365b62705f7',
+  'skia_revision': '3f81f3703a68755c88f5cc4a87728b98f34c4cd4',
 
   # Note: When updating the Dart revision, ensure that all entries that are
   # dependencies of dart are also updated
-  'dart_revision': '1ed4c27c01de6680766593b88a531ef86883a117',
+  'dart_revision': 'd921f94367a47ef51cbcbeb31e18bfef91bc2b2d',
   'dart_boringssl_gen_revision': '1a810313a0290e1caace9da73fa3ab89995ad2c7',
   'dart_boringssl_revision': 'd519bf6be0b447fb80fbc539d4bff4479b5482a2',
   'dart_observatory_packages_revision': '26aad88f1c1915d39bbcbff3cad589e2402fdcf1',
@@ -58,7 +58,7 @@ deps = {
    Var('fuchsia_git') + '/ftl' + '@' + 'bb82d5f52ecca65650817a1c31c1f49eca54237a',
 
   'src/lib/tonic':
-   Var('fuchsia_git') + '/tonic' + '@' + 'a7d3dd8a809097c0e2be1a2893ba73c83f84d776',
+   Var('fuchsia_git') + '/tonic' + '@' + '837a249e73593bd22c4a071778192d1b4f1f931d',
 
   'src/lib/zip':
    Var('fuchsia_git') + '/zip' + '@' + '92dc87ca645fe8e9f5151ef6dac86d8311a7222f',
