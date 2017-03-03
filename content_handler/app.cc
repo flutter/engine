@@ -16,7 +16,6 @@
 #include "lib/ftl/macros.h"
 #include "lib/ftl/tasks/task_runner.h"
 #include "lib/mtl/tasks/message_loop.h"
-#include "apps/icu_data/lib/icu_data.h"
 
 namespace flutter_runner {
 namespace {
