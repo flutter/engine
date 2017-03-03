@@ -1,0 +1,59 @@
+# Copyright 2017 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+name:
+dependencies:
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: ../fonts/third_party/roboto/Roboto-Regular.ttf
+        - asset: ../fonts/third_party/roboto/Roboto-Italic.ttf
+          style: italic
+        - asset: ../fonts/third_party/roboto/Roboto-Thin.ttf
+          weight: 100
+        - asset: ../fonts/third_party/roboto/Roboto-ThinItalic.ttf
+          weight: 100
+          style: italic
+        - asset: ../fonts/third_party/roboto/Roboto-Light.ttf
+          weight: 300
+        - asset: ../fonts/third_party/roboto/Roboto-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: ../fonts/third_party/roboto/Roboto-Medium.ttf
+          weight: 500
+        - asset: ../fonts/third_party/roboto/Roboto-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: ../fonts/third_party/roboto/Roboto-Bold.ttf
+          weight: 700
+        - asset: ../fonts/third_party/roboto/Roboto-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: ../fonts/third_party/roboto/Roboto-Black.ttf
+          weight: 900
+        - asset: ../fonts/third_party/roboto/Roboto-BlackItalic.ttf
+          weight: 900
+          style: italic
+    - family: RobotoCondensed
+      fonts:
+        - asset: ../fonts/third_party/robotocondensed/RobotoCondensed-Regular.ttf
+        - asset: ../fonts/third_party/robotocondensed/RobotoCondensed-Italic.ttf
+          style: italic
+        - asset: ../fonts/third_party/robotocondensed/RobotoCondensed-Light.ttf
+          weight: 300
+        - asset: ../fonts/third_party/robotocondensed/RobotoCondensed-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: ../fonts/third_party/robotocondensed/RobotoCondensed-Bold.ttf
+          weight: 700
+        - asset: ../fonts/third_party/robotocondensed/RobotoCondensed-BoldItalic.ttf
+          weight: 700
+          style: italic

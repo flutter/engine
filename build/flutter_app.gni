@@ -72,7 +72,6 @@ template("flutter_app") {
   flutter_tools_name = get_label_info(flutter_tools_label, "name")
   flutter_tools_packages = "$flutter_tools_gen_dir/$flutter_tools_name.packages"
   flutter_tools_main = "$flutter_tools_label/bin/fuchsia_builder.dart"
-  flutter_tools_asset_manifest = "$flutter_tools_label/schema/material_fonts.yaml"
 
   dot_packages = "$target_gen_dir/$dart_package_name.packages"
   bundle_path = "$root_out_dir/$bundle_name"
@@ -128,14 +127,16 @@ template("flutter_app") {
   }
 
   action(target_name) {
+    if (defined(invoker.manifest)) {
+      manifest = rebase_path(invoker.manifest)
+    } else {
+      manifest = rebase_path("//flutter/build/pubspec.yaml")
+    }
+
     inputs = [
       snapshot_path,
+      manifest,
     ]
-    if (defined(invoker.manifest)) {
-      inputs += [ rebase_path(invoker.manifest) ]
-    } else {
-      inputs += [ rebase_path(flutter_tools_asset_manifest)]
-    }
 
     outputs = [
       bundle_path,
@@ -164,19 +165,10 @@ template("flutter_app") {
       rebase_path(bundle_path),
       "--snapshot",
       rebase_path(snapshot_path),
+      "--manifest",
+      manifest,
     ]
-    if (defined(invoker.manifest)) {
-      args += [
-        "--manifest",
-        rebase_path(invoker.manifest),
-      ]
-    } else {
-      args += [
-        "--manifest",
-        rebase_path(flutter_tools_asset_manifest),
-      ]
-    }
-
+    
     deps = [
       ":$flutter_snapshot_name",
       dart_binary_label,
