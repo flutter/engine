@@ -27,10 +27,7 @@ MessageLoopImpl::MessageLoopImpl() : order_(0) {}
 MessageLoopImpl::~MessageLoopImpl() = default;
 
 void MessageLoopImpl::PostTask(ftl::Closure task, ftl::TimePoint target_time) {
-  if (task == nullptr) {
-    return;
-  }
-
+  FTL_DCHECK(task != nullptr);
   WakeUp(RegisterTaskAndGetNextWake(task, target_time));
 }
 
@@ -39,7 +36,9 @@ void MessageLoopImpl::RunExpiredTasksNow() {
 }
 
 void MessageLoopImpl::SetTaskObserver(MessageLoop::TaskObserver observer) {
-  ftl::MutexLocker lock(&task_observer_mutex_);
+  FTL_DCHECK(MessageLoop::GetCurrent().GetLoopImpl().get() == this)
+      << "Message loop task observer must be set on the same thread as the "
+         "loop.";
   task_observer_ = observer;
 }
 
@@ -73,18 +72,10 @@ ftl::TimePoint MessageLoopImpl::RunExpiredTasksAndGetNextWake() {
     }
   }
 
-  MessageLoop::TaskObserver observer;
-  {
-    // In case the task observer is modified from within the task callout, the
-    // update will only hold the next time task expiry is checked.
-    ftl::MutexLocker lock(&task_observer_mutex_);
-    observer = task_observer_;
-  }
-
   for (const auto& invocation : invocations) {
     invocation();
-    if (observer) {
-      observer();
+    if (task_observer_) {
+      task_observer_();
     }
   }
 

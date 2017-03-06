@@ -25,8 +25,7 @@ class ICUContext {
   bool SetupMapping(const std::string& icu_data_path) {
     // Check if the explicit path specified exists.
     auto overriden_path_mapping = std::make_unique<FileMapping>(icu_data_path);
-    if (overriden_path_mapping != nullptr &&
-        overriden_path_mapping->GetSize() != 0) {
+    if (overriden_path_mapping->GetSize() != 0) {
       file_mapping_ = std::move(overriden_path_mapping);
       return true;
     }
@@ -41,7 +40,7 @@ class ICUContext {
     // Check if the mapping can by directly accessed via a file path. In this
     // case, the data file needs to be next to the executable.
     auto file = std::make_unique<FileMapping>(kIcuDataFileName);
-    if (file != nullptr && file->GetSize() != 0) {
+    if (file->GetSize() != 0) {
       file_mapping_ = std::move(file);
       return true;
     }
@@ -94,10 +93,8 @@ class ICUContext {
 };
 
 void InitializeICUOnce(const std::string& icu_data_path) {
-  static std::unique_ptr<ICUContext> context =
-      std::make_unique<ICUContext>(icu_data_path);
-  FTL_CHECK(context != nullptr && context->IsValid())
-      << "Must be able to initialize the ICU context";
+  static ICUContext* context = new ICUContext(icu_data_path);
+  FTL_CHECK(context->IsValid()) << "Must be able to initialize the ICU context";
 }
 
 std::once_flag gICUInitFlag;

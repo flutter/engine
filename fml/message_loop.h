@@ -33,6 +33,7 @@ class MessageLoop {
 
  private:
   friend class TaskRunner;
+  friend class MessageLoopImpl;
 
   ftl::RefPtr<MessageLoopImpl> loop_;
   ftl::RefPtr<fml::TaskRunner> task_runner_;

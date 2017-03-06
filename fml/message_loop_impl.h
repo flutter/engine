@@ -61,8 +61,7 @@ class MessageLoopImpl : public ftl::RefCountedThreadSafe<MessageLoopImpl> {
   using DelayedTaskQueue = std::
       priority_queue<DelayedTask, std::deque<DelayedTask>, DelayedTaskCompare>;
 
-  ftl::Mutex task_observer_mutex_;
-  MessageLoop::TaskObserver task_observer_ FTL_GUARDED_BY(task_observer_mutex_);
+  MessageLoop::TaskObserver task_observer_;
   ftl::Mutex delayed_tasks_mutex_;
   DelayedTaskQueue delayed_tasks_ FTL_GUARDED_BY(delayed_tasks_mutex_);
   size_t order_ FTL_GUARDED_BY(delayed_tasks_mutex_);
