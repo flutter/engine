@@ -49,6 +49,15 @@ source_set("fml") {
 
     libs += [ "Foundation.framework" ]
   }
+
+  if (is_android) {
+    sources += [
+      "platform/android/message_loop_android.cc",
+      "platform/android/message_loop_android.h",
+    ]
+
+    libs += [ "android" ]
+  }
 }
 
 executable("fml_unittests") {

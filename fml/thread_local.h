@@ -10,7 +10,7 @@
 #include "lib/ftl/logging.h"
 #include "lib/ftl/macros.h"
 
-#define FML_THREAD_LOCAL_PTHREADS OS_MACOSX || OS_LINUX
+#define FML_THREAD_LOCAL_PTHREADS OS_MACOSX || OS_LINUX || OS_ANDROID
 
 #if FML_THREAD_LOCAL_PTHREADS
 #include <pthread.h>

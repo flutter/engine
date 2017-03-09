@@ -10,6 +10,11 @@
 #include "flutter/fml/platform/darwin/message_loop_darwin.h"
 using PlatformMessageLoopImpl = fml::MessageLoopDarwin;
 
+#elif OS_ANDROID
+
+#include "flutter/fml/platform/android/message_loop_android.h"
+using PlatformMessageLoopImpl = fml::MessageLoopAndroid;
+
 #else
 
 #error This platform does not have a message loop implementation.
@@ -58,6 +63,7 @@ ftl::TimePoint MessageLoopImpl::RunExpiredTasksAndGetNextWake() {
     ftl::MutexLocker lock(&delayed_tasks_mutex_);
 
     if (delayed_tasks_.empty()) {
+      FTL_DCHECK(false) << "Spurious wake when no delayed tasks were queued.";
       return ftl::TimePoint::Max();
     }
 
@@ -71,6 +77,8 @@ ftl::TimePoint MessageLoopImpl::RunExpiredTasksAndGetNextWake() {
       delayed_tasks_.pop();
     }
   }
+
+  FTL_DCHECK(false) << "Spurious wake when no expired tasks were queued.";
 
   for (const auto& invocation : invocations) {
     invocation();

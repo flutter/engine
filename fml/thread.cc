@@ -11,7 +11,7 @@
 
 #if OS_MACOSX
 #include <pthread/pthread.h>
-#elif OS_LINUX
+#elif OS_LINUX || OS_ANDROID
 #include <pthread.h>
 #else
 #error Unsupported Platform
@@ -56,7 +56,7 @@ void Thread::SetCurrentThreadName(const std::string& name) {
   }
 #if OS_MACOSX
   pthread_setname_np(name.c_str());
-#elif OS_LINUX
+#elif OS_LINUX || OS_ANDROID
   pthread_setname_np(pthread_self(), name.c_str());
 #else
 #error Unsupported Platform
