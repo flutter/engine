@@ -9,6 +9,7 @@
 #include <sys/cdefs.h>
 
 #include "FlutterAsyncMessageListener.h"
+#include "FlutterBinaryMessages.h"
 #include "FlutterDartProject.h"
 #include "FlutterMacros.h"
 #include "FlutterMessageListener.h"
@@ -30,6 +31,13 @@ FLUTTER_EXPORT
 - (void)addMessageListener:(NSObject<FlutterMessageListener>*)listener;
 
 - (void)removeMessageListener:(NSObject<FlutterMessageListener>*)listener;
+
+- (void)sendBinaryMessage:(NSData*)message
+                onChannel:(NSString*)channelName
+       andHandleReplyWith:(FlutterBinaryReplyHandler)handler;
+
+- (void)handleBinaryMessagesOnChannel:(NSString*)channelName
+                          withHandler:(FlutterBinaryMessageHandler)handler;
 
 - (void)addAsyncMessageListener:
     (NSObject<FlutterAsyncMessageListener>*)listener;
