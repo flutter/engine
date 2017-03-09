@@ -63,7 +63,6 @@ ftl::TimePoint MessageLoopImpl::RunExpiredTasksAndGetNextWake() {
     ftl::MutexLocker lock(&delayed_tasks_mutex_);
 
     if (delayed_tasks_.empty()) {
-      FTL_DCHECK(false) << "Spurious wake when no delayed tasks were queued.";
       return ftl::TimePoint::Max();
     }
 
@@ -77,8 +76,6 @@ ftl::TimePoint MessageLoopImpl::RunExpiredTasksAndGetNextWake() {
       delayed_tasks_.pop();
     }
   }
-
-  FTL_DCHECK(false) << "Spurious wake when no expired tasks were queued.";
 
   for (const auto& invocation : invocations) {
     invocation();

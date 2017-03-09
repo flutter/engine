@@ -24,7 +24,7 @@ struct UniqueLooperTraits {
 class MessageLoopAndroid : public MessageLoopImpl {
  private:
   ftl::UniqueObject<ALooper*, UniqueLooperTraits> looper_;
-  ftl::UniqueFD event_fd_;
+  ftl::UniqueFD timer_fd_;
   bool running_;
 
   MessageLoopAndroid();
@@ -39,7 +39,7 @@ class MessageLoopAndroid : public MessageLoopImpl {
 
   void OnEventFired();
 
-  bool DrainEventFD();
+  bool DrainTimerFD();
 
   FRIEND_MAKE_REF_COUNTED(MessageLoopAndroid);
   FRIEND_REF_COUNTED_THREAD_SAFE(MessageLoopAndroid);

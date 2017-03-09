@@ -4,16 +4,23 @@
 
 #include "flutter/fml/platform/android/message_loop_android.h"
 #include <unistd.h>
+#include "flutter/fml/platform/linux/timerfd.h"
 #include "lib/ftl/files/eintr_wrapper.h"
 
+#ifndef NSEC_PER_SEC
+#define NSEC_PER_SEC 1000000000
+#endif
+
 namespace fml {
+
+static const int kClockType = CLOCK_MONOTONIC;
 
 static ALooper* AcquireLooperForThread() {
   ALooper* looper = ALooper_forThread();
 
   if (looper == nullptr) {
-    // No looper has been configured for the current thread. Create one
-    // reference it and return the same.
+    // No looper has been configured for the current thread. Create one and
+    // return the same.
     looper = ALooper_prepare(0);
   }
 
@@ -25,9 +32,11 @@ static ALooper* AcquireLooperForThread() {
 
 MessageLoopAndroid::MessageLoopAndroid()
     : looper_(AcquireLooperForThread()),
-      event_fd_(::eventfd(0 /* initial value */,
-                          EFD_CLOEXEC | EFD_NONBLOCK /* flags */)),
+      timer_fd_(::timerfd_create(kClockType, TFD_NONBLOCK | TFD_CLOEXEC)),
       running_(false) {
+  FTL_CHECK(looper_.is_valid());
+  FTL_CHECK(timer_fd_.is_valid());
+
   static const int kWakeEvents = ALOOPER_EVENT_INPUT;
 
   ALooper_callbackFunc read_event_fd = [](int, int events, void* data) -> int {
@@ -37,10 +46,8 @@ MessageLoopAndroid::MessageLoopAndroid()
     return 1;  // continue receiving callbacks
   };
 
-  FTL_CHECK(looper_.is_valid());
-  FTL_CHECK(event_fd_.is_valid());
   int add_result = ::ALooper_addFd(looper_.get(),          // looper
-                                   event_fd_.get(),        // fd
+                                   timer_fd_.get(),        // fd
                                    ALOOPER_POLL_CALLBACK,  // ident
                                    kWakeEvents,            // events
                                    read_event_fd,          // callback
@@ -50,7 +57,7 @@ MessageLoopAndroid::MessageLoopAndroid()
 }
 
 MessageLoopAndroid::~MessageLoopAndroid() {
-  int remove_result = ::ALooper_removeFd(looper_.get(), event_fd_.get());
+  int remove_result = ::ALooper_removeFd(looper_.get(), timer_fd_.get());
   FTL_CHECK(remove_result == 1);
 }
 
@@ -78,28 +85,31 @@ void MessageLoopAndroid::Terminate() {
 }
 
 void MessageLoopAndroid::WakeUp(ftl::TimePoint time_point) {
-  // On signal, the 8 byte integer value is addded. We specify 1 for each wake.
-  // The value itself does not matter since we never count the wakes on read.
-  const uint64_t write_count = 1;
-  ssize_t size =
-      HANDLE_EINTR(::write(event_fd_.get(), &write_count, sizeof(write_count)));
-  FTL_CHECK(size == sizeof(write_count));
+  const uint64_t nano_secs = time_point.ToEpochDelta().ToNanoseconds();
+
+  struct itimerspec spec = {};
+  spec.it_value.tv_sec = (time_t)(nano_secs / NSEC_PER_SEC);
+  spec.it_value.tv_nsec = nano_secs % NSEC_PER_SEC;
+  spec.it_interval = spec.it_value;  // single expiry.
+
+  int result =
+      ::timerfd_settime(timer_fd_.get(), TFD_TIMER_ABSTIME, &spec, nullptr);
+  FTL_DCHECK(result == 0);
 }
 
-bool MessageLoopAndroid::DrainEventFD() {
-  // On read, the signal count is the number of times this descriptor was
-  // woken up.
-  uint64_t signal_count = 0;
-  ssize_t size = HANDLE_EINTR(
-      ::read(event_fd_.get(), &signal_count, sizeof(signal_count)));
-  if (size != sizeof(signal_count)) {
+bool MessageLoopAndroid::DrainTimerFD() {
+  // 8 bytes must be read from a signalled timer file descriptor when signalled.
+  uint64_t fire_count = 0;
+  ssize_t size =
+      HANDLE_EINTR(::read(timer_fd_.get(), &fire_count, sizeof(uint64_t)));
+  if (size != sizeof(uint64_t)) {
     return false;
   }
-  return signal_count > 0;
+  return fire_count > 0;
 }
 
 void MessageLoopAndroid::OnEventFired() {
-  if (DrainEventFD()) {
+  if (DrainTimerFD()) {
     RunExpiredTasksNow();
   }
 }

@@ -58,6 +58,16 @@ source_set("fml") {
 
     libs += [ "android" ]
   }
+
+  if (is_android || is_linux) {
+    # Don't filter away Linux sources on Android.
+    set_sources_assignment_filter([])
+    sources += [
+      "platform/linux/timerfd.cc",
+      "platform/linux/timerfd.h",
+    ]
+    set_sources_assignment_filter(sources_assignment_filter)
+  }
 }
 
 executable("fml_unittests") {
