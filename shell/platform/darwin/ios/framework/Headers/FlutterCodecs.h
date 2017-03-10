@@ -10,7 +10,7 @@
 
 FLUTTER_EXPORT
 @protocol FlutterMessageCodec
-+ (instancetype)shared;
++ (instancetype)sharedInstance;
 - (NSData*)encode:(id)message;
 - (id)decode:(NSData*)message;
 @end
@@ -33,43 +33,53 @@ FLUTTER_EXPORT
 
 FLUTTER_EXPORT
 @interface FlutterMethodCall : NSObject
-+ (instancetype) withMethod:(NSString*)method andArguments:(id)arguments;
++ (instancetype)methodCallWithMethodName:(NSString*)method
+                               arguments:(id)arguments;
 @property(readonly) NSString* method;
 @property(readonly) id arguments;
 @end
 
 FLUTTER_EXPORT
 @interface FlutterError : NSObject
-+ (instancetype) withCode:(NSString*)code message:(NSString*)message details:(id)details;
++ (instancetype)errorWithCode:(NSString*)code
+                      message:(NSString*)message
+                      details:(id)details;
 @property(readonly) NSString* code;
 @property(readonly) NSString* message;
 @property(readonly) id details;
 @end
 
+typedef NS_ENUM(NSInteger, FlutterStandardDataType) {
+  FlutterStandardDataTypeUInt8,
+  FlutterStandardDataTypeInt32,
+  FlutterStandardDataTypeInt64,
+  FlutterStandardDataTypeFloat64,
+};
+
 FLUTTER_EXPORT
 @interface FlutterStandardTypedData : NSObject
-+ (instancetype) withBytes:(NSData*)data;
-+ (instancetype) withInt32:(NSData*)data;
-+ (instancetype) withInt64:(NSData*)data;
-+ (instancetype) withFloat64:(NSData*)data;
++ (instancetype)typedDataWithBytes:(NSData*)data;
++ (instancetype)typedDataWithInt32:(NSData*)data;
++ (instancetype)typedDataWithInt64:(NSData*)data;
++ (instancetype)typedDataWithFloat64:(NSData*)data;
 @property(readonly) NSData* data;
-@property(readonly) UInt32 length;
+@property(readonly) FlutterStandardDataType type;
+@property(readonly) UInt32 elementCount;
 @property(readonly) UInt8 elementSize;
-@property(readonly) UInt8 type;
 @end
 
 FLUTTER_EXPORT
 @interface FlutterStandardBigInteger : NSObject
-+ (instancetype) withHex:(NSString*)hex;
++ (instancetype)bigIntegerWithHex:(NSString*)hex;
 @property(readonly) NSString* hex;
 @end
 
 FLUTTER_EXPORT
 @protocol FlutterMethodCodec
-+ (instancetype) shared;
-- (FlutterMethodCall*) decodeMethodCall:(NSData*)message;
-- (NSData*) encodeSuccessEnvelope:(id)result;
-- (NSData*) encodeErrorEnvelope:(FlutterError*)error;
++ (instancetype)sharedInstance;
+- (FlutterMethodCall*)decodeMethodCall:(NSData*)message;
+- (NSData*)encodeSuccessEnvelope:(id)result;
+- (NSData*)encodeErrorEnvelope:(FlutterError*)error;
 @end
 
 FLUTTER_EXPORT

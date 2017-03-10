@@ -7,11 +7,9 @@
 namespace shell {
 
 NSData* GetNSDataFromNSString(NSString* string) {
-  if (!string)
-      return nil;
-  NSData* data = [[NSData alloc] initWithBytes:string.UTF8String length:string.length];
-  [data autorelease];
-  return data;
+  if (!string.length)
+    return [NSData data];
+  return [NSData dataWithBytes:string.UTF8String length:string.length];
 }
 std::vector<uint8_t> GetVectorFromNSData(NSData* data) {
   if (!data.length)
@@ -21,18 +19,13 @@ std::vector<uint8_t> GetVectorFromNSData(NSData* data) {
 }
 
 NSString* GetNSStringFromNSData(NSData* data) {
-  NSString* string = [[NSString alloc] initWithBytes:data.bytes
-                                              length:data.length
-                                            encoding:NSUTF8StringEncoding];
-  [string autorelease];
-  return string;
+  return [[[NSString alloc] initWithBytes:data.bytes
+                                   length:data.length
+                                 encoding:NSUTF8StringEncoding] autorelease];
 }
 
 NSData* GetNSDataFromVector(const std::vector<uint8_t>& buffer) {
-  NSData* data = [[NSData alloc] initWithBytes:buffer.data()
-                                        length:buffer.size()];
-  [data autorelease];
-  return data;
+  return [NSData dataWithBytes:buffer.data() length:buffer.size()];
 }
-    
+
 }  // namespace shell

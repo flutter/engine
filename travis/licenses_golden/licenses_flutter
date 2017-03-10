@@ -1924,6 +1924,13 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/MethodCod
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StandardMessageCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StandardMethodCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StringMessageCodec.java
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessages.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterChannels.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCodecs.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterStandardCodec.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterStandardCodec_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_main_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_main_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.h

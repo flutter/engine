@@ -7,33 +7,56 @@
 
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs.h"
 
+typedef NS_ENUM(NSInteger, FlutterStandardField) {
+  FlutterStandardFieldNil,
+  FlutterStandardFieldTrue,
+  FlutterStandardFieldFalse,
+  FlutterStandardFieldInt32,
+  FlutterStandardFieldInt64,
+  FlutterStandardFieldIntHex,
+  FlutterStandardFieldFloat64,
+  FlutterStandardFieldString,
+  FlutterStandardFieldUInt8Data,
+  FlutterStandardFieldInt32Data,
+  FlutterStandardFieldInt64Data,
+  FlutterStandardFieldFloat64Data,
+  FlutterStandardFieldList,
+  FlutterStandardFieldMap
+};
+
 namespace shell {
-  const UInt8 kNIL = 0;
-  const UInt8 kTRUE = 1;
-  const UInt8 kFALSE = 2;
-  const UInt8 kINT32 = 3;
-  const UInt8 kINT64 = 4;
-  const UInt8 kINTHEX = 5;
-  const UInt8 kFLOAT64 = 6;
-  const UInt8 kSTRING = 7;
-  const UInt8 kBYTE_ARRAY = 8;
-  const UInt8 kINT32_ARRAY = 9;
-  const UInt8 kINT64_ARRAY = 10;
-  const UInt8 kFLOAT64_ARRAY = 11;
-  const UInt8 kLIST = 12;
-  const UInt8 kMAP = 13;
+FlutterStandardField FlutterStandardFieldForDataType(
+    FlutterStandardDataType type) {
+  return (FlutterStandardField)(type + FlutterStandardFieldUInt8Data);
 }
+FlutterStandardDataType FlutterStandardDataTypeForField(
+    FlutterStandardField field) {
+  return (FlutterStandardDataType)(field - FlutterStandardFieldUInt8Data);
+}
+UInt8 elementSizeForFlutterStandardDataType(FlutterStandardDataType type) {
+  switch (type) {
+    case FlutterStandardDataTypeUInt8:
+      return 1;
+    case FlutterStandardDataTypeInt32:
+      return 4;
+    case FlutterStandardDataTypeInt64:
+      return 8;
+    case FlutterStandardDataTypeFloat64:
+      return 8;
+  }
+}
+}  // namespace shell
 
 @interface FlutterStandardWriter : NSObject
-+ (instancetype) withData:(NSMutableData*)data;
++ (instancetype)writerWithData:(NSMutableData*)data;
 - (void)writeByte:(UInt8)value;
 - (void)writeValue:(id)value;
 @end
 
-@interface FlutterStandardReader: NSObject
-+ (instancetype) withData:(NSData*)data;
-- (BOOL) hasMore;
-- (id) readValue;
+@interface FlutterStandardReader : NSObject
++ (instancetype)readerWithData:(NSData*)data;
+- (BOOL)hasMore;
+- (id)readValue;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERSTANDARDCODECINTERNAL_H_

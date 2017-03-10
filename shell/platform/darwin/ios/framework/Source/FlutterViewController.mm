@@ -536,39 +536,11 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 #pragma mark - Application Messages
 
-- (void)sendBinaryMessage:(NSData*)message
-                onChannel:(NSString*)channel {
-    NSAssert(message, @"The message must not be null");
-    NSAssert(channel, @"The channel must not be null");
-    _platformView->DispatchPlatformMessage(
-        ftl::MakeRefCounted<blink::PlatformMessage>(
-            channel.UTF8String,
-            shell::GetVectorFromNSData(message),
-            nil
-        )
-    );
-}
-
-- (void)sendBinaryMessage:(NSData*)message
-                onChannel:(NSString*)channel
-       andHandleReplyWith:(FlutterBinaryReplyHandler)callback {
-    NSAssert(message, @"The message must not be null");
-    NSAssert(channel, @"The channel must not be null");
-    NSAssert(callback, @"The callback must not be null");
-    _platformView->DispatchPlatformMessage(
-        ftl::MakeRefCounted<blink::PlatformMessage>(
-            channel.UTF8String, shell::GetVectorFromNSData(message),
-            ftl::MakeRefCounted<PlatformMessageResponseDarwin>(^(NSData* reply) {
-              if (callback) callback(reply);
-            })));
-}
-
 - (void)sendString:(NSString*)message withMessageName:(NSString*)channel {
   NSAssert(message, @"The message must not be null");
   NSAssert(channel, @"The channel must not be null");
   [self sendBinaryMessage:shell::GetNSDataFromNSString(message)
-                onChannel:channel
-  ];
+              channelName:channel];
 }
 
 - (void)sendString:(NSString*)message
@@ -578,37 +550,37 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   NSAssert(channel, @"The channel must not be null");
   NSAssert(callback, @"The callback must not be null");
   [self sendBinaryMessage:shell::GetNSDataFromNSString(message)
-                onChannel:channel
-       andHandleReplyWith:^(NSData* data){
+              channelName:channel
+       binaryReplyHandler:^(NSData* data) {
          callback(shell::GetNSStringFromNSData(data));
-       }
-  ];
+       }];
 }
 
 - (void)sendJSON:(NSDictionary*)message withMessageName:(NSString*)channel {
   NSData* data =
       [NSJSONSerialization dataWithJSONObject:message options:0 error:nil];
-  [self sendBinaryMessage:data onChannel:channel];
+  [self sendBinaryMessage:data channelName:channel];
 }
 
 - (void)addMessageListener:(NSObject<FlutterMessageListener>*)listener {
   NSAssert(listener, @"The listener must not be null");
   NSString* messageName = listener.messageName;
   NSAssert(messageName, @"The messageName must not be null");
-  [self handleBinaryMessagesOnChannel: messageName
-                          withHandler: ^(NSData* message, FlutterBinaryReplyHandler replyHandler) {
-                            NSString* reply = [listener didReceiveString: shell::GetNSStringFromNSData(message)];
-                            replyHandler(shell::GetNSDataFromNSString(reply));
-                          }
-  ];
+  [self
+      setBinaryMessageHandlerOnChannel:messageName
+                  binaryMessageHandler:^(
+                      NSData* message, FlutterBinaryReplyHandler replyHandler) {
+                    NSString* reply = [listener
+                        didReceiveString:shell::GetNSStringFromNSData(message)];
+                    replyHandler(shell::GetNSDataFromNSString(reply));
+                  }];
 }
 
 - (void)removeMessageListener:(NSObject<FlutterMessageListener>*)listener {
   NSAssert(listener, @"The listener must not be null");
   NSString* messageName = listener.messageName;
   NSAssert(messageName, @"The messageName must not be null");
-  [self handleBinaryMessagesOnChannel: messageName
-                          withHandler: nil];
+  [self setBinaryMessageHandlerOnChannel:messageName binaryMessageHandler:nil];
 }
 
 - (void)addAsyncMessageListener:
@@ -616,14 +588,17 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   NSAssert(listener, @"The listener must not be null");
   NSString* messageName = listener.messageName;
   NSAssert(messageName, @"The messageName must not be null");
-  [self handleBinaryMessagesOnChannel: messageName
-                         withHandler: ^(NSData* message, FlutterBinaryReplyHandler replyHandler) {
-                           [listener didReceiveString: shell::GetNSStringFromNSData(message)
-                                     callback: ^(NSString* reply) {
-                                       replyHandler(shell::GetNSDataFromNSString(reply));
-                                     }];
-                         }
-  ];
+  [self
+      setBinaryMessageHandlerOnChannel:messageName
+                  binaryMessageHandler:^(
+                      NSData* message, FlutterBinaryReplyHandler replyHandler) {
+                    [listener
+                        didReceiveString:shell::GetNSStringFromNSData(message)
+                                callback:^(NSString* reply) {
+                                  replyHandler(
+                                      shell::GetNSDataFromNSString(reply));
+                                }];
+                  }];
 }
 
 - (void)removeAsyncMessageListener:
@@ -631,14 +606,36 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   NSAssert(listener, @"The listener must not be null");
   NSString* messageName = listener.messageName;
   NSAssert(messageName, @"The messageName must not be null");
-  [self handleBinaryMessagesOnChannel: messageName
-                          withHandler: nil];
+  [self setBinaryMessageHandlerOnChannel:messageName binaryMessageHandler:nil];
 }
 
-- (void)handleBinaryMessagesOnChannel: (NSString*)channel
-    withHandler: (FlutterBinaryMessageHandler)handler {
+- (void)sendBinaryMessage:(NSData*)message channelName:(NSString*)channel {
+  NSAssert(message, @"The message must not be null");
+  NSAssert(channel, @"The channel must not be null");
+  _platformView->DispatchPlatformMessage(
+      ftl::MakeRefCounted<blink::PlatformMessage>(
+          channel.UTF8String, shell::GetVectorFromNSData(message), nil));
+}
+
+- (void)sendBinaryMessage:(NSData*)message
+              channelName:(NSString*)channel
+       binaryReplyHandler:(FlutterBinaryReplyHandler)callback {
+  NSAssert(message, @"The message must not be null");
+  NSAssert(channel, @"The channel must not be null");
+  NSAssert(callback, @"The callback must not be null");
+  _platformView->DispatchPlatformMessage(
+      ftl::MakeRefCounted<blink::PlatformMessage>(
+          channel.UTF8String, shell::GetVectorFromNSData(message),
+          ftl::MakeRefCounted<PlatformMessageResponseDarwin>(^(NSData* reply) {
+            if (callback)
+              callback(reply);
+          })));
+}
+
+- (void)setBinaryMessageHandlerOnChannel:(NSString*)channel
+                    binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
   NSAssert(channel, @"The channel name must not be null");
-  _platformView->platform_message_router().SetMessageHandler(
-    channel.UTF8String, handler);
+  _platformView->platform_message_router().SetMessageHandler(channel.UTF8String,
+                                                             handler);
 }
 @end

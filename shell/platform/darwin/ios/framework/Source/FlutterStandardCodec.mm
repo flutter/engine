@@ -7,23 +7,24 @@
 #pragma mark - Codec for basic message channel
 
 @implementation FlutterStandardMessageCodec
-+ (instancetype) shared {
-  static id _shared = nil;
-  if (!_shared) {
-     _shared = [FlutterStandardMessageCodec new];
++ (instancetype)sharedInstance {
+  static id _sharedInstance = nil;
+  if (!_sharedInstance) {
+    _sharedInstance = [FlutterStandardMessageCodec new];
   }
-  return _shared;
+  return _sharedInstance;
 }
 
-- (NSData*) encode:(id)message {
+- (NSData*)encode:(id)message {
   NSMutableData* data = [NSMutableData dataWithCapacity:32];
-  FlutterStandardWriter* writer = [FlutterStandardWriter withData:data];
+  FlutterStandardWriter* writer = [FlutterStandardWriter writerWithData:data];
   [writer writeValue:message];
   return data;
 }
 
-- (id) decode:(NSData*)message {
-  FlutterStandardReader* reader = [FlutterStandardReader withData:message];
+- (id)decode:(NSData*)message {
+  FlutterStandardReader* reader =
+      [FlutterStandardReader readerWithData:message];
   id value = [reader readValue];
   if ([reader hasMore]) {
     @throw [NSException exceptionWithName:NSInvalidArgumentException
@@ -37,25 +38,25 @@
 #pragma mark - Codec for method channel
 
 @implementation FlutterStandardMethodCodec
-+ (instancetype) shared {
-  static id _shared = nil;
-  if (!_shared) {
-     _shared = [FlutterStandardMethodCodec new];
++ (instancetype)sharedInstance {
+  static id _sharedInstance = nil;
+  if (!_sharedInstance) {
+    _sharedInstance = [FlutterStandardMethodCodec new];
   }
-  return _shared;
+  return _sharedInstance;
 }
 
-- (NSData*) encodeSuccessEnvelope:(id)result {
+- (NSData*)encodeSuccessEnvelope:(id)result {
   NSMutableData* data = [NSMutableData dataWithCapacity:32];
-  FlutterStandardWriter* writer = [FlutterStandardWriter withData:data];
+  FlutterStandardWriter* writer = [FlutterStandardWriter writerWithData:data];
   [writer writeByte:0];
   [writer writeValue:result];
   return data;
 }
 
-- (NSData*) encodeErrorEnvelope:(FlutterError*)error {
+- (NSData*)encodeErrorEnvelope:(FlutterError*)error {
   NSMutableData* data = [NSMutableData dataWithCapacity:32];
-  FlutterStandardWriter* writer = [FlutterStandardWriter withData:data];
+  FlutterStandardWriter* writer = [FlutterStandardWriter writerWithData:data];
   [writer writeByte:1];
   [writer writeValue:error.code];
   [writer writeValue:error.message];
@@ -63,8 +64,9 @@
   return data;
 }
 
-- (FlutterMethodCall*) decodeMethodCall:(NSData*)message {
-  FlutterStandardReader* reader = [FlutterStandardReader withData:message];
+- (FlutterMethodCall*)decodeMethodCall:(NSData*)message {
+  FlutterStandardReader* reader =
+      [FlutterStandardReader readerWithData:message];
   id value1 = [reader readValue];
   id value2 = [reader readValue];
   if ([reader hasMore]) {
@@ -77,7 +79,7 @@
                                    reason:@"Method call corrupted"
                                  userInfo:nil];
   }
-  return [FlutterMethodCall withMethod:value1 andArguments:value2];
+  return [FlutterMethodCall methodCallWithMethodName:value1 arguments:value2];
 }
 @end
 
@@ -86,69 +88,71 @@ using namespace shell;
 #pragma mark - Standard serializable types
 
 @implementation FlutterStandardTypedData
-+ (instancetype)withBytes:(NSData*)data {
-  return [[[FlutterStandardTypedData alloc] initWithData:data ofType:kBYTE_ARRAY elementSize:1] autorelease];
++ (instancetype)typedDataWithBytes:(NSData*)data {
+  return
+      [FlutterStandardTypedData typedDataWithData:data
+                                             type:FlutterStandardDataTypeUInt8];
 }
 
-+ (instancetype)withInt32:(NSData*)data {
-  return [[[FlutterStandardTypedData alloc] initWithData:data ofType:kINT32_ARRAY elementSize:4] autorelease];
++ (instancetype)typedDataWithInt32:(NSData*)data {
+  return
+      [FlutterStandardTypedData typedDataWithData:data
+                                             type:FlutterStandardDataTypeInt32];
 }
 
-+ (instancetype)withInt64:(NSData*)data {
-  return [[[FlutterStandardTypedData alloc] initWithData:data ofType:kINT64_ARRAY elementSize:8] autorelease];
++ (instancetype)typedDataWithInt64:(NSData*)data {
+  return
+      [FlutterStandardTypedData typedDataWithData:data
+                                             type:FlutterStandardDataTypeInt64];
 }
 
-+ (instancetype)withFloat64:(NSData*)data {
-  return [[[FlutterStandardTypedData alloc] initWithData:data ofType:kFLOAT64_ARRAY elementSize:8] autorelease];
++ (instancetype)typedDataWithFloat64:(NSData*)data {
+  return [FlutterStandardTypedData
+      typedDataWithData:data
+                   type:FlutterStandardDataTypeFloat64];
 }
 
-+ (instancetype)withData:(NSData*)data ofType:(UInt8)type {
-  switch (type) {
-    case kBYTE_ARRAY: return [FlutterStandardTypedData withBytes:data];
-    case kINT32_ARRAY: return [FlutterStandardTypedData withInt32:data];
-    case kINT64_ARRAY: return [FlutterStandardTypedData withInt64:data];
-    case kFLOAT64_ARRAY: return [FlutterStandardTypedData withFloat64:data];
-    default:
-      @throw [NSException exceptionWithName:NSInvalidArgumentException
-                                     reason:@"Invalid type"
-                                   userInfo:nil];
-
-  }
++ (instancetype)typedDataWithData:(NSData*)data
+                             type:(FlutterStandardDataType)type {
+  return [[[FlutterStandardTypedData alloc] initWithData:data type:type]
+      autorelease];
 }
 
-- (instancetype)initWithData:(NSData*)data ofType:(UInt8)type elementSize:(UInt8)elementSize {
+- (instancetype)initWithData:(NSData*)data type:(FlutterStandardDataType)type {
   if (self = [super init]) {
     _data = [data retain];
     _type = type;
-    _elementSize = elementSize;
+    _elementSize = elementSizeForFlutterStandardDataType(type);
     if (_data.length % _elementSize) {
-      @throw [NSException exceptionWithName:NSInvalidArgumentException
-                                     reason:@"Invalid byte count for element size"
-                                   userInfo:nil];
+      @throw
+          [NSException exceptionWithName:NSInvalidArgumentException
+                                  reason:@"Invalid byte count for element size"
+                                userInfo:nil];
     }
+    _elementCount = _data.length / _elementSize;
   }
   return self;
 }
 
-- (void) dealloc {
+- (void)dealloc {
   [_data release];
   [super dealloc];
 }
 @end
 
 @implementation FlutterStandardBigInteger
-+ (instancetype) withHex:(NSString*)hex {
++ (instancetype)bigIntegerWithHex:(NSString*)hex {
   return [[[FlutterStandardBigInteger alloc] initWithHex:hex] autorelease];
 }
 
-- (instancetype) initWithHex:(NSString*)hex {
+- (instancetype)initWithHex:(NSString*)hex {
   if (self = [super init]) {
     _hex = [hex retain];
   }
   return self;
 }
 
-- (void) dealloc {
+- (void)dealloc {
   [_hex release];
   [super dealloc];
 }
@@ -160,8 +164,9 @@ using namespace shell;
   NSMutableData* _data;
 }
 
-+ (instancetype) withData:(NSMutableData*)data {
-  FlutterStandardWriter* writer = [[FlutterStandardWriter alloc] initWithData:data];
++ (instancetype)writerWithData:(NSMutableData*)data {
+  FlutterStandardWriter* writer =
+      [[FlutterStandardWriter alloc] initWithData:data];
   [writer autorelease];
   return writer;
 }
@@ -173,21 +178,21 @@ using namespace shell;
   return self;
 }
 
-- (void) dealloc {
+- (void)dealloc {
   [_data release];
   [super dealloc];
 }
 
-- (void) writeByte:(UInt8)value {
+- (void)writeByte:(UInt8)value {
   [_data appendBytes:&value length:1];
 }
 
-- (void) writeSize:(UInt32)size {
+- (void)writeSize:(UInt32)size {
   if (size < 254) {
     [self writeByte:(UInt8)size];
   } else if (size <= 0xffff) {
     [self writeByte:254];
-    UInt16 value = (UInt16) size;
+    UInt16 value = (UInt16)size;
     [_data appendBytes:&value length:2];
   } else {
     [self writeByte:255];
@@ -195,7 +200,7 @@ using namespace shell;
   }
 }
 
-- (void) writeAlignment:(UInt8)alignment {
+- (void)writeAlignment:(UInt8)alignment {
   UInt8 mod = _data.length % alignment;
   if (mod) {
     for (int i = 0; i < (alignment - mod); i++) {
@@ -204,32 +209,33 @@ using namespace shell;
   }
 }
 
-- (void) writeUTF8:(NSString*)value {
+- (void)writeUTF8:(NSString*)value {
   UInt32 length = [value lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
   [self writeSize:length];
   [_data appendBytes:value.UTF8String length:length];
 }
 
-- (void) writeValue:(id)value {
+- (void)writeValue:(id)value {
   if (value == nil || value == [NSNull null]) {
-    [self writeByte:kNIL];
+    [self writeByte:FlutterStandardFieldNil];
   } else if ([value isKindOfClass:[NSNumber class]]) {
     NSNumber* number = value;
     const char* type = [number objCType];
     if (strcmp(type, @encode(BOOL)) == 0) {
       BOOL b = number.boolValue;
-      [self writeByte:(b ? kTRUE : kFALSE)];
+      [self
+          writeByte:(b ? FlutterStandardFieldTrue : FlutterStandardFieldFalse)];
     } else if (strcmp(type, @encode(int)) == 0) {
       SInt32 n = number.intValue;
-      [self writeByte:kINT32];
+      [self writeByte:FlutterStandardFieldInt32];
       [_data appendBytes:(UInt8*)&n length:4];
     } else if (strcmp(type, @encode(long)) == 0) {
       SInt64 n = number.longValue;
-      [self writeByte:kINT64];
+      [self writeByte:FlutterStandardFieldInt64];
       [_data appendBytes:(UInt8*)&n length:8];
     } else if (strcmp(type, @encode(double)) == 0) {
       Float64 f = number.doubleValue;
-      [self writeByte:kFLOAT64];
+      [self writeByte:FlutterStandardFieldFloat64];
       [_data appendBytes:(UInt8*)&f length:8];
     } else {
       @throw [NSException exceptionWithName:NSInvalidArgumentException
@@ -238,28 +244,28 @@ using namespace shell;
     }
   } else if ([value isKindOfClass:[NSString class]]) {
     NSString* string = value;
-    [self writeByte:kSTRING];
+    [self writeByte:FlutterStandardFieldString];
     [self writeUTF8:string];
   } else if ([value isKindOfClass:[FlutterStandardBigInteger class]]) {
     FlutterStandardBigInteger* bigInt = value;
-    [self writeByte:kINTHEX];
+    [self writeByte:FlutterStandardFieldIntHex];
     [self writeUTF8:bigInt.hex];
   } else if ([value isKindOfClass:[FlutterStandardTypedData class]]) {
     FlutterStandardTypedData* typedData = value;
-    [self writeByte:typedData.type];
-    [self writeSize:typedData.length];
+    [self writeByte:FlutterStandardFieldForDataType(typedData.type)];
+    [self writeSize:typedData.elementCount];
     [self writeAlignment:typedData.elementSize];
     [_data appendData:typedData.data];
   } else if ([value isKindOfClass:[NSArray class]]) {
     NSArray* array = value;
-    [self writeByte:kLIST];
+    [self writeByte:FlutterStandardFieldList];
     [self writeSize:array.count];
     for (id object in array) {
       [self writeValue:object];
     }
   } else if ([value isKindOfClass:[NSArray class]]) {
     NSDictionary* dict = value;
-    [self writeByte:kMAP];
+    [self writeByte:FlutterStandardFieldMap];
     [self writeSize:dict.count];
     for (id key in dict) {
       [self writeValue:key];
@@ -278,13 +284,14 @@ using namespace shell;
   NSRange _range;
 }
 
-+ (instancetype) withData:(NSData*)data {
-  FlutterStandardReader* reader = [[FlutterStandardReader alloc] initWithData:data];
++ (instancetype)readerWithData:(NSData*)data {
+  FlutterStandardReader* reader =
+      [[FlutterStandardReader alloc] initWithData:data];
   [reader autorelease];
   return reader;
 }
 
-- (instancetype) initWithData:(NSData*)data {
+- (instancetype)initWithData:(NSData*)data {
   if (self = [super init]) {
     _data = [data retain];
     _range = NSMakeRange(0, 0);
@@ -292,31 +299,31 @@ using namespace shell;
   return self;
 }
 
-- (void) dealloc {
+- (void)dealloc {
   [_data release];
   [super dealloc];
 }
 
-- (BOOL) hasMore {
+- (BOOL)hasMore {
   return _range.location < _data.length;
 }
 
-- (void) readBytes:(void*)destination length:(int)length {
+- (void)readBytes:(void*)destination length:(int)length {
   _range.length = length;
   [_data getBytes:destination range:_range];
   _range.location += _range.length;
 }
 
-- (UInt8) readByte {
+- (UInt8)readByte {
   UInt8 value;
   [self readBytes:&value length:1];
   return value;
 }
 
-- (UInt32) readSize {
+- (UInt32)readSize {
   UInt8 byte = [self readByte];
   if (byte < 254) {
-    return (UInt32) byte;
+    return (UInt32)byte;
   } else if (byte == 254) {
     UInt16 value;
     [self readBytes:&value length:2];
@@ -328,84 +335,91 @@ using namespace shell;
   }
 }
 
-- (NSData*) readData:(int)length {
+- (NSData*)readData:(int)length {
   _range.length = length;
   NSData* data = [_data subdataWithRange:_range];
   _range.location += _range.length;
   return data;
 }
 
-- (NSString*) readUTF8 {
+- (NSString*)readUTF8 {
   NSData* bytes = [self readData:[self readSize]];
-  NSString* string = [[NSString alloc] initWithData:bytes encoding:NSUTF8StringEncoding];
-  [string autorelease];
-  return string;
+  return [[[NSString alloc] initWithData:bytes encoding:NSUTF8StringEncoding]
+      autorelease];
 }
 
-- (void) readAlignment:(UInt8)alignment {
+- (void)readAlignment:(UInt8)alignment {
   UInt8 mod = _range.location % alignment;
   if (mod) {
     _range.location += (alignment - mod);
   }
 }
 
-- (FlutterStandardTypedData*) readTypedDataOfType:(UInt8)type withElementSize:(UInt8)elementSize {
+- (FlutterStandardTypedData*)readTypedDataOfType:(FlutterStandardDataType)type {
   UInt32 elementCount = [self readSize];
+  UInt8 elementSize = elementSizeForFlutterStandardDataType(type);
   [self readAlignment:elementSize];
-  NSData* data = [self readData:elementCount*elementSize];
-  return [FlutterStandardTypedData withData:data ofType:type];
+  NSData* data = [self readData:elementCount * elementSize];
+  return [FlutterStandardTypedData typedDataWithData:data type:type];
 }
 
-- (id) readValue {
-  UInt8 type = [self readByte];
-  switch (type) {
-  case kNIL: return nil;
-  case kTRUE: return @YES;
-  case kFALSE: return @NO;
-  case kINT32: {
-    SInt32 value;
-    [self readBytes:&value length: 4];
-    return [NSNumber numberWithInt:value];
-  }
-  case kINT64: {
-    SInt64 value;
-    [self readBytes:&value length: 8];
-    return [NSNumber numberWithLong:value];
-  }
-  case kFLOAT64: {
-    Float64 value;
-    [self readBytes:&value length: 8];
-    return [NSNumber numberWithDouble:value];
-  }
-  case kINTHEX: return [FlutterStandardBigInteger withHex:[self readUTF8]];
-  case kSTRING: return [self readUTF8];
-  case kBYTE_ARRAY: return [self readTypedDataOfType:kBYTE_ARRAY withElementSize:1];
-  case kINT32_ARRAY: return [self readTypedDataOfType:kINT32_ARRAY withElementSize:4];
-  case kINT64_ARRAY: return [self readTypedDataOfType:kINT64_ARRAY withElementSize:8];
-  case kFLOAT64_ARRAY:  return [self readTypedDataOfType:kFLOAT64_ARRAY withElementSize:8];
-  case kLIST: {
-    UInt32 length = [self readSize];
-    NSMutableArray* array = [NSMutableArray arrayWithCapacity:length];
-    for (UInt32 i = 0; i < length; i++) {
-      [array addObject:[self readValue]];
+- (id)readValue {
+  FlutterStandardField field = (FlutterStandardField)[self readByte];
+  switch (field) {
+    case FlutterStandardFieldNil:
+      return nil;
+    case FlutterStandardFieldTrue:
+      return @YES;
+    case FlutterStandardFieldFalse:
+      return @NO;
+    case FlutterStandardFieldInt32: {
+      SInt32 value;
+      [self readBytes:&value length:4];
+      return [NSNumber numberWithInt:value];
     }
-    return array;
-  }
-  case kMAP: {
-    UInt32 size = [self readSize];
-    NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithCapacity:size];
-    for (UInt32 i = 0; i < size; i++) {
-      id key = [self readValue];
-      id val = [self readValue];
-      [dict setObject:(val == nil ? [NSNull null] : val)
-               forKey:(key == nil ? [NSNull null] : key)];
+    case FlutterStandardFieldInt64: {
+      SInt64 value;
+      [self readBytes:&value length:8];
+      return [NSNumber numberWithLong:value];
     }
-    return dict;
-  }
-  default:
-    @throw [NSException exceptionWithName:NSInvalidArgumentException
-                                   reason:@"Message corrupted"
-                                 userInfo:nil];
+    case FlutterStandardFieldFloat64: {
+      Float64 value;
+      [self readBytes:&value length:8];
+      return [NSNumber numberWithDouble:value];
+    }
+    case FlutterStandardFieldIntHex:
+      return [FlutterStandardBigInteger bigIntegerWithHex:[self readUTF8]];
+    case FlutterStandardFieldString:
+      return [self readUTF8];
+    case FlutterStandardFieldUInt8Data:
+    case FlutterStandardFieldInt32Data:
+    case FlutterStandardFieldInt64Data:
+    case FlutterStandardFieldFloat64Data:
+      return [self readTypedDataOfType:FlutterStandardDataTypeForField(field)];
+    case FlutterStandardFieldList: {
+      UInt32 length = [self readSize];
+      NSMutableArray* array = [NSMutableArray arrayWithCapacity:length];
+      for (UInt32 i = 0; i < length; i++) {
+        [array addObject:[self readValue]];
+      }
+      return array;
+    }
+    case FlutterStandardFieldMap: {
+      UInt32 size = [self readSize];
+      NSMutableDictionary* dict =
+          [NSMutableDictionary dictionaryWithCapacity:size];
+      for (UInt32 i = 0; i < size; i++) {
+        id key = [self readValue];
+        id val = [self readValue];
+        [dict setObject:(val == nil ? [NSNull null] : val)
+                 forKey:(key == nil ? [NSNull null] : key)];
+      }
+      return dict;
+    }
+    default:
+      @throw [NSException exceptionWithName:NSInvalidArgumentException
+                                     reason:@"Message corrupted"
+                                   userInfo:nil];
   }
 }
 @end

@@ -32,21 +32,22 @@ FLUTTER_EXPORT
 
 - (void)removeMessageListener:(NSObject<FlutterMessageListener>*)listener;
 
-- (void)sendBinaryMessage:(NSData*)message
-                onChannel:(NSString*)channelName
-       andHandleReplyWith:(FlutterBinaryReplyHandler)handler;
-
-- (void)handleBinaryMessagesOnChannel:(NSString*)channelName
-                          withHandler:(FlutterBinaryMessageHandler)handler;
-
 - (void)addAsyncMessageListener:
     (NSObject<FlutterAsyncMessageListener>*)listener;
 
 - (void)removeAsyncMessageListener:
     (NSObject<FlutterAsyncMessageListener>*)listener;
 
-- (void)handleStatusBarTouches:(UIEvent *)event;
+- (void)handleStatusBarTouches:(UIEvent*)event;
 
+- (void)sendBinaryMessage:(NSData*)message channelName:(NSString*)channelName;
+
+- (void)sendBinaryMessage:(NSData*)message
+              channelName:(NSString*)channelName
+       binaryReplyHandler:(FlutterBinaryReplyHandler)handler;
+
+- (void)setBinaryMessageHandlerOnChannel:(NSString*)channelName
+                    binaryMessageHandler:(FlutterBinaryMessageHandler)handler;
 @end
 
 __BEGIN_DECLS
