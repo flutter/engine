@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_STRING_CONVERSIONS_H_
-#define FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_STRING_CONVERSIONS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_BUFFER_CONVERSIONS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_BUFFER_CONVERSIONS_H_
 
 #include <Foundation/Foundation.h>
 
@@ -11,12 +11,10 @@
 
 namespace shell {
 
-// NSData* GetNSDataFromNSString(NSString* string);
 std::vector<uint8_t> GetVectorFromNSData(NSData* data);
 
-// NSString* GetNSStringFromNSData(NSData* data);
 NSData* GetNSDataFromVector(const std::vector<uint8_t>& buffer);
 
 }  // namespace shell
 
-#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_STRING_CONVERSIONS_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_BUFFER_CONVERSIONS_H_
