@@ -24,6 +24,14 @@ class CFRef {
     instance_ = nullptr;
   }
 
+  void Reset(T instance) {
+    if (instance_ != nullptr) {
+      CFRelease(instance_);
+    }
+
+    instance_ = instance;
+  }
+
   operator T() const { return instance_; }
 
   operator bool() const { return instance_ != nullptr; }
