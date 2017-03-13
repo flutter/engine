@@ -54,6 +54,8 @@ source_set("fml") {
     sources += [
       "platform/android/message_loop_android.cc",
       "platform/android/message_loop_android.h",
+      "platform/android/scoped_java_ref.cc",
+      "platform/android/scoped_java_ref.h",
     ]
 
     libs += [ "android" ]
