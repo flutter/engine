@@ -93,6 +93,7 @@ class ICUContext {
 };
 
 void InitializeICUOnce(const std::string& icu_data_path) {
+  return;
   static ICUContext* context = new ICUContext(icu_data_path);
   FTL_CHECK(context->IsValid()) << "Must be able to initialize the ICU context";
 }

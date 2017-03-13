@@ -4,9 +4,6 @@
 
 #include "flutter/shell/platform/darwin/desktop/flutter_application.h"
 
-#include "base/auto_reset.h"
-#include "base/logging.h"
-
 @implementation FlutterApplication {
   BOOL handlingSendEvent_;
 }
@@ -24,8 +21,9 @@
 }
 
 - (void)sendEvent:(NSEvent*)event {
-  base::AutoReset<BOOL> scoper(&handlingSendEvent_, YES);
+  handlingSendEvent_ = YES;
   [super sendEvent:event];
+  handlingSendEvent_ = NO;
 }
 
 - (void)setHandlingSendEvent:(BOOL)handlingSendEvent {

@@ -36,16 +36,18 @@ shared_library("sky_shell") {
     "library_loader.cc",
     "platform_view_android.cc",
     "platform_view_android.h",
+    "platform_view_android_jni.cc",
+    "platform_view_android_jni.h",
     "vsync_waiter_android.cc",
     "vsync_waiter_android.h",
   ]
 
   deps = [
     ":jni_headers",
-    "//base",
     "//dart/runtime:libdart",
     "//flutter/common",
     "//flutter/flow",
+    "//flutter/fml",
     "//flutter/lib/jni",
     "//flutter/lib/ui",
     "//flutter/runtime",

@@ -9,37 +9,26 @@
 #include <asl.h>
 
 #include "base/at_exit.h"
-#include "base/command_line.h"
 #include "base/i18n/icu_util.h"
 #include "base/lazy_instance.h"
-#include "base/logging.h"
 #include "base/mac/scoped_nsautorelease_pool.h"
 #include "base/message_loop/message_loop.h"
-#include "base/trace_event/trace_event.h"
 #include "dart/runtime/include/dart_tools_api.h"
 #include "flutter/common/threads.h"
+#include "flutter/fml/trace_event.h"
 #include "flutter/runtime/start_up.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/tracing_controller.h"
 #include "flutter/sky/engine/wtf/MakeUnique.h"
+#include "lib/ftl/command_line.h"
 
 namespace shell {
 
-static void InitializeLogging() {
-  logging::LoggingSettings settings;
-  settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
-  logging::InitLogging(settings);
-  logging::SetLogItems(false,   // Process ID
-                       false,   // Thread ID
-                       false,   // Timestamp
-                       false);  // Tick count
-}
-
-static void RedirectIOConnectionsToSyslog() {
+static void RedirectIOConnectionsToSyslog(
+    const ftl::CommandLine& command_line) {
 #if TARGET_OS_IPHONE
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
-          FlagForSwitch(Switch::NoRedirectToSyslog))) {
+  if (command_line.HasOption(FlagForSwitch(Switch::NoRedirectToSyslog))) {
     return;
   }
 
@@ -50,17 +39,14 @@ static void RedirectIOConnectionsToSyslog() {
 #endif
 }
 
-static void InitializeCommandLine() {
-  base::mac::ScopedNSAutoreleasePool pool;
-  base::CommandLine::StringVector vector;
+static ftl::CommandLine InitializedCommandLine() {
+  std::vector<std::string> args_vector;
 
   for (NSString* arg in [NSProcessInfo processInfo].arguments) {
-    vector.emplace_back(arg.UTF8String);
+    args_vector.emplace_back(arg.UTF8String);
   }
 
-  base::CommandLine::Init(0, nullptr);
-  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
-  command_line.InitFromArgv(vector);
+  return ftl::CommandLineFromIterators(args_vector.begin(), args_vector.end());
 }
 
 class EmbedderState {
@@ -75,26 +61,13 @@ class EmbedderState {
     CHECK([NSThread isMainThread])
         << "Embedder initialization must occur on the main platform thread";
 
-    InitializeCommandLine();
+    auto command_line = InitializedCommandLine();
 
-    RedirectIOConnectionsToSyslog();
-
-    InitializeLogging();
-
-    base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
-    if (command_line.HasSwitch(FlagForSwitch(Switch::TraceStartup))) {
-      // Usually, all tracing within flutter is managed via the tracing
-      // controller
-      // The tracing controller is accessed via the shell instance. This means
-      // that tracing can only be enabled once that instance is created. Traces
-      // early in startup are lost. This enables tracing only in base manually
-      // till the tracing controller takes over.
-      shell::TracingController::StartBaseTracing();
-    }
+    RedirectIOConnectionsToSyslog(command_line);
 
     // This is about as early as tracing of any kind can start. Add an instant
     // marker that can be used as a reference for startup.
-    TRACE_EVENT_INSTANT0("flutter", "main", TRACE_EVENT_SCOPE_PROCESS);
+    TRACE_EVENT_INSTANT0("flutter", "main");
 
     embedder_message_loop_ = WTF::MakeUnique<base::MessageLoopForUI>();
 
@@ -104,7 +77,8 @@ class EmbedderState {
     embedder_message_loop_->Attach();
 #endif
 
-    shell::Shell::InitStandalone(icu_data_path, application_library_path);
+    shell::Shell::InitStandalone(std::move(command_line), icu_data_path,
+                                 application_library_path);
   }
 
   ~EmbedderState() {
@@ -160,10 +134,11 @@ static bool FlagsValidForCommandLineLaunch(const std::string& bundle_path,
 }
 
 static std::string ResolveCommandLineLaunchFlag(const char* name) {
-  auto command_line = *base::CommandLine::ForCurrentProcess();
+  const auto& command_line = shell::Shell::Shared().GetCommandLine();
 
-  if (command_line.HasSwitch(name)) {
-    return command_line.GetSwitchValueASCII(name);
+  std::string command_line_option;
+  if (command_line.GetOptionValue(name, &command_line_option)) {
+    return command_line_option;
   }
 
   const char* saved_default =
@@ -181,11 +156,11 @@ bool AttemptLaunchFromCommandLineSwitches(Engine* engine) {
 
   NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
 
-  auto command_line = *base::CommandLine::ForCurrentProcess();
+  const auto& command_line = shell::Shell::Shared().GetCommandLine();
 
-  if (command_line.HasSwitch(FlagForSwitch(Switch::FLX)) ||
-      command_line.HasSwitch(FlagForSwitch(Switch::MainDartFile)) ||
-      command_line.HasSwitch(FlagForSwitch(Switch::Packages))) {
+  if (command_line.HasOption(FlagForSwitch(Switch::FLX)) ||
+      command_line.HasOption(FlagForSwitch(Switch::MainDartFile)) ||
+      command_line.HasOption(FlagForSwitch(Switch::Packages))) {
     // The main dart file, flx bundle and the package root must be specified in
     // one go. We dont want to end up in a situation where we take one value
     // from the command line and the others from user defaults. In case, any

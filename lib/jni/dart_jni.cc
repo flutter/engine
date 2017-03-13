@@ -6,15 +6,14 @@
 
 #include "base/android/jni_android.h"
 #include "base/android/jni_string.h"
-#include "base/logging.h"
 #include "flutter/lib/jni/jni_api.h"
 #include "flutter/lib/jni/jni_array.h"
 #include "flutter/lib/jni/jni_class.h"
 #include "flutter/lib/jni/jni_object.h"
 #include "flutter/lib/jni/jni_string.h"
+#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_args.h"
 #include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/converter/dart_converter.h"
 
 namespace blink {
 
@@ -210,7 +209,7 @@ void DartJni::InitForGlobal(DartJniIsolateDataProvider provider) {
 }
 
 void DartJni::InitForIsolate() {
-  DCHECK(g_natives);
+  FTL_DCHECK(g_natives);
 
   Dart_Handle jni_library = Dart_LookupLibrary(ToDart("dart:jni"));
   DART_CHECK_VALID(jni_library)
@@ -234,26 +233,26 @@ void DartJni::InitForIsolate() {
 bool DartJni::InitJni() {
   JNIEnv* env = base::android::AttachCurrentThread();
 
-  DCHECK(!g_jvm_data);
+  FTL_DCHECK(!g_jvm_data);
   g_jvm_data = new DartJniJvmData();
 
   g_jvm_data->class_loader.Reset(base::android::GetClassLoader(env));
 
   ScopedJavaLocalRef<jclass> class_loader_clazz(
       env, env->FindClass("java/lang/ClassLoader"));
-  CHECK(!base::android::ClearException(env));
+  FTL_CHECK(!base::android::ClearException(env));
 
   g_jvm_data->class_loader_load_class_method_id =
       env->GetMethodID(class_loader_clazz.obj(), "loadClass",
                        "(Ljava/lang/String;)Ljava/lang/Class;");
-  CHECK(!base::android::ClearException(env));
+  FTL_CHECK(!base::android::ClearException(env));
 
   g_jvm_data->class_clazz.Reset(env, env->FindClass("java/lang/Class"));
-  CHECK(!base::android::ClearException(env));
+  FTL_CHECK(!base::android::ClearException(env));
 
   g_jvm_data->class_get_name_method_id = env->GetMethodID(
       g_jvm_data->class_clazz.obj(), "getName", "()Ljava/lang/String;");
-  CHECK(!base::android::ClearException(env));
+  FTL_CHECK(!base::android::ClearException(env));
 
   return true;
 }
@@ -273,10 +272,10 @@ ScopedJavaLocalRef<jclass> DartJni::GetClass(JNIEnv* env, const char* name) {
 
 std::string DartJni::GetObjectClassName(JNIEnv* env, jobject obj) {
   jclass clazz = env->GetObjectClass(obj);
-  DCHECK(clazz);
+  FTL_DCHECK(clazz);
   jstring name = static_cast<jstring>(
       env->CallObjectMethod(clazz, g_jvm_data->class_get_name_method_id));
-  DCHECK(name);
+  FTL_DCHECK(name);
 
   return base::android::ConvertJavaStringToUTF8(env, name);
 }
@@ -315,14 +314,14 @@ jclass DartJni::class_clazz() {
 Dart_Handle DartJni::jni_object_type() {
   Dart_Handle object_type =
       Dart_HandleFromPersistent(IsolateData()->jni_object_type);
-  DCHECK(!Dart_IsError(object_type));
+  FTL_DCHECK(!Dart_IsError(object_type));
   return object_type;
 }
 
 Dart_Handle DartJni::jni_float_type() {
   Dart_Handle float_type =
       Dart_HandleFromPersistent(IsolateData()->jni_float_type);
-  DCHECK(!Dart_IsError(float_type));
+  FTL_DCHECK(!Dart_IsError(float_type));
   return float_type;
 }
 

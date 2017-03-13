@@ -8,26 +8,19 @@
 #include "base/android/jni_registrar.h"
 #include "base/android/library_loader/library_loader_hooks.h"
 #include "base/bind.h"
-#include "base/logging.h"
+#include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/lib/jni/dart_jni.h"
 #include "flutter/shell/platform/android/flutter_main.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
 #include "flutter/shell/platform/android/vsync_waiter_android.h"
+#include "lib/ftl/arraysize.h"
 
 namespace {
-
-base::android::RegistrationMethod kSkyRegisteredMethods[] = {
-    {"FlutterView", shell::PlatformViewAndroid::Register},
-    {"VsyncWaiter", shell::VsyncWaiterAndroid::Register},
-    {"FlutterMain", shell::RegisterFlutterMain},
-};
 
 bool RegisterJNI(JNIEnv* env) {
   if (!base::android::RegisterJni(env))
     return false;
-
-  return RegisterNativeMethods(env, kSkyRegisteredMethods,
-                               arraysize(kSkyRegisteredMethods));
+  return true;
 }
 
 bool InitJNI() {
@@ -38,6 +31,24 @@ bool InitJNI() {
 
 // This is called by the VM when the shared library is first loaded.
 JNI_EXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
+  // Initialize the Java VM.
+  fml::jni::InitJavaVM(vm);
+
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  bool result = false;
+
+  // Register FlutterMain.
+  result = shell::RegisterFlutterMain(env);
+  FTL_CHECK(result);
+
+  // Register PlatformView
+  result = shell::PlatformViewAndroid::Register(env);
+  FTL_CHECK(result);
+
+  // Register VSyncWaiter.
+  result = shell::VsyncWaiterAndroid::Register(env);
+  FTL_CHECK(result);
+
   std::vector<base::android::RegisterCallback> register_callbacks;
   register_callbacks.push_back(base::Bind(&RegisterJNI));
 

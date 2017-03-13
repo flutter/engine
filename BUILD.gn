@@ -23,6 +23,7 @@ group("flutter") {
   # If on the host, compile all unittests targets.
   if (current_toolchain == host_toolchain) {
     deps += [
+      "//flutter/fml:fml_unittests",
       "//flutter/sky/engine/wtf:wtf_unittests",
       "//flutter/synchronization:synchronization_unittests",
       "//lib/ftl:ftl_unittests",

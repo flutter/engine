@@ -5,6 +5,7 @@
 #ifndef SHELL_PLATFORM_ANDROID_VSYNC_WAITER_ANDROID_H_
 #define SHELL_PLATFORM_ANDROID_VSYNC_WAITER_ANDROID_H_
 
+#include <jni.h>
 #include "base/android/jni_android.h"
 #include "flutter/shell/common/vsync_waiter.h"
 #include "lib/ftl/macros.h"

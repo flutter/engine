@@ -52,8 +52,12 @@ source_set("fml") {
 
   if (is_android) {
     sources += [
+      "platform/android/jni_util.cc",
+      "platform/android/jni_util.h",
       "platform/android/message_loop_android.cc",
       "platform/android/message_loop_android.h",
+      "platform/android/resource_mapping_android.cc",
+      "platform/android/resource_mapping_android.h",
       "platform/android/scoped_java_ref.cc",
       "platform/android/scoped_java_ref.h",
     ]

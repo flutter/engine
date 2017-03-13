@@ -168,7 +168,7 @@ void GPURasterizer::DrawToTraceIfNecessary(flow::LayerTree& layer_tree) {
   auto& tracing_controller = Shell::Shared().tracing_controller();
 
   std::string path = tracing_controller.PictureTracingPathForCurrentTime();
-  LOG(INFO) << "Frame threshold exceeded. Capturing SKP to " << path;
+  FTL_LOG(INFO) << "Frame threshold exceeded. Capturing SKP to " << path;
 
   SkPictureRecorder recorder;
 

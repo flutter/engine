@@ -11,6 +11,11 @@
 #include "flutter/fml/platform/darwin/resource_mapping_darwin.h"
 using PlatformResourceMapping = fml::ResourceMappingDarwin;
 
+#elif OS_ANDROID
+
+#include "flutter/fml/platform/android/resource_mapping_android.h"
+using PlatformResourceMapping = fml::ResourceMappingAndroid;
+
 #else
 
 #error This platform does not have a resource mapping implementation.
