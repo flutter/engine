@@ -10,8 +10,9 @@
 #include "base/mac/scoped_nsobject.h"
 #include "base/strings/sys_string_conversions.h"
 #include "flutter/common/threads.h"
+#include "flutter/shell/platform/darwin/common/buffer_conversions.h"
 #include "flutter/shell/platform/darwin/common/platform_mac.h"
-#include "flutter/shell/platform/darwin/common/string_conversions.h"
+#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
@@ -539,8 +540,8 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 - (void)sendString:(NSString*)message withMessageName:(NSString*)channel {
   NSAssert(message, @"The message must not be null");
   NSAssert(channel, @"The channel must not be null");
-  [self sendBinaryMessage:shell::GetNSDataFromNSString(message)
-              channelName:channel];
+  FlutterStringCodec* codec = [FlutterStringCodec sharedInstance];
+  [self sendBinaryMessage:[codec encode:message] channelName:channel];
 }
 
 - (void)sendString:(NSString*)message
@@ -549,16 +550,16 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   NSAssert(message, @"The message must not be null");
   NSAssert(channel, @"The channel must not be null");
   NSAssert(callback, @"The callback must not be null");
-  [self sendBinaryMessage:shell::GetNSDataFromNSString(message)
+  FlutterStringCodec* codec = [FlutterStringCodec sharedInstance];
+  [self sendBinaryMessage:[codec encode:message]
               channelName:channel
        binaryReplyHandler:^(NSData* data) {
-         callback(shell::GetNSStringFromNSData(data));
+         callback([codec decode:data]);
        }];
 }
 
 - (void)sendJSON:(NSDictionary*)message withMessageName:(NSString*)channel {
-  NSData* data =
-      [NSJSONSerialization dataWithJSONObject:message options:0 error:nil];
+  NSData* data = [[FlutterJSONMessageCodec sharedInstance] encode:message];
   [self sendBinaryMessage:data channelName:channel];
 }
 
@@ -566,13 +567,14 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   NSAssert(listener, @"The listener must not be null");
   NSString* messageName = listener.messageName;
   NSAssert(messageName, @"The messageName must not be null");
+  FlutterStringCodec* codec = [FlutterStringCodec sharedInstance];
   [self
       setBinaryMessageHandlerOnChannel:messageName
                   binaryMessageHandler:^(
                       NSData* message, FlutterBinaryReplyHandler replyHandler) {
-                    NSString* reply = [listener
-                        didReceiveString:shell::GetNSStringFromNSData(message)];
-                    replyHandler(shell::GetNSDataFromNSString(reply));
+                    NSString* reply =
+                        [listener didReceiveString:[codec decode:message]];
+                    replyHandler([codec encode:reply]);
                   }];
 }
 
@@ -588,16 +590,15 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   NSAssert(listener, @"The listener must not be null");
   NSString* messageName = listener.messageName;
   NSAssert(messageName, @"The messageName must not be null");
+  FlutterStringCodec* codec = [FlutterStringCodec sharedInstance];
   [self
       setBinaryMessageHandlerOnChannel:messageName
                   binaryMessageHandler:^(
                       NSData* message, FlutterBinaryReplyHandler replyHandler) {
-                    [listener
-                        didReceiveString:shell::GetNSStringFromNSData(message)
-                                callback:^(NSString* reply) {
-                                  replyHandler(
-                                      shell::GetNSDataFromNSString(reply));
-                                }];
+                    [listener didReceiveString:[codec decode:message]
+                                      callback:^(NSString* reply) {
+                                        replyHandler([codec encode:reply]);
+                                      }];
                   }];
 }
 

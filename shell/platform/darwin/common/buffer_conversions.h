@@ -11,10 +11,10 @@
 
 namespace shell {
 
-NSData* GetNSDataFromNSString(NSString* string);
+// NSData* GetNSDataFromNSString(NSString* string);
 std::vector<uint8_t> GetVectorFromNSData(NSData* data);
 
-NSString* GetNSStringFromNSData(NSData* data);
+// NSString* GetNSStringFromNSData(NSData* data);
 NSData* GetNSDataFromVector(const std::vector<uint8_t>& buffer);
 
 }  // namespace shell

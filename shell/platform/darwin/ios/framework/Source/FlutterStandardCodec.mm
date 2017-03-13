@@ -26,11 +26,7 @@
   FlutterStandardReader* reader =
       [FlutterStandardReader readerWithData:message];
   id value = [reader readValue];
-  if ([reader hasMore]) {
-    @throw [NSException exceptionWithName:NSInvalidArgumentException
-                                   reason:@"Message corrupted"
-                                 userInfo:nil];
-  }
+  NSAssert(![reader hasMore], @"Corrupted standard message");
   return value;
 }
 @end
@@ -69,16 +65,9 @@
       [FlutterStandardReader readerWithData:message];
   id value1 = [reader readValue];
   id value2 = [reader readValue];
-  if ([reader hasMore]) {
-    @throw [NSException exceptionWithName:NSInvalidArgumentException
-                                   reason:@"Message corrupted"
-                                 userInfo:nil];
-  }
-  if (![value1 isKindOfClass:[NSString class]]) {
-    @throw [NSException exceptionWithName:NSInvalidArgumentException
-                                   reason:@"Method call corrupted"
-                                 userInfo:nil];
-  }
+  NSAssert(![reader hasMore], @"Corrupted standard method call");
+  NSAssert([value1 isKindOfClass:[NSString class]],
+           @"Corrupted standard method call");
   return [FlutterMethodCall methodCallWithMethodName:value1 arguments:value2];
 }
 @end
@@ -119,17 +108,14 @@ using namespace shell;
 }
 
 - (instancetype)initWithData:(NSData*)data type:(FlutterStandardDataType)type {
+  UInt8 elementSize = elementSizeForFlutterStandardDataType(type);
+  NSAssert(data.length % elementSize == 0,
+           @"Data must contain integral number of elements");
   if (self = [super init]) {
     _data = [data retain];
     _type = type;
-    _elementSize = elementSizeForFlutterStandardDataType(type);
-    if (_data.length % _elementSize) {
-      @throw
-          [NSException exceptionWithName:NSInvalidArgumentException
-                                  reason:@"Invalid byte count for element size"
-                                userInfo:nil];
-    }
-    _elementCount = _data.length / _elementSize;
+    _elementSize = elementSize;
+    _elementCount = data.length / elementSize;
   }
   return self;
 }
@@ -238,9 +224,8 @@ using namespace shell;
       [self writeByte:FlutterStandardFieldFloat64];
       [_data appendBytes:(UInt8*)&f length:8];
     } else {
-      @throw [NSException exceptionWithName:NSInvalidArgumentException
-                                     reason:@"Unsupported value"
-                                   userInfo:nil];
+      NSLog(@"Unsupported value: %@", value);
+      NSAssert(NO, @"Unsupported value for standard codec");
     }
   } else if ([value isKindOfClass:[NSString class]]) {
     NSString* string = value;
@@ -263,7 +248,7 @@ using namespace shell;
     for (id object in array) {
       [self writeValue:object];
     }
-  } else if ([value isKindOfClass:[NSArray class]]) {
+  } else if ([value isKindOfClass:[NSDictionary class]]) {
     NSDictionary* dict = value;
     [self writeByte:FlutterStandardFieldMap];
     [self writeSize:dict.count];
@@ -272,9 +257,8 @@ using namespace shell;
       [self writeValue:[dict objectForKey:key]];
     }
   } else {
-    @throw [NSException exceptionWithName:NSInvalidArgumentException
-                                   reason:@"Unsupported value"
-                                 userInfo:nil];
+    NSLog(@"Unsupported value: %@", value);
+    NSAssert(NO, @"Unsupported value for standard codec");
   }
 }
 @end
@@ -400,7 +384,8 @@ using namespace shell;
       UInt32 length = [self readSize];
       NSMutableArray* array = [NSMutableArray arrayWithCapacity:length];
       for (UInt32 i = 0; i < length; i++) {
-        [array addObject:[self readValue]];
+        id value = [self readValue];
+        [array addObject:(value == nil ? [NSNull null] : value)];
       }
       return array;
     }
@@ -417,9 +402,7 @@ using namespace shell;
       return dict;
     }
     default:
-      @throw [NSException exceptionWithName:NSInvalidArgumentException
-                                     reason:@"Message corrupted"
-                                   userInfo:nil];
+      NSAssert(NO, @"Corrupted standard message");
   }
 }
 @end

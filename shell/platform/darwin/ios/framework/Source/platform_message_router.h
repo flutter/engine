@@ -8,7 +8,7 @@
 #include <unordered_map>
 
 #include "flutter/lib/ui/window/platform_message.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessages.h"
+#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessenger.h"
 #include "lib/ftl/memory/weak_ptr.h"
 
 namespace shell {

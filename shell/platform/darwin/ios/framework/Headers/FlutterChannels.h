@@ -5,8 +5,8 @@
 #ifndef FLUTTER_FLUTTERCHANNELS_H_
 #define FLUTTER_FLUTTERCHANNELS_H_
 
+#include "FlutterBinaryMessenger.h"
 #include "FlutterCodecs.h"
-#include "FlutterViewController.h"
 
 typedef void (^FlutterReplyHandler)(id reply);
 typedef void (^FlutterMessageHandler)(id message,
@@ -14,10 +14,9 @@ typedef void (^FlutterMessageHandler)(id message,
 
 FLUTTER_EXPORT
 @interface FlutterMessageChannel : NSObject
-+ (instancetype)messageChannelWithController:(FlutterViewController*)controller
-                                        name:(NSString*)name
-                                       codec:(NSObject<FlutterMessageCodec>*)
-                                                 codec;
++ (instancetype)messageChannelNamed:(NSString*)name
+                    binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                              codec:(NSObject<FlutterMessageCodec>*)codec;
 - (void)sendMessage:(id)message replyHandler:(FlutterReplyHandler)handler;
 - (void)setMessageHandler:(FlutterMessageHandler)handler;
 @end
@@ -35,10 +34,9 @@ typedef void (^FlutterStreamHandler)(FlutterMethodCall* call,
 
 FLUTTER_EXPORT
 @interface FlutterMethodChannel : NSObject
-+ (instancetype)methodChannelWithController:(FlutterViewController*)controller
-                                       name:(NSString*)name
-                                      codec:
-                                          (NSObject<FlutterMethodCodec>*)codec;
++ (instancetype)methodChannelNamed:(NSString*)name
+                   binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                             codec:(NSObject<FlutterMethodCodec>*)codec;
 - (void)setMethodCallHandler:(FlutterMethodCallHandler)handler;
 - (void)setStreamHandler:(FlutterStreamHandler)handler;
 @end

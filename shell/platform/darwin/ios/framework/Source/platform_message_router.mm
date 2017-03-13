@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "base/strings/sys_string_conversions.h"
-#include "flutter/shell/platform/darwin/common/string_conversions.h"
+#include "flutter/shell/platform/darwin/common/buffer_conversions.h"
 
 namespace shell {
 
