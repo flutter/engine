@@ -51,7 +51,7 @@ ApplicationControllerImpl::ApplicationControllerImpl(
 
 ApplicationControllerImpl::~ApplicationControllerImpl() = default;
 
-void ApplicationControllerImpl::Kill(const KillCallback& callback) {
+void ApplicationControllerImpl::Kill() {
   runtime_holder_.reset();
   app_->Destroy(this);
   // |this| has been deleted at this point.
@@ -77,6 +77,19 @@ void ApplicationControllerImpl::CreateView(
     fidl::InterfaceRequest<app::ServiceProvider> services) {
   runtime_holder_->CreateView(url_, std::move(view_owner_request),
                               std::move(services));
+}
+
+Dart_Port ApplicationControllerImpl::GetUIIsolateMainPort() {
+  if (!runtime_holder_)
+    return ILLEGAL_PORT;
+  return runtime_holder_->GetUIIsolateMainPort();
+}
+
+std::string ApplicationControllerImpl::GetUIIsolateName() {
+  if (!runtime_holder_) {
+    return "";
+  }
+  return runtime_holder_->GetUIIsolateName();
 }
 
 }  // namespace flutter_runner

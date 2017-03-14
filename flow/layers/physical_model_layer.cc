@@ -6,6 +6,11 @@
 
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
+#if defined(OS_FUCHSIA)
+#include "apps/mozart/lib/skia/type_converters.h"
+#include "apps/mozart/services/composition/nodes.fidl.h"
+#endif  // defined(OS_FUCHSIA)
+
 namespace flow {
 
 PhysicalModelLayer::PhysicalModelLayer()
@@ -26,25 +31,42 @@ void PhysicalModelLayer::Preroll(PrerollContext* context, const SkMatrix& matrix
   set_paint_bounds(bounds);
 }
 
+#if defined(OS_FUCHSIA)
+
+void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context,
+                                     mozart::Node* container) {
+  context.AddLayerToCurrentPaintTask(this);
+  auto node = mozart::Node::New();
+  node->content_clip = mozart::RectF::From(rrect_.getBounds());
+  UpdateSceneChildrenInsideNode(context, container, std::move(node));
+}
+
+#endif  // defined(OS_FUCHSIA)
+
 void PhysicalModelLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "PhysicalModelLayer::Paint");
-  // TODO: need to support this layer on Fuchsia
-  FTL_DCHECK(!needs_system_composite());
 
   SkPath path;
   path.addRRect(rrect_);
 
   if (elevation_ != 0) {
+    SkShadowFlags flags = SkColorGetA(color_) == 0xff ?
+        SkShadowFlags::kNone_ShadowFlag :
+        SkShadowFlags::kTransparentOccluder_ShadowFlag;
     SkShadowUtils::DrawShadow(&context.canvas, path,
                               elevation_ * 4,
                               SkPoint3::Make(0.0f, -700.0f, 2800.0f),
                               2800.0f,
                               0.25f, 0.25f,
-                              SK_ColorBLACK);
+                              SK_ColorBLACK,
+                              flags);
   }
 
+  if (needs_system_composite())
+    return;
+
   SkPaint paint;
-  paint.setColor(SkColorSetA(color_, 0xFF));
+  paint.setColor(color_);
   context.canvas.drawPath(path, paint);
 
   SkAutoCanvasRestore save(&context.canvas, false);

@@ -45,6 +45,9 @@ class RuntimeHolder : public blink::RuntimeDelegate,
                   fidl::InterfaceRequest<mozart::ViewOwner> view_owner_request,
                   fidl::InterfaceRequest<app::ServiceProvider> services);
 
+  Dart_Port GetUIIsolateMainPort();
+  std::string GetUIIsolateName();
+
  private:
   // |blink::RuntimeDelegate| implementation:
   void ScheduleFrame() override;
@@ -55,7 +58,7 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   void DidCreateMainIsolate(Dart_Isolate isolate) override;
 
   // |mozart::InputListener| implementation:
-  void OnEvent(mozart::EventPtr event,
+  void OnEvent(mozart::InputEventPtr event,
                const OnEventCallback& callback) override;
 
   // |mozart::ViewListener| implementation:
