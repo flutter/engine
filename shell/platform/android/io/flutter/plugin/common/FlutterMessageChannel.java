@@ -5,10 +5,12 @@
 package io.flutter.plugin.common;
 
 import android.util.Log;
+
 import io.flutter.view.FlutterView;
 import io.flutter.view.FlutterView.BinaryMessageReplyCallback;
 import io.flutter.view.FlutterView.BinaryMessageResponse;
 import io.flutter.view.FlutterView.OnBinaryMessageListenerAsync;
+
 import java.nio.ByteBuffer;
 
 /**

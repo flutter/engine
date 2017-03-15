@@ -10,11 +10,13 @@ import android.text.InputType;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+
 import io.flutter.plugin.common.FlutterMethodChannel;
 import io.flutter.plugin.common.FlutterMethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.FlutterMethodChannel.Response;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.view.FlutterView;
+
 import java.util.List;
 import java.util.Map;
 

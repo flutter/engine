@@ -6,22 +6,16 @@ package io.flutter.plugin.editing;
 
 import android.text.Editable;
 import android.text.Selection;
-import android.util.Log;
 import android.view.inputmethod.BaseInputConnection;
-import android.view.inputmethod.CompletionInfo;
-import android.view.inputmethod.CorrectionInfo;
-import android.view.inputmethod.EditorInfo;
 import android.view.KeyEvent;
-import android.view.View;
+
 import io.flutter.plugin.common.FlutterMethodChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.view.FlutterView;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 class InputConnectionAdaptor extends BaseInputConnection {
     private final int mClient;

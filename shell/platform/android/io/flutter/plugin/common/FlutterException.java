@@ -1,7 +1,7 @@
 package io.flutter.plugin.common;
 
 /**
- * Thrown to indicate an error invoking a Flutter method.
+ * Thrown to indicate that a Flutter method invocation failed on the Flutter side.
  */
 public class FlutterException extends RuntimeException {
   public final String code;

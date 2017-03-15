@@ -27,32 +27,30 @@ import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+
+import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.FlutterMessageChannel;
 import io.flutter.plugin.common.FlutterMethodChannel;
-import io.flutter.plugin.common.FlutterMethodChannel.Response;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.common.StringCodec;
-import java.util.Arrays;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.plugin.platform.PlatformPlugin;
 
 import org.chromium.base.CalledByNative;
 import org.chromium.base.JNINamespace;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import io.flutter.plugin.common.ActivityLifecycleListener;
-import io.flutter.plugin.editing.TextInputPlugin;
-import io.flutter.plugin.platform.PlatformPlugin;
 
 /**
  * An Android view containing a Flutter app.
@@ -154,7 +152,8 @@ public class FlutterView extends SurfaceView
         mFlutterSystemChannel = new FlutterMessageChannel<>(this, "flutter/system",
             StandardMessageCodec.INSTANCE);
         PlatformPlugin platformPlugin = new PlatformPlugin((Activity) getContext());
-        FlutterMethodChannel flutterPlatformChannel = new FlutterMethodChannel(this, "flutter/platform");
+        FlutterMethodChannel flutterPlatformChannel = new FlutterMethodChannel(this,
+            "flutter/platform");
         flutterPlatformChannel.setMethodCallHandler(platformPlugin);
         addActivityLifecycleListener(platformPlugin);
         mTextInputPlugin = new TextInputPlugin((Activity) getContext(), this);
@@ -219,13 +218,9 @@ public class FlutterView extends SurfaceView
     }
 
     public void onMemoryPressure() {
-        try {
-            JSONObject message = new JSONObject();
-            message.put("type", "memoryPressure");
-            mFlutterSystemChannel.send(message);
-        } catch (JSONException e) {
-            Log.e(TAG, "Failed to serialize system event", e);
-        }
+        Map<String, Object> message = new HashMap<>(1);
+        message.put("type", "memoryPressure");
+        mFlutterSystemChannel.send(message);
     }
 
     public void pushRoute(String route) {
