@@ -6,6 +6,7 @@ package io.flutter.plugin.common;
 
 import android.util.Log;
 import io.flutter.view.FlutterView;
+import io.flutter.view.FlutterView.BinaryMessageReplyCallback;
 import io.flutter.view.FlutterView.BinaryMessageResponse;
 import io.flutter.view.FlutterView.OnBinaryMessageListenerAsync;
 import java.nio.ByteBuffer;
@@ -58,6 +59,25 @@ public final class FlutterMethodChannel {
         this.view = view;
         this.name = name;
         this.codec = codec;
+    }
+
+    /**
+     * Invokes a void method on this channel.
+     *
+     * @param call a {@link MethodCall}.
+     */
+    public void invokeMethod(MethodCall call) {
+        view.sendBinaryMessage(name, codec.encodeMethodCall(call), null);
+    }
+
+    /**
+     * Invokes a method on this channel.
+     *
+     * @param call a {@link MethodCall}.
+     * @param handler a {@link Response} handler for the invocation result.
+     */
+    public void invokeMethod(MethodCall call, Response handler) {
+        view.sendBinaryMessage(name, codec.encodeMethodCall(call), new MethodCallResultCallback(handler));
     }
 
     /**
@@ -150,6 +170,24 @@ public final class FlutterMethodChannel {
         void done();
     }
 
+    private final class MethodCallResultCallback implements BinaryMessageReplyCallback {
+        private final Response handler;
+
+        MethodCallResultCallback(Response handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public void onReply(ByteBuffer reply) {
+            try {
+                final Object result = codec.decodeEnvelope(reply);
+                handler.success(result);
+            } catch (FlutterException e) {
+                handler.error(e.code, e.getMessage(), e.details);
+            }
+        }
+    }
+
     private final class MethodCallListener implements OnBinaryMessageListenerAsync {
         private final MethodCallHandler handler;
 
@@ -236,7 +274,7 @@ public final class FlutterMethodChannel {
                             if (cancelled.get()) {
                                 return;
                             }
-                            FlutterMethodChannel.this.view.sendToFlutter(name,null);
+                            FlutterMethodChannel.this.view.sendBinaryMessage(name,null,null);
                         }
                     });
                     response.send(codec.encodeSuccessEnvelope(null));
