@@ -78,6 +78,10 @@
   return _sharedInstance;
 }
 
+- (NSData*)encodeMethodCall:(FlutterMethodCall*)call {
+  return [[FlutterJSONMessageCodec sharedInstance] encode:@[ call.method, call.arguments ]];
+}
+
 - (NSData*)encodeSuccessEnvelope:(id)result {
   return [[FlutterJSONMessageCodec sharedInstance] encode:@[ result ]];
 }
@@ -88,10 +92,21 @@
 }
 
 - (FlutterMethodCall*)decodeMethodCall:(NSData*)message {
-  NSArray* call = [[FlutterJSONMessageCodec sharedInstance] decode:message];
-  NSAssert(call.count == 2, @"Invalid JSON method call");
-  NSAssert([call[0] isKindOfClass:[NSString class]],
+  NSArray* array = [[FlutterJSONMessageCodec sharedInstance] decode:message];
+  NSAssert(array.count == 2, @"Invalid JSON method call");
+  NSAssert([array[0] isKindOfClass:[NSString class]],
            @"Invalid JSON method call");
-  return [FlutterMethodCall methodCallWithMethodName:call[0] arguments:call[1]];
+  return [FlutterMethodCall methodCallWithMethodName:array[0] arguments:array[1]];
+}
+
+- (id)decodeEnvelope:(NSData*)envelope error:(FlutterError**)error {
+  NSArray* array = [[FlutterJSONMessageCodec sharedInstance] decode:envelope];
+  if (array.count == 1)
+    return array[0];
+  NSAssert(array.count == 3, @"Invalid JSON envelope");
+  NSAssert([array[0] isKindOfClass:[NSString class]], @"Invalid JSON envelope");
+  NSAssert(array[1] == nil || [array[1] isKindOfClass:[NSString class]], @"Invalid JSON envelope");
+  *error = [FlutterError errorWithCode:array[0] message:array[1] details:array[2]];
+  return nil;
 }
 @end

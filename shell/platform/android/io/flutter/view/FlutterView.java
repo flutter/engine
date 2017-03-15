@@ -224,16 +224,16 @@ public class FlutterView extends SurfaceView
     }
 
     public void pushRoute(String route) {
-        mFlutterNavigationChannel.invokeMethod(new MethodCall("pushRoute", route));
+        mFlutterNavigationChannel.invokeMethod("pushRoute", route);
     }
 
     public void popRoute() {
-        mFlutterNavigationChannel.invokeMethod(new MethodCall("popRoute", null));
+        mFlutterNavigationChannel.invokeMethod("popRoute", null);
     }
 
     private void setLocale(Locale locale) {
-        mFlutterLocalizationChannel.invokeMethod(new MethodCall("setLocale", Arrays
-            .asList(locale.getLanguage(), locale.getCountry())));
+        mFlutterLocalizationChannel.invokeMethod("setLocale", Arrays
+            .asList(locale.getLanguage(), locale.getCountry()));
     }
 
     @Override

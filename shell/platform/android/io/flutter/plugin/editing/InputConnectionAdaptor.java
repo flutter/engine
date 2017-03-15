@@ -39,8 +39,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
         mOutgoingState.put("selectionExtent", Selection.getSelectionEnd(content));
         mOutgoingState.put("composingBase", BaseInputConnection.getComposingSpanStart(content));
         mOutgoingState.put("composingExtent", BaseInputConnection.getComposingSpanEnd(content));
-        mFlutterChannel.invokeMethod(new MethodCall("TextInputClient.updateEditingState", Arrays
-            .asList(mClient, mOutgoingState)));
+        mFlutterChannel.invokeMethod("TextInputClient.updateEditingState", Arrays
+            .asList(mClient, mOutgoingState));
         mPlugin.setLatestEditingState(mOutgoingState);
     }
 
@@ -106,8 +106,8 @@ class InputConnectionAdaptor extends BaseInputConnection {
     @Override
     public boolean performEditorAction(int actionCode) {
         // TODO(abarth): Support more actions.
-        mFlutterChannel.invokeMethod(new MethodCall("TextInputClient.performAction",
-            Arrays.asList(mClient, "TextInputAction.done")));
+        mFlutterChannel.invokeMethod("TextInputClient.performAction",
+            Arrays.asList(mClient, "TextInputAction.done"));
         return true;
     }
 }

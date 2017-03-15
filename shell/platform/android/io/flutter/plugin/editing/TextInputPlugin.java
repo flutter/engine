@@ -44,18 +44,23 @@ public class TextInputPlugin implements MethodCallHandler {
         Object args = call.arguments;
         if (method.equals("TextInput.show")) {
             showTextInput(mView);
+            response.success(nil);
         } else if (method.equals("TextInput.hide")) {
             hideTextInput(mView);
+            response.success(nil);
         } else if (method.equals("TextInput.setClient")) {
             final List<?> argumentList = (List<?>) args;
             setTextInputClient(mView, (Integer) argumentList.get(0),
                 (Map<?, ?>) argumentList.get(1));
+            response.success(nil);
         } else if (method.equals("TextInput.setEditingState")) {
             setTextInputEditingState(mView, (Map<?, ?>) args);
+            response.success(nil);
         } else if (method.equals("TextInput.clearClient")) {
             clearTextInputClient();
+            response.success(nil);
         } else {
-            throw new IllegalArgumentException("Unknown method: " + call.method);
+          response.error("UNKNOWN", "Unknown method: " + call.method, null);
         }
     }
 

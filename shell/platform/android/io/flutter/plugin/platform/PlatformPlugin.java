@@ -46,30 +46,39 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
         Object arguments = call.arguments;
         if (method.equals("SystemSound.play")) {
             playSystemSound((String) arguments);
+            response.success(null);
         } else if (method.equals("HapticFeedback.vibrate")) {
             vibrateHapticFeedback();
+            response.success(null);
         } else if (method.equals("UrlLauncher.launch")) {
             launchURL((String) arguments);
+            response.success(null);
         } else if (method.equals("SystemChrome.setPreferredOrientations")) {
             setSystemChromePreferredOrientations((List<?>) arguments);
+            response.success(null);
         } else if (method.equals("SystemChrome.setApplicationSwitcherDescription")) {
             setSystemChromeApplicationSwitcherDescription((Map<?, ?>) arguments);
+            response.success(null);
         } else if (method.equals("SystemChrome.setEnabledSystemUIOverlays")) {
             setSystemChromeEnabledSystemUIOverlays((List<?>) arguments);
+            response.success(null);
         } else if (method.equals("SystemChrome.setSystemUIOverlayStyle")) {
             setSystemChromeSystemUIOverlayStyle((String) arguments);
+            response.success(null);
         } else if (method.equals("SystemNavigator.pop")) {
             popSystemNavigator();
+            response.success(null);
         } else if (method.equals("Clipboard.getData")) {
             response.success(getClipboardData((String) arguments));
         } else if (method.equals("Clipboard.setData")) {
             setClipboardData((Map<?, ?>) arguments);
+            response.success(null);
         } else if (method.equals("PathProvider.getTemporaryDirectory")) {
             response.success(getPathProviderTemporaryDirectory());
         } else if (method.equals("PathProvider.getApplicationDocumentsDirectory")) {
             response.success(getPathProviderApplicationDocumentsDirectory());
         } else {
-            throw new IllegalArgumentException("Unknown method: " + call.method);
+            response.error("UNKNOWN", "Unknown method: " + method, null);
         }
     }
 

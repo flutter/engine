@@ -69,8 +69,8 @@ public final class FlutterMethodChannel {
      *
      * @param call a {@link MethodCall}.
      */
-    public void invokeMethod(MethodCall call) {
-        view.sendBinaryMessage(name, codec.encodeMethodCall(call), null);
+    public void invokeMethod(String method, Object arguments) {
+        invokeMethod(method, arguments, null);
     }
 
     /**
@@ -79,8 +79,8 @@ public final class FlutterMethodChannel {
      * @param call a {@link MethodCall}.
      * @param handler a {@link Response} handler for the invocation result.
      */
-    public void invokeMethod(MethodCall call, Response handler) {
-        view.sendBinaryMessage(name, codec.encodeMethodCall(call),
+    public void invokeMethod(String method, Object arguments, Response handler) {
+        view.sendBinaryMessage(name, codec.encodeMethodCall(new MethodCall(method, arguments)),
             handler == null ? null : new MethodCallResultCallback(handler));
     }
 
