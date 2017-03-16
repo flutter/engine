@@ -242,7 +242,6 @@ public class FlutterView extends SurfaceView
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         setLocale(newConfig.locale);
-        Log.e(TAG, "config changed");
     }
 
     float getDevicePixelRatio() {
