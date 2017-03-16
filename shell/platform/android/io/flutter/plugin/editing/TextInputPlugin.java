@@ -17,8 +17,10 @@ import io.flutter.plugin.common.FlutterMethodChannel.Response;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.view.FlutterView;
 
-import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Android implementation of the text input plugin.
@@ -28,8 +30,8 @@ public class TextInputPlugin implements MethodCallHandler {
     private final FlutterView mView;
     private final FlutterMethodChannel mFlutterChannel;
     private int mClient = 0;
-    private Map<?, ?> mConfiguration;
-    private Map<?, ?> mLatestState;
+    private JSONObject mConfiguration;
+    private JSONObject mLatestState;
 
     public TextInputPlugin(Activity activity, FlutterView view) {
         mActivity = activity;
@@ -42,25 +44,28 @@ public class TextInputPlugin implements MethodCallHandler {
     public void onMethodCall(MethodCall call, Response response) {
         String method = call.method;
         Object args = call.arguments;
-        if (method.equals("TextInput.show")) {
-            showTextInput(mView);
-            response.success(null);
-        } else if (method.equals("TextInput.hide")) {
-            hideTextInput(mView);
-            response.success(null);
-        } else if (method.equals("TextInput.setClient")) {
-            final List<?> argumentList = (List<?>) args;
-            setTextInputClient(mView, (Integer) argumentList.get(0),
-                (Map<?, ?>) argumentList.get(1));
-            response.success(null);
-        } else if (method.equals("TextInput.setEditingState")) {
-            setTextInputEditingState(mView, (Map<?, ?>) args);
-            response.success(null);
-        } else if (method.equals("TextInput.clearClient")) {
-            clearTextInputClient();
-            response.success(null);
-        } else {
-          response.error("UNKNOWN", "Unknown method: " + call.method, null);
+        try {
+            if (method.equals("TextInput.show")) {
+                showTextInput(mView);
+                response.success(null);
+            } else if (method.equals("TextInput.hide")) {
+                hideTextInput(mView);
+                response.success(null);
+            } else if (method.equals("TextInput.setClient")) {
+                final JSONArray argumentList = (JSONArray) args;
+                setTextInputClient(mView, argumentList.getInt(0), argumentList.getJSONObject(1));
+                response.success(null);
+            } else if (method.equals("TextInput.setEditingState")) {
+                setTextInputEditingState(mView, (JSONObject) args);
+                response.success(null);
+            } else if (method.equals("TextInput.clearClient")) {
+                clearTextInputClient();
+                response.success(null);
+            } else {
+                response.error("unknown", "Unknown method: " + call.method, null);
+            }
+        } catch (JSONException e) {
+            response.error("error", "JSON error: " + e.getMessage(), null);
         }
     }
 
@@ -77,12 +82,12 @@ public class TextInputPlugin implements MethodCallHandler {
         return InputType.TYPE_CLASS_TEXT;
     }
 
-    public InputConnection createInputConnection(FlutterView view, EditorInfo outAttrs) {
+    public InputConnection createInputConnection(FlutterView view, EditorInfo outAttrs) throws JSONException {
         if (mClient == 0) {
             return null;
         }
-        outAttrs.inputType = inputTypeFromTextInputType((String) mConfiguration.get("inputType"));
-        outAttrs.actionLabel = (String) mConfiguration.get("actionLabel");
+        outAttrs.inputType = inputTypeFromTextInputType(mConfiguration.getString("inputType"));
+        outAttrs.actionLabel = mConfiguration.getString("actionLabel");
         outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN;
         InputConnectionAdaptor connection = new InputConnectionAdaptor(view, mClient, this, mFlutterChannel);
         if (mLatestState != null) {
@@ -114,7 +119,7 @@ public class TextInputPlugin implements MethodCallHandler {
         imm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
     }
 
-    private void setTextInputClient(FlutterView view, int client, Map<?, ?> configuration) {
+    private void setTextInputClient(FlutterView view, int client, JSONObject configuration) {
         mLatestState = null;
         mClient = client;
         mConfiguration = configuration;
@@ -123,15 +128,15 @@ public class TextInputPlugin implements MethodCallHandler {
         imm.restartInput(view);
     }
 
-    private void setTextInputEditingState(FlutterView view, Map<?, ?> state) {
+    private void setTextInputEditingState(FlutterView view, JSONObject state) {
         mLatestState = state;
         InputMethodManager imm =
             (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.restartInput(view);
     }
 
-    void setLatestEditingState(Map<?, ?> state) {
-        mLatestState = state;
+    void setLatestEditingState(Map<String, Object> state) {
+        mLatestState = (JSONObject) JSONObject.wrap(state);
     }
 
     private void clearTextInputClient() {

@@ -39,7 +39,7 @@ public final class JSONMethodCodec implements MethodCodec {
                 final Object method = map.get("method");
                 final Object arguments = map.get("args");
                 if (method instanceof String) {
-                    return new MethodCall(method, arguments);
+                    return new MethodCall((String) method, arguments);
                 }
             }
             throw new IllegalArgumentException("Invalid method call: " + json);
