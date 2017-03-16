@@ -14,6 +14,7 @@ import android.view.inputmethod.InputMethodManager;
 import io.flutter.plugin.common.FlutterMethodChannel;
 import io.flutter.plugin.common.FlutterMethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.FlutterMethodChannel.Response;
+import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.view.FlutterView;
 
@@ -26,6 +27,7 @@ import org.json.JSONObject;
  * Android implementation of the text input plugin.
  */
 public class TextInputPlugin implements MethodCallHandler {
+
     private final Activity mActivity;
     private final FlutterView mView;
     private final FlutterMethodChannel mFlutterChannel;
@@ -36,7 +38,8 @@ public class TextInputPlugin implements MethodCallHandler {
     public TextInputPlugin(Activity activity, FlutterView view) {
         mActivity = activity;
         mView = view;
-        mFlutterChannel = new FlutterMethodChannel(view, "flutter/textinput");
+        mFlutterChannel = new FlutterMethodChannel(view, "flutter/textinput",
+            JSONMethodCodec.INSTANCE);
         mFlutterChannel.setMethodCallHandler(this);
     }
 
@@ -82,14 +85,16 @@ public class TextInputPlugin implements MethodCallHandler {
         return InputType.TYPE_CLASS_TEXT;
     }
 
-    public InputConnection createInputConnection(FlutterView view, EditorInfo outAttrs) throws JSONException {
+    public InputConnection createInputConnection(FlutterView view, EditorInfo outAttrs)
+        throws JSONException {
         if (mClient == 0) {
             return null;
         }
         outAttrs.inputType = inputTypeFromTextInputType(mConfiguration.getString("inputType"));
         outAttrs.actionLabel = mConfiguration.getString("actionLabel");
         outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN;
-        InputConnectionAdaptor connection = new InputConnectionAdaptor(view, mClient, this, mFlutterChannel);
+        InputConnectionAdaptor connection = new InputConnectionAdaptor(view, mClient, this,
+            mFlutterChannel);
         if (mLatestState != null) {
             int selectionBase = (Integer) mLatestState.get("selectionBase");
             int selectionExtent = (Integer) mLatestState.get("selectionExtent");
