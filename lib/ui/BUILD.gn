@@ -12,6 +12,9 @@ source_set("ui") {
     "dart_runtime_hooks.h",
     "dart_ui.cc",
     "dart_ui.h",
+    "logger/logger.cc",
+    "logger/logger.h",
+    "logger/system_logger.h",
     "painting/canvas.cc",
     "painting/canvas.h",
     "painting/gradient.cc",
@@ -71,6 +74,14 @@ source_set("ui") {
     "window/window.cc",
     "window/window.h",
   ]
+
+  if (is_android) {
+    sources += [ "logger/system_logger_android.cc" ]
+  } else if (is_ios || is_mac) {
+    sources += [ "logger/system_logger_darwin.mm" ]
+  } else {
+    sources += [ "logger/system_logger_stdout.cc" ]
+  }
 
   deps = [
     "//dart/runtime/bin:embedded_dart_io",

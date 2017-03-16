@@ -88,6 +88,10 @@ DEF_SWITCH(DartNonCheckedMode,
            "precompiled and checked mode is unsupported. However, this flag "
            "may be specified if the user wishes to run in the debug product "
            "mode (i.e. with JIT or DBC) with checked mode off.")
+DEF_SWITCH(LoggerPort,
+           "logger-port",
+           "If a logger port is specified, application logs will be redirected "
+           "to a socket bound to the specified port.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);
