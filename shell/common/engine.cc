@@ -239,11 +239,11 @@ bool Engine::HandleNavigationPlatformMessage(
 
   rapidjson::Document document;
   document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
-  if (document.HasParseError() || !document.IsArray())
+  if (document.HasParseError() || !document.IsObject())
     return false;
-  auto root = document.GetArray();
-  const auto& method = root[0];
-  if (!method.IsString() || method != "pushRoute")
+  auto root = document.GetObject();
+  auto method = root.FindMember("method");
+  if (method == root.MemberEnd() || method->value != "pushRoute")
     return false;
 
   pending_push_route_message_ = std::move(message);
@@ -256,19 +256,19 @@ bool Engine::HandleLocalizationPlatformMessage(
 
   rapidjson::Document document;
   document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
-  if (document.HasParseError() || !document.IsArray())
+  if (document.HasParseError() || !document.IsObject())
     return false;
-  auto root = document.GetArray();
-  const auto& method = root[0];
-  const auto& args = root[1];
-  if (!method.IsString() || method != "setLocale")
-    return false;
-  if (!args.IsArray())
+  auto root = document.GetObject();
+  auto method = root.FindMember("method");
+  if (method == root.MemberEnd() || method->value != "setLocale")
     return false;
 
-  auto argsArray = args.GetArray();
-  const auto& language = argsArray[0];
-  const auto& country = argsArray[1];
+  auto args = root.FindMember("args");
+  if (args == root.MemberEnd() || !args->value.IsArray())
+    return false;
+
+  const auto& language = args->value[0];
+  const auto& country = args->value[1];
 
   if (!language.IsString() || !country.IsString())
     return false;

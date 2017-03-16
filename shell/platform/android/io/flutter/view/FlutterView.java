@@ -31,8 +31,8 @@ import android.view.inputmethod.InputConnection;
 import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.FlutterMessageChannel;
 import io.flutter.plugin.common.FlutterMethodChannel;
+import io.flutter.plugin.common.JSONMessageCodec;
 import io.flutter.plugin.common.JSONMethodCodec;
-import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.common.StringCodec;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
@@ -146,14 +146,14 @@ public class FlutterView extends SurfaceView
         mFlutterNavigationChannel = new FlutterMethodChannel(this, "flutter/navigation",
             JSONMethodCodec.INSTANCE);
         mFlutterKeyEventChannel = new FlutterMessageChannel<>(this, "flutter/keyevent",
-            StandardMessageCodec.INSTANCE);
+            JSONMessageCodec.INSTANCE);
         mFlutterLifecycleChannel = new FlutterMessageChannel<>(this, "flutter/lifecycle",
             StringCodec.INSTANCE);
         mFlutterSystemChannel = new FlutterMessageChannel<>(this, "flutter/system",
-            StandardMessageCodec.INSTANCE);
+            JSONMessageCodec.INSTANCE);
         PlatformPlugin platformPlugin = new PlatformPlugin((Activity) getContext());
         FlutterMethodChannel flutterPlatformChannel = new FlutterMethodChannel(this,
-            "flutter/platform");
+            "flutter/platform", JSONMethodCodec.INSTANCE);
         flutterPlatformChannel.setMethodCallHandler(platformPlugin);
         addActivityLifecycleListener(platformPlugin);
         mTextInputPlugin = new TextInputPlugin((Activity) getContext(), this);

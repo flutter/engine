@@ -73,7 +73,6 @@ void FlutterInit(int argc, const char* argv[]) {
   base::scoped_nsprotocol<FlutterMethodChannel*> _platformChannel;
   base::scoped_nsprotocol<FlutterMethodChannel*> _textInputChannel;
   base::scoped_nsprotocol<FlutterMessageChannel*> _lifecycleChannel;
-  base::scoped_nsprotocol<FlutterMessageChannel*> _keyEventChannel;
   base::scoped_nsprotocol<FlutterMessageChannel*> _systemChannel;
   BOOL _initialized;
 }
@@ -130,37 +129,32 @@ void FlutterInit(int argc, const char* argv[]) {
   _localizationChannel.reset([[FlutterMethodChannel alloc]
       initWithName:@"flutter/localization"
       binaryMessenger:self
-      codec:[FlutterStandardMethodCodec sharedInstance]]);
+      codec:[FlutterJSONMethodCodec sharedInstance]]);
 
   _navigationChannel.reset([[FlutterMethodChannel alloc]
       initWithName:@"flutter/navigation"
       binaryMessenger:self
-      codec:[FlutterStandardMethodCodec sharedInstance]]);
+      codec:[FlutterJSONMethodCodec sharedInstance]]);
 
   _platformChannel.reset([[FlutterMethodChannel alloc]
       initWithName:@"flutter/platform"
       binaryMessenger:self
-      codec:[FlutterStandardMethodCodec sharedInstance]]);
+      codec:[FlutterJSONMethodCodec sharedInstance]]);
 
   _textInputChannel.reset([[FlutterMethodChannel alloc]
-      initWithName:@"flutter/textInput"
+      initWithName:@"flutter/textinput"
       binaryMessenger:self
-      codec:[FlutterStandardMethodCodec sharedInstance]]);
-
-  _keyEventChannel.reset([[FlutterMessageChannel alloc]
-      initWithName:@"flutter/textInput"
-      binaryMessenger:self
-      codec:[FlutterStandardMessageCodec sharedInstance]]);
+      codec:[FlutterJSONMethodCodec sharedInstance]]);
 
   _lifecycleChannel.reset([[FlutterMessageChannel alloc]
       initWithName:@"flutter/lifecycle"
       binaryMessenger:self
-      codec:[FlutterStandardMessageCodec sharedInstance]]);
+      codec:[FlutterStringCodec sharedInstance]]);
 
   _systemChannel.reset([[FlutterMessageChannel alloc]
       initWithName:@"flutter/system"
       binaryMessenger:self
-      codec:[FlutterStandardMessageCodec sharedInstance]]);
+      codec:[FlutterJSONMessageCodec sharedInstance]]);
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] init]);
   [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResultReceiver resultReceiver) {

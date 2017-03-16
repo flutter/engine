@@ -79,24 +79,32 @@
 }
 
 - (NSData*)encodeMethodCall:(FlutterMethodCall*)call {
-  return [[FlutterJSONMessageCodec sharedInstance] encode:@[ call.method, call.arguments ]];
+  return [[FlutterJSONMessageCodec sharedInstance] encode:@{
+    @"method": call.method,
+    @"args": (call.arguments == nil ? [NSNull null] : call.arguments),
+  }];
 }
 
 - (NSData*)encodeSuccessEnvelope:(id)result {
-  return [[FlutterJSONMessageCodec sharedInstance] encode:@[ result ]];
+  return [[FlutterJSONMessageCodec sharedInstance] encode:@[
+    result == nil ? [NSNull null] : result
+  ]];
 }
 
 - (NSData*)encodeErrorEnvelope:(FlutterError*)error {
-  return [[FlutterJSONMessageCodec sharedInstance]
-      encode:@[ error.code, error.message, error.details ]];
+  return [[FlutterJSONMessageCodec sharedInstance] encode:@[
+    error.code,
+    error.message == nil ? [NSNull null] : error.message,
+    error.details == nil ? [NSNull null] : error.details,
+  ]];
 }
 
 - (FlutterMethodCall*)decodeMethodCall:(NSData*)message {
-  NSArray* array = [[FlutterJSONMessageCodec sharedInstance] decode:message];
-  NSAssert(array.count == 2, @"Invalid JSON method call");
-  NSAssert([array[0] isKindOfClass:[NSString class]],
-           @"Invalid JSON method call");
-  return [FlutterMethodCall methodCallWithMethodName:array[0] arguments:array[1]];
+  NSDictionary* dictionary = [[FlutterJSONMessageCodec sharedInstance] decode:message];
+  id method = dictionary[@"method"];
+  id arguments = dictionary[@"args"];
+  NSAssert([method isKindOfClass:[NSString class]], @"Invalid JSON method call");
+  return [FlutterMethodCall methodCallWithMethodName:method arguments:arguments];
 }
 
 - (id)decodeEnvelope:(NSData*)envelope error:(FlutterError**)error {

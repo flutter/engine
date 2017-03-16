@@ -20,19 +20,26 @@ public final class JSONMethodCodec implements MethodCodec {
 
     @Override
     public ByteBuffer encodeMethodCall(MethodCall methodCall) {
-        return JSONMessageCodec.INSTANCE.encodeMessage(new JSONArray()
-            .put(methodCall.method)
-            .put(JSONObject.wrap(methodCall.arguments)));
+       try {
+          final JSONObject map = new JSONObject();
+          map.put("method", methodCall.method);
+          map.put("args", JSONObject.wrap(methodCall.arguments));
+          return JSONMessageCodec.INSTANCE.encodeMessage(map);
+       } catch (JSONException e) {
+          throw new IllegalArgumentException("Invalid JSON", e);
+       }
     }
 
     @Override
     public MethodCall decodeMethodCall(ByteBuffer message) {
         try {
             final Object json = JSONMessageCodec.INSTANCE.decodeMessage(message);
-            if (json instanceof JSONArray) {
-                final JSONArray pair = (JSONArray) json;
-                if (pair.length() == 2) {
-                    return new MethodCall(pair.getString(0), pair.get(1));
+            if (json instanceof JSONObject) {
+                final JSONObject map = (JSONObject) json;
+                final Object method = map.get("method");
+                final Object arguments = map.get("args");
+                if (method instanceof String) {
+                    return new MethodCall(method, arguments);
                 }
             }
             throw new IllegalArgumentException("Invalid method call: " + json);
