@@ -130,7 +130,7 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
             return;
         }
 
-        int color = (Integer) description.get("primaryColor");
+        int color = ((Number) description.get("primaryColor")).intValue();
         if (color != 0) { // 0 means color isn't set, use system default
             color = color | 0xFF000000; // color must be opaque if set
         }

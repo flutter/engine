@@ -31,7 +31,7 @@ import android.view.inputmethod.InputConnection;
 import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.FlutterMessageChannel;
 import io.flutter.plugin.common.FlutterMethodChannel;
-import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.common.StringCodec;
 import io.flutter.plugin.editing.TextInputPlugin;
@@ -75,14 +75,14 @@ public class FlutterView extends SurfaceView
     }
 
     private final TextInputPlugin mTextInputPlugin;
-    private final HashMap<String, OnBinaryMessageListenerAsync> mMessageListeners;
+    private final Map<String, OnBinaryMessageListenerAsync> mMessageListeners;
     private final SurfaceHolder.Callback mSurfaceCallback;
     private final ViewportMetrics mMetrics;
     private final AccessibilityManager mAccessibilityManager;
     private final FlutterMethodChannel mFlutterLocalizationChannel;
     private final FlutterMethodChannel mFlutterNavigationChannel;
     private final FlutterMessageChannel<Object> mFlutterKeyEventChannel;
-    private final FlutterMessageChannel<Object> mFlutterLifecycleChannel;
+    private final FlutterMessageChannel<String> mFlutterLifecycleChannel;
     private final FlutterMessageChannel<Object> mFlutterSystemChannel;
     private final BroadcastReceiver mDiscoveryReceiver;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
@@ -140,15 +140,15 @@ public class FlutterView extends SurfaceView
         mMessageListeners = new HashMap<>();
         mActivityLifecycleListeners = new ArrayList<>();
 
-        setLocale(getResources().getConfiguration().locale);
-
         // Configure the platform plugins and flutter channels.
-        mFlutterLocalizationChannel = new FlutterMethodChannel(this, "flutter/localization");
-        mFlutterNavigationChannel = new FlutterMethodChannel(this, "flutter/navigation");
+        mFlutterLocalizationChannel = new FlutterMethodChannel(this, "flutter/localization",
+            JSONMethodCodec.INSTANCE);
+        mFlutterNavigationChannel = new FlutterMethodChannel(this, "flutter/navigation",
+            JSONMethodCodec.INSTANCE);
         mFlutterKeyEventChannel = new FlutterMessageChannel<>(this, "flutter/keyevent",
             StandardMessageCodec.INSTANCE);
         mFlutterLifecycleChannel = new FlutterMessageChannel<>(this, "flutter/lifecycle",
-            StandardMessageCodec.INSTANCE);
+            StringCodec.INSTANCE);
         mFlutterSystemChannel = new FlutterMessageChannel<>(this, "flutter/system",
             StandardMessageCodec.INSTANCE);
         PlatformPlugin platformPlugin = new PlatformPlugin((Activity) getContext());
@@ -157,6 +157,8 @@ public class FlutterView extends SurfaceView
         flutterPlatformChannel.setMethodCallHandler(platformPlugin);
         addActivityLifecycleListener(platformPlugin);
         mTextInputPlugin = new TextInputPlugin((Activity) getContext(), this);
+
+        setLocale(getResources().getConfiguration().locale);
 
         if ((context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
             mDiscoveryReceiver = new DiscoveryReceiver();
@@ -232,14 +234,15 @@ public class FlutterView extends SurfaceView
     }
 
     private void setLocale(Locale locale) {
-        mFlutterLocalizationChannel.invokeMethod("setLocale", Arrays
-            .asList(locale.getLanguage(), locale.getCountry()));
+        mFlutterLocalizationChannel.invokeMethod("setLocale",
+            Arrays.asList(locale.getLanguage(), locale.getCountry()));
     }
 
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         setLocale(newConfig.locale);
+        Log.e(TAG, "config changed");
     }
 
     float getDevicePixelRatio() {
@@ -616,8 +619,7 @@ public class FlutterView extends SurfaceView
     }
 
     private int mNextResponseId = 1;
-    private final Map<Integer, BinaryMessageReplyCallback> mPendingResponses
-        = new HashMap<Integer, BinaryMessageReplyCallback>();
+    private final Map<Integer, BinaryMessageReplyCallback> mPendingResponses = new HashMap<>();
 
     // Called by native to respond to a platform message that we sent.
     @CalledByNative

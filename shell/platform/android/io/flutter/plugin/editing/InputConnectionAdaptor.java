@@ -10,7 +10,6 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.KeyEvent;
 
 import io.flutter.plugin.common.FlutterMethodChannel;
-import io.flutter.plugin.common.MethodCall;
 import io.flutter.view.FlutterView;
 
 import java.util.Arrays;
