@@ -73,23 +73,19 @@ public class TextInputPlugin implements MethodCallHandler {
     }
 
     private static int inputTypeFromTextInputType(String inputType) {
-        if (inputType.equals("TextInputType.datetime")) {
+        if (inputType.equals("TextInputType.datetime"))
             return InputType.TYPE_CLASS_DATETIME;
-        }
-        if (inputType.equals("TextInputType.number")) {
+        if (inputType.equals("TextInputType.number"))
             return InputType.TYPE_CLASS_NUMBER;
-        }
-        if (inputType.equals("TextInputType.phone")) {
+        if (inputType.equals("TextInputType.phone"))
             return InputType.TYPE_CLASS_PHONE;
-        }
         return InputType.TYPE_CLASS_TEXT;
     }
 
     public InputConnection createInputConnection(FlutterView view, EditorInfo outAttrs)
         throws JSONException {
-        if (mClient == 0) {
+        if (mClient == 0)
             return null;
-        }
         outAttrs.inputType = inputTypeFromTextInputType(mConfiguration.getString("inputType"));
         outAttrs.actionLabel = mConfiguration.getString("actionLabel");
         outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN;

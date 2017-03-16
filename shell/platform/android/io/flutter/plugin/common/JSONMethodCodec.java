@@ -1,7 +1,6 @@
 package io.flutter.plugin.common;
 
 import java.nio.ByteBuffer;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,7 +11,6 @@ import org.json.JSONObject;
  * {@link JSONMessageCodec}.
  */
 public final class JSONMethodCodec implements MethodCodec {
-
     public static final JSONMethodCodec INSTANCE = new JSONMethodCodec();
 
     private JSONMethodCodec() {
@@ -73,7 +71,12 @@ public final class JSONMethodCodec implements MethodCodec {
                     return array.get(0);
                 }
                 if (array.length() == 3) {
-                    throw new FlutterException(array.getString(0), array.optString(1), array.get(2));
+                    final Object code = array.get(0);
+                    final Object message = array.get(1);
+                    final Object details = array.get(2);
+                    if (code instanceof String && (message == null || message instanceof String)) {
+                        throw new FlutterException((String) code, (String) message, details);
+                    }
                 }
             }
             throw new IllegalArgumentException("Invalid method call: " + json);

@@ -5,7 +5,6 @@
 package io.flutter.plugin.common;
 
 import io.flutter.plugin.common.StandardMessageCodec.ExposedByteArrayOutputStream;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -20,7 +19,6 @@ import java.nio.ByteOrder;
  * {@link StandardMessageCodec}.
  */
 public final class StandardMethodCodec implements MethodCodec {
-
     // This codec must match the Dart codec of the same name in package flutter/services.
     public static final StandardMethodCodec INSTANCE = new StandardMethodCodec();
 

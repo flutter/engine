@@ -779,17 +779,6 @@ public class FlutterView extends SurfaceView
     }
 
     /**
-     * Callback invoked when the app replies to a String message sent with sendToFlutter.
-     *
-     * @deprecated Use {@link io.flutter.plugin.common.FlutterMessageChannel} with {@link
-     * StringCodec} instead.
-     */
-    public interface MessageReplyCallback {
-
-        void onReply(String reply);
-    }
-
-    /**
      * Callback invoked when the app replies to a binary message sent with sendBinaryMessage.
      */
     public interface BinaryMessageReplyCallback {
