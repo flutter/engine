@@ -154,7 +154,7 @@ void Logger_PrintString(Dart_NativeArguments args) {
     __android_log_print(ANDROID_LOG_INFO, tag, "%.*s", (int)length,
                         chars);
 #elif __APPLE__
-    asl_log(NULL, NULL, ASL_LEVEL_NOTICE, "%.*s", (int)length, chars);
+    asl_log_message(ASL_LEVEL_NOTICE, "%.*s", (int)length, chars);
 #endif
   }
   if (dart::bin::ShouldCaptureStdout()) {
