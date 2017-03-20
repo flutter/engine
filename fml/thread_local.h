@@ -6,6 +6,7 @@
 #define FLUTTER_FML_THREAD_LOCAL_H_
 
 #include <functional>
+
 #include "lib/ftl/build_config.h"
 #include "lib/ftl/logging.h"
 #include "lib/ftl/macros.h"

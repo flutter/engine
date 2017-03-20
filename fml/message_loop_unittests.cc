@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <thread>
+
 #include "flutter/fml/message_loop.h"
 #include "gtest/gtest.h"
 #include "lib/ftl/synchronization/waitable_event.h"

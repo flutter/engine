@@ -3,8 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/thread.h"
+
 #include <memory>
 #include <string>
+
 #include "flutter/fml/message_loop.h"
 #include "lib/ftl/build_config.h"
 #include "lib/ftl/synchronization/waitable_event.h"

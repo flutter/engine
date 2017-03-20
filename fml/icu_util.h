@@ -6,6 +6,7 @@
 #define FLUTTER_FML_ICU_UTIL_H_
 
 #include <string>
+
 #include "lib/ftl/macros.h"
 
 namespace fml {

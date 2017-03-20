@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+
 #include "lib/ftl/macros.h"
 
 #define TRACE_EVENT0(category_group, name)           \

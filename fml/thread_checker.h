@@ -6,6 +6,7 @@
 #define FLUTTER_FML_THREAD_CHECKER_H_
 
 #include <thread>
+
 #include "lib/ftl/macros.h"
 
 namespace fml {

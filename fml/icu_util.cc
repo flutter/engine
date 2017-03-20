@@ -3,8 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/icu_util.h"
+
 #include <memory>
 #include <mutex>
+
 #include "flutter/fml/mapping.h"
 #include "lib/ftl/build_config.h"
 #include "lib/ftl/logging.h"
@@ -13,7 +15,7 @@
 namespace fml {
 namespace icu {
 
-static const char kIcuDataFileName[] = "icudtl.dat";
+static constexpr char kIcuDataFileName[] = "icudtl.dat";
 
 class ICUContext {
  public:
@@ -81,9 +83,9 @@ void InitializeICUOnce(const std::string& icu_data_path) {
   FTL_CHECK(context->IsValid()) << "Must be able to initialize the ICU context";
 }
 
-std::once_flag gICUInitFlag;
+std::once_flag g_icu_init_flag;
 void InitializeICU(const std::string& icu_data_path) {
-  std::call_once(gICUInitFlag,
+  std::call_once(g_icu_init_flag,
                  [&icu_data_path]() { InitializeICUOnce(icu_data_path); });
 }
 

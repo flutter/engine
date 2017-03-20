@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/message_loop_impl.h"
+
 #include "lib/ftl/build_config.h"
 
 #if OS_MACOSX
