@@ -12,7 +12,7 @@
 
 namespace fml {
 
-static const int kClockType = CLOCK_MONOTONIC;
+static constexpr int kClockType = CLOCK_MONOTONIC;
 
 MessageLoopLinux::MessageLoopLinux()
     : epoll_fd_(HANDLE_EINTR(::epoll_create(1 /* unused */))),
