@@ -167,13 +167,9 @@ using namespace shell;
     return YES;
   if (![object isKindOfClass:[FlutterStandardTypedData class]])
     return NO;
-  return [self isEqualToTypedData:(FlutterStandardTypedData*)object];
-}
-
-- (BOOL)isEqualToTypedData:(FlutterStandardTypedData*)other {
-  return other && self.type == other.type &&
-         self.elementCount == other.elementCount &&
-         [self.data isEqualToData:other.data];
+  FlutterStandardTypedData* other = (FlutterStandardTypedData*)object;
+  return self.type == other.type && self.elementCount == other.elementCount &&
+         [self.data isEqual:other.data];
 }
 
 - (NSUInteger)hash {
@@ -204,11 +200,8 @@ using namespace shell;
     return YES;
   if (![object isKindOfClass:[FlutterStandardBigInteger class]])
     return NO;
-  return [self isEqualToBigInteger:(FlutterStandardBigInteger*)object];
-}
-
-- (BOOL)isEqualToBigInteger:(FlutterStandardBigInteger*)other {
-  return other && [self.hex isEqualToString:other.hex];
+  FlutterStandardBigInteger* other = (FlutterStandardBigInteger*)object;
+  return [self.hex isEqual:other.hex];
 }
 
 - (NSUInteger)hash {
