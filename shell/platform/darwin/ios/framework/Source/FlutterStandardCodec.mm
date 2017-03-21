@@ -145,6 +145,7 @@ using namespace shell;
 
 - (instancetype)initWithData:(NSData*)data type:(FlutterStandardDataType)type {
   UInt8 elementSize = elementSizeForFlutterStandardDataType(type);
+  NSAssert(data, @"Data cannot be null");
   NSAssert(data.length % elementSize == 0,
            @"Data must contain integral number of elements");
   if (self = [super init]) {
@@ -160,6 +161,24 @@ using namespace shell;
   [_data release];
   [super dealloc];
 }
+
+- (BOOL)isEqual:(id)object {
+  if (self == object)
+    return YES;
+  if (![object isKindOfClass:[FlutterStandardTypedData class]])
+    return NO;
+  return [self isEqualToTypedData:(FlutterStandardTypedData*)object];
+}
+
+- (BOOL)isEqualToTypedData:(FlutterStandardTypedData*)other {
+  return other && self.type == other.type &&
+         self.elementCount == other.elementCount &&
+         [self.data isEqualToData:other.data];
+}
+
+- (NSUInteger)hash {
+  return [self.data hash] ^ self.type;
+}
 @end
 
 @implementation FlutterStandardBigInteger
@@ -168,6 +187,7 @@ using namespace shell;
 }
 
 - (instancetype)initWithHex:(NSString*)hex {
+  NSAssert(hex, @"Hex cannot be null");
   if (self = [super init]) {
     _hex = [hex retain];
   }
@@ -177,6 +197,22 @@ using namespace shell;
 - (void)dealloc {
   [_hex release];
   [super dealloc];
+}
+
+- (BOOL)isEqual:(id)object {
+  if (self == object)
+    return YES;
+  if (![object isKindOfClass:[FlutterStandardBigInteger class]])
+    return NO;
+  return [self isEqualToBigInteger:(FlutterStandardBigInteger*)object];
+}
+
+- (BOOL)isEqualToBigInteger:(FlutterStandardBigInteger*)other {
+  return other && [self.hex isEqualToString:other.hex];
+}
+
+- (NSUInteger)hash {
+  return [self.hex hash];
 }
 @end
 
@@ -243,8 +279,7 @@ using namespace shell;
   } else if ([value isKindOfClass:[NSNumber class]]) {
     NSNumber* number = value;
     const char* type = [number objCType];
-    if (strcmp(type, @encode(BOOL)) == 0 &&
-        [number boolValue] == [number charValue]) {
+    if ([self isBool:number type:type]) {
       BOOL b = number.boolValue;
       [self
           writeByte:(b ? FlutterStandardFieldTrue : FlutterStandardFieldFalse)];
@@ -310,6 +345,11 @@ using namespace shell;
     NSLog(@"Unsupported value: %@ of type %@", value, [value class]);
     NSAssert(NO, @"Unsupported value for standard codec");
   }
+}
+
+- (BOOL)isBool:(NSNumber*)number type:(const char*)type {
+  return strcmp([number objCType], @encode(signed char)) == 0 &&
+         [NSStringFromClass([number class]) isEqual:@"__NSCFBoolean"];
 }
 @end
 
