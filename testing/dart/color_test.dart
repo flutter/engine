@@ -47,8 +47,12 @@ void main() {
   });
 
   test("two colors are only == if they have the same runtime type", () {
+    expect(const Color(123), equals(const Color(123)));
+    expect(const Color(123), equals(new Color(123)));
+    expect(const Color(123), isNot(equals(const Color(321))));
     expect(const Color(123), isNot(equals(const NotAColor(123))));
     expect(const NotAColor(123), isNot(equals(const Color(123))));
+    expect(const NotAColor(123), equals(const NotAColor(123)));
   });
 
 }
