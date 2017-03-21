@@ -72,7 +72,7 @@ TEST(FlutterStandardCodec, CanEncodeAndDecodeUInt64AsHexString) {
   UInt64 u64 = 0xfffffffffffffffa;
   NSData* encoded = [codec encode:@(u64)];
   FlutterStandardBigInteger* decoded = [codec decode:encoded];
-  ASSERT_TRUE([decoded.hex isEqualTo:@"fffffffffffffffa"]);
+  ASSERT_TRUE([decoded.hex isEqual:@"fffffffffffffffa"]);
 }
 
 TEST(FlutterStandardCodec, CanEncodeAndDecodeSInt8) {
@@ -188,7 +188,7 @@ TEST(FlutterStandardCodec, HandlesMethodCallsWithNilArguments) {
       [FlutterMethodCall methodCallWithMethodName:@"hello" arguments:nil];
   NSData* encoded = [codec encodeMethodCall:call];
   FlutterMethodCall* decoded = [codec decodeMethodCall:encoded];
-  ASSERT_TRUE([decoded isEqualToMethodCall:call]);
+  ASSERT_TRUE([decoded isEqual:call]);
 }
 
 TEST(FlutterStandardCodec, HandlesMethodCallsWithSingleArgument) {
@@ -198,7 +198,7 @@ TEST(FlutterStandardCodec, HandlesMethodCallsWithSingleArgument) {
       [FlutterMethodCall methodCallWithMethodName:@"hello" arguments:@42];
   NSData* encoded = [codec encodeMethodCall:call];
   FlutterMethodCall* decoded = [codec decodeMethodCall:encoded];
-  ASSERT_TRUE([decoded isEqualToMethodCall:call]);
+  ASSERT_TRUE([decoded isEqual:call]);
 }
 
 TEST(FlutterStandardCodec, HandlesMethodCallsWithArgumentList) {
@@ -209,7 +209,7 @@ TEST(FlutterStandardCodec, HandlesMethodCallsWithArgumentList) {
       [FlutterMethodCall methodCallWithMethodName:@"hello" arguments:arguments];
   NSData* encoded = [codec encodeMethodCall:call];
   FlutterMethodCall* decoded = [codec decodeMethodCall:encoded];
-  ASSERT_TRUE([decoded isEqualToMethodCall:call]);
+  ASSERT_TRUE([decoded isEqual:call]);
 }
 
 TEST(FlutterStandardCodec, HandlesSuccessEnvelopesWithNilResult) {
@@ -239,7 +239,7 @@ TEST(FlutterStandardCodec, HandlesSuccessEnvelopesWithResultMap) {
   NSData* encoded = [codec encodeSuccessEnvelope:result];
   FlutterError* decodedError = nil;
   id decodedResult = [codec decodeEnvelope:encoded error:&decodedError];
-  ASSERT_TRUE([decodedResult isEqualTo:result]);
+  ASSERT_TRUE([decodedResult isEqual:result]);
 }
 
 TEST(FlutterStandardCodec, HandlesErrorEnvelopes) {
@@ -253,5 +253,5 @@ TEST(FlutterStandardCodec, HandlesErrorEnvelopes) {
   FlutterError* decodedError = nil;
   id decodedResult = [codec decodeEnvelope:encoded error:&decodedError];
   ASSERT_EQ(decodedResult, nil);
-  ASSERT_TRUE([decodedError isEqualToError:error]);
+  ASSERT_TRUE([decodedError isEqual:error]);
 }

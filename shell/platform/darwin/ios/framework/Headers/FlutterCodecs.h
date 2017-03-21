@@ -37,7 +37,6 @@ FLUTTER_EXPORT
                                arguments:(id)arguments;
 @property(readonly, nonatomic) NSString* method;
 @property(readonly, nonatomic) id arguments;
-- (BOOL)isEqualToMethodCall:(FlutterMethodCall*)other;
 @end
 
 FLUTTER_EXPORT
@@ -48,7 +47,6 @@ FLUTTER_EXPORT
 @property(readonly, nonatomic) NSString* code;
 @property(readonly, nonatomic) NSString* message;
 @property(readonly, nonatomic) id details;
-- (BOOL)isEqualToError:(FlutterError*)other;
 @end
 
 typedef NS_ENUM(NSInteger, FlutterStandardDataType) {
@@ -68,14 +66,12 @@ FLUTTER_EXPORT
 @property(readonly, nonatomic) FlutterStandardDataType type;
 @property(readonly, nonatomic) UInt32 elementCount;
 @property(readonly, nonatomic) UInt8 elementSize;
-- (BOOL)isEqualToTypedData:(FlutterStandardTypedData*)other;
 @end
 
 FLUTTER_EXPORT
 @interface FlutterStandardBigInteger : NSObject
 + (instancetype)bigIntegerWithHex:(NSString*)hex;
 @property(readonly, nonatomic) NSString* hex;
-- (BOOL)isEqualToBigInteger:(FlutterStandardBigInteger*)other;
 @end
 
 FLUTTER_EXPORT

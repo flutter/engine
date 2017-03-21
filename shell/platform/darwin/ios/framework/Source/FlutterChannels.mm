@@ -42,28 +42,29 @@
 }
 
 - (void)sendMessage:(id)message replyHandler:(FlutterReplyHandler)handler {
+  FlutterBinaryReplyHandler replyHandler = ^(NSData* reply) {
+    if (handler)
+      handler([_codec decode:reply]);
+  };
   [_messenger sendBinaryMessage:[_codec encode:message]
                     channelName:_name
-             binaryReplyHandler:^(NSData* reply) {
-               if (handler)
-                 handler([_codec decode:reply]);
-             }];
+             binaryReplyHandler:replyHandler];
 }
 
 - (void)setMessageHandler:(FlutterMessageHandler)handler {
-  if (handler) {
-    [_messenger setBinaryMessageHandlerOnChannel:_name
-                            binaryMessageHandler:^(
-                                NSData* message,
-                                FlutterBinaryReplyHandler replyHandler) {
-                              handler([_codec decode:message], ^(id reply) {
-                                replyHandler([_codec encode:reply]);
-                              });
-                            }];
-  } else {
+  if (!handler) {
     [_messenger setBinaryMessageHandlerOnChannel:_name
                             binaryMessageHandler:nil];
+    return;
   }
+  FlutterBinaryMessageHandler messageHandler =
+      ^(NSData* message, FlutterBinaryReplyHandler replyHandler) {
+        handler([_codec decode:message], ^(id reply) {
+          replyHandler([_codec encode:reply]);
+        });
+      };
+  [_messenger setBinaryMessageHandlerOnChannel:_name
+                          binaryMessageHandler:messageHandler];
 }
 @end
 
@@ -102,13 +103,10 @@
     return YES;
   if (![object isKindOfClass:[FlutterError class]])
     return NO;
-  return [self isEqualToError:(FlutterError*)object];
-}
-
-- (BOOL)isEqualToError:(FlutterError*)other {
-  return other && [self.code isEqualToString:other.code] &&
+  FlutterError* other = (FlutterError*)object;
+  return [self.code isEqual:other.code] &&
          ((!self.message && !other.message) ||
-          [self.message isEqualToString:other.message]) &&
+          [self.message isEqual:other.message]) &&
          ((!self.details && !other.details) ||
           [self.details isEqual:other.details]);
 }
@@ -145,11 +143,8 @@
     return YES;
   if (![object isKindOfClass:[FlutterMethodCall class]])
     return NO;
-  return [self isEqualToMethodCall:(FlutterMethodCall*)object];
-}
-
-- (BOOL)isEqualToMethodCall:(FlutterMethodCall*)other {
-  return other && [self.method isEqualToString:[other method]] &&
+  FlutterMethodCall* other = (FlutterMethodCall*)object;
+  return [self.method isEqual:[other method]] &&
          ((!self.arguments && !other.arguments) ||
           [self.arguments isEqual:other.arguments]);
 }
@@ -192,45 +187,48 @@
 }
 
 - (void)invokeMethod:(NSString*)method arguments:(id)arguments {
-  [_messenger
-      sendBinaryMessage:
-          [_codec encodeMethodCall:[FlutterMethodCall
-                                       methodCallWithMethodName:method
-                                                      arguments:arguments]]
-            channelName:_name];
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:method arguments:arguments];
+  NSData* message = [_codec encodeMethodCall:methodCall];
+  [_messenger sendBinaryMessage:message channelName:_name];
 }
 
 - (void)invokeMethod:(NSString*)method
            arguments:(id)arguments
       resultReceiver:(FlutterResultReceiver)resultReceiver {
-  [_messenger
-       sendBinaryMessage:
-           [_codec encodeMethodCall:[FlutterMethodCall
-                                        methodCallWithMethodName:method
-                                                       arguments:arguments]]
-             channelName:_name
-      binaryReplyHandler:^(NSData* reply) {
-        if (resultReceiver) {
-          FlutterError* flutterError = nil;
-          id result = [_codec decodeEnvelope:reply error:&flutterError];
-          resultReceiver(result, flutterError);
-        }
-      }];
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:method arguments:arguments];
+  NSData* message = [_codec encodeMethodCall:methodCall];
+  FlutterBinaryReplyHandler replyHandler = ^(NSData* reply) {
+    if (resultReceiver) {
+      FlutterError* flutterError = nil;
+      id result = [_codec decodeEnvelope:reply error:&flutterError];
+      resultReceiver(result, flutterError);
+    }
+  };
+  [_messenger sendBinaryMessage:message
+                    channelName:_name
+             binaryReplyHandler:replyHandler];
 }
 
 - (void)setMethodCallHandler:(FlutterMethodCallHandler)handler {
-  [_messenger
-      setBinaryMessageHandlerOnChannel:_name
-                  binaryMessageHandler:^(NSData* message,
-                                         FlutterBinaryReplyHandler reply) {
-                    FlutterMethodCall* call = [_codec decodeMethodCall:message];
-                    handler(call, ^(id result, FlutterError* error) {
-                      if (error)
-                        reply([_codec encodeErrorEnvelope:error]);
-                      else
-                        reply([_codec encodeSuccessEnvelope:result]);
-                    });
-                  }];
+  if (!handler) {
+    [_messenger setBinaryMessageHandlerOnChannel:_name
+                            binaryMessageHandler:nil];
+    return;
+  }
+  FlutterBinaryMessageHandler messageHandler =
+      ^(NSData* message, FlutterBinaryReplyHandler reply) {
+        FlutterMethodCall* call = [_codec decodeMethodCall:message];
+        handler(call, ^(id result, FlutterError* error) {
+          if (error)
+            reply([_codec encodeErrorEnvelope:error]);
+          else
+            reply([_codec encodeSuccessEnvelope:result]);
+        });
+      };
+  [_messenger setBinaryMessageHandlerOnChannel:_name
+                          binaryMessageHandler:messageHandler];
 }
 
 - (void)setStreamHandler:(FlutterStreamHandler)handler {
@@ -239,33 +237,29 @@
                             binaryMessageHandler:nil];
     return;
   }
-  [_messenger
-      setBinaryMessageHandlerOnChannel:_name
-                  binaryMessageHandler:^(NSData* message,
-                                         FlutterBinaryReplyHandler reply) {
-                    FlutterMethodCall* call = [_codec decodeMethodCall:message];
-                    handler(
-                        call,
-                        ^(id result, FlutterError* error) {
-                          if (error)
-                            reply([_codec encodeErrorEnvelope:error]);
-                          else
-                            reply([_codec encodeSuccessEnvelope:nil]);
-                        },
-                        ^(id event, FlutterError* error, BOOL done) {
-                          if (error)
-                            [_messenger
-                                sendBinaryMessage:[_codec
-                                                      encodeErrorEnvelope:error]
-                                      channelName:_name];
-                          else if (done)
-                            [_messenger sendBinaryMessage:[NSData data]
-                                              channelName:_name];
-                          else
-                            [_messenger sendBinaryMessage:
-                                            [_codec encodeSuccessEnvelope:event]
-                                              channelName:_name];
-                        });
-                  }];
+  FlutterBinaryMessageHandler messageHandler = ^(
+      NSData* message, FlutterBinaryReplyHandler reply) {
+    FlutterMethodCall* call = [_codec decodeMethodCall:message];
+    FlutterResultReceiver resultReceiver = ^(id result, FlutterError* error) {
+      if (error)
+        reply([_codec encodeErrorEnvelope:error]);
+      else
+        reply([_codec encodeSuccessEnvelope:nil]);
+    };
+    FlutterEventReceiver eventReceiver =
+        ^(id event, FlutterError* error, BOOL done) {
+          if (error)
+            [_messenger sendBinaryMessage:[_codec encodeErrorEnvelope:error]
+                              channelName:_name];
+          else if (done)
+            [_messenger sendBinaryMessage:[NSData data] channelName:_name];
+          else
+            [_messenger sendBinaryMessage:[_codec encodeSuccessEnvelope:event]
+                              channelName:_name];
+        };
+    handler(call, resultReceiver, eventReceiver);
+  };
+  [_messenger setBinaryMessageHandlerOnChannel:_name
+                          binaryMessageHandler:messageHandler];
 }
 @end
