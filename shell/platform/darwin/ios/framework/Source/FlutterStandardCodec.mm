@@ -89,19 +89,20 @@
     case 0: {
       result = [reader readValue];
       NSAssert(![reader hasMore], @"Corrupted standard envelope");
-    }
-    break;
+    } break;
     case 1: {
       id code = [reader readValue];
       id message = [reader readValue];
       id details = [reader readValue];
       NSAssert(![reader hasMore], @"Corrupted standard envelope");
-      NSAssert([code isKindOfClass:[NSString class]], @"Invalid standard envelope");
-      NSAssert(message == nil || [message isKindOfClass:[NSString class]], @"Invalid standard envelope");
-      *error = [FlutterError errorWithCode:code message:message details:details];
+      NSAssert([code isKindOfClass:[NSString class]],
+               @"Invalid standard envelope");
+      NSAssert(message == nil || [message isKindOfClass:[NSString class]],
+               @"Invalid standard envelope");
+      *error =
+          [FlutterError errorWithCode:code message:message details:details];
       result = nil;
-    }
-    break;
+    } break;
   }
   return result;
 }
@@ -242,24 +243,38 @@ using namespace shell;
   } else if ([value isKindOfClass:[NSNumber class]]) {
     NSNumber* number = value;
     const char* type = [number objCType];
-    if (strcmp(type, @encode(BOOL)) == 0) {
+    if (strcmp(type, @encode(BOOL)) == 0 &&
+        [number boolValue] == [number charValue]) {
       BOOL b = number.boolValue;
       [self
           writeByte:(b ? FlutterStandardFieldTrue : FlutterStandardFieldFalse)];
-    } else if (strcmp(type, @encode(int)) == 0) {
+    } else if (strcmp(type, @encode(signed int)) == 0 ||
+               strcmp(type, @encode(signed short)) == 0 ||
+               strcmp(type, @encode(unsigned short)) == 0 ||
+               strcmp(type, @encode(signed char)) == 0 ||
+               strcmp(type, @encode(unsigned char)) == 0) {
       SInt32 n = number.intValue;
       [self writeByte:FlutterStandardFieldInt32];
       [_data appendBytes:(UInt8*)&n length:4];
-    } else if (strcmp(type, @encode(long)) == 0) {
+    } else if (strcmp(type, @encode(signed long)) == 0 ||
+               strcmp(type, @encode(unsigned int)) == 0) {
       SInt64 n = number.longValue;
       [self writeByte:FlutterStandardFieldInt64];
       [_data appendBytes:(UInt8*)&n length:8];
-    } else if (strcmp(type, @encode(double)) == 0) {
+    } else if (strcmp(type, @encode(double)) == 0 ||
+               strcmp(type, @encode(float)) == 0) {
       Float64 f = number.doubleValue;
       [self writeByte:FlutterStandardFieldFloat64];
       [_data appendBytes:(UInt8*)&f length:8];
+    } else if (strcmp(type, @encode(unsigned long)) == 0 ||
+               strcmp(type, @encode(signed long long)) == 0 ||
+               strcmp(type, @encode(unsigned long long)) == 0) {
+      NSString* hex =
+          [NSString stringWithFormat:@"%llx", number.unsignedLongLongValue];
+      [self writeByte:FlutterStandardFieldIntHex];
+      [self writeUTF8:hex];
     } else {
-      NSLog(@"Unsupported value: %@", value);
+      NSLog(@"Unsupported value: %@ of type %s", value, type);
       NSAssert(NO, @"Unsupported value for standard codec");
     }
   } else if ([value isKindOfClass:[NSString class]]) {
@@ -292,7 +307,7 @@ using namespace shell;
       [self writeValue:[dict objectForKey:key]];
     }
   } else {
-    NSLog(@"Unsupported value: %@", value);
+    NSLog(@"Unsupported value: %@ of type %@", value, [value class]);
     NSAssert(NO, @"Unsupported value for standard codec");
   }
 }
