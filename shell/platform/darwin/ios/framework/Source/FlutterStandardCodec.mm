@@ -348,7 +348,7 @@ using namespace shell;
 }
 
 - (BOOL)isBool:(NSNumber*)number type:(const char*)type {
-  return strcmp([number objCType], @encode(signed char)) == 0 &&
+  return strcmp(type, @encode(signed char)) == 0 &&
          [NSStringFromClass([number class]) isEqual:@"__NSCFBoolean"];
 }
 @end
