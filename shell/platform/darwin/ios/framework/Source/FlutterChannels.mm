@@ -38,8 +38,7 @@
 }
 
 - (void)sendMessage:(id)message {
-  [_messenger sendBinaryMessage:[_codec encode:message]
-                    channelName:_name];
+  [_messenger sendBinaryMessage:[_codec encode:message] channelName:_name];
 }
 
 - (void)sendMessage:(id)message replyHandler:(FlutterReplyHandler)handler {
@@ -82,6 +81,7 @@
 - (instancetype)initWithCode:(NSString*)code
                      message:(NSString*)message
                      details:(id)details {
+  NSAssert(code, @"Code cannot be nil");
   if (self = [super init]) {
     _code = [code retain];
     _message = [message retain];
@@ -96,6 +96,26 @@
   [_details release];
   [super dealloc];
 }
+
+- (BOOL)isEqual:(id)object {
+  if (self == object)
+    return YES;
+  if (![object isKindOfClass:[FlutterError class]])
+    return NO;
+  return [self isEqualToError:(FlutterError*)object];
+}
+
+- (BOOL)isEqualToError:(FlutterError*)other {
+  return other && [self.code isEqualToString:other.code] &&
+         ((!self.message && !other.message) ||
+          [self.message isEqualToString:other.message]) &&
+         ((!self.details && !other.details) ||
+          [self.details isEqual:other.details]);
+}
+
+- (NSUInteger)hash {
+  return [self.code hash] ^ [self.message hash] ^ [self.details hash];
+}
 @end
 
 @implementation FlutterMethodCall
@@ -106,6 +126,7 @@
 }
 
 - (instancetype)initWithMethodName:(NSString*)method arguments:(id)arguments {
+  NSAssert(method, @"Method name cannot be nil");
   if (self = [super init]) {
     _method = [method retain];
     _arguments = [arguments retain];
@@ -117,6 +138,24 @@
   [_method release];
   [_arguments release];
   [super dealloc];
+}
+
+- (BOOL)isEqual:(id)object {
+  if (self == object)
+    return YES;
+  if (![object isKindOfClass:[FlutterMethodCall class]])
+    return NO;
+  return [self isEqualToMethodCall:(FlutterMethodCall*)object];
+}
+
+- (BOOL)isEqualToMethodCall:(FlutterMethodCall*)other {
+  return other && [self.method isEqualToString:[other method]] &&
+         ((!self.arguments && !other.arguments) ||
+          [self.arguments isEqual:other.arguments]);
+}
+
+- (NSUInteger)hash {
+  return [self.method hash] ^ [self.arguments hash];
 }
 @end
 
@@ -153,22 +192,30 @@
 }
 
 - (void)invokeMethod:(NSString*)method arguments:(id)arguments {
-  [_messenger sendBinaryMessage:[_codec encodeMethodCall:[FlutterMethodCall methodCallWithMethodName:method arguments:arguments]]
-                    channelName:_name];
+  [_messenger
+      sendBinaryMessage:
+          [_codec encodeMethodCall:[FlutterMethodCall
+                                       methodCallWithMethodName:method
+                                                      arguments:arguments]]
+            channelName:_name];
 }
 
 - (void)invokeMethod:(NSString*)method
            arguments:(id)arguments
       resultReceiver:(FlutterResultReceiver)resultReceiver {
-        [_messenger sendBinaryMessage:[_codec encodeMethodCall:[FlutterMethodCall methodCallWithMethodName:method arguments:arguments]]
-                          channelName:_name
-                   binaryReplyHandler:^(NSData* reply) {
-                            if (resultReceiver) {
-                              FlutterError* flutterError = nil;
-                              id result = [_codec decodeEnvelope:reply error:&flutterError];
-                              resultReceiver(result, flutterError);
-                            }
-                          }];
+  [_messenger
+       sendBinaryMessage:
+           [_codec encodeMethodCall:[FlutterMethodCall
+                                        methodCallWithMethodName:method
+                                                       arguments:arguments]]
+             channelName:_name
+      binaryReplyHandler:^(NSData* reply) {
+        if (resultReceiver) {
+          FlutterError* flutterError = nil;
+          id result = [_codec decodeEnvelope:reply error:&flutterError];
+          resultReceiver(result, flutterError);
+        }
+      }];
 }
 
 - (void)setMethodCallHandler:(FlutterMethodCallHandler)handler {
