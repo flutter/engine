@@ -145,7 +145,7 @@ using namespace shell;
 
 - (instancetype)initWithData:(NSData*)data type:(FlutterStandardDataType)type {
   UInt8 elementSize = elementSizeForFlutterStandardDataType(type);
-  NSAssert(data, @"Data cannot be null");
+  NSAssert(data, @"Data cannot be nil");
   NSAssert(data.length % elementSize == 0,
            @"Data must contain integral number of elements");
   if (self = [super init]) {
@@ -183,7 +183,7 @@ using namespace shell;
 }
 
 - (instancetype)initWithHex:(NSString*)hex {
-  NSAssert(hex, @"Hex cannot be null");
+  NSAssert(hex, @"Hex cannot be nil");
   if (self = [super init]) {
     _hex = [hex retain];
   }
