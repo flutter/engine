@@ -12,6 +12,7 @@
 #include "dart/runtime/include/dart_api.h"
 #include "dart/runtime/include/dart_tools_api.h"
 #include "flutter/common/settings.h"
+#include "flutter/lib/ui/logger/logger.h"
 #include "lib/ftl/build_config.h"
 #include "lib/ftl/logging.h"
 #include "lib/tonic/converter/dart_converter.h"
@@ -22,17 +23,6 @@
 #include "lib/tonic/logging/dart_invoke.h"
 #include "lib/tonic/scopes/dart_api_scope.h"
 #include "lib/tonic/scopes/dart_isolate_scope.h"
-
-#if defined(OS_ANDROID)
-#include <android/log.h>
-#endif
-
-#if __APPLE__
-extern "C" {
-// Cannot import the syslog.h header directly because of macro collision
-extern void syslog(int, const char*, ...);
-}
-#endif
 
 using tonic::LogIfError;
 using tonic::ToDart;
@@ -146,19 +136,7 @@ void Logger_PrintString(Dart_NativeArguments args) {
   if (Dart_IsError(result)) {
     Dart_PropagateError(result);
   } else {
-    // Uses fwrite to support printing NUL bytes.
-    fwrite(chars, 1, length, stdout);
-    fputs("\n", stdout);
-    fflush(stdout);
-#if defined(OS_ANDROID)
-    // In addition to writing to the stdout, write to the logcat so that the
-    // message is discoverable when running on an unrooted device.
-    const char* tag = Settings::Get().log_tag.c_str();
-    __android_log_print(ANDROID_LOG_INFO, tag, "%.*s", (int)length,
-                        chars);
-#elif __APPLE__
-    syslog(1 /* LOG_ALERT */, "%.*s", (int)length, chars);
-#endif
+    Logger::GetLogger().Log(chars, length);
   }
   if (dart::bin::ShouldCaptureStdout()) {
     // For now we report print output on the Stdout stream.

@@ -21,6 +21,7 @@
 #include "flutter/common/settings.h"
 #include "flutter/common/threads.h"
 #include "flutter/glue/task_runner_adaptor.h"
+#include "flutter/lib/ui/logger/logger.h"
 #include "flutter/runtime/dart_init.h"
 #include "flutter/shell/common/diagnostic/diagnostic_server.h"
 #include "flutter/shell/common/engine.h"
@@ -142,6 +143,15 @@ void Shell::InitStandalone(std::string icu_data_path,
 
   blink::Settings settings;
   settings.application_library_path = application_library_path;
+
+  // Enable logger.
+  size_t logger_port = blink::Logger::kDisabledPort;
+  if (command_line.HasSwitch(FlagForSwitch(Switch::LoggerPort))) {
+    if (!GetSwitchValue(command_line, Switch::LoggerPort, &logger_port)) {
+      logger_port = blink::Logger::kDisabledPort;
+    }
+  }
+  blink::Logger::InitializeLogger(logger_port);
 
   // Enable Observatory
   settings.enable_observatory =
