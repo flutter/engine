@@ -14,6 +14,16 @@
 #include "flutter/fml/platform/linux/path_provider_linux.h"
 using PlatformPathProvider = fml::paths::PathProviderLinux;
 
+#elif OS_ANDROID
+
+#include "flutter/fml/platform/android/path_provider_android.h"
+using PlatformPathProvider = fml::paths::PathProviderAndroid;
+
+#elif OS_MACOSX
+
+#include "flutter/fml/platform/darwin/path_provider_darwin.h"
+using PlatformPathProvider = fml::paths::PathProviderDarwin;
+
 #else
 
 #error This platform does not have a path provider implementation.
