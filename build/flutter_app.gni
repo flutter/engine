@@ -135,12 +135,16 @@ template("flutter_app") {
   }
 
   action(target_name) {
+    if (defined(invoker.manifest)) {
+      manifest = rebase_path(invoker.manifest)
+    } else {
+      manifest = rebase_path("//flutter/build/pubspec.yaml")
+    }
+
     inputs = [
       snapshot_path,
+      manifest,
     ]
-    if (defined(invoker.manifest)) {
-      inputs += [ rebase_path(invoker.manifest) ]
-    }
 
     outputs = [
       bundle_path,
@@ -169,14 +173,10 @@ template("flutter_app") {
       rebase_path(bundle_path),
       "--snapshot",
       rebase_path(snapshot_path),
+      "--manifest",
+      manifest,
     ]
-    if (defined(invoker.manifest)) {
-      args += [
-        "--manifest",
-        rebase_path(invoker.manifest),
-      ]
-    }
-
+    
     deps = [
       ":$flutter_snapshot_name",
       dart_binary_label,
