@@ -45,8 +45,7 @@ class ICUContext {
 
     // Check if the mapping can by directly accessed via a file path. In this
     // case, the data file needs to be next to the executable.
-    auto directory =
-        fml::paths::GetPath(fml::paths::PathType::ExecutableDirectory);
+    auto directory = fml::paths::GetExecutableDirectoryPath();
 
     if (!directory.first) {
       return false;

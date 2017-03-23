@@ -2,19 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FML_PATH_SERVICE_H_
-#define FLUTTER_FML_PATH_SERVICE_H_
-
-#include <memory>
-#include <string>
-#include <utility>
+#include "flutter/fml/paths.h"
 
 namespace fml {
 namespace paths {
 
-std::pair<bool, std::string> GetExecutableDirectoryPath();
+std::pair<bool, std::string> GetExecutableDirectoryPath() {
+  return {false, ""};
+}
 
 }  // namespace paths
 }  // namespace fml
-
-#endif  // FLUTTER_FML_PATH_SERVICE_H_
