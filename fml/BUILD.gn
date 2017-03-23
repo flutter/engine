@@ -12,6 +12,8 @@ source_set("fml") {
     "message_loop.h",
     "message_loop_impl.cc",
     "message_loop_impl.h",
+    "paths.cc",
+    "paths.h",
     "task_runner.cc",
     "task_runner.h",
     "thread.cc",
@@ -83,6 +85,8 @@ source_set("fml") {
     sources += [
       "platform/linux/message_loop_linux.cc",
       "platform/linux/message_loop_linux.h",
+      "platform/linux/path_provider_linux.cc",
+      "platform/linux/path_provider_linux.h",
       "platform/linux/timerfd.cc",
       "platform/linux/timerfd.h",
     ]
