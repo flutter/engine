@@ -86,7 +86,7 @@ source_set("fml") {
     sources += [
       "platform/linux/message_loop_linux.cc",
       "platform/linux/message_loop_linux.h",
-      "platform/linux/paths_linux.h",
+      "platform/linux/paths_linux.cc",
       "platform/linux/timerfd.cc",
       "platform/linux/timerfd.h",
     ]
