@@ -7,7 +7,7 @@
 
 #include <jni.h>
 
-#include "flutter/fml/platform/android/scoped_java_ref.h"
+#include "base/android/jni_android.h"
 #include "lib/tonic/dart_wrappable.h"
 
 namespace blink {
@@ -72,7 +72,7 @@ class JniObject : public ftl::RefCountedThreadSafe<JniObject>,
  protected:
   JniObject(JNIEnv* env, jobject object);
 
-  fml::jni::ScopedJavaGlobalRef<jobject> object_;
+  base::android::ScopedJavaGlobalRef<jobject> object_;
 };
 
 }  // namespace blink

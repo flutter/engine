@@ -21,6 +21,7 @@
 @implementation VSyncClient {
   CADisplayLink* _displayLink;
   shell::VsyncWaiter::Callback _pendingCallback;
+  bool _traceCounter;
 }
 
 - (instancetype)init {
@@ -49,6 +50,8 @@
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
+  _traceCounter = !_traceCounter;
+  TRACE_COUNTER1("flutter", "OnDisplayLink", _traceCounter);
   _displayLink.paused = YES;
 
   // Note: Even though we know we are on the UI thread already (since the

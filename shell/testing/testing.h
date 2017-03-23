@@ -5,11 +5,9 @@
 #ifndef SHELL_TESTING_TESTING_H_
 #define SHELL_TESTING_TESTING_H_
 
-#include "lib/ftl/command_line.h"
-
 namespace shell {
 
-bool InitForTesting(const ftl::CommandLine& command_line);
+bool InitForTesting();
 
 }  // namespace shell
 

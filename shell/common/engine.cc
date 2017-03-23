@@ -90,7 +90,8 @@ void Engine::RunBundle(const std::string& bundle_path) {
   } else {
     std::vector<uint8_t> kernel;
     if (GetAssetAsBuffer(blink::kKernelAssetKey, &kernel)) {
-      runtime_->dart_controller()->RunFromKernel(kernel.data(), kernel.size());
+      runtime_->dart_controller()->RunFromKernel(kernel.data(),
+                                                 kernel.size());
       return;
     }
     std::vector<uint8_t> snapshot;
@@ -303,7 +304,7 @@ void Engine::ConfigureAssetBundle(const std::string& path) {
   // custom font loading in hot reload.
 
   if (::stat(path.c_str(), &stat_result) != 0) {
-    FTL_LOG(INFO) << "Could not configure asset bundle at path: " << path;
+    LOG(INFO) << "Could not configure asset bundle at path: " << path;
     return;
   }
 

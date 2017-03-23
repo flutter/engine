@@ -8,7 +8,6 @@ source_set("web") {
   ]
 
   deps = [
-    "//flutter/fml",
     "//flutter/sky/engine/core",
     "//flutter/sky/engine/platform",
   ]

@@ -5,6 +5,8 @@
 #include "base/at_exit.h"
 #include "base/basictypes.h"
 #include "base/bind.h"
+#include "base/command_line.h"
+#include "base/logging.h"
 #include "base/message_loop/message_loop.h"
 #include "dart/runtime/bin/embedded_dart_io.h"
 #include "flutter/common/threads.h"
@@ -16,7 +18,6 @@
 #include "flutter/shell/testing/test_runner.h"
 #include "flutter/shell/testing/testing.h"
 #include "flutter/sky/engine/public/web/Sky.h"
-#include "lib/ftl/command_line.h"
 #include "lib/tonic/dart_microtask_queue.h"
 
 namespace {
@@ -57,7 +58,9 @@ class ScriptCompletionTaskObserver : public base::MessageLoop::TaskObserver {
     prev_live_ = live;
   }
 
-  tonic::DartErrorHandleType last_error() { return last_error_; }
+  tonic::DartErrorHandleType last_error() {
+    return last_error_;
+  }
 
  private:
   base::MessageLoop& main_message_loop_;
@@ -78,11 +81,10 @@ int ConvertErrorTypeToExitCode(tonic::DartErrorHandleType error) {
   }
 }
 
-void RunNonInteractive(ftl::CommandLine initial_command_line,
-                       bool run_forever) {
+void RunNonInteractive(bool run_forever) {
   base::MessageLoop message_loop;
 
-  shell::Shell::InitStandalone(initial_command_line);
+  shell::Shell::InitStandalone();
 
   // Note that this task observer must be added after the observer that drains
   // the microtask queue.
@@ -93,7 +95,7 @@ void RunNonInteractive(ftl::CommandLine initial_command_line,
     });
   }
 
-  if (!shell::InitForTesting(std::move(initial_command_line))) {
+  if (!shell::InitForTesting()) {
     shell::PrintUsage("sky_shell");
     exit(1);
   }
@@ -101,8 +103,7 @@ void RunNonInteractive(ftl::CommandLine initial_command_line,
   message_loop.Run();
 
   shell::TestRunner& test_runner = shell::TestRunner::Shared();
-  tonic::DartErrorHandleType error =
-      test_runner.platform_view().engine().GetLoadScriptError();
+  tonic::DartErrorHandleType error = test_runner.platform_view().engine().GetLoadScriptError();
   if (error == tonic::kNoError)
     error = task_observer.last_error();
   if (error == tonic::kNoError)
@@ -118,19 +119,19 @@ static bool IsDartFile(const std::string& path) {
   return path.rfind(dart_extension) == (path.size() - dart_extension.size());
 }
 
-int RunInteractive(ftl::CommandLine initial_command_line) {
+int RunInteractive() {
+  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
+
   base::MessageLoop message_loop(shell::MessagePumpGLFW::Create());
 
-  shell::Shell::InitStandalone(std::move(initial_command_line));
+  shell::Shell::InitStandalone();
 
-  const auto& command_line = shell::Shell::Shared().GetCommandLine();
-
-  std::string target = command_line.GetOptionValueWithDefault(
-      shell::FlagForSwitch(shell::Switch::FLX), "");
+  std::string target = command_line.GetSwitchValueASCII(
+      shell::FlagForSwitch(shell::Switch::FLX));
 
   if (target.empty()) {
     // Alternatively, use the first positional argument.
-    auto args = command_line.positional_args();
+    auto args = command_line.GetArgs();
     if (args.empty())
       return 1;
     target = args[0];
@@ -171,21 +172,22 @@ int main(int argc, char* argv[]) {
   dart::bin::SetExecutableArguments(argc - 1, argv);
 
   base::AtExitManager exit_manager;
+  base::CommandLine::Init(argc, argv);
 
-  auto command_line = ftl::CommandLineFromArgcArgv(argc, argv);
+  base::CommandLine& command_line = *base::CommandLine::ForCurrentProcess();
 
-  if (command_line.HasOption(shell::FlagForSwitch(shell::Switch::Help))) {
+  if (command_line.HasSwitch(shell::FlagForSwitch(shell::Switch::Help))) {
     shell::PrintUsage("sky_shell");
     return 0;
   }
 
-  if (command_line.HasOption(
+  if (command_line.HasSwitch(
           shell::FlagForSwitch(shell::Switch::NonInteractive))) {
-    bool run_forever =
-        command_line.HasOption(shell::FlagForSwitch(shell::Switch::RunForever));
-    RunNonInteractive(std::move(command_line), run_forever);
+    bool run_forever = command_line.HasSwitch(
+        shell::FlagForSwitch(shell::Switch::RunForever));
+    RunNonInteractive(run_forever);
     return 0;
   }
 
-  return RunInteractive(std::move(command_line));
+  return RunInteractive();
 }

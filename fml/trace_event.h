@@ -11,8 +11,6 @@
 
 #include "lib/ftl/macros.h"
 
-#ifndef TRACE_EVENT_HIDE_MACROS
-
 #define TRACE_EVENT0(category_group, name)           \
   ::fml::tracing::TraceEvent0(category_group, name); \
   ::fml::tracing::ScopedInstantEnd __trace_end0_##__LINE__(name);
@@ -44,8 +42,6 @@
 
 #define TRACE_EVENT_INSTANT0(category_group, name) \
   ::fml::tracing::TraceEventInstant0(category_group, name);
-
-#endif  // TRACE_EVENT_HIDE_MACROS
 
 namespace fml {
 namespace tracing {

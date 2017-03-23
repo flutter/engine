@@ -5,10 +5,8 @@
 #ifndef SHELL_COMMON_SHELL_H_
 #define SHELL_COMMON_SHELL_H_
 
-#include "flutter/fml/thread.h"
-#include "flutter/fml/thread_checker.h"
+#include "base/threading/thread.h"
 #include "flutter/shell/common/tracing_controller.h"
-#include "lib/ftl/command_line.h"
 #include "lib/ftl/macros.h"
 #include "lib/ftl/memory/ref_ptr.h"
 #include "lib/ftl/memory/weak_ptr.h"
@@ -24,13 +22,11 @@ class Shell {
  public:
   ~Shell();
 
-  static void InitStandalone(ftl::CommandLine command_line,
-                             std::string icu_data_path = "",
+  static void InitStandalone(std::string icu_data_path = "",
                              std::string application_library_path = "");
+  static void Init();
 
   static Shell& Shared();
-
-  const ftl::CommandLine& GetCommandLine() const;
 
   TracingController& tracing_controller();
 
@@ -69,9 +65,7 @@ class Shell {
                          std::string* isolate_name);
 
  private:
-  static void Init(ftl::CommandLine command_line);
-
-  Shell(ftl::CommandLine command_line);
+  Shell();
 
   void InitGpuThread();
   void InitUIThread();
@@ -89,14 +83,12 @@ class Shell {
                                  std::string* isolate_name,
                                  ftl::AutoResetWaitableEvent* latch);
 
-  ftl::CommandLine command_line_;
+  std::unique_ptr<base::Thread> gpu_thread_;
+  std::unique_ptr<base::Thread> ui_thread_;
+  std::unique_ptr<base::Thread> io_thread_;
 
-  std::unique_ptr<fml::Thread> gpu_thread_;
-  std::unique_ptr<fml::Thread> ui_thread_;
-  std::unique_ptr<fml::Thread> io_thread_;
-
-  std::unique_ptr<fml::ThreadChecker> gpu_thread_checker_;
-  std::unique_ptr<fml::ThreadChecker> ui_thread_checker_;
+  std::unique_ptr<base::ThreadChecker> gpu_thread_checker_;
+  std::unique_ptr<base::ThreadChecker> ui_thread_checker_;
 
   TracingController tracing_controller_;
 

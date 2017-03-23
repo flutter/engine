@@ -4,8 +4,10 @@
 
 #include "flutter/shell/common/animator.h"
 
+#include "base/bind.h"
+#include "base/message_loop/message_loop.h"
+#include "base/trace_event/trace_event.h"
 #include "flutter/common/threads.h"
-#include "flutter/fml/trace_event.h"
 #include "lib/ftl/time/stopwatch.h"
 
 namespace shell {
@@ -49,7 +51,8 @@ void Animator::BeginFrame(ftl::TimePoint frame_time) {
       // If we still don't have valid continuation, the pipeline is currently
       // full because the consumer is being too slow. Try again at the next
       // frame interval.
-      TRACE_EVENT_INSTANT0("flutter", "ConsumerSlowDefer");
+      TRACE_EVENT_INSTANT0("flutter", "ConsumerSlowDefer",
+                           TRACE_EVENT_SCOPE_PROCESS);
       RequestFrame();
       return;
     }
@@ -57,7 +60,7 @@ void Animator::BeginFrame(ftl::TimePoint frame_time) {
 
   // We have acquired a valid continuation from the pipeline and are ready
   // to service potential frame.
-  FTL_DCHECK(producer_continuation_);
+  DCHECK(producer_continuation_);
 
   // TODO(abarth): We should use |frame_time| instead, but the frame time we get
   // on Android appears to be unstable.
@@ -104,7 +107,7 @@ void Animator::RequestFrame() {
   blink::Threads::UI()->PostTask([self = weak_factory_.GetWeakPtr()]() {
     if (!self.get())
       return;
-    TRACE_EVENT_INSTANT0("flutter", "RequestFrame");
+    TRACE_EVENT_INSTANT0("flutter", "RequestFrame", TRACE_EVENT_SCOPE_PROCESS);
     self->AwaitVSync();
   });
 }
