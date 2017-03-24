@@ -13,7 +13,6 @@ import android.view.inputmethod.InputMethodManager;
 
 import io.flutter.plugin.common.FlutterMethodChannel;
 import io.flutter.plugin.common.FlutterMethodChannel.MethodCallHandler;
-import io.flutter.plugin.common.FlutterMethodChannel.Response;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.view.FlutterView;
@@ -44,7 +43,7 @@ public class TextInputPlugin implements MethodCallHandler {
     }
 
     @Override
-    public void onMethodCall(MethodCall call, Response response) {
+    public void onMethodCall(MethodCall call, FlutterMethodChannel.Response response) {
         String method = call.method;
         Object args = call.arguments;
         try {
@@ -65,7 +64,7 @@ public class TextInputPlugin implements MethodCallHandler {
                 clearTextInputClient();
                 response.success(null);
             } else {
-                response.error("unknown", "Unknown method: " + call.method, null);
+                response.notImplemented();
             }
         } catch (JSONException e) {
             response.error("error", "JSON error: " + e.getMessage(), null);

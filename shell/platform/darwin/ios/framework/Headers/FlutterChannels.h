@@ -25,16 +25,12 @@ FLUTTER_EXPORT
 - (void)setMessageHandler:(FlutterMessageHandler)handler;
 @end
 
-typedef void (^FlutterResultReceiver)(id successResult,
-                                      FlutterError* errorResult);
-typedef void (^FlutterEventReceiver)(id successEvent,
-                                     FlutterError* errorEvent,
-                                     BOOL done);
+typedef void (^FlutterResultReceiver)(id result);
 typedef void (^FlutterMethodCallHandler)(FlutterMethodCall* call,
                                          FlutterResultReceiver resultReceiver);
-typedef void (^FlutterStreamHandler)(FlutterMethodCall* call,
-                                     FlutterResultReceiver resultReceiver,
-                                     FlutterEventReceiver eventReceiver);
+
+FLUTTER_EXPORT
+extern NSObject const* FlutterMethodNotImplemented;
 
 FLUTTER_EXPORT
 @interface FlutterMethodChannel : NSObject
@@ -42,14 +38,38 @@ FLUTTER_EXPORT
                    binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                              codec:(NSObject<FlutterMethodCodec>*)codec;
 - (instancetype)initWithName:(NSString*)name
-                   binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
-                             codec:(NSObject<FlutterMethodCodec>*)codec;
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMethodCodec>*)codec;
 - (void)invokeMethod:(NSString*)method arguments:(id)arguments;
 - (void)invokeMethod:(NSString*)method
            arguments:(id)arguments
       resultReceiver:(FlutterResultReceiver)resultReceiver;
 - (void)setMethodCallHandler:(FlutterMethodCallHandler)handler;
-- (void)setStreamHandler:(FlutterStreamHandler)handler;
+@end
+
+typedef void (^FlutterEventReceiver)(id event);
+
+FLUTTER_EXPORT
+@protocol FlutterStreamHandler
+- (void)onListenWithArguments:(id)arguments
+                eventReceiver:(FlutterEventReceiver)eventReceiver
+                        error:(FlutterError**)error;
+- (void)onCancelWithArguments:(id)arguments
+                        error:(FlutterError**)error;
+@end
+
+FLUTTER_EXPORT
+extern NSObject const* FlutterEndOfEventStream;
+
+FLUTTER_EXPORT
+@interface FlutterEventChannel : NSObject
++ (instancetype)eventChannelNamed:(NSString*)name
+                  binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                            codec:(NSObject<FlutterMethodCodec>*)codec;
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMethodCodec>*)codec;
+- (void)setStreamHandler:(NSObject<FlutterStreamHandler>*)streamHandler;
 @end
 
 #endif  // FLUTTER_FLUTTERCHANNELS_H_
