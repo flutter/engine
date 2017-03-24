@@ -16,6 +16,8 @@
 }
 
 - (NSData*)encode:(id)message {
+  if (message == nil)
+    return nil;
   NSMutableData* data = [NSMutableData dataWithCapacity:32];
   FlutterStandardWriter* writer = [FlutterStandardWriter writerWithData:data];
   [writer writeValue:message];
@@ -23,6 +25,8 @@
 }
 
 - (id)decode:(NSData*)message {
+  if (!message.length)
+    return nil;
   FlutterStandardReader* reader =
       [FlutterStandardReader readerWithData:message];
   id value = [reader readValue];
@@ -79,7 +83,7 @@
   return [FlutterMethodCall methodCallWithMethodName:value1 arguments:value2];
 }
 
-- (id)decodeEnvelope:(NSData*)envelope error:(FlutterError**)error {
+- (id)decodeEnvelope:(NSData*)envelope {
   FlutterStandardReader* reader =
       [FlutterStandardReader readerWithData:envelope];
   UInt8 flag = [reader readByte];
@@ -99,9 +103,7 @@
                @"Invalid standard envelope");
       NSAssert(message == nil || [message isKindOfClass:[NSString class]],
                @"Invalid standard envelope");
-      *error =
-          [FlutterError errorWithCode:code message:message details:details];
-      result = nil;
+      result = [FlutterError errorWithCode:code message:message details:details];
     } break;
   }
   return result;

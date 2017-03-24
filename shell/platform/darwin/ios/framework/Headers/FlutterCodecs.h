@@ -81,7 +81,7 @@ FLUTTER_EXPORT
 - (FlutterMethodCall*)decodeMethodCall:(NSData*)methodCall;
 - (NSData*)encodeSuccessEnvelope:(id)result;
 - (NSData*)encodeErrorEnvelope:(FlutterError*)error;
-- (id)decodeEnvelope:(NSData*)envelope error:(FlutterError**)error;
+- (id)decodeEnvelope:(NSData*)envelope;
 @end
 
 FLUTTER_EXPORT
