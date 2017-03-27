@@ -11,7 +11,14 @@
   NSString* _name;
   NSObject<FlutterMessageCodec>* _codec;
 }
-+ (instancetype)messageChannelNamed:(NSString*)name
++ (instancetype)messageChannelWithName:(NSString*)name
+                    binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
+  NSObject<FlutterMessageCodec>* codec = [FlutterStandardMessageCodec sharedInstance];
+  return [FlutterMessageChannel messageChannelWithName:name
+                                    binaryMessenger:messenger
+                                              codec:codec];
+}
++ (instancetype)messageChannelWithName:(NSString*)name
                     binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                               codec:(NSObject<FlutterMessageCodec>*)codec {
   return [[[FlutterMessageChannel alloc] initWithName:name
@@ -21,12 +28,12 @@
 
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
-                       codec:(NSObject<FlutterMessageCodec>*)codec {
-  if (self = [super init]) {
-    _name = [name retain];
-    _messenger = [messenger retain];
-    _codec = [codec retain];
-  }
+                       codec:(NSObject<FlutterMessageCodec
+                         >*)codec {
+  NSAssert(self = [super init], @"Super init cannot be nil");
+  _name = [name retain];
+  _messenger = [messenger retain];
+  _codec = [codec retain];
   return self;
 }
 
@@ -83,11 +90,10 @@
                      message:(NSString*)message
                      details:(id)details {
   NSAssert(code, @"Code cannot be nil");
-  if (self = [super init]) {
-    _code = [code retain];
-    _message = [message retain];
-    _details = [details retain];
-  }
+  NSAssert(self = [super init], @"Super init cannot be nil");
+  _code = [code retain];
+  _message = [message retain];
+  _details = [details retain];
   return self;
 }
 
@@ -125,10 +131,9 @@
 
 - (instancetype)initWithMethodName:(NSString*)method arguments:(id)arguments {
   NSAssert(method, @"Method name cannot be nil");
-  if (self = [super init]) {
-    _method = [method retain];
-    _arguments = [arguments retain];
-  }
+  NSAssert(self = [super init], @"Super init cannot be nil");
+  _method = [method retain];
+  _arguments = [arguments retain];
   return self;
 }
 
@@ -162,7 +167,15 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
   NSObject<FlutterMethodCodec>* _codec;
 }
 
-+ (instancetype)methodChannelNamed:(NSString*)name
++ (instancetype)methodChannelWithName:(NSString*)name
+                   binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
+  NSObject<FlutterMethodCodec>* codec = [FlutterStandardMethodCodec sharedInstance];
+  return [FlutterMethodChannel methodChannelWithName:name
+                                  binaryMessenger:messenger
+                                            codec:codec];
+}
+
++ (instancetype)methodChannelWithName:(NSString*)name
                    binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                              codec:(NSObject<FlutterMethodCodec>*)codec {
   return [[[FlutterMethodChannel alloc] initWithName:name
@@ -173,11 +186,10 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                        codec:(NSObject<FlutterMethodCodec>*)codec {
-  if (self = [super init]) {
-    _name = [name retain];
-    _messenger = [messenger retain];
-    _codec = [codec retain];
-  }
+  NSAssert(self = [super init], @"Super init cannot be nil");
+  _name = [name retain];
+  _messenger = [messenger retain];
+  _codec = [codec retain];
   return self;
 }
 
@@ -243,7 +255,15 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
   NSString* _name;
   NSObject<FlutterMethodCodec>* _codec;
 }
-+ (instancetype)eventChannelNamed:(NSString*)name
++ (instancetype)eventChannelWithName:(NSString*)name
+                  binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
+  NSObject<FlutterMethodCodec>* codec = [FlutterStandardMethodCodec sharedInstance];
+  return [FlutterEventChannel eventChannelWithName:name
+                                binaryMessenger:messenger
+                                          codec:codec];
+}
+
++ (instancetype)eventChannelWithName:(NSString*)name
                   binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                             codec:(NSObject<FlutterMethodCodec>*)codec {
   return [[[FlutterEventChannel alloc] initWithName:name
@@ -254,11 +274,10 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                        codec:(NSObject<FlutterMethodCodec>*)codec {
-  if (self = [super init]) {
-    _name = [name retain];
-    _messenger = [messenger retain];
-    _codec = [codec retain];
-  }
+  NSAssert(self = [super init], @"Super init cannot be nil");
+  _name = [name retain];
+  _messenger = [messenger retain];
+  _codec = [codec retain];
   return self;
 }
 
@@ -282,21 +301,17 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
           [_messenger sendBinaryMessage:[_codec encodeSuccessEnvelope:event]
                             channelName:_name];
       };
-      FlutterError* error = nil;
-      [handler onListenWithArguments:call.arguments eventReceiver:eventReceiver error:&error];
-      if (error == nil) {
+      FlutterError* error = [handler onListenWithArguments:call.arguments eventReceiver:eventReceiver];
+      if (error)
+        reply([_codec encodeErrorEnvelope:error]);
+      else
         reply([_codec encodeSuccessEnvelope:nil]);
-      } else {
-        reply([_codec encodeErrorEnvelope:(FlutterError*)error]);
-      }
     } else if ([call.method isEqual:@"cancel"]) {
-      FlutterError* error = nil;
-      [handler onCancelWithArguments:call.arguments error:&error];
-      if (error == nil) {
+      FlutterError* error = [handler onCancelWithArguments:call.arguments];
+      if (error)
+        reply([_codec encodeErrorEnvelope:error]);
+      else
         reply([_codec encodeSuccessEnvelope:nil]);
-      } else {
-        reply([_codec encodeErrorEnvelope:(FlutterError*)error]);
-      }
     } else {
       reply(nil);
     }

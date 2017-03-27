@@ -9,21 +9,23 @@
 
 #include "FlutterMacros.h"
 
-typedef void (^FlutterBinaryReplyHandler)(NSData* reply);
+NS_ASSUME_NONNULL_BEGIN
+typedef void (^FlutterBinaryReplyHandler)(NSData* _Nullable reply);
 typedef void (^FlutterBinaryMessageHandler)(
-    NSData* message,
+    NSData* _Nullable message,
     FlutterBinaryReplyHandler replyHandler);
 
 FLUTTER_EXPORT
 @protocol FlutterBinaryMessenger<NSObject>
-- (void)sendBinaryMessage:(NSData*)message channelName:(NSString*)channelName;
+- (void)sendBinaryMessage:(NSData* _Nullable)message
+              channelName:(NSString*)channelName;
 
-- (void)sendBinaryMessage:(NSData*)message
+- (void)sendBinaryMessage:(NSData* _Nullable)message
               channelName:(NSString*)channelName
        binaryReplyHandler:(FlutterBinaryReplyHandler)handler;
 
 - (void)setBinaryMessageHandlerOnChannel:(NSString*)channelName
-                    binaryMessageHandler:(FlutterBinaryMessageHandler)handler;
+                    binaryMessageHandler:(FlutterBinaryMessageHandler _Nullable)handler;
 @end
-
+NS_ASSUME_NONNULL_END
 #endif  // FLUTTER_FLUTTERBINARYMESSAGES_H_

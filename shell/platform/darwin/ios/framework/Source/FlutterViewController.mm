@@ -604,8 +604,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
       ftl::MakeRefCounted<blink::PlatformMessage>(
           channel.UTF8String, shell::GetVectorFromNSData(message),
           ftl::MakeRefCounted<PlatformMessageResponseDarwin>(^(NSData* reply) {
-            if (callback)
-              callback(reply);
+            callback(reply);
           })));
 }
 
