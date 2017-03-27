@@ -8,11 +8,13 @@
 #import <Foundation/Foundation.h>
 #include "FlutterMacros.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 FLUTTER_EXPORT
 @protocol FlutterMessageCodec
 + (instancetype)sharedInstance;
-- (NSData*)encode:(id)message;
-- (id)decode:(NSData*)message;
+- (NSData* _Nullable)encode:(id _Nullable)message;
+- (id _Nullable)decode:(NSData* _Nullable)message;
 @end
 
 FLUTTER_EXPORT
@@ -34,19 +36,19 @@ FLUTTER_EXPORT
 FLUTTER_EXPORT
 @interface FlutterMethodCall : NSObject
 + (instancetype)methodCallWithMethodName:(NSString*)method
-                               arguments:(id)arguments;
+                               arguments:(id _Nullable)arguments;
 @property(readonly, nonatomic) NSString* method;
-@property(readonly, nonatomic) id arguments;
+@property(readonly, nonatomic, nullable) id arguments;
 @end
 
 FLUTTER_EXPORT
 @interface FlutterError : NSObject
 + (instancetype)errorWithCode:(NSString*)code
-                      message:(NSString*)message
-                      details:(id)details;
+                      message:(NSString* _Nullable)message
+                      details:(id _Nullable)details;
 @property(readonly, nonatomic) NSString* code;
-@property(readonly, nonatomic) NSString* message;
-@property(readonly, nonatomic) id details;
+@property(readonly, nonatomic, nullable) NSString* message;
+@property(readonly, nonatomic, nullable) id details;
 @end
 
 typedef NS_ENUM(NSInteger, FlutterStandardDataType) {
@@ -79,9 +81,9 @@ FLUTTER_EXPORT
 + (instancetype)sharedInstance;
 - (NSData*)encodeMethodCall:(FlutterMethodCall*)methodCall;
 - (FlutterMethodCall*)decodeMethodCall:(NSData*)methodCall;
-- (NSData*)encodeSuccessEnvelope:(id)result;
+- (NSData*)encodeSuccessEnvelope:(id _Nullable)result;
 - (NSData*)encodeErrorEnvelope:(FlutterError*)error;
-- (id)decodeEnvelope:(NSData*)envelope;
+- (id _Nullable)decodeEnvelope:(NSData*)envelope;
 @end
 
 FLUTTER_EXPORT
@@ -91,5 +93,7 @@ FLUTTER_EXPORT
 FLUTTER_EXPORT
 @interface FlutterStandardMethodCodec : NSObject<FlutterMethodCodec>
 @end
+
+NS_ASSUME_NONNULL_END
 
 #endif  // FLUTTER_FLUTTERCODECS_H_
