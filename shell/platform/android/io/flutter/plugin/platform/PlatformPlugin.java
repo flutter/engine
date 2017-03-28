@@ -22,6 +22,7 @@ import io.flutter.util.PathUtils;
 
 import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.FlutterMethodChannel.MethodCallHandler;
+import io.flutter.plugin.common.FlutterMethodChannel.Response;
 import io.flutter.plugin.common.MethodCall;
 
 import org.json.JSONArray;
@@ -43,7 +44,7 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
     }
 
     @Override
-    public void onMethodCall(MethodCall call, FlutterMethodChannel.Response response) {
+    public void onMethodCall(MethodCall call, Response response) {
         String method = call.method;
         Object arguments = call.arguments;
         try {
