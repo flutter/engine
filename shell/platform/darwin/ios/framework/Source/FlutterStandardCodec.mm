@@ -150,12 +150,12 @@ using namespace shell;
   NSAssert(data, @"Data cannot be nil");
   NSAssert(data.length % elementSize == 0,
            @"Data must contain integral number of elements");
-  if (self = [super init]) {
-    _data = [data retain];
-    _type = type;
-    _elementSize = elementSize;
-    _elementCount = data.length / elementSize;
-  }
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
+  _data = [data retain];
+  _type = type;
+  _elementSize = elementSize;
+  _elementCount = data.length / elementSize;
   return self;
 }
 
@@ -186,9 +186,9 @@ using namespace shell;
 
 - (instancetype)initWithHex:(NSString*)hex {
   NSAssert(hex, @"Hex cannot be nil");
-  if (self = [super init]) {
-    _hex = [hex retain];
-  }
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
+  _hex = [hex retain];
   return self;
 }
 
@@ -225,9 +225,9 @@ using namespace shell;
 }
 
 - (instancetype)initWithData:(NSMutableData*)data {
-  if (self = [super init]) {
-    _data = [data retain];
-  }
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
+  _data = [data retain];
   return self;
 }
 
@@ -361,10 +361,10 @@ using namespace shell;
 }
 
 - (instancetype)initWithData:(NSData*)data {
-  if (self = [super init]) {
-    _data = [data retain];
-    _range = NSMakeRange(0, 0);
-  }
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
+  _data = [data retain];
+  _range = NSMakeRange(0, 0);
   return self;
 }
 
