@@ -279,6 +279,7 @@ FLUTTER_EXPORT
      call-back with `FlutterEndOfEventStream` to indicate that no more
      events will be emitted. Any other value, including `nil` are emitted as
      successful events.
+ - Returns: A FlutterError instance, if setup fails.
  */
 - (FlutterError* _Nullable)onListenWithArguments:(id _Nullable)arguments
                                    eventReceiver:(FlutterEventReceiver)eventReceiver;
@@ -290,6 +291,7 @@ FLUTTER_EXPORT
  this channel on the Flutter side.
 
  - Parameter arguments: Arguments for the stream.
+ - Returns: A FlutterError instance, if teardown fails.
  */
 - (FlutterError* _Nullable)onCancelWithArguments:(id _Nullable)arguments;
 @end

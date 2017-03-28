@@ -12,15 +12,15 @@
   NSObject<FlutterMessageCodec>* _codec;
 }
 + (instancetype)messageChannelWithName:(NSString*)name
-                    binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
+                       binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
   NSObject<FlutterMessageCodec>* codec = [FlutterStandardMessageCodec sharedInstance];
   return [FlutterMessageChannel messageChannelWithName:name
-                                    binaryMessenger:messenger
-                                              codec:codec];
+                                       binaryMessenger:messenger
+                                                 codec:codec];
 }
 + (instancetype)messageChannelWithName:(NSString*)name
-                    binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
-                              codec:(NSObject<FlutterMessageCodec>*)codec {
+                       binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                                 codec:(NSObject<FlutterMessageCodec>*)codec {
   return [[[FlutterMessageChannel alloc] initWithName:name
                                       binaryMessenger:messenger
                                                 codec:codec] autorelease];
@@ -28,9 +28,9 @@
 
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
-                       codec:(NSObject<FlutterMessageCodec
-                         >*)codec {
-  NSAssert(self = [super init], @"Super init cannot be nil");
+                       codec:(NSObject<FlutterMessageCodec>*)codec {
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
   _name = [name retain];
   _messenger = [messenger retain];
   _codec = [codec retain];
@@ -90,7 +90,8 @@
                      message:(NSString*)message
                      details:(id)details {
   NSAssert(code, @"Code cannot be nil");
-  NSAssert(self = [super init], @"Super init cannot be nil");
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
   _code = [code retain];
   _message = [message retain];
   _details = [details retain];
@@ -131,7 +132,8 @@
 
 - (instancetype)initWithMethodName:(NSString*)method arguments:(id)arguments {
   NSAssert(method, @"Method name cannot be nil");
-  NSAssert(self = [super init], @"Super init cannot be nil");
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
   _method = [method retain];
   _arguments = [arguments retain];
   return self;
@@ -186,7 +188,8 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                        codec:(NSObject<FlutterMethodCodec>*)codec {
-  NSAssert(self = [super init], @"Super init cannot be nil");
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
   _name = [name retain];
   _messenger = [messenger retain];
   _codec = [codec retain];
@@ -274,7 +277,8 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                        codec:(NSObject<FlutterMethodCodec>*)codec {
-  NSAssert(self = [super init], @"Super init cannot be nil");
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
   _name = [name retain];
   _messenger = [messenger retain];
   _codec = [codec retain];
