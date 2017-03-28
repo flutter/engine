@@ -10,7 +10,7 @@ import io.flutter.view.FlutterView.BinaryMessageResponse;
 import io.flutter.view.FlutterView.OnBinaryMessageListenerAsync;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A named channel for communicating with the Flutter application using asynchronous
@@ -126,8 +126,8 @@ public final class FlutterEventChannel {
     }
 
     private final class StreamListener implements OnBinaryMessageListenerAsync {
-        private final AtomicBoolean cancelled = new AtomicBoolean(false);
         private final StreamHandler handler;
+        private final AtomicReference<EventSink> activeSink = new AtomicReference<>(null);
 
         StreamListener(StreamHandler handler) {
             this.handler = handler;
@@ -138,55 +138,73 @@ public final class FlutterEventChannel {
             final BinaryMessageResponse response) {
             final MethodCall call = codec.decodeMethodCall(message);
             if (call.method.equals("listen")) {
+                onListen(call.arguments, response);
+            } else if (call.method.equals("cancel")) {
+                onCancel(call.arguments, response);
+            } else {
+                response.send(null);
+            }
+        }
+
+        private void onListen(Object arguments, BinaryMessageResponse response) {
+            final EventSink eventSink = new EventSink() {
+                @Override
+                public void success(Object event) {
+                    if (activeSink.get() != this) {
+                        return;
+                    }
+                    FlutterEventChannel.this.view.sendBinaryMessage(
+                        name,
+                        codec.encodeSuccessEnvelope(event),
+                        null);
+                }
+
+                @Override
+                public void error(String errorCode, String errorMessage,
+                    Object errorDetails) {
+                    if (activeSink.get() != this) {
+                        return;
+                    }
+                    FlutterEventChannel.this.view.sendBinaryMessage(
+                        name,
+                        codec.encodeErrorEnvelope(errorCode, errorMessage, errorDetails),
+                        null);
+                }
+
+                @Override
+                public void endOfStream() {
+                    if (activeSink.get() != this) {
+                        return;
+                    }
+                    FlutterEventChannel.this.view.sendBinaryMessage(name, null, null);
+                }
+            };
+            if (activeSink.compareAndSet(null, eventSink)) {
                 try {
-                    handler.onListen(call.arguments, new EventSink() {
-                        @Override
-                        public void success(Object event) {
-                            if (cancelled.get()) {
-                                return;
-                            }
-                            FlutterEventChannel.this.view.sendBinaryMessage(
-                                name,
-                                codec.encodeSuccessEnvelope(event),
-                                null);
-                        }
-
-                        @Override
-                        public void error(String errorCode, String errorMessage,
-                            Object errorDetails) {
-                            if (cancelled.get()) {
-                                return;
-                            }
-                            FlutterEventChannel.this.view.sendBinaryMessage(
-                                name,
-                                codec.encodeErrorEnvelope(errorCode, errorMessage, errorDetails),
-                                null);
-                        }
-
-                        @Override
-                        public void endOfStream() {
-                            if (cancelled.get()) {
-                                return;
-                            }
-                            FlutterEventChannel.this.view.sendBinaryMessage(name, null, null);
-                        }
-                    });
+                    handler.onListen(arguments, eventSink);
                     response.send(codec.encodeSuccessEnvelope(null));
                 } catch (Exception e) {
+                    activeSink.set(null);
                     Log.e(TAG + name, "Failed to open event stream", e);
                     response.send(codec.encodeErrorEnvelope("error", e.getMessage(), null));
                 }
-            } else if (call.method.equals("cancel")) {
-                cancelled.set(true);
+            } else {
+                response.send(codec.encodeErrorEnvelope("error", "Stream already active", null));
+            }
+        }
+
+        private void onCancel(Object arguments, BinaryMessageResponse response) {
+            final EventSink currentSink = activeSink.get();
+            if (currentSink != null && activeSink.compareAndSet(currentSink, null)) {
                 try {
-                    handler.onCancel(call.arguments);
+                    handler.onCancel(arguments);
                     response.send(codec.encodeSuccessEnvelope(null));
                 } catch (Exception e) {
                     Log.e(TAG + name, "Failed to close event stream", e);
                     response.send(codec.encodeErrorEnvelope("error", e.getMessage(), null));
                 }
             } else {
-                response.send(null);
+                response.send(codec.encodeErrorEnvelope("error", "No active stream to cancel", null));
             }
         }
     }
