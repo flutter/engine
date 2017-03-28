@@ -126,6 +126,7 @@ public final class FlutterEventChannel {
     }
 
     private final class StreamListener implements OnBinaryMessageListenerAsync {
+        private final AtomicBoolean cancelled = new AtomicBoolean(false);
         private final StreamHandler handler;
 
         StreamListener(StreamHandler handler) {
@@ -136,7 +137,6 @@ public final class FlutterEventChannel {
         public void onMessage(FlutterView view, ByteBuffer message,
             final BinaryMessageResponse response) {
             final MethodCall call = codec.decodeMethodCall(message);
-            final AtomicBoolean cancelled = new AtomicBoolean(false);
             if (call.method.equals("listen")) {
                 try {
                     handler.onListen(call.arguments, new EventSink() {
