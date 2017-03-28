@@ -147,38 +147,7 @@ public final class FlutterEventChannel {
         }
 
         private void onListen(Object arguments, BinaryMessageResponse response) {
-            final EventSink eventSink = new EventSink() {
-                @Override
-                public void success(Object event) {
-                    if (activeSink.get() != this) {
-                        return;
-                    }
-                    FlutterEventChannel.this.view.sendBinaryMessage(
-                        name,
-                        codec.encodeSuccessEnvelope(event),
-                        null);
-                }
-
-                @Override
-                public void error(String errorCode, String errorMessage,
-                    Object errorDetails) {
-                    if (activeSink.get() != this) {
-                        return;
-                    }
-                    FlutterEventChannel.this.view.sendBinaryMessage(
-                        name,
-                        codec.encodeErrorEnvelope(errorCode, errorMessage, errorDetails),
-                        null);
-                }
-
-                @Override
-                public void endOfStream() {
-                    if (activeSink.get() != this) {
-                        return;
-                    }
-                    FlutterEventChannel.this.view.sendBinaryMessage(name, null, null);
-                }
-            };
+            final EventSink eventSink = new EventSinkImplementation();
             if (activeSink.compareAndSet(null, eventSink)) {
                 try {
                     handler.onListen(arguments, eventSink);
@@ -194,8 +163,8 @@ public final class FlutterEventChannel {
         }
 
         private void onCancel(Object arguments, BinaryMessageResponse response) {
-            final EventSink currentSink = activeSink.get();
-            if (currentSink != null && activeSink.compareAndSet(currentSink, null)) {
+            final EventSink oldSink = activeSink.getAndSet(null);
+            if (oldSink != null) {
                 try {
                     handler.onCancel(arguments);
                     response.send(codec.encodeSuccessEnvelope(null));
@@ -207,5 +176,38 @@ public final class FlutterEventChannel {
                 response.send(codec.encodeErrorEnvelope("error", "No active stream to cancel", null));
             }
         }
+
+        private final class EventSinkImplementation implements EventSink {
+             @Override
+             public void success(Object event) {
+                 if (activeSink.get() != this) {
+                     return;
+                 }
+                 FlutterEventChannel.this.view.sendBinaryMessage(
+                     name,
+                     codec.encodeSuccessEnvelope(event),
+                     null);
+             }
+
+             @Override
+             public void error(String errorCode, String errorMessage,
+                 Object errorDetails) {
+                 if (activeSink.get() != this) {
+                     return;
+                 }
+                 FlutterEventChannel.this.view.sendBinaryMessage(
+                     name,
+                     codec.encodeErrorEnvelope(errorCode, errorMessage, errorDetails),
+                     null);
+             }
+
+             @Override
+             public void endOfStream() {
+                 if (activeSink.get() != this) {
+                     return;
+                 }
+                 FlutterEventChannel.this.view.sendBinaryMessage(name, null, null);
+             }
+         }
     }
 }
