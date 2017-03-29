@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  - Parameter reply: The reply.
  */
-typedef void (^FlutterReplyHandler)(id reply);
+typedef void (^FlutterReplyHandler)(id _Nullable reply);
 
 /**
  A strategy for handling a message.
@@ -23,7 +23,7 @@ typedef void (^FlutterReplyHandler)(id reply);
    - message: The incoming message.
    - replyHandler: A call-back to asynchronously supply a reply to the message.
  */
-typedef void (^FlutterMessageHandler)(id message,
+typedef void (^FlutterMessageHandler)(id _Nullable message,
                                       FlutterReplyHandler replyHandler);
 
 /**
