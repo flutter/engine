@@ -151,6 +151,10 @@ extern NSObject const* FlutterMethodNotImplemented;
 /**
  A channel for communicating with the Flutter side using invocation of
  asynchronous methods.
+
+ - SeeAlso:
+  - `FlutterMethodPlugin`, which provides a convenience base class for plugins
+    using a single `FlutterMethodChannel` along with additional state.
  */
 FLUTTER_EXPORT
 @interface FlutterMethodChannel : NSObject

@@ -11,6 +11,7 @@
 #include "FlutterCodecs.h"
 #include "FlutterDartProject.h"
 #include "FlutterMacros.h"
+#include "FlutterPlugins.h"
 #include "FlutterViewController.h"
 
 #endif  // FLUTTER_FLUTTER_H_
