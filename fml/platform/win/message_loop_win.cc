@@ -6,20 +6,18 @@
 
 namespace fml {
 
-MessageLoopWin::MessageLoopWin() {
-  timer_ = CreateWaitableTimer(NULL, FALSE, NULL);
-  FTL_CHECK(timer_);
+MessageLoopWin::MessageLoopWin()
+    : timer_(CreateWaitableTimer(NULL, FALSE, NULL)) {
+  FTL_CHECK(timer_.is_valid());
 }
 
-MessageLoopWin::~MessageLoopWin() {
-  FTL_CHECK(CloseHandle(timer_));
-}
+MessageLoopWin::~MessageLoopWin() = default;
 
 void MessageLoopWin::Run() {
   running_ = true;
 
   while (running_) {
-    FTL_CHECK(WaitForSingleObject(timer_, INFINITE) == 0);
+    FTL_CHECK(WaitForSingleObject(timer_.get(), INFINITE) == 0);
     RunExpiredTasksNow();
   }
 }
@@ -35,7 +33,7 @@ void MessageLoopWin::WakeUp(ftl::TimePoint time_point) {
   if (time_point > now) {
     due_time.QuadPart = (time_point - now).ToNanoseconds() / -100;
   }
-  FTL_CHECK(SetWaitableTimer(timer_, &due_time, 0, NULL, NULL, FALSE));
+  FTL_CHECK(SetWaitableTimer(timer_.get(), &due_time, 0, NULL, NULL, FALSE));
 }
 
 }  // namespace fml

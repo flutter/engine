@@ -11,13 +11,20 @@
 
 #include "flutter/fml/message_loop_impl.h"
 #include "lib/ftl/macros.h"
+#include "lib/ftl/memory/unique_object.h"
 
 namespace fml {
 
 class MessageLoopWin : public MessageLoopImpl {
  private:
+  struct UniqueHandleTraits {
+    static HANDLE InvalidValue() { return NULL; }
+    static bool IsValid(HANDLE value) { return value != NULL; }
+    static void Free(HANDLE value) { CloseHandle(value); }
+  };
+
   bool running_;
-  HANDLE timer_;
+  ftl::UniqueObject<HANDLE, UniqueHandleTraits> timer_;
 
   MessageLoopWin();
 

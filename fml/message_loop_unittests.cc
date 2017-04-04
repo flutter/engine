@@ -8,8 +8,6 @@
 #include "gtest/gtest.h"
 #include "lib/ftl/synchronization/waitable_event.h"
 
-#include <iostream>
-
 #define TIME_SENSITIVE(x) TimeSensitiveTest_##x
 
 TEST(MessageLoop, GetCurrent) {
