@@ -20,7 +20,8 @@ public final class MethodCall {
      * Arguments for the call.
      *
      * Consider using {@link #arguments()} for cases where a particular run-time type is expected.
-     * Consider using {@link #argument(String)} when that run-time type is a Map with String keys.
+     * Consider using {@link #argument(String)} when that run-time type is a {@link java.util.Map}
+     * or a {@link org.json.JSONObject}.
      */
     public final Object arguments;
 
