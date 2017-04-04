@@ -114,7 +114,9 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
   int end = std::max(0, std::max(_selectionBase, _selectionExtent));
   int len = end - start;
   if (len > 0) {
-    [self.text deleteCharactersInRange:NSMakeRange(start, len)];
+    NSRange selRange = [self.text
+        rangeOfComposedCharacterSequencesForRange:NSMakeRange(start, len)];
+    [self.text deleteCharactersInRange:selRange];
   } else if (start > 0) {
     start -= 1;
     NSRange charRange = [self.text rangeOfComposedCharacterSequenceAtIndex:start];
