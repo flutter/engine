@@ -1265,7 +1265,6 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartSou
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartSource.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlugins.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.mm
@@ -1438,6 +1437,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugins.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterChannels.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCodecs.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlugins.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterStandardCodec.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterStandardCodec_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_codecs_unittest.mm

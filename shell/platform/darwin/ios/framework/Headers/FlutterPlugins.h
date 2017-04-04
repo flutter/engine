@@ -18,12 +18,12 @@ FLUTTER_EXPORT
 /**
  View controller associated to this plugin.
  */
-@property(strong, nonatomic, readonly) FlutterViewController *controller;
+@property(strong, nonatomic, readonly) FlutterViewController* controller;
 
 /**
  Method channel used for communication with Flutter.
  */
-@property(strong, nonatomic, readonly) FlutterMethodChannel *channel;
+@property(strong, nonatomic, readonly) FlutterMethodChannel* channel;
 - (instancetype)init NS_UNAVAILABLE;
 /**
  Initializes the plugin with a channel name.
@@ -36,7 +36,7 @@ FLUTTER_EXPORT
    - controller: A `FlutterViewController`.
    - channelName: The name of the `FlutterMethodChannel` used by this plugin.
  */
-- (instancetype)initWithController:(FlutterViewController *)controller
+- (instancetype)initWithController:(FlutterViewController*)controller
                        channelName:(NSString*)channelName;
 /**
  Initializes the plugin.
@@ -48,8 +48,9 @@ FLUTTER_EXPORT
    - controller: A `FlutterViewController`.
    - channel: A `FlutterMethodChannel` to use for the communication.
 */
-- (instancetype)initWithController:(FlutterViewController *)controller
-                           channel:(FlutterMethodChannel*)channel NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithController:(FlutterViewController*)controller
+                           channel:(FlutterMethodChannel*)channel
+    NS_DESIGNATED_INITIALIZER;
 
 /**
  Handles an incoming method invocation from Flutter.
@@ -62,9 +63,9 @@ FLUTTER_EXPORT
    - arguments: Arguments for the invocation.
    - result: A callback for submitting the result of the invocation.
  */
-- (void)handleInvocationOfMethod:(NSString*)method
-                       arguments:(id _Nullable)arguments
-                          result:(FlutterResultReceiver)result;
+- (void)handleMethodInvocation:(NSString*)method
+                     arguments:(id _Nullable)arguments
+                        result:(FlutterResultReceiver)result;
 @end
 NS_ASSUME_NONNULL_END
 

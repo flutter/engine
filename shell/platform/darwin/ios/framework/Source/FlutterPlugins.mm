@@ -5,15 +5,16 @@
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugins.h"
 
 @implementation FlutterMethodPlugin
-- (instancetype)initWithController:(FlutterViewController *)controller
+- (instancetype)initWithController:(FlutterViewController*)controller
                        channelName:(NSString*)channelName {
   NSAssert(channelName, @"Channel name cannot be nil");
   return [self initWithController:controller
-                          channel:[FlutterMethodChannel methodChannelWithName:channelName
-                                                              binaryMessenger:controller]];
+                          channel:[FlutterMethodChannel
+                                      methodChannelWithName:channelName
+                                            binaryMessenger:controller]];
 }
 
-- (instancetype)initWithController:(FlutterViewController *)controller
+- (instancetype)initWithController:(FlutterViewController*)controller
                            channel:(FlutterMethodChannel*)channel {
   NSAssert(controller, @"Controller cannot be nil");
   NSAssert(channel, @"Channel cannot be nil");
@@ -21,16 +22,19 @@
   NSAssert(self, @"Super init cannot be nil");
   _controller = controller;
   _channel = channel;
-  __unsafe_unretained id weakSelf = self;
-  [_channel setMethodCallHandler:^(FlutterMethodCall *call, FlutterResultReceiver result) {
-    [weakSelf handleInvocationOfMethod:call.method arguments:call.arguments result:result];
+  __block __typeof(self) weakSelf = self;
+  [_channel setMethodCallHandler:^(FlutterMethodCall* call,
+                                   FlutterResultReceiver result) {
+    [weakSelf handleMethodInvocation:call.method
+                           arguments:call.arguments
+                              result:result];
   }];
   return self;
 }
 
-- (void)handleInvocationOfMethod:(NSString*)method
-                       arguments:(id _Nullable)arguments
-                          result:(FlutterResultReceiver)result {
+- (void)handleMethodInvocation:(NSString*)method
+                     arguments:(id _Nullable)arguments
+                        result:(FlutterResultReceiver)result {
   result(FlutterMethodNotImplemented);
 }
 
