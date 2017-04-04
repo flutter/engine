@@ -112,18 +112,16 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
 - (void)deleteBackward {
   int start = std::max(0, std::min(_selectionBase, _selectionExtent));
   int end = std::max(0, std::max(_selectionBase, _selectionExtent));
-  int len = end - start;
-  if (len > 0) {
-    NSRange selRange = [self.text
-        rangeOfComposedCharacterSequencesForRange:NSMakeRange(start, len)];
-    [self.text deleteCharactersInRange:selRange];
-  } else if (start > 0) {
-    start -= 1;
-    NSRange charRange = [self.text rangeOfComposedCharacterSequenceAtIndex:start];
-    [self.text deleteCharactersInRange:charRange];
+  NSRange delRange = NSMakeRange(start, end - start);
+  if (delRange.length > 0) {
+    delRange = [self.text rangeOfComposedCharacterSequencesForRange:delRange];
+    [self.text deleteCharactersInRange:delRange];
+  } else if (delRange.location > 0) {
+    delRange = [self.text rangeOfComposedCharacterSequenceAtIndex:delRange.location - 1];
+    [self.text deleteCharactersInRange:delRange];
   }
-  _selectionBase = start;
-  _selectionExtent = start;
+  _selectionBase = delRange.location;
+  _selectionExtent = delRange.location;
   _selectionAffinity = _kTextAffinityDownstream;
   [self updateEditingState];
 }
