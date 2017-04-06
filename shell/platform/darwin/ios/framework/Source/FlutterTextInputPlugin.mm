@@ -496,27 +496,26 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
   [super dealloc];
 }
 
-- (void)handleMethodCall:(FlutterMethodCall*)call
-          resultReceiver:(FlutterResultReceiver)resultReceiver {
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   NSString* method = call.method;
   id args = call.arguments;
   if ([method isEqualToString:@"TextInput.show"]) {
     [self showTextInput];
-    resultReceiver(nil);
+    result(nil);
   } else if ([method isEqualToString:@"TextInput.hide"]) {
     [self hideTextInput];
-    resultReceiver(nil);
+    result(nil);
   } else if ([method isEqualToString:@"TextInput.setClient"]) {
     [self setTextInputClient:[args[0] intValue] withConfiguration:args[1]];
-    resultReceiver(nil);
+    result(nil);
   } else if ([method isEqualToString:@"TextInput.setEditingState"]) {
     [self setTextInputEditingState:args];
-    resultReceiver(nil);
+    result(nil);
   } else if ([method isEqualToString:@"TextInput.clearClient"]) {
     [self clearTextInputClient];
-    resultReceiver(nil);
+    result(nil);
   } else {
-    resultReceiver(FlutterMethodNotImplemented);
+    result(FlutterMethodNotImplemented);
   }
 }
 

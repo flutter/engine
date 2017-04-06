@@ -13,7 +13,7 @@ import android.view.inputmethod.InputMethodManager;
 
 import io.flutter.plugin.common.FlutterMethodChannel;
 import io.flutter.plugin.common.FlutterMethodChannel.MethodCallHandler;
-import io.flutter.plugin.common.FlutterMethodChannel.Response;
+import io.flutter.plugin.common.FlutterMethodChannel.Result;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.JSONUtil;
 import io.flutter.plugin.common.MethodCall;
@@ -45,31 +45,31 @@ public class TextInputPlugin implements MethodCallHandler {
     }
 
     @Override
-    public void onMethodCall(MethodCall call, Response response) {
+    public void onMethodCall(MethodCall call, Result result) {
         String method = call.method;
         Object args = call.arguments;
         try {
             if (method.equals("TextInput.show")) {
                 showTextInput(mView);
-                response.success(null);
+                result.success(null);
             } else if (method.equals("TextInput.hide")) {
                 hideTextInput(mView);
-                response.success(null);
+                result.success(null);
             } else if (method.equals("TextInput.setClient")) {
                 final JSONArray argumentList = (JSONArray) args;
                 setTextInputClient(mView, argumentList.getInt(0), argumentList.getJSONObject(1));
-                response.success(null);
+                result.success(null);
             } else if (method.equals("TextInput.setEditingState")) {
                 setTextInputEditingState(mView, (JSONObject) args);
-                response.success(null);
+                result.success(null);
             } else if (method.equals("TextInput.clearClient")) {
                 clearTextInputClient();
-                response.success(null);
+                result.success(null);
             } else {
-                response.notImplemented();
+                result.notImplemented();
             }
         } catch (JSONException e) {
-            response.error("error", "JSON error: " + e.getMessage(), null);
+            result.error("error", "JSON error: " + e.getMessage(), null);
         }
     }
 

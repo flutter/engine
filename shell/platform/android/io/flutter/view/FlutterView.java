@@ -29,7 +29,8 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 
 import io.flutter.plugin.common.ActivityLifecycleListener;
-import io.flutter.plugin.common.FlutterMessageChannel;
+import io.flutter.plugin.common.FlutterBinaryMessenger;
+import io.flutter.plugin.common.FlutterBasicMessageChannel;
 import io.flutter.plugin.common.FlutterMethodChannel;
 import io.flutter.plugin.common.JSONMessageCodec;
 import io.flutter.plugin.common.JSONMethodCodec;
@@ -54,7 +55,7 @@ import java.util.Map;
  * An Android view containing a Flutter app.
  */
 public class FlutterView extends SurfaceView
-    implements AccessibilityManager.AccessibilityStateChangeListener {
+    implements FlutterBinaryMessenger, AccessibilityManager.AccessibilityStateChangeListener {
 
     private static final String TAG = "FlutterView";
 
@@ -72,15 +73,15 @@ public class FlutterView extends SurfaceView
     }
 
     private final TextInputPlugin mTextInputPlugin;
-    private final Map<String, OnBinaryMessageListenerAsync> mMessageListeners;
+    private final Map<String, BinaryMessageHandler> mMessageHandlers;
     private final SurfaceHolder.Callback mSurfaceCallback;
     private final ViewportMetrics mMetrics;
     private final AccessibilityManager mAccessibilityManager;
     private final FlutterMethodChannel mFlutterLocalizationChannel;
     private final FlutterMethodChannel mFlutterNavigationChannel;
-    private final FlutterMessageChannel<Object> mFlutterKeyEventChannel;
-    private final FlutterMessageChannel<String> mFlutterLifecycleChannel;
-    private final FlutterMessageChannel<Object> mFlutterSystemChannel;
+    private final FlutterBasicMessageChannel<Object> mFlutterKeyEventChannel;
+    private final FlutterBasicMessageChannel<String> mFlutterLifecycleChannel;
+    private final FlutterBasicMessageChannel<Object> mFlutterSystemChannel;
     private final BroadcastReceiver mDiscoveryReceiver;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private long mNativePlatformView;
@@ -134,7 +135,7 @@ public class FlutterView extends SurfaceView
         mAccessibilityManager = (AccessibilityManager) getContext()
             .getSystemService(Context.ACCESSIBILITY_SERVICE);
 
-        mMessageListeners = new HashMap<>();
+        mMessageHandlers = new HashMap<>();
         mActivityLifecycleListeners = new ArrayList<>();
 
         // Configure the platform plugins and flutter channels.
@@ -142,11 +143,11 @@ public class FlutterView extends SurfaceView
             JSONMethodCodec.INSTANCE);
         mFlutterNavigationChannel = new FlutterMethodChannel(this, "flutter/navigation",
             JSONMethodCodec.INSTANCE);
-        mFlutterKeyEventChannel = new FlutterMessageChannel<>(this, "flutter/keyevent",
+        mFlutterKeyEventChannel = new FlutterBasicMessageChannel<>(this, "flutter/keyevent",
             JSONMessageCodec.INSTANCE);
-        mFlutterLifecycleChannel = new FlutterMessageChannel<>(this, "flutter/lifecycle",
+        mFlutterLifecycleChannel = new FlutterBasicMessageChannel<>(this, "flutter/lifecycle",
             StringCodec.INSTANCE);
-        mFlutterSystemChannel = new FlutterMessageChannel<>(this, "flutter/system",
+        mFlutterSystemChannel = new FlutterBasicMessageChannel<>(this, "flutter/system",
             JSONMessageCodec.INSTANCE);
         PlatformPlugin platformPlugin = new PlatformPlugin((Activity) getContext());
         FlutterMethodChannel flutterPlatformChannel = new FlutterMethodChannel(this,
@@ -604,21 +605,21 @@ public class FlutterView extends SurfaceView
     }
 
     // Called by native to send us a platform message.
-    private void handlePlatformMessage(String channel, byte[] message, final int responseId) {
-        OnBinaryMessageListenerAsync listener = mMessageListeners.get(channel);
-        if (listener != null) {
+    private void handlePlatformMessage(String channel, byte[] message, final int replyId) {
+        BinaryMessageHandler handler = mMessageHandlers.get(channel);
+        if (handler != null) {
             try {
                 final ByteBuffer buffer = (message == null ? null : ByteBuffer.wrap(message));
-                listener.onMessage(this, buffer,
-                    new BinaryMessageResponse() {
+                handler.onMessage(buffer,
+                    new BinaryReply() {
                         @Override
-                        public void send(ByteBuffer response) {
-                            if (response == null) {
+                        public void reply(ByteBuffer reply) {
+                            if (reply == null) {
                                 nativeInvokePlatformMessageEmptyResponseCallback(mNativePlatformView,
                                     responseId);
                             } else {
                                 nativeInvokePlatformMessageResponseCallback(mNativePlatformView,
-                                    responseId, response, response.position());
+                                    responseId, reply, reply.position());
                             }
                         }
                     });
@@ -631,17 +632,17 @@ public class FlutterView extends SurfaceView
         nativeInvokePlatformMessageEmptyResponseCallback(mNativePlatformView, responseId);
     }
 
-    private int mNextResponseId = 1;
-    private final Map<Integer, BinaryMessageReplyCallback> mPendingResponses = new HashMap<>();
+    private int mNextReplyId = 1;
+    private final Map<Integer, BinaryReply> mPendingReplies = new HashMap<>();
 
     // Called by native to respond to a platform message that we sent.
-    private void handlePlatformMessageResponse(int responseId, byte[] response) {
-        BinaryMessageReplyCallback callback = mPendingResponses.remove(responseId);
+    private void handlePlatformMessageResponse(int replyId, byte[] reply) {
+        BinaryReply callback = mPendingReplies.remove(replyId);
         if (callback != null) {
             try {
-                callback.onReply(response == null ? null : ByteBuffer.wrap(response));
+                callback.reply(response == null ? null : ByteBuffer.wrap(response));
             } catch (Exception ex) {
-                Log.e(TAG, "Uncaught exception in binary message listener reply", ex);
+                Log.e(TAG, "Uncaught exception in binary message handler reply", ex);
             }
         }
     }
@@ -764,21 +765,17 @@ public class FlutterView extends SurfaceView
         return true;
     }
 
-    /**
-     * Send a binary message to the Flutter application. The Flutter Dart code can register a
-     * platform message handler that will receive these messages.
-     *
-     * @param channel Name of the channel that will receive this message.
-     * @param message Message payload, a {@link ByteBuffer} with the message bytes between position
-     * zero and current position, or null.
-     * @param callback Callback that receives a reply from the Flutter application.
-     */
-    public void sendBinaryMessage(String channel, ByteBuffer message,
-        BinaryMessageReplyCallback callback) {
-        int responseId = 0;
+    @Override
+    public void send(String channel, ByteBuffer message) {
+      send(channel, message, null);
+    }
+
+    @Override
+    public void send(String channel, ByteBuffer message, BinaryReply callback) {
+        int replyId = 0;
         if (callback != null) {
-            responseId = mNextResponseId++;
-            mPendingResponses.put(responseId, callback);
+            replyId = mNextReplyId++;
+            mPendingReplies.put(replyId, callback);
         }
         if (message == null) {
             nativeDispatchEmptyPlatformMessage(mNativePlatformView, channel, responseId);
@@ -788,45 +785,13 @@ public class FlutterView extends SurfaceView
         }
     }
 
-    /**
-     * Callback invoked when the app replies to a binary message sent with sendBinaryMessage.
-     */
-    public interface BinaryMessageReplyCallback {
-
-        void onReply(ByteBuffer reply);
-    }
-
-    /**
-     * Register a callback to be invoked when the Flutter application sends a message
-     * to its host.  The reply to the message can be provided asynchronously.
-     *
-     * @param channel Name of the channel used by the application.
-     * @param listener Called when messages arrive.
-     */
-    public void addOnBinaryMessageListenerAsync(String channel,
-        OnBinaryMessageListenerAsync listener) {
-        if (listener == null) {
-            mMessageListeners.remove(channel);
+    @Override
+    public void setMessageHandler(String channel, BinaryMessageHandler handler) {
+        if (handler == null) {
+            mMessageHandlers.remove(channel);
         } else {
-            mMessageListeners.put(channel, listener);
+            mMessageHandlers.put(channel, handler);
         }
-    }
-
-    public interface OnBinaryMessageListenerAsync {
-
-        /**
-         * Called when a message is received from the Flutter app.
-         *
-         * @param view The Flutter view hosting the app.
-         * @param message Message payload.
-         * @param response Used to send a reply back to the app.
-         */
-        void onMessage(FlutterView view, ByteBuffer message, BinaryMessageResponse response);
-    }
-
-    public interface BinaryMessageResponse {
-
-        void send(ByteBuffer reply);
     }
 
     /**
