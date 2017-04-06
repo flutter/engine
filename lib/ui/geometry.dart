@@ -462,6 +462,16 @@ class Size extends OffsetBase {
   /// See also [Rect.bottomRight].
   Offset bottomRight(Offset origin) => new Offset(origin.dx + width, origin.dy + height);
 
+  /// Whether the point specified by the given offset (which is assumed to be
+  /// relative to the top left of the size) lies between the left and right and
+  /// the top and bottom edges of a rectangle of this size.
+  ///
+  /// Rectangles include their top and left edges but exclude their bottom and
+  /// right edges.
+  bool contains(Offset offset) {
+    return offset.dx >= 0.0 && offset.dx < width && offset.dy >= 0.0 && offset.dy < height;
+  }
+
   /// A [Size] with the [width] and [height] swapped.
   Size get flipped => new Size(height, width);
 
@@ -579,8 +589,20 @@ class Rect {
   bool get isEmpty => left >= right || top >= bottom;
 
   /// Returns a new rectangle translated by the given offset.
+  ///
+  /// To translate a rectangle by separate x and y components rather than by an
+  /// [Offset], consider [translate].
   Rect shift(Offset offset) {
     return new Rect.fromLTRB(left + offset.dx, top + offset.dy, right + offset.dx, bottom + offset.dy);
+  }
+
+  /// Returns a new rectangle with translateX added to the x components and
+  /// translateY added to the y components.
+  ///
+  /// To translate a rectangle by an [Offset] rather than by separate x and y
+  /// components, consider [shift].
+  Offset translate(double translateX, double translateY) {
+    return new Rect.fromLTRB(left + translateX, top + translateY, right + translateX, bottom + translateY);
   }
 
   /// Returns a new rectangle with edges moved outwards by the given delta.
