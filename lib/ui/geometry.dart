@@ -81,7 +81,7 @@ abstract class OffsetBase {
   /// the right-hand-side operand respectively. Returns false otherwise.
   @override
   bool operator ==(dynamic other) {
-    if (runtimeType != other.runtimeType)
+    if (other is! OffsetBase)
       return false;
     final OffsetBase typedOther = other;
     return _dx == typedOther._dx &&
@@ -272,6 +272,19 @@ class Offset extends OffsetBase {
       return a * (1.0 - t);
     return new Offset(lerpDouble(a.dx, b.dx, t), lerpDouble(a.dy, b.dy, t));
   }
+
+  /// Compares two Offsets for equality.
+  @override
+  bool operator ==(dynamic other) {
+    if (other is! Offset)
+      return false;
+    final Offset typedOther = other;
+    return _dx == typedOther._dx &&
+           _dy == typedOther._dy;
+  }
+
+  @override
+  String toString() => "Offset(${dx?.toStringAsFixed(1)}, ${dy?.toStringAsFixed(1)})";
 }
 
 /// Holds a 2D floating-point size.
@@ -487,6 +500,20 @@ class Size extends OffsetBase {
       return a * (1.0 - t);
     return new Size(lerpDouble(a.width, b.width, t), lerpDouble(a.height, b.height, t));
   }
+
+  /// Compares two Sizes for equality.
+  // We don't compare the runtimeType because of _DebugSize in the framework.
+  @override
+  bool operator ==(dynamic other) {
+    if (other is! Size)
+      return false;
+    final Offset typedOther = other;
+    return _dx == typedOther._dx &&
+           _dy == typedOther._dy;
+  }
+
+  @override
+  String toString() => "Size(${width?.toStringAsFixed(1)}, ${height?.toStringAsFixed(1)})";
 }
 
 /// An immutable, 2D, axis-aligned, floating-point rectangle whose coordinates
