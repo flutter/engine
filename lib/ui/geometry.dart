@@ -507,7 +507,7 @@ class Size extends OffsetBase {
   bool operator ==(dynamic other) {
     if (other is! Size)
       return false;
-    final Offset typedOther = other;
+    final Size typedOther = other;
     return _dx == typedOther._dx &&
            _dy == typedOther._dy;
   }
@@ -628,7 +628,7 @@ class Rect {
   ///
   /// To translate a rectangle by an [Offset] rather than by separate x and y
   /// components, consider [shift].
-  Offset translate(double translateX, double translateY) {
+  Rect translate(double translateX, double translateY) {
     return new Rect.fromLTRB(left + translateX, top + translateY, right + translateX, bottom + translateY);
   }
 
