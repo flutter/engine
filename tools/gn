@@ -80,10 +80,10 @@ def to_gn_args(args):
       gn_args['use_system_harfbuzz'] = False
       aot = False
 
-    if args.runtime_mode == 'debug':
-        gn_args['dart_runtime_mode'] = 'develop'
+    if args.runtime_mode == 'release':
+        gn_args['dart_build_mode'] = 'product'
     else:
-        gn_args['dart_runtime_mode'] = args.runtime_mode
+        gn_args['dart_build_mode'] = 'release'
 
     if args.target_os == 'android':
         gn_args['target_cpu'] = args.android_cpu
@@ -108,7 +108,8 @@ def to_gn_args(args):
     # snapshotting and linking costs of the precompiler during development.
     # We can still use the JIT on the simulator though.
     use_dbc = args.target_os == 'ios' and not args.simulator and args.runtime_mode == 'debug'
-    gn_args['dart_experimental_interpreter'] = use_dbc
+    if use_dbc:
+      gn_args['dart_target_arch'] = 'dbc'
 
     gn_args['flutter_runtime_mode'] = args.runtime_mode
 
