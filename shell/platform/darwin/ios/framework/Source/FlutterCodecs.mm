@@ -34,7 +34,7 @@
 - (NSData*)encode:(NSString*)message {
   if (message == nil)
     return nil;
-  char* utf8 = message.UTF8String;
+  const char* utf8 = message.UTF8String;
   return [NSData dataWithBytes:utf8 length:strlen(utf8)];
 }
 
