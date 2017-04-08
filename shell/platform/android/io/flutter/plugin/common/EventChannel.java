@@ -5,8 +5,8 @@
 package io.flutter.plugin.common;
 
 import android.util.Log;
-import io.flutter.plugin.common.FlutterBinaryMessenger.BinaryMessageHandler;
-import io.flutter.plugin.common.FlutterBinaryMessenger.BinaryReply;
+import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
+import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
@@ -26,33 +26,33 @@ import java.util.concurrent.atomic.AtomicReference;
  * The identity of the channel is given by its name, so other uses of that name
  * with may interfere with this channel's communication.
  */
-public final class FlutterEventChannel {
-    private static final String TAG = "FlutterEventChannel#";
+public final class EventChannel {
+    private static final String TAG = "EventChannel#";
 
-    private final FlutterBinaryMessenger messenger;
+    private final BinaryMessenger messenger;
     private final String name;
     private final MethodCodec codec;
 
     /**
-     * Creates a new channel associated with the specified {@link FlutterBinaryMessenger}
+     * Creates a new channel associated with the specified {@link BinaryMessenger}
      * and with the specified name and the standard {@link MethodCodec}.
      *
-     * @param messenger a {@link FlutterBinaryMessenger}.
+     * @param messenger a {@link BinaryMessenger}.
      * @param name a channel name String.
      */
-    public FlutterEventChannel(FlutterBinaryMessenger messenger, String name) {
+    public EventChannel(BinaryMessenger messenger, String name) {
         this(messenger, name, StandardMethodCodec.INSTANCE);
     }
 
     /**
-     * Creates a new channel associated with the specified {@link FlutterBinaryMessenger}
+     * Creates a new channel associated with the specified {@link BinaryMessenger}
      * and with the specified name and {@link MethodCodec}.
      *
-     * @param messenger a {@link FlutterBinaryMessenger}.
+     * @param messenger a {@link BinaryMessenger}.
      * @param name a channel name String.
      * @param codec a {@link MessageCodec}.
      */
-    public FlutterEventChannel(FlutterBinaryMessenger messenger, String name, MethodCodec codec) {
+    public EventChannel(BinaryMessenger messenger, String name, MethodCodec codec) {
         assert messenger != null;
         assert name != null;
         assert codec != null;
@@ -179,7 +179,7 @@ public final class FlutterEventChannel {
                  if (activeSink.get() != this) {
                      return;
                  }
-                 FlutterEventChannel.this.messenger.send(
+                 EventChannel.this.messenger.send(
                      name,
                      codec.encodeSuccessEnvelope(event));
              }
@@ -190,7 +190,7 @@ public final class FlutterEventChannel {
                  if (activeSink.get() != this) {
                      return;
                  }
-                 FlutterEventChannel.this.messenger.send(
+                 EventChannel.this.messenger.send(
                      name,
                      codec.encodeErrorEnvelope(errorCode, errorMessage, errorDetails));
              }
@@ -200,7 +200,7 @@ public final class FlutterEventChannel {
                  if (activeSink.get() != this) {
                      return;
                  }
-                 FlutterEventChannel.this.messenger.send(name, null);
+                 EventChannel.this.messenger.send(name, null);
              }
          }
     }

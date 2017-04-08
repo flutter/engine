@@ -5,8 +5,8 @@
 package io.flutter.plugin.common;
 
 import android.util.Log;
-import io.flutter.plugin.common.FlutterBinaryMessenger.BinaryMessageHandler;
-import io.flutter.plugin.common.FlutterBinaryMessenger.BinaryReply;
+import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
+import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
 import java.nio.ByteBuffer;
 
 /**
@@ -23,33 +23,33 @@ import java.nio.ByteBuffer;
  * The identity of the channel is given by its name, so other uses of that name
  * with may interfere with this channel's communication.
  */
-public final class FlutterMethodChannel {
-    private static final String TAG = "FlutterMethodChannel#";
+public final class MethodChannel {
+    private static final String TAG = "MethodChannel#";
 
-    private final FlutterBinaryMessenger messenger;
+    private final BinaryMessenger messenger;
     private final String name;
     private final MethodCodec codec;
 
     /**
-     * Creates a new channel associated with the specified {@link FlutterBinaryMessenger}
+     * Creates a new channel associated with the specified {@link BinaryMessenger}
      * and with the specified name and the standard {@link MethodCodec}.
      *
-     * @param messenger a {@link FlutterBinaryMessenger}.
+     * @param messenger a {@link BinaryMessenger}.
      * @param name a channel name String.
      */
-    public FlutterMethodChannel(FlutterBinaryMessenger messenger, String name) {
+    public MethodChannel(BinaryMessenger messenger, String name) {
         this(messenger, name, StandardMethodCodec.INSTANCE);
     }
 
     /**
-     * Creates a new channel associated with the specified {@link FlutterBinaryMessenger} and with the
+     * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
      * specified name and {@link MethodCodec}.
      *
-     * @param messenger a {@link FlutterBinaryMessenger}.
+     * @param messenger a {@link BinaryMessenger}.
      * @param name a channel name String.
      * @param codec a {@link MessageCodec}.
      */
-    public FlutterMethodChannel(FlutterBinaryMessenger messenger, String name, MethodCodec codec) {
+    public MethodChannel(BinaryMessenger messenger, String name, MethodCodec codec) {
         assert messenger != null;
         assert name != null;
         assert codec != null;

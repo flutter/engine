@@ -6,8 +6,8 @@ package io.flutter.plugin.common;
 
 import android.util.Log;
 import java.nio.ByteBuffer;
-import io.flutter.plugin.common.FlutterBinaryMessenger.BinaryReply;
-import io.flutter.plugin.common.FlutterBinaryMessenger.BinaryMessageHandler;
+import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
+import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 
 /**
  * A named channel for communicating with the Flutter application using semi-structured messages.
@@ -22,22 +22,22 @@ import io.flutter.plugin.common.FlutterBinaryMessenger.BinaryMessageHandler;
  *
  * Identically named channels may interfere with each other's communication.
  */
-public final class FlutterBasicMessageChannel<T> {
+public final class BasicMessageChannel<T> {
     private static final String TAG = "FlutterMessageChannel#";
 
-    private final FlutterBinaryMessenger messenger;
+    private final BinaryMessenger messenger;
     private final String name;
     private final MessageCodec<T> codec;
 
     /**
-     * Creates a new channel associated with the specified {@link FlutterBinaryMessenger}
+     * Creates a new channel associated with the specified {@link BinaryMessenger}
      * and with the specified name and {@link MessageCodec}.
      *
-     * @param messenger a {@link FlutterBinaryMessenger}.
+     * @param messenger a {@link BinaryMessenger}.
      * @param name a channel name String.
      * @param codec a {@link MessageCodec}.
      */
-    public FlutterBasicMessageChannel(FlutterBinaryMessenger messenger, String name, MessageCodec<T> codec) {
+    public BasicMessageChannel(BinaryMessenger messenger, String name, MessageCodec<T> codec) {
         assert messenger != null;
         assert name != null;
         assert codec != null;

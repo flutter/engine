@@ -6,11 +6,11 @@ import java.nio.ByteBuffer;
  * Facility for communicating with Flutter using asynchronous message passing with binary messages.
  * The Flutter Dart code can use {@code BinaryMessages} to participate.
  *
- * @see FlutterBasicMessageChannel, which supports message passing with Strings and semi-structured messages.
- * @see FlutterMethodChannel, which supports communication using asynchronous method invocation.
- * @see FlutterEventChannel, which supports communication using event streams.
+ * @see BasicMessageChannel , which supports message passing with Strings and semi-structured messages.
+ * @see MethodChannel , which supports communication using asynchronous method invocation.
+ * @see EventChannel , which supports communication using event streams.
  */
-public interface FlutterBinaryMessenger {
+public interface BinaryMessenger {
     /**
      * Sends a binary message to the Flutter application. The Flutter Dart code can register a
      * platform message handler with {@code BinaryMessages} that will receive these messages.

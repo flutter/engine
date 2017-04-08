@@ -28,13 +28,8 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 
-import io.flutter.plugin.common.ActivityLifecycleListener;
-import io.flutter.plugin.common.FlutterBinaryMessenger;
-import io.flutter.plugin.common.FlutterBasicMessageChannel;
-import io.flutter.plugin.common.FlutterMethodChannel;
-import io.flutter.plugin.common.JSONMessageCodec;
-import io.flutter.plugin.common.JSONMethodCodec;
-import io.flutter.plugin.common.StringCodec;
+import io.flutter.plugin.common.*;
+import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 
@@ -55,7 +50,7 @@ import java.util.Map;
  * An Android view containing a Flutter app.
  */
 public class FlutterView extends SurfaceView
-    implements FlutterBinaryMessenger, AccessibilityManager.AccessibilityStateChangeListener {
+    implements BinaryMessenger, AccessibilityManager.AccessibilityStateChangeListener {
 
     private static final String TAG = "FlutterView";
 
@@ -77,11 +72,11 @@ public class FlutterView extends SurfaceView
     private final SurfaceHolder.Callback mSurfaceCallback;
     private final ViewportMetrics mMetrics;
     private final AccessibilityManager mAccessibilityManager;
-    private final FlutterMethodChannel mFlutterLocalizationChannel;
-    private final FlutterMethodChannel mFlutterNavigationChannel;
-    private final FlutterBasicMessageChannel<Object> mFlutterKeyEventChannel;
-    private final FlutterBasicMessageChannel<String> mFlutterLifecycleChannel;
-    private final FlutterBasicMessageChannel<Object> mFlutterSystemChannel;
+    private final MethodChannel mFlutterLocalizationChannel;
+    private final MethodChannel mFlutterNavigationChannel;
+    private final BasicMessageChannel<Object> mFlutterKeyEventChannel;
+    private final BasicMessageChannel<String> mFlutterLifecycleChannel;
+    private final BasicMessageChannel<Object> mFlutterSystemChannel;
     private final BroadcastReceiver mDiscoveryReceiver;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private long mNativePlatformView;
@@ -139,18 +134,18 @@ public class FlutterView extends SurfaceView
         mActivityLifecycleListeners = new ArrayList<>();
 
         // Configure the platform plugins and flutter channels.
-        mFlutterLocalizationChannel = new FlutterMethodChannel(this, "flutter/localization",
+        mFlutterLocalizationChannel = new MethodChannel(this, "flutter/localization",
             JSONMethodCodec.INSTANCE);
-        mFlutterNavigationChannel = new FlutterMethodChannel(this, "flutter/navigation",
+        mFlutterNavigationChannel = new MethodChannel(this, "flutter/navigation",
             JSONMethodCodec.INSTANCE);
-        mFlutterKeyEventChannel = new FlutterBasicMessageChannel<>(this, "flutter/keyevent",
+        mFlutterKeyEventChannel = new BasicMessageChannel<>(this, "flutter/keyevent",
             JSONMessageCodec.INSTANCE);
-        mFlutterLifecycleChannel = new FlutterBasicMessageChannel<>(this, "flutter/lifecycle",
+        mFlutterLifecycleChannel = new BasicMessageChannel<>(this, "flutter/lifecycle",
             StringCodec.INSTANCE);
-        mFlutterSystemChannel = new FlutterBasicMessageChannel<>(this, "flutter/system",
+        mFlutterSystemChannel = new BasicMessageChannel<>(this, "flutter/system",
             JSONMessageCodec.INSTANCE);
         PlatformPlugin platformPlugin = new PlatformPlugin((Activity) getContext());
-        FlutterMethodChannel flutterPlatformChannel = new FlutterMethodChannel(this,
+        MethodChannel flutterPlatformChannel = new MethodChannel(this,
             "flutter/platform", JSONMethodCodec.INSTANCE);
         flutterPlatformChannel.setMethodCallHandler(platformPlugin);
         addActivityLifecycleListener(platformPlugin);

@@ -11,9 +11,9 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
-import io.flutter.plugin.common.FlutterMethodChannel;
-import io.flutter.plugin.common.FlutterMethodChannel.MethodCallHandler;
-import io.flutter.plugin.common.FlutterMethodChannel.Result;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
+import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.JSONUtil;
 import io.flutter.plugin.common.MethodCall;
@@ -31,7 +31,7 @@ public class TextInputPlugin implements MethodCallHandler {
 
     private final Activity mActivity;
     private final FlutterView mView;
-    private final FlutterMethodChannel mFlutterChannel;
+    private final MethodChannel mFlutterChannel;
     private int mClient = 0;
     private JSONObject mConfiguration;
     private JSONObject mLatestState;
@@ -39,7 +39,7 @@ public class TextInputPlugin implements MethodCallHandler {
     public TextInputPlugin(Activity activity, FlutterView view) {
         mActivity = activity;
         mView = view;
-        mFlutterChannel = new FlutterMethodChannel(view, "flutter/textinput",
+        mFlutterChannel = new MethodChannel(view, "flutter/textinput",
             JSONMethodCodec.INSTANCE);
         mFlutterChannel.setMethodCallHandler(this);
     }
