@@ -25,7 +25,7 @@
 }
 
 - (id)decode:(NSData*)message {
-  if (message == nil)
+  if (!message.length)
     return nil;
   FlutterStandardReader* reader =
       [FlutterStandardReader readerWithData:message];

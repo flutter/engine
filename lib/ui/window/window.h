@@ -51,7 +51,6 @@ class Window {
 
   void CompletePlatformMessageResponse(int response_id,
                                        std::vector<uint8_t> data);
-  void CompletePlatformMessageEmptyResponse(int response_id);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

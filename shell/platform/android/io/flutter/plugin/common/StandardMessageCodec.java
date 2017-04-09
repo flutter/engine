@@ -56,7 +56,7 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
 
     @Override
     public Object decodeMessage(ByteBuffer message) {
-        if (message == null) {
+        if (message == null || !message.hasRemaining()) {
             return null;
         }
         message.order(ByteOrder.nativeOrder());

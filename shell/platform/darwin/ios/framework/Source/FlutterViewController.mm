@@ -38,13 +38,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
         }));
   }
 
-  void CompleteEmpty() override {
-    ftl::RefPtr<PlatformMessageResponseDarwin> self(this);
-    blink::Threads::Platform()->PostTask(
-        ftl::MakeCopyable([ self ]() mutable {
-          self->callback_.get()(nil);
-        }));
-  }
+  void CompleteWithError() override { Complete(std::vector<uint8_t>()); }
 
  private:
   explicit PlatformMessageResponseDarwin(
@@ -587,23 +581,27 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 #pragma mark - Application Messages
 
 - (void)sendBinaryMessage:(NSData*)message channelName:(NSString*)channel {
-  [self sendBinaryMessage:message channelName:channel binaryReplyHandler:nil];
+  NSAssert(channel, @"The channel must not be null");
+  if (message == nil)
+    message = [NSData data];
+  _platformView->DispatchPlatformMessage(
+      ftl::MakeRefCounted<blink::PlatformMessage>(
+          channel.UTF8String, shell::GetVectorFromNSData(message), nil));
 }
 
 - (void)sendBinaryMessage:(NSData*)message
               channelName:(NSString*)channel
        binaryReplyHandler:(FlutterBinaryReplyHandler)callback {
   NSAssert(channel, @"The channel must not be null");
-  ftl::RefPtr<PlatformMessageResponseDarwin> response = (callback == nil)
-    ? nullptr
-    : ftl::MakeRefCounted<PlatformMessageResponseDarwin>(^(NSData* reply) {
-         callback(reply);
-      });
-  ftl::RefPtr<blink::PlatformMessage> platformMessage = (message == nil)
-    ? ftl::MakeRefCounted<blink::PlatformMessage>(channel.UTF8String, response)
-    : ftl::MakeRefCounted<blink::PlatformMessage>(channel.UTF8String,
-        shell::GetVectorFromNSData(message), response);
-  _platformView->DispatchPlatformMessage(platformMessage);
+  NSAssert(callback, @"The callback must not be null");
+  if (message == nil)
+    message = [NSData data];
+  _platformView->DispatchPlatformMessage(
+      ftl::MakeRefCounted<blink::PlatformMessage>(
+          channel.UTF8String, shell::GetVectorFromNSData(message),
+          ftl::MakeRefCounted<PlatformMessageResponseDarwin>(^(NSData* reply) {
+            callback(reply);
+          })));
 }
 
 - (void)setBinaryMessageHandlerOnChannel:(NSString*)channel

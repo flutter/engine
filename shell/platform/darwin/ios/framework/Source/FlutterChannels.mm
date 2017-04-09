@@ -218,9 +218,7 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
   NSData* message = [_codec encodeMethodCall:methodCall];
   FlutterBinaryReplyHandler replyHandler = ^(NSData* reply) {
     if (resultReceiver) {
-      resultReceiver((reply == nil)
-        ? FlutterMethodNotImplemented
-        : [_codec decodeEnvelope:reply]);
+      resultReceiver([_codec decodeEnvelope:reply]);
     }
   };
   [_messenger sendBinaryMessage:message
