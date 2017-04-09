@@ -20,8 +20,8 @@ public final class MethodCall {
      * Arguments for the call.
      *
      * Consider using {@link #arguments()} for cases where a particular run-time type is expected.
-     * Consider using {@link #argument(String)} when that run-time type is a {@link java.util.Map}
-     * or a {@link org.json.JSONObject}.
+     * Consider using {@link #argument(String)} when that run-time type is a {@link Map}
+     * or a {@link JSONObject}.
      */
     public final Object arguments;
 
@@ -50,14 +50,15 @@ public final class MethodCall {
 
     /**
      * Returns a String-keyed argument of this method call, assuming {@link #arguments} is a
-     * {@link java.util.Map} or a {@link org.json.JSONObject}. The static type of the returned
-     * result is determined by the call-site.
+     * {@link Map} or a {@link JSONObject}. The static type of the returned result is determined
+     * by the call-site.
      *
      * @param <T> the intended type of the argument.
      * @param key the String key.
      * @return the argument value at the specified key, with static type T, or {@code null}, if
      * such an entry is not present.
-     * @throws ClassCastException if {@link #arguments} is neither a Map nor a JSONObject.
+     * @throws ClassCastException if {@link #arguments} can be cast to neither {@link Map} nor
+     * {@link JSONObject}.
      */
     @SuppressWarnings("unchecked")
     public <T> T argument(String key) {
