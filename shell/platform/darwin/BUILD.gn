@@ -60,6 +60,7 @@ executable("flutter_channels_unittests") {
 
   deps = [
     ":flutter_channels",
+    "//dart/runtime:libdart_jit",
     "//flutter/testing",
   ]
 }
