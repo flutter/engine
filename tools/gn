@@ -80,10 +80,10 @@ def to_gn_args(args):
       gn_args['use_system_harfbuzz'] = False
       aot = False
 
-    if args.runtime_mode == 'release':
-        gn_args['dart_build_mode'] = 'product'
+    if args.runtime_mode == 'debug':
+        gn_args['dart_runtime_mode'] = 'develop'
     else:
-        gn_args['dart_build_mode'] = 'release'
+        gn_args['dart_runtime_mode'] = args.runtime_mode
 
     if args.target_os == 'android':
         gn_args['target_cpu'] = args.android_cpu
