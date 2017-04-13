@@ -237,15 +237,9 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
     selectedRange.length -= intersectionRange.length;
   }
 
-  [self.inputDelegate textWillChange:self];
-  [self.inputDelegate selectionWillChange:self];
-
   [self.text replaceCharactersInRange:replaceRange withString:text];
   [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
           updateEditingState:NO];
-
-  [self.inputDelegate textDidChange:self];
-  [self.inputDelegate selectionDidChange:self];
 
   [self updateEditingState];
 }
@@ -270,12 +264,10 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
   self.markedTextRange =
       markedTextRange.length > 0 ? [FlutterTextRange rangeWithNSRange:markedTextRange] : nil;
 
-  [self.inputDelegate selectionWillChange:self];
   NSUInteger selectionLocation = markedSelectedRange.location + markedTextRange.location;
   selectedRange = NSMakeRange(selectionLocation, markedSelectedRange.length);
   [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
           updateEditingState:YES];
-  [self.inputDelegate selectionDidChange:self];
 }
 
 - (void)unmarkText {
