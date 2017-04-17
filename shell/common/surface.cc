@@ -64,8 +64,8 @@ double Surface::GetScale() const {
 }
 
 void Surface::SetScale(double scale) {
-  static const double kMaxScale = 1.0;
-  static const double kMinScale = 0.25;
+  static constexpr double kMaxScale = 1.0;
+  static constexpr double kMinScale = 0.25;
   if (scale > kMaxScale) {
     scale = kMaxScale;
   } else if (scale < kMinScale) {
