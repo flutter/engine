@@ -611,20 +611,20 @@ public class FlutterView extends SurfaceView
                         public void reply(ByteBuffer reply) {
                             if (reply == null) {
                                 nativeInvokePlatformMessageEmptyResponseCallback(mNativePlatformView,
-                                    responseId);
+                                    replyId);
                             } else {
                                 nativeInvokePlatformMessageResponseCallback(mNativePlatformView,
-                                    responseId, reply, reply.position());
+                                    replyId, reply, reply.position());
                             }
                         }
                     });
             } catch (Exception ex) {
                 Log.e(TAG, "Uncaught exception in binary message listener", ex);
-                nativeInvokePlatformMessageEmptyResponseCallback(mNativePlatformView, responseId);
+                nativeInvokePlatformMessageEmptyResponseCallback(mNativePlatformView, replyId);
             }
             return;
         }
-        nativeInvokePlatformMessageEmptyResponseCallback(mNativePlatformView, responseId);
+        nativeInvokePlatformMessageEmptyResponseCallback(mNativePlatformView, replyId);
     }
 
     private int mNextReplyId = 1;
@@ -635,7 +635,7 @@ public class FlutterView extends SurfaceView
         BinaryReply callback = mPendingReplies.remove(replyId);
         if (callback != null) {
             try {
-                callback.reply(response == null ? null : ByteBuffer.wrap(response));
+                callback.reply(reply == null ? null : ByteBuffer.wrap(reply));
             } catch (Exception ex) {
                 Log.e(TAG, "Uncaught exception in binary message handler reply", ex);
             }
@@ -773,10 +773,10 @@ public class FlutterView extends SurfaceView
             mPendingReplies.put(replyId, callback);
         }
         if (message == null) {
-            nativeDispatchEmptyPlatformMessage(mNativePlatformView, channel, responseId);
+            nativeDispatchEmptyPlatformMessage(mNativePlatformView, channel, replyId);
         } else {
             nativeDispatchPlatformMessage(mNativePlatformView, channel, message,
-                message.position(), responseId);
+                message.position(), replyId);
         }
     }
 
