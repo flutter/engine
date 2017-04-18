@@ -66,7 +66,7 @@ FLUTTER_EXPORT
  */
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData* _Nullable)message
-          binaryReply:(FlutterBinaryReply)callback;
+          binaryReply:(FlutterBinaryReply _Nullable)callback;
 
 /**
  Registers a message handler for incoming binary messages from the Flutter side
