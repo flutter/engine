@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
  - Parameters:
    - reply: The reply.
  */
-typedef void (^FlutterBinaryReply)(NSData *_Nullable reply);
+typedef void (^FlutterBinaryReply)(NSData* _Nullable reply);
 
 /**
  A strategy for handling incoming binary messages from Flutter and to send
@@ -29,8 +29,7 @@ typedef void (^FlutterBinaryReply)(NSData *_Nullable reply);
    - message: The message.
    - reply: A callback for submitting a reply to the sender.
  */
-typedef void (^FlutterBinaryMessageHandler)(NSData *_Nullable message,
-                                            FlutterBinaryReply reply);
+typedef void (^FlutterBinaryMessageHandler)(NSData* _Nullable message, FlutterBinaryReply reply);
 
 /**
  A facility for communicating with the Flutter side using asynchronous message
@@ -44,7 +43,7 @@ typedef void (^FlutterBinaryMessageHandler)(NSData *_Nullable message,
    - `FlutterEventChannel`, which supports commuication using event streams.
  */
 FLUTTER_EXPORT
-@protocol FlutterBinaryMessenger <NSObject>
+@protocol FlutterBinaryMessenger<NSObject>
 /**
  Sends a binary message to the Flutter side on the specified channel, expecting
  no reply.
@@ -53,7 +52,7 @@ FLUTTER_EXPORT
    - channel: The channel name.
    - message: The message.
  */
-- (void)sendOnChannel:(NSString *)channel message:(NSData *_Nullable)message;
+- (void)sendOnChannel:(NSString*)channel message:(NSData* _Nullable)message;
 
 /**
  Sends a binary message to the Flutter side on the specified channel, expecting
@@ -64,8 +63,8 @@ FLUTTER_EXPORT
    - message: The message.
    - callback: A callback for receiving a reply.
  */
-- (void)sendOnChannel:(NSString *)channel
-              message:(NSData *_Nullable)message
+- (void)sendOnChannel:(NSString*)channel
+              message:(NSData* _Nullable)message
           binaryReply:(FlutterBinaryReply _Nullable)callback;
 
 /**
@@ -79,9 +78,8 @@ FLUTTER_EXPORT
    - channel: The channel name.
    - handler: The message handler.
  */
-- (void)setMessageHandlerOnChannel:(NSString *)channel
-              binaryMessageHandler:
-                  (FlutterBinaryMessageHandler _Nullable)handler;
+- (void)setMessageHandlerOnChannel:(NSString*)channel
+              binaryMessageHandler:(FlutterBinaryMessageHandler _Nullable)handler;
 @end
 NS_ASSUME_NONNULL_END
-#endif // FLUTTER_FLUTTERBINARYMESSENGER_H_
+#endif  // FLUTTER_FLUTTERBINARYMESSENGER_H_

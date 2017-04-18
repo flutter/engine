@@ -9,7 +9,7 @@
 static const char _kTextAffinityDownstream[] = "TextAffinity.downstream";
 static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
 
-static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
+static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
   if ([inputType isEqualToString:@"TextInputType.text"])
     return UIKeyboardTypeDefault;
   if ([inputType isEqualToString:@"TextInputType.number"])
@@ -50,7 +50,7 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
 #pragma mark - FlutterTextRange
 
 /** A range of text in the buffer of a Flutter text editing widget. */
-@interface FlutterTextRange : UITextRange <NSCopying>
+@interface FlutterTextRange : UITextRange<NSCopying>
 
 @property(nonatomic, readonly) NSRange range;
 
@@ -72,33 +72,32 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
   return self;
 }
 
-- (UITextPosition *)start {
+- (UITextPosition*)start {
   return [FlutterTextPosition positionWithIndex:self.range.location];
 }
 
-- (UITextPosition *)end {
-  return [FlutterTextPosition
-      positionWithIndex:self.range.location + self.range.length];
+- (UITextPosition*)end {
+  return [FlutterTextPosition positionWithIndex:self.range.location + self.range.length];
 }
 
 - (BOOL)isEmpty {
   return self.range.length == 0;
 }
 
-- (id)copyWithZone:(NSZone *)zone {
+- (id)copyWithZone:(NSZone*)zone {
   return [[FlutterTextRange allocWithZone:zone] initWithNSRange:self.range];
 }
 
 @end
 
-@interface FlutterTextInputView : UIView <UITextInput>
+@interface FlutterTextInputView : UIView<UITextInput>
 
 // UITextInput
-@property(nonatomic, readonly) NSMutableString *text;
-@property(nonatomic, readonly) NSMutableString *markedText;
-@property(readwrite, copy) UITextRange *selectedTextRange;
-@property(nonatomic, strong) UITextRange *markedTextRange;
-@property(nonatomic, copy) NSDictionary *markedTextStyle;
+@property(nonatomic, readonly) NSMutableString* text;
+@property(nonatomic, readonly) NSMutableString* markedText;
+@property(readwrite, copy) UITextRange* selectedTextRange;
+@property(nonatomic, strong) UITextRange* markedTextRange;
+@property(nonatomic, copy) NSDictionary* markedTextStyle;
 @property(nonatomic, assign) id<UITextInputDelegate> inputDelegate;
 
 // UITextInputTraits
@@ -117,8 +116,8 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
 
 @implementation FlutterTextInputView {
   int _textInputClient;
-  const char *_selectionAffinity;
-  FlutterTextRange *_selectedTextRange;
+  const char* _selectionAffinity;
+  FlutterTextRange* _selectedTextRange;
 }
 
 @synthesize tokenizer = _tokenizer;
@@ -133,8 +132,7 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
     // UITextInput
     _text = [[NSMutableString alloc] init];
     _markedText = [[NSMutableString alloc] init];
-    _selectedTextRange =
-        [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0)];
+    _selectedTextRange = [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0)];
 
     // UITextInputTraits
     _autocapitalizationType = UITextAutocapitalizationTypeSentences;
@@ -163,7 +161,7 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
   _textInputClient = client;
 }
 
-- (void)setTextInputState:(NSDictionary *)state {
+- (void)setTextInputState:(NSDictionary*)state {
   [self.inputDelegate selectionWillChange:self];
   [self.inputDelegate textWillChange:self];
 
@@ -200,18 +198,17 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
   return _tokenizer;
 }
 
-- (UITextRange *)selectedTextRange {
+- (UITextRange*)selectedTextRange {
   return [[_selectedTextRange copy] autorelease];
 }
 
-- (void)setSelectedTextRange:(UITextRange *)selectedTextRange {
+- (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
   [self setSelectedTextRange:selectedTextRange updateEditingState:YES];
 }
 
-- (void)setSelectedTextRange:(UITextRange *)selectedTextRange
-          updateEditingState:(BOOL)update {
+- (void)setSelectedTextRange:(UITextRange*)selectedTextRange updateEditingState:(BOOL)update {
   if (_selectedTextRange != selectedTextRange) {
-    UITextRange *oldSelectedRange = _selectedTextRange;
+    UITextRange* oldSelectedRange = _selectedTextRange;
     _selectedTextRange = [selectedTextRange copy];
     [oldSelectedRange release];
 
@@ -220,13 +217,13 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
   }
 }
 
-- (NSString *)textInRange:(UITextRange *)range {
-  NSRange textRange = ((FlutterTextRange *)range).range;
+- (NSString*)textInRange:(UITextRange*)range {
+  NSRange textRange = ((FlutterTextRange*)range).range;
   return [self.text substringWithRange:textRange];
 }
 
-- (void)replaceRange:(UITextRange *)range withText:(NSString *)text {
-  NSRange replaceRange = ((FlutterTextRange *)range).range;
+- (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
+  NSRange replaceRange = ((FlutterTextRange*)range).range;
   NSRange selectedRange = _selectedTextRange.range;
 
   // Adjust the text selection:
@@ -247,10 +244,9 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
   [self updateEditingState];
 }
 
-- (void)setMarkedText:(NSString *)markedText
-        selectedRange:(NSRange)markedSelectedRange {
+- (void)setMarkedText:(NSString*)markedText selectedRange:(NSRange)markedSelectedRange {
   NSRange selectedRange = _selectedTextRange.range;
-  NSRange markedTextRange = ((FlutterTextRange *)self.markedTextRange).range;
+  NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
 
   if (markedText == nil)
     markedText = @"";
@@ -266,12 +262,9 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
   }
 
   self.markedTextRange =
-      markedTextRange.length > 0
-          ? [FlutterTextRange rangeWithNSRange:markedTextRange]
-          : nil;
+      markedTextRange.length > 0 ? [FlutterTextRange rangeWithNSRange:markedTextRange] : nil;
 
-  NSUInteger selectionLocation =
-      markedSelectedRange.location + markedTextRange.location;
+  NSUInteger selectionLocation = markedSelectedRange.location + markedTextRange.location;
   selectedRange = NSMakeRange(selectionLocation, markedSelectedRange.length);
   [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
           updateEditingState:YES];
@@ -282,12 +275,11 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
   [self updateEditingState];
 }
 
-- (UITextRange *)textRangeFromPosition:(UITextPosition *)fromPosition
-                            toPosition:(UITextPosition *)toPosition {
-  NSUInteger fromIndex = ((FlutterTextPosition *)fromPosition).index;
-  NSUInteger toIndex = ((FlutterTextPosition *)toPosition).index;
-  return [FlutterTextRange
-      rangeWithNSRange:NSMakeRange(fromIndex, toIndex - fromIndex)];
+- (UITextRange*)textRangeFromPosition:(UITextPosition*)fromPosition
+                           toPosition:(UITextPosition*)toPosition {
+  NSUInteger fromIndex = ((FlutterTextPosition*)fromPosition).index;
+  NSUInteger toIndex = ((FlutterTextPosition*)toPosition).index;
+  return [FlutterTextRange rangeWithNSRange:NSMakeRange(fromIndex, toIndex - fromIndex)];
 }
 
 /** Returns the range of the character sequence at the specified index in the
@@ -307,9 +299,8 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
   return MIN(position + charRange.length, self.text.length);
 }
 
-- (UITextPosition *)positionFromPosition:(UITextPosition *)position
-                                  offset:(NSInteger)offset {
-  NSUInteger offsetPosition = ((FlutterTextPosition *)position).index;
+- (UITextPosition*)positionFromPosition:(UITextPosition*)position offset:(NSInteger)offset {
+  NSUInteger offsetPosition = ((FlutterTextPosition*)position).index;
   if (offset >= 0) {
     for (NSInteger i = 0; i < offset && offsetPosition < self.text.length; ++i)
       offsetPosition = [self incrementOffsetPosition:offsetPosition];
@@ -320,32 +311,31 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
   return [FlutterTextPosition positionWithIndex:offsetPosition];
 }
 
-- (UITextPosition *)positionFromPosition:(UITextPosition *)position
-                             inDirection:(UITextLayoutDirection)direction
-                                  offset:(NSInteger)offset {
+- (UITextPosition*)positionFromPosition:(UITextPosition*)position
+                            inDirection:(UITextLayoutDirection)direction
+                                 offset:(NSInteger)offset {
   // TODO(cbracken) Add RTL handling.
   switch (direction) {
-  case UITextLayoutDirectionLeft:
-  case UITextLayoutDirectionUp:
-    return [self positionFromPosition:position offset:offset * -1];
-  case UITextLayoutDirectionRight:
-  case UITextLayoutDirectionDown:
-    return [self positionFromPosition:position offset:1];
+    case UITextLayoutDirectionLeft:
+    case UITextLayoutDirectionUp:
+      return [self positionFromPosition:position offset:offset * -1];
+    case UITextLayoutDirectionRight:
+    case UITextLayoutDirectionDown:
+      return [self positionFromPosition:position offset:1];
   }
 }
 
-- (UITextPosition *)beginningOfDocument {
+- (UITextPosition*)beginningOfDocument {
   return [FlutterTextPosition positionWithIndex:0];
 }
 
-- (UITextPosition *)endOfDocument {
+- (UITextPosition*)endOfDocument {
   return [FlutterTextPosition positionWithIndex:self.text.length];
 }
 
-- (NSComparisonResult)comparePosition:(UITextPosition *)position
-                           toPosition:(UITextPosition *)other {
-  NSUInteger positionIndex = ((FlutterTextPosition *)position).index;
-  NSUInteger otherIndex = ((FlutterTextPosition *)other).index;
+- (NSComparisonResult)comparePosition:(UITextPosition*)position toPosition:(UITextPosition*)other {
+  NSUInteger positionIndex = ((FlutterTextPosition*)position).index;
+  NSUInteger otherIndex = ((FlutterTextPosition*)other).index;
   if (positionIndex < otherIndex)
     return NSOrderedAscending;
   if (positionIndex > otherIndex)
@@ -353,61 +343,56 @@ static UIKeyboardType ToUIKeyboardType(NSString *inputType) {
   return NSOrderedSame;
 }
 
-- (NSInteger)offsetFromPosition:(UITextPosition *)from
-                     toPosition:(UITextPosition *)toPosition {
-  return ((FlutterTextPosition *)toPosition).index -
-         ((FlutterTextPosition *)from).index;
+- (NSInteger)offsetFromPosition:(UITextPosition*)from toPosition:(UITextPosition*)toPosition {
+  return ((FlutterTextPosition*)toPosition).index - ((FlutterTextPosition*)from).index;
 }
 
-- (UITextPosition *)positionWithinRange:(UITextRange *)range
-                    farthestInDirection:(UITextLayoutDirection)direction {
+- (UITextPosition*)positionWithinRange:(UITextRange*)range
+                   farthestInDirection:(UITextLayoutDirection)direction {
   NSUInteger index;
   switch (direction) {
-  case UITextLayoutDirectionLeft:
-  case UITextLayoutDirectionUp:
-    index = ((FlutterTextPosition *)range.start).index;
-    break;
-  case UITextLayoutDirectionRight:
-  case UITextLayoutDirectionDown:
-    index = ((FlutterTextPosition *)range.end).index;
-    break;
+    case UITextLayoutDirectionLeft:
+    case UITextLayoutDirectionUp:
+      index = ((FlutterTextPosition*)range.start).index;
+      break;
+    case UITextLayoutDirectionRight:
+    case UITextLayoutDirectionDown:
+      index = ((FlutterTextPosition*)range.end).index;
+      break;
   }
   return [FlutterTextPosition positionWithIndex:index];
 }
 
-- (UITextRange *)characterRangeByExtendingPosition:(UITextPosition *)position
-                                       inDirection:
-                                           (UITextLayoutDirection)direction {
-  NSUInteger positionIndex = ((FlutterTextPosition *)position).index;
+- (UITextRange*)characterRangeByExtendingPosition:(UITextPosition*)position
+                                      inDirection:(UITextLayoutDirection)direction {
+  NSUInteger positionIndex = ((FlutterTextPosition*)position).index;
   NSUInteger startIndex;
   NSUInteger endIndex;
   switch (direction) {
-  case UITextLayoutDirectionLeft:
-  case UITextLayoutDirectionUp:
-    startIndex = [self decrementOffsetPosition:positionIndex];
-    endIndex = positionIndex;
-    break;
-  case UITextLayoutDirectionRight:
-  case UITextLayoutDirectionDown:
-    startIndex = positionIndex;
-    endIndex = [self incrementOffsetPosition:positionIndex];
-    break;
+    case UITextLayoutDirectionLeft:
+    case UITextLayoutDirectionUp:
+      startIndex = [self decrementOffsetPosition:positionIndex];
+      endIndex = positionIndex;
+      break;
+    case UITextLayoutDirectionRight:
+    case UITextLayoutDirectionDown:
+      startIndex = positionIndex;
+      endIndex = [self incrementOffsetPosition:positionIndex];
+      break;
   }
-  return [FlutterTextRange
-      rangeWithNSRange:NSMakeRange(startIndex, endIndex - startIndex)];
+  return [FlutterTextRange rangeWithNSRange:NSMakeRange(startIndex, endIndex - startIndex)];
 }
 
 #pragma mark - UITextInput text direction handling
 
-- (UITextWritingDirection)
-baseWritingDirectionForPosition:(UITextPosition *)position
-                    inDirection:(UITextStorageDirection)direction {
+- (UITextWritingDirection)baseWritingDirectionForPosition:(UITextPosition*)position
+                                              inDirection:(UITextStorageDirection)direction {
   // TODO(cbracken) Add RTL handling.
   return UITextWritingDirectionNatural;
 }
 
 - (void)setBaseWritingDirection:(UITextWritingDirection)writingDirection
-                       forRange:(UITextRange *)range {
+                       forRange:(UITextRange*)range {
   // TODO(cbracken) Add RTL handling.
 }
 
@@ -418,74 +403,67 @@ baseWritingDirectionForPosition:(UITextPosition *)position
 // candidates view for multi-stage input methods (e.g., Japanese) when using a
 // physical keyboard.
 
-- (CGRect)firstRectForRange:(UITextRange *)range {
+- (CGRect)firstRectForRange:(UITextRange*)range {
   // TODO(cbracken) Implement.
   return CGRectZero;
 }
 
-- (CGRect)caretRectForPosition:(UITextPosition *)position {
+- (CGRect)caretRectForPosition:(UITextPosition*)position {
   // TODO(cbracken) Implement.
   return CGRectZero;
 }
 
-- (UITextPosition *)closestPositionToPoint:(CGPoint)point {
+- (UITextPosition*)closestPositionToPoint:(CGPoint)point {
   // TODO(cbracken) Implement.
-  NSUInteger currentIndex =
-      ((FlutterTextPosition *)_selectedTextRange.start).index;
+  NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
   return [FlutterTextPosition positionWithIndex:currentIndex];
 }
 
-- (NSArray *)selectionRectsForRange:(UITextRange *)range {
+- (NSArray*)selectionRectsForRange:(UITextRange*)range {
   // TODO(cbracken) Implement.
   return @[];
 }
 
-- (UITextPosition *)closestPositionToPoint:(CGPoint)point
-                               withinRange:(UITextRange *)range {
+- (UITextPosition*)closestPositionToPoint:(CGPoint)point withinRange:(UITextRange*)range {
   // TODO(cbracken) Implement.
   return range.start;
 }
 
-- (UITextRange *)characterRangeAtPoint:(CGPoint)point {
+- (UITextRange*)characterRangeAtPoint:(CGPoint)point {
   // TODO(cbracken) Implement.
-  NSUInteger currentIndex =
-      ((FlutterTextPosition *)_selectedTextRange.start).index;
-  return [FlutterTextRange
-      rangeWithNSRange:[self rangeForCharacterAtIndex:currentIndex]];
+  NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
+  return [FlutterTextRange rangeWithNSRange:[self rangeForCharacterAtIndex:currentIndex]];
 }
 
 #pragma mark - UIKeyInput Overrides
 
 - (void)updateEditingState {
-  NSUInteger selectionBase =
-      ((FlutterTextPosition *)_selectedTextRange.start).index;
-  NSUInteger selectionExtent =
-      ((FlutterTextPosition *)_selectedTextRange.end).index;
+  NSUInteger selectionBase = ((FlutterTextPosition*)_selectedTextRange.start).index;
+  NSUInteger selectionExtent = ((FlutterTextPosition*)_selectedTextRange.end).index;
 
   NSUInteger composingBase = 0;
   NSUInteger composingExtent = 0;
   if (self.markedTextRange != nil) {
-    composingBase = ((FlutterTextPosition *)self.markedTextRange.start).index;
-    composingExtent = ((FlutterTextPosition *)self.markedTextRange.end).index;
+    composingBase = ((FlutterTextPosition*)self.markedTextRange.start).index;
+    composingExtent = ((FlutterTextPosition*)self.markedTextRange.end).index;
   }
-  [_textInputDelegate
-      updateEditingClient:_textInputClient
-                withState:@{
-                  @"selectionBase" : @(selectionBase),
-                  @"selectionExtent" : @(selectionExtent),
-                  @"selectionAffinity" : @(_selectionAffinity),
-                  @"selectionIsDirectional" : @(false),
-                  @"composingBase" : @(composingBase),
-                  @"composingExtent" : @(composingExtent),
-                  @"text" : [NSString stringWithString:self.text],
-                }];
+  [_textInputDelegate updateEditingClient:_textInputClient
+                                withState:@{
+                                  @"selectionBase" : @(selectionBase),
+                                  @"selectionExtent" : @(selectionExtent),
+                                  @"selectionAffinity" : @(_selectionAffinity),
+                                  @"selectionIsDirectional" : @(false),
+                                  @"composingBase" : @(composingBase),
+                                  @"composingExtent" : @(composingExtent),
+                                  @"text" : [NSString stringWithString:self.text],
+                                }];
 }
 
 - (BOOL)hasText {
   return self.text.length > 0;
 }
 
-- (void)insertText:(NSString *)text {
+- (void)insertText:(NSString*)text {
   _selectionAffinity = _kTextAffinityUpstream;
   [self replaceRange:_selectedTextRange withText:text];
 }
@@ -499,7 +477,7 @@ baseWritingDirectionForPosition:(UITextPosition *)position
 @end
 
 @implementation FlutterTextInputPlugin {
-  FlutterTextInputView *_view;
+  FlutterTextInputView* _view;
 }
 
 @synthesize textInputDelegate = _textInputDelegate;
@@ -521,9 +499,8 @@ baseWritingDirectionForPosition:(UITextPosition *)position
   [super dealloc];
 }
 
-- (void)handleMethodCall:(FlutterMethodCall *)call
-                  result:(FlutterResult)result {
-  NSString *method = call.method;
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
+  NSString* method = call.method;
   id args = call.arguments;
   if ([method isEqualToString:@"TextInput.show"]) {
     [self showTextInput];
@@ -559,14 +536,13 @@ baseWritingDirectionForPosition:(UITextPosition *)position
   [_view removeFromSuperview];
 }
 
-- (void)setTextInputClient:(int)client
-         withConfiguration:(NSDictionary *)configuration {
+- (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {
   _view.keyboardType = ToUIKeyboardType(configuration[@"inputType"]);
   [_view setTextInputClient:client];
   [_view reloadInputViews];
 }
 
-- (void)setTextInputEditingState:(NSDictionary *)state {
+- (void)setTextInputEditingState:(NSDictionary*)state {
   [_view setTextInputState:state];
 }
 

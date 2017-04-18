@@ -9,17 +9,17 @@
 
 @interface FlutterPlatformPlugin : NSObject
 
-- (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result;
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 
 @end
 
 namespace shell {
 
-extern const char *const kOrientationUpdateNotificationName;
-extern const char *const kOrientationUpdateNotificationKey;
-extern const char *const kOverlayStyleUpdateNotificationName;
-extern const char *const kOverlayStyleUpdateNotificationKey;
+extern const char* const kOrientationUpdateNotificationName;
+extern const char* const kOrientationUpdateNotificationKey;
+extern const char* const kOverlayStyleUpdateNotificationName;
+extern const char* const kOverlayStyleUpdateNotificationKey;
 
-} // namespace shell
+}  // namespace shell
 
-#endif // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMPLUGIN_H_
+#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMPLUGIN_H_

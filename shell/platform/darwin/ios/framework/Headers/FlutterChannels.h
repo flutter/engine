@@ -27,8 +27,7 @@ typedef void (^FlutterReply)(id _Nullable reply);
    - message: The message.
    - reply: A callback for submitting a reply to the sender.
  */
-typedef void (^FlutterMessageHandler)(id _Nullable message,
-                                      FlutterReply callback);
+typedef void (^FlutterMessageHandler)(id _Nullable message, FlutterReply callback);
 
 /**
  A channel for communicating with the Flutter side using basic, asynchronous
@@ -52,9 +51,8 @@ FLUTTER_EXPORT
    - name: The channel name.
    - messenger: The binary messenger.
  */
-+ (instancetype)messageChannelWithName:(NSString *)name
-                       binaryMessenger:
-                           (NSObject<FlutterBinaryMessenger> *)messenger;
++ (instancetype)messageChannelWithName:(NSString*)name
+                       binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger;
 
 /**
  Creates a `FlutterBasicMessageChannel` with the specified name, binary
@@ -72,10 +70,9 @@ FLUTTER_EXPORT
    - messenger: The binary messenger.
    - codec: The message codec.
  */
-+ (instancetype)messageChannelWithName:(NSString *)name
-                       binaryMessenger:
-                           (NSObject<FlutterBinaryMessenger> *)messenger
-                                 codec:(NSObject<FlutterMessageCodec> *)codec;
++ (instancetype)messageChannelWithName:(NSString*)name
+                       binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                                 codec:(NSObject<FlutterMessageCodec>*)codec;
 
 /**
  Initializes a `FlutterBasicMessageChannel` with the specified name, binary
@@ -92,9 +89,9 @@ FLUTTER_EXPORT
    - messenger: The binary messenger.
    - codec: The message codec.
  */
-- (instancetype)initWithName:(NSString *)name
-             binaryMessenger:(NSObject<FlutterBinaryMessenger> *)messenger
-                       codec:(NSObject<FlutterMessageCodec> *)codec;
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMessageCodec>*)codec;
 
 /**
  Sends the specified message to the Flutter side, ignoring any reply.
@@ -112,8 +109,7 @@ FLUTTER_EXPORT
    - message: The message. Must be supported by the codec of this channel.
    - callback: A callback to be invoked with the message reply from Flutter.
  */
-- (void)sendMessage:(id _Nullable)message
-              reply:(FlutterReply _Nullable)callback;
+- (void)sendMessage:(id _Nullable)message reply:(FlutterReply _Nullable)callback;
 
 /**
  Registers a message handler with this channel.
@@ -147,15 +143,14 @@ typedef void (^FlutterResult)(id _Nullable result);
      method was unknown. Any other values, including `nil`, are interpreted as
      successful results.
  */
-typedef void (^FlutterMethodCallHandler)(FlutterMethodCall *call,
-                                         FlutterResult result);
+typedef void (^FlutterMethodCallHandler)(FlutterMethodCall* call, FlutterResult result);
 
 /**
  A constant used with `FlutterMethodCallHandler` to respond to the call of an
  unknown method.
  */
 FLUTTER_EXPORT
-extern NSObject const *FlutterMethodNotImplemented;
+extern NSObject const* FlutterMethodNotImplemented;
 
 /**
  A channel for communicating with the Flutter side using invocation of
@@ -179,9 +174,8 @@ FLUTTER_EXPORT
    - name: The channel name.
    - messenger: The binary messenger.
  */
-+ (instancetype)methodChannelWithName:(NSString *)name
-                      binaryMessenger:
-                          (NSObject<FlutterBinaryMessenger> *)messenger;
++ (instancetype)methodChannelWithName:(NSString*)name
+                      binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger;
 
 /**
  Creates a `FlutterMethodChannel` with the specified name, binary messenger, and
@@ -198,10 +192,9 @@ FLUTTER_EXPORT
    - messenger: The binary messenger.
    - codec: The method codec.
  */
-+ (instancetype)methodChannelWithName:(NSString *)name
-                      binaryMessenger:
-                          (NSObject<FlutterBinaryMessenger> *)messenger
-                                codec:(NSObject<FlutterMethodCodec> *)codec;
++ (instancetype)methodChannelWithName:(NSString*)name
+                      binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                                codec:(NSObject<FlutterMethodCodec>*)codec;
 
 /**
  Initializes a `FlutterMethodChannel` with the specified name, binary messenger,
@@ -218,9 +211,9 @@ FLUTTER_EXPORT
    - messenger: The binary messenger.
    - codec: The method codec.
  */
-- (instancetype)initWithName:(NSString *)name
-             binaryMessenger:(NSObject<FlutterBinaryMessenger> *)messenger
-                       codec:(NSObject<FlutterMethodCodec> *)codec;
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMethodCodec>*)codec;
 
 /**
  Invokes the specified Flutter method with the specified arguments, expecting
@@ -231,7 +224,7 @@ FLUTTER_EXPORT
    - arguments: The arguments. Must be a value supported by the codec of this
      channel.
  */
-- (void)invokeMethod:(NSString *)method arguments:(id _Nullable)arguments;
+- (void)invokeMethod:(NSString*)method arguments:(id _Nullable)arguments;
 
 /**
  Invokes the specified Flutter method with the specified arguments, expecting
@@ -247,7 +240,7 @@ FLUTTER_EXPORT
      the method called was not implemented on the Flutter side. Any other value,
      including `nil`, should be interpreted as successful results.
  */
-- (void)invokeMethod:(NSString *)method
+- (void)invokeMethod:(NSString*)method
            arguments:(id _Nullable)arguments
               result:(FlutterResult _Nullable)callback;
 
@@ -289,7 +282,7 @@ FLUTTER_EXPORT
      successful events.
  - Returns: A FlutterError instance, if setup fails.
  */
-- (FlutterError *_Nullable)onListenWithArguments:(id _Nullable)arguments
+- (FlutterError* _Nullable)onListenWithArguments:(id _Nullable)arguments
                                        eventSink:(FlutterEventSink)events;
 
 /**
@@ -301,14 +294,14 @@ FLUTTER_EXPORT
  - Parameter arguments: Arguments for the stream.
  - Returns: A FlutterError instance, if teardown fails.
  */
-- (FlutterError *_Nullable)onCancelWithArguments:(id _Nullable)arguments;
+- (FlutterError* _Nullable)onCancelWithArguments:(id _Nullable)arguments;
 @end
 
 /**
  A constant used with `FlutterEventChannel` to indicate end of stream.
  */
 FLUTTER_EXPORT
-extern NSObject const *FlutterEndOfEventStream;
+extern NSObject const* FlutterEndOfEventStream;
 
 /**
  A channel for communicating with the Flutter side using event streams.
@@ -332,9 +325,8 @@ FLUTTER_EXPORT
    - messenger: The binary messenger.
    - codec: The method codec.
  */
-+ (instancetype)eventChannelWithName:(NSString *)name
-                     binaryMessenger:
-                         (NSObject<FlutterBinaryMessenger> *)messenger;
++ (instancetype)eventChannelWithName:(NSString*)name
+                     binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger;
 
 /**
  Creates a `FlutterEventChannel` with the specified name, binary messenger,
@@ -351,10 +343,9 @@ FLUTTER_EXPORT
    - messenger: The binary messenger.
    - codec: The method codec.
  */
-+ (instancetype)eventChannelWithName:(NSString *)name
-                     binaryMessenger:
-                         (NSObject<FlutterBinaryMessenger> *)messenger
-                               codec:(NSObject<FlutterMethodCodec> *)codec;
++ (instancetype)eventChannelWithName:(NSString*)name
+                     binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                               codec:(NSObject<FlutterMethodCodec>*)codec;
 
 /**
  Initializes a `FlutterEventChannel` with the specified name, binary messenger,
@@ -371,9 +362,9 @@ FLUTTER_EXPORT
    - messenger: The binary messenger.
    - codec: The method codec.
  */
-- (instancetype)initWithName:(NSString *)name
-             binaryMessenger:(NSObject<FlutterBinaryMessenger> *)messenger
-                       codec:(NSObject<FlutterMethodCodec> *)codec;
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMethodCodec>*)codec;
 /**
  Registers a handler for stream setup requests from the Flutter side.
 
@@ -382,8 +373,8 @@ FLUTTER_EXPORT
 
  - Parameter handler: The stream handler.
  */
-- (void)setStreamHandler:(NSObject<FlutterStreamHandler> *_Nullable)handler;
+- (void)setStreamHandler:(NSObject<FlutterStreamHandler>* _Nullable)handler;
 @end
 NS_ASSUME_NONNULL_END
 
-#endif // FLUTTER_FLUTTERCHANNELS_H_
+#endif  // FLUTTER_FLUTTERCHANNELS_H_
