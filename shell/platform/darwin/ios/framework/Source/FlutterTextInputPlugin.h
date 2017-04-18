@@ -11,8 +11,8 @@
 @interface FlutterTextInputPlugin : NSObject
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
--(void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result;
 
 @end
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
+#endif // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

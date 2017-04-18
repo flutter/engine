@@ -13,35 +13,37 @@ namespace {
 
 constexpr char kTextPlainFormat[] = "text/plain";
 
-NSString* GetDirectoryOfType(NSSearchPathDirectory dir) {
-  NSArray* paths = NSSearchPathForDirectoriesInDomains(dir, NSUserDomainMask, YES);
+NSString *GetDirectoryOfType(NSSearchPathDirectory dir) {
+  NSArray *paths =
+      NSSearchPathForDirectoriesInDomains(dir, NSUserDomainMask, YES);
   if (paths.count == 0)
     return nil;
   return paths.firstObject;
 }
 
-}  // namespaces
+} // namespaces
 
 namespace shell {
 
 // TODO(abarth): Move these definitions from system_chrome_impl.cc to here.
-const char* const kOrientationUpdateNotificationName =
+const char *const kOrientationUpdateNotificationName =
     "io.flutter.plugin.platform.SystemChromeOrientationNotificationName";
-const char* const kOrientationUpdateNotificationKey =
+const char *const kOrientationUpdateNotificationKey =
     "io.flutter.plugin.platform.SystemChromeOrientationNotificationKey";
-const char* const kOverlayStyleUpdateNotificationName =
+const char *const kOverlayStyleUpdateNotificationName =
     "io.flutter.plugin.platform.SystemChromeOverlayNotificationName";
-const char* const kOverlayStyleUpdateNotificationKey =
+const char *const kOverlayStyleUpdateNotificationKey =
     "io.flutter.plugin.platform.SystemChromeOverlayNotificationKey";
 
-}  // namespace shell
+} // namespace shell
 
 using namespace shell;
 
 @implementation FlutterPlatformPlugin
 
-- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-  NSString* method = call.method;
+- (void)handleMethodCall:(FlutterMethodCall *)call
+                  result:(FlutterResult)result {
+  NSString *method = call.method;
   id args = call.arguments;
   if ([method isEqualToString:@"SystemSound.play"]) {
     [self playSystemSound:args];
@@ -52,13 +54,16 @@ using namespace shell;
   } else if ([method isEqualToString:@"UrlLauncher.launch"]) {
     [self launchURL:args];
     result(nil);
-  } else if ([method isEqualToString:@"SystemChrome.setPreferredOrientations"]) {
+  } else if ([method
+                 isEqualToString:@"SystemChrome.setPreferredOrientations"]) {
     [self setSystemChromePreferredOrientations:args];
     result(nil);
-  } else if ([method isEqualToString:@"SystemChrome.setApplicationSwitcherDescription"]) {
+  } else if ([method isEqualToString:
+                         @"SystemChrome.setApplicationSwitcherDescription"]) {
     [self setSystemChromeApplicationSwitcherDescription:args];
     result(nil);
-  } else if ([method isEqualToString:@"SystemChrome.setEnabledSystemUIOverlays"]) {
+  } else if ([method
+                 isEqualToString:@"SystemChrome.setEnabledSystemUIOverlays"]) {
     [self setSystemChromeEnabledSystemUIOverlays:args];
     result(nil);
   } else if ([method isEqualToString:@"SystemChrome.setSystemUIOverlayStyle"]) {
@@ -74,14 +79,15 @@ using namespace shell;
     result(nil);
   } else if ([method isEqualToString:@"PathProvider.getTemporaryDirectory"]) {
     result([self getPathProviderTemporaryDirectory]);
-  } else if ([method isEqualToString:@"PathProvider.getApplicationDocumentsDirectory"]) {
+  } else if ([method isEqualToString:
+                         @"PathProvider.getApplicationDocumentsDirectory"]) {
     result([self getPathProviderApplicationDocumentsDirectory]);
   } else {
     result(FlutterMethodNotImplemented);
   }
 }
 
-- (void)playSystemSound:(NSString*)soundType {
+- (void)playSystemSound:(NSString *)soundType {
   if ([soundType isEqualToString:@"SystemSoundType.click"]) {
     // All feedback types are specific to Android and are treated as equal on
     // iOS. The surface must (and does) adopt the UIInputViewAudioFeedback
@@ -94,45 +100,47 @@ using namespace shell;
   AudioServicesPlayAlertSound(kSystemSoundID_Vibrate);
 }
 
-- (NSDictionary*)launchURL:(NSString*)urlString {
-  NSURL* url = [NSURL URLWithString:urlString];
-  UIApplication* application = [UIApplication sharedApplication];
+- (NSDictionary *)launchURL:(NSString *)urlString {
+  NSURL *url = [NSURL URLWithString:urlString];
+  UIApplication *application = [UIApplication sharedApplication];
   bool success = [application canOpenURL:url] && [application openURL:url];
   return @{ @"succes" : @(success) };
 }
 
-- (void)setSystemChromePreferredOrientations:(NSArray*)orientations {
+- (void)setSystemChromePreferredOrientations:(NSArray *)orientations {
   UIInterfaceOrientationMask mask = 0;
 
   if (orientations.count == 0) {
     mask |= UIInterfaceOrientationMaskAll;
   } else {
-    for (NSString* orientation in orientations) {
+    for (NSString *orientation in orientations) {
       if ([orientation isEqualToString:@"DeviceOrientation.portraitUp"])
         mask |= UIInterfaceOrientationMaskPortrait;
       else if ([orientation isEqualToString:@"DeviceOrientation.portraitDown"])
         mask |= UIInterfaceOrientationMaskPortraitUpsideDown;
       else if ([orientation isEqualToString:@"DeviceOrientation.landscapeLeft"])
         mask |= UIInterfaceOrientationMaskLandscapeLeft;
-      else if ([orientation isEqualToString:@"DeviceOrientation.landscapeRight"])
+      else if ([orientation
+                   isEqualToString:@"DeviceOrientation.landscapeRight"])
         mask |= UIInterfaceOrientationMaskLandscapeRight;
     }
   }
 
   if (!mask)
     return;
-  [[NSNotificationCenter defaultCenter] postNotificationName:@(kOrientationUpdateNotificationName)
-                                                      object:nil
-                                                    userInfo:@{
-                                                      @(kOrientationUpdateNotificationKey) : @(mask)
-                                                    }];
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:@(kOrientationUpdateNotificationName)
+                    object:nil
+                  userInfo:@{
+                    @(kOrientationUpdateNotificationKey) : @(mask)
+                  }];
 }
 
-- (void)setSystemChromeApplicationSwitcherDescription:(NSDictionary*)object {
+- (void)setSystemChromeApplicationSwitcherDescription:(NSDictionary *)object {
   // No counterpart on iOS but is a benign operation. So no asserts.
 }
 
-- (void)setSystemChromeEnabledSystemUIOverlays:(NSArray*)overlays {
+- (void)setSystemChromeEnabledSystemUIOverlays:(NSArray *)overlays {
   // Checks if the top status bar should be visible. This platform ignores all
   // other overlays
 
@@ -143,7 +151,7 @@ using namespace shell;
       ![overlays containsObject:@"SystemUiOverlay.top"];
 }
 
-- (void)setSystemChromeSystemUIOverlayStyle:(NSString*)style {
+- (void)setSystemChromeSystemUIOverlayStyle:(NSString *)style {
   UIStatusBarStyle statusBarStyle;
   if ([style isEqualToString:@"SystemUiOverlayStyle.light"])
     statusBarStyle = UIStatusBarStyleLightContent;
@@ -152,9 +160,10 @@ using namespace shell;
   else
     return;
 
-  NSNumber* infoValue = [[NSBundle mainBundle]
+  NSNumber *infoValue = [[NSBundle mainBundle]
       objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"];
-  Boolean delegateToViewController = (infoValue == nil || [infoValue boolValue]);
+  Boolean delegateToViewController =
+      (infoValue == nil || [infoValue boolValue]);
 
   if (delegateToViewController) {
     // This notification is respected by the iOS embedder
@@ -175,23 +184,23 @@ using namespace shell;
   // Apple's human user guidelines say not to terminate iOS applications.
 }
 
-- (NSDictionary*)getClipboardData:(NSString*)format {
-  UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
+- (NSDictionary *)getClipboardData:(NSString *)format {
+  UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
   if (!format || [format isEqualToString:@(kTextPlainFormat)])
     return @{ @"text" : pasteboard.string };
   return nil;
 }
 
-- (void)setClipboardData:(NSDictionary*)data {
-  UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
+- (void)setClipboardData:(NSDictionary *)data {
+  UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
   pasteboard.string = data[@"text"];
 }
 
-- (NSString*)getPathProviderTemporaryDirectory {
+- (NSString *)getPathProviderTemporaryDirectory {
   return GetDirectoryOfType(NSCachesDirectory);
 }
 
-- (NSString*)getPathProviderApplicationDocumentsDirectory {
+- (NSString *)getPathProviderApplicationDocumentsDirectory {
   return GetDirectoryOfType(NSDocumentDirectory);
 }
 
