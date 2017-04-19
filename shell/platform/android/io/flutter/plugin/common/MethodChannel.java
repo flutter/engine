@@ -194,6 +194,7 @@ public final class MethodChannel {
             try {
                 call = codec.decodeMethodCall(message);
             } catch (RuntimeException e) {
+                Log.e(TAG + name, "Failed to decode method call", e);
                 reply.reply(codec.encodeErrorEnvelope("decode", e.getMessage(), null));
                 return;
             }

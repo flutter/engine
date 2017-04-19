@@ -166,7 +166,7 @@ public final class EventChannel {
                     reply.reply(null);
                 }
             } catch (RuntimeException e) {
-                Log.e(TAG + name, "Failed to encode event stream lifecycle call", e);
+                Log.e(TAG + name, "Failed to decode event stream lifecycle call", e);
                 reply.reply(codec.encodeErrorEnvelope("decode", e.getMessage(), null));
             }
         }
