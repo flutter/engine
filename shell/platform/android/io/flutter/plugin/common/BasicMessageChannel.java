@@ -63,8 +63,7 @@ public final class BasicMessageChannel<T> {
     /**
      * Sends the specified message to the Flutter application, optionally expecting a reply.
      *
-     * <p>Any uncaught exception thrown by the reply callback will be caught by the framework
-     * and logged.</p>
+     * <p>Any uncaught exception thrown by the reply callback will be caught and logged.</p>
      *
      * @param message the message, possibly null.
      * @param callback a {@link Reply} callback, possibly null.
@@ -102,8 +101,8 @@ public final class BasicMessageChannel<T> {
          * message decoding, will be caught by the channel implementation and logged, and a null reply
          * message will be sent back to Flutter.</p>
          *
-         * <p>Exceptions thrown during encoding a reply message submitted to the {@link Reply} are
-         * treated similarly: the exception is logged, and a null reply is sent to Flutter.</p>
+         * <p>Any uncaught exception thrown during encoding a reply message submitted to the {@link Reply}
+         * is treated similarly: the exception is logged, and a null reply is sent to Flutter.</p>
          *
          * @param message the message, possibly null.
          * @param reply a {@link Reply} for sending a single message reply back to Flutter.
