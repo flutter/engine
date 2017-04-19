@@ -6,7 +6,6 @@ package io.flutter.plugin.common;
 
 import android.util.Log;
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
@@ -74,9 +73,13 @@ public final class BasicMessageChannel<T> {
     }
 
     /**
-     * Registers a message handler on this channel.
+     * Registers a message handler on this channel for receiving messages sent from the Flutter
+     * application.
      *
-     * <p>Overrides any existing handler registration (for messages, method calls, or streams).
+     * <p>Overrides any existing handler registration for (the name of) this channel.</p>
+     *
+     * <p>If no handler has been registered, any incoming message on this channel will be handled silently
+     * by sending a null reply.</p>
      *
      * @param handler a {@link MessageHandler}, or null to deregister.
      */
@@ -152,13 +155,8 @@ public final class BasicMessageChannel<T> {
         public void onMessage(ByteBuffer message, final BinaryReply callback) {
             try {
                 handler.onMessage(codec.decodeMessage(message), new Reply<T>() {
-                    private final AtomicBoolean done = new AtomicBoolean(false);
-
                     @Override
                     public void reply(T reply) {
-                        if (done.getAndSet(true)) {
-                            throw new IllegalStateException("Message reply already provided");
-                        }
                         try {
                             callback.reply(codec.encodeMessage(reply));
                         } catch (RuntimeException e) {
