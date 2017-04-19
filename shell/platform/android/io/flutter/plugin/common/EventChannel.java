@@ -93,11 +93,11 @@ public final class EventChannel {
          *
          * <p>Any uncaught exception thrown by this method, or the preceding arguments
          * decoding, will be caught by the channel implementation and logged. An error result
-         * message will be sent back to Flutter, typically resulting in an empty Dart stream.</p>
+         * message will be sent back to Flutter.</p>
          *
          * <p>Any uncaught exception thrown during encoding an event or error submitted to the
          * {@link EventSink} is treated similarly: the exception is logged, and an error event
-         * is sent to Flutter. The stream remains active.</p>
+         * is sent to Flutter.</p>
          *
          * @param arguments stream configuration arguments, possibly null.
          * @param events an {@link EventSink} for emitting events to the Flutter receiver.
@@ -109,7 +109,7 @@ public final class EventChannel {
          *
          * <p>Any uncaught exception thrown by this method, or the preceding arguments
          * decoding, will be caught by the channel implementation and logged. An error result
-         * message will be sent back to Flutter, where the Dart stream is terminated.</p>
+         * result message will be sent back to Flutter.</p>
          *
          * @param arguments stream configuration arguments, possibly null.
          */

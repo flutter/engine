@@ -608,7 +608,7 @@ public class FlutterView extends SurfaceView
                 final ByteBuffer buffer = (message == null ? null : ByteBuffer.wrap(message));
                 handler.onMessage(buffer,
                     new BinaryReply() {
-                        private final AtomicBoolean done = new AtomicBoolean(true);
+                        private final AtomicBoolean done = new AtomicBoolean(false);
                         @Override
                         public void reply(ByteBuffer reply) {
                             if (done.getAndSet(true)) {
