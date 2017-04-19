@@ -7,7 +7,7 @@
 #include "lib/ftl/logging.h"
 
 @implementation FlutterAppDelegate {
-  UIBackgroundTaskIdentifier debugBackgroundTask;
+  UIBackgroundTaskIdentifier _debugBackgroundTask;
 }
 
 // Returns the key window's rootViewController, if it's a FlutterViewController.
@@ -29,27 +29,25 @@
   }
 }
 
-- (void)applicationDidEnterBackground:(UIApplication *)application {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+- (void)applicationDidEnterBackground:(UIApplication *)application {
   // The following keeps the Flutter session alive when the device screen locks
   // in debug mode. It allows continued use of features like hot reload and 
   // taking screenshots once the device unlocks again.
   //
   // Note the name is not an identifier and multiple instances can exist. 
-  debugBackgroundTask = [application beginBackgroundTaskWithName:@"Flutter debug task"
-                                               expirationHandler:^{
-      FTL_DLOG(WARNING) << "\nThe OS has terminated the Flutter debug connection for being "
-                           "inactive in the background for too long.\n\n"
-                           "There are no errors with your Flutter application.\n\n"
-                           "To reconnect, launch your application again via 'flutter run";
+  _debugBackgroundTask = [application beginBackgroundTaskWithName:@"Flutter debug task"
+                                                expirationHandler:^{
+      FTL_LOG(WARNING) << "\nThe OS has terminated the Flutter debug connection for being "
+                          "inactive in the background for too long.\n\n"
+                          "There are no errors with your Flutter application.\n\n"
+                          "To reconnect, launch your application again via 'flutter run";
       }];
-#endif
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  [application endBackgroundTask: debugBackgroundTask];
-#endif
+  [application endBackgroundTask: _debugBackgroundTask];
 }
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
 @end
