@@ -11,7 +11,7 @@ import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 
 /**
- * A named channel for communicating with the Flutter application using semi-structured messages.
+ * A named channel for communicating with the Flutter application using basic, asynchronous message passing.
  *
  * <p>Messages are encoded into binary before being sent, and binary messages received are decoded
  * into Java objects. The {@link MessageCodec} used must be compatible with the
@@ -19,9 +19,6 @@ import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
  * <a href="https://docs.flutter.io/flutter/services/BasicMessageChannel-class.html">BasicMessageChannel</a>
  * counterpart of this channel on the Dart side. The static Java type of messages sent and received
  * is {@code Object}, but only values supported by the specified {@link MessageCodec} can be used.</p>
- *
- * <p>The channel supports basic message send/receive operations, with message replies. All communication
- * is asynchronous.</p>
  *
  * <p>The logical identity of the channel is given by its name. Identically named channels will interfere
  * with each other's communication.</p>
@@ -100,9 +97,9 @@ public final class BasicMessageChannel<T> {
          * message to the given {@link Reply}. Failure to do so will result in lingering Flutter reply
          * handlers. The reply may be submitted asynchronously.</p>
          *
-         * <p>Any uncaught exception thrown by {@link #onMessage(Object, Reply)}, or the preceding
-         * message decoding, will be caught by the channel implementation and logged, and a null reply
-         * message will be sent back to Flutter.</p>
+         * <p>Any uncaught exception thrown by this method, or the preceding message decoding, will be
+         * caught by the channel implementation and logged, and a null reply message will be sent back
+         * to Flutter.</p>
          *
          * <p>Any uncaught exception thrown during encoding a reply message submitted to the {@link Reply}
          * is treated similarly: the exception is logged, and a null reply is sent to Flutter.</p>
