@@ -76,32 +76,39 @@ void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface) {
 
 void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
                                  ftl::Closure caller_continuation) {
-  ftl::AutoResetWaitableEvent latch;
-
-  auto ui_continuation = ftl::MakeCopyable([
-    this,                          //
-    surface = std::move(surface),  //
-    caller_continuation,           //
-    &latch
+  ftl::AutoResetWaitableEvent gpu_latch;
+  sk_sp<GrContext> rasterizer_grcontext;
+  auto gpu_continuation = ftl::MakeCopyable([
+    this,
+    surface = std::move(surface),
+    caller_continuation,
+    &gpu_latch,
+    &rasterizer_grcontext
   ]() mutable {
-    auto gpu_continuation = ftl::MakeCopyable([
-      this,                          //
-      surface = std::move(surface),  //
-      caller_continuation,           //
-      &latch
-    ]() mutable {
-      // Runs on the GPU Thread. So does the Caller Continuation.
-      surface->Setup();
-      rasterizer_->Setup(std::move(surface), caller_continuation, &latch);
-    });
+    // Runs on the GPU Thread. So does the Caller Continuation.
+    surface->Setup();
+    rasterizer_grcontext = sk_ref_sp(surface->GetContext());
+    rasterizer_->Setup(std::move(surface), caller_continuation, &gpu_latch);
+  });
+
+  // Runs on the Platform Thread.
+  blink::Threads::Gpu()->PostTask(gpu_continuation);
+  gpu_latch.Wait();
+
+  ftl::AutoResetWaitableEvent ui_latch;
+  auto ui_continuation = ftl::MakeCopyable([
+    this,
+    &ui_latch,
+    rasterizer_grcontext = std::move(rasterizer_grcontext)
+  ]() mutable {
     // Runs on the UI Thread.
-    engine_->OnOutputSurfaceCreated(std::move(gpu_continuation));
+    engine_->OnOutputSurfaceCreated(std::move(rasterizer_grcontext));
+    ui_latch.Signal();
   });
 
   // Runs on the Platform Thread.
   blink::Threads::UI()->PostTask(std::move(ui_continuation));
-
-  latch.Wait();
+  ui_latch.Wait();
 }
 
 void PlatformView::NotifyDestroyed() {

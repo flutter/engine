@@ -61,7 +61,7 @@ class Engine : public blink::RuntimeDelegate {
   tonic::DartErrorHandleType GetUIIsolateLastError();
   tonic::DartErrorHandleType GetLoadScriptError();
 
-  void OnOutputSurfaceCreated(const ftl::Closure& gpu_continuation);
+  void OnOutputSurfaceCreated(sk_sp<GrContext> rasterizer_grcontext);
   void OnOutputSurfaceDestroyed(const ftl::Closure& gpu_continuation);
   void SetViewportMetrics(const blink::ViewportMetrics& metrics);
   void DispatchPlatformMessage(ftl::RefPtr<blink::PlatformMessage> message);

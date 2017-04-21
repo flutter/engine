@@ -7,6 +7,7 @@
 #include "flutter/lib/ui/window/window.h"
 #include "flutter/sky/engine/platform/fonts/FontSelector.h"
 #include "lib/tonic/converter/dart_converter.h"
+#include "third_party/skia/include/gpu/GrContext.h"
 
 using tonic::ToDart;
 
@@ -52,6 +53,14 @@ void UIDartState::set_font_selector(PassRefPtr<FontSelector> selector) {
 
 PassRefPtr<FontSelector> UIDartState::font_selector() {
   return font_selector_;
+}
+
+void UIDartState::set_rasterizer_grcontext(sk_sp<GrContext> context) {
+  rasterizer_grcontext_ = std::move(context);
+}
+
+sk_sp<GrContext> UIDartState::rasterizer_grcontext() {
+  return rasterizer_grcontext_;
 }
 
 }  // namespace blink

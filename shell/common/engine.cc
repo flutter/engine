@@ -275,8 +275,9 @@ tonic::DartErrorHandleType Engine::GetLoadScriptError() {
   return load_script_error_;
 }
 
-void Engine::OnOutputSurfaceCreated(const ftl::Closure& gpu_continuation) {
-  blink::Threads::Gpu()->PostTask(gpu_continuation);
+void Engine::OnOutputSurfaceCreated(sk_sp<GrContext> rasterizer_grcontext) {
+  runtime_->dart_controller()->dart_state()->set_rasterizer_grcontext(
+      std::move(rasterizer_grcontext));
   have_surface_ = true;
   StartAnimatorIfPossible();
   if (runtime_)
@@ -284,6 +285,7 @@ void Engine::OnOutputSurfaceCreated(const ftl::Closure& gpu_continuation) {
 }
 
 void Engine::OnOutputSurfaceDestroyed(const ftl::Closure& gpu_continuation) {
+  runtime_->dart_controller()->dart_state()->set_rasterizer_grcontext(nullptr);
   have_surface_ = false;
   StopAnimator();
   blink::Threads::Gpu()->PostTask(gpu_continuation);
