@@ -20,7 +20,7 @@ RESULTS=`dartanalyzer                                                          \
   | grep -Ev "Unused import.+ui\.dart"                                         \
   | grep -v "TODO"                                                             \
   | grep -Ev "[0-9]+ errors.*found\."                                          \
-  | grep -v "Analyzing \[out/host_debug_unopt/gen/sky/bindings/dart_ui/ui\.dart\]\.\.\."`
+  | grep -v "Analyzing.+out/host_debug_unopt/gen/sky/bindings/dart_ui/ui\.dart"`
 
 echo "$RESULTS"
 if [ -n "$RESULTS" ]; then
