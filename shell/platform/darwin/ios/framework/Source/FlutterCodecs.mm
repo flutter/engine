@@ -57,7 +57,17 @@
 - (NSData*)encode:(id)message {
   if (message == nil)
     return nil;
-  NSData* encoding = [NSJSONSerialization dataWithJSONObject:message options:0 error:nil];
+  NSData* encoding;
+  if ([message isKindOfClass:[NSArray class]] || [message isKindOfClass:[NSDictionary class]]) {
+    encoding = [NSJSONSerialization dataWithJSONObject:message options:0 error:nil];
+  } else {
+    // NSJSONSerialization does not support top-level simple values.
+    // We encode as singleton array, then extract the relevant bytes.
+    encoding = [NSJSONSerialization dataWithJSONObject:@[message] options:0 error:nil];
+    if (encoding) {
+      encoding = [encoding subdataWithRange:NSMakeRange(1, encoding.length - 2)];
+    }
+  }
   NSAssert(encoding, @"Invalid JSON message, encoding failed");
   return encoding;
 }
@@ -65,9 +75,25 @@
 - (id)decode:(NSData*)message {
   if (message == nil)
     return nil;
-  id decoded = [NSJSONSerialization JSONObjectWithData:message options:0 error:nil];
+  BOOL isSimpleValue = NO;
+  id decoded = nil;
+  if (0 < message.length) {
+    UInt8 first;
+    [message getBytes:&first length:1];
+    isSimpleValue = first != '{' && first != '[';
+    if (isSimpleValue) {
+      UInt8 begin = '[';
+      UInt8 end = ']';
+      NSMutableData* expandedMessage = [NSMutableData dataWithLength:message.length + 2];
+      [expandedMessage replaceBytesInRange:NSMakeRange(0, 1) withBytes:&begin];
+      [expandedMessage replaceBytesInRange:NSMakeRange(1, message.length) withBytes:message.bytes];
+      [expandedMessage replaceBytesInRange:NSMakeRange(message.length + 1, 1) withBytes:&end];
+      message = expandedMessage;
+    }
+    decoded = [NSJSONSerialization JSONObjectWithData:message options:0 error:nil];
+  }
   NSAssert(decoded, @"Invalid JSON message, decoding failed");
-  return decoded;
+  return isSimpleValue ? ((NSArray*) decoded)[0] : decoded;
 }
 @end
 
