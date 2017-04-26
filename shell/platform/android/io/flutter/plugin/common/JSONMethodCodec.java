@@ -36,7 +36,7 @@ public final class JSONMethodCodec implements MethodCodec {
             if (json instanceof JSONObject) {
                 final JSONObject map = (JSONObject) json;
                 final Object method = map.get("method");
-                final Object arguments = map.get("args");
+                final Object arguments = unwrap(map.opt("args"));
                 if (method instanceof String) {
                     return new MethodCall((String) method, arguments);
                 }
@@ -73,16 +73,20 @@ public final class JSONMethodCodec implements MethodCodec {
                 }
                 if (array.length() == 3) {
                     final Object code = array.get(0);
-                    final Object message = array.get(1);
-                    final Object details = array.get(2);
+                    final Object message = unwrap(array.opt(1));
+                    final Object details = unwrap(array.opt(2));
                     if (code instanceof String && (message == null || message instanceof String)) {
                         throw new FlutterException((String) code, (String) message, details);
                     }
                 }
             }
-            throw new IllegalArgumentException("Invalid method call: " + json);
+            throw new IllegalArgumentException("Invalid envelope: " + json);
         } catch (JSONException e) {
             throw new IllegalArgumentException("Invalid JSON", e);
         }
+    }
+
+    Object unwrap(Object value) {
+      return (value == JSONObject.NULL) ? null : value;
     }
 }

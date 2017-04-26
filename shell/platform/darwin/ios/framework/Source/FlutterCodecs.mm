@@ -109,7 +109,7 @@
 - (NSData*)encodeMethodCall:(FlutterMethodCall*)call {
   return [[FlutterJSONMessageCodec sharedInstance] encode:@{
     @"method" : call.method,
-    @"args" : (call.arguments == nil ? [NSNull null] : call.arguments),
+    @"args" : [self wrapNil:call.arguments],
   }];
 }
 
@@ -121,15 +121,15 @@
 - (NSData*)encodeErrorEnvelope:(FlutterError*)error {
   return [[FlutterJSONMessageCodec sharedInstance] encode:@[
     error.code,
-    error.message == nil ? [NSNull null] : error.message,
-    error.details == nil ? [NSNull null] : error.details,
+    [self wrapNil:error.message],
+    [self wrapNil:error.details],
   ]];
 }
 
 - (FlutterMethodCall*)decodeMethodCall:(NSData*)message {
   NSDictionary* dictionary = [[FlutterJSONMessageCodec sharedInstance] decode:message];
   id method = dictionary[@"method"];
-  id arguments = dictionary[@"args"];
+  id arguments = [self unwrapNil:dictionary[@"args"]];
   NSAssert([method isKindOfClass:[NSString class]], @"Invalid JSON method call");
   return [FlutterMethodCall methodCallWithMethodName:method arguments:arguments];
 }
@@ -137,10 +137,20 @@
 - (id)decodeEnvelope:(NSData*)envelope {
   NSArray* array = [[FlutterJSONMessageCodec sharedInstance] decode:envelope];
   if (array.count == 1)
-    return array[0];
+    return [self unwrapNil:array[0]];
   NSAssert(array.count == 3, @"Invalid JSON envelope");
-  NSAssert([array[0] isKindOfClass:[NSString class]], @"Invalid JSON envelope");
-  NSAssert(array[1] == nil || [array[1] isKindOfClass:[NSString class]], @"Invalid JSON envelope");
-  return [FlutterError errorWithCode:array[0] message:array[1] details:array[2]];
+  id code = array[0];
+  id message = [self unwrapNil:array[1]];
+  id details = [self unwrapNil:array[2]];
+  NSAssert([code isKindOfClass:[NSString class]], @"Invalid JSON envelope");
+  NSAssert(message == nil || [message isKindOfClass:[NSString class]], @"Invalid JSON envelope");
+  return [FlutterError errorWithCode:code message:message details:details];
+}
+
+- (id)wrapNil:(id)value {
+  return value == nil ? [NSNull null] : value;
+}
+- (id)unwrapNil:(id)value {
+  return value == [NSNull null] ? nil : value;
 }
 @end
