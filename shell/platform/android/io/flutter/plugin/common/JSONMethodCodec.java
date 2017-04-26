@@ -36,7 +36,7 @@ public final class JSONMethodCodec implements MethodCodec {
             if (json instanceof JSONObject) {
                 final JSONObject map = (JSONObject) json;
                 final Object method = map.get("method");
-                final Object arguments = unwrap(map.opt("args"));
+                final Object arguments = unwrapNull(map.opt("args"));
                 if (method instanceof String) {
                     return new MethodCall((String) method, arguments);
                 }
@@ -58,7 +58,7 @@ public final class JSONMethodCodec implements MethodCodec {
         Object errorDetails) {
         return JSONMessageCodec.INSTANCE.encodeMessage(new JSONArray()
             .put(errorCode)
-            .put(errorMessage)
+            .put(JSONUtil.wrap(errorMessage))
             .put(JSONUtil.wrap(errorDetails)));
     }
 
@@ -69,12 +69,12 @@ public final class JSONMethodCodec implements MethodCodec {
             if (json instanceof JSONArray) {
                 final JSONArray array = (JSONArray) json;
                 if (array.length() == 1) {
-                    return array.get(0);
+                    return unwrapNull(array.opt(0));
                 }
                 if (array.length() == 3) {
                     final Object code = array.get(0);
-                    final Object message = unwrap(array.opt(1));
-                    final Object details = unwrap(array.opt(2));
+                    final Object message = unwrapNull(array.opt(1));
+                    final Object details = unwrapNull(array.opt(2));
                     if (code instanceof String && (message == null || message instanceof String)) {
                         throw new FlutterException((String) code, (String) message, details);
                     }
@@ -86,7 +86,7 @@ public final class JSONMethodCodec implements MethodCodec {
         }
     }
 
-    Object unwrap(Object value) {
+    Object unwrapNull(Object value) {
       return (value == JSONObject.NULL) ? null : value;
     }
 }

@@ -82,6 +82,9 @@
     [message getBytes:&first length:1];
     isSimpleValue = first != '{' && first != '[';
     if (isSimpleValue) {
+      // NSJSONSerialization does not support top-level simple values.
+      // We expand encoding to singleton array, then decode that and extract
+      // the single entry.
       UInt8 begin = '[';
       UInt8 end = ']';
       NSMutableData* expandedMessage = [NSMutableData dataWithLength:message.length + 2];
@@ -114,8 +117,7 @@
 }
 
 - (NSData*)encodeSuccessEnvelope:(id)result {
-  return
-      [[FlutterJSONMessageCodec sharedInstance] encode:@[ result == nil ? [NSNull null] : result ]];
+  return [[FlutterJSONMessageCodec sharedInstance] encode:@[[self wrapNil:result]]];
 }
 
 - (NSData*)encodeErrorEnvelope:(FlutterError*)error {
