@@ -71,6 +71,10 @@ FLUTTER_EXPORT
 
  Supports values accepted by `NSJSONSerialization` plus top-level
  `nil`, `NSNumber`, and `NSString`.
+
+ On the Dart side, JSON messages are handled by the JSON facilities of the
+ [`dart:convert`](https://api.dartlang.org/stable/dart-convert/JSON-constant.html)
+ package.
  */
 FLUTTER_EXPORT
 @interface FlutterJSONMessageCodec : NSObject<FlutterMessageCodec>
@@ -95,7 +99,7 @@ FLUTTER_EXPORT
 
  On the Dart side, these values are represented as follows:
 
- - `nil`: `null`
+ - `nil` or `NSNull`: `null`
  - `NSNumber`: `bool`, `int`, or `double`, depending on the contained value.
  - `FlutterStandardBigInteger`: `int`
  - `NSString`: `String`
