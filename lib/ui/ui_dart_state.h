@@ -12,6 +12,9 @@
 #include "lib/ftl/build_config.h"
 #include "lib/tonic/dart_persistent_value.h"
 #include "lib/tonic/dart_state.h"
+#include "third_party/skia/include/core/SkRefCnt.h"
+
+class GrContext;
 
 namespace blink {
 class FontSelector;
@@ -42,6 +45,9 @@ class UIDartState : public tonic::DartState {
   void set_font_selector(PassRefPtr<FontSelector> selector);
   PassRefPtr<FontSelector> font_selector();
 
+  void set_rasterizer_grcontext(sk_sp<GrContext> context);
+  sk_sp<GrContext> rasterizer_grcontext();
+
  private:
   void DidSetIsolate() override;
 
@@ -50,6 +56,7 @@ class UIDartState : public tonic::DartState {
   std::string debug_name_;
   std::unique_ptr<Window> window_;
   RefPtr<FontSelector> font_selector_;
+  sk_sp<GrContext> rasterizer_grcontext_;
 };
 
 }  // namespace blink

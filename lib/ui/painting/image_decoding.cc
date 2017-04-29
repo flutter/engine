@@ -6,6 +6,7 @@
 
 #include "flutter/common/threads.h"
 #include "flutter/glue/trace_event.h"
+#include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/resource_context.h"
 #include "lib/ftl/build_config.h"
@@ -14,11 +15,9 @@
 #include "lib/tonic/dart_state.h"
 #include "lib/tonic/logging/dart_invoke.h"
 #include "lib/tonic/typed_data/uint8_list.h"
+#include "third_party/skia/include/core/SkCrossContextImageData.h"
 #include "third_party/skia/include/core/SkImageGenerator.h"
-
-#ifdef OS_ANDROID
-#include <GLES2/gl2.h>
-#endif
+#include "third_party/skia/include/gpu/GrContext.h"
 
 using tonic::DartInvoke;
 using tonic::DartPersistentValue;
@@ -26,33 +25,6 @@ using tonic::ToDart;
 
 namespace blink {
 namespace {
-
-sk_sp<SkImage> DecodeImage(sk_sp<SkData> buffer) {
-  TRACE_EVENT0("blink", "DecodeImage");
-
-  if (buffer == nullptr || buffer->isEmpty()) {
-    return nullptr;
-  }
-
-  auto raster_image = SkImage::MakeFromEncoded(std::move(buffer));
-
-  if (raster_image == nullptr) {
-    return nullptr;
-  }
-
-  if (auto context = ResourceContext::Get()) {
-    // TODO: Supply actual destination color space once available
-    if (auto texture_image =
-            raster_image->makeTextureImage(context, nullptr)) {
-#ifdef OS_ANDROID
-      glFlush();
-#endif
-      return texture_image;
-    }
-  }
-
-  return raster_image;
-}
 
 void InvokeImageCallback(sk_sp<SkImage> image,
                          std::unique_ptr<DartPersistentValue> callback) {
@@ -69,14 +41,47 @@ void InvokeImageCallback(sk_sp<SkImage> image,
   }
 }
 
-void DecodeImageAndInvokeImageCallback(
+void InvokeImageCallbackOnUIThread(
     std::unique_ptr<DartPersistentValue> callback,
-    sk_sp<SkData> buffer) {
-  sk_sp<SkImage> image = DecodeImage(std::move(buffer));
+    sk_sp<SkImage> image) {
   Threads::UI()->PostTask(
       ftl::MakeCopyable([ callback = std::move(callback), image ]() mutable {
         InvokeImageCallback(image, std::move(callback));
       }));
+}
+
+void DecodeImageAndInvokeImageCallback(
+    std::unique_ptr<DartPersistentValue> callback,
+    sk_sp<SkData> buffer,
+    sk_sp<GrContext> rasterizer_grcontext) {
+  if (buffer == nullptr || buffer->isEmpty()) {
+    InvokeImageCallbackOnUIThread(std::move(callback), nullptr);
+    return;
+  }
+
+  std::unique_ptr<SkCrossContextImageData> cross_context;
+  if (ResourceContext::Get() && rasterizer_grcontext) {
+    cross_context = SkCrossContextImageData::MakeFromEncoded(
+        ResourceContext::Get(), buffer, nullptr);
+  }
+
+  if (!cross_context) {
+    // Return a raster image if we are unable to create a texture backed image.
+    sk_sp<SkImage> image = SkImage::MakeFromEncoded(std::move(buffer));
+    InvokeImageCallbackOnUIThread(std::move(callback), std::move(image));
+    return;
+  }
+
+  Threads::Gpu()->PostTask(ftl::MakeCopyable([
+    callback = std::move(callback),
+    buffer = std::move(buffer),
+    cross_context = std::move(cross_context),
+    rasterizer_grcontext = std::move(rasterizer_grcontext)
+  ]() mutable {
+    sk_sp<SkImage> image = SkImage::MakeFromCrossContextImageData(
+        rasterizer_grcontext.get(), std::move(cross_context));
+    InvokeImageCallbackOnUIThread(std::move(callback), std::move(image));
+  }));
 }
 
 void DecodeImageFromList(Dart_NativeArguments args) {
@@ -97,12 +102,18 @@ void DecodeImageFromList(Dart_NativeArguments args) {
 
   auto buffer = SkData::MakeWithCopy(list.data(), list.num_elements());
 
+  sk_sp<GrContext> rasterizer_grcontext =
+      UIDartState::Current()->rasterizer_grcontext();
+
   Threads::IO()->PostTask(ftl::MakeCopyable([
     callback = std::make_unique<DartPersistentValue>(
         tonic::DartState::Current(), callback_handle),
-    buffer = std::move(buffer)
+    buffer = std::move(buffer),
+    rasterizer_grcontext = std::move(rasterizer_grcontext)
   ]() mutable {
-    DecodeImageAndInvokeImageCallback(std::move(callback), std::move(buffer));
+    DecodeImageAndInvokeImageCallback(std::move(callback),
+                                      std::move(buffer),
+                                      std::move(rasterizer_grcontext));
   }));
 }
 
