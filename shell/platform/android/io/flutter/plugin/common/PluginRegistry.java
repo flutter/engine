@@ -13,13 +13,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Registry used by plugins to register their interaction with Android APIs.
+ * Registry used by plugins to set up interaction with Android APIs.
  *
  * <p>Flutter applications by default include an auto-generated
- * PluginRegistry sub-class that overrides {@link #registerPlugins(PluginContext)}
+ * PluginRegistry subclass that overrides {@link #registerPlugins(PluginContext)}
  * with contributions from each plugin mentioned in the application's pubspec
- * file. Their main {@link Activity} is a {@link io.flutter.app.FlutterActivity}
- * constructed with that subclass.</p>
+ * file. An instance of the generated PluginRegistry is, again by default,
+ * proved as argument to the application's main {@link Activity} which is a
+ * {@link io.flutter.app.FlutterActivity} subclass.</p>
  */
 public class PluginRegistry {
     private final Map<String, Object> map = new LinkedHashMap<>(0);
@@ -28,9 +29,10 @@ public class PluginRegistry {
     private final List<NewIntentListener> newIntentListeners = new ArrayList<>(0);
 
     /**
-     * Registers the plugins of this registry by delegation to the #registerPlugins
-     * hook method. Plugins install components and uses the provided {@link Activity}
-     * and {@link BinaryMessenger} for Flutter/platform.
+     * Registers the plugins of this registry by delegation to the
+     * {@link #registerPlugins(PluginContext)} hook method. Plugins install
+     * components and uses the provided {@link Activity} and
+     * {@link BinaryMessenger} for Flutter/platform.
      *
      * <p>Intended to be called by the main {@link Activity}'s {@code onCreate}
      * method.
