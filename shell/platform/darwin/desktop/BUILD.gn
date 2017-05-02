@@ -7,6 +7,14 @@ assert(is_mac)
 source_set("mac_desktop_platform") {
   visibility = [ ":*" ]
 
+  cflags_objc = [
+    "-Wno-availability",
+    "-Wno-deprecated-declarations",
+    "-Wno-incompatible-property-type",
+    "-Wno-missing-method-return-type",
+    "-Wno-property-attribute-mismatch",
+  ]
+
   sources = [
     "flutter_app_delegate.h",
     "flutter_app_delegate.m",
