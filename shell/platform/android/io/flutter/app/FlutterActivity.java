@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.Window;
 import android.view.WindowManager;
+import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 import io.flutter.view.FlutterView;
@@ -18,9 +19,36 @@ import java.util.ArrayList;
 
 /**
  * Base class for activities that use Flutter.
+ *
+ * <p>Delegates to {@link PluginRegistry} for handling common lifecycle
+ * and notification callbacks.</p>
  */
 public class FlutterActivity extends Activity {
+    private final PluginRegistry pluginRegistry;
     private FlutterView flutterView;
+
+    /**
+     * Creates a FlutterActivity with no plugins.
+     */
+    public FlutterActivity() {
+        this(new PluginRegistry());
+    }
+
+    /**
+     * Creates a FlutterActivity delegating to the plugins of the specified
+     * {@link PluginRegistry}.
+     *
+     * <p>By default, Flutter applications to call this constructor with an
+     * auto-generated PluginRegistry subclass.</p>
+     */
+    public FlutterActivity(PluginRegistry pluginRegistry) {
+        assert(pluginRegistry != null);
+        this.pluginRegistry = pluginRegistry;
+    }
+
+    public PluginRegistry getPluginRegistry() {
+      return pluginRegistry;
+    }
 
     private String[] getArgsFromIntent(Intent intent) {
         // Before adding more entries to this list, consider that arbitrary
@@ -66,6 +94,8 @@ public class FlutterActivity extends Activity {
         setContentView(flutterView);
 
         onFlutterReady();
+
+        pluginRegistry.registerPlugins(this, flutterView);
     }
 
     /**
@@ -118,8 +148,20 @@ public class FlutterActivity extends Activity {
         }
     }
 
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        pluginRegistry.onRequestPermissionResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        pluginRegistry.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
     protected void onNewIntent(Intent intent) {
-        loadIntent(intent);
+        if (!loadIntent(intent)) {
+          pluginRegistry.onNewIntent(intent);
+        }
     }
 
     public boolean loadIntent(Intent intent) {
