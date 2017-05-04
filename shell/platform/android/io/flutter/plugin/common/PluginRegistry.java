@@ -7,195 +7,142 @@ package io.flutter.plugin.common;
 import android.app.Activity;
 import android.content.Intent;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * Registry used by plugins to set up interaction with Android APIs.
  *
- * <p>Flutter applications by default include an auto-generated
- * PluginRegistry subclass that overrides {@link #registerPlugins(PluginContext)}
- * with contributions from each plugin mentioned in the application's pubspec
- * file. An instance of the generated PluginRegistry is, again by default,
- * proved as argument to the application's main {@link Activity} which is a
- * {@link io.flutter.app.FlutterActivity} subclass.</p>
+ * <p>Flutter applications by default include an auto-generated and auto-updated
+ * plugin registrant class (GeneratedPluginRegistrant) that makes use of a
+ * {@link PluginRegistry} to register contributions from each plugin mentioned
+ * in the application's pubspec file. The generated registrant class is, again
+ * by default, called from the application's main {@link Activity}, which
+ * defaults to an instance of {@link io.flutter.app.FlutterActivity}, itself a
+ * {@link PluginRegistry}.</p>
  */
-public class PluginRegistry {
-    private final Map<String, Object> map = new LinkedHashMap<>(0);
-    private final List<RequestPermissionResultListener> requestPermissionResultListeners = new ArrayList<>(0);
-    private final List<ActivityResultListener> activityResultListeners = new ArrayList<>(0);
-    private final List<NewIntentListener> newIntentListeners = new ArrayList<>(0);
+public interface PluginRegistry {
+    /**
+     * Returns a {@link Registrar} for receiving the registrations pertaining
+     * to the specified plugin.
+     *
+     * @param pluginKey a unique String identifying the plugin; typically the
+     * fully qualified name of the plugin's main class.
+     */
+    Registrar registrarFor(String pluginKey);
 
     /**
-     * Registers the plugins of this registry by delegation to the
-     * {@link #registerPlugins(PluginContext)} hook method. Plugins install
-     * components and uses the provided {@link Activity} and
-     * {@link BinaryMessenger} for Flutter/platform.
+     * Returns whether the specified plugin is known to this registry.
      *
-     * <p>Intended to be called by the main {@link Activity}'s {@code onCreate}
-     * method.
+     * @param pluginKey a unique String identifying the plugin; typically the
+     * fully qualified name of the plugin's main class.
+     * @return true if this registry has handed out a registrar for the
+     * specified plugin.
      */
-    public final void registerPlugins(Activity activity, BinaryMessenger messenger) {
-      registerPlugins(new PluginContext(activity, messenger));
-    }
+    boolean hasPlugin(String pluginKey);
 
     /**
-     * Hook method for registering plugins. Subclasses are expected to call a
-     * static method on each plugin's main implementation class in turn,
-     * providing the {@link PluginContext} as argument.
+     * Returns the value published by the specified plugin, if any.
+     *
+     * <p>Plugins may publish a single value, such as an instance of the
+     * plugin's main class, for situations where external control or
+     * interaction is needed. Clients are expected to know the value's
+     * type.</p>
+     *
+     * @param pluginKey a unique String identifying the plugin; typically the
+     * fully qualified name of the plugin's main class.
+     * @return the published value, possibly null.
      */
-    protected void registerPlugins(PluginContext context) {
-    }
+    <T> T valuePublishedByPlugin(String pluginKey);
 
     /**
-     * Returns whether an entry for the specified key has been put.
+     * Receiver of registrations from a single plugin.
      */
-    public final boolean containsKey(String key) {
-      return map.containsKey(key);
-    }
+    interface Registrar {
+        /**
+         * Returns the {@link Activity} that forms the plugin's operating context.
+         */
+        Activity activity();
 
-    /**
-     * Returns the value associated to the specified key.
-     * <p>The static type of the value is determed by the call site.</p>
-     *
-     * @return the value, possibly null.
-     */
-    @SuppressWarnings("unchecked")
-    public final <T> T get(String key) {
-      return (T) map.get(key);
-    }
+        /**
+         * Returns a {@link BinaryMessenger} which the plugin can use for
+         * creating channels for communicating with the Dart side.
+         */
+        BinaryMessenger messenger();
 
-    /**
-     * Delegates handling of request permissions results to registered plugins.
-     *
-     * <p>Intended to be called by the application's main {@link Activity}.</a>
-     *
-     * @see {@link Activity#onRequestPermissionResult(int,String[],int[])}
-     */
-    public final void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
-      for (RequestPermissionResultListener listener: requestPermissionResultListeners) {
-        if (listener.onRequestPermissionResult(requestCode, permissions, grantResults)) {
-          break;
-        }
-      }
-    }
+        /**
+         * Publishes a value associated with the plugin being registered.
+         *
+         * <p>The published value is available to interested clients via
+         * {@link PluginRegistry#valuePublishedByPlugin(String)}.</p>
+         *
+         * <p>Publication should be done only when client code needs to interact
+         * with the plugin in a way that cannot be accomplished by the plugin
+         * registering callbacks with client APIs.</p>
+         *
+         * <p>Overwrites any previously published value.</p>
+         *
+         * @param value the value, possibly null.
+         * @return this {@link Registrar}.
+         */
+        Registrar publish(Object value);
 
-    /**
-     * Delegates handling of activity results to registered plugins.
-     *
-     * <p>Intended to be called by the application's main {@link Activity}.</a>
-     *
-     * @see {@link Activity#onActivityResult(int,int,Intent)}
-     */
-    public final void onActivityResult(int requestCode, int resultCode, Intent data) {
-      for (ActivityResultListener listener: activityResultListeners) {
-        if (listener.onActivityResult(requestCode, resultCode, data)) {
-          break;
-        }
-      }
-    }
+        /**
+         * Adds a callback allowing the plugin to take part in handling incoming
+         * calls to {@Activity#onRequestPermissionsResult(int, String[], int[])}
+         * or {android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
+         *
+         * @param listener a {@link RequestPermissionResultListener} callback.
+         * @return this {@link Registrar}.
+         */
+        Registrar addRequestPermissionResultListener(RequestPermissionResultListener listener);
 
-    /**
-     * Delegates handling of new intents to registered plugins.
-     *
-     * <p>Intended to be called by the application's main {@link Activity}.</a>
-     *
-     * @see {@link Activity#onNewIntent(Intent)}
-     */
-    public final void onNewIntent(Intent intent) {
-      for (NewIntentListener listener: newIntentListeners) {
-        if (listener.onNewIntent(intent)) {
-          break;
-        }
-      }
-    }
+        /**
+         * Adds a callback allowing the plugin to take part in handling incoming
+         * calls to {@Activity#onActivityResult(int, int, Intent)}.
+         *
+         * @param listener an {@link ActivityResultListener} callback.
+         * @return this {@link Registrar}.
+         */
+        Registrar addActivityResultListener(ActivityResultListener listener);
 
-    /**
-     * Context used by plugins when registering. Provides access to the
-     * application context (via {@link #activity()}), Flutter/Android messaging
-     * (via {@link #messenger()} and {@link #newMethodChannel(String)}), and
-     * allows plugins to register callbacks to activity lifecycle methods.
-     */
-    public final class PluginContext {
-      private final Activity activity;
-      private final BinaryMessenger messenger;
-
-      PluginContext(Activity activity, BinaryMessenger messenger) {
-        this.activity = activity;
-        this.messenger = messenger;
-      }
-
-      /**
-       * Registers a key and value for lookup by interested clients which are
-       * expected to know the type of value for a given key.
-       *
-       * <p>Plugins should prefix keys by inverted domain names to avoid clashes:
-       * {@code com.example.myplugin.SomeKey}.</p>
-       */
-      public final void put(String key, Object value) {
-        if (map.containsKey(key)) {
-          throw new IllegalArgumentException("Double registration of " + key);
-        }
-        map.put(key, value);
-      }
-
-      public void addRequestPermissionResultListener(RequestPermissionResultListener listener) {
-        requestPermissionResultListeners.add(listener);
-      }
-
-      public void addActivityResultListener(ActivityResultListener listener) {
-        activityResultListeners.add(listener);
-      }
-
-      public void addNewIntentListener(NewIntentListener listener) {
-        newIntentListeners.add(listener);
-      }
-
-      public Activity activity() {
-        return activity;
-      }
-
-      public BinaryMessenger messenger() {
-        return messenger;
-      }
-
-      public MethodChannel newMethodChannel(String name) {
-        return new MethodChannel(messenger, name);
-      }
+        /**
+         * Adds a callback allowing the plugin to take part in handling incoming
+         * calls to {@Activity#onNewIntent(Intent)}.
+         *
+         * @param listener a {@link NewIntentListener} callback.
+         * @return this {@link Registrar}.
+         */
+        Registrar addNewIntentListener(NewIntentListener listener);
     }
 
     /**
      * Delegate interface for handling results of permission requests on
-     * behalf of an {@link Activity}.
+     * behalf of the main {@link Activity}.
      */
-    public interface RequestPermissionResultListener {
-      /**
-       * @return true if the result has been handled.
-       */
-      boolean onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults);
+    interface RequestPermissionResultListener {
+        /**
+         * @return true if the result has been handled.
+         */
+        boolean onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults);
     }
 
     /**
-     * Delegate interface for handling activity results on behalf of an
+     * Delegate interface for handling activity results on behalf of the main
      * {@link Activity}.
      */
-    public interface ActivityResultListener {
-      /**
-       * @return true if the result has been handled.
-       */
-      boolean onActivityResult(int requestCode, int resultCode, Intent data);
+    interface ActivityResultListener {
+        /**
+         * @return true if the result has been handled.
+         */
+        boolean onActivityResult(int requestCode, int resultCode, Intent data);
     }
 
     /**
-     * Delegate interface for handling new intents on behalf of an
+     * Delegate interface for handling new intents on behalf of the main
      * {@link Activity}.
      */
-    public interface NewIntentListener {
-      /**
-       * @return true if the new intent has been handled.
-       */
-      boolean onNewIntent(Intent intent);
+    interface NewIntentListener {
+        /**
+         * @return true if the new intent has been handled.
+         */
+        boolean onNewIntent(Intent intent);
     }
 }
