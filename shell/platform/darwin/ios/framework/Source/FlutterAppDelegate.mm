@@ -6,8 +6,31 @@
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #include "lib/ftl/logging.h"
 
+@interface FlutterAppDelegate()
+@property (readonly, nonatomic) NSMutableArray* pluginDelegates;
+@property (readonly, nonatomic) NSMutableDictionary* pluginPublications;
+@end
+
+@interface FlutterAppDelegateRegistrar : NSObject<FlutterPluginRegistrar>
+- (instancetype)initWithPlugin:(NSString*)pluginKey appDelegate:(FlutterAppDelegate*)delegate;
+@end
+
 @implementation FlutterAppDelegate {
   UIBackgroundTaskIdentifier _debugBackgroundTask;
+}
+
+- (instancetype)init {
+  if (self = [super init]) {
+    _pluginDelegates = [NSMutableArray new];
+    _pluginPublications = [NSMutableDictionary new];
+  }
+  return self;
+}
+
+- (void)dealloc {
+  [_pluginDelegates release];
+  [_pluginPublications release];
+  [super dealloc];
 }
 
 // Returns the key window's rootViewController, if it's a FlutterViewController.
@@ -29,13 +52,13 @@
   }
 }
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 - (void)applicationDidEnterBackground:(UIApplication *)application {
+  #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // The following keeps the Flutter session alive when the device screen locks
-  // in debug mode. It allows continued use of features like hot reload and 
+  // in debug mode. It allows continued use of features like hot reload and
   // taking screenshots once the device unlocks again.
   //
-  // Note the name is not an identifier and multiple instances can exist. 
+  // Note the name is not an identifier and multiple instances can exist.
   _debugBackgroundTask = [application beginBackgroundTaskWithName:@"Flutter debug task"
                                                 expirationHandler:^{
       FTL_LOG(WARNING) << "\nThe OS has terminated the Flutter debug connection for being "
@@ -43,11 +66,98 @@
                           "There are no errors with your Flutter application.\n\n"
                           "To reconnect, launch your application again via 'flutter run";
       }];
+  #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      [plugin applicationWillEnterForeground:application];
+    }
+  }
 }
 
 - (void)applicationWillEnterForeground:(UIApplication *)application {
+  #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   [application endBackgroundTask: _debugBackgroundTask];
+  #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      [plugin applicationWillEnterForeground:application];
+    }
+  }
 }
-#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+
+- (void)applicationWillResignActive:(UIApplication *)application {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      [plugin applicationWillResignActive:application];
+    }
+  }
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      [plugin applicationDidBecomeActive:application];
+    }
+  }
+}
+
+- (void)applicationWillTerminate:(UIApplication *)application {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      [plugin applicationWillTerminate:application];
+    }
+  }
+}
+
+- (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
+  return [[[FlutterAppDelegateRegistrar alloc] initWithPlugin:pluginKey appDelegate:self] autorelease];
+}
+
+- (BOOL)hasPlugin:(NSString*)pluginKey {
+  return _pluginPublications[pluginKey] != nil;
+}
+
+- (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
+  return _pluginPublications[pluginKey];
+}
+@end
+
+@implementation FlutterAppDelegateRegistrar {
+  NSString* _pluginKey;
+  FlutterAppDelegate* _appDelegate;
+}
+
+- (instancetype)initWithPlugin:(NSString*)pluginKey appDelegate:(FlutterAppDelegate*)appDelegate {
+  self = [super init];
+  NSAssert(self, @"Super init cannot be null");
+  _pluginKey = [pluginKey retain];
+  _appDelegate = [appDelegate retain];
+  return self;
+}
+
+- (NSObject<FlutterBinaryMessenger>*)messenger {
+  return [_appDelegate rootFlutterViewController];
+}
+
+- (void)publish:(NSObject*)value {
+  _appDelegate.pluginPublications[_pluginKey] = value;
+}
+
+- (void)addMethodCallDelegate:(NSObject<FlutterPlugin>*)delegate
+                      channel:(FlutterMethodChannel*)channel {
+  [channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [delegate handleMethodCall:call result:result];
+  }];
+}
+
+- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
+  [_appDelegate.pluginDelegates addObject:delegate];
+}
+
+- (void)dealloc {
+  [_pluginKey release];
+  [_appDelegate release];
+  [super dealloc];
+}
 
 @end

@@ -1260,6 +1260,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterDartProject.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterMacros.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h
