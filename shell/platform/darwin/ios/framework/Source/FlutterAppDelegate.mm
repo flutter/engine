@@ -6,9 +6,9 @@
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #include "lib/ftl/logging.h"
 
-@interface FlutterAppDelegate()
-@property (readonly, nonatomic) NSMutableArray* pluginDelegates;
-@property (readonly, nonatomic) NSMutableDictionary* pluginPublications;
+@interface FlutterAppDelegate ()
+@property(readonly, nonatomic) NSMutableArray* pluginDelegates;
+@property(readonly, nonatomic) NSMutableDictionary* pluginPublications;
 @end
 
 @interface FlutterAppDelegateRegistrar : NSObject<FlutterPluginRegistrar>
@@ -33,7 +33,8 @@
   [super dealloc];
 }
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+- (BOOL)application:(UIApplication*)application
+    didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       if (![plugin application:application didFinishLaunchingWithOptions:launchOptions]) {
@@ -63,21 +64,34 @@
   }
 }
 
-- (void)applicationDidEnterBackground:(UIApplication *)application {
-  #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+- (void)applicationDidEnterBackground:(UIApplication*)application {
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // The following keeps the Flutter session alive when the device screen locks
   // in debug mode. It allows continued use of features like hot reload and
   // taking screenshots once the device unlocks again.
   //
   // Note the name is not an identifier and multiple instances can exist.
-  _debugBackgroundTask = [application beginBackgroundTaskWithName:@"Flutter debug task"
-                                                expirationHandler:^{
-      FTL_LOG(WARNING) << "\nThe OS has terminated the Flutter debug connection for being "
-                          "inactive in the background for too long.\n\n"
-                          "There are no errors with your Flutter application.\n\n"
-                          "To reconnect, launch your application again via 'flutter run";
-      }];
-  #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  _debugBackgroundTask = [application
+      beginBackgroundTaskWithName:@"Flutter debug task"
+                expirationHandler:^{
+                  FTL_LOG(WARNING)
+                      << "\nThe OS has terminated the Flutter debug connection for being "
+                         "inactive in the background for too long.\n\n"
+                         "There are no errors with your Flutter application.\n\n"
+                         "To reconnect, launch your application again via 'flutter run";
+                }];
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      [plugin applicationDidEnterBackground:application];
+    }
+  }
+}
+
+- (void)applicationWillEnterForeground:(UIApplication*)application {
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  [application endBackgroundTask:_debugBackgroundTask];
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       [plugin applicationWillEnterForeground:application];
@@ -85,18 +99,7 @@
   }
 }
 
-- (void)applicationWillEnterForeground:(UIApplication *)application {
-  #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  [application endBackgroundTask: _debugBackgroundTask];
-  #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  for (id<FlutterPlugin> plugin in _pluginDelegates) {
-    if ([plugin respondsToSelector:_cmd]) {
-      [plugin applicationWillEnterForeground:application];
-    }
-  }
-}
-
-- (void)applicationWillResignActive:(UIApplication *)application {
+- (void)applicationWillResignActive:(UIApplication*)application {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       [plugin applicationWillResignActive:application];
@@ -104,7 +107,7 @@
   }
 }
 
-- (void)applicationDidBecomeActive:(UIApplication *)application {
+- (void)applicationDidBecomeActive:(UIApplication*)application {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       [plugin applicationDidBecomeActive:application];
@@ -112,7 +115,7 @@
   }
 }
 
-- (void)applicationWillTerminate:(UIApplication *)application {
+- (void)applicationWillTerminate:(UIApplication*)application {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       [plugin applicationWillTerminate:application];
@@ -120,8 +123,8 @@
   }
 }
 
-- (void)application:(UIApplication *)application
-  didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings {
+- (void)application:(UIApplication*)application
+    didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       [plugin application:application didRegisterUserNotificationSettings:notificationSettings];
@@ -129,8 +132,8 @@
   }
 }
 
-- (void)application:(UIApplication *)application
-  didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+- (void)application:(UIApplication*)application
+    didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       [plugin application:application didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
@@ -138,21 +141,23 @@
   }
 }
 
-- (void)application:(UIApplication *)application
-  didReceiveRemoteNotification:(NSDictionary *)userInfo
-        fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
+- (void)application:(UIApplication*)application
+    didReceiveRemoteNotification:(NSDictionary*)userInfo
+          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
-      if ([plugin application:application didReceiveRemoteNotification:userInfo fetchCompletionHandler:completionHandler]) {
+      if ([plugin application:application
+              didReceiveRemoteNotification:userInfo
+                    fetchCompletionHandler:completionHandler]) {
         return;
       }
     }
   }
 }
 
-- (BOOL)application:(UIApplication *)application
-            openURL:(NSURL *)url
-            options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+- (BOOL)application:(UIApplication*)application
+            openURL:(NSURL*)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       if ([plugin application:application openURL:url options:options]) {
@@ -164,7 +169,8 @@
 }
 
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
-  return [[[FlutterAppDelegateRegistrar alloc] initWithPlugin:pluginKey appDelegate:self] autorelease];
+  return
+      [[[FlutterAppDelegateRegistrar alloc] initWithPlugin:pluginKey appDelegate:self] autorelease];
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {
@@ -196,7 +202,7 @@
 }
 
 - (NSObject<FlutterBinaryMessenger>*)messenger {
-  return (FlutterViewController*) _appDelegate.window.rootViewController;
+  return (FlutterViewController*)_appDelegate.window.rootViewController;
 }
 
 - (void)publish:(NSObject*)value {
