@@ -10,7 +10,11 @@
 #include "FlutterCodecs.h"
 
 NS_ASSUME_NONNULL_BEGIN
+@protocol FlutterPluginRegistrar;
+
 @protocol FlutterPlugin <NSObject>
+@required
++ (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar;
 @optional
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 - (void)applicationDidBecomeActive:(UIApplication*)application;
@@ -23,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
             options:(NSDictionary<UIApplicationOpenURLOptionsKey,id>*)options;
 @end
 
-@protocol FlutterPluginRegistrar
+@protocol FlutterPluginRegistrar <NSObject>
 - (NSObject<FlutterBinaryMessenger>*) messenger;
 - (void)publish:(NSObject*)value;
 - (void)addMethodCallDelegate:(NSObject<FlutterPlugin>*)delegate
@@ -31,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate;
 @end
 
-@protocol FlutterPluginRegistry
+@protocol FlutterPluginRegistry <NSObject>
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey;
 - (BOOL)hasPlugin:(NSString*)pluginKey;
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey;
