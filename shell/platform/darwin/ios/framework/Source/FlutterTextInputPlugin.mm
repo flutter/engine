@@ -141,7 +141,7 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
     _enablesReturnKeyAutomatically = NO;
     _keyboardAppearance = UIKeyboardAppearanceDefault;
     _keyboardType = UIKeyboardTypeDefault;
-    _returnKeyType = UIReturnKeyDefault;
+    _returnKeyType = UIReturnKeyDone;
     _secureTextEntry = NO;
   }
 
