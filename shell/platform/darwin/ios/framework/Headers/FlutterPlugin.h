@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar;
 @optional
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (BOOL)application:(UIApplication*)application didFinishLaunchingWithOptions:(NSDictionary*)launchOptions;
 - (void)applicationDidBecomeActive:(UIApplication*)application;
 - (void)applicationWillResignActive:(UIApplication*)application;
 - (void)applicationDidEnterBackground:(UIApplication*)application;

@@ -33,6 +33,17 @@
   [super dealloc];
 }
 
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      if (![plugin application:application didFinishLaunchingWithOptions:launchOptions]) {
+        return NO;
+      }
+    }
+  }
+  return YES;
+}
+
 // Returns the key window's rootViewController, if it's a FlutterViewController.
 // Otherwise, returns nil.
 - (FlutterViewController*)rootFlutterViewController {
@@ -148,6 +159,12 @@
   return self;
 }
 
+- (void)dealloc {
+  [_pluginKey release];
+  [_appDelegate release];
+  [super dealloc];
+}
+
 - (NSObject<FlutterBinaryMessenger>*)messenger {
   return (FlutterViewController*) _appDelegate.window.rootViewController;
 }
@@ -166,11 +183,4 @@
 - (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
   [_appDelegate.pluginDelegates addObject:delegate];
 }
-
-- (void)dealloc {
-  [_pluginKey release];
-  [_appDelegate release];
-  [super dealloc];
-}
-
 @end
