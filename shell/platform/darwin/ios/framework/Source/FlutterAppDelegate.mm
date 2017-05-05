@@ -149,7 +149,7 @@
 }
 
 - (NSObject<FlutterBinaryMessenger>*)messenger {
-  return [_appDelegate rootFlutterViewController];
+  return (FlutterViewController*) _appDelegate.window.rootViewController;
 }
 
 - (void)publish:(NSObject*)value {
