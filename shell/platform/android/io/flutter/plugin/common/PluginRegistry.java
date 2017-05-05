@@ -111,6 +111,15 @@ public interface PluginRegistry {
          * @return this {@link Registrar}.
          */
         Registrar addNewIntentListener(NewIntentListener listener);
+
+        /**
+         * Adds a callback allowing the plugin to take part in handling incoming
+         * calls to {@Activity#onUserLeaveHint()}.
+         *
+         * @param listener a {@link UserLeaveHintListener} callback.
+         * @return this {@link Registrar}.
+         */
+        Registrar addUserLeaveHintListener(UserLeaveHintListener listener);
     }
 
     /**
@@ -144,5 +153,13 @@ public interface PluginRegistry {
          * @return true if the new intent has been handled.
          */
         boolean onNewIntent(Intent intent);
+    }
+
+    /**
+     * Delegate interface for handling user leave hints on behalf of the main
+     * {@link Activity}.
+     */
+    interface UserLeaveHintListener {
+        void onUserLeaveHint();
     }
 }

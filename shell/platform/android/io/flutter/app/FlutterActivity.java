@@ -30,6 +30,7 @@ public class FlutterActivity extends Activity implements PluginRegistry {
     private final List<RequestPermissionResultListener> requestPermissionResultListeners = new ArrayList<>(0);
     private final List<ActivityResultListener> activityResultListeners = new ArrayList<>(0);
     private final List<NewIntentListener> newIntentListeners = new ArrayList<>(0);
+    private final List<UserLeaveHintListener> userLeaveHintListeners = new ArrayList<>(0);
     private FlutterView flutterView;
 
     private String[] getArgsFromIntent(Intent intent) {
@@ -176,6 +177,13 @@ public class FlutterActivity extends Activity implements PluginRegistry {
         }
     }
 
+    @Override
+    public void onUserLeaveHint() {
+        for (UserLeaveHintListener listener : userLeaveHintListeners) {
+            listener.onUserLeaveHint();
+        }
+    }
+
     public boolean loadIntent(Intent intent) {
         String action = intent.getAction();
         if (Intent.ACTION_RUN.equals(action)) {
@@ -259,6 +267,11 @@ public class FlutterActivity extends Activity implements PluginRegistry {
 
         public Registrar addNewIntentListener(NewIntentListener listener) {
             newIntentListeners.add(listener);
+            return this;
+        }
+
+        public Registrar addUserLeaveHintListener(UserLeaveHintListener listener) {
+            userLeaveHintListeners.add(listener);
             return this;
         }
     };
