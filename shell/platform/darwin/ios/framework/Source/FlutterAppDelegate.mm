@@ -120,6 +120,36 @@
   }
 }
 
+- (void)application:(UIApplication *)application
+  didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      [plugin application:application didRegisterUserNotificationSettings:notificationSettings];
+    }
+  }
+}
+
+- (void)application:(UIApplication *)application
+  didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      [plugin application:application didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+    }
+  }
+}
+
+- (void)application:(UIApplication *)application
+  didReceiveRemoteNotification:(NSDictionary *)userInfo
+        fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      if ([plugin application:application didReceiveRemoteNotification:userInfo fetchCompletionHandler:completionHandler]) {
+        return;
+      }
+    }
+  }
+}
+
 - (BOOL)application:(UIApplication *)application
             openURL:(NSURL *)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {

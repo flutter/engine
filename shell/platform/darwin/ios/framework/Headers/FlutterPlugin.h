@@ -23,6 +23,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)applicationDidEnterBackground:(UIApplication*)application;
 - (void)applicationWillEnterForeground:(UIApplication*)application;
 - (void)applicationWillTerminate:(UIApplication*)application;
+- (void)application:(UIApplication *)application
+  didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings;
+- (void)application:(UIApplication *)application
+  didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken;
+- (BOOL)application:(UIApplication *)application
+  didReceiveRemoteNotification:(NSDictionary *)userInfo
+        fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey,id>*)options;
