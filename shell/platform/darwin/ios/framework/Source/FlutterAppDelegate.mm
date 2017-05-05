@@ -109,6 +109,19 @@
   }
 }
 
+- (BOOL)application:(UIApplication *)application
+            openURL:(NSURL *)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      if ([plugin application:application openURL:url options:options]) {
+        return YES;
+      }
+    }
+  }
+  return NO;
+}
+
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   return [[[FlutterAppDelegateRegistrar alloc] initWithPlugin:pluginKey appDelegate:self] autorelease];
 }
