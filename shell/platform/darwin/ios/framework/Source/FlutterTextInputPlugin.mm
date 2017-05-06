@@ -244,6 +244,16 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
   [self updateEditingState];
 }
 
+- (BOOL)shouldChangeTextInRange:(UITextRange*)range replacementText:(NSString*)text {
+  if (self.returnKeyType == UIReturnKeyDone && [text isEqualToString:@"\n"]) {
+    [self resignFirstResponder];
+    [self removeFromSuperview];
+    [_textInputDelegate performAction:FlutterTextInputActionDone withClient:_textInputClient];
+    return NO;
+  }
+  return YES;
+}
+
 - (void)setMarkedText:(NSString*)markedText selectedRange:(NSRange)markedSelectedRange {
   NSRange selectedRange = _selectedTextRange.range;
   NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
