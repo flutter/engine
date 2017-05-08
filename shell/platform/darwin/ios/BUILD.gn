@@ -23,6 +23,7 @@ shared_library("flutter_framework_dylib") {
     "framework/Headers/FlutterCodecs.h",
     "framework/Headers/FlutterDartProject.h",
     "framework/Headers/FlutterMacros.h",
+    "framework/Headers/FlutterPlugins.h",
     "framework/Headers/FlutterViewController.h",
     "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterChannels.mm",
@@ -33,6 +34,7 @@ shared_library("flutter_framework_dylib") {
     "framework/Source/FlutterDartSource.mm",
     "framework/Source/FlutterPlatformPlugin.h",
     "framework/Source/FlutterPlatformPlugin.mm",
+    "framework/Source/FlutterPlugins.mm",
     "framework/Source/FlutterStandardCodec.mm",
     "framework/Source/FlutterStandardCodec_Internal.h",
     "framework/Source/FlutterTextInputDelegate.h",
@@ -163,6 +165,7 @@ copy("framework_headers") {
     "framework/Headers/FlutterCodecs.h",
     "framework/Headers/FlutterDartProject.h",
     "framework/Headers/FlutterMacros.h",
+    "framework/Headers/FlutterPlugins.h",
     "framework/Headers/FlutterViewController.h",
   ]
   outputs = [
