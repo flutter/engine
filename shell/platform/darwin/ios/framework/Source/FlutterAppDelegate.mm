@@ -169,6 +169,8 @@
 }
 
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
+  NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
+  self.pluginPublications[pluginKey] = [NSNull null];
   return
       [[[FlutterAppDelegateRegistrar alloc] initWithPlugin:pluginKey appDelegate:self] autorelease];
 }
@@ -189,7 +191,7 @@
 
 - (instancetype)initWithPlugin:(NSString*)pluginKey appDelegate:(FlutterAppDelegate*)appDelegate {
   self = [super init];
-  NSAssert(self, @"Super init cannot be null");
+  NSAssert(self, @"Super init cannot be nil");
   _pluginKey = [pluginKey retain];
   _appDelegate = [appDelegate retain];
   return self;
