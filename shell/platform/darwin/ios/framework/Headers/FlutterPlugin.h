@@ -14,6 +14,9 @@
 NS_ASSUME_NONNULL_BEGIN
 @protocol FlutterPluginRegistrar;
 
+/**
+ iOS part of a Flutter plugin.
+ */
 @protocol FlutterPlugin<NSObject>
 @required
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar;
