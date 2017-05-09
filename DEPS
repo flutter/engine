@@ -77,7 +77,7 @@ deps = {
    Var('fuchsia_git') + '/buildtools' + '@' +  Var('buildtools_revision'),
 
   'src/third_party/icu':
-   Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'c3f79166089e5360c09e3053fce50e6e296c3204',
+   Var('fuchsia_git') + '/third_party/icu' + '@' + '1f5095f807215f2ad8c320406cf86e9c73c9a801',
 
   'src/dart':
     Var('chromium_git') + '/external/github.com/dart-lang/sdk.git' + '@' + Var('dart_revision'),
