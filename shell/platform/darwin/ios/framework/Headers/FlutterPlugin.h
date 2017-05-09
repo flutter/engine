@@ -15,10 +15,10 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FlutterPluginRegistrar;
 
 /**
- iOS part of a Flutter plugin.
+ Implemented by the iOS part of a Flutter plugin.
 
- Provides a protocol of optional callback methods and the means to register with
- the application.
+ Defines a set of optional callback methods and a method to set up the plugin
+ and register it to be called by other application components.
  */
 @protocol FlutterPlugin<NSObject>
 @required
@@ -26,48 +26,124 @@ NS_ASSUME_NONNULL_BEGIN
  Registers this plugin.
 
  - Parameters:
-   - registrar: a helper providing application context and methods for
+   - registrar: A helper providing application context and methods for
      registering callbacks
  */
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar;
 @optional
 /**
- Handles an incoming method call from the Dart side (optional).
+ Called if this plugin has been registered to receive `FlutterMethodCall`s.
 
  - Parameters:
-   - call: the method call
-   - result: a result callback
+   - call: The method call command object.
+   - result: A callback for submitting the result of the call.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+
+ - Returns: `NO` if this plugin vetoes application launch.
+ */
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions;
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+ */
 - (void)applicationDidBecomeActive:(UIApplication*)application;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+ */
 - (void)applicationWillResignActive:(UIApplication*)application;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+ */
 - (void)applicationDidEnterBackground:(UIApplication*)application;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+ */
 - (void)applicationWillEnterForeground:(UIApplication*)application;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+ */
 - (void)applicationWillTerminate:(UIApplication*)application;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+ */
 - (void)application:(UIApplication*)application
     didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+ */
 - (void)application:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+
+ - Returns: `YES` if this plugin handles request.
+ */
 - (BOOL)application:(UIApplication*)application
     didReceiveRemoteNotification:(NSDictionary*)userInfo
           fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+
+ - Returns: `YES` if this plugin handles request.
+ */
 - (BOOL)application:(UIApplication*)application
       handleOpenURL:(NSURL*)url;
 @end
 
 /**
- Plugin registration context.
+ Registration context for a single `FlutterPlugin`.
  */
 @protocol FlutterPluginRegistrar<NSObject>
 /**
- Returns a `FlutterBinaryMessenger`
+ Returns a `FlutterBinaryMessenger` for creating Dart/iOS communication
+ channels to be used by the plugin.
+
+ - Returns: The messenger.
  */
 - (NSObject<FlutterBinaryMessenger>*)messenger;
+
+/**
+ Publishes a value for external use of the plugin.
+
+ Plugins may publish a single value, such as an instance of the
+ plugin's main class, for situations where external control or
+ interaction is needed.
+
+ The published value will be available from the `FlutterPluginRegistry`.
+ Repeated calls overwrite any previous publication.
+
+ - Parameter value: The value to be published.
+ */
 - (void)publish:(NSObject*)value;
+
+/**
+ Registers the plugin as a receiver of incoming method calls from the Dart side
+ on the specified `FlutterMethodChannel`.
+
+ - Parameters:
+   - delegate: The receiving object, such as the plugin's main class.
+   - channel: The channel
+ */
 - (void)addMethodCallDelegate:(NSObject<FlutterPlugin>*)delegate
                       channel:(FlutterMethodChannel*)channel;
+
+/**
+ Registers the plugin as a receiver of `UIApplicationDelegate` calls.
+
+ - Parameters delegate: The receiving object, such as the plugin's main class.
+ */
 - (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate;
 @end
 
