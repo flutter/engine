@@ -107,6 +107,11 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol FlutterPluginRegistrar<NSObject>
 /**
+ The `UIWindow` context for the plugin.
+ */
+@property(strong, nonatomic, readonly) UIWindow* window;
+
+/**
  Returns a `FlutterBinaryMessenger` for creating Dart/iOS communication
  channels to be used by the plugin.
 
