@@ -14,9 +14,6 @@ static_library("core") {
   output_name = "sky_core"
 
   deps = [
-    "//dart/runtime:libdart",
-    "//dart/runtime/bin:embedded_dart_io",
-    "//dart/runtime/vm:libdart_platform",
     "//flutter/assets",
     "//flutter/sky/engine/platform",
   ]
@@ -45,15 +42,7 @@ static_library("core") {
     "//third_party/zlib",
   ]
 
-  if (!is_fuchsia) {
-    public_deps += [ "//base" ]
-  }
-
   if (flutter_runtime_mode != "release") {
     public_deps += [ "//lib/tonic/debugger" ]
-  }
-
-  if (is_android) {
-    public_deps += [ "//flutter/lib/jni" ]
   }
 }

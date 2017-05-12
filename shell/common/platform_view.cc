@@ -11,6 +11,7 @@
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "lib/ftl/functional/make_copyable.h"
+#include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
 namespace shell {
@@ -132,7 +133,7 @@ void PlatformView::UpdateSemantics(std::vector<blink::SemanticsNode> update) {}
 void PlatformView::HandlePlatformMessage(
     ftl::RefPtr<blink::PlatformMessage> message) {
   if (auto response = message->response())
-    response->CompleteWithError();
+    response->CompleteEmpty();
 }
 
 void PlatformView::SetupResourceContextOnIOThread() {
@@ -158,15 +159,29 @@ void PlatformView::SetupResourceContextOnIOThreadPerform(
   bool current = ResourceContextMakeCurrent();
 
   if (!current) {
-    LOG(WARNING)
-        << "WARNING: Could not setup an OpenGL context on the resource loader.";
+    FTL_DLOG(WARNING)
+        << "WARNING: Could not setup a context on the resource loader.";
     latch->Signal();
     return;
   }
 
+  GrContextOptions options;
+  // There is currently a bug with doing GPU YUV to RGB conversions on the IO
+  // thread. The necessary work isn't being flushed or synchronized with the
+  // other threads correctly, so the textures end up blank.  For now, suppress
+  // that feature, which will cause texture uploads to do CPU YUV conversion.
+  options.fDisableGpuYUVConversion = true;
+
   blink::ResourceContext::Set(GrContext::Create(
       GrBackend::kOpenGL_GrBackend,
-      reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface())));
+      reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface()),
+      options));
+
+  // Do not cache textures created by the image decoder.  These textures should
+  // be deleted when they are no longer referenced by an SkImage.
+  if (blink::ResourceContext::Get())
+    blink::ResourceContext::Get()->setResourceCacheLimits(0, 0);
+
   latch->Signal();
 }
 

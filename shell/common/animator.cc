@@ -4,10 +4,8 @@
 
 #include "flutter/shell/common/animator.h"
 
-#include "base/bind.h"
-#include "base/message_loop/message_loop.h"
-#include "base/trace_event/trace_event.h"
 #include "flutter/common/threads.h"
+#include "flutter/fml/trace_event.h"
 #include "lib/ftl/time/stopwatch.h"
 
 namespace shell {
@@ -20,6 +18,7 @@ Animator::Animator(ftl::WeakPtr<Rasterizer> rasterizer,
       engine_(engine),
       layer_tree_pipeline_(ftl::MakeRefCounted<LayerTreePipeline>(3)),
       pending_frame_semaphore_(1),
+      frame_number_(1),
       paused_(false),
       weak_factory_(this) {}
 
@@ -39,6 +38,8 @@ void Animator::Start() {
 }
 
 void Animator::BeginFrame(ftl::TimePoint frame_time) {
+  TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending", frame_number_++);
+
   pending_frame_semaphore_.Signal();
 
   if (!producer_continuation_) {
@@ -51,8 +52,7 @@ void Animator::BeginFrame(ftl::TimePoint frame_time) {
       // If we still don't have valid continuation, the pipeline is currently
       // full because the consumer is being too slow. Try again at the next
       // frame interval.
-      TRACE_EVENT_INSTANT0("flutter", "ConsumerSlowDefer",
-                           TRACE_EVENT_SCOPE_PROCESS);
+      TRACE_EVENT_INSTANT0("flutter", "ConsumerSlowDefer");
       RequestFrame();
       return;
     }
@@ -60,7 +60,7 @@ void Animator::BeginFrame(ftl::TimePoint frame_time) {
 
   // We have acquired a valid continuation from the pipeline and are ready
   // to service potential frame.
-  DCHECK(producer_continuation_);
+  FTL_DCHECK(producer_continuation_);
 
   // TODO(abarth): We should use |frame_time| instead, but the frame time we get
   // on Android appears to be unstable.
@@ -104,12 +104,15 @@ void Animator::RequestFrame() {
   // started an expensive operation right after posting this message however.
   // To support that, we need edge triggered wakes on VSync.
 
-  blink::Threads::UI()->PostTask([self = weak_factory_.GetWeakPtr()]() {
-    if (!self.get())
-      return;
-    TRACE_EVENT_INSTANT0("flutter", "RequestFrame", TRACE_EVENT_SCOPE_PROCESS);
-    self->AwaitVSync();
-  });
+  blink::Threads::UI()->PostTask(
+      [ self = weak_factory_.GetWeakPtr(), frame_number = frame_number_ ]() {
+        if (!self.get()) {
+          return;
+        }
+        TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending",
+                                 frame_number);
+        self->AwaitVSync();
+      });
 }
 
 void Animator::AwaitVSync() {

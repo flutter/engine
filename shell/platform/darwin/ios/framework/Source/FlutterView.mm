@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+
+#include "flutter/common/settings.h"
 #include "flutter/common/threads.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/shell/common/rasterizer.h"
@@ -17,19 +19,24 @@
 @implementation FlutterView
 
 - (void)layoutSubviews {
-  CGFloat screenScale = [UIScreen mainScreen].scale;
-  CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
-
-  layer.allowsGroupOpacity = YES;
-  layer.opaque = YES;
-  layer.contentsScale = screenScale;
-  layer.rasterizationScale = screenScale;
+  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
+    CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
+    layer.allowsGroupOpacity = YES;
+    layer.opaque = YES;
+    CGFloat screenScale = [UIScreen mainScreen].scale;
+    layer.contentsScale = screenScale;
+    layer.rasterizationScale = screenScale;
+  }
 
   [super layoutSubviews];
 }
 
 + (Class)layerClass {
+#if TARGET_IPHONE_SIMULATOR
+  return [CALayer class];
+#else   // TARGET_IPHONE_SIMULATOR
   return [CAEAGLLayer class];
+#endif  // TARGET_IPHONE_SIMULATOR
 }
 
 - (BOOL)enableInputClicksWhenVisible {
@@ -53,10 +60,9 @@ void SnapshotRasterizer(ftl::WeakPtr<shell::Rasterizer> rasterizer,
   if (size.isEmpty()) {
     return;
   }
-  auto info =
-      SkImageInfo::MakeN32(size.width(), size.height(),
-                           is_opaque ? SkAlphaType::kOpaque_SkAlphaType
-                                     : SkAlphaType::kPremul_SkAlphaType);
+  auto info = SkImageInfo::MakeN32(
+      size.width(), size.height(),
+      is_opaque ? SkAlphaType::kOpaque_SkAlphaType : SkAlphaType::kPremul_SkAlphaType);
 
   // Create the backing store and prepare for use.
   SkBitmap bitmap;
@@ -67,14 +73,12 @@ void SnapshotRasterizer(ftl::WeakPtr<shell::Rasterizer> rasterizer,
 
   // Create a canvas from the backing store and a single use compositor context
   // to draw into the canvas.
-  SkAutoLockPixels pixel_lock(bitmap, true);
 
   SkCanvas canvas(bitmap);
 
   {
     flow::CompositorContext compositor_context(nullptr);
-    auto frame = compositor_context.AcquireFrame(nullptr, &canvas,
-                                                 false /* instrumentation */);
+    auto frame = compositor_context.AcquireFrame(nullptr, &canvas, false /* instrumentation */);
     layer_tree->Raster(frame, false /* ignore raster cache. */);
   }
 

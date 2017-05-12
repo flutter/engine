@@ -12,6 +12,7 @@
 #include "application/services/application_environment.fidl.h"
 #include "application/services/service_provider.fidl.h"
 #include "apps/mozart/services/input/input_connection.fidl.h"
+#include "apps/mozart/services/input/text_input.fidl.h"
 #include "apps/mozart/services/views/view_manager.fidl.h"
 #include "flutter/assets/unzipper_provider.h"
 #include "flutter/assets/zip_asset_store.h"
@@ -24,26 +25,26 @@
 #include "lib/ftl/macros.h"
 #include "lib/ftl/memory/weak_ptr.h"
 
-#if FLUTTER_ENABLE_VULKAN
-#include "flutter/content_handler/direct_input.h"
-#endif  // FLUTTER_ENABLE_VULKAN
-
 namespace flutter_runner {
 class Rasterizer;
 
 class RuntimeHolder : public blink::RuntimeDelegate,
                       public mozart::ViewListener,
-                      public mozart::InputListener {
+                      public mozart::InputListener,
+                      public mozart::InputMethodEditorClient {
  public:
   RuntimeHolder();
   ~RuntimeHolder();
 
-  void Init(fidl::InterfaceHandle<modular::ApplicationEnvironment> environment,
-            fidl::InterfaceRequest<modular::ServiceProvider> outgoing_services,
+  void Init(fidl::InterfaceHandle<app::ApplicationEnvironment> environment,
+            fidl::InterfaceRequest<app::ServiceProvider> outgoing_services,
             std::vector<char> bundle);
   void CreateView(const std::string& script_uri,
                   fidl::InterfaceRequest<mozart::ViewOwner> view_owner_request,
-                  fidl::InterfaceRequest<modular::ServiceProvider> services);
+                  fidl::InterfaceRequest<app::ServiceProvider> services);
+
+  Dart_Port GetUIIsolateMainPort();
+  std::string GetUIIsolateName();
 
  private:
   // |blink::RuntimeDelegate| implementation:
@@ -55,18 +56,23 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   void DidCreateMainIsolate(Dart_Isolate isolate) override;
 
   // |mozart::InputListener| implementation:
-  void OnEvent(mozart::EventPtr event,
+  void OnEvent(mozart::InputEventPtr event,
                const OnEventCallback& callback) override;
 
   // |mozart::ViewListener| implementation:
   void OnInvalidation(mozart::ViewInvalidationPtr invalidation,
                       const OnInvalidationCallback& callback) override;
 
+  // |mozart::InputMethodEditorClient| implementation:
+  void DidUpdateState(mozart::TextInputStatePtr state,
+                      mozart::InputEventPtr event) override;
+
   ftl::WeakPtr<RuntimeHolder> GetWeakPtr();
 
   void InitRootBundle(std::vector<char> bundle);
   blink::UnzipperProvider GetUnzipperProviderForRootBundle();
-  void HandleAssetPlatformMessage(ftl::RefPtr<blink::PlatformMessage> message);
+  bool HandleAssetPlatformMessage(blink::PlatformMessage* message);
+  bool HandleTextInputPlatformMessage(blink::PlatformMessage* message);
 
   void InitFidlInternal();
   void InitMozartInternal();
@@ -75,12 +81,13 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   void OnFrameComplete();
   void Invalidate();
 
-  modular::ApplicationEnvironmentPtr environment_;
-  modular::ServiceProviderPtr environment_services_;
-  fidl::InterfaceRequest<modular::ServiceProvider> outgoing_services_;
+  app::ApplicationEnvironmentPtr environment_;
+  app::ServiceProviderPtr environment_services_;
+  fidl::InterfaceRequest<app::ServiceProvider> outgoing_services_;
 
   std::vector<char> root_bundle_data_;
   ftl::RefPtr<blink::ZipAssetStore> asset_store_;
+  void* dylib_handle_ = nullptr;
 
   std::unique_ptr<Rasterizer> rasterizer_;
   std::unique_ptr<blink::RuntimeController> runtime_;
@@ -89,9 +96,6 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   mozart::ViewManagerPtr view_manager_;
   fidl::Binding<mozart::ViewListener> view_listener_binding_;
   fidl::Binding<mozart::InputListener> input_listener_binding_;
-#if FLUTTER_ENABLE_VULKAN
-  std::unique_ptr<DirectInput> direct_input_;
-#endif  // FLUTTER_ENABLE_VULKAN
   mozart::InputConnectionPtr input_connection_;
   mozart::ViewPtr view_;
   mozart::ViewPropertiesPtr view_properties_;
@@ -103,6 +107,11 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   OnInvalidationCallback deferred_invalidation_callback_;
   bool is_ready_to_draw_ = false;
   int outstanding_requests_ = 0;
+
+  mozart::TextInputServicePtr text_input_service_;
+  mozart::InputMethodEditorPtr input_method_editor_;
+  fidl::Binding<mozart::InputMethodEditorClient> text_input_binding_;
+  int current_text_input_client_ = 0;
 
   ftl::WeakPtrFactory<RuntimeHolder> weak_factory_;
 

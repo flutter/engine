@@ -14,31 +14,8 @@
 
 namespace blink {
 
-#define DART_ALLOW_DYNAMIC_RESOLUTION (OS_IOS || FLUTTER_AOT)
-
-#if DART_ALLOW_DYNAMIC_RESOLUTION
-
-extern const char kDartVmSnapshotDataName[];
-extern const char kDartVmSnapshotInstructionsName[];
-extern const char kDartIsolateSnapshotDataName[];
-extern const char kDartIsolateSnapshotInstructionsName[];
-
-void* _DartSymbolLookup(const char* symbol_name);
-
-#define DART_SYMBOL(symbol) _DartSymbolLookup(symbol##Name)
-
-#else  // DART_ALLOW_DYNAMIC_RESOLUTION
-
-extern "C" {
-extern void* kDartVmSnapshotData;
-extern void* kDartVmSnapshotInstructions;
-extern void* kDartIsolateSnapshotData;
-extern void* kDartIsolateSnapshotInstructions;
-}
-
-#define DART_SYMBOL(symbol) (&symbol)
-
-#endif  // DART_ALLOW_DYNAMIC_RESOLUTION
+// Name of the kernel blob asset within the FLX bundle.
+extern const char kKernelAssetKey[];
 
 // Name of the snapshot blob asset within the FLX bundle.
 extern const char kSnapshotAssetKey[];
@@ -58,7 +35,10 @@ struct EmbedderTracingCallbacks {
                            EmbedderTracingCallback stop);
 };
 
-void InitDartVM();
+void InitDartVM(const uint8_t* vm_snapshot_data,
+                const uint8_t* vm_snapshot_instructions,
+                const uint8_t* default_isolate_snapshot_data,
+                const uint8_t* default_isolate_snapshot_instructions);
 
 void SetEmbedderTracingCallbacks(
     std::unique_ptr<EmbedderTracingCallbacks> callbacks);

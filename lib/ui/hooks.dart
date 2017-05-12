@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of dart_ui;
+part of dart.ui;
 
 String _decodeUTF8(ByteData message) {
   return message != null ? UTF8.decoder.convert(message.buffer.asUint8List()) : null;
@@ -81,6 +81,11 @@ void _dispatchSemanticsAction(int id, int action) {
 void _beginFrame(int microseconds) {
   if (window.onBeginFrame != null)
     window.onBeginFrame(new Duration(microseconds: microseconds));
+}
+
+void _drawFrame() {
+  if (window.onDrawFrame != null)
+    window.onDrawFrame();
 }
 
 // If this value changes, update the encoding code in the following files:

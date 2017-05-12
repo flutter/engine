@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of dart_ui;
+part of dart.ui;
 
 Color _scaleAlpha(Color a, double factor) {
   return a.withAlpha((a.alpha * factor).round());
@@ -33,6 +33,11 @@ Color _scaleAlpha(Color a, double factor) {
 /// Color c1 = const Color(0xFFFFFF); // fully transparent white (invisible)
 /// Color c2 = const Color(0xFFFFFFFF); // fully opaque white (visible)
 /// ```
+///
+/// See also:
+///
+///  * [Colors](https://docs.flutter.io/flutter/material/Colors-class.html), which
+///    defines the colors found in the Material Design specification.
 class Color {
   /// Construct a color from the lower 32 bits of an [int].
   ///
@@ -170,7 +175,9 @@ class Color {
 
   @override
   bool operator ==(dynamic other) {
-    if (other is! Color)
+    if (identical(this, other))
+      return true;
+    if (other.runtimeType != runtimeType)
       return false;
     final Color typedOther = other;
     return value == typedOther.value;
@@ -189,7 +196,7 @@ class Color {
 /// can be used to blend the pixels. The image below shows the effects
 /// of these modes.
 ///
-/// [![Open Skia fiddle to view image.](https://flutter.io/images/transfer_mode.png)](https://fiddle.skia.org/c/864acd0659c7a866ea7296a3184b8bdd)
+/// [![Open Skia fiddle to view image.](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode.png)](https://fiddle.skia.org/c/864acd0659c7a866ea7296a3184b8bdd)
 ///
 /// See [Paint.blendMode].
 enum BlendMode {
@@ -286,12 +293,12 @@ enum PaintingStyle {
   // in sync.
 
   /// Apply the [Paint] to the inside of the shape. For example, when
-  /// applied to the [Paint.drawCircle] call, this results in a disc
+  /// applied to the [Canvas.drawCircle] call, this results in a disc
   /// of the given size being painted.
   fill,
 
   /// Apply the [Paint] to the edge of the shape. For example, when
-  /// applied to the [Paint.drawCircle] call, this results is a hoop
+  /// applied to the [Canvas.drawCircle] call, this results is a hoop
   /// of the given size being painted. The line drawn on the edge will
   /// be the width given by the [Paint.strokeWidth] property.
   stroke,
@@ -584,7 +591,7 @@ class Paint {
 /// To obtain an Image object, use [decodeImageFromList].
 ///
 /// To draw an Image, use one of the methods on the [Canvas] class, such as
-/// [drawImage].
+/// [Canvas.drawImage].
 abstract class Image extends NativeFieldWrapperClass2 {
   /// The number of image pixels along the image's horizontal axis.
   int get width native "Image_width";
@@ -764,9 +771,13 @@ class Path extends NativeFieldWrapperClass2 {
                double startAngle, double sweepAngle) native "Path_addArc";
 
   /// Adds a new subpath with a sequence of line segments that connect the given
-  /// points. If `close` is true, a final line segment will be added that
-  /// connects the last point to the first point.
-  void addPolygon(List<Point> points, bool close) {
+  /// points.
+  ///
+  /// If `close` is true, a final line segment will be added that connects the
+  /// last point to the first point.
+  ///
+  /// The `points` argument is interpreted as offsets from the origin.
+  void addPolygon(List<Offset> points, bool close) {
     _addPolygon(_encodePointList(points), close);
   }
   void _addPolygon(Float32List points, bool close) native "Path_addPolygon";
@@ -796,12 +807,14 @@ class Path extends NativeFieldWrapperClass2 {
   /// reset to the origin.
   void reset() native "Path_reset";
 
-  /// Tests to see if the point is within the path. (That is, whether
-  /// the point would be in the visible portion of the path if the
-  /// path was used with [Canvas.clipPath].)
+  /// Tests to see if the given point is within the path. (That is, whether the
+  /// point would be in the visible portion of the path if the path was used
+  /// with [Canvas.clipPath].)
+  ///
+  /// The `point` argument is interpreted as an offset from the origin.
   ///
   /// Returns true if the point is in the path, and false otherwise.
-  bool contains(Point position) => _contains(position.x, position.y);
+  bool contains(Offset point) => _contains(point.dx, point.dy);
   bool _contains(double x, double y) native "Path_contains";
 
   /// Returns a copy of the path with all the segments of every
@@ -882,7 +895,7 @@ class ColorFilter {
   /// The output of this filter is then composited into the background according
   /// to the [Paint.blendMode], using the output of this filter as the source
   /// and the background as the destination.
-  ColorFilter.mode(Color color, BlendMode blendMode)
+  const ColorFilter.mode(Color color, BlendMode blendMode)
     : _color = color, _blendMode = blendMode;
 
   final Color _color;
@@ -937,15 +950,54 @@ class ImageFilter extends NativeFieldWrapperClass2 {
 abstract class Shader extends NativeFieldWrapperClass2 { }
 
 /// Defines what happens at the edge of the gradient.
+///
+/// A gradient is defined along a finite inner area. In the case of a linear
+/// gradient, it's between the parallel lines that are orthogonal to the line
+/// drawn between two points. In the case of radial gradients, it's the disc
+/// that covers the circle centered on a particular point up to a given radius.
+///
+/// This enum is used to define how the gradient should paint the regions
+/// outside that defined inner area.
+///
+/// See also:
+///
+///  * [painting.Gradient], the superclass for [LinearGradient] and
+///    [RadialGradient], as used by [BoxDecoration] et al, which works in
+///    relative coordinates and can create a [Shader] representing the gradient
+///    for a particular [Rect] on demand.
+///  * [dart:ui.Gradient], the low-level class used when dealing with the
+///    [Paint.shader] property directly, with its [new Gradient.linear] and [new
+///    Gradient.radial] constructors.
 enum TileMode {
   /// Edge is clamped to the final color.
+  ///
+  /// The gradient will paint the all the regions outside the inner area with
+  /// the color of the point closest to that region.
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_radial.png)
   clamp,
 
-  /// Edge is repeated from first color to last.
-  repeated,
-
   /// Edge is mirrored from last color to first.
+  ///
+  /// This is as if the stop points from 0.0 to 1.0 were then repeated backwards
+  /// from 2.0 to 1.0, then forwards from 2.0 to 3.0, then backwards again from
+  /// 4.0 to 3.0, and so forth (and for linear gradients, similarly from in the
+  /// negative direction).
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_radial.png)
   mirror,
+
+  /// Edge is repeated from first color to last.
+  ///
+  /// This is as if the stop points from 0.0 to 1.0 were then repeated from 1.0
+  /// to 2.0, 2.0 to 3.0, and so forth (and for linear gradients, similarly from
+  /// -1.0 to 0.0, -2.0 to -1.0, etc).
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_radial.png)
+  repeated,
 }
 
 Int32List _encodeColorList(List<Color> colors) {
@@ -956,46 +1008,66 @@ Int32List _encodeColorList(List<Color> colors) {
   return result;
 }
 
-Float32List _encodePointList(List<Point> points) {
+Float32List _encodePointList(List<Offset> points) {
   final int pointCount = points.length;
   final Float32List result = new Float32List(pointCount * 2);
   for (int i = 0; i < pointCount; ++i) {
     final int xIndex = i * 2;
     final int yIndex = xIndex + 1;
-    final Point point = points[i];
-    result[xIndex] = point.x;
-    result[yIndex] = point.y;
+    final Offset point = points[i];
+    result[xIndex] = point.dx;
+    result[yIndex] = point.dy;
   }
+  return result;
+}
+
+Float32List _encodeTwoPoints(Offset pointA, Offset pointB) {
+  final Float32List result = new Float32List(4);
+  result[0] = pointA.dx;
+  result[1] = pointA.dy;
+  result[2] = pointB.dx;
+  result[3] = pointB.dy;
   return result;
 }
 
 /// A shader (as used by [Paint.shader]) that renders a color gradient.
 ///
 /// There are two useful types of gradients, created by [new Gradient.linear]
-/// and [new Griadent.radial].
+/// and [new Gradient.radial].
 class Gradient extends Shader {
   /// Creates a Gradient object that is not initialized.
   ///
-  /// Use the [Gradient.linear] or [Gradient.radial] constructors to
+  /// Use the [new Gradient.linear] or [new Gradient.radial] constructors to
   /// obtain a usable [Gradient] object.
   Gradient();
   void _constructor() native "Gradient_constructor";
 
-  /// Creates a linear gradient from `endPoint[0]` to `endPoint[1]`. If
-  /// `colorStops` is provided, `colorStops[i]` is a number from 0 to 1 that
-  /// specifies where `color[i]` begins in the gradient. If `colorStops` is not
-  /// provided, then two stops at 0.0 and 1.0 are implied. The behavior before
-  /// and after the radius is described by the `tileMode` argument.
-  // TODO(mpcomplete): Consider passing a list of (color, colorStop) pairs
-  // instead.
-  Gradient.linear(List<Point> endPoints,
-                  List<Color> colors,
-                  [List<double> colorStops = null,
-                  TileMode tileMode = TileMode.clamp]) {
-    if (endPoints == null || endPoints.length != 2)
-      throw new ArgumentError("Expected exactly 2 [endPoints].");
+  /// Creates a linear gradient from `from` to `to`.
+  ///
+  /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
+  /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
+  /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
+  /// `color` must therefore only have two entries).
+  ///
+  /// The behavior before `from` and after `to` is described by the `tileMode`
+  /// argument. For details, see the [TileMode] enum.
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_linear.png)
+  ///
+  /// If `from`, `to`, `colors`, or `tileMode` are null, or if `colors` or
+  /// `colorStops` contain null values, this constructor will throw a
+  /// [NoSuchMethodError].
+  Gradient.linear(
+    Offset from,
+    Offset to,
+    List<Color> colors, [
+    List<double> colorStops = null,
+    TileMode tileMode = TileMode.clamp,
+  ]) {
     _validateColorStops(colors, colorStops);
-    final Float32List endPointsBuffer = _encodePointList(endPoints);
+    final Float32List endPointsBuffer = _encodeTwoPoints(from, to);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : new Float32List.fromList(colorStops);
     _constructor();
@@ -1004,27 +1076,45 @@ class Gradient extends Shader {
   void _initLinear(Float32List endPoints, Int32List colors, Float32List colorStops, int tileMode) native "Gradient_initLinear";
 
   /// Creates a radial gradient centered at `center` that ends at `radius`
-  /// distance from the center. If `colorStops` is provided, `colorStops[i]` is
-  /// a number from 0 to 1 that specifies where `color[i]` begins in the
-  /// gradient. If `colorStops` is not provided, then two stops at 0.0 and 1.0
-  /// are implied. The behavior before and after the radius is described by the
-  /// `tileMode` argument.
-  Gradient.radial(Point center,
+  /// distance from the center.
+  ///
+  /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
+  /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
+  /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
+  /// `color` must therefore only have two entries).
+  ///
+  /// The behavior before and after the radius is described by the `tileMode`
+  /// argument. For details, see the [TileMode] enum.
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_radial.png)
+  ///
+  /// If `center`, `radius`, `colors`, or `tileMode` are null, or if `colors` or
+  /// `colorStops` contain null values, this constructor will throw a
+  /// [NoSuchMethodError].
+  Gradient.radial(Offset center,
                   double radius,
-                  List<Color> colors,
-                  [List<double> colorStops = null,
-                  TileMode tileMode = TileMode.clamp]) {
+                  List<Color> colors, [
+                  List<double> colorStops = null,
+                  TileMode tileMode = TileMode.clamp,
+  ]) {
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : new Float32List.fromList(colorStops);
     _constructor();
-    _initRadial(center.x, center.y, radius, colorsBuffer, colorStopsBuffer, tileMode.index);
+    _initRadial(center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index);
   }
   void _initRadial(double centerX, double centerY, double radius, Int32List colors, Float32List colorStops, int tileMode) native "Gradient_initRadial";
 
   static void _validateColorStops(List<Color> colors, List<double> colorStops) {
-    if (colorStops != null && colors.length != colorStops.length)
-      throw new ArgumentError("[colors] and [colorStops] parameters must be equal length.");
+    if (colorStops == null) {
+      if (colors.length != 2)
+        throw new ArgumentError("[colors] must have length 2 if [colorStops] is omitted.");
+    } else {
+      if (colors.length != colorStops.length)
+        throw new ArgumentError("[colors] and [colorStops] arguments must have equal length.");
+    }
   }
 }
 
@@ -1067,13 +1157,48 @@ enum VertexMode {
   triangleFan,
 }
 
+/// A set of vertex data used by [Canvas.drawVertices].
+class Vertices extends NativeFieldWrapperClass2 {
+  Vertices(
+    VertexMode mode,
+    List<Offset> positions, {
+    List<Offset> textureCoordinates,
+    List<Color> colors,
+    List<int> indices,
+  }) {
+    if (textureCoordinates != null && textureCoordinates.length != positions.length)
+      throw new ArgumentError("[positions] and [textureCoordinates] lengths must match");
+    if (colors != null && colors.length != positions.length)
+      throw new ArgumentError("[positions] and [colors] lengths must match");
+    if (indices != null && indices.any((int i) => i < 0 || i >= positions.length))
+      throw new ArgumentError("[indices] values must be valid indices in the positions list");
+
+    Float32List encodedPositions = _encodePointList(positions);
+    Float32List encodedTexs = (textureCoordinates != null) ?
+      _encodePointList(textureCoordinates) : null;
+    Int32List encodedColors = (colors != null) ? _encodeColorList(colors) : null;
+    Int32List encodedIndices = (indices != null) ? new Int32List.fromList(indices) : null;
+
+    _constructor();
+    _init(mode.index, encodedPositions, encodedTexs, encodedColors, encodedIndices);
+  }
+
+  void _constructor() native "Vertices_constructor";
+
+  void _init(int mode,
+             Float32List positions,
+             Float32List textureCoordinates,
+             Int32List colors,
+             Int32List indices) native "Vertices_init";
+}
+
 /// Defines how a list of points is interpreted when drawing a set of points.
 ///
 /// Used by [Canvas.drawPoints].
 enum PointMode {
   /// Draw each point separately.
   ///
-  /// If the [Paint.strokeCap] is [StrokeCat.round], then each point is drawn
+  /// If the [Paint.strokeCap] is [StrokeCap.round], then each point is drawn
   /// as a circle with the diameter of the [Paint.strokeWidth], filled as
   /// described by the [Paint] (ignoring [Paint.style]).
   ///
@@ -1250,10 +1375,12 @@ class Canvas extends NativeFieldWrapperClass2 {
   }
   void _drawColor(int color, int blendMode) native "Canvas_drawColor";
 
-  /// Draws a line between the given [Point]s using the given paint. The line is
+  /// Draws a line between the given points using the given paint. The line is
   /// stroked, the value of the [Paint.style] is ignored for this call.
-  void drawLine(Point p1, Point p2, Paint paint) {
-    _drawLine(p1.x, p1.y, p2.x, p2.y, paint._objects, paint._data);
+  ///
+  /// The `p1` and `p2` arguments are interpreted as offsets from the origin.
+  void drawLine(Offset p1, Offset p2, Paint paint) {
+    _drawLine(p1.dx, p1.dy, p2.dx, p2.dy, paint._objects, paint._data);
   }
   void _drawLine(double x1,
                  double y1,
@@ -1318,12 +1445,12 @@ class Canvas extends NativeFieldWrapperClass2 {
                  List<dynamic> paintObjects,
                  ByteData paintData) native "Canvas_drawOval";
 
-  /// Draws a circle centered at the point given by the first two arguments and
-  /// that has the radius given by the third argument, with the [Paint] given in
-  /// the fourth argument. Whether the circle is filled or stroked (or both) is
+  /// Draws a circle centered at the point given by the first argument and
+  /// that has the radius given by the second argument, with the [Paint] given in
+  /// the third argument. Whether the circle is filled or stroked (or both) is
   /// controlled by [Paint.style].
-  void drawCircle(Point c, double radius, Paint paint) {
-    _drawCircle(c.x, c.y, radius, paint._objects, paint._data);
+  void drawCircle(Offset c, double radius, Paint paint) {
+    _drawCircle(c.dx, c.dy, radius, paint._objects, paint._data);
   }
   void _drawCircle(double x,
                    double y,
@@ -1366,9 +1493,9 @@ class Canvas extends NativeFieldWrapperClass2 {
                  ByteData paintData) native "Canvas_drawPath";
 
   /// Draws the given [Image] into the canvas with its top-left corner at the
-  /// given [Point]. The image is composited into the canvas using the given [Paint].
-  void drawImage(Image image, Point p, Paint paint) {
-    _drawImage(image, p.x, p.y, paint._objects, paint._data);
+  /// given [Offset]. The image is composited into the canvas using the given [Paint].
+  void drawImage(Image image, Offset p, Paint paint) {
+    _drawImage(image, p.dx, p.dy, paint._objects, paint._data);
   }
   void _drawImage(Image image,
                   double x,
@@ -1448,15 +1575,34 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// [PictureRecorder].
   void drawPicture(Picture picture) native "Canvas_drawPicture";
 
-  /// Draws the text in the given paragraph into this canvas at the given offset.
+  /// Draws the text in the given [Paragraph] into this canvas at the given
+  /// [Offset].
   ///
-  /// Valid only after [Paragraph.layout] has been called on the paragraph.
+  /// The [Paragraph] object must have had [Paragraph.layout] called on it
+  /// first.
+  ///
+  /// To align the text, set the `textAlign` on the [ParagraphStyle] object
+  /// passed to the [new ParagraphBuilder] constructor. For more details see
+  /// [TextAlign] and the discussion at [new ParagraphStyle].
+  ///
+  /// If the text is left aligned or justified, the left margin will be at the
+  /// position specified by the `offset` argument's [Offset.dx] coordinate.
+  ///
+  /// If the text is right aligned or justified, the right margin will be at the
+  /// position described by adding the [ParagraphConstraints.width] given to
+  /// [Paragraph.layout], to the `offset` argument's [Offset.dx] coordinate.
+  ///
+  /// If the text is centered, the centering axis will be at the position
+  /// described by adding half of the [ParagraphConstraints.width] given to
+  /// [Paragraph.layout], to the `offset` argument's [Offset.dx] coordinate.
   void drawParagraph(Paragraph paragraph, Offset offset) {
     paragraph._paint(this, offset.dx, offset.dy);
   }
 
   /// Draws a sequence of points according to the given [PointMode].
-  void drawPoints(PointMode pointMode, List<Point> points, Paint paint) {
+  ///
+  /// The `points` argument is interpreted as offsets from the origin.
+  void drawPoints(PointMode pointMode, List<Offset> points, Paint paint) {
     _drawPoints(paint._objects, paint._data, pointMode.index, _encodePointList(points));
   }
   void _drawPoints(List<dynamic> paintObjects,
@@ -1464,38 +1610,13 @@ class Canvas extends NativeFieldWrapperClass2 {
                    int pointMode,
                    Float32List points) native "Canvas_drawPoints";
 
-  void drawVertices(VertexMode vertexMode,
-                    List<Point> vertices,
-                    List<Point> textureCoordinates,
-                    List<Color> colors,
-                    BlendMode blendMode,
-                    List<int> indicies,
-                    Paint paint) {
-    final int vertexCount = vertices.length;
-
-    if (textureCoordinates.isNotEmpty && textureCoordinates.length != vertexCount)
-      throw new ArgumentError("[vertices] and [textureCoordinates] lengths must match");
-    if (colors.isNotEmpty && colors.length != vertexCount)
-      throw new ArgumentError("[vertices] and [colors] lengths must match");
-
-    final Float32List vertexBuffer = _encodePointList(vertices);
-    final Float32List textureCoordinateBuffer = textureCoordinates.isEmpty ? null : _encodePointList(textureCoordinates);
-    final Int32List colorBuffer = colors.isEmpty ? null : _encodeColorList(colors);
-    final Int32List indexBuffer = new Int32List.fromList(indicies);
-
-    _drawVertices(
-      paint._objects, paint._data, vertexMode.index, vertexBuffer,
-      textureCoordinateBuffer, colorBuffer, blendMode.index, indexBuffer
-    );
+  void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
+    _drawVertices(vertices, blendMode, paint._objects, paint._data);
   }
-  void _drawVertices(List<dynamic> paintObjects,
-                     ByteData paintData,
-                     int vertexMode,
-                     Float32List vertices,
-                     Float32List textureCoordinates,
-                     Int32List colors,
-                     int blendMode,
-                     Int32List indicies) native "Canvas_drawVertices";
+  void _drawVertices(Vertices vertices,
+                     BlendMode blendMode,
+                     List<dynamic> paintObjects,
+                     ByteData paintData) native "Canvas_drawVertices";
 
   // TODO(eseidel): Paint should be optional, but optional doesn't work.
   void drawAtlas(Image atlas,
@@ -1548,6 +1669,18 @@ class Canvas extends NativeFieldWrapperClass2 {
                   Int32List colors,
                   int blendMode,
                   Float32List cullRect) native "Canvas_drawAtlas";
+
+  /// Draws a shadow for a [Path] representing the given material elevation.
+  ///
+  /// transparentOccluder should be true if the occluding object is not opaque.
+  void drawShadow(Path path, Color color, double elevation, bool transparentOccluder) {
+    _drawShadow(path, color.value, elevation, transparentOccluder);
+  }
+
+  void _drawShadow(Path path,
+                   int color,
+                   double elevation,
+                   bool transparentOccluder) native "Canvas_drawShadow";
 }
 
 /// An object representing a sequence of recorded graphical operations.
@@ -1563,6 +1696,15 @@ abstract class Picture extends NativeFieldWrapperClass2 {
   /// Calling the Picture constructor directly will not create a useable
   /// object. To create a Picture object, use a [PictureRecorder].
   Picture(); // (this constructor is here just so we can document it)
+
+  /// Creates an image from this picture.
+  /// 
+  /// The picture is rasterized using the number of pixels specified by the
+  /// given width and height.
+  /// 
+  /// Although the image is returned synchronously, the picture is actually
+  /// rasterized the first time the image is drawn and then cached.
+  Image toImage(int width, int height) native "Picture_toImage";
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.

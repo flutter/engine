@@ -7,21 +7,20 @@ source_set("common") {
   # as Mac.
   set_sources_assignment_filter([])
   sources = [
+    "buffer_conversions.h",
+    "buffer_conversions.mm",
     "platform_mac.h",
     "platform_mac.mm",
     "process_info_mac.cc",
     "process_info_mac.h",
-    "string_conversions.h",
-    "string_conversions.mm",
   ]
   set_sources_assignment_filter(sources_assignment_filter)
 
   deps = [
-    "//base",
-    "//base:i18n",
-    "//dart/runtime:libdart",
+    "//dart/runtime:dart_api",
     "//flutter/common",
     "//flutter/flow",
+    "//flutter/fml",
     "//flutter/runtime",
     "//flutter/shell/common",
     "//flutter/shell/gpu",

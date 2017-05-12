@@ -23,8 +23,8 @@ void SceneUpdateContext::CurrentPaintTask::Clear() {
 }
 
 SceneUpdateContext::SceneUpdateContext(mozart::SceneUpdate* update,
-                                       mozart::BufferProducer* buffer_producer)
-    : update_(update), buffer_producer_(buffer_producer) {}
+                                       SurfaceProducer* surface_producer)
+    : update_(update), surface_producer_(surface_producer) {}
 
 SceneUpdateContext::~SceneUpdateContext() = default;
 
@@ -60,7 +60,7 @@ mozart::NodePtr SceneUpdateContext::FinalizeCurrentPaintTask(
 
   mozart::ImagePtr image;
   PaintTask task;
-  task.surface = mozart::MakeSkSurface(physical_size, buffer_producer_, &image);
+  task.surface = surface_producer_->ProduceSurface(physical_size, &image);
   task.left = bounds.left();
   task.top = bounds.top();
   task.scaleX = scaleX;
@@ -109,7 +109,8 @@ void SceneUpdateContext::ExecutePaintTasks(
     SkCanvas* canvas = task.surface->getCanvas();
     Layer::PaintContext context = {*canvas, frame.context().frame_time(),
                                    frame.context().engine_time(),
-                                   frame.context().memory_usage()};
+                                   frame.context().memory_usage(),
+                                   false};
 
     canvas->clear(SK_ColorTRANSPARENT);
     canvas->scale(task.scaleX, task.scaleY);

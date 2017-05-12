@@ -4,7 +4,6 @@
 
 import("//dart/sdk/lib/rules.gni")
 import("//flutter/build/dart/rules.gni")
-import("//flutter/lib/jni/dart_jni.gni")
 import("//flutter/lib/ui/dart_ui.gni")
 import("//flutter/sky/engine/core/core.gni")
 
@@ -22,67 +21,59 @@ if (!is_fuchsia) {
 
 dart_sdk_lib_copy("async") {
   sdk_lib_name = "async"
-  destination = "$root_gen_dir/dart-pkg/sky_engine/dart_sdk"
+  destination = "$root_gen_dir/dart-pkg/sky_engine/lib"
 }
 
 dart_sdk_lib_copy("collection") {
   sdk_lib_name = "collection"
-  destination = "$root_gen_dir/dart-pkg/sky_engine/dart_sdk"
+  destination = "$root_gen_dir/dart-pkg/sky_engine/lib"
 }
 
 dart_sdk_lib_copy("convert") {
   sdk_lib_name = "convert"
-  destination = "$root_gen_dir/dart-pkg/sky_engine/dart_sdk"
+  destination = "$root_gen_dir/dart-pkg/sky_engine/lib"
 }
 
 dart_sdk_lib_copy("core") {
   sdk_lib_name = "core"
-  destination = "$root_gen_dir/dart-pkg/sky_engine/dart_sdk"
+  destination = "$root_gen_dir/dart-pkg/sky_engine/lib"
 }
 
 dart_sdk_lib_copy("developer") {
   sdk_lib_name = "developer"
-  destination = "$root_gen_dir/dart-pkg/sky_engine/dart_sdk"
+  destination = "$root_gen_dir/dart-pkg/sky_engine/lib"
 }
 
 dart_sdk_lib_copy("internal") {
   sdk_lib_name = "internal"
-  destination = "$root_gen_dir/dart-pkg/sky_engine/dart_sdk"
+  destination = "$root_gen_dir/dart-pkg/sky_engine/lib"
 }
 
 dart_sdk_lib_copy("io") {
   sdk_lib_name = "io"
-  destination = "$root_gen_dir/dart-pkg/sky_engine/dart_sdk"
+  destination = "$root_gen_dir/dart-pkg/sky_engine/lib"
 }
 
 dart_sdk_lib_copy("isolate") {
   sdk_lib_name = "isolate"
-  destination = "$root_gen_dir/dart-pkg/sky_engine/dart_sdk"
+  destination = "$root_gen_dir/dart-pkg/sky_engine/lib"
 }
 
 dart_sdk_lib_copy("math") {
   sdk_lib_name = "math"
-  destination = "$root_gen_dir/dart-pkg/sky_engine/dart_sdk"
+  destination = "$root_gen_dir/dart-pkg/sky_engine/lib"
 }
 
 dart_sdk_lib_copy("typed_data") {
   sdk_lib_name = "typed_data"
-  destination = "$root_gen_dir/dart-pkg/sky_engine/dart_sdk"
+  destination = "$root_gen_dir/dart-pkg/sky_engine/lib"
 }
 
 copy("copy_dart_ui") {
   sources = dart_ui_files
 
   outputs = [
-    "$root_gen_dir/dart-pkg/sky_engine/dart_ui/{{source_file_part}}",
-  ]
-}
-
-copy("copy_dart_jni") {
-  sources = dart_jni_files
-
-  outputs = [
-    "$root_gen_dir/dart-pkg/sky_engine/dart_jni/{{source_file_part}}",
+    "$root_gen_dir/dart-pkg/sky_engine/lib/ui/{{source_file_part}}",
   ]
 }
 
@@ -105,13 +96,12 @@ dart_pkg("sky_engine") {
   sources = [
     "LICENSE",
     "README.md",
-    "dart_sdk/_empty.dart",
     "lib/_embedder.yaml",
+    "lib/_empty.dart",
     "pubspec.yaml",
   ]
 
   deps = [
-    ":copy_dart_jni",
     ":copy_dart_sdk",
     ":copy_dart_ui",
   ]
@@ -136,5 +126,13 @@ if (is_fuchsia) {
     package_name = "sky_engine"
 
     source_dir = rebase_path("$root_gen_dir/dart-pkg/sky_engine/lib")
+
+    disable_analysis = true
+
+    non_dart_deps = [
+      # This will ensure all the source files needed for this package are
+      # copied to the right location.
+      ":sky_engine",
+    ]
   }
 }

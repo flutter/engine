@@ -21,21 +21,18 @@
 @implementation VSyncClient {
   CADisplayLink* _displayLink;
   shell::VsyncWaiter::Callback _pendingCallback;
-  bool _traceCounter;
 }
 
 - (instancetype)init {
   self = [super init];
 
   if (self) {
-    _displayLink = [[CADisplayLink
-        displayLinkWithTarget:self
-                     selector:@selector(onDisplayLink:)] retain];
+    _displayLink =
+        [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain];
     _displayLink.paused = YES;
 
     blink::Threads::UI()->PostTask([client = [self retain]]() {
-      [client->_displayLink addToRunLoop:[NSRunLoop currentRunLoop]
-                                 forMode:NSRunLoopCommonModes];
+      [client->_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
       [client release];
     });
   }
@@ -50,8 +47,6 @@
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
-  _traceCounter = !_traceCounter;
-  TRACE_COUNTER1("flutter", "OnDisplayLink", _traceCounter);
   _displayLink.paused = YES;
 
   // Note: Even though we know we are on the UI thread already (since the

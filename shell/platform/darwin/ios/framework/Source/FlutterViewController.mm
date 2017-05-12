@@ -6,14 +6,12 @@
 
 #include <memory>
 
-#include "base/mac/scoped_block.h"
-#include "base/mac/scoped_nsobject.h"
-#include "base/strings/sys_string_conversions.h"
 #include "flutter/common/threads.h"
-#include "flutter/shell/gpu/gpu_rasterizer.h"
-#include "flutter/shell/gpu/gpu_surface_gl.h"
+#include "flutter/fml/platform/darwin/scoped_block.h"
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/shell/platform/darwin/common/buffer_conversions.h"
 #include "flutter/shell/platform/darwin/common/platform_mac.h"
-#include "flutter/shell/platform/darwin/common/string_conversions.h"
+#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
@@ -26,7 +24,7 @@
 
 namespace {
 
-typedef void (^PlatformMessageResponseCallback)(NSString*);
+typedef void (^PlatformMessageResponseCallback)(NSData*);
 
 class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   FRIEND_MAKE_REF_COUNTED(PlatformMessageResponseDarwin);
@@ -36,40 +34,43 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
     ftl::RefPtr<PlatformMessageResponseDarwin> self(this);
     blink::Threads::Platform()->PostTask(
         ftl::MakeCopyable([ self, data = std::move(data) ]() mutable {
-          self->callback_.get()(shell::GetNSStringFromVector(data));
+          self->callback_.get()(shell::GetNSDataFromVector(data));
         }));
   }
 
-  void CompleteWithError() override { Complete(std::vector<uint8_t>()); }
+  void CompleteEmpty() override {
+    ftl::RefPtr<PlatformMessageResponseDarwin> self(this);
+    blink::Threads::Platform()->PostTask(
+        ftl::MakeCopyable([self]() mutable { self->callback_.get()(nil); }));
+  }
 
  private:
-  explicit PlatformMessageResponseDarwin(
-      PlatformMessageResponseCallback callback)
-      : callback_(callback, base::scoped_policy::RETAIN) {}
+  explicit PlatformMessageResponseDarwin(PlatformMessageResponseCallback callback)
+      : callback_(callback, fml::OwnershipPolicy::Retain) {}
 
-  base::mac::ScopedBlock<PlatformMessageResponseCallback> callback_;
+  fml::ScopedBlock<PlatformMessageResponseCallback> callback_;
 };
 
 }  // namespace
 
-@interface FlutterViewController ()<UIAlertViewDelegate,
-                                    FlutterTextInputDelegate>
+@interface FlutterViewController ()<UIAlertViewDelegate, FlutterTextInputDelegate>
 @end
 
-void FlutterInit(int argc, const char* argv[]) {
-  // Deprecated. To be removed.
-}
-
 @implementation FlutterViewController {
-  base::scoped_nsprotocol<FlutterDartProject*> _dartProject;
+  fml::scoped_nsprotocol<FlutterDartProject*> _dartProject;
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
   blink::ViewportMetrics _viewportMetrics;
   shell::TouchMapper _touchMapper;
   std::unique_ptr<shell::PlatformViewIOS> _platformView;
-  base::scoped_nsprotocol<FlutterPlatformPlugin*> _platformPlugin;
-  base::scoped_nsprotocol<FlutterTextInputPlugin*> _textInputPlugin;
-
+  fml::scoped_nsprotocol<FlutterPlatformPlugin*> _platformPlugin;
+  fml::scoped_nsprotocol<FlutterTextInputPlugin*> _textInputPlugin;
+  fml::scoped_nsprotocol<FlutterMethodChannel*> _localizationChannel;
+  fml::scoped_nsprotocol<FlutterMethodChannel*> _navigationChannel;
+  fml::scoped_nsprotocol<FlutterMethodChannel*> _platformChannel;
+  fml::scoped_nsprotocol<FlutterMethodChannel*> _textInputChannel;
+  fml::scoped_nsprotocol<FlutterBasicMessageChannel*> _lifecycleChannel;
+  fml::scoped_nsprotocol<FlutterBasicMessageChannel*> _systemChannel;
   BOOL _initialized;
 }
 
@@ -88,8 +89,7 @@ void FlutterInit(int argc, const char* argv[]) {
 
   if (self) {
     if (project == nil)
-      _dartProject.reset(
-          [[FlutterDartProject alloc] initFromDefaultSourceForConfiguration]);
+      _dartProject.reset([[FlutterDartProject alloc] initFromDefaultSourceForConfiguration]);
     else
       _dartProject.reset([project retain]);
 
@@ -99,8 +99,7 @@ void FlutterInit(int argc, const char* argv[]) {
   return self;
 }
 
-- (instancetype)initWithNibName:(NSString*)nibNameOrNil
-                         bundle:(NSBundle*)nibBundleOrNil {
+- (instancetype)initWithNibName:(NSString*)nibNameOrNil bundle:(NSBundle*)nibBundleOrNil {
   return [self initWithProject:nil nibName:nil bundle:nil];
 }
 
@@ -118,16 +117,50 @@ void FlutterInit(int argc, const char* argv[]) {
 
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
-  _platformView = std::make_unique<shell::PlatformViewIOS>(
-      reinterpret_cast<CAEAGLLayer*>(self.view.layer));
+  _platformView =
+      std::make_unique<shell::PlatformViewIOS>(reinterpret_cast<CAEAGLLayer*>(self.view.layer));
   _platformView->SetupResourceContextOnIOThread();
 
+  _localizationChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/localization"
+      binaryMessenger:self
+                codec:[FlutterJSONMethodCodec sharedInstance]]);
+
+  _navigationChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/navigation"
+      binaryMessenger:self
+                codec:[FlutterJSONMethodCodec sharedInstance]]);
+
+  _platformChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/platform"
+      binaryMessenger:self
+                codec:[FlutterJSONMethodCodec sharedInstance]]);
+
+  _textInputChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/textinput"
+      binaryMessenger:self
+                codec:[FlutterJSONMethodCodec sharedInstance]]);
+
+  _lifecycleChannel.reset([[FlutterBasicMessageChannel alloc]
+         initWithName:@"flutter/lifecycle"
+      binaryMessenger:self
+                codec:[FlutterStringCodec sharedInstance]]);
+
+  _systemChannel.reset([[FlutterBasicMessageChannel alloc]
+         initWithName:@"flutter/system"
+      binaryMessenger:self
+                codec:[FlutterJSONMessageCodec sharedInstance]]);
+
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] init]);
-  [self addMessageListener:_platformPlugin.get()];
+  [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [_platformPlugin.get() handleMethodCall:call result:result];
+  }];
 
   _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
   _textInputPlugin.get().textInputDelegate = self;
-  [self addMessageListener:_textInputPlugin.get()];
+  [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [_textInputPlugin.get() handleMethodCall:call result:result];
+  }];
 
   [self setupNotificationCenterObservers];
 
@@ -157,8 +190,8 @@ void FlutterInit(int argc, const char* argv[]) {
                object:nil];
 
   [center addObserver:self
-             selector:@selector(keyboardWasShown:)
-                 name:UIKeyboardDidShowNotification
+             selector:@selector(keyboardWillChangeFrame:)
+                 name:UIKeyboardWillChangeFrameNotification
                object:nil];
 
   [center addObserver:self
@@ -175,12 +208,16 @@ void FlutterInit(int argc, const char* argv[]) {
              selector:@selector(onVoiceOverChanged:)
                  name:UIAccessibilityVoiceOverStatusChanged
                object:nil];
+
+  [center addObserver:self
+             selector:@selector(onMemoryWarning:)
+                 name:UIApplicationDidReceiveMemoryWarningNotification
+               object:nil];
 }
 
 #pragma mark - Initializing the engine
 
-- (void)alertView:(UIAlertView*)alertView
-    clickedButtonAtIndex:(NSInteger)buttonIndex {
+- (void)alertView:(UIAlertView*)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
   exit(0);
 }
 
@@ -188,19 +225,17 @@ void FlutterInit(int argc, const char* argv[]) {
   TRACE_EVENT0("flutter", "connectToEngineAndLoad");
 
   // We ask the VM to check what it supports.
-  const enum VMType type =
-      Dart_IsPrecompiledRuntime() ? VMTypePrecompilation : VMTypeInterpreter;
+  const enum VMType type = Dart_IsPrecompiledRuntime() ? VMTypePrecompilation : VMTypeInterpreter;
 
   [_dartProject launchInEngine:&_platformView->engine()
                 embedderVMType:type
                         result:^(BOOL success, NSString* message) {
                           if (!success) {
-                            UIAlertView* alert = [[UIAlertView alloc]
-                                    initWithTitle:@"Launch Error"
-                                          message:message
-                                         delegate:self
-                                cancelButtonTitle:@"OK"
-                                otherButtonTitles:nil];
+                            UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"Launch Error"
+                                                                            message:message
+                                                                           delegate:self
+                                                                  cancelButtonTitle:@"OK"
+                                                                  otherButtonTitles:nil];
                             [alert show];
                             [alert release];
                           }
@@ -214,8 +249,7 @@ void FlutterInit(int argc, const char* argv[]) {
 
   self.view = view;
   self.view.multipleTouchEnabled = YES;
-  self.view.autoresizingMask =
-      UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+  self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
   [view release];
 }
@@ -223,13 +257,11 @@ void FlutterInit(int argc, const char* argv[]) {
 #pragma mark - Application lifecycle notifications
 
 - (void)applicationBecameActive:(NSNotification*)notification {
-  [self sendString:@"AppLifecycleState.resumed"
-      withMessageName:@"flutter/lifecycle"];
+  [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.resumed"];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
-  [self sendString:@"AppLifecycleState.paused"
-      withMessageName:@"flutter/lifecycle"];
+  [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
 }
 
 #pragma mark - Touch event handling
@@ -240,30 +272,23 @@ enum MapperPhase {
   Removed,
 };
 
-using PointerChangeMapperPhase =
-    std::pair<blink::PointerData::Change, MapperPhase>;
-static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(
-    UITouchPhase phase) {
+using PointerChangeMapperPhase = std::pair<blink::PointerData::Change, MapperPhase>;
+static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(UITouchPhase phase) {
   switch (phase) {
     case UITouchPhaseBegan:
-      return PointerChangeMapperPhase(blink::PointerData::Change::kDown,
-                                      MapperPhase::Added);
+      return PointerChangeMapperPhase(blink::PointerData::Change::kDown, MapperPhase::Added);
     case UITouchPhaseMoved:
     case UITouchPhaseStationary:
       // There is no EVENT_TYPE_POINTER_STATIONARY. So we just pass a move type
       // with the same coordinates
-      return PointerChangeMapperPhase(blink::PointerData::Change::kMove,
-                                      MapperPhase::Accessed);
+      return PointerChangeMapperPhase(blink::PointerData::Change::kMove, MapperPhase::Accessed);
     case UITouchPhaseEnded:
-      return PointerChangeMapperPhase(blink::PointerData::Change::kUp,
-                                      MapperPhase::Removed);
+      return PointerChangeMapperPhase(blink::PointerData::Change::kUp, MapperPhase::Removed);
     case UITouchPhaseCancelled:
-      return PointerChangeMapperPhase(blink::PointerData::Change::kCancel,
-                                      MapperPhase::Removed);
+      return PointerChangeMapperPhase(blink::PointerData::Change::kCancel, MapperPhase::Removed);
   }
 
-  return PointerChangeMapperPhase(blink::PointerData::Change::kCancel,
-                                  MapperPhase::Accessed);
+  return PointerChangeMapperPhase(blink::PointerData::Change::kCancel, MapperPhase::Accessed);
 }
 
 - (void)dispatchTouches:(NSSet*)touches phase:(UITouchPhase)phase {
@@ -292,7 +317,7 @@ static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(
         break;
     }
 
-    DCHECK(device_id != 0);
+    FTL_DCHECK(device_id != 0);
     CGPoint windowCoordinates = [touch locationInView:nil];
 
     blink::PointerData pointer_data;
@@ -311,12 +336,11 @@ static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(
     packet->SetPointerData(i++, pointer_data);
   }
 
-  blink::Threads::UI()->PostTask(ftl::MakeCopyable([
-    engine = _platformView->engine().GetWeakPtr(), packet = std::move(packet)
-  ] {
-    if (engine.get())
-      engine->DispatchPointerDataPacket(*packet);
-  }));
+  blink::Threads::UI()->PostTask(ftl::MakeCopyable(
+      [ engine = _platformView->engine().GetWeakPtr(), packet = std::move(packet) ] {
+        if (engine.get())
+          engine->DispatchPointerDataPacket(*packet);
+      }));
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
@@ -338,40 +362,23 @@ static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetrics {
-  blink::Threads::UI()->PostTask([
-    weak_platform_view = _platformView->GetWeakPtr(), metrics = _viewportMetrics
-  ] {
-    if (!weak_platform_view) {
-      return;
-    }
-    weak_platform_view->UpdateSurfaceSize();
-    weak_platform_view->engine().SetViewportMetrics(metrics);
-  });
-}
-
-- (bool)isWindowFullscreen {
-  UIWindow* window = self.view.window;
-  return CGRectEqualToRect(window.frame, window.screen.bounds);
+  blink::Threads::UI()->PostTask(
+      [ weak_platform_view = _platformView->GetWeakPtr(), metrics = _viewportMetrics ] {
+        if (!weak_platform_view) {
+          return;
+        }
+        weak_platform_view->UpdateSurfaceSize();
+        weak_platform_view->engine().SetViewportMetrics(metrics);
+      });
 }
 
 - (CGFloat)statusBarPadding {
-  // If we're a child of a containing view, let the container apply padding.
-  if (self.parentViewController != nil) {
-    return 0.0;
-  }
-
-  // If not fullscreen, assume we don't want padding.
-  if (![self isWindowFullscreen]) {
-    return 0.0;
-  }
-
   UIScreen* screen = self.view.window.screen;
   CGRect statusFrame = [UIApplication sharedApplication].statusBarFrame;
-  CGRect viewFrame = [self.view convertRect:self.view.bounds
-                          toCoordinateSpace:screen.coordinateSpace];
-  CGFloat padding =
-      statusFrame.origin.y + statusFrame.size.height - viewFrame.origin.y;
-  return MAX(padding, 0.0);
+  CGRect viewFrame =
+      [self.view convertRect:self.view.bounds toCoordinateSpace:screen.coordinateSpace];
+  CGRect intersection = CGRectIntersection(statusFrame, viewFrame);
+  return CGRectIsNull(intersection) ? 0.0 : intersection.size.height;
 }
 
 - (void)viewDidLayoutSubviews {
@@ -387,10 +394,10 @@ static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(
 
 #pragma mark - Keyboard events
 
-- (void)keyboardWasShown:(NSNotification*)notification {
+- (void)keyboardWillChangeFrame:(NSNotification*)notification {
   NSDictionary* info = [notification userInfo];
-  CGFloat bottom = CGRectGetHeight(
-      [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue]);
+  CGFloat bottom =
+      CGRectGetHeight([[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue]);
   CGFloat scale = [UIScreen mainScreen].scale;
   _viewportMetrics.physical_padding_bottom = bottom * scale;
   [self updateViewportMetrics];
@@ -404,11 +411,19 @@ static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(
 #pragma mark - Text input delegate
 
 - (void)updateEditingClient:(int)client withState:(NSDictionary*)state {
-  NSDictionary* message = @{
-    @"method" : @"TextInputClient.updateEditingState",
-    @"args" : @[ @(client), state ],
-  };
-  [self sendJSON:message withMessageName:@"flutter/textinputclient"];
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingState"
+                              arguments:@[ @(client), state ]];
+}
+
+- (void)performAction:(FlutterTextInputAction)action withClient:(int)client {
+  NSString* actionString;
+  switch (action) {
+    case FlutterTextInputActionDone:
+      actionString = @"TextInputAction.done";
+      break;
+  }
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.performAction"
+                              arguments:@[ @(client), actionString ]];
 }
 
 #pragma mark - Orientation updates
@@ -455,26 +470,28 @@ static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(
   _platformView->ToggleAccessibility(self.view, enabled);
 }
 
+#pragma mark - Memory Notifications
+
+- (void)onMemoryWarning:(NSNotification*)notification {
+  [_systemChannel.get() sendMessage:@{ @"type" : @"memoryPressure" }];
+}
+
 #pragma mark - Locale updates
 
 - (void)onLocaleUpdated:(NSNotification*)notification {
   NSLocale* currentLocale = [NSLocale currentLocale];
   NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
   NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
-  NSDictionary* message =
-      @{ @"method" : @"setLocale",
-         @"args" : @[ languageCode, countryCode ] };
-  [self sendJSON:message withMessageName:@"flutter/localization"];
+  [_localizationChannel.get() invokeMethod:@"setLocale" arguments:@[ languageCode, countryCode ]];
 }
 
 #pragma mark - Surface creation and teardown updates
 
 - (void)surfaceUpdated:(BOOL)appeared {
-  CHECK(_platformView != nullptr);
+  FTL_CHECK(_platformView != nullptr);
 
   if (appeared) {
-    _platformView->NotifyCreated(
-        std::make_unique<shell::GPUSurfaceGL>(_platformView.get()));
+    _platformView->NotifyCreated();
   } else {
     _platformView->NotifyDestroyed();
   }
@@ -553,72 +570,31 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   });
 }
 
-#pragma mark - Application Messages
+#pragma mark - FlutterBinaryMessenger
 
-- (void)sendString:(NSString*)message withMessageName:(NSString*)channel {
-  NSAssert(message, @"The message must not be null");
+- (void)sendOnChannel:(NSString*)channel message:(NSData*)message {
+  [self sendOnChannel:channel message:message binaryReply:nil];
+}
+
+- (void)sendOnChannel:(NSString*)channel
+              message:(NSData*)message
+          binaryReply:(FlutterBinaryReply)callback {
   NSAssert(channel, @"The channel must not be null");
-  _platformView->DispatchPlatformMessage(
-      ftl::MakeRefCounted<blink::PlatformMessage>(
-          channel.UTF8String, shell::GetVectorFromNSString(message), nullptr));
+  ftl::RefPtr<PlatformMessageResponseDarwin> response =
+      (callback == nil) ? nullptr
+                        : ftl::MakeRefCounted<PlatformMessageResponseDarwin>(^(NSData* reply) {
+                            callback(reply);
+                          });
+  ftl::RefPtr<blink::PlatformMessage> platformMessage =
+      (message == nil) ? ftl::MakeRefCounted<blink::PlatformMessage>(channel.UTF8String, response)
+                       : ftl::MakeRefCounted<blink::PlatformMessage>(
+                             channel.UTF8String, shell::GetVectorFromNSData(message), response);
+  _platformView->DispatchPlatformMessage(platformMessage);
 }
 
-- (void)sendString:(NSString*)message
-    withMessageName:(NSString*)channel
-           callback:(void (^)(NSString*))callback {
-  NSAssert(message, @"The message must not be null");
+- (void)setMessageHandlerOnChannel:(NSString*)channel
+              binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
   NSAssert(channel, @"The channel must not be null");
-  NSAssert(callback, @"The callback must not be null");
-  _platformView->DispatchPlatformMessage(
-      ftl::MakeRefCounted<blink::PlatformMessage>(
-          channel.UTF8String, shell::GetVectorFromNSString(message),
-          ftl::MakeRefCounted<PlatformMessageResponseDarwin>(callback)));
+  _platformView->platform_message_router().SetMessageHandler(channel.UTF8String, handler);
 }
-
-- (void)sendJSON:(NSDictionary*)message withMessageName:(NSString*)channel {
-  NSData* data =
-      [NSJSONSerialization dataWithJSONObject:message options:0 error:nil];
-  if (!data)
-    return;
-  const uint8_t* bytes = static_cast<const uint8_t*>(data.bytes);
-  _platformView->DispatchPlatformMessage(
-      ftl::MakeRefCounted<blink::PlatformMessage>(
-          channel.UTF8String, std::vector<uint8_t>(bytes, bytes + data.length),
-          nullptr));
-}
-
-- (void)addMessageListener:(NSObject<FlutterMessageListener>*)listener {
-  NSAssert(listener, @"The listener must not be null");
-  NSString* channel = listener.messageName;
-  NSAssert(channel, @"The channel must not be null");
-  _platformView->platform_message_router().SetMessageListener(
-      channel.UTF8String, listener);
-}
-
-- (void)removeMessageListener:(NSObject<FlutterMessageListener>*)listener {
-  NSAssert(listener, @"The listener must not be null");
-  NSString* channel = listener.messageName;
-  NSAssert(channel, @"The channel must not be null");
-  _platformView->platform_message_router().SetMessageListener(
-      channel.UTF8String, nil);
-}
-
-- (void)addAsyncMessageListener:
-    (NSObject<FlutterAsyncMessageListener>*)listener {
-  NSAssert(listener, @"The listener must not be null");
-  NSString* messageName = listener.messageName;
-  NSAssert(messageName, @"The messageName must not be null");
-  _platformView->platform_message_router().SetAsyncMessageListener(
-      messageName.UTF8String, listener);
-}
-
-- (void)removeAsyncMessageListener:
-    (NSObject<FlutterAsyncMessageListener>*)listener {
-  NSAssert(listener, @"The listener must not be null");
-  NSString* messageName = listener.messageName;
-  NSAssert(messageName, @"The messageName must not be null");
-  _platformView->platform_message_router().SetAsyncMessageListener(
-      messageName.UTF8String, nil);
-}
-
 @end

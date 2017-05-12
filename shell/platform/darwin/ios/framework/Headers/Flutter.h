@@ -6,11 +6,12 @@
 #define FLUTTER_FLUTTER_H_
 
 #include "FlutterAppDelegate.h"
-#include "FlutterAsyncMessageListener.h"
+#include "FlutterBinaryMessenger.h"
+#include "FlutterChannels.h"
+#include "FlutterCodecs.h"
 #include "FlutterDartProject.h"
-#include "FlutterJSONMessageListener.h"
 #include "FlutterMacros.h"
-#include "FlutterMessageListener.h"
+#include "FlutterPlugin.h"
 #include "FlutterViewController.h"
 
 #endif  // FLUTTER_FLUTTER_H_

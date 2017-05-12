@@ -6,17 +6,20 @@ package io.flutter.plugin.editing;
 
 import android.app.Activity;
 import android.content.Context;
-import android.text.Editable;
 import android.text.InputType;
-import android.text.Selection;
-import android.text.SpannableStringBuilder;
-import android.util.Log;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import android.view.View;
-import io.flutter.plugin.common.JSONMessageListener;
+
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
+import io.flutter.plugin.common.MethodChannel.Result;
+import io.flutter.plugin.common.JSONMethodCodec;
+import io.flutter.plugin.common.JSONUtil;
+import io.flutter.plugin.common.MethodCall;
 import io.flutter.view.FlutterView;
+
+import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,110 +27,124 @@ import org.json.JSONObject;
 /**
  * Android implementation of the text input plugin.
  */
-public class TextInputPlugin extends JSONMessageListener {
-    private static final String TAG = "FlutterView";
+public class TextInputPlugin implements MethodCallHandler {
 
     private final Activity mActivity;
+    private final FlutterView mView;
+    private final MethodChannel mFlutterChannel;
     private int mClient = 0;
     private JSONObject mConfiguration;
     private JSONObject mLatestState;
 
-    public TextInputPlugin(Activity activity) {
+    public TextInputPlugin(Activity activity, FlutterView view) {
         mActivity = activity;
+        mView = view;
+        mFlutterChannel = new MethodChannel(view, "flutter/textinput",
+            JSONMethodCodec.INSTANCE);
+        mFlutterChannel.setMethodCallHandler(this);
     }
 
     @Override
-    public JSONObject onJSONMessage(FlutterView view, JSONObject message) throws JSONException {
-        String method = message.getString("method");
-        JSONArray args = message.getJSONArray("args");
-        if (method.equals("TextInput.show")) {
-            showTextInput(view);
-        } else if (method.equals("TextInput.hide")) {
-            hideTextInput(view);
-        } else if (method.equals("TextInput.setClient")) {
-            setTextInputClient(view, args.getInt(0), args.getJSONObject(1));
-        } else if (method.equals("TextInput.setEditingState")) {
-            setTextInputEditingState(view, args.getJSONObject(0));
-        } else if (method.equals("TextInput.clearClient")) {
-            clearTextInputClient();
-        } else {
-            // TODO(abarth): We should throw an exception here that gets
-            // transmitted back to Dart.
+    public void onMethodCall(MethodCall call, Result result) {
+        String method = call.method;
+        Object args = call.arguments;
+        try {
+            if (method.equals("TextInput.show")) {
+                showTextInput(mView);
+                result.success(null);
+            } else if (method.equals("TextInput.hide")) {
+                hideTextInput(mView);
+                result.success(null);
+            } else if (method.equals("TextInput.setClient")) {
+                final JSONArray argumentList = (JSONArray) args;
+                setTextInputClient(mView, argumentList.getInt(0), argumentList.getJSONObject(1));
+                result.success(null);
+            } else if (method.equals("TextInput.setEditingState")) {
+                setTextInputEditingState(mView, (JSONObject) args);
+                result.success(null);
+            } else if (method.equals("TextInput.clearClient")) {
+                clearTextInputClient();
+                result.success(null);
+            } else {
+                result.notImplemented();
+            }
+        } catch (JSONException e) {
+            result.error("error", "JSON error: " + e.getMessage(), null);
         }
-        return null;
     }
 
-    private static int inputTypeFromTextInputType(String inputType) {
+    private static int inputTypeFromTextInputType(String inputType, boolean obscureText) {
         if (inputType.equals("TextInputType.datetime"))
             return InputType.TYPE_CLASS_DATETIME;
         if (inputType.equals("TextInputType.number"))
             return InputType.TYPE_CLASS_NUMBER;
         if (inputType.equals("TextInputType.phone"))
             return InputType.TYPE_CLASS_PHONE;
-        return InputType.TYPE_CLASS_TEXT;
+        return obscureText
+          ? InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+          : InputType.TYPE_CLASS_TEXT;
     }
 
-    public InputConnection createInputConnection(FlutterView view, EditorInfo outAttrs) {
+    public InputConnection createInputConnection(FlutterView view, EditorInfo outAttrs)
+        throws JSONException {
         if (mClient == 0)
             return null;
-        try {
-            outAttrs.inputType = inputTypeFromTextInputType(mConfiguration.getString("inputType"));
-            outAttrs.actionLabel = getStringOrNull(mConfiguration, "actionLabel");
-            outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN;
-            InputConnectionAdaptor connection = new InputConnectionAdaptor(view, mClient, this);
-            if (mLatestState != null) {
-                int selectionBase = mLatestState.getInt("selectionBase");
-                int selectionExtent = mLatestState.getInt("selectionExtent");
-                outAttrs.initialSelStart = selectionBase;
-                outAttrs.initialSelEnd = selectionExtent;
-                connection.getEditable().append(mLatestState.getString("text"));
-                connection.setSelection(Math.max(selectionBase, 0),
-                                        Math.max(selectionExtent, 0));
-                connection.setComposingRegion(mLatestState.getInt("composingBase"),
-                                              mLatestState.getInt("composingExtent"));
-            } else {
-                outAttrs.initialSelStart = 0;
-                outAttrs.initialSelEnd = 0;
-            }
-            return connection;
-        } catch (JSONException e) {
-            Log.e(TAG, "Failed to create input connection", e);
+        outAttrs.inputType = inputTypeFromTextInputType(mConfiguration.getString("inputType"),
+            mConfiguration.optBoolean("obscureText"));
+        if (!mConfiguration.isNull("actionLabel"))
+          outAttrs.actionLabel = mConfiguration.getString("actionLabel");
+        outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN;
+        InputConnectionAdaptor connection = new InputConnectionAdaptor(view, mClient, this,
+            mFlutterChannel);
+        if (mLatestState != null) {
+            int selectionBase = (Integer) mLatestState.get("selectionBase");
+            int selectionExtent = (Integer) mLatestState.get("selectionExtent");
+            outAttrs.initialSelStart = selectionBase;
+            outAttrs.initialSelEnd = selectionExtent;
+            connection.getEditable().append((String) mLatestState.get("text"));
+            connection.setSelection(Math.max(selectionBase, 0),
+                Math.max(selectionExtent, 0));
+            connection.setComposingRegion((Integer) mLatestState.get("composingBase"),
+                (Integer) mLatestState.get("composingExtent"));
+        } else {
+            outAttrs.initialSelStart = 0;
+            outAttrs.initialSelEnd = 0;
         }
-        return null;
+        return connection;
     }
 
     private void showTextInput(FlutterView view) {
         InputMethodManager imm =
-                (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
+            (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.showSoftInput(view, 0);
     }
 
     private void hideTextInput(FlutterView view) {
         InputMethodManager imm =
-                (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
+            (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
     }
 
-    private void setTextInputClient(FlutterView view, int client, JSONObject configuration) throws JSONException {
+    private void setTextInputClient(FlutterView view, int client, JSONObject configuration) {
         mLatestState = null;
         mClient = client;
         mConfiguration = configuration;
         InputMethodManager imm =
-                (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
+            (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.restartInput(view);
     }
 
-    private void setTextInputEditingState(FlutterView view, JSONObject state) throws JSONException {
+    private void setTextInputEditingState(FlutterView view, JSONObject state) {
         mLatestState = state;
         InputMethodManager imm =
-                (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
+            (InputMethodManager) mActivity.getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.restartInput(view);
     }
 
-    void setLatestEditingState(JSONObject state) {
-        mLatestState = state;
+    void setLatestEditingState(Map<String, Object> state) {
+        mLatestState = (JSONObject) JSONUtil.wrap(state);
     }
-    
+
     private void clearTextInputClient() {
         mClient = 0;
     }

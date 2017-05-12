@@ -35,9 +35,9 @@
 #include "flutter/sky/engine/public/platform/Platform.h"
 #include "flutter/sky/engine/wtf/Assertions.h"
 #include "flutter/sky/engine/wtf/MainThread.h"
+#include "flutter/sky/engine/wtf/WTF.h"
 #include "flutter/sky/engine/wtf/text/AtomicString.h"
 #include "flutter/sky/engine/wtf/text/TextEncoding.h"
-#include "flutter/sky/engine/wtf/WTF.h"
 #include "lib/ftl/build_config.h"
 #include "lib/tonic/dart_microtask_queue.h"
 
@@ -47,7 +47,7 @@
 
 #else  // defined(OS_FUCHSIA)
 
-#include "base/message_loop/message_loop.h"
+#include "flutter/fml/message_loop.h"
 
 #endif  // defined(OS_FUCHSIA)
 
@@ -56,7 +56,7 @@ namespace blink {
 namespace {
 
 void didProcessTask() {
-  tonic::DartMicrotaskQueue::RunMicrotasks();
+  tonic::DartMicrotaskQueue::GetForCurrentThread()->RunMicrotasks();
   // FIXME: Report memory usage to dart?
 }
 
@@ -72,29 +72,31 @@ void removeMessageLoopObservers() {
 
 #else  // defined(OS_FUCHSIA)
 
-class TaskObserver : public base::MessageLoop::TaskObserver {
+class RunMicrotasksTaskObserver : public fml::TaskObserver {
  public:
-  void WillProcessTask(const base::PendingTask& pending_task) override {}
-  void DidProcessTask(const base::PendingTask& pending_task) override {
-    didProcessTask();
-  }
+  RunMicrotasksTaskObserver() = default;
+
+  ~RunMicrotasksTaskObserver() override = default;
+
+  void DidProcessTask() override { didProcessTask(); }
 };
 
-static TaskObserver* s_taskObserver = 0;
+// FIXME(chinmaygarde): The awkward use of the global here is be cause we cannot
+// introduce the fml::TaskObserver subclass in common code because Fuchsia does
+// not support the same. Unify the API and remove hack.
+static RunMicrotasksTaskObserver* g_run_microtasks_task_observer = nullptr;
 
 void addMessageLoopObservers() {
-  ASSERT(!s_taskObserver);
-  s_taskObserver = new TaskObserver;
-
-  base::MessageLoop::current()->AddTaskObserver(s_taskObserver);
+  g_run_microtasks_task_observer = new RunMicrotasksTaskObserver();
+  fml::MessageLoop::GetCurrent().AddTaskObserver(
+      g_run_microtasks_task_observer);
 }
 
 void removeMessageLoopObservers() {
-  base::MessageLoop::current()->RemoveTaskObserver(s_taskObserver);
-
-  ASSERT(s_taskObserver);
-  delete s_taskObserver;
-  s_taskObserver = 0;
+  fml::MessageLoop::GetCurrent().RemoveTaskObserver(
+      g_run_microtasks_task_observer);
+  delete g_run_microtasks_task_observer;
+  g_run_microtasks_task_observer = nullptr;
 }
 
 #endif  // defined(OS_FUCHSIA)
@@ -129,11 +131,13 @@ void InitEngine(Platform* platform) {
   // this, initializing this lazily probably doesn't buy us much.
   WTF::UTF8Encoding();
 
+  tonic::DartMicrotaskQueue::StartForCurrentThread();
   addMessageLoopObservers();
 }
 
 void ShutdownEngine() {
   removeMessageLoopObservers();
+  tonic::DartMicrotaskQueue::GetForCurrentThread()->Destroy();
 
   // FIXME: Shutdown dart?
 

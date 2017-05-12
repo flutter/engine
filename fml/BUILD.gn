@@ -1,0 +1,116 @@
+# Copyright 2017 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("fml") {
+  sources = [
+    "icu_util.cc",
+    "icu_util.h",
+    "mapping.cc",
+    "mapping.h",
+    "message_loop.cc",
+    "message_loop.h",
+    "message_loop_impl.cc",
+    "message_loop_impl.h",
+    "paths.h",
+    "task_observer.h",
+    "task_runner.cc",
+    "task_runner.h",
+    "thread.cc",
+    "thread.h",
+    "thread_local.h",
+    "trace_event.cc",
+    "trace_event.h",
+  ]
+
+  deps = [
+    "//dart/runtime:dart_api",
+    "//lib/ftl",
+
+    # These need to be in sync with the Fuchsia buildroot.
+    "//third_party/icu",
+  ]
+
+  configs += [ "//third_party/icu:icu_config" ]
+
+  libs = []
+
+  if (is_ios || is_mac) {
+    sources += [
+      "platform/darwin/cf_utils.cc",
+      "platform/darwin/cf_utils.h",
+      "platform/darwin/message_loop_darwin.h",
+      "platform/darwin/message_loop_darwin.mm",
+      "platform/darwin/paths_darwin.mm",
+      "platform/darwin/resource_mapping_darwin.h",
+      "platform/darwin/resource_mapping_darwin.mm",
+      "platform/darwin/scoped_block.h",
+      "platform/darwin/scoped_block.mm",
+      "platform/darwin/scoped_nsobject.h",
+      "platform/darwin/scoped_nsobject.mm",
+    ]
+
+    libs += [ "Foundation.framework" ]
+  }
+
+  if (is_android) {
+    sources += [
+      "platform/android/jni_util.cc",
+      "platform/android/jni_util.h",
+      "platform/android/jni_weak_ref.cc",
+      "platform/android/jni_weak_ref.h",
+      "platform/android/message_loop_android.cc",
+      "platform/android/message_loop_android.h",
+      "platform/android/paths_android.cc",
+      "platform/android/scoped_java_ref.cc",
+      "platform/android/scoped_java_ref.h",
+    ]
+
+    libs += [ "android" ]
+  }
+
+  if (is_android) {
+    # Don't filter away these Linux sources on Android.
+    set_sources_assignment_filter([])
+    sources += [
+      "platform/linux/timerfd.cc",
+      "platform/linux/timerfd.h",
+    ]
+    set_sources_assignment_filter(sources_assignment_filter)
+  }
+
+  if (is_linux) {
+    sources += [
+      "platform/linux/message_loop_linux.cc",
+      "platform/linux/message_loop_linux.h",
+      "platform/linux/paths_linux.cc",
+      "platform/linux/timerfd.cc",
+      "platform/linux/timerfd.h",
+    ]
+  }
+
+  if (is_win) {
+    sources += [
+      "platform/win/message_loop_win.cc",
+      "platform/win/message_loop_win.h",
+      "platform/win/paths_win.cc",
+    ]
+  }
+}
+
+executable("fml_unittests") {
+  testonly = true
+
+  sources = [
+    "message_loop_unittests.cc",
+    "thread_local_unittests.cc",
+    "thread_unittests.cc",
+  ]
+
+  deps = [
+    "//dart/runtime:libdart_jit",
+    "//flutter/fml",
+    "//flutter/testing",
+    "//lib/ftl",
+  ]
+}

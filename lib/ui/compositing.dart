@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of dart_ui;
+part of dart.ui;
 
 /// An opaque object representing a composited scene.
 ///
@@ -127,6 +127,18 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
                        double maskRectBottom,
                        int blendMode) native "SceneBuilder_pushShaderMask";
 
+  /// Pushes a physical model operation onto the operation stack.
+  ///
+  /// Rasterization will be clipped to the given shape.
+  ///
+  /// See [pop] for details about the operation stack.
+  void pushPhysicalModel({ RRect rrect, double elevation, Color color }) {
+    _pushPhysicalModel(rrect._value, elevation, color.value);
+  }
+  void _pushPhysicalModel(Float32List rrect,
+                          double elevation,
+                          int color) native "SceneBuilder_pushPhysicalModel";
+
   /// Ends the effect of the most recently pushed operation.
   ///
   /// Internally the scene builder maintains a stack of operations. Each of the
@@ -239,6 +251,12 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Currently this interface is difficult to use by end-developers. If you're
   /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
   void setCheckerboardRasterCacheImages(bool checkerboard) native "SceneBuilder_setCheckerboardRasterCacheImages";
+
+  /// Sets whether the compositor should checkerboard layers that are rendered
+  /// to offscreen bitmaps.
+  ///
+  /// This is only useful for debugging purposes.
+  void setCheckerboardOffscreenLayers(bool checkerboard) native "SceneBuilder_setCheckerboardOffscreenLayers";
 
   /// Finishes building the scene.
   ///

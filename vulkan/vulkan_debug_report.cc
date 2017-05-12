@@ -201,7 +201,11 @@ OnVulkanDebugReportCallback(VkDebugReportFlagsEXT flags,
   stream << "-----------------------------------------------------------------";
 
   if (flags & kVulkanErrorFlags) {
-    FTL_DCHECK(false) << stream.str();
+    if (ValidationErrorsFatal()) {
+      FTL_DCHECK(false) << stream.str();
+    } else {
+      FTL_LOG(ERROR) << stream.str();
+    }
   } else {
     FTL_LOG(INFO) << stream.str();
   }
@@ -224,10 +228,13 @@ VulkanDebugReport::VulkanDebugReport(
     return;
   }
 
+  VkDebugReportFlagsEXT flags = kVulkanErrorFlags;
+  if (ValidationLayerInfoMessagesEnabled())
+    flags |= kVulkanInfoFlags;
   const VkDebugReportCallbackCreateInfoEXT create_info = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT,
       .pNext = nullptr,
-      .flags = kVulkanErrorFlags | kVulkanInfoFlags,
+      .flags = flags,
       .pfnCallback = &vulkan::OnVulkanDebugReportCallback,
       .pUserData = nullptr,
   };

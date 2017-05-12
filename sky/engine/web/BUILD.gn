@@ -20,5 +20,7 @@ source_set("web") {
 
   if (is_fuchsia) {
     deps += [ "//lib/mtl/tasks" ]
+  } else {
+    deps += [ "//flutter/fml" ]
   }
 }

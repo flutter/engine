@@ -6,6 +6,7 @@
 
 #include <math.h>
 
+#include "flutter/flow/layers/physical_model_layer.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "lib/tonic/converter/dart_converter.h"
@@ -53,7 +54,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Canvas);
   V(Canvas, drawPicture)            \
   V(Canvas, drawPoints)             \
   V(Canvas, drawVertices)           \
-  V(Canvas, drawAtlas)
+  V(Canvas, drawAtlas)              \
+  V(Canvas, drawShadow)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -337,35 +339,16 @@ void Canvas::drawPoints(const Paint& paint,
                       *paint.paint());
 }
 
-void Canvas::drawVertices(const Paint& paint,
-                          const PaintData& paint_data,
-                          SkCanvas::VertexMode vertex_mode,
-                          const tonic::Float32List& vertices,
-                          const tonic::Float32List& texture_coordinates,
-                          const tonic::Int32List& colors,
+void Canvas::drawVertices(const Vertices* vertices,
                           SkBlendMode blend_mode,
-                          const tonic::Int32List& indices) {
+                          const Paint& paint,
+                          const PaintData& paint_data) {
   if (!canvas_)
     return;
 
-  std::vector<uint16_t> indices16;
-  indices16.reserve(indices.num_elements());
-  for (int i = 0; i < indices.num_elements(); ++i)
-    indices16.push_back(indices.data()[i]);
-
-  static_assert(sizeof(SkPoint) == sizeof(float) * 2,
-                "SkPoint doesn't use floats.");
-  static_assert(sizeof(SkColor) == sizeof(int32_t),
-                "SkColor doesn't use int32_t.");
-
-  canvas_->drawVertices(
-      vertex_mode,
-      vertices.num_elements() / 2,  // SkPoints have two floats.
-      reinterpret_cast<const SkPoint*>(vertices.data()),
-      reinterpret_cast<const SkPoint*>(texture_coordinates.data()),
-      reinterpret_cast<const SkColor*>(colors.data()), blend_mode,
-      indices16.empty() ? nullptr : indices16.data(), indices16.size(),
-      *paint.paint());
+  canvas_->drawVertices(vertices->vertices(),
+                        blend_mode,
+                        *paint.paint());
 }
 
 void Canvas::drawAtlas(const Paint& paint,
@@ -393,6 +376,17 @@ void Canvas::drawAtlas(const Paint& paint,
       rects.num_elements() / 4,  // SkRect have four floats.
       blend_mode, reinterpret_cast<const SkRect*>(cull_rect.data()),
       paint.paint());
+}
+
+void Canvas::drawShadow(const CanvasPath* path,
+                        SkColor color,
+                        double elevation,
+                        bool transparentOccluder) {
+  flow::PhysicalModelLayer::DrawShadow(canvas_,
+                                       path->path(),
+                                       color,
+                                       elevation,
+                                       transparentOccluder);
 }
 
 void Canvas::Clear() {

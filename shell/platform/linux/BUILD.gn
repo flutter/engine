@@ -3,32 +3,21 @@
 # found in the LICENSE file.
 
 executable("linux") {
-  output_name = "sky_shell"
+  output_name = "flutter_tester"
 
   sources = [
     "main_linux.cc",
-    "message_pump_glfw.cc",
-    "message_pump_glfw.h",
-    "platform_view_glfw.cc",
-    "platform_view_glfw.h",
   ]
 
   deps = [
-    "//base",
+    "//dart/runtime:libdart_jit",
     "//dart/runtime/bin:embedded_dart_io",
     "//flutter/common",
+    "//flutter/fml",
     "//flutter/shell/common",
-    "//flutter/shell/gpu",
     "//flutter/shell/testing",
     "//lib/ftl",
     "//lib/tonic",
-
-    # Required by FontCacheLinux. Not Skia. Skia uses a custom font manager
-    # that delegates to us.
-    "//third_party:fontconfig",
-    "//third_party/glfw",
     "//third_party/skia",
   ]
-
-  ldflags = [ "-lGL" ]
 }

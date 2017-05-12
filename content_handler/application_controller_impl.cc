@@ -16,9 +16,9 @@ namespace flutter_runner {
 
 ApplicationControllerImpl::ApplicationControllerImpl(
     App* app,
-    modular::ApplicationPackagePtr application,
-    modular::ApplicationStartupInfoPtr startup_info,
-    fidl::InterfaceRequest<modular::ApplicationController> controller)
+    app::ApplicationPackagePtr application,
+    app::ApplicationStartupInfoPtr startup_info,
+    fidl::InterfaceRequest<app::ApplicationController> controller)
     : app_(app), binding_(this) {
   if (controller.is_pending()) {
     binding_.Bind(std::move(controller));
@@ -51,7 +51,7 @@ ApplicationControllerImpl::ApplicationControllerImpl(
 
 ApplicationControllerImpl::~ApplicationControllerImpl() = default;
 
-void ApplicationControllerImpl::Kill(const KillCallback& callback) {
+void ApplicationControllerImpl::Kill() {
   runtime_holder_.reset();
   app_->Destroy(this);
   // |this| has been deleted at this point.
@@ -74,9 +74,22 @@ void ApplicationControllerImpl::ConnectToService(
 
 void ApplicationControllerImpl::CreateView(
     fidl::InterfaceRequest<mozart::ViewOwner> view_owner_request,
-    fidl::InterfaceRequest<modular::ServiceProvider> services) {
+    fidl::InterfaceRequest<app::ServiceProvider> services) {
   runtime_holder_->CreateView(url_, std::move(view_owner_request),
                               std::move(services));
+}
+
+Dart_Port ApplicationControllerImpl::GetUIIsolateMainPort() {
+  if (!runtime_holder_)
+    return ILLEGAL_PORT;
+  return runtime_holder_->GetUIIsolateMainPort();
+}
+
+std::string ApplicationControllerImpl::GetUIIsolateName() {
+  if (!runtime_holder_) {
+    return "";
+  }
+  return runtime_holder_->GetUIIsolateName();
 }
 
 }  // namespace flutter_runner

@@ -4,8 +4,6 @@
 
 source_set("flow") {
   sources = [
-    "bitmap_image.cc",
-    "bitmap_image.h",
     "compositor_context.cc",
     "compositor_context.h",
     "instrumentation.cc",
@@ -30,18 +28,21 @@ source_set("flow") {
     "layers/opacity_layer.h",
     "layers/performance_overlay_layer.cc",
     "layers/performance_overlay_layer.h",
+    "layers/physical_model_layer.cc",
+    "layers/physical_model_layer.h",
     "layers/picture_layer.cc",
     "layers/picture_layer.h",
     "layers/shader_mask_layer.cc",
     "layers/shader_mask_layer.h",
     "layers/transform_layer.cc",
     "layers/transform_layer.h",
+    "paint_utils.cc",
+    "paint_utils.h",
     "process_info.h",
     "raster_cache.cc",
     "raster_cache.h",
     "scene_update_context.cc",
     "scene_update_context.h",
-    "texture_image.h",
   ]
 
   deps = [
@@ -57,18 +58,10 @@ source_set("flow") {
     sources += [
       "layers/child_scene_layer.cc",
       "layers/child_scene_layer.h",
-      "texture_image_none.cc",
     ]
     public_deps = [
       "//apps/mozart/lib/skia",
       "//apps/mozart/services/composition",
-    ]
-  } else {
-    sources += [
-      "gl_connection.cc",
-      "gl_connection.h",
-      "open_gl.h",
-      "texture_image_gles2.cc",
     ]
   }
 }

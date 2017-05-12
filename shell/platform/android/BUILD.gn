@@ -2,23 +2,15 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
 import("//build/config/android/config.gni")
 import("//build/config/android/rules.gni")
 
-generate_jni("jni_headers") {
+shared_library("flutter_shell_native") {
   visibility = [ ":*" ]
 
-  sources = [
-    "io/flutter/view/FlutterMain.java",
-    "io/flutter/view/FlutterView.java",
-    "io/flutter/view/VsyncWaiter.java",
-  ]
-  jni_package = "shell"
-}
-
-shared_library("sky_shell") {
-  visibility = [ ":*" ]
+  output_name = "flutter"
 
   sources = [
     "android_context_gl.cc",
@@ -36,17 +28,16 @@ shared_library("sky_shell") {
     "library_loader.cc",
     "platform_view_android.cc",
     "platform_view_android.h",
+    "platform_view_android_jni.cc",
+    "platform_view_android_jni.h",
     "vsync_waiter_android.cc",
     "vsync_waiter_android.h",
   ]
 
   deps = [
-    ":jni_headers",
-    "//base",
-    "//dart/runtime:libdart",
     "//flutter/common",
     "//flutter/flow",
-    "//flutter/lib/jni",
+    "//flutter/fml",
     "//flutter/lib/ui",
     "//flutter/runtime",
     "//flutter/shell/common",
@@ -54,6 +45,11 @@ shared_library("sky_shell") {
     "//lib/ftl",
     "//third_party/skia",
   ]
+  if (flutter_runtime_mode == "debug") {
+    deps += [ "//dart/runtime:libdart_jit" ]
+  } else {
+    deps += [ "//dart/runtime:libdart_precompiled_runtime" ]
+  }
 
   defines = []
 
@@ -68,24 +64,40 @@ shared_library("sky_shell") {
     defines += [ "SHELL_ENABLE_VULKAN" ]
   }
 
-  ldflags = [
-    "-landroid",
-    "-lEGL",
-    "-lGLESv2",
+  libs = [
+    "android",
+    "EGL",
+    "GLESv2",
   ]
 }
 
-android_library("java") {
-  visibility = [ ":*" ]
+java_library("flutter_shell_java") {
+  supports_android = true
 
   java_files = [
     "io/flutter/app/FlutterActivity.java",
     "io/flutter/app/FlutterApplication.java",
     "io/flutter/plugin/common/ActivityLifecycleListener.java",
-    "io/flutter/plugin/common/JSONMessageListener.java",
+    "io/flutter/plugin/common/BasicMessageChannel.java",
+    "io/flutter/plugin/common/BinaryCodec.java",
+    "io/flutter/plugin/common/BinaryMessenger.java",
+    "io/flutter/plugin/common/FlutterException.java",
+    "io/flutter/plugin/common/EventChannel.java",
+    "io/flutter/plugin/common/JSONMessageCodec.java",
+    "io/flutter/plugin/common/JSONMethodCodec.java",
+    "io/flutter/plugin/common/JSONUtil.java",
+    "io/flutter/plugin/common/MessageCodec.java",
+    "io/flutter/plugin/common/MethodCall.java",
+    "io/flutter/plugin/common/MethodChannel.java",
+    "io/flutter/plugin/common/MethodCodec.java",
+    "io/flutter/plugin/common/PluginRegistry.java",
+    "io/flutter/plugin/common/StandardMessageCodec.java",
+    "io/flutter/plugin/common/StandardMethodCodec.java",
+    "io/flutter/plugin/common/StringCodec.java",
     "io/flutter/plugin/editing/InputConnectionAdaptor.java",
     "io/flutter/plugin/editing/TextInputPlugin.java",
     "io/flutter/plugin/platform/PlatformPlugin.java",
+    "io/flutter/util/PathUtils.java",
     "io/flutter/view/AccessibilityBridge.java",
     "io/flutter/view/FlutterMain.java",
     "io/flutter/view/FlutterView.java",
@@ -93,45 +105,56 @@ android_library("java") {
     "io/flutter/view/ResourceExtractor.java",
     "io/flutter/view/ResourcePaths.java",
     "io/flutter/view/VsyncWaiter.java",
-
-    # Deprecated classes provided for backwards compatibility
-    "org/domokit/sky/shell/SkyActivity.java",
-    "org/domokit/sky/shell/SkyApplication.java",
   ]
 
-  deps = [
-    "//base:base_java",
-  ]
+  jar_path = "$root_out_dir/flutter_java.jar"
 }
 
-copy_ex("assets") {
+copy("flutter_shell_assets") {
   visibility = [ ":*" ]
 
-  clear_dir = true
-  dest = "$root_build_dir/sky_shell/assets"
   sources = [
     "$root_build_dir/icudtl.dat",
   ]
+
+  outputs = [
+    "$root_build_dir/flutter_shell_assets/{{source_file_part}}",
+  ]
+
   deps = [
     "//third_party/icu:icudata",
   ]
 }
 
-android_apk("android") {
-  apk_name = "SkyShell"
-  android_manifest = "AndroidManifest.xml"
+action("android") {
+  script = "//build/android/gyp/create_flutter_jar.py"
 
-  native_libs = [ "libsky_shell.so" ]
-  asset_location = "$root_build_dir/sky_shell/assets"
+  inputs = [
+    "$root_build_dir/flutter_java.jar",
+    "$root_build_dir/lib.stripped/libflutter.so",
+    "$root_build_dir/flutter_shell_assets/icudtl.dat",
+  ]
 
-  extensions_to_not_compress = ".flx"
+  outputs = [
+    "$root_build_dir/flutter.jar",
+  ]
 
-  flutter_dist_jar = "$root_build_dir/flutter.jar"
+  args = [
+    "--output",
+    rebase_path("flutter.jar", root_build_dir, root_build_dir),
+    "--dist_jar",
+    rebase_path("flutter_java.jar", root_build_dir, root_build_dir),
+    "--asset_dir",
+    rebase_path("flutter_shell_assets", root_build_dir, root_build_dir),
+    "--native_lib",
+    rebase_path("lib.stripped/libflutter.so", root_build_dir, root_build_dir),
+    "--android_abi",
+    "$android_app_abi",
+  ]
 
   deps = [
-    ":assets",
-    ":java",
-    ":sky_shell",
-    "//base:base_java",
+    ":flutter_shell_assets",
+    ":flutter_shell_java",
+    ":flutter_shell_native",
   ]
 }

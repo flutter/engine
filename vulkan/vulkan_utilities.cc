@@ -10,15 +10,25 @@
 namespace vulkan {
 
 bool IsDebuggingEnabled() {
-#if OS_FUCHSIA
-  return false;
-#endif
-
 #ifndef NDEBUG
   return true;
 #else
   return false;
 #endif
+}
+
+// Whether to show Vulkan validation layer info messages in addition
+// to the error messages.
+bool ValidationLayerInfoMessagesEnabled() {
+  return false;
+}
+
+bool ValidationErrorsFatal() {
+#if OS_FUCHSIA
+  return false;
+#endif
+
+  return true;
 }
 
 static std::vector<std::string> InstanceOrDeviceLayersToEnable(
@@ -30,11 +40,21 @@ static std::vector<std::string> InstanceOrDeviceLayersToEnable(
 
   // NOTE: The loader is sensitive to the ordering here. Please do not rearrange
   // this list.
+#if OS_FUCHSIA
+  // Fuchsia uses the updated Vulkan loader and validation layers which no
+  // longer includes the image validation layer.
+  const std::vector<std::string> candidates = {
+      "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_parameter_validation",
+      "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_core_validation",
+      "VK_LAYER_LUNARG_device_limits",  "VK_LAYER_LUNARG_swapchain",
+      "VK_LAYER_GOOGLE_unique_objects"};
+#else
   const std::vector<std::string> candidates = {
       "VK_LAYER_GOOGLE_threading",      "VK_LAYER_LUNARG_parameter_validation",
       "VK_LAYER_LUNARG_object_tracker", "VK_LAYER_LUNARG_core_validation",
       "VK_LAYER_LUNARG_device_limits",  "VK_LAYER_LUNARG_image",
       "VK_LAYER_LUNARG_swapchain",      "VK_LAYER_GOOGLE_unique_objects"};
+#endif
 
   uint32_t count = 0;
 

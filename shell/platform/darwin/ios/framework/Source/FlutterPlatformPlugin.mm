@@ -13,14 +13,6 @@ namespace {
 
 constexpr char kTextPlainFormat[] = "text/plain";
 
-NSDictionary* GetDirectoryOfType(NSSearchPathDirectory dir) {
-  NSArray* paths =
-      NSSearchPathForDirectoriesInDomains(dir, NSUserDomainMask, YES);
-  if (paths.count == 0)
-    return nil;
-  return @{ @"path": paths.firstObject };
-}
-
 }  // namespaces
 
 namespace shell {
@@ -41,42 +33,38 @@ using namespace shell;
 
 @implementation FlutterPlatformPlugin
 
-- (NSString *)messageName {
-  return @"flutter/platform";
-}
-
-- (NSDictionary*)didReceiveJSON:(NSDictionary*)message {
-  NSString* method = message[@"method"];
-  NSArray* args = message[@"args"];
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
+  NSString* method = call.method;
+  id args = call.arguments;
   if ([method isEqualToString:@"SystemSound.play"]) {
-    [self playSystemSound:args.firstObject];
+    [self playSystemSound:args];
+    result(nil);
   } else if ([method isEqualToString:@"HapticFeedback.vibrate"]) {
     [self vibrateHapticFeedback];
-  } else if ([method isEqualToString:@"UrlLauncher.launch"]) {
-    [self launchURL:args.firstObject];
+    result(nil);
   } else if ([method isEqualToString:@"SystemChrome.setPreferredOrientations"]) {
-    [self setSystemChromePreferredOrientatations:args.firstObject];
+    [self setSystemChromePreferredOrientations:args];
+    result(nil);
   } else if ([method isEqualToString:@"SystemChrome.setApplicationSwitcherDescription"]) {
-    [self setSystemChromeApplicationSwitcherDescription:args.firstObject];
+    [self setSystemChromeApplicationSwitcherDescription:args];
+    result(nil);
   } else if ([method isEqualToString:@"SystemChrome.setEnabledSystemUIOverlays"]) {
-    [self setSystemChromeEnabledSystemUIOverlays:args.firstObject];
+    [self setSystemChromeEnabledSystemUIOverlays:args];
+    result(nil);
   } else if ([method isEqualToString:@"SystemChrome.setSystemUIOverlayStyle"]) {
-    [self setSystemChromeSystemUIOverlayStyle:args.firstObject];
+    [self setSystemChromeSystemUIOverlayStyle:args];
+    result(nil);
   } else if ([method isEqualToString:@"SystemNavigator.pop"]) {
     [self popSystemNavigator];
+    result(nil);
   } else if ([method isEqualToString:@"Clipboard.getData"]) {
-    return [self getClipboardData:args.firstObject];
+    result([self getClipboardData:args]);
   } else if ([method isEqualToString:@"Clipboard.setData"]) {
-    [self setClipboardData:args.firstObject];
-  } else if ([method isEqualToString:@"PathProvider.getTemporaryDirectory"]) {
-    return [self getPathProviderTemporaryDirectory];
-  } else if ([method isEqualToString:@"PathProvider.getApplicationDocumentsDirectory"]) {
-    return [self getPathProviderApplicationDocumentsDirectory];
+    [self setClipboardData:args];
+    result(nil);
   } else {
-    // TODO(abarth): We should signal an error here that gets reported back to
-    // Dart.
+    result(FlutterMethodNotImplemented);
   }
-  return nil;
 }
 
 - (void)playSystemSound:(NSString*)soundType {
@@ -92,14 +80,7 @@ using namespace shell;
   AudioServicesPlayAlertSound(kSystemSoundID_Vibrate);
 }
 
-- (NSDictionary*)launchURL:(NSString*)urlString {
-  NSURL* url = [NSURL URLWithString:urlString];
-  UIApplication* application = [UIApplication sharedApplication];
-  bool success = [application canOpenURL:url] && [application openURL:url];
-  return @{ @"succes": @(success) };
-}
-
-- (void)setSystemChromePreferredOrientatations:(NSArray*)orientations {
+- (void)setSystemChromePreferredOrientations:(NSArray*)orientations {
   UIInterfaceOrientationMask mask = 0;
 
   if (orientations.count == 0) {
@@ -119,13 +100,11 @@ using namespace shell;
 
   if (!mask)
     return;
-  [[NSNotificationCenter defaultCenter]
-      postNotificationName:@(kOrientationUpdateNotificationName)
-                    object:nil
-                  userInfo:@{
-                    @(kOrientationUpdateNotificationKey) : @(mask)
-                  }];
-
+  [[NSNotificationCenter defaultCenter] postNotificationName:@(kOrientationUpdateNotificationName)
+                                                      object:nil
+                                                    userInfo:@{
+                                                      @(kOrientationUpdateNotificationKey) : @(mask)
+                                                    }];
 }
 
 - (void)setSystemChromeApplicationSwitcherDescription:(NSDictionary*)object {
@@ -154,8 +133,7 @@ using namespace shell;
 
   NSNumber* infoValue = [[NSBundle mainBundle]
       objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"];
-  Boolean delegateToViewController =
-      (infoValue == nil || [infoValue boolValue]);
+  Boolean delegateToViewController = (infoValue == nil || [infoValue boolValue]);
 
   if (delegateToViewController) {
     // This notification is respected by the iOS embedder
@@ -178,22 +156,18 @@ using namespace shell;
 
 - (NSDictionary*)getClipboardData:(NSString*)format {
   UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
-  if (!format || [format isEqualToString:@(kTextPlainFormat)])
-    return @{ @"text": pasteboard.string };
+  if (!format || [format isEqualToString:@(kTextPlainFormat)]) {
+    NSString* stringInPasteboard = pasteboard.string;
+    // The pasteboard may contain an item but it may not be a string (an image for instance).
+    return stringInPasteboard == nil ? nil : @{@"text" : stringInPasteboard};
+  }
   return nil;
 }
 
-- (void)setClipboardData:(NSDictionary *)data {
+
+- (void)setClipboardData:(NSDictionary*)data {
   UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
   pasteboard.string = data[@"text"];
-}
-
-- (NSDictionary*)getPathProviderTemporaryDirectory {
-  return GetDirectoryOfType(NSCachesDirectory);
-}
-
-- (NSDictionary*)getPathProviderApplicationDocumentsDirectory {
-  return GetDirectoryOfType(NSDocumentDirectory);
 }
 
 @end

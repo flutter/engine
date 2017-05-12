@@ -97,7 +97,6 @@ source_set("platform") {
     "fonts/harfbuzz/HarfBuzzFaceSkia.cpp",
     "fonts/harfbuzz/HarfBuzzShaper.cpp",
     "fonts/harfbuzz/HarfBuzzShaper.h",
-    "fonts/linux/FontPlatformDataLinux.cpp",
     "fonts/opentype/OpenTypeTypes.h",
     "fonts/skia/FontCacheSkia.cpp",
     "fonts/skia/FontCustomPlatformDataSkia.cpp",
@@ -260,25 +259,24 @@ source_set("platform") {
     ]
   }
 
+  if (is_linux || is_fuchsia) {
+    sources += [ "fonts/linux/FontPlatformDataLinux.cpp" ]
+  }
+
   if (is_ios || is_mac) {
     sources += [ "fonts/apple/FontPlatformDataApple.cpp" ]
   }
 
-  if (is_ios) {
-    deps += [ "//base" ]
-    sources += [ "fonts/apple/FontCacheIOS.mm" ]
-  }
-
   if (is_mac && !is_ios) {
-    sources += [ "fonts/apple/FontCacheMac.cpp" ]
+    sources += [ "fonts/FontCacheEmpty.cpp" ]
   }
 
-  if (is_android) {
-    sources += [ "fonts/android/FontCacheAndroid.cpp" ]
+  if (is_android || is_ios) {
+    sources += [ "fonts/mobile/FontCacheMobile.cpp" ]
   }
 
   if (is_linux && !is_android) {
-    sources += [ "fonts/linux/FontCacheLinux.cpp" ]
+    sources += [ "fonts/FontCacheEmpty.cpp" ]
   }
 
   if (is_fuchsia) {

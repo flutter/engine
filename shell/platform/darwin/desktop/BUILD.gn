@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/config/mac/rules.gni")
-
 assert(is_mac)
 
 source_set("mac_desktop_platform") {
@@ -24,8 +22,9 @@ source_set("mac_desktop_platform") {
   ]
 
   deps = [
-    "//base",
+    "//dart/runtime:libdart_jit",
     "//flutter/common",
+    "//flutter/fml",
     "//flutter/shell/common",
     "//flutter/shell/gpu",
     "//flutter/shell/platform/darwin/common",
@@ -37,28 +36,34 @@ source_set("mac_desktop_platform") {
 }
 
 executable("shell_standalone") {
-  output_name = "sky_shell"
-
+  output_name = "flutter_tester"
   deps = [
     ":mac_desktop_platform",
   ]
 }
 
-resource_copy_mac("mac_desktop_resources") {
-  app_name = "SkyShell"
+if (!is_fuchsia_host) {
 
-  resources = [ "//third_party/icu/android/icudtl.dat" ]
+  import("//build/config/mac/rules.gni")
 
-  bundle_directory = "."
-}
+  resource_copy_mac("mac_desktop_resources") {
+    app_name = "FlutterTester"
+    if (is_fuchsia_host) {
+      resources = [ "//third_party/icu/common/icudtl.dat" ]
+    } else {
+      resources = [ "//third_party/icu/android/icudtl.dat" ]
+    }
+    bundle_directory = "."
+  }
 
-mac_app("shell_application_bundle") {
-  app_name = "SkyShell"
-  info_plist = "Info.plist"
-  xibs = [ "flutter_mac.xib" ]
+  mac_app("shell_application_bundle") {
+    app_name = "FlutterTester"
+    info_plist = "Info.plist"
+    xibs = [ "flutter_mac.xib" ]
 
-  deps = [
-    ":mac_desktop_platform",
-    ":mac_desktop_resources",
-  ]
+    deps = [
+      ":mac_desktop_platform",
+      ":mac_desktop_resources",
+    ]
+  }
 }

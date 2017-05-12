@@ -19,12 +19,16 @@ class DartController {
   DartController();
   ~DartController();
 
-  void RunFromPrecompiledSnapshot();
-  void RunFromSnapshot(const uint8_t* buffer, size_t size);
+  tonic::DartErrorHandleType RunFromKernel(const uint8_t* buffer, size_t size);
+  tonic::DartErrorHandleType RunFromPrecompiledSnapshot();
+  tonic::DartErrorHandleType RunFromScriptSnapshot(const uint8_t* buffer,
+                                                   size_t size);
   tonic::DartErrorHandleType RunFromSource(const std::string& main,
                                            const std::string& packages);
 
   void CreateIsolateFor(const std::string& script_uri,
+                        const uint8_t* isolate_snapshot_data,
+                        const uint8_t* isolate_snapshot_instr,
                         std::unique_ptr<UIDartState> ui_dart_state);
 
   UIDartState* dart_state() const { return ui_dart_state_; }

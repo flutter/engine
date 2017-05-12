@@ -12,19 +12,15 @@ source_set("glue") {
     "//lib/ftl",
   ]
 
-  if (is_fuchsia || is_fuchsia_host) {
+  if (is_fuchsia) {
     sources += [ "stack_trace_fuchsia.cc" ]
 
     public_deps = [
       "//apps/tracing/lib/trace",
     ]
   } else {
-    sources += [
-      "stack_trace_base.cc",
-      "task_runner_adaptor.cc",
-      "task_runner_adaptor.h",
-    ]
+    sources += [ "stack_trace_base.cc" ]
 
-    deps += [ "//base" ]
+    deps += [ "//flutter/fml" ]
   }
 }
