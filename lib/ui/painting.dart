@@ -1449,8 +1449,8 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// that has the radius given by the second argument, with the [Paint] given in
   /// the third argument. Whether the circle is filled or stroked (or both) is
   /// controlled by [Paint.style].
-  void drawCircle(Offset c, double radius, Paint paint) {
-    _drawCircle(c.dx, c.dy, radius, paint._objects, paint._data);
+  void drawCircle(Offset center, double radius, Paint paint) {
+    _drawCircle(center.dx, center.dy, radius, paint._objects, paint._data);
   }
   void _drawCircle(double x,
                    double y,
@@ -1494,8 +1494,8 @@ class Canvas extends NativeFieldWrapperClass2 {
 
   /// Draws the given [Image] into the canvas with its top-left corner at the
   /// given [Offset]. The image is composited into the canvas using the given [Paint].
-  void drawImage(Image image, Offset p, Paint paint) {
-    _drawImage(image, p.dx, p.dy, paint._objects, paint._data);
+  void drawImage(Image image, Offset offset, Paint paint) {
+    _drawImage(image, offset.dx, offset.dy, paint._objects, paint._data);
   }
   void _drawImage(Image image,
                   double x,
@@ -1602,8 +1602,28 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// Draws a sequence of points according to the given [PointMode].
   ///
   /// The `points` argument is interpreted as offsets from the origin.
+  ///
+  /// See also:
+  ///
+  ///  * [drawPointsFromTypedData], which represents the points as a
+  ///    [Float32List] rather than a list of [Offset] objects.
   void drawPoints(PointMode pointMode, List<Offset> points, Paint paint) {
     _drawPoints(paint._objects, paint._data, pointMode.index, _encodePointList(points));
+  }
+
+  /// Draws a sequence of points according to the given [PointMode].
+  ///
+  /// The `points` argument is interpreted as a flattened array of offsets from
+  /// the origin, alternating between x and y coordinates.
+  ///
+  /// See also:
+  ///
+  ///  * [drawPoints], which represents the points as a list of [Offset]
+  ///    objects rather than a [Float32List].
+  void drawPointsFromTypedData(PointMode pointMode, Float32List points, Paint paint) {
+    if (points.length % 2 != 0)
+      throw new ArgumentError('points must have an even number of items.');
+    _drawPoints(paint._objects, paint._data, pointMode.index, points);
   }
   void _drawPoints(List<dynamic> paintObjects,
                    ByteData paintData,
@@ -1698,10 +1718,10 @@ abstract class Picture extends NativeFieldWrapperClass2 {
   Picture(); // (this constructor is here just so we can document it)
 
   /// Creates an image from this picture.
-  /// 
+  ///
   /// The picture is rasterized using the number of pixels specified by the
   /// given width and height.
-  /// 
+  ///
   /// Although the image is returned synchronously, the picture is actually
   /// rasterized the first time the image is drawn and then cached.
   Image toImage(int width, int height) native "Picture_toImage";
