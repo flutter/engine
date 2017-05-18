@@ -176,10 +176,8 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
   NSRange selectedRange = NSMakeRange(start, end - start);
 
   NSRange oldSelectedRange = [(FlutterTextRange*)self.selectedTextRange range];
-  BOOL selectionChanged = selectedRange.location != oldSelectedRange.location ||
-                          selectedRange.length != oldSelectedRange.length;
-
-  if (selectionChanged) {
+  if (selectedRange.location != oldSelectedRange.location ||
+      selectedRange.length != oldSelectedRange.length) {
     [self.inputDelegate selectionWillChange:self];
     [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
             updateEditingState:NO];
