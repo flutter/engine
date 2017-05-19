@@ -129,7 +129,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
-  CGFloat scale = [UIScreen mainScreen].scale;
+  CGFloat scale = [[_bridge->view() window] screen].scale;
   auto result =
       CGRectMake(rect.x() / scale, rect.y() / scale, rect.width() / scale, rect.height() / scale);
   return UIAccessibilityConvertFrameToScreenCoordinates(result, _bridge->view());
