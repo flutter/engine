@@ -51,6 +51,24 @@ AndroidSurfaceGL::AndroidSurfaceGL(
   if (!offscreen_context_ || !offscreen_context_->IsValid()) {
     offscreen_context_ = nullptr;
   }
+
+  // Create a GrContext.
+  gr_context_ = offscreen_context_->CreateGrContext();
+  if (!gr_context_) {
+    FTL_LOG(ERROR) << "Could not create the GrContext.";
+    offscreen_context_ = nullptr;
+    return;
+  }
+
+  // Check if the GrContext supports sRGB transfer function.  This, along
+  // with EGL support, means that we can use sRGB mode.
+  use_srgb_ = gr_context_->caps()->srgbSupport() &&
+              offscreen_context_->SupportsSRGB();
+
+  if (!offscreen_context_->CreatePBufferSurface(use_srgb_)) {
+    FTL_LOG(ERROR) << "Could not create the EGL surface.";
+    offscreen_context_ = nullptr;
+  }
 }
 
 AndroidSurfaceGL::~AndroidSurfaceGL() = default;
@@ -96,7 +114,7 @@ SkISize AndroidSurfaceGL::OnScreenSurfaceSize() const {
 
 bool AndroidSurfaceGL::OnScreenSurfaceResize(const SkISize& size) const {
   FTL_DCHECK(onscreen_context_ && onscreen_context_->IsValid());
-  return onscreen_context_->Resize(size);
+  return onscreen_context_->Resize(size, use_srgb_);
 }
 
 bool AndroidSurfaceGL::ResourceContextMakeCurrent() {
@@ -117,10 +135,15 @@ bool AndroidSurfaceGL::SetNativeWindow(ftl::RefPtr<AndroidNativeWindow> window,
 
   // Create the onscreen context.
   onscreen_context_ = ftl::MakeRefCounted<AndroidContextGL>(
-      offscreen_context_->Environment(), std::move(window), config,
+      offscreen_context_->Environment(), config,
       offscreen_context_.get() /* sharegroup */);
 
   if (!onscreen_context_->IsValid()) {
+    onscreen_context_ = nullptr;
+    return false;
+  }
+
+  if (!onscreen_context_->CreateWindowSurface(std::move(window), use_srgb_)) {
     onscreen_context_ = nullptr;
     return false;
   }

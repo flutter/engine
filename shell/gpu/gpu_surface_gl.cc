@@ -35,26 +35,31 @@ bool GPUSurfaceGL::Setup() {
     return false;
   }
 
-  if (!delegate_->GLContextMakeCurrent()) {
-    // Could not make the context current to create the native interface.
-    return false;
-  }
+  context_ = delegate_->GetGrContext();
+  srgb_support_ = delegate_->SupportsSRGB();
 
-  // Create the native interface.
-  auto backend_context =
-      reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface());
+  if (!context_) {
+    if (!delegate_->GLContextMakeCurrent()) {
+      // Could not make the context current to create the native interface.
+      return false;
+    }
 
-  context_ =
-      sk_sp<GrContext>(GrContext::Create(kOpenGL_GrBackend, backend_context));
+    // Create the native interface.
+    auto backend_context =
+        reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface());
 
-  if (context_ == nullptr) {
-    FTL_LOG(INFO) << "Failed to setup Skia Gr context.";
-    return false;
+    context_ =
+        sk_sp<GrContext>(GrContext::Create(kOpenGL_GrBackend, backend_context));
+
+    if (context_ == nullptr) {
+      FTL_LOG(INFO) << "Failed to setup Skia Gr context.";
+      return false;
+    }
+
+    delegate_->GLContextClearCurrent();
   }
 
   context_->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
-
-  delegate_->GLContextClearCurrent();
 
   return true;
 }
@@ -104,15 +109,16 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
 }
 
 bool GPUSurfaceGL::SelectPixelConfig(GrPixelConfig* config) {
-  static const GrPixelConfig kConfigOptions[] = {
-      kSkia8888_GrPixelConfig, kRGBA_4444_GrPixelConfig,
-  };
+  if (srgb_support_) {
+    FTL_DCHECK(context_->caps()->isConfigRenderable(kSRGBA_8888_GrPixelConfig,
+                                                    false));
+    *config = kSRGBA_8888_GrPixelConfig;
+    return true;
+  }
 
-  for (size_t i = 0; i < arraysize(kConfigOptions); i++) {
-    if (context_->caps()->isConfigRenderable(kConfigOptions[i], false)) {
-      *config = kConfigOptions[i];
-      return true;
-    }
+  if (context_->caps()->isConfigRenderable(kRGBA_8888_GrPixelConfig, false)) {
+    *config = kRGBA_8888_GrPixelConfig;
+    return true;
   }
 
   return false;
@@ -124,7 +130,6 @@ sk_sp<SkSurface> GPUSurfaceGL::CreateSurface(const SkISize& size) {
   }
 
   GrBackendRenderTargetDesc desc;
-
   if (!SelectPixelConfig(&desc.fConfig)) {
     return nullptr;
   }
@@ -135,7 +140,13 @@ sk_sp<SkSurface> GPUSurfaceGL::CreateSurface(const SkISize& size) {
   desc.fOrigin = kBottomLeft_GrSurfaceOrigin;
   desc.fRenderTargetHandle = delegate_->GLContextFBO();
 
-  return SkSurface::MakeFromBackendRenderTarget(context_.get(), desc, nullptr);
+  sk_sp<SkColorSpace> space = nullptr;
+  if (srgb_support_) {
+    space = SkColorSpace::MakeSRGB();
+  }
+
+  return SkSurface::MakeFromBackendRenderTarget(context_.get(), desc,
+                                                std::move(space), nullptr);
 }
 
 sk_sp<SkSurface> GPUSurfaceGL::AcquireSurface(const SkISize& size) {

@@ -17,6 +17,14 @@ namespace shell {
 
 class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
  public:
+
+  bool CreateWindowSurface(ftl::RefPtr<AndroidNativeWindow> window,
+                           bool use_srgb);
+
+  bool CreatePBufferSurface(bool use_srgb);
+
+  sk_sp<GrContext> CreateGrContext();
+
   ftl::RefPtr<AndroidEnvironmentGL> Environment() const;
 
   bool IsValid() const;
@@ -29,7 +37,9 @@ class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
 
   SkISize GetSize();
 
-  bool Resize(const SkISize& size);
+  bool Resize(const SkISize& size, bool use_srgb);
+
+  bool SupportsSRGB() const;
 
  private:
   ftl::RefPtr<AndroidEnvironmentGL> environment_;
@@ -37,16 +47,9 @@ class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
   EGLConfig config_;
   EGLSurface surface_;
   EGLContext context_;
+  bool srgb_support_;
   bool valid_;
 
-  /// Creates a window surface context tied to the window handle for on-screen
-  /// rendering.
-  AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
-                   ftl::RefPtr<AndroidNativeWindow> window,
-                   PlatformView::SurfaceConfig config,
-                   const AndroidContextGL* share_context = nullptr);
-
-  /// Creates a pbuffer surface context for offscreen rendering.
   AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
                    PlatformView::SurfaceConfig config,
                    const AndroidContextGL* share_context = nullptr);

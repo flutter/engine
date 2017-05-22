@@ -41,9 +41,13 @@ sk_sp<SkImage> DecodeImage(sk_sp<SkData> buffer) {
   }
 
   if (auto context = ResourceContext::Get()) {
-    // TODO: Supply actual destination color space once available
+#ifdef OS_ANDROID
+      sk_sp<SkColorSpace> dstColorSpace = SkColorSpace::MakeSRGB();
+#else
+      sk_sp<SkColorSpace> dstColorSpace = nullptr;
+#endif
     if (auto texture_image =
-            raster_image->makeTextureImage(context, nullptr)) {
+            raster_image->makeTextureImage(context, dstColorSpace.get())) {
 #ifdef OS_ANDROID
       glFlush();
 #endif

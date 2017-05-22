@@ -12,6 +12,7 @@
 #include "flutter/shell/platform/android/android_environment_gl.h"
 #include "flutter/shell/platform/android/android_surface.h"
 #include "lib/ftl/macros.h"
+#include "third_party/skia/include/gpu/GrContext.h"
 
 namespace shell {
 
@@ -46,9 +47,19 @@ class AndroidSurfaceGL : public GPUSurfaceGLDelegate, public AndroidSurface {
 
   intptr_t GLContextFBO() const override;
 
+  sk_sp<GrContext> GetGrContext() const override {
+    return gr_context_;
+  }
+
+  bool SupportsSRGB() const override {
+    return use_srgb_;
+  }
+
  private:
   ftl::RefPtr<AndroidContextGL> onscreen_context_;
   ftl::RefPtr<AndroidContextGL> offscreen_context_;
+  sk_sp<GrContext> gr_context_;
+  bool use_srgb_;
 
   FTL_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGL);
 };
