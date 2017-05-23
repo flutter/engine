@@ -234,6 +234,14 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
 
   SemanticsObject* root = objects_[kRootNodeId];
 
+  if (root) {
+    if (!view_.accessibilityElements) {
+      view_.accessibilityElements = @[ root ];
+    }
+  } else {
+    view_.accessibilityElements = nil;
+  }
+
   std::unordered_set<int> visited_objects;
   if (root)
     VisitObjectsRecursively(root, &visited_objects);
@@ -247,20 +255,26 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
     // TODO(abarth): Use extract once we're at C++17.
   }
 
+  SemanticsObject* doomed_focused_object = nil;
+  for (const auto& entry : doomed_objects) {
+    SemanticsObject* object = entry.second;
+    if ([object accessibilityElementIsFocused]) {
+      doomed_focused_object = object;
+      break;
+    }
+  }
+
+  if (doomed_focused_object != nil) {
+    // Previously focused element is no longer in the tree, let iOS figure out what to focus next.
+    // TODO(goderbauer): Figure out which element should be focused next and post
+    //     UIAccessibilityLayoutChangedNotification with that element instead.
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, nil);
+  } else {
+    UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, nil);
+  }
+
   ReleaseObjects(doomed_objects);
   doomed_objects.clear();
-
-  if (root) {
-    if (!view_.accessibilityElements) {
-      view_.accessibilityElements = @[ root ];
-    }
-  } else {
-    view_.accessibilityElements = nil;
-  }
-  // TODO(goderbauer): If the previously focused element is still on screen we should fire a
-  //     UIAccessibilityLayoutChangedNotification instead. If the element is no longer on screen
-  //     we should use the semantics tree to figure out which element to focus instead.
-  UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, nil);
 }
 
 void AccessibilityBridge::DispatchSemanticsAction(int32_t uid, blink::SemanticsAction action) {
