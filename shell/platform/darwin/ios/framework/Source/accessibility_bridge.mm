@@ -265,16 +265,17 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
   }
 
   if (doomed_focused_object != nil) {
-    // Previously focused element is no longer in the tree, let iOS figure out what to focus next.
+    // Previously focused element is no longer in the tree.
+    // Passing `nil` as argument to let iOS figure out what to focus next.
     // TODO(goderbauer): Figure out which element should be focused next and post
     //     UIAccessibilityLayoutChangedNotification with that element instead.
     UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, nil);
   } else {
+    // Passing `nil` as argument to keep focus where it is.
     UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, nil);
   }
 
   ReleaseObjects(doomed_objects);
-  doomed_objects.clear();
 }
 
 void AccessibilityBridge::DispatchSemanticsAction(int32_t uid, blink::SemanticsAction action) {
@@ -297,12 +298,13 @@ void AccessibilityBridge::VisitObjectsRecursively(SemanticsObject* object,
     VisitObjectsRecursively(child, visited_objects);
 }
 
-void AccessibilityBridge::ReleaseObjects(const std::unordered_map<int, SemanticsObject*>& objects) {
+void AccessibilityBridge::ReleaseObjects(std::unordered_map<int, SemanticsObject*>& objects) {
   for (const auto& entry : objects) {
     SemanticsObject* object = entry.second;
     [object neuter];
     [object release];
   }
+  objects.clear();
 }
 
 }  // namespace shell
