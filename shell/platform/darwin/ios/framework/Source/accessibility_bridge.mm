@@ -257,7 +257,10 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
   } else {
     view_.accessibilityElements = nil;
   }
-  UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, nil);
+  // TODO(goderbauer): If the previously focused element is still on screen we should fire a
+  //     UIAccessibilityLayoutChangedNotification instead. If the element is no longer on screen
+  //     we should use the semantics tree to figure out which element to focus instead.
+  UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, nil);
 }
 
 void AccessibilityBridge::DispatchSemanticsAction(int32_t uid, blink::SemanticsAction action) {
