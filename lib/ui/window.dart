@@ -26,6 +26,12 @@ typedef void PlatformMessageResponseCallback(ByteData data);
 typedef void PlatformMessageCallback(String name, ByteData data, PlatformMessageResponseCallback callback);
 
 /// States that an application can be in.
+///
+/// The values below describe notifications from the operating system.
+/// Applications should not expect to always receive all possible
+/// notifications. For example, if the users pulls out the battery from the
+/// device, no notification will be sent before the application is suddenly
+/// terminated, along with the rest of the operating system.
 enum AppLifecycleState {
   /// The application is visible and responding to user input.
   resumed,
