@@ -27,13 +27,36 @@ typedef void PlatformMessageCallback(String name, ByteData data, PlatformMessage
 
 /// States that an application can be in.
 enum AppLifecycleState {
-  /// The application is not currently visible to the user. When the
-  /// application is in this state, the engine will not call the
+  /// The application is visible and responding to user input.
+  resumed,
+
+  /// The application is in an inactive state and is not receiving user input.
+  ///
+  /// On iOS, this state corresponds to an app running in the foreground
+  /// inactive state. Apps transition to this state when in a phone call,
+  /// responding to a TouchID request, or when entering the app switcher. Apps
+  /// in this state should assume that they may be [paused] at any time.
+  ///
+  /// On Android, this state is currently unused.
+  inactive,
+
+  /// The application is not currently visible to the user, not responding to
+  /// user input, and running in the background.
+  ///
+  /// When the application is in this state, the engine will not call the
   /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
+  ///
+  /// Apps in this state should assume that they may be [suspended] at any
+  /// time.
   paused,
 
-  /// The application is visible to the user.
-  resumed,
+  /// The application will be suspended momentarily.
+  ///
+  /// When the application is in this state, the engine will not call the
+  /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
+  ///
+  /// On iOS, this state is currently unused.
+  suspending,
 }
 
 /// A representation of distances for each of the four edges of a rectangle,
