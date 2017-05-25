@@ -36,6 +36,8 @@ source_set("flow") {
     "layers/shader_mask_layer.h",
     "layers/transform_layer.cc",
     "layers/transform_layer.h",
+    "matrix_decomposition.cc",
+    "matrix_decomposition.h",
     "paint_utils.cc",
     "paint_utils.h",
     "process_info.h",
@@ -64,4 +66,19 @@ source_set("flow") {
       "//apps/mozart/services/composition",
     ]
   }
+}
+
+executable("flow_unittests") {
+  testonly = true
+
+  sources = [
+    "matrix_decomposition_unittests.cc",
+  ]
+
+  deps = [
+    ":flow",
+    "//dart/runtime:libdart_jit",  # for tracing
+    "//flutter/testing",
+    "//third_party/skia",
+  ]
 }
