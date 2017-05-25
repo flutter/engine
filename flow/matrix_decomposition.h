@@ -25,15 +25,15 @@ class MatrixDecomposition {
 
   bool IsValid() const;
 
-  const SkVector3& translation() const { return translation_; };
+  const SkVector3& translation() const { return translation_; }
 
-  const SkVector3& scale() { return scale_; };
+  const SkVector3& scale() const { return scale_; }
 
-  const SkVector3& shear() { return shear_; };
+  const SkVector3& shear() const { return shear_; }
 
-  const SkVector4& perspective() { return perspective_; };
+  const SkVector4& perspective() const { return perspective_; }
 
-  const SkVector4& rotation() { return rotation_; };
+  const SkVector4& rotation() const { return rotation_; }
 
  private:
   bool valid_;
