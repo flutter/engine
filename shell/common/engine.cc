@@ -341,6 +341,11 @@ bool Engine::HandleNavigationPlatformMessage(
     return false;
   auto root = document.GetObject();
   auto method = root.FindMember("method");
+  if (method->value == "setInitialRoute") {
+    auto route = root.FindMember("args");
+    initial_route_ = std::move(route->value.GetString());
+    return false;
+  }
   if (method == root.MemberEnd() || method->value != "pushRoute")
     return false;
 
@@ -448,6 +453,13 @@ void Engine::StopAnimator() {
 void Engine::StartAnimatorIfPossible() {
   if (activity_running_ && have_surface_)
     animator_->Start();
+}
+
+std::string Engine::DefaultRouteName() {
+  if (!initial_route_.empty()) {
+    return initial_route_;
+  }
+  return std::string("/");
 }
 
 void Engine::ScheduleFrame() {
