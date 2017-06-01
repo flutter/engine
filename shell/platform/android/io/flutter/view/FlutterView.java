@@ -84,9 +84,9 @@ public class FlutterView extends SurfaceView
     private final BroadcastReceiver mDiscoveryReceiver;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private long mNativePlatformView;
-    private boolean mIsUsingSoftwareRendering = false; // using the software renderer or not
+    private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
 
-    private Bitmap mSoftwareRenderingBitmap;
+    private volatile Bitmap mSoftwareRenderingBitmap;
 
     public FlutterView(Context context) {
         this(context, null);
@@ -95,7 +95,7 @@ public class FlutterView extends SurfaceView
     public FlutterView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
-        mIsUsingSoftwareRendering = nativeGetmIsUsingSoftwareRenderingRenderingEnabled();
+        mIsSoftwareRenderingEnabled = nativeGetIsSoftwareRenderingEnabled();
 
         mMetrics = new ViewportMetrics();
         mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
@@ -215,8 +215,9 @@ public class FlutterView extends SurfaceView
 
     // This method will be called on the GPU Thread.
     public void updateSoftwareBuffer(ByteBuffer buffer, int width, int height) {
-        mSoftwareRenderingBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        mSoftwareRenderingBitmap.copyPixelsFromBuffer(buffer);
+        Bitmap newBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        newBitmap.copyPixelsFromBuffer(buffer);
+        mSoftwareRenderingBitmap = newBitmap;
         postInvalidate();
     }
 
@@ -614,7 +615,8 @@ public class FlutterView extends SurfaceView
     // Send an empty response to a platform message received from Dart.
     private static native void nativeInvokePlatformMessageEmptyResponseCallback(
         long nativePlatformViewAndroid, int responseId);
-    private static native boolean nativeGetmIsUsingSoftwareRenderingRenderingEnabled();
+
+    private static native boolean nativeGetIsSoftwareRenderingEnabled();
 
     private void updateViewportMetrics() {
         nativeSetViewportMetrics(mNativePlatformView,
@@ -720,7 +722,7 @@ public class FlutterView extends SurfaceView
     }
 
     private void resetWillNotDraw() {
-        if (!mIsUsingSoftwareRendering) {
+        if (!mIsSoftwareRenderingEnabled) {
             setWillNotDraw(!(mAccessibilityEnabled || mTouchExplorationEnabled));
         } else {
             setWillNotDraw(false);
