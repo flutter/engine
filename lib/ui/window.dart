@@ -289,15 +289,15 @@ class Window {
   /// restored, if [onPlatformMessage] is set to null.
   PlatformMessageCallback get onPlatformMessage => _onPlatformMessage;
   void set onPlatformMessage(PlatformMessageCallback callback) {
-	if (callback == null) {
-	  _onPlatformMessage = _queueingPlatformMessageCallback;
-	} else {
+    if (callback == null) {
+      _onPlatformMessage = _queueingPlatformMessageCallback;
+    } else {
       if (_onPlatformMessage == _queueingPlatformMessageCallback) {
-       for (_PlatformMessage message in _messageQueue)
-         callback(message.name, message.data, message.responseCallback);
-       _messageQueue.clear();
-     }
-     _onPlatformMessage = callback;
+        for (_PlatformMessage message in _messageQueue)
+          callback(message.name, message.data, message.responseCallback);
+        _messageQueue.clear();
+      }
+      _onPlatformMessage = callback;
     }
   }
   PlatformMessageCallback _onPlatformMessage = _queueingPlatformMessageCallback;
