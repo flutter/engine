@@ -272,6 +272,7 @@ enum FilterQuality {
 /// Styles to use for line endings.
 ///
 /// See [Paint.strokeCap].
+// These enum values must be kept in sync with SkPaint::Cap.
 enum StrokeCap {
   /// Begin and end contours with a flat edge and no extension.
   butt,
@@ -288,6 +289,7 @@ enum StrokeCap {
 /// Strategies for painting shapes and paths on a canvas.
 ///
 /// See [Paint.style].
+// These enum values must be kept in sync with SkPaint::Style.
 enum PaintingStyle {
   // This list comes from Skia's SkPaint.h and the values (order) should be kept
   // in sync.
@@ -833,6 +835,7 @@ class Path extends NativeFieldWrapperClass2 {
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
+// These enum values must be kept in sync with SkBlurStyle.
 enum BlurStyle {
   // These mirror SkBlurStyle and must be kept in sync.
 
@@ -1147,6 +1150,7 @@ class ImageShader extends Shader {
 /// Defines how a list of points is interpreted when drawing a set of triangles.
 ///
 /// Used by [Canvas.drawVertices].
+// These enum values must be kept in sync with SkVertices::VertexMode.
 enum VertexMode {
   /// Draw each sequence of three points as the vertices of a triangle.
   triangles,
@@ -1215,6 +1219,7 @@ class Vertices extends NativeFieldWrapperClass2 {
 ///
 // ignore: deprecated_member_use
 /// Used by [Canvas.drawPoints].
+// These enum values must be kept in sync with SkCanvas::PointMode.
 enum PointMode {
   /// Draw each point separately.
   ///
