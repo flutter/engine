@@ -978,6 +978,16 @@ enum TileMode {
   /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_radial.png)
   clamp,
 
+  /// Edge is repeated from first color to last.
+  ///
+  /// This is as if the stop points from 0.0 to 1.0 were then repeated from 1.0
+  /// to 2.0, 2.0 to 3.0, and so forth (and for linear gradients, similarly from
+  /// -1.0 to 0.0, -2.0 to -1.0, etc).
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_radial.png)
+  repeated,
+
   /// Edge is mirrored from last color to first.
   ///
   /// This is as if the stop points from 0.0 to 1.0 were then repeated backwards
@@ -988,16 +998,6 @@ enum TileMode {
   /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_linear.png)
   /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_radial.png)
   mirror,
-
-  /// Edge is repeated from first color to last.
-  ///
-  /// This is as if the stop points from 0.0 to 1.0 were then repeated from 1.0
-  /// to 2.0, 2.0 to 3.0, and so forth (and for linear gradients, similarly from
-  /// -1.0 to 0.0, -2.0 to -1.0, etc).
-  ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_linear.png)
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_radial.png)
-  repeated,
 }
 
 Int32List _encodeColorList(List<Color> colors) {
