@@ -968,6 +968,7 @@ abstract class Shader extends NativeFieldWrapperClass2 { }
 ///  * [dart:ui.Gradient], the low-level class used when dealing with the
 ///    [Paint.shader] property directly, with its [new Gradient.linear] and [new
 ///    Gradient.radial] constructors.
+// These enum values must be kept in sync with SkShader::TileMode.
 enum TileMode {
   /// Edge is clamped to the final color.
   ///
