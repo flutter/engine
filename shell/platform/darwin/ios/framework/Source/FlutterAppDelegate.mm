@@ -219,6 +219,10 @@
   [super dealloc];
 }
 
+- (UIWindow*) window {
+  return _appDelegate.window;
+}
+
 - (NSObject<FlutterBinaryMessenger>*)messenger {
   return (FlutterViewController*)_appDelegate.window.rootViewController;
 }
