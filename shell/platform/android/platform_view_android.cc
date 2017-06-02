@@ -117,7 +117,7 @@ static std::unique_ptr<AndroidSurface> InitializePlatformSurface() {
       return surface;
   }
 
-  FTL_CHECK(false) << "Could not initialize either the Vulkan OpenGL or Software"
+  FTL_CHECK(false) << "Could not initialize either the Vulkan, OpenGL, or Software"
                       "surface backends. Flutter requires a GPU to render.";
   return nullptr;
 }
