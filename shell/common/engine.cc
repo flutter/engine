@@ -310,7 +310,7 @@ void Engine::DispatchPlatformMessage(
     return;
   }
 
-  // If there's no runtime_, we need to buffer some navigation messages.
+  // If there's no runtime_, we may still need to set the initial route.
   if (message->channel() == kNavigationChannel)
     HandleNavigationPlatformMessage(std::move(message));
 }
@@ -341,15 +341,10 @@ bool Engine::HandleNavigationPlatformMessage(
     return false;
   auto root = document.GetObject();
   auto method = root.FindMember("method");
-  if (method->value == "setInitialRoute") {
-    auto route = root.FindMember("args");
-    initial_route_ = std::move(route->value.GetString());
+  if (method->value != "setInitialRoute")
     return false;
-  }
-  if (method == root.MemberEnd() || method->value != "pushRoute")
-    return false;
-
-  pending_push_route_message_ = std::move(message);
+  auto route = root.FindMember("args");
+  initial_route_ = std::move(route->value.GetString());
   return true;
 }
 
@@ -432,8 +427,6 @@ void Engine::ConfigureRuntime(const std::string& script_uri) {
   runtime_->SetViewportMetrics(viewport_metrics_);
   runtime_->SetLocale(language_code_, country_code_);
   runtime_->SetSemanticsEnabled(semantics_enabled_);
-  if (pending_push_route_message_)
-    runtime_->DispatchPlatformMessage(std::move(pending_push_route_message_));
 }
 
 void Engine::DidCreateMainIsolate(Dart_Isolate isolate) {
