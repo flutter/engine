@@ -173,8 +173,10 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 #pragma mark - UIAccessibilityAction overrides
 
 - (BOOL)accessibilityActivate {
-  // TODO(tvolkert): Implement
-  return NO;
+  if (!_node.HasAction(blink::SemanticsAction::kTap))
+    return NO;
+  _bridge->DispatchSemanticsAction(_uid, blink::SemanticsAction::kTap);
+  return YES;
 }
 
 - (void)accessibilityIncrement {
@@ -219,6 +221,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
     : view_(view), platform_view_(platform_view) {}
 
 AccessibilityBridge::~AccessibilityBridge() {
+  view_.accessibilityElements = nil;
   ReleaseObjects(objects_);
   objects_.clear();
 }

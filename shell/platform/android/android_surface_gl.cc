@@ -154,4 +154,7 @@ intptr_t AndroidSurfaceGL::GLContextFBO() const {
   return 0;
 }
 
+void AndroidSurfaceGL::SetFlutterView(
+    const fml::jni::JavaObjectWeakGlobalRef& flutter_view) {}
+
 }  // namespace shell
