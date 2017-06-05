@@ -144,10 +144,10 @@ void Logger_PrintString(Dart_NativeArguments args) {
     const char* tag = Settings::Get().log_tag.c_str();
     __android_log_print(ANDROID_LOG_INFO, tag, "%.*s", (int)length, chars);
 #else
-    // On Fuchsia, iOS and in flutter_tester (on both macOS and Linux, write
+    // On Fuchsia, iOS and in flutter_tester (on both macOS and Linux), write
     // directly to stdout. On iOS, this is redirected to ASL via
     // RedirectIOConnectionsToSyslog in platform_mac.mm.
-    // TODO(cbracken) replace with dedicated (non-stdout) logging on iOS.
+    // TODO(cbracken): replace with dedicated (non-stdout) logging on iOS.
     fwrite(chars, 1, length, stdout);
     fputs("\n", stdout);
     fflush(stdout);
