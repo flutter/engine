@@ -79,10 +79,11 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   return &_children;
 }
 
-- (void)neuter {
+- (void)dealloc {
   _bridge = nullptr;
   _children.clear();
   self.parent = nil;
+  [super dealloc];
 }
 
 #pragma mark - UIAccessibility overrides
@@ -309,7 +310,6 @@ void AccessibilityBridge::VisitObjectsRecursively(SemanticsObject* object,
 void AccessibilityBridge::ReleaseObjects(std::unordered_map<int, SemanticsObject*>& objects) {
   for (const auto& entry : objects) {
     SemanticsObject* object = entry.second;
-    [object neuter];
     [object release];
   }
   objects.clear();

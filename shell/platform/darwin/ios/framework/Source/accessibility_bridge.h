@@ -31,7 +31,7 @@ class AccessibilityBridge;
  * The parent of this node in the node tree. Will be nil for the root node and
  * during transient state changes.
  */
-@property(nonatomic, assign) SemanticsObject* parent;
+@property(nonatomic, strong) SemanticsObject* parent;
 
 - (instancetype)init __attribute__((unavailable("Use initWithBridge instead")));
 - (instancetype)initWithBridge:(shell::AccessibilityBridge*)bridge
