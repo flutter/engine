@@ -40,8 +40,8 @@ Dart_Handle ToByteData(const std::vector<uint8_t>& buffer) {
 }
 
 void DefaultRouteName(Dart_NativeArguments args) {
-    std::string routeName = UIDartState::Current()->window()->client()->DefaultRouteName();
-    Dart_SetReturnValue(args, Dart_NewStringFromCString(routeName.c_str()));
+  std::string routeName = UIDartState::Current()->window()->client()->DefaultRouteName();
+  Dart_SetReturnValue(args, StdStringToDart(routeName));
 }
 
 void ScheduleFrame(Dart_NativeArguments args) {

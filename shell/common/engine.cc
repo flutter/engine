@@ -452,7 +452,7 @@ std::string Engine::DefaultRouteName() {
   if (!initial_route_.empty()) {
     return initial_route_;
   }
-  return std::string("/");
+  return "/";
 }
 
 void Engine::ScheduleFrame() {
