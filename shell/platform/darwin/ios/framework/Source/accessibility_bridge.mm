@@ -82,7 +82,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 - (void)dealloc {
   _bridge = nullptr;
   _children.clear();
-  self.parent = nil;
+  [_parent release];
   [super dealloc];
 }
 
