@@ -56,6 +56,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class FlutterView extends SurfaceView
     implements BinaryMessenger, AccessibilityManager.AccessibilityStateChangeListener {
 
+    /**
+     * Interface for those objects that maintain and expose a reference to a
+     * {@code FlutterView} (such as a full-screen Flutter activity).
+     * <p/>
+     * This indirection is provided (over just adding a method directly to
+     * {@link FlutterActivity}) to support applications that use the
+     * {@code FragmentActivity} class in the Android v4 support library. It
+     * allows Flutter plugins to deal in this interface and not require that
+     * the activity be a subclass of {@code FlutterActivity}.
+     */
+    public interface Provider {
+        /**
+         * Returns a reference to the Flutter view maintained by this object.
+         * This may be {@code null}.
+         */
+        FlutterView getFlutterView();
+    }
+
     private static final String TAG = "FlutterView";
 
     private static final String ACTION_DISCOVER = "io.flutter.view.DISCOVER";
