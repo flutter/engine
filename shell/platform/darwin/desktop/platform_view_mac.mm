@@ -32,15 +32,17 @@ PlatformViewMac::PlatformViewMac(NSOpenGLView* gl_view)
   CFDataRef dataRef = CGColorSpaceCopyICCProfile(cs);
   const uint8_t* data = CFDataGetBytePtr(dataRef);
   size_t size = CFDataGetLength(dataRef);
-  
+
   color_space_ = SkColorSpace::MakeICC(data, size);
-  
+
   CFRelease(cs);
   CFRelease(dataRef);
 
-  if (!color_space) {
+  if (!color_space_) {
+    FTL_LOG(WARNING) << "Could not determine monitor color space";
     color_space_ = SkColorSpace::MakeSRGB();
   } else if (!color_space_->gammaCloseToSRGB() && !color_space_->gammaIsLinear()) {
+    FTL_LOG(WARNING) << "Monitor color space has unsupported transfer function";
     SkMatrix44 toXYZD50(SkMatrix44::kUninitialized_Constructor);
     if (color_space_->toXYZD50(&toXYZD50)) {
       color_space_ = SkColorSpace::MakeRGB(SkColorSpace::kSRGB_RenderTargetGamma,
