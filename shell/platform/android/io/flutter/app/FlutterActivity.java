@@ -20,13 +20,19 @@ import io.flutter.view.FlutterView;
 public class FlutterActivity extends Activity implements FlutterView.Provider, PluginRegistry, ViewFactory {
     private final FlutterActivityDelegate delegate = new FlutterActivityDelegate(this, this);
 
+    // These aliases ensure that the methods we forward to the delegate adhere
+    // to relevant interfaces versus just existing in FlutterActivityDelegate.
+    private final FlutterActivityEvents eventDelegate = delegate;
+    private final FlutterView.Provider viewProvider = delegate;
+    private final PluginRegistry pluginRegistry = delegate;
+
     /**
      * Returns the Flutter view used by this activity; will be null before
      * {@link #onCreate(Bundle)} is called.
      */
     @Override
     public FlutterView getFlutterView() {
-        return delegate.getFlutterView();
+        return viewProvider.getFlutterView();
     }
 
     /**
@@ -52,35 +58,35 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
 
     @Override
     public final boolean hasPlugin(String key) {
-        return delegate.hasPlugin(key);
+        return pluginRegistry.hasPlugin(key);
     }
 
     @Override
     public final <T> T valuePublishedByPlugin(String pluginKey) {
-        return delegate.valuePublishedByPlugin(pluginKey);
+        return pluginRegistry.valuePublishedByPlugin(pluginKey);
     }
 
     @Override
     public final Registrar registrarFor(String pluginKey) {
-        return delegate.registrarFor(pluginKey);
+        return pluginRegistry.registrarFor(pluginKey);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        delegate.onCreate(savedInstanceState);
+        eventDelegate.onCreate(savedInstanceState);
         onFlutterReady();
     }
 
     @Override
     protected void onDestroy() {
-        delegate.onDestroy();
+        eventDelegate.onDestroy();
         super.onDestroy();
     }
 
     @Override
     public void onBackPressed() {
-        if (!delegate.onBackPressed()) {
+        if (!eventDelegate.onBackPressed()) {
             super.onBackPressed();
         }
     }
@@ -88,49 +94,49 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     @Override
     protected void onPause() {
         super.onPause();
-        delegate.onPause();
+        eventDelegate.onPause();
     }
 
     @Override
     protected void onPostResume() {
         super.onPostResume();
-        delegate.onPostResume();
+        eventDelegate.onPostResume();
     }
 
     // @Override - added in API level 23
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        delegate.onRequestPermissionResult(requestCode, permissions, grantResults);
+        eventDelegate.onRequestPermissionResult(requestCode, permissions, grantResults);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (!delegate.onActivityResult(requestCode, resultCode, data)) {
+        if (!eventDelegate.onActivityResult(requestCode, resultCode, data)) {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
-        delegate.onNewIntent(intent);
+        eventDelegate.onNewIntent(intent);
     }
 
     @Override
     public void onUserLeaveHint() {
-        delegate.onUserLeaveHint();
+        eventDelegate.onUserLeaveHint();
     }
 
     @Override
     public void onTrimMemory(int level) {
-        delegate.onTrimMemory(level);
+        eventDelegate.onTrimMemory(level);
     }
 
     @Override
     public void onLowMemory() {
-        delegate.onLowMemory();
+        eventDelegate.onLowMemory();
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
-        delegate.onConfigurationChanged(newConfig);
+        eventDelegate.onConfigurationChanged(newConfig);
     }
 }

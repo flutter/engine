@@ -40,7 +40,7 @@ import java.util.Map;
  * <p/>
  * <h3>Usage:</h3>
  * To wire this class up to your activity, simply forward the events defined
- * in {@link ActivityEventDelegate} from your activity to an instance of this
+ * in {@link FlutterActivityEvents} from your activity to an instance of this
  * class. Optionally, you can make your activity implement
  * {@link PluginRegistry} and/or {@link FlutterView.Provider} and forward those
  * methods to this class as well.
