@@ -23,8 +23,7 @@ class GPUSurfaceGLDelegate {
 
   virtual intptr_t GLContextFBO() const = 0;
 
-  // TODO: Update Mac desktop and make this pure virtual.
-  virtual sk_sp<SkColorSpace> ColorSpace() const { return nullptr; }
+  virtual sk_sp<SkColorSpace> ColorSpace() const = 0;
 };
 
 class GPUSurfaceGL : public Surface {

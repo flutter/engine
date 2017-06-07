@@ -49,6 +49,7 @@ class AndroidSurfaceSoftware : public AndroidSurface,
 
   ftl::RefPtr<AndroidNativeWindow> native_window_;
   SkColorType target_color_type_;
+  sk_sp<SkColorSpace> target_color_space_;
 
   FTL_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceSoftware);
 };

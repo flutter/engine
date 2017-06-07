@@ -62,7 +62,8 @@ void SnapshotRasterizer(ftl::WeakPtr<shell::Rasterizer> rasterizer,
   }
   auto info = SkImageInfo::MakeN32(
       size.width(), size.height(),
-      is_opaque ? SkAlphaType::kOpaque_SkAlphaType : SkAlphaType::kPremul_SkAlphaType);
+      is_opaque ? SkAlphaType::kOpaque_SkAlphaType : SkAlphaType::kPremul_SkAlphaType,
+      SkColorSpace::MakeSRGB());
 
   // Create the backing store and prepare for use.
   SkBitmap bitmap;

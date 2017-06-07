@@ -6,9 +6,9 @@
 
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkData.h"
-#include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPixelSerializer.h"
 #include "third_party/skia/include/core/SkStream.h"
+#include "third_party/skia/include/encode/SkPngEncoder.h"
 
 namespace shell {
 
@@ -19,8 +19,9 @@ bool PngPixelSerializer::onUseEncodedData(const void*, size_t) {
 SkData* PngPixelSerializer::onEncode(const SkPixmap& pixmap) {
   SkDynamicMemoryWStream stream;
 
-  bool encode_result = SkEncodeImage(
-      &stream, pixmap, SkEncodedImageFormat::kPNG, 80 /* quality */);
+  SkPngEncoder::Options options;
+  options.fUnpremulBehavior = SkTransferFunctionBehavior::kRespect;
+  bool encode_result = SkPngEncoder::Encode(&stream, pixmap, options);
 
   return encode_result ? stream.detachAsData().release() : nullptr;
 }

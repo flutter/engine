@@ -18,13 +18,16 @@ namespace shell {
 
 namespace {
 
-bool GetSkColorType(int32_t buffer_format, SkColorType* color_type) {
+bool GetSkColorTypeAndSkColorSpace(int32_t buffer_format,
+                                   SkColorType* color_type) {
   switch (buffer_format) {
     case WINDOW_FORMAT_RGB_565:
       *color_type = kRGB_565_SkColorType;
+      *color_space = nullptr;
       return true;
     case WINDOW_FORMAT_RGBA_8888:
       *color_type = kRGBA_8888_SkColorType;
+      *color_space = SkColorSpace::MakeSRGB();
       return true;
     default:
       return false;
@@ -35,7 +38,8 @@ bool GetSkColorType(int32_t buffer_format, SkColorType* color_type) {
 
 AndroidSurfaceSoftware::AndroidSurfaceSoftware()
     : AndroidSurface(),
-      target_color_type_(kRGBA_8888_SkColorType) {}
+      target_color_type_(kRGBA_8888_SkColorType),
+      target_color_space_(SkColorSpace::MakeSRGB()) {}
 
 AndroidSurfaceSoftware::~AndroidSurfaceSoftware() = default;
 
@@ -75,11 +79,10 @@ sk_sp<SkSurface> AndroidSurfaceSoftware::AcquireBackingStore(
     return sk_surface_;
   }
 
-  SkImageInfo image_info = SkImageInfo::Make(
-      size.fWidth, size.fHeight, target_color_type_, kPremul_SkAlphaType);
+  SkImageInfo image_info = SkImageInfo::Make(size.fWidth, size.fHeight,
+      target_color_type_, kPremul_SkAlphaType, target_color_space_);
 
   sk_surface_ = SkSurface::MakeRaster(image_info);
-
   return sk_surface_;
 }
 
@@ -101,9 +104,12 @@ bool AndroidSurfaceSoftware::PresentBackingStore(
   }
 
   SkColorType color_type;
-  if (GetSkColorType(native_buffer.format, &color_type)) {
+  sk_sp<SkColorSpace> color_space;
+  if (GetSkColorTypeAndSkColorSpace(native_buffer.format, &color_type,
+                                                          &color_space)) {
     SkImageInfo native_image_info = SkImageInfo::Make(
-        native_buffer.width, native_buffer.height, color_type, kPremul_SkAlphaType);
+        native_buffer.width, native_buffer.height, color_type,
+        kPremul_SkAlphaType, color_space);
 
     std::unique_ptr<SkCanvas> canvas = SkCanvas::MakeRasterDirect(
         native_image_info,

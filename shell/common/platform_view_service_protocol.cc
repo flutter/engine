@@ -298,7 +298,9 @@ void PlatformViewServiceProtocol::ScreenshotGpuTask(SkBitmap* bitmap) {
     return;
 
   const SkISize& frame_size = layer_tree->frame_size();
-  if (!bitmap->tryAllocN32Pixels(frame_size.width(), frame_size.height()))
+  SkImageInfo info = SkImageInfo::MakeS32(
+      frame_size.width(), frame_size.height(), kPremul_SkAlphaType);
+  if (!bitmap->tryAllocPixels(info))
     return;
 
   sk_sp<SkSurface> surface = SkSurface::MakeRasterDirect(
