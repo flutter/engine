@@ -365,7 +365,24 @@ class Window {
   /// Message handlers must call the function given in the `callback` parameter.
   /// If the handler does not need to respond, the handler should pass `null` to
   /// the callback.
-  PlatformMessageCallback onPlatformMessage;
+  ///
+  /// The default handler queues incoming messages and relays them to
+  /// the first custom handler set, flushing the queue. The default handler is
+  /// restored, if [onPlatformMessage] is set to null.
+  PlatformMessageCallback get onPlatformMessage => _onPlatformMessage;
+  void set onPlatformMessage(PlatformMessageCallback callback) {
+    if (callback == null) {
+      _onPlatformMessage = _queueingPlatformMessageCallback;
+    } else {
+      if (_onPlatformMessage == _queueingPlatformMessageCallback) {
+        for (_PlatformMessage message in _messageQueue)
+          callback(message.name, message.data, message.responseCallback);
+        _messageQueue.clear();
+      }
+      _onPlatformMessage = callback;
+    }
+  }
+  PlatformMessageCallback _onPlatformMessage = _queueingPlatformMessageCallback;
 
   /// Called by [_dispatchPlatformMessage].
   void _respondToPlatformMessage(int responseId, ByteData data)
@@ -376,3 +393,21 @@ class Window {
 /// core scheduler API, the input event callback, the graphics drawing API, and
 /// other such core services.
 final Window window = new Window._();
+
+/// Platform message for queueing.
+class _PlatformMessage {
+  final String name;
+  final ByteData data;
+  final PlatformMessageResponseCallback responseCallback;
+
+  _PlatformMessage(this.name, this.data, this.responseCallback);
+}
+
+/// Queue of unhandled [_PlatformMessage]s.
+final List<_PlatformMessage> _messageQueue = <_PlatformMessage>[];
+
+/// Queueing platform message handler.
+final PlatformMessageCallback _queueingPlatformMessageCallback =
+  (String name, ByteData data, PlatformMessageResponseCallback responseCallback) {
+    _messageQueue.add(new _PlatformMessage(name, data, responseCallback));
+  };
