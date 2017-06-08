@@ -138,6 +138,7 @@ public class FlutterFragmentActivity
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
         eventDelegate.onConfigurationChanged(newConfig);
     }
 }
