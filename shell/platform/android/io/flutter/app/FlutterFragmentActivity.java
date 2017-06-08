@@ -16,7 +16,8 @@ import io.flutter.view.FlutterView;
 
 /**
  * Base class for activities that use Flutter who also require the use of the
- * Android v4 Support library's {@link FragmentActivity}.
+ * Android v4 Support library's {@link FragmentActivity}. Applications that
+ * don't have this need will likely want to use {@link FlutterActivity} instead.
  * <p/>
  * <strong>Important!</strong> Flutter does not bundle the necessary Android
  * v4 Support library classes for this class to work at runtime. It is the
