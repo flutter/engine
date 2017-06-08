@@ -2079,8 +2079,6 @@ class RepositoryFlutterDirectory extends RepositoryDirectory {
   RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'sky')
       return new RepositoryExcludeSubpathDirectory(this, entry, const <String>['packages', 'sky_engine', 'LICENSE']); // that's the output of this script!
-    if (entry.name == 'shell')
-      return new RepositoryExcludeSubpathDirectory(this, entry, const <String>['platform', 'android', 'lib', 'android-support-v4.jar']); // not bundled or statically linked.
     return super.createSubdirectory(entry);
   }
 }

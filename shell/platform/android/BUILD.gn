@@ -123,7 +123,7 @@ java_library("flutter_shell_java") {
 java_prebuilt("android_support_v4") {
   supports_android = true
 
-  jar_path = "lib/android-support-v4.jar"
+  jar_path = "//third_party/android_tools/sdk/extras/android/support/v4/android-support-v4.jar"
 }
 
 copy("flutter_shell_assets") {
