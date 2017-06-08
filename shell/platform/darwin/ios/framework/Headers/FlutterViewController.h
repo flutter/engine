@@ -20,6 +20,9 @@ FLUTTER_EXPORT
                          bundle:(NSBundle*)nibBundleOrNil NS_DESIGNATED_INITIALIZER;
 
 - (void)handleStatusBarTouches:(UIEvent*)event;
+
+- (void)setInitialRoute:(NSString*)route;
+
 @end
 
 #endif  // FLUTTER_FLUTTERVIEWCONTROLLER_H_
