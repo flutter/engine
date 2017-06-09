@@ -110,6 +110,14 @@ NS_ASSUME_NONNULL_BEGIN
             openURL:(NSURL*)url
   sourceApplication:(NSString*)sourceApplication
          annotation:(id)annotation;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+*/
+- (void)application:(UIApplication *)application
+performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem
+  completionHandler:(void (^)(BOOL succeeded))completionHandler;
+
 @end
 
 /**
