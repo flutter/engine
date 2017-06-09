@@ -21,6 +21,11 @@ FLUTTER_EXPORT
 
 - (void)handleStatusBarTouches:(UIEvent*)event;
 
+/**
+ Sets the first route that the Flutter app shows. The default is "/".
+
+ - Parameter route: The name of the first route to show.
+ */
 - (void)setInitialRoute:(NSString*)route;
 
 @end
