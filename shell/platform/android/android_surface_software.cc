@@ -106,8 +106,9 @@ bool AndroidSurfaceSoftware::PresentBackingStore(
 
   SkColorType color_type;
   sk_sp<SkColorSpace> color_space;
-  if (GetSkColorTypeAndSkColorSpace(native_buffer.format, &color_type,
-                                                          &color_space)) {
+  if (GetSkColorTypeAndSkColorSpace(native_buffer.format,
+                                    &color_type,
+                                    &color_space)) {
     SkImageInfo native_image_info = SkImageInfo::Make(
         native_buffer.width, native_buffer.height, color_type,
         kPremul_SkAlphaType, color_space);
