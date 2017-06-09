@@ -25,7 +25,7 @@ import io.flutter.view.FlutterView;
  * link against the v4 support library .jar file when creating their app to
  * ensure that {@link FragmentActivity} is available at runtime.</p>
  *
- * @see "https://developer.android.com/topic/libraries/support-library/setup.html"
+ * @see <a target="_new" href="https://developer.android.com/topic/libraries/support-library/setup.html">https://developer.android.com/topic/libraries/support-library/setup.html</a>
  */
 public class FlutterFragmentActivity
         extends FragmentActivity implements FlutterView.Provider, PluginRegistry, ViewFactory {
