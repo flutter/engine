@@ -135,7 +135,7 @@ class SemanticsFlags {
   static const SemanticsFlags isChecked = const SemanticsFlags._(_kIsCheckedIndex);
 
 
-  /// Whether a sematics node is selected.
+  /// Whether a semantics node is selected.
   ///
   /// If true, the semantics node is "selected". If false, the semantics node is
   /// "unselected".
