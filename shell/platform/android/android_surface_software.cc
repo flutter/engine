@@ -19,7 +19,8 @@ namespace shell {
 namespace {
 
 bool GetSkColorTypeAndSkColorSpace(int32_t buffer_format,
-                                   SkColorType* color_type) {
+                                   SkColorType* color_type,
+                                   sk_sp<SkColorSpace>* color_space) {
   switch (buffer_format) {
     case WINDOW_FORMAT_RGB_565:
       *color_type = kRGB_565_SkColorType;
@@ -151,7 +152,9 @@ bool AndroidSurfaceSoftware::SetNativeWindow(
   int32_t window_format = ANativeWindow_getFormat(native_window_->handle());
   if (window_format < 0)
     return false;
-  if (!GetSkColorType(window_format, &target_color_type_))
+  if (!GetSkColorTypeAndSkColorSpace(window_format,
+                                     &target_color_type_,
+                                     &target_color_space_))
     return false;
   return true;
 }
