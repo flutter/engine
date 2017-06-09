@@ -113,8 +113,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+
+  - Returns: `YES` if this plugin handles the request.
 */
-- (void)application:(UIApplication *)application
+- (BOOL)application:(UIApplication *)application
 performActionForShortcutItem:(UIApplicationShortcutItem *)shortcutItem
   completionHandler:(void (^)(BOOL succeeded))completionHandler;
 
