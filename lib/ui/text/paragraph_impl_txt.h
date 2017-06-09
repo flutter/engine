@@ -2,14 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_LIB_UI_TEXT_PARAGRAPH_H_
-#define FLUTTER_LIB_UI_TEXT_PARAGRAPH_H_
+#ifndef FLUTTER_LIB_UI_TEXT_PARAGRAPH_IMPL_TXT_H_
+#define FLUTTER_LIB_UI_TEXT_PARAGRAPH_IMPL_TXT_H_
 
 #include "flutter/lib/ui/painting/canvas.h"
-#include "flutter/lib/ui/text/paragraph_builder.h"
 #include "flutter/lib/ui/text/paragraph_impl.h"
 #include "flutter/lib/ui/text/paragraph_impl_blink.h"
-#include "flutter/lib/ui/text/paragraph_impl_txt.h"
 #include "flutter/lib/ui/text/text_box.h"
 #include "flutter/sky/engine/core/rendering/RenderView.h"
 #include "lib/tonic/dart_wrappable.h"
@@ -21,19 +19,19 @@ class DartLibraryNatives;
 
 namespace blink {
 
-class Paragraph : public ftl::RefCountedThreadSafe<Paragraph>,
-                  public tonic::DartWrappable {
+class ParagraphImplTxt : public ParagraphImpl,
+                         public ftl::RefCountedThreadSafe<ParagraphImplTxt>,
+                         public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(Paragraph);
+  FRIEND_MAKE_REF_COUNTED(ParagraphImplTxt);
 
  public:
-  static ftl::RefPtr<Paragraph> create(
-      PassOwnPtr<RenderView> renderView,
-      const std::unique_ptr<txt::Paragraph>& paragraph) {
-    return ftl::MakeRefCounted<Paragraph>(renderView, paragraph);
-  }
+  ~ParagraphImplTxt();
 
-  ~Paragraph() override;
+  ParagraphImplTxt();
+
+  void setRenderView(PassOwnPtr<RenderView> renderView,
+                     std::unique_ptr<txt::Paragraph>& paragraph);
 
   double width();
   double height();
@@ -50,27 +48,17 @@ class Paragraph : public ftl::RefCountedThreadSafe<Paragraph>,
   Dart_Handle getPositionForOffset(double dx, double dy);
   Dart_Handle getWordBoundary(unsigned offset);
 
-  RenderView* renderView() const { return m_renderView.get(); }
-
-  virtual size_t GetAllocationSize() override;
-
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  friend class ParagraphBuilder;
-
-  ParagraphImplTxt m_paragraphImpl;
-
-  RenderBox* firstChildBox() const { return m_renderView->firstChildBox(); }
+  ParagraphImplBlink tempblink;
 
   int absoluteOffsetForPosition(const PositionWithAffinity& position);
 
-  explicit Paragraph(PassOwnPtr<RenderView> renderView,
-                     const std::unique_ptr<txt::Paragraph>& paragraph);
-
-  OwnPtr<RenderView> m_renderView;
+  std::unique_ptr<txt::Paragraph> m_paragraph;
+  double m_width = -1.0;
 };
 
 }  // namespace blink
 
-#endif  // FLUTTER_LIB_UI_TEXT_PARAGRAPH_H_
+#endif  // FLUTTER_LIB_UI_TEXT_PARAGRAPH_IMPL_TXT_H_
