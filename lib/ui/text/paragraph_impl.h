@@ -9,6 +9,7 @@
 #include "flutter/lib/ui/text/text_box.h"
 #include "flutter/sky/engine/core/rendering/RenderView.h"
 #include "lib/tonic/dart_wrappable.h"
+#include "lib/txt/src/paragraph.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -17,12 +18,9 @@ class DartLibraryNatives;
 namespace blink {
 
 class ParagraphImpl {
-  // DEFINE_WRAPPERTYPEINFO();
-
  public:
-  //~ParagraphImpl();
-
-  // ParagraphImpl();
+  virtual void setRenderView(PassOwnPtr<RenderView> renderView,
+                             std::unique_ptr<txt::Paragraph>& paragraph) = 0;
 
   virtual double width() = 0;
 

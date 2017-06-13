@@ -56,10 +56,13 @@ class Paragraph : public ftl::RefCountedThreadSafe<Paragraph>,
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
+  void toggleTxt();  // Toggle Blink or libtxt backend.
+
  private:
   friend class ParagraphBuilder;
 
-  ParagraphImplTxt m_paragraphImpl;
+  std::unique_ptr<ParagraphImpl> m_paragraphImpl;
+  static bool m_usingBlink;
 
   RenderBox* firstChildBox() const { return m_renderView->firstChildBox(); }
 

@@ -32,7 +32,8 @@ double ParagraphImplTxt::width() {
 }
 
 double ParagraphImplTxt::height() {
-  return m_paragraph->GetHeight();
+  return m_paragraph
+      ->GetHeight();  // tempblink.height();  // m_paragraph->GetHeight();
 }
 
 double ParagraphImplTxt::minIntrinsicWidth() {  // TODO.
@@ -44,11 +45,11 @@ double ParagraphImplTxt::maxIntrinsicWidth() {  // TODO.
 }
 
 double ParagraphImplTxt::alphabeticBaseline() {  // TODO.
-  return tempblink.alphabeticBaseline();
+  return m_paragraph->GetAlphabeticBaseline();
 }
 
 double ParagraphImplTxt::ideographicBaseline() {  // TODO.
-  return tempblink.ideographicBaseline();
+  return m_paragraph->GetIdeographicBaseline();
 }
 
 bool ParagraphImplTxt::didExceedMaxLines() {
@@ -56,7 +57,6 @@ bool ParagraphImplTxt::didExceedMaxLines() {
 }
 
 void ParagraphImplTxt::layout(double width) {
-  tempblink.layout(width);  // REMOVE THIS LATER.
   m_width = width;
   m_paragraph->Layout(txt::ParagraphConstraints{width});
 }
@@ -65,6 +65,7 @@ void ParagraphImplTxt::paint(Canvas* canvas, double x, double y) {
   SkCanvas* skCanvas = canvas->canvas();
   if (!skCanvas)
     return;
+  txt::ParagraphStyle pStyle = m_paragraph->GetParagraphStyle();
   m_paragraph->Paint(skCanvas, x, y);
 }
 

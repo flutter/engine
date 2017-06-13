@@ -8,8 +8,4 @@
 #include "flutter/sky/engine/core/rendering/RenderView.h"
 #include "lib/tonic/dart_wrappable.h"
 
-namespace blink {
-
-// ParagraphImpl::ParagraphImpl() {}
-
-}  // namespace blink
+namespace blink {}  // namespace blink
