@@ -8,6 +8,7 @@ import android.content.Context;
 import android.text.Editable;
 import android.text.Selection;
 import android.view.inputmethod.BaseInputConnection;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.view.KeyEvent;
 
@@ -162,8 +163,17 @@ class InputConnectionAdaptor extends BaseInputConnection {
     @Override
     public boolean performEditorAction(int actionCode) {
         // TODO(abarth): Support more actions.
-        mFlutterChannel.invokeMethod("TextInputClient.performAction",
-            Arrays.asList(mClient, "TextInputAction.done"));
+        switch (actionCode) {
+            case EditorInfo.IME_ACTION_NONE:
+                mFlutterChannel.invokeMethod("TextInputClient.performAction",
+                    Arrays.asList(mClient, "TextInputAction.none"));
+                break;
+            default:
+            case EditorInfo.IME_ACTION_DONE:
+                mFlutterChannel.invokeMethod("TextInputClient.performAction",
+                    Arrays.asList(mClient, "TextInputAction.done"));
+                break;
+        }
         return true;
     }
 }
