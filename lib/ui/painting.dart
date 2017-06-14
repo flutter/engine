@@ -8,6 +8,29 @@ Color _scaleAlpha(Color a, double factor) {
   return a.withAlpha((a.alpha * factor).round());
 }
 
+/// Apply to canonical sRGB transfer function to convert to linear values.
+double _srgbToLinear(int color) {
+  assert(0 <= color && color <= 255);
+
+  double x = color * (1.0 / 255.0);
+  if (x <= 0.04045) {
+    return x * (1.0 / 12.92);
+  }
+
+  return math.pow((x + 0.055) * (1.0 / 1.055), 2.4);
+}
+
+/// Apply the canonical inverse sRGB transfer function to convert from linear values.
+int _srgbFromLinear(double x) {
+  assert(0.0 <= x && x <= 1.0);
+
+  if (x <= 0.0031308) {
+    return (255.0 * (x * 12.92)).toInt();
+  }
+
+  return (255.0 * (1.055 * math.pow(x, (1.0 / 2.4)) - 0.055)).toInt();
+}
+
 /// An immutable 32 bit color value in ARGB format.
 ///
 /// Consider the light teal of the Flutter logo. It is fully opaque, with a red
@@ -167,9 +190,9 @@ class Color {
       return _scaleAlpha(a, 1.0 - t);
     return new Color.fromARGB(
       lerpDouble(a.alpha, b.alpha, t).toInt(),
-      lerpDouble(a.red, b.red, t).toInt(),
-      lerpDouble(a.green, b.green, t).toInt(),
-      lerpDouble(a.blue, b.blue, t).toInt()
+      _srgbFromLinear(lerpDouble(_srgbToLinear(a.red), _srgbToLinear(b.red), t)),
+      _srgbFromLinear(lerpDouble(_srgbToLinear(a.green), _srgbToLinear(b.green), t)),
+      _srgbFromLinear(lerpDouble(_srgbToLinear(a.blue), _srgbToLinear(b.blue), t)),
     );
   }
 
