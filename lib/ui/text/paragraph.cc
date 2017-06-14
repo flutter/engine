@@ -41,7 +41,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Paragraph);
 
 DART_BIND_ALL(Paragraph, FOR_EACH_BINDING)
 
-bool Paragraph::m_usingBlink = false;
+bool Paragraph::m_usingBlink = true;
 
 Paragraph::Paragraph(PassOwnPtr<RenderView> renderView,
                      const std::unique_ptr<txt::Paragraph>& paragraph) {
