@@ -101,7 +101,7 @@ explicit `--local-engine-src-path` pointing at the `engine/src` directory. Make
 sure you have a device connected over USB and debugging enabled on that device:
 
  * `cd /path/to/flutter/examples/hello_world`
- * `pub get`
+ * `../../bin/flutter packages upgrade`
  * `../../bin/flutter run --local-engine-src-path /path/to/engine/src --local-engine=android_debug_unopt` or `--local-engine=android_debug_unopt_x64`
 
 If you put the `engine` and `flutter` directories side-by-side, you can skip the
