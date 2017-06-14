@@ -23,11 +23,13 @@ constexpr int kBlendModeIndex = 2;
 constexpr int kStyleIndex = 3;
 constexpr int kStrokeWidthIndex = 4;
 constexpr int kStrokeCapIndex = 5;
-constexpr int kFilterQualityIndex = 6;
-constexpr int kColorFilterIndex = 7;
-constexpr int kColorFilterColorIndex = 8;
-constexpr int kColorFilterBlendModeIndex = 9;
-constexpr size_t kDataByteCount = 40;
+constexpr int kStrokeJoinIndex = 6;
+constexpr int kStrokeMiterLimitIndex = 7;
+constexpr int kFilterQualityIndex = 8;
+constexpr int kColorFilterIndex = 9;
+constexpr int kColorFilterColorIndex = 10;
+constexpr int kColorFilterBlendModeIndex = 11;
+constexpr size_t kDataByteCount = 48;
 
 constexpr int kMaskFilterIndex = 0;
 constexpr int kShaderIndex = 1;
@@ -100,6 +102,14 @@ Paint DartConverter<Paint>::FromArguments(Dart_NativeArguments args,
   uint32_t stroke_cap = uint_data[kStrokeCapIndex];
   if (stroke_cap)
     paint.setStrokeCap(static_cast<SkPaint::Cap>(stroke_cap));
+
+  uint32_t stroke_join = uint_data[kStrokeJoinIndex];
+  if (stroke_join)
+    paint.setStrokeJoin(static_cast<SkPaint::Join>(stroke_join));
+
+  float stroke_miter_limit = uint_data[kStrokeMiterLimitIndex];
+  if (stroke_miter_limit != 0.0)
+    paint.setStrokeMiter(stroke_miter_limit);
 
   uint32_t filter_quality = uint_data[kFilterQualityIndex];
   if (filter_quality)

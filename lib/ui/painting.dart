@@ -271,6 +271,7 @@ enum FilterQuality {
 
 /// Styles to use for line endings.
 ///
+/// Must be in the same order as the SkPaint::Cap enum.
 /// See [Paint.strokeCap].
 // These enum values must be kept in sync with SkPaint::Cap.
 enum StrokeCap {
@@ -284,6 +285,22 @@ enum StrokeCap {
   /// similar to extending each contour by half the stroke width (as
   /// given by [Paint.strokeWidth]).
   square,
+}
+
+/// Styles to use for line joins.
+///
+/// Must be in the same order as the SkPaint::Join enum.
+/// See [Paint.strokeJoin].
+enum StrokeJoin {
+  /// Joins between line segments form sharp corners.
+  miter,
+
+  /// Joins between line segments are semi-circular.
+  round,
+
+  /// Joins between line segments connect the corners of the butt ends of the
+  /// line segments to give a beveled appearance.
+  bevel,
 }
 
 /// Strategies for painting shapes and paths on a canvas.
@@ -321,7 +338,7 @@ class Paint {
   // * _data is binary data in four-byte fields, each of which is either a
   //   uint32_t or a float. The default value for each field is encoded as
   //   zero to make initialization trivial. Most values already have a default
-  //   value of zero, but some, such a color, have a non-zero default value.
+  //   value of zero, but some, such as color, have a non-zero default value.
   //   To encode or decode these values, XOR the value with the default value.
   //
   // * _objects is a list of unencodable objects, typically wrappers for native
@@ -337,10 +354,12 @@ class Paint {
   static const int _kStyleIndex = 3;
   static const int _kStrokeWidthIndex = 4;
   static const int _kStrokeCapIndex = 5;
-  static const int _kFilterQualityIndex = 6;
-  static const int _kColorFilterIndex = 7;
-  static const int _kColorFilterColorIndex = 8;
-  static const int _kColorFilterBlendModeIndex = 9;
+  static const int _kStrokeJoinIndex = 6;
+  static const int _kStrokeMiterLimitIndex = 7;
+  static const int _kFilterQualityIndex = 8;
+  static const int _kColorFilterIndex = 9;
+  static const int _kColorFilterColorIndex = 10;
+  static const int _kColorFilterBlendModeIndex = 11;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
   static const int _kColorOffset = _kColorIndex << 2;
@@ -348,12 +367,14 @@ class Paint {
   static const int _kStyleOffset = _kStyleIndex << 2;
   static const int _kStrokeWidthOffset = _kStrokeWidthIndex << 2;
   static const int _kStrokeCapOffset = _kStrokeCapIndex << 2;
+  static const int _kStrokeJoinOffset = _kStrokeJoinIndex << 2;
+  static const int _kStrokeMiterLimitOffset = _kStrokeMiterLimitIndex << 2;
   static const int _kFilterQualityOffset = _kFilterQualityIndex << 2;
   static const int _kColorFilterOffset = _kColorFilterIndex << 2;
   static const int _kColorFilterColorOffset = _kColorFilterColorIndex << 2;
   static const int _kColorFilterBlendModeOffset = _kColorFilterBlendModeIndex << 2;
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 40;
+  static const int _kDataByteCount = 48;
 
   // Binary format must match the deserialization code in paint.cc.
   List<dynamic> _objects;
@@ -461,6 +482,38 @@ class Paint {
     _data.setInt32(_kStrokeCapOffset, encoded, _kFakeHostEndian);
   }
 
+  /// The kind of finish to place on the joins between segments on lines drawn
+  /// when [style] is set to [PaintingStyle.stroke].
+  ///
+  /// Defaults to [StrokeJoin.miter], i.e. sharp corners, but note that if the
+  /// [strokeMiterLimit] isn't set to something other than its default of zero,
+  /// then a [StrokeJoin.bevel] join will used.
+  StrokeJoin get strokeJoin {
+    return StrokeJoin.values[_data.getInt32(_kStrokeJoinOffset, _kFakeHostEndian)];
+  }
+  set strokeJoin(StrokeJoin value) {
+    assert(value != null);
+    final int encoded = value.index;
+    _data.setInt32(_kStrokeJoinOffset, encoded, _kFakeHostEndian);
+  }
+
+  /// The limit for miters to be drawn on segments when the join is set to
+  /// [StrokeJoin.miter] and the [style] is set to [PaintingStyle.stroke]. If
+  /// this limit is exceeded, then a [StrokeJoin.bevel] join will be drawn
+  /// instead.
+  ///
+  /// This limit is expressed as the 'length' of the miter.
+  ///
+  /// Defaults to zero, i.e. always do a [StrokeJoin.bevel].
+  double get strokeMiterLimit {
+    return _data.getFloat32(_kStrokeMiterLimitOffset, _kFakeHostEndian);
+  }
+  set strokeMiterLimit(double value) {
+    assert(value != null);
+    final double encoded = value;
+    _data.setFloat32(_kStrokeMiterLimitOffset, encoded, _kFakeHostEndian);
+  }
+
   /// A mask filter (for example, a blur) to apply to a shape after it has been
   /// drawn but before it has been composited into the image.
   ///
@@ -552,6 +605,10 @@ class Paint {
         result.write(' hairline');
       if (strokeCap != StrokeCap.butt)
         result.write(' $strokeCap');
+      if (strokeJoin != StrokeJoin.miter)
+        result.write(' $strokeJoin');
+      if (strokeMiterLimit != 0.0)
+        result.write(' $strokeMiterLimit');
       semicolon = '; ';
     }
     if (isAntiAlias != true) {
