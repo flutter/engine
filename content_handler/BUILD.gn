@@ -42,6 +42,7 @@ template("flutter_content_handler") {
 
     deps = [
       "//application/lib/app",
+      "//application/lib/svc",
       "//apps/icu_data/lib",
       "//apps/mozart/lib/flutter/sdk_ext",
       "//apps/mozart/lib/skia:vmo",
@@ -95,6 +96,16 @@ template("flutter_content_handler") {
         "//magma:vulkan",
       ]
     }
+
+    # The flags below are needed so that Dart's CPU profiler can walk the
+    # C++ stack.
+    cflags = [
+      "-mno-omit-leaf-frame-pointer",
+      "-fno-omit-frame-pointer",
+    ]
+    # This flag is needed so that the call to dladdr() in Dart's native symbol
+    # resolver can report good symbol information for the CPU profiler.
+    ldflags = [ "-rdynamic" ]
   }
 }
 

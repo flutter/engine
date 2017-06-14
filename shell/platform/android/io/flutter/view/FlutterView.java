@@ -13,6 +13,9 @@ import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Matrix;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -53,6 +56,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class FlutterView extends SurfaceView
     implements BinaryMessenger, AccessibilityManager.AccessibilityStateChangeListener {
 
+    /**
+     * Interface for those objects that maintain and expose a reference to a
+     * {@code FlutterView} (such as a full-screen Flutter activity).
+     *
+     * <p>This indirection is provided to support applications that use an
+     * activity other than {@link io.flutter.app.FlutterActivity} (e.g. Android
+     * v4 support library's {@code FragmentActivity}). It allows Flutter plugins
+     * to deal in this interface and not require that the activity be a subclass
+     * of {@code FlutterActivity}.</p>
+     */
+    public interface Provider {
+        /**
+         * Returns a reference to the Flutter view maintained by this object.
+         * This may be {@code null}.
+         */
+        FlutterView getFlutterView();
+    }
+
     private static final String TAG = "FlutterView";
 
     private static final String ACTION_DISCOVER = "io.flutter.view.DISCOVER";
@@ -81,6 +102,7 @@ public class FlutterView extends SurfaceView
     private final BroadcastReceiver mDiscoveryReceiver;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private long mNativePlatformView;
+    private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
 
     public FlutterView(Context context) {
         this(context, null);
@@ -88,6 +110,8 @@ public class FlutterView extends SurfaceView
 
     public FlutterView(Context context, AttributeSet attrs) {
         super(context, attrs);
+
+        mIsSoftwareRenderingEnabled = nativeGetIsSoftwareRenderingEnabled();
 
         mMetrics = new ViewportMetrics();
         mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
@@ -150,7 +174,7 @@ public class FlutterView extends SurfaceView
             "flutter/platform", JSONMethodCodec.INSTANCE);
         flutterPlatformChannel.setMethodCallHandler(platformPlugin);
         addActivityLifecycleListener(platformPlugin);
-        mTextInputPlugin = new TextInputPlugin((Activity) getContext(), this);
+        mTextInputPlugin = new TextInputPlugin(this);
 
         setLocale(getResources().getConfiguration().locale);
 
@@ -221,6 +245,10 @@ public class FlutterView extends SurfaceView
         Map<String, Object> message = new HashMap<>(1);
         message.put("type", "memoryPressure");
         mFlutterSystemChannel.send(message);
+    }
+
+    public void setInitialRoute(String route) {
+        mFlutterNavigationChannel.invokeMethod("setInitialRoute", route);
     }
 
     public void pushRoute(String route) {
@@ -593,6 +621,8 @@ public class FlutterView extends SurfaceView
     private static native void nativeInvokePlatformMessageEmptyResponseCallback(
         long nativePlatformViewAndroid, int responseId);
 
+    private static native boolean nativeGetIsSoftwareRenderingEnabled();
+
     private void updateViewportMetrics() {
         nativeSetViewportMetrics(mNativePlatformView,
             mMetrics.devicePixelRatio,
@@ -697,7 +727,11 @@ public class FlutterView extends SurfaceView
     }
 
     private void resetWillNotDraw() {
-        setWillNotDraw(!(mAccessibilityEnabled || mTouchExplorationEnabled));
+        if (!mIsSoftwareRenderingEnabled) {
+            setWillNotDraw(!(mAccessibilityEnabled || mTouchExplorationEnabled));
+        } else {
+            setWillNotDraw(false);
+        }
     }
 
     @Override

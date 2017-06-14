@@ -23,6 +23,8 @@ shared_library("flutter_shell_native") {
     "android_surface.h",
     "android_surface_gl.cc",
     "android_surface_gl.h",
+    "android_surface_software.h",
+    "android_surface_software.cc",
     "flutter_main.cc",
     "flutter_main.h",
     "library_loader.cc",
@@ -76,7 +78,10 @@ java_library("flutter_shell_java") {
 
   java_files = [
     "io/flutter/app/FlutterActivity.java",
+    "io/flutter/app/FlutterActivityDelegate.java",
+    "io/flutter/app/FlutterActivityEvents.java",
     "io/flutter/app/FlutterApplication.java",
+    "io/flutter/app/FlutterFragmentActivity.java",
     "io/flutter/plugin/common/ActivityLifecycleListener.java",
     "io/flutter/plugin/common/BasicMessageChannel.java",
     "io/flutter/plugin/common/BinaryCodec.java",
@@ -98,6 +103,7 @@ java_library("flutter_shell_java") {
     "io/flutter/plugin/editing/TextInputPlugin.java",
     "io/flutter/plugin/platform/PlatformPlugin.java",
     "io/flutter/util/PathUtils.java",
+    "io/flutter/util/Preconditions.java",
     "io/flutter/view/AccessibilityBridge.java",
     "io/flutter/view/FlutterMain.java",
     "io/flutter/view/FlutterView.java",
@@ -107,7 +113,17 @@ java_library("flutter_shell_java") {
     "io/flutter/view/VsyncWaiter.java",
   ]
 
+  deps = [
+    ":android_support_v4",
+  ]
+
   jar_path = "$root_out_dir/flutter_java.jar"
+}
+
+java_prebuilt("android_support_v4") {
+  supports_android = true
+
+  jar_path = "//third_party/android_tools/sdk/extras/android/support/v4/android-support-v4.jar"
 }
 
 copy("flutter_shell_assets") {

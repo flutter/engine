@@ -28,7 +28,7 @@ vars = {
   # dependencies of Dart are also updated to match the entries in the
   # Dart SDK's DEPS file for that revision of Dart. The DEPS file for
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS
-  'dart_revision': 'ae57eca5040cc32e97c9f4728842127f8ca5f742',
+  'dart_revision': 'd86cb763b982ae3a3ace96eea7acbd7aa53fae0d',
   # Dart calls the next one "boringssl_gen_rev"
   'dart_boringssl_gen_revision': '753224969dbe43dad29343146529727b5066c0f3',
   # Dart calls the next one "boringssl_rev"
@@ -37,6 +37,9 @@ vars = {
   'dart_observatory_packages_revision': '26aad88f1c1915d39bbcbff3cad589e2402fdcf1',
   # Dart calls the next one "root_certificates_rev"
   'dart_root_certificates_revision': 'a4c7c6f23a664a37bc1b6f15a819e3f2a292791a',
+
+  # Build bot tooling for iOS
+  'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
 
   'buildtools_revision': 'c8db819853bcf8ce1635a8b7a395820f39b5a9fc',
 }
@@ -51,7 +54,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '49dc17e37e24ae153a3d2426c958254be1904562',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'a37901d9b7b2051d315e0b1c63427e2cf46bacae',
 
    # Fuchsia compatibility
    #
@@ -81,6 +84,9 @@ deps = {
 
   'src/buildtools':
    Var('fuchsia_git') + '/buildtools' + '@' +  Var('buildtools_revision'),
+
+   'src/ios_tools':
+   Var('chromium_git') + '/chromium/src/ios.git' + '@' + Var('ios_tools_revision'),
 
   'src/third_party/icu':
    Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'c3f79166089e5360c09e3053fce50e6e296c3204',

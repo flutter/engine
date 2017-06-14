@@ -971,7 +971,7 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
 
   /// Searches the current and all parent directories (up to the license root)
   /// for a license of the specified type.
-  License _nearestAncestorLicenseWithType(type) {
+  License _nearestAncestorLicenseWithType(LicenseType type) {
     License result = _localLicenseWithType(type);
     if (result != null)
       return result;
@@ -1180,7 +1180,7 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
     }
   }
 
-  Stream<List<int>> _signatureStream(List files) async* {
+  Stream<List<int>> _signatureStream(List<RepositoryLicensedFile> files) async* {
     for (RepositoryLicensedFile file in files) {
       yield file.io.fullName.codeUnits;
       yield file.io.readBytes();
@@ -1190,7 +1190,7 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
   /// Compute a signature representing a hash of all the licensed files within
   /// this directory tree.
   Future<String> get signature async {
-    List allFiles = _signatureFiles.toList();
+    List<RepositoryLicensedFile> allFiles = _signatureFiles.toList();
     allFiles.sort((RepositoryLicensedFile a, RepositoryLicensedFile b) =>
         a.io.fullName.compareTo(b.io.fullName));
     crypto.Digest digest = await crypto.md5.bind(_signatureStream(allFiles)).single;
@@ -2103,6 +2103,7 @@ class RepositoryRoot extends RepositoryDirectory {
     return entry.name != 'testing' // only used by tests
         && entry.name != 'build' // only used by build
         && entry.name != 'buildtools' // only used by build
+        && entry.name != 'ios_tools' // only used by build
         && entry.name != 'tools' // not distributed in binary
         && entry.name != 'out' // output of build
         && super.shouldRecurse(entry);
@@ -2249,7 +2250,7 @@ Future<Null> main(List<String> arguments) async {
         Progress progress = new Progress(component.fileCount);
 
         system.File outFile = new system.File(
-            path.join(argResults['out'], 'licenses_${component.io.name}'));
+            path.join(argResults['out'], 'licenses_${component.name}'));
         system.IOSink sink = outFile.openWrite();
         if (signature != null)
           sink.writeln('Signature: $signature\n');
@@ -2265,7 +2266,7 @@ Future<Null> main(List<String> arguments) async {
           // contain any state left over from previous components.
           clearLicenseRegistry();
           componentRoot = new RepositoryRoot(rootDirectory).subdirectories.firstWhere(
-            (RepositoryDirectory dir) => dir.io.name == component.io.name
+            (RepositoryDirectory dir) => dir.name == component.name
           );
         }
         List<License> licenses = new Set<License>.from(
