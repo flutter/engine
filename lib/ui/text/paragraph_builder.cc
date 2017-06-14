@@ -234,20 +234,21 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
       style.ellipsis = ellipsis;
 
     m_paragraphBuilder.SetParagraphStyle(style);
+  } else {
+    // Blink version.
+    createRenderView();
+
+    RefPtr<RenderStyle> paragraphStyle =
+        decodeParagraphStyle(m_renderView->style(), encoded, fontFamily, fontSize,
+                             lineHeight, ellipsis);
+    encoded.Release();
+
+    m_renderParagraph = new RenderParagraph();
+    m_renderParagraph->setStyle(paragraphStyle.release());
+
+    m_currentRenderObject = m_renderParagraph;
+    m_renderView->addChild(m_currentRenderObject);
   }
-  // Blink version.
-  createRenderView();
-
-  RefPtr<RenderStyle> paragraphStyle =
-      decodeParagraphStyle(m_renderView->style(), encoded, fontFamily, fontSize,
-                           lineHeight, ellipsis);
-  encoded.Release();
-
-  m_renderParagraph = new RenderParagraph();
-  m_renderParagraph->setStyle(paragraphStyle.release());
-
-  m_currentRenderObject = m_renderParagraph;
-  m_renderView->addChild(m_currentRenderObject);
 }
 
 ParagraphBuilder::~ParagraphBuilder() {
@@ -266,6 +267,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
   FTL_DCHECK(encoded.num_elements() == 8);
 
   int32_t mask = encoded[0];
+
   if (!Paragraph::m_usingBlink) {
     txt::TextStyle tstyle;
 
@@ -317,107 +319,114 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
     }
 
     m_paragraphBuilder.PushStyle(tstyle);
-  }
+  } else {
 
-  // Blink Version.
-  RefPtr<RenderStyle> style = RenderStyle::create();
-  style->inheritFrom(m_currentRenderObject->style());
+    // Blink Version.
+    RefPtr<RenderStyle> style = RenderStyle::create();
+    style->inheritFrom(m_currentRenderObject->style());
 
-  if (mask & tsColorMask)
-    style->setColor(getColorFromARGB(encoded[tsColorIndex]));
+    if (mask & tsColorMask)
+      style->setColor(getColorFromARGB(encoded[tsColorIndex]));
 
-  if (mask & tsTextDecorationMask) {
-    style->setTextDecoration(
-        static_cast<TextDecoration>(encoded[tsTextDecorationIndex]));
-    style->applyTextDecorations();
-  }
-
-  if (mask & tsTextDecorationColorMask)
-    style->setTextDecorationColor(
-        StyleColor(getColorFromARGB(encoded[tsTextDecorationColorIndex])));
-
-  if (mask & tsTextDecorationStyleMask)
-    style->setTextDecorationStyle(
-        static_cast<TextDecorationStyle>(encoded[tsTextDecorationStyleIndex]));
-
-  if (mask & tsTextBaselineMask) {
-    // TODO(abarth): Implement TextBaseline. The CSS version of this
-    // property wasn't wired up either.
-  }
-
-  if (mask & (tsFontWeightMask | tsFontStyleMask | tsFontFamilyMask |
-              tsFontSizeMask | tsLetterSpacingMask | tsWordSpacingMask)) {
-    FontDescription fontDescription = style->fontDescription();
-
-    if (mask & tsFontWeightMask)
-      fontDescription.setWeight(
-          static_cast<FontWeight>(encoded[tsFontWeightIndex]));
-
-    if (mask & tsFontStyleMask)
-      fontDescription.setStyle(
-          static_cast<FontStyle>(encoded[tsFontStyleIndex]));
-
-    if (mask & tsFontFamilyMask) {
-      FontFamily family;
-      family.setFamily(String::fromUTF8(fontFamily));
-      fontDescription.setFamily(family);
+    if (mask & tsTextDecorationMask) {
+      style->setTextDecoration(
+          static_cast<TextDecoration>(encoded[tsTextDecorationIndex]));
+      style->applyTextDecorations();
     }
 
-    if (mask & tsFontSizeMask) {
-      fontDescription.setSpecifiedSize(fontSize);
-      fontDescription.setIsAbsoluteSize(true);
-      fontDescription.setComputedSize(
-          getComputedSizeFromSpecifiedSize(fontSize));
+    if (mask & tsTextDecorationColorMask)
+      style->setTextDecorationColor(
+          StyleColor(getColorFromARGB(encoded[tsTextDecorationColorIndex])));
+
+    if (mask & tsTextDecorationStyleMask)
+      style->setTextDecorationStyle(
+          static_cast<TextDecorationStyle>(encoded[tsTextDecorationStyleIndex]));
+
+    if (mask & tsTextBaselineMask) {
+      // TODO(abarth): Implement TextBaseline. The CSS version of this
+      // property wasn't wired up either.
     }
 
-    if (mask & tsLetterSpacingMask)
-      fontDescription.setLetterSpacing(letterSpacing);
+    if (mask & (tsFontWeightMask | tsFontStyleMask | tsFontFamilyMask |
+                tsFontSizeMask | tsLetterSpacingMask | tsWordSpacingMask)) {
+      FontDescription fontDescription = style->fontDescription();
 
-    if (mask & tsWordSpacingMask)
-      fontDescription.setWordSpacing(wordSpacing);
+      if (mask & tsFontWeightMask)
+        fontDescription.setWeight(
+            static_cast<FontWeight>(encoded[tsFontWeightIndex]));
 
-    style->setFontDescription(fontDescription);
-    style->font().update(UIDartState::Current()->font_selector());
+      if (mask & tsFontStyleMask)
+        fontDescription.setStyle(
+            static_cast<FontStyle>(encoded[tsFontStyleIndex]));
+
+      if (mask & tsFontFamilyMask) {
+        FontFamily family;
+        family.setFamily(String::fromUTF8(fontFamily));
+        fontDescription.setFamily(family);
+      }
+
+      if (mask & tsFontSizeMask) {
+        fontDescription.setSpecifiedSize(fontSize);
+        fontDescription.setIsAbsoluteSize(true);
+        fontDescription.setComputedSize(
+            getComputedSizeFromSpecifiedSize(fontSize));
+      }
+
+      if (mask & tsLetterSpacingMask)
+        fontDescription.setLetterSpacing(letterSpacing);
+
+      if (mask & tsWordSpacingMask)
+        fontDescription.setWordSpacing(wordSpacing);
+
+      style->setFontDescription(fontDescription);
+      style->font().update(UIDartState::Current()->font_selector());
+    }
+
+    if (mask & tsHeightMask) {
+      style->setLineHeight(Length(height * 100.0, Percent));
+    }
+
+    encoded.Release();
+
+    RenderObject* span = new RenderInline();
+    span->setStyle(style.release());
+    m_currentRenderObject->addChild(span);
+    m_currentRenderObject = span;
   }
-
-  if (mask & tsHeightMask) {
-    style->setLineHeight(Length(height * 100.0, Percent));
-  }
-
-  encoded.Release();
-
-  RenderObject* span = new RenderInline();
-  span->setStyle(style.release());
-  m_currentRenderObject->addChild(span);
-  m_currentRenderObject = span;
 }
 
 void ParagraphBuilder::pop() {
   if (!Paragraph::m_usingBlink)
     m_paragraphBuilder.Pop();
-
-  // Blink Version.
-  if (m_currentRenderObject)
-    m_currentRenderObject = m_currentRenderObject->parent();
+  else {
+    // Blink Version.
+    if (m_currentRenderObject)
+      m_currentRenderObject = m_currentRenderObject->parent();
+  }
 }
 
 void ParagraphBuilder::addText(const std::string& text) {
   if (!Paragraph::m_usingBlink)
     m_paragraphBuilder.AddText(text);
-
-  // Blink Version.
-  if (!m_currentRenderObject)
-    return;
-  RenderText* renderText = new RenderText(String::fromUTF8(text).impl());
-  RefPtr<RenderStyle> style = RenderStyle::create();
-  style->inheritFrom(m_currentRenderObject->style());
-  renderText->setStyle(style.release());
-  m_currentRenderObject->addChild(renderText);
+  else {
+    // Blink Version.
+    if (!m_currentRenderObject)
+      return;
+    RenderText* renderText = new RenderText(String::fromUTF8(text).impl());
+    RefPtr<RenderStyle> style = RenderStyle::create();
+    style->inheritFrom(m_currentRenderObject->style());
+    renderText->setStyle(style.release());
+    m_currentRenderObject->addChild(renderText);
+  }
 }
 
 ftl::RefPtr<Paragraph> ParagraphBuilder::build() {
   m_currentRenderObject = nullptr;
-  return Paragraph::create(m_renderView.release(), m_paragraphBuilder.Build());
+  if (!Paragraph::m_usingBlink) {
+    return Paragraph::create(nullptr, m_paragraphBuilder.Build());
+  } else {
+    return Paragraph::create(m_renderView.release(), nullptr);
+  }
 }
 
 void ParagraphBuilder::createRenderView() {
