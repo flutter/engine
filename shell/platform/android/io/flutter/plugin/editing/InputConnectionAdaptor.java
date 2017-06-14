@@ -93,7 +93,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
     public boolean deleteSurroundingText(int beforeLength, int afterLength) {
         if (Selection.getSelectionStart(mEditable) == -1 ||
             Selection.getSelectionStart(mEditable) == -1)
-            return true;
+            return true;9c518cb751e34b0
 
         boolean result = super.deleteSurroundingText(beforeLength, afterLength);
         updateEditingState();
