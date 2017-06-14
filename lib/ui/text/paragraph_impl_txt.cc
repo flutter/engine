@@ -14,8 +14,6 @@
 
 namespace blink {
 
-IMPLEMENT_WRAPPERTYPEINFO(ui, ParagraphImplTxt);
-
 ParagraphImplTxt::ParagraphImplTxt() {}
 
 ParagraphImplTxt::~ParagraphImplTxt() {}

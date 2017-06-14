@@ -19,12 +19,7 @@ class DartLibraryNatives;
 
 namespace blink {
 
-class ParagraphImplTxt : public ParagraphImpl,
-                         public ftl::RefCountedThreadSafe<ParagraphImplTxt>,
-                         public tonic::DartWrappable {
-  DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(ParagraphImplTxt);
-
+class ParagraphImplTxt : public ParagraphImpl {
  public:
   ~ParagraphImplTxt();
 

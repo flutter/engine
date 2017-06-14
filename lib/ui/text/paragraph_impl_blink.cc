@@ -24,8 +24,6 @@ using tonic::ToDart;
 
 namespace blink {
 
-IMPLEMENT_WRAPPERTYPEINFO(ui, ParagraphImplBlink);
-
 ParagraphImplBlink::ParagraphImplBlink() {}
 
 ParagraphImplBlink::~ParagraphImplBlink() {
