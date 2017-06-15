@@ -289,6 +289,10 @@ enum StrokeCap {
 
 /// Styles to use for line joins.
 ///
+/// Note that this only affects line joins for polygons drawn by
+/// [Canvas.drawPath] and rectangles, not points drawn as lines with
+/// [Canvas.drawPoints].
+///
 /// Must be in the same order as the SkPaint::Join enum.
 /// See [Paint.strokeJoin].
 enum StrokeJoin {
@@ -482,12 +486,13 @@ class Paint {
     _data.setInt32(_kStrokeCapOffset, encoded, _kFakeHostEndian);
   }
 
-  /// The kind of finish to place on the joins between segments on lines drawn
-  /// when [style] is set to [PaintingStyle.stroke].
+  /// The kind of finish to place on the joins between segments.
   ///
-  /// Defaults to [StrokeJoin.miter], i.e. sharp corners, but note that if the
-  /// [strokeMiterLimit] isn't set to something other than its default of zero,
-  /// then a [StrokeJoin.bevel] join will used.
+  /// This applies to paths drawn when [style] is set to [PaintingStyle.stroke],
+  /// It does not apply to points drawn as lines with [Canvas.drawPoints].
+  ///
+  /// Defaults to [StrokeJoin.miter], i.e. sharp corners.  See also
+  /// [strokeMiterLimit] to control when miters are replaced by bevels.
   StrokeJoin get strokeJoin {
     return StrokeJoin.values[_data.getInt32(_kStrokeJoinOffset, _kFakeHostEndian)];
   }
@@ -500,11 +505,14 @@ class Paint {
   /// The limit for miters to be drawn on segments when the join is set to
   /// [StrokeJoin.miter] and the [style] is set to [PaintingStyle.stroke]. If
   /// this limit is exceeded, then a [StrokeJoin.bevel] join will be drawn
-  /// instead.
+  /// instead.  Note that this may cause some 'popping' of the corners of a
+  /// path if it is animated.
   ///
-  /// This limit is expressed as the 'length' of the miter.
+  /// This limit is expressed as a limit on the length of the miter.
   ///
-  /// Defaults to zero, i.e. always do a [StrokeJoin.bevel].
+  /// Defaults to zero, which means that a reasonable value will be picked
+  /// instead of using zero as the limit, which would draw a bevel all the
+  /// time.
   double get strokeMiterLimit {
     return _data.getFloat32(_kStrokeMiterLimitOffset, _kFakeHostEndian);
   }
