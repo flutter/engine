@@ -115,8 +115,15 @@ bool GPUSurfaceGL::SelectPixelConfig(GrPixelConfig* config) {
     return true;
   }
 
+  // FIXME:
+  // If sRGB support is not available, we should instead fall back to software.
   if (context_->caps()->isConfigRenderable(kRGBA_8888_GrPixelConfig, false)) {
     *config = kRGBA_8888_GrPixelConfig;
+    return true;
+  }
+
+  if (context_->caps()->isConfigRenderable(kRGBA_4444_GrPixelConfig, false)) {
+    *config = kRGBA_4444_GrPixelConfig;
     return true;
   }
 
