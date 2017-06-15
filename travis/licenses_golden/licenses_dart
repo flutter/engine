@@ -1226,6 +1226,7 @@ FILE: ../../../dart/client/idea/.idea/.name
 FILE: ../../../dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../dart/client/idea/.idea/vcs.xml
 FILE: ../../../dart/runtime/CPPLINT.cfg
+FILE: ../../../dart/runtime/bin/vmservice_sdk/lib/libraries.json
 FILE: ../../../dart/runtime/bin/vmserviceio_dartium.dart
 FILE: ../../../dart/runtime/observatory/.analysis_options
 FILE: ../../../dart/runtime/observatory/.packages
