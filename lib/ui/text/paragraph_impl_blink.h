@@ -22,10 +22,7 @@ class ParagraphImplBlink : public ParagraphImpl {
  public:
   ~ParagraphImplBlink();
 
-  ParagraphImplBlink();
-
-  void setRenderView(PassOwnPtr<RenderView> renderView,
-                     std::unique_ptr<txt::Paragraph>& paragraph);
+  ParagraphImplBlink(PassOwnPtr<RenderView> renderView);
 
   double width();
   double height();

@@ -12,6 +12,7 @@
 #include "flutter/sky/engine/platform/fonts/FontCache.h"
 #include "flutter/sky/engine/platform/graphics/GraphicsContext.h"
 #include "flutter/sky/engine/platform/text/TextBoundaries.h"
+#include "flutter/sky/engine/wtf/PassOwnPtr.h"
 #include "lib/ftl/tasks/task_runner.h"
 #include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_args.h"
@@ -43,15 +44,13 @@ DART_BIND_ALL(Paragraph, FOR_EACH_BINDING)
 
 bool Paragraph::m_usingBlink = true;
 
-Paragraph::Paragraph(PassOwnPtr<RenderView> renderView,
-                     const std::unique_ptr<txt::Paragraph>& paragraph) {
-  if (m_usingBlink) {
-    m_paragraphImpl = std::make_unique<ParagraphImplBlink>();
-  } else {
-    m_paragraphImpl = std::make_unique<ParagraphImplTxt>();
-  }
-  m_paragraphImpl->setRenderView(
-      renderView, const_cast<std::unique_ptr<txt::Paragraph>&>(paragraph));
+Paragraph::Paragraph(PassOwnPtr<RenderView> renderView) {
+  m_paragraphImpl = std::make_unique<ParagraphImplBlink>(renderView);
+}
+
+Paragraph::Paragraph(const std::unique_ptr<txt::Paragraph>& paragraph) {
+  m_paragraphImpl = std::make_unique<ParagraphImplTxt>(
+      const_cast<std::unique_ptr<txt::Paragraph>&>(paragraph));
 }
 
 Paragraph::~Paragraph() {
@@ -105,22 +104,6 @@ void Paragraph::toggleTxt() {
   FTL_LOG(WARNING) << "WARNING: toggleTxt() is a debug method and is not part "
                       "of the Flutter API! It will be removed shortly.";
   m_usingBlink = !m_usingBlink;
-}
-
-int Paragraph::absoluteOffsetForPosition(const PositionWithAffinity& position) {
-  FTL_DCHECK(position.renderer());
-  unsigned offset = 0;
-  for (RenderObject* object = m_renderView.get(); object;
-       object = object->nextInPreOrder()) {
-    if (object == position.renderer())
-      return offset + position.offset();
-    if (object->isText()) {
-      RenderText* text = toRenderText(object);
-      offset += text->textLength();
-    }
-  }
-  FTL_DCHECK(false);
-  return 0;
 }
 
 Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {

@@ -18,9 +18,6 @@ namespace blink {
 
 class ParagraphImpl {
  public:
-  virtual void setRenderView(PassOwnPtr<RenderView> renderView,
-                             std::unique_ptr<txt::Paragraph>& paragraph) = 0;
-
   virtual double width() = 0;
 
   virtual double height() = 0;
@@ -45,10 +42,6 @@ class ParagraphImpl {
   virtual Dart_Handle getPositionForOffset(double dx, double dy) = 0;
 
   virtual Dart_Handle getWordBoundary(unsigned offset) = 0;
-
- private:
-  virtual int absoluteOffsetForPosition(
-      const PositionWithAffinity& position) = 0;
 };
 
 }  // namespace blink
