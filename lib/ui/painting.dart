@@ -506,7 +506,7 @@ class Paint {
   /// [StrokeJoin.miter] and the [style] is set to [PaintingStyle.stroke]. If
   /// this limit is exceeded, then a [StrokeJoin.bevel] join will be drawn
   /// instead.  Note that this may cause some 'popping' of the corners of a
-  /// path if it is animated.
+  /// path if the angle between line segments is animated.
   ///
   /// This limit is expressed as a limit on the length of the miter.
   ///
