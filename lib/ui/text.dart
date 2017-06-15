@@ -763,10 +763,6 @@ abstract class Paragraph extends NativeFieldWrapperClass2 {
   /// Word boundaries are defined more precisely in Unicode Standard Annex #29
   /// http://www.unicode.org/reports/tr29/#Word_Boundaries
   List<int> getWordBoundary(int offset) native "Paragraph_getWordBoundary";
-  
-  // Toggles between Blink text shaping backend and libtxt backend. This allows
-  // for debugging and development and is not intended to be a final feature.
-  void toggleTxt() native "Paragraph_toggleTxt";
 
   // Redirecting the paint function in this way solves some dependency problems
   // in the C++ code. If we straighten out the C++ dependencies, we can remove
