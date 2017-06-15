@@ -107,7 +107,7 @@ Paint DartConverter<Paint>::FromArguments(Dart_NativeArguments args,
   if (stroke_join)
     paint.setStrokeJoin(static_cast<SkPaint::Join>(stroke_join));
 
-  float stroke_miter_limit = uint_data[kStrokeMiterLimitIndex];
+  float stroke_miter_limit = float_data[kStrokeMiterLimitIndex];
   if (stroke_miter_limit != 0.0)
     paint.setStrokeMiter(stroke_miter_limit);
 
