@@ -6,7 +6,6 @@
 #define FLUTTER_LIB_UI_TEXT_PARAGRAPH_H_
 
 #include "flutter/lib/ui/painting/canvas.h"
-#include "flutter/lib/ui/text/paragraph_builder.h"
 #include "flutter/lib/ui/text/paragraph_impl.h"
 #include "flutter/lib/ui/text/paragraph_impl_blink.h"
 #include "flutter/lib/ui/text/paragraph_impl_txt.h"
