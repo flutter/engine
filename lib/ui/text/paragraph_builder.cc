@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/text/paragraph_builder.h"
 
+#include "flutter/common/settings.h"
 #include "flutter/common/threads.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/sky/engine/core/rendering/RenderInline.h"
@@ -201,7 +202,7 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
                                    double fontSize,
                                    double lineHeight,
                                    const std::string& ellipsis) {
-  if (!Paragraph::m_usingBlink) {
+  if (!Settings::using_blink) {
     int32_t mask = encoded[0];
     txt::ParagraphStyle style;
     if (mask & psTextAlignMask)
@@ -269,7 +270,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
   int32_t mask = encoded[0];
 
-  if (!Paragraph::m_usingBlink) {
+  if (!Settings::using_blink) {
     txt::TextStyle tstyle;
 
     if (mask & tsColorMask)
@@ -396,7 +397,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 }
 
 void ParagraphBuilder::pop() {
-  if (!Paragraph::m_usingBlink)
+  if (!Settings::using_blink)
     m_paragraphBuilder.Pop();
   else {
     // Blink Version.
@@ -406,7 +407,7 @@ void ParagraphBuilder::pop() {
 }
 
 void ParagraphBuilder::addText(const std::string& text) {
-  if (!Paragraph::m_usingBlink)
+  if (!Settings::using_blink)
     m_paragraphBuilder.AddText(text);
   else {
     // Blink Version.
@@ -422,7 +423,7 @@ void ParagraphBuilder::addText(const std::string& text) {
 
 ftl::RefPtr<Paragraph> ParagraphBuilder::build() {
   m_currentRenderObject = nullptr;
-  if (!Paragraph::m_usingBlink) {
+  if (!Settings::using_blink) {
     return Paragraph::create(m_paragraphBuilder.Build());
   } else {
     return Paragraph::create(m_renderView.release());
