@@ -15,6 +15,8 @@ Settings* g_settings = nullptr;
 
 }  // namespace
 
+bool Settings::using_blink = true;
+
 const Settings& Settings::Get() {
   FTL_CHECK(g_settings);
   return *g_settings;

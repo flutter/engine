@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/text/paragraph.h"
 
+#include "flutter/common/settings.h"
 #include "flutter/common/threads.h"
 #include "flutter/sky/engine/core/rendering/PaintInfo.h"
 #include "flutter/sky/engine/core/rendering/RenderParagraph.h"
@@ -110,7 +111,7 @@ std::vector<TextBox> Paragraph::getRectsForRange(unsigned start, unsigned end) {
 void Paragraph::toggleTxt() {
   FTL_LOG(WARNING) << "WARNING: toggleTxt() is a debug method and is not part "
                       "of the Flutter API! It will be removed shortly.";
-  m_usingBlink = !m_usingBlink;
+  Settings::using_blink = !Settings::using_blink;
 }
 
 Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {
