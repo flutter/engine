@@ -9,7 +9,6 @@
 #include "flutter/lib/ui/text/paragraph_impl.h"
 #include "flutter/lib/ui/text/paragraph_impl_blink.h"
 #include "flutter/lib/ui/text/text_box.h"
-#include "flutter/sky/engine/core/rendering/RenderView.h"
 #include "lib/tonic/dart_wrappable.h"
 #include "lib/txt/src/paragraph.h"
 
@@ -23,10 +22,7 @@ class ParagraphImplTxt : public ParagraphImpl {
  public:
   ~ParagraphImplTxt();
 
-  ParagraphImplTxt();
-
-  void setRenderView(PassOwnPtr<RenderView> renderView,
-                     std::unique_ptr<txt::Paragraph>& paragraph);
+  ParagraphImplTxt(std::unique_ptr<txt::Paragraph>& paragraph);
 
   double width();
   double height();
@@ -46,10 +42,6 @@ class ParagraphImplTxt : public ParagraphImpl {
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  ParagraphImplBlink tempblink;
-
-  int absoluteOffsetForPosition(const PositionWithAffinity& position);
-
   std::unique_ptr<txt::Paragraph> m_paragraph;
   double m_width = -1.0;
 };

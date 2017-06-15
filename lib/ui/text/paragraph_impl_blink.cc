@@ -24,19 +24,15 @@ using tonic::ToDart;
 
 namespace blink {
 
-ParagraphImplBlink::ParagraphImplBlink() {}
+ParagraphImplBlink::ParagraphImplBlink(PassOwnPtr<RenderView> renderView) {
+  m_renderView = renderView;
+}
 
 ParagraphImplBlink::~ParagraphImplBlink() {
   if (m_renderView) {
     RenderView* renderView = m_renderView.leakPtr();
     Threads::UI()->PostTask([renderView]() { renderView->destroy(); });
   }
-}
-
-void ParagraphImplBlink::setRenderView(
-    PassOwnPtr<RenderView> renderView,
-    std::unique_ptr<txt::Paragraph>& paragraph) {
-  m_renderView = renderView;
 }
 
 double ParagraphImplBlink::width() {

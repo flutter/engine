@@ -12,6 +12,7 @@
 #include "flutter/lib/ui/text/paragraph_impl_txt.h"
 #include "flutter/lib/ui/text/text_box.h"
 #include "flutter/sky/engine/core/rendering/RenderView.h"
+#include "flutter/sky/engine/wtf/PassOwnPtr.h"
 #include "lib/tonic/dart_wrappable.h"
 #include "lib/txt/src/paragraph.h"
 
@@ -27,10 +28,13 @@ class Paragraph : public ftl::RefCountedThreadSafe<Paragraph>,
   FRIEND_MAKE_REF_COUNTED(Paragraph);
 
  public:
+  static ftl::RefPtr<Paragraph> create(PassOwnPtr<RenderView> renderView) {
+    return ftl::MakeRefCounted<Paragraph>(renderView);
+  }
+
   static ftl::RefPtr<Paragraph> create(
-      PassOwnPtr<RenderView> renderView,
       const std::unique_ptr<txt::Paragraph>& paragraph) {
-    return ftl::MakeRefCounted<Paragraph>(renderView, paragraph);
+    return ftl::MakeRefCounted<Paragraph>(paragraph);
   }
 
   ~Paragraph() override;
@@ -66,10 +70,9 @@ class Paragraph : public ftl::RefCountedThreadSafe<Paragraph>,
 
   RenderBox* firstChildBox() const { return m_renderView->firstChildBox(); }
 
-  int absoluteOffsetForPosition(const PositionWithAffinity& position);
+  explicit Paragraph(PassOwnPtr<RenderView> renderView);
 
-  explicit Paragraph(PassOwnPtr<RenderView> renderView,
-                     const std::unique_ptr<txt::Paragraph>& paragraph);
+  explicit Paragraph(const std::unique_ptr<txt::Paragraph>& paragraph);
 
   OwnPtr<RenderView> m_renderView;
 };

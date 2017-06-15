@@ -239,8 +239,8 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
     createRenderView();
 
     RefPtr<RenderStyle> paragraphStyle =
-        decodeParagraphStyle(m_renderView->style(), encoded, fontFamily, fontSize,
-                             lineHeight, ellipsis);
+        decodeParagraphStyle(m_renderView->style(), encoded, fontFamily,
+                             fontSize, lineHeight, ellipsis);
     encoded.Release();
 
     m_renderParagraph = new RenderParagraph();
@@ -249,7 +249,8 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
     m_currentRenderObject = m_renderParagraph;
     m_renderView->addChild(m_currentRenderObject);
   }
-}
+
+}  // namespace blink
 
 ParagraphBuilder::~ParagraphBuilder() {
   if (m_renderView) {
@@ -320,7 +321,6 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
     m_paragraphBuilder.PushStyle(tstyle);
   } else {
-
     // Blink Version.
     RefPtr<RenderStyle> style = RenderStyle::create();
     style->inheritFrom(m_currentRenderObject->style());
@@ -339,8 +339,8 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
           StyleColor(getColorFromARGB(encoded[tsTextDecorationColorIndex])));
 
     if (mask & tsTextDecorationStyleMask)
-      style->setTextDecorationStyle(
-          static_cast<TextDecorationStyle>(encoded[tsTextDecorationStyleIndex]));
+      style->setTextDecorationStyle(static_cast<TextDecorationStyle>(
+          encoded[tsTextDecorationStyleIndex]));
 
     if (mask & tsTextBaselineMask) {
       // TODO(abarth): Implement TextBaseline. The CSS version of this
@@ -423,9 +423,9 @@ void ParagraphBuilder::addText(const std::string& text) {
 ftl::RefPtr<Paragraph> ParagraphBuilder::build() {
   m_currentRenderObject = nullptr;
   if (!Paragraph::m_usingBlink) {
-    return Paragraph::create(nullptr, m_paragraphBuilder.Build());
+    return Paragraph::create(m_paragraphBuilder.Build());
   } else {
-    return Paragraph::create(m_renderView.release(), nullptr);
+    return Paragraph::create(m_renderView.release());
   }
 }
 

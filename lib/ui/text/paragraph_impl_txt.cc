@@ -3,43 +3,35 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/text/paragraph_impl_txt.h"
+#include "flutter/common/threads.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/lib/ui/text/paragraph_impl.h"
-
-#include "flutter/common/threads.h"
-#include "flutter/sky/engine/platform/text/TextBoundaries.h"
 #include "lib/ftl/tasks/task_runner.h"
 
 #include "lib/txt/src/paragraph_constraints.h"
 
 namespace blink {
 
-ParagraphImplTxt::ParagraphImplTxt() {}
-
-ParagraphImplTxt::~ParagraphImplTxt() {}
-
-void ParagraphImplTxt::setRenderView(
-    PassOwnPtr<RenderView> renderView,
-    std::unique_ptr<txt::Paragraph>& paragraph) {
-  tempblink.setRenderView(renderView, paragraph);
+ParagraphImplTxt::ParagraphImplTxt(std::unique_ptr<txt::Paragraph>& paragraph) {
   m_paragraph = std::move(paragraph);
 }
+
+ParagraphImplTxt::~ParagraphImplTxt() {}
 
 double ParagraphImplTxt::width() {
   return m_width;
 }
 
-double ParagraphImplTxt::height() {
-  return m_paragraph
-      ->GetHeight();  // tempblink.height();  // m_paragraph->GetHeight();
+double ParagraphImplTxt::height() {  // TODO.
+  return m_paragraph->GetHeight();
 }
 
 double ParagraphImplTxt::minIntrinsicWidth() {  // TODO.
-  return tempblink.minIntrinsicWidth();
+  return FLT_MAX;
 }
 
 double ParagraphImplTxt::maxIntrinsicWidth() {  // TODO.
-  return tempblink.maxIntrinsicWidth();
+  return FLT_MAX;
 }
 
 double ParagraphImplTxt::alphabeticBaseline() {  // TODO.
@@ -72,18 +64,13 @@ std::vector<TextBox> ParagraphImplTxt::getRectsForRange(unsigned start,
   return std::vector<TextBox>{0ull};
 }
 
-int ParagraphImplTxt::absoluteOffsetForPosition(
-    const PositionWithAffinity& position) {
-  return 0;
-}
-
 Dart_Handle ParagraphImplTxt::getPositionForOffset(double dx,
                                                    double dy) {  // TODO.
-  return tempblink.getPositionForOffset(dx, dy);
+  return NULL;
 }
 
 Dart_Handle ParagraphImplTxt::getWordBoundary(unsigned offset) {  // TODO.
-  return tempblink.getWordBoundary(offset);
+  return NULL;
 }
 
 }  // namespace blink

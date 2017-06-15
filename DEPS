@@ -92,11 +92,8 @@ deps = {
   'src/lib/zip':
    Var('fuchsia_git') + '/zip' + '@' + '92dc87ca645fe8e9f5151ef6dac86d8311a7222f',
 
-  'src/third_party/benchmark':
-   Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',
-
-   'src/lib/txt':
-   Var('fuchsia_git') + '/txt' + '@' + '2d131e8489f76a278b08494aab1bc2e44e45d039',
+  'src/lib/txt':
+   Var('fuchsia_git') + '/txt' + '@' + 'b3af0699570a13345e404acb8dce444c50ef5a43',
 
   'src/third_party/gtest':
    Var('fuchsia_git') + '/third_party/gtest' + '@' + 'c00f82917331efbbd27124b537e4ccc915a02b72',
