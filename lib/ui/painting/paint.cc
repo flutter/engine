@@ -35,6 +35,17 @@ constexpr int kMaskFilterIndex = 0;
 constexpr int kShaderIndex = 1;
 constexpr int kObjectCount = 2;  // Must be one larger than the largest index
 
+// Must be kept in sync with the default in painting.dart.
+constexpr uint32_t kColorDefault = 0xFF000000;
+
+// Must be kept in sync with the default in painting.dart.
+constexpr uint32_t kBlendModeDefault =
+    static_cast<uint32_t>(SkBlendMode::kSrcOver);
+
+// Must be kept in sync with the default in painting.dart, and also with the
+// default SkPaintDefaults_MiterLimit in Skia (which is not in a public header).
+constexpr double kStrokeMiterLimitDefault = 4.0;
+
 Paint DartConverter<Paint>::FromArguments(Dart_NativeArguments args,
                                           int index,
                                           Dart_Handle& exception) {
@@ -80,14 +91,14 @@ Paint DartConverter<Paint>::FromArguments(Dart_NativeArguments args,
 
   uint32_t encoded_color = uint_data[kColorIndex];
   if (encoded_color) {
-    SkColor color = encoded_color ^ 0xFF000000;
+    SkColor color = encoded_color ^ kColorDefault;
     paint.setColor(color);
   }
 
   uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
   if (encoded_blend_mode) {
     uint32_t blend_mode =
-        encoded_blend_mode ^ static_cast<uint32_t>(SkBlendMode::kSrcOver);
+        encoded_blend_mode ^ kBlendModeDefault;
     paint.setBlendMode(static_cast<SkBlendMode>(blend_mode));
   }
 
@@ -109,7 +120,7 @@ Paint DartConverter<Paint>::FromArguments(Dart_NativeArguments args,
 
   float stroke_miter_limit = float_data[kStrokeMiterLimitIndex];
   if (stroke_miter_limit != 0.0)
-    paint.setStrokeMiter(stroke_miter_limit);
+    paint.setStrokeMiter(stroke_miter_limit + kStrokeMiterLimitDefault);
 
   uint32_t filter_quality = uint_data[kFilterQualityIndex];
   if (filter_quality)

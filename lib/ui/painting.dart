@@ -271,7 +271,6 @@ enum FilterQuality {
 
 /// Styles to use for line endings.
 ///
-/// Must be in the same order as the SkPaint::Cap enum.
 /// See [Paint.strokeCap].
 // These enum values must be kept in sync with SkPaint::Cap.
 enum StrokeCap {
@@ -289,12 +288,11 @@ enum StrokeCap {
 
 /// Styles to use for line joins.
 ///
-/// Note that this only affects line joins for polygons drawn by
-/// [Canvas.drawPath] and rectangles, not points drawn as lines with
-/// [Canvas.drawPoints].
+/// This only affects line joins for polygons drawn by [Canvas.drawPath] and
+/// rectangles, not points drawn as lines with [Canvas.drawPoints].
 ///
-/// Must be in the same order as the SkPaint::Join enum.
 /// See [Paint.strokeJoin].
+// These enum values must be kept in sync with SkPaint::Join.
 enum StrokeJoin {
   /// Joins between line segments form sharp corners.
   miter,
@@ -400,6 +398,7 @@ class Paint {
     _data.setInt32(_kIsAntiAliasOffset, encoded, _kFakeHostEndian);
   }
 
+  // Must be kept in sync with the default in paint.cc
   static const int _kColorDefault = 0xFF000000;
 
   /// The color to use when stroking or filling a shape.
@@ -424,6 +423,7 @@ class Paint {
     _data.setInt32(_kColorOffset, encoded, _kFakeHostEndian);
   }
 
+  // Must be kept in sync with the default in paint.cc
   static final int _kBlendModeDefault = BlendMode.srcOver.index;
 
   /// A blend mode to apply when a shape is drawn or a layer is composited.
@@ -491,7 +491,7 @@ class Paint {
   /// This applies to paths drawn when [style] is set to [PaintingStyle.stroke],
   /// It does not apply to points drawn as lines with [Canvas.drawPoints].
   ///
-  /// Defaults to [StrokeJoin.miter], i.e. sharp corners.  See also
+  /// Defaults to [StrokeJoin.miter], i.e. sharp corners. See also
   /// [strokeMiterLimit] to control when miters are replaced by bevels.
   StrokeJoin get strokeJoin {
     return StrokeJoin.values[_data.getInt32(_kStrokeJoinOffset, _kFakeHostEndian)];
@@ -502,23 +502,25 @@ class Paint {
     _data.setInt32(_kStrokeJoinOffset, encoded, _kFakeHostEndian);
   }
 
+  // Must be kept in sync with the default in paint.cc
+  static final double _kStrokeMiterLimitDefault = 4.0;
+
   /// The limit for miters to be drawn on segments when the join is set to
   /// [StrokeJoin.miter] and the [style] is set to [PaintingStyle.stroke]. If
   /// this limit is exceeded, then a [StrokeJoin.bevel] join will be drawn
-  /// instead.  Note that this may cause some 'popping' of the corners of a
-  /// path if the angle between line segments is animated.
+  /// instead. This may cause some 'popping' of the corners of a path if the
+  /// angle between line segments is animated.
   ///
   /// This limit is expressed as a limit on the length of the miter.
   ///
-  /// Defaults to zero, which means that a reasonable value will be picked
-  /// instead of using zero as the limit, which would draw a bevel all the
-  /// time.
+  /// Defaults to 4.0.  Using zero as a limit will cause a [StrokeJoin.bevel]
+  /// join to be used all the time.
   double get strokeMiterLimit {
     return _data.getFloat32(_kStrokeMiterLimitOffset, _kFakeHostEndian);
   }
   set strokeMiterLimit(double value) {
     assert(value != null);
-    final double encoded = value;
+    final double encoded = value - _kStrokeMiterLimitDefault;
     _data.setFloat32(_kStrokeMiterLimitOffset, encoded, _kFakeHostEndian);
   }
 
@@ -613,24 +615,26 @@ class Paint {
         result.write(' hairline');
       if (strokeCap != StrokeCap.butt)
         result.write(' $strokeCap');
-      if (strokeJoin != StrokeJoin.miter)
+      if (strokeJoin == StrokeJoin.miter) {
+        if (strokeMiterLimit != _kStrokeMiterLimitDefault)
+          result.write('$strokeJoin up to $strokeMiterLimit');
+      } else {
         result.write(' $strokeJoin');
-      if (strokeMiterLimit != 0.0)
-        result.write(' $strokeMiterLimit');
+      }
       semicolon = '; ';
     }
     if (isAntiAlias != true) {
       result.write('${semicolon}antialias off');
       semicolon = '; ';
     }
-    if (color != const Color(0xFF000000)) {
+    if (color != const Color(_kColorDefault)) {
       if (color != null)
         result.write('$semicolon$color');
       else
         result.write('${semicolon}no color');
       semicolon = '; ';
     }
-    if (blendMode != BlendMode.srcOver) {
+    if (blendMode.index != _kBlendModeDefault) {
       result.write('$semicolon$blendMode');
       semicolon = '; ';
     }
