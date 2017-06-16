@@ -17,7 +17,7 @@ class ParagraphImplTxt : public ParagraphImpl {
  public:
   ~ParagraphImplTxt();
 
-  explicit ParagraphImplTxt(std::unique_ptr<txt::Paragraph>* paragraph);
+  explicit ParagraphImplTxt(std::unique_ptr<txt::Paragraph> paragraph);
 
   double width();
   double height();
