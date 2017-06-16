@@ -24,9 +24,8 @@ using tonic::ToDart;
 
 namespace blink {
 
-ParagraphImplBlink::ParagraphImplBlink(PassOwnPtr<RenderView> renderView) {
-  m_renderView = renderView;
-}
+ParagraphImplBlink::ParagraphImplBlink(PassOwnPtr<RenderView> renderView)
+    : m_renderView(renderView) {}
 
 ParagraphImplBlink::~ParagraphImplBlink() {
   if (m_renderView) {

@@ -12,6 +12,8 @@ namespace blink {
 
 class ParagraphImpl {
  public:
+  virtual ~ParagraphImpl(){};
+
   virtual double width() = 0;
 
   virtual double height() = 0;
