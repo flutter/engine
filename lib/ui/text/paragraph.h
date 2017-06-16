@@ -63,7 +63,6 @@ class Paragraph : public ftl::RefCountedThreadSafe<Paragraph>,
   friend class ParagraphBuilder;
 
   std::unique_ptr<ParagraphImpl> m_paragraphImpl;
-  static bool m_usingBlink;
 
   RenderBox* firstChildBox() const { return m_renderView->firstChildBox(); }
 
