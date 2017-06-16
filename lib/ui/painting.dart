@@ -423,7 +423,7 @@ class Paint {
     _data.setInt32(_kColorOffset, encoded, _kFakeHostEndian);
   }
 
-  // Must be kept in sync with the default in paint.cc
+  // Must be kept in sync with the default in paint.cc.
   static final int _kBlendModeDefault = BlendMode.srcOver.index;
 
   /// A blend mode to apply when a shape is drawn or a layer is composited.
@@ -502,7 +502,7 @@ class Paint {
     _data.setInt32(_kStrokeJoinOffset, encoded, _kFakeHostEndian);
   }
 
-  // Must be kept in sync with the default in paint.cc
+  // Must be kept in sync with the default in paint.cc.
   static final double _kStrokeMiterLimitDefault = 4.0;
 
   /// The limit for miters to be drawn on segments when the join is set to
