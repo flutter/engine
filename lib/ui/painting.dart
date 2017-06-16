@@ -398,7 +398,7 @@ class Paint {
     _data.setInt32(_kIsAntiAliasOffset, encoded, _kFakeHostEndian);
   }
 
-  // Must be kept in sync with the default in paint.cc
+  // Must be kept in sync with the default in paint.cc.
   static const int _kColorDefault = 0xFF000000;
 
   /// The color to use when stroking or filling a shape.
@@ -610,14 +610,14 @@ class Paint {
     if (style == PaintingStyle.stroke) {
       result.write('$style');
       if (strokeWidth != 0.0)
-        result.write(' $strokeWidth');
+        result.write(' ${strokeWidth.toStringAsFixed(1)}');
       else
         result.write(' hairline');
       if (strokeCap != StrokeCap.butt)
         result.write(' $strokeCap');
       if (strokeJoin == StrokeJoin.miter) {
         if (strokeMiterLimit != _kStrokeMiterLimitDefault)
-          result.write('$strokeJoin up to $strokeMiterLimit');
+          result.write(' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
       } else {
         result.write(' $strokeJoin');
       }
