@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/text/paragraph_impl_blink.h"
-#include "flutter/lib/ui/text/paragraph.h"
-#include "flutter/lib/ui/text/paragraph_impl.h"
 
 #include "flutter/common/threads.h"
+#include "flutter/lib/ui/text/paragraph.h"
+#include "flutter/lib/ui/text/paragraph_impl.h"
 #include "flutter/sky/engine/core/rendering/PaintInfo.h"
 #include "flutter/sky/engine/core/rendering/RenderParagraph.h"
 #include "flutter/sky/engine/core/rendering/RenderText.h"

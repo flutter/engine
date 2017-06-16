@@ -26,20 +26,19 @@ namespace blink {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Paragraph);
 
-#define FOR_EACH_BINDING(V)          \
-  V(Paragraph, width)                \
-  V(Paragraph, height)               \
-  V(Paragraph, minIntrinsicWidth)    \
-  V(Paragraph, maxIntrinsicWidth)    \
-  V(Paragraph, alphabeticBaseline)   \
-  V(Paragraph, ideographicBaseline)  \
-  V(Paragraph, didExceedMaxLines)    \
-  V(Paragraph, layout)               \
-  V(Paragraph, paint)                \
-  V(Paragraph, getWordBoundary)      \
-  V(Paragraph, getRectsForRange)     \
-  V(Paragraph, getPositionForOffset) \
-  V(Paragraph, toggleTxt)
+#define FOR_EACH_BINDING(V)         \
+  V(Paragraph, width)               \
+  V(Paragraph, height)              \
+  V(Paragraph, minIntrinsicWidth)   \
+  V(Paragraph, maxIntrinsicWidth)   \
+  V(Paragraph, alphabeticBaseline)  \
+  V(Paragraph, ideographicBaseline) \
+  V(Paragraph, didExceedMaxLines)   \
+  V(Paragraph, layout)              \
+  V(Paragraph, paint)               \
+  V(Paragraph, getWordBoundary)     \
+  V(Paragraph, getRectsForRange)    \
+  V(Paragraph, getPositionForOffset)
 
 DART_BIND_ALL(Paragraph, FOR_EACH_BINDING)
 
@@ -47,9 +46,8 @@ Paragraph::Paragraph(PassOwnPtr<RenderView> renderView) {
   m_paragraphImpl = std::make_unique<ParagraphImplBlink>(renderView);
 }
 
-Paragraph::Paragraph(const std::unique_ptr<txt::Paragraph>& paragraph) {
-  m_paragraphImpl = std::make_unique<ParagraphImplTxt>(
-      const_cast<std::unique_ptr<txt::Paragraph>&>(paragraph));
+Paragraph::Paragraph(std::unique_ptr<txt::Paragraph>* paragraph) {
+  m_paragraphImpl = std::make_unique<ParagraphImplTxt>(paragraph);
 }
 
 Paragraph::~Paragraph() {
@@ -97,12 +95,6 @@ void Paragraph::paint(Canvas* canvas, double x, double y) {
 
 std::vector<TextBox> Paragraph::getRectsForRange(unsigned start, unsigned end) {
   return m_paragraphImpl->getRectsForRange(start, end);
-}
-
-void Paragraph::toggleTxt() {
-  FTL_LOG(WARNING) << "WARNING: toggleTxt() is a debug method and is not part "
-                      "of the Flutter API! It will be removed shortly.";
-  Settings::using_blink = !Settings::using_blink;
 }
 
 Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {

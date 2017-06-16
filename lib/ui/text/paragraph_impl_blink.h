@@ -9,12 +9,7 @@
 #include "flutter/lib/ui/text/paragraph_impl.h"
 #include "flutter/lib/ui/text/text_box.h"
 #include "flutter/sky/engine/core/rendering/RenderView.h"
-#include "lib/tonic/dart_wrappable.h"
 #include "lib/txt/src/paragraph.h"
-
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
 
 namespace blink {
 
@@ -40,8 +35,6 @@ class ParagraphImplBlink : public ParagraphImpl {
   Dart_Handle getWordBoundary(unsigned offset);
 
   RenderView* renderView() const { return m_renderView.get(); }
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   RenderBox* firstChildBox() const { return m_renderView->firstChildBox(); }

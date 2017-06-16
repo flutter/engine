@@ -202,7 +202,7 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
                                    double fontSize,
                                    double lineHeight,
                                    const std::string& ellipsis) {
-  if (!Settings::using_blink) {
+  if (!Settings::Get().using_blink) {
     int32_t mask = encoded[0];
     txt::ParagraphStyle style;
     if (mask & psTextAlignMask)
@@ -270,7 +270,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
   int32_t mask = encoded[0];
 
-  if (!Settings::using_blink) {
+  if (!Settings::Get().using_blink) {
     txt::TextStyle tstyle;
 
     if (mask & tsColorMask)
@@ -397,9 +397,9 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 }
 
 void ParagraphBuilder::pop() {
-  if (!Settings::using_blink)
+  if (!Settings::Get().using_blink) {
     m_paragraphBuilder.Pop();
-  else {
+  } else {
     // Blink Version.
     if (m_currentRenderObject)
       m_currentRenderObject = m_currentRenderObject->parent();
@@ -407,9 +407,9 @@ void ParagraphBuilder::pop() {
 }
 
 void ParagraphBuilder::addText(const std::string& text) {
-  if (!Settings::using_blink)
+  if (!Settings::Get().using_blink) {
     m_paragraphBuilder.AddText(text);
-  else {
+  } else {
     // Blink Version.
     if (!m_currentRenderObject)
       return;
@@ -423,10 +423,11 @@ void ParagraphBuilder::addText(const std::string& text) {
 
 ftl::RefPtr<Paragraph> ParagraphBuilder::build() {
   m_currentRenderObject = nullptr;
-  if (!Settings::using_blink) {
-    return Paragraph::create(m_paragraphBuilder.Build());
+  if (!Settings::Get().using_blink) {
+    std::unique_ptr<txt::Paragraph> paragraph = m_paragraphBuilder.Build();
+    return Paragraph::Create(&paragraph);
   } else {
-    return Paragraph::create(m_renderView.release());
+    return Paragraph::Create(m_renderView.release());
   }
 }
 

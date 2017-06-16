@@ -27,12 +27,12 @@ class Paragraph : public ftl::RefCountedThreadSafe<Paragraph>,
   FRIEND_MAKE_REF_COUNTED(Paragraph);
 
  public:
-  static ftl::RefPtr<Paragraph> create(PassOwnPtr<RenderView> renderView) {
+  static ftl::RefPtr<Paragraph> Create(PassOwnPtr<RenderView> renderView) {
     return ftl::MakeRefCounted<Paragraph>(renderView);
   }
 
-  static ftl::RefPtr<Paragraph> create(
-      const std::unique_ptr<txt::Paragraph>& paragraph) {
+  static ftl::RefPtr<Paragraph> Create(
+      std::unique_ptr<txt::Paragraph>* paragraph) {
     return ftl::MakeRefCounted<Paragraph>(paragraph);
   }
 
@@ -57,18 +57,14 @@ class Paragraph : public ftl::RefCountedThreadSafe<Paragraph>,
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
-  void toggleTxt();  // Toggle Blink or libtxt backend.
-
  private:
-  friend class ParagraphBuilder;
-
   std::unique_ptr<ParagraphImpl> m_paragraphImpl;
 
   RenderBox* firstChildBox() const { return m_renderView->firstChildBox(); }
 
   explicit Paragraph(PassOwnPtr<RenderView> renderView);
 
-  explicit Paragraph(const std::unique_ptr<txt::Paragraph>& paragraph);
+  explicit Paragraph(std::unique_ptr<txt::Paragraph>* paragraph);
 
   OwnPtr<RenderView> m_renderView;
 };
