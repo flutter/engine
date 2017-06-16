@@ -43,8 +43,6 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Paragraph);
 
 DART_BIND_ALL(Paragraph, FOR_EACH_BINDING)
 
-bool Paragraph::m_usingBlink = true;
-
 Paragraph::Paragraph(PassOwnPtr<RenderView> renderView) {
   m_paragraphImpl = std::make_unique<ParagraphImplBlink>(renderView);
 }
