@@ -17,7 +17,7 @@ class ParagraphImplBlink : public ParagraphImpl {
  public:
   ~ParagraphImplBlink();
 
-  ParagraphImplBlink(PassOwnPtr<RenderView> renderView);
+  explicit ParagraphImplBlink(PassOwnPtr<RenderView> renderView);
 
   double width();
   double height();
