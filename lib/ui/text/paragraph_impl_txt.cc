@@ -23,12 +23,10 @@ double ParagraphImplTxt::width() {
 }
 
 double ParagraphImplTxt::height() {
-  // TODO(garyq): Implement in the library.
   return m_paragraph->GetHeight();
 }
 
 double ParagraphImplTxt::minIntrinsicWidth() {
-  // TODO(garyq): Implement in the library.
   return m_paragraph->GetMinIntrinsicWidth();
 }
 
@@ -37,12 +35,10 @@ double ParagraphImplTxt::maxIntrinsicWidth() {
 }
 
 double ParagraphImplTxt::alphabeticBaseline() {
-  // TODO(garyq): Implement in the library.
   return m_paragraph->GetAlphabeticBaseline();
 }
 
 double ParagraphImplTxt::ideographicBaseline() {
-  // TODO(garyq): Implement in the library.
   return m_paragraph->GetIdeographicBaseline();
 }
 

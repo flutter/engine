@@ -42,13 +42,12 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Paragraph);
 
 DART_BIND_ALL(Paragraph, FOR_EACH_BINDING)
 
-Paragraph::Paragraph(PassOwnPtr<RenderView> renderView) {
-  m_paragraphImpl = std::make_unique<ParagraphImplBlink>(renderView);
-}
+Paragraph::Paragraph(PassOwnPtr<RenderView> renderView)
+    : m_paragraphImpl(std::make_unique<ParagraphImplBlink>(renderView)) {}
 
-Paragraph::Paragraph(std::unique_ptr<txt::Paragraph> paragraph) {
-  m_paragraphImpl = std::make_unique<ParagraphImplTxt>(std::move(paragraph));
-}
+Paragraph::Paragraph(std::unique_ptr<txt::Paragraph> paragraph)
+    : m_paragraphImpl(
+          std::make_unique<ParagraphImplTxt>(std::move(paragraph))) {}
 
 Paragraph::~Paragraph() {
   if (m_renderView) {

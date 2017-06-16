@@ -15,24 +15,24 @@ namespace blink {
 
 class ParagraphImplTxt : public ParagraphImpl {
  public:
-  ~ParagraphImplTxt();
+  ~ParagraphImplTxt() override;
 
   explicit ParagraphImplTxt(std::unique_ptr<txt::Paragraph> paragraph);
 
-  double width();
-  double height();
-  double minIntrinsicWidth();
-  double maxIntrinsicWidth();
-  double alphabeticBaseline();
-  double ideographicBaseline();
-  bool didExceedMaxLines();
+  double width() override;
+  double height() override;
+  double minIntrinsicWidth() override;
+  double maxIntrinsicWidth() override;
+  double alphabeticBaseline() override;
+  double ideographicBaseline() override;
+  bool didExceedMaxLines() override;
 
-  void layout(double width);
-  void paint(Canvas* canvas, double x, double y);
+  void layout(double width) override;
+  void paint(Canvas* canvas, double x, double y) override;
 
-  std::vector<TextBox> getRectsForRange(unsigned start, unsigned end);
-  Dart_Handle getPositionForOffset(double dx, double dy);
-  Dart_Handle getWordBoundary(unsigned offset);
+  std::vector<TextBox> getRectsForRange(unsigned start, unsigned end) override;
+  Dart_Handle getPositionForOffset(double dx, double dy) override;
+  Dart_Handle getWordBoundary(unsigned offset) override;
 
  private:
   std::unique_ptr<txt::Paragraph> m_paragraph;
