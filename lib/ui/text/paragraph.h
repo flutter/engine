@@ -32,8 +32,8 @@ class Paragraph : public ftl::RefCountedThreadSafe<Paragraph>,
   }
 
   static ftl::RefPtr<Paragraph> Create(
-      std::unique_ptr<txt::Paragraph>* paragraph) {
-    return ftl::MakeRefCounted<Paragraph>(paragraph);
+      std::unique_ptr<txt::Paragraph> paragraph) {
+    return ftl::MakeRefCounted<Paragraph>(std::move(paragraph));
   }
 
   ~Paragraph() override;
@@ -66,7 +66,7 @@ class Paragraph : public ftl::RefCountedThreadSafe<Paragraph>,
 
   explicit Paragraph(PassOwnPtr<RenderView> renderView);
 
-  explicit Paragraph(std::unique_ptr<txt::Paragraph>* paragraph);
+  explicit Paragraph(std::unique_ptr<txt::Paragraph> paragraph);
 
   OwnPtr<RenderView> m_renderView;
 };

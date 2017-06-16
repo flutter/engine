@@ -13,8 +13,8 @@
 
 namespace blink {
 
-ParagraphImplTxt::ParagraphImplTxt(std::unique_ptr<txt::Paragraph>* paragraph)
-    : m_paragraph(std::move(*paragraph)) {}
+ParagraphImplTxt::ParagraphImplTxt(std::unique_ptr<txt::Paragraph> paragraph)
+    : m_paragraph(std::move(paragraph)) {}
 
 ParagraphImplTxt::~ParagraphImplTxt() {}
 

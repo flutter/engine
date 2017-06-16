@@ -424,8 +424,7 @@ void ParagraphBuilder::addText(const std::string& text) {
 ftl::RefPtr<Paragraph> ParagraphBuilder::build() {
   m_currentRenderObject = nullptr;
   if (!Settings::Get().using_blink) {
-    std::unique_ptr<txt::Paragraph> paragraph = m_paragraphBuilder.Build();
-    return Paragraph::Create(&paragraph);
+    return Paragraph::Create(m_paragraphBuilder.Build());
   } else {
     return Paragraph::Create(m_renderView.release());
   }
