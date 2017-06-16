@@ -9,12 +9,7 @@
 #include "flutter/lib/ui/text/paragraph_impl.h"
 #include "flutter/lib/ui/text/paragraph_impl_blink.h"
 #include "flutter/lib/ui/text/text_box.h"
-#include "lib/tonic/dart_wrappable.h"
 #include "lib/txt/src/paragraph.h"
-
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
 
 namespace blink {
 
@@ -22,7 +17,7 @@ class ParagraphImplTxt : public ParagraphImpl {
  public:
   ~ParagraphImplTxt();
 
-  ParagraphImplTxt(std::unique_ptr<txt::Paragraph>& paragraph);
+  explicit ParagraphImplTxt(std::unique_ptr<txt::Paragraph>* paragraph);
 
   double width();
   double height();
@@ -38,8 +33,6 @@ class ParagraphImplTxt : public ParagraphImpl {
   std::vector<TextBox> getRectsForRange(unsigned start, unsigned end);
   Dart_Handle getPositionForOffset(double dx, double dy);
   Dart_Handle getWordBoundary(unsigned offset);
-
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   std::unique_ptr<txt::Paragraph> m_paragraph;

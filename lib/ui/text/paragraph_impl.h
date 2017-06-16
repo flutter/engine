@@ -7,12 +7,6 @@
 
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/text/text_box.h"
-#include "lib/tonic/dart_wrappable.h"
-#include "lib/txt/src/paragraph.h"
-
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
 
 namespace blink {
 
