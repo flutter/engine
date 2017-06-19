@@ -5,7 +5,7 @@
 
 # Generates objc docs for Flutter iOS libraries.
 
-if [ ! -d "./flutter/shell/platform/darwin/ios" ]
+if [ ! -d "shell/platform/darwin/ios" ]
   then
       echo "Error: This script must be run at the root of the Flutter source tree."
       exit 1
@@ -25,9 +25,8 @@ jazzy \
   --github_url 'https://github.com/flutter'\
   --github-file-prefix 'http://github.com/flutter/engine/blob/master'\
   --module-version 1.0.0\
-  --xcodebuild-arguments --objc,flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h,--,-x,objective-c,-isysroot,$(xcrun --show-sdk-path),-I,$(pwd)\
+  --xcodebuild-arguments --objc,shell/platform/darwin/ios/framework/Headers/Flutter.h,--,-x,objective-c,-isysroot,$(xcrun --show-sdk-path),-I,$(pwd)\
   --module Flutter\
   --root-url https://docs.flutter.io/objc/\
   --output $1\
-  --readme './flutter/README.md'\
   --no-download-badge
