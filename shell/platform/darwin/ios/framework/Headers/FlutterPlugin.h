@@ -96,10 +96,18 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
 
+  - Returns: `YES` if this plugin handles the request.
+*/
+- (BOOL)application:(UIApplication*)application
+            openURL:(NSURL*)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+
  - Returns: `YES` if this plugin handles the request.
  */
-- (BOOL)application:(UIApplication*)application
-      handleOpenURL:(NSURL*)url;
+- (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url;
 
 /**
  Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
@@ -107,9 +115,19 @@ NS_ASSUME_NONNULL_BEGIN
   - Returns: `YES` if this plugin handles the request.
 */
 - (BOOL)application:(UIApplication*)application
-            openURL:(NSURL*)url
-  sourceApplication:(NSString*)sourceApplication
-         annotation:(id)annotation;
+              openURL:(NSURL*)url
+    sourceApplication:(NSString*)sourceApplication
+           annotation:(id)annotation;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+
+  - Returns: `YES` if this plugin handles the request.
+*/
+- (BOOL)application:(UIApplication*)application
+    performActionForShortcutItem:(UIApplicationShortcutItem*)shortcutItem
+               completionHandler:(void (^)(BOOL succeeded))completionHandler;
+
 @end
 
 /**

@@ -1,23 +1,34 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2017 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package io.flutter.app;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import io.flutter.app.FlutterActivityDelegate.ViewFactory;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 import io.flutter.view.FlutterView;
 
 /**
- * Base class for activities that use Flutter.
+ * Base class for activities that use Flutter who also require the use of the
+ * Android v4 Support library's {@link FragmentActivity}. Applications that
+ * don't have this need will likely want to use {@link FlutterActivity} instead.
+ *
+ * <p><strong>Important!</strong> Flutter does not bundle the necessary Android
+ * v4 Support library classes for this class to work at runtime. It is the
+ * responsibility of the app developer using this class to ensure that they
+ * link against the v4 support library .jar file when creating their app to
+ * ensure that {@link FragmentActivity} is available at runtime.</p>
+ *
+ * @see <a target="_new" href="https://developer.android.com/topic/libraries/support-library/setup.html">https://developer.android.com/topic/libraries/support-library/setup.html</a>
  */
-public class FlutterActivity extends Activity implements FlutterView.Provider, PluginRegistry, ViewFactory {
+public class FlutterFragmentActivity
+        extends FragmentActivity implements FlutterView.Provider, PluginRegistry, ViewFactory {
     private final FlutterActivityDelegate delegate = new FlutterActivityDelegate(this, this);
 
     // These aliases ensure that the methods we forward to the delegate adhere
@@ -34,15 +45,6 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     public FlutterView getFlutterView() {
         return viewProvider.getFlutterView();
     }
-
-    /**
-     * Hook for subclasses to customize their startup behavior.
-     *
-     * @deprecated Just override {@link #onCreate(Bundle)} instead, and add your
-     * logic after calling {@code super.onCreate()}.
-     */
-    @Deprecated
-    protected void onFlutterReady() {}
 
     /**
      * Hook for subclasses to customize the creation of the
@@ -75,7 +77,6 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         eventDelegate.onCreate(savedInstanceState);
-        onFlutterReady();
     }
 
     @Override
@@ -104,7 +105,8 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     }
 
     // @Override - added in API level 23
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(
+            int requestCode, String[] permissions, int[] grantResults) {
         eventDelegate.onRequestPermissionResult(requestCode, permissions, grantResults);
     }
 

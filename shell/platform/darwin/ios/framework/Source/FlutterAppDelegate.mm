@@ -156,7 +156,21 @@
 }
 
 - (BOOL)application:(UIApplication*)application
-      handleOpenURL:(NSURL*)url {
+            openURL:(NSURL*)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      if ([plugin application:application
+                      openURL:url
+                      options:options]) {
+        return YES;
+      }
+    }
+  }
+  return NO;
+}
+
+- (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       if ([plugin application:application handleOpenURL:url]) {
@@ -168,20 +182,34 @@
 }
 
 - (BOOL)application:(UIApplication*)application
-            openURL:(NSURL*)url
-  sourceApplication:(NSString*)sourceApplication
-         annotation:(id)annotation {
+              openURL:(NSURL*)url
+    sourceApplication:(NSString*)sourceApplication
+           annotation:(id)annotation {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       if ([plugin application:application
-                      openURL:url
-            sourceApplication:sourceApplication
-                   annotation:annotation]) {
+                        openURL:url
+              sourceApplication:sourceApplication
+                     annotation:annotation]) {
         return YES;
       }
     }
   }
   return NO;
+}
+
+- (void)application:(UIApplication*)application
+    performActionForShortcutItem:(UIApplicationShortcutItem*)shortcutItem
+               completionHandler:(void (^)(BOOL succeeded))completionHandler {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      if ([plugin application:application
+              performActionForShortcutItem:shortcutItem
+                         completionHandler:completionHandler]) {
+        return;
+      }
+    }
+  }
 }
 
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {

@@ -25,23 +25,29 @@ def main():
 
   classpath = [
     ANDROID_SRC_ROOT,
+    'third_party/android_tools/sdk/extras/android/support/v4/android-support-v4.jar',
     'third_party/android_tools/sdk/platforms/android-22/android.jar',
     'base/android/java/src',
     'third_party/jsr-305/src/ri/src/main/java',
   ]
   packages = [
     'io.flutter.app',
-    'io.flutter.view',
-    'io.flutter.plugin.editing',
     'io.flutter.plugin.common',
+    'io.flutter.plugin.editing',
     'io.flutter.plugin.platform',
+    'io.flutter.util',
+    'io.flutter.view',
   ]
 
-  return subprocess.call([
+  command = [
     'javadoc',
     '-classpath', ':'.join(classpath),
     '-d', args.out_dir,
-  ] + packages)
+    '-link', 'https://developer.android.com/reference/',
+  ] + packages
+  print(' '.join(command))
+
+  return subprocess.call(command)
 
 
 if __name__ == '__main__':
