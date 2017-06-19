@@ -5,6 +5,18 @@
 
 # Generates objc docs for Flutter iOS libraries.
 
+if [ ! -d "./flutter/shell/platform/darwin/ios" ]
+  then
+      echo "Error: This script must be run at the root of the Flutter source tree."
+      exit 1
+fi
+
+if [ $# -eq 0 ]
+  then
+      echo "Error: Argument specifying output directory required."
+      exit 1
+fi
+
 jazzy \
   --objc\
   --clean\
