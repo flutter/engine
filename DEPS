@@ -35,6 +35,72 @@ vars = {
   'dart_boringssl_revision': 'd519bf6be0b447fb80fbc539d4bff4479b5482a2',
   # Dart calls the next one "observatory_pub_packages_rev"
   'dart_observatory_packages_revision': '26aad88f1c1915d39bbcbff3cad589e2402fdcf1',
+  # Dart calls the next one "args_tag"
+  'dart_args_revision':
+  '0.13.7',
+  # Dart calls the next one "async_tag"
+  'dart_async_revision':
+  'daf66909019d2aaec1721fc39d94ea648a9fdc1d',
+  # Dart calls the next one "collection_tag"
+  'dart_collection_revision':
+  '1.13.0',
+  # Dart calls the next one "charcode_tag"
+  'dart_charcode_revision':
+  'v1.1.1',
+  # Dart calls the next one "package_config_tag"
+  'dart_package_config_revision':
+  '1.0.0',
+  # Dart calls the next one "convert_tag"
+  'dart_convert_revision':
+  '2.0.1',
+  # Dart calls the next one "crypto_tag"
+  'dart_crypto_revision':
+  '2.0.1',
+  # Dart calls the next one "csslib_tag"
+  'dart_csslib_revision':
+  '0.13.3+1',
+  # Dart calls the next one "dart2js_info_tag"
+  "dart_dart2js_info_revision":
+  "0.5.4+2",
+  # Dart calls the next one "isolate_tag"
+  'dart_isolate_revision':
+  '1.0.0',
+  # Dart calls the next one "glob_tag"
+  'dart_glob_revision':
+  '1.1.3',
+  # Dart calls the next one "html_tag"
+  'dart_html_revision':
+  '0.13.1',
+  # Dart calls the next one "logging_tag"
+  'dart_logging_revision':
+  "0.11.3+1",
+  # Dart calls the next one "path_tag"
+  'dart_path_revision':
+  "1.4.1",
+  # Dart calls the next one "plugin_tag"
+  'dart_plugin_revision':
+  '0.2.0',
+  # Dart calls the next one "pub_semver_tag"
+  "dart_pub_semver_revision":
+  "1.3.2",
+  # Dart calls the next one "source_span_tag"
+  'dart_source_span_revision':
+  '1.3.1',
+  # Dart calls the next one "string_scanner_tag"
+  'dart_string_scanner_revision':
+  '1.0.1',
+  # Dart calls the next one "typed_data_tag"
+  'dart_typed_data_revision':
+  '1.1.3',
+  # Dart calls the next one "utf_tag"
+  'dart_utf_revision':
+  '0.9.0+3',
+  # Dart calls the next one "watcher_tag"
+  'dart_watcher_revision':
+  '0.9.7+3',
+  # Dart calls the next one "yaml_tag"
+  'dart_yaml_revision':
+  '2.1.12',
   # Dart calls the next one "root_certificates_rev"
   'dart_root_certificates_revision': 'a4c7c6f23a664a37bc1b6f15a819e3f2a292791a',
 
@@ -104,6 +170,116 @@ deps = {
    Var('chromium_git') +
    '/external/github.com/dart-lang/observatory_pub_packages' + '@' +
    Var('dart_observatory_packages_revision'),
+
+  'src/dart/third_party/pkg/args':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/args' + '@' +
+  Var('dart_args_revision'),
+
+  'src/dart/third_party/pkg/async':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/async' + '@' +
+  Var('dart_async_revision'),
+
+  'src/dart/third_party/pkg/charcode':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/charcode' + '@' +
+  Var('dart_charcode_revision'),
+
+  'src/dart/third_party/pkg/collection':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/collection' + '@' +
+  Var('dart_collection_revision'),
+
+  'src/dart/third_party/pkg/convert':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/convert' + '@' +
+  Var('dart_convert_revision'),
+
+  'src/dart/third_party/pkg/crypto':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/crypto' + '@' +
+  Var('dart_crypto_revision'),
+
+  'src/dart/third_party/pkg/csslib':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/csslib' + '@' +
+  Var('dart_csslib_revision'),
+
+  'src/dart/third_party/pkg/dart2js_info':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/dart2js_info' + '@' +
+  Var('dart_dart2js_info_revision'),
+
+  'src/dart/third_party/pkg/isolate':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/isolate' + '@' +
+  Var('dart_isolate_revision'),
+
+  'src/dart/third_party/pkg/glob':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/glob' + '@' +
+  Var('dart_glob_revision'),
+
+  'src/dart/third_party/pkg/html':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/html' + '@' +
+  Var('dart_html_revision'),
+
+  'src/dart/third_party/pkg/logging':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/logging' + '@' +
+  Var('dart_logging_revision'),
+
+  'src/dart/third_party/pkg_tested/package_config':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/package_config' + '@' +
+  Var('dart_package_config_revision'),
+
+  'src/dart/third_party/pkg/path':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/path' + '@' +
+  Var('dart_path_revision'),
+
+  'src/dart/third_party/pkg/plugin':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/plugin' + '@' +
+  Var('dart_plugin_revision'),
+
+  'src/dart/third_party/pkg/pub_semver':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/pub_semver' + '@' +
+  Var('dart_pub_semver_revision'),
+
+  'src/dart/third_party/pkg/source_span':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/source_span' + '@' +
+  Var('dart_source_span_revision'),
+
+  'src/dart/third_party/pkg/string_scanner':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/string_scanner' + '@' +
+  Var('dart_string_scanner_revision'),
+
+  'src/dart/third_party/pkg/typed_data':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/typed_data' + '@' +
+  Var('dart_typed_data_revision'),
+
+  'src/dart/third_party/pkg/utf':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/utf' + '@' +
+  Var('dart_utf_revision'),
+
+  'src/dart/third_party/pkg/watcher':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/watcher' + '@' +
+  Var('dart_watcher_revision'),
+
+  'src/dart/third_party/pkg/yaml':
+  Var('chromium_git') +
+  '/external/github.com/dart-lang/yaml' + '@' +
+  Var('dart_yaml_revision'),
 
   'src/third_party/root_certificates':
    Var('chromium_git') +
