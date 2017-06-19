@@ -148,7 +148,7 @@ void Shell::InitStandalone(ftl::CommandLine command_line,
       command_line.HasOption(FlagForSwitch(Switch::EnableSoftwareRendering));
 
   settings.using_blink =
-      !command_line.HasOption(FlagForSwitch(Switch::EnableTxt));
+      command_line.HasOption(FlagForSwitch(Switch::EnableTxt));
 
   settings.endless_trace_buffer =
       command_line.HasOption(FlagForSwitch(Switch::EndlessTraceBuffer));
