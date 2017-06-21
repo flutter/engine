@@ -2,14 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/lib/snapshot/toolchain.gni")
-
 group("flutter") {
   testonly = true
 
   deps = [
     "//flutter/lib/snapshot:generate_snapshot_bin",
-    "//flutter/lib/snapshot:patched_sdk($dart_host_toolchain)",
+    "//flutter/lib/snapshot:patched_sdk",
     "//flutter/sky",
   ]
 

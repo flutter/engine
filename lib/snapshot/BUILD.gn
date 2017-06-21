@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/lib/snapshot/toolchain.gni")
 import("//flutter/lib/ui/dart_ui.gni")
 
 import("//dart/runtime/vm/gypi_contents.gni")
@@ -144,7 +143,6 @@ action("generate_snapshot_bin") {
       "--error_on_bad_override",
     ]
   }
-
 
   if (target_is_fuchsia) {
     inputs += fidl_dart_sdk_ext_files + mozart_dart_sdk_ext_files
@@ -311,8 +309,7 @@ template("generate_vm_patched_sdk") {
   # libraries.
   generate_patched_sdk(target_name) {
     mode = "flutter"
-    deps = concatenation_target_names +
-      ["//dart/runtime/vm:patched_sdk($dart_host_toolchain)"]
+    deps = concatenation_target_names + ["//dart/runtime/vm:patched_sdk"]
     input_patches_dir = "$target_gen_dir/patches"
     patched_sdk_dir = "flutter_patched_sdk"
   }
