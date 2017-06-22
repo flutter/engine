@@ -112,8 +112,11 @@ void MessageLoopImpl::RegisterTask(ftl::Closure task,
     return;
   }
   ftl::MutexLocker lock(&delayed_tasks_mutex_);
+  bool was_empty = delayed_task_.empty();
   delayed_tasks_.push({++order_, std::move(task), target_time});
-  WakeUp(delayed_tasks_.top().target_time);
+  if (was_empty) {
+    WakeUp(delayed_tasks_.top().target_time);
+  }
 }
 
 void MessageLoopImpl::RunExpiredTasks() {
