@@ -111,11 +111,18 @@ void MessageLoopImpl::RegisterTask(ftl::Closure task,
     // |task| synchronously within this function.
     return;
   }
+
   ftl::MutexLocker lock(&delayed_tasks_mutex_);
-  bool was_empty = delayed_task_.empty();
+  ftl::TimePoint previous_wakeup;
+  if (delayed_tasks_.empty()) {
+    previous_wakeup = ftl::TimePoint::Max();
+  } else {
+    previous_wakeup = delayed_tasks_.top().target_time;
+  }
   delayed_tasks_.push({++order_, std::move(task), target_time});
-  if (was_empty) {
-    WakeUp(delayed_tasks_.top().target_time);
+  ftl::TimePoint new_wakeup = delayed_tasks_.top().target_time;
+  if (new_wakeup < previous_wakeup) {
+    WakeUp(new_wakeup);
   }
 }
 
