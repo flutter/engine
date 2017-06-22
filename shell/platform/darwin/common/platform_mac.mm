@@ -6,8 +6,6 @@
 
 #include <Foundation/Foundation.h>
 
-#include <asl.h>
-
 #include "dart/runtime/include/dart_tools_api.h"
 #include "flutter/common/threads.h"
 #include "flutter/fml/trace_event.h"
@@ -20,17 +18,6 @@
 #include "lib/ftl/strings/string_view.h"
 
 namespace shell {
-
-static void RedirectIOConnectionsToSyslog(const ftl::CommandLine& command_line) {
-#if TARGET_OS_IPHONE
-  if (command_line.HasOption(FlagForSwitch(Switch::NoRedirectToSyslog))) {
-    return;
-  }
-
-  asl_log_descriptor(NULL, NULL, ASL_LEVEL_NOTICE, STDOUT_FILENO, ASL_LOG_DESCRIPTOR_WRITE);
-  asl_log_descriptor(NULL, NULL, ASL_LEVEL_WARNING, STDERR_FILENO, ASL_LOG_DESCRIPTOR_WRITE);
-#endif
-}
 
 static ftl::CommandLine InitializedCommandLine() {
   std::vector<std::string> args_vector;
@@ -54,8 +41,6 @@ class EmbedderState {
         << "Embedder initialization must occur on the main platform thread";
 
     auto command_line = InitializedCommandLine();
-
-    RedirectIOConnectionsToSyslog(command_line);
 
     // This is about as early as tracing of any kind can start. Add an instant
     // marker that can be used as a reference for startup.

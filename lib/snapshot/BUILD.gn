@@ -7,9 +7,7 @@ import("//flutter/lib/ui/dart_ui.gni")
 import("//dart/runtime/vm/gypi_contents.gni")
 import("//dart/utils/generate_patch_sdk.gni")
 
-target_is_fuchsia = target_os == "fuchsia"
-
-if (target_is_fuchsia) {
+if (is_fuchsia) {
   import("//apps/mozart/lib/flutter/sdk_ext/sdk_ext.gni")
   import("//lib/fidl/dart/sdk_ext/sdk_ext.gni")
 }
@@ -24,7 +22,7 @@ copy("generate_dart_ui") {
   ]
 }
 
-if (target_is_fuchsia) {
+if (is_fuchsia) {
   action("generate_package_map") {
     dart_deps = [
       "//lib/fidl/dart:dart",
@@ -60,7 +58,7 @@ if (target_is_fuchsia) {
 }
 
 action("generate_snapshot_bin") {
-  if (target_is_fuchsia) {
+  if (is_fuchsia) {
     snapshot_dart = "snapshot_fuchsia.dart"
     # TODO(rmacnak): Fuchsia cross builds use the wrong Dart target
     # architecture, and have added steps that depend on this error for
@@ -83,7 +81,7 @@ action("generate_snapshot_bin") {
              "//dart/runtime/tools/create_snapshot_bin.py",
              snapshot_dart,
            ] + dart_ui_files
-  if (target_is_fuchsia) {
+  if (is_fuchsia) {
     deps += [ ":generate_package_map" ]
     inputs += [ "fuchsia_compilation_trace.txt" ]
   }
@@ -144,7 +142,7 @@ action("generate_snapshot_bin") {
     ]
   }
 
-  if (target_is_fuchsia) {
+  if (is_fuchsia) {
     inputs += fidl_dart_sdk_ext_files + mozart_dart_sdk_ext_files
     fidl_internal_path = rebase_path(fidl_dart_sdk_ext_lib)
     mozart_internal_path = rebase_path(mozart_dart_sdk_ext_lib)
