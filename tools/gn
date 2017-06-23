@@ -119,6 +119,8 @@ def to_gn_args(args):
         gn_args['dart_host_toolchain'] = "//build/toolchain/linux:clang_x86"
       elif sys.platform.startswith('darwin'):
         gn_args['dart_host_toolchain'] = "//build/toolchain/mac:clang_i386"
+      elif sys.platform.startswith('win'):
+        gn_args['dart_host_toolchain'] = "//build/toolchain/win:x86"
     elif args.target_os == "ios" and not args.simulator:
       if gn_args['target_cpu'] == 'arm':
         gn_args['dart_host_toolchain'] = '//build/toolchain/mac:clang_i386'
