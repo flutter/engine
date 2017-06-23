@@ -214,11 +214,8 @@ class Window {
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
   VoidCallback get onMetricsChanged => _onMetricsChanged;
-
   VoidCallback _onMetricsChanged;
   Zone _onMetricsChangedZone;
-
-  /// Updates the callback.
   set onMetricsChanged(VoidCallback callback) {
     _onMetricsChanged = callback;
     _onMetricsChangedZone = Zone.current;
@@ -248,11 +245,8 @@ class Window {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
   VoidCallback get onLocaleChanged => _onLocaleChanged;
-
   VoidCallback _onLocaleChanged;
   Zone _onLocaleChangedZone;
-
-  /// Updates the callback.
   set onLocaleChanged(VoidCallback callback) {
     _onLocaleChanged = callback;
     _onLocaleChangedZone = Zone.current;
@@ -278,11 +272,8 @@ class Window {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   FrameCallback get onBeginFrame => _onBeginFrame;
-
   FrameCallback _onBeginFrame;
   Zone _onBeginFrameZone;
-
-  /// Updates the callback.
   set onBeginFrame(FrameCallback callback) {
     _onBeginFrame = callback;
     _onBeginFrameZone = Zone.current;
@@ -303,11 +294,8 @@ class Window {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   VoidCallback get onDrawFrame => _onDrawFrame;
-
   VoidCallback _onDrawFrame;
   Zone _onDrawFrameZone;
-
-  /// Updates the callback.
   set onDrawFrame(VoidCallback callback) {
     _onDrawFrame = callback;
     _onDrawFrameZone = Zone.current;
@@ -323,11 +311,8 @@ class Window {
   ///  * [GestureBinding], the Flutter framework class which manages pointer
   ///    events.
   PointerDataPacketCallback get onPointerDataPacket => _onPointerDataPacket;
-
   PointerDataPacketCallback _onPointerDataPacket;
   Zone _onPointerDataPacketZone;
-
-  /// Updates the callback.
   set onPointerDataPacket(PointerDataPacketCallback callback) {
     _onPointerDataPacket = callback;
     _onPointerDataPacketZone = Zone.current;
@@ -386,11 +371,8 @@ class Window {
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
   VoidCallback get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
-
   VoidCallback _onSemanticsEnabledChanged;
   Zone _onSemanticsEnabledChangedZone;
-
-  /// Updates the callback.
   set onSemanticsEnabledChanged(VoidCallback callback) {
     _onSemanticsEnabledChanged = callback;
     _onSemanticsEnabledChangedZone = Zone.current;
@@ -405,11 +387,8 @@ class Window {
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
   SemanticsActionCallback get onSemanticsAction => _onSemanticsAction;
-
   SemanticsActionCallback _onSemanticsAction;
   Zone _onSemanticsActionZone;
-
-  /// Updates the callback.
   set onSemanticsAction(SemanticsActionCallback callback) {
     _onSemanticsAction = callback;
     _onSemanticsActionZone = Zone.current;
@@ -456,11 +435,8 @@ class Window {
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
   PlatformMessageCallback get onPlatformMessage => _onPlatformMessage;
-
   PlatformMessageCallback _onPlatformMessage;
   Zone _onPlatformMessageZone;
-
-  /// Updates the callback.
   set onPlatformMessage(PlatformMessageCallback callback) {
     _onPlatformMessage = callback;
     _onPlatformMessageZone = Zone.current;

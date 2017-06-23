@@ -63,24 +63,20 @@ void _invokeOnPointerDataPacket(PointerDataPacket packet) {
 }
 
 void _dispatchSemanticsAction(int id, int action) {
-  if (window.onSemanticsAction != null) {
-    _invoke2<int, SemanticsAction>(
-      window.onSemanticsAction,
-      window._onSemanticsActionZone,
-      id,
-      SemanticsAction.values[action],
-    );
-  }
+  _invoke2<int, SemanticsAction>(
+    window.onSemanticsAction,
+    window._onSemanticsActionZone,
+    id,
+    SemanticsAction.values[action],
+  );
 }
 
 void _beginFrame(int microseconds) {
-  if (window.onBeginFrame != null)
-    _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone, new Duration(microseconds: microseconds));
+  _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone, new Duration(microseconds: microseconds));
 }
 
 void _drawFrame() {
-  if (window.onDrawFrame != null)
-    _invoke(window.onDrawFrame, window._onDrawFrameZone);
+  _invoke(window.onDrawFrame, window._onDrawFrameZone);
 }
 
 /// Invokes [callback] inside the given [zone].
