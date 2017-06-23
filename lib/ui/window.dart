@@ -473,7 +473,8 @@ class Window {
   /// Wraps the given [callback] in another callback that ensures that the
   /// original callback is called in the zone it was registered in.
   static PlatformMessageResponseCallback _zonedPlatformMessageResponseCallback(PlatformMessageResponseCallback callback) {
-    if (callback == null) return null;
+    if (callback == null)
+      return null;
 
     // Store the zone in which the callback is being registered.
     final Zone registrationZone = Zone.current;
