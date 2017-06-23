@@ -53,7 +53,7 @@ class RasterCache {
   RasterCacheResult GetPrerolledImage(GrContext* context,
                                       SkPicture* picture,
                                       const SkMatrix& transformation_matrix,
-                                      sk_sp<SkColorSpace> dst_color_space,
+                                      SkColorSpace* dst_color_space,
                                       bool is_complex,
                                       bool will_change);
 
