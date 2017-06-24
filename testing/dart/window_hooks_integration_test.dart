@@ -133,7 +133,7 @@ void main() {
         };
       });
 
-      _invokeOnPointerDataPacket(null);
+      _dispatchPointerDataPacket(new ByteData.view(new Uint8List(0).buffer));
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
     });

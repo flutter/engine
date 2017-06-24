@@ -55,11 +55,7 @@ void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
 
 void _dispatchPointerDataPacket(ByteData packet) {
   if (window.onPointerDataPacket != null)
-    _invokeOnPointerDataPacket(_unpackPointerDataPacket(packet));
-}
-
-void _invokeOnPointerDataPacket(PointerDataPacket packet) {
-  _invoke1<PointerDataPacket>(window.onPointerDataPacket, window._onPointerDataPacketZone, packet);
+    _invoke1<PointerDataPacket>(window.onPointerDataPacket, window._onPointerDataPacketZone, _unpackPointerDataPacket(packet));
 }
 
 void _dispatchSemanticsAction(int id, int action) {
