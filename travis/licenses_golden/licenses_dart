@@ -1,4 +1,4 @@
-Signature: 271a357f835aa67705dc2f62c2695d76
+Signature: ef77827bde8b3c1f5a1f2718b3dba272
 
 UNUSED LICENSES:
 
@@ -1201,6 +1201,7 @@ FILE: ../../../dart/.travis.yml
 FILE: ../../../dart/client/idea/.idea/.name
 FILE: ../../../dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../dart/client/idea/.idea/vcs.xml
+FILE: ../../../dart/dart_third_party_pkg.manifest
 FILE: ../../../dart/runtime/CPPLINT.cfg
 FILE: ../../../dart/runtime/bin/vmservice_sdk/lib/libraries.json
 FILE: ../../../dart/runtime/bin/vmserviceio_dartium.dart
