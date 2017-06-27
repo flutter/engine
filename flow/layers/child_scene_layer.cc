@@ -32,32 +32,33 @@ void ChildSceneLayer::Paint(PaintContext& context) {
   FTL_DCHECK(false) << "Failed to composite child scene.";
 }
 
-void ChildSceneLayer::UpdateScene(SceneUpdateContext& context,
-                                  mozart::Node* container) {
-  FTL_DCHECK(needs_system_composite());
+void ChildSceneLayer::UpdateScene(mozart::client::Session& session,
+                                  SceneUpdateContext& context,
+                                  ContainerNode& container) {
+  // FTL_DCHECK(needs_system_composite());
 
-  auto resource = mozart::Resource::New();
-  resource->set_scene(mozart::SceneResource::New());
-  resource->get_scene()->scene_token = mozart::SceneToken::New();
-  resource->get_scene()->scene_token->value = scene_token_;
+  // auto resource = mozart::Resource::New();
+  // resource->set_scene(mozart::SceneResource::New());
+  // resource->get_scene()->scene_token = mozart::SceneToken::New();
+  // resource->get_scene()->scene_token->value = scene_token_;
 
-  auto node = mozart::Node::New();
-  if (!hit_testable_) {
-    node->hit_test_behavior = mozart::HitTestBehavior::New();
-    node->hit_test_behavior->visibility =
-        mozart::HitTestBehavior::Visibility::INVISIBLE;
-    node->hit_test_behavior->prune = true;
-  }
-  node->op = mozart::NodeOp::New();
-  node->op->set_scene(mozart::SceneNodeOp::New());
-  node->op->get_scene()->scene_resource_id =
-      context.AddResource(std::move(resource));
-  node->content_clip = mozart::RectF::New();
-  node->content_clip->width = physical_size_.width();
-  node->content_clip->height = physical_size_.height();
-  node->content_transform = mozart::Transform::From(transform_);
+  // auto node = mozart::Node::New();
+  // if (!hit_testable_) {
+  //   node->hit_test_behavior = mozart::HitTestBehavior::New();
+  //   node->hit_test_behavior->visibility =
+  //       mozart::HitTestBehavior::Visibility::INVISIBLE;
+  //   node->hit_test_behavior->prune = true;
+  // }
+  // node->op = mozart::NodeOp::New();
+  // node->op->set_scene(mozart::SceneNodeOp::New());
+  // node->op->get_scene()->scene_resource_id =
+  //     context.AddResource(std::move(resource));
+  // node->content_clip = mozart::RectF::New();
+  // node->content_clip->width = physical_size_.width();
+  // node->content_clip->height = physical_size_.height();
+  // node->content_transform = mozart::Transform::From(transform_);
 
-  context.AddChildNode(container, std::move(node));
+  // context.AddChildNode(container, std::move(node));
 }
 
 }  // namespace flow

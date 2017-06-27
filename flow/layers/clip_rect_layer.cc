@@ -5,15 +5,17 @@
 #include "flutter/flow/layers/clip_rect_layer.h"
 
 #if defined(OS_FUCHSIA)
-#include "apps/mozart/lib/skia/type_converters.h" // nogncheck
-#include "apps/mozart/services/composition/nodes.fidl.h" // nogncheck
+
+#include "apps/mozart/lib/skia/type_converters.h"         // nogncheck
+#include "apps/mozart/services/composition/nodes.fidl.h"  // nogncheck
+
 #endif  // defined(OS_FUCHSIA)
 
 namespace flow {
 
-ClipRectLayer::ClipRectLayer() {}
+ClipRectLayer::ClipRectLayer() = default;
 
-ClipRectLayer::~ClipRectLayer() {}
+ClipRectLayer::~ClipRectLayer() = default;
 
 void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   PrerollChildren(context, matrix);
@@ -24,11 +26,22 @@ void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 #if defined(OS_FUCHSIA)
 
-void ClipRectLayer::UpdateScene(SceneUpdateContext& context,
-                                mozart::Node* container) {
-  auto node = mozart::Node::New();
-  node->content_clip = mozart::RectF::From(clip_rect_);
-  UpdateSceneChildrenInsideNode(context, container, std::move(node));
+void ClipRectLayer::UpdateScene(mozart::client::Session& session,
+                                SceneUpdateContext& context,
+                                ContainerNode& container) {
+  // TODO(MZ-138): Need to be able to specify an origin.
+  mozart::client::Rectangle clip_shape(&session,            // session
+                                       clip_rect_.width(),  //  width
+                                       clip_rect_.height()  //  height
+                                       );
+  mozart::client::ShapeNode shape_node(&session);
+  shape_node.SetShape(clip_shape);
+
+  mozart::client::EntityNode node(&session);
+  node.AddPart(shape_node);
+  node.SetClip(shape_node.id(), true /* clip to self */);
+
+  UpdateSceneChildrenInsideNode(session, context, container, node);
 }
 
 #endif  // defined(OS_FUCHSIA)

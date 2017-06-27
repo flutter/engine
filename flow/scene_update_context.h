@@ -16,9 +16,12 @@
 #include "third_party/skia/include/core/SkSurface.h"
 
 #if defined(OS_FUCHSIA)
-#include "apps/mozart/services/composition/nodes.fidl.h" // nogncheck
-#include "apps/mozart/services/composition/resources.fidl.h" // nogncheck
-#include "apps/mozart/services/images/image.fidl.h" // nogncheck
+
+#include "apps/mozart/lib/scene/client/resources.h"           // nogncheck
+#include "apps/mozart/services/composition/nodes.fidl.h"      // nogncheck
+#include "apps/mozart/services/composition/resources.fidl.h"  // nogncheck
+#include "apps/mozart/services/images/image.fidl.h"           // nogncheck
+
 #endif  // defined(OS_FUCHSIA)
 
 namespace mozart {
@@ -33,33 +36,34 @@ class SceneUpdateContext;
 
 #if defined(OS_FUCHSIA)
 
+using ContainerNode = mozart::client::ContainerTraits<mozart::client::Node>;
+
 class SceneUpdateContext {
  public:
   class SurfaceProducer {
    public:
     virtual ~SurfaceProducer() {}
     virtual sk_sp<SkSurface> ProduceSurface(SkISize size,
-                                            mozart::ImagePtr* out_image) = 0;
+                                            mozart::client::Session* session,
+                                            uint32_t& session_image_id,
+                                            mx::event& acquire_release,
+                                            mx::event& release_fence) = 0;
   };
 
-  SceneUpdateContext(mozart::SceneUpdate* update,
+  SceneUpdateContext(mozart::client::Session& session,
                      SurfaceProducer* surface_producer);
+
   ~SceneUpdateContext();
 
-  mozart::SceneUpdate* update() const { return update_; }
-
   void AddLayerToCurrentPaintTask(Layer* layer);
-  void FinalizeCurrentPaintTaskIfNeeded(mozart::Node* container,
-                                        const SkMatrix& ctm);
 
-  uint32_t AddResource(mozart::ResourcePtr resource);
-  void AddChildNode(mozart::Node* container, mozart::NodePtr child);
+  void FinalizeCurrentPaintTaskIfNeeded(mozart::client::Session& session,
+                                        ContainerNode& container,
+                                        const SkMatrix& ctm);
 
   void ExecutePaintTasks(CompositorContext::ScopedFrame& frame);
 
  private:
-  mozart::NodePtr FinalizeCurrentPaintTask(const SkMatrix& ctm);
-
   struct CurrentPaintTask {
     CurrentPaintTask();
     void Clear();
@@ -77,14 +81,10 @@ class SceneUpdateContext {
     std::vector<Layer*> layers;
   };
 
-  mozart::SceneUpdate* update_;
+  mozart::client::Session& session_;
   SurfaceProducer* surface_producer_;
-
   CurrentPaintTask current_paint_task_;
   std::vector<PaintTask> paint_tasks_;
-
-  uint32_t next_resource_id_ = 1;
-  uint32_t next_node_id_ = 1;
 
   FTL_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };

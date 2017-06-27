@@ -21,8 +21,9 @@ class ClipPathLayer : public ContainerLayer {
   void Paint(PaintContext& context) override;
 
 #if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context,
-                   mozart::Node* container) override;
+  void UpdateScene(mozart::client::Session& session,
+                   SceneUpdateContext& context,
+                   ContainerNode& container) override;
 #endif  // defined(OS_FUCHSIA)
 
  private:

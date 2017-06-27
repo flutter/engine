@@ -65,9 +65,11 @@ source_set("flow") {
       "layers/child_scene_layer.cc",
       "layers/child_scene_layer.h",
     ]
-    public_deps = [
+
+    deps += [
+      "//apps/mozart/lib/scene:client",
       "//apps/mozart/lib/skia",
-      "//apps/mozart/services/composition",
+      "//apps/mozart/services/scene",
     ]
   }
 }

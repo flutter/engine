@@ -5,15 +5,17 @@
 #include "flutter/flow/layers/transform_layer.h"
 
 #if defined(OS_FUCHSIA)
-#include "apps/mozart/lib/skia/type_converters.h" // nogncheck
-#include "apps/mozart/services/composition/nodes.fidl.h" // nogncheck
+
+#include "apps/mozart/lib/skia/type_converters.h"         // nogncheck
+#include "apps/mozart/services/composition/nodes.fidl.h"  // nogncheck
+
 #endif  // defined(OS_FUCHSIA)
 
 namespace flow {
 
-TransformLayer::TransformLayer() {}
+TransformLayer::TransformLayer() = default;
 
-TransformLayer::~TransformLayer() {}
+TransformLayer::~TransformLayer() = default;
 
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkMatrix childMatrix;
@@ -25,11 +27,38 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 #if defined(OS_FUCHSIA)
 
-void TransformLayer::UpdateScene(SceneUpdateContext& context,
-                                 mozart::Node* container) {
-  auto node = mozart::Node::New();
-  node->content_transform = mozart::Transform::From(transform_);
-  UpdateSceneChildrenInsideNode(context, container, std::move(node));
+void TransformLayer::UpdateScene(mozart::client::Session& session,
+                                 SceneUpdateContext& context,
+                                 ContainerNode& container) {
+  mozart::client::EntityNode node(&session);
+
+  // TODO(chinmaygarde): The perspective and shear components in the matrix are
+  // not handled correctly.
+  MatrixDecomposition decomposition(transform_);
+
+  if (decomposition.IsValid()) {
+    const float translation[3] = {
+        decomposition.translation().x(),  //
+        decomposition.translation().y(),  //
+        decomposition.translation().z(),  //
+    };
+    node.SetTranslation(translation);
+    const float scale[3] = {
+        decomposition.scale().x(),  //
+        decomposition.scale().y(),  //
+        decomposition.scale().z(),  //
+    };
+    node.SetScale(scale);
+    const float rotation[4] = {
+        decomposition.rotation().fData[0],  //
+        decomposition.rotation().fData[1],  //
+        decomposition.rotation().fData[2],  //
+        decomposition.rotation().fData[3],  //
+    };
+    node.SetRotation(rotation);
+  }
+
+  UpdateSceneChildrenInsideNode(session, context, container, node);
 }
 
 #endif  // defined(OS_FUCHSIA)
@@ -37,7 +66,6 @@ void TransformLayer::UpdateScene(SceneUpdateContext& context,
 void TransformLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "TransformLayer::Paint");
   FTL_DCHECK(!needs_system_composite());
-
   SkAutoCanvasRestore save(&context.canvas, true);
   context.canvas.concat(transform_);
   PaintChildren(context);

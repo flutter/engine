@@ -6,9 +6,9 @@
 
 namespace flow {
 
-ShaderMaskLayer::ShaderMaskLayer() {}
+ShaderMaskLayer::ShaderMaskLayer() = default;
 
-ShaderMaskLayer::~ShaderMaskLayer() {}
+ShaderMaskLayer::~ShaderMaskLayer() = default;
 
 void ShaderMaskLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");

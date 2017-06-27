@@ -32,7 +32,7 @@ class Rasterizer;
 
 class RuntimeHolder : public blink::RuntimeDelegate,
                       public mozart::NativesDelegate,
-                      public mozart::ViewListener,
+                      public mozart::ViewListener2,
                       public mozart::InputListener,
                       public mozart::InputMethodEditorClient {
  public:
@@ -66,9 +66,10 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   void OnEvent(mozart::InputEventPtr event,
                const OnEventCallback& callback) override;
 
-  // |mozart::ViewListener| implementation:
-  void OnInvalidation(mozart::ViewInvalidationPtr invalidation,
-                      const OnInvalidationCallback& callback) override;
+  // |mozart::ViewListener2| implementation:
+  void OnPropertiesChanged(
+      mozart::ViewPropertiesPtr properties,
+      const OnPropertiesChangedCallback& callback) override;
 
   // |mozart::InputMethodEditorClient| implementation:
   void DidUpdateState(mozart::TextInputStatePtr state,
@@ -91,34 +92,23 @@ class RuntimeHolder : public blink::RuntimeDelegate,
 
   std::unique_ptr<app::ApplicationContext> context_;
   fidl::InterfaceRequest<app::ServiceProvider> outgoing_services_;
-
   std::vector<char> root_bundle_data_;
   ftl::RefPtr<blink::ZipAssetStore> asset_store_;
   void* dylib_handle_ = nullptr;
-
   std::unique_ptr<Rasterizer> rasterizer_;
   std::unique_ptr<blink::RuntimeController> runtime_;
   blink::ViewportMetrics viewport_metrics_;
-
   mozart::ViewManagerPtr view_manager_;
-  fidl::Binding<mozart::ViewListener> view_listener_binding_;
+  fidl::Binding<mozart::ViewListener2> view_listener_binding_;
   fidl::Binding<mozart::InputListener> input_listener_binding_;
   mozart::InputConnectionPtr input_connection_;
   mozart::ViewPtr view_;
-  mozart::ViewPropertiesPtr view_properties_;
-  uint32_t scene_version_ = mozart::kSceneVersionNone;
-
   std::unordered_set<int> down_pointers_;
-
-  bool pending_invalidation_ = false;
-  OnInvalidationCallback deferred_invalidation_callback_;
-  bool is_ready_to_draw_ = false;
-  int outstanding_requests_ = 0;
-
   mozart::InputMethodEditorPtr input_method_editor_;
   fidl::Binding<mozart::InputMethodEditorClient> text_input_binding_;
   int current_text_input_client_ = 0;
   ftl::TimePoint last_begin_frame_time_;
+  bool frame_outstanding_ = false;
 
   ftl::WeakPtrFactory<RuntimeHolder> weak_factory_;
 

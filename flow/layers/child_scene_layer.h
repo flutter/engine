@@ -5,8 +5,8 @@
 #ifndef FLUTTER_FLOW_LAYERS_CHILD_SCENE_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_CHILD_SCENE_LAYER_H_
 
-#include "flutter/flow/layers/layer.h"
 #include "apps/mozart/services/composition/scenes.fidl.h"
+#include "flutter/flow/layers/layer.h"
 
 namespace flow {
 
@@ -30,9 +30,12 @@ class ChildSceneLayer : public Layer {
   void set_hit_testable(bool hit_testable) { hit_testable_ = hit_testable; }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+
   void Paint(PaintContext& context) override;
-  void UpdateScene(SceneUpdateContext& context,
-                   mozart::Node* container) override;
+
+  void UpdateScene(mozart::client::Session& session,
+                   SceneUpdateContext& context,
+                   ContainerNode& container) override;
 
  private:
   SkPoint offset_;

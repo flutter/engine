@@ -9,7 +9,7 @@
 
 namespace flow {
 
-PictureLayer::PictureLayer() {}
+PictureLayer::PictureLayer() = default;
 
 PictureLayer::~PictureLayer() {
   // The picture may contain references to textures that are associated

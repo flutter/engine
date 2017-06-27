@@ -10,7 +10,7 @@ ContainerLayer::ContainerLayer() {
   ctm_.setIdentity();
 }
 
-ContainerLayer::~ContainerLayer() {}
+ContainerLayer::~ContainerLayer() = default;
 
 void ContainerLayer::Add(std::unique_ptr<Layer> layer) {
   layer->set_parent(this);
@@ -50,27 +50,31 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
 
 #if defined(OS_FUCHSIA)
 
-void ContainerLayer::UpdateScene(SceneUpdateContext& context,
-                                 mozart::Node* container) {
-  UpdateSceneChildren(context, container);
+void ContainerLayer::UpdateScene(mozart::client::Session& session,
+                                 SceneUpdateContext& context,
+                                 ContainerNode& container) {
+  UpdateSceneChildren(session, context, container);
 }
 
-void ContainerLayer::UpdateSceneChildrenInsideNode(SceneUpdateContext& context,
-                                                   mozart::Node* container,
-                                                   mozart::NodePtr node) {
+void ContainerLayer::UpdateSceneChildrenInsideNode(
+    mozart::client::Session& session,
+    SceneUpdateContext& context,
+    ContainerNode& container,
+    ContainerNode& node) {
   FTL_DCHECK(needs_system_composite());
-  UpdateSceneChildren(context, node.get());
-  context.FinalizeCurrentPaintTaskIfNeeded(node.get(), ctm());
-  context.AddChildNode(container, std::move(node));
+  UpdateSceneChildren(session, context, node);
+  context.FinalizeCurrentPaintTaskIfNeeded(session, node, ctm());
+  container.AddChild(node);
 }
 
-void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context,
-                                         mozart::Node* container) {
+void ContainerLayer::UpdateSceneChildren(mozart::client::Session& session,
+                                         SceneUpdateContext& context,
+                                         ContainerNode& container) {
   FTL_DCHECK(needs_system_composite());
   for (auto& layer : layers_) {
     if (layer->needs_system_composite()) {
-      context.FinalizeCurrentPaintTaskIfNeeded(container, ctm());
-      layer->UpdateScene(context, container);
+      context.FinalizeCurrentPaintTaskIfNeeded(session, container, ctm());
+      layer->UpdateScene(session, context, container);
     } else {
       context.AddLayerToCurrentPaintTask(layer.get());
     }

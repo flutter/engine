@@ -24,7 +24,15 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 
+#if defined(OS_FUCHSIA)
+
+#include "apps/mozart/lib/scene/client/resources.h"  //nogncheck
+#include "apps/mozart/lib/scene/client/session.h"    //nogncheck
+
+#endif  // defined(OS_FUCHSIA)
+
 namespace flow {
+
 class ContainerLayer;
 
 class Layer {
@@ -70,8 +78,9 @@ class Layer {
   virtual void Paint(PaintContext& context) = 0;
 
 #if defined(OS_FUCHSIA)
-  virtual void UpdateScene(SceneUpdateContext& context,
-                           mozart::Node* container);
+  virtual void UpdateScene(mozart::client::Session& session,
+                           SceneUpdateContext& context,
+                           ContainerNode& container);
 #endif
 
   ContainerLayer* parent() const { return parent_; }
