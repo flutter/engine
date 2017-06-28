@@ -137,6 +137,7 @@ void MessageLoopImpl::RunExpiredTasks() {
     ftl::MutexLocker lock(&delayed_tasks_mutex_);
 
     if (delayed_tasks_.empty()) {
+      FTL_DCHECK(terminated_);  // No spurious wakeups except shutdown.
       return;
     }
 
