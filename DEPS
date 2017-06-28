@@ -205,6 +205,9 @@ deps = {
    # Headers for Vulkan 1.0
    'src/third_party/vulkan':
    Var('github_git') + '/KhronosGroup/Vulkan-Docs.git' + '@' + 'e29c2489e238509c41aeb8c7bce9d669a496344b',
+
+   'src/third_party/benchmark':
+   Var('github_git') + '/google/benchmark.git' + '@' + '710c2b89d8c6e839e51ac148b4e840ce2c009dbb',
 }
 
 recursedeps = [
