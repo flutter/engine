@@ -109,13 +109,23 @@ public final class MethodChannel {
         /**
          * Handles the specified method call received from Flutter.
          *
-         * <p>Handler implementations must submit a result for all incoming calls, by making a single call
-         * on the given {@link Result} callback. Failure to do so will result in lingering Flutter result
-         * handlers. The result may be submitted asynchronously. Calls to unknown or unimplemented methods
-         * should be handled using {@link Result#notImplemented()}.</p>
+         * <p>Handler implementations must submit a result for all incoming calls, by making a
+         * single call on the given {@link Result} callback. Failure to do so will result in
+         * lingering Flutter result handlers. The result may be submitted asynchronously. Calls to
+         * unknown or unimplemented methods should be handled using
+         * {@link Result#notImplemented()}.</p>
          *
-         * <p>Any uncaught exception thrown by this method will be caught by the channel implementation and
-         * logged, and an error result will be sent back to Flutter.</p>
+         * <p>Any uncaught exception thrown by this method will be caught by the channel
+         * implementation and logged, and an error result will be sent back to Flutter. Exceptions
+         * that are instances of {@link ResultException} will have the error result that is sent
+         * back to Flutter be populated with corresponding semantic information (error code, error
+         * message, and error details).</p>
+         *
+         * <p>Uncaught <i>asynchronous</i> exceptions (those thrown in a different thread or event
+         * loop) will be truly uncaught because the channel implementation is no longer in the call
+         * stack. It is up to {@code MethodCallHandler} implementations to ensure that they catch
+         * such exceptions and call {@code Result.error} if they want to send the exception back
+         * to Flutter.</p>
          *
          * @param call A {@link MethodCall}.
          * @param result A {@link Result} used for submitting the result of the call.
@@ -150,6 +160,57 @@ public final class MethodChannel {
          * Handles a call to an unimplemented method.
          */
         void notImplemented();
+    }
+
+    /**
+     * An exception that {@link MethodCallHandler} implementations may throw in
+     * {@link MethodCallHandler#onMethodCall(MethodCall, Result)} to be caught by the
+     * channel implementation and sent back to Flutter as a {@code PlatformException}. Metadata
+     * in this exception class will be translated to corresponding fields in the Dart exception.
+     *
+     * <p>Other uncaught exceptions thrown in {@code onMethodCall()} will also be sent back to
+     * Flutter as a {@code PlatformException}, but they will have a generic "error" code and no
+     * error details.</p>
+     *
+     * <p>Throwing this exception in an asynchronous callback has no special meaning since the
+     * channel implementation is no longer in the call stack.</p>
+     */
+    public static final class ResultException extends RuntimeException {
+        private final String code;
+        private final Object details;
+
+        /**
+         * Creates a {@code ResultException} with the specified error code and error message.
+         */
+        public ResultException(String code, String message) {
+            this(code, message, null);
+        }
+
+        /**
+         * Creates a {@code ResultException} with the specified error code, error message, and
+         * error details.
+         */
+        public ResultException(String code, String message, Object details) {
+            super(message);
+            this.code = code;
+            this.details = details;
+        }
+
+        /**
+         * Gets the error code. This is translated to the {@code PlatformException.code} field
+         * when the exception is serialized back to Flutter.
+         */
+        public String getCode() {
+            return code;
+        }
+
+        /**
+         * Gets the error details. This is translated to the {@code PlatformException.details}
+         * field when the exception is serialized back to Flutter.
+         */
+        public Object getDetails() {
+            return details;
+        }
     }
 
     private final class IncomingResultHandler implements BinaryReply {
@@ -204,6 +265,9 @@ public final class MethodChannel {
                         reply.reply(null);
                     }
                 });
+            } catch (ResultException e) {
+                Log.e(TAG + name, "Failed to handle method call", e);
+                reply.reply(codec.encodeErrorEnvelope(e.getCode(), e.getMessage(), e.getDetails()));
             } catch (RuntimeException e) {
                 Log.e(TAG + name, "Failed to handle method call", e);
                 reply.reply(codec.encodeErrorEnvelope("error", e.getMessage(), null));
