@@ -121,6 +121,12 @@ public final class MethodChannel {
          * back to Flutter be populated with corresponding semantic information (error code, error
          * message, and error details).</p>
          *
+         * <p>Uncaught <i>asynchronous</i> exceptions (those thrown in a different thread or event
+         * loop) will be truly uncaught because the channel implementation is no longer in the call
+         * stack. It is up to {@code MethodCallHandler} implementations to ensure that they catch
+         * such exceptions and call {@code Result.error} if they want to send the exception back
+         * to Flutter.</p>
+         *
          * @param call A {@link MethodCall}.
          * @param result A {@link Result} used for submitting the result of the call.
          */
@@ -158,13 +164,16 @@ public final class MethodChannel {
 
     /**
      * An exception that {@link MethodCallHandler} implementations may throw in
-     * {@link MethodCallHandler#onMethodCall(MethodCall, Result)} that will be caught by the
+     * {@link MethodCallHandler#onMethodCall(MethodCall, Result)} to be caught by the
      * channel implementation and sent back to Flutter as a {@code PlatformException}. Metadata
      * in this exception class will be translated to corresponding fields in the Dart exception.
      *
-     * <p>Other uncaught exceptions thrown by {@code MethodCallHandler} implementations will also
-     * be sent back to Flutter as a {@code PlatformException}, but they will have a generic
-     * "error" code and no error details.</p>
+     * <p>Other uncaught exceptions thrown in {@code onMethodCall()} will also be sent back to
+     * Flutter as a {@code PlatformException}, but they will have a generic "error" code and no
+     * error details.</p>
+     *
+     * <p>Throwing this exception in an asynchronous callback has no special meaning since the
+     * channel implementation is no longer in the call stack.</p>
      */
     public static final class ResultException extends RuntimeException {
         private final String code;
