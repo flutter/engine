@@ -72,6 +72,8 @@ bool DartController::SendStartMessage(Dart_Handle root_library) {
 
   // In order to support pausing the isolate at start, we indirectly invoke
   // main by sending a message to the isolate.
+
+  // Get the closure of main().
   Dart_Handle main_closure =
       Dart_GetClosure(root_library, Dart_NewStringFromCString("main"));
   if (LogIfError(main_closure))
