@@ -24,8 +24,7 @@ void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 #if defined(OS_FUCHSIA)
-void Layer::UpdateScene(mozart::client::Session& session,
-                        SceneUpdateContext& context,
+void Layer::UpdateScene(SceneUpdateContext& context,
                         mozart::client::ContainerNode& container) {}
 #endif
 

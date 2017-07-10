@@ -26,9 +26,9 @@ class SessionConnection {
     return root_node_;
   }
 
-  mozart::client::Session& session() {
+  mozart::client::Session* session() {
     ASSERT_IS_GPU_THREAD;
-    return session_;
+    return &session_;
   }
 
   void Present(ftl::Closure on_present_callback);

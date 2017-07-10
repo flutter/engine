@@ -38,17 +38,16 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 }
 
 #if defined(OS_FUCHSIA)
-void LayerTree::UpdateScene(mozart::client::Session& session,
-                            SceneUpdateContext& context,
+void LayerTree::UpdateScene(SceneUpdateContext& context,
                             mozart::client::ContainerNode& container) {
   TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
 
   if (root_layer_->needs_system_composite()) {
-    root_layer_->UpdateScene(session, context, container);
+    root_layer_->UpdateScene(context, container);
   } else {
     context.AddLayerToCurrentPaintTask(root_layer_.get());
   }
-  context.FinalizeCurrentPaintTaskIfNeeded(session, container, SkMatrix::I());
+  context.FinalizeCurrentPaintTaskIfNeeded(container, SkMatrix::I());
 }
 #endif
 

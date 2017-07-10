@@ -50,32 +50,31 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
 
 #if defined(OS_FUCHSIA)
 
-void ContainerLayer::UpdateScene(mozart::client::Session& session,
-                                 SceneUpdateContext& context,
+void ContainerLayer::UpdateScene(SceneUpdateContext& context,
                                  mozart::client::ContainerNode& container) {
-  UpdateSceneChildren(session, context, container);
+  UpdateSceneChildren(context, container);
 }
 
 void ContainerLayer::UpdateSceneChildrenInsideNode(
-    mozart::client::Session& session,
+
     SceneUpdateContext& context,
     mozart::client::ContainerNode& container,
     mozart::client::ContainerNode& node) {
   FTL_DCHECK(needs_system_composite());
-  UpdateSceneChildren(session, context, node);
-  context.FinalizeCurrentPaintTaskIfNeeded(session, node, ctm());
+  UpdateSceneChildren(context, node);
+  context.FinalizeCurrentPaintTaskIfNeeded(node, ctm());
   container.AddChild(node);
 }
 
 void ContainerLayer::UpdateSceneChildren(
-    mozart::client::Session& session,
+
     SceneUpdateContext& context,
     mozart::client::ContainerNode& container) {
   FTL_DCHECK(needs_system_composite());
   for (auto& layer : layers_) {
     if (layer->needs_system_composite()) {
-      context.FinalizeCurrentPaintTaskIfNeeded(session, container, ctm());
-      layer->UpdateScene(session, context, container);
+      context.FinalizeCurrentPaintTaskIfNeeded(container, ctm());
+      layer->UpdateScene(context, container);
     } else {
       context.AddLayerToCurrentPaintTask(layer.get());
     }

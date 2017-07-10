@@ -32,15 +32,16 @@ class SceneUpdateContext {
                                             mx::event& release_fence) = 0;
   };
 
-  SceneUpdateContext(mozart::client::Session& session,
+  SceneUpdateContext(mozart::client::Session* session,
                      SurfaceProducer* surface_producer);
 
   ~SceneUpdateContext();
 
+  mozart::client::Session* session() { return session_; }
+
   void AddLayerToCurrentPaintTask(Layer* layer);
 
   void FinalizeCurrentPaintTaskIfNeeded(
-      mozart::client::Session& session,
       mozart::client::ContainerNode& container,
       const SkMatrix& ctm);
 
@@ -64,7 +65,7 @@ class SceneUpdateContext {
     std::vector<Layer*> layers;
   };
 
-  mozart::client::Session& session_;
+  mozart::client::Session* session_;
   SurfaceProducer* surface_producer_;
   CurrentPaintTask current_paint_task_;
   std::vector<PaintTask> paint_tasks_;

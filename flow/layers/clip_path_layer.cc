@@ -25,25 +25,24 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 #if defined(OS_FUCHSIA)
 
-void ClipPathLayer::UpdateScene(mozart::client::Session& session,
-                                SceneUpdateContext& context,
+void ClipPathLayer::UpdateScene(SceneUpdateContext& context,
                                 mozart::client::ContainerNode& container) {
   // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
   //               Treating the shape as a rectangle for now.
   auto rect = clip_path_.getBounds();
   // TODO(MZ-138): Need to be able to specify an origin.
-  mozart::client::Rectangle clip_shape(&session,      // session
-                                       rect.width(),  //  width
-                                       rect.height()  //  height
+  mozart::client::Rectangle clip_shape(context.session(),  // session
+                                       rect.width(),       //  width
+                                       rect.height()       //  height
                                        );
-  mozart::client::ShapeNode shape_node(&session);
+  mozart::client::ShapeNode shape_node(context.session());
   shape_node.SetShape(clip_shape);
 
-  mozart::client::EntityNode node(&session);
+  mozart::client::EntityNode node(context.session());
   node.AddPart(shape_node);
   node.SetClip(shape_node.id(), true /* clip to self */);
 
-  UpdateSceneChildrenInsideNode(session, context, container, node);
+  UpdateSceneChildrenInsideNode(context, container, node);
 }
 
 #endif  // defined(OS_FUCHSIA)

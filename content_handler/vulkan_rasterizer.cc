@@ -33,7 +33,8 @@ static bool WaitForFirstDisplayDriver() {
   wd.options = 0;
 
   mx::channel watcher;
-  mx_status_t status = mx_channel_create(0, &wd.channel, watcher.reset_and_get_address());
+  mx_status_t status =
+      mx_channel_create(0, &wd.channel, watcher.reset_and_get_address());
   if (status != MX_OK) {
     FTL_DLOG(ERROR) << "Failed to create channel";
     return false;
@@ -114,8 +115,7 @@ void VulkanRasterizer::Draw(std::unique_ptr<flow::LayerTree> layer_tree,
     // Traverse the Flutter layer tree so that the necessary session ops to
     // represent the frame are enqueued in the underlying session.
     TRACE_EVENT0("flutter", "UpdateScene");
-    layer_tree->UpdateScene(session_connection_->session(),
-                            scene_update_context,
+    layer_tree->UpdateScene(scene_update_context,
                             session_connection_->root_node());
   }
 

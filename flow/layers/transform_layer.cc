@@ -20,10 +20,9 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 #if defined(OS_FUCHSIA)
 
-void TransformLayer::UpdateScene(mozart::client::Session& session,
-                                 SceneUpdateContext& context,
+void TransformLayer::UpdateScene(SceneUpdateContext& context,
                                  mozart::client::ContainerNode& container) {
-  mozart::client::EntityNode node(&session);
+  mozart::client::EntityNode node(context.session());
 
   // TODO(chinmaygarde): The perspective and shear components in the matrix are
   // not handled correctly.
@@ -51,7 +50,7 @@ void TransformLayer::UpdateScene(mozart::client::Session& session,
     node.SetRotation(rotation);
   }
 
-  UpdateSceneChildrenInsideNode(session, context, container, node);
+  UpdateSceneChildrenInsideNode(context, container, node);
 }
 
 #endif  // defined(OS_FUCHSIA)

@@ -19,13 +19,12 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 #if defined(OS_FUCHSIA)
 
-void ClipRRectLayer::UpdateScene(mozart::client::Session& session,
-                                 SceneUpdateContext& context,
+void ClipRRectLayer::UpdateScene(SceneUpdateContext& context,
                                  mozart::client::ContainerNode& container) {
   // TODO(MZ-137): Need to be able to express the radii as vectors.
   // TODO(MZ-138): Need to be able to specify an origin.
   mozart::client::RoundedRectangle clip_shape(
-      &session,                                            // session
+      context.session(),                                   // session
       clip_rrect_.width(),                                 //  width
       clip_rrect_.height(),                                //  height
       clip_rrect_.radii(SkRRect::kUpperLeft_Corner).x(),   //  top_left_radius
@@ -35,14 +34,14 @@ void ClipRRectLayer::UpdateScene(mozart::client::Session& session,
       clip_rrect_.radii(SkRRect::kLowerLeft_Corner).x()  //  bottom_left_radius
       );
 
-  mozart::client::ShapeNode shape_node(&session);
+  mozart::client::ShapeNode shape_node(context.session());
   shape_node.SetShape(clip_shape);
 
-  mozart::client::EntityNode node(&session);
+  mozart::client::EntityNode node(context.session());
   node.AddPart(shape_node);
   node.SetClip(shape_node.id(), true /* clip to self */);
 
-  UpdateSceneChildrenInsideNode(session, context, container, node);
+  UpdateSceneChildrenInsideNode(context, container, node);
 }
 
 #endif  // defined(OS_FUCHSIA)

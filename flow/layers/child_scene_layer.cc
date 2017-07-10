@@ -29,8 +29,7 @@ void ChildSceneLayer::Paint(PaintContext& context) {
   FTL_DCHECK(false) << "Failed to composite child scene.";
 }
 
-void ChildSceneLayer::UpdateScene(mozart::client::Session& session,
-                                  SceneUpdateContext& context,
+void ChildSceneLayer::UpdateScene(SceneUpdateContext& context,
                                   mozart::client::ContainerNode& container) {
   // FTL_DCHECK(needs_system_composite());
 

@@ -23,15 +23,12 @@ class ContainerLayer : public Layer {
   void PaintChildren(PaintContext& context) const;
 
 #if defined(OS_FUCHSIA)
-  void UpdateScene(mozart::client::Session& session,
-                   SceneUpdateContext& context,
+  void UpdateScene(SceneUpdateContext& context,
                    mozart::client::ContainerNode& container) override;
-  void UpdateSceneChildrenInsideNode(mozart::client::Session& session,
-                                     SceneUpdateContext& context,
+  void UpdateSceneChildrenInsideNode(SceneUpdateContext& context,
                                      mozart::client::ContainerNode& container,
                                      mozart::client::ContainerNode& node);
-  void UpdateSceneChildren(mozart::client::Session& session,
-                           SceneUpdateContext& context,
+  void UpdateSceneChildren(SceneUpdateContext& context,
                            mozart::client::ContainerNode& container);
 #endif  // defined(OS_FUCHSIA)
 

@@ -17,7 +17,7 @@ void SceneUpdateContext::CurrentPaintTask::Clear() {
   layers.clear();
 }
 
-SceneUpdateContext::SceneUpdateContext(mozart::client::Session& session,
+SceneUpdateContext::SceneUpdateContext(mozart::client::Session* session,
                                        SurfaceProducer* surface_producer)
     : session_(session), surface_producer_(surface_producer) {}
 
@@ -29,7 +29,6 @@ void SceneUpdateContext::AddLayerToCurrentPaintTask(Layer* layer) {
 }
 
 void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
-    mozart::client::Session& session,
     mozart::client::ContainerNode& container,
     const SkMatrix& ctm) {
   if (current_paint_task_.layers.empty()) {
@@ -54,7 +53,7 @@ void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
   uint32_t session_image_id = 0;
   mx::event acquire, release;
   auto surface = surface_producer_->ProduceSurface(
-      physical_size, &session, session_image_id, acquire, release);
+      physical_size, session_, session_image_id, acquire, release);
 
   // TODO(chinmaygarde): Check that the acquire and release events are valid.
   if (!surface || session_image_id == 0 /* || !acquire || !release */) {
@@ -81,17 +80,17 @@ void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
   task.layers = std::move(current_paint_task_.layers);
 
   // Enqueue session ops for the node with the surface as the texture.
-  mozart::client::ShapeNode node(&session_);
+  mozart::client::ShapeNode node(session_);
 
   // The node has a rectangular shape.
-  mozart::client::Rectangle rectangle(&session_,              //
+  mozart::client::Rectangle rectangle(session_,               //
                                       physical_size.width(),  //
                                       physical_size.height()  //
                                       );
   node.SetShape(rectangle);
   // The rectangular shape is filled in with a texture that is the content
   // that are rendered into the surface that we just setup.
-  mozart::client::Material texture_material(&session_);
+  mozart::client::Material texture_material(session_);
   texture_material.SetTexture(session_image_id);
   texture_material.SetColor(255, 255, 255, 255);
   node.SetMaterial(texture_material);

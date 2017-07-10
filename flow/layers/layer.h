@@ -78,8 +78,7 @@ class Layer {
   virtual void Paint(PaintContext& context) = 0;
 
 #if defined(OS_FUCHSIA)
-  virtual void UpdateScene(mozart::client::Session& session,
-                           SceneUpdateContext& context,
+  virtual void UpdateScene(SceneUpdateContext& context,
                            mozart::client::ContainerNode& container);
 #endif
 

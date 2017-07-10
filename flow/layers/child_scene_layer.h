@@ -32,8 +32,7 @@ class ChildSceneLayer : public Layer {
 
   void Paint(PaintContext& context) override;
 
-  void UpdateScene(mozart::client::Session& session,
-                   SceneUpdateContext& context,
+  void UpdateScene(SceneUpdateContext& context,
                    mozart::client::ContainerNode& container) override;
 
  private:
