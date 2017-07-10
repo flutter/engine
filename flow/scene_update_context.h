@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_MOZART_SCENE_UPDATE_CONTEXT_H_
-#define FLUTTER_FLOW_MOZART_SCENE_UPDATE_CONTEXT_H_
+#ifndef FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
+#define FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_
 
 #include <memory>
 #include <vector>
@@ -17,18 +17,9 @@
 
 #if defined(OS_FUCHSIA)
 
-#include "apps/mozart/lib/scene/client/resources.h"           // nogncheck
-#include "apps/mozart/services/composition/nodes.fidl.h"      // nogncheck
-#include "apps/mozart/services/composition/resources.fidl.h"  // nogncheck
-#include "apps/mozart/services/images/image.fidl.h"           // nogncheck
+#include "apps/mozart/lib/scene/client/resources.h"  // nogncheck
 
 #endif  // defined(OS_FUCHSIA)
-
-namespace mozart {
-class BufferProducer;
-class Node;
-class SceneUpdate;
-}  // namespace mozart
 
 namespace flow {
 class Layer;
@@ -93,4 +84,4 @@ class SceneUpdateContext {
 
 }  // namespace flow
 
-#endif  // FLUTTER_FLOW_MOZART_SCENE_UPDATE_CONTEXT_H_
+#endif  // FLUTTER_FLOW_SCENE_UPDATE_CONTEXT_H_

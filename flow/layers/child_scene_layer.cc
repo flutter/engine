@@ -4,9 +4,6 @@
 
 #include "flutter/flow/layers/child_scene_layer.h"
 
-#include "apps/mozart/lib/skia/type_converters.h"
-#include "apps/mozart/services/composition/nodes.fidl.h"
-
 namespace flow {
 
 ChildSceneLayer::ChildSceneLayer() = default;

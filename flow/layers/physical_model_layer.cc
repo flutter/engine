@@ -7,13 +7,6 @@
 #include "flutter/flow/paint_utils.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
-#if defined(OS_FUCHSIA)
-
-#include "apps/mozart/lib/skia/type_converters.h"         // nogncheck
-#include "apps/mozart/services/composition/nodes.fidl.h"  // nogncheck
-
-#endif  // defined(OS_FUCHSIA)
-
 namespace flow {
 
 PhysicalModelLayer::PhysicalModelLayer() : rrect_(SkRRect::MakeEmpty()) {}

@@ -4,13 +4,6 @@
 
 #include "flutter/flow/layers/clip_rect_layer.h"
 
-#if defined(OS_FUCHSIA)
-
-#include "apps/mozart/lib/skia/type_converters.h"         // nogncheck
-#include "apps/mozart/services/composition/nodes.fidl.h"  // nogncheck
-
-#endif  // defined(OS_FUCHSIA)
-
 namespace flow {
 
 ClipRectLayer::ClipRectLayer() = default;

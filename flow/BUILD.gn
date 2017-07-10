@@ -68,7 +68,6 @@ source_set("flow") {
 
     deps += [
       "//apps/mozart/lib/scene:client",
-      "//apps/mozart/lib/skia",
       "//apps/mozart/services/scene",
     ]
   }
