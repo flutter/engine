@@ -10,7 +10,6 @@
 
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
-#include "flutter/flow/scene_update_context.h"
 #include "flutter/glue/trace_event.h"
 #include "lib/ftl/build_config.h"
 #include "lib/ftl/logging.h"
@@ -28,6 +27,7 @@
 
 #include "apps/mozart/lib/scene/client/resources.h"  //nogncheck
 #include "apps/mozart/lib/scene/client/session.h"    //nogncheck
+#include "flutter/flow/scene_update_context.h"       //nogncheck
 
 #endif  // defined(OS_FUCHSIA)
 

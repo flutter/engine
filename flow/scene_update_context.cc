@@ -4,8 +4,6 @@
 
 #include "flutter/flow/scene_update_context.h"
 
-#if defined(OS_FUCHSIA)
-
 #include "flutter/flow/layers/layer.h"
 #include "flutter/glue/trace_event.h"
 
@@ -136,5 +134,3 @@ void SceneUpdateContext::ExecutePaintTasks(
 }
 
 }  // namespace flow
-
-#endif  // defined(OS_FUCHSIA)

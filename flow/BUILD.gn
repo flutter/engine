@@ -47,8 +47,6 @@ source_set("flow") {
     "raster_cache.h",
     "raster_cache_key.cc",
     "raster_cache_key.h",
-    "scene_update_context.cc",
-    "scene_update_context.h",
   ]
 
   deps = [
@@ -64,6 +62,8 @@ source_set("flow") {
     sources += [
       "layers/child_scene_layer.cc",
       "layers/child_scene_layer.h",
+      "scene_update_context.cc",
+      "scene_update_context.h",
     ]
 
     deps += [

@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "apps/mozart/lib/scene/client/resources.h"
 #include "flutter/flow/compositor_context.h"
 #include "lib/ftl/build_config.h"
 #include "lib/ftl/logging.h"
@@ -15,18 +16,9 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-#if defined(OS_FUCHSIA)
-
-#include "apps/mozart/lib/scene/client/resources.h"  // nogncheck
-
-#endif  // defined(OS_FUCHSIA)
-
 namespace flow {
+
 class Layer;
-class SceneUpdateContext;
-
-#if defined(OS_FUCHSIA)
-
 using ContainerNode = mozart::client::ContainerTraits<mozart::client::Node>;
 
 class SceneUpdateContext {
@@ -79,8 +71,6 @@ class SceneUpdateContext {
 
   FTL_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };
-
-#endif  // defined(OS_FUCHSIA)
 
 }  // namespace flow
 
