@@ -27,7 +27,7 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void ClipPathLayer::UpdateScene(mozart::client::Session& session,
                                 SceneUpdateContext& context,
-                                ContainerNode& container) {
+                                mozart::client::ContainerNode& container) {
   // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
   //               Treating the shape as a rectangle for now.
   auto rect = clip_path_.getBounds();

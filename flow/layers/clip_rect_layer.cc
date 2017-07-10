@@ -21,7 +21,7 @@ void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void ClipRectLayer::UpdateScene(mozart::client::Session& session,
                                 SceneUpdateContext& context,
-                                ContainerNode& container) {
+                                mozart::client::ContainerNode& container) {
   // TODO(MZ-138): Need to be able to specify an origin.
   mozart::client::Rectangle clip_shape(&session,            // session
                                        clip_rect_.width(),  //  width

@@ -19,7 +19,6 @@
 namespace flow {
 
 class Layer;
-using ContainerNode = mozart::client::ContainerTraits<mozart::client::Node>;
 
 class SceneUpdateContext {
  public:
@@ -40,9 +39,10 @@ class SceneUpdateContext {
 
   void AddLayerToCurrentPaintTask(Layer* layer);
 
-  void FinalizeCurrentPaintTaskIfNeeded(mozart::client::Session& session,
-                                        ContainerNode& container,
-                                        const SkMatrix& ctm);
+  void FinalizeCurrentPaintTaskIfNeeded(
+      mozart::client::Session& session,
+      mozart::client::ContainerNode& container,
+      const SkMatrix& ctm);
 
   void ExecutePaintTasks(CompositorContext::ScopedFrame& frame);
 

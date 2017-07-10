@@ -21,7 +21,7 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void ClipRRectLayer::UpdateScene(mozart::client::Session& session,
                                  SceneUpdateContext& context,
-                                 ContainerNode& container) {
+                                 mozart::client::ContainerNode& container) {
   // TODO(MZ-137): Need to be able to express the radii as vectors.
   // TODO(MZ-138): Need to be able to specify an origin.
   mozart::client::RoundedRectangle clip_shape(

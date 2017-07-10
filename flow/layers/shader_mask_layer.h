@@ -20,9 +20,7 @@ class ShaderMaskLayer : public ContainerLayer {
 
   void set_mask_rect(const SkRect& mask_rect) { mask_rect_ = mask_rect; }
 
-  void set_blend_mode(SkBlendMode blend_mode) {
-    blend_mode_ = blend_mode;
-  }
+  void set_blend_mode(SkBlendMode blend_mode) { blend_mode_ = blend_mode; }
 
  protected:
   void Paint(PaintContext& context) override;

@@ -31,7 +31,7 @@ void PhysicalModelLayer::Preroll(PrerollContext* context,
 
 void PhysicalModelLayer::UpdateScene(mozart::client::Session& session,
                                      SceneUpdateContext& context,
-                                     ContainerNode& container) {
+                                     mozart::client::ContainerNode& container) {
   context.AddLayerToCurrentPaintTask(this);
 
   // TODO(MZ-137): Need to be able to express the radii as vectors.

@@ -31,7 +31,7 @@ void ChildSceneLayer::Paint(PaintContext& context) {
 
 void ChildSceneLayer::UpdateScene(mozart::client::Session& session,
                                   SceneUpdateContext& context,
-                                  ContainerNode& container) {
+                                  mozart::client::ContainerNode& container) {
   // FTL_DCHECK(needs_system_composite());
 
   // auto resource = mozart::Resource::New();

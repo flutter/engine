@@ -22,7 +22,7 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void TransformLayer::UpdateScene(mozart::client::Session& session,
                                  SceneUpdateContext& context,
-                                 ContainerNode& container) {
+                                 mozart::client::ContainerNode& container) {
   mozart::client::EntityNode node(&session);
 
   // TODO(chinmaygarde): The perspective and shear components in the matrix are

@@ -26,7 +26,7 @@ void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 #if defined(OS_FUCHSIA)
 void Layer::UpdateScene(mozart::client::Session& session,
                         SceneUpdateContext& context,
-                        ContainerNode& container) {}
+                        mozart::client::ContainerNode& container) {}
 #endif
 
 Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,

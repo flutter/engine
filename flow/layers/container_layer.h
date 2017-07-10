@@ -25,14 +25,14 @@ class ContainerLayer : public Layer {
 #if defined(OS_FUCHSIA)
   void UpdateScene(mozart::client::Session& session,
                    SceneUpdateContext& context,
-                   ContainerNode& container) override;
+                   mozart::client::ContainerNode& container) override;
   void UpdateSceneChildrenInsideNode(mozart::client::Session& session,
                                      SceneUpdateContext& context,
-                                     ContainerNode& container,
-                                     ContainerNode& node);
+                                     mozart::client::ContainerNode& container,
+                                     mozart::client::ContainerNode& node);
   void UpdateSceneChildren(mozart::client::Session& session,
                            SceneUpdateContext& context,
-                           ContainerNode& container);
+                           mozart::client::ContainerNode& container);
 #endif  // defined(OS_FUCHSIA)
 
   const std::vector<std::unique_ptr<Layer>>& layers() const { return layers_; }

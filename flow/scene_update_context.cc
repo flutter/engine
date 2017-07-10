@@ -30,7 +30,7 @@ void SceneUpdateContext::AddLayerToCurrentPaintTask(Layer* layer) {
 
 void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
     mozart::client::Session& session,
-    ContainerNode& container,
+    mozart::client::ContainerNode& container,
     const SkMatrix& ctm) {
   if (current_paint_task_.layers.empty()) {
     return;

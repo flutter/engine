@@ -40,7 +40,7 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 #if defined(OS_FUCHSIA)
 void LayerTree::UpdateScene(mozart::client::Session& session,
                             SceneUpdateContext& context,
-                            ContainerNode& container) {
+                            mozart::client::ContainerNode& container) {
   TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
 
   if (root_layer_->needs_system_composite()) {

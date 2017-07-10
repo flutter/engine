@@ -36,7 +36,7 @@ class LayerTree {
   // blending operations to child scene).
   void UpdateScene(mozart::client::Session& session,
                    SceneUpdateContext& context,
-                   ContainerNode& container);
+                   mozart::client::ContainerNode& container);
 #endif
 
   void Paint(CompositorContext::ScopedFrame& frame);

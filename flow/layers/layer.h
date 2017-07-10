@@ -80,7 +80,7 @@ class Layer {
 #if defined(OS_FUCHSIA)
   virtual void UpdateScene(mozart::client::Session& session,
                            SceneUpdateContext& context,
-                           ContainerNode& container);
+                           mozart::client::ContainerNode& container);
 #endif
 
   ContainerLayer* parent() const { return parent_; }

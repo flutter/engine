@@ -23,7 +23,7 @@ class ClipRRectLayer : public ContainerLayer {
 #if defined(OS_FUCHSIA)
   void UpdateScene(mozart::client::Session& session,
                    SceneUpdateContext& context,
-                   ContainerNode& container) override;
+                   mozart::client::ContainerNode& container) override;
 #endif  // defined(OS_FUCHSIA)
 
  private:
