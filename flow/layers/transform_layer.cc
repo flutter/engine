@@ -14,6 +14,10 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkMatrix childMatrix;
   childMatrix.setConcat(matrix, transform_);
   PrerollChildren(context, childMatrix);
+
+  if (needs_system_composite())
+    return;
+
   transform_.mapRect(&context->child_paint_bounds);
   set_paint_bounds(context->child_paint_bounds);
 }
@@ -22,6 +26,8 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void TransformLayer::UpdateScene(SceneUpdateContext& context,
                                  mozart::client::ContainerNode& container) {
+  FTL_DCHECK(needs_system_composite());
+
   mozart::client::EntityNode node(context.session());
 
   // TODO(chinmaygarde): The perspective and shear components in the matrix are
@@ -52,6 +58,7 @@ void TransformLayer::UpdateScene(SceneUpdateContext& context,
 void TransformLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "TransformLayer::Paint");
   FTL_DCHECK(!needs_system_composite());
+
   SkAutoCanvasRestore save(&context.canvas, true);
   context.canvas.concat(transform_);
   PaintChildren(context);

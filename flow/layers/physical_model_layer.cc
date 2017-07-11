@@ -16,15 +16,14 @@ PhysicalModelLayer::~PhysicalModelLayer() = default;
 void PhysicalModelLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
   PrerollChildren(context, matrix);
+  if (needs_system_composite())
+    return;
 
+  // Add some margin to the paint bounds to leave space for the shadow.
+  // The margin is hardcoded to an arbitrary maximum for now because Skia
+  // doesn't provide a way to calculate it.
   SkRect bounds(rrect_.getBounds());
-  if (!needs_system_composite()) {
-    // Add some margin to the paint bounds to leave space for the shadow.
-    // The margin is hardcoded to an arbitrary maximum for now because Skia
-    // doesn't provide a way to calculate it.
-    bounds.outset(20.0, 20.0);
-  }
-
+  bounds.outset(20.0, 20.0);
   set_paint_bounds(bounds);
   context->child_paint_bounds = bounds;
 }
@@ -33,7 +32,7 @@ void PhysicalModelLayer::Preroll(PrerollContext* context,
 
 void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context,
                                      mozart::client::ContainerNode& container) {
-  context.AddLayerToCurrentPaintTask(this);
+  FTL_DCHECK(needs_system_composite());
 
   // TODO(MZ-137): Need to be able to express the radii as vectors.
   // TODO(MZ-138): Need to be able to specify an origin.
@@ -61,9 +60,7 @@ void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context,
 
 void PhysicalModelLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "PhysicalModelLayer::Paint");
-
-  if (needs_system_composite())
-    return;
+  FTL_DCHECK(!needs_system_composite());
 
   SkPath path;
   path.addRRect(rrect_);

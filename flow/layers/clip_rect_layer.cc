@@ -12,6 +12,9 @@ ClipRectLayer::~ClipRectLayer() = default;
 
 void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   PrerollChildren(context, matrix);
+  if (needs_system_composite())
+    return;
+
   if (!context->child_paint_bounds.intersect(clip_rect_))
     context->child_paint_bounds.setEmpty();
   set_paint_bounds(context->child_paint_bounds);
@@ -21,6 +24,8 @@ void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void ClipRectLayer::UpdateScene(SceneUpdateContext& context,
                                 mozart::client::ContainerNode& container) {
+  FTL_DCHECK(needs_system_composite());
+
   // TODO(MZ-138): Need to be able to specify an origin.
   mozart::client::Rectangle clip_shape(context.session(),   // session
                                        clip_rect_.width(),  //  width

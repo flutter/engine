@@ -12,6 +12,9 @@ ClipRRectLayer::~ClipRRectLayer() = default;
 
 void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   PrerollChildren(context, matrix);
+  if (needs_system_composite())
+    return;
+
   if (!context->child_paint_bounds.intersect(clip_rrect_.getBounds()))
     context->child_paint_bounds.setEmpty();
   set_paint_bounds(context->child_paint_bounds);
@@ -21,6 +24,8 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void ClipRRectLayer::UpdateScene(SceneUpdateContext& context,
                                  mozart::client::ContainerNode& container) {
+  FTL_DCHECK(needs_system_composite());
+
   // TODO(MZ-137): Need to be able to express the radii as vectors.
   // TODO(MZ-138): Need to be able to specify an origin.
   mozart::client::RoundedRectangle clip_shape(

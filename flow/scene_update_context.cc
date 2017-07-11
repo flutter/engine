@@ -24,6 +24,8 @@ SceneUpdateContext::SceneUpdateContext(mozart::client::Session* session,
 SceneUpdateContext::~SceneUpdateContext() = default;
 
 void SceneUpdateContext::AddLayerToCurrentPaintTask(Layer* layer) {
+  FTL_DCHECK(!layer->needs_system_composite());
+
   current_paint_task_.bounds.join(layer->paint_bounds());
   current_paint_task_.layers.push_back(layer);
 }

@@ -18,6 +18,9 @@ ClipPathLayer::~ClipPathLayer() = default;
 
 void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   PrerollChildren(context, matrix);
+  if (needs_system_composite())
+    return;
+
   if (!context->child_paint_bounds.intersect(clip_path_.getBounds()))
     context->child_paint_bounds.setEmpty();
   set_paint_bounds(context->child_paint_bounds);
@@ -27,6 +30,8 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
 void ClipPathLayer::UpdateScene(SceneUpdateContext& context,
                                 mozart::client::ContainerNode& container) {
+  FTL_DCHECK(needs_system_composite());
+
   // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
   //               Treating the shape as a rectangle for now.
   auto rect = clip_path_.getBounds();

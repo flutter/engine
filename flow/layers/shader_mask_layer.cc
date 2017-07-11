@@ -12,6 +12,8 @@ ShaderMaskLayer::~ShaderMaskLayer() = default;
 
 void ShaderMaskLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
+  FTL_DCHECK(!needs_system_composite());
+
   Layer::AutoSaveLayer(context, paint_bounds(), nullptr);
   PaintChildren(context);
 

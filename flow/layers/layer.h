@@ -91,7 +91,9 @@ class Layer {
     needs_system_composite_ = value;
   }
 
-  // subclasses should assume this will be true by the time Paint() is called
+  // Subclasses should assume this will be true by the time Paint() is called.
+  // However, UpdateScene() should not consult this field because it is
+  // not meaningful for system compositing.
   bool has_paint_bounds() const { return has_paint_bounds_; }
 
   const SkRect& paint_bounds() const {
@@ -99,6 +101,7 @@ class Layer {
     return paint_bounds_;
   }
 
+  // This should be set by Preroll() when needs_system_composite() is false.
   void set_paint_bounds(const SkRect& paint_bounds) {
     has_paint_bounds_ = true;
     paint_bounds_ = paint_bounds;

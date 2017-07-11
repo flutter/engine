@@ -57,7 +57,9 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame) {
                                  frame.context().memory_usage(),
                                  checkerboard_offscreen_layers_};
   TRACE_EVENT0("flutter", "LayerTree::Paint");
-  root_layer_->Paint(context);
+
+  if (!root_layer_->needs_system_composite())
+    root_layer_->Paint(context);
 }
 
 }  // namespace flow
