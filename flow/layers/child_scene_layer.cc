@@ -36,7 +36,8 @@ void ChildSceneLayer::UpdateScene(SceneUpdateContext& context,
   // In some situations, it might be useful to allow children to draw
   // outside of their layout bounds.
   if (export_node_) {
-    export_node_->Bind(context, container, offset_, 1.f / device_pixel_ratio_);
+    export_node_->Bind(context, container, offset_, 1.f / device_pixel_ratio_,
+                       hit_testable_);
   }
 }
 

@@ -17,7 +17,8 @@ ExportNode::~ExportNode() {
 void ExportNode::Bind(SceneUpdateContext& context,
                       mozart::client::ContainerNode& container,
                       const SkPoint& offset,
-                      float scale) {
+                      float scale,
+                      bool hit_testable) {
   ftl::MutexLocker lock(&mutex_);
 
   if (export_token_) {
@@ -30,6 +31,9 @@ void ExportNode::Bind(SceneUpdateContext& context,
     node_->SetTranslation(offset.x(), offset.y(),
                           10.f);  // FIXME: don't translate in Z
     node_->SetScale(scale, scale, 1.f);
+    node_->SetHitTestBehavior(hit_testable
+                                  ? mozart2::HitTestBehavior::kDefault
+                                  : mozart2::HitTestBehavior::kSuppress);
   }
 }
 
