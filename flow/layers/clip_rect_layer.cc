@@ -31,7 +31,7 @@ void ClipRectLayer::UpdateScene(SceneUpdateContext& context,
 
   mozart::client::EntityNode node(context.session());
   node.AddPart(shape_node);
-  node.SetClip(shape_node.id(), true /* clip to self */);
+  node.SetClip(0u, true /* clip to self */);
 
   UpdateSceneChildrenInsideNode(context, container, node);
 }

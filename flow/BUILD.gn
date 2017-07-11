@@ -60,6 +60,8 @@ source_set("flow") {
 
   if (is_fuchsia) {
     sources += [
+      "export_node.cc",
+      "export_node.h",
       "layers/child_scene_layer.cc",
       "layers/child_scene_layer.h",
       "scene_update_context.cc",
@@ -69,6 +71,10 @@ source_set("flow") {
     deps += [
       "//apps/mozart/lib/scene:client",
       "//apps/mozart/services/scene",
+    ]
+
+    public_deps = [
+      "//magenta/system/ulib/mx",
     ]
   }
 }

@@ -83,23 +83,21 @@ void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
   mozart::client::ShapeNode node(session_);
 
   // The node has a rectangular shape.
-  mozart::client::Rectangle rectangle(session_,               //
-                                      physical_size.width(),  //
-                                      physical_size.height()  //
+  mozart::client::Rectangle rectangle(session_,        //
+                                      bounds.width(),  //
+                                      bounds.height()  //
                                       );
   node.SetShape(rectangle);
+
   // The rectangular shape is filled in with a texture that is the content
   // that are rendered into the surface that we just setup.
   mozart::client::Material texture_material(session_);
   texture_material.SetTexture(session_image_id);
-  texture_material.SetColor(255, 255, 255, 255);
   node.SetMaterial(texture_material);
-  const float translation[3] = {
-      (physical_size.width() / 2.0f) + task.left,  //
-      (physical_size.height() / 2.0f) + task.top,  //
-      0.0f                                         //
-  };
-  node.SetTranslation(translation);
+  node.SetTranslation(bounds.width() * 0.5f + bounds.left(),  //
+                      bounds.height() * 0.5f + bounds.top(),  //
+                      0.0f                                    //
+                      );
 
   // Add the node as a child of the container.
   container.AddChild(node);

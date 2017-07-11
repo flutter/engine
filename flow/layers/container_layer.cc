@@ -56,24 +56,22 @@ void ContainerLayer::UpdateScene(SceneUpdateContext& context,
 }
 
 void ContainerLayer::UpdateSceneChildrenInsideNode(
-
     SceneUpdateContext& context,
     mozart::client::ContainerNode& container,
     mozart::client::ContainerNode& node) {
   FTL_DCHECK(needs_system_composite());
   UpdateSceneChildren(context, node);
-  context.FinalizeCurrentPaintTaskIfNeeded(node, ctm());
+  context.FinalizeCurrentPaintTaskIfNeeded(node, ctm_);
   container.AddChild(node);
 }
 
 void ContainerLayer::UpdateSceneChildren(
-
     SceneUpdateContext& context,
     mozart::client::ContainerNode& container) {
   FTL_DCHECK(needs_system_composite());
   for (auto& layer : layers_) {
     if (layer->needs_system_composite()) {
-      context.FinalizeCurrentPaintTaskIfNeeded(container, ctm());
+      context.FinalizeCurrentPaintTaskIfNeeded(container, ctm_);
       layer->UpdateScene(context, container);
     } else {
       context.AddLayerToCurrentPaintTask(layer.get());

@@ -29,25 +29,19 @@ void TransformLayer::UpdateScene(SceneUpdateContext& context,
   MatrixDecomposition decomposition(transform_);
 
   if (decomposition.IsValid()) {
-    const float translation[3] = {
-        decomposition.translation().x(),  //
-        decomposition.translation().y(),  //
-        decomposition.translation().z(),  //
-    };
-    node.SetTranslation(translation);
-    const float scale[3] = {
-        decomposition.scale().x(),  //
-        decomposition.scale().y(),  //
-        decomposition.scale().z(),  //
-    };
-    node.SetScale(scale);
-    const float rotation[4] = {
-        decomposition.rotation().fData[0],  //
-        decomposition.rotation().fData[1],  //
-        decomposition.rotation().fData[2],  //
-        decomposition.rotation().fData[3],  //
-    };
-    node.SetRotation(rotation);
+    node.SetTranslation(decomposition.translation().x(),  //
+                        decomposition.translation().y(),  //
+                        decomposition.translation().z()   //
+                        );
+    node.SetScale(decomposition.scale().x(),  //
+                  decomposition.scale().y(),  //
+                  decomposition.scale().z()   //
+                  );
+    node.SetRotation(decomposition.rotation().fData[0],  //
+                     decomposition.rotation().fData[1],  //
+                     decomposition.rotation().fData[2],  //
+                     decomposition.rotation().fData[3]   //
+                     );
   }
 
   UpdateSceneChildrenInsideNode(context, container, node);

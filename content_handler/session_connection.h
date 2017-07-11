@@ -8,6 +8,7 @@
 #include "apps/mozart/lib/scene/client/resources.h"
 #include "apps/mozart/lib/scene/client/session.h"
 #include "flutter/common/threads.h"
+#include "flutter/flow/scene_update_context.h"
 #include "lib/fidl/cpp/bindings/interface_handle.h"
 #include "lib/ftl/macros.h"
 #include "magenta/system/ulib/mx/include/mx/eventpair.h"
@@ -16,10 +17,16 @@ namespace flutter_runner {
 
 class SessionConnection {
  public:
-  SessionConnection(fidl::InterfaceHandle<mozart2::Session> session_handle,
-                    mx::eventpair import_token);
+  SessionConnection(
+      fidl::InterfaceHandle<mozart2::Session> session_handle,
+      mx::eventpair import_token,
+      flow::SceneUpdateContext::SurfaceProducer* surface_producer);
 
   ~SessionConnection();
+
+  flow::SceneUpdateContext& scene_update_context() {
+    return scene_update_context_;
+  }
 
   mozart::client::ImportNode& root_node() {
     ASSERT_IS_GPU_THREAD;
@@ -38,6 +45,8 @@ class SessionConnection {
   mozart::client::ImportNode root_node_;
   mozart::client::Session::PresentCallback present_callback_;
   ftl::Closure pending_on_present_callback_;
+
+  flow::SceneUpdateContext scene_update_context_;
 
   void OnSessionError();
 

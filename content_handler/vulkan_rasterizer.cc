@@ -76,8 +76,10 @@ bool VulkanRasterizer::IsValid() const {
 void VulkanRasterizer::SetSession(
     fidl::InterfaceHandle<mozart2::Session> session,
     mx::eventpair import_token) {
+  FTL_DCHECK(!session_connection_);
+
   session_connection_ = std::make_unique<SessionConnection>(
-      std::move(session), std::move(import_token));
+      std::move(session), std::move(import_token), surface_producer_.get());
 }
 
 void VulkanRasterizer::Draw(std::unique_ptr<flow::LayerTree> layer_tree,
@@ -107,15 +109,11 @@ void VulkanRasterizer::Draw(std::unique_ptr<flow::LayerTree> layer_tree,
     layer_tree->Preroll(frame);
   }
 
-  // TODO: Move this into the session connection.
-  flow::SceneUpdateContext scene_update_context(session_connection_->session(),
-                                                surface_producer_.get());
-
   {
     // Traverse the Flutter layer tree so that the necessary session ops to
     // represent the frame are enqueued in the underlying session.
     TRACE_EVENT0("flutter", "UpdateScene");
-    layer_tree->UpdateScene(scene_update_context,
+    layer_tree->UpdateScene(session_connection_->scene_update_context(),
                             session_connection_->root_node());
   }
 
@@ -123,7 +121,7 @@ void VulkanRasterizer::Draw(std::unique_ptr<flow::LayerTree> layer_tree,
     // Draw the contents of the scene to a surface.
     // We do this after publishing to take advantage of pipelining.
     TRACE_EVENT0("flutter", "ExecutePaintTasks");
-    scene_update_context.ExecutePaintTasks(frame);
+    session_connection_->scene_update_context().ExecutePaintTasks(frame);
   }
 
   {

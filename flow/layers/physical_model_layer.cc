@@ -17,13 +17,15 @@ void PhysicalModelLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
   PrerollChildren(context, matrix);
 
-  // Add some margin to the paint bounds to leave space for the shadow.
-  // The margin is hardcoded to an arbitrary maximum for now because Skia
-  // doesn't provide a way to calculate it.
   SkRect bounds(rrect_.getBounds());
-  bounds.outset(20.0, 20.0);
-  set_paint_bounds(bounds);
+  if (!needs_system_composite()) {
+    // Add some margin to the paint bounds to leave space for the shadow.
+    // The margin is hardcoded to an arbitrary maximum for now because Skia
+    // doesn't provide a way to calculate it.
+    bounds.outset(20.0, 20.0);
+  }
 
+  set_paint_bounds(bounds);
   context->child_paint_bounds = bounds;
 }
 
@@ -50,7 +52,7 @@ void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context,
 
   mozart::client::EntityNode node(context.session());
   node.AddPart(shape_node);
-  node.SetClip(shape_node.id(), true /* clip to self */);
+  node.SetClip(0u, true /* clip to self */);
 
   UpdateSceneChildrenInsideNode(context, container, node);
 }
@@ -60,6 +62,9 @@ void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context,
 void PhysicalModelLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "PhysicalModelLayer::Paint");
 
+  if (needs_system_composite())
+    return;
+
   SkPath path;
   path.addRRect(rrect_);
 
@@ -67,9 +72,6 @@ void PhysicalModelLayer::Paint(PaintContext& context) {
     DrawShadow(&context.canvas, path, SK_ColorBLACK, elevation_,
                SkColorGetA(color_) != 0xff);
   }
-
-  if (needs_system_composite())
-    return;
 
   SkPaint paint;
   paint.setColor(color_);
