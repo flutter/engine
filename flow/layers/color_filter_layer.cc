@@ -6,9 +6,9 @@
 
 namespace flow {
 
-ColorFilterLayer::ColorFilterLayer() {}
+ColorFilterLayer::ColorFilterLayer() = default;
 
-ColorFilterLayer::~ColorFilterLayer() {}
+ColorFilterLayer::~ColorFilterLayer() = default;
 
 void ColorFilterLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");

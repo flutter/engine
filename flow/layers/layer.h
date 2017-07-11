@@ -10,7 +10,6 @@
 
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
-#include "flutter/flow/scene_update_context.h"
 #include "flutter/glue/trace_event.h"
 #include "lib/ftl/build_config.h"
 #include "lib/ftl/logging.h"
@@ -24,7 +23,16 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 
+#if defined(OS_FUCHSIA)
+
+#include "apps/mozart/lib/scene/client/resources.h"  //nogncheck
+#include "apps/mozart/lib/scene/client/session.h"    //nogncheck
+#include "flutter/flow/scene_update_context.h"       //nogncheck
+
+#endif  // defined(OS_FUCHSIA)
+
 namespace flow {
+
 class ContainerLayer;
 
 class Layer {
@@ -71,7 +79,7 @@ class Layer {
 
 #if defined(OS_FUCHSIA)
   virtual void UpdateScene(SceneUpdateContext& context,
-                           mozart::Node* container);
+                           mozart::client::ContainerNode& container);
 #endif
 
   ContainerLayer* parent() const { return parent_; }

@@ -18,8 +18,11 @@ class PhysicalModelLayer : public ContainerLayer {
   void set_elevation(double elevation) { elevation_ = elevation; }
   void set_color(SkColor color) { color_ = color; }
 
-  static void DrawShadow(SkCanvas* canvas, const SkPath& path,
-                         SkColor color, double elevation, bool transparentOccluder);
+  static void DrawShadow(SkCanvas* canvas,
+                         const SkPath& path,
+                         SkColor color,
+                         double elevation,
+                         bool transparentOccluder);
 
  protected:
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
@@ -27,7 +30,7 @@ class PhysicalModelLayer : public ContainerLayer {
 
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context,
-                   mozart::Node* container) override;
+                   mozart::client::ContainerNode& container) override;
 #endif  // defined(OS_FUCHSIA)
 
  private:

@@ -5,15 +5,16 @@
 #include "flutter/flow/layers/clip_path_layer.h"
 
 #if defined(OS_FUCHSIA)
-#include "apps/mozart/lib/skia/type_converters.h" // nogncheck
-#include "apps/mozart/services/composition/nodes.fidl.h" // nogncheck
+
+#include "apps/mozart/lib/scene/session_helpers.h"  // nogncheck
+
 #endif  // defined(OS_FUCHSIA)
 
 namespace flow {
 
-ClipPathLayer::ClipPathLayer() {}
+ClipPathLayer::ClipPathLayer() = default;
 
-ClipPathLayer::~ClipPathLayer() {}
+ClipPathLayer::~ClipPathLayer() = default;
 
 void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   PrerollChildren(context, matrix);
@@ -25,10 +26,23 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 #if defined(OS_FUCHSIA)
 
 void ClipPathLayer::UpdateScene(SceneUpdateContext& context,
-                                mozart::Node* container) {
-  auto node = mozart::Node::New();
-  node->content_clip = mozart::RectF::From(clip_path_.getBounds());
-  UpdateSceneChildrenInsideNode(context, container, std::move(node));
+                                mozart::client::ContainerNode& container) {
+  // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
+  //               Treating the shape as a rectangle for now.
+  auto rect = clip_path_.getBounds();
+  // TODO(MZ-138): Need to be able to specify an origin.
+  mozart::client::Rectangle clip_shape(context.session(),  // session
+                                       rect.width(),       //  width
+                                       rect.height()       //  height
+                                       );
+  mozart::client::ShapeNode shape_node(context.session());
+  shape_node.SetShape(clip_shape);
+
+  mozart::client::EntityNode node(context.session());
+  node.AddPart(shape_node);
+  node.SetClip(0u, true /* clip to self */);
+
+  UpdateSceneChildrenInsideNode(context, container, node);
 }
 
 #endif  // defined(OS_FUCHSIA)

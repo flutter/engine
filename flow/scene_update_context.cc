@@ -4,11 +4,6 @@
 
 #include "flutter/flow/scene_update_context.h"
 
-#if defined(OS_FUCHSIA)
-
-#include "apps/mozart/lib/skia/skia_vmo_surface.h" // nogncheck
-#include "apps/mozart/lib/skia/type_converters.h" // nogncheck
-#include "apps/mozart/services/composition/scenes.fidl.h" // nogncheck
 #include "flutter/flow/layers/layer.h"
 #include "flutter/glue/trace_event.h"
 
@@ -22,9 +17,9 @@ void SceneUpdateContext::CurrentPaintTask::Clear() {
   layers.clear();
 }
 
-SceneUpdateContext::SceneUpdateContext(mozart::SceneUpdate* update,
+SceneUpdateContext::SceneUpdateContext(mozart::client::Session* session,
                                        SurfaceProducer* surface_producer)
-    : update_(update), surface_producer_(surface_producer) {}
+    : session_(session), surface_producer_(surface_producer) {}
 
 SceneUpdateContext::~SceneUpdateContext() = default;
 
@@ -34,16 +29,11 @@ void SceneUpdateContext::AddLayerToCurrentPaintTask(Layer* layer) {
 }
 
 void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
-    mozart::Node* container,
+    mozart::client::ContainerNode& container,
     const SkMatrix& ctm) {
-  if (mozart::NodePtr node = FinalizeCurrentPaintTask(ctm))
-    AddChildNode(container, std::move(node));
-}
-
-mozart::NodePtr SceneUpdateContext::FinalizeCurrentPaintTask(
-    const SkMatrix& ctm) {
-  if (current_paint_task_.layers.empty())
-    return nullptr;
+  if (current_paint_task_.layers.empty()) {
+    return;
+  }
 
   const SkRect& bounds = current_paint_task_.bounds;
 
@@ -55,49 +45,66 @@ mozart::NodePtr SceneUpdateContext::FinalizeCurrentPaintTask(
 
   if (physical_size.isEmpty()) {
     current_paint_task_.Clear();
-    return nullptr;
+    return;
   }
 
-  mozart::ImagePtr image;
+  // Acquire a surface from the surface producer and register the paint tasks.
+
+  uint32_t session_image_id = 0;
+  mx::event acquire, release;
+  auto surface = surface_producer_->ProduceSurface(
+      physical_size, session_, session_image_id, acquire, release);
+
+  // TODO(chinmaygarde): Check that the acquire and release events are valid.
+  if (!surface || session_image_id == 0 /* || !acquire || !release */) {
+    FTL_LOG(ERROR) << "Could not acquire a surface from the surface producer "
+                      "of size: "
+                   << physical_size.width() << "x" << physical_size.height()
+                   << " Surface: " << static_cast<bool>(surface) << ", "
+                   << "Session Image: " << session_image_id << ", "
+                   << "Acquire Fence: " << static_cast<bool>(acquire) << ", "
+                   << "Release Fence: " << static_cast<bool>(release);
+    return;
+  }
+
+  // Enqueue the acquire and release fences.
+  // session_.EnqueueAcquireFence(std::move(acquire));
+  // session_.EnqueueReleaseFence(std::move(release));
+
   PaintTask task;
-  task.surface = surface_producer_->ProduceSurface(physical_size, &image);
+  task.surface = surface;
   task.left = bounds.left();
   task.top = bounds.top();
   task.scaleX = scaleX;
   task.scaleY = scaleY;
   task.layers = std::move(current_paint_task_.layers);
 
-  FTL_DCHECK(task.surface) << "Failed to create surface size="
-                           << physical_size.width() << "x"
-                           << physical_size.height();
+  // Enqueue session ops for the node with the surface as the texture.
+  mozart::client::ShapeNode node(session_);
 
+  // The node has a rectangular shape.
+  mozart::client::Rectangle rectangle(session_,        //
+                                      bounds.width(),  //
+                                      bounds.height()  //
+                                      );
+  node.SetShape(rectangle);
+
+  // The rectangular shape is filled in with a texture that is the content
+  // that are rendered into the surface that we just setup.
+  mozart::client::Material texture_material(session_);
+  texture_material.SetTexture(session_image_id);
+  node.SetMaterial(texture_material);
+  node.SetTranslation(bounds.width() * 0.5f + bounds.left(),  //
+                      bounds.height() * 0.5f + bounds.top(),  //
+                      0.0f                                    //
+                      );
+
+  // Add the node as a child of the container.
+  container.AddChild(node);
+
+  // Ensure that the paint task is registered. We will execute these tasks as
+  // the session ops are being flushed.
   paint_tasks_.push_back(task);
-
-  auto resource = mozart::Resource::New();
-  resource->set_image(mozart::ImageResource::New());
-  resource->get_image()->image = std::move(image);
-
-  auto node = mozart::Node::New();
-  node->op = mozart::NodeOp::New();
-  node->op->set_image(mozart::ImageNodeOp::New());
-  node->op->get_image()->content_rect = mozart::RectF::From(bounds);
-  node->op->get_image()->image_resource_id = AddResource(std::move(resource));
-
-  current_paint_task_.Clear();
-  return node;
-}
-
-uint32_t SceneUpdateContext::AddResource(mozart::ResourcePtr resource) {
-  uint32_t resource_id = next_resource_id_++;
-  update_->resources.insert(resource_id, std::move(resource));
-  return resource_id;
-}
-
-void SceneUpdateContext::AddChildNode(mozart::Node* container,
-                                      mozart::NodePtr child) {
-  uint32_t node_id = next_node_id_++;
-  update_->nodes.insert(node_id, std::move(child));
-  container->child_node_ids.push_back(node_id);
 }
 
 void SceneUpdateContext::ExecutePaintTasks(
@@ -109,14 +116,14 @@ void SceneUpdateContext::ExecutePaintTasks(
     SkCanvas* canvas = task.surface->getCanvas();
     Layer::PaintContext context = {*canvas, frame.context().frame_time(),
                                    frame.context().engine_time(),
-                                   frame.context().memory_usage(),
-                                   false};
+                                   frame.context().memory_usage(), false};
 
     canvas->clear(SK_ColorTRANSPARENT);
     canvas->scale(task.scaleX, task.scaleY);
     canvas->translate(-task.left, -task.top);
-    for (Layer* layer : task.layers)
+    for (Layer* layer : task.layers) {
       layer->Paint(context);
+    }
     canvas->flush();
   }
 
@@ -124,5 +131,3 @@ void SceneUpdateContext::ExecutePaintTasks(
 }
 
 }  // namespace flow
-
-#endif  // defined(OS_FUCHSIA)
