@@ -31,6 +31,8 @@ class PlatformViewMac : public PlatformView, public GPUSurfaceGLDelegate {
 
   intptr_t GLContextFBO() const override;
 
+  sk_sp<SkColorSpace> ColorSpace() const override { return color_space_; }
+
   VsyncWaiter* GetVsyncWaiter() override;
 
   bool ResourceContextMakeCurrent() override;
@@ -42,6 +44,7 @@ class PlatformViewMac : public PlatformView, public GPUSurfaceGLDelegate {
  private:
   fml::scoped_nsobject<NSOpenGLView> opengl_view_;
   fml::scoped_nsobject<NSOpenGLContext> resource_loading_context_;
+  sk_sp<SkColorSpace> color_space_;
 
   bool IsValid() const;
 

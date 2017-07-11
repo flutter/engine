@@ -127,7 +127,7 @@ VulkanRasterizer::VulkanSurfaceProducer::CreateSurface(uint32_t width,
   GrBackendRenderTargetDesc desc;
   desc.fWidth = width;
   desc.fHeight = height;
-  desc.fConfig = kSBGRA_8888_GrPixelConfig;
+  desc.fConfig = kSRGBA_8888_GrPixelConfig;
   desc.fOrigin = kTopLeft_GrSurfaceOrigin;
   desc.fSampleCnt = 0;
   desc.fStencilBits = 0;
@@ -136,8 +136,8 @@ VulkanRasterizer::VulkanSurfaceProducer::CreateSurface(uint32_t width,
 
   SkSurfaceProps props(SkSurfaceProps::InitType::kLegacyFontHost_InitType);
 
-  auto sk_surface = SkSurface::MakeFromBackendRenderTarget(context_.get(), desc,
-                                                           nullptr, &props);
+  auto sk_surface = SkSurface::MakeFromBackendRenderTarget(
+      context_.get(), desc, SkColorSpace::MakeSRGB(), &props);
   if (!sk_surface) {
     FTL_LOG(ERROR) << "MakeFromBackendRenderTarget Failed";
     return nullptr;

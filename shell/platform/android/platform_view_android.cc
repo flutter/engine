@@ -567,7 +567,8 @@ void PlatformViewAndroid::GetBitmapGpuTask(jobject* pixels_out,
 
   SkImageInfo image_info =
       SkImageInfo::Make(frame_size.width(), frame_size.height(),
-                        kRGBA_8888_SkColorType, kPremul_SkAlphaType);
+                        kRGBA_8888_SkColorType, kPremul_SkAlphaType,
+                        SkColorSpace::MakeSRGB());
 
   sk_sp<SkSurface> surface = SkSurface::MakeRasterDirect(
       image_info, pixels, frame_size.width() * sizeof(jint));
