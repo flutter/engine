@@ -15,6 +15,12 @@ PhysicalModelLayer::~PhysicalModelLayer() = default;
 
 void PhysicalModelLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
+#if defined(OS_FUCHSIA)
+  // Let the system compositor draw all shadows for us.
+  if (elevation_ != 0)
+    set_needs_system_composite(true);
+#endif  // defined(OS_FUCHSIA)
+
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
 
@@ -34,13 +40,9 @@ void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context,
                                      mozart::client::ContainerNode& container) {
   FTL_DCHECK(needs_system_composite());
 
-  mozart::client::Material background(context.session());
-  background.SetColor(SkColorGetR(color_), SkColorGetG(color_),
-                      SkColorGetB(color_), SkColorGetA(color_));
-
   // TODO(MZ-137): Need to be able to express the radii as vectors.
   // TODO(MZ-138): Need to be able to specify an origin.
-  mozart::client::RoundedRectangle clip_shape(
+  mozart::client::RoundedRectangle layer_shape(
       context.session(),                              // session
       rrect_.width(),                                 //  width
       rrect_.height(),                                //  height
@@ -49,21 +51,23 @@ void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context,
       rrect_.radii(SkRRect::kLowerRight_Corner).x(),  //  bottom_right_radius
       rrect_.radii(SkRRect::kLowerLeft_Corner).x()    //  bottom_left_radius
       );
+  mozart::client::Material layer_material(context.session());
+  mozart::client::ShapeNode layer_shape_node(context.session());
+  layer_shape_node.SetShape(layer_shape);
+  layer_shape_node.SetMaterial(layer_material);
+  layer_shape_node.SetTranslation(
+      rrect_.width() * 0.5f + rrect_.getBounds().left(),
+      rrect_.height() * 0.5f + rrect_.getBounds().top(), 0.f);
 
-  mozart::client::ShapeNode shape_node(context.session());
-  shape_node.SetShape(clip_shape);
-  shape_node.SetMaterial(background);
-  shape_node.SetTranslation(rrect_.width() * 0.5f + rrect_.getBounds().left(),
-                            rrect_.height() * 0.5f + rrect_.getBounds().top(),
-                            0.f);
+  mozart::client::EntityNode layer_entity_node(context.session());
+  layer_entity_node.AddPart(layer_shape_node);
+  layer_entity_node.SetClip(0u, true /* clip to self */);
+  layer_entity_node.SetTranslation(0.f, 0.f, elevation_);
+  container.AddChild(layer_entity_node);
 
-  mozart::client::EntityNode node(context.session());
-  node.AddPart(shape_node);
-  node.SetClip(0u, true /* clip to self */);
-  node.SetTranslation(0.f, 0.f, elevation_);
-  container.AddChild(node);
-
-  UpdateSceneChildren(context, node);
+  context.PushPhysicalModel(rrect_.getBounds(), color_);
+  UpdateSceneChildren(context, layer_entity_node);
+  context.PopPhysicalModel(layer_material);
 }
 
 #endif  // defined(OS_FUCHSIA)

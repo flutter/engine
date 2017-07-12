@@ -39,8 +39,10 @@ class SceneUpdateContext {
 
   mozart::client::Session* session() { return session_; }
 
-  void AddLayerToCurrentPaintTask(Layer* layer);
+  void PushPhysicalModel(SkRect bounds, SkColor color);
+  void PopPhysicalModel(mozart::client::Material& material);
 
+  void AddLayerToCurrentPaintTask(Layer* layer);
   void FinalizeCurrentPaintTaskIfNeeded(
       mozart::client::ContainerNode& container,
       SkScalar scale_x,
@@ -63,7 +65,15 @@ class SceneUpdateContext {
     SkScalar top;
     SkScalar scale_x;
     SkScalar scale_y;
+    SkColor background_color;
     std::vector<Layer*> layers;
+  };
+
+  struct PhysicalModel {
+    SkRect bounds;
+    SkColor color;
+    uint32_t image_id = 0u;
+    bool finalized = false;
   };
 
   mozart::client::Session* const session_;
@@ -71,6 +81,7 @@ class SceneUpdateContext {
 
   CurrentPaintTask current_paint_task_;
   std::vector<PaintTask> paint_tasks_;
+  std::vector<PhysicalModel> physical_model_stack_;
 
   FTL_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };

@@ -23,6 +23,25 @@ SceneUpdateContext::SceneUpdateContext(mozart::client::Session* session,
 
 SceneUpdateContext::~SceneUpdateContext() = default;
 
+void SceneUpdateContext::PushPhysicalModel(SkRect bounds, SkColor color) {
+  physical_model_stack_.push_back({.bounds = bounds, .color = color});
+}
+
+void SceneUpdateContext::PopPhysicalModel(mozart::client::Material& material) {
+  FTL_DCHECK(!physical_model_stack_.empty());
+
+  const PhysicalModel& physical_model = physical_model_stack_.back();
+  if (physical_model.image_id) {
+    material.SetTexture(physical_model.image_id);
+  } else {
+    material.SetColor(
+        SkColorGetR(physical_model.color), SkColorGetG(physical_model.color),
+        SkColorGetB(physical_model.color), SkColorGetA(physical_model.color));
+  }
+
+  physical_model_stack_.pop_back();
+}
+
 void SceneUpdateContext::AddLayerToCurrentPaintTask(Layer* layer) {
   FTL_DCHECK(!layer->needs_system_composite());
 
@@ -34,33 +53,48 @@ void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
     mozart::client::ContainerNode& container,
     SkScalar scale_x,
     SkScalar scale_y) {
-  if (current_paint_task_.layers.empty())
-    return;
+  SkRect bounds = current_paint_task_.bounds;
+  std::vector<Layer*> layers = std::move(current_paint_task_.layers);
+  current_paint_task_.Clear();
 
-  const SkRect& bounds = current_paint_task_.bounds;
-  SkISize physical_size =
-      SkISize::Make(bounds.width() * scale_x, bounds.height() * scale_y);
-  if (physical_size.isEmpty()) {
-    current_paint_task_.Clear();
-    return;
+  // Get the containing physical model and mark it finalized.
+  // We can only finalize the first set of paint tasks to the physical model.
+  // Subsequent paint tasks must be rendered into child nodes.
+  SkColor background_color = SK_ColorTRANSPARENT;
+  PhysicalModel* physical_model = nullptr;
+  if (!physical_model_stack_.empty() &&
+      !physical_model_stack_.back().finalized) {
+    physical_model = &physical_model_stack_.back();
+    physical_model->finalized = true;
+    bounds.join(physical_model->bounds);
+    background_color = physical_model->color;
   }
 
+  // Bail if there are no paint tasks.
+  if (layers.empty())
+    return;
+
+  // Bail if the paint bounds are empty.
+  SkISize physical_size =
+      SkISize::Make(bounds.width() * scale_x, bounds.height() * scale_y);
+  if (physical_size.isEmpty())
+    return;
+
   // Acquire a surface from the surface producer and register the paint tasks.
-  uint32_t session_image_id = 0;
+  uint32_t surface_image_id = 0;
   mx::event acquire, release;
   auto surface = surface_producer_->ProduceSurface(
-      physical_size, session_, session_image_id, acquire, release);
+      physical_size, session_, surface_image_id, acquire, release);
 
   // TODO(chinmaygarde): Check that the acquire and release events are valid.
-  if (!surface || session_image_id == 0 /* || !acquire || !release */) {
+  if (!surface || surface_image_id == 0 /* || !acquire || !release */) {
     FTL_LOG(ERROR) << "Could not acquire a surface from the surface producer "
                       "of size: "
                    << physical_size.width() << "x" << physical_size.height()
                    << " Surface: " << static_cast<bool>(surface) << ", "
-                   << "Session Image: " << session_image_id << ", "
+                   << "Image: " << surface_image_id << ", "
                    << "Acquire Fence: " << static_cast<bool>(acquire) << ", "
                    << "Release Fence: " << static_cast<bool>(release);
-    current_paint_task_.Clear();
     return;
   }
 
@@ -68,28 +102,22 @@ void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
   // session_.EnqueueAcquireFence(std::move(acquire));
   // session_.EnqueueReleaseFence(std::move(release));
 
-  // Enqueue session ops for the node with the surface as the texture.
-  mozart::client::ShapeNode node(session_);
-
-  // The node has a rectangular shape.
-  mozart::client::Rectangle rectangle(session_,        //
-                                      bounds.width(),  //
-                                      bounds.height()  //
-                                      );
-  node.SetShape(rectangle);
-
-  // The rectangular shape is filled in with a texture that is the content
-  // that are rendered into the surface that we just setup.
-  mozart::client::Material texture_material(session_);
-  texture_material.SetTexture(session_image_id);
-  node.SetMaterial(texture_material);
-  node.SetTranslation(bounds.width() * 0.5f + bounds.left(),  //
-                      bounds.height() * 0.5f + bounds.top(),  //
-                      0.0f                                    //
-                      );
-
-  // Add the node as a child of the container.
-  container.AddChild(node);
+  // Try to rasterize the contents to the containing physical model layer.
+  // Otherwise create a node to contain the texture.
+  if (physical_model) {
+    physical_model->image_id = surface_image_id;
+  } else {
+    mozart::client::Rectangle surface_rectangle(session_, bounds.width(),
+                                                bounds.height());
+    mozart::client::Material surface_material(session_);
+    surface_material.SetTexture(surface_image_id);
+    mozart::client::ShapeNode surface_node(session_);
+    surface_node.SetShape(surface_rectangle);
+    surface_node.SetMaterial(surface_material);
+    surface_node.SetTranslation(bounds.width() * 0.5f + bounds.left(),
+                                bounds.height() * 0.5f + bounds.top(), 0.0f);
+    container.AddChild(surface_node);
+  }
 
   // Enqueue the paint task.
   paint_tasks_.push_back({.surface = std::move(surface),
@@ -97,8 +125,8 @@ void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
                           .top = bounds.top(),
                           .scale_x = scale_x,
                           .scale_y = scale_y,
-                          .layers = std::move(current_paint_task_.layers)});
-  current_paint_task_.Clear();
+                          .background_color = background_color,
+                          .layers = std::move(layers)});
 }
 
 void SceneUpdateContext::ExecutePaintTasks(
@@ -112,7 +140,7 @@ void SceneUpdateContext::ExecutePaintTasks(
                                    frame.context().engine_time(),
                                    frame.context().memory_usage(), false};
 
-    canvas->clear(SK_ColorTRANSPARENT);
+    canvas->clear(task.background_color);
     canvas->scale(task.scale_x, task.scale_y);
     canvas->translate(-task.left, -task.top);
     for (Layer* layer : task.layers) {
