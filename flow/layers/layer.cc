@@ -12,16 +12,11 @@ namespace flow {
 Layer::Layer()
     : parent_(nullptr),
       needs_system_composite_(false),
-      has_paint_bounds_(false),
-      paint_bounds_() {}
+      paint_bounds_(SkRect::MakeEmpty()) {}
 
 Layer::~Layer() = default;
 
-void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  if (!has_paint_bounds()) {
-    set_paint_bounds(SkRect::MakeEmpty());
-  }
-}
+void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}
 
 #if defined(OS_FUCHSIA)
 void Layer::UpdateScene(SceneUpdateContext& context,

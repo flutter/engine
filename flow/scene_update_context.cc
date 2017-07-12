@@ -32,26 +32,20 @@ void SceneUpdateContext::AddLayerToCurrentPaintTask(Layer* layer) {
 
 void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
     mozart::client::ContainerNode& container,
-    const SkMatrix& ctm) {
-  if (current_paint_task_.layers.empty()) {
+    SkScalar scale_x,
+    SkScalar scale_y) {
+  if (current_paint_task_.layers.empty())
     return;
-  }
 
   const SkRect& bounds = current_paint_task_.bounds;
-
-  SkScalar scaleX = ctm.getScaleX();
-  SkScalar scaleY = ctm.getScaleY();
-
   SkISize physical_size =
-      SkISize::Make(bounds.width() * scaleX, bounds.height() * scaleY);
-
+      SkISize::Make(bounds.width() * scale_x, bounds.height() * scale_y);
   if (physical_size.isEmpty()) {
     current_paint_task_.Clear();
     return;
   }
 
   // Acquire a surface from the surface producer and register the paint tasks.
-
   uint32_t session_image_id = 0;
   mx::event acquire, release;
   auto surface = surface_producer_->ProduceSurface(
@@ -66,20 +60,13 @@ void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
                    << "Session Image: " << session_image_id << ", "
                    << "Acquire Fence: " << static_cast<bool>(acquire) << ", "
                    << "Release Fence: " << static_cast<bool>(release);
+    current_paint_task_.Clear();
     return;
   }
 
   // Enqueue the acquire and release fences.
   // session_.EnqueueAcquireFence(std::move(acquire));
   // session_.EnqueueReleaseFence(std::move(release));
-
-  PaintTask task;
-  task.surface = surface;
-  task.left = bounds.left();
-  task.top = bounds.top();
-  task.scaleX = scaleX;
-  task.scaleY = scaleY;
-  task.layers = std::move(current_paint_task_.layers);
 
   // Enqueue session ops for the node with the surface as the texture.
   mozart::client::ShapeNode node(session_);
@@ -104,9 +91,14 @@ void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
   // Add the node as a child of the container.
   container.AddChild(node);
 
-  // Ensure that the paint task is registered. We will execute these tasks as
-  // the session ops are being flushed.
-  paint_tasks_.push_back(task);
+  // Enqueue the paint task.
+  paint_tasks_.push_back({.surface = std::move(surface),
+                          .left = bounds.left(),
+                          .top = bounds.top(),
+                          .scale_x = scale_x,
+                          .scale_y = scale_y,
+                          .layers = std::move(current_paint_task_.layers)});
+  current_paint_task_.Clear();
 }
 
 void SceneUpdateContext::ExecutePaintTasks(
@@ -121,14 +113,13 @@ void SceneUpdateContext::ExecutePaintTasks(
                                    frame.context().memory_usage(), false};
 
     canvas->clear(SK_ColorTRANSPARENT);
-    canvas->scale(task.scaleX, task.scaleY);
+    canvas->scale(task.scale_x, task.scale_y);
     canvas->translate(-task.left, -task.top);
     for (Layer* layer : task.layers) {
       layer->Paint(context);
     }
     canvas->flush();
   }
-
   paint_tasks_.clear();
 }
 

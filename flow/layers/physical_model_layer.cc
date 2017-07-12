@@ -15,17 +15,17 @@ PhysicalModelLayer::~PhysicalModelLayer() = default;
 
 void PhysicalModelLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
-  PrerollChildren(context, matrix);
-  if (needs_system_composite())
-    return;
+  SkRect child_paint_bounds = SkRect::MakeEmpty();
+  PrerollChildren(context, matrix, &child_paint_bounds);
 
-  // Add some margin to the paint bounds to leave space for the shadow.
-  // The margin is hardcoded to an arbitrary maximum for now because Skia
-  // doesn't provide a way to calculate it.
-  SkRect bounds(rrect_.getBounds());
-  bounds.outset(20.0, 20.0);
-  set_paint_bounds(bounds);
-  context->child_paint_bounds = bounds;
+  if (!needs_system_composite()) {
+    // Add some margin to the paint bounds to leave space for the shadow.
+    // The margin is hardcoded to an arbitrary maximum for now because Skia
+    // doesn't provide a way to calculate it.
+    SkRect bounds(rrect_.getBounds());
+    bounds.outset(20.0, 20.0);
+    set_paint_bounds(bounds);
+  }
 }
 
 #if defined(OS_FUCHSIA)
@@ -33,6 +33,10 @@ void PhysicalModelLayer::Preroll(PrerollContext* context,
 void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context,
                                      mozart::client::ContainerNode& container) {
   FTL_DCHECK(needs_system_composite());
+
+  mozart::client::Material background(context.session());
+  background.SetColor(SkColorGetR(color_), SkColorGetG(color_),
+                      SkColorGetB(color_), SkColorGetA(color_));
 
   // TODO(MZ-137): Need to be able to express the radii as vectors.
   // TODO(MZ-138): Need to be able to specify an origin.
@@ -48,12 +52,18 @@ void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context,
 
   mozart::client::ShapeNode shape_node(context.session());
   shape_node.SetShape(clip_shape);
+  shape_node.SetMaterial(background);
+  shape_node.SetTranslation(rrect_.width() * 0.5f + rrect_.getBounds().left(),
+                            rrect_.height() * 0.5f + rrect_.getBounds().top(),
+                            0.f);
 
   mozart::client::EntityNode node(context.session());
   node.AddPart(shape_node);
   node.SetClip(0u, true /* clip to self */);
+  node.SetTranslation(0.f, 0.f, elevation_);
+  container.AddChild(node);
 
-  UpdateSceneChildrenInsideNode(context, container, node);
+  UpdateSceneChildren(context, node);
 }
 
 #endif  // defined(OS_FUCHSIA)

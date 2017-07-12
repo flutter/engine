@@ -17,13 +17,13 @@ ClipPathLayer::ClipPathLayer() = default;
 ClipPathLayer::~ClipPathLayer() = default;
 
 void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  PrerollChildren(context, matrix);
-  if (needs_system_composite())
-    return;
+  SkRect child_paint_bounds = SkRect::MakeEmpty();
+  PrerollChildren(context, matrix, &child_paint_bounds);
 
-  if (!context->child_paint_bounds.intersect(clip_path_.getBounds()))
-    context->child_paint_bounds.setEmpty();
-  set_paint_bounds(context->child_paint_bounds);
+  if (!needs_system_composite() &&
+      child_paint_bounds.intersect(clip_path_.getBounds())) {
+    set_paint_bounds(child_paint_bounds);
+  }
 }
 
 #if defined(OS_FUCHSIA)
@@ -46,8 +46,9 @@ void ClipPathLayer::UpdateScene(SceneUpdateContext& context,
   mozart::client::EntityNode node(context.session());
   node.AddPart(shape_node);
   node.SetClip(0u, true /* clip to self */);
+  container.AddChild(node);
 
-  UpdateSceneChildrenInsideNode(context, container, node);
+  UpdateSceneChildren(context, node);
 }
 
 #endif  // defined(OS_FUCHSIA)

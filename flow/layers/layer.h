@@ -44,7 +44,6 @@ class Layer {
     RasterCache* raster_cache;
     GrContext* gr_context;
     SkColorSpace* dst_color_space;
-    SkRect child_paint_bounds;
   };
 
   virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
@@ -91,26 +90,17 @@ class Layer {
     needs_system_composite_ = value;
   }
 
-  // Subclasses should assume this will be true by the time Paint() is called.
-  // However, UpdateScene() should not consult this field because it is
-  // not meaningful for system compositing.
-  bool has_paint_bounds() const { return has_paint_bounds_; }
+  const SkRect& paint_bounds() const { return paint_bounds_; }
 
-  const SkRect& paint_bounds() const {
-    FTL_DCHECK(has_paint_bounds_);
-    return paint_bounds_;
-  }
-
-  // This should be set by Preroll() when needs_system_composite() is false.
+  // This must be set by Preroll() when needs_system_composite() is false.
+  // The value will be ignored when needs_system_composite() is true.
   void set_paint_bounds(const SkRect& paint_bounds) {
-    has_paint_bounds_ = true;
     paint_bounds_ = paint_bounds;
   }
 
  private:
   ContainerLayer* parent_;
   bool needs_system_composite_;
-  bool has_paint_bounds_;  // if false, paint_bounds_ is not valid
   SkRect paint_bounds_;
 
   FTL_DISALLOW_COPY_AND_ASSIGN(Layer);

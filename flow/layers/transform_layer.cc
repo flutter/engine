@@ -11,15 +11,16 @@ TransformLayer::TransformLayer() = default;
 TransformLayer::~TransformLayer() = default;
 
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  SkMatrix childMatrix;
-  childMatrix.setConcat(matrix, transform_);
-  PrerollChildren(context, childMatrix);
+  SkMatrix child_matrix;
+  child_matrix.setConcat(matrix, transform_);
 
-  if (needs_system_composite())
-    return;
+  SkRect child_paint_bounds = SkRect::MakeEmpty();
+  PrerollChildren(context, child_matrix, &child_paint_bounds);
 
-  transform_.mapRect(&context->child_paint_bounds);
-  set_paint_bounds(context->child_paint_bounds);
+  if (!needs_system_composite()) {
+    transform_.mapRect(&child_paint_bounds);
+    set_paint_bounds(child_paint_bounds);
+  }
 }
 
 #if defined(OS_FUCHSIA)
@@ -28,13 +29,12 @@ void TransformLayer::UpdateScene(SceneUpdateContext& context,
                                  mozart::client::ContainerNode& container) {
   FTL_DCHECK(needs_system_composite());
 
-  mozart::client::EntityNode node(context.session());
-
   // TODO(chinmaygarde): The perspective and shear components in the matrix are
   // not handled correctly.
   MatrixDecomposition decomposition(transform_);
 
   if (decomposition.IsValid()) {
+    mozart::client::EntityNode node(context.session());
     node.SetTranslation(decomposition.translation().x(),  //
                         decomposition.translation().y(),  //
                         decomposition.translation().z()   //
@@ -48,9 +48,11 @@ void TransformLayer::UpdateScene(SceneUpdateContext& context,
                      decomposition.rotation().fData[2],  //
                      decomposition.rotation().fData[3]   //
                      );
+    container.AddChild(node);
+    UpdateSceneChildren(context, node);
+  } else {
+    UpdateSceneChildren(context, container);
   }
-
-  UpdateSceneChildrenInsideNode(context, container, node);
 }
 
 #endif  // defined(OS_FUCHSIA)

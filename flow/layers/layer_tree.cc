@@ -32,8 +32,8 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       checkerboard_raster_cache_images_);
   Layer::PrerollContext context = {
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
-      frame.gr_context(), color_space, SkRect::MakeEmpty(),
-  };
+      frame.gr_context(), color_space};
+
   root_layer_->Preroll(&context, SkMatrix::I());
 }
 
@@ -47,7 +47,7 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
   } else {
     context.AddLayerToCurrentPaintTask(root_layer_.get());
   }
-  context.FinalizeCurrentPaintTaskIfNeeded(container, SkMatrix::I());
+  context.FinalizeCurrentPaintTaskIfNeeded(container, 1.f, 1.f);
 }
 #endif
 

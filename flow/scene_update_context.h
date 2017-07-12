@@ -43,7 +43,8 @@ class SceneUpdateContext {
 
   void FinalizeCurrentPaintTaskIfNeeded(
       mozart::client::ContainerNode& container,
-      const SkMatrix& ctm);
+      SkScalar scale_x,
+      SkScalar scale_y);
 
   void ExecutePaintTasks(CompositorContext::ScopedFrame& frame);
 
@@ -60,13 +61,14 @@ class SceneUpdateContext {
     sk_sp<SkSurface> surface;
     SkScalar left;
     SkScalar top;
-    SkScalar scaleX;
-    SkScalar scaleY;
+    SkScalar scale_x;
+    SkScalar scale_y;
     std::vector<Layer*> layers;
   };
 
-  mozart::client::Session* session_;
-  SurfaceProducer* surface_producer_;
+  mozart::client::Session* const session_;
+  SurfaceProducer* const surface_producer_;
+
   CurrentPaintTask current_paint_task_;
   std::vector<PaintTask> paint_tasks_;
 

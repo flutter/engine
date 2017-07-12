@@ -18,30 +18,32 @@ class ContainerLayer : public Layer {
   void Add(std::unique_ptr<Layer> layer);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-  void PrerollChildren(PrerollContext* context, const SkMatrix& matrix);
-
-  void PaintChildren(PaintContext& context) const;
 
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context,
                    mozart::client::ContainerNode& container) override;
-  void UpdateSceneChildrenInsideNode(SceneUpdateContext& context,
-                                     mozart::client::ContainerNode& container,
-                                     mozart::client::ContainerNode& node);
-  void UpdateSceneChildren(SceneUpdateContext& context,
-                           mozart::client::ContainerNode& container);
 #endif  // defined(OS_FUCHSIA)
 
   const std::vector<std::unique_ptr<Layer>>& layers() const { return layers_; }
 
  protected:
-  // Valid only after preroll when needs_system_composite() is true.
-  const SkMatrix& ctm() const { return ctm_; }
+  void PrerollChildren(PrerollContext* context,
+                       const SkMatrix& matrix,
+                       SkRect* child_paint_bounds);
+  void PaintChildren(PaintContext& context) const;
+
+#if defined(OS_FUCHSIA)
+  void UpdateSceneChildren(SceneUpdateContext& context,
+                           mozart::client::ContainerNode& container);
+#endif  // defined(OS_FUCHSIA)
 
  private:
   std::vector<std::unique_ptr<Layer>> layers_;
 
-  SkMatrix ctm_;
+#if defined(OS_FUCHSIA)
+  SkScalar scale_x_{};
+  SkScalar scale_y_{};
+#endif  // defined(OS_FUCHSIA)
 
   FTL_DISALLOW_COPY_AND_ASSIGN(ContainerLayer);
 };
