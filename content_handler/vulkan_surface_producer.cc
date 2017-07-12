@@ -239,12 +239,7 @@ sk_sp<SkSurface> VulkanSurfaceProducer::ProduceSurface(
       surface = std::move(swapchain.queue.front());
       swapchain.queue.pop();
       swapchain.tick_count = 0;
-
-      // Need to do some skia foo here to clear all the canvas state from the
-      // last frame
-      surface->sk_surface->getCanvas()->restoreToCount(0);
-      surface->sk_surface->getCanvas()->save();
-      surface->sk_surface->getCanvas()->resetMatrix();
+      surface->sk_surface->getCanvas()->restoreToCount(1);
     }
   }
 
@@ -258,6 +253,8 @@ sk_sp<SkSurface> VulkanSurfaceProducer::ProduceSurface(
   // TODO: Release fence.
 
   auto sk_surface = surface->sk_surface;
+  sk_surface->getCanvas()->save();
+
   PendingSurfaceInfo info;
   info.handler_key = dummy_handler_key_++;
   info.surface = std::move(surface);
