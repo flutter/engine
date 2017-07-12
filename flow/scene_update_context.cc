@@ -4,18 +4,12 @@
 
 #include "flutter/flow/scene_update_context.h"
 
+#include "flutter/flow/export_node.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/matrix_decomposition.h"
 #include "flutter/glue/trace_event.h"
 
 namespace flow {
-
-SceneUpdateContext::CurrentPaintTask::CurrentPaintTask()
-    : bounds(SkRect::MakeEmpty()) {}
-
-void SceneUpdateContext::CurrentPaintTask::Clear() {
-  bounds = SkRect::MakeEmpty();
-  layers.clear();
-}
 
 SceneUpdateContext::SceneUpdateContext(mozart::client::Session* session,
                                        SurfaceProducer* surface_producer)
@@ -23,110 +17,92 @@ SceneUpdateContext::SceneUpdateContext(mozart::client::Session* session,
 
 SceneUpdateContext::~SceneUpdateContext() = default;
 
-void SceneUpdateContext::PushPhysicalModel(SkRect bounds, SkColor color) {
-  physical_model_stack_.push_back({.bounds = bounds, .color = color});
+void SceneUpdateContext::AddChildScene(ExportNode* export_node,
+                                       SkPoint offset,
+                                       float device_pixel_ratio,
+                                       bool hit_testable) {
+  FTL_DCHECK(top_entity_);
+
+  export_node->Bind(*this, top_entity_->entity_node(), offset,
+                    1.f / device_pixel_ratio, hit_testable);
 }
 
-void SceneUpdateContext::PopPhysicalModel(mozart::client::Material& material) {
-  FTL_DCHECK(!physical_model_stack_.empty());
-
-  const PhysicalModel& physical_model = physical_model_stack_.back();
-  if (physical_model.image_id) {
-    material.SetTexture(physical_model.image_id);
-  } else {
-    material.SetColor(
-        SkColorGetR(physical_model.color), SkColorGetG(physical_model.color),
-        SkColorGetB(physical_model.color), SkColorGetA(physical_model.color));
+void SceneUpdateContext::PrepareMaterial(mozart::client::Material& material,
+                                         const SkRect& shape_bounds,
+                                         SkColor color,
+                                         SkScalar scale_x,
+                                         SkScalar scale_y,
+                                         const SkRect& paint_bounds,
+                                         std::vector<Layer*> paint_layers) {
+  uint32_t texture_id =
+      GenerateTextureIfNeeded(shape_bounds, color, scale_x, scale_y,
+                              paint_bounds, std::move(paint_layers));
+  if (texture_id != 0u) {
+    material.SetTexture(texture_id);
+  } else if (color != SK_ColorTRANSPARENT) {
+    material.SetColor(SkColorGetR(color), SkColorGetG(color),
+                      SkColorGetB(color), SkColorGetA(color));
   }
-
-  physical_model_stack_.pop_back();
 }
 
-void SceneUpdateContext::AddLayerToCurrentPaintTask(Layer* layer) {
-  FTL_DCHECK(!layer->needs_system_composite());
-
-  current_paint_task_.bounds.join(layer->paint_bounds());
-  current_paint_task_.layers.push_back(layer);
-}
-
-void SceneUpdateContext::FinalizeCurrentPaintTaskIfNeeded(
-    mozart::client::ContainerNode& container,
+uint32_t SceneUpdateContext::GenerateTextureIfNeeded(
+    const SkRect& shape_bounds,
+    SkColor color,
     SkScalar scale_x,
-    SkScalar scale_y) {
-  SkRect bounds = current_paint_task_.bounds;
-  std::vector<Layer*> layers = std::move(current_paint_task_.layers);
-  current_paint_task_.Clear();
+    SkScalar scale_y,
+    const SkRect& paint_bounds,
+    std::vector<Layer*> paint_layers) {
+  // Bail if there's nothing to paint.
+  if (paint_layers.empty() || paint_bounds.isEmpty())
+    return 0u;
 
-  // Get the containing physical model and mark it finalized.
-  // We can only finalize the first set of paint tasks to the physical model.
-  // Subsequent paint tasks must be rendered into child nodes.
-  SkColor background_color = SK_ColorTRANSPARENT;
-  PhysicalModel* physical_model = nullptr;
-  if (!physical_model_stack_.empty() &&
-      !physical_model_stack_.back().finalized) {
-    physical_model = &physical_model_stack_.back();
-    physical_model->finalized = true;
-    bounds.join(physical_model->bounds);
-    background_color = physical_model->color;
-  }
+  // Limit the painting area to the space within the shape.
+  SkRect surface_bounds = paint_bounds;
+  if (!surface_bounds.intersect(shape_bounds))
+    return 0u;
 
-  // Bail if there are no paint tasks.
-  if (layers.empty())
-    return;
+  // Expand to include the dimensions of the shape itself if it has
+  // a background color that needs to be filled in.
+  if (color != SK_ColorTRANSPARENT)
+    surface_bounds.join(shape_bounds);
 
-  // Bail if the paint bounds are empty.
-  SkISize physical_size =
-      SkISize::Make(bounds.width() * scale_x, bounds.height() * scale_y);
+  // Bail if the physical paint bounds are empty.
+  SkISize physical_size = SkISize::Make(surface_bounds.width() * scale_x,
+                                        surface_bounds.height() * scale_y);
   if (physical_size.isEmpty())
-    return;
+    return 0u;
 
   // Acquire a surface from the surface producer and register the paint tasks.
-  uint32_t surface_image_id = 0;
+  uint32_t texture_id = 0u;
   mx::event acquire, release;
   auto surface = surface_producer_->ProduceSurface(
-      physical_size, session_, surface_image_id, acquire, release);
+      physical_size, session_, texture_id, acquire, release);
 
   // TODO(chinmaygarde): Check that the acquire and release events are valid.
-  if (!surface || surface_image_id == 0 /* || !acquire || !release */) {
+  if (!surface || texture_id == 0 /* || !acquire || !release */) {
     FTL_LOG(ERROR) << "Could not acquire a surface from the surface producer "
                       "of size: "
                    << physical_size.width() << "x" << physical_size.height()
                    << " Surface: " << static_cast<bool>(surface) << ", "
-                   << "Image: " << surface_image_id << ", "
+                   << "Texture Id: " << texture_id << ", "
                    << "Acquire Fence: " << static_cast<bool>(acquire) << ", "
                    << "Release Fence: " << static_cast<bool>(release);
-    return;
+    return 0u;
   }
 
   // Enqueue the acquire and release fences.
   // session_.EnqueueAcquireFence(std::move(acquire));
   // session_.EnqueueReleaseFence(std::move(release));
 
-  // Try to rasterize the contents to the containing physical model layer.
-  // Otherwise create a node to contain the texture.
-  if (physical_model) {
-    physical_model->image_id = surface_image_id;
-  } else {
-    mozart::client::Rectangle surface_rectangle(session_, bounds.width(),
-                                                bounds.height());
-    mozart::client::Material surface_material(session_);
-    surface_material.SetTexture(surface_image_id);
-    mozart::client::ShapeNode surface_node(session_);
-    surface_node.SetShape(surface_rectangle);
-    surface_node.SetMaterial(surface_material);
-    surface_node.SetTranslation(bounds.width() * 0.5f + bounds.left(),
-                                bounds.height() * 0.5f + bounds.top(), 0.0f);
-    container.AddChild(surface_node);
-  }
-
   // Enqueue the paint task.
   paint_tasks_.push_back({.surface = std::move(surface),
-                          .left = bounds.left(),
-                          .top = bounds.top(),
+                          .left = surface_bounds.left(),
+                          .top = surface_bounds.top(),
                           .scale_x = scale_x,
                           .scale_y = scale_y,
-                          .background_color = background_color,
-                          .layers = std::move(layers)});
+                          .background_color = color,
+                          .layers = std::move(paint_layers)});
+  return texture_id;
 }
 
 void SceneUpdateContext::ExecutePaintTasks(
@@ -149,6 +125,94 @@ void SceneUpdateContext::ExecutePaintTasks(
     canvas->flush();
   }
   paint_tasks_.clear();
+}
+
+SceneUpdateContext::Entity::Entity(SceneUpdateContext& context)
+    : context_(context),
+      previous_entity_(context.top_entity_),
+      entity_node_(context.session()) {
+  if (previous_entity_)
+    previous_entity_->entity_node_.AddChild(entity_node_);
+  context.top_entity_ = this;
+}
+
+SceneUpdateContext::Entity::~Entity() {
+  FTL_DCHECK(context_.top_entity_ == this);
+  context_.top_entity_ = previous_entity_;
+}
+
+SceneUpdateContext::Clip::Clip(SceneUpdateContext& context,
+                               mozart::client::Shape& shape)
+    : Entity(context) {
+  mozart::client::ShapeNode shape_node(context.session());
+  shape_node.SetShape(shape);
+
+  entity_node().AddPart(shape_node);
+  entity_node().SetClip(0u, true /* clip to self */);
+}
+
+SceneUpdateContext::Clip::~Clip() = default;
+
+SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
+                                         const SkMatrix& transform)
+    : Entity(context) {
+  // TODO(chinmaygarde): The perspective and shear components in the matrix
+  // are not handled correctly.
+  MatrixDecomposition decomposition(transform);
+  if (decomposition.IsValid()) {
+    entity_node().SetTranslation(decomposition.translation().x(),  //
+                                 decomposition.translation().y(),  //
+                                 decomposition.translation().z()   //
+                                 );
+    entity_node().SetScale(decomposition.scale().x(),  //
+                           decomposition.scale().y(),  //
+                           decomposition.scale().z()   //
+                           );
+    entity_node().SetRotation(decomposition.rotation().fData[0],  //
+                              decomposition.rotation().fData[1],  //
+                              decomposition.rotation().fData[2],  //
+                              decomposition.rotation().fData[3]   //
+                              );
+  }
+}
+
+SceneUpdateContext::Transform::~Transform() = default;
+
+SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
+                                 mozart::client::Shape& shape,
+                                 const SkRect& shape_bounds,
+                                 SkColor color,
+                                 float elevation,
+                                 SkScalar scale_x,
+                                 SkScalar scale_y)
+    : Entity(context),
+      shape_bounds_(shape_bounds),
+      color_(color),
+      scale_x_(scale_x),
+      scale_y_(scale_y),
+      material_(context.session()),
+      paint_bounds_(SkRect::MakeEmpty()) {
+  mozart::client::ShapeNode shape_node(context.session());
+  shape_node.SetShape(shape);
+  shape_node.SetMaterial(material_);
+  shape_node.SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
+                            shape_bounds.height() * 0.5f + shape_bounds.top(),
+                            0.f);
+
+  entity_node().AddPart(shape_node);
+  entity_node().SetClip(0u, true /* clip to self */);
+  entity_node().SetTranslation(0.f, 0.f, elevation);
+}
+
+SceneUpdateContext::Frame::~Frame() {
+  context().PrepareMaterial(material_, shape_bounds_, color_, scale_x_,
+                            scale_y_, paint_bounds_, std::move(paint_layers_));
+}
+
+void SceneUpdateContext::Frame::AddPaintedLayer(Layer* layer) {
+  FTL_DCHECK(layer->needs_painting());
+  paint_layers_.push_back(layer);
+  paint_bounds_.join(layer->paint_bounds());
 }
 
 }  // namespace flow

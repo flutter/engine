@@ -19,6 +19,7 @@
 namespace flow {
 
 class Layer;
+class ExportNode;
 
 class SceneUpdateContext {
  public:
@@ -39,26 +40,65 @@ class SceneUpdateContext {
 
   mozart::client::Session* session() { return session_; }
 
-  void PushPhysicalModel(SkRect bounds, SkColor color);
-  void PopPhysicalModel(mozart::client::Material& material);
+  class Entity {
+   public:
+    Entity(SceneUpdateContext& context);
+    ~Entity();
 
-  void AddLayerToCurrentPaintTask(Layer* layer);
-  void FinalizeCurrentPaintTaskIfNeeded(
-      mozart::client::ContainerNode& container,
-      SkScalar scale_x,
-      SkScalar scale_y);
+    SceneUpdateContext& context() { return context_; }
+    mozart::client::EntityNode& entity_node() { return entity_node_; }
+
+   private:
+    SceneUpdateContext& context_;
+    Entity* const previous_entity_;
+
+    mozart::client::EntityNode entity_node_;
+  };
+
+  class Clip : public Entity {
+   public:
+    Clip(SceneUpdateContext& context, mozart::client::Shape& shape);
+    ~Clip();
+  };
+
+  class Transform : public Entity {
+   public:
+    Transform(SceneUpdateContext& context, const SkMatrix& transform);
+    ~Transform();
+  };
+
+  class Frame : public Entity {
+   public:
+    Frame(SceneUpdateContext& context,
+          mozart::client::Shape& shape,
+          const SkRect& shape_bounds,
+          SkColor color,
+          float elevation,
+          SkScalar scale_x,
+          SkScalar scale_y);
+    ~Frame();
+
+    void AddPaintedLayer(Layer* layer);
+
+   private:
+    const SkRect& shape_bounds_;
+    SkColor const color_;
+    SkScalar const scale_x_;
+    SkScalar const scale_y_;
+
+    mozart::client::Material material_;
+    std::vector<Layer*> paint_layers_;
+    SkRect paint_bounds_;
+  };
+
+  void AddChildScene(ExportNode* export_node,
+                     SkPoint offset,
+                     float device_pixel_ratio,
+                     bool hit_testable);
 
   void ExecutePaintTasks(CompositorContext::ScopedFrame& frame);
 
  private:
-  struct CurrentPaintTask {
-    CurrentPaintTask();
-    void Clear();
-
-    SkRect bounds;
-    std::vector<Layer*> layers;
-  };
-
   struct PaintTask {
     sk_sp<SkSurface> surface;
     SkScalar left;
@@ -69,19 +109,26 @@ class SceneUpdateContext {
     std::vector<Layer*> layers;
   };
 
-  struct PhysicalModel {
-    SkRect bounds;
-    SkColor color;
-    uint32_t image_id = 0u;
-    bool finalized = false;
-  };
+  void PrepareMaterial(mozart::client::Material& material,
+                       const SkRect& shape_bounds,
+                       SkColor color,
+                       SkScalar scale_x,
+                       SkScalar scale_y,
+                       const SkRect& paint_bounds,
+                       std::vector<Layer*> paint_layers);
+  uint32_t GenerateTextureIfNeeded(const SkRect& shape_bounds,
+                                   SkColor color,
+                                   SkScalar scale_x,
+                                   SkScalar scale_y,
+                                   const SkRect& paint_bounds,
+                                   std::vector<Layer*> paint_layers);
+
+  Entity* top_entity_ = nullptr;
 
   mozart::client::Session* const session_;
   SurfaceProducer* const surface_producer_;
 
-  CurrentPaintTask current_paint_task_;
   std::vector<PaintTask> paint_tasks_;
-  std::vector<PhysicalModel> physical_model_stack_;
 
   FTL_DISALLOW_COPY_AND_ASSIGN(SceneUpdateContext);
 };

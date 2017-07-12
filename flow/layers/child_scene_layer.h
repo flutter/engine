@@ -35,8 +35,7 @@ class ChildSceneLayer : public Layer {
 
   void Paint(PaintContext& context) override;
 
-  void UpdateScene(SceneUpdateContext& context,
-                   mozart::client::ContainerNode& container) override;
+  void UpdateScene(SceneUpdateContext& context) override;
 
  private:
   SkPoint offset_;

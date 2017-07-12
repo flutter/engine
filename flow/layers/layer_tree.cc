@@ -42,12 +42,19 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
                             mozart::client::ContainerNode& container) {
   TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
 
+  mozart::client::Rectangle shape(context.session(), frame_size_.width(),
+                                  frame_size_.height());
+  SceneUpdateContext::Frame frame(
+      context, shape,
+      SkRect::MakeIWH(frame_size_.width(), frame_size_.height()),
+      SK_ColorTRANSPARENT, 0.f, 1.f, 1.f);
   if (root_layer_->needs_system_composite()) {
-    root_layer_->UpdateScene(context, container);
-  } else {
-    context.AddLayerToCurrentPaintTask(root_layer_.get());
+    root_layer_->UpdateScene(context);
   }
-  context.FinalizeCurrentPaintTaskIfNeeded(container, 1.f, 1.f);
+  if (root_layer_->needs_painting()) {
+    frame.AddPaintedLayer(root_layer_.get());
+  }
+  container.AddChild(frame.entity_node());
 }
 #endif
 
@@ -58,7 +65,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame) {
                                  checkerboard_offscreen_layers_};
   TRACE_EVENT0("flutter", "LayerTree::Paint");
 
-  if (!root_layer_->needs_system_composite())
+  if (root_layer_->needs_painting())
     root_layer_->Paint(context);
 }
 

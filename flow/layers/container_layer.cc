@@ -20,18 +20,15 @@ void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
-
-  if (!needs_system_composite()) {
-    set_paint_bounds(child_paint_bounds);
-  }
+  set_paint_bounds(child_paint_bounds);
 }
 
 void ContainerLayer::PrerollChildren(PrerollContext* context,
-                                     const SkMatrix& matrix,
+                                     const SkMatrix& child_matrix,
                                      SkRect* child_paint_bounds) {
   for (auto& layer : layers_) {
     PrerollContext child_context = *context;
-    layer->Preroll(&child_context, matrix);
+    layer->Preroll(&child_context, child_matrix);
 
     if (layer->needs_system_composite()) {
       set_needs_system_composite(true);
@@ -39,45 +36,36 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
       child_paint_bounds->join(layer->paint_bounds());
     }
   }
-
-#if defined(OS_FUCHSIA)
-  if (needs_system_composite()) {
-    scale_x_ = matrix.getScaleX();
-    scale_y_ = matrix.getScaleY();
-  }
-#endif  // defined(OS_FUCHSIA)
 }
 
 void ContainerLayer::PaintChildren(PaintContext& context) const {
-  FTL_DCHECK(!needs_system_composite());
+  FTL_DCHECK(needs_painting());
 
   // Intentionally not tracing here as there should be no self-time
   // and the trace event on this common function has a small overhead.
-  for (auto& layer : layers_)
-    layer->Paint(context);
+  for (auto& layer : layers_) {
+    if (layer->needs_painting()) {
+      layer->Paint(context);
+    }
+  }
 }
 
 #if defined(OS_FUCHSIA)
 
-void ContainerLayer::UpdateScene(SceneUpdateContext& context,
-                                 mozart::client::ContainerNode& container) {
-  UpdateSceneChildren(context, container);
+void ContainerLayer::UpdateScene(SceneUpdateContext& context) {
+  UpdateSceneChildren(context);
 }
 
-void ContainerLayer::UpdateSceneChildren(
-    SceneUpdateContext& context,
-    mozart::client::ContainerNode& container) {
+void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
   FTL_DCHECK(needs_system_composite());
 
+  // Paint all of the layers which need to be drawn into the container.
+  // These may be flattened down to a containing
   for (auto& layer : layers_) {
     if (layer->needs_system_composite()) {
-      context.FinalizeCurrentPaintTaskIfNeeded(container, scale_x_, scale_y_);
-      layer->UpdateScene(context, container);
-    } else {
-      context.AddLayerToCurrentPaintTask(layer.get());
+      layer->UpdateScene(context);
     }
   }
-  context.FinalizeCurrentPaintTaskIfNeeded(container, scale_x_, scale_y_);
 }
 
 #endif  // defined(OS_FUCHSIA)

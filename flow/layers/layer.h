@@ -77,8 +77,8 @@ class Layer {
   virtual void Paint(PaintContext& context) = 0;
 
 #if defined(OS_FUCHSIA)
-  virtual void UpdateScene(SceneUpdateContext& context,
-                           mozart::client::ContainerNode& container);
+  // Updates the system composited scene.
+  virtual void UpdateScene(SceneUpdateContext& context);
 #endif
 
   ContainerLayer* parent() const { return parent_; }
@@ -92,11 +92,13 @@ class Layer {
 
   const SkRect& paint_bounds() const { return paint_bounds_; }
 
-  // This must be set by Preroll() when needs_system_composite() is false.
-  // The value will be ignored when needs_system_composite() is true.
+  // This must be set by the time Preroll() returns otherwise the layer will
+  // be assumed to have empty paint bounds (paints no content).
   void set_paint_bounds(const SkRect& paint_bounds) {
     paint_bounds_ = paint_bounds;
   }
+
+  bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
  private:
   ContainerLayer* parent_;

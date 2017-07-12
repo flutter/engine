@@ -15,11 +15,10 @@ void ChildSceneLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 void ChildSceneLayer::Paint(PaintContext& context) {
-  FTL_NOTREACHED() << "UpdateScene() should have been called instead.";
+  FTL_NOTREACHED() << "This layer never needs painting.";
 }
 
-void ChildSceneLayer::UpdateScene(SceneUpdateContext& context,
-                                  mozart::client::ContainerNode& container) {
+void ChildSceneLayer::UpdateScene(SceneUpdateContext& context) {
   FTL_DCHECK(needs_system_composite());
 
   // TODO(jeffbrown): Set clip.
@@ -34,8 +33,8 @@ void ChildSceneLayer::UpdateScene(SceneUpdateContext& context,
   //                      physical_size_.width() * inverse_device_pixel_ratio,
   //                      physical_size_.height() * inverse_device_pixel_ratio);
   if (export_node_) {
-    export_node_->Bind(context, container, offset_, 1.f / device_pixel_ratio_,
-                       hit_testable_);
+    context.AddChildScene(export_node_.get(), offset_, device_pixel_ratio_,
+                          hit_testable_);
   }
 }
 

@@ -14,21 +14,19 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
 
-  if (!needs_system_composite() &&
-      child_paint_bounds.intersect(clip_rrect_.getBounds())) {
+  if (child_paint_bounds.intersect(clip_rrect_.getBounds())) {
     set_paint_bounds(child_paint_bounds);
   }
 }
 
 #if defined(OS_FUCHSIA)
 
-void ClipRRectLayer::UpdateScene(SceneUpdateContext& context,
-                                 mozart::client::ContainerNode& container) {
+void ClipRRectLayer::UpdateScene(SceneUpdateContext& context) {
   FTL_DCHECK(needs_system_composite());
 
   // TODO(MZ-137): Need to be able to express the radii as vectors.
   // TODO(MZ-138): Need to be able to specify an origin.
-  mozart::client::RoundedRectangle clip_shape(
+  mozart::client::RoundedRectangle shape(
       context.session(),                                   // session
       clip_rrect_.width(),                                 //  width
       clip_rrect_.height(),                                //  height
@@ -39,22 +37,15 @@ void ClipRRectLayer::UpdateScene(SceneUpdateContext& context,
       clip_rrect_.radii(SkRRect::kLowerLeft_Corner).x()  //  bottom_left_radius
       );
 
-  mozart::client::ShapeNode shape_node(context.session());
-  shape_node.SetShape(clip_shape);
-
-  mozart::client::EntityNode node(context.session());
-  node.AddPart(shape_node);
-  node.SetClip(0u, true /* clip to self */);
-  container.AddChild(node);
-
-  UpdateSceneChildren(context, node);
+  SceneUpdateContext::Clip clip(context, shape);
+  UpdateSceneChildren(context);
 }
 
 #endif  // defined(OS_FUCHSIA)
 
 void ClipRRectLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "ClipRRectLayer::Paint");
-  FTL_DCHECK(!needs_system_composite());
+  FTL_DCHECK(needs_painting());
 
   Layer::AutoSaveLayer save(context, paint_bounds(), nullptr);
   context.canvas.clipRRect(clip_rrect_, true);

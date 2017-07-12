@@ -20,42 +20,34 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
 
-  if (!needs_system_composite() &&
-      child_paint_bounds.intersect(clip_path_.getBounds())) {
+  if (child_paint_bounds.intersect(clip_path_.getBounds())) {
     set_paint_bounds(child_paint_bounds);
   }
 }
 
 #if defined(OS_FUCHSIA)
 
-void ClipPathLayer::UpdateScene(SceneUpdateContext& context,
-                                mozart::client::ContainerNode& container) {
+void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
   FTL_DCHECK(needs_system_composite());
 
   // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
   //               Treating the shape as a rectangle for now.
-  auto rect = clip_path_.getBounds();
   // TODO(MZ-138): Need to be able to specify an origin.
-  mozart::client::Rectangle clip_shape(context.session(),  // session
-                                       rect.width(),       //  width
-                                       rect.height()       //  height
-                                       );
-  mozart::client::ShapeNode shape_node(context.session());
-  shape_node.SetShape(clip_shape);
+  auto rect = clip_path_.getBounds();
+  mozart::client::Rectangle shape(context.session(),  // session
+                                  rect.width(),       //  width
+                                  rect.height()       //  height
+                                  );
 
-  mozart::client::EntityNode node(context.session());
-  node.AddPart(shape_node);
-  node.SetClip(0u, true /* clip to self */);
-  container.AddChild(node);
-
-  UpdateSceneChildren(context, node);
+  SceneUpdateContext::Clip clip(context, shape);
+  UpdateSceneChildren(context);
 }
 
 #endif  // defined(OS_FUCHSIA)
 
 void ClipPathLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "ClipPathLayer::Paint");
-  FTL_DCHECK(!needs_system_composite());
+  FTL_DCHECK(needs_painting());
 
   Layer::AutoSaveLayer save(context, paint_bounds(), nullptr);
   context.canvas.clipPath(clip_path_, true);

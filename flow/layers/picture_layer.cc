@@ -34,7 +34,7 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void PictureLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "PictureLayer::Paint");
   FTL_DCHECK(picture_);
-  FTL_DCHECK(!needs_system_composite());
+  FTL_DCHECK(needs_painting());
 
   SkAutoCanvasRestore save(&context.canvas, true);
   context.canvas.translate(offset_.x(), offset_.y());

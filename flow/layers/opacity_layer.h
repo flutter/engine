@@ -16,7 +16,6 @@ class OpacityLayer : public ContainerLayer {
 
   void set_alpha(int alpha) { alpha_ = alpha; }
 
- protected:
   void Paint(PaintContext& context) override;
 
   // TODO(chinmaygarde): Once MZ-139 is addressed, introduce a new node in the

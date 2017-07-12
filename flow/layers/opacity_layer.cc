@@ -12,7 +12,7 @@ OpacityLayer::~OpacityLayer() = default;
 
 void OpacityLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "OpacityLayer::Paint");
-  FTL_DCHECK(!needs_system_composite());
+  FTL_DCHECK(needs_painting());
 
   SkPaint paint;
   paint.setAlpha(alpha_);

@@ -21,13 +21,17 @@ void PhysicalModelLayer::Preroll(PrerollContext* context,
     set_needs_system_composite(true);
 #endif  // defined(OS_FUCHSIA)
 
-  SkRect child_paint_bounds = SkRect::MakeEmpty();
+  SkRect child_paint_bounds;
   PrerollChildren(context, matrix, &child_paint_bounds);
 
-  if (!needs_system_composite()) {
+  if (needs_system_composite()) {
+    scale_x_ = matrix.getScaleX();
+    scale_y_ = matrix.getScaleY();
+  } else {
     // Add some margin to the paint bounds to leave space for the shadow.
     // The margin is hardcoded to an arbitrary maximum for now because Skia
-    // doesn't provide a way to calculate it.
+    // doesn't provide a way to calculate it.  We fill this whole region
+    // and clip children to it so we don't need to join the child paint bounds.
     SkRect bounds(rrect_.getBounds());
     bounds.outset(20.0, 20.0);
     set_paint_bounds(bounds);
@@ -36,13 +40,12 @@ void PhysicalModelLayer::Preroll(PrerollContext* context,
 
 #if defined(OS_FUCHSIA)
 
-void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context,
-                                     mozart::client::ContainerNode& container) {
+void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context) {
   FTL_DCHECK(needs_system_composite());
 
   // TODO(MZ-137): Need to be able to express the radii as vectors.
   // TODO(MZ-138): Need to be able to specify an origin.
-  mozart::client::RoundedRectangle layer_shape(
+  mozart::client::RoundedRectangle shape(
       context.session(),                              // session
       rrect_.width(),                                 //  width
       rrect_.height(),                                //  height
@@ -51,30 +54,23 @@ void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context,
       rrect_.radii(SkRRect::kLowerRight_Corner).x(),  //  bottom_right_radius
       rrect_.radii(SkRRect::kLowerLeft_Corner).x()    //  bottom_left_radius
       );
-  mozart::client::Material layer_material(context.session());
-  mozart::client::ShapeNode layer_shape_node(context.session());
-  layer_shape_node.SetShape(layer_shape);
-  layer_shape_node.SetMaterial(layer_material);
-  layer_shape_node.SetTranslation(
-      rrect_.width() * 0.5f + rrect_.getBounds().left(),
-      rrect_.height() * 0.5f + rrect_.getBounds().top(), 0.f);
 
-  mozart::client::EntityNode layer_entity_node(context.session());
-  layer_entity_node.AddPart(layer_shape_node);
-  layer_entity_node.SetClip(0u, true /* clip to self */);
-  layer_entity_node.SetTranslation(0.f, 0.f, elevation_);
-  container.AddChild(layer_entity_node);
+  SceneUpdateContext::Frame frame(context, shape, rrect_.getBounds(), color_,
+                                  elevation_, scale_x_, scale_y_);
+  for (auto& layer : layers()) {
+    if (layer->needs_painting()) {
+      frame.AddPaintedLayer(layer.get());
+    }
+  }
 
-  context.PushPhysicalModel(rrect_.getBounds(), color_);
-  UpdateSceneChildren(context, layer_entity_node);
-  context.PopPhysicalModel(layer_material);
+  UpdateSceneChildren(context);
 }
 
 #endif  // defined(OS_FUCHSIA)
 
 void PhysicalModelLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "PhysicalModelLayer::Paint");
-  FTL_DCHECK(!needs_system_composite());
+  FTL_DCHECK(needs_painting());
 
   SkPath path;
   path.addRRect(rrect_);
@@ -103,7 +99,7 @@ void PhysicalModelLayer::Paint(PaintContext& context) {
 void PhysicalModelLayer::DrawShadow(SkCanvas* canvas,
                                     const SkPath& path,
                                     SkColor color,
-                                    double elevation,
+                                    float elevation,
                                     bool transparentOccluder) {
   SkShadowFlags flags = transparentOccluder
                             ? SkShadowFlags::kTransparentOccluder_ShadowFlag
