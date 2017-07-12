@@ -158,8 +158,7 @@ using namespace shell;
   if ([viewController isKindOfClass:[UINavigationController class]]) {
    [((UINavigationController*)viewController) popViewControllerAnimated:NO];
   }
-
-  }
+}
 
 - (NSDictionary*)getClipboardData:(NSString*)format {
   UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
