@@ -25,6 +25,7 @@ shared_library("flutter_framework_dylib") {
     "framework/Headers/FlutterMacros.h",
     "framework/Headers/FlutterPlugin.h",
     "framework/Headers/FlutterViewController.h",
+    "framework/Headers/FlutterNavigationController.h",
     "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterChannels.mm",
     "framework/Source/FlutterCodecs.mm",
@@ -42,6 +43,7 @@ shared_library("flutter_framework_dylib") {
     "framework/Source/FlutterView.h",
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
+    "framework/Source/FlutterNavigationController.mm",
     "framework/Source/accessibility_bridge.h",
     "framework/Source/accessibility_bridge.mm",
     "framework/Source/flutter_main_ios.h",
@@ -166,6 +168,7 @@ copy("framework_headers") {
     "framework/Headers/FlutterMacros.h",
     "framework/Headers/FlutterPlugin.h",
     "framework/Headers/FlutterViewController.h",
+    "framework/Headers/FlutterNavigationController.h",
   ]
   outputs = [
     "$_flutter_framework_dir/Headers/{{source_file_part}}",
