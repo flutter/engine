@@ -86,6 +86,7 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   void InitFidlInternal();
   void InitMozartInternal();
 
+  void PostBeginFrame();
   void BeginFrame();
   void OnFrameComplete();
   void Invalidate();
@@ -109,6 +110,7 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   int current_text_input_client_ = 0;
   ftl::TimePoint last_begin_frame_time_;
   bool frame_outstanding_ = false;
+  bool frame_scheduled_ = false;
 
   ftl::WeakPtrFactory<RuntimeHolder> weak_factory_;
 

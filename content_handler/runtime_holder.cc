@@ -267,12 +267,17 @@ std::string RuntimeHolder::DefaultRouteName() {
 
 void RuntimeHolder::ScheduleFrame() {
   ASSERT_IS_UI_THREAD;
-  if (!frame_outstanding_) {
-    BeginFrame();
+  if (!frame_scheduled_) {
+    frame_scheduled_ = true;
+    if (!frame_outstanding_)
+      PostBeginFrame();
   }
 }
 
 void RuntimeHolder::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
+  if (!frame_outstanding_)
+    return;  // spurious
+
   layer_tree->set_construction_time(ftl::TimePoint::Now() -
                                     last_begin_frame_time_);
   layer_tree->set_frame_size(SkISize::Make(viewport_metrics_.physical_width,
@@ -664,8 +669,21 @@ ftl::WeakPtr<RuntimeHolder> RuntimeHolder::GetWeakPtr() {
   return weak_factory_.GetWeakPtr();
 }
 
+void RuntimeHolder::PostBeginFrame() {
+  blink::Threads::Platform()->PostTask([weak_runtime_holder = GetWeakPtr()]() {
+    // On the Platform/UI thread.
+    ASSERT_IS_UI_THREAD;
+    if (weak_runtime_holder) {
+      weak_runtime_holder->BeginFrame();
+    }
+  });
+}
+
 void RuntimeHolder::BeginFrame() {
   ASSERT_IS_UI_THREAD
+  FTL_DCHECK(frame_scheduled_);
+  FTL_DCHECK(!frame_outstanding_);
+  frame_scheduled_ = false;
   frame_outstanding_ = true;
   last_begin_frame_time_ = ftl::TimePoint::Now();
   runtime_->BeginFrame(last_begin_frame_time_);
@@ -673,8 +691,10 @@ void RuntimeHolder::BeginFrame() {
 
 void RuntimeHolder::OnFrameComplete() {
   ASSERT_IS_UI_THREAD
+  FTL_DCHECK(frame_outstanding_);
   frame_outstanding_ = false;
-  ScheduleFrame();
+  if (frame_scheduled_)
+    PostBeginFrame();
 }
 
 }  // namespace flutter_runner
