@@ -129,7 +129,6 @@ void VulkanSurfacePool::AgeAndCollectOldBuffers() {
   for (const auto& size : sizes_to_erase) {
     available_surfaces_.erase(size);
   }
-  PrintStats();
 }
 
 void VulkanSurfacePool::PrintStats() const {

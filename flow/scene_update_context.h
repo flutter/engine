@@ -115,9 +115,9 @@ class SceneUpdateContext {
 
   // TODO(chinmaygarde): This method must submit the surfaces as soon as paint
   // tasks are done. However, given that there is no support currently for
-  // Vulkan semaphores, we need to perform all the surfaces after an explicit
-  // CPU wait. One Vulkan semaphores are available, this method must return void
-  // and the implemtation must submit surfaces on its own as soon as the
+  // Vulkan semaphores, we need to submit all the surfaces after an explicit
+  // CPU wait. Once Vulkan semaphores are available, this method must return
+  // void and the implementation must submit surfaces on its own as soon as the
   // specific canvas operations are done.
   FTL_WARN_UNUSED_RESULT
   std::vector<std::unique_ptr<SurfaceProducerSurface>> ExecutePaintTasks(

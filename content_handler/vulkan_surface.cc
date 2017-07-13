@@ -333,7 +333,9 @@ void VulkanSurface::Reset() {
   }
 }
 
-void VulkanSurface::OnHandleReady(mx_handle_t handle, mx_signals_t pending) {
+void VulkanSurface::OnHandleReady(mx_handle_t handle,
+                                  mx_signals_t pending,
+                                  uint64_t count) {
   ASSERT_IS_GPU_THREAD;
   FTL_DCHECK(pending & MX_USER_SIGNAL_0);
   FTL_DCHECK(handle == release_event_.get());

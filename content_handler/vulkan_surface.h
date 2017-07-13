@@ -65,7 +65,9 @@ class VulkanSurface : public flow::SceneUpdateContext::SurfaceProducerSurface,
   bool valid_ = false;
 
   // |mtl::MessageLoopHandler|
-  void OnHandleReady(mx_handle_t handle, mx_signals_t pending) override;
+  void OnHandleReady(mx_handle_t handle,
+                     mx_signals_t pending,
+                     uint64_t count) override;
 
   bool AllocateDeviceMemory(sk_sp<GrContext> context, const SkISize& size);
 
