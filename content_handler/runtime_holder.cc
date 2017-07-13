@@ -188,14 +188,14 @@ void RuntimeHolder::CreateView(
     FTL_LOG(ERROR) << "Could not create an event pair.";
     return;
   }
-  mozart::ViewListener2Ptr view_listener;
+  mozart::ViewListenerPtr view_listener;
   view_listener_binding_.Bind(view_listener.NewRequest());
-  view_manager_->CreateView2(view_.NewRequest(),             // view
-                             std::move(view_owner_request),  // view owner
-                             std::move(view_listener),       // view listener
-                             std::move(export_token),        // export token
-                             script_uri                      // diagnostic label
-                             );
+  view_manager_->CreateView(view_.NewRequest(),             // view
+                            std::move(view_owner_request),  // view owner
+                            std::move(view_listener),       // view listener
+                            std::move(export_token),        // export token
+                            script_uri                      // diagnostic label
+                            );
   app::ServiceProviderPtr view_services;
   view_->GetServiceProvider(view_services.NewRequest());
 

@@ -32,7 +32,7 @@ class Rasterizer;
 
 class RuntimeHolder : public blink::RuntimeDelegate,
                       public mozart::NativesDelegate,
-                      public mozart::ViewListener2,
+                      public mozart::ViewListener,
                       public mozart::InputListener,
                       public mozart::InputMethodEditorClient {
  public:
@@ -66,7 +66,7 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   void OnEvent(mozart::InputEventPtr event,
                const OnEventCallback& callback) override;
 
-  // |mozart::ViewListener2| implementation:
+  // |mozart::ViewListener| implementation:
   void OnPropertiesChanged(
       mozart::ViewPropertiesPtr properties,
       const OnPropertiesChangedCallback& callback) override;
@@ -100,7 +100,7 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   std::unique_ptr<blink::RuntimeController> runtime_;
   blink::ViewportMetrics viewport_metrics_;
   mozart::ViewManagerPtr view_manager_;
-  fidl::Binding<mozart::ViewListener2> view_listener_binding_;
+  fidl::Binding<mozart::ViewListener> view_listener_binding_;
   fidl::Binding<mozart::InputListener> input_listener_binding_;
   mozart::InputConnectionPtr input_connection_;
   mozart::ViewPtr view_;
