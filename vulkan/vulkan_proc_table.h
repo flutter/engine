@@ -107,6 +107,7 @@ class VulkanProcTable : public ftl::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(GetSwapchainImagesKHR);
   DEFINE_PROC(QueuePresentKHR);
   DEFINE_PROC(QueueSubmit);
+  DEFINE_PROC(QueueWaitIdle);
   DEFINE_PROC(ResetCommandBuffer);
   DEFINE_PROC(ResetFences);
   DEFINE_PROC(WaitForFences);

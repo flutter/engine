@@ -9,6 +9,7 @@
 #include "apps/mozart/lib/scene/client/session.h"
 #include "flutter/common/threads.h"
 #include "flutter/content_handler/vulkan_surface_producer.h"
+#include "flutter/flow/compositor_context.h"
 #include "flutter/flow/scene_update_context.h"
 #include "lib/fidl/cpp/bindings/interface_handle.h"
 #include "lib/ftl/macros.h"
@@ -32,7 +33,8 @@ class SessionConnection {
     return root_node_;
   }
 
-  void Present(ftl::Closure on_present_callback);
+  void Present(flow::CompositorContext::ScopedFrame& frame,
+               ftl::Closure on_present_callback);
 
  private:
   mozart::client::Session session_;

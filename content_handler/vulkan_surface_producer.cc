@@ -101,7 +101,25 @@ bool VulkanSurfaceProducer::Initialize(
   return true;
 }
 
-void VulkanSurfaceProducer::OnSurfacesPresented() {
+void VulkanSurfaceProducer::OnSurfacesPresented(
+    std::vector<
+        std::unique_ptr<flow::SceneUpdateContext::SurfaceProducerSurface>>
+        surfaces) {
+  // Do a single flush for all canvases derived from the context.
+  context_->flush();
+
+  // Do a CPU wait.
+  // TODO(chinmaygarde): Remove this once we have support for Vulkan semaphores.
+  VkResult wait_result =
+      VK_CALL_LOG_ERROR(vk_->QueueWaitIdle(backend_context_->fQueue));
+  FTL_DCHECK(wait_result == VK_SUCCESS);
+
+  // Submit surface, this signals acquire events sent along the session.
+  for (auto& surface : surfaces) {
+    SubmitSurface(std::move(surface));
+  }
+
+  // Buffer management.
   surface_pool_->AgeAndCollectOldBuffers();
 }
 

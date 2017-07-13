@@ -113,7 +113,15 @@ class SceneUpdateContext {
                      float device_pixel_ratio,
                      bool hit_testable);
 
-  void ExecutePaintTasks(CompositorContext::ScopedFrame& frame);
+  // TODO(chinmaygarde): This method must submit the surfaces as soon as paint
+  // tasks are done. However, given that there is no support currently for
+  // Vulkan semaphores, we need to perform all the surfaces after an explicit
+  // CPU wait. One Vulkan semaphores are available, this method must return void
+  // and the implemtation must submit surfaces on its own as soon as the
+  // specific canvas operations are done.
+  FTL_WARN_UNUSED_RESULT
+  std::vector<std::unique_ptr<SurfaceProducerSurface>> ExecutePaintTasks(
+      CompositorContext::ScopedFrame& frame);
 
  private:
   struct PaintTask {

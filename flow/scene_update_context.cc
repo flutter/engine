@@ -168,10 +168,10 @@ uint32_t SceneUpdateContext::GenerateTextureIfNeeded(
   return session_image_id;
 }
 
-void SceneUpdateContext::ExecutePaintTasks(
-    CompositorContext::ScopedFrame& frame) {
+std::vector<std::unique_ptr<flow::SceneUpdateContext::SurfaceProducerSurface>>
+SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
   TRACE_EVENT0("flutter", "SceneUpdateContext::ExecutePaintTasks");
-
+  std::vector<std::unique_ptr<SurfaceProducerSurface>> surfaces_to_submit;
   for (auto& task : paint_tasks_) {
     FTL_DCHECK(task.surface);
     SkCanvas* canvas = task.surface->GetSkiaSurface()->getCanvas();
@@ -185,11 +185,10 @@ void SceneUpdateContext::ExecutePaintTasks(
     for (Layer* layer : task.layers) {
       layer->Paint(context);
     }
-    // TODO(chinmaygarde): Get rid of this.
-    canvas->flush();
-    surface_producer_->SubmitSurface(std::move(task.surface));
+    surfaces_to_submit.emplace_back(std::move(task.surface));
   }
   paint_tasks_.clear();
+  return surfaces_to_submit;
 }
 
 SceneUpdateContext::Entity::Entity(SceneUpdateContext& context)

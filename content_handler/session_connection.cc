@@ -32,15 +32,28 @@ void SessionConnection::OnSessionError() {
   FTL_CHECK(false) << "Session connection was terminated.";
 }
 
-void SessionConnection::Present(ftl::Closure on_present_callback) {
+void SessionConnection::Present(flow::CompositorContext::ScopedFrame& frame,
+                                ftl::Closure on_present_callback) {
   ASSERT_IS_GPU_THREAD;
   FTL_DCHECK(pending_on_present_callback_ == nullptr);
   FTL_DCHECK(on_present_callback != nullptr);
   pending_on_present_callback_ = on_present_callback;
+
+  // Flush all session ops. Paint tasks have not yet executed but those are
+  // fenced. The compositor can start processing ops while we finalize paint
+  // tasks.
   session_.Present(0,                 // presentation_time. Placeholder for now.
                    present_callback_  // callback
                    );
-  surface_producer_->OnSurfacesPresented();
+
+  // Execute paint tasks and signal fences.
+  auto surfaces_to_submit = scene_update_context_.ExecutePaintTasks(frame);
+
+  // Tell the surface producer that a present has occurred so it can perform
+  // book-keeping on buffer caches.
+  surface_producer_->OnSurfacesPresented(std::move(surfaces_to_submit));
+
+  // Prepare for the next frame.
   EnqueueClearOps();
 }
 

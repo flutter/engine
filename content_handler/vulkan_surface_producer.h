@@ -36,7 +36,10 @@ class VulkanSurfaceProducer : public flow::SceneUpdateContext::SurfaceProducer {
       std::unique_ptr<flow::SceneUpdateContext::SurfaceProducerSurface> surface)
       override;
 
-  void OnSurfacesPresented();
+  void OnSurfacesPresented(
+      std::vector<
+          std::unique_ptr<flow::SceneUpdateContext::SurfaceProducerSurface>>
+          surfaces);
 
  private:
   // Note: the order here is very important. The proctable must be destroyed

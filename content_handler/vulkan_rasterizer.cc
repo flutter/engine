@@ -117,18 +117,10 @@ void VulkanRasterizer::Draw(std::unique_ptr<flow::LayerTree> layer_tree,
   }
 
   {
-    // Draw the contents of the scene to a surface.
-    // We do this after publishing to take advantage of pipelining.
-    TRACE_EVENT0("flutter", "ExecutePaintTasks");
-    session_connection_->scene_update_context().ExecutePaintTasks(frame);
-  }
-
-  {
     // Flush all pending session ops.
     TRACE_EVENT0("flutter", "SessionPresent");
-    session_connection_->Present([callback = std::move(callback)]() {
-      callback();
-    });
+    session_connection_->Present(
+        frame, [callback = std::move(callback)]() { callback(); });
   }
 }
 
