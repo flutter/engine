@@ -8,6 +8,7 @@
 #include "apps/mozart/lib/scene/client/resources.h"
 #include "apps/mozart/lib/scene/client/session.h"
 #include "flutter/common/threads.h"
+#include "flutter/content_handler/vulkan_surface_producer.h"
 #include "flutter/flow/scene_update_context.h"
 #include "lib/fidl/cpp/bindings/interface_handle.h"
 #include "lib/ftl/macros.h"
@@ -17,10 +18,8 @@ namespace flutter_runner {
 
 class SessionConnection {
  public:
-  SessionConnection(
-      fidl::InterfaceHandle<mozart2::Session> session_handle,
-      mx::eventpair import_token,
-      flow::SceneUpdateContext::SurfaceProducer* surface_producer);
+  SessionConnection(fidl::InterfaceHandle<mozart2::Session> session_handle,
+                    mx::eventpair import_token);
 
   ~SessionConnection();
 
@@ -33,11 +32,6 @@ class SessionConnection {
     return root_node_;
   }
 
-  mozart::client::Session* session() {
-    ASSERT_IS_GPU_THREAD;
-    return &session_;
-  }
-
   void Present(ftl::Closure on_present_callback);
 
  private:
@@ -45,7 +39,7 @@ class SessionConnection {
   mozart::client::ImportNode root_node_;
   mozart::client::Session::PresentCallback present_callback_;
   ftl::Closure pending_on_present_callback_;
-
+  std::unique_ptr<VulkanSurfaceProducer> surface_producer_;
   flow::SceneUpdateContext scene_update_context_;
 
   void OnSessionError();

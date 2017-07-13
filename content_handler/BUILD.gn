@@ -33,6 +33,10 @@ template("flutter_content_handler") {
       "session_connection.h",
       "vulkan_rasterizer.cc",
       "vulkan_rasterizer.h",
+      "vulkan_surface.cc",
+      "vulkan_surface.h",
+      "vulkan_surface_pool.cc",
+      "vulkan_surface_pool.h",
       "vulkan_surface_producer.cc",
       "vulkan_surface_producer.h",
     ]

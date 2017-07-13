@@ -13,7 +13,9 @@ namespace flow {
 
 SceneUpdateContext::SceneUpdateContext(mozart::client::Session* session,
                                        SurfaceProducer* surface_producer)
-    : session_(session), surface_producer_(surface_producer) {}
+    : session_(session), surface_producer_(surface_producer) {
+  FTL_DCHECK(surface_producer_ != nullptr);
+}
 
 SceneUpdateContext::~SceneUpdateContext() = default;
 
@@ -144,26 +146,16 @@ uint32_t SceneUpdateContext::GenerateTextureIfNeeded(
     return 0u;
 
   // Acquire a surface from the surface producer and register the paint tasks.
-  uint32_t texture_id = 0u;
-  mx::event acquire, release;
-  auto surface = surface_producer_->ProduceSurface(
-      physical_size, session_, texture_id, acquire, release);
+  auto surface = surface_producer_->ProduceSurface(physical_size);
 
-  // TODO(chinmaygarde): Check that the acquire and release events are valid.
-  if (!surface || texture_id == 0 /* || !acquire || !release */) {
+  if (!surface) {
     FTL_LOG(ERROR) << "Could not acquire a surface from the surface producer "
                       "of size: "
-                   << physical_size.width() << "x" << physical_size.height()
-                   << " Surface: " << static_cast<bool>(surface) << ", "
-                   << "Texture Id: " << texture_id << ", "
-                   << "Acquire Fence: " << static_cast<bool>(acquire) << ", "
-                   << "Release Fence: " << static_cast<bool>(release);
+                   << physical_size.width() << "x" << physical_size.height();
     return 0u;
   }
 
-  // Enqueue the acquire and release fences.
-  // session_.EnqueueAcquireFence(std::move(acquire));
-  // session_.EnqueueReleaseFence(std::move(release));
+  auto session_image_id = surface->GetSessionImageID();
 
   // Enqueue the paint task.
   paint_tasks_.push_back({.surface = std::move(surface),
@@ -173,7 +165,7 @@ uint32_t SceneUpdateContext::GenerateTextureIfNeeded(
                           .scale_y = scale_y,
                           .background_color = color,
                           .layers = std::move(paint_layers)});
-  return texture_id;
+  return session_image_id;
 }
 
 void SceneUpdateContext::ExecutePaintTasks(
@@ -182,7 +174,7 @@ void SceneUpdateContext::ExecutePaintTasks(
 
   for (auto& task : paint_tasks_) {
     FTL_DCHECK(task.surface);
-    SkCanvas* canvas = task.surface->getCanvas();
+    SkCanvas* canvas = task.surface->GetSkiaSurface()->getCanvas();
     Layer::PaintContext context = {*canvas, frame.context().frame_time(),
                                    frame.context().engine_time(),
                                    frame.context().memory_usage(), false};
@@ -193,7 +185,9 @@ void SceneUpdateContext::ExecutePaintTasks(
     for (Layer* layer : task.layers) {
       layer->Paint(context);
     }
+    // TODO(chinmaygarde): Get rid of this.
     canvas->flush();
+    surface_producer_->SubmitSurface(std::move(task.surface));
   }
   paint_tasks_.clear();
 }

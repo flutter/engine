@@ -23,14 +23,31 @@ class ExportNode;
 
 class SceneUpdateContext {
  public:
+  class SurfaceProducerSurface {
+   public:
+    virtual size_t AdvanceAndGetAge() = 0;
+
+    virtual bool FlushSessionAcquireAndReleaseEvents() = 0;
+
+    virtual bool IsValid() const = 0;
+
+    virtual SkISize GetSize() const = 0;
+
+    virtual void SignalWritesFinished(
+        std::function<void(void)> on_writes_committed) = 0;
+
+    virtual uint32_t GetSessionImageID() const = 0;
+
+    virtual sk_sp<SkSurface> GetSkiaSurface() const = 0;
+  };
+
   class SurfaceProducer {
    public:
-    virtual ~SurfaceProducer() {}
-    virtual sk_sp<SkSurface> ProduceSurface(SkISize size,
-                                            mozart::client::Session* session,
-                                            uint32_t& session_image_id,
-                                            mx::event& acquire_release,
-                                            mx::event& release_fence) = 0;
+    virtual std::unique_ptr<SurfaceProducerSurface> ProduceSurface(
+        const SkISize& size) = 0;
+
+    virtual void SubmitSurface(
+        std::unique_ptr<SurfaceProducerSurface> surface) = 0;
   };
 
   SceneUpdateContext(mozart::client::Session* session,
@@ -100,7 +117,7 @@ class SceneUpdateContext {
 
  private:
   struct PaintTask {
-    sk_sp<SkSurface> surface;
+    std::unique_ptr<SurfaceProducerSurface> surface;
     SkScalar left;
     SkScalar top;
     SkScalar scale_x;

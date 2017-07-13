@@ -13,6 +13,7 @@
 #include <thread>
 #include <utility>
 
+#include "flutter/common/threads.h"
 #include "flutter/glue/trace_event.h"
 #include "lib/ftl/files/unique_fd.h"
 
@@ -62,28 +63,26 @@ static bool WaitForFirstDisplayDriver() {
 
 VulkanRasterizer::VulkanRasterizer() : compositor_context_(nullptr) {
   valid_ = WaitForFirstDisplayDriver();
-  if (valid_) {
-    surface_producer_ = std::make_unique<VulkanSurfaceProducer>();
-  }
 }
 
 VulkanRasterizer::~VulkanRasterizer() = default;
 
 bool VulkanRasterizer::IsValid() const {
-  return valid_ && surface_producer_ && surface_producer_->IsValid();
+  return valid_;
 }
 
 void VulkanRasterizer::SetSession(
     fidl::InterfaceHandle<mozart2::Session> session,
     mx::eventpair import_token) {
-  FTL_DCHECK(!session_connection_);
-
+  ASSERT_IS_GPU_THREAD;
+  FTL_DCHECK(valid_ && !session_connection_);
   session_connection_ = std::make_unique<SessionConnection>(
-      std::move(session), std::move(import_token), surface_producer_.get());
+      std::move(session), std::move(import_token));
 }
 
 void VulkanRasterizer::Draw(std::unique_ptr<flow::LayerTree> layer_tree,
                             ftl::Closure callback) {
+  ASSERT_IS_GPU_THREAD;
   FTL_DCHECK(callback != nullptr);
 
   if (layer_tree == nullptr) {
@@ -125,24 +124,9 @@ void VulkanRasterizer::Draw(std::unique_ptr<flow::LayerTree> layer_tree,
   }
 
   {
-    // Perform the surface producer step.
-    TRACE_EVENT0("flutter", "FinishFrame/Tick");
-    if (!surface_producer_->FinishFrame()) {
-      FTL_LOG(ERROR) << "Failed to Finish Frame";
-      surface_producer_->Tick();
-      callback();
-      return;
-    }
-  }
-
-  {
     // Flush all pending session ops.
     TRACE_EVENT0("flutter", "SessionPresent");
-    session_connection_->Present([
-      producer = surface_producer_.get(),  //
-      callback = std::move(callback)       //
-    ]() {
-      producer->Tick();
+    session_connection_->Present([callback = std::move(callback)]() {
       callback();
     });
   }

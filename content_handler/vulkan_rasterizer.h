@@ -6,13 +6,9 @@
 #define FLUTTER_CONTENT_HANDLER_VULKAN_RASTERIZER_H_
 
 #include <memory>
-#include <queue>
-#include <unordered_map>
-#include <vector>
 
 #include "flutter/content_handler/rasterizer.h"
 #include "flutter/content_handler/session_connection.h"
-#include "flutter/content_handler/vulkan_surface_producer.h"
 #include "flutter/flow/compositor_context.h"
 #include "lib/ftl/macros.h"
 
@@ -34,7 +30,6 @@ class VulkanRasterizer : public Rasterizer {
 
  private:
   flow::CompositorContext compositor_context_;
-  std::unique_ptr<VulkanSurfaceProducer> surface_producer_;
   std::unique_ptr<SessionConnection> session_connection_;
   bool valid_;
 
