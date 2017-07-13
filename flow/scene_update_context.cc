@@ -52,23 +52,14 @@ uint32_t SceneUpdateContext::GenerateTextureIfNeeded(
     SkScalar scale_y,
     const SkRect& paint_bounds,
     std::vector<Layer*> paint_layers) {
-  // Bail if there's nothing to paint.
-  if (paint_layers.empty() || paint_bounds.isEmpty())
+  // Bail if there's nothing to paint within the shape.
+  if (paint_layers.empty() || paint_bounds.isEmpty() ||
+      !paint_bounds.intersects(shape_bounds))
     return 0u;
 
-  // Limit the painting area to the space within the shape.
-  SkRect surface_bounds = paint_bounds;
-  if (!surface_bounds.intersect(shape_bounds))
-    return 0u;
-
-  // Expand to include the dimensions of the shape itself if it has
-  // a background color that needs to be filled in.
-  if (color != SK_ColorTRANSPARENT)
-    surface_bounds.join(shape_bounds);
-
-  // Bail if the physical paint bounds are empty.
-  SkISize physical_size = SkISize::Make(surface_bounds.width() * scale_x,
-                                        surface_bounds.height() * scale_y);
+  // Bail if the physical bounds are empty.
+  SkISize physical_size = SkISize::Make(shape_bounds.width() * scale_x,
+                                        shape_bounds.height() * scale_y);
   if (physical_size.isEmpty())
     return 0u;
 
@@ -96,8 +87,8 @@ uint32_t SceneUpdateContext::GenerateTextureIfNeeded(
 
   // Enqueue the paint task.
   paint_tasks_.push_back({.surface = std::move(surface),
-                          .left = surface_bounds.left(),
-                          .top = surface_bounds.top(),
+                          .left = shape_bounds.left(),
+                          .top = shape_bounds.top(),
                           .scale_x = scale_x,
                           .scale_y = scale_y,
                           .background_color = color,
