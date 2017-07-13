@@ -111,6 +111,7 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   ftl::TimePoint last_begin_frame_time_;
   bool frame_outstanding_ = false;
   bool frame_scheduled_ = false;
+  bool frame_rendering_ = false;
 
   ftl::WeakPtrFactory<RuntimeHolder> weak_factory_;
 

@@ -275,8 +275,9 @@ void RuntimeHolder::ScheduleFrame() {
 }
 
 void RuntimeHolder::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
-  if (!frame_outstanding_)
+  if (!frame_outstanding_ || frame_rendering_)
     return;  // spurious
+  frame_rendering_ = true;
 
   layer_tree->set_construction_time(ftl::TimePoint::Now() -
                                     last_begin_frame_time_);
@@ -300,6 +301,7 @@ void RuntimeHolder::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
         // On the Platform/UI thread.
         ASSERT_IS_UI_THREAD;
         if (weak_runtime_holder) {
+          weak_runtime_holder->frame_rendering_ = false;
           weak_runtime_holder->OnFrameComplete();
         }
       });
