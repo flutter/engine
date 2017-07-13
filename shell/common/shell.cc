@@ -147,7 +147,7 @@ void Shell::InitStandalone(ftl::CommandLine command_line,
   settings.enable_software_rendering =
       command_line.HasOption(FlagForSwitch(Switch::EnableSoftwareRendering));
 
-  blink::Settings::using_blink =
+  settings.using_blink =
       !command_line.HasOption(FlagForSwitch(Switch::EnableTxt));
 
   settings.endless_trace_buffer =
@@ -245,7 +245,8 @@ void Shell::GetRasterizers(std::vector<ftl::WeakPtr<Rasterizer>>* rasterizers) {
   *rasterizers = rasterizers_;
 }
 
-void Shell::AddPlatformView(const std::shared_ptr<PlatformView>& platform_view) {
+void Shell::AddPlatformView(
+    const std::shared_ptr<PlatformView>& platform_view) {
   std::lock_guard<std::mutex> lk(platform_views_mutex_);
   if (platform_view) {
     platform_views_.push_back(platform_view);
@@ -320,8 +321,15 @@ void Shell::RunInPlatformViewUIThread(uintptr_t view_id,
   *view_existed = false;
 
   for (auto it = platform_views_.begin(); it != platform_views_.end(); it++) {
+<<<<<<< HEAD
     std::shared_ptr<PlatformView> view = it->lock();
-    if (!view) continue;
+    if (!view)
+      continue;
+=======
+    std::shared_ptr<PlatformView> view{*it};
+    if (!view)
+      continue;
+>>>>>>> Implement GetRectsForRange, GetPositionForOffset, and GetWordBoundary.
     if (reinterpret_cast<uintptr_t>(view.get()) == view_id) {
       *view_existed = true;
       view->RunFromSource(assets_directory, main, packages);

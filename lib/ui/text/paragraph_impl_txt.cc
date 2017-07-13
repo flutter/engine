@@ -7,7 +7,12 @@
 #include "flutter/common/threads.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/lib/ui/text/paragraph_impl.h"
+#include "lib/ftl/logging.h"
 #include "lib/ftl/tasks/task_runner.h"
+#include "lib/tonic/converter/dart_converter.h"
+#include "third_party/skia/include/core/SkPoint.h"
+
+using tonic::ToDart;
 
 #include "lib/txt/src/paragraph_constraints.h"
 
@@ -60,16 +65,31 @@ void ParagraphImplTxt::paint(Canvas* canvas, double x, double y) {
 
 std::vector<TextBox> ParagraphImplTxt::getRectsForRange(unsigned start,
                                                         unsigned end) {
-  return std::vector<TextBox>{0ull};
+  std::vector<TextBox> result;
+  std::vector<SkRect> rects = m_paragraph->GetRectsForRange(start, end);
+  for (size_t i = 0; i < rects.size(); ++i) {
+    result.push_back(TextBox(rects[i], m_paragraph->GetParagraphStyle().rtl
+                                           ? TextDirection::RTL
+                                           : TextDirection::LTR));
+  }
+  return result;
 }
 
 Dart_Handle ParagraphImplTxt::getPositionForOffset(double dx, double dy) {
   // TODO(garyq): Implement in the library.
-  return nullptr;
+  Dart_Handle result = Dart_NewList(2);
+  Dart_ListSetAt(result, 0,
+                 ToDart(m_paragraph->GetGlyphPositionAtCoordinate(dx, dy)));
+  Dart_ListSetAt(result, 1, ToDart(static_cast<int>(EAffinity::DOWNSTREAM)));
+  return result;
 }
 
 Dart_Handle ParagraphImplTxt::getWordBoundary(unsigned offset) {
   // TODO(garyq): Implement in the library.
+  SkIPoint point = m_paragraph->GetWordBoundary(offset);
+  Dart_Handle result = Dart_NewList(2);
+  Dart_ListSetAt(result, 0, ToDart(point.x()));
+  Dart_ListSetAt(result, 1, ToDart(point.y()));
   return nullptr;
 }
 
