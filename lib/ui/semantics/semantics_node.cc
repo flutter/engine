@@ -16,6 +16,14 @@ bool SemanticsNode::HasAction(SemanticsAction action) {
   return (actions & static_cast<int32_t>(action)) != 0;
 }
 
+bool SemanticsNode::IsFocusable() {
+  int32_t scrollable = static_cast<int32_t>(SemanticsAction::kScrollLeft) |
+                       static_cast<int32_t>(SemanticsAction::kScrollRight) |
+                       static_cast<int32_t>(SemanticsAction::kScrollUp) |
+                       static_cast<int32_t>(SemanticsAction::kScrollDown);
+  return (actions & ~scrollable) != 0;
+}
+
 bool SemanticsNode::HasFlag(SemanticsFlags flag) {
   return (flags & static_cast<int32_t>(flag)) != 0;
 }

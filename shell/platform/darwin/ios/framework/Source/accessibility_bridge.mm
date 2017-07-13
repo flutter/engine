@@ -92,7 +92,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   // Note: hit detection will only apply to elements that report
   // -isAccessibilityElement of YES. The framework will continue scanning the
   // entire element tree looking for such a hit.
-  return _node.HasAction(blink::SemanticsAction::kTap) || _children.empty();
+  return _node.IsFocusable();
 }
 
 - (NSString*)accessibilityLabel {
@@ -252,7 +252,7 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
   } else {
     view_.accessibilityElements = nil;
   }
-    
+
   NSMutableArray<NSNumber*>* doomed_uids =
     [NSMutableArray arrayWithArray: [objects_.get() allKeys]];
   if (root)

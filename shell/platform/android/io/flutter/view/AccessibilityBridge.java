@@ -102,6 +102,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
         result.setVisibleToUser(true);
         result.setEnabled(true); // TODO(ianh): Expose disabled subtrees
 
+        result.setFocusable((object.actions & ~SEMANTICS_ACTION_SCROLLABLE) != 0 || object.children == null);
+
         if ((object.actions & SEMANTICS_ACTION_TAP) != 0) {
             result.addAction(AccessibilityNodeInfo.ACTION_CLICK);
             result.setClickable(true);
