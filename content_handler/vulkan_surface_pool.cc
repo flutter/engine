@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/content_handler/vulkan_surface_pool.h"
+#include "apps/tracing/lib/trace/event.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
 namespace flutter_runner {
@@ -48,8 +49,14 @@ VulkanSurfacePool::GetCachedOrCreateSurface(const SkISize& size) {
   if (available_surfaces.size() == 0) {
     available_surfaces_.erase(found_in_available);
   }
-  return acquired_surface->IsValid() ? std::move(acquired_surface)
-                                     : CreateSurface(size);
+  if (acquired_surface->IsValid()) {
+    trace_surfaces_reused_++;
+    return acquired_surface;
+  }
+  // This is only likely to happen if the surface was invalidated between the
+  // time it was sent into the available buffers cache and accessed now.
+  // Extremely unlikely.
+  return CreateSurface(size);
 }
 
 void VulkanSurfacePool::SubmitSurface(
@@ -79,7 +86,7 @@ std::unique_ptr<VulkanSurface> VulkanSurfacePool::CreateSurface(
   if (!surface->IsValid()) {
     return nullptr;
   }
-
+  trace_surfaces_created_++;
   return surface;
 }
 
@@ -129,9 +136,11 @@ void VulkanSurfacePool::AgeAndCollectOldBuffers() {
   for (const auto& size : sizes_to_erase) {
     available_surfaces_.erase(size);
   }
+  TraceStats();
 }
 
-void VulkanSurfacePool::PrintStats() const {
+void VulkanSurfacePool::TraceStats() {
+#if 0
   FTL_LOG(INFO) << "~~~~~~~~~~~~ Surface Pool Stats:";
   for (const auto& surface_iterator : available_surfaces_) {
     FTL_LOG(INFO) << surface_iterator.second.size() << " surfaces(s) of size "
@@ -142,6 +151,20 @@ void VulkanSurfacePool::PrintStats() const {
       << pending_surfaces_.size()
       << " surface(s) pending read acknowledgement from the compositor.";
   FTL_LOG(INFO) << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
+#endif
+  size_t cached_surfaces = 0;
+  for (const auto& surfaces : available_surfaces_) {
+    cached_surfaces += surfaces.second.size();
+  }
+  TRACE_COUNTER("flutter", "SurfacePool", 0u,                    //
+                "Cached", cached_surfaces,                       //
+                "Created", trace_surfaces_created_,              //
+                "Reused", trace_surfaces_reused_,                //
+                "PendingInCompositor", pending_surfaces_.size()  //
+                );
+  // Reset per present/frame stats.
+  trace_surfaces_created_ = 0;
+  trace_surfaces_reused_ = 0;
 }
 
 }  // namespace flutter_runner

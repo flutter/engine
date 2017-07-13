@@ -30,8 +30,6 @@ class VulkanSurfacePool {
       std::unique_ptr<flow::SceneUpdateContext::SurfaceProducerSurface>
           surface);
 
-  void PrintStats() const;
-
   void AgeAndCollectOldBuffers();
 
  private:
@@ -61,6 +59,8 @@ class VulkanSurfacePool {
       uintptr_t,
       std::unique_ptr<flow::SceneUpdateContext::SurfaceProducerSurface>>
       pending_surfaces_;
+  size_t trace_surfaces_created_ = 0;
+  size_t trace_surfaces_reused_ = 0;
 
   std::unique_ptr<flow::SceneUpdateContext::SurfaceProducerSurface>
   GetCachedOrCreateSurface(const SkISize& size);
@@ -68,6 +68,8 @@ class VulkanSurfacePool {
   std::unique_ptr<VulkanSurface> CreateSurface(const SkISize& size);
 
   void RecycleSurface(uintptr_t surface_key);
+
+  void TraceStats();
 
   FTL_DISALLOW_COPY_AND_ASSIGN(VulkanSurfacePool);
 };
