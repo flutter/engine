@@ -133,10 +133,14 @@ SceneUpdateContext::Entity::~Entity() {
 }
 
 SceneUpdateContext::Clip::Clip(SceneUpdateContext& context,
-                               mozart::client::Shape& shape)
+                               mozart::client::Shape& shape,
+                               const SkRect& shape_bounds)
     : Entity(context) {
   mozart::client::ShapeNode shape_node(context.session());
   shape_node.SetShape(shape);
+  shape_node.SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
+                            shape_bounds.height() * 0.5f + shape_bounds.top(),
+                            0.f);
 
   entity_node().AddPart(shape_node);
   entity_node().SetClip(0u, true /* clip to self */);

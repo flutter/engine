@@ -57,7 +57,9 @@ class SceneUpdateContext {
 
   class Clip : public Entity {
    public:
-    Clip(SceneUpdateContext& context, mozart::client::Shape& shape);
+    Clip(SceneUpdateContext& context,
+         mozart::client::Shape& shape,
+         const SkRect& shape_bounds);
     ~Clip();
   };
 

@@ -33,13 +33,13 @@ void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
   // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
   //               Treating the shape as a rectangle for now.
   // TODO(MZ-138): Need to be able to specify an origin.
-  auto rect = clip_path_.getBounds();
+  auto bounds = clip_path_.getBounds();
   mozart::client::Rectangle shape(context.session(),  // session
-                                  rect.width(),       //  width
-                                  rect.height()       //  height
+                                  bounds.width(),     //  width
+                                  bounds.height()     //  height
                                   );
 
-  SceneUpdateContext::Clip clip(context, shape);
+  SceneUpdateContext::Clip clip(context, shape, bounds);
   UpdateSceneChildren(context);
 }
 

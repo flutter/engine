@@ -30,7 +30,7 @@ void ClipRectLayer::UpdateScene(SceneUpdateContext& context) {
                                   clip_rect_.height()  //  height
                                   );
 
-  SceneUpdateContext::Clip clip(context, shape);
+  SceneUpdateContext::Clip clip(context, shape, clip_rect_);
   UpdateSceneChildren(context);
 }
 
