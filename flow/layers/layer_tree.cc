@@ -42,11 +42,10 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
                             mozart::client::ContainerNode& container) {
   TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
 
-  mozart::client::Rectangle shape(context.session(), frame_size_.width(),
-                                  frame_size_.height());
   SceneUpdateContext::Frame frame(
-      context, shape,
-      SkRect::MakeIWH(frame_size_.width(), frame_size_.height()),
+      context,
+      SkRRect::MakeRect(
+          SkRect::MakeIWH(frame_size_.width(), frame_size_.height())),
       SK_ColorTRANSPARENT, 0.f, 1.f, 1.f);
   if (root_layer_->needs_system_composite()) {
     root_layer_->UpdateScene(context);

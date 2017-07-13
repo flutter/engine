@@ -48,20 +48,8 @@ void PhysicalModelLayer::Preroll(PrerollContext* context,
 void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context) {
   FTL_DCHECK(needs_system_composite());
 
-  // TODO(MZ-137): Need to be able to express the radii as vectors.
-  // TODO(MZ-138): Need to be able to specify an origin.
-  mozart::client::RoundedRectangle shape(
-      context.session(),                              // session
-      rrect_.width(),                                 //  width
-      rrect_.height(),                                //  height
-      rrect_.radii(SkRRect::kUpperLeft_Corner).x(),   //  top_left_radius
-      rrect_.radii(SkRRect::kUpperRight_Corner).x(),  //  top_right_radius
-      rrect_.radii(SkRRect::kLowerRight_Corner).x(),  //  bottom_right_radius
-      rrect_.radii(SkRRect::kLowerLeft_Corner).x()    //  bottom_left_radius
-      );
-
-  SceneUpdateContext::Frame frame(context, shape, rrect_.getBounds(), color_,
-                                  elevation_, scale_x_, scale_y_);
+  SceneUpdateContext::Frame frame(context, rrect_, color_, elevation_, scale_x_,
+                                  scale_y_);
   for (auto& layer : layers()) {
     if (layer->needs_painting()) {
       frame.AddPaintedLayer(layer.get());

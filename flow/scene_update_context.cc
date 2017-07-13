@@ -27,39 +27,119 @@ void SceneUpdateContext::AddChildScene(ExportNode* export_node,
                     1.f / device_pixel_ratio, hit_testable);
 }
 
-void SceneUpdateContext::PrepareMaterial(mozart::client::Material& material,
-                                         const SkRect& shape_bounds,
-                                         SkColor color,
-                                         SkScalar scale_x,
-                                         SkScalar scale_y,
-                                         const SkRect& paint_bounds,
-                                         std::vector<Layer*> paint_layers) {
-  uint32_t texture_id =
-      GenerateTextureIfNeeded(shape_bounds, color, scale_x, scale_y,
-                              paint_bounds, std::move(paint_layers));
-  if (texture_id != 0u) {
-    material.SetTexture(texture_id);
-  } else if (color != SK_ColorTRANSPARENT) {
-    material.SetColor(SkColorGetR(color), SkColorGetG(color),
-                      SkColorGetB(color), SkColorGetA(color));
+void SceneUpdateContext::CreateFrame(mozart::client::EntityNode& entity_node,
+                                     const SkRRect& rrect,
+                                     SkColor color,
+                                     SkScalar scale_x,
+                                     SkScalar scale_y,
+                                     const SkRect& paint_bounds,
+                                     std::vector<Layer*> paint_layers) {
+  // Frames always clip their children.
+  entity_node.SetClip(0u, true /* clip to self */);
+
+  // We don't need a shape if the frame is zero size.
+  if (rrect.isEmpty())
+    return;
+
+  // Add a part which represents the frame's geometry for clipping purposes
+  // and possibly for its texture.
+  // TODO(MZ-137): Need to be able to express the radii as vectors.
+  // TODO(MZ-138): Need to be able to specify an origin.
+  SkRect shape_bounds = rrect.getBounds();
+  mozart::client::RoundedRectangle shape(
+      session_,                                      // session
+      rrect.width(),                                 // width
+      rrect.height(),                                // height
+      rrect.radii(SkRRect::kUpperLeft_Corner).x(),   // top_left_radius
+      rrect.radii(SkRRect::kUpperRight_Corner).x(),  // top_right_radius
+      rrect.radii(SkRRect::kLowerRight_Corner).x(),  // bottom_right_radius
+      rrect.radii(SkRRect::kLowerLeft_Corner).x()    // bottom_left_radius
+      );
+  mozart::client::ShapeNode shape_node(session_);
+  shape_node.SetShape(shape);
+  shape_node.SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
+                            shape_bounds.height() * 0.5f + shape_bounds.top(),
+                            0.f);
+  entity_node.AddPart(shape_node);
+
+  // Check whether the painted layers will be visible.
+  if (paint_bounds.isEmpty() || !paint_bounds.intersects(shape_bounds))
+    paint_layers.clear();
+
+  // Check whether a solid color will suffice.
+  if (paint_layers.empty()) {
+    SetShapeColor(shape_node, color);
+    return;
   }
+
+  // If the painted area only covers a portion of the frame then we can
+  // reduce the texture size by drawing just that smaller area.
+  SkRect inner_bounds = shape_bounds;
+  inner_bounds.intersect(paint_bounds);
+  if (inner_bounds != shape_bounds && rrect.contains(inner_bounds)) {
+    SetShapeColor(shape_node, color);
+
+    mozart::client::Rectangle inner_shape(session_, inner_bounds.width(),
+                                          inner_bounds.height());
+    mozart::client::ShapeNode inner_node(session_);
+    inner_node.SetShape(inner_shape);
+    inner_node.SetTranslation(inner_bounds.width() * 0.5f + inner_bounds.left(),
+                              inner_bounds.height() * 0.5f + inner_bounds.top(),
+                              0.f);
+    entity_node.AddPart(inner_node);
+    SetShapeTextureOrColor(inner_node, color, scale_x, scale_y, inner_bounds,
+                           std::move(paint_layers));
+    return;
+  }
+
+  // Apply a texture to the whole shape.
+  SetShapeTextureOrColor(shape_node, color, scale_x, scale_y, shape_bounds,
+                         std::move(paint_layers));
 }
 
-uint32_t SceneUpdateContext::GenerateTextureIfNeeded(
-    const SkRect& shape_bounds,
+void SceneUpdateContext::SetShapeTextureOrColor(
+    mozart::client::ShapeNode& shape_node,
     SkColor color,
     SkScalar scale_x,
     SkScalar scale_y,
     const SkRect& paint_bounds,
     std::vector<Layer*> paint_layers) {
-  // Bail if there's nothing to paint within the shape.
-  if (paint_layers.empty() || paint_bounds.isEmpty() ||
-      !paint_bounds.intersects(shape_bounds))
+  uint32_t texture_id = GenerateTextureIfNeeded(
+      color, scale_x, scale_y, paint_bounds, std::move(paint_layers));
+  if (texture_id != 0u) {
+    mozart::client::Material material(session_);
+    material.SetTexture(texture_id);
+    shape_node.SetMaterial(material);
+    return;
+  }
+
+  SetShapeColor(shape_node, color);
+}
+
+void SceneUpdateContext::SetShapeColor(mozart::client::ShapeNode& shape_node,
+                                       SkColor color) {
+  if (SkColorGetA(color) == 0)
+    return;
+
+  mozart::client::Material material(session_);
+  material.SetColor(SkColorGetR(color), SkColorGetG(color), SkColorGetB(color),
+                    SkColorGetA(color));
+  shape_node.SetMaterial(material);
+}
+
+uint32_t SceneUpdateContext::GenerateTextureIfNeeded(
+    SkColor color,
+    SkScalar scale_x,
+    SkScalar scale_y,
+    const SkRect& paint_bounds,
+    std::vector<Layer*> paint_layers) {
+  // Bail if there's nothing to paint.
+  if (paint_layers.empty())
     return 0u;
 
-  // Bail if the physical bounds are empty.
-  SkISize physical_size = SkISize::Make(shape_bounds.width() * scale_x,
-                                        shape_bounds.height() * scale_y);
+  // Bail if the physical bounds are empty after rounding.
+  SkISize physical_size = SkISize::Make(paint_bounds.width() * scale_x,
+                                        paint_bounds.height() * scale_y);
   if (physical_size.isEmpty())
     return 0u;
 
@@ -87,8 +167,8 @@ uint32_t SceneUpdateContext::GenerateTextureIfNeeded(
 
   // Enqueue the paint task.
   paint_tasks_.push_back({.surface = std::move(surface),
-                          .left = shape_bounds.left(),
-                          .top = shape_bounds.top(),
+                          .left = paint_bounds.left(),
+                          .top = paint_bounds.top(),
                           .scale_x = scale_x,
                           .scale_y = scale_y,
                           .background_color = color,
@@ -174,34 +254,23 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
 SceneUpdateContext::Transform::~Transform() = default;
 
 SceneUpdateContext::Frame::Frame(SceneUpdateContext& context,
-                                 mozart::client::Shape& shape,
-                                 const SkRect& shape_bounds,
+                                 const SkRRect& rrect,
                                  SkColor color,
                                  float elevation,
                                  SkScalar scale_x,
                                  SkScalar scale_y)
     : Entity(context),
-      shape_bounds_(shape_bounds),
+      rrect_(rrect),
       color_(color),
       scale_x_(scale_x),
       scale_y_(scale_y),
-      material_(context.session()),
       paint_bounds_(SkRect::MakeEmpty()) {
-  mozart::client::ShapeNode shape_node(context.session());
-  shape_node.SetShape(shape);
-  shape_node.SetMaterial(material_);
-  shape_node.SetTranslation(shape_bounds.width() * 0.5f + shape_bounds.left(),
-                            shape_bounds.height() * 0.5f + shape_bounds.top(),
-                            0.f);
-
-  entity_node().AddPart(shape_node);
-  entity_node().SetClip(0u, true /* clip to self */);
   entity_node().SetTranslation(0.f, 0.f, elevation);
 }
 
 SceneUpdateContext::Frame::~Frame() {
-  context().PrepareMaterial(material_, shape_bounds_, color_, scale_x_,
-                            scale_y_, paint_bounds_, std::move(paint_layers_));
+  context().CreateFrame(entity_node(), rrect_, color_, scale_x_, scale_y_,
+                        paint_bounds_, std::move(paint_layers_));
 }
 
 void SceneUpdateContext::Frame::AddPaintedLayer(Layer* layer) {

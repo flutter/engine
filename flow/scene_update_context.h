@@ -72,8 +72,7 @@ class SceneUpdateContext {
   class Frame : public Entity {
    public:
     Frame(SceneUpdateContext& context,
-          mozart::client::Shape& shape,
-          const SkRect& shape_bounds,
+          const SkRRect& rrect,
           SkColor color,
           float elevation,
           SkScalar scale_x,
@@ -83,12 +82,11 @@ class SceneUpdateContext {
     void AddPaintedLayer(Layer* layer);
 
    private:
-    const SkRect& shape_bounds_;
+    const SkRRect& rrect_;
     SkColor const color_;
     SkScalar const scale_x_;
     SkScalar const scale_y_;
 
-    mozart::client::Material material_;
     std::vector<Layer*> paint_layers_;
     SkRect paint_bounds_;
   };
@@ -111,15 +109,21 @@ class SceneUpdateContext {
     std::vector<Layer*> layers;
   };
 
-  void PrepareMaterial(mozart::client::Material& material,
-                       const SkRect& shape_bounds,
-                       SkColor color,
-                       SkScalar scale_x,
-                       SkScalar scale_y,
-                       const SkRect& paint_bounds,
-                       std::vector<Layer*> paint_layers);
-  uint32_t GenerateTextureIfNeeded(const SkRect& shape_bounds,
-                                   SkColor color,
+  void CreateFrame(mozart::client::EntityNode& entity_node,
+                   const SkRRect& rrect,
+                   SkColor color,
+                   SkScalar scale_x,
+                   SkScalar scale_y,
+                   const SkRect& paint_bounds,
+                   std::vector<Layer*> paint_layers);
+  void SetShapeTextureOrColor(mozart::client::ShapeNode& shape_node,
+                              SkColor color,
+                              SkScalar scale_x,
+                              SkScalar scale_y,
+                              const SkRect& paint_bounds,
+                              std::vector<Layer*> paint_layers);
+  void SetShapeColor(mozart::client::ShapeNode& shape_node, SkColor color);
+  uint32_t GenerateTextureIfNeeded(SkColor color,
                                    SkScalar scale_x,
                                    SkScalar scale_y,
                                    const SkRect& paint_bounds,
