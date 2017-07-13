@@ -152,16 +152,35 @@ void VulkanSurfacePool::TraceStats() {
       << " surface(s) pending read acknowledgement from the compositor.";
   FTL_LOG(INFO) << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~";
 #endif
+  // Resources held in cached buffers.
   size_t cached_surfaces = 0;
+  size_t cached_surfaces_bytes = 0;
   for (const auto& surfaces : available_surfaces_) {
-    cached_surfaces += surfaces.second.size();
+    const auto surface_count = surfaces.second.size();
+    cached_surfaces += surface_count;
+    // TODO(chinmaygarde): Assuming for now that all surfaces are 32bpp.
+    cached_surfaces_bytes +=
+        (surfaces.first.fWidth * surfaces.first.fHeight * 4 * surface_count);
   }
-  TRACE_COUNTER("flutter", "SurfacePool", 0u,                    //
-                "Cached", cached_surfaces,                       //
-                "Created", trace_surfaces_created_,              //
-                "Reused", trace_surfaces_reused_,                //
-                "PendingInCompositor", pending_surfaces_.size()  //
+
+  // Resources held by Skia.
+  int skia_resources = 0;
+  size_t skia_bytes = 0;
+  context_->getResourceCacheUsage(&skia_resources, &skia_bytes);
+  const size_t skia_cache_purgeable =
+      context_->getResourceCachePurgeableBytes();
+
+  TRACE_COUNTER("flutter", "SurfacePool", 0u,                     //
+                "CachedCount", cached_surfaces,                   //
+                "CachedBytes", cached_surfaces_bytes,             //
+                "Created", trace_surfaces_created_,               //
+                "Reused", trace_surfaces_reused_,                 //
+                "PendingInCompositor", pending_surfaces_.size(),  //
+                "SkiaCacheResources", skia_resources,             //
+                "SkiaCacheBytes", skia_bytes,                     //
+                "SkiaCachePurgeable", skia_cache_purgeable        //
                 );
+
   // Reset per present/frame stats.
   trace_surfaces_created_ = 0;
   trace_surfaces_reused_ = 0;
