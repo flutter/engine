@@ -15,19 +15,16 @@ PhysicalModelLayer::~PhysicalModelLayer() = default;
 
 void PhysicalModelLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
-#if defined(OS_FUCHSIA)
-  // Let the system compositor draw all shadows for us.
-  if (elevation_ != 0)
-    set_needs_system_composite(true);
-#endif  // defined(OS_FUCHSIA)
-
   SkRect child_paint_bounds;
   PrerollChildren(context, matrix, &child_paint_bounds);
 
-  if (needs_system_composite()) {
-    scale_x_ = matrix.getScaleX();
-    scale_y_ = matrix.getScaleY();
+  if (elevation_ == 0) {
+    set_paint_bounds(rrect_.getBounds());
   } else {
+#if defined(OS_FUCHSIA)
+    // Let the system compositor draw all shadows for us.
+    set_needs_system_composite(true);
+#else
     // Add some margin to the paint bounds to leave space for the shadow.
     // The margin is hardcoded to an arbitrary maximum for now because Skia
     // doesn't provide a way to calculate it.  We fill this whole region
@@ -35,7 +32,15 @@ void PhysicalModelLayer::Preroll(PrerollContext* context,
     SkRect bounds(rrect_.getBounds());
     bounds.outset(20.0, 20.0);
     set_paint_bounds(bounds);
+#endif  // defined(OS_FUCHSIA)
   }
+
+#if defined(OS_FUCHSIA)
+  if (needs_system_composite()) {
+    scale_x_ = matrix.getScaleX();
+    scale_y_ = matrix.getScaleY();
+  }
+#endif  // defined(OS_FUCHSIA)
 }
 
 #if defined(OS_FUCHSIA)
