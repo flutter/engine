@@ -6,6 +6,7 @@
 #define FLUTTER_RUNTIME_DART_CONTROLLER_H_
 
 #include <memory>
+#include <vector>
 
 #include "dart/runtime/include/dart_api.h"
 #include "lib/ftl/macros.h"
@@ -19,7 +20,7 @@ class DartController {
   DartController();
   ~DartController();
 
-  tonic::DartErrorHandleType RunFromKernel(const uint8_t* buffer, size_t size);
+  tonic::DartErrorHandleType RunFromKernel(const std::vector<uint8_t>& kernel);
   tonic::DartErrorHandleType RunFromPrecompiledSnapshot();
   tonic::DartErrorHandleType RunFromScriptSnapshot(const uint8_t* buffer,
                                                    size_t size);
@@ -29,6 +30,7 @@ class DartController {
   void CreateIsolateFor(const std::string& script_uri,
                         const uint8_t* isolate_snapshot_data,
                         const uint8_t* isolate_snapshot_instr,
+                        const std::vector<uint8_t>& platform_kernel,
                         std::unique_ptr<UIDartState> ui_dart_state);
 
   UIDartState* dart_state() const { return ui_dart_state_; }
