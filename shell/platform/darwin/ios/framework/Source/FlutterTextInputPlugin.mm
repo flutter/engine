@@ -567,6 +567,9 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
   _view.keyboardType = ToUIKeyboardType(configuration[@"inputType"]);
   _view.autocapitalizationType = ToUITextAutocapitalizationType(configuration[@"inputType"]);
   _view.secureTextEntry = [configuration[@"obscureText"] boolValue];
+  _view.autocorrectionType = [configuration[@"autocorrect"] boolValue]
+                                 ? UITextAutocorrectionTypeDefault
+                                 : UITextAutocorrectionTypeNo;
   [_view setTextInputClient:client];
   [_view reloadInputViews];
 }
