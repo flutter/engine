@@ -178,9 +178,8 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
     Layer::PaintContext context = {*canvas, frame.context().frame_time(),
                                    frame.context().engine_time(),
                                    frame.context().memory_usage(), false};
-    canvas->restoreToCount(0);
+    canvas->restoreToCount(1);
     canvas->save();
-    canvas->resetMatrix();
     canvas->clear(task.background_color);
     canvas->scale(task.scale_x, task.scale_y);
     canvas->translate(-task.left, -task.top);
