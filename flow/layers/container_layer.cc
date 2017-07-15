@@ -32,9 +32,8 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 
     if (layer->needs_system_composite()) {
       set_needs_system_composite(true);
-    } else {
-      child_paint_bounds->join(layer->paint_bounds());
     }
+    child_paint_bounds->join(layer->paint_bounds());
   }
 }
 
