@@ -49,11 +49,11 @@ class PlatformViewServiceProtocol {
   // at a breakpoint or is in an infinite loop.
   static const char* kWaitUIThreadIdleExtensionName;
   static bool WaitUIThreadIdle(const char* method,
-                              const char** param_keys,
-                              const char** param_values,
-                              intptr_t num_params,
-                              void* user_data,
-                              const char** json_object);
+                               const char** param_keys,
+                               const char** param_values,
+                               intptr_t num_params,
+                               void* user_data,
+                               const char** json_object);
 };
 
 }  // namespace shell
