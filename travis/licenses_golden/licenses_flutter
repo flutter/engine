@@ -1426,6 +1426,7 @@ FILE: ../../../flutter/fml/trace_event.cc
 FILE: ../../../flutter/fml/trace_event.h
 FILE: ../../../flutter/lib/ui/compositing/scene_host.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_host.h
+FILE: ../../../flutter/lib/ui/painting/utils.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.cc
