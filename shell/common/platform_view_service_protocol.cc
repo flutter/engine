@@ -129,8 +129,8 @@ void PlatformViewServiceProtocol::RegisterHook(bool running_precompiled_code) {
   Dart_RegisterRootServiceRequestCallback(kRunInViewExtensionName, &RunInView,
                                           nullptr);
   // [benchmark helper] Wait for the UI Thread to idle.
-  Dart_RegisterRootServiceRequestCallback(kWaitUIThreadIdleExtensionName,
-                                          &WaitUIThreadIdle, nullptr);
+  Dart_RegisterRootServiceRequestCallback(kFlushUIThreadTasksExtensionName,
+                                          &FlushUIThreadTasks, nullptr);
 }
 
 const char* PlatformViewServiceProtocol::kRunInViewExtensionName =
@@ -316,13 +316,16 @@ void PlatformViewServiceProtocol::ScreenshotGpuTask(SkBitmap* bitmap) {
   canvas->flush();
 }
 
-const char* PlatformViewServiceProtocol::kWaitUIThreadIdleExtensionName =
-    "_flutter.waitUIThreadIdle";
+const char* PlatformViewServiceProtocol::kFlushUIThreadTasksExtensionName =
+    "_flutter.flushUIThreadTasks";
 
 // This API should not be invoked by production code.
 // It can potentially starve the service isolate if the main isolate pauses
 // at a breakpoint or is in an infinite loop.
-bool PlatformViewServiceProtocol::WaitUIThreadIdle(const char* method,
+//
+// It should be invoked from the VM Service and and blocks it until UI thread
+// tasks are processed.
+bool PlatformViewServiceProtocol::FlushUIThreadTasks(const char* method,
                                                    const char** param_keys,
                                                    const char** param_values,
                                                    intptr_t num_params,

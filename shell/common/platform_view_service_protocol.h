@@ -20,6 +20,8 @@ class PlatformViewServiceProtocol {
 
  private:
   static const char* kRunInViewExtensionName;
+  // It should be invoked from the VM Service and and blocks it until previous
+  // UI thread tasks are processed.
   static bool RunInView(const char* method,
                         const char** param_keys,
                         const char** param_values,
@@ -36,6 +38,8 @@ class PlatformViewServiceProtocol {
                         const char** json_object);
 
   static const char* kScreenshotExtensionName;
+  // It should be invoked from the VM Service and and blocks it until previous
+  // GPU thread tasks are processed.
   static bool Screenshot(const char* method,
                          const char** param_keys,
                          const char** param_values,
@@ -47,13 +51,16 @@ class PlatformViewServiceProtocol {
   // This API should not be invoked by production code.
   // It can potentially starve the service isolate if the main isolate pauses
   // at a breakpoint or is in an infinite loop.
-  static const char* kWaitUIThreadIdleExtensionName;
-  static bool WaitUIThreadIdle(const char* method,
-                               const char** param_keys,
-                               const char** param_values,
-                               intptr_t num_params,
-                               void* user_data,
-                               const char** json_object);
+  //
+  // It should be invoked from the VM Service and and blocks it until previous
+  // GPU thread tasks are processed.
+  static const char* kFlushUIThreadTasksExtensionName;
+  static bool FlushUIThreadTasks(const char* method,
+                                 const char** param_keys,
+                                 const char** param_values,
+                                 intptr_t num_params,
+                                 void* user_data,
+                                 const char** json_object);
 };
 
 }  // namespace shell
