@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/android/android_context_gl.h"
 #include <EGL/eglext.h>
 #include <utility>
+#include "flutter/glue/trace_event.h"
 
 #ifndef EGL_GL_COLORSPACE_KHR
 #define EGL_GL_COLORSPACE_KHR 0x309D
@@ -119,22 +120,27 @@ static bool TeardownSurface(EGLDisplay display, EGLSurface surface) {
   return true;
 }
 
-// For onscreen rendering.
 bool AndroidContextGL::CreateWindowSurface(
     ftl::RefPtr<AndroidNativeWindow> window) {
-  // The configurations are only required when dealing with extensions or VG.
-  // We do neither.
+  return CreateWindowSurface(std::move(window), SkISize::Make(1, 1));
+}
 
+// For onscreen rendering.
+bool AndroidContextGL::CreateWindowSurface(
+    ftl::RefPtr<AndroidNativeWindow> window,
+    const SkISize& size) {
+  TRACE_EVENT0("flutter", "AndroidContextGL::CreateWindowSurface");
   window_ = std::move(window);
+
+  if (!window_->SetSize(size)) {
+    return false;
+  }
+
   EGLDisplay display = environment_->Display();
 
-  const EGLint srgb_attribs[] = {
-      EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR,
-      EGL_NONE
-  };
-  const EGLint default_attribs[] = {
-      EGL_NONE
-  };
+  const EGLint srgb_attribs[] = {EGL_GL_COLORSPACE_KHR,
+                                 EGL_GL_COLORSPACE_SRGB_KHR, EGL_NONE};
+  const EGLint default_attribs[] = {EGL_NONE};
 
   const EGLint* attribs = default_attribs;
   if (srgb_support_) {
@@ -154,17 +160,14 @@ bool AndroidContextGL::CreatePBufferSurface() {
 
   EGLDisplay display = environment_->Display();
 
-  const EGLint srgb_attribs[] = {
-      EGL_WIDTH, 1,
-      EGL_HEIGHT, 1,
-      EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR,
-      EGL_NONE
-  };
-  const EGLint default_attribs[] = {
-      EGL_WIDTH, 1,
-      EGL_HEIGHT, 1,
-      EGL_NONE
-  };
+  const EGLint srgb_attribs[] = {EGL_WIDTH,
+                                 1,
+                                 EGL_HEIGHT,
+                                 1,
+                                 EGL_GL_COLORSPACE_KHR,
+                                 EGL_GL_COLORSPACE_SRGB_KHR,
+                                 EGL_NONE};
+  const EGLint default_attribs[] = {EGL_WIDTH, 1, EGL_HEIGHT, 1, EGL_NONE};
 
   const EGLint* attribs = default_attribs;
   if (srgb_support_) {
@@ -231,12 +234,14 @@ AndroidContextGL::AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
 
 AndroidContextGL::~AndroidContextGL() {
   if (!TeardownContext(environment_->Display(), context_)) {
-    FTL_LOG(ERROR) << "Could not tear down the EGL context. Possible resource leak.";
+    FTL_LOG(ERROR)
+        << "Could not tear down the EGL context. Possible resource leak.";
     LogLastEGLError();
   }
 
   if (!TeardownSurface(environment_->Display(), surface_)) {
-    FTL_LOG(ERROR) << "Could not tear down the EGL surface. Possible resource leak.";
+    FTL_LOG(ERROR)
+        << "Could not tear down the EGL surface. Possible resource leak.";
     LogLastEGLError();
   }
 }
@@ -289,6 +294,8 @@ SkISize AndroidContextGL::GetSize() {
 }
 
 bool AndroidContextGL::Resize(const SkISize& size) {
+  TRACE_EVENT0("flutter", "AndroidContextGL::Resize");
+
   if (size == GetSize()) {
     return true;
   }
@@ -297,7 +304,7 @@ bool AndroidContextGL::Resize(const SkISize& size) {
 
   TeardownSurface(environment_->Display(), surface_);
 
-  if (!this->CreateWindowSurface(window_)) {
+  if (!this->CreateWindowSurface(window_, size)) {
     FTL_LOG(ERROR) << "Unable to create EGL window surface on resize.";
     return false;
   }

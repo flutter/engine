@@ -16,9 +16,12 @@ class Surface;
 
 class GPURasterizer : public Rasterizer {
  public:
-  GPURasterizer(std::unique_ptr<flow::ProcessInfo> info);
+  GPURasterizer(std::unique_ptr<flow::ProcessInfo> info,
+                double rasterization_scale);
 
   ~GPURasterizer() override;
+
+  double GetRasterizationScale() const override;
 
   void Setup(std::unique_ptr<Surface> surface,
              ftl::Closure continuation,
@@ -36,6 +39,7 @@ class GPURasterizer : public Rasterizer {
   void Draw(ftl::RefPtr<flutter::Pipeline<flow::LayerTree>> pipeline) override;
 
  private:
+  const double rasterization_scale_;
   std::unique_ptr<Surface> surface_;
   flow::CompositorContext compositor_context_;
   std::unique_ptr<flow::LayerTree> last_layer_tree_;

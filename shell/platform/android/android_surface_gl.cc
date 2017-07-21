@@ -117,8 +117,10 @@ bool AndroidSurfaceGL::SetNativeWindow(ftl::RefPtr<AndroidNativeWindow> window,
 
   // Create the onscreen context.
   onscreen_context_ = ftl::MakeRefCounted<AndroidContextGL>(
-      offscreen_context_->Environment(), config,
-      offscreen_context_.get() /* sharegroup */);
+      offscreen_context_->Environment(),  // EGL environment
+      config,                             // surface config
+      offscreen_context_.get()            // sharegroup
+      );
 
   if (!onscreen_context_->IsValid()) {
     onscreen_context_ = nullptr;

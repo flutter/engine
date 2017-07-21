@@ -17,6 +17,8 @@ namespace shell {
 
 class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
  public:
+  bool CreateWindowSurface(ftl::RefPtr<AndroidNativeWindow> window,
+                           const SkISize& size);
 
   bool CreateWindowSurface(ftl::RefPtr<AndroidNativeWindow> window);
 

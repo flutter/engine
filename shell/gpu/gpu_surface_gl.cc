@@ -48,9 +48,8 @@ bool GPUSurfaceGL::Setup() {
   GrContextOptions options;
   options.fRequireDecodeDisableForSRGB = false;
 
-  context_ =
-      sk_sp<GrContext>(GrContext::Create(kOpenGL_GrBackend, backend_context,
-                                         options));
+  context_ = sk_sp<GrContext>(
+      GrContext::Create(kOpenGL_GrBackend, backend_context, options));
   if (context_ == nullptr) {
     FTL_LOG(INFO) << "Failed to setup Skia Gr context.";
     return false;
@@ -84,10 +83,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
 
   auto weak_this = weak_factory_.GetWeakPtr();
 
-  SurfaceFrame::SubmitCallback submit_callback = [weak_this](
-      const SurfaceFrame& surface_frame, SkCanvas* canvas) {
-    return weak_this ? weak_this->PresentSurface(canvas) : false;
-  };
+  SurfaceFrame::SubmitCallback submit_callback =
+      [weak_this](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        return weak_this ? weak_this->PresentSurface(canvas) : false;
+      };
 
   return std::make_unique<SurfaceFrame>(surface, submit_callback);
 }
@@ -109,8 +108,8 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
 
 bool GPUSurfaceGL::SelectPixelConfig(GrPixelConfig* config) {
   if (delegate_->ColorSpace() && delegate_->ColorSpace()->gammaCloseToSRGB()) {
-    FTL_DCHECK(context_->caps()->isConfigRenderable(kSRGBA_8888_GrPixelConfig,
-                                                    false));
+    FTL_DCHECK(
+        context_->caps()->isConfigRenderable(kSRGBA_8888_GrPixelConfig, false));
     *config = kSRGBA_8888_GrPixelConfig;
     return true;
   }
@@ -146,8 +145,8 @@ sk_sp<SkSurface> GPUSurfaceGL::CreateSurface(const SkISize& size) {
   desc.fOrigin = kBottomLeft_GrSurfaceOrigin;
   desc.fRenderTargetHandle = delegate_->GLContextFBO();
 
-  return SkSurface::MakeFromBackendRenderTarget(context_.get(), desc,
-                                                delegate_->ColorSpace(), nullptr);
+  return SkSurface::MakeFromBackendRenderTarget(
+      context_.get(), desc, delegate_->ColorSpace(), nullptr);
 }
 
 sk_sp<SkSurface> GPUSurfaceGL::AcquireSurface(const SkISize& size) {
