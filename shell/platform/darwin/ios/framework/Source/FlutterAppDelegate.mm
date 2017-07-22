@@ -212,6 +212,10 @@
   }
 }
 
+- (NSObject<FlutterBinaryMessenger>*)pluginMessenger {
+  return self.rootFlutterViewController;
+}
+
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
   self.pluginPublications[pluginKey] = [NSNull null];
@@ -248,7 +252,7 @@
 }
 
 - (NSObject<FlutterBinaryMessenger>*)messenger {
-  return (FlutterViewController*)_appDelegate.window.rootViewController;
+  return [_appDelegate pluginMessenger];
 }
 
 - (void)publish:(NSObject*)value {
