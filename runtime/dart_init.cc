@@ -270,6 +270,7 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
       if (!platform_data.empty()) {
         kernel_platform =
             Dart_ReadKernelBinary(platform_data.data(), platform_data.size());
+        FTL_DCHECK(kernel_platform != NULL);
       }
     }
   }
