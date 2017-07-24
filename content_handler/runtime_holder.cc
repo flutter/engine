@@ -234,7 +234,7 @@ void RuntimeHolder::CreateView(
         dlsym(dylib_handle_, "_kDartIsolateSnapshotInstructions"));
   }
   runtime_->CreateDartController(script_uri, isolate_snapshot_data,
-                                 isolate_snapshot_instr);
+                                 isolate_snapshot_instr, kernel);
 
   runtime_->SetViewportMetrics(viewport_metrics_);
 
