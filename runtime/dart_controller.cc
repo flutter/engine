@@ -44,7 +44,8 @@ std::string ResolvePath(std::string path) {
 
 }  // namespace
 
-DartController::DartController() : ui_dart_state_(nullptr) {}
+DartController::DartController() : ui_dart_state_(nullptr),
+    kernel_bytes(nullptr), platform_kernel_bytes(nullptr) {}
 
 DartController::~DartController() {
   if (ui_dart_state_) {
@@ -54,6 +55,12 @@ DartController::~DartController() {
     Dart_SetMessageNotifyCallback(nullptr);
     Dart_ShutdownIsolate();  // deletes ui_dart_state_
     ui_dart_state_ = nullptr;
+  }
+  if (kernel_bytes) {
+    free(kernel_bytes);
+  }
+  if (platform_kernel_bytes) {
+    free(platform_kernel_bytes);
   }
 }
 
@@ -94,17 +101,25 @@ bool DartController::SendStartMessage(Dart_Handle root_library) {
   return LogIfError(result);
 }
 
+static void CopyVectorBytes(const std::vector<uint8_t>& vector,
+    uint8_t*& bytes) {
+  if (bytes) {
+    free(bytes);
+  }
+  bytes = (uint8_t*) malloc(vector.size());
+  memcpy(bytes, vector.data(), vector.size());
+}
+
 tonic::DartErrorHandleType DartController::RunFromKernel(
     const std::vector<uint8_t>& kernel) {
   tonic::DartState::Scope scope(dart_state());
   // Copy kernel bytes so they won't go away after we exit this method.
   // This is needed because original kernel data has to be available
   // during code execution.
-  uint8_t* kernel_data = (uint8_t*) malloc(kernel.size());
-  memcpy(kernel_data, kernel.data(), kernel.size());
+  CopyVectorBytes(kernel, kernel_bytes);
 
   Dart_Handle result = Dart_LoadKernel(
-      Dart_ReadKernelBinary(kernel_data, kernel.size()));
+      Dart_ReadKernelBinary(kernel_bytes, kernel.size()));
   LogIfError(result);
   tonic::DartErrorHandleType error = tonic::GetErrorHandleType(result);
   if (SendStartMessage(Dart_RootLibrary())) {
@@ -162,12 +177,11 @@ void DartController::CreateIsolateFor(const std::string& script_uri,
     // Copy kernel bytes so they won't go away after we exit this method.
     // This is needed because original kernel data has to be available
     // during code execution.
-    uint8_t* platform_kernel_data = (uint8_t*) malloc(platform_kernel.size());
-    memcpy(platform_kernel_data, platform_kernel.data(), platform_kernel.size());
+    CopyVectorBytes(platform_kernel, platform_kernel_bytes);
 
     isolate = Dart_CreateIsolateFromKernel(
         script_uri.c_str(), "main",
-        Dart_ReadKernelBinary(platform_kernel_data, platform_kernel.size()),
+        Dart_ReadKernelBinary(platform_kernel_bytes, platform_kernel.size()),
         nullptr /* flags */,
         static_cast<tonic::DartState*>(state.get()), &error);
   } else {

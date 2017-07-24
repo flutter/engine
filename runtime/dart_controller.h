@@ -42,6 +42,15 @@ class DartController {
   // during isolate shutdown.
   UIDartState* ui_dart_state_;
 
+  // Kernel binary image of dart script. This is copied and maintained
+  // for dart script lifespan, so that kernel loading mechanism can
+  // incrementally build the dart objects from it.
+  uint8_t* kernel_bytes;
+  // Kernel binary image of platform core libraries. This is copied and
+  // maintained for dart script lifespan, so that kernel loading mechanism can
+  // incrementally build the dart objects from it.
+  uint8_t* platform_kernel_bytes;
+
   FTL_DISALLOW_COPY_AND_ASSIGN(DartController);
 };
 }
