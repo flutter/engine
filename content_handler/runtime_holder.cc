@@ -234,14 +234,14 @@ void RuntimeHolder::CreateView(
         dlsym(dylib_handle_, "_kDartIsolateSnapshotInstructions"));
   }
   runtime_->CreateDartController(script_uri, isolate_snapshot_data,
-                                 isolate_snapshot_instr);
+                                 isolate_snapshot_instr, kernel);
 
   runtime_->SetViewportMetrics(viewport_metrics_);
 
   if (Dart_IsPrecompiledRuntime()) {
     runtime_->dart_controller()->RunFromPrecompiledSnapshot();
   } else if (!kernel.empty()) {
-    runtime_->dart_controller()->RunFromKernel(kernel.data(), kernel.size());
+    runtime_->dart_controller()->RunFromKernel(kernel);
   } else {
     runtime_->dart_controller()->RunFromScriptSnapshot(snapshot.data(),
                                                        snapshot.size());
