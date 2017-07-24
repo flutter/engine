@@ -160,7 +160,7 @@ bool DartServiceIsolate::Startup(std::string server_ip,
     // port when the HTTP server is started.
     server_port = 0;
   }
-  // Set the HTTP's servers port.
+  // Set the HTTP server's port.
   result = Dart_SetField(library, Dart_NewStringFromCString("_port"),
                          Dart_NewInteger(server_port));
   SHUTDOWN_ON_ERROR(result);
@@ -171,6 +171,42 @@ bool DartServiceIsolate::Startup(std::string server_ip,
       Dart_SetField(library, Dart_NewStringFromCString("_originCheckDisabled"),
                     Dart_NewBoolean(disable_origin_check));
   SHUTDOWN_ON_ERROR(result);
+
+  // Are we running on Windows?
+#if defined(_WIN32)
+  Dart_Handle is_windows = Dart_True();
+#else
+  Dart_Handle is_windows = Dart_False();
+#endif
+  result = Dart_SetField(library, Dart_NewStringFromCString("_isWindows"),
+                         is_windows);
+  SHUTDOWN_ON_ERROR(result);
+
+// Are we running on Fuchsia?
+#if defined(__Fuchsia__)
+  Dart_Handle is_fuchsia = Dart_True();
+#else
+  Dart_Handle is_fuchsia = Dart_False();
+#endif
+  result = Dart_SetField(library, Dart_NewStringFromCString("_isFuchsia"),
+                         is_fuchsia);
+  SHUTDOWN_ON_ERROR(result);
+
+  // Get _getWatchSignalInternal from dart:io.
+  Dart_Handle dart_io_str = Dart_NewStringFromCString("dart:io");
+  SHUTDOWN_ON_ERROR(dart_io_str);
+  Dart_Handle io_lib = Dart_LookupLibrary(dart_io_str);
+  SHUTDOWN_ON_ERROR(io_lib);
+  Dart_Handle function_name =
+      Dart_NewStringFromCString("_getWatchSignalInternal");
+  SHUTDOWN_ON_ERROR(function_name);
+  Dart_Handle signal_watch = Dart_Invoke(io_lib, function_name, 0, NULL);
+  SHUTDOWN_ON_ERROR(signal_watch);
+  Dart_Handle field_name = Dart_NewStringFromCString("_signalWatch");
+  SHUTDOWN_ON_ERROR(field_name);
+  result = Dart_SetField(library, field_name, signal_watch);
+  SHUTDOWN_ON_ERROR(field_name);
+
   return true;
 }
 
