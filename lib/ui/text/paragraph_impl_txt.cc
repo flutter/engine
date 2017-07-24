@@ -14,8 +14,6 @@
 
 using tonic::ToDart;
 
-#include "lib/txt/src/paragraph_constraints.h"
-
 namespace blink {
 
 ParagraphImplTxt::ParagraphImplTxt(std::unique_ptr<txt::Paragraph> paragraph)
@@ -24,7 +22,7 @@ ParagraphImplTxt::ParagraphImplTxt(std::unique_ptr<txt::Paragraph> paragraph)
 ParagraphImplTxt::~ParagraphImplTxt() {}
 
 double ParagraphImplTxt::width() {
-  return m_width;
+  return m_paragraph->GetLayoutWidth();
 }
 
 double ParagraphImplTxt::height() {
@@ -53,7 +51,7 @@ bool ParagraphImplTxt::didExceedMaxLines() {
 
 void ParagraphImplTxt::layout(double width) {
   m_width = width;
-  m_paragraph->Layout(txt::ParagraphConstraints{width});
+  m_paragraph->Layout(width);
 }
 
 void ParagraphImplTxt::paint(Canvas* canvas, double x, double y) {
@@ -76,7 +74,6 @@ std::vector<TextBox> ParagraphImplTxt::getRectsForRange(unsigned start,
 }
 
 Dart_Handle ParagraphImplTxt::getPositionForOffset(double dx, double dy) {
-  // TODO(garyq): Implement in the library.
   Dart_Handle result = Dart_NewList(2);
   Dart_ListSetAt(result, 0,
                  ToDart(m_paragraph->GetGlyphPositionAtCoordinate(dx, dy)));
@@ -85,7 +82,6 @@ Dart_Handle ParagraphImplTxt::getPositionForOffset(double dx, double dy) {
 }
 
 Dart_Handle ParagraphImplTxt::getWordBoundary(unsigned offset) {
-  // TODO(garyq): Implement in the library.
   SkIPoint point = m_paragraph->GetWordBoundary(offset);
   Dart_Handle result = Dart_NewList(2);
   Dart_ListSetAt(result, 0, ToDart(point.x()));

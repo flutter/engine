@@ -14,6 +14,7 @@
 #include "flutter/sky/engine/platform/graphics/GraphicsContext.h"
 #include "flutter/sky/engine/platform/text/TextBoundaries.h"
 #include "flutter/sky/engine/wtf/PassOwnPtr.h"
+#include "lib/ftl/logging.h"
 #include "lib/ftl/tasks/task_runner.h"
 #include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_args.h"
