@@ -241,7 +241,7 @@ void RuntimeHolder::CreateView(
   if (Dart_IsPrecompiledRuntime()) {
     runtime_->dart_controller()->RunFromPrecompiledSnapshot();
   } else if (!kernel.empty()) {
-    runtime_->dart_controller()->RunFromKernel(kernel.data(), kernel.size());
+    runtime_->dart_controller()->RunFromKernel(kernel);
   } else {
     runtime_->dart_controller()->RunFromScriptSnapshot(snapshot.data(),
                                                        snapshot.size());
