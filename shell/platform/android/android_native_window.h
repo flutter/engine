@@ -24,12 +24,15 @@ class AndroidNativeWindow
 
   SkISize GetSize() const;
 
+  bool SetSize(const SkISize& size);
+
  private:
   Handle window_;
+  const double rasterization_scale_;
 
   /// Creates a native window with the given handle. Handle ownership is assumed
   /// by this instance of the native window.
-  explicit AndroidNativeWindow(Handle window);
+  explicit AndroidNativeWindow(Handle window, double rasterization_scale);
 
   ~AndroidNativeWindow();
 

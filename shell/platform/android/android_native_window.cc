@@ -6,7 +6,9 @@
 
 namespace shell {
 
-AndroidNativeWindow::AndroidNativeWindow(Handle window) : window_(window) {}
+AndroidNativeWindow::AndroidNativeWindow(Handle window,
+                                         double rasterization_scale)
+    : window_(window), rasterization_scale_(rasterization_scale) {}
 
 AndroidNativeWindow::~AndroidNativeWindow() {
   if (window_ != nullptr) {
@@ -21,6 +23,18 @@ bool AndroidNativeWindow::IsValid() const {
 
 AndroidNativeWindow::Handle AndroidNativeWindow::handle() const {
   return window_;
+}
+
+bool AndroidNativeWindow::SetSize(const SkISize& size) {
+  int32_t width = std::max<int32_t>(1, size.fWidth * rasterization_scale_);
+  int32_t height = std::max<int32_t>(1, size.fHeight * rasterization_scale_);
+
+  return ANativeWindow_setBuffersGeometry(
+             window_,                          // window handle
+             width,                            // width
+             height,                           // height
+             ANativeWindow_getFormat(window_)  // format (same as before)
+             ) >= 0;
 }
 
 SkISize AndroidNativeWindow::GetSize() const {

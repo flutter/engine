@@ -20,6 +20,8 @@ class Rasterizer {
  public:
   virtual ~Rasterizer();
 
+  virtual double GetRasterizationScale() const = 0;
+
   virtual void Setup(std::unique_ptr<Surface> surface_or_null,
                      ftl::Closure rasterizer_continuation,
                      ftl::AutoResetWaitableEvent* setup_completion_event) = 0;

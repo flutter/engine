@@ -115,19 +115,21 @@ static std::unique_ptr<AndroidSurface> InitializePlatformSurface() {
   }
 
   if (auto surface = InitializePlatformSurfaceSoftware()) {
-      FTL_DLOG(INFO) << "Software surface initialized.";
-      return surface;
+    FTL_DLOG(INFO) << "Software surface initialized.";
+    return surface;
   }
 
-  FTL_CHECK(false) << "Could not initialize either the Vulkan, OpenGL, or Software"
-                      "surface backends. Flutter requires a GPU to render.";
+  FTL_CHECK(false)
+      << "Could not initialize either the Vulkan, OpenGL, or Software"
+         "surface backends. Flutter requires a GPU to render.";
   return nullptr;
 }
 
 PlatformViewAndroid::PlatformViewAndroid()
-    : PlatformView(std::make_unique<GPURasterizer>(nullptr)),
-      android_surface_(InitializePlatformSurface()) {
-}
+    : PlatformView(std::make_unique<GPURasterizer>(
+          nullptr,
+          0.25 /* TODO: Make this configurable */)),
+      android_surface_(InitializePlatformSurface()) {}
 
 PlatformViewAndroid::~PlatformViewAndroid() = default;
 
@@ -155,7 +157,9 @@ void PlatformViewAndroid::SurfaceCreated(JNIEnv* env,
   fml::jni::ScopedJavaLocalFrame scoped_local_reference_frame(env);
 
   auto native_window = ftl::MakeRefCounted<AndroidNativeWindow>(
-      ANativeWindow_fromSurface(env, jsurface));
+      ANativeWindow_fromSurface(env, jsurface),  // window handle
+      rasterizer().GetRasterizationScale()       // rasterization scale
+      );
 
   if (!native_window->IsValid()) {
     return;

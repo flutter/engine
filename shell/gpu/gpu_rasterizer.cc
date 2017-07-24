@@ -16,8 +16,11 @@
 
 namespace shell {
 
-GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info)
-    : compositor_context_(std::move(info)), weak_factory_(this) {
+GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info,
+                             double rasterization_scale)
+    : rasterization_scale_(rasterization_scale),
+      compositor_context_(std::move(info)),
+      weak_factory_(this) {
   auto weak_ptr = weak_factory_.GetWeakPtr();
   blink::Threads::Gpu()->PostTask(
       [weak_ptr]() { Shell::Shared().AddRasterizer(weak_ptr); });
@@ -26,6 +29,10 @@ GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info)
 GPURasterizer::~GPURasterizer() {
   weak_factory_.InvalidateWeakPtrs();
   Shell::Shared().PurgeRasterizers();
+}
+
+double GPURasterizer::GetRasterizationScale() const {
+  return rasterization_scale_;
 }
 
 ftl::WeakPtr<Rasterizer> GPURasterizer::GetWeakRasterizerPtr() {
@@ -47,7 +54,10 @@ void GPURasterizer::Clear(SkColor color, const SkISize& size) {
     return;
   }
 
-  auto frame = surface_->AcquireFrame(size);
+  auto frame = surface_->AcquireFrame(SkISize::Make(
+      size.fWidth * rasterization_scale_,  //
+      size.fHeight * rasterization_scale_  //
+      ));
 
   if (frame == nullptr) {
     return;
@@ -118,7 +128,12 @@ void GPURasterizer::DoDraw(std::unique_ptr<flow::LayerTree> layer_tree) {
 }
 
 void GPURasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
-  auto frame = surface_->AcquireFrame(layer_tree.frame_size());
+  const auto layer_tree_frame_size = layer_tree.frame_size();
+  const auto gpu_frame_size =
+      SkISize::Make(layer_tree_frame_size.fWidth * rasterization_scale_,
+                    layer_tree_frame_size.fHeight * rasterization_scale_);
+
+  auto frame = surface_->AcquireFrame(gpu_frame_size);
 
   if (frame == nullptr) {
     return;
@@ -133,8 +148,10 @@ void GPURasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
   auto compositor_frame =
       compositor_context_.AcquireFrame(surface_->GetContext(), canvas);
 
+  canvas->restoreToCount(1);
+  canvas->save();
+  canvas->scale(rasterization_scale_, rasterization_scale_);
   canvas->clear(SK_ColorBLACK);
-
   layer_tree.Raster(compositor_frame);
 
   frame->Submit();
