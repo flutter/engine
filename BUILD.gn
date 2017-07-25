@@ -34,6 +34,7 @@ group("flutter") {
       "//lib/ftl:ftl_unittests",
       "//lib/txt/examples:txt_example($host_toolchain)",
       "//lib/txt/tests($host_toolchain)",  # txt_unittests
+      "//lib/txt/benchmarks($host_toolchain)",  # txt_benchmarks
     ]
   }
 }

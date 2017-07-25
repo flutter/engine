@@ -86,7 +86,7 @@ Dart_Handle ParagraphImplTxt::getWordBoundary(unsigned offset) {
   Dart_Handle result = Dart_NewList(2);
   Dart_ListSetAt(result, 0, ToDart(point.x()));
   Dart_ListSetAt(result, 1, ToDart(point.y()));
-  return nullptr;
+  return result;
 }
 
 }  // namespace blink
