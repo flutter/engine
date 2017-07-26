@@ -17,9 +17,9 @@
 
 namespace shell {
 
-PlatformViewIOS::PlatformViewIOS(CALayer* layer)
+PlatformViewIOS::PlatformViewIOS(CALayer* layer, ftl::Closure firstFrameCallback)
     : PlatformView(std::make_unique<GPURasterizer>(std::make_unique<ProcessInfoMac>())),
-      ios_surface_(IOSSurface::Create(surface_config_, layer)),
+      ios_surface_(IOSSurface::Create(surface_config_, layer, firstFrameCallback)),
       weak_factory_(this) {
 }
 
