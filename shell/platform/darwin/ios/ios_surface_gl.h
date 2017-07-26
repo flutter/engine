@@ -8,6 +8,7 @@
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "lib/ftl/functional/closure.h"
 #include "lib/ftl/macros.h"
 
 @class CAEAGLLayer;
@@ -16,7 +17,10 @@ namespace shell {
 
 class IOSSurfaceGL : public IOSSurface, public GPUSurfaceGLDelegate {
  public:
-  IOSSurfaceGL(PlatformView::SurfaceConfig surface_config, CAEAGLLayer* layer);
+  IOSSurfaceGL(
+      PlatformView::SurfaceConfig surface_config,
+      CAEAGLLayer* layer,
+      ftl::Closure firstFrameCallback);
 
   ~IOSSurfaceGL() override;
 
@@ -40,6 +44,7 @@ class IOSSurfaceGL : public IOSSurface, public GPUSurfaceGLDelegate {
 
  private:
   IOSGLContext context_;
+  ftl::Closure firstFrameCallback_;
 
   FTL_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceGL);
 };

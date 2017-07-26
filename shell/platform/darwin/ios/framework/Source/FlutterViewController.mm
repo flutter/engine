@@ -72,6 +72,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   fml::scoped_nsprotocol<FlutterMethodChannel*> _textInputChannel;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> _lifecycleChannel;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> _systemChannel;
+  fml::scoped_nsprotocol<UIView*> _launchView;
   bool _platformSupportsTouchTypes;
   bool _platformSupportsTouchPressure;
   bool _platformSupportsTouchOrientationAndTilt;
@@ -127,7 +128,20 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
   _platformView =
-      std::make_shared<shell::PlatformViewIOS>(reinterpret_cast<CAEAGLLayer*>(self.view.layer));
+      std::make_shared<shell::PlatformViewIOS>(
+        reinterpret_cast<CAEAGLLayer*>(self.view.layer),
+        // First frame callback.
+        [self]() {
+          TRACE_EVENT0("flutter", "First Frame");
+          if (_launchView) {
+            [UIView animateWithDuration:0.2
+                             animations:^{ _launchView.get().alpha = 0; }
+                             completion:^(BOOL finished){
+                               [_launchView removeFromSuperview];
+                               _launchView.reset(nil);
+                             }];
+          }
+        });
   _platformView->Attach();
   _platformView->SetupResourceContextOnIOThread();
 
@@ -277,6 +291,21 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
   [view release];
+
+  // Show the launch screen view again on top of the FlutterView if available.
+  // This launch screen view will be removed once the first Flutter frame is rendered.
+  NSString* launchStoryboardName =
+      [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UILaunchStoryboardName"];
+  if (launchStoryboardName) {
+    UIViewController* launchViewController =
+        [[UIStoryboard storyboardWithName:launchStoryboardName
+                                  bundle:nil] instantiateInitialViewController];
+    _launchView.reset(launchViewController.view);
+    _launchView.get().frame = self.view.bounds;
+    _launchView.get().autoresizingMask =
+        UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self.view addSubview:_launchView];
+  }
 }
 
 #pragma mark - Surface creation and teardown updates
