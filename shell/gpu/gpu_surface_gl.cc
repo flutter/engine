@@ -20,45 +20,25 @@ static const int kGrCacheMaxCount = 8192;
 // cache.
 static const size_t kGrCacheMaxByteSize = 512 * (1 << 20);
 
-GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
-    : delegate_(delegate), weak_factory_(this) {}
+GPUSurfaceGL::GPUSurfaceGL(GrContext* context, GPUSurfaceGLDelegate* delegate)
+    : context_(context), delegate_(delegate), weak_factory_(this) {}
 
 GPUSurfaceGL::~GPUSurfaceGL() = default;
 
 bool GPUSurfaceGL::Setup() {
   if (delegate_ == nullptr) {
     // Invalid delegate.
+    FTL_LOG(ERROR) << "GPU surface delegate was null.";
     return false;
   }
 
-  if (context_ != nullptr) {
-    // Already setup.
-    return false;
-  }
-
-  if (!delegate_->GLContextMakeCurrent()) {
-    // Could not make the context current to create the native interface.
-    return false;
-  }
-
-  // Create the native interface.
-  auto backend_context =
-      reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface());
-
-  GrContextOptions options;
-  options.fRequireDecodeDisableForSRGB = false;
-
-  context_ =
-      sk_sp<GrContext>(GrContext::Create(kOpenGL_GrBackend, backend_context,
-                                         options));
   if (context_ == nullptr) {
-    FTL_LOG(INFO) << "Failed to setup Skia Gr context.";
+    // Context must be present.
+    FTL_LOG(ERROR) << "GPU surface GR context was null.";
     return false;
   }
 
   context_->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
-
-  delegate_->GLContextClearCurrent();
 
   return true;
 }
@@ -84,10 +64,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
 
   auto weak_this = weak_factory_.GetWeakPtr();
 
-  SurfaceFrame::SubmitCallback submit_callback = [weak_this](
-      const SurfaceFrame& surface_frame, SkCanvas* canvas) {
-    return weak_this ? weak_this->PresentSurface(canvas) : false;
-  };
+  SurfaceFrame::SubmitCallback submit_callback =
+      [weak_this](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        return weak_this ? weak_this->PresentSurface(canvas) : false;
+      };
 
   return std::make_unique<SurfaceFrame>(surface, submit_callback);
 }
@@ -109,8 +89,8 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
 
 bool GPUSurfaceGL::SelectPixelConfig(GrPixelConfig* config) {
   if (delegate_->ColorSpace() && delegate_->ColorSpace()->gammaCloseToSRGB()) {
-    FTL_DCHECK(context_->caps()->isConfigRenderable(kSRGBA_8888_GrPixelConfig,
-                                                    false));
+    FTL_DCHECK(
+        context_->caps()->isConfigRenderable(kSRGBA_8888_GrPixelConfig, false));
     *config = kSRGBA_8888_GrPixelConfig;
     return true;
   }
@@ -146,8 +126,8 @@ sk_sp<SkSurface> GPUSurfaceGL::CreateSurface(const SkISize& size) {
   desc.fOrigin = kBottomLeft_GrSurfaceOrigin;
   desc.fRenderTargetHandle = delegate_->GLContextFBO();
 
-  return SkSurface::MakeFromBackendRenderTarget(context_.get(), desc,
-                                                delegate_->ColorSpace(), nullptr);
+  return SkSurface::MakeFromBackendRenderTarget(
+      context_, desc, delegate_->ColorSpace(), nullptr);
 }
 
 sk_sp<SkSurface> GPUSurfaceGL::AcquireSurface(const SkISize& size) {
@@ -168,7 +148,7 @@ sk_sp<SkSurface> GPUSurfaceGL::AcquireSurface(const SkISize& size) {
 }
 
 GrContext* GPUSurfaceGL::GetContext() {
-  return context_.get();
+  return context_;
 }
 
 }  // namespace shell

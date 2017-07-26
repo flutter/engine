@@ -29,7 +29,7 @@ class GPUSurfaceGLDelegate {
 
 class GPUSurfaceGL : public Surface {
  public:
-  GPUSurfaceGL(GPUSurfaceGLDelegate* delegate);
+  GPUSurfaceGL(GrContext* context, GPUSurfaceGLDelegate* delegate);
 
   ~GPUSurfaceGL() override;
 
@@ -42,8 +42,8 @@ class GPUSurfaceGL : public Surface {
   GrContext* GetContext() override;
 
  private:
+  GrContext* context_;
   GPUSurfaceGLDelegate* delegate_;
-  sk_sp<GrContext> context_;
   sk_sp<SkSurface> cached_surface_;
   ftl::WeakPtrFactory<GPUSurfaceGL> weak_factory_;
 

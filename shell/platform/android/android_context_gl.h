@@ -8,6 +8,7 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
 #include "flutter/shell/platform/android/android_native_window.h"
+#include "flutter/shell/platform/android/egl_surface.h"
 #include "lib/ftl/macros.h"
 #include "lib/ftl/memory/ref_counted.h"
 #include "lib/ftl/memory/ref_ptr.h"
@@ -17,11 +18,6 @@ namespace shell {
 
 class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
  public:
-
-  bool CreateWindowSurface(ftl::RefPtr<AndroidNativeWindow> window);
-
-  bool CreatePBufferSurface();
-
   ftl::RefPtr<AndroidEnvironmentGL> Environment() const;
 
   bool IsValid() const;
@@ -36,20 +32,18 @@ class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
 
   bool Resize(const SkISize& size);
 
-  bool SupportsSRGB() const;
-
  private:
   ftl::RefPtr<AndroidEnvironmentGL> environment_;
+  const PlatformView::SurfaceConfig surface_config_;
   ftl::RefPtr<AndroidNativeWindow> window_;
-  EGLConfig config_;
-  EGLSurface surface_;
-  EGLContext context_;
-  bool srgb_support_;
-  bool valid_;
+  std::unique_ptr<shell::EGLSurface> surface_;
+  ::EGLContext context_ = nullptr;
+  bool valid_ = false;
 
   AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
                    PlatformView::SurfaceConfig config,
-                   const AndroidContextGL* share_context = nullptr);
+                   ftl::RefPtr<AndroidNativeWindow> window,
+                   const AndroidContextGL* share_context);
 
   ~AndroidContextGL();
 
