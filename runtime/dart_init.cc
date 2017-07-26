@@ -131,6 +131,9 @@ void IsolateShutdownCallback(void* callback_data) {
     Dart_Handle sticky_error = Dart_GetStickyError();
     FTL_CHECK(LogIfError(sticky_error));
   }
+}
+
+void IsolateCleanupCallback(void* callback_data) {
   tonic::DartState* dart_state = static_cast<tonic::DartState*>(callback_data);
   delete dart_state;
 }
@@ -546,6 +549,7 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
     params.vm_snapshot_instructions = vm_snapshot_instructions;
     params.create = IsolateCreateCallback;
     params.shutdown = IsolateShutdownCallback;
+    params.cleanup = IsolateCleanupCallback;
     params.thread_exit = ThreadExitCallback;
     params.get_service_assets = GetVMServiceAssetsArchiveCallback;
     char* init_error = Dart_Initialize(&params);
