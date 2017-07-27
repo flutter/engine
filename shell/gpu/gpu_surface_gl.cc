@@ -7,6 +7,7 @@
 #include "flutter/glue/trace_event.h"
 #include "lib/ftl/arraysize.h"
 #include "lib/ftl/logging.h"
+#include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
@@ -203,7 +204,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
 }
 
 bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
-  if (delegate_ == nullptr || canvas == nullptr) {
+  if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
     return false;
   }
 
@@ -212,11 +213,16 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     // Now we must ensure that the texture is copied onscreen.
     TRACE_EVENT0("flutter", "CopyTextureOnscreen");
     FTL_DCHECK(offscreen_surface_ != nullptr);
+    SkPaint paint;
+    const GrCaps* caps = context_->caps();
+    if (caps->srgbSupport() && !caps->srgbDecodeDisableSupport()) {
+      paint.setColorFilter(SkColorFilter::MakeLinearToSRGBGamma());
+    }
     onscreen_surface_->getCanvas()->drawImage(
         offscreen_surface_->makeImageSnapshot(),  // image
         0,                                        // left
         0,                                        // top
-        nullptr                                   // paint (TODO)
+        &paint                                    // paint
         );
   }
 
