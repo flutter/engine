@@ -23,10 +23,16 @@ shared_library("flutter_shell_native") {
     "android_surface.h",
     "android_surface_gl.cc",
     "android_surface_gl.h",
-    "android_surface_software.h",
     "android_surface_software.cc",
+    "android_surface_software.h",
+    "egl_surface.cc",
+    "egl_surface.h",
+    "egl_utils.cc",
+    "egl_utils.h",
     "flutter_main.cc",
     "flutter_main.h",
+    "gl_render_target.cc",
+    "gl_render_target.h",
     "library_loader.cc",
     "platform_view_android.cc",
     "platform_view_android.h",
@@ -46,6 +52,7 @@ shared_library("flutter_shell_native") {
     "//flutter/shell/gpu",
     "//lib/ftl",
     "//third_party/skia",
+    "//third_party/skia:gpu",
   ]
   if (flutter_runtime_mode == "debug") {
     deps += [ "//dart/runtime:libdart_jit" ]
