@@ -62,8 +62,6 @@ class Paragraph : public ftl::RefCountedThreadSafe<Paragraph>,
  private:
   std::unique_ptr<ParagraphImpl> m_paragraphImpl;
 
-  RenderBox* firstChildBox() const { return m_renderView->firstChildBox(); }
-
   explicit Paragraph(PassOwnPtr<RenderView> renderView);
 
   explicit Paragraph(std::unique_ptr<txt::Paragraph> paragraph);

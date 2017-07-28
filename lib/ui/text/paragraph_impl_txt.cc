@@ -22,7 +22,7 @@ ParagraphImplTxt::ParagraphImplTxt(std::unique_ptr<txt::Paragraph> paragraph)
 ParagraphImplTxt::~ParagraphImplTxt() {}
 
 double ParagraphImplTxt::width() {
-  return m_paragraph->GetLayoutWidth();
+  return m_paragraph->GetMaxWidth();
 }
 
 double ParagraphImplTxt::height() {
