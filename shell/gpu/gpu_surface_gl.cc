@@ -136,7 +136,7 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
                             onscreen_surface_->height())) {
     // We know that if there is an offscreen surface, it will be sized to be
     // equal to the size of the onscreen surface. And the onscreen surface size
-    // appears unchained. So bail.
+    // appears unchanged. So bail.
     return true;
   }
 
@@ -209,8 +209,8 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
   }
 
   if (!onscreen_surface_supports_sgrb_) {
-    // Because the surface did not support SRGB, we rendered offscreen surface.
-    // Now we must ensure that the texture is copied onscreen.
+    // Because the surface did not support sRGB, we rendered to an offscreen
+    // surface. Now we must ensure that the texture is copied onscreen.
     TRACE_EVENT0("flutter", "CopyTextureOnscreen");
     FTL_DCHECK(offscreen_surface_ != nullptr);
     SkPaint paint;
