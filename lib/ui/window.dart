@@ -59,7 +59,7 @@ enum AppLifecycleState {
   /// When the application is in this state, the engine will not call the
   /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
   ///
-  /// Android pps in this state should assume that they may enter the
+  /// Android apps in this state should assume that they may enter the
   /// [suspending] state at any time.
   paused,
 

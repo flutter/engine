@@ -280,7 +280,6 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   FTL_CHECK(_platformView != nullptr);
 
   if (appeared) {
-    NSLog(@"Making surface");
     _platformView->NotifyCreated();
   } else {
     _platformView->NotifyDestroyed();
