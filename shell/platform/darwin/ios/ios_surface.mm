@@ -50,7 +50,7 @@ PlatformView::SurfaceConfig IOSSurface::GetSurfaceConfig() const {
   return surface_config_;
 }
 
-void IOSSurface::NotifyFirstFrameIfNecessary() {
+void IOSSurface::NotifyFirstFrameOnce() {
   if (firstFrameCallback_) {
     firstFrameCallback_();
     firstFrameCallback_ = NULL;

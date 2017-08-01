@@ -59,7 +59,7 @@ bool IOSSurfaceGL::GLContextPresent() {
   }
 
   if (context_.PresentRenderBuffer()) {
-    NotifyFirstFrameIfNecessary();
+    NotifyFirstFrameOnce();
     return true;
   }
 

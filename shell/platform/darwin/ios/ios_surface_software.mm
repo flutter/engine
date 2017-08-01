@@ -125,7 +125,7 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
   CALayer* layer = GetLayer();
   layer.contents = reinterpret_cast<id>(static_cast<CGImageRef>(pixmap_image));
 
-  NotifyFirstFrameIfNecessary();
+  NotifyFirstFrameOnce();
 
   return true;
 }

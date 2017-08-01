@@ -45,7 +45,7 @@ class IOSSurface {
   fml::scoped_nsobject<CALayer> layer_;
 
  protected:
-  void NotifyFirstFrameIfNecessary();
+  void NotifyFirstFrameOnce();
 
  private:
   // A closure to be called when the underlaying surface presents a first frame.

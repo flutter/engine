@@ -296,7 +296,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   // This launch screen view will be removed once the first Flutter frame is rendered.
   NSString* launchStoryboardName =
       [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UILaunchStoryboardName"];
-  if (launchStoryboardName) {
+  if (launchStoryboardName && !self.isBeingPresented && !self.isMovingToParentViewController) {
     UIViewController* launchViewController =
         [[UIStoryboard storyboardWithName:launchStoryboardName
                                   bundle:nil] instantiateInitialViewController];
