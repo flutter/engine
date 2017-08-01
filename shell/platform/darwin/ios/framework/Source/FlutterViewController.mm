@@ -407,6 +407,19 @@ static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(UITouc
     FTL_DCHECK(device_id != 0);
     CGPoint windowCoordinates = [touch locationInView:nil];
 
+    // The touch ended location can settle since the last touch moved location but without the
+    // precise timestamp of when the location settled which will throw off velocity calculation
+    // in Flutter. If the settling distance is within the margin of error from the previous
+    // location, just report the previous location on touch ended.
+    if (touch.phase == UITouchPhaseEnded) {
+      CGPoint endedLocation = [touch locationInView:nil];
+      CGPoint lastMovedLocation = [touch previousLocationInView:nil];
+      CGFloat distanceSquared = pow(endedLocation.x - lastMovedLocation.x, 2)
+          + pow(endedLocation.y - lastMovedLocation.y, 2);
+      if (distanceSquared < pow(touch.majorRadiusTolerance, 2))
+        windowCoordinates = lastMovedLocation;
+    }
+
     blink::PointerData pointer_data;
     pointer_data.Clear();
 
