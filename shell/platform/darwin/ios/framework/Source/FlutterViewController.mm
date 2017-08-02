@@ -414,9 +414,10 @@ static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(UITouc
     if (touch.phase == UITouchPhaseEnded) {
       CGPoint endedLocation = [touch locationInView:nil];
       CGPoint lastMovedLocation = [touch previousLocationInView:nil];
-      CGFloat distanceSquared = pow(endedLocation.x - lastMovedLocation.x, 2)
-          + pow(endedLocation.y - lastMovedLocation.y, 2);
-      if (distanceSquared < pow(touch.majorRadiusTolerance, 2))
+      CGFloat distanceSquared =
+          (endedLocation.x - lastMovedLocation.x) * (endedLocation.x - lastMovedLocation.x)
+          - (endedLocation.y - lastMovedLocation.y) * (endedLocation.y - lastMovedLocation.y)
+      if (distanceSquared < touch.majorRadiusTolerance * touch.majorRadiusTolerance))
         windowCoordinates = lastMovedLocation;
     }
 
