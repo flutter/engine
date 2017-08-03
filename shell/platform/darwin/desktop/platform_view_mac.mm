@@ -20,7 +20,9 @@
 namespace shell {
 
 PlatformViewMac::PlatformViewMac(NSOpenGLView* gl_view)
-    : PlatformView(std::make_unique<GPURasterizer>(std::make_unique<ProcessInfoMac>())),
+    : PlatformView(std::make_unique<GPURasterizer>(
+          std::make_unique<ProcessInfoMac>(),
+          NULL)),
       opengl_view_([gl_view retain]),
       resource_loading_context_([[NSOpenGLContext alloc] initWithFormat:gl_view.pixelFormat
                                                            shareContext:gl_view.openGLContext]) {}

@@ -15,11 +15,8 @@
 
 namespace shell {
 
-IOSSurfaceSoftware::IOSSurfaceSoftware(
-  PlatformView::SurfaceConfig surface_config,
-  CALayer* layer,
-  ftl::Closure firstFrameCallback)
-    : IOSSurface(surface_config, layer, firstFrameCallback) {
+IOSSurfaceSoftware::IOSSurfaceSoftware(PlatformView::SurfaceConfig surface_config, CALayer* layer)
+    : IOSSurface(surface_config, layer) {
   UpdateStorageSizeIfNecessary();
 }
 
@@ -124,8 +121,6 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
 
   CALayer* layer = GetLayer();
   layer.contents = reinterpret_cast<id>(static_cast<CGImageRef>(pixmap_image));
-
-  NotifyFirstFrameOnce();
 
   return true;
 }

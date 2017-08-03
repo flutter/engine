@@ -16,8 +16,11 @@
 
 namespace shell {
 
-GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info)
-    : compositor_context_(std::move(info)), weak_factory_(this) {
+GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info,
+                             ftl::Closure firstFrameCallback)
+    : compositor_context_(std::move(info)),
+      weak_factory_(this),
+      firstFrameCallback_(firstFrameCallback) {
   auto weak_ptr = weak_factory_.GetWeakPtr();
   blink::Threads::Gpu()->PostTask(
       [weak_ptr]() { Shell::Shared().AddRasterizer(weak_ptr); });
@@ -138,6 +141,16 @@ void GPURasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
   layer_tree.Raster(compositor_frame);
 
   frame->Submit();
+
+  NotifyFirstFrameOnce();
+}
+
+void GPURasterizer::NotifyFirstFrameOnce() {
+  if (firstFrameCallback_) {
+    TRACE_EVENT0("flutter", "GPURasterizer::NotifyFirstFrameOnce");
+    firstFrameCallback_();
+    firstFrameCallback_ = NULL;
+  }
 }
 
 }  // namespace shell

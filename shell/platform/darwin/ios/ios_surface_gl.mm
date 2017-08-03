@@ -8,11 +8,8 @@
 
 namespace shell {
 
-IOSSurfaceGL::IOSSurfaceGL(
-    PlatformView::SurfaceConfig surface_config,
-    CAEAGLLayer* layer,
-    ftl::Closure firstFrameCallback)
-    : IOSSurface(surface_config, reinterpret_cast<CALayer*>(layer), firstFrameCallback),
+IOSSurfaceGL::IOSSurfaceGL(PlatformView::SurfaceConfig surface_config, CAEAGLLayer* layer)
+    : IOSSurface(surface_config, reinterpret_cast<CALayer*>(layer)),
       context_(surface_config, layer) {}
 
 IOSSurfaceGL::~IOSSurfaceGL() = default;
@@ -54,16 +51,7 @@ bool IOSSurfaceGL::GLContextClearCurrent() {
 
 bool IOSSurfaceGL::GLContextPresent() {
   TRACE_EVENT0("flutter", "IOSSurfaceGL::GLContextPresent");
-  if (!IsValid()) {
-    return false;
-  }
-
-  if (context_.PresentRenderBuffer()) {
-    NotifyFirstFrameOnce();
-    return true;
-  }
-
-  return false;
+  return IsValid() ? context_.PresentRenderBuffer() : false;
 }
 
 }  // namespace shell

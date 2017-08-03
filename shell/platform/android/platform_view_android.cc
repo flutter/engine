@@ -124,8 +124,10 @@ static std::unique_ptr<AndroidSurface> InitializePlatformSurface() {
   return nullptr;
 }
 
-PlatformViewAndroid::PlatformViewAndroid()
-    : PlatformView(std::make_unique<GPURasterizer>(nullptr)),
+PlatformViewAndroid::PlatformViewAndroid(ftl::Closure firstFrameCallback)
+    : PlatformView(std::make_unique<GPURasterizer>(
+          nullptr,
+          firstFrameCallback))),
       android_surface_(InitializePlatformSurface()) {
 }
 

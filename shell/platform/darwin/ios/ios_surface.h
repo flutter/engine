@@ -7,7 +7,6 @@
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
-#include "lib/ftl/functional/closure.h"
 #include "lib/ftl/macros.h"
 
 @class CALayer;
@@ -18,13 +17,9 @@ class IOSSurface {
  public:
   static std::unique_ptr<IOSSurface> Create(
       PlatformView::SurfaceConfig surface_config,
-      CALayer* layer,
-      ftl::Closure firstFrameCallback);
+      CALayer* layer);
 
-  IOSSurface(
-      PlatformView::SurfaceConfig surface_config,
-      CALayer* layer,
-      ftl::Closure firstFrameCallback);
+  IOSSurface(PlatformView::SurfaceConfig surface_config, CALayer* layer);
 
   CALayer* GetLayer() const;
 
@@ -43,14 +38,6 @@ class IOSSurface {
  public:
   PlatformView::SurfaceConfig surface_config_;
   fml::scoped_nsobject<CALayer> layer_;
-
- protected:
-  void NotifyFirstFrameOnce();
-
- private:
-  // A closure to be called when the underlaying surface presents a first frame.
-  // NULL if there is no callback or the callback is already called.
-  ftl::Closure firstFrameCallback_;
 
   FTL_DISALLOW_COPY_AND_ASSIGN(IOSSurface);
 };

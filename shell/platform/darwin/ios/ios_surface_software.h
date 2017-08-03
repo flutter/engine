@@ -7,7 +7,6 @@
 
 #include "flutter/shell/gpu/gpu_surface_software.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
-#include "lib/ftl/functional/closure.h"
 #include "lib/ftl/macros.h"
 
 namespace shell {
@@ -16,8 +15,7 @@ class IOSSurfaceSoftware : public IOSSurface,
                            public GPUSurfaceSoftwareDelegate {
  public:
   IOSSurfaceSoftware(PlatformView::SurfaceConfig surface_config,
-                     CALayer* layer,
-                     ftl::Closure firstFrameCallback);
+                     CALayer* layer);
 
   ~IOSSurfaceSoftware() override;
 
