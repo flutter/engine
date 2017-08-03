@@ -11,6 +11,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "lib/ftl/functional/closure.h"
 #include "lib/ftl/macros.h"
 #include "lib/ftl/memory/weak_ptr.h"
 
@@ -21,7 +22,7 @@ namespace shell {
 
 class PlatformViewIOS : public PlatformView {
  public:
-  explicit PlatformViewIOS(CALayer* layer);
+  explicit PlatformViewIOS(CALayer* layer, ftl::Closure firstFrameCallback);
 
   ~PlatformViewIOS() override;
 
