@@ -24,7 +24,7 @@ class PlatformViewAndroid : public PlatformView {
  public:
   static bool Register(JNIEnv* env);
 
-  PlatformViewAndroid(ftl::Closure firstFrameCallback);
+  PlatformViewAndroid();
 
   ~PlatformViewAndroid() override;
 

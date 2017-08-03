@@ -30,7 +30,7 @@ import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
-
+import io.flutter.app.FlutterActivity;
 import io.flutter.plugin.common.*;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
@@ -690,6 +690,17 @@ public class FlutterView extends SurfaceView
             }
         } catch (Exception ex) {
             Log.e(TAG, "Uncaught exception while updating semantics", ex);
+        }
+    }
+
+    // Called by native to notify first Flutter frame rendered.
+    private void onFirstFrame() {
+        if (getContext() instanceof FlutterActivity) {
+            // Resets the activity theme from one possibly containing a splash
+            // background to a blank one.
+            //
+            // We can make this configurable if users want it.
+            getContext().setTheme(android.R.style.Theme_Black_NoTitleBar);
         }
     }
 
