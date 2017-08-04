@@ -8,12 +8,17 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
+import android.content.res.Resources.NotFoundException;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
+import android.widget.ImageView;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.ActivityResultListener;
@@ -50,6 +55,9 @@ public final class FlutterActivityDelegate
         implements FlutterActivityEvents,
                    FlutterView.Provider,
                    PluginRegistry {
+    private static final String LAUNCH_DRAWABLE_META_DATA_KEY = "io.flutter.app.LaunchScreen";
+    private static final String TAG = "FlutterActivityDelegate";
+
     /**
      * Specifies the mechanism by which Flutter views are created during the
      * operation of a {@code FlutterActivityDelegate}.
@@ -71,6 +79,7 @@ public final class FlutterActivityDelegate
     private final List<UserLeaveHintListener> userLeaveHintListeners = new ArrayList<>(0);
 
     private FlutterView flutterView;
+    private ImageView launchView;
 
     public FlutterActivityDelegate(Activity activity, ViewFactory viewFactory) {
         this.activity = Preconditions.checkNotNull(activity);
@@ -132,6 +141,8 @@ public final class FlutterActivityDelegate
             window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
         }
 
+        displayLaunchScreenIfPossible();
+
         String[] args = getArgsFromIntent(activity.getIntent());
         FlutterMain.ensureInitializationComplete(activity.getApplicationContext(), args);
 
@@ -140,7 +151,9 @@ public final class FlutterActivityDelegate
             flutterView = new FlutterView(activity);
             flutterView.setLayoutParams(
                     new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-            activity.setContentView(flutterView);
+            if (launchView != null) {
+                activity.setContentView(flutterView);
+            }
         }
 
         if (loadIntent(activity.getIntent())) {
@@ -270,6 +283,35 @@ public final class FlutterActivityDelegate
         }
 
         return false;
+    }
+
+    private void displayLaunchScreenIfPossible() {
+        ApplicationInfo appInfo = null;
+        try {
+             appInfo = activity.getPackageManager().getApplicationInfo(
+                activity.getPackageName(),
+                PackageManager.GET_META_DATA);
+        } catch (NameNotFoundException e) {
+            // There may be no metadata/launch screen defined which is fine.
+        }
+
+        if (appInfo != null && appInfo.metaData != null) {
+            final int launchDrawableResId = appInfo.metaData.getInt(LAUNCH_DRAWABLE_META_DATA_KEY);
+            if (launchDrawableResId == 0) {
+                return;
+            }
+            try {
+                launchView = new ImageView(activity);
+                launchView.setLayoutParams(
+                        new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+                launchView.setImageResource(launchDrawableResId);
+                    // activity.getResources().getDrawable(launchDrawableResId));
+                activity.setContentView(launchView);
+            } catch (NotFoundException e) {
+                Log.e(TAG, "Referenced launch screen drawable resource '"
+                    + LAUNCH_DRAWABLE_META_DATA_KEY + "' does not exist");
+            }
+        }
     }
 
     private class FlutterRegistrar implements Registrar {

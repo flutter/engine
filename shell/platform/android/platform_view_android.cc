@@ -128,8 +128,10 @@ PlatformViewAndroid::PlatformViewAndroid()
     : PlatformView(std::make_unique<GPURasterizer>(
           nullptr,
           // First frame callback.
-          []() {static_cast<PlatformViewAndroid*>(view.get())
-                    ->FlutterViewOnFirstFrame())),
+          [this]() {
+              JNIEnv* env = fml::jni::AttachCurrentThread();
+              FlutterViewOnFirstFrame(env, flutter_view_.get(env).obj());
+          })),
       android_surface_(InitializePlatformSurface()) {
 }
 

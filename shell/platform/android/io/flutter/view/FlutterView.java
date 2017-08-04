@@ -701,6 +701,7 @@ public class FlutterView extends SurfaceView
             //
             // We can make this configurable if users want it.
             getContext().setTheme(android.R.style.Theme_Black_NoTitleBar);
+            Log.e(TAG, "Called onFirstFrame");
         }
     }
 

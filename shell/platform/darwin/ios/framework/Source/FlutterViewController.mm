@@ -137,8 +137,8 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
             [UIView animateWithDuration:0.2
                              animations:^{ _launchView.get().alpha = 0; }
                              completion:^(BOOL finished){
-                               [_launchView removeFromSuperview];
-                               _launchView.reset(nil);
+                               [_launchView.get() removeFromSuperview];
+                               _launchView.reset();
                              }];
           }
         });
@@ -299,12 +299,12 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   if (launchStoryboardName && !self.isBeingPresented && !self.isMovingToParentViewController) {
     UIViewController* launchViewController =
         [[UIStoryboard storyboardWithName:launchStoryboardName
-                                  bundle:nil] instantiateInitialViewController];
-    _launchView.reset(launchViewController.view);
+                                   bundle:nil] instantiateInitialViewController];
+    _launchView.reset([launchViewController.view retain]);
     _launchView.get().frame = self.view.bounds;
     _launchView.get().autoresizingMask =
         UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.view addSubview:_launchView];
+    [self.view addSubview:_launchView.get()];
   }
 }
 
