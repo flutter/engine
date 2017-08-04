@@ -11,6 +11,12 @@ group("flutter") {
     "//flutter/sky",
   ]
 
+  if (current_toolchain == host_toolchain) {
+    deps += [
+        "//dart:create_sdk"
+    ]
+  }
+
   if (is_fuchsia) {
     deps += [
       "//flutter/content_handler",
