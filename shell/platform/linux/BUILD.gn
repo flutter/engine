@@ -7,6 +7,8 @@ executable("linux") {
 
   sources = [
     "main_linux.cc",
+    "platform_view_glfw.cc",
+    "platform_view_glfw.h",
   ]
 
   deps = [
@@ -15,9 +17,13 @@ executable("linux") {
     "//flutter/common",
     "//flutter/fml",
     "//flutter/shell/common",
+    "//flutter/shell/gpu",
     "//flutter/shell/testing",
     "//lib/ftl",
     "//lib/tonic",
     "//third_party/skia",
+    "//third_party/glfw",
   ]
+
+  ldflags = [ "-lGL", "-lX11", "-lXi", "-lXrandr", "-lXxf86vm", "-lXinerama", "-lXcursor", "-lrt", "-lm" ]
 }
