@@ -2142,7 +2142,7 @@ class Progress {
   int _withoutLicense = 0;
   String get label => _label;
   String _label = '';
-  int last_length = 0;
+  int _lastLength = 0;
   set label(String value) {
     if (value.length > 50)
       value = '.../' + value.substring(math.max(0, value.lastIndexOf('/', value.length - 45) + 1));
@@ -2164,10 +2164,10 @@ class Progress {
       _lastUpdate ??= new Stopwatch();
       final String line = toString();
       system.stderr.write('\r$line');
-      if (last_length > line.length) {
-	system.stderr.write(' ' * (last_length - line.length));
+      if (_lastLength > line.length) {
+	system.stderr.write(' ' * (_lastLength - line.length));
       }
-      last_length = line.length;
+      _lastLength = line.length;
       _lastUpdate.reset();
       _lastUpdate.start();
     }
