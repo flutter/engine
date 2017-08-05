@@ -129,8 +129,8 @@ PlatformViewAndroid::PlatformViewAndroid()
           nullptr,
           // First frame callback.
           [this]() {
-              JNIEnv* env = fml::jni::AttachCurrentThread();
-              FlutterViewOnFirstFrame(env, flutter_view_.get(env).obj());
+            JNIEnv* env = fml::jni::AttachCurrentThread();
+            FlutterViewOnFirstFrame(env, flutter_view_.get(env).obj());
           })),
       android_surface_(InitializePlatformSurface()) {
 }

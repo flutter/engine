@@ -101,6 +101,7 @@ public class FlutterView extends SurfaceView
     private final BasicMessageChannel<Object> mFlutterSystemChannel;
     private final BroadcastReceiver mDiscoveryReceiver;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
+    private final List<FirstFrameListener> mFirstFrameListeners;
     private long mNativePlatformView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
 
@@ -157,6 +158,7 @@ public class FlutterView extends SurfaceView
 
         mMessageHandlers = new HashMap<>();
         mActivityLifecycleListeners = new ArrayList<>();
+        mFirstFrameListeners = new ArrayList<>();
 
         // Configure the platform plugins and flutter channels.
         mFlutterLocalizationChannel = new MethodChannel(this, "flutter/localization",
@@ -245,6 +247,21 @@ public class FlutterView extends SurfaceView
         Map<String, Object> message = new HashMap<>(1);
         message.put("type", "memoryPressure");
         mFlutterSystemChannel.send(message);
+    }
+
+    /**
+     * Provide a listener that will be called once when the FlutterView renders its first frame
+     * to the underlaying SurfaceView.
+     */
+    public void addFirstFrameListener(FirstFrameListener listener) {
+        mFirstFrameListeners.add(listener);
+    }
+
+    /**
+     * Remove an existing first frame listener.
+     */
+    public void removeFirstFrameListener(FirstFrameListener listener) {
+        mFirstFrameListeners.remove(listener);
     }
 
     public void setInitialRoute(String route) {
@@ -695,14 +712,19 @@ public class FlutterView extends SurfaceView
 
     // Called by native to notify first Flutter frame rendered.
     private void onFirstFrame() {
-        if (getContext() instanceof FlutterActivity) {
-            // Resets the activity theme from one possibly containing a splash
-            // background to a blank one.
-            //
-            // We can make this configurable if users want it.
-            getContext().setTheme(android.R.style.Theme_Black_NoTitleBar);
-            Log.e(TAG, "Called onFirstFrame");
+        if (mFirstFrameListeners.isEmpty()) {
+            return;
         }
+        // Call the listeners on the UI thread.
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                for (FirstFrameListener listener : mFirstFrameListeners) {
+                    listener.onFirstFrame();
+                }
+            }
+        };
+        post(runnable);
     }
 
     // ACCESSIBILITY
@@ -875,5 +897,12 @@ public class FlutterView extends SurfaceView
             } catch (JSONException e) {
             }
         }
+    }
+
+    /**
+     * Listener will be called on the UI thread once when Flutter renders the first frame.
+     */
+    public interface FirstFrameListener {
+        void onFirstFrame();
     }
 }

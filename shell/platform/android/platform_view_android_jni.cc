@@ -348,6 +348,12 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_on_first_frame_method =
+      env->GetMethodID(g_flutter_view_class->obj(), "onFirstFrame", "()V");
+
+  if (g_update_semantics_method == nullptr) {
+    return false;
+  }
   return true;
 }
 
