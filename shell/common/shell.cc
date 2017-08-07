@@ -321,15 +321,9 @@ void Shell::RunInPlatformViewUIThread(uintptr_t view_id,
   *view_existed = false;
 
   for (auto it = platform_views_.begin(); it != platform_views_.end(); it++) {
-<<<<<<< HEAD
     std::shared_ptr<PlatformView> view = it->lock();
     if (!view)
       continue;
-=======
-    std::shared_ptr<PlatformView> view{*it};
-    if (!view)
-      continue;
->>>>>>> Implement GetRectsForRange, GetPositionForOffset, and GetWordBoundary.
     if (reinterpret_cast<uintptr_t>(view.get()) == view_id) {
       *view_existed = true;
       view->RunFromSource(assets_directory, main, packages);
