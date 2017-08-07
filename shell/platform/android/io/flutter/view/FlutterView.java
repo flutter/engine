@@ -710,12 +710,9 @@ public class FlutterView extends SurfaceView
         }
     }
 
-    // Called by native to notify first Flutter frame rendered.
+    // Called by native on the GPU thread to notify first Flutter frame rendered.
     private void onFirstFrame() {
-        if (mFirstFrameListeners.isEmpty()) {
-            return;
-        }
-        // Call the listeners on the UI thread.
+        // Call the listeners on the Android UI thread.
         Runnable runnable = new Runnable() {
             @Override
             public void run() {

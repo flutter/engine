@@ -130,7 +130,10 @@ PlatformViewAndroid::PlatformViewAndroid()
           // First frame callback.
           [this]() {
             JNIEnv* env = fml::jni::AttachCurrentThread();
-            FlutterViewOnFirstFrame(env, flutter_view_.get(env).obj());
+            fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
+            if (!view.is_null()) {
+              FlutterViewOnFirstFrame(env, view.obj());
+            }
           })),
       android_surface_(InitializePlatformSurface()) {
 }

@@ -149,7 +149,7 @@ void GPURasterizer::NotifyFirstFrameOnce() {
   if (firstFrameCallback_) {
     TRACE_EVENT0("flutter", "GPURasterizer::NotifyFirstFrameOnce");
     firstFrameCallback_();
-    firstFrameCallback_ = NULL;
+    firstFrameCallback_ = nullptr;
   }
 }
 
