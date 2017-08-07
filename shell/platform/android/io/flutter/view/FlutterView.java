@@ -897,7 +897,7 @@ public class FlutterView extends SurfaceView
     }
 
     /**
-     * Listener will be called on the UI thread once when Flutter renders the first frame.
+     * Listener will be called on the Android UI thread once when Flutter renders the first frame.
      */
     public interface FirstFrameListener {
         void onFirstFrame();

@@ -19,8 +19,8 @@ namespace shell {
 GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info,
                              ftl::Closure firstFrameCallback)
     : compositor_context_(std::move(info)),
-      weak_factory_(this),
-      firstFrameCallback_(firstFrameCallback) {
+      firstFrameCallback_(firstFrameCallback),
+      weak_factory_(this) {
   auto weak_ptr = weak_factory_.GetWeakPtr();
   blink::Threads::Gpu()->PostTask(
       [weak_ptr]() { Shell::Shared().AddRasterizer(weak_ptr); });

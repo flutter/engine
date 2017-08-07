@@ -40,10 +40,10 @@ class GPURasterizer : public Rasterizer {
   std::unique_ptr<Surface> surface_;
   flow::CompositorContext compositor_context_;
   std::unique_ptr<flow::LayerTree> last_layer_tree_;
-  ftl::WeakPtrFactory<GPURasterizer> weak_factory_;
   // A closure to be called when the underlaying surface presents a first frame.
   // NULL if there is no callback or the callback is already called.
   ftl::Closure firstFrameCallback_;
+  ftl::WeakPtrFactory<GPURasterizer> weak_factory_;
 
   void DoDraw(std::unique_ptr<flow::LayerTree> layer_tree);
 
