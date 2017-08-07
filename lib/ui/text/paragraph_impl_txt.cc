@@ -75,8 +75,9 @@ std::vector<TextBox> ParagraphImplTxt::getRectsForRange(unsigned start,
 
 Dart_Handle ParagraphImplTxt::getPositionForOffset(double dx, double dy) {
   Dart_Handle result = Dart_NewList(2);
-  Dart_ListSetAt(result, 0,
-                 ToDart(m_paragraph->GetGlyphPositionAtCoordinate(dx, dy)));
+  Dart_ListSetAt(
+      result, 0,
+      ToDart(m_paragraph->GetGlyphPositionAtCoordinate(dx, dy, true)));
   Dart_ListSetAt(result, 1, ToDart(static_cast<int>(EAffinity::DOWNSTREAM)));
   return result;
 }

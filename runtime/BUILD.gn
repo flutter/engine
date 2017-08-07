@@ -46,6 +46,7 @@ source_set("embedded_resources_cc") {
 }
 
 source_set("runtime") {
+
   sources = [
     "asset_font_selector.cc",
     "asset_font_selector.h",
@@ -88,6 +89,7 @@ source_set("runtime") {
     "//lib/tonic",
     "//third_party/rapidjson",
     "//third_party/skia",
+    "//lib/txt",
   ]
 
   defines = []
