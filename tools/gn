@@ -135,7 +135,6 @@ def to_gn_args(args):
 
     gn_args['flutter_runtime_mode'] = args.runtime_mode
     gn_args['flutter_aot'] = aot
-    gn_args['is_flutter'] = True
 
     if args.target_sysroot:
       gn_args['target_sysroot'] = args.target_sysroot
