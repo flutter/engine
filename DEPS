@@ -22,15 +22,15 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'github_git': 'https://github.com',
-  'skia_revision': '16d8ec66cdce2f30ce89b87066d3ac7a244c460d',
+  'skia_revision': '95db9b3cb1286e2c88e12035fd96fd047ea3582d',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
   # Dart SDK's DEPS file for that revision of Dart. The DEPS file for
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
-  # You can use //tools/dart/create_updated_fluter_deps.py to produce
+  # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '82e9557aa78cc1ff43ea60bc443758558bbe4d99',
+  'dart_revision': '21eddc429e9c7260de00a9af7cad94baba830f59',
 
   'dart_args_tag': '0.13.7',
   'dart_async_tag': 'daf66909019d2aaec1721fc39d94ea648a9fdc1d',
@@ -40,9 +40,9 @@ vars = {
   'dart_boringssl_rev': 'd519bf6be0b447fb80fbc539d4bff4479b5482a2',
   'dart_charcode_tag': 'v1.1.1',
   'dart_cli_util_tag' : '0.1.0',
-  'dart_collection_tag': '1.13.0',
+  'dart_collection_tag': '1.14.3',
   'dart_convert_tag': '2.0.1',
-  'dart_crypto_tag': '2.0.1',
+  'dart_crypto_tag': '2.0.2',
   'dart_csslib_tag': '0.13.3+1',
   'dart_dart2js_info_tag': '0.5.4+2',
   'dart_dartdoc_tag' : 'v0.13.0+1',
@@ -63,7 +63,7 @@ vars = {
   'dart_mustache4dart_tag' : 'v1.1.0',
   'dart_oauth2_tag': '1.0.2',
   'dart_observatory_pub_packages_rev': 'a4e392521c720d244cd63e067387195d78584b35',
-  'dart_package_config_tag': '1.0.0',
+  'dart_package_config_tag': '1.0.1',
   'dart_package_resolver_tag': '1.0.2+1',
   'dart_path_tag': '1.4.1',
   'dart_pool_tag': '1.3.0',
@@ -105,7 +105,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '4cf93efdd098f6c3bc26b9f38f2306fa0560ead6',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'af244ff404fc9e20e0068173a4a30abd1d3c9980',
 
    # Fuchsia compatibility
    #
@@ -119,8 +119,14 @@ deps = {
   'src/lib/tonic':
    Var('fuchsia_git') + '/tonic' + '@' + '32e37b1478ea334ee215bd909cd35b85a6197c65',
 
+   'src/lib/txt':
+   Var('fuchsia_git') + '/txt' + '@' + '10ba0f7fd2fa4dc7ebac2ac085b459db29a83c0f',
+
   'src/lib/zip':
    Var('fuchsia_git') + '/zip' + '@' + '92dc87ca645fe8e9f5151ef6dac86d8311a7222f',
+
+   'src/third_party/benchmark':
+   Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',
 
   'src/third_party/gtest':
    Var('fuchsia_git') + '/third_party/gtest' + '@' + 'c00f82917331efbbd27124b537e4ccc915a02b72',
