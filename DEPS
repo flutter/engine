@@ -34,45 +34,46 @@ vars = {
 
   'dart_args_tag': '0.13.7',
   'dart_async_tag': 'daf66909019d2aaec1721fc39d94ea648a9fdc1d',
-  'dart_barback_tag' : '0.15.2+11',
+  'dart_barback_tag': '0.15.2+11',
   'dart_bazel_worker_tag': 'v0.1.4',
   'dart_boringssl_gen_rev': '753224969dbe43dad29343146529727b5066c0f3',
   'dart_boringssl_rev': 'd519bf6be0b447fb80fbc539d4bff4479b5482a2',
   'dart_charcode_tag': 'v1.1.1',
-  'dart_cli_util_tag' : '0.1.0',
+  'dart_cli_util_tag': '0.1.0',
   'dart_collection_tag': '1.14.3',
   'dart_convert_tag': '2.0.1',
   'dart_crypto_tag': '2.0.2',
   'dart_csslib_tag': '0.13.3+1',
   'dart_dart2js_info_tag': '0.5.4+2',
-  'dart_dartdoc_tag' : 'v0.13.0+1',
+  'dart_dart_style_tag': '1.0.7',
+  'dart_dartdoc_tag': 'v0.13.0+1',
   'dart_fixnum_tag': '0.10.5',
   'dart_glob_tag': '1.1.3',
   'dart_html_tag': '0.13.1',
-  'dart_http_tag' : '0.11.3+14',
-  'dart_http_multi_server_tag' : '2.0.3',
-  'dart_http_throttle_tag' : '1.0.1',
-  'dart_http_parser_tag' : '3.1.1',
+  'dart_http_multi_server_tag': '2.0.3',
+  'dart_http_parser_tag': '3.1.1',
+  'dart_http_tag': '0.11.3+14',
+  'dart_http_throttle_tag': '1.0.1',
   'dart_intl_tag': '0.14.0',
   'dart_isolate_tag': '1.0.0',
   'dart_json_rpc_2_tag': '2.0.4',
-  'dart_logging_tag': '0.11.3+1',
   'dart_linter_tag': '0.1.35',
+  'dart_logging_tag': '0.11.3+1',
   'dart_markdown_tag': '0.11.3',
-  'dart_mime_tag': '75890811d4af5af080351ba8a2853ad4c8df98dd',
-  'dart_mustache4dart_tag' : 'v1.1.0',
+  'dart_mime_rev': '75890811d4af5af080351ba8a2853ad4c8df98dd',
+  'dart_mustache4dart_tag': 'v1.1.0',
   'dart_oauth2_tag': '1.0.2',
   'dart_observatory_pub_packages_rev': 'a4e392521c720d244cd63e067387195d78584b35',
   'dart_package_config_tag': '1.0.1',
   'dart_package_resolver_tag': '1.0.2+1',
   'dart_path_tag': '1.4.1',
-  'dart_pool_tag': '1.3.0',
   'dart_plugin_tag': '0.2.0',
+  'dart_pool_tag': '1.3.0',
   'dart_protobuf_tag': '0.5.4',
-  'dart_pub_tag': '0f122625f8e607842afe156b9b23a9709e4ce39a',
+  'dart_pub_rev': '0f122625f8e607842afe156b9b23a9709e4ce39a',
   'dart_pub_semver_tag': '1.3.2',
   'dart_quiver_tag': '0.22.0',
-  'dart_resource_tag':'a49101ba2deb29c728acba6fb86000a8f730f4b1',
+  'dart_resource_rev': 'a49101ba2deb29c728acba6fb86000a8f730f4b1',
   'dart_root_certificates_rev': 'a4c7c6f23a664a37bc1b6f15a819e3f2a292791a',
   'dart_shelf_tag': '0.6.7+2',
   'dart_shelf_web_socket_tag': '0.2.1',
@@ -80,7 +81,6 @@ vars = {
   'dart_stack_trace_tag': '1.7.2',
   'dart_stream_channel_tag': '1.6.1',
   'dart_string_scanner_tag': '1.0.1',
-  'dart_style_tag': '1.0.7',
   'dart_tuple_tag': 'v1.0.1',
   'dart_typed_data_tag': '1.1.3',
   'dart_usage_tag': '3.3.0',
@@ -239,7 +239,7 @@ deps = {
    Var('chromium_git') + '/external/github.com/dart-lang/markdown' + '@' + Var('dart_markdown_tag'),
 
   'src/dart/third_party/pkg/mime':
-   Var('chromium_git') + '/external/github.com/dart-lang/mime' + '@' + Var('dart_mime_tag'),
+   Var('chromium_git') + '/external/github.com/dart-lang/mime' + '@' + Var('dart_mime_rev'),
 
   'src/dart/third_party/pkg/mustache4dart':
    Var('chromium_git') + '/external/github.com/valotas/mustache4dart' + '@' + Var('dart_mustache4dart_tag'),
@@ -266,13 +266,13 @@ deps = {
    Var('chromium_git') + '/external/github.com/dart-lang/pub_semver' + '@' + Var('dart_pub_semver_tag'),
 
   'src/dart/third_party/pkg/pub':
-   Var('chromium_git') + '/external/github.com/dart-lang/pub' + '@' + Var('dart_pub_tag'),
+   Var('chromium_git') + '/external/github.com/dart-lang/pub' + '@' + Var('dart_pub_rev'),
 
   'src/dart/third_party/pkg/quiver':
    Var('chromium_git') + '/external/github.com/google/quiver-dart' + '@' + Var('dart_quiver_tag'),
 
   'src/dart/third_party/pkg/resource':
-   Var('chromium_git') + '/external/github.com/dart-lang/resource' + '@' + Var('dart_resource_tag'),
+   Var('chromium_git') + '/external/github.com/dart-lang/resource' + '@' + Var('dart_resource_rev'),
 
   'src/dart/third_party/pkg/shelf':
    Var('chromium_git') + '/external/github.com/dart-lang/shelf' + '@' + Var('dart_shelf_tag'),
@@ -293,7 +293,7 @@ deps = {
    Var('chromium_git') + '/external/github.com/dart-lang/stack_trace' + '@' + Var('dart_stack_trace_tag'),
 
   'src/dart/third_party/pkg_tested/dart_style':
-   Var('chromium_git') + '/external/github.com/dart-lang/dart_style' + '@' + Var('dart_style_tag'),
+   Var('chromium_git') + '/external/github.com/dart-lang/dart_style' + '@' + Var('dart_dart_style_tag'),
 
   'src/dart/third_party/pkg/typed_data':
    Var('chromium_git') + '/external/github.com/dart-lang/typed_data' + '@' + Var('dart_typed_data_tag'),
