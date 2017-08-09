@@ -66,7 +66,7 @@ DEF_SWITCH(EnableSoftwareRendering,
            "when testing Flutter on emulators. By default, Flutter will"
            "attempt to either use OpenGL or Vulkan.")
 DEF_SWITCH(EnableTxt,
-           "Enable-txt",
+           "enable-txt",
            "Enable libtxt as the text shaping library instead of Blink.")
 DEF_SWITCH(FLX, "flx", "Specify the the FLX path.")
 DEF_SWITCH(Help, "help", "Display this help text.")
