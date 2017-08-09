@@ -134,13 +134,14 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
       // First frame callback.
       [self]() {
         TRACE_EVENT0("flutter", "First Frame");
-        [UIView animateWithDuration:0.2
-                        animations:^{ _launchView.get().alpha = 0; }
-                        completion:^(BOOL finished){
-                          [_launchView.get() removeFromSuperview];
-                          [_launchView release];
-                          _launchView.reset();
-                        }];
+        if (_launchView) {
+          [UIView animateWithDuration:0.2
+                           animations:^{ _launchView.get().alpha = 0; }
+                           completion:^(BOOL finished){
+                             [_launchView.get() removeFromSuperview];
+                             _launchView.reset();
+                           }];
+        }
       });
   _platformView->SetupResourceContextOnIOThread();
 
