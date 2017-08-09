@@ -429,6 +429,20 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
     FTL_DCHECK(device_id != 0);
     CGPoint windowCoordinates = [touch locationInView:nil];
 
+    // The touch ended location can settle since the last touch moved location but without the
+    // precise timestamp of when the location settled which will throw off velocity calculation
+    // in Flutter. If the settling distance is within the margin of error from the previous
+    // location, just report the previous location on touch ended.
+    if (touch.phase == UITouchPhaseEnded) {
+      CGPoint endedLocation = [touch locationInView:nil];
+      CGPoint lastMovedLocation = [touch previousLocationInView:nil];
+      CGFloat distanceSquared =
+          (endedLocation.x - lastMovedLocation.x) * (endedLocation.x - lastMovedLocation.x)
+          - (endedLocation.y - lastMovedLocation.y) * (endedLocation.y - lastMovedLocation.y)
+      if (distanceSquared < touch.majorRadiusTolerance * touch.majorRadiusTolerance))
+        windowCoordinates = lastMovedLocation;
+    }
+
     blink::PointerData pointer_data;
     pointer_data.Clear();
 
