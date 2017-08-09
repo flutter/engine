@@ -196,6 +196,9 @@ deps = {
   'src/dart/third_party/pkg/yaml':
    Var('chromium_git') + '/external/github.com/dart-lang/yaml' + '@' + Var('dart_yaml_tag'),
 
+   'src/third_party/glfw':
+   Var('github_git') + '/glfw/glfw.git' + '@' + 'cf2eab5b4ee2de1808e80a2a49096f011fbd0b82',
+
   'src/third_party/root_certificates':
    Var('chromium_git') + '/external/github.com/dart-lang/root_certificates' + '@' + Var('dart_root_certificates_rev'),
 

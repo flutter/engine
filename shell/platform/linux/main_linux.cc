@@ -1,16 +1,18 @@
 // Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
+#include <iostream>
 #include "dart/runtime/bin/embedded_dart_io.h"
 #include "flutter/common/threads.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/testing/test_runner.h"
 #include "flutter/shell/testing/testing.h"
 #include "flutter/sky/engine/public/web/Sky.h"
+#include "flutter/shell/platform/linux/platform_view_glfw.h"
 #include "lib/ftl/command_line.h"
 #include "lib/tonic/dart_microtask_queue.h"
 
@@ -116,6 +118,44 @@ void RunNonInteractive(ftl::CommandLine initial_command_line,
   exit(ConvertErrorTypeToExitCode(error));
 }
 
+int RunInteractive(ftl::CommandLine initial_command_line) {
+  shell::Shell::InitStandalone(initial_command_line);
+
+  const auto& command_line = shell::Shell::Shared().GetCommandLine();
+
+  std::string target = command_line.GetOptionValueWithDefault(
+      shell::FlagForSwitch(shell::Switch::FLX), "");
+  std::string packages = command_line.GetOptionValueWithDefault(FlagForSwitch(shell::Switch::Packages), "");
+
+  if (target.empty()) {
+    // Alternatively, use the first positional argument.
+    auto args = command_line.positional_args();
+    if (args.empty())
+      return 1;
+    target = args[0];
+  }
+
+  if (target.empty())
+    return 1;
+
+  std::shared_ptr<shell::PlatformViewGLFW> platform_view(
+      new shell::PlatformViewGLFW());
+  platform_view->InitMessageLoop();
+  platform_view->Attach();
+
+
+  platform_view->NotifyCreated(
+      std::make_unique<shell::GPUSurfaceGL>(platform_view.get()));
+
+  platform_view->RunFromSource(std::string(), target, packages);
+
+  platform_view->RunMessageLoop();
+
+  platform_view->NotifyDestroyed();
+
+  return 0;
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -129,8 +169,12 @@ int main(int argc, char* argv[]) {
     return EXIT_SUCCESS;
   }
 
-  bool run_forever =
-      command_line.HasOption(shell::FlagForSwitch(shell::Switch::RunForever));
-  RunNonInteractive(std::move(command_line), run_forever);
-  return EXIT_SUCCESS;
+  if (command_line.HasOption(
+          shell::FlagForSwitch(shell::Switch::NonInteractive))) {
+    bool run_forever =
+        command_line.HasOption(shell::FlagForSwitch(shell::Switch::RunForever));
+    RunNonInteractive(std::move(command_line), run_forever);
+    return EXIT_SUCCESS;
+  }
+  return RunInteractive(std::move(command_line));
 }

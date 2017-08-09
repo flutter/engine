@@ -15,9 +15,33 @@ executable("linux") {
     "//flutter/common",
     "//flutter/fml",
     "//flutter/shell/common",
+    "//flutter/shell/gpu",
     "//flutter/shell/testing",
     "//lib/ftl",
     "//lib/tonic",
     "//third_party/skia",
+    "//third_party/glfw",
+  ]
+}
+
+shared_library("linux_x11") {
+  output_name = "flutter_lib"
+
+  sources = [
+    "platform_view_glfw.cc",
+    "platform_view_glfw.h",
+  ]
+
+  deps = [
+    "//dart/runtime:libdart_jit",
+    "//dart/runtime/bin:embedded_dart_io",
+    "//flutter/common",
+    "//flutter/fml",
+    "//flutter/shell/common",
+    "//flutter/shell/gpu",
+    "//lib/ftl",
+    "//lib/tonic",
+    "//third_party/skia",
+    "//third_party/glfw",
   ]
 }
