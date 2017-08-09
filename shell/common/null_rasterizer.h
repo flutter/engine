@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_COMMON_NULL_RASTERIZER_H_
 
 #include "flutter/shell/common/rasterizer.h"
+#include "lib/ftl/functional/closure.h"
 #include "lib/ftl/macros.h"
 #include "lib/ftl/memory/weak_ptr.h"
 
@@ -29,6 +30,8 @@ class NullRasterizer : public Rasterizer {
   flow::LayerTree* GetLastLayerTree() override;
 
   void Draw(ftl::RefPtr<flutter::Pipeline<flow::LayerTree>> pipeline) override;
+
+  void AddNextFrameCallback(ftl::Closure nextFrameCallback) override;
 
  private:
   std::unique_ptr<Surface> surface_;

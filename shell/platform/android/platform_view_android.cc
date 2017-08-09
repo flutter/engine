@@ -125,16 +125,7 @@ static std::unique_ptr<AndroidSurface> InitializePlatformSurface() {
 }
 
 PlatformViewAndroid::PlatformViewAndroid()
-    : PlatformView(std::make_unique<GPURasterizer>(
-          nullptr,
-          // First frame callback.
-          [this]() {
-            JNIEnv* env = fml::jni::AttachCurrentThread();
-            fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
-            if (!view.is_null()) {
-              FlutterViewOnFirstFrame(env, view.obj());
-            }
-          })),
+    : PlatformView(std::make_unique<GPURasterizer>(nullptr)),
       android_surface_(InitializePlatformSurface()) {
 }
 
@@ -149,6 +140,15 @@ void PlatformViewAndroid::Attach() {
   UpdateThreadPriorities();
 
   PostAddToShellTask();
+
+  rasterizer_->AddNextFrameCallback(
+      [this]() {
+        JNIEnv* env = fml::jni::AttachCurrentThread();
+        fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
+        if (!view.is_null()) {
+          FlutterViewOnFirstFrame(env, view.obj());
+        }
+      });
 }
 
 void PlatformViewAndroid::Detach() {

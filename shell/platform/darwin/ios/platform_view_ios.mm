@@ -17,10 +17,8 @@
 
 namespace shell {
 
-PlatformViewIOS::PlatformViewIOS(CALayer* layer, ftl::Closure firstFrameCallback)
-    : PlatformView(std::make_unique<GPURasterizer>(
-          std::make_unique<ProcessInfoMac>(),
-          firstFrameCallback)),
+PlatformViewIOS::PlatformViewIOS(CALayer* layer)
+    : PlatformView(std::make_unique<GPURasterizer>(std::make_unique<ProcessInfoMac>())),
       ios_surface_(IOSSurface::Create(surface_config_, layer)),
       weak_factory_(this) {
 }
@@ -28,8 +26,21 @@ PlatformViewIOS::PlatformViewIOS(CALayer* layer, ftl::Closure firstFrameCallback
 PlatformViewIOS::~PlatformViewIOS() = default;
 
 void PlatformViewIOS::Attach() {
+  Attach(NULL);
+}
+
+void PlatformViewIOS::Attach(ftl::Closure firstFrameCallback) {
   CreateEngine();
   PostAddToShellTask();
+  if (firstFrameCallback) {
+    firstFrameCallback_ = firstFrameCallback;
+    rasterizer_->AddNextFrameCallback([weakSelf = GetWeakPtr()] {
+      if (weakSelf) {
+        weakSelf->firstFrameCallback_();
+        weakSelf->firstFrameCallback_ = nullptr;
+      }
+    });
+  }
 }
 
 void PlatformViewIOS::NotifyCreated() {

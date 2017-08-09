@@ -127,22 +127,21 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
-  _platformView =
-      std::make_shared<shell::PlatformViewIOS>(
-        reinterpret_cast<CAEAGLLayer*>(self.view.layer),
-        // First frame callback.
-        [self]() {
-          TRACE_EVENT0("flutter", "First Frame");
-          if (_launchView) {
-            [UIView animateWithDuration:0.2
-                             animations:^{ _launchView.get().alpha = 0; }
-                             completion:^(BOOL finished){
-                               [_launchView.get() removeFromSuperview];
-                               _launchView.reset();
-                             }];
-          }
-        });
-  _platformView->Attach();
+  _platformView = std::make_shared<shell::PlatformViewIOS>(
+      reinterpret_cast<CAEAGLLayer*>(self.view.layer));
+
+  _platformView->Attach(
+      // First frame callback.
+      [self]() {
+        TRACE_EVENT0("flutter", "First Frame");
+        [UIView animateWithDuration:0.2
+                        animations:^{ _launchView.get().alpha = 0; }
+                        completion:^(BOOL finished){
+                          [_launchView.get() removeFromSuperview];
+                          [_launchView release];
+                          _launchView.reset();
+                        }];
+      });
   _platformView->SetupResourceContextOnIOThread();
 
   _localizationChannel.reset([[FlutterMethodChannel alloc]

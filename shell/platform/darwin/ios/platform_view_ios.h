@@ -22,11 +22,13 @@ namespace shell {
 
 class PlatformViewIOS : public PlatformView {
  public:
-  explicit PlatformViewIOS(CALayer* layer, ftl::Closure firstFrameCallback);
+  explicit PlatformViewIOS(CALayer* layer);
 
   ~PlatformViewIOS() override;
 
-  virtual void Attach() override;
+  void Attach() override;
+
+  void Attach(ftl::Closure firstFrameCallback);
 
   void NotifyCreated();
 
@@ -57,6 +59,7 @@ class PlatformViewIOS : public PlatformView {
   std::unique_ptr<IOSSurface> ios_surface_;
   PlatformMessageRouter platform_message_router_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
+  ftl::Closure firstFrameCallback_;
   ftl::WeakPtrFactory<PlatformViewIOS> weak_factory_;
 
   void SetupAndLoadFromSource(const std::string& assets_directory,

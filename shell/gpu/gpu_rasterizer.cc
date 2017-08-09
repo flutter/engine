@@ -16,10 +16,8 @@
 
 namespace shell {
 
-GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info,
-                             ftl::Closure firstFrameCallback)
+GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info)
     : compositor_context_(std::move(info)),
-      firstFrameCallback_(firstFrameCallback),
       weak_factory_(this) {
   auto weak_ptr = weak_factory_.GetWeakPtr();
   blink::Threads::Gpu()->PostTask(
@@ -117,6 +115,8 @@ void GPURasterizer::DoDraw(std::unique_ptr<flow::LayerTree> layer_tree) {
 
   DrawToSurface(*layer_tree);
 
+  NotifyNextFrameOnce();
+
   last_layer_tree_ = std::move(layer_tree);
 }
 
@@ -141,15 +141,22 @@ void GPURasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
   layer_tree.Raster(compositor_frame);
 
   frame->Submit();
-
-  NotifyFirstFrameOnce();
 }
 
-void GPURasterizer::NotifyFirstFrameOnce() {
-  if (firstFrameCallback_) {
-    TRACE_EVENT0("flutter", "GPURasterizer::NotifyFirstFrameOnce");
-    firstFrameCallback_();
-    firstFrameCallback_ = nullptr;
+void GPURasterizer::AddNextFrameCallback(ftl::Closure nextFrameCallback) {
+  nextFrameCallback_ = nextFrameCallback;
+}
+
+void GPURasterizer::NotifyNextFrameOnce() {
+  if (nextFrameCallback_) {
+    blink::Threads::Platform()->PostTask([weak_this = weak_factory_.GetWeakPtr()] {
+      TRACE_EVENT0("flutter", "GPURasterizer::NotifyNextFrameOnce");
+      if (weak_this) {
+        ftl::Closure callback = weak_this->nextFrameCallback_;
+        callback();
+        weak_this->nextFrameCallback_ = nullptr;
+      }
+    });
   }
 }
 
