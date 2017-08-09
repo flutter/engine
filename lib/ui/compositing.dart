@@ -272,10 +272,10 @@ class SceneHost extends NativeFieldWrapperClass2 {
   /// to the child.
   ///
   /// The scene host takes ownership of the provided export token handle.
-  SceneHost(int export_token_handle) {
+  SceneHost(dynamic export_token_handle) {
     _constructor(export_token_handle);
   }
-  void _constructor(int export_token_handle) native "SceneHost_constructor";
+  void _constructor(dynamic export_token_handle) native "SceneHost_constructor";
 
   /// Releases the resources associated with the child scene host.
   ///
