@@ -11,10 +11,12 @@ group("flutter") {
     "//flutter/sky",
   ]
 
-  if (current_toolchain == host_toolchain) {
-    deps += [
-        "//dart:create_sdk"
-    ]
+  if (!is_fuchsia) {
+    if (current_toolchain == host_toolchain) {
+      deps += [
+          "//dart:create_sdk"
+      ]
+    }
   }
 
   if (is_fuchsia) {
