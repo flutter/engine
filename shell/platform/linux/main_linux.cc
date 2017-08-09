@@ -119,10 +119,6 @@ void RunNonInteractive(ftl::CommandLine initial_command_line,
 }
 
 int RunInteractive(ftl::CommandLine initial_command_line) {
-  // This is a platform thread (i.e not one created by fml::Thread), so perform
-  // one time initialization.
-  fml::MessageLoop::EnsureInitializedForCurrentThread();
-
   shell::Shell::InitStandalone(initial_command_line);
 
   const auto& command_line = shell::Shell::Shared().GetCommandLine();
@@ -144,24 +140,16 @@ int RunInteractive(ftl::CommandLine initial_command_line) {
 
   std::shared_ptr<shell::PlatformViewGLFW> platform_view(
       new shell::PlatformViewGLFW());
+  platform_view->InitMessageLoop();
   platform_view->Attach();
 
 
   platform_view->NotifyCreated(
       std::make_unique<shell::GPUSurfaceGL>(platform_view.get()));
 
-  blink::Threads::UI()->PostTask(
-      [ engine = platform_view->engine().GetWeakPtr(), target, packages ] {
-        if (engine) {
-          if (true) { // IsDartFile(target)) {
-            engine->RunBundleAndSource(std::string(), target, packages);
-          } else {
-            engine->RunBundle(target);
-          }
-        }
-      });
+  platform_view->RunFromSource(std::string(), target, packages);
 
-  fml::MessageLoop::GetCurrent().Run();
+  platform_view->RunMessageLoop();
 
   platform_view->NotifyDestroyed();
 

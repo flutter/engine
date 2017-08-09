@@ -20,9 +20,19 @@ class PlatformViewGLFW : public PlatformView, public GPUSurfaceGLDelegate {
 
   ~PlatformViewGLFW() override;
 
-  bool IsValid() const;
+  void InitMessageLoop();
 
   void Attach() override;
+
+  void Run(const std::string& main, const std::string& packages);
+
+  void RunFromSource(const std::string& assets_directory,
+                     const std::string& main,
+                     const std::string& packages) override;
+
+  void RunMessageLoop();
+
+  void Cleanup();
 
   bool SurfaceSupportsSRGB() const override;
 
@@ -36,22 +46,8 @@ class PlatformViewGLFW : public PlatformView, public GPUSurfaceGLDelegate {
 
   intptr_t GLContextFBO() const override;
 
-  void RunFromSource(const std::string& assets_directory,
-                     const std::string& main,
-                     const std::string& packages) override;
-
  private:
-  bool valid_;
   GLFWwindow* glfw_window_;
-  int buttons_;
-
-  void OnWindowSizeChanged(int width, int height);
-
-  void OnMouseButtonChanged(int button, int action, int mods);
-
-  void OnCursorPosChanged(double x, double y);
-
-  void OnKeyEvent(int key, int scancode, int action, int mods);
 
   FTL_DISALLOW_COPY_AND_ASSIGN(PlatformViewGLFW);
 };

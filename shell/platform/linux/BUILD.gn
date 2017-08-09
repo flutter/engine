@@ -7,8 +7,6 @@ executable("linux") {
 
   sources = [
     "main_linux.cc",
-    "platform_view_glfw.cc",
-    "platform_view_glfw.h",
   ]
 
   deps = [
@@ -24,6 +22,26 @@ executable("linux") {
     "//third_party/skia",
     "//third_party/glfw",
   ]
+}
 
-  ldflags = [ "-lGL", "-lX11", "-lXi", "-lXrandr", "-lXxf86vm", "-lXinerama", "-lXcursor", "-lrt", "-lm" ]
+shared_library("linux_x11") {
+  output_name = "flutter_lib"
+
+  sources = [
+    "platform_view_glfw.cc",
+    "platform_view_glfw.h",
+  ]
+
+  deps = [
+    "//dart/runtime:libdart_jit",
+    "//dart/runtime/bin:embedded_dart_io",
+    "//flutter/common",
+    "//flutter/fml",
+    "//flutter/shell/common",
+    "//flutter/shell/gpu",
+    "//lib/ftl",
+    "//lib/tonic",
+    "//third_party/skia",
+    "//third_party/glfw",
+  ]
 }
