@@ -1614,6 +1614,8 @@ FILE: ../../../flutter/lib/ui/painting/shader.cc
 FILE: ../../../flutter/lib/ui/painting/shader.h
 FILE: ../../../flutter/lib/ui/pointer.dart
 FILE: ../../../flutter/lib/ui/text.dart
+FILE: ../../../flutter/lib/ui/text/font_collection_mgr.cc
+FILE: ../../../flutter/lib/ui/text/font_collection_mgr.h
 FILE: ../../../flutter/lib/ui/text/paragraph.cc
 FILE: ../../../flutter/lib/ui/text/paragraph.h
 FILE: ../../../flutter/lib/ui/text/paragraph_builder.cc
