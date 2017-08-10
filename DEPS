@@ -399,4 +399,19 @@ hooks = [
         'src/tools',
     ],
   },
+  {
+    "name": "7zip",
+    "pattern": ".",
+    "action": [
+      "download_from_google_storage",
+      "--no_auth",
+      "--no_resume",
+      "--bucket",
+      "dart-dependencies",
+      "--platform=win32",
+      "--extract",
+      "-s",
+      "src/dart/third_party/7zip.tar.gz.sha1",
+    ],
+  },
 ]
