@@ -271,7 +271,9 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
   int32_t mask = encoded[0];
 
   if (!Settings::Get().using_blink) {
-    txt::TextStyle tstyle;
+    // Set to use the properties of the previous style if the property is not
+    // explicitly given.
+    txt::TextStyle tstyle = m_paragraphBuilder.PeekStyle();
 
     if (mask & tsColorMask)
       tstyle.color = encoded[tsColorIndex];
