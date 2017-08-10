@@ -273,21 +273,21 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
   if (!Settings::Get().using_blink) {
     // Set to use the properties of the previous style if the property is not
     // explicitly given.
-    txt::TextStyle tstyle = m_paragraphBuilder.PeekStyle();
+    txt::TextStyle style = m_paragraphBuilder.PeekStyle();
 
     if (mask & tsColorMask)
-      tstyle.color = encoded[tsColorIndex];
+      style.color = encoded[tsColorIndex];
 
     if (mask & tsTextDecorationMask) {
-      tstyle.decoration =
+      style.decoration =
           static_cast<txt::TextDecoration>(encoded[tsTextDecorationIndex]);
     }
 
     if (mask & tsTextDecorationColorMask)
-      tstyle.decoration_color = encoded[tsTextDecorationColorIndex];
+      style.decoration_color = encoded[tsTextDecorationColorIndex];
 
     if (mask & tsTextDecorationStyleMask)
-      tstyle.decoration_style = static_cast<txt::TextDecorationStyle>(
+      style.decoration_style = static_cast<txt::TextDecorationStyle>(
           encoded[tsTextDecorationStyleIndex]);
 
     if (mask & tsTextBaselineMask) {
@@ -298,31 +298,31 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
     if (mask & (tsFontWeightMask | tsFontStyleMask | tsFontFamilyMask |
                 tsFontSizeMask | tsLetterSpacingMask | tsWordSpacingMask)) {
       if (mask & tsFontWeightMask)
-        tstyle.font_weight =
+        style.font_weight =
             static_cast<txt::FontWeight>(encoded[tsFontWeightIndex]);
 
       if (mask & tsFontStyleMask)
-        tstyle.font_style =
+        style.font_style =
             static_cast<txt::FontStyle>(encoded[tsFontStyleIndex]);
 
       if (mask & tsFontFamilyMask)
-        tstyle.font_family = fontFamily;
+        style.font_family = fontFamily;
 
       if (mask & tsFontSizeMask)
-        tstyle.font_size = fontSize;
+        style.font_size = fontSize;
 
       if (mask & tsLetterSpacingMask)
-        tstyle.letter_spacing = letterSpacing;
+        style.letter_spacing = letterSpacing;
 
       if (mask & tsWordSpacingMask)
-        tstyle.word_spacing = wordSpacing;
+        style.word_spacing = wordSpacing;
     }
 
     if (mask & tsHeightMask) {
-      tstyle.height = height;
+      style.height = height;
     }
 
-    m_paragraphBuilder.PushStyle(tstyle);
+    m_paragraphBuilder.PushStyle(style);
   } else {
     // Blink Version.
     RefPtr<RenderStyle> style = RenderStyle::create();
