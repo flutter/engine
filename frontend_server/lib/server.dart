@@ -59,14 +59,99 @@ ${argParser.usage}
 
 enum State { READY_FOR_INSTRUCTION, RECOMPILE_LIST }
 
-starter(List<String> args) async {
+abstract class CompilerInterface {
+  compile(String filename, ArgResults options);
+  recompileDelta();
+  acceptLastDelta();
+  rejectLastDelta();
+  invalidate(Uri uri);
+}
+
+class FrontendCompiler implements CompilerInterface {
+  IncrementalKernelGenerator ikg;
+  String filename;
+
+  @override
+  compile(String filename, ArgResults options) async {
+    var program;
+    String boundaryKey = new Uuid().generateV4();
+    print("result $boundaryKey");
+    if (options['incremental']) {
+      final CompilerOptions compilerOptions = new CompilerOptions()
+        ..sdkRoot = Uri.base.resolve(options['sdk-root'])
+        ..strongMode = false
+        ..target = new FlutterTarget(new TargetFlags())
+        ..onError = (CompilationMessage message) {
+          print(message);
+        };
+      ikg = await IncrementalKernelGenerator.newInstance(
+          compilerOptions, Uri.base.resolve(filename));
+      var deltaProgram = await ikg.computeDelta();
+      program = deltaProgram.newProgram;
+    } else {
+      final CompilerOptions compilerOptions = new CompilerOptions()
+        ..sdkRoot = Uri.base.resolve(options['sdk-root'])
+        ..chaseDependencies = true
+        ..compileSdk = true
+        ..linkedDependencies = <Uri>[
+          Uri.base.resolve(options['platform-kernel-dill'])
+        ]
+        ..target = new FlutterFastaTarget(new TargetFlags())
+        ..onError = (CompilationMessage message) {
+          print(message);
+        };
+      program = await kernelForProgram(new Uri.file(filename), compilerOptions);
+    }
+    if (program != null) {
+      final String kernelBinaryFilename = filename + ".dill";
+      await writeProgramToBinary(program, kernelBinaryFilename);
+      print(boundaryKey + " " + kernelBinaryFilename);
+    } else {
+      print(boundaryKey);
+    }
+  }
+
+  @override
+  recompileDelta() async {
+    ikg.computeDelta();
+    String boundaryKey = new Uuid().generateV4();
+    print("result $boundaryKey");
+    DeltaProgram deltaProgram = await ikg.computeDelta();
+    Program program = deltaProgram.newProgram;
+    final String kernelBinaryFilename = filename + ".dill";
+    await writeProgramToBinary(program, kernelBinaryFilename);
+    print(boundaryKey);
+    return kernelBinaryFilename;
+  }
+
+  @override
+  acceptLastDelta() {
+    ikg.acceptLastDelta();
+  }
+
+  @override
+  rejectLastDelta() {
+    ikg.rejectLastDelta();
+  }
+
+  @override
+  invalidate(Uri uri) {
+    ikg.invalidate(uri);
+  }
+}
+
+// compiler is an optional parameter so it can be replaced with mocked version
+// for testing.
+starter(List<String> args, {CompilerInterface compiler}) async {
   ArgResults options = argParser.parse(args);
   if (options['train']) {
     return 0;
   }
 
+  compiler ??= new FrontendCompiler();
+
   if (options.rest.isNotEmpty) {
-    await compile(options.rest[0], options);
+    await compiler.compile(options.rest[0], options);
     return 0;
   }
 
@@ -81,80 +166,26 @@ starter(List<String> args) async {
       case State.READY_FOR_INSTRUCTION:
         if (string.startsWith('compile ')) {
           String filename = string.substring('compile '.length);
-          await compile(filename, options);
+          await compiler.compile(filename, options);
         } else if (string.startsWith('recompile ')) {
           boundaryKey = string.substring('recompile '.length);
           state = State.RECOMPILE_LIST;
         } else if (string == 'accept') {
-          ikg.acceptLastDelta();
+          compiler.acceptLastDelta();
         } else if (string == 'reject') {
-          ikg.rejectLastDelta();
+          compiler.rejectLastDelta();
         } else if (string == 'quit') {
           exit(0);
         }
         break;
       case State.RECOMPILE_LIST:
         if (string == boundaryKey) {
-          recompileDelta();
+          compiler.recompileDelta();
           state = State.READY_FOR_INSTRUCTION;
         } else {
-          ikg.invalidate(Uri.parse(string));
+          compiler.invalidate(Uri.parse(string));
         }
         break;
     }
   });
-}
-
-IncrementalKernelGenerator ikg;
-String filename;
-
-compile(String filename, ArgResults options) async {
-  var program;
-  String boundaryKey = new Uuid().generateV4();
-  print("result $boundaryKey");
-  if (options['incremental']) {
-    final CompilerOptions compilerOptions = new CompilerOptions()
-      ..sdkRoot = Uri.base.resolve(options['sdk-root'])
-      ..strongMode = false
-      ..target = new FlutterTarget(new TargetFlags())
-      ..onError = (CompilationMessage message) {
-        print(message);
-      };
-    ikg = await IncrementalKernelGenerator.newInstance(
-        compilerOptions, Uri.base.resolve(filename));
-    var deltaProgram = await ikg.computeDelta();
-    program = deltaProgram.newProgram;
-  } else {
-    final CompilerOptions compilerOptions = new CompilerOptions()
-      ..sdkRoot = Uri.base.resolve(options['sdk-root'])
-      ..chaseDependencies = true
-      ..compileSdk = true
-      ..linkedDependencies = <Uri>[
-        Uri.base.resolve(options['platform-kernel-dill'])
-      ]
-      ..target = new FlutterFastaTarget(new TargetFlags())
-      ..onError = (CompilationMessage message) {
-        print(message);
-      };
-    program = await kernelForProgram(new Uri.file(filename), compilerOptions);
-  }
-  if (program != null) {
-    final String kernelBinaryFilename = filename + ".dill";
-    await writeProgramToBinary(program, kernelBinaryFilename);
-    print(boundaryKey + " " + kernelBinaryFilename);
-  } else {
-    print(boundaryKey);
-  }
-}
-
-recompileDelta() async {
-  ikg.computeDelta();
-  String boundaryKey = new Uuid().generateV4();
-  print("result $boundaryKey");
-  DeltaProgram deltaProgram = await ikg.computeDelta();
-  Program program = deltaProgram.newProgram;
-  final String kernelBinaryFilename = filename + ".dill";
-  await writeProgramToBinary(program, kernelBinaryFilename);
-  print(boundaryKey);
-  return kernelBinaryFilename;
 }
