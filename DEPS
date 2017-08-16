@@ -81,6 +81,7 @@ vars = {
   'dart_stack_trace_tag': '1.7.2',
   'dart_stream_channel_tag': '1.6.1',
   'dart_string_scanner_tag': '1.0.1',
+  'dart_test_tag': '0.12.18+1',
   'dart_tuple_tag': 'v1.0.1',
   'dart_typed_data_tag': '1.1.3',
   'dart_usage_tag': '3.3.0',
@@ -297,6 +298,9 @@ deps = {
 
   'src/dart/third_party/pkg/typed_data':
    Var('chromium_git') + '/external/github.com/dart-lang/typed_data' + '@' + Var('dart_typed_data_tag'),
+
+  'src/dart/third_party/pkg/test':
+   Var('chromium_git') + '/external/github.com/dart-lang/test' + '@' + Var('dart_test_tag'),
 
   'src/dart/third_party/pkg/tuple':
    Var('chromium_git') + '/external/github.com/dart-lang/tuple' + '@' + Var('dart_tuple_tag'),

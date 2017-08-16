@@ -14,7 +14,7 @@ import 'package:kernel/kernel.dart';
 import 'package:kernel/target/flutter.dart';
 import 'package:kernel/target/flutter_fasta.dart';
 import 'package:kernel/target/targets.dart';
-import 'package:usage/lib/uuid/uuid.dart';
+import 'package:usage/uuid/uuid.dart';
 
 ArgParser argParser = new ArgParser(allowTrailingOptions: true)
   ..addFlag('train',
@@ -59,15 +59,15 @@ ${argParser.usage}
 
 enum State { READY_FOR_INSTRUCTION, RECOMPILE_LIST }
 
-main(List<String> args) async {
+starter(List<String> args) async {
   ArgResults options = argParser.parse(args);
   if (options['train']) {
-    exit(0);
+    return 0;
   }
 
   if (options.rest.isNotEmpty) {
     await compile(options.rest[0], options);
-    exit(0);
+    return 0;
   }
 
   State state = State.READY_FOR_INSTRUCTION;
