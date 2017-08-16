@@ -24,10 +24,7 @@ ArgParser argParser = new ArgParser(allowTrailingOptions: true)
       help: 'Run compiler in incremental mode', defaultsTo: false)
   ..addOption('sdk-root',
       help: 'Path to sdk root',
-      defaultsTo: '../../out/android_debug/flutter_patched_sdk')
-  ..addOption('platform-kernel-dill',
-      help: 'Path to platform kernel dill file',
-      defaultsTo: '../../out/android_debug/flutter_patched_sdk/platform.dill');
+      defaultsTo: '../../out/android_debug/flutter_patched_sdk');
 
 String usage = '''
 Usage: server [options] [input.dart]
@@ -40,8 +37,8 @@ instructions from stdin.
 Instructions:
 - compile <input.dart>
 - recompile <boundary-key>
-<invalidate-file1.dart>
-<invalidate-file2.dart>
+<path/to/updated/file1.dart>
+<path/to/updated/file2.dart>
 ...
 <boundary-key>
 - accept
@@ -76,30 +73,25 @@ class FrontendCompiler implements CompilerInterface {
     var program;
     String boundaryKey = new Uuid().generateV4();
     print("result $boundaryKey");
+    var sdkRoot = Uri.base.resolve(options['sdk-root']);
+    final CompilerOptions compilerOptions = new CompilerOptions()
+      ..sdkRoot = sdkRoot
+      ..strongMode = false
+      ..target = new FlutterTarget(new TargetFlags())
+      ..onError = (CompilationMessage message) {
+        print(message);
+      };
     if (options['incremental']) {
-      final CompilerOptions compilerOptions = new CompilerOptions()
-        ..sdkRoot = Uri.base.resolve(options['sdk-root'])
-        ..strongMode = false
-        ..target = new FlutterTarget(new TargetFlags())
-        ..onError = (CompilationMessage message) {
-          print(message);
-        };
       ikg = await IncrementalKernelGenerator.newInstance(
           compilerOptions, Uri.base.resolve(filename));
       var deltaProgram = await ikg.computeDelta();
       program = deltaProgram.newProgram;
     } else {
-      final CompilerOptions compilerOptions = new CompilerOptions()
-        ..sdkRoot = Uri.base.resolve(options['sdk-root'])
-        ..chaseDependencies = true
-        ..compileSdk = true
-        ..linkedDependencies = <Uri>[
-          Uri.base.resolve(options['platform-kernel-dill'])
-        ]
-        ..target = new FlutterFastaTarget(new TargetFlags())
-        ..onError = (CompilationMessage message) {
-          print(message);
-        };
+      // TODO(aam): Remove linkedDependencies once platform is directly embedded
+      // into VM snapshot.
+      compilerOptions.linkedDependencies = <Uri>[
+        sdkRoot.resolve('platform.dill')
+      ];
       program = await kernelForProgram(new Uri.file(filename), compilerOptions);
     }
     if (program != null) {
