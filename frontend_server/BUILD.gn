@@ -5,7 +5,7 @@
 import("//dart/utils/application_snapshot.gni")
 
 application_snapshot("frontend_server") {
-  main_dart = "bin/server.dart"
+  main_dart = "bin/starter.dart"
   dot_packages = rebase_path(".packages")
   training_args = [ "--train" ]
 
