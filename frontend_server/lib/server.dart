@@ -12,7 +12,6 @@ import 'package:front_end/kernel_generator.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/kernel.dart';
 import 'package:kernel/target/flutter.dart';
-import 'package:kernel/target/flutter_fasta.dart';
 import 'package:kernel/target/targets.dart';
 import 'package:usage/uuid/uuid.dart';
 
@@ -73,7 +72,7 @@ class FrontendCompiler implements CompilerInterface {
     var program;
     String boundaryKey = new Uuid().generateV4();
     print("result $boundaryKey");
-    var sdkRoot = Uri.base.resolve(options['sdk-root']);
+    Uri sdkRoot = _ensureFolderPath(options['sdk-root']);
     final CompilerOptions compilerOptions = new CompilerOptions()
       ..sdkRoot = sdkRoot
       ..strongMode = false
@@ -88,11 +87,11 @@ class FrontendCompiler implements CompilerInterface {
       program = deltaProgram.newProgram;
     } else {
       // TODO(aam): Remove linkedDependencies once platform is directly embedded
-      // into VM snapshot.
+      // into VM snapshot and http://dartbug.com/30111 is fixed.
       compilerOptions.linkedDependencies = <Uri>[
         sdkRoot.resolve('platform.dill')
       ];
-      program = await kernelForProgram(new Uri.file(filename), compilerOptions);
+      program = await kernelForProgram(Uri.base.resolve(filename), compilerOptions);
     }
     if (program != null) {
       final String kernelBinaryFilename = filename + ".dill";
@@ -129,6 +128,11 @@ class FrontendCompiler implements CompilerInterface {
   @override
   invalidate(Uri uri) {
     ikg.invalidate(uri);
+  }
+
+  Uri _ensureFolderPath(String path) {
+    if (!path.endsWith('/')) path = '$path/';
+    return Uri.base.resolve(path);
   }
 }
 
@@ -175,7 +179,7 @@ starter(List<String> args, {CompilerInterface compiler}) async {
           compiler.recompileDelta();
           state = State.READY_FOR_INSTRUCTION;
         } else {
-          compiler.invalidate(Uri.parse(string));
+          compiler.invalidate(Uri.base.resolve(string));
         }
         break;
     }

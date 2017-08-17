@@ -3,15 +3,15 @@ import 'package:frontend_server/server.dart';
 import 'package:test/test.dart';
 
 class MockedCompiler implements CompilerInterface {
-  var compileCallback;
-  var recompileDeltaCallback;
-  var acceptLastDeltaCallback;
-  var rejectLastDeltaCallback;
-  var invalideCallback;
+  void Function(String, ArgResults) compileCallback;
+  void Function(Uri) invalidateCallback;
+  void Function() recompileDeltaCallback;
+  void Function() acceptLastDeltaCallback;
+  void Function() rejectLastDeltaCallback;
 
   MockedCompiler({this.compileCallback, this.recompileDeltaCallback,
     this.acceptLastDeltaCallback, this.rejectLastDeltaCallback,
-    this.invalideCallback});
+    this.invalidateCallback});
 
   @override
   compile(String filename, ArgResults options) =>
@@ -19,7 +19,7 @@ class MockedCompiler implements CompilerInterface {
 
   @override
   invalidate(Uri uri) =>
-      invalideCallback != null ? invalideCallback(uri) : null;
+      invalidateCallback != null ? invalidateCallback(uri) : null;
 
   @override
   recompileDelta() =>
@@ -46,16 +46,13 @@ main() async {
     test('compile from command line', () async {
       var args = [
         'server.dart',
-        '--sdk-root', 'sdkroot',
-        '--platform-kernel-dill', 'platform.dill'
+        '--sdk-root', 'sdkroot'
       ];
       int exitcode = await starter(args,
           compiler: new MockedCompiler(
               compileCallback: (String filename, ArgResults options) {
                 expect(filename, equals('server.dart'));
                 expect(options['sdk-root'], equals('sdkroot'));
-                expect(
-                    options['platform-kernel-dill'], equals('platform.dill'));
               }
           ));
       expect(exitcode, equals(0));
