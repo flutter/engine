@@ -1,4 +1,4 @@
-Signature: dd783b5c51579583f067cd17d7a2831a
+Signature: 9d2998dba827427f2041946b91bfddd9
 
 UNUSED LICENSES:
 
@@ -685,7 +685,6 @@ LIBRARY: dart
 ORIGIN: ../../../dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../dart/.mailmap
-FILE: ../../../dart/.travis.yml
 FILE: ../../../dart/client/idea/.idea/.name
 FILE: ../../../dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../dart/client/idea/.idea/vcs.xml
@@ -3028,20 +3027,13 @@ ORIGIN: ../../../dart/third_party/observatory_pub_packages/packages/async/LICENS
 TYPE: LicenseType.bsd
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/async/.analysis_options
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/async/.test_config
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/async/.travis.yml
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/cli_util/.travis.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/collection/.analysis_options
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/collection/.test_config
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/collection/.travis.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/convert/.analysis_options
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/convert/.test_config
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/crypto/.test_config
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/crypto/.travis.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/initialize/.test_config
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/initialize/.travis.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/initialize/tool/rename_build_outputs.dart
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/isolate/.travis.yml
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/package_config/.travis.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/typed_data/.test_config
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/utf/.test_config
 ----------------------------------------------------------------------------------------------------
@@ -3123,10 +3115,8 @@ LIBRARY: observatory_pub_packages
 ORIGIN: ../../../dart/third_party/observatory_pub_packages/packages/browser/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/charcode/.analysis_options
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/charcode/.travis.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/code_transformers/.analysis_options
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/code_transformers/.test_config
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/code_transformers/.travis.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/dart_style/.analysis_options
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/dart_style/.test_config
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/dart_style/dist/dart-style.d.ts
@@ -3145,12 +3135,10 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/source_maps/.t
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/source_span/.analysis_options
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/source_span/.test_config
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/stack_trace/.test_config
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/stack_trace/.travis.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/string_scanner/.analysis_options
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/string_scanner/.test_config
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/unittest/.analysis_options
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/usage/.analysis_options
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/usage/.travis.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/watcher/.analysis_options
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/watcher/.test_config
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/yaml/.analysis_options
@@ -3392,7 +3380,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 LIBRARY: observatory_pub_packages
 ORIGIN: ../../../dart/third_party/observatory_pub_packages/packages/dart_to_js_script_rewriter/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/dart_to_js_script_rewriter/.travis.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/dart_to_js_script_rewriter/COPYRIGHT_TRANSFER
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/dart_to_js_script_rewriter/docs.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/dart_to_js_script_rewriter/example/index.html
@@ -3629,7 +3616,6 @@ LIBRARY: observatory_pub_packages
 ORIGIN: ../../../dart/third_party/observatory_pub_packages/packages/quiver/LICENSE
 TYPE: LicenseType.apache
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/quiver/.analysis_options
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/quiver/.travis.yml
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/quiver/lib/async.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/quiver/lib/cache.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/quiver/lib/check.dart
