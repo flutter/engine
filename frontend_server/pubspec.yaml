@@ -151,6 +151,6 @@ dependency_overrides:
   web_socket_channel:
     path: ../../dart/third_party/pkg/web_socket_channel
   when:
-    path: ../../dart/third_party/pkg/when
+    path: ../../third_party/pkg/when
   yaml:
     path: ../../dart/third_party/pkg/yaml
