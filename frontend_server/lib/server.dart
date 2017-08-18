@@ -1,5 +1,6 @@
 library frontend_server;
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -15,7 +16,7 @@ import 'package:kernel/target/flutter.dart';
 import 'package:kernel/target/targets.dart';
 import 'package:usage/uuid/uuid.dart';
 
-ArgParser argParser = new ArgParser(allowTrailingOptions: true)
+ArgParser _argParser = new ArgParser(allowTrailingOptions: true)
   ..addFlag('train',
       help: 'Run through sample command line to produce snapshot',
       negatable: false)
@@ -25,7 +26,7 @@ ArgParser argParser = new ArgParser(allowTrailingOptions: true)
       help: 'Path to sdk root',
       defaultsTo: '../../out/android_debug/flutter_patched_sdk');
 
-String usage = '''
+String _usage = '''
 Usage: server [options] [input.dart]
 
 If input dart source code is provided on the command line, then the server 
@@ -50,29 +51,41 @@ Output:
 <boundary-key> [<output.dill>]
 
 Options:
-${argParser.usage}
+${_argParser.usage}
 ''';
 
-enum State { READY_FOR_INSTRUCTION, RECOMPILE_LIST }
-
-abstract class CompilerInterface {
-  compile(String filename, ArgResults options);
-  recompileDelta();
-  acceptLastDelta();
-  rejectLastDelta();
-  invalidate(Uri uri);
+enum _State {
+  READY_FOR_INSTRUCTION,
+  RECOMPILE_LIST
 }
 
-class FrontendCompiler implements CompilerInterface {
-  IncrementalKernelGenerator ikg;
-  String filename;
+/// Actions that every compiler should implement.
+abstract class CompilerInterface {
+  /// Compile given Dart program identified by `filename` with given list of
+  /// `options`.
+  Future<Null> compile(String filename, ArgResults options);
+  /// Assuming some Dart program was previously compiled, recompile it again
+  /// taking into account some changed(invalidated) sources.
+  Future<Null> recompileDelta();
+  /// Accept results of previous compilation so that next recompilation cycle
+  /// won't recompile sources that were previously reported as changed.
+  void acceptLastDelta();
+  /// Reject results of previous compilation. Next recompilation cycle will
+  /// recompile sources indicated as changed.
+  void rejectLastDelta();
+  /// This let's compiler know that source file identifed by `uri` was changed.
+  void invalidate(Uri uri);
+}
+
+class _FrontendCompiler implements CompilerInterface {
+  IncrementalKernelGenerator _ikg;
+  String _filename;
 
   @override
-  compile(String filename, ArgResults options) async {
-    var program;
-    String boundaryKey = new Uuid().generateV4();
+  Future<Null> compile(String filename, ArgResults options) async {
+    final String boundaryKey = new Uuid().generateV4();
     print("result $boundaryKey");
-    Uri sdkRoot = _ensureFolderPath(options['sdk-root']);
+    final Uri sdkRoot = _ensureFolderPath(options['sdk-root']);
     final CompilerOptions compilerOptions = new CompilerOptions()
       ..sdkRoot = sdkRoot
       ..strongMode = false
@@ -80,10 +93,11 @@ class FrontendCompiler implements CompilerInterface {
       ..onError = (CompilationMessage message) {
         print(message);
       };
+    Program program;
     if (options['incremental']) {
-      ikg = await IncrementalKernelGenerator.newInstance(
+      _ikg = await IncrementalKernelGenerator.newInstance(
           compilerOptions, Uri.base.resolve(filename));
-      var deltaProgram = await ikg.computeDelta();
+      final DeltaProgram deltaProgram = await _ikg.computeDelta();
       program = deltaProgram.newProgram;
     } else {
       // TODO(aam): Remove linkedDependencies once platform is directly embedded
@@ -100,58 +114,63 @@ class FrontendCompiler implements CompilerInterface {
     } else {
       print(boundaryKey);
     }
+    return null;
   }
 
   @override
-  recompileDelta() async {
-    ikg.computeDelta();
-    String boundaryKey = new Uuid().generateV4();
+  Future<Null> recompileDelta() async {
+    _ikg.computeDelta();
+    final String boundaryKey = new Uuid().generateV4();
     print("result $boundaryKey");
-    DeltaProgram deltaProgram = await ikg.computeDelta();
-    Program program = deltaProgram.newProgram;
-    final String kernelBinaryFilename = filename + ".dill";
+    final DeltaProgram deltaProgram = await _ikg.computeDelta();
+    final Program program = deltaProgram.newProgram;
+    final String kernelBinaryFilename = _filename + ".dill";
     await writeProgramToBinary(program, kernelBinaryFilename);
     print(boundaryKey);
-    return kernelBinaryFilename;
+    return null;
   }
 
   @override
-  acceptLastDelta() {
-    ikg.acceptLastDelta();
+  void acceptLastDelta() {
+    _ikg.acceptLastDelta();
   }
 
   @override
-  rejectLastDelta() {
-    ikg.rejectLastDelta();
+  void rejectLastDelta() {
+    _ikg.rejectLastDelta();
   }
 
   @override
-  invalidate(Uri uri) {
-    ikg.invalidate(uri);
+  void invalidate(Uri uri) {
+    _ikg.invalidate(uri);
   }
 
   Uri _ensureFolderPath(String path) {
-    if (!path.endsWith('/')) path = '$path/';
+    if (!path.endsWith('/')) {
+      path = '$path/';
+    }
     return Uri.base.resolve(path);
   }
 }
 
-// compiler is an optional parameter so it can be replaced with mocked version
-// for testing.
-starter(List<String> args, {CompilerInterface compiler}) async {
-  ArgResults options = argParser.parse(args);
+/// Entry point for this module, that creates `_FrontendCompiler` instance and
+/// processes user input.
+/// `compiler` is an optional parameter so it can be replaced with mocked
+/// version for testing.
+Future<int> starter(List<String> args, {CompilerInterface compiler}) async {
+  final ArgResults options = _argParser.parse(args);
   if (options['train']) {
     return 0;
   }
 
-  compiler ??= new FrontendCompiler();
+  compiler ??= new _FrontendCompiler();
 
   if (options.rest.isNotEmpty) {
     await compiler.compile(options.rest[0], options);
     return 0;
   }
 
-  State state = State.READY_FOR_INSTRUCTION;
+  _State state = _State.READY_FOR_INSTRUCTION;
   String boundaryKey;
   print('Frontend server is ready.');
   stdin
@@ -159,13 +178,13 @@ starter(List<String> args, {CompilerInterface compiler}) async {
       .transform(new LineSplitter())
       .listen((String string) async {
     switch (state) {
-      case State.READY_FOR_INSTRUCTION:
+      case _State.READY_FOR_INSTRUCTION:
         if (string.startsWith('compile ')) {
-          String filename = string.substring('compile '.length);
+          final String filename = string.substring('compile '.length);
           await compiler.compile(filename, options);
         } else if (string.startsWith('recompile ')) {
           boundaryKey = string.substring('recompile '.length);
-          state = State.RECOMPILE_LIST;
+          state = _State.RECOMPILE_LIST;
         } else if (string == 'accept') {
           compiler.acceptLastDelta();
         } else if (string == 'reject') {
@@ -174,14 +193,15 @@ starter(List<String> args, {CompilerInterface compiler}) async {
           exit(0);
         }
         break;
-      case State.RECOMPILE_LIST:
+      case _State.RECOMPILE_LIST:
         if (string == boundaryKey) {
           compiler.recompileDelta();
-          state = State.READY_FOR_INSTRUCTION;
+          state = _State.READY_FOR_INSTRUCTION;
         } else {
           compiler.invalidate(Uri.base.resolve(string));
         }
         break;
     }
   });
+  return 0;
 }
