@@ -94,7 +94,6 @@ vars = {
   'dart_utf_tag': '0.9.0+3',
   'dart_watcher_tag': '0.9.7+3',
   'dart_web_socket_channel_tag': '1.0.4',
-  'dart_when_tag': '0.2.0',
   'dart_yaml_tag': '2.1.12',
 
   # Build bot tooling for iOS
@@ -342,9 +341,6 @@ deps = {
   'src/dart/third_party/pkg/web_socket_channel':
    Var('chromium_git') + '/external/github.com/dart-lang/web_socket_channel' + '@' + Var('dart_web_socket_channel_tag'),
 
-  'src/dart/third_party/pkg/when':
-   Var('chromium_git') + '/external/github.com/dart-lang/when' + '@' + Var('dart_when_tag'),
-
   'src/dart/third_party/pkg/yaml':
    Var('chromium_git') + '/external/github.com/dart-lang/yaml' + '@' + Var('dart_yaml_tag'),
 
@@ -363,6 +359,9 @@ deps = {
    # Headers for Vulkan 1.0
    'src/third_party/vulkan':
    Var('github_git') + '/KhronosGroup/Vulkan-Docs.git' + '@' + 'e29c2489e238509c41aeb8c7bce9d669a496344b',
+
+  'src/third_party/pkg/when':
+   Var('chromium_git') + '/external/github.com/dart-lang/when' + '@' + '0.2.0',
 }
 
 recursedeps = [

@@ -24,7 +24,9 @@ dependencies:
 
 dev_dependencies:
   analyzer: any
+  barback: any
   boolean_selector: any
+  cli_util: any
   csslib: any
   glob: any
   html: any
@@ -90,8 +92,12 @@ dependency_overrides:
 
   analyzer:
     path: ../../dart/pkg/analyzer
+  barback:
+    path: ../../dart/third_party/pkg/barback
   boolean_selector:
     path: ../../dart/third_party/pkg/boolean_selector
+  cli_util:
+    path: ../../dart/third_party/pkg/cli_util
   csslib:
     path: ../../dart/third_party/pkg/csslib
   glob:
