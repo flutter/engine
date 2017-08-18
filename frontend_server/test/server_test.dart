@@ -5,36 +5,46 @@ import 'package:frontend_server/server.dart';
 import 'package:test/test.dart';
 
 class _MockedCompiler implements CompilerInterface {
+  _MockedCompiler(
+      {this.compileCallback,
+      this.recompileDeltaCallback,
+      this.acceptLastDeltaCallback,
+      this.rejectLastDeltaCallback,
+      this.invalidateCallback});
+
   Future<Null> Function(String, ArgResults) compileCallback;
   Future<Null> Function() recompileDeltaCallback;
   void Function() acceptLastDeltaCallback;
   void Function() rejectLastDeltaCallback;
   void Function(Uri) invalidateCallback;
 
-  _MockedCompiler({this.compileCallback, this.recompileDeltaCallback,
-    this.acceptLastDeltaCallback, this.rejectLastDeltaCallback,
-    this.invalidateCallback});
+  @override
+  Future<Null> compile(String filename, ArgResults options) {
+    return compileCallback != null ? compileCallback(filename, options) : null;
+  }
 
   @override
-  Future<Null> compile(String filename, ArgResults options) =>
-      compileCallback != null ? compileCallback(filename, options) : null;
+  void invalidate(Uri uri) {
+    if (invalidateCallback != null)
+      invalidateCallback(uri);
+  }
 
   @override
-  void invalidate(Uri uri) =>
-      invalidateCallback != null ? invalidateCallback(uri) : null;
+  Future<Null> recompileDelta() {
+    return recompileDeltaCallback != null ? recompileDeltaCallback() : null;
+  }
 
   @override
-  Future<Null> recompileDelta() =>
-      recompileDeltaCallback != null ?
-      recompileDeltaCallback() : null;
+  void acceptLastDelta() {
+    if (acceptLastDeltaCallback != null)
+      acceptLastDeltaCallback();
+  }
 
   @override
-  void acceptLastDelta() =>
-      acceptLastDeltaCallback != null ? acceptLastDeltaCallback() : null;
-
-  @override
-  void rejectLastDelta() =>
-      rejectLastDeltaCallback != null ? rejectLastDeltaCallback() : null;
+  void rejectLastDelta() {
+    if (rejectLastDeltaCallback != null)
+      rejectLastDeltaCallback();
+  }
 }
 
 Future<int> main() async {
@@ -48,15 +58,14 @@ Future<int> main() async {
     test('compile from command line', () async {
       final List<String> args = <String>[
         'server.dart',
-        '--sdk-root', 'sdkroot'
+        '--sdk-root',
+        'sdkroot'
       ];
-      final int exitcode = await starter(args,
-          compiler: new _MockedCompiler(
-              compileCallback: (String filename, ArgResults options) {
-                expect(filename, equals('server.dart'));
-                expect(options['sdk-root'], equals('sdkroot'));
-              }
-          ));
+      final int exitcode = await starter(args, compiler: new _MockedCompiler(
+          compileCallback: (String filename, ArgResults options) {
+        expect(filename, equals('server.dart'));
+        expect(options['sdk-root'], equals('sdkroot'));
+      }));
       expect(exitcode, equals(0));
     });
   });

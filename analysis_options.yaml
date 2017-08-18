@@ -17,9 +17,6 @@ analyzer:
     missing_return: warning
     # allow having TODOs in the code
     todo: ignore
-  # `flutter analyze` (without `--watch`) just ignores directories
-  # that contain a .dartignore file, and this file does not have any
-  # effect on what files are actually analyzed.
 
 linter:
   rules:
