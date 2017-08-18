@@ -3,7 +3,7 @@ Signature: b14477fbf858097e989a05cc60847525
 UNUSED LICENSES:
 
 ====================================================================================================
-ORIGIN: ../../../third_party/pkg/when/LICENSE
+ORIGIN: ../../../dart/third_party/observatory_pub_packages/packages/async/LICENSE
 TYPE: LicenseType.bsd
 ----------------------------------------------------------------------------------------------------
 Copyright 2015, the Dart project authors. All rights reserved.
@@ -3547,7 +3547,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: etc1
 LIBRARY: skia
 LIBRARY: vulkan
-ORIGIN: ../../../lib/txt/LICENSE
+ORIGIN: ../../../dart/third_party/observatory_pub_packages/packages/quiver/LICENSE
 TYPE: LicenseType.apache
 FILE: ../../../third_party/skia/src/images/SkWebpEncoder.cpp
 FILE: ../../../third_party/skia/third_party/etc1/etc1.cpp
@@ -23922,13 +23922,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: pkg
-ORIGIN: ../../../third_party/pkg/when/lib/when.dart + ../../../third_party/pkg/when/LICENSE
+ORIGIN: ../../../third_party/pkg/when/lib/when.dart + ../../../dart/third_party/observatory_pub_packages/packages/async/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/pkg/when/lib/when.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are

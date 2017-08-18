@@ -143,8 +143,7 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/web_components
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/web_components/lib/web_components.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -495,8 +494,7 @@ FILE: ../../../dart/utils/compiler/create_snapshot.dart
 FILE: ../../../dart/utils/compiler/create_snapshot_entry.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -652,8 +650,7 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/web_components
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/web_components/lib/src/static_initializer.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -1202,8 +1199,7 @@ FILE: ../../../dart/sdk/lib/web_sql/dartium/web_sql_dartium.dart
 FILE: ../../../dart/sdk/lib/web_sql/dartium/web_sql_dartium.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -1492,8 +1488,7 @@ FILE: ../../../dart/sdk/lib/vmservice/devfs.dart
 FILE: ../../../dart/utils/kernel-service/kernel-service.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -1615,8 +1610,7 @@ FILE: ../../../dart/sdk/lib/io/sync_socket.dart
 FILE: ../../../dart/sdk/lib/vmservice/named_lookup.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -1746,8 +1740,7 @@ FILE: ../../../dart/sdk/lib/internal/sort.dart
 FILE: ../../../dart/utils/peg/pegparser.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2011, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -2317,8 +2310,7 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/observable/lib
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/string_scanner/lib/src/relative_span_scanner.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -2467,8 +2459,7 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/yaml/lib/src/u
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/yaml/lib/src/yaml_exception.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -2596,6 +2587,9 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/barback/lib/sr
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/barback/lib/src/transformer/lazy_transformer.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/barback/lib/src/transformer/transform.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/barback/lib/src/transformer/wrapping_aggregate_transformer.dart
+FILE: ../../../dart/third_party/observatory_pub_packages/packages/charcode/lib/ascii.dart
+FILE: ../../../dart/third_party/observatory_pub_packages/packages/charcode/lib/charcode.dart
+FILE: ../../../dart/third_party/observatory_pub_packages/packages/charcode/lib/html_entity.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/code_transformers/lib/assets.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/code_transformers/lib/benchmarks.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/code_transformers/lib/messages/messages.dart
@@ -2692,8 +2686,7 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/yaml/lib/src/y
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/yaml/lib/src/yaml_node_wrapper.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -2881,8 +2874,7 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/watcher/lib/sr
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/yaml/benchmark/benchmark.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -2945,6 +2937,7 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/intl_
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/intl_standalone.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/message_lookup_by_library.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/number_symbols.dart
+FILE: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/locale_list.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/src/date_format_internal.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/src/file_data_reader.dart
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/src/http_request_data_reader.dart
@@ -2991,8 +2984,7 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/yaml/lib/src/y
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/yaml/lib/yaml.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -3080,8 +3072,7 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/collection/lib
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/stack_trace/lib/src/lazy_chain.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -3146,45 +3137,6 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/yaml/.test_con
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/yaml/benchmark/output.json
 ----------------------------------------------------------------------------------------------------
 Copyright 2014, the Dart project authors. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../dart/third_party/observatory_pub_packages/packages/charcode/lib/ascii.dart + ../../../dart/third_party/observatory_pub_packages/packages/browser/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/charcode/lib/ascii.dart
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/charcode/lib/charcode.dart
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/charcode/lib/html_entity.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2014, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source is governed by a
-BSD-style license that can be found in the LICENSE file
-
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
 met:
@@ -3466,88 +3418,11 @@ LIBRARY: observatory_pub_packages
 ORIGIN: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/date_symbol_data_local.dart + ../../../dart/third_party/observatory_pub_packages/packages/analyzer/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/date_symbol_data_local.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2014, the Dart project authors.
-Please see the AUTHORS file
-for details. All rights reserved. Use of this source code
-is governed by a
-BSD-style license that can be found in the LICENSE file
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/number_symbols_data.dart + ../../../dart/third_party/observatory_pub_packages/packages/analyzer/LICENSE
-TYPE: LicenseType.bsd
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/number_symbols_data.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2014, the Dart project authors.
 Please see the AUTHORS file
-for details. All rights reserved. Use of this source
-code is governed by a
-BSD-style license that can be found in the LICENSE file
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: observatory_pub_packages
-ORIGIN: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/locale_list.dart + ../../../dart/third_party/observatory_pub_packages/packages/analyzer/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../dart/third_party/observatory_pub_packages/packages/intl/lib/src/data/dates/locale_list.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this sourcecode is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -3876,8 +3751,7 @@ FILE: ../../../dart/third_party/observatory_pub_packages/packages/unittest/lib/c
 FILE: ../../../dart/third_party/observatory_pub_packages/packages/unittest/lib/test_controller.js
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2011, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved. Use of this source code is governed by a
-BSD-style license that can be found in the LICENSE file
+for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -4124,4 +3998,4 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
-Total license count: 40
+Total license count: 37
