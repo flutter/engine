@@ -262,6 +262,14 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   Scene build() native "SceneBuilder_build";
 }
 
+/// (Fuchsia-only) Holds a token for an export node.
+/// This is created by ChildViewConnection in //apps/mozart/lib/flutter/.
+/// The handle value is a Magenta handle to one side of an eventpair.
+class ExportTokenHandle {
+  final dynamic handle;
+  ExportTokenHandle(this.handle);
+}
+
 /// (Fuchsia-only) Hosts content provided by another application.
 class SceneHost extends NativeFieldWrapperClass2 {
   /// Creates a host for a child scene.
@@ -272,8 +280,8 @@ class SceneHost extends NativeFieldWrapperClass2 {
   /// to the child.
   ///
   /// The scene host takes ownership of the provided export token handle.
-  SceneHost(dynamic export_token_handle) {
-    _constructor(export_token_handle);
+  SceneHost(ExportTokenHandle export_token_handle) {
+    _constructor(export_token_handle.handle);
   }
   void _constructor(dynamic export_token_handle) native "SceneHost_constructor";
 
