@@ -20,9 +20,11 @@ Frontend server runs in two modes:
 ```<boundary-key>```
  Incrementally recompiles Dart program previously compiled in current session, taking into account changes in the listed files. Replies with ```result``` response.
 - ```accept```
- Accepts results of incremental compilation, so that next recompilation request won't recompile previously reported changed files.
+ Accepts results of incremental compilation, so that on next recompilation request Dart Frontend won't include these recompiled files.
 - ```reject```
- Rejects results of incremental compilation, so that next recompilation request will recompile previously reported changed files.
+ Rejects results of incremental compilation, so that on next recompilation request Dart Frontend will include compilation results from previously rejected recompilation in addition to what it will recompile based on newly changed files.
+ Small technical detail is that Dart Frontend will not recompile files from previously rejected recompilation attempts (unless they were changed since then), it will just
+ include appropriate kernel binaries it kept around from those previously rejected compilation requests.
 - ```quit```
  Stops the server.
 
