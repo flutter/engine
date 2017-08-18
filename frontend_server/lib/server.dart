@@ -148,7 +148,8 @@ class _FrontendCompiler implements CompilerInterface {
   }
 
   Uri _ensureFolderPath(String path) {
-    if (!path.endsWith('/')) path = '$path/';
+    if (!path.endsWith('/'))
+      path = '$path/';
     return Uri.base.resolve(path);
   }
 }
@@ -159,7 +160,8 @@ class _FrontendCompiler implements CompilerInterface {
 /// version for testing.
 Future<int> starter(List<String> args, {CompilerInterface compiler}) async {
   final ArgResults options = _argParser.parse(args);
-  if (options['train']) return 0;
+  if (options['train'])
+    return 0;
 
   compiler ??= new _FrontendCompiler();
 
@@ -177,7 +179,7 @@ Future<int> starter(List<String> args, {CompilerInterface compiler}) async {
     switch (state) {
       case _State.READY_FOR_INSTRUCTION:
         const String COMPILE_INSTRUCTION_SPACE = 'compile ';
-        final String RECOMPILE_INSTRUCTION_SPACE = 'recompile ';
+        const String RECOMPILE_INSTRUCTION_SPACE = 'recompile ';
         if (string.startsWith(COMPILE_INSTRUCTION_SPACE)) {
           final String filename =
               string.substring(COMPILE_INSTRUCTION_SPACE.length);
@@ -189,7 +191,8 @@ Future<int> starter(List<String> args, {CompilerInterface compiler}) async {
           compiler.acceptLastDelta();
         else if (string == 'reject')
           compiler.rejectLastDelta();
-        else if (string == 'quit') exit(0);
+        else if (string == 'quit')
+          exit(0);
         break;
       case _State.RECOMPILE_LIST:
         if (string == boundaryKey) {
