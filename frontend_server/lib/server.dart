@@ -81,18 +81,23 @@ abstract class CompilerInterface {
 class _FrontendCompiler implements CompilerInterface {
   IncrementalKernelGenerator _generator;
   String _filename;
+  StringSink _outputStream;
+
+  _FrontendCompiler(this._outputStream) {
+    _outputStream ??= stdout;
+  }
 
   @override
   Future<Null> compile(String filename, ArgResults options) async {
     final String boundaryKey = new Uuid().generateV4();
-    print("result $boundaryKey");
+    _outputStream.writeln("result $boundaryKey");
     final Uri sdkRoot = _ensureFolderPath(options['sdk-root']);
     final CompilerOptions compilerOptions = new CompilerOptions()
       ..sdkRoot = sdkRoot
       ..strongMode = false
       ..target = new FlutterTarget(new TargetFlags())
       ..onError = (CompilationMessage message) {
-        print(message);
+        _outputStream.writeln("$message");
       };
     Program program;
     if (options['incremental']) {
@@ -113,9 +118,9 @@ class _FrontendCompiler implements CompilerInterface {
     if (program != null) {
       final String kernelBinaryFilename = filename + ".dill";
       await writeProgramToBinary(program, kernelBinaryFilename);
-      print(boundaryKey + " " + kernelBinaryFilename);
+      _outputStream.writeln("$boundaryKey $kernelBinaryFilename");
     } else
-      print(boundaryKey);
+      _outputStream.writeln(boundaryKey);
     return null;
   }
 
@@ -123,12 +128,12 @@ class _FrontendCompiler implements CompilerInterface {
   Future<Null> recompileDelta() async {
     _generator.computeDelta();
     final String boundaryKey = new Uuid().generateV4();
-    print("result $boundaryKey");
+    _outputStream.writeln("result $boundaryKey");
     final DeltaProgram deltaProgram = await _generator.computeDelta();
     final Program program = deltaProgram.newProgram;
     final String kernelBinaryFilename = _filename + ".dill";
     await writeProgramToBinary(program, kernelBinaryFilename);
-    print(boundaryKey);
+    _outputStream.writeln("$boundaryKey");
     return null;
   }
 
@@ -158,12 +163,14 @@ class _FrontendCompiler implements CompilerInterface {
 /// processes user input.
 /// `compiler` is an optional parameter so it can be replaced with mocked
 /// version for testing.
-Future<int> starter(List<String> args, {CompilerInterface compiler}) async {
+Future<int> starter(List<String> args, {CompilerInterface compiler,
+    Stream<List<int>> input, StringSink output}) async {
   final ArgResults options = _argParser.parse(args);
   if (options['train'])
     return 0;
 
-  compiler ??= new _FrontendCompiler();
+  compiler ??= new _FrontendCompiler(output);
+  input ??= stdin;
 
   if (options.rest.isNotEmpty) {
     await compiler.compile(options.rest[0], options);
@@ -172,7 +179,7 @@ Future<int> starter(List<String> args, {CompilerInterface compiler}) async {
 
   _State state = _State.READY_FOR_INSTRUCTION;
   String boundaryKey;
-  stdin
+  input
       .transform(UTF8.decoder)
       .transform(new LineSplitter())
       .listen((String string) async {
