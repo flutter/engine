@@ -1,4 +1,4 @@
-Signature: 9d2998dba827427f2041946b91bfddd9
+Signature: f254df4d65693a4e1871b2a3359c82be
 
 UNUSED LICENSES:
 
@@ -1552,9 +1552,11 @@ FILE: ../../../dart/runtime/bin/sync_socket_patch.dart
 FILE: ../../../dart/runtime/bin/sync_socket_unsupported.cc
 FILE: ../../../dart/runtime/bin/sync_socket_win.cc
 FILE: ../../../dart/runtime/lib/async.cc
+FILE: ../../../dart/runtime/observatory/lib/src/elements/memory/allocations.dart
 FILE: ../../../dart/runtime/observatory/lib/src/elements/memory/dashboard.dart
 FILE: ../../../dart/runtime/observatory/lib/src/elements/memory/graph.dart
 FILE: ../../../dart/runtime/observatory/lib/src/elements/memory/profile.dart
+FILE: ../../../dart/runtime/observatory/lib/src/elements/memory/snapshot.dart
 FILE: ../../../dart/runtime/observatory/lib/src/elements/nav/reload.dart
 FILE: ../../../dart/runtime/observatory/lib/src/elements/singletargetcache_ref.dart
 FILE: ../../../dart/runtime/observatory/lib/src/elements/singletargetcache_view.dart
