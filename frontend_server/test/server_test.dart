@@ -6,12 +6,13 @@ import 'package:frontend_server/server.dart';
 import 'package:test/test.dart';
 
 class _MockedCompiler implements CompilerInterface {
-  _MockedCompiler(
-      {this.compileCallback,
-      this.recompileDeltaCallback,
-      this.acceptLastDeltaCallback,
-      this.rejectLastDeltaCallback,
-      this.invalidateCallback});
+  _MockedCompiler({
+    this.compileCallback,
+    this.recompileDeltaCallback,
+    this.acceptLastDeltaCallback,
+    this.rejectLastDeltaCallback,
+    this.invalidateCallback
+  });
 
   Future<Null> Function(String, ArgResults) compileCallback;
   Future<Null> Function() recompileDeltaCallback;
@@ -21,7 +22,9 @@ class _MockedCompiler implements CompilerInterface {
 
   @override
   Future<Null> compile(String filename, ArgResults options) {
-    return compileCallback != null ? compileCallback(filename, options) : null;
+    return compileCallback != null
+        ? compileCallback(filename, options)
+        : new Future<Null>.value(null);
   }
 
   @override
@@ -32,7 +35,9 @@ class _MockedCompiler implements CompilerInterface {
 
   @override
   Future<Null> recompileDelta() {
-    return recompileDeltaCallback != null ? recompileDeltaCallback() : null;
+    return recompileDeltaCallback != null
+        ? recompileDeltaCallback()
+        : new Future<Null>.value(null);
   }
 
   @override
@@ -63,10 +68,11 @@ Future<int> main() async {
         'sdkroot'
       ];
       final int exitcode = await starter(args, compiler: new _MockedCompiler(
-          compileCallback: (String filename, ArgResults options) {
-        expect(filename, equals('server.dart'));
-        expect(options['sdk-root'], equals('sdkroot'));
-      }));
+        compileCallback: (String filename, ArgResults options) {
+          expect(filename, equals('server.dart'));
+          expect(options['sdk-root'], equals('sdkroot'));
+        }
+      ));
       expect(exitcode, equals(0));
     });
   });
@@ -82,12 +88,13 @@ Future<int> main() async {
           new StreamController<List<int>>();
       final ReceivePort compileCalled = new ReceivePort();
       final int exitcode = await starter(args, compiler: new _MockedCompiler(
-          compileCallback: (String filename, ArgResults options) {
-            expect(filename, equals('server.dart'));
-            expect(options['sdk-root'], equals('sdkroot'));
-            compileCalled.sendPort.send(true);
-          }),
-          input: inputStreamController.stream);
+        compileCallback: (String filename, ArgResults options) {
+          expect(filename, equals('server.dart'));
+          expect(options['sdk-root'], equals('sdkroot'));
+          compileCalled.sendPort.send(true);
+        }),
+        input: inputStreamController.stream,
+      );
       expect(exitcode, equals(0));
       inputStreamController.add('compile server.dart\n'.codeUnits);
       await compileCalled.first;
@@ -100,12 +107,13 @@ Future<int> main() async {
       final ReceivePort compileCalled = new ReceivePort();
       int counter = 1;
       final int exitcode = await starter(args, compiler: new _MockedCompiler(
-          compileCallback: (String filename, ArgResults options) {
-            expect(filename, equals('server${counter++}.dart'));
-            expect(options['sdk-root'], equals('sdkroot'));
-            compileCalled.sendPort.send(true);
-          }),
-          input: streamController.stream);
+        compileCallback: (String filename, ArgResults options) {
+          expect(filename, equals('server${counter++}.dart'));
+          expect(options['sdk-root'], equals('sdkroot'));
+          compileCalled.sendPort.send(true);
+        }),
+        input: streamController.stream,
+      );
       expect(exitcode, equals(0));
       streamController.add('compile server1.dart\n'.codeUnits);
       streamController.add('compile server2.dart\n'.codeUnits);
@@ -120,17 +128,19 @@ Future<int> main() async {
 
       int counter = 0;
       final List<Uri> expectedInvalidatedFiles = <Uri>[
-          Uri.base.resolve('file1.dart'),
-          Uri.base.resolve('file2.dart')];
+        Uri.base.resolve('file1.dart'),
+        Uri.base.resolve('file2.dart'),
+      ];
       final int exitcode = await starter(args, compiler: new _MockedCompiler(
-          invalidateCallback: (Uri uri) {
-            expect(uri, equals(expectedInvalidatedFiles[counter++]));
-          },
-          recompileDeltaCallback: () {
-            expect(counter, equals(2));
-            recompileCalled.sendPort.send(true);
-          }),
-          input: streamController.stream);
+        invalidateCallback: (Uri uri) {
+          expect(uri, equals(expectedInvalidatedFiles[counter++]));
+        },
+        recompileDeltaCallback: () {
+          expect(counter, equals(2));
+          recompileCalled.sendPort.send(true);
+        }),
+        input: streamController.stream,
+      );
       expect(exitcode, equals(0));
       streamController.add('recompile abc\nfile1.dart\nfile2.dart\nabc\n'.codeUnits);
       await recompileCalled.first;
@@ -142,10 +152,11 @@ Future<int> main() async {
           new StreamController<List<int>>();
       final ReceivePort acceptCalled = new ReceivePort();
       final int exitcode = await starter(args, compiler: new _MockedCompiler(
-          acceptLastDeltaCallback: () {
-            acceptCalled.sendPort.send(true);
-          }),
-          input: inputStreamController.stream);
+        acceptLastDeltaCallback: () {
+          acceptCalled.sendPort.send(true);
+        }),
+        input: inputStreamController.stream,
+      );
       expect(exitcode, equals(0));
       inputStreamController.add('accept\n'.codeUnits);
       await acceptCalled.first;
@@ -157,10 +168,11 @@ Future<int> main() async {
       new StreamController<List<int>>();
       final ReceivePort rejectCalled = new ReceivePort();
       final int exitcode = await starter(args, compiler: new _MockedCompiler(
-          rejectLastDeltaCallback: () {
-            rejectCalled.sendPort.send(true);
-          }),
-          input: inputStreamController.stream);
+        rejectLastDeltaCallback: () {
+          rejectCalled.sendPort.send(true);
+        }),
+        input: inputStreamController.stream,
+      );
       expect(exitcode, equals(0));
       inputStreamController.add('reject\n'.codeUnits);
       await rejectCalled.first;
@@ -181,23 +193,24 @@ Future<int> main() async {
       ];
       bool acceptCalled = false;
       final int exitcode = await starter(args, compiler: new _MockedCompiler(
-          invalidateCallback: (Uri uri) {
-            expect(uri, equals(expectedInvalidatedFiles[counter++]));
-          },
-          recompileDeltaCallback: () {
-            if (counter == 2) {
-              expect(acceptCalled, equals(false));
-            } else {
-              expect(counter, equals(4));
-              expect(acceptCalled, equals(true));
-            }
-            recompileCalled.sendPort.send(true);
-          },
-          acceptLastDeltaCallback: () {
+        invalidateCallback: (Uri uri) {
+          expect(uri, equals(expectedInvalidatedFiles[counter++]));
+        },
+        recompileDeltaCallback: () {
+          if (counter == 2) {
             expect(acceptCalled, equals(false));
-            acceptCalled = true;
-          }),
-          input: streamController.stream);
+          } else {
+            expect(counter, equals(4));
+            expect(acceptCalled, equals(true));
+          }
+          recompileCalled.sendPort.send(true);
+        },
+        acceptLastDeltaCallback: () {
+          expect(acceptCalled, equals(false));
+          acceptCalled = true;
+        }),
+        input: streamController.stream,
+      );
       expect(exitcode, equals(0));
       streamController.add('recompile abc\nfile1.dart\nfile2.dart\nabc\n'.codeUnits);
       streamController.add('accept\n'.codeUnits);

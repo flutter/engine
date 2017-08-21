@@ -79,13 +79,13 @@ abstract class CompilerInterface {
 }
 
 class _FrontendCompiler implements CompilerInterface {
-  IncrementalKernelGenerator _generator;
-  String _filename;
-  StringSink _outputStream;
-
   _FrontendCompiler(this._outputStream) {
     _outputStream ??= stdout;
   }
+
+  IncrementalKernelGenerator _generator;
+  String _filename;
+  StringSink _outputStream;
 
   @override
   Future<Null> compile(String filename, ArgResults options) async {
@@ -112,8 +112,7 @@ class _FrontendCompiler implements CompilerInterface {
       compilerOptions.linkedDependencies = <Uri>[
         sdkRoot.resolve('platform.dill')
       ];
-      program =
-          await kernelForProgram(Uri.base.resolve(filename), compilerOptions);
+      program = await kernelForProgram(Uri.base.resolve(filename), compilerOptions);
     }
     if (program != null) {
       final String kernelBinaryFilename = filename + ".dill";
