@@ -30,7 +30,7 @@ Future<int> main() async {
       final List<String> args = <String>[
         'server.dart',
         '--sdk-root',
-        'sdkroot'
+        'sdkroot',
       ];
       final int exitcode = await starter(args, compiler: compiler);
       expect(exitcode, equals(0));
@@ -39,7 +39,7 @@ Future<int> main() async {
           compiler.compile(
             argThat(equals('server.dart')),
             captureAny,
-            generator: any
+            generator: any,
           )
         ).captured;
       expect(capturedArgs.single['sdk-root'], equals('sdkroot'));
@@ -59,12 +59,12 @@ Future<int> main() async {
       new StreamController<List<int>>();
       final ReceivePort compileCalled = new ReceivePort();
       when(compiler.compile(any, any, generator: any)).thenAnswer(
-              (Invocation invocation) {
-            expect(invocation.positionalArguments[0], equals('server.dart'));
-            expect(invocation.positionalArguments[1]['sdk-root'],
-                equals('sdkroot'));
-            compileCalled.sendPort.send(true);
-          });
+        (Invocation invocation) {
+          expect(invocation.positionalArguments[0], equals('server.dart'));
+          expect(invocation.positionalArguments[1]['sdk-root'], equals('sdkroot'));
+          compileCalled.sendPort.send(true);
+        }
+      );
 
       final int exitcode = await starter(args, compiler: compiler,
         input: inputStreamController.stream,
@@ -81,13 +81,12 @@ Future<int> main() async {
       final ReceivePort compileCalled = new ReceivePort();
       int counter = 1;
       when(compiler.compile(any, any, generator: any)).thenAnswer(
-              (Invocation invocation) {
-            expect(invocation.positionalArguments[0],
-                equals('server${counter++}.dart'));
-            expect(invocation.positionalArguments[1]['sdk-root'],
-                equals('sdkroot'));
-            compileCalled.sendPort.send(true);
-          });
+        (Invocation invocation) {
+          expect(invocation.positionalArguments[0], equals('server${counter++}.dart'));
+          expect(invocation.positionalArguments[1]['sdk-root'], equals('sdkroot'));
+          compileCalled.sendPort.send(true);
+        }
+      );
 
       final int exitcode = await starter(args, compiler: compiler,
         input: streamController.stream,
@@ -111,7 +110,7 @@ Future<int> main() async {
 
     test('recompile few files', () async {
       final StreamController<List<int>> streamController =
-          new StreamController<List<int>>();
+        new StreamController<List<int>>();
       final ReceivePort recompileCalled = new ReceivePort();
 
       when(compiler.recompileDelta()).thenAnswer((Invocation invocation) {
@@ -136,7 +135,7 @@ Future<int> main() async {
 
     test('accept', () async {
       final StreamController<List<int>> inputStreamController =
-          new StreamController<List<int>>();
+        new StreamController<List<int>>();
       final ReceivePort acceptCalled = new ReceivePort();
       when(compiler.acceptLastDelta()).thenAnswer((Invocation invocation) {
         acceptCalled.sendPort.send(true);
@@ -198,7 +197,7 @@ Future<int> main() async {
     final List<String> args = <String>[
       '--sdk-root',
       'sdkroot',
-      '--incremental'
+      '--incremental',
     ];
 
     test('compile then accept', () async {
@@ -211,24 +210,24 @@ Future<int> main() async {
 
       String boundaryKey;
       stdoutStreamController.stream
-          .transform(UTF8.decoder)
-          .transform(new LineSplitter())
-          .listen((String s) {
-        const String RESULT_OUTPUT_SPACE = 'result ';
-        if (boundaryKey == null) {
-          if (s.startsWith(RESULT_OUTPUT_SPACE)) {
-            boundaryKey = s.substring(RESULT_OUTPUT_SPACE.length);
+        .transform(UTF8.decoder)
+        .transform(new LineSplitter())
+        .listen((String s) {
+          const String RESULT_OUTPUT_SPACE = 'result ';
+          if (boundaryKey == null) {
+            if (s.startsWith(RESULT_OUTPUT_SPACE)) {
+              boundaryKey = s.substring(RESULT_OUTPUT_SPACE.length);
+            }
+          } else {
+            if (s == boundaryKey) {
+              boundaryKey = null;
+              receivedResult.sendPort.send(true);
+            }
           }
-        } else {
-          if (s == boundaryKey) {
-            boundaryKey = null;
-            receivedResult.sendPort.send(true);
-          }
-        }
-      });
+        });
 
       final _MockedIncrementalKernelGenerator generator =
-          new _MockedIncrementalKernelGenerator();
+        new _MockedIncrementalKernelGenerator();
       when(generator.computeDelta()).thenReturn(new Future<DeltaProgram>.value(
         new DeltaProgram(null /* program stub */)
       ));

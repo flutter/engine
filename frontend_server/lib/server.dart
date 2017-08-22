@@ -92,6 +92,7 @@ class KernelSerializer {
 class _FrontendCompiler implements CompilerInterface {
   _FrontendCompiler(this._outputStream, {this.kernelSerializer}) {
     _outputStream ??= stdout;
+    kernelSerializer ??= new KernelSerializer();
   }
 
   KernelSerializer kernelSerializer;
