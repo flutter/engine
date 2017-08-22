@@ -59,10 +59,12 @@ enum _State { READY_FOR_INSTRUCTION, RECOMPILE_LIST }
 /// Actions that every compiler should implement.
 abstract class CompilerInterface {
   /// Compile given Dart program identified by `filename` with given list of
-  /// `options`. If `generator` instance is provided(primarily for mocking in
-  /// tests, it is used for compilation. Otherwise new instance will be created.
-  Future<Null> compile(String filename, ArgResults options,
-    {IncrementalKernelGenerator generator});
+  /// `options`. When `generator` parameter is omitted, new instance of
+  /// `IncrementalKernelGenerator` is created by this method. Main use for this
+  /// parameter is for mocking in tests.
+  Future<Null> compile(String filename, ArgResults options, {
+    IncrementalKernelGenerator generator,
+  });
 
   /// Assuming some Dart program was previously compiled, recompile it again
   /// taking into account some changed(invalidated) sources.
@@ -90,20 +92,21 @@ class KernelSerializer {
 }
 
 class _FrontendCompiler implements CompilerInterface {
-  _FrontendCompiler(this._outputStream, {this.kernelSerializer}) {
+  _FrontendCompiler(this._outputStream, { this.kernelSerializer }) {
     _outputStream ??= stdout;
     kernelSerializer ??= new KernelSerializer();
   }
 
+  StringSink _outputStream;
   KernelSerializer kernelSerializer;
 
   IncrementalKernelGenerator _generator;
   String _filename;
-  StringSink _outputStream;
 
   @override
-  Future<Null> compile(String filename, ArgResults options,
-    {IncrementalKernelGenerator generator}) async {
+  Future<Null> compile(String filename, ArgResults options, {
+    IncrementalKernelGenerator generator,
+  }) async {
     _filename = filename;
     final String boundaryKey = new Uuid().generateV4();
     _outputStream.writeln("result $boundaryKey");
@@ -120,7 +123,8 @@ class _FrontendCompiler implements CompilerInterface {
       _generator = generator != null
         ? generator
         : await IncrementalKernelGenerator.newInstance(
-            compilerOptions, Uri.base.resolve(_filename));
+            compilerOptions, Uri.base.resolve(_filename)
+        );
       final DeltaProgram deltaProgram = await _generator.computeDelta();
       program = deltaProgram.newProgram;
     } else {
@@ -178,10 +182,12 @@ class _FrontendCompiler implements CompilerInterface {
 /// processes user input.
 /// `compiler` is an optional parameter so it can be replaced with mocked
 /// version for testing.
-Future<int> starter(List<String> args, {CompilerInterface compiler,
-    Stream<List<int>> input, StringSink output,
-    IncrementalKernelGenerator generator,
-    KernelSerializer kernelSerializer}) async {
+Future<int> starter(List<String> args, {
+  CompilerInterface compiler,
+  Stream<List<int>> input, StringSink output,
+  IncrementalKernelGenerator generator,
+  KernelSerializer kernelSerializer
+}) async {
   final ArgResults options = _argParser.parse(args);
   if (options['train'])
     return 0;
