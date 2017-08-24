@@ -212,7 +212,8 @@
   }
 }
 
-- (NSObject<FlutterBinaryMessenger>*)pluginMessenger {
+// TODO(xster): move when doing https://github.com/flutter/flutter/issues/3671.
+- (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
   return self.rootFlutterViewController;
 }
 
@@ -252,7 +253,7 @@
 }
 
 - (NSObject<FlutterBinaryMessenger>*)messenger {
-  return [_appDelegate pluginMessenger];
+  return [_appDelegate binaryMessenger];
 }
 
 - (void)publish:(NSObject*)value {

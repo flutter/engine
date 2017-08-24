@@ -33,7 +33,7 @@ FLUTTER_EXPORT
 // typically a FlutterViewController, for plugin interop.
 //
 // Defaults to window's rootViewController.
-- (NSObject<FlutterBinaryMessenger>*) pluginMessenger;
+- (NSObject<FlutterBinaryMessenger>*) binaryMessenger;
 
 @end
 
