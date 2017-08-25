@@ -16,6 +16,8 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -158,7 +160,15 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
         }
 
         if (object.children != null) {
-            for (SemanticsObject child : object.children) {
+            List<SemanticsObject> childrenInTraversalOrder =
+                new ArrayList<SemanticsObject>(object.children);
+            Collections.sort(childrenInTraversalOrder, new Comparator<SemanticsObject>() {
+                public int compare(SemanticsObject a, SemanticsObject b) {
+                    final int top = Integer.compare(a.globalRect.top, b.globalRect.top);
+                    return top == 0 ? Integer.compare(a.globalRect.left, b.globalRect.left) : top;
+                }
+            });
+            for (SemanticsObject child : childrenInTraversalOrder) {
                 result.addChild(mOwner, child.id);
             }
         }
@@ -358,7 +368,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
         private float[] transform;
 
         SemanticsObject parent;
-        List<SemanticsObject> children;
+        List<SemanticsObject> children;  // In paint order.
 
         private boolean inverseTransformDirty = true;
         private float[] inverseTransform;
