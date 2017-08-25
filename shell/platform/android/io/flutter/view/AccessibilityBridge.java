@@ -12,7 +12,6 @@ import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -118,14 +117,17 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
             // TODO(ianh): Once we're on SDK v23+, call addAction to
             // expose AccessibilityAction.ACTION_SCROLL_LEFT, _RIGHT,
             // _UP, and _DOWN when appropriate.
-            if ((object.actions & SEMANTICS_ACTION_SCROLL_RIGHT) != 0 || (object.actions & SEMANTICS_ACTION_SCROLL_UP) != 0 ) {
+            if ((object.actions & SEMANTICS_ACTION_SCROLL_RIGHT) != 0
+                    || (object.actions & SEMANTICS_ACTION_SCROLL_UP) != 0) {
                 result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
             }
-            if ((object.actions & SEMANTICS_ACTION_SCROLL_LEFT) != 0 || (object.actions & SEMANTICS_ACTION_SCROLL_DOWN) != 0 ) {
+            if ((object.actions & SEMANTICS_ACTION_SCROLL_LEFT) != 0
+                    || (object.actions & SEMANTICS_ACTION_SCROLL_DOWN) != 0) {
                 result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
             }
         }
-        if ((object.actions & SEMANTICS_ACTION_INCREASE) != 0 || (object.actions & SEMANTICS_ACTION_DECREASE) != 0 ) {
+        if ((object.actions & SEMANTICS_ACTION_INCREASE) != 0
+                || (object.actions & SEMANTICS_ACTION_DECREASE) != 0 ) {
             result.setFocusable(true);
             result.setClassName("android.widget.SeekBar");
             if ((object.actions & SEMANTICS_ACTION_INCREASE) != 0) {
