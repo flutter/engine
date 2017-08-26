@@ -368,7 +368,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
         private float[] transform;
 
         SemanticsObject parent;
-        List<SemanticsObject> children;  // In paint order.
+        List<SemanticsObject> children;  // In inverse hit test order (i.e. paint order).
 
         private boolean inverseTransformDirty = true;
         private float[] inverseTransform;
