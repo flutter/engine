@@ -205,23 +205,14 @@ sk_sp<SkSurface> VulkanSwapchain::CreateSkiaSurface(GrContext* gr_context,
       .fLevelCount = 1,
   };
 
-  GrBackendRenderTargetDesc desc;
-  desc.fWidth = size.fWidth;
-  desc.fHeight = size.fHeight;
-  desc.fConfig = pixel_config;
-  desc.fOrigin = kTopLeft_GrSurfaceOrigin;
-
   // TODO(chinmaygarde): Setup the stencil buffer and the sampleCnt.
-  desc.fSampleCnt = 0;
-  desc.fStencilBits = 0;
-
-  desc.fRenderTargetHandle = reinterpret_cast<GrBackendObject>(&image_info);
-
+  GrBackendRenderTarget backend_render_target(size.fWidth, size.fHeight, 0, 0, image_info);
   SkSurfaceProps props(SkSurfaceProps::InitType::kLegacyFontHost_InitType);
 
   return SkSurface::MakeFromBackendRenderTarget(
-      gr_context,  // context
-      desc,        // backend render target description
+      gr_context,             // context
+      backend_render_target,  // backend render target
+      kTopLeft_GrSurfaceOrigin,
       SkColorSpaceFromVkFormat(surface_format_.format),  // colorspace
       &props                                             // surface properties
       );
