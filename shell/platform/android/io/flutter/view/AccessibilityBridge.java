@@ -146,12 +146,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
         result.setSelected((object.flags & SEMANTICS_FLAG_IS_SELECTED) != 0);
         result.setText(object.label);
 
-        // TODO(ianh): use setTraversalBefore/setTraversalAfter to set
-        // the relative order of the views. For each set of siblings,
-        // the views should be ordered top-to-bottom, tie-breaking
-        // left-to-right (right-to-left in rtl environments), height,
-        // width, and finally by list order.
-
         // Accessibility Focus
         if (mFocusedObject != null && mFocusedObject.id == virtualViewId) {
             result.addAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS);
@@ -165,6 +159,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
             Collections.sort(childrenInTraversalOrder, new Comparator<SemanticsObject>() {
                 public int compare(SemanticsObject a, SemanticsObject b) {
                     final int top = Integer.compare(a.globalRect.top, b.globalRect.top);
+                    // TODO(goderbauer): sort right-to-left in rtl environments.
                     return top == 0 ? Integer.compare(a.globalRect.left, b.globalRect.left) : top;
                 }
             });
