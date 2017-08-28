@@ -204,7 +204,7 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrContext> context,
       .fLevelCount = image_create_info.mipLevels,
   };
 
-  GrBackendRenderTarget sk_render_target(size.width(); size.height(), 0, 0, image_info);
+  GrBackendRenderTarget sk_render_target(size.width(), size.height(), 0, 0, image_info);
 
   SkSurfaceProps sk_surface_props(
       SkSurfaceProps::InitType::kLegacyFontHost_InitType);
