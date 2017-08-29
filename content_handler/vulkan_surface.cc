@@ -5,6 +5,7 @@
 #include "flutter/content_handler/vulkan_surface.h"
 #include "flutter/common/threads.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 #include "third_party/skia/src/gpu/vk/GrVkImage.h"
 
