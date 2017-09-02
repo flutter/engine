@@ -74,7 +74,7 @@ def to_gn_args(args):
     enable_lto = args.lto
     if args.unoptimized:
       # There is no point in enabling LTO in unoptimized builds.
-      enable_lto = false
+      enable_lto = False
 
     if args.target_os != 'win':
       # The GN arg is not available in the windows toolchain.
