@@ -85,10 +85,10 @@ abstract class CompilerInterface {
 
 /// Class that for test mocking purposes encapsulates creation of [BinaryPrinter].
 class BinaryPrinterFactory {
-  /// Creates new [BinaryPrinter] to write to [path] file.
-  BinaryPrinter newBinaryPrinter(String path) {
+  /// Creates new [BinaryPrinter] to write to [targetSink].
+  BinaryPrinter newBinaryPrinter(IOSink targetSink) {
     return new LimitedBinaryPrinter(
-      new File(path).openWrite(),
+      targetSink,
       (_) => true /* predicate */,
       false /* excludeUriToSource */);  }
 }
@@ -140,9 +140,11 @@ class _FrontendCompiler implements CompilerInterface {
       program = await kernelForProgram(Uri.base.resolve(_filename), compilerOptions);
     }
     if (program != null) {
-      final BinaryPrinter printer = printerFactory.newBinaryPrinter(_kernelBinaryFilename);
+      final IOSink sink = new File(_kernelBinaryFilename).openWrite();
+      final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
       printer.writeProgramFile(program);
       _outputStream.writeln("$boundaryKey $_kernelBinaryFilename");
+      await sink.close();
     } else
       _outputStream.writeln(boundaryKey);
     return null;
@@ -153,9 +155,11 @@ class _FrontendCompiler implements CompilerInterface {
     final String boundaryKey = new Uuid().generateV4();
     _outputStream.writeln("result $boundaryKey");
     final DeltaProgram deltaProgram = await _generator.computeDelta();
-    final BinaryPrinter printer = printerFactory.newBinaryPrinter(_kernelBinaryFilename);
+    final IOSink sink = new File(_kernelBinaryFilename).openWrite();
+    final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
     printer.writeProgramFile(deltaProgram.newProgram);
     _outputStream.writeln("$boundaryKey");
+    await sink.close();
     return null;
   }
 
