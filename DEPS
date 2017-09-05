@@ -47,7 +47,7 @@ vars = {
   'dart_csslib_tag': '0.13.3+1',
   'dart_dart2js_info_tag': '0.5.4+2',
   'dart_dart_style_tag': '1.0.7',
-  'dart_dartdoc_tag': 'v0.13.0+1',
+  'dart_dartdoc_tag': 'v0.13.0+2',
   'dart_fixnum_tag': '0.10.5',
   'dart_glob_tag': '1.1.3',
   'dart_html_tag': '0.13.1',
