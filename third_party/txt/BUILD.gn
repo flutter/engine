@@ -86,7 +86,6 @@ source_set("txt") {
     "src/txt/paragraph_builder.h",
     "src/txt/paragraph_style.cc",
     "src/txt/paragraph_style.h",
-    "src/txt/platform.h",
     "src/txt/styled_runs.cc",
     "src/txt/styled_runs.h",
     "src/txt/text_align.h",
@@ -101,16 +100,8 @@ source_set("txt") {
     "src/utils/TypeHelpers.h",
   ]
 
-  if (is_mac || is_ios) {
-    set_sources_assignment_filter([])
-    sources += [ "src/txt/platform_mac.mm" ]
-    set_sources_assignment_filter(sources_assignment_filter)
   } else if (is_android) {
     sources += [ "src/txt/platform_android.cc" ]
-  } else {
-    sources += [ "src/txt/platform.cc" ]
-  }
-
   public_configs = [ ":txt_config" ]
 
   public_deps = [
