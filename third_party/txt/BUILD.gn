@@ -100,8 +100,6 @@ source_set("txt") {
     "src/utils/TypeHelpers.h",
   ]
 
-  } else if (is_android) {
-    sources += [ "src/txt/platform_android.cc" ]
   public_configs = [ ":txt_config" ]
 
   public_deps = [
