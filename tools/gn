@@ -28,7 +28,7 @@ def get_out_dir(args):
         target_dir.append(args.android_cpu)
 
     if args.ios_cpu != 'arm64':
-        target_dir.append('armv7')
+        target_dir.append(args.ios_cpu)
 
     if args.enable_vulkan:
         target_dir.append('vulkan')
