@@ -160,7 +160,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         // Accessibility Focus
         if (mFocusedObject != null && mFocusedObject.id == virtualViewId) {
             result.addAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS);
-        } else if (object.isFocusable()) {
+        } else {
             result.addAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
         }
 
