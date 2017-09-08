@@ -23,10 +23,12 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   // directions, which is why the following maps left to right and vice versa.
   switch (direction) {
     case UIAccessibilityScrollDirectionRight:
-    case UIAccessibilityScrollDirectionPrevious:  // TODO(abarth): Support RTL using _node.textDirection.
+    case UIAccessibilityScrollDirectionPrevious:  // TODO(abarth): Support RTL using
+                                                  // _node.textDirection.
       return blink::SemanticsAction::kScrollLeft;
     case UIAccessibilityScrollDirectionLeft:
-    case UIAccessibilityScrollDirectionNext:  // TODO(abarth): Support RTL using _node.textDirection.
+    case UIAccessibilityScrollDirectionNext:  // TODO(abarth): Support RTL using
+                                              // _node.textDirection.
       return blink::SemanticsAction::kScrollRight;
     case UIAccessibilityScrollDirectionUp:
       return blink::SemanticsAction::kScrollDown;
@@ -35,6 +37,17 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   }
   FTL_DCHECK(false);  // Unreachable
   return blink::SemanticsAction::kScrollUp;
+}
+
+bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
+  // Should a go before b?
+  CGRect rectA = [a accessibilityFrame];
+  CGRect rectB = [b accessibilityFrame];
+  CGFloat top = rectA.origin.y - rectB.origin.y;
+  if (top == 0) {
+    return rectA.origin.x - rectB.origin.x < 0;
+  }
+  return top < 0;
 }
 
 }  // namespace
@@ -92,17 +105,13 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   // Note: hit detection will only apply to elements that report
   // -isAccessibilityElement of YES. The framework will continue scanning the
   // entire element tree looking for such a hit.
-  return _node.HasAction(blink::SemanticsAction::kTap) || _children.empty();
+  return _node.flags != 0 || !_node.label.empty() ||
+         (_node.actions & ~blink::kScrollableSemanticsActions) != 0;
 }
 
 - (NSString*)accessibilityLabel {
   if (_node.label.empty()) {
-    NSMutableString *label = [NSMutableString string];
-    for (auto& child : _children) {
-      [label appendString: [child accessibilityLabel]];
-      [label appendString: @"\n"];
-    }
-    return label;
+    return nil;
   }
   return @(_node.label.data());
 }
@@ -178,8 +187,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 #pragma mark - UIAccessibilityAction overrides
 
 - (BOOL)accessibilityActivate {
-  if (!_node.HasAction(blink::SemanticsAction::kTap))
+  if (!_node.HasAction(blink::SemanticsAction::kTap)) {
     return NO;
+  }
   _bridge->DispatchSemanticsAction(_uid, blink::SemanticsAction::kTap);
   return YES;
 }
@@ -198,8 +208,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
 - (BOOL)accessibilityScroll:(UIAccessibilityScrollDirection)direction {
   blink::SemanticsAction action = GetSemanticsActionForScrollDirection(direction);
-  if (!_node.HasAction(action))
+  if (!_node.HasAction(action)) {
     return NO;
+  }
   _bridge->DispatchSemanticsAction(_uid, action);
   // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
   UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, nil);
@@ -225,11 +236,11 @@ namespace shell {
 AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform_view)
     : view_(view), platform_view_(platform_view), objects_([[NSMutableDictionary alloc] init]) {}
 
-AccessibilityBridge::~AccessibilityBridge() {
-  view_.accessibilityElements = nil;
-}
+AccessibilityBridge::~AccessibilityBridge() { view_.accessibilityElements = nil; }
 
 void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> nodes) {
+  NSMutableSet<SemanticsObject*>* childOrdersToUpdate = [[NSMutableSet alloc] init];
+
   for (const blink::SemanticsNode& node : nodes) {
     SemanticsObject* object = GetOrCreateObject(node.id);
     [object setSemanticsNode:&node];
@@ -239,7 +250,20 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
     for (size_t i = 0; i < childrenCount; ++i) {
       SemanticsObject* child = GetOrCreateObject(node.children[i]);
       child.parent = object;
-      children[i] = child;
+      children[childrenCount - i - 1] = child;
+    }
+
+    [childOrdersToUpdate addObject:object];
+    if (object.parent) {
+      [childOrdersToUpdate addObject:object.parent];
+    }
+  }
+
+  // Bring children into traversal order.
+  for (SemanticsObject* object in childOrdersToUpdate) {
+    std::vector<SemanticsObject*>* children = [object children];
+    if (!children->empty()) {
+      std::stable_sort(children->begin(), children->end(), GeometryComparator);
     }
   }
 
@@ -252,11 +276,11 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
   } else {
     view_.accessibilityElements = nil;
   }
-    
-  NSMutableArray<NSNumber*>* doomed_uids =
-    [NSMutableArray arrayWithArray: [objects_.get() allKeys]];
-  if (root)
+
+  NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
+  if (root) {
     VisitObjectsRecursivelyAndRemove(root, doomed_uids);
+  }
 
   bool focused_object_doomed = false;
   for (NSNumber* uid in doomed_uids) {
@@ -267,7 +291,7 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
     }
   }
 
-  [objects_ removeObjectsForKeys: doomed_uids];
+  [objects_ removeObjectsForKeys:doomed_uids];
 
   if (focused_object_doomed) {
     // Previously focused element is no longer in the tree.
@@ -295,8 +319,8 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid) {
 }
 
 void AccessibilityBridge::VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
-                                                  NSMutableArray<NSNumber*>* doomed_uids) {
-  [doomed_uids removeObject: @(object.uid)];
+                                                           NSMutableArray<NSNumber*>* doomed_uids) {
+  [doomed_uids removeObject:@(object.uid)];
   for (SemanticsObject* child : *[object children])
     VisitObjectsRecursivelyAndRemove(child, doomed_uids);
 }

@@ -160,7 +160,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         // Accessibility Focus
         if (mFocusedObject != null && mFocusedObject.id == virtualViewId) {
             result.addAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS);
-        } else {
+        } else if (object.isFocusable()) {
             result.addAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
         }
 
@@ -504,7 +504,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         boolean isFocusable() {
-            return flags != 0 || label != null || (actions & ~SEMANTICS_ACTION_SCROLLABLE) != 0;
+            return flags != 0 || (label != null && !label.isEmpty()) || (actions & ~SEMANTICS_ACTION_SCROLLABLE) != 0;
         }
 
         void updateRecursively(float[] ancestorTransform, Set<SemanticsObject> visitedObjects, boolean forceUpdate) {
