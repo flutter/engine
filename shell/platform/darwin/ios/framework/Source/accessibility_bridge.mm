@@ -255,9 +255,8 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
     }
 
     [childOrdersToUpdate addObject:object];
-    if (object.parent) {
+    if (object.parent)
       [childOrdersToUpdate addObject:object.parent];
-    }
   }
 
   // Bring children into traversal order.
@@ -277,9 +276,8 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
   }
 
   NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
-  if (root) {
+  if (root)
     VisitObjectsRecursivelyAndRemove(root, doomed_uids);
-  }
 
   bool focused_object_doomed = false;
   for (NSNumber* uid in doomed_uids) {
