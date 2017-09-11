@@ -44,10 +44,9 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
   CGRect rectA = [a accessibilityFrame];
   CGRect rectB = [b accessibilityFrame];
   CGFloat top = rectA.origin.y - rectB.origin.y;
-  if (top == 0) {
-    return rectA.origin.x - rectB.origin.x < 0;
-  }
-  return top < 0;
+  if (top == 0.0)
+    return rectA.origin.x - rectB.origin.x < 0.0;
+  return top < 0.0;
 }
 
 }  // namespace
@@ -110,9 +109,8 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
 }
 
 - (NSString*)accessibilityLabel {
-  if (_node.label.empty()) {
+  if (_node.label.empty())
     return nil;
-  }
   return @(_node.label.data());
 }
 
@@ -187,9 +185,8 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
 #pragma mark - UIAccessibilityAction overrides
 
 - (BOOL)accessibilityActivate {
-  if (!_node.HasAction(blink::SemanticsAction::kTap)) {
+  if (!_node.HasAction(blink::SemanticsAction::kTap))
     return NO;
-  }
   _bridge->DispatchSemanticsAction(_uid, blink::SemanticsAction::kTap);
   return YES;
 }
@@ -208,9 +205,8 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
 
 - (BOOL)accessibilityScroll:(UIAccessibilityScrollDirection)direction {
   blink::SemanticsAction action = GetSemanticsActionForScrollDirection(direction);
-  if (!_node.HasAction(action)) {
+  if (!_node.HasAction(action))
     return NO;
-  }
   _bridge->DispatchSemanticsAction(_uid, action);
   // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
   UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, nil);
@@ -236,10 +232,14 @@ namespace shell {
 AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform_view)
     : view_(view), platform_view_(platform_view), objects_([[NSMutableDictionary alloc] init]) {}
 
-AccessibilityBridge::~AccessibilityBridge() { view_.accessibilityElements = nil; }
+AccessibilityBridge::~AccessibilityBridge() {
+  view_.accessibilityElements = nil;
+}
 
 void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> nodes) {
-  NSMutableSet<SemanticsObject*>* childOrdersToUpdate = [[NSMutableSet alloc] init];
+  // Children are received in paint order (inverse hit testing order). We need to bring them into
+  // traversal order (top left to bottom right, with hit testing order as tie breaker).
+  NSMutableSet<SemanticsObject*>* childOrdersToUpdate = [[[NSMutableSet alloc] init] autorelease];
 
   for (const blink::SemanticsNode& node : nodes) {
     SemanticsObject* object = GetOrCreateObject(node.id);
@@ -250,6 +250,7 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
     for (size_t i = 0; i < childrenCount; ++i) {
       SemanticsObject* child = GetOrCreateObject(node.children[i]);
       child.parent = object;
+      // Reverting to get hit testing order (as tie breaker for sorting below).
       children[childrenCount - i - 1] = child;
     }
 
@@ -262,9 +263,7 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
   // Bring children into traversal order.
   for (SemanticsObject* object in childOrdersToUpdate) {
     std::vector<SemanticsObject*>* children = [object children];
-    if (!children->empty()) {
-      std::stable_sort(children->begin(), children->end(), GeometryComparator);
-    }
+    std::stable_sort(children->begin(), children->end(), GeometryComparator);
   }
 
   SemanticsObject* root = objects_.get()[@(kRootNodeId)];
