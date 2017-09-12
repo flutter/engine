@@ -1,6 +1,10 @@
 #!/bin/bash
 echo "Checking formatting..."
 
+set -e
+
+cd ..
+
 case "$(uname -s)" in
   Darwin)
     OS="mac-x64"
