@@ -44,8 +44,8 @@ std::string ResolvePath(std::string path) {
 
 }  // namespace
 
-DartController::DartController() : ui_dart_state_(nullptr),
-    platform_kernel_bytes(nullptr) {}
+DartController::DartController()
+    : ui_dart_state_(nullptr), platform_kernel_bytes(nullptr) {}
 
 DartController::~DartController() {
   if (ui_dart_state_) {
@@ -99,8 +99,8 @@ bool DartController::SendStartMessage(Dart_Handle root_library) {
 }
 
 static void CopyVectorBytes(const std::vector<uint8_t>& vector,
-    uint8_t*& bytes) {
-  bytes = (uint8_t*) malloc(vector.size());
+                            uint8_t*& bytes) {
+  bytes = (uint8_t*)malloc(vector.size());
   memcpy(bytes, vector.data(), vector.size());
 }
 
@@ -137,7 +137,8 @@ tonic::DartErrorHandleType DartController::RunFromPrecompiledSnapshot() {
 }
 
 tonic::DartErrorHandleType DartController::RunFromScriptSnapshot(
-    const uint8_t* buffer, size_t size) {
+    const uint8_t* buffer,
+    size_t size) {
   tonic::DartState::Scope scope(dart_state());
   Dart_Handle result = Dart_LoadScriptFromSnapshot(buffer, size);
   LogIfError(result);
@@ -149,7 +150,8 @@ tonic::DartErrorHandleType DartController::RunFromScriptSnapshot(
 }
 
 tonic::DartErrorHandleType DartController::RunFromSource(
-    const std::string& main, const std::string& packages) {
+    const std::string& main,
+    const std::string& packages) {
   tonic::DartState::Scope scope(dart_state());
   tonic::FileLoader& loader = dart_state()->file_loader();
   if (!packages.empty() && !loader.LoadPackagesMap(ResolvePath(packages)))
@@ -163,11 +165,12 @@ tonic::DartErrorHandleType DartController::RunFromSource(
   return error;
 }
 
-void DartController::CreateIsolateFor(const std::string& script_uri,
-                                      const uint8_t* isolate_snapshot_data,
-                                      const uint8_t* isolate_snapshot_instr,
-                                      const std::vector<uint8_t>& platform_kernel,
-                                      std::unique_ptr<UIDartState> state) {
+void DartController::CreateIsolateFor(
+    const std::string& script_uri,
+    const uint8_t* isolate_snapshot_data,
+    const uint8_t* isolate_snapshot_instr,
+    const std::vector<uint8_t>& platform_kernel,
+    std::unique_ptr<UIDartState> state) {
   char* error = nullptr;
 
   Dart_Isolate isolate;
@@ -181,13 +184,13 @@ void DartController::CreateIsolateFor(const std::string& script_uri,
         script_uri.c_str(), "main",
         Dart_ReadKernelBinary(platform_kernel_bytes, platform_kernel.size(),
                               ReleaseFetchedBytes),
-        nullptr /* flags */,
-        static_cast<tonic::DartState*>(state.get()), &error);
+        nullptr /* flags */, static_cast<tonic::DartState*>(state.get()),
+        &error);
   } else {
-    isolate = Dart_CreateIsolate(
-        script_uri.c_str(), "main", isolate_snapshot_data,
-        isolate_snapshot_instr, nullptr,
-        static_cast<tonic::DartState*>(state.get()), &error);
+    isolate =
+        Dart_CreateIsolate(script_uri.c_str(), "main", isolate_snapshot_data,
+                           isolate_snapshot_instr, nullptr,
+                           static_cast<tonic::DartState*>(state.get()), &error);
   }
   FXL_CHECK(isolate) << error;
   ui_dart_state_ = state.release();
