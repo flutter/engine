@@ -206,7 +206,7 @@ To start working on a patch:
      [design principles](https://flutter.io/design-principles/) before
      working on anything non-trivial. These guidelines are intended to
      keep the code consistent and avoid common pitfalls.
-   * C, C++, and Objective-C code has to be formatted with `clang-format` before
+   * C, C++, and Objective-C code should be formatted with `clang-format` before
      submission (use `buildtools/<OS>/clang/bin/clang-format --style=file -i`).
  * `git commit -a -m "<your brief but informative commit message>"`
  * `git push origin name_of_your_branch`
