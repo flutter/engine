@@ -25,7 +25,9 @@ FILES="$(find flutter/ -name '*.cpp' -or -name '*.h' -or -name '*.c' -or -name '
 
 FAILED_CHECKS=0
 for FILE in $FILES; do
+  set +e
   RESULT="$(diff -u "$FILE" <($CLANG_FORMAT --style=file "$FILE"))"
+  set -e
   if ! [ -z "$RESULT" ]; then
     echo "$RESULT"
     FAILED_CHECKS=$(($counter+1))
