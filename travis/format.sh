@@ -1,8 +1,6 @@
 #!/bin/bash
-echo "Checking formatting..."
-
 set -e
-
+echo "Checking formatting..."
 cd ..
 
 case "$(uname -s)" in
@@ -22,8 +20,8 @@ CLANG_FORMAT="buildtools/$OS/clang/bin/clang-format"
 $CLANG_FORMAT --version
 
 FILES="$(find flutter/ -name '*.cpp' -or -name '*.h' -or -name '*.c' -or -name '*.cc' -or -name '*.m' -or -name '*.mm')"
-
 FAILED_CHECKS=0
+
 for FILE in $FILES; do
   set +e
   RESULT="$(diff -u "$FILE" <($CLANG_FORMAT --style=file "$FILE"))"
