@@ -1034,7 +1034,7 @@ final List<MultipleVersionedLicenseReferencePattern> csReferencesByUrl = <Multip
       r'^(?:(?:\1\2? *)? *\n)*'
       r'^\1\2You should have received a copy of the (GNU Lesser) General Public *\n'
       r'^\1\2License along with this library; if not, write to the Free Software *\n'
-      r'^\1\2Foundation, Inc\., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA *\n'
+      r'^\1\2Foundation, Inc\., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 +USA *\n'
       r'^(?:(?:\1\2? *)? *\n)*'
       r'^\1\2Alternatively, the contents of this file may be used under the terms *\n'
       r'^\1\2of either the Mozilla Public License Version 1\.1, found at *\n'
