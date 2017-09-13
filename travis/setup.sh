@@ -14,6 +14,6 @@ cd src
 mv flutter/travis/gclient ../.gclient
 gclient sync
 
-./tools/dart/update.py
+../tools/dart/update.py
 
-PATH="$PWD/dart/tools/sdks/linux/dart-sdk/bin:$PATH"
+PATH="$PWD/../dart/tools/sdks/linux/dart-sdk/bin:$PATH"
