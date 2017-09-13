@@ -13,8 +13,3 @@ cd src
 
 mv flutter/travis/gclient ../.gclient
 gclient sync
-
-PATH="$PWD/dart/tools/sdks/linux/dart-sdk/bin:$PATH"
-
-which dartanalyzer
-dartanalyzer --version
