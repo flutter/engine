@@ -196,8 +196,7 @@ void Shell::InitStandalone(fxl::CommandLine command_line,
 
 void Shell::Init(fxl::CommandLine command_line) {
 #if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
-  bool trace_skia  =
-      command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
+  bool trace_skia = command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
   InitSkiaEventTracer(trace_skia);
 #endif
 

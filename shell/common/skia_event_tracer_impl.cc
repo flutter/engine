@@ -9,8 +9,8 @@
 
 #include <vector>
 
-#include "lib/fxl/logging.h"
 #include "dart/runtime/include/dart_tools_api.h"
+#include "lib/fxl/logging.h"
 #include "third_party/skia/include/utils/SkEventTracer.h"
 #include "third_party/skia/src/core/SkTraceEventCommon.h"
 
@@ -22,8 +22,7 @@ class FlutterEventTracer : public SkEventTracer {
   static constexpr uint8_t kYes = 1;
   static constexpr uint8_t kNo = 0;
 
-  FlutterEventTracer(bool enabled)
-    : enabled_(enabled ? kYes : kNo) {};
+  FlutterEventTracer(bool enabled) : enabled_(enabled ? kYes : kNo){};
 
   SkEventTracer::Handle addTraceEvent(char phase,
                                       const uint8_t* category_enabled_flag,
@@ -74,9 +73,7 @@ class FlutterEventTracer : public SkEventTracer {
     return kSkiaTag;
   }
 
-  void enable() {
-    enabled_ = kYes;
-  }
+  void enable() { enabled_ = kYes; }
 
  private:
   uint8_t enabled_;
@@ -84,12 +81,12 @@ class FlutterEventTracer : public SkEventTracer {
 };
 
 bool enableSkiaTracingCallback(const char* method,
-                            const char** param_keys,
-                            const char** param_values,
-                            intptr_t num_params,
-                            void* user_data,
-                            const char** json_object) {
-  FlutterEventTracer *tracer = static_cast<FlutterEventTracer*>(user_data);
+                               const char** param_keys,
+                               const char** param_values,
+                               intptr_t num_params,
+                               void* user_data,
+                               const char** json_object) {
+  FlutterEventTracer* tracer = static_cast<FlutterEventTracer*>(user_data);
   tracer->enable();
   *json_object = strdup("{\"type\":\"Success\"}");
   return true;
@@ -98,7 +95,7 @@ bool enableSkiaTracingCallback(const char* method,
 }  // namespace skia
 
 void InitSkiaEventTracer(bool enabled) {
-  skia::FlutterEventTracer *tracer = new skia::FlutterEventTracer(enabled);
+  skia::FlutterEventTracer* tracer = new skia::FlutterEventTracer(enabled);
   Dart_RegisterRootServiceRequestCallback("_flutter.enableSkiaTracing",
                                           skia::enableSkiaTracingCallback,
                                           static_cast<void*>(tracer));
