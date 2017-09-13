@@ -30,7 +30,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '8da668be933b950763ba4cb87ca61c4bdf57c850',
+  'dart_revision': 'd9a26967e0b73191b158fcdff2dc8bc303c06a1b',
 
   'dart_args_tag': '0.13.7',
   'dart_async_tag': 'daf66909019d2aaec1721fc39d94ea648a9fdc1d',
@@ -122,7 +122,7 @@ deps = {
    # and not have to specific specific hashes.
 
   'src/garnet':
-   Var('fuchsia_git') + '/garnet' + '@' + 'e40988884664ffc0ba326b519d0c8c4cdb4efc25',
+   Var('fuchsia_git') + '/garnet' + '@' + '1ec17c0bdae1e2981902e837f6ea7162ff0cad84',
 
   'src/lib/tonic':
    Var('fuchsia_git') + '/tonic' + '@' + 'ce1c9992ddefb940f549e6a9f94252ef2963dd2e',
