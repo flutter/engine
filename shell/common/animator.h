@@ -40,6 +40,8 @@ class Animator {
 
   void AwaitVSync();
 
+  const char *FrameId();
+
   fxl::WeakPtr<Rasterizer> rasterizer_;
   VsyncWaiter* waiter_;
   Engine* engine_;

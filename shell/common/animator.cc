@@ -41,6 +41,12 @@ void Animator::Start() {
   RequestFrame();
 }
 
+// This ID is used by the timeline component to correctly align
+// GPU Workloads events with their respective Framework Workload.
+const char *Animator::FrameId() {
+  return (frame_number_ % 2) ? "0" : "1";
+}
+
 static int64_t FxlToDartOrEarlier(fxl::TimePoint time) {
   int64_t dart_now = Dart_TimelineGetMicros();
   fxl::TimePoint fxl_now = fxl::TimePoint::Now();
@@ -76,7 +82,13 @@ void Animator::BeginFrame(fxl::TimePoint frame_start_time,
 
   last_begin_frame_time_ = frame_start_time;
   dart_frame_deadline_ = FxlToDartOrEarlier(frame_target_time);
-  engine_->BeginFrame(last_begin_frame_time_);
+  {
+    TRACE_EVENT2("flutter",
+                 "Framework Workload",
+                 "mode", "basic",
+                 "frame", FrameId());
+    engine_->BeginFrame(last_begin_frame_time_);
+  }
 
   if (!frame_scheduled_) {
     // We don't have another frame pending, so we're waiting on user input
@@ -96,9 +108,15 @@ void Animator::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
   producer_continuation_.Complete(std::move(layer_tree));
 
   blink::Threads::Gpu()->PostTask(
-      [ rasterizer = rasterizer_, pipeline = layer_tree_pipeline_ ]() {
+      [ rasterizer = rasterizer_,
+        pipeline = layer_tree_pipeline_,
+        frame_id = FrameId() ]() {
         if (!rasterizer.get())
           return;
+        TRACE_EVENT2("flutter",
+                     "GPU Workload",
+                     "mode", "basic",
+                     "frame", frame_id);
         rasterizer->Draw(pipeline);
       });
 }
