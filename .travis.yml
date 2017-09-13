@@ -1,5 +1,4 @@
 language: dart
-dart: stable
 sudo: false
 before_script:
   - ./travis/setup.sh
