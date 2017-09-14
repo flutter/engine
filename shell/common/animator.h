@@ -18,8 +18,7 @@ namespace shell {
 
 class Animator {
  public:
-  Animator(fxl::WeakPtr<Rasterizer> rasterizer,
-           VsyncWaiter* waiter,
+  Animator(fxl::WeakPtr<Rasterizer> rasterizer, VsyncWaiter* waiter,
            Engine* engine);
 
   ~Animator();
@@ -40,7 +39,7 @@ class Animator {
 
   void AwaitVSync();
 
-  const char *FrameId();
+  const char* FrameId();
 
   fxl::WeakPtr<Rasterizer> rasterizer_;
   VsyncWaiter* waiter_;

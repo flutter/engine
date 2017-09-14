@@ -11,8 +11,7 @@
 
 namespace shell {
 
-Animator::Animator(fxl::WeakPtr<Rasterizer> rasterizer,
-                   VsyncWaiter* waiter,
+Animator::Animator(fxl::WeakPtr<Rasterizer> rasterizer, VsyncWaiter* waiter,
                    Engine* engine)
     : rasterizer_(rasterizer),
       waiter_(waiter),
@@ -28,9 +27,7 @@ Animator::Animator(fxl::WeakPtr<Rasterizer> rasterizer,
 
 Animator::~Animator() = default;
 
-void Animator::Stop() {
-  paused_ = true;
-}
+void Animator::Stop() { paused_ = true; }
 
 void Animator::Start() {
   if (!paused_) {
@@ -43,9 +40,7 @@ void Animator::Start() {
 
 // This ID is used by the timeline component to correctly align
 // GPU Workloads events with their respective Framework Workload.
-const char *Animator::FrameId() {
-  return (frame_number_ % 2) ? "0" : "1";
-}
+const char* Animator::FrameId() { return (frame_number_ % 2) ? "0" : "1"; }
 
 static int64_t FxlToDartOrEarlier(fxl::TimePoint time) {
   int64_t dart_now = Dart_TimelineGetMicros();
@@ -83,10 +78,8 @@ void Animator::BeginFrame(fxl::TimePoint frame_start_time,
   last_begin_frame_time_ = frame_start_time;
   dart_frame_deadline_ = FxlToDartOrEarlier(frame_target_time);
   {
-    TRACE_EVENT2("flutter",
-                 "Framework Workload",
-                 "mode", "basic",
-                 "frame", FrameId());
+    TRACE_EVENT2("flutter", "Framework Workload", "mode", "basic", "frame",
+                 FrameId());
     engine_->BeginFrame(last_begin_frame_time_);
   }
 
@@ -107,18 +100,14 @@ void Animator::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
   // Commit the pending continuation.
   producer_continuation_.Complete(std::move(layer_tree));
 
-  blink::Threads::Gpu()->PostTask(
-      [ rasterizer = rasterizer_,
-        pipeline = layer_tree_pipeline_,
-        frame_id = FrameId() ]() {
-        if (!rasterizer.get())
-          return;
-        TRACE_EVENT2("flutter",
-                     "GPU Workload",
-                     "mode", "basic",
-                     "frame", frame_id);
-        rasterizer->Draw(pipeline);
-      });
+  blink::Threads::Gpu()->PostTask([
+    rasterizer = rasterizer_, pipeline = layer_tree_pipeline_,
+    frame_id = FrameId()
+  ]() {
+    if (!rasterizer.get()) return;
+    TRACE_EVENT2("flutter", "GPU Workload", "mode", "basic", "frame", frame_id);
+    rasterizer->Draw(pipeline);
+  });
 }
 
 void Animator::RequestFrame() {
@@ -154,8 +143,7 @@ void Animator::RequestFrame() {
 void Animator::AwaitVSync() {
   waiter_->AsyncWaitForVsync([self = weak_factory_.GetWeakPtr()](
       fxl::TimePoint frame_start_time, fxl::TimePoint frame_target_time) {
-    if (self)
-      self->BeginFrame(frame_start_time, frame_target_time);
+    if (self) self->BeginFrame(frame_start_time, frame_target_time);
   });
 
   engine_->NotifyIdle(dart_frame_deadline_);

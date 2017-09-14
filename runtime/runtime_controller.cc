@@ -27,8 +27,7 @@ RuntimeController::RuntimeController(RuntimeDelegate* client)
 RuntimeController::~RuntimeController() {}
 
 void RuntimeController::CreateDartController(
-    const std::string& script_uri,
-    const uint8_t* isolate_snapshot_data,
+    const std::string& script_uri, const uint8_t* isolate_snapshot_data,
     const uint8_t* isolate_snapshot_instr,
     const std::vector<uint8_t>& platform_kernel) {
   FXL_DCHECK(!dart_controller_);
@@ -48,8 +47,7 @@ void RuntimeController::CreateDartController(
 
   window->UpdateLocale(language_code_, country_code_);
 
-  if (semantics_enabled_)
-    window->UpdateSemanticsEnabled(semantics_enabled_);
+  if (semantics_enabled_) window->UpdateSemanticsEnabled(semantics_enabled_);
 }
 
 void RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
@@ -58,8 +56,7 @@ void RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
 
 void RuntimeController::SetLocale(const std::string& language_code,
                                   const std::string& country_code) {
-  if (language_code_ == language_code && country_code_ == country_code)
-    return;
+  if (language_code_ == language_code && country_code_ == country_code) return;
 
   language_code_ = language_code;
   country_code_ = country_code;
@@ -67,8 +64,7 @@ void RuntimeController::SetLocale(const std::string& language_code,
 }
 
 void RuntimeController::SetSemanticsEnabled(bool enabled) {
-  if (semantics_enabled_ == enabled)
-    return;
+  if (semantics_enabled_ == enabled) return;
   semantics_enabled_ = enabled;
   GetWindow()->UpdateSemanticsEnabled(semantics_enabled_);
 }
@@ -88,27 +84,21 @@ void RuntimeController::NotifyIdle(int64_t deadline) {
 
 void RuntimeController::DispatchPlatformMessage(
     fxl::RefPtr<PlatformMessage> message) {
-  TRACE_EVENT1("flutter",
-               "RuntimeController::DispatchPlatformMessage",
-               "mode",
+  TRACE_EVENT1("flutter", "RuntimeController::DispatchPlatformMessage", "mode",
                "basic");
   GetWindow()->DispatchPlatformMessage(std::move(message));
 }
 
 void RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
-  TRACE_EVENT1("flutter",
-               "RuntimeController::DispatchPointerDataPacket",
-               "mode",
-               "basic");
+  TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
+               "mode", "basic");
   GetWindow()->DispatchPointerDataPacket(packet);
 }
 
 void RuntimeController::DispatchSemanticsAction(int32_t id,
                                                 SemanticsAction action) {
-  TRACE_EVENT1("flutter",
-               "RuntimeController::DispatchSemanticsAction",
-               "mode",
+  TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction", "mode",
                "basic");
   GetWindow()->DispatchSemanticsAction(id, action);
 }
@@ -121,17 +111,14 @@ std::string RuntimeController::DefaultRouteName() {
   return client_->DefaultRouteName();
 }
 
-void RuntimeController::ScheduleFrame() {
-  client_->ScheduleFrame();
-}
+void RuntimeController::ScheduleFrame() { client_->ScheduleFrame(); }
 
 void RuntimeController::Render(Scene* scene) {
   client_->Render(scene->takeLayerTree());
 }
 
 void RuntimeController::UpdateSemantics(SemanticsUpdate* update) {
-  if (semantics_enabled_)
-    client_->UpdateSemantics(update->takeNodes());
+  if (semantics_enabled_) client_->UpdateSemantics(update->takeNodes());
 }
 
 void RuntimeController::HandlePlatformMessage(
