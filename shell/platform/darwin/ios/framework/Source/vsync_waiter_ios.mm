@@ -64,7 +64,7 @@
     // sizeof(jlong) * 8 / 10 * 3 (number of digits - 1)
     // sizeof(jlong) * 8 / 10 * 3 + 2 (number of digits + \0)
     char deadline[sizeof(jlong) * 8 / 10 * 3 + 2];
-    sprintf(deadline, "%lld", frame_target_time / 1000); // microseconds
+    sprintf(deadline, "%lld", frame_target_time / 1000);  // microseconds
     TRACE_EVENT2("flutter", "VSYNC", "mode", "basic", "deadline", deadline);
   }
 
