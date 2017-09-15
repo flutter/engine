@@ -88,9 +88,8 @@ public class TextInputPlugin implements MethodCallHandler {
             return InputType.TYPE_CLASS_PHONE;
 
         int textType = InputType.TYPE_CLASS_TEXT;
-        if (inputType.equals("TextInputType.multiline")) {
+        if (inputType.equals("TextInputType.multiline"))
             textType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
-        }
         else if (inputType.equals("TextInputType.emailAddress"))
             textType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
         else if (inputType.equals("TextInputType.url"))
