@@ -41,10 +41,10 @@ void Animator::Start() {
   RequestFrame();
 }
 
-// This ID is used by the timeline component to correctly align
+// This Parity is used by the timeline component to correctly align
 // GPU Workloads events with their respective Framework Workload.
-const char* Animator::FrameId() {
-  return (frame_number_ % 2) ? "0" : "1";
+const char* Animator::FrameParity() {
+  return (frame_number_ % 2) ? "even" : "odd";
 }
 
 static int64_t FxlToDartOrEarlier(fxl::TimePoint time) {
@@ -84,7 +84,7 @@ void Animator::BeginFrame(fxl::TimePoint frame_start_time,
   dart_frame_deadline_ = FxlToDartOrEarlier(frame_target_time);
   {
     TRACE_EVENT2("flutter", "Framework Workload", "mode", "basic", "frame",
-                 FrameId());
+                 FrameParity());
     engine_->BeginFrame(last_begin_frame_time_);
   }
 
@@ -107,7 +107,7 @@ void Animator::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
 
   blink::Threads::Gpu()->PostTask([
     rasterizer = rasterizer_, pipeline = layer_tree_pipeline_,
-    frame_id = FrameId()
+    frame_id = FrameParity()
   ]() {
     if (!rasterizer.get())
       return;
