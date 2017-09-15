@@ -199,7 +199,7 @@ class _FrontendCompiler implements CompilerInterface {
     return Uri.base.resolve(path);
   }
 
-  String _severityName(Severity severity) {
+  static String _severityName(Severity severity) {
     switch (severity) {
       case Severity.error:
         return "Error";
