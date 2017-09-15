@@ -56,6 +56,9 @@
   // Vsync" checkbox in the timeline can be enabled.
   // See: https://github.com/catapult-project/catapult/blob/2091404475cbba9b786
   // 442979b6ec631305275a6/tracing/tracing/extras/vsync/vsync_auditor.html#L26
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+  TRACE_EVENT1("flutter", "VSYNC", "mode", "basic");
+#else
   {
     // Every 10 bits we can potentially increase the size of the output
     // by 3 digis.
@@ -64,9 +67,10 @@
     // sizeof(jlong) * 8 / 10 * 3 (number of digits - 1)
     // sizeof(jlong) * 8 / 10 * 3 + 2 (number of digits + \0)
     char deadline[sizeof(jlong) * 8 / 10 * 3 + 2];
-    sprintf(deadline, "%lld", frame_target_time / 1000);  // microseconds
+    sprintf(deadline, "%lld", frameTargetTimeNanos / 1000);  // microseconds
     TRACE_EVENT2("flutter", "VSYNC", "mode", "basic", "deadline", deadline);
   }
+#endif
 
   // Note: Even though we know we are on the UI thread already (since the
   // display link was scheduled on the UI thread in the contructor), we use

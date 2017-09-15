@@ -59,6 +59,9 @@ static void OnNativeVsync(JNIEnv* env,
   // Vsync" checkbox in the timeline can be enabled.
   // See: https://github.com/catapult-project/catapult/blob/2091404475cbba9b786
   // 442979b6ec631305275a6/tracing/tracing/extras/vsync/vsync_auditor.html#L26
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+  TRACE_EVENT1("flutter", "VSYNC", "mode", "basic");
+#else
   {
     // Every 10 bits we can potentially increase the size of the output
     // by 3 digis.
@@ -70,6 +73,7 @@ static void OnNativeVsync(JNIEnv* env,
     sprintf(deadline, "%lld", frameTargetTimeNanos / 1000);  // microseconds
     TRACE_EVENT2("flutter", "VSYNC", "mode", "basic", "deadline", deadline);
   }
+#endif
   fxl::WeakPtr<VsyncWaiterAndroid>* weak =
       reinterpret_cast<fxl::WeakPtr<VsyncWaiterAndroid>*>(cookie);
   VsyncWaiterAndroid* waiter = weak->get();
