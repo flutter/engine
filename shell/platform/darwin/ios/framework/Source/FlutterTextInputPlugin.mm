@@ -280,6 +280,8 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
     [_textInputDelegate performAction:FlutterTextInputActionDone withClient:_textInputClient];
     return NO;
   }
+  if (self.returnKeyType == UIReturnKeyDefault && [text isEqualToString:@"\n"])
+    [_textInputDelegate performAction:FlutterTextInputActionNewline withClient:_textInputClient];
   return YES;
 }
 

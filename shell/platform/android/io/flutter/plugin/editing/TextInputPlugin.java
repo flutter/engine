@@ -105,7 +105,7 @@ public class TextInputPlugin implements MethodCallHandler {
     }
 
     private static int inputActionFromTextInputAction(String inputAction) {
-        if (inputAction.equals("TextInputAction.none"))
+        if (inputAction.equals("TextInputAction.newline"))
             return EditorInfo.IME_ACTION_NONE;
         return EditorInfo.IME_ACTION_DONE;
     }

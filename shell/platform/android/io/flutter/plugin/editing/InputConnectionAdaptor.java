@@ -166,7 +166,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
         switch (actionCode) {
             case EditorInfo.IME_ACTION_NONE:
                 mFlutterChannel.invokeMethod("TextInputClient.performAction",
-                    Arrays.asList(mClient, "TextInputAction.none"));
+                    Arrays.asList(mClient, "TextInputAction.newline"));
                 break;
             default:
             case EditorInfo.IME_ACTION_DONE:
