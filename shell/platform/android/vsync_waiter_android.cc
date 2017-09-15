@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/android/vsync_waiter_android.h"
 
+#include <cmath>
 #include <utility>
 
 #include "flutter/common/threads.h"
@@ -63,13 +64,8 @@ static void OnNativeVsync(JNIEnv* env,
   TRACE_EVENT1("flutter", "VSYNC", "mode", "basic");
 #else
   {
-    // Every 10 bits we can potentially increase the size of the output
-    // by 3 digis.
-    // sizeof(jlong) * 8 (number of bits)
-    // sizeof(jlong) * 8 / 10 (number of groups of 10 bits)
-    // sizeof(jlong) * 8 / 10 * 3 (number of digits - 1)
-    // sizeof(jlong) * 8 / 10 * 3 + 2 (number of digits + \0)
-    char deadline[sizeof(jlong) * 8 / 10 * 3 + 2];
+    constexpr size_t num_chars = sizeof(jlong) * CHAR_BIT * 3.4 + 2;
+    char deadline[num_chars];
     sprintf(deadline, "%lld", frameTargetTimeNanos / 1000);  // microseconds
     TRACE_EVENT2("flutter", "VSYNC", "mode", "basic", "deadline", deadline);
   }
