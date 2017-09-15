@@ -124,9 +124,9 @@ public class TextInputPlugin implements MethodCallHandler {
         if (mConfiguration.isNull("inputAction")) {
             // If an explicit input action isn't set, then default to none for multi-line fields
             // and done for single line fields.
-            enterAction =
-                (InputType.TYPE_TEXT_FLAG_MULTI_LINE & outAttrs.inputType) != 0 ?
-                    EditorInfo.IME_ACTION_NONE : EditorInfo.IME_ACTION_DONE;
+            enterAction = (InputType.TYPE_TEXT_FLAG_MULTI_LINE & outAttrs.inputType) != 0
+                ? EditorInfo.IME_ACTION_NONE
+                : EditorInfo.IME_ACTION_DONE;
         } else {
             enterAction = inputActionFromTextInputAction(mConfiguration.getString("inputAction"));
         }
