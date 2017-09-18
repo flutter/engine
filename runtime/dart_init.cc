@@ -131,7 +131,7 @@ void IsolateShutdownCallback(void* callback_data) {
     FXL_CHECK(LogIfError(sticky_error));
   }
   UIDartState* dart_state = static_cast<UIDartState*>(callback_data);
-  IsolateClient *isolate_client = dart_state->isolate_client();
+  IsolateClient* isolate_client = dart_state->isolate_client();
   if (isolate_client) {
     isolate_client->WillShutDownIsolate(dart_state->isolate());
   }
@@ -194,9 +194,10 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
   return nullptr;
 #else   // FLUTTER_RUNTIME_MODE
   blink::UIDartState* dart_state = new blink::UIDartState(nullptr, nullptr);
-  Dart_Isolate isolate = Dart_CreateIsolate(
-      script_uri, "main", g_default_isolate_snapshot_data,
-      g_default_isolate_snapshot_instructions, nullptr, static_cast<tonic::DartState*>(dart_state), error);
+  Dart_Isolate isolate =
+      Dart_CreateIsolate(script_uri, "main", g_default_isolate_snapshot_data,
+                         g_default_isolate_snapshot_instructions, nullptr,
+                         static_cast<tonic::DartState*>(dart_state), error);
   FXL_CHECK(isolate) << error;
   dart_state->set_debug_name_prefix(script_uri);
   dart_state->SetIsolate(isolate);
