@@ -52,7 +52,7 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
 }  // namespace
 
 /**
- * Represents a semantics object that has children and hence has to be presented to the OS as an
+ * Represents a semantics object that has children and hence has to be presented to the OS as a
  * UIAccessibilityContainer.
  *
  * The SemanticsObject class cannot implement the UIAccessibilityContainer protocol because an
@@ -60,14 +60,14 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
  * UIAccessibilityContainer.
  *
  * With the help of SemanticsObjectContainer, the hierarchy of semantic objects received from
- * the framework...
+ * the framework, such as:
  *
  * SemanticsObject1
  *     SemanticsObject2
  *         SemanticsObject3
  *         SemanticsObject4
  *
- * ...is translated into the following hierarchy, which is understood by iOS:
+ * is translated into the following hierarchy, which is understood by iOS:
  *
  * SemanticsObjectContainer1
  *     SemanticsObject1
@@ -76,7 +76,11 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
  *         SemanticsObject3
  *         SemanticsObject4
  *
- * The SemanticsObjects have semantic information attached to them which is interpreted by
+ * From Flutter's view of the world (the first tree seen above), we construct iOS's view of the
+ * world (second tree) as follows: We replace each SemanticsObjects that has children with a
+ * SemanticsObjectContainer, which has the original SemanticsObject and its children as children.
+ *
+ * SemanticsObjects have semantic information attached to them which is interpreted by
  * VoiceOver (they return YES for isAccessibilityElement). The SemanticsObjectContainers are just
  * there for structure and they don't provide any semantic information to VoiceOver (they return
  * NO for isAccessibilityElement).
@@ -114,7 +118,6 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
   if (self) {
     _bridge = bridge;
     _uid = uid;
-    _container = [[SemanticsObjectContainer alloc] initWithSemanticsObject:self bridge:bridge];
   }
 
   return self;
@@ -138,7 +141,8 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
   _bridge = nullptr;
   _children.clear();
   [_parent release];
-  [_container release];
+  if (_container != nil)
+    [_container release];
   [super dealloc];
 }
 
@@ -202,7 +206,12 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
 #pragma mark - UIAccessibilityElement protocol
 
 - (id)accessibilityContainer {
-  return [self hasChildren] ? _container : _parent->_container;
+  if ([self hasChildren]) {
+    if (_container == nil)
+      _container = [[SemanticsObjectContainer alloc] initWithSemanticsObject:self bridge:_bridge];
+    return _container;
+  }
+  return [_parent accessibilityContainer];
 }
 
 #pragma mark - UIAccessibilityAction overrides
@@ -286,7 +295,7 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
   if (element == _semanticsObject)
     return 0;
   std::vector<SemanticsObject*>* children = [_semanticsObject children];
-  for (unsigned i = 0; i < children->size(); i++) {
+  for (size_t i = 0; i < children->size(); i++) {
     SemanticsObject* child = (*children)[i];
     if ([child hasChildren]) {
       if ([child accessibilityContainer] == element)
