@@ -601,7 +601,15 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   _viewportMetrics.device_pixel_ratio = scale;
   _viewportMetrics.physical_width = viewSize.width * scale;
   _viewportMetrics.physical_height = viewSize.height * scale;
-  _viewportMetrics.physical_padding_top = [self statusBarPadding] * scale;
+
+  if (@available(iOS 11, *)) {
+    _viewportMetrics.physical_padding_top = self.view.safeAreaInsets.top * scale;
+    _viewportMetrics.physical_padding_left = self.view.safeAreaInsets.left * scale;
+    _viewportMetrics.physical_padding_right = self.view.safeAreaInsets.right * scale;
+    _viewportMetrics.physical_padding_bottom = self.view.safeAreaInsets.bottom * scale;
+  } else {
+    _viewportMetrics.physical_padding_top = [self statusBarPadding] * scale;
+  }
   [self updateViewportMetrics];
 
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
