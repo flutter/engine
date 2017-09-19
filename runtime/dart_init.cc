@@ -193,7 +193,7 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
   // No VM-service in release mode.
   return nullptr;
 #else   // FLUTTER_RUNTIME_MODE
-  blink::UIDartState* dart_state = new blink::UIDartState(nullptr, nullptr);
+  UIDartState* dart_state = new UIDartState(nullptr, nullptr);
   Dart_Isolate isolate =
       Dart_CreateIsolate(script_uri, "main", g_default_isolate_snapshot_data,
                          g_default_isolate_snapshot_instructions, nullptr,
