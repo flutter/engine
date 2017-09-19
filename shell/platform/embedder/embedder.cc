@@ -243,7 +243,7 @@ FlutterResult FlutterEngineSendPlatformMessage(
 
   auto holder = reinterpret_cast<PlatformViewHolder*>(engine);
 
-  auto message = ftl::MakeRefCounted<blink::PlatformMessage>(
+  auto message = fxl::MakeRefCounted<blink::PlatformMessage>(
       flutter_message->channel,
       std::vector<uint8_t>(
           flutter_message->message,
