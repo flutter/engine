@@ -95,7 +95,7 @@ typedef struct {
 } FlutterPointerEvent;
 
 typedef struct {
-  // The size of this struct. Must be sizeof(FlutterPlatformMessage)
+  // The size of this struct. Must be sizeof(FlutterPlatformMessage).
   size_t struct_size;
   const char* channel;
   const uint8_t* message;
