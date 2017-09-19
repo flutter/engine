@@ -17,10 +17,11 @@
 
 namespace shell {
 
-PlatformViewIOS::PlatformViewIOS(CALayer* layer)
+PlatformViewIOS::PlatformViewIOS(CALayer* layer, NSObject<FlutterBinaryMessenger>* binaryMessenger)
     : PlatformView(std::make_unique<GPURasterizer>(std::make_unique<ProcessInfoMac>())),
       ios_surface_(IOSSurface::Create(surface_config_, layer)),
-      weak_factory_(this) {}
+      weak_factory_(this),
+      binaryMessenger_(binaryMessenger) {}
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
@@ -111,6 +112,10 @@ void PlatformViewIOS::RunFromSource(const std::string& assets_directory,
 
   latch->Wait();
   delete latch;
+}
+
+NSObject<FlutterBinaryMessenger>* PlatformViewIOS::GetBinaryMessenger() {
+  return binaryMessenger_;
 }
 
 }  // namespace shell
