@@ -44,6 +44,7 @@ constexpr char kAssetChannel[] = "flutter/assets";
 constexpr char kLifecycleChannel[] = "flutter/lifecycle";
 constexpr char kNavigationChannel[] = "flutter/navigation";
 constexpr char kLocalizationChannel[] = "flutter/localization";
+constexpr char kSystemChannel[] = "flutter/system";
 
 bool PathExists(const std::string& path) {
   return access(path.c_str(), R_OK) == 0;
@@ -74,6 +75,7 @@ Engine::Engine(PlatformView* platform_view)
           platform_view->GetVsyncWaiter(),
           this)),
       load_script_error_(tonic::kNoError),
+      text_scale_factor_(1.0),
       activity_running_(false),
       have_surface_(false),
       weak_factory_(this) {}
@@ -312,7 +314,12 @@ void Engine::DispatchPlatformMessage(
     if (HandleLifecyclePlatformMessage(message.get()))
       return;
   } else if (message->channel() == kLocalizationChannel) {
-    if (HandleLocalizationPlatformMessage(std::move(message)))
+    if (HandleLocalizationPlatformMessage(message.get()))
+      return;
+  } else if (message->channel() == kSystemChannel) {
+    // This only handles textScaleFactor changes: other system messages are
+    // handled by DispatchPlatformMessage below.
+    if (HandleSystemPlatformMessage(message.get()))
       return;
   }
 
@@ -366,8 +373,7 @@ bool Engine::HandleNavigationPlatformMessage(
   return true;
 }
 
-bool Engine::HandleLocalizationPlatformMessage(
-    fxl::RefPtr<blink::PlatformMessage> message) {
+bool Engine::HandleLocalizationPlatformMessage(blink::PlatformMessage* message) {
   const auto& data = message->data();
 
   rapidjson::Document document;
@@ -393,6 +399,35 @@ bool Engine::HandleLocalizationPlatformMessage(
   country_code_ = country.GetString();
   if (runtime_)
     runtime_->SetLocale(language_code_, country_code_);
+  return true;
+}
+
+bool Engine::HandleSystemPlatformMessage(blink::PlatformMessage* message) {
+  const auto& data = message->data();
+  rapidjson::Document document;
+  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+
+  if (document.HasParseError() || !document.IsObject())
+    return false;
+
+  auto root = document.GetObject();
+  auto type = root.FindMember("type");
+  if (type == root.MemberEnd() || type->value != "systemSettings")
+    return false;
+
+  // This only handles textScaleFactor changes: other system messages
+  // are handled by DispatchPlatformMessage.
+  auto text_scale_factor = root.FindMember("textScaleFactor");
+  if (text_scale_factor == root.MemberEnd() ||
+      !text_scale_factor->value.IsDouble()) {
+    return false;
+  }
+  text_scale_factor_ = text_scale_factor->value.GetDouble();
+  if (runtime_) {
+    runtime_->SetTextScaleFactor(text_scale_factor_);
+    if (have_surface_)
+      ScheduleFrame();
+  }
   return true;
 }
 
@@ -445,6 +480,7 @@ void Engine::ConfigureRuntime(const std::string& script_uri,
       default_isolate_snapshot_instr, platform_kernel);
   runtime_->SetViewportMetrics(viewport_metrics_);
   runtime_->SetLocale(language_code_, country_code_);
+  runtime_->SetTextScaleFactor(text_scale_factor_);
   runtime_->SetSemanticsEnabled(semantics_enabled_);
 }
 
