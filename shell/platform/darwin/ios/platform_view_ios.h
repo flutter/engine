@@ -56,7 +56,9 @@ class PlatformViewIOS : public PlatformView {
                      const std::string& main,
                      const std::string& packages) override;
 
-  NSObject<FlutterBinaryMessenger>* GetBinaryMessenger();
+  NSObject<FlutterBinaryMessenger>* binary_messenger() const {
+    return binary_messenger_;
+  }
 
  private:
   std::unique_ptr<IOSSurface> ios_surface_;
@@ -64,7 +66,7 @@ class PlatformViewIOS : public PlatformView {
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
   fxl::Closure firstFrameCallback_;
   fxl::WeakPtrFactory<PlatformViewIOS> weak_factory_;
-  NSObject<FlutterBinaryMessenger>* binaryMessenger_;
+  NSObject<FlutterBinaryMessenger>* binary_messenger_;
 
   void SetupAndLoadFromSource(const std::string& assets_directory,
                               const std::string& main,

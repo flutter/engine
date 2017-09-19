@@ -334,7 +334,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
     : view_(view), platform_view_(platform_view), objects_([[NSMutableDictionary alloc] init]) {
   accessibilityChannel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
-      binaryMessenger:platform_view->GetBinaryMessenger()
+      binaryMessenger:platform_view->binary_messenger()
                 codec:[FlutterStandardMessageCodec sharedInstance]]);
   [accessibilityChannel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
@@ -420,7 +420,7 @@ void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEven
     // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
     UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, @"");
   } else {
-    assert(false);
+    NSCAssert(NO, @"Invalid event type %@", type);
   }
 }
 
