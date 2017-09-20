@@ -211,7 +211,7 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
       _container = [[SemanticsObjectContainer alloc] initWithSemanticsObject:self bridge:_bridge];
     return _container;
   }
-  NSAssert(_parent != nil, @"illegal access to parent");
+  NSAssert(_parent != nil, @"Illegal access to non-existent parent of root semantics node");
   return [_parent accessibilityContainer];
 }
 
