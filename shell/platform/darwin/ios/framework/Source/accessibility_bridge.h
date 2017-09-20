@@ -64,7 +64,7 @@ class AccessibilityBridge final {
   UIView* view_;
   PlatformViewIOS* platform_view_;
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
-  fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibilityChannel_;
+  fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };

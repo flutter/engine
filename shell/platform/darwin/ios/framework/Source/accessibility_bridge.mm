@@ -332,18 +332,18 @@ namespace shell {
 
 AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform_view)
     : view_(view), platform_view_(platform_view), objects_([[NSMutableDictionary alloc] init]) {
-  accessibilityChannel_.reset([[FlutterBasicMessageChannel alloc]
+  accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->binary_messenger()
                 codec:[FlutterStandardMessageCodec sharedInstance]]);
-  [accessibilityChannel_.get() setMessageHandler:^(id message, FlutterReply reply) {
+  [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
   }];
 }
 
 AccessibilityBridge::~AccessibilityBridge() {
   view_.accessibilityElements = nil;
-  [accessibilityChannel_.get() setMessageHandler:nil];
+  [accessibility_channel_.get() setMessageHandler:nil];
 }
 
 void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> nodes) {
