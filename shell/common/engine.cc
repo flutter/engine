@@ -373,7 +373,8 @@ bool Engine::HandleNavigationPlatformMessage(
   return true;
 }
 
-bool Engine::HandleLocalizationPlatformMessage(blink::PlatformMessage* message) {
+bool Engine::HandleLocalizationPlatformMessage(
+    blink::PlatformMessage* message) {
   const auto& data = message->data();
 
   rapidjson::Document document;
@@ -428,7 +429,9 @@ bool Engine::HandleSystemPlatformMessage(blink::PlatformMessage* message) {
     if (have_surface_)
       ScheduleFrame();
   }
-  return true;
+  // If the only members were "type" and "textScaleFactor", then we're done.
+  // If there are more members, then we need to send it on to other handlers.
+  return root.MemberCount() == 2;
 }
 
 void Engine::DispatchPointerDataPacket(const PointerDataPacket& packet) {
