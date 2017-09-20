@@ -28,5 +28,6 @@ part 'natives.dart';
 part 'painting.dart';
 part 'pointer.dart';
 part 'semantics.dart';
+part 'testing_hooks.dart';
 part 'text.dart';
 part 'window.dart';
