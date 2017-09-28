@@ -77,7 +77,6 @@ void main() {
       _updateWindowMetrics(0.1234, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
-      expect(devicePixelRatio, isNotNull);
       expect(devicePixelRatio, equals(0.1234));
     });
 
@@ -97,7 +96,6 @@ void main() {
       _updateLocale('en', 'US');
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
-      expect(locale, isNotNull);
       expect(locale, equals(const Locale('en', 'US')));
     });
 
@@ -117,7 +115,6 @@ void main() {
       _beginFrame(1234);
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
-      expect(start, isNotNull);
       expect(start, equals(const Duration(microseconds: 1234)));
     });
 
@@ -184,7 +181,7 @@ void main() {
 
       runZoned(() {
         innerZone = Zone.current;
-        window.onSemanticsAction = (int value, __) {
+        window.onSemanticsAction = (int value, _) {
           runZone = Zone.current;
           action = value;
         };
@@ -193,7 +190,6 @@ void main() {
       _dispatchSemanticsAction(1234, 0);
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
-      expect(action, isNotNull);
       expect(action, equals(1234));
     });
 
@@ -204,7 +200,7 @@ void main() {
 
       runZoned(() {
         innerZone = Zone.current;
-        window.onPlatformMessage = (String value, __, ___) {
+        window.onPlatformMessage = (String value, _, __) {
           runZone = Zone.current;
           name = value;
         };
@@ -233,7 +229,6 @@ void main() {
       _updateTextScaleFactor(0.5);
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
-      expect(textScaleFactor, isNotNull);
       expect(textScaleFactor, equals(0.5));
     });
   });
