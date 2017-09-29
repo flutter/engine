@@ -206,10 +206,10 @@ void main() {
         };
       });
 
-      _dispatchPlatformMessage("testName", null, null);
+      _dispatchPlatformMessage('testName', null, null);
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
-      expect(name, equals("testName"));
+      expect(name, equals('testName'));
     });
 
     test('onTextScaleFactorChanged preserves callback zone', () {
