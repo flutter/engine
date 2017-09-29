@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "flutter/common/threads.h"
+#include "flutter/flow/platform_surface.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_block.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -19,6 +20,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/flutter_main_ios.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/flutter_touch_mapper.h"
+#include "flutter/shell/platform/darwin/ios/ios_platform_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #include "lib/fxl/functional/make_copyable.h"
 #include "lib/fxl/time/time_delta.h"
@@ -146,7 +148,6 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
         }
       });
   _platformView->SetupResourceContextOnIOThread();
-
   _localizationChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/localization"
       binaryMessenger:self
@@ -187,7 +188,6 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [_textInputPlugin.get() handleMethodCall:call result:result];
   }];
-
   [self setupNotificationCenterObservers];
 }
 
@@ -773,5 +773,19 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
   NSAssert(channel, @"The channel must not be null");
   _platformView->platform_message_router().SetMessageHandler(channel.UTF8String, handler);
+}
+
+#pragma mark - FlutterPlatformSurfaceRegistry
+
+- (NSUInteger)registerPlatformSurface:(NSObject<FlutterPlatformSurface>*)surface {
+  return flow::PlatformSurface::RegisterPlatformSurface(new shell::IOSPlatformSurfaceGL(surface));
+}
+
+- (void)unregisterPlatformSurface:(NSUInteger)surfaceId {
+  flow::PlatformSurface::DisposePlatformSurface(surfaceId);
+}
+
+- (void)newPlatformSurfaceFrameAvailable:(NSUInteger)surfaceId {
+  _platformView->ScheduleFrame();
 }
 @end

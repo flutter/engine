@@ -219,6 +219,14 @@
   return nil;
 }
 
+- (NSObject<FlutterPlatformSurfaceRegistry>*)platformSurfaceRegistry {
+  UIViewController* rootViewController = _window.rootViewController;
+  if ([rootViewController conformsToProtocol:@protocol(FlutterPlatformSurfaceRegistry)]) {
+    return (NSObject<FlutterPlatformSurfaceRegistry>*)rootViewController;
+  }
+  return nil;
+}
+
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
   self.pluginPublications[pluginKey] = [NSNull null];
@@ -256,6 +264,10 @@
 
 - (NSObject<FlutterBinaryMessenger>*)messenger {
   return [_appDelegate binaryMessenger];
+}
+
+- (NSObject<FlutterPlatformSurfaceRegistry>*)platformSurfaceRegistry {
+  return [_appDelegate platformSurfaceRegistry];
 }
 
 - (void)publish:(NSObject*)value {

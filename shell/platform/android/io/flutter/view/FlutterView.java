@@ -11,11 +11,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Matrix;
+import android.graphics.SurfaceTexture;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -37,6 +41,9 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.VsyncWaiter;
+import java.io.FileDescriptor;
+import java.io.File;
+import java.io.InputStream;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -106,12 +113,14 @@ public class FlutterView extends SurfaceView
     private final List<FirstFrameListener> mFirstFrameListeners;
     private long mNativePlatformView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
+    private MediaPlayer mMediaPlayer;
+    private static Map<Long, SurfaceTexture> surfaceIdToSurfaceTexture = new HashMap<Long, SurfaceTexture>();
 
     public FlutterView(Context context) {
         this(context, null);
     }
 
-    public FlutterView(Context context, AttributeSet attrs) {
+    public FlutterView(final Context context, AttributeSet attrs) {
         super(context, attrs);
 
         mIsSoftwareRenderingEnabled = nativeGetIsSoftwareRenderingEnabled();
@@ -590,6 +599,27 @@ public class FlutterView extends SurfaceView
         return nativeGetBitmap(mNativePlatformView);
     }
 
+    public static long createSurfaceTexture() {
+        final long surfaceId = nativeAllocatePlatformSurface();
+        final long textureId = nativeGetPlatformSurfaceTextureID(surfaceId);
+        surfaceIdToSurfaceTexture.put(surfaceId, new SurfaceTexture((int)textureId));
+        return surfaceId;
+    }
+
+    public static void releaseSurfaceTexture(long surfaceId) {
+        SurfaceTexture surfaceTexture = surfaceIdToSurfaceTexture.remove(surfaceId);
+        surfaceTexture.release();
+        nativeReleasePlatformSurface(surfaceId);
+    }
+
+    public static SurfaceTexture getSurfaceTexture(long surfaceId) {
+        return surfaceIdToSurfaceTexture.get(surfaceId);
+    }
+
+    public void markSurfaceTextureDirty(long surfaceId) {
+        nativeMarkPlatformSurfaceFrameAvailable(mNativePlatformView, surfaceId);
+    }
+
     private static native long nativeAttach(FlutterView view);
 
     private static native String nativeGetObservatoryUri();
@@ -652,6 +682,14 @@ public class FlutterView extends SurfaceView
         long nativePlatformViewAndroid, int responseId);
 
     private static native boolean nativeGetIsSoftwareRenderingEnabled();
+
+    private static native long nativeAllocatePlatformSurface();
+
+    private static native void nativeMarkPlatformSurfaceFrameAvailable(long nativePlatformViewAndroid, long surfaceId);
+
+    private static native void nativeReleasePlatformSurface(long surfaceId);
+
+    private static native long nativeGetPlatformSurfaceTextureID(long surfaceId);
 
     private void updateViewportMetrics() {
         if (!isAttached())
@@ -740,6 +778,11 @@ public class FlutterView extends SurfaceView
         for (FirstFrameListener listener : mFirstFrameListeners) {
             listener.onFirstFrame();
         }
+    }
+
+    // Called by native to get a new frame on an platformSurface.
+    static private void updateTexImage(long surfaceId) {
+        surfaceIdToSurfaceTexture.get(surfaceId).updateTexImage();
     }
 
     // ACCESSIBILITY

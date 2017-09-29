@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/android_platform_surface_gl.h"
 #include "flutter/common/settings.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
@@ -54,6 +55,12 @@ static jmethodID g_on_first_frame_method = nullptr;
 void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
   env->CallVoidMethod(obj, g_on_first_frame_method);
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
+}
+
+static jmethodID g_update_tex_image_method;
+void FlutterViewUpdateTexImage(JNIEnv* env, jlong surfaceId) {
+  env->CallStaticVoidMethod(g_flutter_view_class->obj(), g_update_tex_image_method, surfaceId);
+  FTL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 }
 
 // Called By Java
@@ -194,6 +201,30 @@ static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {
   return blink::Settings::Get().enable_software_rendering;
 }
 
+static jlong AllocatePlatformSurface(JNIEnv* env, jobject jcaller) {
+  AndroidPlatformSurfaceGL* surface = new AndroidPlatformSurfaceGL();
+  jlong surfaceId = flow::PlatformSurface::RegisterPlatformSurface(surface);
+  return surfaceId;
+}
+
+static void MarkPlatformSurfaceFrameAvailable(JNIEnv* env,
+                                            jobject jcaller,
+                                            jlong platform_view,
+                                            jlong surfaceId) {
+  AndroidPlatformSurfaceGL *surface = static_cast<AndroidPlatformSurfaceGL*>(flow::PlatformSurface::GetPlatformSurface(surfaceId));
+  surface->MarkNewFrameAvailable();
+  PLATFORM_VIEW->ScheduleFrame();
+}
+
+static void ReleasePlatformSurface(JNIEnv* env, jobject jcaller, jlong surfaceId) {
+  flow::PlatformSurface::DisposePlatformSurface(surfaceId);
+}
+
+static jlong GetPlatformSurfaceTextureID(JNIEnv* env, jobject jcaller, jlong surfaceId) {
+  AndroidPlatformSurfaceGL* surface = static_cast<AndroidPlatformSurfaceGL*>(flow::PlatformSurface::GetPlatformSurface(surfaceId));
+  return surface->texture_id();
+}
+
 static void InvokePlatformMessageResponseCallback(JNIEnv* env,
                                                   jobject jcaller,
                                                   jlong platform_view,
@@ -319,6 +350,26 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .signature = "()Z",
           .fnPtr = reinterpret_cast<void*>(&shell::GetIsSoftwareRendering),
       },
+      {
+         .name = "nativeAllocatePlatformSurface",
+         .signature = "()J",
+         .fnPtr = reinterpret_cast<void*>(&shell::AllocatePlatformSurface),
+      },
+      {
+         .name = "nativeGetPlatformSurfaceTextureID",
+         .signature = "(J)J",
+         .fnPtr = reinterpret_cast<void*>(&shell::GetPlatformSurfaceTextureID),
+      },
+      {
+         .name = "nativeMarkPlatformSurfaceFrameAvailable",
+         .signature = "(JJ)V",
+         .fnPtr = reinterpret_cast<void*>(&shell::MarkPlatformSurfaceFrameAvailable),
+      },
+      {
+         .name = "nativeReleasePlatformSurface",
+         .signature = "(J)V",
+         .fnPtr = reinterpret_cast<void*>(&shell::ReleasePlatformSurface),
+      },
   };
 
   if (env->RegisterNatives(g_flutter_view_class->obj(), methods,
@@ -353,6 +404,13 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       env->GetMethodID(g_flutter_view_class->obj(), "onFirstFrame", "()V");
 
   if (g_on_first_frame_method == nullptr) {
+    return false;
+  }
+
+  g_update_tex_image_method =
+      env->GetStaticMethodID(g_flutter_view_class->obj(), "updateTexImage", "(J)V");
+
+  if (g_update_tex_image_method == nullptr) {
     return false;
   }
   return true;

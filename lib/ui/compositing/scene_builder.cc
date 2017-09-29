@@ -14,6 +14,7 @@
 #include "flutter/flow/layers/performance_overlay_layer.h"
 #include "flutter/flow/layers/physical_model_layer.h"
 #include "flutter/flow/layers/picture_layer.h"
+#include "flutter/flow/layers/platform_surface_layer.h"
 #include "flutter/flow/layers/shader_mask_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/lib/ui/painting/matrix.h"
@@ -51,6 +52,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
   V(SceneBuilder, pushPhysicalModel)                \
   V(SceneBuilder, pop)                              \
   V(SceneBuilder, addPicture)                       \
+  V(SceneBuilder, addPlatformSurface)                 \
   V(SceneBuilder, addChildScene)                    \
   V(SceneBuilder, addPerformanceOverlay)            \
   V(SceneBuilder, setRasterizerTracingThreshold)    \
@@ -220,6 +222,21 @@ void SceneBuilder::addPicture(double dx,
   layer->set_picture(picture->picture());
   layer->set_is_complex(!!(hints & 1));
   layer->set_will_change(!!(hints & 2));
+  m_currentLayer->Add(std::move(layer));
+}
+
+void SceneBuilder::addPlatformSurface(double dx,
+                                    double dy,
+                                    double width,
+                                    double height,
+                                    int surfaceId) {
+  if (!m_currentLayer)
+    return;
+
+  std::unique_ptr<flow::PlatformSurfaceLayer> layer(new flow::PlatformSurfaceLayer());
+  layer->set_offset(SkPoint::Make(dx, dy));
+  layer->set_size(SkSize::Make(width, height));
+  layer->set_surface_id(surfaceId);
   m_currentLayer->Add(std::move(layer));
 }
 

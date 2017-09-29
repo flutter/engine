@@ -29,6 +29,8 @@ void FlutterViewUpdateSemantics(JNIEnv* env,
 
 void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj);
 
+void FlutterViewUpdateTexImage(JNIEnv* env, jlong imageId);
+
 }  // namespace shell
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_

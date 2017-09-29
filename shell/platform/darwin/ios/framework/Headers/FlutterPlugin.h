@@ -10,6 +10,7 @@
 #include "FlutterBinaryMessenger.h"
 #include "FlutterChannels.h"
 #include "FlutterCodecs.h"
+#include "FlutterPlatformSurface.h"
 
 NS_ASSUME_NONNULL_BEGIN
 @protocol FlutterPluginRegistrar;
@@ -141,6 +142,14 @@ NS_ASSUME_NONNULL_BEGIN
  - Returns: The messenger.
  */
 - (NSObject<FlutterBinaryMessenger>*)messenger;
+
+/**
+ Returns a `FlutterPlatformSurfaceRegistry` for registering surfaces
+ provided by the plugin.
+
+ - Returns: The surface registry.
+ */
+- (NSObject<FlutterPlatformSurfaceRegistry>*)platformSurfaceRegistry;
 
 /**
  Publishes a value for external use of the plugin.

@@ -127,6 +127,13 @@ VsyncWaiter* PlatformView::GetVsyncWaiter() {
 
 void PlatformView::UpdateSemantics(std::vector<blink::SemanticsNode> update) {}
 
+void PlatformView::ScheduleFrame() {
+  blink::Threads::UI()->PostTask([engine = engine_->GetWeakPtr()] {
+    if (engine)
+      engine->ScheduleFrame();
+  });
+}
+
 void PlatformView::HandlePlatformMessage(
     fxl::RefPtr<blink::PlatformMessage> message) {
   if (auto response = message->response())
