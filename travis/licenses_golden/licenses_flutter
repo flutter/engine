@@ -1074,6 +1074,8 @@ FILE: ../../../flutter/flow/debug_print.h
 FILE: ../../../flutter/flow/export_node.h
 FILE: ../../../flutter/flow/layers/physical_model_layer.cc
 FILE: ../../../flutter/flow/layers/physical_model_layer.h
+FILE: ../../../flutter/flow/layers/platform_surface_layer.cc
+FILE: ../../../flutter/flow/layers/platform_surface_layer.h
 FILE: ../../../flutter/flow/matrix_decomposition.cc
 FILE: ../../../flutter/flow/matrix_decomposition.h
 FILE: ../../../flutter/flow/matrix_decomposition_unittests.cc
@@ -1140,6 +1142,8 @@ FILE: ../../../flutter/lib/ui/text/font_collection.cc
 FILE: ../../../flutter/lib/ui/text/font_collection.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.h
+FILE: ../../../flutter/shell/platform/android/android_platform_surface_gl.cc
+FILE: ../../../flutter/shell/platform/android/android_platform_surface_gl.h
 FILE: ../../../flutter/shell/platform/android/android_surface_software.cc
 FILE: ../../../flutter/shell/platform/android/android_surface_software.h
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityDelegate.java
@@ -1166,6 +1170,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinary
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterNavigationController.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformSurface.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterChannels.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCodecs.mm
@@ -1178,6 +1183,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_main_i
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_standard_codec_unittest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_platform_surface_gl.h
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_platform_surface_gl.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_gl.h
