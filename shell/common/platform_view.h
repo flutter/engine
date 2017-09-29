@@ -59,7 +59,7 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
 
   virtual void UpdateSemantics(std::vector<blink::SemanticsNode> update);
   virtual void HandlePlatformMessage(
-      ftl::RefPtr<blink::PlatformMessage> message);
+      fxl::RefPtr<blink::PlatformMessage> message);
   virtual void ScheduleFrame();
 
   Rasterizer& rasterizer() { return *rasterizer_; }

@@ -11,7 +11,7 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "flutter/common/threads.h"
-#include "lib/ftl/synchronization/waitable_event.h"
+#include "lib/fxl/synchronization/waitable_event.h"
 
 namespace flow {
 
@@ -27,7 +27,7 @@ void PlatformSurfaceLayer::Preroll(PrerollContext* context, const SkMatrix& matr
 void PlatformSurfaceLayer::Paint(PaintContext& context) {
   PlatformSurface* surface = PlatformSurface::GetPlatformSurface(surface_id_);
   if (surface == nullptr) {
-    FTL_DLOG(WARNING) << "No platform surface with id: " << surface_id_;
+    FXL_DLOG(WARNING) << "No platform surface with id: " << surface_id_;
     return;
   }
   sk_sp<SkImage> sk_image = surface->MakeSkImage(paint_bounds().width(), paint_bounds().height(), context.canvas.getGrContext());

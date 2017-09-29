@@ -31,7 +31,7 @@ class AndroidPlatformSurfaceGL : public flow::PlatformSurface {
   uint32_t texture_id_;
   bool new_frame_ready_ = false;
   bool first_frame_seen_ = false;
-  FTL_DISALLOW_COPY_AND_ASSIGN(AndroidPlatformSurfaceGL);
+  FXL_DISALLOW_COPY_AND_ASSIGN(AndroidPlatformSurfaceGL);
 };
 
 }

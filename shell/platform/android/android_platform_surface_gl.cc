@@ -19,7 +19,7 @@
 namespace shell {
 
 AndroidPlatformSurfaceGL::~AndroidPlatformSurfaceGL() {
-  ftl::AutoResetWaitableEvent latch;
+  fxl::AutoResetWaitableEvent latch;
   blink::Threads::IO()->PostTask([this, &latch]() {
     glDeleteTextures(1, &texture_id_);
     latch.Signal();
@@ -28,7 +28,7 @@ AndroidPlatformSurfaceGL::~AndroidPlatformSurfaceGL() {
 }
 
 AndroidPlatformSurfaceGL::AndroidPlatformSurfaceGL() {
-  ftl::AutoResetWaitableEvent latch;
+  fxl::AutoResetWaitableEvent latch;
   blink::Threads::IO()->PostTask([this, &latch]() {
     GrGLuint texID;
     glGenTextures(1, &texID);
@@ -49,7 +49,7 @@ void AndroidPlatformSurfaceGL::MarkNewFrameAvailable() {
 
 sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width, int height, GrContext *grContext) {
   ASSERT_IS_GPU_THREAD;
-  ftl::AutoResetWaitableEvent latch;
+  fxl::AutoResetWaitableEvent latch;
   blink::Threads::IO()->PostTask([this, &latch]() {
     if (new_frame_ready_) {
       JNIEnv* env = fml::jni::AttachCurrentThread();

@@ -32,7 +32,7 @@ class PlatformSurfaceLayer : public Layer {
   SkSize size_;
   uint32_t surface_id_ = 0;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(PlatformSurfaceLayer);
+  FXL_DISALLOW_COPY_AND_ASSIGN(PlatformSurfaceLayer);
 };
 
 }  // namespace flow

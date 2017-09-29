@@ -60,7 +60,7 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
 static jmethodID g_update_tex_image_method;
 void FlutterViewUpdateTexImage(JNIEnv* env, jlong surfaceId) {
   env->CallStaticVoidMethod(g_flutter_view_class->obj(), g_update_tex_image_method, surfaceId);
-  FTL_CHECK(env->ExceptionCheck() == JNI_FALSE);
+  FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 }
 
 // Called By Java

@@ -28,7 +28,7 @@ class IOSPlatformSurfaceGL : public flow::PlatformSurface {
   // TODO(sigurdm, mravn): Share this cache between instances?
   CVOpenGLESTextureCacheRef cache_ = nullptr;
   CVOpenGLESTextureRef texture_ = nullptr;
-  FTL_DISALLOW_COPY_AND_ASSIGN(IOSPlatformSurfaceGL);
+  FXL_DISALLOW_COPY_AND_ASSIGN(IOSPlatformSurfaceGL);
 };
 
 }
