@@ -52,7 +52,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
   V(SceneBuilder, pushPhysicalModel)                \
   V(SceneBuilder, pop)                              \
   V(SceneBuilder, addPicture)                       \
-  V(SceneBuilder, addPlatformSurface)                 \
+  V(SceneBuilder, addPlatformSurface)               \
   V(SceneBuilder, addChildScene)                    \
   V(SceneBuilder, addPerformanceOverlay)            \
   V(SceneBuilder, setRasterizerTracingThreshold)    \
@@ -226,14 +226,15 @@ void SceneBuilder::addPicture(double dx,
 }
 
 void SceneBuilder::addPlatformSurface(double dx,
-                                    double dy,
-                                    double width,
-                                    double height,
-                                    int surfaceId) {
+                                      double dy,
+                                      double width,
+                                      double height,
+                                      int surfaceId) {
   if (!m_currentLayer)
     return;
 
-  std::unique_ptr<flow::PlatformSurfaceLayer> layer(new flow::PlatformSurfaceLayer());
+  std::unique_ptr<flow::PlatformSurfaceLayer> layer(
+      new flow::PlatformSurfaceLayer());
   layer->set_offset(SkPoint::Make(dx, dy));
   layer->set_size(SkSize::Make(width, height));
   layer->set_surface_id(surfaceId);

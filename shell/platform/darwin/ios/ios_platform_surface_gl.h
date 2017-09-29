@@ -21,7 +21,9 @@ class IOSPlatformSurfaceGL : public flow::PlatformSurface {
   ~IOSPlatformSurfaceGL() override;
 
   // Called from GPU thread.
-  virtual sk_sp<SkImage> MakeSkImage(int width, int height, GrContext *grContext) override;
+  virtual sk_sp<SkImage> MakeSkImage(int width,
+                                     int height,
+                                     GrContext* grContext) override;
 
  private:
   NSObject<FlutterPlatformSurface>* surface_;
@@ -31,6 +33,6 @@ class IOSPlatformSurfaceGL : public flow::PlatformSurface {
   FXL_DISALLOW_COPY_AND_ASSIGN(IOSPlatformSurfaceGL);
 };
 
-}
+}  // namespace shell
 
-#endif // FLUTTER_SHELL_PLATFORM_IOS_PLATFORM_SURFACE_GL_H_
+#endif  // FLUTTER_SHELL_PLATFORM_IOS_PLATFORM_SURFACE_GL_H_

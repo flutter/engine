@@ -9,10 +9,10 @@ namespace flow {
 static std::map<int, PlatformSurface*> mapping = {};
 
 int PlatformSurface::RegisterPlatformSurface(PlatformSurface* surface) {
-    int id = mapping.size() + 1;
-    mapping[id] = surface;
-    surface->id_ = id;
-    return id;
+  int id = mapping.size() + 1;
+  mapping[id] = surface;
+  surface->id_ = id;
+  return id;
 }
 
 void PlatformSurface::DisposePlatformSurface(int id) {
@@ -25,4 +25,4 @@ PlatformSurface* PlatformSurface::GetPlatformSurface(int id) {
   return mapping[id];
 }
 
-}
+}  // namespace flow

@@ -59,7 +59,11 @@ class SceneBuilder : public fxl::RefCountedThreadSafe<SceneBuilder>,
 
   void addPicture(double dx, double dy, Picture* picture, int hints);
 
-  void addPlatformSurface(double dx, double dy, double width, double height, int surfaceId);
+  void addPlatformSurface(double dx,
+                          double dy,
+                          double width,
+                          double height,
+                          int surfaceId);
 
   void addChildScene(double dx,
                      double dy,

@@ -5,13 +5,12 @@
 #ifndef FLUTTER_FLOW_LAYERS_PLATFORM_SURFACE_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_PLATFORM_SURFACE_LAYER_H_
 
-
 #include "flutter/flow/layers/layer.h"
-#include "third_party/skia/include/gpu/GrTypes.h"
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 #include "third_party/skia/include/gpu/GrTexture.h"
-#include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrTypes.h"
 
 namespace flow {
 

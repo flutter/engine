@@ -3,12 +3,12 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
-#include "flutter/shell/platform/android/android_platform_surface_gl.h"
 #include "flutter/common/settings.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/runtime/dart_service_isolate.h"
+#include "flutter/shell/platform/android/android_platform_surface_gl.h"
 #include "lib/fxl/arraysize.h"
 #include "lib/fxl/logging.h"
 
@@ -59,7 +59,8 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
 
 static jmethodID g_update_tex_image_method;
 void FlutterViewUpdateTexImage(JNIEnv* env, jlong surfaceId) {
-  env->CallStaticVoidMethod(g_flutter_view_class->obj(), g_update_tex_image_method, surfaceId);
+  env->CallStaticVoidMethod(g_flutter_view_class->obj(),
+                            g_update_tex_image_method, surfaceId);
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 }
 
@@ -208,20 +209,26 @@ static jlong AllocatePlatformSurface(JNIEnv* env, jobject jcaller) {
 }
 
 static void MarkPlatformSurfaceFrameAvailable(JNIEnv* env,
-                                            jobject jcaller,
-                                            jlong platform_view,
-                                            jlong surfaceId) {
-  AndroidPlatformSurfaceGL *surface = static_cast<AndroidPlatformSurfaceGL*>(flow::PlatformSurface::GetPlatformSurface(surfaceId));
+                                              jobject jcaller,
+                                              jlong platform_view,
+                                              jlong surfaceId) {
+  AndroidPlatformSurfaceGL* surface = static_cast<AndroidPlatformSurfaceGL*>(
+      flow::PlatformSurface::GetPlatformSurface(surfaceId));
   surface->MarkNewFrameAvailable();
   PLATFORM_VIEW->ScheduleFrame();
 }
 
-static void ReleasePlatformSurface(JNIEnv* env, jobject jcaller, jlong surfaceId) {
+static void ReleasePlatformSurface(JNIEnv* env,
+                                   jobject jcaller,
+                                   jlong surfaceId) {
   flow::PlatformSurface::DisposePlatformSurface(surfaceId);
 }
 
-static jlong GetPlatformSurfaceTextureID(JNIEnv* env, jobject jcaller, jlong surfaceId) {
-  AndroidPlatformSurfaceGL* surface = static_cast<AndroidPlatformSurfaceGL*>(flow::PlatformSurface::GetPlatformSurface(surfaceId));
+static jlong GetPlatformSurfaceTextureID(JNIEnv* env,
+                                         jobject jcaller,
+                                         jlong surfaceId) {
+  AndroidPlatformSurfaceGL* surface = static_cast<AndroidPlatformSurfaceGL*>(
+      flow::PlatformSurface::GetPlatformSurface(surfaceId));
   return surface->texture_id();
 }
 
@@ -351,24 +358,25 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&shell::GetIsSoftwareRendering),
       },
       {
-         .name = "nativeAllocatePlatformSurface",
-         .signature = "()J",
-         .fnPtr = reinterpret_cast<void*>(&shell::AllocatePlatformSurface),
+          .name = "nativeAllocatePlatformSurface",
+          .signature = "()J",
+          .fnPtr = reinterpret_cast<void*>(&shell::AllocatePlatformSurface),
       },
       {
-         .name = "nativeGetPlatformSurfaceTextureID",
-         .signature = "(J)J",
-         .fnPtr = reinterpret_cast<void*>(&shell::GetPlatformSurfaceTextureID),
+          .name = "nativeGetPlatformSurfaceTextureID",
+          .signature = "(J)J",
+          .fnPtr = reinterpret_cast<void*>(&shell::GetPlatformSurfaceTextureID),
       },
       {
-         .name = "nativeMarkPlatformSurfaceFrameAvailable",
-         .signature = "(JJ)V",
-         .fnPtr = reinterpret_cast<void*>(&shell::MarkPlatformSurfaceFrameAvailable),
+          .name = "nativeMarkPlatformSurfaceFrameAvailable",
+          .signature = "(JJ)V",
+          .fnPtr = reinterpret_cast<void*>(
+              &shell::MarkPlatformSurfaceFrameAvailable),
       },
       {
-         .name = "nativeReleasePlatformSurface",
-         .signature = "(J)V",
-         .fnPtr = reinterpret_cast<void*>(&shell::ReleasePlatformSurface),
+          .name = "nativeReleasePlatformSurface",
+          .signature = "(J)V",
+          .fnPtr = reinterpret_cast<void*>(&shell::ReleasePlatformSurface),
       },
   };
 
@@ -407,8 +415,8 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_update_tex_image_method =
-      env->GetStaticMethodID(g_flutter_view_class->obj(), "updateTexImage", "(J)V");
+  g_update_tex_image_method = env->GetStaticMethodID(
+      g_flutter_view_class->obj(), "updateTexImage", "(J)V");
 
   if (g_update_tex_image_method == nullptr) {
     return false;

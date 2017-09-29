@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 #include <jni.h>
+#include "flutter/flow/platform_surface.h"
+#include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
-#include "flutter/fml/platform/android/jni_util.h"
-#include "flutter/flow/platform_surface.h"
 
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_SURFACE_GL_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_SURFACE_GL_H_
@@ -22,7 +22,9 @@ class AndroidPlatformSurfaceGL : public flow::PlatformSurface {
   uint32_t texture_id() { return texture_id_; }
 
   // Called from GPU thread.
-  virtual sk_sp<SkImage> MakeSkImage(int width, int height, GrContext *grContext) override;
+  virtual sk_sp<SkImage> MakeSkImage(int width,
+                                     int height,
+                                     GrContext* grContext) override;
 
   // Called on platform thread.
   void MarkNewFrameAvailable();
@@ -34,6 +36,6 @@ class AndroidPlatformSurfaceGL : public flow::PlatformSurface {
   FXL_DISALLOW_COPY_AND_ASSIGN(AndroidPlatformSurfaceGL);
 };
 
-}
+}  // namespace shell
 
-#endif // FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_SURFACE_GL_H_
+#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_SURFACE_GL_H_

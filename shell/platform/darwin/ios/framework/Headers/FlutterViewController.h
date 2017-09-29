@@ -10,11 +10,12 @@
 
 #include "FlutterBinaryMessenger.h"
 #include "FlutterDartProject.h"
-#include "FlutterPlatformSurface.h"
 #include "FlutterMacros.h"
+#include "FlutterPlatformSurface.h"
 
 FLUTTER_EXPORT
-@interface FlutterViewController : UIViewController<FlutterBinaryMessenger, FlutterPlatformSurfaceRegistry>
+@interface FlutterViewController
+    : UIViewController<FlutterBinaryMessenger, FlutterPlatformSurfaceRegistry>
 
 - (instancetype)initWithProject:(FlutterDartProject*)project
                         nibName:(NSString*)nibNameOrNil
