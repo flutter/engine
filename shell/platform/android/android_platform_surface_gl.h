@@ -20,8 +20,6 @@ class AndroidPlatformSurfaceGL : public flow::PlatformSurface {
 
   ~AndroidPlatformSurfaceGL() override;
 
-  uint32_t texture_id() { return texture_id_; }
-
   // Called from GPU thread.
   virtual sk_sp<SkImage> MakeSkImage(int width,
                                      int height,
@@ -32,9 +30,7 @@ class AndroidPlatformSurfaceGL : public flow::PlatformSurface {
 
  private:
   std::shared_ptr<PlatformViewAndroid> platform_view_;
-  uint32_t texture_id_;
   bool new_frame_ready_ = false;
-  bool first_frame_seen_ = false;
   FXL_DISALLOW_COPY_AND_ASSIGN(AndroidPlatformSurfaceGL);
 };
 

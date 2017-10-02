@@ -24,20 +24,14 @@ IOSPlatformSurfaceGL::IOSPlatformSurfaceGL(NSObject<FlutterPlatformSurface>* sur
 
 sk_sp<SkImage> IOSPlatformSurfaceGL::MakeSkImage(int width, int height, GrContext* grContext) {
   ASSERT_IS_GPU_THREAD;
-  CVPixelBufferRef buffer;
-  fxl::AutoResetWaitableEvent latch;
-  blink::Threads::IO()->PostTask([this, &latch, &buffer]() {
-    if (cache_ == nullptr) {
-      CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL,
-                                                  [EAGLContext currentContext], NULL, &cache_);
-      if (err != noErr) {
-        FXL_LOG(WARNING) << "Failed to create GLES texture cache: " << err;
-      }
+  if (cache_ == nullptr) {
+    CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL,
+                                                [EAGLContext currentContext], NULL, &cache_);
+    if (err != noErr) {
+      FXL_LOG(WARNING) << "Failed to create GLES texture cache: " << err;
     }
-    buffer = [surface_ getPixelBuffer];
-    latch.Signal();
-  });
-  latch.Wait();
+  }
+  CVPixelBufferRef buffer = [surface_ getPixelBuffer];
   if (buffer != nullptr) {
     if (texture_ != nullptr)
       CFRelease(texture_);

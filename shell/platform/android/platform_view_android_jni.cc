@@ -58,8 +58,9 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
 }
 
 static jmethodID g_update_tex_image_method = nullptr;
-void FlutterViewUpdateTexImage(JNIEnv* env, jobject obj, jlong surfaceId) {
-  env->CallVoidMethod(obj, g_update_tex_image_method, surfaceId);
+void FlutterViewUpdateTexImage(JNIEnv* env, jobject obj, jlong surfaceId, jlong textureId, jboolean isNew) {
+  ASSERT_IS_GPU_THREAD;
+  env->CallVoidMethod(obj, g_update_tex_image_method, surfaceId, textureId, isNew);
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 }
 
@@ -223,15 +224,6 @@ static void ReleasePlatformSurface(JNIEnv* env,
   PLATFORM_VIEW->rasterizer().GetPlatformSurfaceRegistry().DisposePlatformSurface(surfaceId);
 }
 
-static jlong GetPlatformSurfaceTextureID(JNIEnv* env,
-                                         jobject jcaller,
-                                         jlong platform_view,
-                                         jlong surfaceId) {
-  AndroidPlatformSurfaceGL* surface = static_cast<AndroidPlatformSurfaceGL*>(
-      PLATFORM_VIEW->rasterizer().GetPlatformSurfaceRegistry().GetPlatformSurface(surfaceId));
-  return surface->texture_id();
-}
-
 static void InvokePlatformMessageResponseCallback(JNIEnv* env,
                                                   jobject jcaller,
                                                   jlong platform_view,
@@ -363,11 +355,6 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&shell::AllocatePlatformSurface),
       },
       {
-          .name = "nativeGetPlatformSurfaceTextureID",
-          .signature = "(JJ)J",
-          .fnPtr = reinterpret_cast<void*>(&shell::GetPlatformSurfaceTextureID),
-      },
-      {
           .name = "nativeMarkPlatformSurfaceFrameAvailable",
           .signature = "(JJ)V",
           .fnPtr = reinterpret_cast<void*>(
@@ -416,7 +403,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   }
 
   g_update_tex_image_method = env->GetMethodID(
-      g_flutter_view_class->obj(), "updateTexImage", "(J)V");
+      g_flutter_view_class->obj(), "updateTexImage", "(JJZ)V");
 
   if (g_update_tex_image_method == nullptr) {
     return false;
