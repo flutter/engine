@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLUTTERPlatformSurface_H_
-#define FLUTTER_FLUTTERPlatformSurface_H_
+#ifndef FLUTTER_FLUTTERPLATFORMSURFACE_H_
+#define FLUTTER_FLUTTERPLATFORMSURFACE_H_
 
 #import <CoreMedia/CoreMedia.h>
 #import <Foundation/Foundation.h>
@@ -20,10 +20,10 @@ FLUTTER_EXPORT
 FLUTTER_EXPORT
 @protocol FlutterPlatformSurfaceRegistry<NSObject>
 - (NSUInteger)registerPlatformSurface:(NSObject<FlutterPlatformSurface>*)surface;
-- (void)newPlatformSurfaceFrameAvailable:(NSUInteger)surfaceId;
+- (void)platformSurfaceFrameAvailable:(NSUInteger)surfaceId;
 - (void)unregisterPlatformSurface:(NSUInteger)surfaceId;
 @end
 
 NS_ASSUME_NONNULL_END
 
-#endif  // FLUTTER_PlatformSurface_H_
+#endif  // FLUTTER_FLUTTERPLATFORMSURFACE_H_

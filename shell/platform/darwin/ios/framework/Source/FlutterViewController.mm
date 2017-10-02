@@ -785,7 +785,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   _platformView->rasterizer().GetPlatformSurfaceRegistry().DisposePlatformSurface(surfaceId);
 }
 
-- (void)newPlatformSurfaceFrameAvailable:(NSUInteger)surfaceId {
+- (void)platformSurfaceFrameAvailable:(NSUInteger)surfaceId {
   _platformView->ScheduleFrame();
 }
 @end

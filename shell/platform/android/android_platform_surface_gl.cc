@@ -32,7 +32,6 @@ AndroidPlatformSurfaceGL::AndroidPlatformSurfaceGL(std::shared_ptr<PlatformViewA
   blink::Threads::IO()->PostTask([this, &latch]() {
     GrGLuint texID;
     glGenTextures(1, &texID);
-
     glBindTexture(GL_TEXTURE_EXTERNAL_OES, texID);
     texture_id_ = texID;
     latch.Signal();
