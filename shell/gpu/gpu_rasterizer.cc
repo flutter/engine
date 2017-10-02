@@ -78,6 +78,10 @@ flow::LayerTree* GPURasterizer::GetLastLayerTree() {
   return last_layer_tree_.get();
 }
 
+flow::PlatformSurfaceRegistry& GPURasterizer::GetPlatformSurfaceRegistry() {
+  return compositor_context_.platform_surface_registry();
+}
+
 void GPURasterizer::Draw(
     fxl::RefPtr<flutter::Pipeline<flow::LayerTree>> pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");

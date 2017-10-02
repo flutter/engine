@@ -27,7 +27,7 @@ AndroidPlatformSurfaceGL::~AndroidPlatformSurfaceGL() {
   latch.Wait();
 }
 
-AndroidPlatformSurfaceGL::AndroidPlatformSurfaceGL() {
+AndroidPlatformSurfaceGL::AndroidPlatformSurfaceGL(std::shared_ptr<PlatformViewAndroid> platformView): platform_view_(platformView) {
   fxl::AutoResetWaitableEvent latch;
   blink::Threads::IO()->PostTask([this, &latch]() {
     GrGLuint texID;
@@ -52,8 +52,7 @@ sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width,
   fxl::AutoResetWaitableEvent latch;
   blink::Threads::IO()->PostTask([this, &latch]() {
     if (new_frame_ready_) {
-      JNIEnv* env = fml::jni::AttachCurrentThread();
-      FlutterViewUpdateTexImage(env, Id());
+      platform_view_->UpdateTexImage(Id());
       first_frame_seen_ = true;
       new_frame_ready_ = false;
     }

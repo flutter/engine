@@ -9,6 +9,7 @@
 #include <string>
 
 #include "flutter/flow/instrumentation.h"
+#include "flutter/flow/platform_surface.h"
 #include "flutter/flow/process_info.h"
 #include "flutter/flow/raster_cache.h"
 #include "lib/fxl/macros.h"
@@ -59,6 +60,8 @@ class CompositorContext {
 
   RasterCache& raster_cache() { return raster_cache_; }
 
+  PlatformSurfaceRegistry& platform_surface_registry() { return platform_surface_registry_; }
+
   const Counter& frame_count() const { return frame_count_; }
 
   const Stopwatch& frame_time() const { return frame_time_; }
@@ -69,6 +72,7 @@ class CompositorContext {
 
  private:
   RasterCache raster_cache_;
+  PlatformSurfaceRegistry platform_surface_registry_;
   std::unique_ptr<ProcessInfo> process_info_;
   Counter frame_count_;
   Stopwatch frame_time_;

@@ -33,6 +33,10 @@ flow::LayerTree* NullRasterizer::GetLastLayerTree() {
   return nullptr;
 }
 
+flow::PlatformSurfaceRegistry& NullRasterizer::GetPlatformSurfaceRegistry() {
+  return platform_surface_registry_;
+}
+
 void NullRasterizer::Clear(SkColor color, const SkISize& size) {
   // Null rasterizer. Nothing to do.
 }

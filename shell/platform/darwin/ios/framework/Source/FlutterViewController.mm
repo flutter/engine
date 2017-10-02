@@ -778,11 +778,11 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 #pragma mark - FlutterPlatformSurfaceRegistry
 
 - (NSUInteger)registerPlatformSurface:(NSObject<FlutterPlatformSurface>*)surface {
-  return flow::PlatformSurface::RegisterPlatformSurface(new shell::IOSPlatformSurfaceGL(surface));
+  return _platformView->rasterizer().GetPlatformSurfaceRegistry().RegisterPlatformSurface(new shell::IOSPlatformSurfaceGL(surface));
 }
 
 - (void)unregisterPlatformSurface:(NSUInteger)surfaceId {
-  flow::PlatformSurface::DisposePlatformSurface(surfaceId);
+  _platformView->rasterizer().GetPlatformSurfaceRegistry().DisposePlatformSurface(surfaceId);
 }
 
 - (void)newPlatformSurfaceFrameAvailable:(NSUInteger)surfaceId {

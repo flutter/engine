@@ -97,6 +97,8 @@ class PlatformViewAndroid : public PlatformView {
                      const std::string& main,
                      const std::string& packages) override;
 
+  void UpdateTexImage(int image_id);
+
   void set_flutter_view(const fml::jni::JavaObjectWeakGlobalRef& flutter_view) {
     flutter_view_ = flutter_view;
     android_surface_->SetFlutterView(flutter_view);

@@ -513,6 +513,14 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
   fml::jni::DetachFromVM();
 }
 
+void PlatformViewAndroid::UpdateTexImage(int image_id) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
+  if (!view.is_null()) {
+    FlutterViewUpdateTexImage(env, view.obj(), image_id);
+  }
+}
+
 fml::jni::ScopedJavaLocalRef<jobject> PlatformViewAndroid::GetBitmap(
     JNIEnv* env) {
   // Render the last frame to an array of pixels on the GPU thread.

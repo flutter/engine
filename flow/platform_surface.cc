@@ -6,23 +6,28 @@
 
 namespace flow {
 
-static std::map<int, PlatformSurface*> mapping = {};
+PlatformSurfaceRegistry::PlatformSurfaceRegistry() {
+  mapping_ = {};
+}
+PlatformSurfaceRegistry::~PlatformSurfaceRegistry() = default;
 
-int PlatformSurface::RegisterPlatformSurface(PlatformSurface* surface) {
-  int id = mapping.size() + 1;
-  mapping[id] = surface;
+int PlatformSurfaceRegistry::RegisterPlatformSurface(PlatformSurface* surface) {
+  int id = mapping_.size() + 1;
+  mapping_[id] = surface;
   surface->id_ = id;
   return id;
 }
 
-void PlatformSurface::DisposePlatformSurface(int id) {
-  PlatformSurface* surface = mapping[id];
-  mapping.erase(id);
+void PlatformSurfaceRegistry::DisposePlatformSurface(int id) {
+  PlatformSurface* surface = mapping_[id];
+  mapping_.erase(id);
   delete surface;
 }
 
-PlatformSurface* PlatformSurface::GetPlatformSurface(int id) {
-  return mapping[id];
+PlatformSurface* PlatformSurfaceRegistry::GetPlatformSurface(int id) {
+  return mapping_[id];
 }
+
+PlatformSurface::~PlatformSurface() = default;
 
 }  // namespace flow
