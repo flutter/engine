@@ -58,7 +58,7 @@ sk_sp<SkImage> IOSPlatformSurfaceGL::MakeSkImage(int width, int height, GrContex
                                  CVOpenGLESTextureGetName(texture_)};
   GrBackendTexture backendTexture(width, height, kRGBA_8888_GrPixelConfig, textureInfo);
   sk_sp<SkImage> sk_image =
-      SkImage::MakeFromTexture(grContext, backendTexture, kBottomLeft_GrSurfaceOrigin,
+      SkImage::MakeFromTexture(grContext, backendTexture, kTopLeft_GrSurfaceOrigin,
                                SkAlphaType::kPremul_SkAlphaType, nullptr);
   CVOpenGLESTextureCacheFlush(cache_, 0);
   return sk_image;

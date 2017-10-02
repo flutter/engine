@@ -23,7 +23,6 @@ void PlatformSurfaceLayer::Preroll(PrerollContext* context,
                                    const SkMatrix& matrix) {
   set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
                                     size_.height()));
-  set_needs_system_composite(true);
 }
 
 void PlatformSurfaceLayer::Paint(PaintContext& context) {
@@ -38,11 +37,7 @@ void PlatformSurfaceLayer::Paint(PaintContext& context) {
   if (!sk_image) {
     return;
   }
-  context.canvas.save();
-  context.canvas.scale(1.0, -1.0);
-  context.canvas.translate(0.0, -paint_bounds().height());
-  context.canvas.drawImage(sk_image, paint_bounds().x(), -paint_bounds().y());
-  context.canvas.restore();
+  context.canvas.drawImage(sk_image, paint_bounds().x(), paint_bounds().y());
 }
 
 }  // namespace flow

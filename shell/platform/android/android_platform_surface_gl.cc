@@ -67,7 +67,7 @@ sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width,
   GrBackendTexture backendTexture(width, height, kRGBA_8888_GrPixelConfig,
                                   textureInfo);
   sk_sp<SkImage> sk_image = SkImage::MakeFromTexture(
-      grContext, backendTexture, kBottomLeft_GrSurfaceOrigin,
+      grContext, backendTexture, kTopLeft_GrSurfaceOrigin,
       SkAlphaType::kPremul_SkAlphaType, nullptr);
   return sk_image;
 }
