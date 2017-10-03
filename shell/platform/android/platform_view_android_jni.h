@@ -34,9 +34,7 @@ void FlutterViewUpdateTexImage(JNIEnv* env,
                                jlong imageId,
                                jlong textureId);
 
-void FlutterViewDetachTexImage(JNIEnv* env,
-                               jobject obj,
-                               jlong imageId);
+void FlutterViewDetachTexImage(JNIEnv* env, jobject obj, jlong imageId);
 }  // namespace shell
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_

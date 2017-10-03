@@ -513,8 +513,7 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
   fml::jni::DetachFromVM();
 }
 
-void PlatformViewAndroid::UpdateTexImage(int image_id,
-                                         uint32_t texture_id) {
+void PlatformViewAndroid::UpdateTexImage(int image_id, uint32_t texture_id) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
   if (!view.is_null()) {

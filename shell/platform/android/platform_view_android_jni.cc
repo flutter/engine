@@ -68,9 +68,7 @@ void FlutterViewUpdateTexImage(JNIEnv* env,
 }
 
 static jmethodID g_detach_tex_image_method = nullptr;
-void FlutterViewDetachTexImage(JNIEnv* env,
-                               jobject obj,
-                               jlong surfaceId) {
+void FlutterViewDetachTexImage(JNIEnv* env, jobject obj, jlong surfaceId) {
   ASSERT_IS_GPU_THREAD;
   env->CallVoidMethod(obj, g_detach_tex_image_method, surfaceId);
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
@@ -128,7 +126,7 @@ static void RunBundleAndSnapshot(JNIEnv* env,
   return PLATFORM_VIEW->RunBundleAndSnapshot(
       fml::jni::JavaStringToString(env, bundlePath),       //
       fml::jni::JavaStringToString(env, snapshotOverride)  //
-      );
+  );
 }
 
 void RunBundleAndSource(JNIEnv* env,
