@@ -29,7 +29,6 @@ AndroidPlatformSurfaceGL::AndroidPlatformSurfaceGL(
 class CleanupContext {
  public:
   int surface_id;
-  uint32_t texture_id;
   std::shared_ptr<PlatformViewAndroid> platform_view;
 };
 
@@ -45,7 +44,7 @@ sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width,
   GrGLuint texID;
   if (new_frame_ready_) {
     glGenTextures(1, &texID);
-    platform_view_->UpdateTexImage(Id(), texID, true);
+    platform_view_->UpdateTexImage(Id(), texID);
     new_frame_ready_ = false;
   } else {
     return nullptr;
@@ -53,17 +52,16 @@ sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width,
   GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES, texID};
   GrBackendTexture backendTexture(width, height, kRGBA_8888_GrPixelConfig,
                                   textureInfo);
-  CleanupContext* ctx = new CleanupContext{Id(), texID, platform_view_};
+  CleanupContext* cleanupContext = new CleanupContext{Id(), platform_view_};
   sk_sp<SkImage> sk_image = SkImage::MakeFromTexture(
       grContext, backendTexture, kTopLeft_GrSurfaceOrigin,
       SkAlphaType::kPremul_SkAlphaType, nullptr,
-      [](void* ctx2) {
-        CleanupContext* ctx = (CleanupContext*)ctx2;
-        ctx->platform_view->UpdateTexImage(ctx->surface_id, ctx->texture_id,
-                                           false);
+      [](void* releaseContext) {
+        CleanupContext* ctx = (CleanupContext*)releaseContext;
+        ctx->platform_view->DetachTexImage(ctx->surface_id);
         delete ctx;
       },
-      ctx);
+      cleanupContext);
   return sk_image;
 }
 

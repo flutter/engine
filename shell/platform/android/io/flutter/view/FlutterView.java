@@ -772,15 +772,17 @@ public class FlutterView extends SurfaceView
         }
     }
 
-    // Called by native to get a new frame on an platform surface.
-    private void updateTexImage(long surfaceId, long textureId, boolean isNew) {
+    // Called by native to update a platform surface texture on current GL context.
+    private void updateTexImage(long surfaceId, long textureId) {
         final SurfaceTexture surfaceTexture = surfaceIdToSurfaceTexture.get(surfaceId);
-        if (isNew) {
-          surfaceTexture.attachToGLContext((int) textureId);
-          surfaceTexture.updateTexImage();
-        } else {
-          surfaceTexture.detachFromGLContext();
-        }
+        surfaceTexture.attachToGLContext((int) textureId);
+        surfaceTexture.updateTexImage();
+    }
+
+    // Called by native to detach a platform surface texture from current GL context.
+    private void detachTexImage(long surfaceId) {
+        final SurfaceTexture surfaceTexture = surfaceIdToSurfaceTexture.get(surfaceId);
+        surfaceTexture.detachFromGLContext();
     }
 
     // ACCESSIBILITY

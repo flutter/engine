@@ -32,9 +32,11 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj);
 void FlutterViewUpdateTexImage(JNIEnv* env,
                                jobject obj,
                                jlong imageId,
-                               jlong textureId,
-                               jboolean isNew);
+                               jlong textureId);
 
+void FlutterViewDetachTexImage(JNIEnv* env,
+                               jobject obj,
+                               jlong imageId);
 }  // namespace shell
 
 #endif  // FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_JNI_H_

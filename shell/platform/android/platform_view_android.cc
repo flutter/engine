@@ -514,12 +514,19 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
 }
 
 void PlatformViewAndroid::UpdateTexImage(int image_id,
-                                         uint32_t texture_id,
-                                         bool is_new) {
+                                         uint32_t texture_id) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
   if (!view.is_null()) {
-    FlutterViewUpdateTexImage(env, view.obj(), image_id, texture_id, is_new);
+    FlutterViewUpdateTexImage(env, view.obj(), image_id, texture_id);
+  }
+}
+
+void PlatformViewAndroid::DetachTexImage(int image_id) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
+  if (!view.is_null()) {
+    FlutterViewDetachTexImage(env, view.obj(), image_id);
   }
 }
 
