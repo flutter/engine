@@ -148,6 +148,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
         }
       });
   _platformView->SetupResourceContextOnIOThread();
+
   _localizationChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/localization"
       binaryMessenger:self
@@ -188,6 +189,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [_textInputPlugin.get() handleMethodCall:call result:result];
   }];
+  
   [self setupNotificationCenterObservers];
 }
 

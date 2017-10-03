@@ -11,15 +11,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -41,9 +38,6 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.VsyncWaiter;
-import java.io.FileDescriptor;
-import java.io.File;
-import java.io.InputStream;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -113,14 +107,13 @@ public class FlutterView extends SurfaceView
     private final List<FirstFrameListener> mFirstFrameListeners;
     private long mNativePlatformView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
-    private MediaPlayer mMediaPlayer;
     private Map<Long, SurfaceTexture> surfaceIdToSurfaceTexture = new HashMap<Long, SurfaceTexture>();
 
     public FlutterView(Context context) {
         this(context, null);
     }
 
-    public FlutterView(final Context context, AttributeSet attrs) {
+    public FlutterView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
         mIsSoftwareRenderingEnabled = nativeGetIsSoftwareRenderingEnabled();
@@ -779,7 +772,7 @@ public class FlutterView extends SurfaceView
         }
     }
 
-    // Called by native to get a new frame on an platformSurface.
+    // Called by native to get a new frame on an platform surface.
     private void updateTexImage(long surfaceId, long textureId, boolean isNew) {
         final SurfaceTexture surfaceTexture = surfaceIdToSurfaceTexture.get(surfaceId);
         if (isNew) {
