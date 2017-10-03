@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_SURFACE_GL_H_
+#define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_SURFACE_GL_H_
+
 #include <jni.h>
 #include "flutter/flow/platform_surface.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
-
-#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_SURFACE_GL_H_
-#define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_SURFACE_GL_H_
 
 namespace shell {
 

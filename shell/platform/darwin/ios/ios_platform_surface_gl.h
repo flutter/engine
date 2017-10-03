@@ -2,15 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_IOS_PLATFORM_SURFACE_GL_H_
+#define FLUTTER_SHELL_PLATFORM_IOS_PLATFORM_SURFACE_GL_H_
+
 #import <CoreVideo/CoreVideo.h>
 #import <OpenGLES/EAGL.h>
 #import <OpenGLES/ES2/gl.h>
 #import <OpenGLES/ES2/glext.h>
+#include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/flow/platform_surface.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformSurface.h"
-
-#ifndef FLUTTER_SHELL_PLATFORM_IOS_PLATFORM_SURFACE_GL_H_
-#define FLUTTER_SHELL_PLATFORM_IOS_PLATFORM_SURFACE_GL_H_
 
 namespace shell {
 
@@ -28,8 +29,8 @@ class IOSPlatformSurfaceGL : public flow::PlatformSurface {
  private:
   NSObject<FlutterPlatformSurface>* surface_;
   // TODO(sigurdm, mravn): Share this cache between instances?
-  CVOpenGLESTextureCacheRef cache_ = nullptr;
-  CVOpenGLESTextureRef texture_ = nullptr;
+  fml::CFRef<CVOpenGLESTextureCacheRef> cache_;
+  fml::CFRef<CVOpenGLESTextureRef> texture_;
   FXL_DISALLOW_COPY_AND_ASSIGN(IOSPlatformSurfaceGL);
 };
 
