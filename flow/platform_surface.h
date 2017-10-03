@@ -17,22 +17,22 @@
 
 namespace flow {
 
-  class PlatformSurface {
-    friend class PlatformSurfaceRegistry;
-   public:
+class PlatformSurface {
+  friend class PlatformSurfaceRegistry;
 
-    virtual ~PlatformSurface();
+ public:
+  virtual ~PlatformSurface();
 
-    // Called from GPU thread.
-    virtual sk_sp<SkImage> MakeSkImage(int width,
-                                       int height,
-                                       GrContext* grContext) = 0;
+  // Called from GPU thread.
+  virtual sk_sp<SkImage> MakeSkImage(int width,
+                                     int height,
+                                     GrContext* grContext) = 0;
 
-    int Id() { return id_; }
+  int Id() { return id_; }
 
-   private:
-    int id_;
-  };
+ private:
+  int id_;
+};
 
 class PlatformSurfaceRegistry {
  public:
@@ -42,6 +42,7 @@ class PlatformSurfaceRegistry {
   int RegisterPlatformSurface(PlatformSurface* surface);
   void DisposePlatformSurface(int id);
   PlatformSurface* GetPlatformSurface(int id);
+
  private:
   std::map<int, PlatformSurface*> mapping_;
 };

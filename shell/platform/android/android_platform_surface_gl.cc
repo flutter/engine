@@ -20,7 +20,9 @@ namespace shell {
 
 AndroidPlatformSurfaceGL::~AndroidPlatformSurfaceGL() = default;
 
-AndroidPlatformSurfaceGL::AndroidPlatformSurfaceGL(std::shared_ptr<PlatformViewAndroid> platformView): platform_view_(platformView) {
+AndroidPlatformSurfaceGL::AndroidPlatformSurfaceGL(
+    std::shared_ptr<PlatformViewAndroid> platformView)
+    : platform_view_(platformView) {
   ASSERT_IS_PLATFORM_THREAD;
 }
 
@@ -54,11 +56,14 @@ sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width,
   CleanupContext* ctx = new CleanupContext{Id(), texID, platform_view_};
   sk_sp<SkImage> sk_image = SkImage::MakeFromTexture(
       grContext, backendTexture, kTopLeft_GrSurfaceOrigin,
-      SkAlphaType::kPremul_SkAlphaType, nullptr, [](void* ctx2) {
-        CleanupContext* ctx = (CleanupContext*) ctx2;
-        ctx->platform_view->UpdateTexImage(ctx->surface_id, ctx->texture_id, false);
+      SkAlphaType::kPremul_SkAlphaType, nullptr,
+      [](void* ctx2) {
+        CleanupContext* ctx = (CleanupContext*)ctx2;
+        ctx->platform_view->UpdateTexImage(ctx->surface_id, ctx->texture_id,
+                                           false);
         delete ctx;
-      }, ctx);
+      },
+      ctx);
   return sk_image;
 }
 

@@ -32,9 +32,7 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       checkerboard_raster_cache_images_);
   Layer::PrerollContext context = {
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
-      frame.gr_context(),
-      color_space,
-      SkRect::MakeEmpty(),
+      frame.gr_context(), color_space, SkRect::MakeEmpty(),
   };
 
   root_layer_->Preroll(&context, SkMatrix::I());
@@ -63,7 +61,8 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
 #endif
 
 void LayerTree::Paint(CompositorContext::ScopedFrame& frame) {
-  Layer::PaintContext context = {*frame.canvas(), frame.context().frame_time(),
+  Layer::PaintContext context = {*frame.canvas(),
+                                 frame.context().frame_time(),
                                  frame.context().engine_time(),
                                  frame.context().memory_usage(),
                                  frame.context().platform_surface_registry(),

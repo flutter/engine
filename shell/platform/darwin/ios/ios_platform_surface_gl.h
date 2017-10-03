@@ -9,8 +9,8 @@
 #import <OpenGLES/EAGL.h>
 #import <OpenGLES/ES2/gl.h>
 #import <OpenGLES/ES2/glext.h>
-#include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/flow/platform_surface.h"
+#include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformSurface.h"
 
 namespace shell {

@@ -40,11 +40,9 @@ sk_sp<SkImage> IOSPlatformSurfaceGL::MakeSkImage(int width, int height, GrContex
   if (buffer != nullptr) {
     CVOpenGLESTextureRef texture;
     CVReturn err = CVOpenGLESTextureCacheCreateTextureFromImage(
-        kCFAllocatorDefault, cache_,
-        buffer, nullptr, GL_TEXTURE_2D, GL_RGBA,
+        kCFAllocatorDefault, cache_, buffer, nullptr, GL_TEXTURE_2D, GL_RGBA,
         static_cast<int>(CVPixelBufferGetWidth(buffer)),
-        static_cast<int>(CVPixelBufferGetHeight(buffer)),
-        GL_BGRA, GL_UNSIGNED_BYTE, 0, &texture);
+        static_cast<int>(CVPixelBufferGetHeight(buffer)), GL_BGRA, GL_UNSIGNED_BYTE, 0, &texture);
     texture_.Reset(texture);
     if (err != noErr) {
       FXL_LOG(WARNING) << "Could not create texture from pixel buffer: " << err;

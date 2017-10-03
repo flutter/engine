@@ -189,7 +189,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [_textInputPlugin.get() handleMethodCall:call result:result];
   }];
-  
+
   [self setupNotificationCenterObservers];
 }
 
@@ -780,7 +780,8 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 #pragma mark - FlutterPlatformSurfaceRegistry
 
 - (NSUInteger)registerPlatformSurface:(NSObject<FlutterPlatformSurface>*)surface {
-  return _platformView->rasterizer().GetPlatformSurfaceRegistry().RegisterPlatformSurface(new shell::IOSPlatformSurfaceGL(surface));
+  return _platformView->rasterizer().GetPlatformSurfaceRegistry().RegisterPlatformSurface(
+      new shell::IOSPlatformSurfaceGL(surface));
 }
 
 - (void)unregisterPlatformSurface:(NSUInteger)surfaceId {

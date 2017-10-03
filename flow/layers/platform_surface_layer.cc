@@ -26,7 +26,8 @@ void PlatformSurfaceLayer::Preroll(PrerollContext* context,
 }
 
 void PlatformSurfaceLayer::Paint(PaintContext& context) {
-  PlatformSurface* surface = context.platform_surface_registry.GetPlatformSurface(surface_id_);
+  PlatformSurface* surface =
+      context.platform_surface_registry.GetPlatformSurface(surface_id_);
   if (surface == nullptr) {
     FXL_DLOG(WARNING) << "No platform surface with id: " << surface_id_;
     return;

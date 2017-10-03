@@ -60,7 +60,9 @@ class CompositorContext {
 
   RasterCache& raster_cache() { return raster_cache_; }
 
-  PlatformSurfaceRegistry& platform_surface_registry() { return platform_surface_registry_; }
+  PlatformSurfaceRegistry& platform_surface_registry() {
+    return platform_surface_registry_;
+  }
 
   const Counter& frame_count() const { return frame_count_; }
 
