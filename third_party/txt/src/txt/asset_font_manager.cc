@@ -88,7 +88,7 @@ sk_sp<SkTypeface> AssetFontManager::onMakeFromStreamArgs(
 }
 
 sk_sp<SkTypeface> AssetFontManager::onMakeFromFile(const char path[],
-                                                     int ttcIndex) const {
+                                                   int ttcIndex) const {
   FXL_DCHECK(false);
   return nullptr;
 }
