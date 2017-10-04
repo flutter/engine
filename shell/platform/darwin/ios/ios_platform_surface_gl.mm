@@ -13,9 +13,7 @@
 
 namespace shell {
 
-IOSPlatformSurfaceGL::~IOSPlatformSurfaceGL() {
-  // TODO(sigurdm, mravn): dispose cache
-}
+IOSPlatformSurfaceGL::~IOSPlatformSurfaceGL() = default;
 
 IOSPlatformSurfaceGL::IOSPlatformSurfaceGL(NSObject<FlutterPlatformSurface>* surface)
     : surface_(surface) {
@@ -24,41 +22,40 @@ IOSPlatformSurfaceGL::IOSPlatformSurfaceGL(NSObject<FlutterPlatformSurface>* sur
 
 sk_sp<SkImage> IOSPlatformSurfaceGL::MakeSkImage(int width, int height, GrContext* grContext) {
   ASSERT_IS_GPU_THREAD;
-  if (!cache_) {
+  if (!cacheRef_) {
     CVOpenGLESTextureCacheRef cache;
     CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL,
                                                 [EAGLContext currentContext], NULL, &cache);
     if (err == noErr) {
-      cache_.Reset(cache);
+      cacheRef_.Reset(cache);
     } else {
       FXL_LOG(WARNING) << "Failed to create GLES texture cache: " << err;
       return nullptr;
     }
   }
-  fml::CFRef<CVPixelBufferRef> buffer;
-  buffer.Reset(CVBufferRetain([surface_ getPixelBuffer]));
-  if (buffer != nullptr) {
+  fml::CFRef<CVPixelBufferRef> bufferRef;
+  bufferRef.Reset([surface_ copyPixelBuffer]);
+  if (bufferRef != nullptr) {
     CVOpenGLESTextureRef texture;
     CVReturn err = CVOpenGLESTextureCacheCreateTextureFromImage(
-        kCFAllocatorDefault, cache_, buffer, nullptr, GL_TEXTURE_2D, GL_RGBA,
-        static_cast<int>(CVPixelBufferGetWidth(buffer)),
-        static_cast<int>(CVPixelBufferGetHeight(buffer)), GL_BGRA, GL_UNSIGNED_BYTE, 0, &texture);
-    texture_.Reset(texture);
+        kCFAllocatorDefault, cacheRef_, bufferRef, nullptr, GL_TEXTURE_2D, GL_RGBA,
+        static_cast<int>(CVPixelBufferGetWidth(bufferRef)),
+        static_cast<int>(CVPixelBufferGetHeight(bufferRef)), GL_BGRA, GL_UNSIGNED_BYTE, 0,
+        &texture);
+    textureRef_.Reset(texture);
     if (err != noErr) {
       FXL_LOG(WARNING) << "Could not create texture from pixel buffer: " << err;
       return nullptr;
     }
   }
-  if (!texture_) {
+  if (!textureRef_) {
     return nullptr;
   }
-  GrGLTextureInfo textureInfo = {CVOpenGLESTextureGetTarget(texture_),
-                                 CVOpenGLESTextureGetName(texture_)};
+  GrGLTextureInfo textureInfo = {CVOpenGLESTextureGetTarget(textureRef_),
+                                 CVOpenGLESTextureGetName(textureRef_)};
   GrBackendTexture backendTexture(width, height, kRGBA_8888_GrPixelConfig, textureInfo);
-  sk_sp<SkImage> sk_image =
-      SkImage::MakeFromTexture(grContext, backendTexture, kTopLeft_GrSurfaceOrigin,
-                               SkAlphaType::kPremul_SkAlphaType, nullptr);
-  return sk_image;
+  return SkImage::MakeFromTexture(grContext, backendTexture, kTopLeft_GrSurfaceOrigin,
+                                  SkAlphaType::kPremul_SkAlphaType, nullptr);
 }
 
 }  // namespace shell

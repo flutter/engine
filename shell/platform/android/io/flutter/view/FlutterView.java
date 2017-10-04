@@ -107,7 +107,7 @@ public class FlutterView extends SurfaceView
     private final List<FirstFrameListener> mFirstFrameListeners;
     private long mNativePlatformView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
-    private Map<Long, SurfaceTexture> surfaceIdToSurfaceTexture = new HashMap<Long, SurfaceTexture>();
+    private Map<Long, SurfaceTextureHandle> surfaceTextureHandles = new HashMap<Long, SurfaceTextureHandle>();
 
     public FlutterView(Context context) {
         this(context, null);
@@ -592,26 +592,16 @@ public class FlutterView extends SurfaceView
         return nativeGetBitmap(mNativePlatformView);
     }
 
-    public long createSurfaceTexture() {
+    /**
+     * Creates a SurfaceTexture that can be embedded into this view.
+     *
+     * @return A SurfaceTextureHandle.
+     */
+    public SurfaceTextureHandle createSurfaceTexture() {
         final long surfaceId = nativeAllocatePlatformSurface(mNativePlatformView);
-        final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
-        surfaceTexture.detachFromGLContext();
-        surfaceIdToSurfaceTexture.put(surfaceId, surfaceTexture);
-        return surfaceId;
-    }
-
-    public void releaseSurfaceTexture(long surfaceId) {
-        SurfaceTexture surfaceTexture = surfaceIdToSurfaceTexture.remove(surfaceId);
-        surfaceTexture.release();
-        nativeReleasePlatformSurface(mNativePlatformView, surfaceId);
-    }
-
-    public SurfaceTexture getSurfaceTexture(long surfaceId) {
-        return surfaceIdToSurfaceTexture.get(surfaceId);
-    }
-
-    public void markSurfaceTextureDirty(long surfaceId) {
-        nativeMarkPlatformSurfaceFrameAvailable(mNativePlatformView, surfaceId);
+        final SurfaceTextureHandle handle = new SurfaceTextureHandle(surfaceId);
+        surfaceTextureHandles.put(surfaceId, handle);
+        return handle;
     }
 
     private static native long nativeAttach(FlutterView view);
@@ -774,15 +764,10 @@ public class FlutterView extends SurfaceView
 
     // Called by native to update a platform surface texture on current GL context.
     private void updateTexImage(long surfaceId, long textureId) {
-        final SurfaceTexture surfaceTexture = surfaceIdToSurfaceTexture.get(surfaceId);
-        surfaceTexture.attachToGLContext((int) textureId);
-        surfaceTexture.updateTexImage();
-    }
-
-    // Called by native to detach a platform surface texture from current GL context.
-    private void detachTexImage(long surfaceId) {
-        final SurfaceTexture surfaceTexture = surfaceIdToSurfaceTexture.get(surfaceId);
-        surfaceTexture.detachFromGLContext();
+        final SurfaceTextureHandle handle = surfaceTextureHandles.get(surfaceId);
+        if (handle != null) {
+            handle.updateTexImage(textureId);
+        }
     }
 
     // ACCESSIBILITY
@@ -966,5 +951,52 @@ public class FlutterView extends SurfaceView
      */
     public interface FirstFrameListener {
         void onFirstFrame();
+    }
+
+    public class SurfaceTextureHandle {
+        private final SurfaceTexture surfaceTexture;
+        private final AtomicBoolean isReleased = new AtomicBoolean(false);
+        private final long surfaceId;
+        private long textureId;
+
+        SurfaceTextureHandle(long surfaceId) {
+            this.surfaceId = surfaceId;
+            surfaceTexture = new SurfaceTexture(0);
+            surfaceTexture.detachFromGLContext();
+            surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+                @Override
+                public void onFrameAvailable(SurfaceTexture texture) {
+                    if (!isReleased.get()) {
+                        nativeMarkPlatformSurfaceFrameAvailable(mNativePlatformView, getSurfaceId());
+                    }
+                }
+            });
+        }
+
+        public long getSurfaceId() {
+          return surfaceId;
+        }
+
+        public SurfaceTexture getSurfaceTexture() {
+            return surfaceTexture;
+        }
+
+        public void release() {
+            if (!isReleased.getAndSet(true)) {
+                surfaceTexture.release();
+                nativeReleasePlatformSurface(mNativePlatformView, surfaceId);
+            }
+        }
+
+        void updateTexImage(long textureId) {
+            if (this.textureId != textureId) {
+                if (this.textureId != 0) {
+                    surfaceTexture.detachFromGLContext();
+                }
+                this.textureId = textureId;
+                surfaceTexture.attachToGLContext((int) textureId);
+            }
+            surfaceTexture.updateTexImage();
+        }
     }
 }

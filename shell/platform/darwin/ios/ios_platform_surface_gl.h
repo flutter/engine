@@ -28,9 +28,8 @@ class IOSPlatformSurfaceGL : public flow::PlatformSurface {
 
  private:
   NSObject<FlutterPlatformSurface>* surface_;
-  // TODO(sigurdm, mravn): Share this cache between instances?
-  fml::CFRef<CVOpenGLESTextureCacheRef> cache_;
-  fml::CFRef<CVOpenGLESTextureRef> texture_;
+  fml::CFRef<CVOpenGLESTextureCacheRef> cacheRef_;
+  fml::CFRef<CVOpenGLESTextureRef> textureRef_;
   FXL_DISALLOW_COPY_AND_ASSIGN(IOSPlatformSurfaceGL);
 };
 

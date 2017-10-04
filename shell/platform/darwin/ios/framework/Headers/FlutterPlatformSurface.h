@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 FLUTTER_EXPORT
 @protocol FlutterPlatformSurface<NSObject>
-- (CVPixelBufferRef)getPixelBuffer;
+- (CVPixelBufferRef)copyPixelBuffer;
 @end
 
 FLUTTER_EXPORT

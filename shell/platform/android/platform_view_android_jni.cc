@@ -67,13 +67,6 @@ void FlutterViewUpdateTexImage(JNIEnv* env,
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 }
 
-static jmethodID g_detach_tex_image_method = nullptr;
-void FlutterViewDetachTexImage(JNIEnv* env, jobject obj, jlong surfaceId) {
-  ASSERT_IS_GPU_THREAD;
-  env->CallVoidMethod(obj, g_detach_tex_image_method, surfaceId);
-  FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
-}
-
 // Called By Java
 
 static jlong Attach(JNIEnv* env, jclass clazz, jobject flutterView) {
@@ -425,13 +418,6 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       env->GetMethodID(g_flutter_view_class->obj(), "updateTexImage", "(JJ)V");
 
   if (g_update_tex_image_method == nullptr) {
-    return false;
-  }
-
-  g_detach_tex_image_method =
-      env->GetMethodID(g_flutter_view_class->obj(), "detachTexImage", "(J)V");
-
-  if (g_detach_tex_image_method == nullptr) {
     return false;
   }
 

@@ -521,14 +521,6 @@ void PlatformViewAndroid::UpdateTexImage(int image_id, uint32_t texture_id) {
   }
 }
 
-void PlatformViewAndroid::DetachTexImage(int image_id) {
-  JNIEnv* env = fml::jni::AttachCurrentThread();
-  fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
-  if (!view.is_null()) {
-    FlutterViewDetachTexImage(env, view.obj(), image_id);
-  }
-}
-
 fml::jni::ScopedJavaLocalRef<jobject> PlatformViewAndroid::GetBitmap(
     JNIEnv* env) {
   // Render the last frame to an array of pixels on the GPU thread.
