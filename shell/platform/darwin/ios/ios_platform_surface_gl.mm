@@ -58,4 +58,10 @@ sk_sp<SkImage> IOSPlatformSurfaceGL::MakeSkImage(int width, int height, GrContex
                                   SkAlphaType::kPremul_SkAlphaType, nullptr);
 }
 
+void IOSPlatformSurfaceGL::OnGrContextDestroyed() {
+  FXL_LOG(INFO) << "IOSPlatformSurfaceGL::OnGrContextDestroyed";
+  textureRef_.Reset(nullptr);
+  cacheRef_.Reset(nullptr);
+}
+
 }  // namespace shell

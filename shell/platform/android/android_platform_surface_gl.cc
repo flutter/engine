@@ -30,12 +30,6 @@ AndroidPlatformSurfaceGL::AndroidPlatformSurfaceGL(
   ASSERT_IS_PLATFORM_THREAD;
 }
 
-class CleanupContext {
- public:
-  int surface_id;
-  std::shared_ptr<PlatformViewAndroid> platform_view;
-};
-
 void AndroidPlatformSurfaceGL::MarkNewFrameAvailable() {
   ASSERT_IS_PLATFORM_THREAD;
   blink::Threads::Gpu()->PostTask([this]() { new_frame_ready_ = true; });
@@ -45,7 +39,7 @@ sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width,
                                                      int height,
                                                      GrContext* grContext) {
   ASSERT_IS_GPU_THREAD;
-  if (new_frame_ready_) {
+  if (new_frame_ready_ || !texture_id_) {
     if (!texture_id_) {
       glGenTextures(1, &texture_id_);
     }
@@ -59,6 +53,14 @@ sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width,
   return SkImage::MakeFromTexture(grContext, backendTexture,
                                   kTopLeft_GrSurfaceOrigin,
                                   SkAlphaType::kPremul_SkAlphaType, nullptr);
+}
+
+void AndroidPlatformSurfaceGL::OnGrContextDestroyed() {
+  FXL_LOG(INFO) << "AndroidPlatformSurfaceGL::OnGrContextDestroyed";
+  if (texture_id_) {
+    platform_view_->DetachTexImage(Id());
+    texture_id_ = 0;
+  }
 }
 
 }  // namespace shell

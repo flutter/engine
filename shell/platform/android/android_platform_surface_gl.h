@@ -24,6 +24,7 @@ class AndroidPlatformSurfaceGL : public flow::PlatformSurface {
   virtual sk_sp<SkImage> MakeSkImage(int width,
                                      int height,
                                      GrContext* grContext) override;
+  virtual void OnGrContextDestroyed() override;
 
   // Called on platform thread.
   void MarkNewFrameAvailable();

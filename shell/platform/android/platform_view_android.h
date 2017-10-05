@@ -99,6 +99,8 @@ class PlatformViewAndroid : public PlatformView {
 
   void UpdateTexImage(int image_id, uint32_t texture_id);
 
+  void DetachTexImage(int image_id);
+
   void set_flutter_view(const fml::jni::JavaObjectWeakGlobalRef& flutter_view) {
     flutter_view_ = flutter_view;
     android_surface_->SetFlutterView(flutter_view);

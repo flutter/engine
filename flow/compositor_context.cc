@@ -58,7 +58,9 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 }
 
 void CompositorContext::OnGrContextDestroyed() {
+  FXL_LOG(INFO) << "CompositorContext::OnGrContextDestroyed";
   raster_cache_.Clear();
+  platform_surface_registry_.OnGrContextDestroyed();
 }
 
 }  // namespace flow

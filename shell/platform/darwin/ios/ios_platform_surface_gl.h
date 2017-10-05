@@ -26,6 +26,8 @@ class IOSPlatformSurfaceGL : public flow::PlatformSurface {
                                      int height,
                                      GrContext* grContext) override;
 
+  virtual void OnGrContextDestroyed() override;
+
  private:
   NSObject<FlutterPlatformSurface>* surface_;
   fml::CFRef<CVOpenGLESTextureCacheRef> cacheRef_;

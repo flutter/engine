@@ -770,6 +770,14 @@ public class FlutterView extends SurfaceView
         }
     }
 
+    // Called by native to detach a platform surface texture from current GL context.
+    private void detachTexImage(long surfaceId) {
+        final SurfaceTextureHandle handle = surfaceTextureHandles.get(surfaceId);
+        if (handle != null) {
+            handle.detachTexImage();
+        }
+    }
+
     // ACCESSIBILITY
 
     private boolean mAccessibilityEnabled = false;
@@ -953,50 +961,67 @@ public class FlutterView extends SurfaceView
         void onFirstFrame();
     }
 
-    public class SurfaceTextureHandle {
-        private final SurfaceTexture surfaceTexture;
-        private final AtomicBoolean isReleased = new AtomicBoolean(false);
+    public interface SurfaceTextureConsumer {
+        void accept(SurfaceTexture surfaceTexture);
+    }
+
+    public class SurfaceTextureHandle implements SurfaceTexture.OnFrameAvailableListener {
         private final long surfaceId;
-        private long textureId;
+        private SurfaceTextureConsumer consumer;
+        private SurfaceTexture surfaceTexture;
 
         SurfaceTextureHandle(long surfaceId) {
             this.surfaceId = surfaceId;
-            surfaceTexture = new SurfaceTexture(0);
-            surfaceTexture.detachFromGLContext();
-            surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
-                @Override
-                public void onFrameAvailable(SurfaceTexture texture) {
-                    if (!isReleased.get()) {
-                        nativeMarkPlatformSurfaceFrameAvailable(mNativePlatformView, getSurfaceId());
-                    }
-                }
-            });
+        }
+
+        public void setSurfaceTextureConsumer(SurfaceTextureConsumer consumer) {
+            this.consumer = consumer;
+            notifyConsumer();
+        }
+
+        @Override
+        public void onFrameAvailable(SurfaceTexture texture) {
+            if (texture == surfaceTexture) {
+                nativeMarkPlatformSurfaceFrameAvailable(mNativePlatformView, surfaceId);
+            }
         }
 
         public long getSurfaceId() {
-          return surfaceId;
-        }
-
-        public SurfaceTexture getSurfaceTexture() {
-            return surfaceTexture;
+            return surfaceId;
         }
 
         public void release() {
-            if (!isReleased.getAndSet(true)) {
-                surfaceTexture.release();
-                nativeReleasePlatformSurface(mNativePlatformView, surfaceId);
-            }
+            detachTexImage();
+            nativeReleasePlatformSurface(mNativePlatformView, surfaceId);
         }
 
         void updateTexImage(long textureId) {
-            if (this.textureId != textureId) {
-                if (this.textureId != 0) {
-                    surfaceTexture.detachFromGLContext();
-                }
-                this.textureId = textureId;
-                surfaceTexture.attachToGLContext((int) textureId);
+            if (surfaceTexture == null) {
+                surfaceTexture = new SurfaceTexture((int) textureId);
+                surfaceTexture.setOnFrameAvailableListener(this);
+                notifyConsumer();
             }
             surfaceTexture.updateTexImage();
+        }
+
+        void detachTexImage() {
+            if (surfaceTexture != null) {
+                surfaceTexture.setOnFrameAvailableListener(null);
+                surfaceTexture.release();
+                surfaceTexture = null;
+                notifyConsumer();
+            }
+        }
+
+        private void notifyConsumer() {
+            post(new Runnable() {
+                @Override
+                public void run() {
+                    if (consumer != null) {
+                        consumer.accept(surfaceTexture);
+                    }
+                }
+            });
         }
     }
 }

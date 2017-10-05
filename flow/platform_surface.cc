@@ -24,6 +24,14 @@ void PlatformSurfaceRegistry::DisposePlatformSurface(int id) {
   delete surface;
 }
 
+void PlatformSurfaceRegistry::OnGrContextDestroyed() {
+  FXL_LOG(INFO) << "PlatformSurfaceRegistry::OnGrContextDestroyed";
+  for (std::map<int, PlatformSurface*>::iterator it = mapping_.begin();
+       it != mapping_.end(); ++it) {
+    it->second->OnGrContextDestroyed();
+  }
+}
+
 PlatformSurface* PlatformSurfaceRegistry::GetPlatformSurface(int id) {
   return mapping_[id];
 }
