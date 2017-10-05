@@ -29,10 +29,12 @@ void FlutterViewUpdateSemantics(JNIEnv* env,
 
 void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj);
 
-void FlutterViewUpdateTexImage(JNIEnv* env,
+void FlutterViewAttachTexImage(JNIEnv* env,
                                jobject obj,
                                jlong imageId,
                                jlong textureId);
+
+void FlutterViewUpdateTexImage(JNIEnv* env, jobject obj, jlong imageId);
 
 void FlutterViewDetachTexImage(JNIEnv* env, jobject obj, jlong imageId);
 

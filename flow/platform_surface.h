@@ -28,7 +28,9 @@ class PlatformSurface {
                                      int height,
                                      GrContext* grContext) = 0;
 
-  virtual void OnGrContextDestroyed() = 0;
+  virtual void Attach() = 0;
+
+  virtual void Detach() = 0;
 
   int Id() { return id_; }
 
@@ -44,7 +46,8 @@ class PlatformSurfaceRegistry {
   int RegisterPlatformSurface(PlatformSurface* surface);
   void DisposePlatformSurface(int id);
   PlatformSurface* GetPlatformSurface(int id);
-  void OnGrContextDestroyed();
+  void AttachAll();
+  void DetachAll();
 
  private:
   std::map<int, PlatformSurface*> mapping_;

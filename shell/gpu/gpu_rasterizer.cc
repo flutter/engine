@@ -36,8 +36,8 @@ void GPURasterizer::Setup(std::unique_ptr<Surface> surface,
                           fxl::Closure continuation,
                           fxl::AutoResetWaitableEvent* setup_completion_event) {
   surface_ = std::move(surface);
-
   continuation();
+  GetPlatformSurfaceRegistry().AttachAll();
 
   setup_completion_event->Signal();
 }

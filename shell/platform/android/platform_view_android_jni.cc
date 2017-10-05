@@ -57,13 +57,20 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 }
 
-static jmethodID g_update_tex_image_method = nullptr;
-void FlutterViewUpdateTexImage(JNIEnv* env,
+static jmethodID g_attach_tex_image_method = nullptr;
+void FlutterViewAttachTexImage(JNIEnv* env,
                                jobject obj,
                                jlong surfaceId,
                                jlong textureId) {
   ASSERT_IS_GPU_THREAD;
-  env->CallVoidMethod(obj, g_update_tex_image_method, surfaceId, textureId);
+  env->CallVoidMethod(obj, g_attach_tex_image_method, surfaceId, textureId);
+  FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
+}
+
+static jmethodID g_update_tex_image_method = nullptr;
+void FlutterViewUpdateTexImage(JNIEnv* env, jobject obj, jlong surfaceId) {
+  ASSERT_IS_GPU_THREAD;
+  env->CallVoidMethod(obj, g_update_tex_image_method, surfaceId);
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 }
 
@@ -89,6 +96,14 @@ static jlong Attach(JNIEnv* env, jclass clazz, jobject flutterView) {
 static void Detach(JNIEnv* env, jobject jcaller, jlong platform_view) {
   PLATFORM_VIEW->Detach();
   delete &PLATFORM_VIEW;
+}
+
+static void Pause(JNIEnv* env, jobject jcaller, jlong platform_view) {
+  PLATFORM_VIEW->Pause();
+}
+
+static void PostResume(JNIEnv* env, jobject jcaller, jlong platform_view) {
+  PLATFORM_VIEW->PostResume();
 }
 
 static jstring GetObservatoryUri(JNIEnv* env, jclass clazz) {
@@ -215,23 +230,14 @@ static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {
 static jlong AllocatePlatformSurface(JNIEnv* env,
                                      jobject jcaller,
                                      jlong platform_view) {
-  AndroidPlatformSurfaceGL* surface =
-      new AndroidPlatformSurfaceGL(PLATFORM_VIEW);
-  return PLATFORM_VIEW->rasterizer()
-      .GetPlatformSurfaceRegistry()
-      .RegisterPlatformSurface(surface);
+  return PLATFORM_VIEW->AllocatePlatformSurface(PLATFORM_VIEW);
 }
 
 static void MarkPlatformSurfaceFrameAvailable(JNIEnv* env,
                                               jobject jcaller,
                                               jlong platform_view,
                                               jlong surfaceId) {
-  AndroidPlatformSurfaceGL* surface = static_cast<AndroidPlatformSurfaceGL*>(
-      PLATFORM_VIEW->rasterizer()
-          .GetPlatformSurfaceRegistry()
-          .GetPlatformSurface(surfaceId));
-  surface->MarkNewFrameAvailable();
-  PLATFORM_VIEW->ScheduleFrame();
+  return PLATFORM_VIEW->MarkPlatformSurfaceFrameAvailable(surfaceId);
 }
 
 static void ReleasePlatformSurface(JNIEnv* env,
@@ -283,6 +289,16 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .name = "nativeDetach",
           .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&shell::Detach),
+      },
+      {
+          .name = "nativePause",
+          .signature = "(J)V",
+          .fnPtr = reinterpret_cast<void*>(&shell::Pause),
+      },
+      {
+          .name = "nativePostResume",
+          .signature = "(J)V",
+          .fnPtr = reinterpret_cast<void*>(&shell::PostResume),
       },
       {
           .name = "nativeGetObservatoryUri",
@@ -421,8 +437,15 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_attach_tex_image_method =
+      env->GetMethodID(g_flutter_view_class->obj(), "attachTexImage", "(JJ)V");
+
+  if (g_attach_tex_image_method == nullptr) {
+    return false;
+  }
+
   g_update_tex_image_method =
-      env->GetMethodID(g_flutter_view_class->obj(), "updateTexImage", "(JJ)V");
+      env->GetMethodID(g_flutter_view_class->obj(), "updateTexImage", "(J)V");
 
   if (g_update_tex_image_method == nullptr) {
     return false;

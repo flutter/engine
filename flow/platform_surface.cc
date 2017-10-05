@@ -12,6 +12,7 @@ PlatformSurfaceRegistry::PlatformSurfaceRegistry() {
 PlatformSurfaceRegistry::~PlatformSurfaceRegistry() = default;
 
 int PlatformSurfaceRegistry::RegisterPlatformSurface(PlatformSurface* surface) {
+  ASSERT_IS_GPU_THREAD
   int id = mapping_.size() + 1;
   mapping_[id] = surface;
   surface->id_ = id;
@@ -19,20 +20,28 @@ int PlatformSurfaceRegistry::RegisterPlatformSurface(PlatformSurface* surface) {
 }
 
 void PlatformSurfaceRegistry::DisposePlatformSurface(int id) {
+  ASSERT_IS_GPU_THREAD
   PlatformSurface* surface = mapping_[id];
   mapping_.erase(id);
   delete surface;
 }
 
-void PlatformSurfaceRegistry::OnGrContextDestroyed() {
-  FXL_LOG(INFO) << "PlatformSurfaceRegistry::OnGrContextDestroyed";
-  for (std::map<int, PlatformSurface*>::iterator it = mapping_.begin();
-       it != mapping_.end(); ++it) {
-    it->second->OnGrContextDestroyed();
+void PlatformSurfaceRegistry::AttachAll() {
+  ASSERT_IS_GPU_THREAD;
+  for (auto& it : mapping_) {
+    it.second->Attach();
+  }
+}
+
+void PlatformSurfaceRegistry::DetachAll() {
+  ASSERT_IS_GPU_THREAD;
+  for (auto& it : mapping_) {
+    it.second->Detach();
   }
 }
 
 PlatformSurface* PlatformSurfaceRegistry::GetPlatformSurface(int id) {
+  ASSERT_IS_GPU_THREAD
   return mapping_[id];
 }
 

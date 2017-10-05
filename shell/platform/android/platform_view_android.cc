@@ -17,6 +17,7 @@
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/shell/gpu/gpu_rasterizer.h"
+#include "flutter/shell/platform/android/android_platform_surface_gl.h"
 #include "flutter/shell/platform/android/android_surface_gl.h"
 #include "flutter/shell/platform/android/android_surface_software.h"
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
@@ -152,6 +153,26 @@ void PlatformViewAndroid::Attach() {
 
 void PlatformViewAndroid::Detach() {
   ReleaseSurface();
+}
+
+void PlatformViewAndroid::Pause() {
+  ASSERT_IS_PLATFORM_THREAD
+  fxl::AutoResetWaitableEvent latch;
+  blink::Threads::Gpu()->PostTask([this, &latch]() {
+    rasterizer_->GetPlatformSurfaceRegistry().DetachAll();
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
+void PlatformViewAndroid::PostResume() {
+  //  ASSERT_IS_PLATFORM_THREAD
+  //  fxl::AutoResetWaitableEvent latch;
+  //  blink::Threads::Gpu()->PostTask([this, &latch]() {
+  //    rasterizer_->GetPlatformSurfaceRegistry().AttachAll();
+  //    latch.Signal();
+  //  });
+  //  latch.Wait();
 }
 
 void PlatformViewAndroid::SurfaceCreated(JNIEnv* env,
@@ -513,19 +534,57 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
   fml::jni::DetachFromVM();
 }
 
-void PlatformViewAndroid::UpdateTexImage(int image_id, uint32_t texture_id) {
+int PlatformViewAndroid::AllocatePlatformSurface(
+    std::shared_ptr<PlatformViewAndroid> platform_view) {
+  int surface_id;
+  fxl::AutoResetWaitableEvent latch;
+  blink::Threads::Gpu()->PostTask(
+      [this, &surface_id, &latch, &platform_view]() {
+        AndroidPlatformSurfaceGL* surface =
+            new AndroidPlatformSurfaceGL(platform_view);
+        surface_id =
+            rasterizer_->GetPlatformSurfaceRegistry().RegisterPlatformSurface(
+                surface);
+        latch.Signal();
+      });
+  latch.Wait();
+  return surface_id;
+}
+
+void PlatformViewAndroid::MarkPlatformSurfaceFrameAvailable(int surface_id) {
+  fxl::AutoResetWaitableEvent latch;
+  blink::Threads::Gpu()->PostTask([this, &latch, &surface_id]() {
+    AndroidPlatformSurfaceGL* surface = static_cast<AndroidPlatformSurfaceGL*>(
+        rasterizer_->GetPlatformSurfaceRegistry().GetPlatformSurface(
+            surface_id));
+    surface->MarkNewFrameAvailable();
+    latch.Signal();
+  });
+  latch.Wait();
+  ScheduleFrame();
+}
+
+void PlatformViewAndroid::AttachTexImage(int surface_id, uint32_t texture_id) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
   if (!view.is_null()) {
-    FlutterViewUpdateTexImage(env, view.obj(), image_id, texture_id);
+    FlutterViewAttachTexImage(env, view.obj(), surface_id, texture_id);
   }
 }
 
-void PlatformViewAndroid::DetachTexImage(int image_id) {
+void PlatformViewAndroid::UpdateTexImage(int surface_id) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
   if (!view.is_null()) {
-    FlutterViewDetachTexImage(env, view.obj(), image_id);
+    FlutterViewUpdateTexImage(env, view.obj(), surface_id);
+  }
+}
+
+void PlatformViewAndroid::DetachTexImage(int surface_id) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
+  if (!view.is_null()) {
+    FlutterViewDetachTexImage(env, view.obj(), surface_id);
   }
 }
 

@@ -10,7 +10,7 @@
 #include <jni.h>
 #include "flutter/common/threads.h"
 #include "flutter/lib/ui/painting/resource_context.h"
-#include "flutter/shell/platform/android/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/platform_view_android.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrTexture.h"
@@ -27,26 +27,35 @@ AndroidPlatformSurfaceGL::~AndroidPlatformSurfaceGL() {
 AndroidPlatformSurfaceGL::AndroidPlatformSurfaceGL(
     std::shared_ptr<PlatformViewAndroid> platformView)
     : platform_view_(platformView) {
-  ASSERT_IS_PLATFORM_THREAD;
+  ASSERT_IS_GPU_THREAD;
+}
+
+void AndroidPlatformSurfaceGL::Attach() {
+  FXL_LOG(INFO) << "AndroidPlatformSurfaceGL::Attach";
+  ASSERT_IS_GPU_THREAD;
+  is_detached_ = false;
 }
 
 void AndroidPlatformSurfaceGL::MarkNewFrameAvailable() {
-  ASSERT_IS_PLATFORM_THREAD;
-  blink::Threads::Gpu()->PostTask([this]() { new_frame_ready_ = true; });
+  ASSERT_IS_GPU_THREAD;
+  new_frame_ready_ = true;
 }
 
 sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width,
                                                      int height,
                                                      GrContext* grContext) {
   ASSERT_IS_GPU_THREAD;
-  if (new_frame_ready_ || !texture_id_) {
-    if (!texture_id_) {
-      glGenTextures(1, &texture_id_);
-    }
-    platform_view_->UpdateTexImage(Id(), texture_id_);
+  if (is_detached_) {
+    return nullptr;
+  }
+  if (!texture_id_) {
+    glGenTextures(1, &texture_id_);
+    platform_view_->AttachTexImage(Id(), texture_id_);
+  }
+  if (new_frame_ready_) {
+    platform_view_->UpdateTexImage(Id());
     new_frame_ready_ = false;
   }
-  glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture_id_);
   GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES, texture_id_};
   GrBackendTexture backendTexture(width, height, kRGBA_8888_GrPixelConfig,
                                   textureInfo);
@@ -55,12 +64,14 @@ sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width,
                                   SkAlphaType::kPremul_SkAlphaType, nullptr);
 }
 
-void AndroidPlatformSurfaceGL::OnGrContextDestroyed() {
-  FXL_LOG(INFO) << "AndroidPlatformSurfaceGL::OnGrContextDestroyed";
+void AndroidPlatformSurfaceGL::Detach() {
+  FXL_LOG(INFO) << "AndroidPlatformSurfaceGL::Detach";
+  ASSERT_IS_GPU_THREAD;
   if (texture_id_) {
     platform_view_->DetachTexImage(Id());
     texture_id_ = 0;
   }
+  is_detached_ = true;
 }
 
 }  // namespace shell
