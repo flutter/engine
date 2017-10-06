@@ -56,6 +56,8 @@ class CompositorContext {
                            SkCanvas* canvas,
                            bool instrumentation_enabled = true);
 
+  void OnGrContextCreated();
+
   void OnGrContextDestroyed();
 
   RasterCache& raster_cache() { return raster_cache_; }

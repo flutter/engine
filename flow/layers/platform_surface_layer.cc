@@ -3,15 +3,9 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/platform_surface_layer.h"
-#include "flutter/common/threads.h"
+
 #include "flutter/flow/platform_surface.h"
-#include "lib/fxl/synchronization/waitable_event.h"
-#include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrContext.h"
-#include "third_party/skia/include/gpu/GrTexture.h"
-#include "third_party/skia/include/gpu/GrTypes.h"
 
 namespace flow {
 
@@ -26,9 +20,9 @@ void PlatformSurfaceLayer::Preroll(PrerollContext* context,
 }
 
 void PlatformSurfaceLayer::Paint(PaintContext& context) {
-  PlatformSurface* surface =
+  std::shared_ptr<PlatformSurface> surface =
       context.platform_surface_registry.GetPlatformSurface(surface_id_);
-  if (surface == nullptr) {
+  if (!surface) {
     FXL_DLOG(WARNING) << "No platform surface with id: " << surface_id_;
     return;
   }

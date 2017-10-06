@@ -21,6 +21,7 @@ class PlatformSurface {
   friend class PlatformSurfaceRegistry;
 
  public:
+  // Called from GPU thread.
   virtual ~PlatformSurface();
 
   // Called from GPU thread.
@@ -28,14 +29,16 @@ class PlatformSurface {
                                      int height,
                                      GrContext* grContext) = 0;
 
-  virtual void Attach() = 0;
+  // Called from GPU thread.
+  virtual void OnGrContextCreated() = 0;
 
-  virtual void Detach() = 0;
+  // Called from GPU thread.
+  virtual void OnGrContextDestroyed() = 0;
 
-  int Id() { return id_; }
+  size_t Id() { return id_; }
 
  private:
-  int id_;
+  size_t id_;
 };
 
 class PlatformSurfaceRegistry {
@@ -43,14 +46,24 @@ class PlatformSurfaceRegistry {
   PlatformSurfaceRegistry();
   ~PlatformSurfaceRegistry();
 
-  int RegisterPlatformSurface(PlatformSurface* surface);
-  void DisposePlatformSurface(int id);
-  PlatformSurface* GetPlatformSurface(int id);
-  void AttachAll();
-  void DetachAll();
+  // Called from GPU thread.
+  size_t RegisterPlatformSurface(std::shared_ptr<PlatformSurface> surface);
+
+  // Called from GPU thread.
+  void DisposePlatformSurface(size_t id);
+
+  // Called from GPU thread.
+  std::shared_ptr<PlatformSurface> GetPlatformSurface(size_t id);
+
+  // Called from GPU thread.
+  void OnGrContextCreated();
+
+  // Called from GPU thread.
+  void OnGrContextDestroyed();
 
  private:
-  std::map<int, PlatformSurface*> mapping_;
+  std::map<size_t, std::shared_ptr<PlatformSurface>> mapping_;
+  size_t counter_ = 0;
 };
 
 }  // namespace flow

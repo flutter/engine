@@ -98,14 +98,6 @@ static void Detach(JNIEnv* env, jobject jcaller, jlong platform_view) {
   delete &PLATFORM_VIEW;
 }
 
-static void Pause(JNIEnv* env, jobject jcaller, jlong platform_view) {
-  PLATFORM_VIEW->Pause();
-}
-
-static void PostResume(JNIEnv* env, jobject jcaller, jlong platform_view) {
-  PLATFORM_VIEW->PostResume();
-}
-
 static jstring GetObservatoryUri(JNIEnv* env, jclass clazz) {
   return env->NewStringUTF(
       blink::DartServiceIsolate::GetObservatoryUri().c_str());
@@ -230,7 +222,7 @@ static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {
 static jlong AllocatePlatformSurface(JNIEnv* env,
                                      jobject jcaller,
                                      jlong platform_view) {
-  return PLATFORM_VIEW->AllocatePlatformSurface(PLATFORM_VIEW);
+  return PLATFORM_VIEW->AllocatePlatformSurface();
 }
 
 static void MarkPlatformSurfaceFrameAvailable(JNIEnv* env,
@@ -244,9 +236,7 @@ static void ReleasePlatformSurface(JNIEnv* env,
                                    jobject jcaller,
                                    jlong platform_view,
                                    jlong surfaceId) {
-  PLATFORM_VIEW->rasterizer()
-      .GetPlatformSurfaceRegistry()
-      .DisposePlatformSurface(surfaceId);
+  PLATFORM_VIEW->ReleasePlatformSurface(surfaceId);
 }
 
 static void InvokePlatformMessageResponseCallback(JNIEnv* env,
@@ -289,16 +279,6 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .name = "nativeDetach",
           .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&shell::Detach),
-      },
-      {
-          .name = "nativePause",
-          .signature = "(J)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::Pause),
-      },
-      {
-          .name = "nativePostResume",
-          .signature = "(J)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::PostResume),
       },
       {
           .name = "nativeGetObservatoryUri",

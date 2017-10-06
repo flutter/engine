@@ -5,11 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_SURFACE_GL_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_SURFACE_GL_H_
 
-#include <jni.h>
 #include "flutter/flow/platform_surface.h"
-#include "flutter/fml/platform/android/jni_util.h"
-#include "flutter/fml/platform/android/jni_weak_ref.h"
-#include "flutter/fml/platform/android/scoped_java_ref.h"
 
 namespace shell {
 
@@ -17,29 +13,32 @@ class PlatformViewAndroid;
 
 class AndroidPlatformSurfaceGL : public flow::PlatformSurface {
  public:
-  AndroidPlatformSurfaceGL(std::shared_ptr<PlatformViewAndroid> platformView);
+  AndroidPlatformSurfaceGL(PlatformViewAndroid* platformView);
 
   ~AndroidPlatformSurfaceGL() override;
 
-  // Called from GPU thread.
   virtual sk_sp<SkImage> MakeSkImage(int width,
                                      int height,
                                      GrContext* grContext) override;
 
-  // Called from GPU thread.
-  virtual void Attach() override;
+  virtual void OnGrContextCreated() override;
 
-  // Called from GPU thread.
-  virtual void Detach() override;
+  virtual void OnGrContextDestroyed() override;
 
-  // Called on platform thread.
+  // Called on GPU thread.
   void MarkNewFrameAvailable();
 
  private:
-  std::shared_ptr<PlatformViewAndroid> platform_view_;
-  bool is_detached_ = false;
+  enum class AttachmentState { uninitialized, attached, detached };
+
+  PlatformViewAndroid* platform_view_;
+
+  AttachmentState state_ = AttachmentState::uninitialized;
+
   bool new_frame_ready_ = false;
+
   uint32_t texture_id_ = 0;
+
   FXL_DISALLOW_COPY_AND_ASSIGN(AndroidPlatformSurfaceGL);
 };
 

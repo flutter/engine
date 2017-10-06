@@ -781,7 +781,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 - (NSUInteger)registerPlatformSurface:(NSObject<FlutterPlatformSurface>*)surface {
   return _platformView->rasterizer().GetPlatformSurfaceRegistry().RegisterPlatformSurface(
-      new shell::IOSPlatformSurfaceGL(surface));
+      std::make_shared<shell::IOSPlatformSurfaceGL>(surface));
 }
 
 - (void)unregisterPlatformSurface:(NSUInteger)surfaceId {

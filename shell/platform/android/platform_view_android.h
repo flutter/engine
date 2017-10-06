@@ -32,10 +32,6 @@ class PlatformViewAndroid : public PlatformView {
 
   void Detach();
 
-  void Pause();
-
-  void PostResume();
-
   void SurfaceCreated(JNIEnv* env, jobject jsurface, jint backgroundColor);
 
   void SurfaceChanged(jint width, jint height);
@@ -101,16 +97,17 @@ class PlatformViewAndroid : public PlatformView {
                      const std::string& main,
                      const std::string& packages) override;
 
-  int AllocatePlatformSurface(
-      std::shared_ptr<PlatformViewAndroid> platform_view);
+  int AllocatePlatformSurface();
 
-  void MarkPlatformSurfaceFrameAvailable(int surface_id);
+  void ReleasePlatformSurface(size_t surface_id);
 
-  void AttachTexImage(int surface_id, uint32_t texture_id);
+  void MarkPlatformSurfaceFrameAvailable(size_t surface_id);
 
-  void UpdateTexImage(int surface_id);
+  void AttachTexImage(size_t surface_id, uint32_t texture_id);
 
-  void DetachTexImage(int surface_id);
+  void UpdateTexImage(size_t surface_id);
+
+  void DetachTexImage(size_t surface_id);
 
   void set_flutter_view(const fml::jni::JavaObjectWeakGlobalRef& flutter_view) {
     flutter_view_ = flutter_view;

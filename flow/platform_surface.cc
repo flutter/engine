@@ -6,41 +6,38 @@
 
 namespace flow {
 
-PlatformSurfaceRegistry::PlatformSurfaceRegistry() {
-  mapping_ = {};
-}
+PlatformSurfaceRegistry::PlatformSurfaceRegistry() = default;
+
 PlatformSurfaceRegistry::~PlatformSurfaceRegistry() = default;
 
-int PlatformSurfaceRegistry::RegisterPlatformSurface(PlatformSurface* surface) {
+size_t PlatformSurfaceRegistry::RegisterPlatformSurface(std::shared_ptr<PlatformSurface> surface) {
   ASSERT_IS_GPU_THREAD
-  int id = mapping_.size() + 1;
+  size_t id = counter_++;
   mapping_[id] = surface;
   surface->id_ = id;
   return id;
 }
 
-void PlatformSurfaceRegistry::DisposePlatformSurface(int id) {
+void PlatformSurfaceRegistry::DisposePlatformSurface(size_t id) {
   ASSERT_IS_GPU_THREAD
-  PlatformSurface* surface = mapping_[id];
   mapping_.erase(id);
-  delete surface;
 }
 
-void PlatformSurfaceRegistry::AttachAll() {
+void PlatformSurfaceRegistry::OnGrContextCreated() {
   ASSERT_IS_GPU_THREAD;
   for (auto& it : mapping_) {
-    it.second->Attach();
+    it.second->OnGrContextCreated();
   }
 }
 
-void PlatformSurfaceRegistry::DetachAll() {
+void PlatformSurfaceRegistry::OnGrContextDestroyed() {
   ASSERT_IS_GPU_THREAD;
   for (auto& it : mapping_) {
-    it.second->Detach();
+    it.second->OnGrContextDestroyed();
   }
 }
 
-PlatformSurface* PlatformSurfaceRegistry::GetPlatformSurface(int id) {
+std::shared_ptr<PlatformSurface> PlatformSurfaceRegistry::GetPlatformSurface(size_t id) {
   ASSERT_IS_GPU_THREAD
   return mapping_[id];
 }

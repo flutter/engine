@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -107,7 +108,8 @@ public class FlutterView extends SurfaceView
     private final List<FirstFrameListener> mFirstFrameListeners;
     private long mNativePlatformView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
-    private Map<Long, SurfaceTextureHandle> surfaceTextureHandles = new HashMap<Long, SurfaceTextureHandle>();
+    // Used both by the GPU thread and the Platform thread.
+    private Map<Long, SurfaceTextureHandle> surfaceTextureHandles = new ConcurrentHashMap<Long, SurfaceTextureHandle>();
 
     public FlutterView(Context context) {
         this(context, null);
@@ -233,17 +235,14 @@ public class FlutterView extends SurfaceView
     }
 
     public void onPause() {
-        nativePause(mNativePlatformView);
         mFlutterLifecycleChannel.send("AppLifecycleState.paused");
     }
 
     public void onPostResume() {
-        Log.e(TAG, "FlutterView.onPostResume");
         for (ActivityLifecycleListener listener : mActivityLifecycleListeners) {
             listener.onPostResume();
         }
         mFlutterLifecycleChannel.send("AppLifecycleState.resumed");
-        nativePostResume(mNativePlatformView);
     }
 
     public void onStop() {
@@ -613,10 +612,6 @@ public class FlutterView extends SurfaceView
 
     private static native void nativeDetach(long nativePlatformViewAndroid);
 
-    private static native void nativePause(long nativePlatformViewAndroid);
-
-    private static native void nativePostResume(long nativePlatformViewAndroid);
-
     private static native void nativeSurfaceCreated(long nativePlatformViewAndroid,
         Surface surface,
         int backgroundColor);
@@ -785,17 +780,10 @@ public class FlutterView extends SurfaceView
         }
     }
 
-    // Called by native to detach a platform surface texture from current GL context.
+    // Called by native.
     private void detachTexImage(long surfaceId) {
         final SurfaceTextureHandle handle = surfaceTextureHandles.get(surfaceId);
         if (handle != null) {
-            handle.detachTexImage();
-        }
-    }
-
-    // Called by native to detach all platform surface textures from current GL context.
-    private void detachTexImages() {
-        for (final SurfaceTextureHandle handle : surfaceTextureHandles.values()) {
             handle.detachTexImage();
         }
     }
@@ -987,25 +975,24 @@ public class FlutterView extends SurfaceView
         void accept(SurfaceTexture surfaceTexture);
     }
 
-    public class SurfaceTextureHandle implements SurfaceTexture.OnFrameAvailableListener {
+    public class SurfaceTextureHandle {
         private final long surfaceId;
         private final SurfaceTexture surfaceTexture;
-        private long textureId;
 
         SurfaceTextureHandle(long surfaceId) {
             this.surfaceId = surfaceId;
             this.surfaceTexture = new SurfaceTexture(0);
             this.surfaceTexture.detachFromGLContext();
-            this.surfaceTexture.setOnFrameAvailableListener(this);
+            this.surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+                @Override
+                public void onFrameAvailable(SurfaceTexture texture) {
+                    nativeMarkPlatformSurfaceFrameAvailable(mNativePlatformView, SurfaceTextureHandle.this.surfaceId);
+                }
+            });
         }
 
         public SurfaceTexture getSurfaceTexture() {
           return surfaceTexture;
-        }
-
-        @Override
-        public void onFrameAvailable(SurfaceTexture texture) {
-            nativeMarkPlatformSurfaceFrameAvailable(mNativePlatformView, surfaceId);
         }
 
         public long getSurfaceId() {
@@ -1013,13 +1000,11 @@ public class FlutterView extends SurfaceView
         }
 
         public void release() {
-            detachTexImage();
-            surfaceTexture.release();
             nativeReleasePlatformSurface(mNativePlatformView, surfaceId);
+            surfaceTexture.release();
         }
 
         void attachTexImage(long textureId) {
-            Log.e(TAG, "SurfaceTextureHandle.attachTexImage, textureID " + textureId);
             surfaceTexture.attachToGLContext((int) textureId);
         }
 
@@ -1028,7 +1013,6 @@ public class FlutterView extends SurfaceView
         }
 
         void detachTexImage() {
-            Log.e(TAG, "SurfaceTextureHandle.detachTexImage");
             surfaceTexture.detachFromGLContext();
         }
     }

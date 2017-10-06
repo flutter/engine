@@ -9,7 +9,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.util.Log;
 import io.flutter.app.FlutterActivityDelegate.ViewFactory;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
@@ -90,7 +89,6 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
 
     @Override
     protected void onPostResume() {
-        Log.e("Flotter", "FlutterActivity.onPostResume");
         super.onPostResume();
         eventDelegate.onPostResume();
     }

@@ -155,26 +155,6 @@ void PlatformViewAndroid::Detach() {
   ReleaseSurface();
 }
 
-void PlatformViewAndroid::Pause() {
-  ASSERT_IS_PLATFORM_THREAD
-  fxl::AutoResetWaitableEvent latch;
-  blink::Threads::Gpu()->PostTask([this, &latch]() {
-    rasterizer_->GetPlatformSurfaceRegistry().DetachAll();
-    latch.Signal();
-  });
-  latch.Wait();
-}
-
-void PlatformViewAndroid::PostResume() {
-  //  ASSERT_IS_PLATFORM_THREAD
-  //  fxl::AutoResetWaitableEvent latch;
-  //  blink::Threads::Gpu()->PostTask([this, &latch]() {
-  //    rasterizer_->GetPlatformSurfaceRegistry().AttachAll();
-  //    latch.Signal();
-  //  });
-  //  latch.Wait();
-}
-
 void PlatformViewAndroid::SurfaceCreated(JNIEnv* env,
                                          jobject jsurface,
                                          jint backgroundColor) {
@@ -534,29 +514,36 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
   fml::jni::DetachFromVM();
 }
 
-int PlatformViewAndroid::AllocatePlatformSurface(
-    std::shared_ptr<PlatformViewAndroid> platform_view) {
+int PlatformViewAndroid::AllocatePlatformSurface() {
   int surface_id;
   fxl::AutoResetWaitableEvent latch;
-  blink::Threads::Gpu()->PostTask(
-      [this, &surface_id, &latch, &platform_view]() {
-        AndroidPlatformSurfaceGL* surface =
-            new AndroidPlatformSurfaceGL(platform_view);
-        surface_id =
-            rasterizer_->GetPlatformSurfaceRegistry().RegisterPlatformSurface(
-                surface);
-        latch.Signal();
-      });
+  blink::Threads::Gpu()->PostTask([this, &surface_id, &latch]() {
+    surface_id =
+        rasterizer_->GetPlatformSurfaceRegistry().RegisterPlatformSurface(
+            std::make_shared<AndroidPlatformSurfaceGL>(this));
+    latch.Signal();
+  });
   latch.Wait();
   return surface_id;
 }
 
-void PlatformViewAndroid::MarkPlatformSurfaceFrameAvailable(int surface_id) {
+void PlatformViewAndroid::ReleasePlatformSurface(size_t surface_id) {
   fxl::AutoResetWaitableEvent latch;
-  blink::Threads::Gpu()->PostTask([this, &latch, &surface_id]() {
-    AndroidPlatformSurfaceGL* surface = static_cast<AndroidPlatformSurfaceGL*>(
-        rasterizer_->GetPlatformSurfaceRegistry().GetPlatformSurface(
-            surface_id));
+  blink::Threads::Gpu()->PostTask([this, &latch, surface_id]() {
+    rasterizer_->GetPlatformSurfaceRegistry().DisposePlatformSurface(
+        surface_id);
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
+void PlatformViewAndroid::MarkPlatformSurfaceFrameAvailable(size_t surface_id) {
+  fxl::AutoResetWaitableEvent latch;
+  blink::Threads::Gpu()->PostTask([this, &latch, surface_id]() {
+    std::shared_ptr<AndroidPlatformSurfaceGL> surface =
+        static_pointer_cast<AndroidPlatformSurfaceGL>(
+            rasterizer_->GetPlatformSurfaceRegistry().GetPlatformSurface(
+                surface_id));
     surface->MarkNewFrameAvailable();
     latch.Signal();
   });
@@ -564,7 +551,8 @@ void PlatformViewAndroid::MarkPlatformSurfaceFrameAvailable(int surface_id) {
   ScheduleFrame();
 }
 
-void PlatformViewAndroid::AttachTexImage(int surface_id, uint32_t texture_id) {
+void PlatformViewAndroid::AttachTexImage(size_t surface_id,
+                                         uint32_t texture_id) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
   if (!view.is_null()) {
@@ -572,7 +560,7 @@ void PlatformViewAndroid::AttachTexImage(int surface_id, uint32_t texture_id) {
   }
 }
 
-void PlatformViewAndroid::UpdateTexImage(int surface_id) {
+void PlatformViewAndroid::UpdateTexImage(size_t surface_id) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
   if (!view.is_null()) {
@@ -580,7 +568,7 @@ void PlatformViewAndroid::UpdateTexImage(int surface_id) {
   }
 }
 
-void PlatformViewAndroid::DetachTexImage(int surface_id) {
+void PlatformViewAndroid::DetachTexImage(size_t surface_id) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
   if (!view.is_null()) {

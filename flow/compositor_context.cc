@@ -57,8 +57,12 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
   context_.EndFrame(*this, instrumentation_enabled_);
 }
 
+void CompositorContext::OnGrContextCreated() {
+  platform_surface_registry_.OnGrContextCreated();
+}
+
 void CompositorContext::OnGrContextDestroyed() {
-  FXL_LOG(INFO) << "CompositorContext::OnGrContextDestroyed";
+  platform_surface_registry_.OnGrContextDestroyed();
   raster_cache_.Clear();
 }
 
