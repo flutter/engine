@@ -1316,6 +1316,26 @@ Future<Null> _decodeImageFromListAsync(Uint8List list, ImageDecoderCallback call
   callback(frameInfo.image);
 }
 
+/// The encoding formats supported by the [encodeImage].
+enum EncodedImageFormat {
+  // Be conservative with the formats we expose. We can increase the list in future but reducing
+  // it is more difficult.
+  JPEG,
+  PNG,
+  WEBP,
+}
+
+/// Callback signature for [encodeImage].
+typedef void ImageEncoderCallback(Uint8List result);
+
+/// Convert an [Image] object into a byte array/
+///
+/// [format] is encoding format to be used.
+///
+/// [quality] is a value in [0, 100] where 0 corresponds to the lowest quality.
+void encodeImage(Image image, EncodedImageFormat format, int quality, ImageEncoderCallback callback)
+    native "encodeImage";
+
 /// Determines the winding rule that decides how the interior of a [Path] is
 /// calculated.
 ///
