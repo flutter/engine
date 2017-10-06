@@ -324,7 +324,7 @@ template("generate_vm_patched_sdk") {
   # libraries.
   generate_patched_sdk(target_name) {
     mode = "flutter"
-    deps = concatenation_target_names + ["//dart/runtime/vm:patched_sdk"]
+    deps = concatenation_target_names + ["//dart/runtime/vm:kernel_platform_files"]
     input_patches_dir = "$target_gen_dir/patches"
     patched_sdk_dir = "flutter_patched_sdk"
   }
