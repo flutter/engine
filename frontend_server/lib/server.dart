@@ -148,7 +148,7 @@ class _FrontendCompiler implements CompilerInterface {
       // TODO(aam): Remove linkedDependencies once platform is directly embedded
       // into VM snapshot and http://dartbug.com/30111 is fixed.
       compilerOptions.linkedDependencies = <Uri>[
-        sdkRoot.resolve('vm_platform.dill')
+        sdkRoot.resolve('platform.dill')
       ];
       program = await kernelForProgram(Uri.base.resolve(_filename), compilerOptions);
     }
