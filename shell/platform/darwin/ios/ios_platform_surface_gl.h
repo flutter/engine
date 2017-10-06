@@ -26,6 +26,8 @@ class IOSPlatformSurfaceGL : public flow::PlatformSurface {
                                      int height,
                                      GrContext* grContext) override;
 
+  virtual void OnGrContextCreated() override;
+
   virtual void OnGrContextDestroyed() override;
 
  private:

@@ -58,8 +58,12 @@ sk_sp<SkImage> IOSPlatformSurfaceGL::MakeSkImage(int width, int height, GrContex
                                   SkAlphaType::kPremul_SkAlphaType, nullptr);
 }
 
+void IOSPlatformSurfaceGL::OnGrContextCreated() {
+  ASSERT_IS_GPU_THREAD
+}
+
 void IOSPlatformSurfaceGL::OnGrContextDestroyed() {
-  FXL_LOG(INFO) << "IOSPlatformSurfaceGL::OnGrContextDestroyed";
+  ASSERT_IS_GPU_THREAD
   textureRef_.Reset(nullptr);
   cacheRef_.Reset(nullptr);
 }

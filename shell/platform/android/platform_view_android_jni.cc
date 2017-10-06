@@ -219,10 +219,10 @@ static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {
   return blink::Settings::Get().enable_software_rendering;
 }
 
-static jlong AllocatePlatformSurface(JNIEnv* env,
-                                     jobject jcaller,
-                                     jlong platform_view) {
-  return PLATFORM_VIEW->AllocatePlatformSurface();
+static jlong CreatePlatformSurface(JNIEnv* env,
+                                   jobject jcaller,
+                                   jlong platform_view) {
+  return PLATFORM_VIEW->CreatePlatformSurface();
 }
 
 static void MarkPlatformSurfaceFrameAvailable(JNIEnv* env,
@@ -232,11 +232,11 @@ static void MarkPlatformSurfaceFrameAvailable(JNIEnv* env,
   return PLATFORM_VIEW->MarkPlatformSurfaceFrameAvailable(surfaceId);
 }
 
-static void ReleasePlatformSurface(JNIEnv* env,
+static void DestroyPlatformSurface(JNIEnv* env,
                                    jobject jcaller,
                                    jlong platform_view,
                                    jlong surfaceId) {
-  PLATFORM_VIEW->ReleasePlatformSurface(surfaceId);
+  PLATFORM_VIEW->UnregisterPlatformSurface(surfaceId);
 }
 
 static void InvokePlatformMessageResponseCallback(JNIEnv* env,
@@ -365,9 +365,9 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&shell::GetIsSoftwareRendering),
       },
       {
-          .name = "nativeAllocatePlatformSurface",
+          .name = "nativeCreatePlatformSurface",
           .signature = "(J)J",
-          .fnPtr = reinterpret_cast<void*>(&shell::AllocatePlatformSurface),
+          .fnPtr = reinterpret_cast<void*>(&shell::CreatePlatformSurface),
       },
       {
           .name = "nativeMarkPlatformSurfaceFrameAvailable",
@@ -376,9 +376,9 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
               &shell::MarkPlatformSurfaceFrameAvailable),
       },
       {
-          .name = "nativeReleasePlatformSurface",
+          .name = "nativeDestroyPlatformSurface",
           .signature = "(JJ)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::ReleasePlatformSurface),
+          .fnPtr = reinterpret_cast<void*>(&shell::DestroyPlatformSurface),
       },
   };
 

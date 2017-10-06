@@ -514,27 +514,9 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
   fml::jni::DetachFromVM();
 }
 
-int PlatformViewAndroid::AllocatePlatformSurface() {
-  int surface_id;
-  fxl::AutoResetWaitableEvent latch;
-  blink::Threads::Gpu()->PostTask([this, &surface_id, &latch]() {
-    surface_id =
-        rasterizer_->GetPlatformSurfaceRegistry().RegisterPlatformSurface(
-            std::make_shared<AndroidPlatformSurfaceGL>(this));
-    latch.Signal();
-  });
-  latch.Wait();
-  return surface_id;
-}
-
-void PlatformViewAndroid::ReleasePlatformSurface(size_t surface_id) {
-  fxl::AutoResetWaitableEvent latch;
-  blink::Threads::Gpu()->PostTask([this, &latch, surface_id]() {
-    rasterizer_->GetPlatformSurfaceRegistry().DisposePlatformSurface(
-        surface_id);
-    latch.Signal();
-  });
-  latch.Wait();
+size_t PlatformViewAndroid::CreatePlatformSurface() {
+  return RegisterPlatformSurface(
+      std::make_shared<AndroidPlatformSurfaceGL>(this));
 }
 
 void PlatformViewAndroid::MarkPlatformSurfaceFrameAvailable(size_t surface_id) {
@@ -548,7 +530,7 @@ void PlatformViewAndroid::MarkPlatformSurfaceFrameAvailable(size_t surface_id) {
     latch.Signal();
   });
   latch.Wait();
-  ScheduleFrame();
+  PlatformView::MarkPlatformSurfaceFrameAvailable(surface_id);
 }
 
 void PlatformViewAndroid::AttachTexImage(size_t surface_id,

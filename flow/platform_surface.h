@@ -50,7 +50,7 @@ class PlatformSurfaceRegistry {
   size_t RegisterPlatformSurface(std::shared_ptr<PlatformSurface> surface);
 
   // Called from GPU thread.
-  void DisposePlatformSurface(size_t id);
+  void UnregisterPlatformSurface(size_t id);
 
   // Called from GPU thread.
   std::shared_ptr<PlatformSurface> GetPlatformSurface(size_t id);

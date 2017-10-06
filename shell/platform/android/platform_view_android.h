@@ -97,11 +97,9 @@ class PlatformViewAndroid : public PlatformView {
                      const std::string& main,
                      const std::string& packages) override;
 
-  int AllocatePlatformSurface();
+  size_t CreatePlatformSurface();
 
-  void ReleasePlatformSurface(size_t surface_id);
-
-  void MarkPlatformSurfaceFrameAvailable(size_t surface_id);
+  void MarkPlatformSurfaceFrameAvailable(size_t surface_id) override;
 
   void AttachTexImage(size_t surface_id, uint32_t texture_id);
 

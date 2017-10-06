@@ -140,6 +140,35 @@ void PlatformView::HandlePlatformMessage(
     response->CompleteEmpty();
 }
 
+size_t PlatformView::RegisterPlatformSurface(
+    std::shared_ptr<flow::PlatformSurface> surface) {
+  int surface_id;
+  fxl::AutoResetWaitableEvent latch;
+  blink::Threads::Gpu()->PostTask([this, &surface_id, &latch, surface]() {
+    surface_id =
+        rasterizer_->GetPlatformSurfaceRegistry().RegisterPlatformSurface(
+            surface);
+    latch.Signal();
+  });
+  latch.Wait();
+  return surface_id;
+}
+
+void PlatformView::UnregisterPlatformSurface(size_t surface_id) {
+  fxl::AutoResetWaitableEvent latch;
+  blink::Threads::Gpu()->PostTask([this, &latch, surface_id]() {
+    rasterizer_->GetPlatformSurfaceRegistry().UnregisterPlatformSurface(
+        surface_id);
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
+void PlatformView::MarkPlatformSurfaceFrameAvailable(size_t surface_id) {
+  // TODO(mravn, sigurdm): Avoid involving Dart in this.
+  ScheduleFrame();
+}
+
 void PlatformView::SetupResourceContextOnIOThread() {
   fxl::AutoResetWaitableEvent latch;
 

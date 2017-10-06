@@ -100,6 +100,10 @@ void PlatformViewIOS::HandlePlatformMessage(fxl::RefPtr<blink::PlatformMessage> 
   platform_message_router_.HandlePlatformMessage(std::move(message));
 }
 
+size_t PlatformViewIOS::CreatePlatformSurface(NSObject<FlutterPlatformSurface>* surface) {
+  return RegisterPlatformSurface(std::make_shared<IOSPlatformSurfaceGL>(surface));
+}
+
 void PlatformViewIOS::RunFromSource(const std::string& assets_directory,
                                     const std::string& main,
                                     const std::string& packages) {

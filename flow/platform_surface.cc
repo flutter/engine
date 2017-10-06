@@ -18,7 +18,7 @@ size_t PlatformSurfaceRegistry::RegisterPlatformSurface(std::shared_ptr<Platform
   return id;
 }
 
-void PlatformSurfaceRegistry::DisposePlatformSurface(size_t id) {
+void PlatformSurfaceRegistry::UnregisterPlatformSurface(size_t id) {
   ASSERT_IS_GPU_THREAD
   mapping_.erase(id);
 }
