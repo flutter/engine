@@ -59,7 +59,7 @@ Future<int> main() async {
 
     test('compile one file', () async {
       final StreamController<List<int>> inputStreamController =
-      new StreamController<List<int>>();
+        new StreamController<List<int>>();
       final ReceivePort compileCalled = new ReceivePort();
       when(compiler.compile(any, any, generator: any)).thenAnswer(
         (Invocation invocation) {
@@ -80,7 +80,7 @@ Future<int> main() async {
 
     test('compile few files', () async {
       final StreamController<List<int>> streamController =
-      new StreamController<List<int>>();
+        new StreamController<List<int>>();
       final ReceivePort compileCalled = new ReceivePort();
       int counter = 1;
       when(compiler.compile(any, any, generator: any)).thenAnswer(
@@ -154,7 +154,7 @@ Future<int> main() async {
 
     test('reject', () async {
       final StreamController<List<int>> inputStreamController =
-      new StreamController<List<int>>();
+        new StreamController<List<int>>();
       final ReceivePort rejectCalled = new ReceivePort();
       when(compiler.rejectLastDelta()).thenAnswer((Invocation invocation) {
         rejectCalled.sendPort.send(true);
@@ -170,7 +170,7 @@ Future<int> main() async {
 
     test('reset', () async {
       final StreamController<List<int>> inputStreamController =
-      new StreamController<List<int>>();
+        new StreamController<List<int>>();
       final ReceivePort resetCalled = new ReceivePort();
       when(compiler.resetIncrementalCompiler()).thenAnswer((Invocation invocation) {
         resetCalled.sendPort.send(true);
@@ -186,7 +186,7 @@ Future<int> main() async {
 
     test('compile then recompile', () async {
       final StreamController<List<int>> streamController =
-      new StreamController<List<int>>();
+        new StreamController<List<int>>();
       final ReceivePort recompileCalled = new ReceivePort();
 
       when(compiler.recompileDelta()).thenAnswer((Invocation invocation) {
