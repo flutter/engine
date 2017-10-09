@@ -18,6 +18,7 @@
 namespace shell {
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_view_class = nullptr;
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_surface_texture_class = nullptr;
 
 // Called By Native
 
@@ -57,27 +58,26 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 }
 
-static jmethodID g_attach_tex_image_method = nullptr;
-void FlutterViewAttachTexImage(JNIEnv* env,
-                               jobject obj,
-                               jlong surfaceId,
-                               jlong textureId) {
+static jmethodID g_attach_to_gl_context_method = nullptr;
+void SurfaceTextureAttachToGLContext(JNIEnv* env,
+                                     jobject obj,
+                                     jlong textureId) {
   ASSERT_IS_GPU_THREAD;
-  env->CallVoidMethod(obj, g_attach_tex_image_method, surfaceId, textureId);
+  env->CallVoidMethod(obj, g_attach_to_gl_context_method, textureId);
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 }
 
 static jmethodID g_update_tex_image_method = nullptr;
-void FlutterViewUpdateTexImage(JNIEnv* env, jobject obj, jlong surfaceId) {
+void SurfaceTextureUpdateTexImage(JNIEnv* env, jobject obj) {
   ASSERT_IS_GPU_THREAD;
-  env->CallVoidMethod(obj, g_update_tex_image_method, surfaceId);
+  env->CallVoidMethod(obj, g_update_tex_image_method);
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 }
 
-static jmethodID g_detach_tex_image_method = nullptr;
-void FlutterViewDetachTexImage(JNIEnv* env, jobject obj, jlong surfaceId) {
+static jmethodID g_detach_from_gl_context_method = nullptr;
+void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj) {
   ASSERT_IS_GPU_THREAD;
-  env->CallVoidMethod(obj, g_detach_tex_image_method, surfaceId);
+  env->CallVoidMethod(obj, g_detach_from_gl_context_method);
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 }
 
@@ -221,8 +221,10 @@ static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {
 
 static jlong CreatePlatformSurface(JNIEnv* env,
                                    jobject jcaller,
-                                   jlong platform_view) {
-  return PLATFORM_VIEW->CreatePlatformSurface();
+                                   jlong platform_view,
+                                   jobject surface_texture) {
+  return PLATFORM_VIEW->CreatePlatformSurface(
+      fml::jni::JavaObjectWeakGlobalRef(env, surface_texture));
 }
 
 static void MarkPlatformSurfaceFrameAvailable(JNIEnv* env,
@@ -264,8 +266,13 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   g_flutter_view_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("io/flutter/view/FlutterView"));
-
   if (g_flutter_view_class->is_null()) {
+    return false;
+  }
+
+  g_surface_texture_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("android/graphics/SurfaceTexture"));
+  if (g_surface_texture_class->is_null()) {
     return false;
   }
 
@@ -366,7 +373,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       },
       {
           .name = "nativeCreatePlatformSurface",
-          .signature = "(J)J",
+          .signature = "(JLandroid/graphics/SurfaceTexture;)J",
           .fnPtr = reinterpret_cast<void*>(&shell::CreatePlatformSurface),
       },
       {
@@ -417,24 +424,24 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_attach_tex_image_method =
-      env->GetMethodID(g_flutter_view_class->obj(), "attachTexImage", "(JJ)V");
+  g_attach_to_gl_context_method = env->GetMethodID(
+      g_surface_texture_class->obj(), "attachToGLContext", "(I)V");
 
-  if (g_attach_tex_image_method == nullptr) {
+  if (g_attach_to_gl_context_method == nullptr) {
     return false;
   }
 
   g_update_tex_image_method =
-      env->GetMethodID(g_flutter_view_class->obj(), "updateTexImage", "(J)V");
+      env->GetMethodID(g_surface_texture_class->obj(), "updateTexImage", "()V");
 
   if (g_update_tex_image_method == nullptr) {
     return false;
   }
 
-  g_detach_tex_image_method =
-      env->GetMethodID(g_flutter_view_class->obj(), "detachTexImage", "(J)V");
+  g_detach_from_gl_context_method = env->GetMethodID(
+      g_surface_texture_class->obj(), "detachFromGLContext", "()V");
 
-  if (g_detach_tex_image_method == nullptr) {
+  if (g_detach_from_gl_context_method == nullptr) {
     return false;
   }
 

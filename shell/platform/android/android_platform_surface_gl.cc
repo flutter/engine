@@ -8,19 +8,17 @@
 #include <GLES/glext.h>
 
 #include "flutter/common/threads.h"
-#include "flutter/shell/platform/android/platform_view_android.h"
+#include "flutter/shell/platform/android/platform_view_android_jni.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrTexture.h"
 
 namespace shell {
 
-AndroidPlatformSurfaceGL::~AndroidPlatformSurfaceGL() {
-  // The GLContext is cleaned up by SurfaceTexture.release from Java.
-}
-
 AndroidPlatformSurfaceGL::AndroidPlatformSurfaceGL(
-    PlatformViewAndroid* platformView)
-    : platform_view_(platformView) {}
+    const fml::jni::JavaObjectWeakGlobalRef& surface_texture)
+    : surface_texture_(surface_texture) {}
+
+AndroidPlatformSurfaceGL::~AndroidPlatformSurfaceGL() = default;
 
 void AndroidPlatformSurfaceGL::OnGrContextCreated() {
   ASSERT_IS_GPU_THREAD;
@@ -41,11 +39,11 @@ sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width,
   }
   if (state_ == AttachmentState::uninitialized) {
     glGenTextures(1, &texture_id_);
-    platform_view_->AttachTexImage(Id(), texture_id_);
+    Attach(static_cast<jint>(texture_id_));
     state_ = AttachmentState::attached;
   }
   if (new_frame_ready_) {
-    platform_view_->UpdateTexImage(Id());
+    Update();
     new_frame_ready_ = false;
   }
   GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES, texture_id_};
@@ -59,9 +57,33 @@ sk_sp<SkImage> AndroidPlatformSurfaceGL::MakeSkImage(int width,
 void AndroidPlatformSurfaceGL::OnGrContextDestroyed() {
   ASSERT_IS_GPU_THREAD;
   if (state_ == AttachmentState::attached) {
-    platform_view_->DetachTexImage(Id());
+    Detach();
   }
   state_ = AttachmentState::detached;
+}
+
+void AndroidPlatformSurfaceGL::Attach(jint texture_id) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  fml::jni::ScopedJavaLocalRef<jobject> texture = surface_texture_.get(env);
+  if (!texture.is_null()) {
+    SurfaceTextureAttachToGLContext(env, texture.obj(), texture_id);
+  }
+}
+
+void AndroidPlatformSurfaceGL::Update() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  fml::jni::ScopedJavaLocalRef<jobject> texture = surface_texture_.get(env);
+  if (!texture.is_null()) {
+    SurfaceTextureUpdateTexImage(env, texture.obj());
+  }
+}
+
+void AndroidPlatformSurfaceGL::Detach() {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  fml::jni::ScopedJavaLocalRef<jobject> texture = surface_texture_.get(env);
+  if (!texture.is_null()) {
+    SurfaceTextureDetachFromGLContext(env, texture.obj());
+  }
 }
 
 }  // namespace shell

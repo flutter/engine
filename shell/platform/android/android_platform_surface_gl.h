@@ -6,14 +6,14 @@
 #define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_SURFACE_GL_H_
 
 #include "flutter/flow/platform_surface.h"
+#include "flutter/fml/platform/android/jni_weak_ref.h"
 
 namespace shell {
 
-class PlatformViewAndroid;
-
 class AndroidPlatformSurfaceGL : public flow::PlatformSurface {
  public:
-  AndroidPlatformSurfaceGL(PlatformViewAndroid* platformView);
+  AndroidPlatformSurfaceGL(
+      const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
 
   ~AndroidPlatformSurfaceGL() override;
 
@@ -29,9 +29,15 @@ class AndroidPlatformSurfaceGL : public flow::PlatformSurface {
   void MarkNewFrameAvailable();
 
  private:
+  void Attach(jint texName);
+
+  void Update();
+
+  void Detach();
+
   enum class AttachmentState { uninitialized, attached, detached };
 
-  PlatformViewAndroid* platform_view_;
+  fml::jni::JavaObjectWeakGlobalRef surface_texture_;
 
   AttachmentState state_ = AttachmentState::uninitialized;
 

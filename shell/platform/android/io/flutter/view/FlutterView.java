@@ -51,7 +51,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -109,7 +108,7 @@ public class FlutterView extends SurfaceView
     private long mNativePlatformView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
     // Used both by the GPU thread and the Platform thread.
-    private Map<Long, SurfaceTextureHandle> surfaceTextureHandles = new ConcurrentHashMap<Long, SurfaceTextureHandle>();
+    private Map<Long, SurfaceTextureHandle> surfaceTextureHandles = new HashMap<Long, SurfaceTextureHandle>();
 
     public FlutterView(Context context) {
         this(context, null);
@@ -657,7 +656,7 @@ public class FlutterView extends SurfaceView
 
     private static native boolean nativeGetIsSoftwareRenderingEnabled();
 
-    private static native long nativeCreatePlatformSurface(long nativePlatformViewAndroid);
+    private static native long nativeCreatePlatformSurface(long nativePlatformViewAndroid, SurfaceTexture surfaceTexture);
 
     private static native void nativeMarkPlatformSurfaceFrameAvailable(long nativePlatformViewAndroid, long surfaceId);
 
@@ -941,34 +940,12 @@ public class FlutterView extends SurfaceView
      * @return A SurfaceTextureHandle.
      */
     public SurfaceTextureHandle createSurfaceTexture() {
-        final long surfaceId = nativeCreatePlatformSurface(mNativePlatformView);
-        final SurfaceTextureHandle handle = new SurfaceTextureHandle(surfaceId);
+        final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
+        surfaceTexture.detachFromGLContext();
+        final long surfaceId = nativeCreatePlatformSurface(mNativePlatformView, surfaceTexture);
+        final SurfaceTextureHandle handle = new SurfaceTextureHandle(surfaceId, surfaceTexture);
         surfaceTextureHandles.put(surfaceId, handle);
         return handle;
-    }
-
-    // Called by native.
-    private void attachTexImage(long surfaceId, long textureId) {
-        final SurfaceTextureHandle handle = surfaceTextureHandles.get(surfaceId);
-        if (handle != null) {
-            handle.attachTexImage(textureId);
-        }
-    }
-
-    // Called by native.
-    private void updateTexImage(long surfaceId) {
-        final SurfaceTextureHandle handle = surfaceTextureHandles.get(surfaceId);
-        if (handle != null) {
-            handle.updateTexImage();
-        }
-    }
-
-    // Called by native.
-    private void detachTexImage(long surfaceId) {
-        final SurfaceTextureHandle handle = surfaceTextureHandles.get(surfaceId);
-        if (handle != null) {
-            handle.detachTexImage();
-        }
     }
 
     /**
@@ -978,10 +955,9 @@ public class FlutterView extends SurfaceView
         private final long surfaceId;
         private final SurfaceTexture surfaceTexture;
 
-        SurfaceTextureHandle(long surfaceId) {
+        SurfaceTextureHandle(long surfaceId, SurfaceTexture surfaceTexture) {
             this.surfaceId = surfaceId;
-            this.surfaceTexture = new SurfaceTexture(0);
-            this.surfaceTexture.detachFromGLContext();
+            this.surfaceTexture = surfaceTexture;
             this.surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
                 @Override
                 public void onFrameAvailable(SurfaceTexture texture) {
@@ -1009,19 +985,8 @@ public class FlutterView extends SurfaceView
          */
         public void release() {
             nativeDestroyPlatformSurface(mNativePlatformView, surfaceId);
+            surfaceTextureHandles.remove(surfaceId);
             surfaceTexture.release();
-        }
-
-        void attachTexImage(long textureId) {
-            surfaceTexture.attachToGLContext((int) textureId);
-        }
-
-        void updateTexImage() {
-            surfaceTexture.updateTexImage();
-        }
-
-        void detachTexImage() {
-            surfaceTexture.detachFromGLContext();
         }
     }
 }

@@ -97,15 +97,10 @@ class PlatformViewAndroid : public PlatformView {
                      const std::string& main,
                      const std::string& packages) override;
 
-  size_t CreatePlatformSurface();
+  size_t CreatePlatformSurface(
+      const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
 
   void MarkPlatformSurfaceFrameAvailable(size_t surface_id) override;
-
-  void AttachTexImage(size_t surface_id, uint32_t texture_id);
-
-  void UpdateTexImage(size_t surface_id);
-
-  void DetachTexImage(size_t surface_id);
 
   void set_flutter_view(const fml::jni::JavaObjectWeakGlobalRef& flutter_view) {
     flutter_view_ = flutter_view;

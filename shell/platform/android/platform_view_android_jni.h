@@ -29,14 +29,11 @@ void FlutterViewUpdateSemantics(JNIEnv* env,
 
 void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj);
 
-void FlutterViewAttachTexImage(JNIEnv* env,
-                               jobject obj,
-                               jlong imageId,
-                               jlong textureId);
+void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jlong textureId);
 
-void FlutterViewUpdateTexImage(JNIEnv* env, jobject obj, jlong imageId);
+void SurfaceTextureUpdateTexImage(JNIEnv* env, jobject obj);
 
-void FlutterViewDetachTexImage(JNIEnv* env, jobject obj, jlong imageId);
+void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj);
 
 }  // namespace shell
 
