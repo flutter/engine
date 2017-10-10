@@ -50,40 +50,41 @@ void SceneBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-SceneBuilder::SceneBuilder() = default;
+SceneBuilder::SceneBuilder()
+    : layer_builder_(std::make_unique<flow::LayerBuilder>()){};
 
 SceneBuilder::~SceneBuilder() = default;
 
 void SceneBuilder::pushTransform(const tonic::Float64List& matrix4) {
-  layer_builder_.PushTransform(ToSkMatrix(matrix4));
+  layer_builder_->PushTransform(ToSkMatrix(matrix4));
 }
 
 void SceneBuilder::pushClipRect(double left,
                                 double right,
                                 double top,
                                 double bottom) {
-  layer_builder_.PushClipRect(SkRect::MakeLTRB(left, top, right, bottom));
+  layer_builder_->PushClipRect(SkRect::MakeLTRB(left, top, right, bottom));
 }
 
 void SceneBuilder::pushClipRRect(const RRect& rrect) {
-  layer_builder_.PushClipRoundedRect(rrect.sk_rrect);
+  layer_builder_->PushClipRoundedRect(rrect.sk_rrect);
 }
 
 void SceneBuilder::pushClipPath(const CanvasPath* path) {
-  layer_builder_.PushClipPath(path->path());
+  layer_builder_->PushClipPath(path->path());
 }
 
 void SceneBuilder::pushOpacity(int alpha) {
-  layer_builder_.PushOpacity(alpha);
+  layer_builder_->PushOpacity(alpha);
 }
 
 void SceneBuilder::pushColorFilter(int color, int blendMode) {
-  layer_builder_.PushColorFilter(static_cast<SkColor>(color),
-                                 static_cast<SkBlendMode>(blendMode));
+  layer_builder_->PushColorFilter(static_cast<SkColor>(color),
+                                  static_cast<SkBlendMode>(blendMode));
 }
 
 void SceneBuilder::pushBackdropFilter(ImageFilter* filter) {
-  layer_builder_.PushBackdropFilter(filter->filter());
+  layer_builder_->PushBackdropFilter(filter->filter());
 }
 
 void SceneBuilder::pushShaderMask(Shader* shader,
@@ -92,16 +93,17 @@ void SceneBuilder::pushShaderMask(Shader* shader,
                                   double maskRectTop,
                                   double maskRectBottom,
                                   int blendMode) {
-  layer_builder_.PushShaderMask(shader->shader(),
-                                SkRect::MakeLTRB(maskRectLeft, maskRectTop,
-                                                 maskRectRight, maskRectBottom),
-                                static_cast<SkBlendMode>(blendMode));
+  layer_builder_->PushShaderMask(
+      shader->shader(),
+      SkRect::MakeLTRB(maskRectLeft, maskRectTop, maskRectRight,
+                       maskRectBottom),
+      static_cast<SkBlendMode>(blendMode));
 }
 
 void SceneBuilder::pushPhysicalModel(const RRect& rrect,
                                      double elevation,
                                      int color) {
-  layer_builder_.PushPhysicalModel(
+  layer_builder_->PushPhysicalModel(
       rrect.sk_rrect,               //
       elevation,                    //
       static_cast<SkColor>(color),  //
@@ -109,17 +111,17 @@ void SceneBuilder::pushPhysicalModel(const RRect& rrect,
 }
 
 void SceneBuilder::pop() {
-  layer_builder_.Pop();
+  layer_builder_->Pop();
 }
 
 void SceneBuilder::addPicture(double dx,
                               double dy,
                               Picture* picture,
                               int hints) {
-  layer_builder_.PushPicture(SkPoint::Make(dx, dy),  //
-                             picture->picture(),     //
-                             !!(hints & 1),          // picture is complex
-                             !!(hints & 2)           // picture will change
+  layer_builder_->PushPicture(SkPoint::Make(dx, dy),  //
+                              picture->picture(),     //
+                              !!(hints & 1),          // picture is complex
+                              !!(hints & 2)           // picture will change
   );
 }
 
@@ -130,10 +132,10 @@ void SceneBuilder::addChildScene(double dx,
                                  SceneHost* sceneHost,
                                  bool hitTestable) {
 #if defined(OS_FUCHSIA)
-  layer_builder_.PushChildScene(SkPoint::Make(dx, dy),            //
-                                SkSize::Make(width, height),      //
-                                sceneHost->export_node_holder(),  //
-                                hitTestable);
+  layer_builder_->PushChildScene(SkPoint::Make(dx, dy),            //
+                                 SkSize::Make(width, height),      //
+                                 sceneHost->export_node_holder(),  //
+                                 hitTestable);
 #endif  // defined(OS_FUCHSIA)
 }
 
@@ -142,29 +144,30 @@ void SceneBuilder::addPerformanceOverlay(uint64_t enabledOptions,
                                          double right,
                                          double top,
                                          double bottom) {
-  layer_builder_.PushPerformanceOverlay(
+  layer_builder_->PushPerformanceOverlay(
       enabledOptions, SkRect::MakeLTRB(left, top, right, bottom));
 }
 
 void SceneBuilder::setRasterizerTracingThreshold(uint32_t frameInterval) {
-  layer_builder_.SetRasterizerTracingThreshold(frameInterval);
+  layer_builder_->SetRasterizerTracingThreshold(frameInterval);
 }
 
 void SceneBuilder::setCheckerboardRasterCacheImages(bool checkerboard) {
-  layer_builder_.SetCheckerboardRasterCacheImages(checkerboard);
+  layer_builder_->SetCheckerboardRasterCacheImages(checkerboard);
 }
 
 void SceneBuilder::setCheckerboardOffscreenLayers(bool checkerboard) {
-  layer_builder_.SetCheckerboardOffscreenLayers(checkerboard);
+  layer_builder_->SetCheckerboardOffscreenLayers(checkerboard);
 }
 
 fxl::RefPtr<Scene> SceneBuilder::build() {
   fxl::RefPtr<Scene> scene =
-      Scene::create(layer_builder_.TakeLayer(),
-                    layer_builder_.GetRasterizerTracingThreshold(),
-                    layer_builder_.GetCheckerboardRasterCacheImages(),
-                    layer_builder_.GetCheckerboardOffscreenLayers());
+      Scene::create(layer_builder_->TakeLayer(),
+                    layer_builder_->GetRasterizerTracingThreshold(),
+                    layer_builder_->GetCheckerboardRasterCacheImages(),
+                    layer_builder_->GetCheckerboardOffscreenLayers());
   ClearDartWrapper();
+  layer_builder_.reset();
   return scene;
 }
 

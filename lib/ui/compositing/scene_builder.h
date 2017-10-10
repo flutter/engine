@@ -76,7 +76,7 @@ class SceneBuilder : public fxl::RefCountedThreadSafe<SceneBuilder>,
  private:
   SceneBuilder();
 
-  flow::LayerBuilder layer_builder_;
+  std::unique_ptr<flow::LayerBuilder> layer_builder_;
 };
 
 }  // namespace blink
