@@ -515,9 +515,9 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
 }
 
 size_t PlatformViewAndroid::CreatePlatformSurface(
-    const fml::jni::JavaObjectWeakGlobalRef& flutter_view) {
+    const fml::jni::JavaObjectWeakGlobalRef& surface_texture) {
   return RegisterPlatformSurface(
-      std::make_shared<AndroidPlatformSurfaceGL>(flutter_view));
+      std::make_shared<AndroidPlatformSurfaceGL>(surface_texture));
 }
 
 void PlatformViewAndroid::MarkPlatformSurfaceFrameAvailable(size_t surface_id) {
@@ -527,7 +527,9 @@ void PlatformViewAndroid::MarkPlatformSurfaceFrameAvailable(size_t surface_id) {
         static_pointer_cast<AndroidPlatformSurfaceGL>(
             rasterizer_->GetPlatformSurfaceRegistry().GetPlatformSurface(
                 surface_id));
-    surface->MarkNewFrameAvailable();
+    if (surface) {
+      surface->MarkNewFrameAvailable();
+    }
     latch.Signal();
   });
   latch.Wait();
