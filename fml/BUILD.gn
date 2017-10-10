@@ -2,6 +2,18 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+source_set("trace_event") {
+  sources = [
+    "trace_event.cc",
+    "trace_event.h",
+  ]
+
+  deps = [
+    "//dart/runtime:dart_api",
+    "//garnet/public/lib/fxl",
+  ]
+}
+
 source_set("fml") {
   sources = [
     "icu_util.cc",
@@ -19,16 +31,17 @@ source_set("fml") {
     "thread.cc",
     "thread.h",
     "thread_local.h",
-    "trace_event.cc",
-    "trace_event.h",
   ]
 
   deps = [
-    "//dart/runtime:dart_api",
     "//garnet/public/lib/fxl",
 
     # These need to be in sync with the Fuchsia buildroot.
     "//third_party/icu",
+  ]
+
+  public_deps = [
+    ":trace_event",
   ]
 
   configs += [ "//third_party/icu:icu_config" ]

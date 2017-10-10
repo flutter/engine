@@ -9,8 +9,6 @@
 #include <cstdint>
 #include <string>
 
-#include "lib/fxl/macros.h"
-
 #ifndef TRACE_EVENT_HIDE_MACROS
 
 #define TRACE_EVENT0(category_group, name)           \
@@ -115,7 +113,8 @@ class ScopedInstantEnd {
  private:
   const std::string label_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(ScopedInstantEnd);
+  ScopedInstantEnd(const ScopedInstantEnd&) = delete;
+  ScopedInstantEnd& operator=(const ScopedInstantEnd&) = delete;
 };
 
 }  // namespace tracing
