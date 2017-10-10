@@ -10,7 +10,8 @@ PlatformSurfaceRegistry::PlatformSurfaceRegistry() = default;
 
 PlatformSurfaceRegistry::~PlatformSurfaceRegistry() = default;
 
-size_t PlatformSurfaceRegistry::RegisterPlatformSurface(std::shared_ptr<PlatformSurface> surface) {
+size_t PlatformSurfaceRegistry::RegisterPlatformSurface(
+    std::shared_ptr<PlatformSurface> surface) {
   ASSERT_IS_GPU_THREAD
   size_t id = counter_++;
   mapping_[id] = surface;
@@ -37,7 +38,8 @@ void PlatformSurfaceRegistry::OnGrContextDestroyed() {
   }
 }
 
-std::shared_ptr<PlatformSurface> PlatformSurfaceRegistry::GetPlatformSurface(size_t id) {
+std::shared_ptr<PlatformSurface> PlatformSurfaceRegistry::GetPlatformSurface(
+    size_t id) {
   ASSERT_IS_GPU_THREAD
   return mapping_[id];
 }
