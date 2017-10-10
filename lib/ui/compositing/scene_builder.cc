@@ -4,18 +4,6 @@
 
 #include "flutter/lib/ui/compositing/scene_builder.h"
 
-#include "flutter/flow/layers/backdrop_filter_layer.h"
-#include "flutter/flow/layers/clip_path_layer.h"
-#include "flutter/flow/layers/clip_rect_layer.h"
-#include "flutter/flow/layers/clip_rrect_layer.h"
-#include "flutter/flow/layers/color_filter_layer.h"
-#include "flutter/flow/layers/container_layer.h"
-#include "flutter/flow/layers/opacity_layer.h"
-#include "flutter/flow/layers/performance_overlay_layer.h"
-#include "flutter/flow/layers/physical_model_layer.h"
-#include "flutter/flow/layers/picture_layer.h"
-#include "flutter/flow/layers/shader_mask_layer.h"
-#include "flutter/flow/layers/transform_layer.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/painting/shader.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -26,10 +14,6 @@
 #include "lib/tonic/dart_binding_macros.h"
 #include "lib/tonic/dart_library_natives.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
-
-#if defined(OS_FUCHSIA)
-#include "flutter/flow/layers/child_scene_layer.h"
-#endif
 
 namespace blink {
 
