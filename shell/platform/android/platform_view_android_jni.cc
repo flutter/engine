@@ -61,7 +61,7 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
 static jmethodID g_attach_to_gl_context_method = nullptr;
 void SurfaceTextureAttachToGLContext(JNIEnv* env,
                                      jobject obj,
-                                     jlong textureId) {
+                                     jint textureId) {
   ASSERT_IS_GPU_THREAD;
   env->CallVoidMethod(obj, g_attach_to_gl_context_method, textureId);
   FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
