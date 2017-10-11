@@ -17,6 +17,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Matrix;
 import android.os.Build;
+import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
@@ -101,6 +102,7 @@ public class FlutterView extends SurfaceView
     private final BasicMessageChannel<Object> mFlutterKeyEventChannel;
     private final BasicMessageChannel<String> mFlutterLifecycleChannel;
     private final BasicMessageChannel<Object> mFlutterSystemChannel;
+    private final BasicMessageChannel<Object> mFlutterSettingsChannel;
     private final BroadcastReceiver mDiscoveryReceiver;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private final List<FirstFrameListener> mFirstFrameListeners;
@@ -172,6 +174,8 @@ public class FlutterView extends SurfaceView
         mFlutterLifecycleChannel = new BasicMessageChannel<>(this, "flutter/lifecycle",
             StringCodec.INSTANCE);
         mFlutterSystemChannel = new BasicMessageChannel<>(this, "flutter/system",
+            JSONMessageCodec.INSTANCE);
+        mFlutterSettingsChannel = new BasicMessageChannel<>(this, "flutter/settings",
             JSONMessageCodec.INSTANCE);
 
         // TODO(plugins): Change PlatformPlugin to accept a Context. Disable the
@@ -286,9 +290,9 @@ public class FlutterView extends SurfaceView
 
     private void setTextScaleFactor(float textScaleFactor) {
       Map<String, Object> message = new HashMap<>();
-      message.put("type", "systemSettings");
       message.put("textScaleFactor", textScaleFactor);
-      mFlutterSystemChannel.send(message);
+      message.put("is24HourFormat", DateFormat.is24HourFormat(getContext()));
+      mFlutterSettingsChannel.send(message);
     }
 
     private void setLocale(Locale locale) {

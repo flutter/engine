@@ -97,7 +97,7 @@ class Engine : public blink::RuntimeDelegate {
   bool HandleNavigationPlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message);
   bool HandleLocalizationPlatformMessage(blink::PlatformMessage* message);
-  bool HandleSystemPlatformMessage(blink::PlatformMessage* message);
+  void HandleSettingsPlatformMessage(blink::PlatformMessage* message);
 
   void HandleAssetPlatformMessage(fxl::RefPtr<blink::PlatformMessage> message);
   bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);

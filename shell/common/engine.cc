@@ -44,7 +44,7 @@ constexpr char kAssetChannel[] = "flutter/assets";
 constexpr char kLifecycleChannel[] = "flutter/lifecycle";
 constexpr char kNavigationChannel[] = "flutter/navigation";
 constexpr char kLocalizationChannel[] = "flutter/localization";
-constexpr char kSystemChannel[] = "flutter/system";
+constexpr char kSettingsChannel[] = "flutter/settings";
 
 bool PathExists(const std::string& path) {
   return access(path.c_str(), R_OK) == 0;
@@ -337,11 +337,9 @@ void Engine::DispatchPlatformMessage(
   } else if (message->channel() == kLocalizationChannel) {
     if (HandleLocalizationPlatformMessage(message.get()))
       return;
-  } else if (message->channel() == kSystemChannel) {
-    // This only handles textScaleFactor changes: other system messages are
-    // handled by DispatchPlatformMessage below.
-    if (HandleSystemPlatformMessage(message.get()))
-      return;
+  } else if (message->channel() == kSettingsChannel) {
+    HandleSettingsPlatformMessage(message.get());
+    return;
   }
 
   if (runtime_) {
@@ -424,25 +422,22 @@ bool Engine::HandleLocalizationPlatformMessage(
   return true;
 }
 
-bool Engine::HandleSystemPlatformMessage(blink::PlatformMessage* message) {
+void Engine::HandleSettingsPlatformMessage(blink::PlatformMessage* message) {
   const auto& data = message->data();
   rapidjson::Document document;
   document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
 
   if (document.HasParseError() || !document.IsObject())
-    return false;
+    return;
 
   auto root = document.GetObject();
-  auto type = root.FindMember("type");
-  if (type == root.MemberEnd() || type->value != "systemSettings")
-    return false;
 
   // This only handles textScaleFactor changes: other system messages
   // are handled by DispatchPlatformMessage.
   auto text_scale_factor = root.FindMember("textScaleFactor");
   if (text_scale_factor == root.MemberEnd() ||
       !text_scale_factor->value.IsDouble()) {
-    return false;
+    return;
   }
   text_scale_factor_ = text_scale_factor->value.GetDouble();
   if (runtime_) {
@@ -450,9 +445,6 @@ bool Engine::HandleSystemPlatformMessage(blink::PlatformMessage* message) {
     if (have_surface_)
       ScheduleFrame();
   }
-  // If the only members were "type" and "textScaleFactor", then we're done.
-  // If there are more members, then we need to send it on to other handlers.
-  return root.MemberCount() == 2;
 }
 
 void Engine::DispatchPointerDataPacket(const PointerDataPacket& packet) {
