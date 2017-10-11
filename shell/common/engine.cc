@@ -237,7 +237,6 @@ void Engine::RunBundleAndSource(const std::string& bundle_path,
 
   std::vector<uint8_t> platform_kernel;
   if (!bundle_path.empty()) {
-    FXL_LOG(WARNING) << "RunBundleAndSource bundle_path is not empty";
     GetAssetAsBuffer(blink::kPlatformKernelAssetKey, &platform_kernel);
   }
   ConfigureRuntime(GetScriptUriFromPath(bundle_path), platform_kernel);
@@ -247,8 +246,7 @@ void Engine::RunBundleAndSource(const std::string& bundle_path,
     if (!files::ReadFileToVector(main, &kernel)) {
       load_script_error_ = tonic::kUnknownErrorType;
     }
-    load_script_error_ =
-      runtime_->dart_controller()->RunFromKernel(kernel);
+    load_script_error_ = runtime_->dart_controller()->RunFromKernel(kernel);
   } else {
     load_script_error_ =
         runtime_->dart_controller()->RunFromSource(main, packages_path);
