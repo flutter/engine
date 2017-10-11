@@ -156,7 +156,7 @@ void LayerBuilder::PushChildScene(
     const SkSize& size,
     fxl::RefPtr<flow::ExportNodeHolder> export_token_holder,
     bool hit_testable) {
-  if (!m_currentLayer) {
+  if (!current_layer_) {
     return;
   }
   SkRect sceneRect =
@@ -169,7 +169,7 @@ void LayerBuilder::PushChildScene(
   layer->set_size(size);
   layer->set_export_node_holder(std::move(export_token_holder));
   layer->set_hit_testable(hit_testable);
-  m_currentLayer->Add(std::move(layer));
+  current_layer_->Add(std::move(layer));
 }
 #endif  // defined(OS_FUCHSIA)
 
