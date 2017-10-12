@@ -269,6 +269,12 @@ class Window {
   double get textScaleFactor => _textScaleFactor;
   double _textScaleFactor = 1.0;
 
+  /// The user setting instructing to always show time using the 24-hour format.
+  /// 
+  /// This option is used by [showTimePicker].
+  bool get alwaysUse24HourFormat => _alwaysUse24HourFormat;
+  bool _alwaysUse24HourFormat = false;
+
   /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
   /// The framework invokes this callback in the same zone in which the

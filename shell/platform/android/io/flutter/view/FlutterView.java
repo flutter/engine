@@ -190,7 +190,7 @@ public class FlutterView extends SurfaceView
         mTextInputPlugin = new TextInputPlugin(this);
 
         setLocale(getResources().getConfiguration().locale);
-        setTextScaleFactor(getResources().getConfiguration().fontScale);
+        setUserSettings();
 
         if ((context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
             mDiscoveryReceiver = new DiscoveryReceiver();
@@ -288,10 +288,10 @@ public class FlutterView extends SurfaceView
         mFlutterNavigationChannel.invokeMethod("popRoute", null);
     }
 
-    private void setTextScaleFactor(float textScaleFactor) {
+    private void setUserSettings() {
       Map<String, Object> message = new HashMap<>();
-      message.put("textScaleFactor", textScaleFactor);
-      message.put("is24HourFormat", DateFormat.is24HourFormat(getContext()));
+      message.put("textScaleFactor", getResources().getConfiguration().fontScale);
+      message.put("alwaysUse24HourFormat", DateFormat.is24HourFormat(getContext()));
       mFlutterSettingsChannel.send(message);
     }
 
@@ -304,7 +304,7 @@ public class FlutterView extends SurfaceView
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         setLocale(newConfig.locale);
-        setTextScaleFactor(newConfig.fontScale);
+        setUserSettings();
     }
 
     float getDevicePixelRatio() {
