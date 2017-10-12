@@ -99,11 +99,10 @@ class PlatformViewAndroid : public PlatformView {
 
   void set_flutter_view(const fml::jni::JavaObjectWeakGlobalRef& flutter_view) {
     flutter_view_ = flutter_view;
-    android_surface_->SetFlutterView(flutter_view);
   }
 
  private:
-  const std::unique_ptr<AndroidSurface> android_surface_;
+  std::unique_ptr<AndroidSurface> android_surface_;
   fml::jni::JavaObjectWeakGlobalRef flutter_view_;
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;

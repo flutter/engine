@@ -39,9 +39,6 @@ class AndroidSurfaceSoftware : public AndroidSurface,
   bool SetNativeWindow(fxl::RefPtr<AndroidNativeWindow> window,
                        PlatformView::SurfaceConfig config) override;
 
-  void SetFlutterView(
-      const fml::jni::JavaObjectWeakGlobalRef& flutter_view) override;
-
  private:
   sk_sp<SkSurface> sk_surface_;
 
