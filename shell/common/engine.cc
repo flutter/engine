@@ -196,7 +196,7 @@ std::string DirPath(const std::string& full_path) {
   return "";
 }
 
-void LoadFile(std::ifstream &is, std::vector<uint8_t>& buffer) {
+void LoadFile(std::ifstream& is, std::vector<uint8_t>& buffer) {
   std::istream_iterator<uint8_t> start(is), end;
   buffer.insert(buffer.begin(), start, end);
 }
