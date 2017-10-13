@@ -225,6 +225,7 @@ public class FlutterMain {
             .addResource(sAotIsolateSnapshotData)
             .addResource(sAotIsolateSnapshotInstr)
             .addResource(sFlx)
+            .addResource("snapshot_blob.bin")
             .start();
     }
 
