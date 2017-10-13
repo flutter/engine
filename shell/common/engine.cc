@@ -9,8 +9,6 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <fstream>
-#include <iostream>
 #include <memory>
 #include <utility>
 
@@ -188,19 +186,6 @@ void Engine::Init() {
                      default_isolate_snapshot_instr);
 }
 
-std::string DirPath(const std::string& full_path) {
-  int idx = full_path.rfind("/");
-  if (idx >= 0) {
-    return full_path.substr(0, idx);
-  }
-  return "";
-}
-
-void LoadFile(std::ifstream& is, std::vector<uint8_t>& buffer) {
-  std::istream_iterator<uint8_t> start(is), end;
-  buffer.insert(buffer.begin(), start, end);
-}
-
 void Engine::RunBundle(const std::string& bundle_path) {
   TRACE_EVENT0("flutter", "Engine::RunBundle");
   ConfigureAssetBundle(bundle_path);
@@ -216,16 +201,9 @@ void Engine::RunBundle(const std::string& bundle_path) {
       runtime_->dart_controller()->RunFromKernel(kernel);
       return;
     }
-    std::string snapshot_path = DirPath(bundle_path) + "/snapshot_blob.bin";
-    std::ifstream snapshot_file(snapshot_path.c_str(), std::ios::binary);
-    snapshot_file.unsetf(std::ios::skipws);
     std::vector<uint8_t> snapshot;
-    LoadFile(snapshot_file, snapshot);
-    snapshot_file.close();
-    if (snapshot.size() == 0) {
-      if (!GetAssetAsBuffer(blink::kSnapshotAssetKey, &snapshot))
-        return;
-    }
+    if (!GetAssetAsBuffer(blink::kSnapshotAssetKey, &snapshot))
+      return;
     runtime_->dart_controller()->RunFromScriptSnapshot(snapshot.data(),
                                                        snapshot.size());
   }
@@ -509,6 +487,8 @@ void Engine::ConfigureAssetBundle(const std::string& path) {
   if (S_ISREG(stat_result.st_mode)) {
     asset_store_ = fxl::MakeRefCounted<blink::ZipAssetStore>(
         blink::GetUnzipperProviderForPath(path));
+    directory_asset_bundle_ = std::make_unique<blink::DirectoryAssetBundle>(
+          files::GetDirectoryName(path));
     return;
   }
 }

@@ -55,6 +55,7 @@ public class FlutterMain {
     private static final String DEFAULT_AOT_ISOLATE_SNAPSHOT_DATA = "isolate_snapshot_data";
     private static final String DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR = "isolate_snapshot_instr";
     private static final String DEFAULT_FLX = "app.flx";
+    private static final String DEFAULT_SNAPSHOT_BLOB = "snapshot_blob.bin";
 
     private static final String MANIFEST = "flutter.yaml";
 
@@ -69,6 +70,7 @@ public class FlutterMain {
     private static String sAotIsolateSnapshotData = DEFAULT_AOT_ISOLATE_SNAPSHOT_DATA;
     private static String sAotIsolateSnapshotInstr = DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR;
     private static String sFlx = DEFAULT_FLX;
+    private static String sSnapshotBlob = DEFAULT_SNAPSHOT_BLOB;
 
     private static boolean sInitialized = false;
     private static ResourceExtractor sResourceExtractor;
@@ -225,7 +227,7 @@ public class FlutterMain {
             .addResource(sAotIsolateSnapshotData)
             .addResource(sAotIsolateSnapshotInstr)
             .addResource(sFlx)
-            .addResource("snapshot_blob.bin")
+            .addResource(sSnapshotBlob)
             .start();
     }
 
