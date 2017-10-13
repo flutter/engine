@@ -570,9 +570,22 @@ void RuntimeHolder::OnEvent(mozart::InputEventPtr event,
           pointer_data.change = blink::PointerData::Change::kHover;
         break;
       case blink::PointerData::Change::kAdd:
+        if (down_pointers_.count(pointer_data.device) != 0) {
+          FXL_DLOG(ERROR) << "Received add"
+                          << " event for pointer that is currently down!";
+        }
+        break;
       case blink::PointerData::Change::kRemove:
-      case blink::PointerData::Change::kHover:
-        FXL_DCHECK(down_pointers_.count(pointer_data.device) == 0);
+        if (down_pointers_.count(pointer_data.device) != 0) {
+          FXL_DLOG(ERROR) << "Received remove"
+                          << " event for pointer that is currently down!";
+        }
+        break;
+    case blink::PointerData::Change::kHover:
+        if (down_pointers_.count(pointer_data.device) != 0) {
+          FXL_DLOG(ERROR) << "Received hover"
+                          << " event for pointer that is currently down!";
+        }
         break;
     }
 
