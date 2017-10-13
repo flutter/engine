@@ -488,7 +488,7 @@ void Engine::ConfigureAssetBundle(const std::string& path) {
     asset_store_ = fxl::MakeRefCounted<blink::ZipAssetStore>(
         blink::GetUnzipperProviderForPath(path));
     directory_asset_bundle_ = std::make_unique<blink::DirectoryAssetBundle>(
-          files::GetDirectoryName(path));
+        files::GetDirectoryName(path));
     return;
   }
 }
