@@ -68,7 +68,7 @@ DEF_SWITCH(EnableSoftwareRendering,
 DEF_SWITCH(EnableTxt,
            "enable-txt",
            "Enable libtxt as the text shaping library instead of Blink.")
-DEF_SWITCH(FLX, "flx", "Specify the the FLX path.")
+DEF_SWITCH(FLX, "flx", "Specify the FLX path.")
 DEF_SWITCH(Help, "help", "Display this help text.")
 DEF_SWITCH(LogTag, "log-tag", "Tag associated with log messages.")
 DEF_SWITCH(MainDartFile, "dart-main", "The path to the main Dart file.")
