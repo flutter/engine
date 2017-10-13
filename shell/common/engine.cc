@@ -9,10 +9,10 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include <utility>
-#include <iostream>
-#include <fstream>
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/assets/unzipper_provider.h"
@@ -188,15 +188,15 @@ void Engine::Init() {
                      default_isolate_snapshot_instr);
 }
 
-std::string DirPath(const std::string &fullpath) {
-  int idx = fullpath.rfind("/");
+std::string DirPath(const std::string& full_path) {
+  int idx = full_path.rfind("/");
   if (idx >= 0) {
-    return fullpath.substr(0, idx);
+    return full_path.substr(0, idx);
   }
   return "";
 }
 
-void LoadFile(std::ifstream &is, std::vector<uint8_t> &buffer) {
+void LoadFile(std::ifstream &is, std::vector<uint8_t>& buffer) {
   std::istream_iterator<uint8_t> start(is), end;
   buffer.insert(buffer.begin(), start, end);
 }
