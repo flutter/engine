@@ -860,6 +860,54 @@ class Path extends NativeFieldWrapperClass2 {
   void _arcTo(double left, double top, double right, double bottom,
               double startAngle, double sweepAngle, bool forceMoveTo) native "Path_arcTo";
 
+  /// Appends up to four conic curves weighted to describe an oval of radius
+  /// [radiusX], [radiusY] and rotated by [xAxisRotation].
+  ///
+  /// The first curve begins from the last point in the path and the last ends
+  /// at [arcEndX] and [arcEndY]. The curves follow a path in a direction
+  /// determined by [isClockwiseDirection] and [isLargeArc] in such a way that
+  /// the sweep angle is always less than 360 degrees.
+  ///
+  /// A simple line is appended if either either radii are zero or the last
+  /// point in the path is [arcEndX] and [arcEndY]. The radii are scaled to fit
+  /// the last path point if both are greater than zero but too small to
+  /// describe an arc.
+  void arcToPoint(double radiusX, double radiusY, double xAxisRotation,
+                  bool isLargeArc, bool isClockwiseDirection, double arcEndX,
+                  double arcEndY) {
+    _arcToPoint(radiusX, radiusY, xAxisRotation, isLargeArc,
+                isClockwiseDirection, arcEndX, arcEndY);
+  }
+
+  void _arcToPoint(double radiusX, double radiusY, double xAxisRotation, bool isLargeArc,
+                   bool isClockwiseDirection, double arcEndX, double arcEndY) native "Path_arcToPoint";
+
+
+  /// Appends up to four conic curves weighted to describe an oval of radius
+  /// [radiusX], [radiusY] and rotated by [xAxisRotation].
+  ///
+  /// The last path point is described by (px, py).
+  ///
+  /// The first curve begins from the last point in the path and the last ends
+  /// at [arcEndDeltaX] + px and [arcEndDeltaY] + py. The curves follow a
+  /// path in a direction determined by [isClockwiseDirection] and [isLargeArc]
+  /// in such a way that the sweep angle is always less than 360 degrees.
+  ///
+  /// A simple line is appended if either either radii are zero, or, both
+  /// [arcEndDeltaX] and [arcEndDeltaY] are zero. The radii are scaled to fit
+  /// the last path point if both are greater than zero but too small to
+  /// describe an arc.
+  void relativeArcToPoint(double radiusX, double radiusY, double xAxisRotation,
+                          bool isLargeArc, bool isClockwiseDirection,
+                          double arcEndDeltaX, double arcEndDeltaY) {
+    _relativeArcToPoint(radiusX, radiusY, xAxisRotation, isLargeArc,
+                        isClockwiseDirection, arcEndDeltaX, arcEndDeltaY);
+  }
+
+  void _relativeArcToPoint(double radiusX, double radiusY, double xAxisRotation,
+                           bool isLargeArc, bool isClockwiseDirection,
+                           double arcEndX, double arcEndY) native "Path_relativeArcToPoint";
+
   /// Adds a new subpath that consists of four lines that outline the
   /// given rectangle.
   void addRect(Rect rect) {
