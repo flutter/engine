@@ -77,6 +77,7 @@ DEF_SWITCH(NonInteractive,
            "Make the shell non-interactive. By default, the shell attempts "
            "to setup a window and create an OpenGL context.")
 DEF_SWITCH(Packages, "packages", "Specify the path to the packages.")
+DEF_SWITCH(Snapshot, "snapshot-blob", "Specify the path to the snapshot blob")
 DEF_SWITCH(StartPaused,
            "start-paused",
            "Start the application paused in the Dart debugger.")
