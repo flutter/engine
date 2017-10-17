@@ -34,6 +34,12 @@ bool _offsetIsValid(Offset offset) {
   return true;
 }
 
+bool _radiusIsValid(Radius radius) {
+  assert(radius != null, 'Radius argument was null.');
+  assert(!radius.x.isNaN && !radius.y.isNaN, 'Radius argument contained a NaN value.');
+  return true;
+}
+
 Color _scaleAlpha(Color a, double factor) {
   return a.withAlpha((a.alpha * factor).round().clamp(0, 255));
 }
@@ -861,11 +867,11 @@ class Path extends NativeFieldWrapperClass2 {
               double startAngle, double sweepAngle, bool forceMoveTo) native "Path_arcTo";
 
   /// Appends up to four conic curves weighted to describe an oval of [radius]
-  /// and rotated by [xAxisRotation].
+  /// and rotated by [rotation].
   ///
   /// The first curve begins from the last point in the path and the last ends
   /// at [arcEnd]. The curves follow a path in a direction determined by
-  /// [isClockwiseDirection] and [isLargeArc] in such a way that the sweep angle
+  /// [clockwise] and [largeArc] in such a way that the sweep angle
   /// is always less than 360 degrees.
   ///
   /// A simple line is appended if either either radii are zero or the last
@@ -873,29 +879,29 @@ class Path extends NativeFieldWrapperClass2 {
   /// point if both are greater than zero but too small to describe an arc.
   ///
   void arcToPoint(Offset arcEnd, {
-      Radius radius : Radius.zero,
-      double xAxisRotation : 0.0,
-      bool isLargeArc : false,
-      bool isClockwiseDirection : true,
+    Radius radius: Radius.zero,
+    double rotation: 0.0,
+    bool largeArc: false,
+    bool clockwise: true,
     }) {
     assert(_offsetIsValid(arcEnd));
-    _arcToPoint(arcEnd.dx, arcEnd.dy, radius.x, radius.y, xAxisRotation,
-                isLargeArc, isClockwiseDirection);
+    assert(_radiusIsValid(radius));
+    _arcToPoint(arcEnd.dx, arcEnd.dy, radius.x, radius.y, rotation,
+                largeArc, clockwise);
   }
-
   void _arcToPoint(double arcEndX, double arcEndY, double radiusX,
-                   double radiusY, double xAxisRotation, bool isLargeArc,
-                   bool isClockwiseDirection) native "Path_arcToPoint";
+                   double radiusY, double rotation, bool largeArc,
+                   bool clockwise) native "Path_arcToPoint";
 
 
   /// Appends up to four conic curves weighted to describe an oval of [radius]
-  /// and rotated by [xAxisRotation].
+  /// and rotated by [rotation].
   ///
   /// The last path point is described by (px, py).
   ///
   /// The first curve begins from the last point in the path and the last ends
   /// at [arcEndDelta].dx + px and [arcEndDelta].dy + py. The curves follow a
-  /// path in a direction determined by [isClockwiseDirection] and [isLargeArc]
+  /// path in a direction determined by [clockwise] and [largeArc]
   /// in such a way that the sweep angle is always less than 360 degrees.
   ///
   /// A simple line is appended if either either radii are zero, or, both
@@ -903,19 +909,19 @@ class Path extends NativeFieldWrapperClass2 {
   /// fit the last path point if both are greater than zero but too small to
   /// describe an arc.
   void relativeArcToPoint(Offset arcEndDelta, {
-      Radius radius : Radius.zero,
-      double xAxisRotation : 0.0,
-      bool isLargeArc : false,
-      bool isClockwiseDirection : true,
+    Radius radius: Radius.zero,
+    double rotation: 0.0,
+    bool largeArc: false,
+    bool clockwise: true,
     }) {
     assert(_offsetIsValid(arcEndDelta));
+    assert(_radiusIsValid(radius));
     _relativeArcToPoint(arcEndDelta.dx, arcEndDelta.dy, radius.x, radius.y,
-                        xAxisRotation, isLargeArc, isClockwiseDirection);
+                        rotation, largeArc, clockwise);
   }
-
   void _relativeArcToPoint(double arcEndX, double arcEndY, double radiusX,
-                           double radiusY, double xAxisRotation,
-                           bool isLargeArc, bool isClockwiseDirection)
+                           double radiusY, double rotation,
+                           bool largeArc, bool clockwise)
                            native "Path_relativeArcToPoint";
 
   /// Adds a new subpath that consists of four lines that outline the
