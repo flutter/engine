@@ -41,6 +41,7 @@
 #include <stdio.h>
 #include <strings.h>
 #include <sys/mman.h>
+#include "garnet/public/lib/fxl/logging.h"
 
 #ifndef MADV_FREE
 #define MADV_FREE MADV_DONTNEED
@@ -196,8 +197,8 @@ void decommitSystemPages(void* addr, size_t len) {
   ASSERT(!(len & kSystemPageOffsetMask));
 #if OS(POSIX)
   if (!madvise(addr, len, MADV_FREE)) {
-    printf("Error '%s (%d)' on madvise(%p, %zu, MADV_FREE)\n", strerror(errno),
-           errno, addr, len);
+    FXL_LOG(ERROR) << "Error '" << strerror(errno) << " (" << errno
+                   << ")' on madvise(" << addr << "," << len << ",MADV_FREE);";
   }
 #else
   setSystemPagesInaccessible(addr, len);
