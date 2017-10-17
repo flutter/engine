@@ -125,6 +125,7 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 @property(nonatomic) UITextAutocorrectionType autocorrectionType;
 @property(nonatomic) UITextSpellCheckingType spellCheckingType;
 @property(nonatomic) BOOL enablesReturnKeyAutomatically;
+@property(nonatomic) BOOL shouldCapitalizeNextChar;
 @property(nonatomic) UIKeyboardAppearance keyboardAppearance;
 @property(nonatomic) UIKeyboardType keyboardType;
 @property(nonatomic) UIReturnKeyType returnKeyType;
@@ -287,7 +288,8 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
         return YES;
     } else {
       NSRange replaceRangee = NSMakeRange(currentRange.location-1, 1);
-      [self replaceRange:[FlutterTextRange rangeWithNSRange:replaceRangee] withText:@"."];
+      [self replaceRange:[FlutterTextRange rangeWithNSRange:replaceRangee] withText:@". "];
+      self.shouldCapitalizeNextChar = YES;
     }
     return NO;
   }
