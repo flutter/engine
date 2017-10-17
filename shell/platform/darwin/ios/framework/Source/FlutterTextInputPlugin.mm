@@ -34,6 +34,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inputType) {
   if ([inputType isEqualToString:@"TextInputType.text"])
     return UITextAutocapitalizationTypeSentences;
+  if ([inputType isEqualToString:@"TextInputType.multiline"])
+    return UITextAutocapitalizationTypeSentences;
   return UITextAutocapitalizationTypeNone;
 }
 
@@ -274,6 +276,21 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 }
 
 - (BOOL)shouldChangeTextInRange:(UITextRange*)range replacementText:(NSString*)text {
+  NSRange currentRange = ((FlutterTextRange*)range).range;
+  if ( (currentRange.location > 0 && [text length] > 0 &&
+      [[NSCharacterSet whitespaceCharacterSet] characterIsMember:[text characterAtIndex:0]] &&
+      [[NSCharacterSet whitespaceCharacterSet] characterIsMember:[[self text] characterAtIndex:currentRange.location-1]] ))
+  {
+    if ([self.text characterAtIndex:currentRange.location-2] == '.' ||
+        [self.text characterAtIndex:currentRange.location-2] == ' '
+    ) {
+        return YES;
+    } else {
+      NSRange replaceRangee = NSMakeRange(currentRange.location-1, 1);
+      [self replaceRange:[FlutterTextRange rangeWithNSRange:replaceRangee] withText:@"."];
+    }
+    return NO;
+  }
   if (self.returnKeyType == UIReturnKeyDone && [text isEqualToString:@"\n"]) {
     [self resignFirstResponder];
     [self removeFromSuperview];
@@ -586,6 +603,7 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
   _view.autocorrectionType = autocorrect && ![autocorrect boolValue]
                                  ? UITextAutocorrectionTypeNo
                                  : UITextAutocorrectionTypeDefault;
+  _view.spellCheckingType = UITextSpellCheckingTypeYes;
   [_view setTextInputClient:client];
   [_view reloadInputViews];
 }
