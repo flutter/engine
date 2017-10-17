@@ -46,9 +46,7 @@ class UIDartState : public tonic::DartState {
   void set_font_selector(PassRefPtr<FontSelector> selector);
   PassRefPtr<FontSelector> font_selector();
   bool is_controller_state() const { return is_controller_state_; }
-  void set_is_controller_state(bool value) {
-    is_controller_state_ = value;
-  }
+  void set_is_controller_state(bool value) { is_controller_state_ = value; }
 
  private:
   void DidSetIsolate() override;
