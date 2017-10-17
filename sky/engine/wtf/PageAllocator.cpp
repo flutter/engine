@@ -37,6 +37,9 @@
 
 #if OS(POSIX)
 
+#include <errno.h>
+#include <stdio.h>
+#include <strings.h>
 #include <sys/mman.h>
 
 #ifndef MADV_FREE
@@ -192,8 +195,10 @@ void setSystemPagesAccessible(void* addr, size_t len) {
 void decommitSystemPages(void* addr, size_t len) {
   ASSERT(!(len & kSystemPageOffsetMask));
 #if OS(POSIX)
-  int ret = madvise(addr, len, MADV_FREE);
-  RELEASE_ASSERT(!ret);
+  if (!madvise(addr, len, MADV_FREE)) {
+    printf("Error '%s (%d)' on madvise(%p, %zu, MADV_FREE)\n", strerror(errno),
+           errno, addr, len);
+  }
 #else
   setSystemPagesInaccessible(addr, len);
 #endif
