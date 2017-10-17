@@ -280,11 +280,9 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
   NSRange currentRange = ((FlutterTextRange*)range).range;
   if ( (currentRange.location > 0 && [text length] > 0 &&
       [[NSCharacterSet whitespaceCharacterSet] characterIsMember:[text characterAtIndex:0]] &&
-      [[NSCharacterSet whitespaceCharacterSet] characterIsMember:[[self text] characterAtIndex:currentRange.location-1]] ))
-  {
+      [[NSCharacterSet whitespaceCharacterSet] characterIsMember:[[self text] characterAtIndex:currentRange.location-1]] )) {
     if ([self.text characterAtIndex:currentRange.location-2] == '.' ||
-        [self.text characterAtIndex:currentRange.location-2] == ' '
-    ) {
+        [self.text characterAtIndex:currentRange.location-2] == ' ') {
         return YES;
     } else {
       NSRange replaceRangee = NSMakeRange(currentRange.location-1, 1);
