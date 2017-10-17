@@ -53,20 +53,20 @@ class CanvasPath : public fxl::RefCountedThreadSafe<CanvasPath>,
              float startAngle,
              float sweepAngle,
              bool forceMoveTo);
-  void arcToPoint(float radiusX,
+  void arcToPoint(float arcEndX,
+                  float arcEndY,
+                  float radiusX,
                   float radiusY,
                   float xAxisRotation,
                   bool isLargeArc,
-                  bool isClockwiseDirection,
-                  float arcEndX,
-                  float arcEndY);
-  void relativeArcToPoint(float radiusX,
+                  bool isClockwiseDirection);
+  void relativeArcToPoint(float arcEndDeltaX,
+                          float arcEndDeltaY,
+                          float radiusX,
                           float radiusY,
                           float xAxisRotation,
                           bool isLargeArc,
-                          bool isClockwiseDirection,
-                          float arcEndDeltaX,
-                          float arcEndDeltaY);
+                          bool isClockwiseDirection);
   void addRect(float left, float top, float right, float bottom);
   void addOval(float left, float top, float right, float bottom);
   void addArc(float left,
