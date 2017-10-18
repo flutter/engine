@@ -88,12 +88,16 @@ public class TextInputPlugin implements MethodCallHandler {
             return InputType.TYPE_CLASS_PHONE;
 
         int textType = InputType.TYPE_CLASS_TEXT;
-        if (inputType.equals("TextInputType.multiline"))
+        if (inputType.equals("TextInputType.text")) {
+            textType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
+        } else if (inputType.equals("TextInputType.multiline")) {
+            textType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
             textType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
-        else if (inputType.equals("TextInputType.emailAddress"))
+        } else if (inputType.equals("TextInputType.emailAddress")) {
             textType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
-        else if (inputType.equals("TextInputType.url"))
+        } else if (inputType.equals("TextInputType.url")) {
             textType |= InputType.TYPE_TEXT_VARIATION_URI;
+        }
         if (obscureText) {
             // Note: both required. Some devices ignore TYPE_TEXT_FLAG_NO_SUGGESTIONS.
             textType |= InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
@@ -101,7 +105,6 @@ public class TextInputPlugin implements MethodCallHandler {
         } else if (autocorrect) {
             textType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
         }
-        textType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
         return textType;
     }
 
