@@ -12,9 +12,7 @@ action("gen_embedded_resources_cc") {
     output_file,
   ]
 
-  inputs = rebase_path(vmservice_sources,
-                       "",
-                       "//dart/runtime/bin/vmservice")
+  inputs = rebase_path(vmservice_sources, "", "//dart/runtime/bin/vmservice")
 
   args = [
            "--output",
@@ -37,9 +35,7 @@ source_set("embedded_resources_cc") {
   deps = [
     ":gen_embedded_resources_cc",
   ]
-  public_configs = [
-    "$flutter_root:config",
-  ]
+  public_configs = [ "$flutter_root:config" ]
 }
 
 source_set("test_font") {
@@ -50,9 +46,7 @@ source_set("test_font") {
   deps = [
     "//third_party/skia",
   ]
-  public_configs = [
-    "$flutter_root:config",
-  ]
+  public_configs = [ "$flutter_root:config" ]
   defines = []
   if (flutter_runtime_mode == "debug" || current_toolchain == host_toolchain) {
     # Though the test font data is small, we dont want to add to the binary size
@@ -63,10 +57,7 @@ source_set("test_font") {
 }
 
 source_set("runtime") {
-
   sources = [
-    "asset_font_selector.cc",
-    "asset_font_selector.h",
     "dart_controller.cc",
     "dart_controller.h",
     "dart_init.cc",
@@ -75,8 +66,6 @@ source_set("runtime") {
     "dart_service_isolate.h",
     "embedder_resources.cc",
     "embedder_resources.h",
-    "platform_impl.cc",
-    "platform_impl.h",
     "runtime_controller.cc",
     "runtime_controller.h",
     "runtime_delegate.cc",
@@ -85,32 +74,27 @@ source_set("runtime") {
     "runtime_init.h",
     "start_up.cc",
     "start_up.h",
-    "test_font_selector.cc",
-    "test_font_selector.h",
   ]
 
   deps = [
     ":embedded_resources_cc",
     ":test_font",
-    "//dart/runtime:dart_api",
-    "//dart/runtime/bin:embedded_dart_io",
     "$flutter_root/assets",
     "$flutter_root/common",
     "$flutter_root/flow",
     "$flutter_root/glue",
     "$flutter_root/lib/io",
     "$flutter_root/lib/ui",
-    "$flutter_root/sky/engine/platform",
     "$flutter_root/third_party/txt",
+    "//dart/runtime:dart_api",
+    "//dart/runtime/bin:embedded_dart_io",
     "//garnet/public/lib/fxl",
     "//third_party/rapidjson",
     "//third_party/skia",
     "//topaz/lib/tonic",
   ]
 
-  public_configs = [
-    "$flutter_root:config",
-  ]
+  public_configs = [ "$flutter_root:config" ]
 
   # In AOT mode, precompiled snapshots contain the instruction buffer.
   # Generation of the same requires all application specific script code to be

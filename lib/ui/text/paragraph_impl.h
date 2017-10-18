@@ -32,8 +32,8 @@ class ParagraphImpl {
 
   virtual void paint(Canvas* canvas, double x, double y) = 0;
 
-  virtual std::vector<TextBox> getRectsForRange(unsigned start,
-                                                unsigned end) = 0;
+  virtual std::vector<tonic::TextBox> getRectsForRange(unsigned start,
+                                                       unsigned end) = 0;
 
   virtual Dart_Handle getPositionForOffset(double dx, double dy) = 0;
 

@@ -7,8 +7,6 @@
 
 #include <memory>
 #include "flutter/lib/ui/text/paragraph.h"
-#include "flutter/sky/engine/core/rendering/RenderObject.h"
-#include "flutter/sky/engine/wtf/OwnPtr.h"
 #include "flutter/third_party/txt/src/txt/paragraph_builder.h"
 #include "lib/tonic/dart_wrappable.h"
 #include "lib/tonic/typed_data/int32_list.h"
@@ -57,11 +55,6 @@ class ParagraphBuilder : public fxl::RefCountedThreadSafe<ParagraphBuilder>,
                             double lineHeight,
                             const std::u16string& ellipsis);
 
-  void createRenderView();
-
-  OwnPtr<RenderView> m_renderView;
-  RenderObject* m_renderParagraph;
-  RenderObject* m_currentRenderObject;
   std::unique_ptr<txt::ParagraphBuilder> m_paragraphBuilder;
 };
 

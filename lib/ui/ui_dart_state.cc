@@ -5,7 +5,6 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 
 #include "flutter/lib/ui/window/window.h"
-#include "flutter/sky/engine/platform/fonts/FontSelector.h"
 #include "lib/tonic/converter/dart_converter.h"
 
 using tonic::ToDart;
@@ -43,14 +42,6 @@ void UIDartState::DidSetIsolate() {
 
 UIDartState* UIDartState::Current() {
   return static_cast<UIDartState*>(DartState::Current());
-}
-
-void UIDartState::set_font_selector(PassRefPtr<FontSelector> selector) {
-  font_selector_ = selector;
-}
-
-PassRefPtr<FontSelector> UIDartState::font_selector() {
-  return font_selector_;
 }
 
 void UIDartState::set_debug_name_prefix(const std::string& debug_name_prefix) {
