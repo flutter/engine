@@ -6,14 +6,27 @@
 #define FLUTTER_LIB_UI_TEXT_TEXT_BOX_H_
 
 #include "dart/runtime/include/dart_api.h"
-#include "flutter/sky/engine/platform/text/TextBox.h"
 #include "lib/tonic/converter/dart_converter.h"
+#include "third_party/skia/include/core/SkRect.h"
 
 namespace tonic {
 
+enum TextDirection { RTL, LTR };
+
+class TextBox {
+ public:
+  TextBox() : is_null(true) {}
+  TextBox(SkRect r, TextDirection direction)
+      : sk_rect(std::move(r)), direction(direction), is_null(false) {}
+
+  SkRect sk_rect;
+  TextDirection direction;
+  bool is_null;
+};
+
 template <>
-struct DartConverter<blink::TextBox> {
-  static Dart_Handle ToDart(const blink::TextBox& val);
+struct DartConverter<TextBox> {
+  static Dart_Handle ToDart(const TextBox& val);
 };
 
 }  // namespace tonic

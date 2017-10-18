@@ -20,14 +20,11 @@
 #include "flutter/glue/trace_event.h"
 #include "flutter/lib/snapshot/snapshot.h"
 #include "flutter/lib/ui/text/font_collection.h"
-#include "flutter/runtime/asset_font_selector.h"
 #include "flutter/runtime/dart_controller.h"
 #include "flutter/runtime/dart_init.h"
 #include "flutter/runtime/runtime_init.h"
-#include "flutter/runtime/test_font_selector.h"
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/sky/engine/public/web/Sky.h"
 #include "lib/fxl/files/eintr_wrapper.h"
 #include "lib/fxl/files/file.h"
 #include "lib/fxl/files/path.h"
@@ -510,15 +507,10 @@ void Engine::ConfigureRuntime(const std::string& script_uri,
 
 void Engine::DidCreateMainIsolate(Dart_Isolate isolate) {
   if (blink::Settings::Get().use_test_fonts) {
-    blink::TestFontSelector::Install();
-    if (!blink::Settings::Get().using_blink)
-      blink::FontCollection::ForProcess().RegisterTestFonts();
+    blink::FontCollection::ForProcess().RegisterTestFonts();
   } else if (asset_store_) {
-    blink::AssetFontSelector::Install(asset_store_);
-    if (!blink::Settings::Get().using_blink) {
-      blink::FontCollection::ForProcess().RegisterFontsFromAssetStore(
-          asset_store_);
-    }
+    blink::FontCollection::ForProcess().RegisterFontsFromAssetStore(
+        asset_store_);
   }
 }
 

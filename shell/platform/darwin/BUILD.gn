@@ -10,9 +10,7 @@ group("darwin") {
       "desktop:shell_standalone",
     ]
     if (!is_fuchsia_host) {
-      deps += [
-        "desktop:shell_application_bundle",
-      ]
+      deps += [ "desktop:shell_application_bundle" ]
     }
   } else if (is_ios) {
     deps = [
@@ -46,14 +44,11 @@ source_set("flutter_channels") {
     "$flutter_root/shell/common",
     "$flutter_root/shell/gpu",
     "$flutter_root/shell/testing",
-    "$flutter_root/sky/engine/wtf",
     "//garnet/public/lib/fxl",
     "//third_party/skia",
   ]
 
-  public_configs = [
-    "$flutter_root:config",
-  ]
+  public_configs = [ "$flutter_root:config" ]
 }
 
 executable("flutter_channels_unittests") {
@@ -68,7 +63,7 @@ executable("flutter_channels_unittests") {
 
   deps = [
     ":flutter_channels",
-    "//dart/runtime:libdart_jit",
     "$flutter_root/testing",
+    "//dart/runtime:libdart_jit",
   ]
 }

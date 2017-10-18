@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/darwin/common/platform_mac.h"
 
+#include <memory>
+
 #include <Foundation/Foundation.h>
 
 #include "dart/runtime/include/dart_tools_api.h"
@@ -13,7 +15,6 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/tracing_controller.h"
-#include "flutter/sky/engine/wtf/MakeUnique.h"
 #include "lib/fxl/command_line.h"
 #include "lib/fxl/strings/string_view.h"
 
@@ -60,7 +61,7 @@ void PlatformMacMain(std::string icu_data_path, std::string application_library_
   static std::once_flag once_main;
 
   std::call_once(once_main, [&]() {
-    g_embedder = WTF::MakeUnique<EmbedderState>(icu_data_path, application_library_path);
+    g_embedder = std::make_unique<EmbedderState>(icu_data_path, application_library_path);
   });
 }
 

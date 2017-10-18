@@ -345,9 +345,7 @@ Dart_Handle GetVMServiceAssetsArchiveCallback() {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
   return nullptr;
 #else   // FLUTTER_RUNTIME_MODE
-  return tonic::DartConverter<tonic::Uint8List>::ToDart(
-      ::dart::observatory::observatory_assets_archive,
-      ::dart::observatory::observatory_assets_archive_len);
+  return nullptr;  // TODO
 #endif  // FLUTTER_RUNTIME_MODE
 }
 

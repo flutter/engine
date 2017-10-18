@@ -9,8 +9,6 @@
 #include "lib/tonic/dart_state.h"
 #include "lib/tonic/logging/dart_error.h"
 
-using namespace blink;
-
 namespace tonic {
 
 Dart_Handle DartConverter<TextBox>::ToDart(const TextBox& val) {

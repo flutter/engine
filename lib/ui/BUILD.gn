@@ -62,8 +62,6 @@ source_set("ui") {
     "text/paragraph_builder.h",
     "text/paragraph_impl.cc",
     "text/paragraph_impl.h",
-    "text/paragraph_impl_blink.cc",
-    "text/paragraph_impl_blink.h",
     "text/paragraph_impl_txt.cc",
     "text/paragraph_impl_txt.h",
     "text/text_box.cc",
@@ -85,21 +83,19 @@ source_set("ui") {
     "window/window.h",
   ]
 
-  public_configs = [
-    "$flutter_root:config",
-  ]
+  public_configs = [ "$flutter_root:config" ]
 
   deps = [
-    "//dart/runtime/bin:embedded_dart_io",
     "$flutter_root/assets",
     "$flutter_root/common",
     "$flutter_root/flow",
     "$flutter_root/glue",
     "$flutter_root/runtime:test_font",
-    "$flutter_root/sky/engine",
     "$flutter_root/third_party/txt",
+    "//dart/runtime/bin:embedded_dart_io",
     "//third_party/rapidjson",
     "//third_party/skia",
+    "//third_party/skia:effects",
     "//third_party/skia:gpu",
     "//topaz/lib/tonic",
   ]

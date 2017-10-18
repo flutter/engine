@@ -61,13 +61,13 @@ void ParagraphImplTxt::paint(Canvas* canvas, double x, double y) {
   m_paragraph->Paint(sk_canvas, x, y);
 }
 
-std::vector<TextBox> ParagraphImplTxt::getRectsForRange(unsigned start,
-                                                        unsigned end) {
-  std::vector<TextBox> result;
+std::vector<tonic::TextBox> ParagraphImplTxt::getRectsForRange(unsigned start,
+                                                               unsigned end) {
+  std::vector<tonic::TextBox> result;
   std::vector<SkRect> rects = m_paragraph->GetRectsForRange(start, end);
   for (size_t i = 0; i < rects.size(); ++i) {
-    result.push_back(TextBox(
-        rects[i], static_cast<TextDirection>(
+    result.push_back(tonic::TextBox(
+        rects[i], static_cast<tonic::TextDirection>(
                       m_paragraph->GetParagraphStyle().text_direction)));
   }
   return result;
