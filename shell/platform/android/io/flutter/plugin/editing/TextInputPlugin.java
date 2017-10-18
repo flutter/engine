@@ -101,6 +101,7 @@ public class TextInputPlugin implements MethodCallHandler {
         } else if (autocorrect) {
             textType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
         }
+        textType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
         return textType;
     }
 
