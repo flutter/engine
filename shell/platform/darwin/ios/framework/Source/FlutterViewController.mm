@@ -710,7 +710,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 - (void)onUserSettingsChanged:(NSNotification*)notification {
   [_settingsChannel.get() sendMessage:@{
     @"textScaleFactor" : @([self textScaleFactor]),
-    @"alwaysUse24HourFormat": @([self isAlwaysUse24HourFormat]),
+    @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
   }];
 }
 
@@ -754,7 +754,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   // the "current system locale" or a custom one. On iOS it only applies to the current
   // system locale. Widget implementors must take this into account in order to provide
   // platform-idiomatic behavior in their widgets.
-  NSString *dateFormat =
+  NSString* dateFormat =
       [NSDateFormatter dateFormatFromTemplate:@"j" options:0 locale:[NSLocale currentLocale]];
   return [dateFormat rangeOfString:@"a"].location == NSNotFound;
 }
