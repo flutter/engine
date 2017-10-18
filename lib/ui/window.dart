@@ -276,18 +276,6 @@ class Window {
   bool get alwaysUse24HourFormat => _alwaysUse24HourFormat;
   bool _alwaysUse24HourFormat = false;
 
-  /// Overrides the value of [alwaysUse24HourFormat] in tests.
-  /// 
-  /// This function may only be called in debug mode. It throws a [StateError]
-  /// if called in production or profile mode.
-  void debugOverrideAlwaysUse24HourFormat(bool value) {
-    bool inDebugMode = false;
-    assert(inDebugMode = true);
-    if (!inDebugMode)
-      throw new StateError('debugOverrideAlwaysUse24HourFormat may only be called in debug mode');
-    _alwaysUse24HourFormat = value;
-  }
-
   /// A callback that is invoked whenever [textScaleFactor] changes value.
   ///
   /// The framework invokes this callback in the same zone in which the
