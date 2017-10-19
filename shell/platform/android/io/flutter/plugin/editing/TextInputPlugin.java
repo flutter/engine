@@ -94,7 +94,6 @@ public class TextInputPlugin implements MethodCallHandler {
             textType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
         else if (inputType.equals("TextInputType.url"))
             textType |= InputType.TYPE_TEXT_VARIATION_URI;
-
         if (obscureText) {
             // Note: both required. Some devices ignore TYPE_TEXT_FLAG_NO_SUGGESTIONS.
             textType |= InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
