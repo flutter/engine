@@ -39,8 +39,7 @@ class PlatformViewAndroid : public PlatformView {
   void SurfaceDestroyed();
 
   void RunBundleAndSnapshot(std::string bundle_path,
-                            std::string snapshot_override,
-                            std::string entrypoint);
+                            std::string snapshot_override);
 
   void RunBundleAndSource(std::string bundle_path,
                           std::string main,

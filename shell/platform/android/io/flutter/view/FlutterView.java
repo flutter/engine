@@ -177,16 +177,11 @@ public class FlutterView extends SurfaceView
             JSONMessageCodec.INSTANCE);
         mFlutterSettingsChannel = new BasicMessageChannel<>(this, "flutter/settings",
             JSONMessageCodec.INSTANCE);
-
-        // TODO(plugins): Change PlatformPlugin to accept a Context. Disable the
-        // operations that require an Activity when a Context is passed.
-        if (getContext() instanceof Activity) {
-            PlatformPlugin platformPlugin = new PlatformPlugin((Activity) getContext());
-            MethodChannel flutterPlatformChannel = new MethodChannel(this,
-                "flutter/platform", JSONMethodCodec.INSTANCE);
-            flutterPlatformChannel.setMethodCallHandler(platformPlugin);
-            addActivityLifecycleListener(platformPlugin);
-        }
+        PlatformPlugin platformPlugin = new PlatformPlugin((Activity) getContext());
+        MethodChannel flutterPlatformChannel = new MethodChannel(this,
+            "flutter/platform", JSONMethodCodec.INSTANCE);
+        flutterPlatformChannel.setMethodCallHandler(platformPlugin);
+        addActivityLifecycleListener(platformPlugin);
         mTextInputPlugin = new TextInputPlugin(this);
 
         setLocale(getResources().getConfiguration().locale);
@@ -565,13 +560,9 @@ public class FlutterView extends SurfaceView
     }
 
     public void runFromBundle(String bundlePath, String snapshotOverride) {
-        runFromBundle(bundlePath, snapshotOverride, "main");
-    }
-
-    public void runFromBundle(String bundlePath, String snapshotOverride, String entrypoint) {
         assertAttached();
         preRun();
-        nativeRunBundleAndSnapshot(mNativePlatformView, bundlePath, snapshotOverride, entrypoint);
+        nativeRunBundleAndSnapshot(mNativePlatformView, bundlePath, snapshotOverride);
         postRun();
     }
 
@@ -630,8 +621,7 @@ public class FlutterView extends SurfaceView
 
     private static native void nativeRunBundleAndSnapshot(long nativePlatformViewAndroid,
         String bundlePath,
-        String snapshotOverride,
-        String entrypoint);
+        String snapshotOverride);
 
     private static native void nativeRunBundleAndSource(long nativePlatformViewAndroid,
         String bundlePath,
