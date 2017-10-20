@@ -7,7 +7,7 @@
 
 #import <UIKit/UIKit.h>
 
-#include "FlutterMacros.h"
+#include "flutter/shell/platform/darwin/common/FlutterMacros.h"
 #include "FlutterPlugin.h"
 
 /**
