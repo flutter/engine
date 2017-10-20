@@ -66,11 +66,11 @@ void RuntimeController::SetLocale(const std::string& language_code,
   GetWindow()->UpdateLocale(language_code_, country_code_);
 }
 
-void RuntimeController::SetUserSettingsData(const std::string& data) {
-  if (user_settings_data_ == data)
+void RuntimeController::SetTextScaleFactor(double text_scale_factor) {
+  if (text_scale_factor_ == text_scale_factor)
     return;
-  user_settings_data_ = data;
-  GetWindow()->UpdateUserSettingsData(user_settings_data_);
+  text_scale_factor_ = text_scale_factor;
+  GetWindow()->UpdateTextScaleFactor(text_scale_factor_);
 }
 
 void RuntimeController::SetSemanticsEnabled(bool enabled) {

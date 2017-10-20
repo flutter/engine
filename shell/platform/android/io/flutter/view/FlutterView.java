@@ -17,7 +17,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Matrix;
 import android.os.Build;
-import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
@@ -102,7 +101,6 @@ public class FlutterView extends SurfaceView
     private final BasicMessageChannel<Object> mFlutterKeyEventChannel;
     private final BasicMessageChannel<String> mFlutterLifecycleChannel;
     private final BasicMessageChannel<Object> mFlutterSystemChannel;
-    private final BasicMessageChannel<Object> mFlutterSettingsChannel;
     private final BroadcastReceiver mDiscoveryReceiver;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private final List<FirstFrameListener> mFirstFrameListeners;
@@ -175,8 +173,6 @@ public class FlutterView extends SurfaceView
             StringCodec.INSTANCE);
         mFlutterSystemChannel = new BasicMessageChannel<>(this, "flutter/system",
             JSONMessageCodec.INSTANCE);
-        mFlutterSettingsChannel = new BasicMessageChannel<>(this, "flutter/settings",
-            JSONMessageCodec.INSTANCE);
 
         // TODO(plugins): Change PlatformPlugin to accept a Context. Disable the
         // operations that require an Activity when a Context is passed.
@@ -190,7 +186,7 @@ public class FlutterView extends SurfaceView
         mTextInputPlugin = new TextInputPlugin(this);
 
         setLocale(getResources().getConfiguration().locale);
-        setUserSettings();
+        setTextScaleFactor(getResources().getConfiguration().fontScale);
 
         if ((context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
             mDiscoveryReceiver = new DiscoveryReceiver();
@@ -288,11 +284,11 @@ public class FlutterView extends SurfaceView
         mFlutterNavigationChannel.invokeMethod("popRoute", null);
     }
 
-    private void setUserSettings() {
+    private void setTextScaleFactor(float textScaleFactor) {
       Map<String, Object> message = new HashMap<>();
-      message.put("textScaleFactor", getResources().getConfiguration().fontScale);
-      message.put("alwaysUse24HourFormat", DateFormat.is24HourFormat(getContext()));
-      mFlutterSettingsChannel.send(message);
+      message.put("type", "systemSettings");
+      message.put("textScaleFactor", textScaleFactor);
+      mFlutterSystemChannel.send(message);
     }
 
     private void setLocale(Locale locale) {
@@ -304,7 +300,7 @@ public class FlutterView extends SurfaceView
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         setLocale(newConfig.locale);
-        setUserSettings();
+        setTextScaleFactor(newConfig.fontScale);
     }
 
     float getDevicePixelRatio() {
