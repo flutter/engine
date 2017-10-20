@@ -157,7 +157,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         result.setCheckable((object.flags & SEMANTICS_FLAG_HAS_CHECKED_STATE) != 0);
         result.setChecked((object.flags & SEMANTICS_FLAG_IS_CHECKED) != 0);
         result.setSelected((object.flags & SEMANTICS_FLAG_IS_SELECTED) != 0);
-        result.setText(object.label);
+        result.setText(object.getValueLabelHint());
 
         // Accessibility Focus
         if (mFocusedObject != null && mFocusedObject.id == virtualViewId) {
@@ -429,6 +429,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         int flags;
         int actions;
         String label;
+        String value;
+        String hint;
         TextDirection textDirection;
 
         private float left;
@@ -463,11 +465,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             flags = buffer.getInt();
             actions = buffer.getInt();
 
-            final int stringIndex = buffer.getInt();
-            if (stringIndex == -1)
-                label = null;
-            else
-                label = strings[stringIndex];
+            int stringIndex = buffer.getInt();
+            label = stringIndex == -1 ? null : strings[stringIndex];
+
+            stringIndex = buffer.getInt();
+            value = stringIndex == -1 ? null : strings[stringIndex];
+
+            stringIndex = buffer.getInt();
+            hint = stringIndex == -1 ? null : strings[stringIndex];
 
             textDirection = TextDirection.fromInt(buffer.getInt());
 
@@ -614,6 +619,22 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         private float max(float a, float b, float c, float d) {
             return Math.max(a, Math.max(b, Math.max(c, d)));
+        }
+
+        private String getValueLabelHint() {
+            StringBuilder sb = new StringBuilder();
+            boolean first = true;
+            String[] array = { value, label, hint };
+            for (String word: array) {
+                if (word != null && (word = word.trim()).length() > 0) {
+                    if (first)
+                        first = false;
+                    else
+                        sb.append(", ");
+                    sb.append(word);
+                }
+            }
+            return sb.length() > 0 ? sb.toString() : null;
         }
     }
 }
