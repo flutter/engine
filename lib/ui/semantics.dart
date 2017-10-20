@@ -157,7 +157,8 @@ class SemanticsFlags {
   /// Whether the semantic node represents a button.
   ///
   /// Platforms has special handling for buttons, for example Android's TalkBack
-  /// provides an additional hint when the focused object is a button.
+  /// and iOS's VoiceOver provides an additional hint when the focused object is
+  /// a button.
   static const SemanticsFlags isButton = const SemanticsFlags._(_kIsButton);
 
   /// The possible semantics flags.
