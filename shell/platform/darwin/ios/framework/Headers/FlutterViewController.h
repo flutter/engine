@@ -8,9 +8,9 @@
 #import <UIKit/UIKit.h>
 #include <sys/cdefs.h>
 
+#include "FlutterDartProject.h"
 #include "flutter/shell/platform/darwin/common/FlutterBinaryMessenger.h"
 #include "flutter/shell/platform/darwin/common/FlutterMacros.h"
-#include "FlutterDartProject.h"
 
 FLUTTER_EXPORT
 @interface FlutterViewController : UIViewController<FlutterBinaryMessenger>
