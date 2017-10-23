@@ -92,9 +92,8 @@ class Engine : public blink::RuntimeDelegate {
   void StartAnimatorIfPossible();
 
   void ConfigureAssetBundle(const std::string& path);
-  void ConfigureRuntime(
-      const std::string& script_uri,
-      bool reuse_runtime_controller = false);
+  void ConfigureRuntime(const std::string& script_uri,
+                        bool reuse_runtime_controller = false);
 
   bool HandleLifecyclePlatformMessage(blink::PlatformMessage* message);
   bool HandleNavigationPlatformMessage(

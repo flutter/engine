@@ -61,7 +61,8 @@ void SendNull(Dart_Port port_id) {
 
 DART_NATIVE_CALLBACK_STATIC(DiagnosticServer, HandleSkiaPictureRequest);
 
-void DiagnosticServer::Start(uint32_t port, bool ipv6,
+void DiagnosticServer::Start(uint32_t port,
+                             bool ipv6,
                              bool running_from_kernel) {
   if (!g_natives) {
     g_natives = new DartLibraryNatives();
@@ -75,8 +76,8 @@ void DiagnosticServer::Start(uint32_t port, bool ipv6,
 
   Dart_Handle diagnostic_library;
   if (running_from_kernel) {
-    diagnostic_library = Dart_LookupLibrary(
-        Dart_NewStringFromCString("dart:diagnostic_server"));
+    diagnostic_library =
+        Dart_LookupLibrary(Dart_NewStringFromCString("dart:diagnostic_server"));
   } else {
     const char* source = nullptr;
     int source_length =

@@ -177,11 +177,10 @@ tonic::DartErrorHandleType DartController::RunFromSource(
   return error;
 }
 
-void DartController::CreateIsolateFor(
-    const std::string& script_uri,
-    const uint8_t* isolate_snapshot_data,
-    const uint8_t* isolate_snapshot_instr,
-    std::unique_ptr<UIDartState> state) {
+void DartController::CreateIsolateFor(const std::string& script_uri,
+                                      const uint8_t* isolate_snapshot_data,
+                                      const uint8_t* isolate_snapshot_instr,
+                                      std::unique_ptr<UIDartState> state) {
   char* error = nullptr;
 
   void* platform_kernel = GetKernelPlatformBinary();
@@ -189,10 +188,8 @@ void DartController::CreateIsolateFor(
   Dart_Isolate isolate;
   if (platform_kernel != nullptr) {
     isolate = Dart_CreateIsolateFromKernel(
-        script_uri.c_str(), "main",
-        platform_kernel,
-        nullptr /* flags */, static_cast<tonic::DartState*>(state.get()),
-        &error);
+        script_uri.c_str(), "main", platform_kernel, nullptr /* flags */,
+        static_cast<tonic::DartState*>(state.get()), &error);
   } else {
     isolate =
         Dart_CreateIsolate(script_uri.c_str(), "main", isolate_snapshot_data,

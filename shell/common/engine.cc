@@ -183,8 +183,7 @@ void Engine::Init(const std::string& bundle_path) {
 
   blink::InitRuntime(vm_snapshot_data, vm_snapshot_instr,
                      default_isolate_snapshot_data,
-                     default_isolate_snapshot_instr,
-                     bundle_path);
+                     default_isolate_snapshot_instr, bundle_path);
 }
 
 const std::string Engine::main_entrypoint_ = "main";
@@ -479,9 +478,9 @@ void Engine::ConfigureRuntime(const std::string& script_uri,
     return;
   }
   runtime_ = blink::RuntimeController::Create(this);
-  runtime_->CreateDartController(
-      std::move(script_uri), default_isolate_snapshot_data,
-      default_isolate_snapshot_instr);
+  runtime_->CreateDartController(std::move(script_uri),
+                                 default_isolate_snapshot_data,
+                                 default_isolate_snapshot_instr);
   runtime_->SetViewportMetrics(viewport_metrics_);
   runtime_->SetLocale(language_code_, country_code_);
   runtime_->SetUserSettingsData(user_settings_data_);

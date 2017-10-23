@@ -72,7 +72,8 @@ class Shell {
                          std::string* isolate_name);
 
  private:
-  static void Init(fxl::CommandLine command_line, const std::string& bundle_path);
+  static void Init(fxl::CommandLine command_line,
+                   const std::string& bundle_path);
 
   Shell(fxl::CommandLine command_line);
 

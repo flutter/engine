@@ -62,7 +62,7 @@ void ServiceIsolateHook(bool running_precompiled, bool running_from_kernel) {
     const blink::Settings& settings = blink::Settings::Get();
     if (settings.enable_diagnostic)
       DiagnosticServer::Start(settings.diagnostic_port, settings.ipv6,
-          running_from_kernel);
+                              running_from_kernel);
   }
 }
 
@@ -196,7 +196,8 @@ void Shell::InitStandalone(fxl::CommandLine command_line,
   Init(std::move(command_line), bundle_path);
 }
 
-void Shell::Init(fxl::CommandLine command_line, const std::string& bundle_path) {
+void Shell::Init(fxl::CommandLine command_line,
+                 const std::string& bundle_path) {
 #if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
   bool trace_skia = command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
   InitSkiaEventTracer(trace_skia);
@@ -204,7 +205,8 @@ void Shell::Init(fxl::CommandLine command_line, const std::string& bundle_path) 
 
   FXL_DCHECK(!g_shell);
   g_shell = new Shell(std::move(command_line));
-  blink::Threads::UI()->PostTask([bundle_path]() { Engine::Init(bundle_path); });
+  blink::Threads::UI()->PostTask(
+      [bundle_path]() { Engine::Init(bundle_path); });
 }
 
 Shell& Shell::Shared() {

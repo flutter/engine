@@ -202,15 +202,15 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
 
   bool is_running_from_kernel = kernel_platform != nullptr;
 
-  Dart_Isolate isolate = is_running_from_kernel
-      ? Dart_CreateIsolateFromKernel(script_uri, "main", kernel_platform,
-            nullptr /* flags */,
-            static_cast<tonic::DartState*>(dart_state),
-            error)
-      : Dart_CreateIsolate(script_uri, "main",
-            g_default_isolate_snapshot_data,
-            g_default_isolate_snapshot_instructions, nullptr,
-            static_cast<tonic::DartState*>(dart_state), error);
+  Dart_Isolate isolate =
+      is_running_from_kernel
+          ? Dart_CreateIsolateFromKernel(
+                script_uri, "main", kernel_platform, nullptr /* flags */,
+                static_cast<tonic::DartState*>(dart_state), error)
+          : Dart_CreateIsolate(
+                script_uri, "main", g_default_isolate_snapshot_data,
+                g_default_isolate_snapshot_instructions, nullptr,
+                static_cast<tonic::DartState*>(dart_state), error);
 
   FXL_CHECK(isolate) << error;
   dart_state->set_debug_name_prefix(script_uri);
@@ -236,7 +236,8 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
     }
 
     if (g_service_isolate_hook)
-      g_service_isolate_hook(IsRunningPrecompiledCode(), is_running_from_kernel);
+      g_service_isolate_hook(IsRunningPrecompiledCode(),
+                             is_running_from_kernel);
   }
   Dart_ExitIsolate();
 

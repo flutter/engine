@@ -48,7 +48,8 @@ bool RegisterFlutterMain(JNIEnv* env) {
   static const JNINativeMethod methods[] = {
       {
           .name = "nativeInit",
-          .signature = "(Landroid/content/Context;[Ljava/lang/String;Ljava/lang/String;)V",
+          .signature = "(Landroid/content/Context;[Ljava/lang/String;Ljava/"
+                       "lang/String;)V",
           .fnPtr = reinterpret_cast<void*>(&Init),
       },
       {

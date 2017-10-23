@@ -29,8 +29,7 @@ void InitRuntime(const uint8_t* vm_snapshot_data,
   InitEngine(g_platform_impl);
   InitDartVM(vm_snapshot_data, vm_snapshot_instructions,
              default_isolate_snapshot_data,
-             default_isolate_snapshot_instructions,
-             bundle_path);
+             default_isolate_snapshot_instructions, bundle_path);
 }
 
 }  // namespace blink
