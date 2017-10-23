@@ -623,13 +623,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         private String getValueLabelHint() {
             StringBuilder sb = new StringBuilder();
-            boolean first = true;
             String[] array = { value, label, hint };
             for (String word: array) {
                 if (word != null && (word = word.trim()).length() > 0) {
-                    if (first)
-                        first = false;
-                    else
+                    if (sb.length() > 0)
                         sb.append(", ");
                     sb.append(word);
                 }
