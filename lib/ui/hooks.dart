@@ -114,7 +114,7 @@ void _invoke1<A>(void callback(A a), Zone zone, A arg) {
   if (identical(zone, Zone.current)) {
     callback(arg);
   } else {
-    zone.runUnaryGuarded<Null, A>(callback, arg);
+    zone.runUnaryGuarded<A>(callback, arg);
   }
 }
 
@@ -128,7 +128,7 @@ void _invoke2<A1, A2>(void callback(A1 a1, A2 a2), Zone zone, A1 arg1, A2 arg2) 
   if (identical(zone, Zone.current)) {
     callback(arg1, arg2);
   } else {
-    zone.runBinaryGuarded<Null, A1, A2>(callback, arg1, arg2);
+    zone.runBinaryGuarded<A1, A2>(callback, arg1, arg2);
   }
 }
 
