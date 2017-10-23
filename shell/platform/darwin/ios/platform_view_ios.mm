@@ -13,6 +13,7 @@
 #include "flutter/shell/gpu/gpu_rasterizer.h"
 #include "flutter/shell/platform/darwin/common/process_info_mac.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
+#include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
 #include "lib/fxl/synchronization/waitable_event.h"
 
 namespace shell {
@@ -98,6 +99,10 @@ void PlatformViewIOS::UpdateSemantics(std::vector<blink::SemanticsNode> update) 
 
 void PlatformViewIOS::HandlePlatformMessage(fxl::RefPtr<blink::PlatformMessage> message) {
   platform_message_router_.HandlePlatformMessage(std::move(message));
+}
+
+size_t PlatformViewIOS::RegisterExternalTexture(NSObject<FlutterTexture>* texture) {
+  return RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture));
 }
 
 void PlatformViewIOS::RunFromSource(const std::string& assets_directory,

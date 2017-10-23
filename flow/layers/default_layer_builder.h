@@ -62,6 +62,11 @@ class DefaultLayerBuilder final : public LayerBuilder {
                    bool picture_is_complex,
                    bool picture_will_change) override;
 
+  // |flow::LayerBuilder|
+  void PushTexture(const SkPoint& offset,
+                   const SkSize& size,
+                   size_t texture_id) override;
+
 #if defined(OS_FUCHSIA)
   // |flow::LayerBuilder|
   void PushChildScene(const SkPoint& offset,

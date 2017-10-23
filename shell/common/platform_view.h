@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "flutter/flow/texture.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/shell.h"
@@ -60,6 +61,10 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
   virtual void UpdateSemantics(std::vector<blink::SemanticsNode> update);
   virtual void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message);
+
+  size_t RegisterTexture(std::shared_ptr<flow::Texture> texture);
+  void UnregisterTexture(size_t texture_id);
+  virtual void MarkTextureFrameAvailable(size_t texture_id);
 
   void SetRasterizer(std::unique_ptr<Rasterizer> rasterizer);
 

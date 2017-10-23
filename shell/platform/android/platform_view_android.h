@@ -99,6 +99,11 @@ class PlatformViewAndroid : public PlatformView {
                      const std::string& main,
                      const std::string& packages) override;
 
+  size_t RegisterExternalTexture(
+      const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
+
+  void MarkTextureFrameAvailable(size_t texture_id) override;
+
   void set_flutter_view(const fml::jni::JavaObjectWeakGlobalRef& flutter_view) {
     flutter_view_ = flutter_view;
   }

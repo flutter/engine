@@ -526,6 +526,10 @@ void Engine::ScheduleFrame() {
   animator_->RequestFrame();
 }
 
+void Engine::ScheduleRedraw() {
+  animator_->RequestRedraw();
+}
+
 void Engine::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
   if (!layer_tree)
     return;

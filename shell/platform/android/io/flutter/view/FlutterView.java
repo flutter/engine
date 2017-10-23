@@ -16,6 +16,7 @@ import android.graphics.Rect;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Matrix;
+import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
@@ -108,6 +109,8 @@ public class FlutterView extends SurfaceView
     private final List<FirstFrameListener> mFirstFrameListeners;
     private long mNativePlatformView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
+    // Used both by the GPU thread and the Platform thread.
+    private Map<Long, SurfaceTextureHandle> surfaceTextureHandles = new HashMap<Long, SurfaceTextureHandle>();
 
     public FlutterView(Context context) {
         this(context, null);
@@ -681,6 +684,12 @@ public class FlutterView extends SurfaceView
 
     private static native boolean nativeGetIsSoftwareRenderingEnabled();
 
+    private static native long nativeRegisterTexture(long nativePlatformViewAndroid, SurfaceTexture surfaceTexture);
+
+    private static native void nativeMarkTextureFrameAvailable(long nativePlatformViewAndroid, long textureId);
+
+    private static native void nativeUnregisterTexture(long nativePlatformViewAndroid, long textureId);
+
     private void updateViewportMetrics() {
         if (!isAttached())
             return;
@@ -951,5 +960,61 @@ public class FlutterView extends SurfaceView
      */
     public interface FirstFrameListener {
         void onFirstFrame();
+    }
+
+    /**
+     * Creates a SurfaceTexture that can be embedded into this view.
+     *
+     * @return A SurfaceTextureHandle.
+     */
+    public SurfaceTextureHandle createSurfaceTexture() {
+        final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
+        surfaceTexture.detachFromGLContext();
+        final long id = nativeRegisterTexture(mNativePlatformView, surfaceTexture);
+        final SurfaceTextureHandle handle = new SurfaceTextureHandle(id, surfaceTexture);
+        surfaceTextureHandles.put(id, handle);
+        return handle;
+    }
+
+    /**
+     * A handle to a SurfaceTexture managed by this view.
+     */
+    public final class SurfaceTextureHandle {
+        private final long id;
+        private final SurfaceTexture surfaceTexture;
+
+        SurfaceTextureHandle(long id, SurfaceTexture surfaceTexture) {
+            this.id = id;
+            this.surfaceTexture = surfaceTexture;
+            this.surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+                @Override
+                public void onFrameAvailable(SurfaceTexture texture) {
+                    nativeMarkTextureFrameAvailable(mNativePlatformView, SurfaceTextureHandle.this.id);
+                }
+            });
+        }
+
+        /**
+         * @return The managed SurfaceTexture, not null.
+         */
+        public SurfaceTexture getSurfaceTexture() {
+          return surfaceTexture;
+        }
+
+        /**
+         * @return The identity of this handle.
+         */
+        public long getId() {
+            return id;
+        }
+
+        /**
+         * Releases the managed SurfaceTexture.
+         */
+        public void release() {
+            nativeUnregisterTexture(mNativePlatformView, id);
+            surfaceTextureHandles.remove(id);
+            surfaceTexture.release();
+        }
     }
 }

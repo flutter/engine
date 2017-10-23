@@ -1074,6 +1074,8 @@ FILE: ../../../flutter/flow/debug_print.h
 FILE: ../../../flutter/flow/export_node.h
 FILE: ../../../flutter/flow/layers/physical_model_layer.cc
 FILE: ../../../flutter/flow/layers/physical_model_layer.h
+FILE: ../../../flutter/flow/layers/texture_layer.cc
+FILE: ../../../flutter/flow/layers/texture_layer.h
 FILE: ../../../flutter/flow/matrix_decomposition.cc
 FILE: ../../../flutter/flow/matrix_decomposition.h
 FILE: ../../../flutter/flow/matrix_decomposition_unittests.cc
@@ -1082,6 +1084,8 @@ FILE: ../../../flutter/flow/paint_utils.h
 FILE: ../../../flutter/flow/raster_cache_key.cc
 FILE: ../../../flutter/flow/raster_cache_key.h
 FILE: ../../../flutter/flow/raster_cache_unittests.cc
+FILE: ../../../flutter/flow/texture.cc
+FILE: ../../../flutter/flow/texture.h
 FILE: ../../../flutter/fml/icu_util.cc
 FILE: ../../../flutter/fml/icu_util.h
 FILE: ../../../flutter/fml/mapping.cc
@@ -1142,6 +1146,8 @@ FILE: ../../../flutter/shell/common/null_platform_view.cc
 FILE: ../../../flutter/shell/common/null_platform_view.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.h
+FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.cc
+FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/android/android_surface_software.cc
 FILE: ../../../flutter/shell/platform/android/android_surface_software.h
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityDelegate.java
@@ -1170,6 +1176,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterHeadlessDartRunner.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterNavigationController.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterTexture.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterChannels.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCodecs.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterHeadlessDartRunner.mm
@@ -1181,6 +1188,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_codecs
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_main_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_main_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_standard_codec_unittest.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.h
+FILE: ../../../flutter/shell/platform/darwin/ios/ios_external_texture_gl.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_gl_context.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface.h

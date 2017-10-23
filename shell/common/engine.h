@@ -74,6 +74,7 @@ class Engine : public blink::RuntimeDelegate {
   void DispatchPointerDataPacket(const PointerDataPacket& packet);
   void DispatchSemanticsAction(int id, blink::SemanticsAction action);
   void SetSemanticsEnabled(bool enabled);
+  void ScheduleRedraw();
 
   void set_rasterizer(fml::WeakPtr<Rasterizer> rasterizer);
 

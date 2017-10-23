@@ -30,6 +30,8 @@ class Animator {
 
   void RequestFrame();
 
+  void RequestRedraw();
+
   void Render(std::unique_ptr<flow::LayerTree> layer_tree);
 
   void Start();
@@ -41,6 +43,10 @@ class Animator {
 
   void BeginFrame(fxl::TimePoint frame_start_time,
                   fxl::TimePoint frame_target_time);
+
+  bool CanReuseLastLayerTree();
+  void DrawLastLayerTree();
+  void RequestDrawOnVSync();
 
   void AwaitVSync();
 
@@ -57,6 +63,7 @@ class Animator {
   LayerTreePipeline::ProducerContinuation producer_continuation_;
   int64_t frame_number_;
   bool paused_;
+  bool frame_requested_;
   bool frame_scheduled_;
 
   fml::WeakPtrFactory<Animator> weak_factory_;

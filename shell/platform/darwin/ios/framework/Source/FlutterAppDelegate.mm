@@ -219,6 +219,14 @@
   return nil;
 }
 
+- (NSObject<FlutterTextureRegistry>*)textureRegistry {
+  UIViewController* rootViewController = _window.rootViewController;
+  if ([rootViewController conformsToProtocol:@protocol(FlutterTextureRegistry)]) {
+    return (NSObject<FlutterTextureRegistry>*)rootViewController;
+  }
+  return nil;
+}
+
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
   self.pluginPublications[pluginKey] = [NSNull null];
@@ -256,6 +264,10 @@
 
 - (NSObject<FlutterBinaryMessenger>*)messenger {
   return [_appDelegate binaryMessenger];
+}
+
+- (NSObject<FlutterTextureRegistry>*)textureRegistry {
+  return [_appDelegate textureRegistry];
 }
 
 - (void)publish:(NSObject*)value {
