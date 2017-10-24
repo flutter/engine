@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'github_git': 'https://github.com',
-  'skia_revision': '09eeefba6d19dd6bff1e046c31a889393a9447d0',
+  'skia_revision': '33397f279393a33eff8e32d47fc56be86b86c9bc',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -59,7 +59,7 @@ vars = {
   'dart_intl_tag': '0.15.1',
   'dart_isolate_tag': '1.1.0',
   'dart_json_rpc_2_tag': '2.0.4',
-  'dart_linter_tag': '0.1.35',
+  'dart_linter_rev': 'ae88f710dce03bc92e20f78645cbdf069b39d529',
   'dart_logging_tag': '0.11.3+1',
   'dart_markdown_tag': '0.11.4',
   'dart_matcher_tag': '0.12.1+4',
@@ -98,11 +98,7 @@ vars = {
   'dart_web_socket_channel_tag': '1.0.6',
   'dart_yaml_tag': '2.1.12',
 
-  # Chromium build tooling used for Mac/iOS builds
-  'chromium_build_revision': 'b6fbb0db634b8e8380b718eba27f077d94a6d09c',
-
   # Build bot tooling for iOS
-  # TODO(cbracken) delete once migrated to chromium tooling above
   'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
 
   'buildtools_revision': '5b8eb38aaf523f0124756454276cd0a5b720c17e',
@@ -118,7 +114,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'd9dc9e87c97d4d98342e27482d29403136954114',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '77c6728e5ac9fc7d08b163ed5bf8bc64fc463f21',
 
    # Fuchsia compatibility
    #
@@ -154,9 +150,6 @@ deps = {
 
   'src/ios_tools':
    Var('chromium_git') + '/chromium/src/ios.git' + '@' + Var('ios_tools_revision'),
-
-  'third_party/chromium_build':
-   Var('chromium_git') + '/chromium/src/build.git' + '@' + Var('chromium_build_revision'),
 
   'src/third_party/icu':
    Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '08cb956852a5ccdba7f9c941728bb833529ba3c6',
@@ -249,7 +242,7 @@ deps = {
    Var('chromium_git') + '/external/github.com/dart-lang/logging' + '@' + Var('dart_logging_tag'),
 
   'src/third_party/dart/third_party/pkg/linter':
-   Var('chromium_git') + '/external/github.com/dart-lang/linter' + '@' + Var('dart_linter_tag'),
+   Var('chromium_git') + '/external/github.com/dart-lang/linter' + '@' + Var('dart_linter_rev'),
 
   'src/third_party/dart/third_party/pkg/markdown':
    Var('chromium_git') + '/external/github.com/dart-lang/markdown' + '@' + Var('dart_markdown_tag'),
