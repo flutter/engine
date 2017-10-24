@@ -159,27 +159,6 @@ class Color {
   /// The blue channel of this color in an 8 bit value.
   int get blue => (0x000000ff & value) >> 0;
 
-  // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-  static double _linearizeColorComponent(double component) {
-    if (component <= 0.03928)
-      return component / 12.92;
-    return math.pow((component + 0.055) / 1.055, 2.4);
-  }
-
-  /// Returns a brightness value between 0 for darkest and 1 for lightest.
-  ///
-  /// Represents the relative luminance of the color. This value is computationally
-  /// expensive to calculate.
-  ///
-  /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
-  double get luminance {
-    // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
-    return 0.2126 * R + 0.7152 * G + 0.0722 * B;
-  }
-
   /// Returns a new color that matches this color with the alpha channel
   /// replaced with `a` (which ranges from 0 to 255).
   ///
@@ -219,6 +198,27 @@ class Color {
   /// Out of range values will have unexpected effects.
   Color withBlue(int b) {
     return new Color.fromARGB(alpha, red, green, b);
+  }
+
+    // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
+  static double _linearizeColorComponent(double component) {
+    if (component <= 0.03928)
+      return component / 12.92;
+    return math.pow((component + 0.055) / 1.055, 2.4);
+  }
+
+  /// Returns a brightness value between 0 for darkest and 1 for lightest.
+  ///
+  /// Represents the relative luminance of the color. This value is computationally
+  /// expensive to calculate.
+  ///
+  /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
+  double computeLuminance() {
+    // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
+    final double R = _linearizeColorComponent(red / 0xFF);
+    final double G = _linearizeColorComponent(green / 0xFF);
+    final double B = _linearizeColorComponent(blue / 0xFF);
+    return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
   /// Linearly interpolate between two colors.
