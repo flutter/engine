@@ -200,7 +200,7 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
 #else   // FLUTTER_RUNTIME_MODE
   UIDartState* dart_state = new UIDartState(nullptr, nullptr);
 
-  bool is_running_from_kernel = kernel_platform != nullptr;
+  bool is_running_from_kernel = GetKernelPlatformBinary() != nullptr;
 
   Dart_Isolate isolate =
       is_running_from_kernel
