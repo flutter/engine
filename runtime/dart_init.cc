@@ -125,6 +125,9 @@ static RegisterNativeServiceProtocolExtensionHook
     g_register_native_service_protocol_extensions_hook = nullptr;
 
 // Kernel representation of core dart libraries(loaded from platform.dill).
+// TODO(aam): This (and platform_data below) have to be released when engine
+// gets torn down. At that point we could also call Dart_Cleanup to complete
+// Dart VM cleanup.
 static void* kernel_platform = nullptr;
 // Bytes actually read from platform.dill that are referenced by kernel_platform
 static std::vector<uint8_t> platform_data;
@@ -230,14 +233,13 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
       const bool disable_websocket_origin_check = false;
       const bool service_isolate_booted = DartServiceIsolate::Startup(
           ip, port, tonic::DartState::HandleLibraryTag,
-          IsRunningPrecompiledCode() || is_running_from_kernel,
+          !IsRunningPrecompiledCode() && !is_running_from_kernel,
           disable_websocket_origin_check, error);
       FXL_CHECK(service_isolate_booted) << error;
     }
 
     if (g_service_isolate_hook)
-      g_service_isolate_hook(IsRunningPrecompiledCode(),
-                             is_running_from_kernel);
+      g_service_isolate_hook(IsRunningPrecompiledCode());
   }
   Dart_ExitIsolate();
 

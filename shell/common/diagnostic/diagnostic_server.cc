@@ -6,6 +6,7 @@
 
 #include "flutter/common/threads.h"
 #include "flutter/flow/compositor_context.h"
+#include "flutter/runtime/dart_init.h"
 #include "flutter/runtime/embedder_resources.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/picture_serializer.h"
@@ -61,9 +62,7 @@ void SendNull(Dart_Port port_id) {
 
 DART_NATIVE_CALLBACK_STATIC(DiagnosticServer, HandleSkiaPictureRequest);
 
-void DiagnosticServer::Start(uint32_t port,
-                             bool ipv6,
-                             bool running_from_kernel) {
+void DiagnosticServer::Start(uint32_t port, bool ipv6) {
   if (!g_natives) {
     g_natives = new DartLibraryNatives();
     g_natives->Register({
@@ -75,7 +74,7 @@ void DiagnosticServer::Start(uint32_t port,
       &flutter::runtime::__sky_embedder_diagnostic_server_resources_[0]);
 
   Dart_Handle diagnostic_library;
-  if (running_from_kernel) {
+  if (blink::GetKernelPlatformBinary() != nullptr) {
     diagnostic_library =
         Dart_LookupLibrary(Dart_NewStringFromCString("dart:diagnostic_server"));
   } else {

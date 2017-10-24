@@ -28,7 +28,7 @@ bool IsRunningPrecompiledCode();
 
 using EmbedderTracingCallback = fxl::Closure;
 
-typedef void (*ServiceIsolateHook)(bool, bool);
+typedef void (*ServiceIsolateHook)(bool);
 typedef void (*RegisterNativeServiceProtocolExtensionHook)(bool);
 
 struct EmbedderTracingCallbacks {

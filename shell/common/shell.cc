@@ -57,12 +57,11 @@ bool GetSwitchValue(const fxl::CommandLine& command_line,
   return false;
 }
 
-void ServiceIsolateHook(bool running_precompiled, bool running_from_kernel) {
+void ServiceIsolateHook(bool running_precompiled) {
   if (!running_precompiled) {
     const blink::Settings& settings = blink::Settings::Get();
     if (settings.enable_diagnostic)
-      DiagnosticServer::Start(settings.diagnostic_port, settings.ipv6,
-                              running_from_kernel);
+      DiagnosticServer::Start(settings.diagnostic_port, settings.ipv6);
   }
 }
 
