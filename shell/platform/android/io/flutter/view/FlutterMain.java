@@ -37,6 +37,7 @@ public class FlutterMain {
     private static final String AOT_ISOLATE_SNAPSHOT_INSTR_KEY = "isolate-snapshot-instr";
     private static final String FLX_KEY = "flx";
     private static final String SNAPSHOT_BLOB_KEY = "snapshot-blob";
+    private static final String FLUTTER_ASSETS_DIR_KEY = "flutter-assets-dir";
 
     // XML Attribute keys supported in AndroidManifest.xml
     public static final String PUBLIC_AOT_VM_SNAPSHOT_DATA_KEY =
@@ -51,6 +52,8 @@ public class FlutterMain {
         FlutterMain.class.getName() + '.' + FLX_KEY;
     public static final String PUBLIC_SNAPSHOT_BLOB_KEY =
         FlutterMain.class.getName() + '.' + SNAPSHOT_BLOB_KEY;
+    public static final String PUBLIC_FLUTTER_ASSETS_DIR_KEY =
+        FlutterMain.class.getName() + '.' + FLUTTER_ASSETS_DIR_KEY;
 
     // Resource names used for components of the precompiled snapshot.
     private static final String DEFAULT_AOT_VM_SNAPSHOT_DATA = "vm_snapshot_data";
@@ -59,6 +62,7 @@ public class FlutterMain {
     private static final String DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR = "isolate_snapshot_instr";
     private static final String DEFAULT_FLX = "app.flx";
     private static final String DEFAULT_SNAPSHOT_BLOB = "snapshot_blob.bin";
+    private static final String DEFAULT_FLUTTER_ASSETS_DIR = "flutter_assets";
 
     private static final String MANIFEST = "flutter.yaml";
 
@@ -74,6 +78,7 @@ public class FlutterMain {
     private static String sAotIsolateSnapshotInstr = DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR;
     private static String sFlx = DEFAULT_FLX;
     private static String sSnapshotBlob = DEFAULT_SNAPSHOT_BLOB;
+    private static String sFlutterAssetsDir = DEFAULT_FLUTTER_ASSETS_DIR;
 
     private static boolean sInitialized = false;
     private static ResourceExtractor sResourceExtractor;
@@ -234,6 +239,7 @@ public class FlutterMain {
             .addResource(sAotIsolateSnapshotInstr)
             .addResource(sFlx)
             .addResource(sSnapshotBlob)
+            .addResource(sFlutterAssetsDir)
             .start();
     }
 
@@ -269,7 +275,7 @@ public class FlutterMain {
 
     public static String findAppBundlePath(Context applicationContext) {
         String dataDirectory = PathUtils.getDataDirectory(applicationContext);
-        File appBundle = new File(dataDirectory, sFlx);
+        File appBundle = new File(dataDirectory, sFlutterAssetsDir);
         return appBundle.exists() ? appBundle.getPath() : null;
     }
 }

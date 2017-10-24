@@ -14,11 +14,12 @@ FLUTTER_EXPORT
 
 - (instancetype)initWithPrecompiledDartBundle:(NSBundle*)bundle NS_DESIGNATED_INITIALIZER;
 
-- (instancetype)initWithFLXArchive:(NSURL*)archiveURL
-                          dartMain:(NSURL*)dartMainURL
-                          packages:(NSURL*)dartPackages NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithFlutterAssets:(NSURL*)archiveURL
+                             dartMain:(NSURL*)dartMainURL
+                             packages:(NSURL*)dartPackages NS_DESIGNATED_INITIALIZER;
 
-- (instancetype)initWithFLXArchiveWithScriptSnapshot:(NSURL*)archiveURL NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithFlutterAssetsWithScriptSnapshot:(NSURL*)archiveURL
+    NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)initFromDefaultSourceForConfiguration;
 
