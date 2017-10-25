@@ -200,7 +200,7 @@ class Color {
     return new Color.fromARGB(alpha, red, green, b);
   }
 
-    // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
+  // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
   static double _linearizeColorComponent(double component) {
     if (component <= 0.03928)
       return component / 12.92;
