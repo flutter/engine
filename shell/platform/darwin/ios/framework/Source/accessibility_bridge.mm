@@ -133,7 +133,7 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
  * Whether calling `setSemanticsNode:` with `node` would cause a layout change.
  */
 - (BOOL)willCauseLayoutChange:(const blink::SemanticsNode*)node {
-  return _node.rect != node->rect || _node.transform != node->transform;;
+  return _node.rect != node->rect || _node.transform != node->transform;
 }
 
 - (std::vector<SemanticsObject*>*)children {
