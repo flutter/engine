@@ -370,7 +370,7 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
   // Children are received in paint order (inverse hit testing order). We need to bring them into
   // traversal order (top left to bottom right, with hit testing order as tie breaker).
   NSMutableSet<SemanticsObject*>* childOrdersToUpdate = [[[NSMutableSet alloc] init] autorelease];
-  BOOL layoutChanged = false;
+  BOOL layoutChanged = NO;
 
   for (const blink::SemanticsNode& node : nodes) {
     SemanticsObject* object = GetOrCreateObject(node.id);
