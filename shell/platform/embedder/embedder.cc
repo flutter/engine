@@ -4,9 +4,10 @@
 
 #define FLUTTER_EXPORT __attribute__((visibility("default")))
 
+#include "flutter/shell/platform/embedder/embedder.h"
+
 #include <type_traits>
 #include "flutter/common/threads.h"
-#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
 #include "lib/fxl/functional/make_copyable.h"
 
@@ -43,8 +44,6 @@ class PlatformViewHolder {
  public:
   PlatformViewHolder(std::shared_ptr<shell::PlatformViewEmbedder> ptr)
       : platform_view_(std::move(ptr)) {}
-
-  ~PlatformViewHolder() {}
 
   std::shared_ptr<shell::PlatformViewEmbedder> view() const {
     return platform_view_;
