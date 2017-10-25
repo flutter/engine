@@ -4,9 +4,9 @@
 
 #define FLUTTER_EXPORT __attribute__((visibility("default")))
 
-#include "flutter/shell/platform/embedder/embedder.h"
 #include <type_traits>
 #include "flutter/common/threads.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
 #include "lib/fxl/functional/make_copyable.h"
 
@@ -43,6 +43,8 @@ class PlatformViewHolder {
  public:
   PlatformViewHolder(std::shared_ptr<shell::PlatformViewEmbedder> ptr)
       : platform_view_(std::move(ptr)) {}
+
+  ~PlatformViewHolder() {}
 
   std::shared_ptr<shell::PlatformViewEmbedder> view() const {
     return platform_view_;
@@ -148,8 +150,6 @@ FlutterResult FlutterEngineShutdown(FlutterEngine engine) {
   if (engine == nullptr) {
     return kInvalidArguments;
   }
-  // TODO(chinmaygarde): This is currently unsupported since none of the mobile
-  // shells need to do this. Add support and patch this call.
   delete reinterpret_cast<PlatformViewHolder*>(engine);
   return kSuccess;
 }
