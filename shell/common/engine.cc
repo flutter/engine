@@ -245,7 +245,7 @@ void Engine::RunBundleAndSource(const std::string& bundle_path,
     packages_path = FindPackagesPath(main);
 
   if (!bundle_path.empty())
-     ConfigureAssetBundle(bundle_path);
+    ConfigureAssetBundle(bundle_path);
 
   ConfigureRuntime(GetScriptUriFromPath(bundle_path), reuse_runtime_controller);
 
