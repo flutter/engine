@@ -219,7 +219,7 @@
   return nil;
 }
 
-- (NSObject<FlutterTextureRegistry>*)textureRegistry {
+- (NSObject<FlutterTextureRegistry>*)textures {
   UIViewController* rootViewController = _window.rootViewController;
   if ([rootViewController conformsToProtocol:@protocol(FlutterTextureRegistry)]) {
     return (NSObject<FlutterTextureRegistry>*)rootViewController;
@@ -266,8 +266,8 @@
   return [_appDelegate binaryMessenger];
 }
 
-- (NSObject<FlutterTextureRegistry>*)textureRegistry {
-  return [_appDelegate textureRegistry];
+- (NSObject<FlutterTextureRegistry>*)textures {
+  return [_appDelegate textures];
 }
 
 - (void)publish:(NSObject*)value {

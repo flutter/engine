@@ -62,7 +62,7 @@ class LayerBuilder {
 
   virtual void PushTexture(const SkPoint& offset,
                            const SkSize& size,
-                           size_t texture_id) = 0;
+                           int64_t texture_id) = 0;
 
 #if defined(OS_FUCHSIA)
   virtual void PushChildScene(

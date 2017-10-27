@@ -14,8 +14,8 @@
 namespace shell {
 
 AndroidExternalTextureGL::AndroidExternalTextureGL(
-    const fml::jni::JavaObjectWeakGlobalRef& surfaceTexture)
-    : surface_texture_(surfaceTexture) {}
+    int64_t id, const fml::jni::JavaObjectWeakGlobalRef& surfaceTexture)
+    : Texture(id), surface_texture_(surfaceTexture) {}
 
 AndroidExternalTextureGL::~AndroidExternalTextureGL() = default;
 

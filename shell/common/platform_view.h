@@ -62,9 +62,14 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
   virtual void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message);
 
-  size_t RegisterTexture(std::shared_ptr<flow::Texture> texture);
-  void UnregisterTexture(size_t texture_id);
-  virtual void MarkTextureFrameAvailable(size_t texture_id);
+  // Called once per texture, on the platform thread.
+  void RegisterTexture(std::shared_ptr<flow::Texture> texture);
+
+  // Called once per texture, on the platform thread.
+  void UnregisterTexture(int64_t texture_id);
+
+  // Called once per texture update (e.g. video frame), on the platform thread.
+  virtual void MarkTextureFrameAvailable(int64_t texture_id);
 
   void SetRasterizer(std::unique_ptr<Rasterizer> rasterizer);
 

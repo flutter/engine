@@ -28,9 +28,7 @@ class Animator {
     rasterizer_ = rasterizer;
   }
 
-  void RequestFrame();
-
-  void RequestRedraw();
+  void RequestFrame(bool regenerate_layer_tree = true);
 
   void Render(std::unique_ptr<flow::LayerTree> layer_tree);
 
@@ -63,7 +61,7 @@ class Animator {
   LayerTreePipeline::ProducerContinuation producer_continuation_;
   int64_t frame_number_;
   bool paused_;
-  bool frame_requested_;
+  bool regenerate_layer_tree_;
   bool frame_scheduled_;
 
   fml::WeakPtrFactory<Animator> weak_factory_;

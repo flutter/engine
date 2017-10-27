@@ -21,7 +21,6 @@ void TextureLayer::Paint(PaintContext& context) const {
   std::shared_ptr<Texture> texture =
       context.texture_registry.GetTexture(texture_id_);
   if (!texture) {
-    FXL_DLOG(WARNING) << "No texture with id: " << texture_id_;
     return;
   }
   sk_sp<SkImage> sk_image =

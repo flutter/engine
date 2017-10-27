@@ -76,6 +76,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> _systemChannel;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> _settingsChannel;
   fml::scoped_nsprotocol<UIView*> _launchView;
+  int64_t _nextTextureId;
   bool _platformSupportsTouchTypes;
   bool _platformSupportsTouchPressure;
   bool _platformSupportsTouchOrientationAndTilt;
@@ -870,15 +871,17 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 #pragma mark - FlutterTextureRegistry
 
-- (NSUInteger)registerTexture:(NSObject<FlutterTexture>*)texture {
-  return _platformView->RegisterExternalTexture(texture);
+- (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture {
+  int64_t textureId = _nextTextureId++;
+  _platformView->RegisterExternalTexture(textureId, texture);
+  return textureId;
 }
 
-- (void)unregisterTexture:(NSUInteger)textureId {
+- (void)unregisterTexture:(int64_t)textureId {
   _platformView->UnregisterTexture(textureId);
 }
 
-- (void)textureFrameAvailable:(NSUInteger)textureId {
+- (void)textureFrameAvailable:(int64_t)textureId {
   _platformView->MarkTextureFrameAvailable(textureId);
 }
 @end

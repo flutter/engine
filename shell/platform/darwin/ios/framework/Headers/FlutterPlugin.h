@@ -149,7 +149,7 @@ NS_ASSUME_NONNULL_BEGIN
 
  - Returns: The texture registry.
  */
-- (NSObject<FlutterTextureRegistry>*)textureRegistry;
+- (NSObject<FlutterTextureRegistry>*)textures;
 
 /**
  Publishes a value for external use of the plugin.

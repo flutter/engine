@@ -18,8 +18,8 @@
 namespace flow {
 
 class Texture {
-  friend class TextureRegistry;
-
+ protected:
+  Texture(int64_t id);
  public:
   // Called from GPU thread.
   virtual ~Texture();
@@ -35,10 +35,12 @@ class Texture {
   // Called from GPU thread.
   virtual void OnGrContextDestroyed() = 0;
 
-  size_t Id() { return id_; }
+  int64_t Id() { return id_; }
 
  private:
-  size_t id_;
+  int64_t id_;
+
+  FXL_DISALLOW_COPY_AND_ASSIGN(Texture);
 };
 
 class TextureRegistry {
@@ -47,13 +49,13 @@ class TextureRegistry {
   ~TextureRegistry();
 
   // Called from GPU thread.
-  size_t RegisterTexture(std::shared_ptr<Texture> texture);
+  void RegisterTexture(std::shared_ptr<Texture> texture);
 
   // Called from GPU thread.
-  void UnregisterTexture(size_t id);
+  void UnregisterTexture(int64_t id);
 
   // Called from GPU thread.
-  std::shared_ptr<Texture> GetTexture(size_t id);
+  std::shared_ptr<Texture> GetTexture(int64_t id);
 
   // Called from GPU thread.
   void OnGrContextCreated();
@@ -62,8 +64,9 @@ class TextureRegistry {
   void OnGrContextDestroyed();
 
  private:
-  std::map<size_t, std::shared_ptr<Texture>> mapping_;
-  size_t counter_ = 0;
+  std::map<int64_t, std::shared_ptr<Texture>> mapping_;
+
+  FXL_DISALLOW_COPY_AND_ASSIGN(TextureRegistry);
 };
 
 }  // namespace flow

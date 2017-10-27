@@ -547,24 +547,20 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
   fml::jni::DetachFromVM();
 }
 
-size_t PlatformViewAndroid::RegisterExternalTexture(
+void PlatformViewAndroid::RegisterExternalTexture(int64_t texture_id,
     const fml::jni::JavaObjectWeakGlobalRef& surface_texture) {
-  return RegisterTexture(
-      std::make_shared<AndroidExternalTextureGL>(surface_texture));
+  RegisterTexture(std::make_shared<AndroidExternalTextureGL>(texture_id, surface_texture));
 }
 
-void PlatformViewAndroid::MarkTextureFrameAvailable(size_t texture_id) {
-  fxl::AutoResetWaitableEvent latch;
-  blink::Threads::Gpu()->PostTask([this, &latch, texture_id]() {
+void PlatformViewAndroid::MarkTextureFrameAvailable(int64_t texture_id) {
+  blink::Threads::Gpu()->PostTask([this, texture_id]() {
     std::shared_ptr<AndroidExternalTextureGL> texture =
         static_pointer_cast<AndroidExternalTextureGL>(
             rasterizer_->GetTextureRegistry().GetTexture(texture_id));
     if (texture) {
       texture->MarkNewFrameAvailable();
     }
-    latch.Signal();
   });
-  latch.Wait();
   PlatformView::MarkTextureFrameAvailable(texture_id);
 }
 

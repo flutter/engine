@@ -135,30 +135,24 @@ void PlatformView::HandlePlatformMessage(
     response->CompleteEmpty();
 }
 
-size_t PlatformView::RegisterTexture(std::shared_ptr<flow::Texture> texture) {
-  int texture_id;
-  fxl::AutoResetWaitableEvent latch;
-  blink::Threads::Gpu()->PostTask([this, &texture_id, &latch, texture]() {
-    texture_id = rasterizer_->GetTextureRegistry().RegisterTexture(texture);
-    latch.Signal();
+void PlatformView::RegisterTexture(std::shared_ptr<flow::Texture> texture) {
+  ASSERT_IS_PLATFORM_THREAD
+  blink::Threads::Gpu()->PostTask([this, texture]() {
+    rasterizer_->GetTextureRegistry().RegisterTexture(texture);
   });
-  latch.Wait();
-  return texture_id;
 }
 
-void PlatformView::UnregisterTexture(size_t texture_id) {
-  fxl::AutoResetWaitableEvent latch;
-  blink::Threads::Gpu()->PostTask([this, &latch, texture_id]() {
+void PlatformView::UnregisterTexture(int64_t texture_id) {
+  ASSERT_IS_PLATFORM_THREAD
+  blink::Threads::Gpu()->PostTask([this, texture_id]() {
     rasterizer_->GetTextureRegistry().UnregisterTexture(texture_id);
-    latch.Signal();
   });
-  latch.Wait();
 }
 
-void PlatformView::MarkTextureFrameAvailable(size_t texture_id) {
-  blink::Threads::UI()->PostTask([engine = engine_->GetWeakPtr()] {
-    if (engine)
-      engine->ScheduleRedraw();
+void PlatformView::MarkTextureFrameAvailable(int64_t texture_id) {
+  ASSERT_IS_PLATFORM_THREAD
+  blink::Threads::UI()->PostTask([this]() {
+    engine_->ScheduleFrame(false);
   });
 }
 

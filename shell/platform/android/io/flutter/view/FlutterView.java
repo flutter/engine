@@ -53,12 +53,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An Android view containing a Flutter app.
  */
 public class FlutterView extends SurfaceView
-    implements BinaryMessenger, AccessibilityManager.AccessibilityStateChangeListener {
+    implements BinaryMessenger, TextureRegistry, AccessibilityManager.AccessibilityStateChangeListener {
 
     /**
      * Interface for those objects that maintain and expose a reference to a
@@ -107,10 +108,9 @@ public class FlutterView extends SurfaceView
     private final BroadcastReceiver mDiscoveryReceiver;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private final List<FirstFrameListener> mFirstFrameListeners;
+    private final AtomicLong nextTextureId = new AtomicLong(0L);
     private long mNativePlatformView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
-    // Used both by the GPU thread and the Platform thread.
-    private Map<Long, SurfaceTextureHandle> surfaceTextureHandles = new HashMap<Long, SurfaceTextureHandle>();
 
     public FlutterView(Context context) {
         this(context, null);
@@ -684,7 +684,7 @@ public class FlutterView extends SurfaceView
 
     private static native boolean nativeGetIsSoftwareRenderingEnabled();
 
-    private static native long nativeRegisterTexture(long nativePlatformViewAndroid, SurfaceTexture surfaceTexture);
+    private static native void nativeRegisterTexture(long nativePlatformViewAndroid, long textureId, SurfaceTexture surfaceTexture);
 
     private static native void nativeMarkTextureFrameAvailable(long nativePlatformViewAndroid, long textureId);
 
@@ -962,58 +962,49 @@ public class FlutterView extends SurfaceView
         void onFirstFrame();
     }
 
-    /**
-     * Creates a SurfaceTexture that can be embedded into this view.
-     *
-     * @return A SurfaceTextureHandle.
-     */
-    public SurfaceTextureHandle createSurfaceTexture() {
+    @Override
+    public TextureRegistry.SurfaceTextureEntry createSurfaceTexture() {
         final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
         surfaceTexture.detachFromGLContext();
-        final long id = nativeRegisterTexture(mNativePlatformView, surfaceTexture);
-        final SurfaceTextureHandle handle = new SurfaceTextureHandle(id, surfaceTexture);
-        surfaceTextureHandles.put(id, handle);
-        return handle;
+        final SurfaceTextureRegistryEntry entry = new SurfaceTextureRegistryEntry(
+            nextTextureId.getAndIncrement(), surfaceTexture);
+        nativeRegisterTexture(mNativePlatformView, entry.id(), surfaceTexture);
+        return entry;
     }
 
-    /**
-     * A handle to a SurfaceTexture managed by this view.
-     */
-    public final class SurfaceTextureHandle {
+    final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
         private final long id;
         private final SurfaceTexture surfaceTexture;
+        private boolean released;
 
-        SurfaceTextureHandle(long id, SurfaceTexture surfaceTexture) {
+        SurfaceTextureRegistryEntry(long id, SurfaceTexture surfaceTexture) {
             this.id = id;
             this.surfaceTexture = surfaceTexture;
             this.surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
                 @Override
                 public void onFrameAvailable(SurfaceTexture texture) {
-                    nativeMarkTextureFrameAvailable(mNativePlatformView, SurfaceTextureHandle.this.id);
+                    nativeMarkTextureFrameAvailable(mNativePlatformView, SurfaceTextureRegistryEntry.this.id);
                 }
             });
         }
 
-        /**
-         * @return The managed SurfaceTexture, not null.
-         */
-        public SurfaceTexture getSurfaceTexture() {
+        @Override
+        public SurfaceTexture surfaceTexture() {
           return surfaceTexture;
         }
 
-        /**
-         * @return The identity of this handle.
-         */
-        public long getId() {
+        @Override
+        public long id() {
             return id;
         }
 
-        /**
-         * Releases the managed SurfaceTexture.
-         */
+        @Override
         public void release() {
+            if (released) {
+                return;
+            }
+            released = true;
             nativeUnregisterTexture(mNativePlatformView, id);
-            surfaceTextureHandles.remove(id);
             surfaceTexture.release();
         }
     }

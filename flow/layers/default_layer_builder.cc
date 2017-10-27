@@ -154,7 +154,7 @@ void DefaultLayerBuilder::PushPicture(const SkPoint& offset,
 
 void DefaultLayerBuilder::PushTexture(const SkPoint& offset,
                                       const SkSize& size,
-                                      size_t texture_id) {
+                                      int64_t texture_id) {
   if (!current_layer_) {
     return;
   }

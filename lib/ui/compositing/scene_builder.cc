@@ -129,7 +129,7 @@ void SceneBuilder::addTexture(double dx,
                               double dy,
                               double width,
                               double height,
-                              size_t textureId) {
+                              int64_t textureId) {
   layer_builder_->PushTexture(SkPoint::Make(dx, dy),
                               SkSize::Make(width, height), textureId);
 }

@@ -10,15 +10,12 @@ TextureRegistry::TextureRegistry() = default;
 
 TextureRegistry::~TextureRegistry() = default;
 
-size_t TextureRegistry::RegisterTexture(std::shared_ptr<Texture> texture) {
+void TextureRegistry::RegisterTexture(std::shared_ptr<Texture> texture) {
   ASSERT_IS_GPU_THREAD
-  size_t id = counter_++;
-  mapping_[id] = texture;
-  texture->id_ = id;
-  return id;
+  mapping_[texture->Id()] = texture;
 }
 
-void TextureRegistry::UnregisterTexture(size_t id) {
+void TextureRegistry::UnregisterTexture(int64_t id) {
   ASSERT_IS_GPU_THREAD
   mapping_.erase(id);
 }
@@ -37,11 +34,12 @@ void TextureRegistry::OnGrContextDestroyed() {
   }
 }
 
-std::shared_ptr<Texture> TextureRegistry::GetTexture(size_t id) {
+std::shared_ptr<Texture> TextureRegistry::GetTexture(int64_t id) {
   ASSERT_IS_GPU_THREAD
   return mapping_[id];
 }
 
+Texture::Texture(int64_t id): id_(id) {}
 Texture::~Texture() = default;
 
 }  // namespace flow

@@ -222,26 +222,27 @@ static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {
   return blink::Settings::Get().enable_software_rendering;
 }
 
-static jlong RegisterTexture(JNIEnv* env,
-                             jobject jcaller,
-                             jlong platform_view,
-                             jobject surface_texture) {
-  return PLATFORM_VIEW->RegisterExternalTexture(
+static void RegisterTexture(JNIEnv* env,
+                            jobject jcaller,
+                            jlong platform_view,
+                            jlong texture_id,
+                            jobject surface_texture) {
+  PLATFORM_VIEW->RegisterExternalTexture(static_cast<int64_t>(texture_id),
       fml::jni::JavaObjectWeakGlobalRef(env, surface_texture));
 }
 
 static void MarkTextureFrameAvailable(JNIEnv* env,
                                       jobject jcaller,
                                       jlong platform_view,
-                                      jlong textureId) {
-  return PLATFORM_VIEW->MarkTextureFrameAvailable(textureId);
+                                      jlong texture_id) {
+  return PLATFORM_VIEW->MarkTextureFrameAvailable(static_cast<int64_t>(texture_id));
 }
 
 static void UnregisterTexture(JNIEnv* env,
                               jobject jcaller,
                               jlong platform_view,
-                              jlong textureId) {
-  PLATFORM_VIEW->UnregisterTexture(textureId);
+                              jlong texture_id) {
+  PLATFORM_VIEW->UnregisterTexture(static_cast<int64_t>(texture_id));
 }
 
 static void InvokePlatformMessageResponseCallback(JNIEnv* env,
@@ -377,7 +378,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       },
       {
           .name = "nativeRegisterTexture",
-          .signature = "(JLandroid/graphics/SurfaceTexture;)J",
+          .signature = "(JJLandroid/graphics/SurfaceTexture;)V",
           .fnPtr = reinterpret_cast<void*>(&shell::RegisterTexture),
       },
       {

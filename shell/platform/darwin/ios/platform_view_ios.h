@@ -51,7 +51,7 @@ class PlatformViewIOS : public PlatformView {
   void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message) override;
 
-  size_t RegisterExternalTexture(NSObject<FlutterTexture>* texture);
+  void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
   void UpdateSemantics(std::vector<blink::SemanticsNode> update) override;
 

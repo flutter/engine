@@ -21,7 +21,7 @@ class TextureLayer : public Layer {
 
   void set_offset(const SkPoint& offset) { offset_ = offset; }
   void set_size(const SkSize& size) { size_ = size; }
-  void set_texture_id(size_t texture_id) { texture_id_ = texture_id; }
+  void set_texture_id(int64_t texture_id) { texture_id_ = texture_id; }
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
@@ -29,7 +29,7 @@ class TextureLayer : public Layer {
  private:
   SkPoint offset_;
   SkSize size_;
-  size_t texture_id_ = 0;
+  int64_t texture_id_;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(TextureLayer);
 };

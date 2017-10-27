@@ -23,7 +23,7 @@ Animator::Animator(fml::WeakPtr<Rasterizer> rasterizer,
       pending_frame_semaphore_(1),
       frame_number_(1),
       paused_(false),
-      frame_requested_(false),
+      regenerate_layer_tree_(false),
       frame_scheduled_(false),
       weak_factory_(this) {}
 
@@ -59,7 +59,7 @@ void Animator::BeginFrame(fxl::TimePoint frame_start_time,
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending", frame_number_++);
 
   frame_scheduled_ = false;
-  frame_requested_ = false;
+  regenerate_layer_tree_ = false;
   pending_frame_semaphore_.Signal();
 
   if (!producer_continuation_) {
@@ -119,7 +119,7 @@ void Animator::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
 }
 
 bool Animator::CanReuseLastLayerTree() {
-  return !frame_requested_;
+  return !regenerate_layer_tree_;
 }
 
 void Animator::DrawLastLayerTree() {
@@ -130,16 +130,10 @@ void Animator::DrawLastLayerTree() {
   });
 }
 
-void Animator::RequestRedraw() {
-  RequestDrawOnVSync();
-}
-
-void Animator::RequestFrame() {
-  frame_requested_ = true;
-  RequestDrawOnVSync();
-}
-
-void Animator::RequestDrawOnVSync() {
+void Animator::RequestFrame(bool regenerate_layer_tree) {
+  if (regenerate_layer_tree) {
+    regenerate_layer_tree_ = true;
+  }
   if (paused_) {
     return;
   }

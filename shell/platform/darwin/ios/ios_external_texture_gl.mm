@@ -14,15 +14,12 @@
 
 namespace shell {
 
-IOSExternalTextureGL::IOSExternalTextureGL(NSObject<FlutterTexture>* externalTexture)
-    : external_texture_(externalTexture) {
+IOSExternalTextureGL::IOSExternalTextureGL(int64_t textureId, NSObject<FlutterTexture>* externalTexture)
+    : Texture(textureId), external_texture_(externalTexture) {
   FXL_DCHECK(external_texture_);
-  [external_texture_ retain];
 }
 
-IOSExternalTextureGL::~IOSExternalTextureGL() {
-  [external_texture_ release];
-}
+IOSExternalTextureGL::~IOSExternalTextureGL() = default;
 
 sk_sp<SkImage> IOSExternalTextureGL::MakeSkImage(int width, int height, GrContext* grContext) {
   ASSERT_IS_GPU_THREAD;

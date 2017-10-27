@@ -19,9 +19,9 @@ FLUTTER_EXPORT
 
 FLUTTER_EXPORT
 @protocol FlutterTextureRegistry<NSObject>
-- (NSUInteger)registerTexture:(NSObject<FlutterTexture>*)texture;
-- (void)textureFrameAvailable:(NSUInteger)textureId;
-- (void)unregisterTexture:(NSUInteger)textureId;
+- (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture;
+- (void)textureFrameAvailable:(int64_t)textureId;
+- (void)unregisterTexture:(int64_t)textureId;
 @end
 
 NS_ASSUME_NONNULL_END
