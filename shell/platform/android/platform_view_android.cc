@@ -476,7 +476,7 @@ void PlatformViewAndroid::UpdateSemantics(
         buffer_int32[position++] = strings.size();
         strings.push_back(node.increasedValue);
       }
-        if (node.decreasedValue.empty()) {
+      if (node.decreasedValue.empty()) {
         buffer_int32[position++] = -1;
       } else {
         buffer_int32[position++] = strings.size();
