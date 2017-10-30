@@ -61,7 +61,8 @@ DartController::~DartController() {
 const std::string DartController::main_entrypoint_ = "main";
 
 bool DartController::SendStartMessage(Dart_Handle root_library,
-                                      const std::string& entrypoint) {
+                                      const std::string& entrypoint,
+                                      Dart_Port* out_send_port) {
   if (LogIfError(root_library))
     return true;
 
@@ -87,12 +88,38 @@ bool DartController::SendStartMessage(Dart_Handle root_library,
   Dart_Handle isolate_lib = Dart_LookupLibrary(ToDart("dart:isolate"));
   DART_CHECK_VALID(isolate_lib);
 
+  Dart_Handle args = Dart_Null();
+  if (out_send_port != nullptr) {
+    Dart_Handle receive_port_type =
+        Dart_GetType(isolate_lib, ToDart("RawReceivePort"), 0, nullptr);
+    DART_CHECK_VALID(receive_port_type);
+
+    Dart_Handle receive_port = Dart_New(
+        receive_port_type, Dart_Null(), 0, nullptr);
+    DART_CHECK_VALID(receive_port);
+
+    Dart_Handle send_port = Dart_GetField(receive_port, ToDart("sendPort"));
+    DART_CHECK_VALID(send_port);
+
+    Dart_Port send_port_id;
+    Dart_Handle status = Dart_SendPortGetId(send_port, &send_port_id);
+    DART_CHECK_VALID(status);
+
+    *out_send_port = send_port_id;
+
+    Dart_Handle args = Dart_NewList(1);
+    DART_CHECK_VALID(args);
+
+    status = Dart_ListSetAt(args, 0, receive_port);
+    DART_CHECK_VALID(status);
+  }
+
   // Send the start message containing the entry point by calling
   // _startMainIsolate in dart:isolate.
   const intptr_t kNumIsolateArgs = 2;
   Dart_Handle isolate_args[kNumIsolateArgs];
   isolate_args[0] = main_closure;
-  isolate_args[1] = Dart_Null();
+  isolate_args[1] = args;
   Dart_Handle result = Dart_Invoke(isolate_lib, ToDart("_startMainIsolate"),
                                    kNumIsolateArgs, isolate_args);
   return LogIfError(result);
@@ -110,7 +137,8 @@ static void ReleaseFetchedBytes(uint8_t* buffer) {
 
 tonic::DartErrorHandleType DartController::RunFromKernel(
     const std::vector<uint8_t>& kernel,
-    const std::string& entrypoint) {
+    const std::string& entrypoint,
+    Dart_Port* out_send_port) {
   tonic::DartState::Scope scope(dart_state());
   tonic::DartErrorHandleType error = tonic::kNoError;
   if (Dart_IsNull(Dart_RootLibrary())) {
@@ -124,18 +152,19 @@ tonic::DartErrorHandleType DartController::RunFromKernel(
     LogIfError(result);
     error = tonic::GetErrorHandleType(result);
   }
-  if (SendStartMessage(Dart_RootLibrary(), entrypoint)) {
+  if (SendStartMessage(Dart_RootLibrary(), entrypoint, out_send_port)) {
     return tonic::kUnknownErrorType;
   }
   return error;
 }
 
 tonic::DartErrorHandleType DartController::RunFromPrecompiledSnapshot(
-    const std::string& entrypoint) {
+    const std::string& entrypoint,
+    Dart_Port* out_send_port) {
   TRACE_EVENT0("flutter", "DartController::RunFromPrecompiledSnapshot");
   FXL_DCHECK(Dart_CurrentIsolate() == nullptr);
   tonic::DartState::Scope scope(dart_state());
-  if (SendStartMessage(Dart_RootLibrary(), entrypoint)) {
+  if (SendStartMessage(Dart_RootLibrary(), entrypoint, out_send_port)) {
     return tonic::kUnknownErrorType;
   }
   return tonic::kNoError;
@@ -144,7 +173,8 @@ tonic::DartErrorHandleType DartController::RunFromPrecompiledSnapshot(
 tonic::DartErrorHandleType DartController::RunFromScriptSnapshot(
     const uint8_t* buffer,
     size_t size,
-    const std::string& entrypoint) {
+    const std::string& entrypoint,
+    Dart_Port* out_send_port) {
   tonic::DartState::Scope scope(dart_state());
   tonic::DartErrorHandleType error = tonic::kNoError;
   if (Dart_IsNull(Dart_RootLibrary())) {
@@ -152,7 +182,7 @@ tonic::DartErrorHandleType DartController::RunFromScriptSnapshot(
     LogIfError(result);
     error = tonic::GetErrorHandleType(result);
   }
-  if (SendStartMessage(Dart_RootLibrary(), entrypoint)) {
+  if (SendStartMessage(Dart_RootLibrary(), entrypoint, out_send_port)) {
     return tonic::kUnknownErrorType;
   }
   return error;

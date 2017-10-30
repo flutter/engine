@@ -190,53 +190,57 @@ const std::string Engine::main_entrypoint_ = "main";
 
 void Engine::RunBundle(const std::string& bundle_path,
                        const std::string& entrypoint,
-                       bool reuse_runtime_controller) {
+                       bool reuse_runtime_controller,
+                       Dart_Port* out_send_port) {
   TRACE_EVENT0("flutter", "Engine::RunBundle");
   ConfigureAssetBundle(bundle_path);
   ConfigureRuntime(GetScriptUriFromPath(bundle_path), reuse_runtime_controller);
 
   if (blink::IsRunningPrecompiledCode()) {
-    runtime_->dart_controller()->RunFromPrecompiledSnapshot(entrypoint);
+    runtime_->dart_controller()->RunFromPrecompiledSnapshot(
+        entrypoint, out_send_port);
   } else {
     std::vector<uint8_t> kernel;
     if (GetAssetAsBuffer(blink::kKernelAssetKey, &kernel)) {
-      runtime_->dart_controller()->RunFromKernel(kernel, entrypoint);
+      runtime_->dart_controller()->RunFromKernel(
+          kernel, entrypoint, out_send_port);
       return;
     }
     std::vector<uint8_t> snapshot;
     if (!GetAssetAsBuffer(blink::kSnapshotAssetKey, &snapshot))
       return;
     runtime_->dart_controller()->RunFromScriptSnapshot(
-        snapshot.data(), snapshot.size(), entrypoint);
+        snapshot.data(), snapshot.size(), entrypoint, out_send_port);
   }
 }
 
 void Engine::RunBundleAndSnapshot(const std::string& bundle_path,
                                   const std::string& snapshot_override,
                                   const std::string& entrypoint,
-                                  bool reuse_runtime_controller) {
+                                  bool reuse_runtime_controller,
+                                  Dart_Port* out_send_port) {
   TRACE_EVENT0("flutter", "Engine::RunBundleAndSnapshot");
   if (snapshot_override.empty()) {
-    RunBundle(bundle_path, entrypoint, reuse_runtime_controller);
+    RunBundle(bundle_path, entrypoint, reuse_runtime_controller, out_send_port);
     return;
   }
   ConfigureAssetBundle(bundle_path);
   ConfigureRuntime(GetScriptUriFromPath(bundle_path), reuse_runtime_controller);
   if (blink::IsRunningPrecompiledCode()) {
-    runtime_->dart_controller()->RunFromPrecompiledSnapshot(entrypoint);
+    runtime_->dart_controller()->RunFromPrecompiledSnapshot(
+        entrypoint, out_send_port);
   } else {
     std::vector<uint8_t> snapshot;
     if (!files::ReadFileToVector(snapshot_override, &snapshot))
       return;
     runtime_->dart_controller()->RunFromScriptSnapshot(
-        snapshot.data(), snapshot.size(), entrypoint);
+        snapshot.data(), snapshot.size(), entrypoint, out_send_port);
   }
 }
 
 void Engine::RunBundleAndSource(const std::string& bundle_path,
                                 const std::string& main,
-                                const std::string& packages,
-                                bool reuse_runtime_controller) {
+                                const std::string& packages) {
   TRACE_EVENT0("flutter", "Engine::RunBundleAndSource");
   FXL_CHECK(!blink::IsRunningPrecompiledCode())
       << "Cannot run from source in a precompiled build.";
@@ -247,7 +251,7 @@ void Engine::RunBundleAndSource(const std::string& bundle_path,
   if (!bundle_path.empty())
     ConfigureAssetBundle(bundle_path);
 
-  ConfigureRuntime(GetScriptUriFromPath(bundle_path), reuse_runtime_controller);
+  ConfigureRuntime(GetScriptUriFromPath(bundle_path));
 
   if (blink::GetKernelPlatformBinary() != nullptr) {
     std::vector<uint8_t> kernel;

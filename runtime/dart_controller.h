@@ -22,13 +22,16 @@ class DartController {
 
   tonic::DartErrorHandleType RunFromKernel(
       const std::vector<uint8_t>& kernel,
-      const std::string& entrypoint = main_entrypoint_);
+      const std::string& entrypoint = main_entrypoint_,
+      Dart_Port* out_send_port = nullptr);
   tonic::DartErrorHandleType RunFromPrecompiledSnapshot(
-      const std::string& entrypoint = main_entrypoint_);
+      const std::string& entrypoint = main_entrypoint_,
+      Dart_Port* out_send_port = nullptr);
   tonic::DartErrorHandleType RunFromScriptSnapshot(
       const uint8_t* buffer,
       size_t size,
-      const std::string& entrypoint = main_entrypoint_);
+      const std::string& entrypoint = main_entrypoint_,
+      Dart_Port* out_send_port = nullptr);
   tonic::DartErrorHandleType RunFromSource(const std::string& main,
                                            const std::string& packages);
 
@@ -43,7 +46,8 @@ class DartController {
 
  private:
   bool SendStartMessage(Dart_Handle root_library,
-                        const std::string& entrypoint = main_entrypoint_);
+                        const std::string& entrypoint = main_entrypoint_,
+                        Dart_Port* out_send_port = nullptr);
 
   static const std::string main_entrypoint_;
 

@@ -1158,6 +1158,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BinaryCod
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BinaryMessenger.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/EventChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/FlutterException.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/HeadlessDartRunner.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/JSONMessageCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/JSONMethodCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/MessageCodec.java

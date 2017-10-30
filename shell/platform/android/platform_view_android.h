@@ -41,7 +41,8 @@ class PlatformViewAndroid : public PlatformView {
   void RunBundleAndSnapshot(std::string bundle_path,
                             std::string snapshot_override,
                             std::string entrypoint,
-                            bool reuse_isolate);
+                            bool reuse_isolate,
+                            Dart_Port* out_send_port);
 
   void RunBundleAndSource(std::string bundle_path,
                           std::string main,

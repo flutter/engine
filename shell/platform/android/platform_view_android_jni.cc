@@ -124,19 +124,26 @@ static void SurfaceDestroyed(JNIEnv* env,
   return PLATFORM_VIEW->SurfaceDestroyed();
 }
 
-static void RunBundleAndSnapshot(JNIEnv* env,
-                                 jobject jcaller,
-                                 jlong platform_view,
-                                 jstring bundlePath,
-                                 jstring snapshotOverride,
-                                 jstring entrypoint,
-                                 jboolean reuse_runtime_controller) {
-  return PLATFORM_VIEW->RunBundleAndSnapshot(
+static jlong RunBundleAndSnapshot(JNIEnv* env,
+                                  jobject jcaller,
+                                  jlong platform_view,
+                                  jstring bundlePath,
+                                  jstring snapshotOverride,
+                                  jstring entrypoint,
+                                  jboolean reuse_runtime_controller,
+                                  jboolean create_port) {
+  Dart_Port send_port = ILLEGAL_PORT;
+  Dart_Port* send_port_ptr = nullptr;
+  if (create_port)
+    send_port_ptr = &send_port;
+  PLATFORM_VIEW->RunBundleAndSnapshot(
       fml::jni::JavaStringToString(env, bundlePath),        //
       fml::jni::JavaStringToString(env, snapshotOverride),  //
       fml::jni::JavaStringToString(env, entrypoint),        //
-      reuse_runtime_controller                              //
+      reuse_runtime_controller,                             //
+      send_port_ptr                                         //
   );
+  return static_cast<jlong>(send_port);
 }
 
 void RunBundleAndSource(JNIEnv* env,
@@ -316,7 +323,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       {
           .name = "nativeRunBundleAndSnapshot",
           .signature =
-              "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)V",
+              "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZ)J",
           .fnPtr = reinterpret_cast<void*>(&shell::RunBundleAndSnapshot),
       },
       {
