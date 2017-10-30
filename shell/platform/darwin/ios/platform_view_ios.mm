@@ -101,7 +101,8 @@ void PlatformViewIOS::HandlePlatformMessage(fxl::RefPtr<blink::PlatformMessage> 
   platform_message_router_.HandlePlatformMessage(std::move(message));
 }
 
-void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id, NSObject<FlutterTexture>* texture) {
+void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
+                                              NSObject<FlutterTexture>* texture) {
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
 }
 

@@ -227,7 +227,8 @@ static void RegisterTexture(JNIEnv* env,
                             jlong platform_view,
                             jlong texture_id,
                             jobject surface_texture) {
-  PLATFORM_VIEW->RegisterExternalTexture(static_cast<int64_t>(texture_id),
+  PLATFORM_VIEW->RegisterExternalTexture(
+      static_cast<int64_t>(texture_id),
       fml::jni::JavaObjectWeakGlobalRef(env, surface_texture));
 }
 
@@ -235,7 +236,8 @@ static void MarkTextureFrameAvailable(JNIEnv* env,
                                       jobject jcaller,
                                       jlong platform_view,
                                       jlong texture_id) {
-  return PLATFORM_VIEW->MarkTextureFrameAvailable(static_cast<int64_t>(texture_id));
+  return PLATFORM_VIEW->MarkTextureFrameAvailable(
+      static_cast<int64_t>(texture_id));
 }
 
 static void UnregisterTexture(JNIEnv* env,

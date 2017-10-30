@@ -151,9 +151,7 @@ void PlatformView::UnregisterTexture(int64_t texture_id) {
 
 void PlatformView::MarkTextureFrameAvailable(int64_t texture_id) {
   ASSERT_IS_PLATFORM_THREAD
-  blink::Threads::UI()->PostTask([this]() {
-    engine_->ScheduleFrame(false);
-  });
+  blink::Threads::UI()->PostTask([this]() { engine_->ScheduleFrame(false); });
 }
 
 void PlatformView::SetupResourceContextOnIOThread() {

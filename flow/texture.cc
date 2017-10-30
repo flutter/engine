@@ -39,7 +39,7 @@ std::shared_ptr<Texture> TextureRegistry::GetTexture(int64_t id) {
   return mapping_[id];
 }
 
-Texture::Texture(int64_t id): id_(id) {}
+Texture::Texture(int64_t id) : id_(id) {}
 Texture::~Texture() = default;
 
 }  // namespace flow

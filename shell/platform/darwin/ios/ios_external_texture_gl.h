@@ -18,7 +18,8 @@ namespace shell {
 
 class IOSExternalTextureGL : public flow::Texture {
  public:
-  IOSExternalTextureGL(int64_t textureId, NSObject<FlutterTexture>* externalTexture);
+  IOSExternalTextureGL(int64_t textureId,
+                       NSObject<FlutterTexture>* externalTexture);
 
   ~IOSExternalTextureGL() override;
 

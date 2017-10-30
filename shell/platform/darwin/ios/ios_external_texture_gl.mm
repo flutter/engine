@@ -14,7 +14,8 @@
 
 namespace shell {
 
-IOSExternalTextureGL::IOSExternalTextureGL(int64_t textureId, NSObject<FlutterTexture>* externalTexture)
+IOSExternalTextureGL::IOSExternalTextureGL(int64_t textureId,
+                                           NSObject<FlutterTexture>* externalTexture)
     : Texture(textureId), external_texture_(externalTexture) {
   FXL_DCHECK(external_texture_);
 }

@@ -1170,6 +1170,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StandardM
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StringCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/Preconditions.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/view/TextureRegistry.java
 FILE: ../../../flutter/shell/platform/android/platform_view_android_jni.cc
 FILE: ../../../flutter/shell/platform/android/platform_view_android_jni.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessenger.h
@@ -9459,7 +9460,6 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterApplication.
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourceCleaner.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourceExtractor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourcePaths.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/view/TextureRegistry.java
 FILE: ../../../flutter/shell/platform/android/library_loader.cc
 FILE: ../../../flutter/shell/platform/android/platform_view_android.cc
 FILE: ../../../flutter/shell/platform/android/platform_view_android.h

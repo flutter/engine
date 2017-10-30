@@ -20,6 +20,7 @@ namespace flow {
 class Texture {
  protected:
   Texture(int64_t id);
+
  public:
   // Called from GPU thread.
   virtual ~Texture();

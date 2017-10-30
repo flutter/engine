@@ -14,7 +14,8 @@ namespace shell {
 class AndroidExternalTextureGL : public flow::Texture {
  public:
   AndroidExternalTextureGL(
-      int64_t id, const fml::jni::JavaObjectWeakGlobalRef& surfaceTexture);
+      int64_t id,
+      const fml::jni::JavaObjectWeakGlobalRef& surfaceTexture);
 
   ~AndroidExternalTextureGL() override;
 
