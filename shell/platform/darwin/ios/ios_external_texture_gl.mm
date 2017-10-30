@@ -4,6 +4,9 @@
 
 #include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
 
+#include <OpenGLES/EAGL.h>
+#import <OpenGLES/ES2/gl.h>
+#import <OpenGLES/ES2/glext.h>
 #include "flutter/common/threads.h"
 #include "flutter/lib/ui/painting/resource_context.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
@@ -22,7 +25,7 @@ IOSExternalTextureGL::IOSExternalTextureGL(int64_t textureId,
 
 IOSExternalTextureGL::~IOSExternalTextureGL() = default;
 
-sk_sp<SkImage> IOSExternalTextureGL::MakeSkImage(int width, int height, GrContext* grContext) {
+void IOSExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds) {
   ASSERT_IS_GPU_THREAD;
   if (!cache_ref_) {
     CVOpenGLESTextureCacheRef cache;
@@ -32,7 +35,7 @@ sk_sp<SkImage> IOSExternalTextureGL::MakeSkImage(int width, int height, GrContex
       cache_ref_.Reset(cache);
     } else {
       FXL_LOG(WARNING) << "Failed to create GLES texture cache: " << err;
-      return nullptr;
+      return;
     }
   }
   fml::CFRef<CVPixelBufferRef> bufferRef;
@@ -47,17 +50,22 @@ sk_sp<SkImage> IOSExternalTextureGL::MakeSkImage(int width, int height, GrContex
     texture_ref_.Reset(texture);
     if (err != noErr) {
       FXL_LOG(WARNING) << "Could not create texture from pixel buffer: " << err;
-      return nullptr;
+      return;
     }
   }
   if (!texture_ref_) {
-    return nullptr;
+    return;
   }
   GrGLTextureInfo textureInfo = {CVOpenGLESTextureGetTarget(texture_ref_),
                                  CVOpenGLESTextureGetName(texture_ref_)};
-  GrBackendTexture backendTexture(width, height, kRGBA_8888_GrPixelConfig, textureInfo);
-  return SkImage::MakeFromTexture(grContext, backendTexture, kTopLeft_GrSurfaceOrigin,
-                                  SkAlphaType::kPremul_SkAlphaType, nullptr);
+  GrBackendTexture backendTexture(bounds.width(), bounds.height(), kRGBA_8888_GrPixelConfig,
+                                  textureInfo);
+  sk_sp<SkImage> image =
+      SkImage::MakeFromTexture(canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
+                               SkAlphaType::kPremul_SkAlphaType, nullptr);
+  if (image) {
+    canvas.drawImage(image, bounds.x(), bounds.y());
+  }
 }
 
 void IOSExternalTextureGL::OnGrContextCreated() {

@@ -5,10 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_IOS_EXTERNAL_TEXTURE_GL_H_
 #define FLUTTER_SHELL_PLATFORM_IOS_EXTERNAL_TEXTURE_GL_H_
 
-#import <CoreVideo/CoreVideo.h>
-#import <OpenGLES/EAGL.h>
-#import <OpenGLES/ES2/gl.h>
-#import <OpenGLES/ES2/glext.h>
 #include "flutter/flow/texture.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -24,9 +20,7 @@ class IOSExternalTextureGL : public flow::Texture {
   ~IOSExternalTextureGL() override;
 
   // Called from GPU thread.
-  virtual sk_sp<SkImage> MakeSkImage(int width,
-                                     int height,
-                                     GrContext* grContext) override;
+  virtual void Paint(SkCanvas& canvas, const SkRect& bounds) override;
 
   virtual void OnGrContextCreated() override;
 

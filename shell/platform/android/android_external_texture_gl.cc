@@ -4,11 +4,10 @@
 
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
 
+// #include <GLES/gl.h>
 #include <GLES/glext.h>
-
 #include "flutter/common/threads.h"
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
-#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrTexture.h"
 
 namespace shell {
@@ -30,12 +29,10 @@ void AndroidExternalTextureGL::MarkNewFrameAvailable() {
   new_frame_ready_ = true;
 }
 
-sk_sp<SkImage> AndroidExternalTextureGL::MakeSkImage(int width,
-                                                     int height,
-                                                     GrContext* grContext) {
+void AndroidExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds) {
   ASSERT_IS_GPU_THREAD;
   if (state_ == AttachmentState::detached) {
-    return nullptr;
+    return;
   }
   if (state_ == AttachmentState::uninitialized) {
     glGenTextures(1, &texture_name_);
@@ -47,11 +44,14 @@ sk_sp<SkImage> AndroidExternalTextureGL::MakeSkImage(int width,
     new_frame_ready_ = false;
   }
   GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES, texture_name_};
-  GrBackendTexture backendTexture(width, height, kRGBA_8888_GrPixelConfig,
-                                  textureInfo);
-  return SkImage::MakeFromTexture(grContext, backendTexture,
-                                  kTopLeft_GrSurfaceOrigin,
-                                  SkAlphaType::kPremul_SkAlphaType, nullptr);
+  GrBackendTexture backendTexture(bounds.width(), bounds.height(),
+                                  kRGBA_8888_GrPixelConfig, textureInfo);
+  sk_sp<SkImage> image = SkImage::MakeFromTexture(
+      canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
+      SkAlphaType::kPremul_SkAlphaType, nullptr);
+  if (image) {
+    canvas.drawImage(image, bounds.x(), bounds.y());
+  }
 }
 
 void AndroidExternalTextureGL::OnGrContextDestroyed() {

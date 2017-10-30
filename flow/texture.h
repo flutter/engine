@@ -8,12 +8,7 @@
 #include <map>
 #include "flutter/common/threads.h"
 #include "lib/fxl/synchronization/waitable_event.h"
-#include "third_party/skia/include/core/SkMatrix.h"
-#include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrContext.h"
-#include "third_party/skia/include/gpu/GrTexture.h"
-#include "third_party/skia/include/gpu/GrTypes.h"
+#include "third_party/skia/include/core/SkCanvas.h"
 
 namespace flow {
 
@@ -26,9 +21,7 @@ class Texture {
   virtual ~Texture();
 
   // Called from GPU thread.
-  virtual sk_sp<SkImage> MakeSkImage(int width,
-                                     int height,
-                                     GrContext* grContext) = 0;
+  virtual void Paint(SkCanvas& canvas, const SkRect& bounds) = 0;
 
   // Called from GPU thread.
   virtual void OnGrContextCreated() = 0;

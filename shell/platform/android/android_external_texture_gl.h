@@ -19,9 +19,7 @@ class AndroidExternalTextureGL : public flow::Texture {
 
   ~AndroidExternalTextureGL() override;
 
-  virtual sk_sp<SkImage> MakeSkImage(int width,
-                                     int height,
-                                     GrContext* grContext) override;
+  virtual void Paint(SkCanvas& canvas, const SkRect& bounds) override;
 
   virtual void OnGrContextCreated() override;
 

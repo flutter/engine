@@ -23,13 +23,7 @@ void TextureLayer::Paint(PaintContext& context) const {
   if (!texture) {
     return;
   }
-  sk_sp<SkImage> sk_image =
-      texture->MakeSkImage(paint_bounds().width(), paint_bounds().height(),
-                           context.canvas.getGrContext());
-  if (!sk_image) {
-    return;
-  }
-  context.canvas.drawImage(sk_image, paint_bounds().x(), paint_bounds().y());
+  texture->Paint(context.canvas, paint_bounds());
 }
 
 }  // namespace flow
