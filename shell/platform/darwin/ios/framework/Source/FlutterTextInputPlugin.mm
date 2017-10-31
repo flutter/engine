@@ -76,30 +76,18 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 
 + (instancetype)rangeWithNSRange:(NSRange)range;
 
-+ (instancetype)rangeWithNSRange:(NSRange)range withText:(NSString*)text;
-
 @end
 
 @implementation FlutterTextRange
 
 + (instancetype)rangeWithNSRange:(NSRange)range {
-  return [[[FlutterTextRange alloc] initWithNSRange:range withText:nil] autorelease];
+  return [[[FlutterTextRange alloc] initWithNSRange:range] autorelease];
 }
 
-+ (instancetype)rangeWithNSRange:(NSRange)range withText:(NSString*)text {
-  return [[[FlutterTextRange alloc] initWithNSRange:range withText:text] autorelease];
-}
-
-- (instancetype)initWithNSRange:(NSRange)range withText:(NSString*)text {
+- (instancetype)initWithNSRange:(NSRange)range {
   self = [super init];
   if (self) {
-    if (!text) {
-      _range = range;
-    } else {
-      int start = MIN(MAX(range.location, 0), text.length);
-      int length = MIN(range.length, text.length - start);
-      _range = NSMakeRange(start, length);
-    }
+    _range = range;
   }
   return self;
 }
@@ -117,7 +105,7 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 }
 
 - (id)copyWithZone:(NSZone*)zone {
-  return [[FlutterTextRange allocWithZone:zone] initWithNSRange:self.range withText:nil];
+  return [[FlutterTextRange allocWithZone:zone] initWithNSRange:self.range];
 }
 
 @end
@@ -164,7 +152,7 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
     // UITextInput
     _text = [[NSMutableString alloc] init];
     _markedText = [[NSMutableString alloc] init];
-    _selectedTextRange = [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0) withText:nil];
+    _selectedTextRange = [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0)];
 
     // UITextInputTraits
     _autocapitalizationType = UITextAutocapitalizationTypeSentences;
@@ -203,14 +191,14 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 
   NSInteger selectionBase = [state[@"selectionBase"] intValue];
   NSInteger selectionExtent = [state[@"selectionExtent"] intValue];
-  NSUInteger start = MIN(MAX(0, MIN(selectionBase, selectionExtent)), (NSInteger)self.text.length);
-  NSUInteger end = MIN(MAX(0, MAX(selectionBase, selectionExtent)), (NSInteger)self.text.length);
-  NSRange selectedRange = NSMakeRange(start, end - start);
+  NSRange selectedRange = [self validateSelection:NSMakeRange(MIN(selectionBase, selectionExtent),
+                                                              MAX(selectionBase, selectionExtent))
+                                          forText:self.text];
   NSRange oldSelectedRange = [(FlutterTextRange*)self.selectedTextRange range];
   if (selectedRange.location != oldSelectedRange.location ||
       selectedRange.length != oldSelectedRange.length) {
     [self.inputDelegate selectionWillChange:self];
-    [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange withText:self.text]
+    [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
             updateEditingState:NO];
     _selectionAffinity = _kTextAffinityDownstream;
     if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)])
@@ -224,6 +212,12 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
     // For consistency with Android behavior, send an update to the framework.
     [self updateEditingState];
   }
+}
+
+- (NSRange)validateSelection:(NSRange)range forText:(NSString*)text {
+  int start = MIN(MAX(range.location, 0), text.length);
+  int length = MIN(range.length, text.length - start);
+  return NSMakeRange(start, length);
 }
 
 #pragma mark - UIResponder Overrides
@@ -280,12 +274,12 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
     selectedRange.length -= intersectionRange.length;
   }
 
-  [self.text
-      replaceCharactersInRange:[FlutterTextRange rangeWithNSRange:replaceRange withText:self.text]
-                                   .range
-                    withString:text];
-  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange withText:self.text]
-          updateEditingState:NO];
+  [self.text replaceCharactersInRange:[self validateSelection:replaceRange forText:self.text]
+                           withString:text];
+  [self
+      setSelectedTextRange:[FlutterTextRange rangeWithNSRange:[self validateSelection:selectedRange
+                                                                              forText:self.text]]
+        updateEditingState:NO];
 
   [self updateEditingState];
 }
@@ -324,8 +318,10 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 
   NSUInteger selectionLocation = markedSelectedRange.location + markedTextRange.location;
   selectedRange = NSMakeRange(selectionLocation, markedSelectedRange.length);
-  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange withText:self.text]
-          updateEditingState:YES];
+  [self
+      setSelectedTextRange:[FlutterTextRange rangeWithNSRange:[self validateSelection:selectedRange
+                                                                              forText:self.text]]
+        updateEditingState:YES];
 }
 
 - (void)unmarkText {
