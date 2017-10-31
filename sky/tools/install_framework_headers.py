@@ -35,8 +35,9 @@ def main():
     os.makedirs(args.location)
 
   # Copy all files specified in the args.
-  for file in args.headers:
-    shutil.copyfile(file, os.path.join(args.location, os.path.basename(file)))
+  for header_file in args.headers:
+    shutil.copyfile(header_file,
+      os.path.join(args.location, os.path.basename(header_file)))
 
 
 
