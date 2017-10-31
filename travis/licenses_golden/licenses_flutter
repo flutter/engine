@@ -1534,6 +1534,7 @@ FILE: ../../../flutter/flow/layers/default_layer_builder.cc
 FILE: ../../../flutter/flow/layers/default_layer_builder.h
 FILE: ../../../flutter/flow/layers/layer_builder.cc
 FILE: ../../../flutter/flow/layers/layer_builder.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImport.m
 FILE: ../../../flutter/shell/platform/embedder/embedder.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2017 The Flutter Authors. All rights reserved.
