@@ -1172,6 +1172,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCodecs.
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterNavigationController.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterStandardCodec.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterStandardCodec_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImport.m
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_codecs_unittest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_main_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/flutter_main_ios.mm
@@ -1534,7 +1535,6 @@ FILE: ../../../flutter/flow/layers/default_layer_builder.cc
 FILE: ../../../flutter/flow/layers/default_layer_builder.h
 FILE: ../../../flutter/flow/layers/layer_builder.cc
 FILE: ../../../flutter/flow/layers/layer_builder.h
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterUmbrellaImport.m
 FILE: ../../../flutter/shell/platform/embedder/embedder.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2017 The Flutter Authors. All rights reserved.
