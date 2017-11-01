@@ -24,6 +24,8 @@ source_set("ui") {
     "painting/image_decoding.h",
     "painting/image_filter.cc",
     "painting/image_filter.h",
+    "painting/image_frames.cc",
+    "painting/image_frames.h",
     "painting/image_shader.cc",
     "painting/image_shader.h",
     "painting/mask_filter.cc",

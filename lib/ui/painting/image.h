@@ -30,7 +30,10 @@ class CanvasImage final : public fxl::RefCountedThreadSafe<CanvasImage>,
   void dispose();
 
   const sk_sp<SkImage>& image() const { return image_; }
-  void set_image(sk_sp<SkImage> image) { image_ = std::move(image); }
+  void set_image(sk_sp<SkImage> image, int durationMillis) {
+    image_ = std::move(image);
+    durationMillis_ = durationMillis;
+  }
 
   virtual size_t GetAllocationSize() override;
 
@@ -40,6 +43,9 @@ class CanvasImage final : public fxl::RefCountedThreadSafe<CanvasImage>,
   CanvasImage();
 
   sk_sp<SkImage> image_;
+  // For frames of animated images the duration of this frame.
+  // For non animated images this is set to -1.
+  int durationMillis_;
 };
 
 }  // namespace blink

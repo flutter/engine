@@ -825,7 +825,7 @@ class Paint {
 
 /// Opaque handle to raw decoded image data (pixels).
 ///
-/// To obtain an Image object, use [decodeImageFromList].
+/// To obtain an Image object, use [ImageFrames.nextFrame].
 ///
 /// To draw an Image, use one of the methods on the [Canvas] class, such as
 /// [Canvas.drawImage].
@@ -840,6 +840,12 @@ abstract class Image extends NativeFieldWrapperClass2 {
   /// after this method is called.
   void dispose() native "Image_dispose";
 
+  /// For frames of animated images the duration of the current frame in
+  /// milliseconds.
+  ///
+  /// For non animated frames this will be -1.
+  int get durationMillis native "Image_duration";
+
   @override
   String toString() => '[$width\u00D7$height]';
 }
@@ -848,8 +854,36 @@ abstract class Image extends NativeFieldWrapperClass2 {
 typedef void ImageDecoderCallback(Image result);
 
 /// Convert an image file from a byte array into an [Image] object.
+/// 
+/// This method will no longer be used once we switch to use ImageFrames.
+/// TODO(amirh): replace all usages of this with decodeImageFramesFromList.
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback)
     native "decodeImageFromList";
+
+/// Handle to the frames of an animated image.
+///
+/// To obtain an ImageFrames object use [decodeImageFramesFromList].
+abstract class ImageFrames extends NativeFieldWrapperClass2 {
+  /// The number of frames the animated image contains.
+  int get frameCount native "ImageFrames_frameCount";
+
+  /// Decodes the next frame of the image and returns an [Image] handle to it.
+  Image getNextFrame() native "ImageFrames_getNextFrame";
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  ///
+  /// This does not dispose images returned by nextFrame, and they should be
+  /// disposed separately.
+  void dispose() native "ImageFrames_dispose";
+}
+
+/// Callback signature for [decodeImageFramesFromList].
+typedef void ImageFramesDecoderCallback(ImageFrames result);
+
+/// Convert an image file from a byte array into an [ImageFrames] object.
+void decodeImageFramesFromList(Uint8List list, ImageFramesDecoderCallback callback)
+    native "decodeImageFramesFromList";
 
 /// Determines the winding rule that decides how the interior of a [Path] is
 /// calculated.
