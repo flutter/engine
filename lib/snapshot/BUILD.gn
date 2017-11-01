@@ -45,7 +45,7 @@ if (is_fuchsia) {
 
     dot_packages_file = "$target_gen_dir/snapshot.packages"
     outputs = [
-      dot_packages_file
+      dot_packages_file,
     ]
     deps = []
     foreach(dep, dart_deps) {
@@ -56,26 +56,27 @@ if (is_fuchsia) {
 
     script = "//build/dart/gen_dot_packages.py"
     args = [
-      "--out",
-      rebase_path(dot_packages_file, root_build_dir),
-      "--source-dir",
-      rebase_path("."),
-      "--root-build-dir",
-      rebase_path(root_build_dir),
-      "--root-gen-dir",
-      rebase_path(dart_root_gen_dir),
-      "--package-name",
-      "snapshot_root",
-      "--depfile",
-      rebase_path(depfile),
-      "--deps",
-    ] + dart_deps
+             "--out",
+             rebase_path(dot_packages_file, root_build_dir),
+             "--source-dir",
+             rebase_path("."),
+             "--root-build-dir",
+             rebase_path(root_build_dir),
+             "--root-gen-dir",
+             rebase_path(dart_root_gen_dir),
+             "--package-name",
+             "snapshot_root",
+             "--depfile",
+             rebase_path(depfile),
+             "--deps",
+           ] + dart_deps
   }
 }
 
 action("generate_snapshot_bin") {
   if (is_fuchsia) {
     snapshot_dart = "snapshot_fuchsia.dart"
+
     # TODO(rmacnak): Fuchsia cross builds use the wrong Dart target
     # architecture, and have added steps that depend on this error for
     # reasonable build times (e.g., invoking the analyzer).
@@ -118,9 +119,9 @@ action("generate_snapshot_bin") {
 
   rebased_dart_ui_path = rebase_path(dart_ui_path)
 
-  gen_snapshot_dir =
-      get_label_info("//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
-                     "root_out_dir")
+  gen_snapshot_dir = get_label_info(
+          "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
+          "root_out_dir")
   script = "//third_party/dart/runtime/tools/create_snapshot_bin.py"
 
   args = [
@@ -327,11 +328,12 @@ template("generate_vm_patched_sdk") {
   # libraries.
   generate_patched_sdk(target_name) {
     mode = "flutter"
-    deps = concatenation_target_names + ["//third_party/dart/runtime/vm:kernel_platform_files"]
+    deps = concatenation_target_names +
+           [ "//third_party/dart/runtime/vm:kernel_platform_files" ]
     input_patches_dir = "$target_gen_dir/patches"
     patched_sdk_dir = "flutter_patched_sdk"
     outputs = [
-        "$root_out_dir/${patched_sdk_dir}/lib/libraries.json",
+      "$root_out_dir/${patched_sdk_dir}/lib/libraries.json",
     ]
   }
 }
@@ -417,8 +419,8 @@ action("compile_platform") {
   depfile = "$root_out_dir/flutter_patched_sdk/platform.dill.d"
 
   args = [
-            "--target=flutter",
-            "dart:core"
+           "--target=flutter",
+           "dart:core",
          ] + rebase_path(sources, root_build_dir) +
          rebase_path(outputs, root_build_dir)
 }

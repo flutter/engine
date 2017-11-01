@@ -7,13 +7,13 @@
 
 namespace shell {
 
-PlatformViewEmbedder::PlatformViewEmbedder(DispatchTable dispatch_table)
-    : PlatformView(std::make_unique<GPURasterizer>(nullptr)),
+PlatformViewEmbedder::PlatformViewEmbedder(PlatformView::Delegate& delegate,
+                                           blink::TaskRunners task_runners,
+                                           DispatchTable dispatch_table)
+    : PlatformView(delegate, std::move(task_runners)),
       dispatch_table_(dispatch_table) {}
 
-PlatformViewEmbedder::~PlatformViewEmbedder() {
-  NotifyDestroyed();
-}
+PlatformViewEmbedder::~PlatformViewEmbedder() = default;
 
 bool PlatformViewEmbedder::GLContextMakeCurrent() {
   return dispatch_table_.gl_make_current_callback();
@@ -29,22 +29,6 @@ bool PlatformViewEmbedder::GLContextPresent() {
 
 intptr_t PlatformViewEmbedder::GLContextFBO() const {
   return dispatch_table_.gl_fbo_callback();
-}
-
-void PlatformViewEmbedder::Attach() {
-  CreateEngine();
-  NotifyCreated(std::make_unique<shell::GPUSurfaceGL>(this));
-}
-
-bool PlatformViewEmbedder::ResourceContextMakeCurrent() {
-  // Unsupported.
-  return false;
-}
-
-void PlatformViewEmbedder::RunFromSource(const std::string& assets_directory,
-                                         const std::string& main,
-                                         const std::string& packages) {
-  FXL_LOG(INFO) << "Hot reloading is unsupported on this platform.";
 }
 
 void PlatformViewEmbedder::HandlePlatformMessage(
@@ -63,6 +47,10 @@ void PlatformViewEmbedder::HandlePlatformMessage(
   }
 
   dispatch_table_.platform_message_response_callback(std::move(message));
+}
+
+std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
+  return std::make_unique<GPUSurfaceGL>(this);
 }
 
 }  // namespace shell

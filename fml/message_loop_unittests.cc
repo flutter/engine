@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "flutter/fml/message_loop.h"
+#include "flutter/fml/task_runner.h"
 #include "gtest/gtest.h"
 #include "lib/fxl/synchronization/waitable_event.h"
 

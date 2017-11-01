@@ -6,20 +6,21 @@
 
 #include <memory>
 
-#include "flutter/common/threads.h"
 #include "flutter/flow/texture.h"
+#include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_block.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/lib/ui/painting/resource_context.h"
+#include "flutter/shell/common/shell.h"
+#include "flutter/shell/common/thread_host.h"
+#include "flutter/shell/gpu/gpu_rasterizer.h"
 #include "flutter/shell/platform/darwin/common/buffer_conversions.h"
-#include "flutter/shell/platform/darwin/common/platform_mac.h"
+#include "flutter/shell/platform/darwin/common/process_info_mac.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/flutter_main_ios.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/flutter_touch_mapper.h"
 #include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
@@ -31,8 +32,6 @@ namespace {
 typedef void (^PlatformMessageResponseCallback)(NSData*);
 
 class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
-  FRIEND_MAKE_REF_COUNTED(PlatformMessageResponseDarwin);
-
  public:
   void Complete(std::vector<uint8_t> data) override {
     fxl::RefPtr<PlatformMessageResponseDarwin> self(this);
@@ -53,43 +52,44 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
       : callback_(callback, fml::OwnershipPolicy::Retain) {}
 
   fml::ScopedBlock<PlatformMessageResponseCallback> callback_;
+
+  FRIEND_MAKE_REF_COUNTED(PlatformMessageResponseDarwin);
 };
 
 }  // namespace
 
-@interface FlutterViewController ()<UIAlertViewDelegate, FlutterTextInputDelegate>
+@interface FlutterViewController ()<FlutterTextInputDelegate>
 @end
 
 @implementation FlutterViewController {
-  fml::scoped_nsprotocol<FlutterDartProject*> _dartProject;
+  fml::scoped_nsobject<FlutterDartProject> _dartProject;
+  shell::ThreadHost _threadHost;
+  std::unique_ptr<shell::Shell> _shell;
+
+  // Channels
+  fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
+  fml::scoped_nsobject<FlutterTextInputPlugin> _textInputPlugin;
+  fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
+  fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
+  fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
+  fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
+
+  // We keep a separate reference to this and create it ahead of time because we want to be able to
+  // setup a shell along with its platform view before the view has to appear.
+  fml::scoped_nsobject<FlutterView> _flutterView;
+  fml::scoped_nsobject<UIView> _launchView;
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
   blink::ViewportMetrics _viewportMetrics;
   shell::TouchMapper _touchMapper;
-  std::shared_ptr<shell::PlatformViewIOS> _platformView;
-  fml::scoped_nsprotocol<FlutterPlatformPlugin*> _platformPlugin;
-  fml::scoped_nsprotocol<FlutterTextInputPlugin*> _textInputPlugin;
-  fml::scoped_nsprotocol<FlutterMethodChannel*> _localizationChannel;
-  fml::scoped_nsprotocol<FlutterMethodChannel*> _navigationChannel;
-  fml::scoped_nsprotocol<FlutterMethodChannel*> _platformChannel;
-  fml::scoped_nsprotocol<FlutterMethodChannel*> _textInputChannel;
-  fml::scoped_nsprotocol<FlutterBasicMessageChannel*> _lifecycleChannel;
-  fml::scoped_nsprotocol<FlutterBasicMessageChannel*> _systemChannel;
-  fml::scoped_nsprotocol<FlutterBasicMessageChannel*> _settingsChannel;
-  fml::scoped_nsprotocol<UIView*> _launchView;
   int64_t _nextTextureId;
   bool _platformSupportsTouchTypes;
   bool _platformSupportsTouchPressure;
   bool _platformSupportsTouchOrientationAndTilt;
   bool _platformSupportsSafeAreaInsets;
-  BOOL _initialized;
-  BOOL _connected;
-}
-
-+ (void)initialize {
-  if (self == [FlutterViewController class]) {
-    shell::FlutterMain();
-  }
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -122,11 +122,6 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 #pragma mark - Common view controller initialization tasks
 
 - (void)performCommonViewControllerInitialization {
-  if (_initialized)
-    return;
-
-  _initialized = YES;
-
   _platformSupportsTouchTypes = fml::IsPlatformVersionAtLeast(9);
   _platformSupportsTouchPressure = fml::IsPlatformVersionAtLeast(9);
   _platformSupportsTouchOrientationAndTilt = fml::IsPlatformVersionAtLeast(9, 1);
@@ -134,26 +129,61 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
-  _platformView = std::make_shared<shell::PlatformViewIOS>(
-      reinterpret_cast<CAEAGLLayer*>(self.view.layer), self);
 
-  _platformView->Attach(
-      // First frame callback.
-      [self]() {
-        TRACE_EVENT0("flutter", "First Frame");
-        if (_launchView) {
-          [UIView animateWithDuration:0.2
-              animations:^{
-                _launchView.get().alpha = 0;
-              }
-              completion:^(BOOL finished) {
-                [_launchView.get() removeFromSuperview];
-                _launchView.reset();
-              }];
-        }
-      });
-  _platformView->SetupResourceContextOnIOThread();
+  [self setupShell];
 
+  [self setupChannels];
+
+  [self setupNotificationCenterObservers];
+}
+
+- (void)setupShell {
+  FXL_DCHECK(_shell == nullptr);
+
+  auto threadLabel = [NSString stringWithFormat:@"io.flutter.%p", self];
+
+  _threadHost = {
+      threadLabel.UTF8String,  // label
+      shell::ThreadHost::Type::UI | shell::ThreadHost::Type::GPU | shell::ThreadHost::Type::IO};
+
+  // The current thread will be used as the platform thread. Ensure that the message loop is
+  // initialized.
+  fml::MessageLoop::IsInitializedForCurrentThread();
+
+  blink::TaskRunners task_runners(threadLabel.UTF8String,                          // label
+                                  fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
+                                  _threadHost.gpu_thread->GetTaskRunner(),         // gpu
+                                  _threadHost.ui_thread->GetTaskRunner(),          // ui
+                                  _threadHost.io_thread->GetTaskRunner()           // io
+  );
+
+  _flutterView.reset([[FlutterView alloc] init]);
+
+  // Lambda captures by pointers to ObjC objects are fine here because the create call is
+  // synchronous.
+  shell::Shell::CreateCallback<shell::PlatformView> on_create_platform_view =
+      [ layer = _flutterView.get().layer, binary_messenger = self ](shell::Shell & shell) {
+    return std::make_unique<shell::PlatformViewIOS>(shell,                   // delegate
+                                                    shell.GetTaskRunners(),  // task runners
+                                                    layer,                   // layer
+                                                    binary_messenger         // binary messenger
+    );
+  };
+
+  shell::Shell::CreateCallback<shell::Rasterizer> on_create_rasterizer = [](shell::Shell& shell) {
+    return std::make_unique<shell::GPURasterizer>(
+        shell.GetTaskRunners(),                    // task runners
+        std::make_unique<shell::ProcessInfoMac>()  // process info
+    );
+  };
+
+  _shell = shell::Shell::Create(std::move(task_runners), [_dartProject settings],
+                                on_create_rasterizer, on_create_rasterizer);
+
+  FXL_CHECK(_shell);
+}
+
+- (void)setupChannels {
   _localizationChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/localization"
       binaryMessenger:self
@@ -199,8 +229,6 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [_textInputPlugin.get() handleMethodCall:call result:result];
   }];
-
-  [self setupNotificationCenterObservers];
 }
 
 - (void)setupNotificationCenterObservers {
@@ -269,47 +297,13 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 - (void)setInitialRoute:(NSString*)route {
   [_navigationChannel.get() invokeMethod:@"setInitialRoute" arguments:route];
 }
-#pragma mark - Initializing the engine
-
-- (void)alertView:(UIAlertView*)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
-  exit(0);
-}
-
-- (void)connectToEngineAndLoad {
-  if (_connected)
-    return;
-  _connected = YES;
-
-  TRACE_EVENT0("flutter", "connectToEngineAndLoad");
-
-  // We ask the VM to check what it supports.
-  const enum VMType type = Dart_IsPrecompiledRuntime() ? VMTypePrecompilation : VMTypeInterpreter;
-
-  [_dartProject launchInEngine:&_platformView->engine()
-                embedderVMType:type
-                        result:^(BOOL success, NSString* message) {
-                          if (!success) {
-                            UIAlertView* alert = [[UIAlertView alloc] initWithTitle:@"Launch Error"
-                                                                            message:message
-                                                                           delegate:self
-                                                                  cancelButtonTitle:@"OK"
-                                                                  otherButtonTitles:nil];
-                            [alert show];
-                            [alert release];
-                          }
-                        }];
-}
 
 #pragma mark - Loading the view
 
 - (void)loadView {
-  FlutterView* view = [[FlutterView alloc] init];
-
-  self.view = view;
+  self.view = _flutterView.get();
   self.view.multipleTouchEnabled = YES;
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-
-  [view release];
 
   // Show the launch screen view again on top of the FlutterView if available.
   // This launch screen view will be removed once the first Flutter frame is rendered.
@@ -330,13 +324,12 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 #pragma mark - Surface creation and teardown updates
 
 - (void)surfaceUpdated:(BOOL)appeared {
-  FXL_CHECK(_platformView != nullptr);
-
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
   if (appeared) {
-    _platformView->NotifyCreated();
+    _shell->GetPlatformView()->NotifyCreated();
+
   } else {
-    _platformView->NotifyDestroyed();
+    _shell->GetPlatformView()->NotifyDestroyed();
   }
 }
 
@@ -344,7 +337,6 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
-  [self connectToEngineAndLoad];
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
   if (_viewportMetrics.physical_width)
@@ -399,8 +391,6 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
   [self surfaceUpdated:NO];
-  // GrContext operations are blocked when the app is in the background.
-  blink::ResourceContext::Freeze();
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
 }
 
@@ -408,7 +398,6 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
-  blink::ResourceContext::Unfreeze();
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
 }
 
@@ -582,13 +571,11 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetrics {
-  blink::Threads::UI()->PostTask(
-      [ weak_platform_view = _platformView->GetWeakPtr(), metrics = _viewportMetrics ] {
-        if (!weak_platform_view) {
-          return;
+  _shell->GetTaskRunners().GetUITaskRunner()->PostTask(
+      [ engine = _shell->GetEngine(), metrics = _viewportMetrics ]() {
+        if (engine) {
+          engine->SetViewportMetrics(std::move(metrics));
         }
-        weak_platform_view->UpdateSurfaceSize();
-        weak_platform_view->engine().SetViewportMetrics(metrics);
       });
 }
 
@@ -878,28 +865,30 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
       (message == nil) ? fxl::MakeRefCounted<blink::PlatformMessage>(channel.UTF8String, response)
                        : fxl::MakeRefCounted<blink::PlatformMessage>(
                              channel.UTF8String, shell::GetVectorFromNSData(message), response);
-  _platformView->DispatchPlatformMessage(platformMessage);
+
+  _shell->GetPlatformView()->DispatchPlatformMessage(platformMessage);
 }
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
   NSAssert(channel, @"The channel must not be null");
-  _platformView->platform_message_router().SetMessageHandler(channel.UTF8String, handler);
+  _shell->GetPlatformView()->platform_message_router().SetMessageHandler(channel.UTF8String,
+                                                                         handler);
 }
 
 #pragma mark - FlutterTextureRegistry
 
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture {
   int64_t textureId = _nextTextureId++;
-  _platformView->RegisterExternalTexture(textureId, texture);
+  _shell->GetPlatformView()->RegisterExternalTexture(textureId, texture);
   return textureId;
 }
 
 - (void)unregisterTexture:(int64_t)textureId {
-  _platformView->UnregisterTexture(textureId);
+  _shell->GetPlatformView()->UnregisterTexture(textureId);
 }
 
 - (void)textureFrameAvailable:(int64_t)textureId {
-  _platformView->MarkTextureFrameAvailable(textureId);
+  _shell->GetPlatformView()->MarkTextureFrameAvailable(textureId);
 }
 @end

@@ -4,190 +4,204 @@
 
 #include "flutter/runtime/runtime_controller.h"
 
+#include "flutter/fml/message_loop.h"
 #include "flutter/glue/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/window.h"
-#include "flutter/runtime/dart_controller.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "lib/tonic/dart_message_handler.h"
 
-using tonic::DartState;
-
 namespace blink {
 
-std::unique_ptr<RuntimeController> RuntimeController::Create(
-    RuntimeDelegate* client) {
-  return std::unique_ptr<RuntimeController>(new RuntimeController(client));
+RuntimeController::RuntimeController(
+    RuntimeDelegate& client,
+    const DartVM* vm,
+    TaskRunners task_runners,
+    fml::WeakPtr<GrContext> resource_context,
+    fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue)
+    : client_(client),
+      root_isolate_(
+          DartIsolate::CreateRootIsolate(vm,
+                                         std::move(task_runners),
+                                         std::make_unique<Window>(this),
+                                         std::move(resource_context),
+                                         std::move(unref_queue))) {
+  if (auto window = GetWindowIfAvailable()) {
+    tonic::DartState::Scope scope(root_isolate_.get());
+    window->DidCreateIsolate();
+    client_.DidCreateMainIsolate();
+    if (!FlushRuntimeStateToIsolate()) {
+      FXL_DLOG(ERROR) << "Could not setup intial isolate state.";
+    }
+  }
+  FXL_DCHECK(Dart_CurrentIsolate() == nullptr);
 }
 
-RuntimeController::RuntimeController(RuntimeDelegate* client)
-    : client_(client) {}
-
-RuntimeController::~RuntimeController() {}
-
-void RuntimeController::CreateDartController(
-    const std::string& script_uri,
-    const uint8_t* isolate_snapshot_data,
-    const uint8_t* isolate_snapshot_instr) {
-  FXL_DCHECK(!dart_controller_);
-
-  dart_controller_.reset(new DartController());
-  dart_controller_->CreateIsolateFor(
-      script_uri, isolate_snapshot_data, isolate_snapshot_instr,
-      std::make_unique<UIDartState>(this, std::make_unique<Window>(this)));
-
-  UIDartState* dart_state = dart_controller_->dart_state();
-  DartState::Scope scope(dart_state);
-  dart_state->window()->DidCreateIsolate();
-  client_->DidCreateMainIsolate(dart_state->isolate());
-
-  Window* window = GetWindow();
-
-  window->UpdateLocale(language_code_, country_code_);
-
-  if (semantics_enabled_)
-    window->UpdateSemanticsEnabled(semantics_enabled_);
+RuntimeController::~RuntimeController() {
+  FXL_DCHECK(Dart_CurrentIsolate() == nullptr);
+  if (root_isolate_) {
+    auto result = root_isolate_->Shutdown();
+    if (!result) {
+      FXL_DLOG(ERROR) << "Could not shutdown the root isolate.";
+    }
+    root_isolate_ = {};
+  }
 }
 
-void RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
-  GetWindow()->UpdateWindowMetrics(metrics);
+bool RuntimeController::FlushRuntimeStateToIsolate() {
+  return SetViewportMetrics(viewport_metrics_) &&
+         SetLocale(language_code_, country_code_) &&
+         SetSemanticsEnabled(semantics_enabled_);
 }
 
-void RuntimeController::SetLocale(const std::string& language_code,
+bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
+  viewport_metrics_ = metrics;
+
+  if (auto window = GetWindowIfAvailable()) {
+    window->UpdateWindowMetrics(metrics);
+    return true;
+  }
+  return false;
+}
+
+bool RuntimeController::SetLocale(const std::string& language_code,
                                   const std::string& country_code) {
-  if (language_code_ == language_code && country_code_ == country_code)
-    return;
-
   language_code_ = language_code;
   country_code_ = country_code;
-  GetWindow()->UpdateLocale(language_code_, country_code_);
-}
 
-void RuntimeController::SetUserSettingsData(const std::string& data) {
-  if (user_settings_data_ == data)
-    return;
-  user_settings_data_ = data;
-  GetWindow()->UpdateUserSettingsData(user_settings_data_);
-}
-
-void RuntimeController::SetSemanticsEnabled(bool enabled) {
-  if (semantics_enabled_ == enabled)
-    return;
-  semantics_enabled_ = enabled;
-  GetWindow()->UpdateSemanticsEnabled(semantics_enabled_);
-}
-
-void RuntimeController::BeginFrame(fxl::TimePoint frame_time) {
-  GetWindow()->BeginFrame(frame_time);
-}
-
-void RuntimeController::NotifyIdle(int64_t deadline) {
-  UIDartState* dart_state = dart_controller_->dart_state();
-  if (!dart_state) {
-    return;
+  if (auto window = GetWindowIfAvailable()) {
+    window->UpdateLocale(language_code_, country_code_);
+    return true;
   }
-  DartState::Scope scope(dart_state);
+
+  return false;
+}
+
+bool RuntimeController::SetUserSettingsData(const std::string& data) {
+  user_settings_data_ = data;
+
+  if (auto window = GetWindowIfAvailable()) {
+    window->UpdateUserSettingsData(user_settings_data_);
+    return true;
+  }
+
+  return false;
+}
+
+bool RuntimeController::SetSemanticsEnabled(bool enabled) {
+  semantics_enabled_ = enabled;
+
+  if (auto window = GetWindowIfAvailable()) {
+    window->UpdateSemanticsEnabled(semantics_enabled_);
+    return true;
+  }
+
+  return false;
+}
+
+bool RuntimeController::BeginFrame(fxl::TimePoint frame_time) {
+  if (auto window = GetWindowIfAvailable()) {
+    window->BeginFrame(frame_time);
+    return true;
+  }
+  return false;
+}
+
+bool RuntimeController::NotifyIdle(int64_t deadline) {
+  if (!root_isolate_) {
+    return false;
+  }
+
+  tonic::DartState::Scope scope(root_isolate_.get());
   Dart_NotifyIdle(deadline);
+  return true;
 }
 
-void RuntimeController::DispatchPlatformMessage(
+bool RuntimeController::DispatchPlatformMessage(
     fxl::RefPtr<PlatformMessage> message) {
-  TRACE_EVENT1("flutter", "RuntimeController::DispatchPlatformMessage", "mode",
-               "basic");
-  GetWindow()->DispatchPlatformMessage(std::move(message));
+  if (auto window = GetWindowIfAvailable()) {
+    TRACE_EVENT1("flutter", "RuntimeController::DispatchPlatformMessage",
+                 "mode", "basic");
+    window->DispatchPlatformMessage(std::move(message));
+    return true;
+  }
+  return false;
 }
 
-void RuntimeController::DispatchPointerDataPacket(
+bool RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
-  TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
-               "mode", "basic");
-  GetWindow()->DispatchPointerDataPacket(packet);
+  if (auto window = GetWindowIfAvailable()) {
+    TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
+                 "mode", "basic");
+    window->DispatchPointerDataPacket(packet);
+    return true;
+  }
+  return false;
 }
 
-void RuntimeController::DispatchSemanticsAction(int32_t id,
+bool RuntimeController::DispatchSemanticsAction(int32_t id,
                                                 SemanticsAction action,
                                                 std::vector<uint8_t> args) {
   TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction", "mode",
                "basic");
-  GetWindow()->DispatchSemanticsAction(id, action, std::move(args));
+  if (auto window = GetWindowIfAvailable()) {
+    window->DispatchSemanticsAction(id, action, std::move(args));
+    return true;
+  }
+  return false;
 }
 
-Window* RuntimeController::GetWindow() {
-  return dart_controller_->dart_state()->window();
+Window* RuntimeController::GetWindowIfAvailable() {
+  return root_isolate_ ? root_isolate_->window() : nullptr;
 }
 
 std::string RuntimeController::DefaultRouteName() {
-  return client_->DefaultRouteName();
+  return client_.DefaultRouteName();
 }
 
 void RuntimeController::ScheduleFrame() {
-  client_->ScheduleFrame();
+  client_.ScheduleFrame();
 }
 
 void RuntimeController::Render(Scene* scene) {
-  client_->Render(scene->takeLayerTree());
+  client_.Render(scene->takeLayerTree());
 }
 
 void RuntimeController::UpdateSemantics(SemanticsUpdate* update) {
-  if (semantics_enabled_)
-    client_->UpdateSemantics(update->takeNodes());
+  if (semantics_enabled_) {
+    client_.UpdateSemantics(update->takeNodes());
+  }
 }
 
 void RuntimeController::HandlePlatformMessage(
     fxl::RefPtr<PlatformMessage> message) {
-  client_->HandlePlatformMessage(std::move(message));
-}
-
-void RuntimeController::DidCreateSecondaryIsolate(Dart_Isolate isolate) {
-  client_->DidCreateSecondaryIsolate(isolate);
-}
-
-void RuntimeController::DidShutdownMainIsolate() {
-  client_->DidShutdownMainIsolate();
+  client_.HandlePlatformMessage(std::move(message));
 }
 
 Dart_Port RuntimeController::GetMainPort() {
-  if (!dart_controller_) {
-    return ILLEGAL_PORT;
-  }
-  if (!dart_controller_->dart_state()) {
-    return ILLEGAL_PORT;
-  }
-  return dart_controller_->dart_state()->main_port();
+  return root_isolate_ ? root_isolate_->main_port() : ILLEGAL_PORT;
 }
 
 std::string RuntimeController::GetIsolateName() {
-  if (!dart_controller_) {
-    return "";
-  }
-  if (!dart_controller_->dart_state()) {
-    return "";
-  }
-  return dart_controller_->dart_state()->debug_name();
+  return root_isolate_ ? root_isolate_->debug_name() : "";
 }
 
 bool RuntimeController::HasLivePorts() {
-  if (!dart_controller_) {
+  if (!root_isolate_) {
     return false;
   }
-  UIDartState* dart_state = dart_controller_->dart_state();
-  if (!dart_state) {
-    return false;
-  }
-  DartState::Scope scope(dart_state);
+  tonic::DartState::Scope scope(root_isolate_.get());
   return Dart_HasLivePorts();
 }
 
 tonic::DartErrorHandleType RuntimeController::GetLastError() {
-  if (!dart_controller_) {
-    return tonic::kNoError;
-  }
-  UIDartState* dart_state = dart_controller_->dart_state();
-  if (!dart_state) {
-    return tonic::kNoError;
-  }
-  return dart_state->message_handler().isolate_last_error();
+  return root_isolate_ ? root_isolate_->message_handler().isolate_last_error()
+                       : tonic::kNoError;
+}
+
+fxl::WeakPtr<DartIsolate> RuntimeController::GetRootIsolate() {
+  return root_isolate_;
 }
 
 }  // namespace blink

@@ -58,8 +58,8 @@ class PLATFORM_EXPORT FontFallbackList : public RefCounted<FontFallbackList> {
     GlyphPageTreeNode* m_pageZero;
   };
 
-  static PassRefPtr<FontFallbackList> create() {
-    return adoptRef(new FontFallbackList());
+  static PassRefPtr<FontFallbackList> create(bool useTestFonts) {
+    return adoptRef(new FontFallbackList(useTestFonts));
   }
 
   ~FontFallbackList() { releaseFontData(); }
@@ -104,7 +104,7 @@ class PLATFORM_EXPORT FontFallbackList : public RefCounted<FontFallbackList> {
   }
 
  private:
-  FontFallbackList();
+  FontFallbackList(bool useTestFonts);
 
   PassRefPtr<FontData> getFontData(const FontDescription&,
                                    int& familyIndex) const;
@@ -125,6 +125,7 @@ class PLATFORM_EXPORT FontFallbackList : public RefCounted<FontFallbackList> {
   unsigned short m_generation;
   mutable unsigned m_pitch : 3;  // Pitch
   mutable bool m_hasLoadingFallback : 1;
+  bool m_useTestFonts = false;
 };
 
 }  // namespace blink

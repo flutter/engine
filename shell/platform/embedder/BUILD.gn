@@ -4,10 +4,14 @@
 
 import("$flutter_root/testing/testing.gni")
 
-source_set("embedder") {
+static_library("embedder") {
+  complete_static_lib = true
+
   sources = [
     "embedder.cc",
     "embedder.h",
+    "embedder_engine.cc",
+    "embedder_engine.h",
     "embedder_include.c",
     "platform_view_embedder.cc",
     "platform_view_embedder.h",

@@ -7,7 +7,6 @@
 #include <string>
 #include <utility>
 
-#include "flutter/common/threads.h"
 #include "flutter/glue/trace_event.h"
 #include "flutter/shell/common/picture_serializer.h"
 #include "flutter/shell/common/platform_view.h"
@@ -16,24 +15,22 @@
 
 namespace shell {
 
-GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info)
-    : compositor_context_(std::move(info)), weak_factory_(this) {}
+GPURasterizer::GPURasterizer(blink::TaskRunners task_runners,
+                             std::unique_ptr<flow::ProcessInfo> info)
+    : Rasterizer(std::move(task_runners)),
+      compositor_context_(std::move(info)) {}
 
 GPURasterizer::~GPURasterizer() = default;
 
-fml::WeakPtr<Rasterizer> GPURasterizer::GetWeakRasterizerPtr() {
-  return weak_factory_.GetWeakPtr();
-}
-
-void GPURasterizer::Setup(std::unique_ptr<Surface> surface,
-                          fxl::Closure continuation,
-                          fxl::AutoResetWaitableEvent* setup_completion_event) {
+void GPURasterizer::Setup(std::unique_ptr<Surface> surface) {
   surface_ = std::move(surface);
   compositor_context_.OnGrContextCreated();
+}
 
-  continuation();
-
-  setup_completion_event->Signal();
+void GPURasterizer::Teardown() {
+  compositor_context_.OnGrContextDestroyed();
+  surface_.reset();
+  last_layer_tree_.reset();
 }
 
 void GPURasterizer::Clear(SkColor color, const SkISize& size) {
@@ -56,16 +53,6 @@ void GPURasterizer::Clear(SkColor color, const SkISize& size) {
   canvas->clear(color);
 
   frame->Submit();
-}
-
-void GPURasterizer::Teardown(
-    fxl::AutoResetWaitableEvent* teardown_completion_event) {
-  compositor_context_.OnGrContextDestroyed();
-  if (surface_) {
-    surface_.reset();
-  }
-  last_layer_tree_.reset();
-  teardown_completion_event->Signal();
 }
 
 flow::LayerTree* GPURasterizer::GetLastLayerTree() {
@@ -94,12 +81,12 @@ void GPURasterizer::Draw(
   // between successive tries.
   switch (pipeline->Consume(consumer)) {
     case flutter::PipelineConsumeResult::MoreAvailable: {
-      auto weak_this = weak_factory_.GetWeakPtr();
-      blink::Threads::Gpu()->PostTask([weak_this, pipeline]() {
-        if (weak_this) {
-          weak_this->Draw(pipeline);
-        }
-      });
+      task_runners_.GetGPUTaskRunner()->PostTask(
+          [ weak_this = weak_factory_.GetWeakPtr(), pipeline ]() {
+            if (weak_this) {
+              weak_this->Draw(pipeline);
+            }
+          });
       break;
     }
     default:
@@ -153,16 +140,13 @@ void GPURasterizer::AddNextFrameCallback(fxl::Closure nextFrameCallback) {
 
 void GPURasterizer::NotifyNextFrameOnce() {
   if (nextFrameCallback_) {
-    blink::Threads::Platform()->PostTask([callback = nextFrameCallback_] {
-      TRACE_EVENT0("flutter", "GPURasterizer::NotifyNextFrameOnce");
-      callback();
-    });
+    task_runners_.GetPlatformTaskRunner()->PostTask(
+        [callback = nextFrameCallback_] {
+          TRACE_EVENT0("flutter", "GPURasterizer::NotifyNextFrameOnce");
+          callback();
+        });
     nextFrameCallback_ = nullptr;
   }
-}
-
-void GPURasterizer::SetTextureRegistry(flow::TextureRegistry* textureRegistry) {
-  compositor_context_.SetTextureRegistry(textureRegistry);
 }
 
 }  // namespace shell

@@ -15,8 +15,8 @@
 
 namespace shell {
 
-IOSSurfaceSoftware::IOSSurfaceSoftware(PlatformView::SurfaceConfig surface_config, CALayer* layer)
-    : IOSSurface(surface_config, layer) {
+IOSSurfaceSoftware::IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer)
+    : IOSSurface(std::move(layer)) {
   UpdateStorageSizeIfNecessary();
 }
 

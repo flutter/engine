@@ -6,7 +6,7 @@
 #define FLUTTER_FLOW_TEXTURE_H_
 
 #include <map>
-#include "flutter/common/threads.h"
+
 #include "lib/fxl/synchronization/waitable_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 

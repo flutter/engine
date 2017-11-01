@@ -10,14 +10,16 @@
 namespace shell {
 
 bool InitForTesting(const fxl::CommandLine& command_line) {
-  TestRunner::TestDescriptor test;
-  test.packages = command_line.GetOptionValueWithDefault(
+  RunConfiguration config;
+  config.packages_path = command_line.GetOptionValueWithDefault(
       FlagForSwitch(Switch::Packages), "");
   auto args = command_line.positional_args();
-  if (args.empty())
+  if (args.empty()) {
+    FXL_LOG(INFO) << "Main dart file path not specified.";
     return false;
-  test.path = args[0];
-  TestRunner::Shared().Run(test);
+  }
+  config.main_path = args[0];
+  TestRunner::Shared().Run(std::move(config));
   return true;
 }
 

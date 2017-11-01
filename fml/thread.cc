@@ -22,7 +22,7 @@ namespace fml {
 
 Thread::Thread(const std::string& name) : joined_(false) {
   fxl::AutoResetWaitableEvent latch;
-  fxl::RefPtr<fxl::TaskRunner> runner;
+  fxl::RefPtr<fml::TaskRunner> runner;
   thread_ = std::make_unique<std::thread>([&latch, &runner, name]() -> void {
     SetCurrentThreadName(name);
     fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -39,7 +39,7 @@ Thread::~Thread() {
   Join();
 }
 
-fxl::RefPtr<fxl::TaskRunner> Thread::GetTaskRunner() const {
+fxl::RefPtr<fml::TaskRunner> Thread::GetTaskRunner() const {
   return task_runner_;
 }
 

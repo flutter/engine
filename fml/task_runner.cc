@@ -18,6 +18,14 @@ TaskRunner::TaskRunner(fxl::RefPtr<MessageLoopImpl> loop)
 
 TaskRunner::~TaskRunner() = default;
 
+void TaskRunner::RunNowOrPostTask(fxl::Closure task) {
+  if (RunsTasksOnCurrentThread()) {
+    task();
+  } else {
+    PostTask(std::move(task));
+  }
+}
+
 void TaskRunner::PostTask(fxl::Closure task) {
   loop_->PostTask(std::move(task), fxl::TimePoint::Now());
 }

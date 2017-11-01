@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_MASK_FILTER_H_
 #define FLUTTER_LIB_UI_PAINTING_MASK_FILTER_H_
 
+#include "flutter/flow/skia_gpu_object.h"
 #include "lib/tonic/dart_wrappable.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 
@@ -23,9 +24,10 @@ class MaskFilter : public fxl::RefCountedThreadSafe<MaskFilter>,
 
  public:
   ~MaskFilter() override;
+
   static fxl::RefPtr<MaskFilter> Create(unsigned style, double sigma);
 
-  const sk_sp<SkMaskFilter>& filter() { return filter_; }
+  sk_sp<SkMaskFilter> filter() { return filter_; }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

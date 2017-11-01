@@ -18,7 +18,7 @@ namespace shell {
 
 class IOSGLContext {
  public:
-  IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* layer);
+  IOSGLContext(fml::scoped_nsobject<CAEAGLLayer> layer);
 
   ~IOSGLContext();
 
@@ -42,9 +42,6 @@ class IOSGLContext {
   fml::scoped_nsobject<EAGLContext> resource_context_;
   GLuint framebuffer_;
   GLuint colorbuffer_;
-  GLuint depthbuffer_;
-  GLuint stencilbuffer_;
-  GLuint depth_stencil_packed_buffer_;
   GLint storage_size_width_;
   GLint storage_size_height_;
   sk_sp<SkColorSpace> color_space_;

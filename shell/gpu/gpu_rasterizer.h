@@ -14,22 +14,18 @@ namespace shell {
 
 class Surface;
 
-class GPURasterizer : public Rasterizer {
+class GPURasterizer final : public Rasterizer {
  public:
-  GPURasterizer(std::unique_ptr<flow::ProcessInfo> info);
+  GPURasterizer(blink::TaskRunners task_runners,
+                std::unique_ptr<flow::ProcessInfo> info);
 
   ~GPURasterizer() override;
 
-  void Setup(std::unique_ptr<Surface> surface,
-             fxl::Closure continuation,
-             fxl::AutoResetWaitableEvent* setup_completion_event) override;
+  void Setup(std::unique_ptr<Surface> surface) override;
+
+  void Teardown() override;
 
   void Clear(SkColor color, const SkISize& size) override;
-
-  void Teardown(
-      fxl::AutoResetWaitableEvent* teardown_completion_event) override;
-
-  fml::WeakPtr<Rasterizer> GetWeakRasterizerPtr() override;
 
   flow::LayerTree* GetLastLayerTree() override;
 
@@ -42,8 +38,6 @@ class GPURasterizer : public Rasterizer {
   // Set a callback to be called once when the next frame is drawn.
   void AddNextFrameCallback(fxl::Closure nextFrameCallback) override;
 
-  void SetTextureRegistry(flow::TextureRegistry* textureRegistry) override;
-
  private:
   std::unique_ptr<Surface> surface_;
   flow::CompositorContext compositor_context_;
@@ -52,7 +46,6 @@ class GPURasterizer : public Rasterizer {
   // next time. NULL if there is no callback or the callback was set back to
   // NULL after being called.
   fxl::Closure nextFrameCallback_;
-  fml::WeakPtrFactory<GPURasterizer> weak_factory_;
 
   void DoDraw(std::unique_ptr<flow::LayerTree> layer_tree);
 

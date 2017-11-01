@@ -8,31 +8,26 @@
 #include <memory>
 #include <string>
 
+#include "flutter/shell/common/shell.h"
+#include "flutter/shell/common/thread_host.h"
 #include "lib/fxl/macros.h"
 #include "lib/fxl/memory/weak_ptr.h"
 
 namespace shell {
 
-class PlatformView;
-
 class TestRunner {
  public:
   static TestRunner& Shared();
 
-  struct TestDescriptor {
-    std::string path;
-    std::string packages;
-  };
-
-  void Run(const TestDescriptor& test);
-
-  PlatformView& platform_view() { return *platform_view_; }
+  void Run(RunConfiguration config);
 
  private:
-  TestRunner();
-  ~TestRunner();
+  ThreadHost thread_host_;
+  std::unique_ptr<Shell> shell_;
 
-  std::shared_ptr<PlatformView> platform_view_;
+  TestRunner();
+
+  ~TestRunner();
 
   FXL_DISALLOW_COPY_AND_ASSIGN(TestRunner);
 };

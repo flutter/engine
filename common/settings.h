@@ -19,6 +19,7 @@ struct Settings {
   uint32_t observatory_port = 0;
   bool ipv6 = false;
   bool start_paused = false;
+  bool trace_skia = false;
   bool trace_startup = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
@@ -26,7 +27,9 @@ struct Settings {
   bool dart_non_checked_mode = false;
   bool enable_software_rendering = false;
   bool using_blink = true;
-  std::string aot_shared_library_path;
+  std::string flx_path;
+  std::string main_dart_file_path;
+  std::string packages_file_path;
   std::string aot_snapshot_path;
   std::string aot_vm_snapshot_data_filename;
   std::string aot_vm_snapshot_instr_filename;
@@ -36,9 +39,8 @@ struct Settings {
   std::string temp_directory_path;
   std::vector<std::string> dart_flags;
   std::string log_tag = "flutter";
-
-  static const Settings& Get();
-  static void Set(const Settings& settings);
+  std::string icu_data_path;
+  std::string bundle_path;
 };
 
 }  // namespace blink

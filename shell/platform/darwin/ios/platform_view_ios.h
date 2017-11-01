@@ -16,23 +16,16 @@
 #include "lib/fxl/functional/closure.h"
 #include "lib/fxl/macros.h"
 
-@class CALayer;
-@class UIView;
-
 namespace shell {
 
 class PlatformViewIOS : public PlatformView {
  public:
-  explicit PlatformViewIOS(CALayer* layer,
+  explicit PlatformViewIOS(PlatformView::Delegate& delegate,
+                           blink::TaskRunners task_runners,
+                           std::unique_ptr<IOSSurface> surface,
                            NSObject<FlutterBinaryMessenger>* binaryMessenger);
 
   ~PlatformViewIOS() override;
-
-  void Attach() override;
-
-  void Attach(fxl::Closure firstFrameCallback);
-
-  void NotifyCreated();
 
   void ToggleAccessibility(UIView* view, bool enabled);
 
@@ -40,24 +33,12 @@ class PlatformViewIOS : public PlatformView {
     return platform_message_router_;
   }
 
-  fml::WeakPtr<PlatformViewIOS> GetWeakPtr();
-
-  void UpdateSurfaceSize();
-
-  VsyncWaiter* GetVsyncWaiter() override;
-
-  bool ResourceContextMakeCurrent() override;
-
   void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message) override;
 
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
   void UpdateSemantics(std::vector<blink::SemanticsNode> update) override;
-
-  void RunFromSource(const std::string& assets_directory,
-                     const std::string& main,
-                     const std::string& packages) override;
 
   NSObject<FlutterBinaryMessenger>* binary_messenger() const {
     return binary_messenger_;
@@ -68,12 +49,13 @@ class PlatformViewIOS : public PlatformView {
   PlatformMessageRouter platform_message_router_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
   fxl::Closure firstFrameCallback_;
-  fml::WeakPtrFactory<PlatformViewIOS> weak_factory_;
   NSObject<FlutterBinaryMessenger>* binary_messenger_;
 
-  void SetupAndLoadFromSource(const std::string& assets_directory,
-                              const std::string& main,
-                              const std::string& packages);
+  // |shell::PlatformView|
+  std::unique_ptr<Surface> CreateRenderingSurface() override;
+
+  // |shell::PlatformView|
+  sk_sp<GrContext> CreateResourceContext() const override;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(PlatformViewIOS);
 };

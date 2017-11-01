@@ -4,8 +4,6 @@
 
 source_set("testing") {
   sources = [
-    "platform_view_test.cc",
-    "platform_view_test.h",
     "test_runner.cc",
     "test_runner.h",
     "testing.cc",
@@ -14,12 +12,11 @@ source_set("testing") {
 
   deps = [
     "$flutter_root/common",
+    "$flutter_root/fml",
     "$flutter_root/shell/common",
     "//garnet/public/lib/fxl",
     "//third_party/skia",
   ]
 
-  public_configs = [
-    "$flutter_root:config",
-  ]
+  public_configs = [ "$flutter_root:config" ]
 }
