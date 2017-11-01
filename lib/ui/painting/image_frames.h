@@ -16,11 +16,10 @@ class DartLibraryNatives;
 namespace blink {
 
 class ImageFrames : public fxl::RefCountedThreadSafe<ImageFrames>,
-                          public tonic::DartWrappable {
+                    public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-
   virtual int frameCount() = 0;
 
   virtual fxl::RefPtr<CanvasImage> getNextFrame() = 0;
@@ -28,15 +27,14 @@ class ImageFrames : public fxl::RefCountedThreadSafe<ImageFrames>,
   void dispose();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
 };
 
 class SingleFrameImageFrames final : public ImageFrames {
   FRIEND_MAKE_REF_COUNTED(SingleFrameImageFrames);
 
  public:
-
-  static fxl::RefPtr<SingleFrameImageFrames> Create(fxl::RefPtr<CanvasImage> frame) {
+  static fxl::RefPtr<SingleFrameImageFrames> Create(
+      fxl::RefPtr<CanvasImage> frame) {
     return fxl::MakeRefCounted<SingleFrameImageFrames>(frame);
   }
 

@@ -70,9 +70,10 @@ void DecodeImageAndInvokeImageCallback(
     sk_sp<SkData> buffer,
     size_t trace_id) {
   sk_sp<SkImage> image = DecodeImage(std::move(buffer), trace_id);
-  Threads::UI()->PostTask(fxl::MakeCopyable([
-    callback = std::move(callback), image, trace_id
-  ]() mutable { InvokeImageCallback(image, std::move(callback), trace_id); }));
+  Threads::UI()->PostTask(fxl::MakeCopyable(
+      [callback = std::move(callback), image, trace_id]() mutable {
+        InvokeImageCallback(image, std::move(callback), trace_id);
+      }));
 }
 
 void DecodeImageFromList(Dart_NativeArguments args) {
@@ -99,20 +100,18 @@ void DecodeImageFromList(Dart_NativeArguments args) {
 
   auto buffer = SkData::MakeWithCopy(list.data(), list.num_elements());
 
-  Threads::IO()->PostTask(fxl::MakeCopyable([
-    callback = std::make_unique<DartPersistentValue>(
-        tonic::DartState::Current(), callback_handle),
-    buffer = std::move(buffer), trace_id
-  ]() mutable {
-    DecodeImageAndInvokeImageCallback(std::move(callback), std::move(buffer),
-                                      trace_id);
-  }));
+  Threads::IO()->PostTask(
+      fxl::MakeCopyable([callback = std::make_unique<DartPersistentValue>(
+                             tonic::DartState::Current(), callback_handle),
+                         buffer = std::move(buffer), trace_id]() mutable {
+        DecodeImageAndInvokeImageCallback(std::move(callback),
+                                          std::move(buffer), trace_id);
+      }));
 }
 
-
 void InvokeImageFramesCallback(sk_sp<SkImage> image,
-                         std::unique_ptr<DartPersistentValue> callback,
-                         size_t trace_id) {
+                               std::unique_ptr<DartPersistentValue> callback,
+                               size_t trace_id) {
   tonic::DartState* dart_state = callback->dart_state().get();
   if (!dart_state) {
     TRACE_FLOW_END("flutter", kDecodeImageFramesTraceTag, trace_id);
@@ -124,7 +123,8 @@ void InvokeImageFramesCallback(sk_sp<SkImage> image,
   } else {
     fxl::RefPtr<CanvasImage> resultImage = CanvasImage::Create();
     resultImage->set_image(std::move(image), -1);
-    fxl::RefPtr<SingleFrameImageFrames> resultImageFrames = SingleFrameImageFrames::Create(resultImage);
+    fxl::RefPtr<SingleFrameImageFrames> resultImageFrames =
+        SingleFrameImageFrames::Create(resultImage);
     DartInvoke(callback->value(), {ToDart(resultImageFrames)});
   }
   TRACE_FLOW_END("flutter", kDecodeImageTraceTag, trace_id);
@@ -135,9 +135,10 @@ void DecodeImageFramesAndInvokeImageCallback(
     sk_sp<SkData> buffer,
     size_t trace_id) {
   sk_sp<SkImage> image = DecodeImage(std::move(buffer), trace_id);
-  Threads::UI()->PostTask(fxl::MakeCopyable([
-    callback = std::move(callback), image, trace_id
-  ]() mutable { InvokeImageFramesCallback(image, std::move(callback), trace_id); }));
+  Threads::UI()->PostTask(fxl::MakeCopyable(
+      [callback = std::move(callback), image, trace_id]() mutable {
+        InvokeImageFramesCallback(image, std::move(callback), trace_id);
+      }));
 }
 
 void DecodeImageFramesFromList(Dart_NativeArguments args) {
@@ -164,14 +165,13 @@ void DecodeImageFramesFromList(Dart_NativeArguments args) {
 
   auto buffer = SkData::MakeWithCopy(list.data(), list.num_elements());
 
-  Threads::IO()->PostTask(fxl::MakeCopyable([
-    callback = std::make_unique<DartPersistentValue>(
-        tonic::DartState::Current(), callback_handle),
-    buffer = std::move(buffer), trace_id
-  ]() mutable {
-    DecodeImageFramesAndInvokeImageCallback(std::move(callback), std::move(buffer),
-                                      trace_id);
-  }));
+  Threads::IO()->PostTask(
+      fxl::MakeCopyable([callback = std::make_unique<DartPersistentValue>(
+                             tonic::DartState::Current(), callback_handle),
+                         buffer = std::move(buffer), trace_id]() mutable {
+        DecodeImageFramesAndInvokeImageCallback(std::move(callback),
+                                                std::move(buffer), trace_id);
+      }));
 }
 
 }  // namespace

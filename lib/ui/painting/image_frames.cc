@@ -15,9 +15,9 @@ namespace blink {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageFrames);
 
-#define FOR_EACH_BINDING(V)   \
-  V(ImageFrames, frameCount)  \
-  V(ImageFrames, getNextFrame)   \
+#define FOR_EACH_BINDING(V)    \
+  V(ImageFrames, frameCount)   \
+  V(ImageFrames, getNextFrame) \
   V(ImageFrames, dispose)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
