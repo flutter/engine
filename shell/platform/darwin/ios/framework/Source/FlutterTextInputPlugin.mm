@@ -192,7 +192,7 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
   NSInteger selectionBase = [state[@"selectionBase"] intValue];
   NSInteger selectionExtent = [state[@"selectionExtent"] intValue];
   NSRange selectedRange = [self validateSelection:NSMakeRange(MIN(selectionBase, selectionExtent),
-                                                              MAX(selectionBase, selectionExtent))
+                                                              ABS(selectionBase - selectionExtent))
                                           forText:self.text];
   NSRange oldSelectedRange = [(FlutterTextRange*)self.selectedTextRange range];
   if (selectedRange.location != oldSelectedRange.location ||
