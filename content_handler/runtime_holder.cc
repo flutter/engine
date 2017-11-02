@@ -302,7 +302,7 @@ std::string RuntimeHolder::DefaultRouteName() {
   return "/";
 }
 
-void RuntimeHolder::ScheduleFrame() {
+void RuntimeHolder::ScheduleFrame(bool regenerate_layer_tree) {
   ASSERT_IS_UI_THREAD;
   if (!frame_scheduled_) {
     frame_scheduled_ = true;
