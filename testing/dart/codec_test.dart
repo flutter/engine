@@ -12,11 +12,21 @@ import 'package:path/path.dart' as path;
 
 void main() {
 
-  test('Do something', () async {
+  test('Animation metadata', () async {
     Uint8List data = await _getSkiaResource('alphabetAnim.gif').readAsBytes();
-    final Completer<ui.Codec> completer = new Completer<ui.Codec>();
+    Completer<ui.Codec> completer = new Completer<ui.Codec>();
     ui.instantiateImageCodec(data, completer.complete);
     ui.Codec codec = await completer.future;
+    expect(codec.framesCount, 13);
+    expect(codec.repetitionCount, 0);
+    codec.dispose();
+
+    data = await _getSkiaResource('test640x479.gif').readAsBytes();
+    completer = new Completer<ui.Codec>();
+    ui.instantiateImageCodec(data, completer.complete);
+    codec = await completer.future;
+    expect(codec.framesCount, 4);
+    expect(codec.repetitionCount, -1);
   });
 }
 

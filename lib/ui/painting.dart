@@ -856,10 +856,6 @@ abstract class FrameInfo extends NativeFieldWrapperClass2 {
 
   // The Image object for this frame.
   Image get image native "FrameInfo_image";
-
-  /// Release the resources used by this object. The object is no longer usable
-  /// after this method is called.
-  void dispose() native "FrameInfo_dispose";
 }
 
 /// A handle to an image codec.
@@ -868,12 +864,19 @@ abstract class Codec extends NativeFieldWrapperClass2 {
   int get framesCount native "Codec_framesCount";
 
   /// Number of times to repeat the animation.
+  ///
+  /// * 0 when the animation should be played once.
+  /// * -1 for infinity repetitions.
   int get repetitionCount native "Codec_repetitionCount";
 
   /// Returns the next animation frame.
   ///
   /// Wraps back to the first frame after returning the last frame.
   FrameInfo getNextFrame() native "Codec_getNextFrame";
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() native "Codec_dispose";
 }
 
 /// Callback signature for [imageCodecFromList].

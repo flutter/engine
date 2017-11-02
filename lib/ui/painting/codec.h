@@ -6,7 +6,7 @@
 #define FLUTTER_LIB_UI_PAINTING_CODEC_H_
 
 #include "lib/tonic/dart_wrappable.h"
-#include "lib/tonic/dart_library_natives.h"
+#include "third_party/skia/include/codec/SkCodec.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -23,19 +23,22 @@ class Codec final : public fxl::RefCountedThreadSafe<Codec>,
   FRIEND_MAKE_REF_COUNTED(Codec);
 
  public:
-  ~Codec() override;
-  static fxl::RefPtr<Codec> Create() {
-    return fxl::MakeRefCounted<Codec>();
+  static fxl::RefPtr<Codec> Create(std::unique_ptr<SkCodec> codec) {
+    return fxl::MakeRefCounted<Codec>(std::move(codec));
   }
 
-  int framesCount() { return 0; }
-  int repetitionCount() { return 0; }
-
-  void dispose() {}
+  int framesCount() { return frameCount_; }
+  int repetitionCount() { return repetitionCount_; }
+  void dispose();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
+
  private:
-  Codec();
+  Codec(std::unique_ptr<SkCodec> codec);
+
+  const std::unique_ptr<SkCodec> codec_;
+  int frameCount_;
+  int repetitionCount_;
 };
 }  // namespace blink
 
