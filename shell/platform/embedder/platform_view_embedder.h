@@ -50,6 +50,9 @@ class PlatformViewEmbedder : public PlatformView, public GPUSurfaceGLDelegate {
                      const std::string& main,
                      const std::string& packages) override;
 
+  // |shell::PlatformView|
+  void SetAssetBundlePath(const std::string& assets_directory) override;
+
  private:
   DispatchTable dispatch_table_;
 

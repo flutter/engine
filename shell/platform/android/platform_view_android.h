@@ -99,6 +99,10 @@ class PlatformViewAndroid : public PlatformView {
                      const std::string& main,
                      const std::string& packages) override;
 
+  void SetAssetBundlePathOnUI(std::string bundle_path);
+
+  virtual void SetAssetBundlePath(const std::string& assets_directory) override;
+
   void RegisterExternalTexture(
       int64_t texture_id,
       const fml::jni::JavaObjectWeakGlobalRef& surface_texture);

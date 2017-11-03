@@ -42,6 +42,7 @@ class PlatformViewMac : public PlatformView, public GPUSurfaceGLDelegate {
   void RunFromSource(const std::string& assets_directory,
                      const std::string& main,
                      const std::string& packages) override;
+  void SetAssetBundlePath(const std::string& assets_directory) override;
 
  private:
   fml::scoped_nsobject<NSOpenGLView> opengl_view_;

@@ -609,6 +609,30 @@ public class FlutterView extends SurfaceView
         }
     }
 
+    private void setAssetBundlePath(final String assetsDirectory) {
+        Runnable runnable = new Runnable() {
+            public void run() {
+                assertAttached();
+                nativeSetAssetBundlePathOnUI(mNativePlatformView, assetsDirectory);
+                synchronized (this) {
+                    notify();
+                }
+            }
+        };
+
+        try {
+            synchronized (runnable) {
+                // Post to the Android UI thread and wait for the response.
+                post(runnable);
+                runnable.wait();
+            }
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Thread got interrupted waiting for " +
+                "setAssetBundlePath to finish", e);
+        }
+    }
+
+
     /**
      * Return the most recent frame as a bitmap.
      *
@@ -645,6 +669,9 @@ public class FlutterView extends SurfaceView
         String bundlePath,
         String main,
         String packages);
+
+    private static native void nativeSetAssetBundlePathOnUI(long nativePlatformViewAndroid,
+        String bundlePath);
 
     private static native void nativeSetViewportMetrics(long nativePlatformViewAndroid,
         float devicePixelRatio,

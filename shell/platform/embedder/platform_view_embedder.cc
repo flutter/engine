@@ -51,4 +51,8 @@ void PlatformViewEmbedder::RunFromSource(const std::string& assets_directory,
   FXL_LOG(INFO) << "Hot reloading is unsupported on this platform.";
 }
 
+void PlatformViewEmbedder::SetAssetBundlePath(const std::string& assets_directory) {
+  FXL_LOG(INFO) << "Set asset bundle path is unsupported on this platform.";
+}
+
 }  // namespace shell
