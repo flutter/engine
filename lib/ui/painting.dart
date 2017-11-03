@@ -861,7 +861,7 @@ abstract class FrameInfo extends NativeFieldWrapperClass2 {
 /// A handle to an image codec.
 abstract class Codec extends NativeFieldWrapperClass2 {
   /// Number of frames in this image.
-  int get framesCount native "Codec_framesCount";
+  int get frameCount native "Codec_frameCount";
 
   /// Number of times to repeat the animation.
   ///

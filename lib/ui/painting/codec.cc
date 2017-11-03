@@ -23,19 +23,19 @@ namespace blink {
 IMPLEMENT_WRAPPERTYPEINFO(ui, Codec);
 
 #define FOR_EACH_BINDING(V) \
-  V(Codec, framesCount)     \
+  V(Codec, frameCount)     \
   V(Codec, repetitionCount) \
   V(Codec, dispose)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
-Codec::Codec(std::unique_ptr<SkCodec> codec) : codec_(std::move(codec)) {
-  frameCount_ = codec_->getFrameCount();
-  repetitionCount_ = codec_->getRepetitionCount();
-}
-
 void Codec::dispose() {
   ClearDartWrapper();
+}
+
+MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec) : codec_(std::move(codec)) {
+  frameCount_ = codec_->getFrameCount();
+  repetitionCount_ = codec_->getRepetitionCount();
 }
 
 namespace {
@@ -67,7 +67,7 @@ void InvokeCodecCallback(std::unique_ptr<SkCodec> codec,
   if (!codec) {
     DartInvoke(callback->value(), {Dart_Null()});
   } else {
-    fxl::RefPtr<Codec> resultCodec = Codec::Create(std::move(codec));
+    fxl::RefPtr<Codec> resultCodec = MultiFrameCodec::Create(std::move(codec));
     DartInvoke(callback->value(), {ToDart(resultCodec)});
   }
   TRACE_FLOW_END("flutter", kInitCodecTraceTag, trace_id);

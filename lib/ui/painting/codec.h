@@ -17,24 +17,33 @@ namespace blink {
 // A handle to an SkCodec object.
 //
 // Doesn't mirror SkCodec's API but provides a simple sequential access API.
-class Codec final : public fxl::RefCountedThreadSafe<Codec>,
+class Codec : public fxl::RefCountedThreadSafe<Codec>,
                     public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(Codec);
 
  public:
-  static fxl::RefPtr<Codec> Create(std::unique_ptr<SkCodec> codec) {
-    return fxl::MakeRefCounted<Codec>(std::move(codec));
+  virtual int frameCount() = 0;
+  virtual int repetitionCount() = 0;
+  void dispose();
+
+  static void RegisterNatives(tonic::DartLibraryNatives* natives);
+};
+
+class MultiFrameCodec : public Codec {
+  FRIEND_MAKE_REF_COUNTED(MultiFrameCodec);
+
+ public:
+  static fxl::RefPtr<MultiFrameCodec> Create(std::unique_ptr<SkCodec> codec) {
+    return fxl::MakeRefCounted<MultiFrameCodec>(std::move(codec));
   }
 
-  int framesCount() { return frameCount_; }
+  int frameCount() { return frameCount_; }
   int repetitionCount() { return repetitionCount_; }
-  void dispose();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  Codec(std::unique_ptr<SkCodec> codec);
+  MultiFrameCodec(std::unique_ptr<SkCodec> codec);
 
   const std::unique_ptr<SkCodec> codec_;
   int frameCount_;

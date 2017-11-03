@@ -17,7 +17,7 @@ void main() {
     Completer<ui.Codec> completer = new Completer<ui.Codec>();
     ui.instantiateImageCodec(data, completer.complete);
     ui.Codec codec = await completer.future;
-    expect(codec.framesCount, 13);
+    expect(codec.frameCount, 13);
     expect(codec.repetitionCount, 0);
     codec.dispose();
 
@@ -25,7 +25,7 @@ void main() {
     completer = new Completer<ui.Codec>();
     ui.instantiateImageCodec(data, completer.complete);
     codec = await completer.future;
-    expect(codec.framesCount, 4);
+    expect(codec.frameCount, 4);
     expect(codec.repetitionCount, -1);
   });
 }
