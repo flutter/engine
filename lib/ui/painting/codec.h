@@ -18,7 +18,7 @@ namespace blink {
 //
 // Doesn't mirror SkCodec's API but provides a simple sequential access API.
 class Codec : public fxl::RefCountedThreadSafe<Codec>,
-                    public tonic::DartWrappable {
+              public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
 
  public:

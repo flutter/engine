@@ -23,7 +23,7 @@ namespace blink {
 IMPLEMENT_WRAPPERTYPEINFO(ui, Codec);
 
 #define FOR_EACH_BINDING(V) \
-  V(Codec, frameCount)     \
+  V(Codec, frameCount)      \
   V(Codec, repetitionCount) \
   V(Codec, dispose)
 
@@ -33,7 +33,8 @@ void Codec::dispose() {
   ClearDartWrapper();
 }
 
-MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec) : codec_(std::move(codec)) {
+MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec)
+    : codec_(std::move(codec)) {
   frameCount_ = codec_->getFrameCount();
   repetitionCount_ = codec_->getRepetitionCount();
 }
