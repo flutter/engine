@@ -210,17 +210,19 @@ void PlatformViewAndroid::SurfaceDestroyed() {
 void PlatformViewAndroid::RunBundleAndSnapshot(std::string bundle_path,
                                                std::string snapshot_override,
                                                std::string entrypoint,
-                                               bool reuse_runtime_controller) {
+                                               bool reuse_runtime_controller,
+                                               Dart_Port* send_port_out) {
   blink::Threads::UI()->PostTask([
     engine = engine_->GetWeakPtr(), bundle_path = std::move(bundle_path),
     snapshot_override = std::move(snapshot_override),
     entrypoint = std::move(entrypoint),
-    reuse_runtime_controller = reuse_runtime_controller
+    reuse_runtime_controller = reuse_runtime_controller,
+    send_port_out = send_port_out
   ] {
     if (engine)
       engine->RunBundleAndSnapshot(
           std::move(bundle_path), std::move(snapshot_override),
-          std::move(entrypoint), reuse_runtime_controller);
+          std::move(entrypoint), reuse_runtime_controller, send_port_out);
   });
 }
 

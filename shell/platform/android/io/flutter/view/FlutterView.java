@@ -568,18 +568,28 @@ public class FlutterView extends SurfaceView
     }
 
     public void runFromBundle(String bundlePath, String snapshotOverride) {
-        runFromBundle(bundlePath, snapshotOverride, "main", false);
+        runFromBundle(bundlePath, snapshotOverride, "main", false, false);
     }
 
     public void runFromBundle(String bundlePath, String snapshotOverride, String entrypoint) {
-        runFromBundle(bundlePath, snapshotOverride, entrypoint, false);
+        runFromBundle(bundlePath, snapshotOverride, entrypoint, false, false);
     }
 
-    public void runFromBundle(String bundlePath, String snapshotOverride, String entrypoint, boolean reuseRuntimeController) {
+    public long runFromBundle(String bundlePath,
+                              String snapshotOverride,
+                              String entrypoint,
+                              boolean reuseRuntimeController,
+                              boolean createPort) {
         assertAttached();
         preRun();
-        nativeRunBundleAndSnapshot(mNativePlatformView, bundlePath, snapshotOverride, entrypoint, reuseRuntimeController);
+        long sendPort = nativeRunBundleAndSnapshot(mNativePlatformView,
+                                                   bundlePath,
+                                                   snapshotOverride,
+                                                   entrypoint,
+                                                   reuseRuntimeController,
+                                                   createPort);
         postRun();
+        return sendPort;
     }
 
     private void runFromSource(final String assetsDirectory,
@@ -635,11 +645,12 @@ public class FlutterView extends SurfaceView
 
     private static native void nativeSurfaceDestroyed(long nativePlatformViewAndroid);
 
-    private static native void nativeRunBundleAndSnapshot(long nativePlatformViewAndroid,
+    private static native long nativeRunBundleAndSnapshot(long nativePlatformViewAndroid,
         String bundlePath,
         String snapshotOverride,
         String entrypoint,
-        boolean reuseRuntimeController);
+        boolean reuseRuntimeController,
+        boolean createPort);
 
     private static native void nativeRunBundleAndSource(long nativePlatformViewAndroid,
         String bundlePath,
