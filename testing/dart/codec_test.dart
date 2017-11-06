@@ -55,19 +55,23 @@ void main() {
     Completer<ui.Codec> completer = new Completer<ui.Codec>();
     expect(ui.instantiateImageCodec(data, completer.complete), null);
     ui.Codec codec = await completer.future;
-    List<String> decodedFrameInfos = [];
+    List<List<int>> decodedFrameInfos = [];
     for (int i = 0; i < 5; i++) {
       Completer<ui.FrameInfo> frameCompleter = new Completer<ui.FrameInfo>();
       codec.getNextFrame(frameCompleter.complete);
       ui.FrameInfo frameInfo = await frameCompleter.future;
-      decodedFrameInfos.add("${frameInfo.durationMillis} ${frameInfo.image}");
+      decodedFrameInfos.add([
+        frameInfo.durationMillis,
+        frameInfo.image.width,
+        frameInfo.image.height,
+      ]);
     }
     expect(decodedFrameInfos, equals([
-      "200 [640\u00D7479]",
-      "200 [640\u00D7479]",
-      "200 [640\u00D7479]",
-      "200 [640\u00D7479]",
-      "200 [640\u00D7479]",
+      [200, 640, 479],
+      [200, 640, 479],
+      [200, 640, 479],
+      [200, 640, 479],
+      [200, 640, 479],
     ]));
   });
 }
