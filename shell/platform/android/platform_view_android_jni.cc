@@ -152,9 +152,9 @@ void RunBundleAndSource(JNIEnv* env,
 }
 
 void SetAssetBundlePathOnUI(JNIEnv* env,
-                        jobject jcaller,
-                        jlong platform_view,
-                        jstring bundlePath) {
+                            jobject jcaller,
+                            jlong platform_view,
+                            jstring bundlePath) {
   return PLATFORM_VIEW->SetAssetBundlePathOnUI(
       fml::jni::JavaStringToString(env, bundlePath));
 }
