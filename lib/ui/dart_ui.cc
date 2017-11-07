@@ -8,6 +8,8 @@
 #include "flutter/lib/ui/compositing/scene_builder.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/painting/canvas.h"
+#include "flutter/lib/ui/painting/codec.h"
+#include "flutter/lib/ui/painting/frame_info.h"
 #include "flutter/lib/ui/painting/gradient.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_decoding.h"
@@ -53,7 +55,9 @@ void DartUI::InitForGlobal() {
     CanvasGradient::RegisterNatives(g_natives);
     CanvasImage::RegisterNatives(g_natives);
     CanvasPath::RegisterNatives(g_natives);
+    Codec::RegisterNatives(g_natives);
     DartRuntimeHooks::RegisterNatives(g_natives);
+    FrameInfo::RegisterNatives(g_natives);
     ImageDecoding::RegisterNatives(g_natives);
     ImageFilter::RegisterNatives(g_natives);
     ImageShader::RegisterNatives(g_natives);

@@ -868,6 +868,55 @@ abstract class Image extends NativeFieldWrapperClass2 {
 /// Callback signature for [decodeImageFromList].
 typedef void ImageDecoderCallback(Image result);
 
+/// Information for a single animation frame.
+///
+/// Obtain a FrameInfo with [Codec.getNextFrame].
+abstract class FrameInfo extends NativeFieldWrapperClass2 {
+  // The duration this frame should be shown.
+  int get durationMillis native "FrameInfo_durationMillis";
+
+  // The Image object for this frame.
+  Image get image native "FrameInfo_image";
+}
+
+/// Callback signature for [Codec.getNextFrame].
+typedef void NextFrameInfoCallback(FrameInfo frameInfo);
+
+/// A handle to an image codec.
+abstract class Codec extends NativeFieldWrapperClass2 {
+  /// Number of frames in this image.
+  int get frameCount native "Codec_frameCount";
+
+  /// Number of times to repeat the animation.
+  ///
+  /// * 0 when the animation should be played once.
+  /// * -1 for infinity repetitions.
+  int get repetitionCount native "Codec_repetitionCount";
+
+  /// Fetches the next animation frame.
+  ///
+  /// Wraps back to the first frame after returning the last frame.
+  ///
+  /// Returns an error message on failure, null on success.
+  String getNextFrame(NextFrameInfoCallback callback) native "Codec_getNextFrame";
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() native "Codec_dispose";
+}
+
+/// Callback signature for [imageCodecFromList].
+///
+/// If parsing the data passed to [imageCodecFromList] failed, the result will
+/// be null.
+typedef void CodecCallback(Codec result);
+
+/// Instatiates a [Codec] object for an image binary data.
+///
+/// Returns an error message if the instantiation has failed, null otherwise.
+String instantiateImageCodec(Uint8List list, CodecCallback callback)
+  native "instantiateImageCodec";
+
 /// Convert an image file from a byte array into an [Image] object.
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback)
     native "decodeImageFromList";

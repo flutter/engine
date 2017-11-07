@@ -1137,6 +1137,10 @@ FILE: ../../../flutter/fml/trace_event.cc
 FILE: ../../../flutter/fml/trace_event.h
 FILE: ../../../flutter/lib/ui/compositing/scene_host.cc
 FILE: ../../../flutter/lib/ui/compositing/scene_host.h
+FILE: ../../../flutter/lib/ui/painting/codec.cc
+FILE: ../../../flutter/lib/ui/painting/codec.h
+FILE: ../../../flutter/lib/ui/painting/frame_info.cc
+FILE: ../../../flutter/lib/ui/painting/frame_info.h
 FILE: ../../../flutter/lib/ui/painting/utils.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
