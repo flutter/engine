@@ -74,11 +74,8 @@ namespace {
 
 // Arguments passed to the Dart VM in all configurations.
 static const char* kDartLanguageArgs[] = {
-    "--enable_mirrors=false",
-    "--background_compilation",
-    "--await_is_keyword",
-    "--causal_async_stacks",
-    "--limit-ints-to-64-bits",
+    "--enable_mirrors=false", "--background_compilation", "--await_is_keyword",
+    "--causal_async_stacks",  "--limit-ints-to-64-bits",
 };
 
 static const char* kDartPrecompilationArgs[] = {
