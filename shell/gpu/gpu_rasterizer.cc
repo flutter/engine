@@ -19,7 +19,9 @@ namespace shell {
 GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info)
     : compositor_context_(std::move(info)), weak_factory_(this) {}
 
-GPURasterizer::~GPURasterizer() = default;
+GPURasterizer::~GPURasterizer() {
+    FXL_LOG(INFO) << "Deleting the rasterizer";
+};
 
 fml::WeakPtr<Rasterizer> GPURasterizer::GetWeakRasterizerPtr() {
   return weak_factory_.GetWeakPtr();
@@ -159,6 +161,10 @@ void GPURasterizer::NotifyNextFrameOnce() {
     });
     nextFrameCallback_ = nullptr;
   }
+}
+
+void GPURasterizer::SetTextureRegistry(flow::TextureRegistry* textureRegistry) {
+  compositor_context_.SetTextureRegistry(std::move(textureRegistry));
 }
 
 }  // namespace shell
