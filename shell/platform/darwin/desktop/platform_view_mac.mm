@@ -165,11 +165,11 @@ void PlatformViewMac::RunFromSource(const std::string& assets_directory,
   delete latch;
 }
 
-void PlatformViewIOS::SetAssetBundlePath(const std::string& assets_directory) {
+void PlatformViewMac::SetAssetBundlePath(const std::string& assets_directory) {
   auto latch = new fxl::ManualResetWaitableEvent();
 
   dispatch_async(dispatch_get_main_queue(), ^{
-    SetAssetBundlePathOnUI(bundle_path);
+    SetAssetBundlePathOnUI(assets_directory);
     latch->Signal();
   });
 
