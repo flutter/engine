@@ -654,7 +654,7 @@ class Rect {
 
   /// Returns a new rectangle which is the bounding box containing this
   /// rectangle and the given rectangle.
-  Rect expand(Rect other) {
+  Rect expandToInclude(Rect other) {
     return new Rect.fromLTRB(
         math.min(left, other.left),
         math.min(top, other.top),
