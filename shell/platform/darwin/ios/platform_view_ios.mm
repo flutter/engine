@@ -70,11 +70,10 @@ void PlatformViewIOS::SetupAndLoadFromSource(const std::string& assets_directory
 }
 
 void PlatformViewIOS::SetAssetBundlePathOnUI(const std::string& assets_directory) {
-  blink::Threads::UI()->PostTask(
-      [ engine = engine().GetWeakPtr(), assets_directory ] {
-        if (engine)
-          engine->SetAssetBundlePath(assets_directory);
-      });
+  blink::Threads::UI()->PostTask([ engine = engine().GetWeakPtr(), assets_directory ] {
+    if (engine)
+      engine->SetAssetBundlePath(assets_directory);
+  });
 }
 
 fml::WeakPtr<PlatformViewIOS> PlatformViewIOS::GetWeakPtr() {
