@@ -13,7 +13,7 @@
 #include "flutter/shell/common/picture_serializer.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell.h"
-#include "lib/ftl/memory/weak_ptr.h"
+#include "lib/fxl/memory/weak_ptr.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/src/utils/SkBase64.h"
 
@@ -122,12 +122,20 @@ void PlatformViewServiceProtocol::RegisterHook(bool running_precompiled_code) {
   // Screenshot.
   Dart_RegisterRootServiceRequestCallback(kScreenshotExtensionName, &Screenshot,
                                           nullptr);
+
+  // SkPicture Screenshot.
+  Dart_RegisterRootServiceRequestCallback(kScreenshotSkpExtensionName,
+                                          &ScreenshotSkp, nullptr);
+
   // The following set of service protocol extensions require debug build
   if (running_precompiled_code) {
     return;
   }
   Dart_RegisterRootServiceRequestCallback(kRunInViewExtensionName, &RunInView,
                                           nullptr);
+  // [benchmark helper] Wait for the UI Thread to idle.
+  Dart_RegisterRootServiceRequestCallback(kFlushUIThreadTasksExtensionName,
+                                          &FlushUIThreadTasks, nullptr);
 }
 
 const char* PlatformViewServiceProtocol::kRunInViewExtensionName =
@@ -202,30 +210,21 @@ bool PlatformViewServiceProtocol::ListViews(const char* method,
                                             intptr_t num_params,
                                             void* user_data,
                                             const char** json_object) {
-  // Ask the Shell for the list of platform views. This will run a task on
-  // the UI thread before returning.
-  Shell& shell = Shell::Shared();
-  std::vector<Shell::PlatformViewInfo> platform_views;
-  shell.WaitForPlatformViewIds(&platform_views);
-
   std::stringstream response;
-
   response << "{\"type\":\"FlutterViewList\",\"views\":[";
   bool prefix_comma = false;
-  for (auto it = platform_views.begin(); it != platform_views.end(); it++) {
-    uintptr_t view_id = it->view_id;
-    int64_t isolate_id = it->isolate_id;
-    const std::string& isolate_name = it->isolate_name;
-    if (!view_id) {
-      continue;
-    }
-    if (prefix_comma) {
-      response << ',';
-    } else {
-      prefix_comma = true;
-    }
-    AppendFlutterView(&response, view_id, isolate_id, isolate_name);
-  }
+  Shell::Shared().IteratePlatformViews(
+      [&response, &prefix_comma](PlatformView* view) -> bool {
+        if (prefix_comma) {
+          response << ',';
+        } else {
+          prefix_comma = true;
+        }
+        AppendFlutterView(&response, reinterpret_cast<uintptr_t>(view),
+                          view->engine().GetUIIsolateMainPort(),
+                          view->engine().GetUIIsolateName());
+        return true;
+      });
   response << "]}";
   // Copy the response.
   *json_object = strdup(response.str().c_str());
@@ -246,9 +245,21 @@ static sk_sp<SkData> EncodeBitmapAsPNG(const SkBitmap& bitmap) {
   }
 
   PngPixelSerializer serializer;
-  sk_sp<SkData> data(serializer.encode(pixmap));
+  sk_sp<SkData> data(serializer.encodeToData(pixmap));
 
   return data;
+}
+
+static fml::WeakPtr<Rasterizer> GetRandomRasterizer() {
+  fml::WeakPtr<Rasterizer> rasterizer;
+  Shell::Shared().IteratePlatformViews(
+      [&rasterizer](PlatformView* view) -> bool {
+        rasterizer = view->rasterizer().GetWeakRasterizerPtr();
+        // We just grab the first rasterizer so there is no need to iterate
+        // further.
+        return false;
+      });
+  return rasterizer;
 }
 
 bool PlatformViewServiceProtocol::Screenshot(const char* method,
@@ -257,7 +268,7 @@ bool PlatformViewServiceProtocol::Screenshot(const char* method,
                                              intptr_t num_params,
                                              void* user_data,
                                              const char** json_object) {
-  ftl::AutoResetWaitableEvent latch;
+  fxl::AutoResetWaitableEvent latch;
   SkBitmap bitmap;
   blink::Threads::Gpu()->PostTask([&latch, &bitmap]() {
     ScreenshotGpuTask(&bitmap);
@@ -284,13 +295,9 @@ bool PlatformViewServiceProtocol::Screenshot(const char* method,
 }
 
 void PlatformViewServiceProtocol::ScreenshotGpuTask(SkBitmap* bitmap) {
-  std::vector<ftl::WeakPtr<Rasterizer>> rasterizers;
-  Shell::Shared().GetRasterizers(&rasterizers);
-  if (rasterizers.size() != 1)
-    return;
+  auto rasterizer = GetRandomRasterizer();
 
-  Rasterizer* rasterizer = rasterizers[0].get();
-  if (rasterizer == nullptr)
+  if (!rasterizer)
     return;
 
   flow::LayerTree* layer_tree = rasterizer->GetLastLayerTree();
@@ -312,6 +319,91 @@ void PlatformViewServiceProtocol::ScreenshotGpuTask(SkBitmap* bitmap) {
   canvas->clear(SK_ColorBLACK);
   layer_tree->Raster(frame);
   canvas->flush();
+}
+
+const char* PlatformViewServiceProtocol::kScreenshotSkpExtensionName =
+    "_flutter.screenshotSkp";
+
+bool PlatformViewServiceProtocol::ScreenshotSkp(const char* method,
+                                                const char** param_keys,
+                                                const char** param_values,
+                                                intptr_t num_params,
+                                                void* user_data,
+                                                const char** json_object) {
+  fxl::AutoResetWaitableEvent latch;
+  sk_sp<SkPicture> picture;
+  blink::Threads::Gpu()->PostTask([&latch, &picture]() {
+    picture = ScreenshotSkpGpuTask();
+    latch.Signal();
+  });
+
+  latch.Wait();
+
+  SkDynamicMemoryWStream stream;
+  PngPixelSerializer serializer;
+  picture->serialize(&stream, &serializer);
+  sk_sp<SkData> skp_data(stream.detachAsData());
+
+  size_t b64_size =
+      SkBase64::Encode(skp_data->data(), skp_data->size(), nullptr);
+  SkAutoTMalloc<char> b64_data(b64_size);
+  SkBase64::Encode(skp_data->data(), skp_data->size(), b64_data.get());
+
+  std::stringstream response;
+  response << "{\"type\":\"ScreenshotSkp\","
+           << "\"skp\":\"" << std::string{b64_data.get(), b64_size} << "\"}";
+  *json_object = strdup(response.str().c_str());
+  return true;
+}
+
+sk_sp<SkPicture> PlatformViewServiceProtocol::ScreenshotSkpGpuTask() {
+  auto rasterizer = GetRandomRasterizer();
+
+  if (!rasterizer)
+    return nullptr;
+
+  flow::LayerTree* layer_tree = rasterizer->GetLastLayerTree();
+  if (layer_tree == nullptr)
+    return nullptr;
+
+  SkPictureRecorder recorder;
+  recorder.beginRecording(SkRect::MakeWH(layer_tree->frame_size().width(),
+                                         layer_tree->frame_size().height()));
+
+  flow::CompositorContext compositor_context(nullptr);
+  flow::CompositorContext::ScopedFrame frame = compositor_context.AcquireFrame(
+      nullptr, recorder.getRecordingCanvas(), false);
+  layer_tree->Raster(frame);
+
+  return recorder.finishRecordingAsPicture();
+}
+
+const char* PlatformViewServiceProtocol::kFlushUIThreadTasksExtensionName =
+    "_flutter.flushUIThreadTasks";
+
+// This API should not be invoked by production code.
+// It can potentially starve the service isolate if the main isolate pauses
+// at a breakpoint or is in an infinite loop.
+//
+// It should be invoked from the VM Service and and blocks it until UI thread
+// tasks are processed.
+bool PlatformViewServiceProtocol::FlushUIThreadTasks(const char* method,
+                                                     const char** param_keys,
+                                                     const char** param_values,
+                                                     intptr_t num_params,
+                                                     void* user_data,
+                                                     const char** json_object) {
+  fxl::AutoResetWaitableEvent latch;
+  blink::Threads::UI()->PostTask([&latch]() {
+    // This task is empty because we just need to synchronize this RPC with the
+    // UI Thread
+    latch.Signal();
+  });
+
+  latch.Wait();
+
+  *json_object = strdup("{\"type\":\"Success\"}");
+  return true;
 }
 
 }  // namespace shell

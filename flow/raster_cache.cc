@@ -4,13 +4,12 @@
 
 #include "flutter/flow/raster_cache.h"
 
-#include <stdlib.h>
-
 #include <vector>
 
 #include "flutter/common/threads.h"
+#include "flutter/flow/paint_utils.h"
 #include "flutter/glue/trace_event.h"
-#include "lib/ftl/logging.h"
+#include "lib/fxl/logging.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -18,136 +17,193 @@
 
 namespace flow {
 
-static const int kRasterThreshold = 3;
+RasterCache::RasterCache(size_t threshold)
+    : threshold_(threshold), checkerboard_images_(false), weak_factory_(this) {}
 
-static bool isWorthRasterizing(SkPicture* picture) {
+RasterCache::~RasterCache() = default;
+
+static bool CanRasterizePicture(SkPicture* picture) {
+  if (picture == nullptr) {
+    return false;
+  }
+
+  const SkRect cull_rect = picture->cullRect();
+
+  if (cull_rect.isEmpty()) {
+    // No point in ever rasterizing an empty picture.
+    return false;
+  }
+
+  if (!cull_rect.isFinite()) {
+    // Cannot attempt to rasterize into an infinitely large surface.
+    return false;
+  }
+
+  return true;
+}
+
+static bool IsPictureWorthRasterizing(SkPicture* picture,
+                                      bool will_change,
+                                      bool is_complex) {
+  if (will_change) {
+    // If the picture is going to change in the future, there is no point in
+    // doing to extra work to rasterize.
+    return false;
+  }
+
+  if (!CanRasterizePicture(picture)) {
+    // No point in deciding whether the picture is worth rasterizing if it
+    // cannot be rasterized at all.
+    return false;
+  }
+
+  if (is_complex) {
+    // The caller seems to have extra information about the picture and thinks
+    // the picture is always worth rasterizing.
+    return true;
+  }
+
   // TODO(abarth): We should find a better heuristic here that lets us avoid
   // wasting memory on trivial layers that are easy to re-rasterize every frame.
   return picture->approximateOpCount() > 10;
 }
 
-static sk_sp<SkShader> CreateCheckerboardShader(SkColor c1,
-                                                SkColor c2,
-                                                int size) {
-  SkBitmap bm;
-  bm.allocN32Pixels(2 * size, 2 * size);
-  bm.eraseColor(c1);
-  bm.eraseArea(SkIRect::MakeLTRB(0, 0, size, size), c2);
-  bm.eraseArea(SkIRect::MakeLTRB(size, size, 2 * size, 2 * size), c2);
-  return SkShader::MakeBitmapShader(bm, SkShader::kRepeat_TileMode,
-                                    SkShader::kRepeat_TileMode);
-}
+RasterCacheResult RasterizePicture(SkPicture* picture,
+                                   GrContext* context,
+                                   const MatrixDecomposition& matrix,
+                                   SkColorSpace* dst_color_space,
+#if defined(OS_FUCHSIA)
+                                   scenic::Metrics* metrics,
+#endif
+                                   bool checkerboard) {
+  TRACE_EVENT0("flutter", "RasterCachePopulate");
 
-static void DrawCheckerboard(SkCanvas* canvas,
-                             SkColor c1,
-                             SkColor c2,
-                             int size) {
-  SkPaint paint;
-  paint.setShader(CreateCheckerboardShader(c1, c2, size));
-  canvas->drawPaint(paint);
-}
+  const SkVector3& scale = matrix.scale();
 
-static void DrawCheckerboard(SkCanvas* canvas, const SkRect& rect) {
-  // Draw a checkerboard
-  canvas->save();
-  canvas->clipRect(rect);
+  const SkRect logical_rect = picture->cullRect();
 
-  auto checkerboard_color =
-      SkColorSetARGBInline(64, rand() % 256, rand() % 256, rand() % 256);
+#if defined(OS_FUCHSIA)
+  float metrics_scale_x = metrics->scale_x;
+  float metrics_scale_y = metrics->scale_y;
+#else
+  float metrics_scale_x = 1.f;
+  float metrics_scale_y = 1.f;
+#endif
 
-  DrawCheckerboard(canvas, checkerboard_color, 0x00000000, 12);
-  canvas->restore();
+  const SkRect physical_rect = SkRect::MakeWH(
+      std::fabs(logical_rect.width() * metrics_scale_x * scale.x()),
+      std::fabs(logical_rect.height() * metrics_scale_y * scale.y()));
 
-  // Stroke the drawn area
-  SkPaint debugPaint;
-  debugPaint.setStrokeWidth(8);
-  debugPaint.setColor(SkColorSetA(checkerboard_color, 255));
-  debugPaint.setStyle(SkPaint::kStroke_Style);
-  canvas->drawRect(rect, debugPaint);
-}
+  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
+      std::ceil(physical_rect.width()),   // physical width
+      std::ceil(physical_rect.height()),  // physical height
+      sk_ref_sp(dst_color_space)          // colorspace
+  );
 
-RasterCache::RasterCache() : checkerboard_images_(false), weak_factory_(this) {}
+  sk_sp<SkSurface> surface =
+      context
+          ? SkSurface::MakeRenderTarget(context, SkBudgeted::kYes, image_info)
+          : SkSurface::MakeRaster(image_info);
 
-RasterCache::~RasterCache() {}
-
-RasterCache::Entry::Entry() {
-  physical_size.setEmpty();
-}
-
-RasterCache::Entry::~Entry() {}
-
-sk_sp<SkImage> RasterCache::GetPrerolledImage(GrContext* context,
-                                              SkPicture* picture,
-                                              const SkMatrix& ctm,
-                                              bool is_complex,
-                                              bool will_change) {
-  SkScalar scaleX = ctm.getScaleX();
-  SkScalar scaleY = ctm.getScaleY();
-
-  SkRect rect = picture->cullRect();
-
-  SkISize physical_size =
-      SkISize::Make(rect.width() * scaleX, rect.height() * scaleY);
-
-  if (physical_size.isEmpty())
-    return nullptr;
-
-  Entry& entry = cache_[picture->uniqueID()];
-
-  const bool size_matched = entry.physical_size == physical_size;
-
-  entry.used_this_frame = true;
-  entry.physical_size = physical_size;
-
-  if (!size_matched) {
-    entry.access_count = 1;
-    entry.image = nullptr;
-    return nullptr;
+  if (!surface) {
+    return {};
   }
 
-  entry.access_count++;
+  SkCanvas* canvas = surface->getCanvas();
 
-  if (entry.access_count >= kRasterThreshold) {
-    // Saturate at the threshhold.
-    entry.access_count = kRasterThreshold;
+  canvas->clear(SK_ColorTRANSPARENT);
+  canvas->scale(std::abs(scale.x() * metrics_scale_x),
+                std::abs(scale.y() * metrics_scale_y));
+  canvas->translate(-logical_rect.left(), -logical_rect.top());
+  canvas->drawPicture(picture);
 
-    if (!entry.image && !will_change &&
-        (is_complex || isWorthRasterizing(picture))) {
-      TRACE_EVENT2("flutter", "Rasterize picture layer", "width",
-                   std::to_string(physical_size.width()).c_str(), "height",
-                   std::to_string(physical_size.height()).c_str());
-      SkImageInfo info = SkImageInfo::MakeN32Premul(physical_size);
-      sk_sp<SkSurface> surface =
-          SkSurface::MakeRenderTarget(context, SkBudgeted::kYes, info);
-      if (surface) {
-        SkCanvas* canvas = surface->getCanvas();
-        canvas->clear(SK_ColorTRANSPARENT);
-        canvas->scale(scaleX, scaleY);
-        canvas->translate(-rect.left(), -rect.top());
-        canvas->drawPicture(picture);
-        if (checkerboard_images_) {
-          DrawCheckerboard(canvas, rect);
-        }
-        entry.image = surface->makeImageSnapshot();
-      }
-    }
+  if (checkerboard) {
+    DrawCheckerboard(canvas, logical_rect);
+  }
+
+  return {
+      surface->makeImageSnapshot(),  // image
+      physical_rect,                 // source rect
+      logical_rect                   // destination rect
+  };
+}
+
+static inline size_t ClampSize(size_t value, size_t min, size_t max) {
+  if (value > max) {
+    return max;
+  }
+
+  if (value < min) {
+    return min;
+  }
+
+  return value;
+}
+
+RasterCacheResult RasterCache::GetPrerolledImage(
+    GrContext* context,
+    SkPicture* picture,
+    const SkMatrix& transformation_matrix,
+    SkColorSpace* dst_color_space,
+#if defined(OS_FUCHSIA)
+    scenic::Metrics* metrics,
+#endif
+    bool is_complex,
+    bool will_change) {
+  if (!IsPictureWorthRasterizing(picture, will_change, is_complex)) {
+    // We only deal with pictures that are worthy of rasterization.
+    return {};
+  }
+
+  // Decompose the matrix (once) for all subsequent operations. We want to make
+  // sure to avoid volumetric distortions while accounting for scaling.
+  const MatrixDecomposition matrix(transformation_matrix);
+
+  if (!matrix.IsValid()) {
+    // The matrix was singular. No point in going further.
+    return {};
+  }
+
+  RasterCacheKey cache_key(*picture,
+#if defined(OS_FUCHSIA)
+                           metrics->scale_x, metrics->scale_y,
+#endif
+                           matrix);
+
+  Entry& entry = cache_[cache_key];
+  entry.access_count = ClampSize(entry.access_count + 1, 0, threshold_);
+  entry.used_this_frame = true;
+
+  if (entry.access_count < threshold_ || threshold_ == 0) {
+    // Frame threshold has not yet been reached.
+    return {};
+  }
+
+  if (!entry.image.is_valid()) {
+    entry.image = RasterizePicture(picture, context, matrix, dst_color_space,
+#if defined(OS_FUCHSIA)
+                                   metrics,
+#endif
+                                   checkerboard_images_);
   }
 
   return entry.image;
 }
 
 void RasterCache::SweepAfterFrame() {
-  std::vector<Cache::iterator> dead;
+  std::vector<RasterCacheKey::Map<Entry>::iterator> dead;
 
   for (auto it = cache_.begin(); it != cache_.end(); ++it) {
     Entry& entry = it->second;
-    if (!entry.used_this_frame)
+    if (!entry.used_this_frame) {
       dead.push_back(it);
+    }
     entry.used_this_frame = false;
   }
 
-  for (auto it : dead)
+  for (auto it : dead) {
     cache_.erase(it);
+  }
 }
 
 void RasterCache::Clear() {

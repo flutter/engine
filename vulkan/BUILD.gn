@@ -58,10 +58,14 @@ source_set("vulkan") {
   }
 
   deps = [
-    "//lib/ftl",
+    "//garnet/public/lib/fxl",
     "//third_party/skia",
     "//third_party/skia:gpu",
   ]
 
-  public_configs = [ ":vulkan_config", "//third_party/skia:skia_private" ]
+  public_configs = [
+    ":vulkan_config",
+    "$flutter_root:config",
+    "//third_party/skia:skia_private",
+  ]
 }

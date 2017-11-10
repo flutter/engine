@@ -8,12 +8,18 @@ source_set("ui") {
     "compositing/scene.h",
     "compositing/scene_builder.cc",
     "compositing/scene_builder.h",
+    "compositing/scene_host.cc",
+    "compositing/scene_host.h",
     "dart_runtime_hooks.cc",
     "dart_runtime_hooks.h",
     "dart_ui.cc",
     "dart_ui.h",
     "painting/canvas.cc",
     "painting/canvas.h",
+    "painting/codec.cc",
+    "painting/codec.h",
+    "painting/frame_info.cc",
+    "painting/frame_info.h",
     "painting/gradient.cc",
     "painting/gradient.h",
     "painting/image.cc",
@@ -42,6 +48,7 @@ source_set("ui") {
     "painting/rrect.h",
     "painting/shader.cc",
     "painting/shader.h",
+    "painting/utils.cc",
     "painting/utils.h",
     "painting/vertices.cc",
     "painting/vertices.h",
@@ -51,10 +58,18 @@ source_set("ui") {
     "semantics/semantics_update.h",
     "semantics/semantics_update_builder.cc",
     "semantics/semantics_update_builder.h",
+    "text/font_collection.cc",
+    "text/font_collection.h",
     "text/paragraph.cc",
     "text/paragraph.h",
     "text/paragraph_builder.cc",
     "text/paragraph_builder.h",
+    "text/paragraph_impl.cc",
+    "text/paragraph_impl.h",
+    "text/paragraph_impl_blink.cc",
+    "text/paragraph_impl_blink.h",
+    "text/paragraph_impl_txt.cc",
+    "text/paragraph_impl_txt.h",
     "text/text_box.cc",
     "text/text_box.h",
     "ui_dart_state.cc",
@@ -74,14 +89,25 @@ source_set("ui") {
     "window/window.h",
   ]
 
+  public_configs = [
+    "$flutter_root:config",
+  ]
+
   deps = [
-    "//dart/runtime/bin:embedded_dart_io",
-    "//flutter/common",
-    "//flutter/flow",
-    "//flutter/glue",
-    "//flutter/sky/engine",
-    "//lib/tonic",
+    "//third_party/dart/runtime/bin:embedded_dart_io",
+    "$flutter_root/assets",
+    "$flutter_root/common",
+    "$flutter_root/flow",
+    "$flutter_root/glue",
+    "$flutter_root/runtime:test_font",
+    "$flutter_root/sky/engine",
+    "$flutter_root/third_party/txt",
+    "//third_party/rapidjson",
     "//third_party/skia",
     "//third_party/skia:gpu",
+    "//topaz/lib/tonic",
   ]
+  if (is_fuchsia) {
+    deps += [ "//topaz/public/dart-pkg/zircon" ]
+  }
 }

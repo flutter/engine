@@ -20,19 +20,16 @@ class ShaderMaskLayer : public ContainerLayer {
 
   void set_mask_rect(const SkRect& mask_rect) { mask_rect_ = mask_rect; }
 
-  void set_blend_mode(SkBlendMode blend_mode) {
-    blend_mode_ = blend_mode;
-  }
+  void set_blend_mode(SkBlendMode blend_mode) { blend_mode_ = blend_mode; }
 
- protected:
-  void Paint(PaintContext& context) override;
+  void Paint(PaintContext& context) const override;
 
  private:
   sk_sp<SkShader> shader_;
   SkRect mask_rect_;
   SkBlendMode blend_mode_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(ShaderMaskLayer);
+  FXL_DISALLOW_COPY_AND_ASSIGN(ShaderMaskLayer);
 };
 
 }  // namespace flow

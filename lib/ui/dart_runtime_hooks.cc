@@ -8,12 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dart/runtime/bin/embedded_dart_io.h"
-#include "dart/runtime/include/dart_api.h"
-#include "dart/runtime/include/dart_tools_api.h"
 #include "flutter/common/settings.h"
-#include "lib/ftl/build_config.h"
-#include "lib/ftl/logging.h"
+#include "lib/fxl/build_config.h"
+#include "lib/fxl/logging.h"
 #include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_library_natives.h"
 #include "lib/tonic/dart_microtask_queue.h"
@@ -22,14 +19,15 @@
 #include "lib/tonic/logging/dart_invoke.h"
 #include "lib/tonic/scopes/dart_api_scope.h"
 #include "lib/tonic/scopes/dart_isolate_scope.h"
+#include "third_party/dart/runtime/bin/embedded_dart_io.h"
+#include "third_party/dart/runtime/include/dart_api.h"
+#include "third_party/dart/runtime/include/dart_tools_api.h"
 
 #if defined(OS_ANDROID)
 #include <android/log.h>
-#endif
-
-#if __APPLE__
+#elif defined(OS_IOS)
 extern "C" {
-// Cannot import the syslog.h header directly because of macro collision
+// Cannot import the syslog.h header directly because of macro collision.
 extern void syslog(int, const char*, ...);
 }
 #endif
@@ -102,7 +100,7 @@ static void InitDartAsync(Dart_Handle builtin_library,
     schedule_microtask =
         GetClosure(builtin_library, "_getScheduleMicrotaskClosure");
   } else {
-    FTL_CHECK(isolate_type == DartRuntimeHooks::SecondaryIsolate);
+    FXL_CHECK(isolate_type == DartRuntimeHooks::SecondaryIsolate);
     Dart_Handle isolate_lib = Dart_LookupLibrary(ToDart("dart:isolate"));
     Dart_Handle method_name =
         Dart_NewStringFromCString("_getIsolateScheduleImmediateClosure");
@@ -146,18 +144,22 @@ void Logger_PrintString(Dart_NativeArguments args) {
   if (Dart_IsError(result)) {
     Dart_PropagateError(result);
   } else {
-    // Uses fwrite to support printing NUL bytes.
+#if defined(OS_ANDROID)
+    // Write to the logcat on Android.
+    const char* tag = Settings::Get().log_tag.c_str();
+    __android_log_print(ANDROID_LOG_INFO, tag, "%.*s", (int)length, chars);
+#elif defined(OS_IOS)
+    // Write to syslog on iOS.
+    //
+    // TODO(cbracken): replace with dedicated communication channel and bypass
+    // iOS logging APIs altogether.
+    syslog(1 /* LOG_ALERT */, "%.*s", (int)length, chars);
+#else
+    // On Fuchsia and in flutter_tester (on both macOS and Linux), write
+    // directly to stdout.
     fwrite(chars, 1, length, stdout);
     fputs("\n", stdout);
     fflush(stdout);
-#if defined(OS_ANDROID)
-    // In addition to writing to the stdout, write to the logcat so that the
-    // message is discoverable when running on an unrooted device.
-    const char* tag = Settings::Get().log_tag.c_str();
-    __android_log_print(ANDROID_LOG_INFO, tag, "%.*s", (int)length,
-                        chars);
-#elif __APPLE__
-    syslog(1 /* LOG_ALERT */, "%.*s", (int)length, chars);
 #endif
   }
   if (dart::bin::ShouldCaptureStdout()) {

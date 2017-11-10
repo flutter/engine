@@ -5,11 +5,12 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_VULKAN_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_VULKAN_H_
 
+#include <jni.h>
 #include <memory>
 #include "flutter/shell/platform/android/android_native_window.h"
 #include "flutter/shell/platform/android/android_surface.h"
 #include "flutter/vulkan/vulkan_window.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 
 namespace shell {
 
@@ -31,14 +32,14 @@ class AndroidSurfaceVulkan : public AndroidSurface {
 
   bool ResourceContextMakeCurrent() override;
 
-  bool SetNativeWindow(ftl::RefPtr<AndroidNativeWindow> window,
+  bool SetNativeWindow(fxl::RefPtr<AndroidNativeWindow> window,
                        PlatformView::SurfaceConfig config) override;
 
  private:
-  ftl::RefPtr<vulkan::VulkanProcTable> proc_table_;
-  ftl::RefPtr<AndroidNativeWindow> native_window_;
+  fxl::RefPtr<vulkan::VulkanProcTable> proc_table_;
+  fxl::RefPtr<AndroidNativeWindow> native_window_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceVulkan);
+  FXL_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceVulkan);
 };
 
 }  // namespace shell

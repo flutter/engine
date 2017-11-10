@@ -8,16 +8,20 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
 #include "flutter/shell/platform/android/android_native_window.h"
-#include "lib/ftl/macros.h"
-#include "lib/ftl/memory/ref_counted.h"
-#include "lib/ftl/memory/ref_ptr.h"
+#include "lib/fxl/macros.h"
+#include "lib/fxl/memory/ref_counted.h"
+#include "lib/fxl/memory/ref_ptr.h"
 #include "third_party/skia/include/core/SkSize.h"
 
 namespace shell {
 
-class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
+class AndroidContextGL : public fxl::RefCountedThreadSafe<AndroidContextGL> {
  public:
-  ftl::RefPtr<AndroidEnvironmentGL> Environment() const;
+  bool CreateWindowSurface(fxl::RefPtr<AndroidNativeWindow> window);
+
+  bool CreatePBufferSurface();
+
+  fxl::RefPtr<AndroidEnvironmentGL> Environment() const;
 
   bool IsValid() const;
 
@@ -31,23 +35,18 @@ class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
 
   bool Resize(const SkISize& size);
 
+  bool SupportsSRGB() const;
+
  private:
-  ftl::RefPtr<AndroidEnvironmentGL> environment_;
-  ftl::RefPtr<AndroidNativeWindow> window_;
+  fxl::RefPtr<AndroidEnvironmentGL> environment_;
+  fxl::RefPtr<AndroidNativeWindow> window_;
   EGLConfig config_;
   EGLSurface surface_;
   EGLContext context_;
+  bool srgb_support_;
   bool valid_;
 
-  /// Creates a window surface context tied to the window handle for on-screen
-  /// rendering.
-  AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
-                   ftl::RefPtr<AndroidNativeWindow> window,
-                   PlatformView::SurfaceConfig config,
-                   const AndroidContextGL* share_context = nullptr);
-
-  /// Creates a pbuffer surface context for offscreen rendering.
-  AndroidContextGL(ftl::RefPtr<AndroidEnvironmentGL> env,
+  AndroidContextGL(fxl::RefPtr<AndroidEnvironmentGL> env,
                    PlatformView::SurfaceConfig config,
                    const AndroidContextGL* share_context = nullptr);
 
@@ -55,7 +54,7 @@ class AndroidContextGL : public ftl::RefCountedThreadSafe<AndroidContextGL> {
 
   FRIEND_MAKE_REF_COUNTED(AndroidContextGL);
   FRIEND_REF_COUNTED_THREAD_SAFE(AndroidContextGL);
-  FTL_DISALLOW_COPY_AND_ASSIGN(AndroidContextGL);
+  FXL_DISALLOW_COPY_AND_ASSIGN(AndroidContextGL);
 };
 
 }  // namespace shell

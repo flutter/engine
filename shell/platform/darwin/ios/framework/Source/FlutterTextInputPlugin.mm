@@ -12,11 +12,31 @@ static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
 static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
   if ([inputType isEqualToString:@"TextInputType.text"])
     return UIKeyboardTypeDefault;
+  if ([inputType isEqualToString:@"TextInputType.multiline"])
+    return UIKeyboardTypeDefault;
   if ([inputType isEqualToString:@"TextInputType.number"])
     return UIKeyboardTypeDecimalPad;
   if ([inputType isEqualToString:@"TextInputType.phone"])
     return UIKeyboardTypePhonePad;
+  if ([inputType isEqualToString:@"TextInputType.emailAddress"])
+    return UIKeyboardTypeEmailAddress;
+  if ([inputType isEqualToString:@"TextInputType.url"])
+    return UIKeyboardTypeURL;
   return UIKeyboardTypeDefault;
+}
+
+static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
+  if ([inputType isEqualToString:@"TextInputType.multiline"])
+    return UIReturnKeyDefault;
+  return UIReturnKeyDone;
+}
+
+static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inputType) {
+  if ([inputType isEqualToString:@"TextInputType.text"])
+    return UITextAutocapitalizationTypeSentences;
+  if ([inputType isEqualToString:@"TextInputType.multiline"])
+    return UITextAutocapitalizationTypeSentences;
+  return UITextAutocapitalizationTypeNone;
 }
 
 #pragma mark - FlutterTextPosition
@@ -162,25 +182,42 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
 }
 
 - (void)setTextInputState:(NSDictionary*)state {
-  [self.inputDelegate selectionWillChange:self];
-  [self.inputDelegate textWillChange:self];
-
-  [self.text setString:state[@"text"]];
+  NSString* newText = state[@"text"];
+  BOOL textChanged = ![self.text isEqualToString:newText];
+  if (textChanged) {
+    [self.inputDelegate textWillChange:self];
+    [self.text setString:newText];
+  }
 
   NSInteger selectionBase = [state[@"selectionBase"] intValue];
   NSInteger selectionExtent = [state[@"selectionExtent"] intValue];
-  NSUInteger start = MIN(MAX(0, MIN(selectionBase, selectionExtent)), (NSInteger)self.text.length);
-  NSUInteger end = MIN(MAX(0, MAX(selectionBase, selectionExtent)), (NSInteger)self.text.length);
-  NSRange selectedRange = NSMakeRange(start, end - start);
-  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
-          updateEditingState:NO];
+  NSRange selectedRange = [self clampSelection:NSMakeRange(MIN(selectionBase, selectionExtent),
+                                                           ABS(selectionBase - selectionExtent))
+                                       forText:self.text];
+  NSRange oldSelectedRange = [(FlutterTextRange*)self.selectedTextRange range];
+  if (selectedRange.location != oldSelectedRange.location ||
+      selectedRange.length != oldSelectedRange.length) {
+    [self.inputDelegate selectionWillChange:self];
+    [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
+            updateEditingState:NO];
+    _selectionAffinity = _kTextAffinityDownstream;
+    if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)])
+      _selectionAffinity = _kTextAffinityUpstream;
+    [self.inputDelegate selectionDidChange:self];
+  }
 
-  _selectionAffinity = _kTextAffinityDownstream;
-  if ([state[@"selectionAffinity"] isEqualToString:@(_kTextAffinityUpstream)])
-    _selectionAffinity = _kTextAffinityUpstream;
+  if (textChanged) {
+    [self.inputDelegate textDidChange:self];
 
-  [self.inputDelegate selectionDidChange:self];
-  [self.inputDelegate textDidChange:self];
+    // For consistency with Android behavior, send an update to the framework.
+    [self updateEditingState];
+  }
+}
+
+- (NSRange)clampSelection:(NSRange)range forText:(NSString*)text {
+  int start = MIN(MAX(range.location, 0), text.length);
+  int length = MIN(range.length, text.length - start);
+  return NSMakeRange(start, length);
 }
 
 #pragma mark - UIResponder Overrides
@@ -237,8 +274,10 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
     selectedRange.length -= intersectionRange.length;
   }
 
-  [self.text replaceCharactersInRange:replaceRange withString:text];
-  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
+  [self.text replaceCharactersInRange:[self clampSelection:replaceRange forText:self.text]
+                           withString:text];
+  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:[self clampSelection:selectedRange
+                                                                             forText:self.text]]
           updateEditingState:NO];
 
   [self updateEditingState];
@@ -251,6 +290,8 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
     [_textInputDelegate performAction:FlutterTextInputActionDone withClient:_textInputClient];
     return NO;
   }
+  if (self.returnKeyType == UIReturnKeyDefault && [text isEqualToString:@"\n"])
+    [_textInputDelegate performAction:FlutterTextInputActionNewline withClient:_textInputClient];
   return YES;
 }
 
@@ -276,7 +317,8 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
 
   NSUInteger selectionLocation = markedSelectedRange.location + markedTextRange.location;
   selectedRange = NSMakeRange(selectionLocation, markedSelectedRange.length);
-  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
+  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:[self clampSelection:selectedRange
+                                                                             forText:self.text]]
           updateEditingState:YES];
 }
 
@@ -296,7 +338,7 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
  * text. */
 - (NSRange)rangeForCharacterAtIndex:(NSUInteger)index {
   if (index < self.text.length)
-    [self.text rangeOfComposedCharacterSequenceAtIndex:index];
+    return [self.text rangeOfComposedCharacterSequenceAtIndex:index];
   return NSMakeRange(index, 0);
 }
 
@@ -548,6 +590,13 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
 
 - (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {
   _view.keyboardType = ToUIKeyboardType(configuration[@"inputType"]);
+  _view.returnKeyType = ToUIReturnKeyType(configuration[@"inputType"]);
+  _view.autocapitalizationType = ToUITextAutocapitalizationType(configuration[@"inputType"]);
+  _view.secureTextEntry = [configuration[@"obscureText"] boolValue];
+  NSString* autocorrect = configuration[@"autocorrect"];
+  _view.autocorrectionType = autocorrect && ![autocorrect boolValue]
+                                 ? UITextAutocorrectionTypeNo
+                                 : UITextAutocorrectionTypeDefault;
   [_view setTextInputClient:client];
   [_view reloadInputViews];
 }

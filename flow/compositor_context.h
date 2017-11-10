@@ -11,7 +11,8 @@
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/process_info.h"
 #include "flutter/flow/raster_cache.h"
-#include "lib/ftl/macros.h"
+#include "flutter/flow/texture.h"
+#include "lib/fxl/macros.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
@@ -21,7 +22,7 @@ class CompositorContext {
  public:
   class ScopedFrame {
    public:
-    SkCanvas& canvas() { return *canvas_; }
+    SkCanvas* canvas() { return canvas_; }
 
     CompositorContext& context() const { return context_; }
 
@@ -44,7 +45,7 @@ class CompositorContext {
 
     friend class CompositorContext;
 
-    FTL_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
+    FXL_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
   };
 
   CompositorContext(std::unique_ptr<ProcessInfo> info);
@@ -55,9 +56,13 @@ class CompositorContext {
                            SkCanvas* canvas,
                            bool instrumentation_enabled = true);
 
+  void OnGrContextCreated();
+
   void OnGrContextDestroyed();
 
   RasterCache& raster_cache() { return raster_cache_; }
+
+  TextureRegistry& texture_registry() { return texture_registry_; }
 
   const Counter& frame_count() const { return frame_count_; }
 
@@ -69,6 +74,7 @@ class CompositorContext {
 
  private:
   RasterCache raster_cache_;
+  TextureRegistry texture_registry_;
   std::unique_ptr<ProcessInfo> process_info_;
   Counter frame_count_;
   Stopwatch frame_time_;
@@ -79,7 +85,7 @@ class CompositorContext {
 
   void EndFrame(ScopedFrame& frame, bool enable_instrumentation);
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(CompositorContext);
+  FXL_DISALLOW_COPY_AND_ASSIGN(CompositorContext);
 };
 
 }  // namespace flow

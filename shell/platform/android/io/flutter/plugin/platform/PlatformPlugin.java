@@ -11,13 +11,10 @@ import android.content.ClipDescription;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.net.Uri;
 import android.os.Build;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
-
-import io.flutter.util.PathUtils;
 
 import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -53,9 +50,6 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
             } else if (method.equals("HapticFeedback.vibrate")) {
                 vibrateHapticFeedback();
                 result.success(null);
-            } else if (method.equals("UrlLauncher.launch")) {
-                launchURL((String) arguments);
-                result.success(null);
             } else if (method.equals("SystemChrome.setPreferredOrientations")) {
                 setSystemChromePreferredOrientations((JSONArray) arguments);
                 result.success(null);
@@ -76,10 +70,6 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
             } else if (method.equals("Clipboard.setData")) {
                 setClipboardData((JSONObject) arguments);
                 result.success(null);
-            } else if (method.equals("PathProvider.getTemporaryDirectory")) {
-                result.success(getPathProviderTemporaryDirectory());
-            } else if (method.equals("PathProvider.getApplicationDocumentsDirectory")) {
-                result.success(getPathProviderApplicationDocumentsDirectory());
             } else {
                 result.notImplemented();
             }
@@ -100,35 +90,76 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
         view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
     }
 
-    private void launchURL(String url) {
-        try {
-            Intent launchIntent = new Intent(Intent.ACTION_VIEW);
-            launchIntent.setData(Uri.parse(url));
-            mActivity.startActivity(launchIntent);
-        } catch (java.lang.Exception exception) {
-            // Ignore parsing or ActivityNotFound errors
-        }
-    }
-
     private void setSystemChromePreferredOrientations(JSONArray orientations) throws JSONException {
-        // Currently the Android implementation only supports masks with zero or one
-        // selected device orientations.
-        int androidOrientation;
-        if (orientations.length() == 0) {
-            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
-        } else if (orientations.getString(0).equals("DeviceOrientation.portraitUp")) {
-            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-        } else if (orientations.getString(0).equals("DeviceOrientation.landscapeLeft")) {
-            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-        } else if (orientations.getString(0).equals("DeviceOrientation.portraitDown")) {
-            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-        } else if (orientations.getString(0).equals("DeviceOrientation.landscapeRight")) {
-            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-        } else {
-            return;
+        int requestedOrientation = 0x00;
+        int firstRequestedOrientation = 0x00;
+        for (int index = 0; index < orientations.length(); index += 1) {
+            if (orientations.getString(index).equals("DeviceOrientation.portraitUp")) {
+                requestedOrientation |= 0x01;
+            } else if (orientations.getString(index).equals("DeviceOrientation.landscapeLeft")) {
+                requestedOrientation |= 0x02;
+            } else if (orientations.getString(index).equals("DeviceOrientation.portraitDown")) {
+                requestedOrientation |= 0x04;
+            } else if (orientations.getString(index).equals("DeviceOrientation.landscapeRight")) {
+                requestedOrientation |= 0x08;
+            }
+            if (firstRequestedOrientation == 0x00) {
+                firstRequestedOrientation = requestedOrientation;
+            }
         }
-
-        mActivity.setRequestedOrientation(androidOrientation);
+        switch (requestedOrientation) {
+            case 0x00:
+                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                break;
+            case 0x01:
+                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                break;
+            case 0x02:
+                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                break;
+            case 0x04:
+                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+                break;
+            case 0x05:
+                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT);
+                break;
+            case 0x08:
+                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+                break;
+            case 0x0a:
+                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE);
+                break;
+            case 0x0b:
+                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER);
+                break;
+            case 0x0f:
+                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_USER);
+                break;
+            case 0x03: // portraitUp and landscapeLeft
+            case 0x06: // portraitDown and landscapeLeft
+            case 0x07: // portraitUp, portraitDown, and landscapeLeft
+            case 0x09: // portraitUp and landscapeRight
+            case 0x0c: // portraitDown and landscapeRight
+            case 0x0d: // portraitUp, portraitDown, and landscapeRight
+            case 0x0e: // portraitDown, landscapeLeft, and landscapeRight
+                // Android can't describe these cases, so just default to whatever the first
+                // specified value was.
+                switch (requestedOrientation) {
+                    case 0x01:
+                        mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                        break;
+                    case 0x02:
+                        mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                        break;
+                    case 0x04:
+                        mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+                        break;
+                    case 0x08:
+                        mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+                        break;
+                }
+                break;
+          }
     }
 
     private void setSystemChromeApplicationSwitcherDescription(JSONObject description) throws JSONException {
@@ -210,14 +241,6 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
         ClipboardManager clipboard = (ClipboardManager) mActivity.getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText("text label?", data.getString("text"));
         clipboard.setPrimaryClip(clip);
-    }
-
-    private String getPathProviderTemporaryDirectory() {
-        return mActivity.getCacheDir().getPath();
-    }
-
-    private String getPathProviderApplicationDocumentsDirectory() {
-        return PathUtils.getDataDirectory(mActivity);
     }
 
     @Override

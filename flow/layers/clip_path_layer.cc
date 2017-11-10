@@ -5,40 +5,50 @@
 #include "flutter/flow/layers/clip_path_layer.h"
 
 #if defined(OS_FUCHSIA)
-#include "apps/mozart/lib/skia/type_converters.h"
-#include "apps/mozart/services/composition/nodes.fidl.h"
+
+#include "lib/ui/scenic/fidl_helpers.h"  // nogncheck
+
 #endif  // defined(OS_FUCHSIA)
 
 namespace flow {
 
-ClipPathLayer::ClipPathLayer() {}
+ClipPathLayer::ClipPathLayer() = default;
 
-ClipPathLayer::~ClipPathLayer() {}
+ClipPathLayer::~ClipPathLayer() = default;
 
 void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  PrerollChildren(context, matrix);
-  if (!context->child_paint_bounds.intersect(clip_path_.getBounds()))
-    context->child_paint_bounds.setEmpty();
-  set_paint_bounds(context->child_paint_bounds);
+  SkRect child_paint_bounds = SkRect::MakeEmpty();
+  PrerollChildren(context, matrix, &child_paint_bounds);
+
+  if (child_paint_bounds.intersect(clip_path_.getBounds())) {
+    set_paint_bounds(child_paint_bounds);
+  }
 }
 
 #if defined(OS_FUCHSIA)
 
-void ClipPathLayer::UpdateScene(SceneUpdateContext& context,
-                                mozart::Node* container) {
-  auto node = mozart::Node::New();
-  node->content_clip = mozart::RectF::From(clip_path_.getBounds());
-  UpdateSceneChildrenInsideNode(context, container, std::move(node));
+void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
+  FXL_DCHECK(needs_system_composite());
+
+  // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
+  //               Treating the shape as a rectangle for now.
+  auto bounds = clip_path_.getBounds();
+  scenic_lib::Rectangle shape(context.session(),  // session
+                              bounds.width(),     //  width
+                              bounds.height()     //  height
+  );
+
+  SceneUpdateContext::Clip clip(context, shape, bounds);
+  UpdateSceneChildren(context);
 }
 
 #endif  // defined(OS_FUCHSIA)
 
-void ClipPathLayer::Paint(PaintContext& context) {
+void ClipPathLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipPathLayer::Paint");
-  FTL_DCHECK(!needs_system_composite());
+  FXL_DCHECK(needs_painting());
 
-  SkAutoCanvasRestore save(&context.canvas, false);
-  context.canvas.saveLayer(&paint_bounds(), nullptr);
+  Layer::AutoSaveLayer save(context, paint_bounds(), nullptr);
   context.canvas.clipPath(clip_path_, true);
   PaintChildren(context);
 }

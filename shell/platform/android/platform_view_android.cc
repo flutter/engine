@@ -11,15 +11,19 @@
 
 #include <utility>
 
+#include "flutter/common/settings.h"
 #include "flutter/common/threads.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/runtime/dart_service_isolate.h"
+#include "flutter/shell/common/null_rasterizer.h"
 #include "flutter/shell/gpu/gpu_rasterizer.h"
+#include "flutter/shell/platform/android/android_external_texture_gl.h"
 #include "flutter/shell/platform/android/android_surface_gl.h"
+#include "flutter/shell/platform/android/android_surface_software.h"
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/vsync_waiter_android.h"
-#include "lib/ftl/functional/make_copyable.h"
+#include "lib/fxl/functional/make_copyable.h"
 
 #if SHELL_ENABLE_VULKAN
 #include "flutter/shell/platform/android/android_surface_vulkan.h"
@@ -32,35 +36,36 @@ class PlatformMessageResponseAndroid : public blink::PlatformMessageResponse {
 
  public:
   void Complete(std::vector<uint8_t> data) override {
-    ftl::RefPtr<PlatformMessageResponseAndroid> self(this);
+    fxl::RefPtr<PlatformMessageResponseAndroid> self(this);
     blink::Threads::Platform()->PostTask(
-        ftl::MakeCopyable([ self, data = std::move(data) ]() mutable {
-          if (!self->view_)
+        fxl::MakeCopyable([ self, data = std::move(data) ]() mutable {
+          std::shared_ptr<PlatformView> view = self->view_.lock();
+          if (!view)
             return;
-          static_cast<PlatformViewAndroid*>(self->view_.get())
+          static_cast<PlatformViewAndroid*>(view.get())
               ->HandlePlatformMessageResponse(self->response_id_,
                                               std::move(data));
         }));
   }
 
   void CompleteEmpty() override {
-    ftl::RefPtr<PlatformMessageResponseAndroid> self(this);
-    blink::Threads::Platform()->PostTask(
-        ftl::MakeCopyable([ self ]() mutable {
-          if (!self->view_)
-            return;
-          static_cast<PlatformViewAndroid*>(self->view_.get())
-              ->HandlePlatformMessageEmptyResponse(self->response_id_);
-        }));
+    fxl::RefPtr<PlatformMessageResponseAndroid> self(this);
+    blink::Threads::Platform()->PostTask(fxl::MakeCopyable([self]() mutable {
+      std::shared_ptr<PlatformView> view = self->view_.lock();
+      if (!view)
+        return;
+      static_cast<PlatformViewAndroid*>(view.get())
+          ->HandlePlatformMessageEmptyResponse(self->response_id_);
+    }));
   }
 
  private:
   PlatformMessageResponseAndroid(int response_id,
-                                 ftl::WeakPtr<PlatformView> view)
+                                 std::weak_ptr<PlatformView> view)
       : response_id_(response_id), view_(view) {}
 
   int response_id_;
-  ftl::WeakPtr<PlatformView> view_;
+  std::weak_ptr<PlatformView> view_;
 };
 
 static std::unique_ptr<AndroidSurface> InitializePlatformSurfaceGL() {
@@ -85,43 +90,60 @@ static std::unique_ptr<AndroidSurface> InitializePlatformSurfaceVulkan() {
 #endif  // SHELL_ENABLE_VULKAN
 }
 
+static std::unique_ptr<AndroidSurface> InitializePlatformSurfaceSoftware() {
+  auto surface = std::make_unique<AndroidSurfaceSoftware>();
+  return surface->IsValid() ? std::move(surface) : nullptr;
+}
+
 static std::unique_ptr<AndroidSurface> InitializePlatformSurface() {
+  if (blink::Settings::Get().enable_software_rendering) {
+    if (auto surface = InitializePlatformSurfaceSoftware()) {
+      FXL_DLOG(INFO) << "Software surface initialized.";
+      return surface;
+    }
+  }
+
   if (auto surface = InitializePlatformSurfaceVulkan()) {
-    FTL_DLOG(INFO) << "Vulkan surface initialized.";
+    FXL_DLOG(INFO) << "Vulkan surface initialized.";
     return surface;
   }
 
-  FTL_DLOG(INFO)
+  FXL_DLOG(INFO)
       << "Could not initialize Vulkan surface. Falling back to OpenGL.";
 
   if (auto surface = InitializePlatformSurfaceGL()) {
-    FTL_DLOG(INFO) << "GL surface initialized.";
+    FXL_DLOG(INFO) << "GL surface initialized.";
     return surface;
   }
 
-  FTL_CHECK(false) << "Could not initialize either the Vulkan or OpenGL "
-                      "surface backends. Flutter requires a GPU to render.";
+  if (auto surface = InitializePlatformSurfaceSoftware()) {
+    FXL_DLOG(INFO) << "Software surface initialized.";
+    return surface;
+  }
+
+  FXL_CHECK(false)
+      << "Could not initialize either the Vulkan, OpenGL, or Software"
+         "surface backends. Flutter requires a GPU to render.";
   return nullptr;
 }
 
 PlatformViewAndroid::PlatformViewAndroid()
-    : PlatformView(std::make_unique<GPURasterizer>(nullptr)),
-      android_surface_(InitializePlatformSurface()) {
+    : PlatformView(std::make_unique<NullRasterizer>()),
+      android_surface_(InitializePlatformSurface()) {}
+
+PlatformViewAndroid::~PlatformViewAndroid() = default;
+
+void PlatformViewAndroid::Attach() {
   CreateEngine();
 
   // Eagerly setup the IO thread context. We have already setup the surface.
   SetupResourceContextOnIOThread();
 
   UpdateThreadPriorities();
-
-  PostAddToShellTask();
 }
-
-PlatformViewAndroid::~PlatformViewAndroid() = default;
 
 void PlatformViewAndroid::Detach() {
   ReleaseSurface();
-  delete this;
 }
 
 void PlatformViewAndroid::SurfaceCreated(JNIEnv* env,
@@ -132,7 +154,18 @@ void PlatformViewAndroid::SurfaceCreated(JNIEnv* env,
   // workaround for https://code.google.com/p/android/issues/detail?id=68174
   fml::jni::ScopedJavaLocalFrame scoped_local_reference_frame(env);
 
-  auto native_window = ftl::MakeRefCounted<AndroidNativeWindow>(
+  // We have a drawing surface, so swap in a non-Null rasterizer.
+  SetRasterizer(std::make_unique<GPURasterizer>(nullptr));
+
+  rasterizer_->AddNextFrameCallback([this]() {
+    JNIEnv* env = fml::jni::AttachCurrentThread();
+    fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
+    if (!view.is_null()) {
+      FlutterViewOnFirstFrame(env, view.obj());
+    }
+  });
+
+  auto native_window = fxl::MakeRefCounted<AndroidNativeWindow>(
       ANativeWindow_fromSurface(env, jsurface));
 
   if (!native_window->IsValid()) {
@@ -175,14 +208,19 @@ void PlatformViewAndroid::SurfaceDestroyed() {
 }
 
 void PlatformViewAndroid::RunBundleAndSnapshot(std::string bundle_path,
-                                               std::string snapshot_override) {
+                                               std::string snapshot_override,
+                                               std::string entrypoint,
+                                               bool reuse_runtime_controller) {
   blink::Threads::UI()->PostTask([
     engine = engine_->GetWeakPtr(), bundle_path = std::move(bundle_path),
-    snapshot_override = std::move(snapshot_override)
+    snapshot_override = std::move(snapshot_override),
+    entrypoint = std::move(entrypoint),
+    reuse_runtime_controller = reuse_runtime_controller
   ] {
     if (engine)
-      engine->RunBundleAndSnapshot(std::move(bundle_path),
-                                   std::move(snapshot_override));
+      engine->RunBundleAndSnapshot(
+          std::move(bundle_path), std::move(snapshot_override),
+          std::move(entrypoint), reuse_runtime_controller);
   });
 }
 
@@ -231,29 +269,29 @@ void PlatformViewAndroid::DispatchPlatformMessage(JNIEnv* env,
   std::vector<uint8_t> message =
       std::vector<uint8_t>(message_data, message_data + java_message_position);
 
-  ftl::RefPtr<blink::PlatformMessageResponse> response;
+  fxl::RefPtr<blink::PlatformMessageResponse> response;
   if (response_id) {
-    response = ftl::MakeRefCounted<PlatformMessageResponseAndroid>(
+    response = fxl::MakeRefCounted<PlatformMessageResponseAndroid>(
         response_id, GetWeakPtr());
   }
 
   PlatformView::DispatchPlatformMessage(
-      ftl::MakeRefCounted<blink::PlatformMessage>(
+      fxl::MakeRefCounted<blink::PlatformMessage>(
           std::move(name), std::move(message), std::move(response)));
 }
 
 void PlatformViewAndroid::DispatchEmptyPlatformMessage(JNIEnv* env,
                                                        std::string name,
                                                        jint response_id) {
-  ftl::RefPtr<blink::PlatformMessageResponse> response;
+  fxl::RefPtr<blink::PlatformMessageResponse> response;
   if (response_id) {
-    response = ftl::MakeRefCounted<PlatformMessageResponseAndroid>(
+    response = fxl::MakeRefCounted<PlatformMessageResponseAndroid>(
         response_id, GetWeakPtr());
   }
 
   PlatformView::DispatchPlatformMessage(
-      ftl::MakeRefCounted<blink::PlatformMessage>(
-          std::move(name), std::move(response)));
+      fxl::MakeRefCounted<blink::PlatformMessage>(std::move(name),
+                                                  std::move(response)));
 }
 
 void PlatformViewAndroid::DispatchPointerDataPacket(JNIEnv* env,
@@ -261,7 +299,7 @@ void PlatformViewAndroid::DispatchPointerDataPacket(JNIEnv* env,
                                                     jint position) {
   uint8_t* data = static_cast<uint8_t*>(env->GetDirectBufferAddress(buffer));
 
-  blink::Threads::UI()->PostTask(ftl::MakeCopyable([
+  blink::Threads::UI()->PostTask(fxl::MakeCopyable([
     engine = engine_->GetWeakPtr(),
     packet = std::make_unique<PointerDataPacket>(data, position)
   ] {
@@ -281,9 +319,9 @@ void PlatformViewAndroid::InvokePlatformMessageResponseCallback(
   if (it == pending_responses_.end())
     return;
   uint8_t* response_data =
-     static_cast<uint8_t*>(env->GetDirectBufferAddress(java_response_data));
-  std::vector<uint8_t> response = std::vector<uint8_t>(response_data,
-                                                       response_data + java_response_position);
+      static_cast<uint8_t*>(env->GetDirectBufferAddress(java_response_data));
+  std::vector<uint8_t> response = std::vector<uint8_t>(
+      response_data, response_data + java_response_position);
   auto message_response = std::move(it->second);
   pending_responses_.erase(it);
   message_response->Complete(std::move(response));
@@ -303,7 +341,7 @@ void PlatformViewAndroid::InvokePlatformMessageEmptyResponseCallback(
 }
 
 void PlatformViewAndroid::HandlePlatformMessage(
-    ftl::RefPtr<blink::PlatformMessage> message) {
+    fxl::RefPtr<blink::PlatformMessage> message) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
   if (view.is_null())
@@ -316,22 +354,22 @@ void PlatformViewAndroid::HandlePlatformMessage(
   }
   auto java_channel = fml::jni::StringToJavaString(env, message->channel());
   if (message->hasData()) {
-    fml::jni::ScopedJavaLocalRef<jbyteArray> message_array(env,
-        env->NewByteArray(message->data().size()));
+    fml::jni::ScopedJavaLocalRef<jbyteArray> message_array(
+        env, env->NewByteArray(message->data().size()));
     env->SetByteArrayRegion(
         message_array.obj(), 0, message->data().size(),
         reinterpret_cast<const jbyte*>(message->data().data()));
     message = nullptr;
 
     // This call can re-enter in InvokePlatformMessageXxxResponseCallback.
-    FlutterViewHandlePlatformMessage(
-        env, view.obj(), java_channel.obj(), message_array.obj(), response_id);
+    FlutterViewHandlePlatformMessage(env, view.obj(), java_channel.obj(),
+                                     message_array.obj(), response_id);
   } else {
     message = nullptr;
 
     // This call can re-enter in InvokePlatformMessageXxxResponseCallback.
-    FlutterViewHandlePlatformMessage(
-        env, view.obj(), java_channel.obj(), nullptr, response_id);
+    FlutterViewHandlePlatformMessage(env, view.obj(), java_channel.obj(),
+                                     nullptr, response_id);
   }
 }
 
@@ -344,8 +382,8 @@ void PlatformViewAndroid::HandlePlatformMessageResponse(
 
   if (view.is_null())
     return;
-  fml::jni::ScopedJavaLocalRef<jbyteArray> data_array(env,
-      env->NewByteArray(data.size()));
+  fml::jni::ScopedJavaLocalRef<jbyteArray> data_array(
+      env, env->NewByteArray(data.size()));
   env->SetByteArrayRegion(data_array.obj(), 0, data.size(),
                           reinterpret_cast<const jbyte*>(data.data()));
 
@@ -353,8 +391,7 @@ void PlatformViewAndroid::HandlePlatformMessageResponse(
                                            data_array.obj());
 }
 
-void PlatformViewAndroid::HandlePlatformMessageEmptyResponse(
-    int response_id) {
+void PlatformViewAndroid::HandlePlatformMessageEmptyResponse(int response_id) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   fml::jni::ScopedJavaLocalRef<jobject> view = flutter_view_.get(env);
@@ -377,6 +414,7 @@ void PlatformViewAndroid::SetSemanticsEnabled(jboolean enabled) {
 void PlatformViewAndroid::ReleaseSurface() {
   NotifyDestroyed();
   android_surface_->TeardownOnScreenContext();
+  SetRasterizer(std::make_unique<NullRasterizer>());
 }
 
 VsyncWaiter* PlatformViewAndroid::GetVsyncWaiter() {
@@ -386,12 +424,13 @@ VsyncWaiter* PlatformViewAndroid::GetVsyncWaiter() {
 }
 
 bool PlatformViewAndroid::ResourceContextMakeCurrent() {
+  FXL_CHECK(android_surface_);
   return android_surface_->ResourceContextMakeCurrent();
 }
 
 void PlatformViewAndroid::UpdateSemantics(
     std::vector<blink::SemanticsNode> update) {
-  constexpr size_t kBytesPerNode = 25 * sizeof(int32_t);
+  constexpr size_t kBytesPerNode = 30 * sizeof(int32_t);
   constexpr size_t kBytesPerChild = sizeof(int32_t);
 
   JNIEnv* env = fml::jni::AttachCurrentThread();
@@ -413,6 +452,8 @@ void PlatformViewAndroid::UpdateSemantics(
     std::vector<std::string> strings;
     size_t position = 0;
     for (const blink::SemanticsNode& node : update) {
+      // If you edit this code, make sure you update kBytesPerNode
+      // above to match the number of values you are sending.
       buffer_int32[position++] = node.id;
       buffer_int32[position++] = node.flags;
       buffer_int32[position++] = node.actions;
@@ -422,6 +463,31 @@ void PlatformViewAndroid::UpdateSemantics(
         buffer_int32[position++] = strings.size();
         strings.push_back(node.label);
       }
+      if (node.value.empty()) {
+        buffer_int32[position++] = -1;
+      } else {
+        buffer_int32[position++] = strings.size();
+        strings.push_back(node.value);
+      }
+      if (node.increasedValue.empty()) {
+        buffer_int32[position++] = -1;
+      } else {
+        buffer_int32[position++] = strings.size();
+        strings.push_back(node.increasedValue);
+      }
+      if (node.decreasedValue.empty()) {
+        buffer_int32[position++] = -1;
+      } else {
+        buffer_int32[position++] = strings.size();
+        strings.push_back(node.decreasedValue);
+      }
+      if (node.hint.empty()) {
+        buffer_int32[position++] = -1;
+      } else {
+        buffer_int32[position++] = strings.size();
+        strings.push_back(node.hint);
+      }
+      buffer_int32[position++] = node.textDirection;
       buffer_float32[position++] = node.rect.left();
       buffer_float32[position++] = node.rect.top();
       buffer_float32[position++] = node.rect.right();
@@ -433,8 +499,8 @@ void PlatformViewAndroid::UpdateSemantics(
         buffer_int32[position++] = child;
     }
 
-    fml::jni::ScopedJavaLocalRef<jobject> direct_buffer(env,
-        env->NewDirectByteBuffer(buffer.data(), buffer.size()));
+    fml::jni::ScopedJavaLocalRef<jobject> direct_buffer(
+        env, env->NewDirectByteBuffer(buffer.data(), buffer.size()));
 
     FlutterViewUpdateSemantics(
         env, view.obj(), direct_buffer.obj(),
@@ -446,7 +512,7 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
                                         const std::string& main,
                                         const std::string& packages) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
-  FTL_CHECK(env);
+  FXL_CHECK(env);
 
   {
     fml::jni::ScopedJavaLocalRef<jobject> local_flutter_view =
@@ -458,21 +524,21 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
 
     // Grab the class of the flutter view.
     jclass flutter_view_class = env->GetObjectClass(local_flutter_view.obj());
-    FTL_CHECK(flutter_view_class);
+    FXL_CHECK(flutter_view_class);
 
     // Grab the runFromSource method id.
     jmethodID run_from_source_method_id = env->GetMethodID(
         flutter_view_class, "runFromSource",
         "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
-    FTL_CHECK(run_from_source_method_id);
+    FXL_CHECK(run_from_source_method_id);
 
     // Invoke runFromSource on the Android UI thread.
     jstring java_assets_directory = env->NewStringUTF(assets_directory.c_str());
-    FTL_CHECK(java_assets_directory);
+    FXL_CHECK(java_assets_directory);
     jstring java_main = env->NewStringUTF(main.c_str());
-    FTL_CHECK(java_main);
+    FXL_CHECK(java_main);
     jstring java_packages = env->NewStringUTF(packages.c_str());
-    FTL_CHECK(java_packages);
+    FXL_CHECK(java_packages);
     env->CallVoidMethod(local_flutter_view.obj(), run_from_source_method_id,
                         java_assets_directory, java_main, java_packages);
   }
@@ -481,11 +547,30 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
   fml::jni::DetachFromVM();
 }
 
+void PlatformViewAndroid::RegisterExternalTexture(
+    int64_t texture_id,
+    const fml::jni::JavaObjectWeakGlobalRef& surface_texture) {
+  RegisterTexture(
+      std::make_shared<AndroidExternalTextureGL>(texture_id, surface_texture));
+}
+
+void PlatformViewAndroid::MarkTextureFrameAvailable(int64_t texture_id) {
+  blink::Threads::Gpu()->PostTask([this, texture_id]() {
+    std::shared_ptr<AndroidExternalTextureGL> texture =
+        static_pointer_cast<AndroidExternalTextureGL>(
+            rasterizer_->GetTextureRegistry().GetTexture(texture_id));
+    if (texture) {
+      texture->MarkNewFrameAvailable();
+    }
+  });
+  PlatformView::MarkTextureFrameAvailable(texture_id);
+}
+
 fml::jni::ScopedJavaLocalRef<jobject> PlatformViewAndroid::GetBitmap(
     JNIEnv* env) {
   // Render the last frame to an array of pixels on the GPU thread.
   // The pixels will be returned as a global JNI reference to an int array.
-  ftl::AutoResetWaitableEvent latch;
+  fxl::AutoResetWaitableEvent latch;
   jobject pixels_ref = nullptr;
   SkISize frame_size;
   blink::Threads::Gpu()->PostTask([this, &latch, &pixels_ref, &frame_size]() {
@@ -502,27 +587,27 @@ fml::jni::ScopedJavaLocalRef<jobject> PlatformViewAndroid::GetBitmap(
   fml::jni::ScopedJavaGlobalRef<jobject> pixels(env, pixels_ref);
 
   jclass bitmap_class = env->FindClass("android/graphics/Bitmap");
-  FTL_CHECK(bitmap_class);
+  FXL_CHECK(bitmap_class);
 
   jmethodID create_bitmap = env->GetStaticMethodID(
       bitmap_class, "createBitmap",
       "([IIILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
-  FTL_CHECK(create_bitmap);
+  FXL_CHECK(create_bitmap);
 
   jclass bitmap_config_class = env->FindClass("android/graphics/Bitmap$Config");
-  FTL_CHECK(bitmap_config_class);
+  FXL_CHECK(bitmap_config_class);
 
   jmethodID bitmap_config_value_of = env->GetStaticMethodID(
       bitmap_config_class, "valueOf",
       "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
-  FTL_CHECK(bitmap_config_value_of);
+  FXL_CHECK(bitmap_config_value_of);
 
   jstring argb = env->NewStringUTF("ARGB_8888");
-  FTL_CHECK(argb);
+  FXL_CHECK(argb);
 
   jobject bitmap_config = env->CallStaticObjectMethod(
       bitmap_config_class, bitmap_config_value_of, argb);
-  FTL_CHECK(bitmap_config);
+  FXL_CHECK(bitmap_config);
 
   jobject bitmap = env->CallStaticObjectMethod(
       bitmap_class, create_bitmap, pixels.obj(), frame_size.width(),
@@ -538,15 +623,15 @@ void PlatformViewAndroid::GetBitmapGpuTask(jobject* pixels_out,
     return;
 
   JNIEnv* env = fml::jni::AttachCurrentThread();
-  FTL_CHECK(env);
+  FXL_CHECK(env);
 
   const SkISize& frame_size = layer_tree->frame_size();
   jsize pixels_size = frame_size.width() * frame_size.height();
   jintArray pixels_array = env->NewIntArray(pixels_size);
-  FTL_CHECK(pixels_array);
+  FXL_CHECK(pixels_array);
 
   jint* pixels = env->GetIntArrayElements(pixels_array, nullptr);
-  FTL_CHECK(pixels);
+  FXL_CHECK(pixels);
 
   SkImageInfo image_info =
       SkImageInfo::Make(frame_size.width(), frame_size.height(),

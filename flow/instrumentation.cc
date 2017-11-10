@@ -14,28 +14,28 @@ namespace flow {
 static const size_t kMaxSamples = 120;
 static const size_t kMaxFrameMarkers = 8;
 
-Stopwatch::Stopwatch() : start_(ftl::TimePoint::Now()), current_sample_(0) {
-  const ftl::TimeDelta delta = ftl::TimeDelta::Zero();
+Stopwatch::Stopwatch() : start_(fxl::TimePoint::Now()), current_sample_(0) {
+  const fxl::TimeDelta delta = fxl::TimeDelta::Zero();
   laps_.resize(kMaxSamples, delta);
 }
 
 Stopwatch::~Stopwatch() = default;
 
 void Stopwatch::Start() {
-  start_ = ftl::TimePoint::Now();
+  start_ = fxl::TimePoint::Now();
   current_sample_ = (current_sample_ + 1) % kMaxSamples;
 }
 
 void Stopwatch::Stop() {
-  laps_[current_sample_] = ftl::TimePoint::Now() - start_;
+  laps_[current_sample_] = fxl::TimePoint::Now() - start_;
 }
 
-void Stopwatch::SetLapTime(const ftl::TimeDelta& delta) {
+void Stopwatch::SetLapTime(const fxl::TimeDelta& delta) {
   current_sample_ = (current_sample_ + 1) % kMaxSamples;
   laps_[current_sample_] = delta;
 }
 
-const ftl::TimeDelta& Stopwatch::LastLap() const {
+const fxl::TimeDelta& Stopwatch::LastLap() const {
   return laps_[(current_sample_ - 1) % kMaxSamples];
 }
 
@@ -51,8 +51,8 @@ static inline double UnitHeight(double frame_time_ms,
   return unitHeight;
 }
 
-ftl::TimeDelta Stopwatch::MaxDelta() const {
-  ftl::TimeDelta max_delta;
+fxl::TimeDelta Stopwatch::MaxDelta() const {
+  fxl::TimeDelta max_delta;
   for (size_t i = 0; i < kMaxSamples; i++) {
     if (laps_[i] > max_delta)
       max_delta = laps_[i];
@@ -87,8 +87,7 @@ void Stopwatch::Visualize(SkCanvas& canvas, const SkRect& rect) const {
   const double sample_margin_unit_width = sample_unit_width / 6.0;
   const double sample_margin_width = width * sample_margin_unit_width;
   path.moveTo(x, bottom);
-  path.lineTo(x, y +
-                     height * (1.0 - UnitHeight(laps_[0].ToMillisecondsF(),
+  path.lineTo(x, y + height * (1.0 - UnitHeight(laps_[0].ToMillisecondsF(),
                                                 max_unit_interval)));
   double unit_x;
   double unit_next_x = 0.0;
@@ -96,16 +95,14 @@ void Stopwatch::Visualize(SkCanvas& canvas, const SkRect& rect) const {
     unit_x = unit_next_x;
     unit_next_x = (static_cast<double>(i + 1) / kMaxSamples);
     const double sample_y =
-        y +
-        height *
-            (1.0 - UnitHeight(laps_[i].ToMillisecondsF(), max_unit_interval));
+        y + height * (1.0 - UnitHeight(laps_[i].ToMillisecondsF(),
+                                       max_unit_interval));
     path.lineTo(x + width * unit_x + sample_margin_width, sample_y);
     path.lineTo(x + width * unit_next_x - sample_margin_width, sample_y);
   }
   path.lineTo(
       right,
-      y +
-          height * (1.0 - UnitHeight(laps_[kMaxSamples - 1].ToMillisecondsF(),
+      y + height * (1.0 - UnitHeight(laps_[kMaxSamples - 1].ToMillisecondsF(),
                                      max_unit_interval)));
   path.lineTo(right, bottom);
   path.close();

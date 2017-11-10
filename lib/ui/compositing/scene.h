@@ -18,16 +18,17 @@ class DartLibraryNatives;
 
 namespace blink {
 
-class Scene : public ftl::RefCountedThreadSafe<Scene>,
+class Scene : public fxl::RefCountedThreadSafe<Scene>,
               public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
   FRIEND_MAKE_REF_COUNTED(Scene);
 
  public:
   ~Scene() override;
-  static ftl::RefPtr<Scene> create(std::unique_ptr<flow::Layer> rootLayer,
+  static fxl::RefPtr<Scene> create(std::unique_ptr<flow::Layer> rootLayer,
                                    uint32_t rasterizerTracingThreshold,
-                                   bool checkerboardRasterCacheImages);
+                                   bool checkerboardRasterCacheImages,
+                                   bool checkerboardOffscreenLayers);
 
   std::unique_ptr<flow::LayerTree> takeLayerTree();
 
@@ -38,7 +39,8 @@ class Scene : public ftl::RefCountedThreadSafe<Scene>,
  private:
   explicit Scene(std::unique_ptr<flow::Layer> rootLayer,
                  uint32_t rasterizerTracingThreshold,
-                 bool checkerboardRasterCacheImages);
+                 bool checkerboardRasterCacheImages,
+                 bool checkerboardOffscreenLayers);
 
   std::unique_ptr<flow::LayerTree> m_layerTree;
 };

@@ -8,14 +8,12 @@
 #include "flutter/vulkan/vulkan_handle.h"
 #include "flutter/vulkan/vulkan_interface.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 
 namespace vulkan {
 
 class VulkanDebugReport {
  public:
-  static bool DebugExtensionSupported(const VulkanProcTable& vk);
-
   static std::string DebugExtensionName();
 
   VulkanDebugReport(const VulkanProcTable& vk,
@@ -31,7 +29,7 @@ class VulkanDebugReport {
   VulkanHandle<VkDebugReportCallbackEXT> handle_;
   bool valid_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(VulkanDebugReport);
+  FXL_DISALLOW_COPY_AND_ASSIGN(VulkanDebugReport);
 };
 
 }  // namespace vulkan

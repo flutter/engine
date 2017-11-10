@@ -8,19 +8,20 @@
 #include <memory>
 #include <vector>
 
-#include "dart/runtime/include/dart_api.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/window/platform_message.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
 namespace blink {
 
 class RuntimeDelegate {
  public:
-  virtual void ScheduleFrame() = 0;
+  virtual std::string DefaultRouteName() = 0;
+  virtual void ScheduleFrame(bool regenerate_layer_tree = true) = 0;
   virtual void Render(std::unique_ptr<flow::LayerTree> layer_tree) = 0;
   virtual void UpdateSemantics(std::vector<SemanticsNode> update) = 0;
-  virtual void HandlePlatformMessage(ftl::RefPtr<PlatformMessage> message) = 0;
+  virtual void HandlePlatformMessage(fxl::RefPtr<PlatformMessage> message) = 0;
 
   virtual void DidCreateMainIsolate(Dart_Isolate isolate);
   virtual void DidCreateSecondaryIsolate(Dart_Isolate isolate);

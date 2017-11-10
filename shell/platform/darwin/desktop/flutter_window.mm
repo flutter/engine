@@ -37,7 +37,7 @@ static inline blink::PointerData::Change PointerChangeFromNSEventPhase(NSEventPh
 }
 
 @implementation FlutterWindow {
-  std::unique_ptr<shell::PlatformViewMac> _platformView;
+  std::shared_ptr<shell::PlatformViewMac> _platformView;
   bool _mouseIsDown;
 }
 
@@ -53,9 +53,10 @@ static inline blink::PointerData::Change PointerChangeFromNSEventPhase(NSEventPh
 }
 
 - (void)setupPlatformView {
-  FTL_DCHECK(_platformView == nullptr) << "The platform view must not already be set.";
+  FXL_DCHECK(_platformView == nullptr) << "The platform view must not already be set.";
 
-  _platformView.reset(new shell::PlatformViewMac(self.renderSurface));
+  _platformView = std::make_shared<shell::PlatformViewMac>(self.renderSurface);
+  _platformView->Attach();
   _platformView->SetupResourceContextOnIOThread();
   _platformView->NotifyCreated(std::make_unique<shell::GPUSurfaceGL>(_platformView.get()));
 }
@@ -129,7 +130,7 @@ static inline blink::PointerData::Change PointerChangeFromNSEventPhase(NSEventPh
     case blink::PointerData::Change::kAdd:
     case blink::PointerData::Change::kRemove:
     case blink::PointerData::Change::kHover:
-      FTL_DCHECK(!_mouseIsDown);
+      FXL_DCHECK(!_mouseIsDown);
       break;
   }
 

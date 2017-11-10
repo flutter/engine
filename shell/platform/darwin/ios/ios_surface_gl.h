@@ -8,7 +8,7 @@
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 
 @class CAEAGLLayer;
 
@@ -36,10 +36,12 @@ class IOSSurfaceGL : public IOSSurface, public GPUSurfaceGLDelegate {
 
   intptr_t GLContextFBO() const override;
 
+  bool SurfaceSupportsSRGB() const override;
+
  private:
   IOSGLContext context_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceGL);
+  FXL_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceGL);
 };
 
 }  // namespace shell

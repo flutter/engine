@@ -7,9 +7,10 @@
 #include "flutter/common/settings.h"
 #include "flutter/common/threads.h"
 #include "flutter/flow/layers/layer_tree.h"
+#include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell.h"
-#include "lib/ftl/synchronization/waitable_event.h"
+#include "lib/fxl/synchronization/waitable_event.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
 @interface FlutterView ()<UIInputViewAudioFeedback>
@@ -43,7 +44,7 @@
   return YES;
 }
 
-void SnapshotRasterizer(ftl::WeakPtr<shell::Rasterizer> rasterizer,
+void SnapshotRasterizer(fml::WeakPtr<shell::Rasterizer> rasterizer,
                         CGContextRef context,
                         bool is_opaque) {
   if (!rasterizer) {
@@ -88,17 +89,24 @@ void SnapshotRasterizer(ftl::WeakPtr<shell::Rasterizer> rasterizer,
   SkCGDrawBitmap(context, bitmap, 0, 0);
 }
 
+static fml::WeakPtr<shell::Rasterizer> GetRandomRasterizer() {
+  fml::WeakPtr<shell::Rasterizer> rasterizer;
+  shell::Shell::Shared().IteratePlatformViews([&rasterizer](shell::PlatformView* view) -> bool {
+    rasterizer = view->rasterizer().GetWeakRasterizerPtr();
+    // We just grab the first rasterizer so there is no need to iterate
+    // further.
+    return false;
+  });
+  return rasterizer;
+}
+
 void SnapshotContents(CGContextRef context, bool is_opaque) {
   // TODO(chinmaygarde): Currently, there is no way to get the rasterizer for
   // a particular platform view from the shell. But, for now, we only have one
   // platform view. So use that. Once we support multiple platform views, the
   // shell will need to provide a way to get the rasterizer for a specific
   // platform view.
-  std::vector<ftl::WeakPtr<shell::Rasterizer>> registered_rasterizers;
-  shell::Shell::Shared().GetRasterizers(&registered_rasterizers);
-  for (auto& rasterizer : registered_rasterizers) {
-    SnapshotRasterizer(rasterizer, context, is_opaque);
-  }
+  SnapshotRasterizer(GetRandomRasterizer(), context, is_opaque);
 }
 
 void SnapshotContentsSync(CGContextRef context, UIView* view) {
@@ -108,7 +116,7 @@ void SnapshotContentsSync(CGContextRef context, UIView* view) {
     return;
   }
 
-  ftl::AutoResetWaitableEvent latch;
+  fxl::AutoResetWaitableEvent latch;
   gpu_thread->PostTask([&latch, context, view]() {
     SnapshotContents(context, [view isOpaque]);
     latch.Signal();

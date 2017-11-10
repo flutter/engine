@@ -13,10 +13,13 @@
 
 namespace shell {
 
-TestRunner::TestRunner() : platform_view_(new PlatformViewTest()) {
+TestRunner::TestRunner()
+    : platform_view_(std::make_shared<PlatformViewTest>()) {
+  platform_view_->Attach();
   blink::ViewportMetrics metrics;
-  metrics.physical_width = 800;
-  metrics.physical_height = 600;
+  metrics.device_pixel_ratio = 3.0;
+  metrics.physical_width = 2400;   // 800 at 3x resolution
+  metrics.physical_height = 1800;  // 600 at 3x resolution
 
   blink::Threads::UI()->PostTask(
       [ engine = platform_view_->engine().GetWeakPtr(), metrics ] {

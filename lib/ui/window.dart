@@ -26,14 +26,50 @@ typedef void PlatformMessageResponseCallback(ByteData data);
 typedef void PlatformMessageCallback(String name, ByteData data, PlatformMessageResponseCallback callback);
 
 /// States that an application can be in.
+///
+/// The values below describe notifications from the operating system.
+/// Applications should not expect to always receive all possible
+/// notifications. For example, if the users pulls out the battery from the
+/// device, no notification will be sent before the application is suddenly
+/// terminated, along with the rest of the operating system.
+///
+/// See also:
+///
+///  * [WidgetsBindingObserver], for a mechanism to observe the lifecycle state
+///    from the widgets layer.
 enum AppLifecycleState {
-  /// The application is not currently visible to the user. When the
-  /// application is in this state, the engine will not call the
-  /// [Window.onBeginFrame] callback.
+  /// The application is visible and responding to user input.
+  resumed,
+
+  /// The application is in an inactive state and is not receiving user input.
+  ///
+  /// On iOS, this state corresponds to an app or the Flutter host view running
+  /// in the foreground inactive state. Apps transition to this state when in
+  /// a phone call, responding to a TouchID request, when entering the app
+  /// switcher or the control center, or when the UIViewController hosting the
+  /// Flutter app is transitioning. Apps in this state should assume that they
+  /// may be [paused] at any time.
+  ///
+  /// On Android, this state is currently unused.
+  inactive,
+
+  /// The application is not currently visible to the user, not responding to
+  /// user input, and running in the background.
+  ///
+  /// When the application is in this state, the engine will not call the
+  /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
+  ///
+  /// Android apps in this state should assume that they may enter the
+  /// [suspending] state at any time.
   paused,
 
-  /// The application is visible to the user.
-  resumed,
+  /// The application will be suspended momentarily.
+  ///
+  /// When the application is in this state, the engine will not call the
+  /// [Window.onBeginFrame] and [Window.onDrawFrame] callbacks.
+  ///
+  /// On iOS, this state is currently unused.
+  suspending,
 }
 
 /// A representation of distances for each of the four edges of a rectangle,
@@ -42,6 +78,14 @@ enum AppLifecycleState {
 ///
 /// For a generic class that represents distances around a rectangle, see the
 /// [EdgeInsets] class.
+///
+/// See also:
+///
+///  * [WidgetsBindingObserver], for a widgets layer mechanism to receive
+///    notifications when the padding changes.
+///  * [MediaQuery.of], a simpler mechanism for the same.
+///  * [Scaffold], which automatically applies the padding in material design
+///    applications.
 class WindowPadding {
   const WindowPadding._({ this.left, this.top, this.right, this.bottom });
 
@@ -64,14 +108,21 @@ class WindowPadding {
 /// An identifier used to select a user's language and formatting preferences,
 /// consisting of a language and a country. This is a subset of locale
 /// identifiers as defined by BCP 47.
+///
+/// See also:
+///
+///  * [Window.locale], which specifies the system's currently selected
+///    [Locale].
 class Locale {
   /// Creates a new Locale object. The first argument is the
   /// primary language subtag, the second is the region subtag.
   ///
   /// For example:
   ///
-  ///     const Locale swissFrench = const Locale('fr', 'CH');
-  ///     const Locale canadianFrench = const Locale('fr', 'CA');
+  /// ```dart
+  /// const Locale swissFrench = const Locale('fr', 'CH');
+  /// const Locale canadianFrench = const Locale('fr', 'CA');
+  /// ```
   const Locale(this.languageCode, this.countryCode);
 
   /// The primary language subtag for the locale.
@@ -110,11 +161,34 @@ class Window {
   /// The number of device pixels for each logical pixel. This number might not
   /// be a power of two. Indeed, it might not even be an integer. For example,
   /// the Nexus 6 has a device pixel ratio of 3.5.
+  ///
+  /// Device pixels are also referred to as physical pixels. Logical pixels are
+  /// also referred to as device-independent or resolution-independent pixels.
+  ///
+  /// By definition, there are roughly 38 logical pixels per centimeter, or
+  /// about 96 logical pixels per inch, of the physical display. The value
+  /// returned by [devicePixelRatio] is ultimately obtained either from the
+  /// hardware itself, the device drivers, or a hard-coded value stored in the
+  /// operating system or firmware, and may be inaccurate, sometimes by a
+  /// significant margin.
+  ///
+  /// The Flutter framework operates in logical pixels, so it is rarely
+  /// necessary to directly deal with this property.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
   double get devicePixelRatio => _devicePixelRatio;
   double _devicePixelRatio = 1.0;
 
   /// The dimensions of the rectangle into which the application will be drawn,
   /// in physical pixels.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
   Size get physicalSize => _physicalSize;
   Size _physicalSize = Size.zero;
 
@@ -123,12 +197,31 @@ class Window {
   /// likely place system UI (such as the Android system notification area), or
   /// which might be rendered outside of the physical display (e.g. overscan
   /// regions on television screens).
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  ///  * [MediaQuery.of], a simpler mechanism for the same.
+  ///  * [Scaffold], which automatically applies the padding in material design
+  ///    applications.
   WindowPadding get padding => _padding;
   WindowPadding _padding = WindowPadding.zero;
 
   /// A callback that is invoked whenever the [devicePixelRatio],
-  /// [physicalSize], or [padding] values change.
-  VoidCallback onMetricsChanged;
+  /// [physicalSize], or [padding] values change, for example when the device is
+  /// rotated or when the application is resized (e.g. when showing applications
+  /// side-by-side on Android).
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  VoidCallback get onMetricsChanged => _onMetricsChanged;
+  VoidCallback _onMetricsChanged;
+  Zone _onMetricsChangedZone;
+  set onMetricsChanged(VoidCallback callback) {
+    _onMetricsChanged = callback;
+    _onMetricsChangedZone = Zone.current;
+  }
 
   /// The system-reported locale.
   ///
@@ -136,42 +229,156 @@ class Window {
   /// should, if possible, use to render their user interface.
   ///
   /// The [onLocaleChanged] callback is called whenever this value changes.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
   Locale get locale => _locale;
   Locale _locale;
 
   /// A callback that is invoked whenever [locale] changes value.
-  VoidCallback onLocaleChanged;
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this callback is invoked.
+  VoidCallback get onLocaleChanged => _onLocaleChanged;
+  VoidCallback _onLocaleChanged;
+  Zone _onLocaleChangedZone;
+  set onLocaleChanged(VoidCallback callback) {
+    _onLocaleChanged = callback;
+    _onLocaleChangedZone = Zone.current;
+  }
+
+  /// The system-reported text scale.
+  ///
+  /// This establishes the text scaling factor to use when rendering text,
+  /// according to the user's platform preferences.
+  ///
+  /// The [onTextScaleFactorChanged] callback is called whenever this value
+  /// changes.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  double get textScaleFactor => _textScaleFactor;
+  double _textScaleFactor = 1.0;
+
+  /// The setting indicating whether time should always be shown in the 24-hour
+  /// format.
+  /// 
+  /// This option is used by [showTimePicker].
+  bool get alwaysUse24HourFormat => _alwaysUse24HourFormat;
+  bool _alwaysUse24HourFormat = false;
+
+  /// A callback that is invoked whenever [textScaleFactor] changes value.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this callback is invoked.
+  VoidCallback get onTextScaleFactorChanged => _onTextScaleFactorChanged;
+  VoidCallback _onTextScaleFactorChanged;
+  Zone _onTextScaleFactorChangedZone;
+  set onTextScaleFactorChanged(VoidCallback callback) {
+    _onTextScaleFactorChanged = callback;
+    _onTextScaleFactorChangedZone = Zone.current;
+  }
 
   /// A callback that is invoked to notify the application that it is an
   /// appropriate time to provide a scene using the [SceneBuilder] API and the
   /// [render] method. When possible, this is driven by the hardware VSync
   /// signal. This is only called if [scheduleFrame] has been called since the
   /// last time this callback was invoked.
-  FrameCallback onBeginFrame;
+  ///
+  /// The [onDrawFrame] callback is invoked immediately after [onBeginFrame],
+  /// after draining any microtasks (e.g. completions of any [Future]s) queued
+  /// by the [onBeginFrame] handler.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [SchedulerBinding], the Flutter framework class which manages the
+  ///    scheduling of frames.
+  ///  * [RendererBinding], the Flutter framework class which manages layout and
+  ///    painting.
+  FrameCallback get onBeginFrame => _onBeginFrame;
+  FrameCallback _onBeginFrame;
+  Zone _onBeginFrameZone;
+  set onBeginFrame(FrameCallback callback) {
+    _onBeginFrame = callback;
+    _onBeginFrameZone = Zone.current;
+  }
 
-  /// A callback that is invoked for each frame after onBeginFrame has
-  /// completed and after the microtask queue has been drained.  This can be
+  /// A callback that is invoked for each frame after [onBeginFrame] has
+  /// completed and after the microtask queue has been drained. This can be
   /// used to implement a second phase of frame rendering that happens
-  /// after any deferred work queued by the onBeginFrame phase.
-  VoidCallback onDrawFrame;
+  /// after any deferred work queued by the [onBeginFrame] phase.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [SchedulerBinding], the Flutter framework class which manages the
+  ///    scheduling of frames.
+  ///  * [RendererBinding], the Flutter framework class which manages layout and
+  ///    painting.
+  VoidCallback get onDrawFrame => _onDrawFrame;
+  VoidCallback _onDrawFrame;
+  Zone _onDrawFrameZone;
+  set onDrawFrame(VoidCallback callback) {
+    _onDrawFrame = callback;
+    _onDrawFrameZone = Zone.current;
+  }
 
   /// A callback that is invoked when pointer data is available.
-  PointerDataPacketCallback onPointerDataPacket;
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [GestureBinding], the Flutter framework class which manages pointer
+  ///    events.
+  PointerDataPacketCallback get onPointerDataPacket => _onPointerDataPacket;
+  PointerDataPacketCallback _onPointerDataPacket;
+  Zone _onPointerDataPacketZone;
+  set onPointerDataPacket(PointerDataPacketCallback callback) {
+    _onPointerDataPacket = callback;
+    _onPointerDataPacketZone = Zone.current;
+  }
 
   /// The route or path that the operating system requested when the application
   /// was launched.
-  String get defaultRouteName => _defaultRouteName;
-  String _defaultRouteName;
+  String get defaultRouteName => _defaultRouteName();
+  String _defaultRouteName() native "Window_defaultRouteName";
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame]
-  /// callback be invoked.
+  /// and [onDrawFrame] callbacks be invoked.
+  ///
+  /// See also:
+  ///
+  ///  * [SchedulerBinding], the Flutter framework class which manages the
+  ///    scheduling of frames.
   void scheduleFrame() native "Window_scheduleFrame";
 
   /// Updates the application's rendering on the GPU with the newly provided
   /// [Scene]. This function must be called within the scope of the
-  /// [onBeginFrame] callback being invoked. If this function is called multiple
-  /// times during a single [onBeginFrame] callback or called outside the scope
-  /// of an [onBeginFrame], the call will be ignored.
+  /// [onBeginFrame] or [onDrawFrame] callbacks being invoked. If this function
+  /// is called a second time during a single [onBeginFrame]/[onDrawFrame]
+  /// callback sequence or called outside the scope of those callbacks, the call
+  /// will be ignored.
   ///
   /// To record graphical operations, first create a [PictureRecorder], then
   /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
@@ -183,6 +390,13 @@ class Window {
   /// [SceneBuilder.addPicture]. With the [SceneBuilder.build] method you can
   /// then obtain a [Scene] object, which you can display to the user via this
   /// [render] function.
+  ///
+  /// See also:
+  ///
+  ///  * [SchedulerBinding], the Flutter framework class which manages the
+  ///    scheduling of frames.
+  ///  * [RendererBinding], the Flutter framework class which manages layout and
+  ///    painting.
   void render(Scene scene) native "Window_render";
 
   /// Whether the user has requested that [updateSemantics] be called when
@@ -194,14 +408,32 @@ class Window {
   bool _semanticsEnabled = false;
 
   /// A callback that is invoked when the value of [semanticsEnabled] changes.
-  VoidCallback onSemanticsEnabledChanged;
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  VoidCallback get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
+  VoidCallback _onSemanticsEnabledChanged;
+  Zone _onSemanticsEnabledChangedZone;
+  set onSemanticsEnabledChanged(VoidCallback callback) {
+    _onSemanticsEnabledChanged = callback;
+    _onSemanticsEnabledChangedZone = Zone.current;
+  }
 
   /// A callback that is invoked whenever the user requests an action to be
   /// performed.
   ///
   /// This callback is used when the user expresses the action they wish to
   /// perform based on the semantics supplied by [updateSemantics].
-  SemanticsActionCallback onSemanticsAction;
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  SemanticsActionCallback get onSemanticsAction => _onSemanticsAction;
+  SemanticsActionCallback _onSemanticsAction;
+  Zone _onSemanticsActionZone;
+  set onSemanticsAction(SemanticsActionCallback callback) {
+    _onSemanticsAction = callback;
+    _onSemanticsActionZone = Zone.current;
+  }
 
   /// Change the retained semantics data about this window.
   ///
@@ -218,10 +450,13 @@ class Window {
   /// `data` parameter contains the message payload and is typically UTF-8
   /// encoded JSON but can be arbitrary data. If the plugin replies to the
   /// message, `callback` will be called with the response.
+  ///
+  /// The framework invokes [callback] in the same zone in which this method
+  /// was called.
   void sendPlatformMessage(String name,
                            ByteData data,
                            PlatformMessageResponseCallback callback) {
-    _sendPlatformMessage(name, callback, data);
+    _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
   }
   void _sendPlatformMessage(String name,
                             PlatformMessageResponseCallback callback,
@@ -235,13 +470,36 @@ class Window {
   /// arbitrary data.
   ///
   /// Message handlers must call the function given in the `callback` parameter.
-  /// If the handler does not need to respond, the handler should pass `null` to
+  /// If the handler does not need to respond, the handler should pass null to
   /// the callback.
-  PlatformMessageCallback onPlatformMessage;
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  PlatformMessageCallback get onPlatformMessage => _onPlatformMessage;
+  PlatformMessageCallback _onPlatformMessage;
+  Zone _onPlatformMessageZone;
+  set onPlatformMessage(PlatformMessageCallback callback) {
+    _onPlatformMessage = callback;
+    _onPlatformMessageZone = Zone.current;
+  }
 
   /// Called by [_dispatchPlatformMessage].
   void _respondToPlatformMessage(int responseId, ByteData data)
       native "Window_respondToPlatformMessage";
+
+  /// Wraps the given [callback] in another callback that ensures that the
+  /// original callback is called in the zone it was registered in.
+  static PlatformMessageResponseCallback _zonedPlatformMessageResponseCallback(PlatformMessageResponseCallback callback) {
+    if (callback == null)
+      return null;
+
+    // Store the zone in which the callback is being registered.
+    final Zone registrationZone = Zone.current;
+
+    return (ByteData data) {
+      registrationZone.runUnaryGuarded(callback, data);
+    };
+  }
 }
 
 /// The [Window] singleton. This object exposes the size of the display, the

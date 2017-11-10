@@ -4,26 +4,27 @@
 
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 
-#include "dart/runtime/include/dart_api.h"
 #include "flutter/common/threads.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartSource.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/flutter_main_ios.h"
+#include "lib/fxl/strings/string_view.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
-static NSURL* URLForSwitch(const char* name) {
+static NSURL* URLForSwitch(const fxl::StringView name) {
   const auto& cmd = shell::Shell::Shared().GetCommandLine();
   NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
 
   std::string switch_value;
   if (cmd.GetOptionValue(name, &switch_value)) {
     auto url = [NSURL fileURLWithPath:@(switch_value.c_str())];
-    [defaults setURL:url forKey:@(name)];
+    [defaults setURL:url forKey:@(name.data())];
     [defaults synchronize];
     return url;
   }
 
-  return [defaults URLForKey:@(name)];
+  return [defaults URLForKey:@(name.data())];
 }
 
 @implementation FlutterDartProject {
@@ -167,6 +168,7 @@ static NSString* NSStringFromVMType(VMType type) {
 }
 
 - (void)launchInEngine:(shell::Engine*)engine
+        withEntrypoint:(NSString*)entrypoint
         embedderVMType:(VMType)embedderVMType
                 result:(LaunchResult)result {
   if (_vmTypeRequirement == VMTypeInvalid) {
@@ -181,21 +183,59 @@ static NSString* NSStringFromVMType(VMType type) {
 
   if (_vmTypeRequirement != embedderVMType) {
     NSString* message =
-        [NSString stringWithFormat:@"Could not load the project because of differing project type. "
-                                   @"The project can run in '%@' but the embedder is configured as "
-                                   @"'%@'",
-                                   NSStringFromVMType(_vmTypeRequirement),
-                                   NSStringFromVMType(embedderVMType)];
+        [NSString stringWithFormat:
+                      @"Could not load the project because of differing project type. "
+                      @"The project can run in '%@' but the embedder is configured as "
+                      @"'%@'",
+                      NSStringFromVMType(_vmTypeRequirement), NSStringFromVMType(embedderVMType)];
     result(NO, message);
     return;
   }
 
   switch (_vmTypeRequirement) {
     case VMTypeInterpreter:
-      [self runFromSourceInEngine:engine result:result];
+      [self runFromSourceInEngine:engine withEntrypoint:entrypoint result:result];
       return;
     case VMTypePrecompilation:
-      [self runFromPrecompiledSourceInEngine:engine result:result];
+      [self runFromPrecompiledSourceInEngine:engine withEntrypoint:entrypoint result:result];
+      return;
+    case VMTypeInvalid:
+      break;
+  }
+
+  return result(NO, @"Internal error");
+}
+
+- (void)launchInEngine:(shell::Engine*)engine
+        embedderVMType:(VMType)embedderVMType
+                result:(LaunchResult)result {
+  if (_vmTypeRequirement == VMTypeInvalid) {
+    result(NO, @"The Dart project is invalid and cannot be loaded by any VM.");
+    return;
+  }
+
+  if (embedderVMType == VMTypeInvalid) {
+    result(NO, @"The embedder is invalid.");
+    return;
+  }
+
+  if (_vmTypeRequirement != embedderVMType) {
+    NSString* message =
+        [NSString stringWithFormat:
+                      @"Could not load the project because of differing project type. "
+                      @"The project can run in '%@' but the embedder is configured as "
+                      @"'%@'",
+                      NSStringFromVMType(_vmTypeRequirement), NSStringFromVMType(embedderVMType)];
+    result(NO, message);
+    return;
+  }
+
+  switch (_vmTypeRequirement) {
+    case VMTypeInterpreter:
+      [self runFromSourceInEngine:engine withEntrypoint:@"main" result:result];
+      return;
+    case VMTypePrecompilation:
+      [self runFromPrecompiledSourceInEngine:engine withEntrypoint:@"main" result:result];
       return;
     case VMTypeInvalid:
       break;
@@ -206,7 +246,9 @@ static NSString* NSStringFromVMType(VMType type) {
 
 #pragma mark - Running from precompiled application bundles
 
-- (void)runFromPrecompiledSourceInEngine:(shell::Engine*)engine result:(LaunchResult)result {
+- (void)runFromPrecompiledSourceInEngine:(shell::Engine*)engine
+                          withEntrypoint:(NSString*)entrypoint
+                                  result:(LaunchResult)result {
   if (![_precompiledDartBundle load]) {
     NSString* message = [NSString
         stringWithFormat:@"Could not load the framework ('%@') containing precompiled code.",
@@ -217,17 +259,20 @@ static NSString* NSStringFromVMType(VMType type) {
 
   NSString* path = [self pathForFLXFromBundle:_precompiledDartBundle];
   if (path.length == 0) {
-    NSString* message = [NSString stringWithFormat:@"Could not find the 'app.flx' archive in "
-                                                   @"the precompiled Dart bundle with ID '%@'",
-                                                   _precompiledDartBundle.bundleIdentifier];
+    NSString* message = [NSString stringWithFormat:
+                                      @"Could not find the 'app.flx' archive in "
+                                      @"the precompiled Dart bundle with ID '%@'",
+                                      _precompiledDartBundle.bundleIdentifier];
     result(NO, message);
     return;
   }
 
   std::string bundle_path = path.UTF8String;
-  blink::Threads::UI()->PostTask([ engine = engine->GetWeakPtr(), bundle_path ] {
+  blink::Threads::UI()->PostTask([
+    engine = engine->GetWeakPtr(), bundle_path, entrypoint = std::string([entrypoint UTF8String])
+  ] {
     if (engine)
-      engine->RunBundle(bundle_path);
+      engine->RunBundle(bundle_path, entrypoint);
   });
 
   result(YES, @"Success");
@@ -235,7 +280,9 @@ static NSString* NSStringFromVMType(VMType type) {
 
 #pragma mark - Running from source
 
-- (void)runFromSourceInEngine:(shell::Engine*)engine result:(LaunchResult)result {
+- (void)runFromSourceInEngine:(shell::Engine*)engine
+               withEntrypoint:(NSString*)entrypoint
+                       result:(LaunchResult)result {
   if (_dartSource == nil) {
     result(NO, @"Dart source not specified.");
     return;
@@ -249,9 +296,12 @@ static NSString* NSStringFromVMType(VMType type) {
     std::string bundle_path = _dartSource.flxArchive.absoluteURL.path.UTF8String;
 
     if (_dartSource.archiveContainsScriptSnapshot) {
-      blink::Threads::UI()->PostTask([ engine = engine->GetWeakPtr(), bundle_path ] {
+      blink::Threads::UI()->PostTask([
+        engine = engine->GetWeakPtr(), bundle_path,
+        entrypoint = std::string([entrypoint UTF8String])
+      ] {
         if (engine)
-          engine->RunBundle(bundle_path);
+          engine->RunBundle(bundle_path, entrypoint);
       });
     } else {
       std::string main = _dartSource.dartMain.absoluteURL.path.UTF8String;

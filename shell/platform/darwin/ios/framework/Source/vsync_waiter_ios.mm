@@ -12,7 +12,7 @@
 
 #include "flutter/common/threads.h"
 #include "flutter/glue/trace_event.h"
-#include "lib/ftl/logging.h"
+#include "lib/fxl/logging.h"
 
 @interface VSyncClient : NSObject
 
@@ -41,13 +41,32 @@
 }
 
 - (void)await:(shell::VsyncWaiter::Callback)callback {
-  FTL_DCHECK(!_pendingCallback);
+  FXL_DCHECK(!_pendingCallback);
   _pendingCallback = std::move(callback);
   _displayLink.paused = NO;
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
+  fxl::TimePoint frame_start_time = fxl::TimePoint::Now();
+  fxl::TimePoint frame_target_time = frame_start_time + fxl::TimeDelta::FromSecondsF(link.duration);
+
   _displayLink.paused = YES;
+
+  // Note: The tag name must be "VSYNC" (it is special) so that the "Highlight
+  // Vsync" checkbox in the timeline can be enabled.
+  // See: https://github.com/catapult-project/catapult/blob/2091404475cbba9b786
+  // 442979b6ec631305275a6/tracing/tracing/extras/vsync/vsync_auditor.html#L26
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+  TRACE_EVENT1("flutter", "VSYNC", "mode", "basic");
+#else
+  {
+    fxl::TimeDelta delta = frame_target_time.ToEpochDelta();
+    constexpr size_t num_chars = sizeof(int64_t) * CHAR_BIT * 3.4 + 2;
+    char deadline[num_chars];
+    sprintf(deadline, "%lld", delta.ToMicroseconds());
+    TRACE_EVENT2("flutter", "VSYNC", "mode", "basic", "deadline", deadline);
+  }
+#endif
 
   // Note: Even though we know we are on the UI thread already (since the
   // display link was scheduled on the UI thread in the contructor), we use
@@ -57,9 +76,9 @@
   //
   // We are not using the PostTask for thread switching, but to make task
   // observers work.
-  blink::Threads::UI()->PostTask([callback = _pendingCallback]() {
-    callback(ftl::TimePoint::Now());
-  });
+  blink::Threads::UI()->PostTask([
+    callback = _pendingCallback, frame_start_time, frame_target_time
+  ]() { callback(frame_start_time, frame_target_time); });
 
   _pendingCallback = nullptr;
 }

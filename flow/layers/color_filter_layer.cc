@@ -6,19 +6,20 @@
 
 namespace flow {
 
-ColorFilterLayer::ColorFilterLayer() {}
+ColorFilterLayer::ColorFilterLayer() = default;
 
-ColorFilterLayer::~ColorFilterLayer() {}
+ColorFilterLayer::~ColorFilterLayer() = default;
 
-void ColorFilterLayer::Paint(PaintContext& context) {
+void ColorFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
+  FXL_DCHECK(needs_painting());
+
   sk_sp<SkColorFilter> color_filter =
       SkColorFilter::MakeModeFilter(color_, blend_mode_);
   SkPaint paint;
   paint.setColorFilter(std::move(color_filter));
 
-  SkAutoCanvasRestore save(&context.canvas, false);
-  context.canvas.saveLayer(&paint_bounds(), &paint);
+  Layer::AutoSaveLayer(context, paint_bounds(), nullptr);
   PaintChildren(context);
 }
 

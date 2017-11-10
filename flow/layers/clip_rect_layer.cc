@@ -4,38 +4,40 @@
 
 #include "flutter/flow/layers/clip_rect_layer.h"
 
-#if defined(OS_FUCHSIA)
-#include "apps/mozart/lib/skia/type_converters.h"
-#include "apps/mozart/services/composition/nodes.fidl.h"
-#endif  // defined(OS_FUCHSIA)
-
 namespace flow {
 
-ClipRectLayer::ClipRectLayer() {}
+ClipRectLayer::ClipRectLayer() = default;
 
-ClipRectLayer::~ClipRectLayer() {}
+ClipRectLayer::~ClipRectLayer() = default;
 
 void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  PrerollChildren(context, matrix);
-  if (!context->child_paint_bounds.intersect(clip_rect_))
-    context->child_paint_bounds.setEmpty();
-  set_paint_bounds(context->child_paint_bounds);
+  SkRect child_paint_bounds = SkRect::MakeEmpty();
+  PrerollChildren(context, matrix, &child_paint_bounds);
+
+  if (child_paint_bounds.intersect(clip_rect_)) {
+    set_paint_bounds(child_paint_bounds);
+  }
 }
 
 #if defined(OS_FUCHSIA)
 
-void ClipRectLayer::UpdateScene(SceneUpdateContext& context,
-                                mozart::Node* container) {
-  auto node = mozart::Node::New();
-  node->content_clip = mozart::RectF::From(clip_rect_);
-  UpdateSceneChildrenInsideNode(context, container, std::move(node));
+void ClipRectLayer::UpdateScene(SceneUpdateContext& context) {
+  FXL_DCHECK(needs_system_composite());
+
+  scenic_lib::Rectangle shape(context.session(),   // session
+                              clip_rect_.width(),  //  width
+                              clip_rect_.height()  //  height
+  );
+
+  SceneUpdateContext::Clip clip(context, shape, clip_rect_);
+  UpdateSceneChildren(context);
 }
 
 #endif  // defined(OS_FUCHSIA)
 
-void ClipRectLayer::Paint(PaintContext& context) {
+void ClipRectLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipRectLayer::Paint");
-  FTL_DCHECK(!needs_system_composite());
+  FXL_DCHECK(needs_painting());
 
   SkAutoCanvasRestore save(&context.canvas, true);
   context.canvas.clipRect(paint_bounds());

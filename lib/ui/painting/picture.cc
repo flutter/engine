@@ -7,21 +7,24 @@
 #include "flutter/common/threads.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/utils.h"
+#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_args.h"
 #include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_library_natives.h"
+#include "third_party/skia/include/core/SkImage.h"
 
 namespace blink {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Picture);
 
-#define FOR_EACH_BINDING(V) V(Picture, dispose)
+#define FOR_EACH_BINDING(V) \
+  V(Picture, toImage)       \
+  V(Picture, dispose)
 
 DART_BIND_ALL(Picture, FOR_EACH_BINDING)
 
-ftl::RefPtr<Picture> Picture::Create(sk_sp<SkPicture> picture) {
-  return ftl::MakeRefCounted<Picture>(std::move(picture));
+fxl::RefPtr<Picture> Picture::Create(sk_sp<SkPicture> picture) {
+  return fxl::MakeRefCounted<Picture>(std::move(picture));
 }
 
 Picture::Picture(sk_sp<SkPicture> picture) : picture_(std::move(picture)) {}
@@ -32,8 +35,25 @@ Picture::~Picture() {
   SkiaUnrefOnIOThread(&picture_);
 }
 
+fxl::RefPtr<CanvasImage> Picture::toImage(int width, int height) {
+  fxl::RefPtr<CanvasImage> image = CanvasImage::Create();
+  // TODO(abarth): We should pass in an SkColorSpace at some point.
+  image->set_image(SkImage::MakeFromPicture(
+      picture_, SkISize::Make(width, height), nullptr, nullptr,
+      SkImage::BitDepth::kU8, SkColorSpace::MakeSRGB()));
+  return image;
+}
+
 void Picture::dispose() {
   ClearDartWrapper();
+}
+
+size_t Picture::GetAllocationSize() {
+  if (picture_) {
+    return picture_->approximateBytesUsed();
+  } else {
+    return sizeof(Picture);
+  }
 }
 
 }  // namespace blink

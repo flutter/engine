@@ -4,17 +4,17 @@
 
 #include "flutter/sky/engine/platform/fonts/fuchsia/FontCacheFuchsia.h"
 
+#include <zircon/syscalls.h>
+#include <zx/vmar.h>
+#include <zx/vmo.h>
 #include <limits>
-#include <magenta/syscalls.h>
-#include <mx/vmar.h>
-#include <mx/vmo.h>
 #include <utility>
 
-#include "apps/fonts/services/font_provider.fidl.h"
 #include "flutter/sky/engine/platform/fonts/AlternateFontFamily.h"
 #include "flutter/sky/engine/platform/fonts/FontCache.h"
 #include "flutter/sky/engine/platform/fonts/FontDescription.h"
-#include "lib/ftl/logging.h"
+#include "lib/fonts/fidl/font_provider.fidl.h"
+#include "lib/fxl/logging.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkTypeface.h"
 #include "third_party/skia/include/ports/SkFontMgr.h"
@@ -61,17 +61,17 @@ fonts::FontSlant ToFontSlant(FontStyle style) {
 void UnmapMemory(const void* buffer, void* context) {
   static_assert(sizeof(void*) == sizeof(uint64_t), "pointers aren't 64-bit");
   const uint64_t size = reinterpret_cast<uint64_t>(context);
-  mx::vmar::root_self().unmap(reinterpret_cast<uintptr_t>(buffer), size);
+  zx::vmar::root_self().unmap(reinterpret_cast<uintptr_t>(buffer), size);
 }
 
-sk_sp<SkData> MakeSkDataFromVMO(const mx::vmo& vmo) {
+sk_sp<SkData> MakeSkDataFromVMO(const zx::vmo& vmo) {
   uint64_t size = 0;
-  mx_status_t status = vmo.get_size(&size);
-  if (status != NO_ERROR || size > std::numeric_limits<size_t>::max())
+  zx_status_t status = vmo.get_size(&size);
+  if (status != ZX_OK || size > std::numeric_limits<size_t>::max())
     return nullptr;
   uintptr_t buffer = 0;
-  mx::vmar::root_self().map(0, vmo, 0, size, MX_VM_FLAG_PERM_READ, &buffer);
-  if (status != NO_ERROR)
+  zx::vmar::root_self().map(0, vmo, 0, size, ZX_VM_FLAG_PERM_READ, &buffer);
+  if (status != ZX_OK)
     return nullptr;
   return SkData::MakeWithProc(reinterpret_cast<void*>(buffer), size,
                               UnmapMemory, reinterpret_cast<void*>(size));
@@ -80,14 +80,14 @@ sk_sp<SkData> MakeSkDataFromVMO(const mx::vmo& vmo) {
 fonts::FontProviderPtr* g_font_provider = nullptr;
 
 fonts::FontProviderPtr& GetFontProvider() {
-  FTL_CHECK(g_font_provider);
+  FXL_CHECK(g_font_provider);
   return *g_font_provider;
 }
 
 }  // namespace
 
 void SetFontProvider(fonts::FontProviderPtr provider) {
-  FTL_CHECK(!g_font_provider);
+  FXL_CHECK(!g_font_provider);
   g_font_provider = new fonts::FontProviderPtr;
   *g_font_provider = std::move(provider);
 }
@@ -121,7 +121,7 @@ sk_sp<SkTypeface> FontCache::createTypeface(
       [&response](fonts::FontResponsePtr r) { response = std::move(r); });
   font_provider.WaitForIncomingResponse();
 
-  FTL_DCHECK(response)
+  FXL_DCHECK(response)
       << "Unable to contact the font provider. Did you run "
          "Flutter in an environment that has a font manager?\n"
          "See <https://fuchsia.googlesource.com/modular/+/master/README.md>.";
@@ -133,7 +133,7 @@ sk_sp<SkTypeface> FontCache::createTypeface(
   if (!data)
     return nullptr;
 
-  return sk_sp<SkTypeface>(SkFontMgr::RefDefault()->createFromData(data.get()));
+  return SkFontMgr::RefDefault()->makeFromData(std::move(data));
 }
 
 }  // namespace blink

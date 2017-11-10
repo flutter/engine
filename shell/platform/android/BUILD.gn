@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-import("//flutter/shell/config.gni")
+import("$flutter_root/common/config.gni")
+import("$flutter_root/shell/config.gni")
 import("//build/config/android/config.gni")
 import("//build/config/android/rules.gni")
 
@@ -17,12 +17,16 @@ shared_library("flutter_shell_native") {
     "android_context_gl.h",
     "android_environment_gl.cc",
     "android_environment_gl.h",
+    "android_external_texture_gl.h",
+    "android_external_texture_gl.cc",
     "android_native_window.cc",
     "android_native_window.h",
     "android_surface.cc",
     "android_surface.h",
     "android_surface_gl.cc",
     "android_surface_gl.h",
+    "android_surface_software.h",
+    "android_surface_software.cc",
     "flutter_main.cc",
     "flutter_main.h",
     "library_loader.cc",
@@ -35,21 +39,26 @@ shared_library("flutter_shell_native") {
   ]
 
   deps = [
-    "//flutter/common",
-    "//flutter/flow",
-    "//flutter/fml",
-    "//flutter/lib/ui",
-    "//flutter/runtime",
-    "//flutter/shell/common",
-    "//flutter/shell/gpu",
-    "//lib/ftl",
+    "$flutter_root/common",
+    "$flutter_root/flow",
+    "$flutter_root/fml",
+    "$flutter_root/lib/ui",
+    "$flutter_root/runtime",
+    "$flutter_root/shell/common",
+    "$flutter_root/shell/gpu",
+    "//garnet/public/lib/fxl",
     "//third_party/skia",
+    "//third_party/skia:gpu",
   ]
   if (flutter_runtime_mode == "debug") {
-    deps += [ "//dart/runtime:libdart_jit" ]
+    deps += [ "//third_party/dart/runtime:libdart_jit" ]
   } else {
-    deps += [ "//dart/runtime:libdart_precompiled_runtime" ]
+    deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
   }
+
+  public_configs = [
+    "$flutter_root:config",
+  ]
 
   defines = []
 
@@ -59,7 +68,7 @@ shared_library("flutter_shell_native") {
       "android_surface_vulkan.h",
     ]
 
-    deps += [ "//flutter/vulkan" ]
+    deps += [ "$flutter_root/vulkan" ]
 
     defines += [ "SHELL_ENABLE_VULKAN" ]
   }
@@ -76,7 +85,10 @@ java_library("flutter_shell_java") {
 
   java_files = [
     "io/flutter/app/FlutterActivity.java",
+    "io/flutter/app/FlutterActivityDelegate.java",
+    "io/flutter/app/FlutterActivityEvents.java",
     "io/flutter/app/FlutterApplication.java",
+    "io/flutter/app/FlutterFragmentActivity.java",
     "io/flutter/plugin/common/ActivityLifecycleListener.java",
     "io/flutter/plugin/common/BasicMessageChannel.java",
     "io/flutter/plugin/common/BinaryCodec.java",
@@ -90,6 +102,7 @@ java_library("flutter_shell_java") {
     "io/flutter/plugin/common/MethodCall.java",
     "io/flutter/plugin/common/MethodChannel.java",
     "io/flutter/plugin/common/MethodCodec.java",
+    "io/flutter/plugin/common/PluginRegistry.java",
     "io/flutter/plugin/common/StandardMessageCodec.java",
     "io/flutter/plugin/common/StandardMethodCodec.java",
     "io/flutter/plugin/common/StringCodec.java",
@@ -97,23 +110,36 @@ java_library("flutter_shell_java") {
     "io/flutter/plugin/editing/TextInputPlugin.java",
     "io/flutter/plugin/platform/PlatformPlugin.java",
     "io/flutter/util/PathUtils.java",
+    "io/flutter/util/Preconditions.java",
     "io/flutter/view/AccessibilityBridge.java",
     "io/flutter/view/FlutterMain.java",
+    "io/flutter/view/FlutterNativeView.java",
     "io/flutter/view/FlutterView.java",
     "io/flutter/view/ResourceCleaner.java",
     "io/flutter/view/ResourceExtractor.java",
     "io/flutter/view/ResourcePaths.java",
+    "io/flutter/view/TextureRegistry.java",
     "io/flutter/view/VsyncWaiter.java",
   ]
 
+  deps = [
+    ":android_support_v4",
+  ]
+
   jar_path = "$root_out_dir/flutter_java.jar"
+}
+
+java_prebuilt("android_support_v4") {
+  supports_android = true
+
+  jar_path = "//third_party/android_tools/sdk/extras/android/support/v4/android-support-v4.jar"
 }
 
 copy("flutter_shell_assets") {
   visibility = [ ":*" ]
 
   sources = [
-    "$root_build_dir/icudtl.dat",
+    "//third_party/icu/android/icudtl.dat",
   ]
 
   outputs = [

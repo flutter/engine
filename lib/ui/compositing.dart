@@ -197,34 +197,36 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   }
   void _addPicture(double dx, double dy, Picture picture, int hints) native "SceneBuilder_addPicture";
 
+  /// Adds a backend texture to the scene.
+  ///
+  /// The texture is scaled to the given size and rasterized at the given offset.
+  void addTexture(int textureId, { Offset offset: Offset.zero, double width: 0.0, double height: 0.0 }) {
+    assert(offset != null, 'Offset argument was null');
+    _addTexture(offset.dx, offset.dy, width, height, textureId);
+  }
+  void _addTexture(double dx, double dy, double width, double height, int textureId) native "SceneBuilder_addTexture";
+
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.
-  ///
-  /// Applications typically obtain scene tokens when embedding other views via
-  /// the Fuchsia view manager, but this function is agnostic as to the source
-  /// of scene token.
   void addChildScene({
     Offset offset: Offset.zero,
-    double devicePixelRatio: 1.0,
-    int physicalWidth: 0,
-    int physicalHeight: 0,
-    int sceneToken,
+    double width: 0.0,
+    double height: 0.0,
+    SceneHost sceneHost,
     bool hitTestable: true
   }) {
     _addChildScene(offset.dx,
                    offset.dy,
-                   devicePixelRatio,
-                   physicalWidth,
-                   physicalHeight,
-                   sceneToken,
+                   width,
+                   height,
+                   sceneHost,
                    hitTestable);
   }
   void _addChildScene(double dx,
                       double dy,
-                      double devicePixelRatio,
-                      int physicalWidth,
-                      int physicalHeight,
-                      int sceneToken,
+                      double width,
+                      double height,
+                      SceneHost sceneHost,
                       bool hitTestable) native "SceneBuilder_addChildScene";
 
   /// Sets a threshold after which additional debugging information should be recorded.
@@ -252,6 +254,12 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
   void setCheckerboardRasterCacheImages(bool checkerboard) native "SceneBuilder_setCheckerboardRasterCacheImages";
 
+  /// Sets whether the compositor should checkerboard layers that are rendered
+  /// to offscreen bitmaps.
+  ///
+  /// This is only useful for debugging purposes.
+  void setCheckerboardOffscreenLayers(bool checkerboard) native "SceneBuilder_setCheckerboardOffscreenLayers";
+
   /// Finishes building the scene.
   ///
   /// Returns a [Scene] containing the objects that have been added to
@@ -261,4 +269,29 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// After calling this function, the scene builder object is invalid and
   /// cannot be used further.
   Scene build() native "SceneBuilder_build";
+}
+
+/// (Fuchsia-only) Hosts content provided by another application.
+class SceneHost extends NativeFieldWrapperClass2 {
+  /// Creates a host for a child scene.
+  ///
+  /// The export token is bound to a scene graph node which acts as a container
+  /// for the child's content.  The creator of the scene host is responsible for
+  /// sending the corresponding import token (the other endpoint of the event pair)
+  /// to the child.
+  ///
+  /// The export token is a dart:zircon Handle, but that type isn't
+  /// available here. This is called by ChildViewConnection in
+  /// //topaz/public/lib/ui/flutter/.
+  ///
+  /// The scene host takes ownership of the provided export token handle.
+  SceneHost(dynamic export_token_handle) {
+    _constructor(export_token_handle);
+  }
+  void _constructor(dynamic export_token_handle) native "SceneHost_constructor";
+
+  /// Releases the resources associated with the child scene host.
+  ///
+  /// After calling this function, the child scene host cannot be used further.
+  void dispose() native "SceneHost_dispose";
 }

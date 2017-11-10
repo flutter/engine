@@ -17,6 +17,7 @@ class SemanticsAction {
   static const int _kScrollDownIndex = 1 << 5;
   static const int _kIncreaseIndex = 1 << 6;
   static const int _kDecreaseIndex = 1 << 7;
+  static const int _kShowOnScreen = 1 << 8;
 
   /// The numerical value for this action.
   ///
@@ -69,6 +70,12 @@ class SemanticsAction {
   /// For example, this action might be recognized by a slider control.
   static const SemanticsAction decrease = const SemanticsAction._(_kDecreaseIndex);
 
+  /// A request to fully show the semantics node on screen.
+  ///
+  /// For example, this action might be send to a node in a scrollable list that
+  /// is partially off screen to bring it on screen.
+  static const SemanticsAction showOnScreen = const SemanticsAction._(_kShowOnScreen);
+
   /// The possible semantics actions.
   ///
   /// The map's key is the [index] of the action and the value is the action
@@ -82,6 +89,7 @@ class SemanticsAction {
     _kScrollDownIndex: scrollDown,
     _kIncreaseIndex: increase,
     _kDecreaseIndex: decrease,
+    _kShowOnScreen: showOnScreen,
   };
 
   @override
@@ -103,6 +111,8 @@ class SemanticsAction {
         return 'SemanticsAction.increase';
       case _kDecreaseIndex:
         return 'SemanticsAction.decrease';
+      case _kShowOnScreen:
+        return 'SemanticsAction.showOnScreen';
     }
     return null;
   }
@@ -112,6 +122,10 @@ class SemanticsAction {
 class SemanticsFlags {
   static const int _kHasCheckedStateIndex = 1 << 0;
   static const int _kIsCheckedIndex = 1 << 1;
+  static const int _kIsSelectedIndex = 1 << 2;
+  static const int _kIsButtonIndex = 1 << 3;
+  static const int _kIsTextFieldIndex = 1 << 4;
+  static const int _kIsFocusedIndex = 1 << 5;
 
   const SemanticsFlags._(this.index);
 
@@ -133,12 +147,43 @@ class SemanticsFlags {
   /// For example, if a checkbox has a visible checkmark, [isChecked] is true.
   static const SemanticsFlags isChecked = const SemanticsFlags._(_kIsCheckedIndex);
 
+
+  /// Whether a semantics node is selected.
+  ///
+  /// If true, the semantics node is "selected". If false, the semantics node is
+  /// "unselected".
+  ///
+  /// For example, the active tab in a tab bar has [isSelected] set to true.
+  static const SemanticsFlags isSelected = const SemanticsFlags._(_kIsSelectedIndex);
+
+  /// Whether the semantic node represents a button.
+  ///
+  /// Platforms has special handling for buttons, for example Android's TalkBack
+  /// and iOS's VoiceOver provides an additional hint when the focused object is
+  /// a button.
+  static const SemanticsFlags isButton = const SemanticsFlags._(_kIsButtonIndex);
+
+  /// Whether the semantic node represents a text field.
+  ///
+  /// Text fields are announced as such and allow text input via accessibility
+  /// affordances.
+  static const SemanticsFlags isTextField = const SemanticsFlags._(_kIsTextFieldIndex);
+
+  /// Whether the semantic node currently holds the user's focus.
+  ///
+  /// The focused element is usually the current receiver of keyboard inputs.
+  static const SemanticsFlags isFocused = const SemanticsFlags._(_kIsFocusedIndex);
+
   /// The possible semantics flags.
   ///
   /// The map's key is the [index] of the flag and the value is the flag itself.
   static final Map<int, SemanticsFlags> values = const <int, SemanticsFlags>{
     _kHasCheckedStateIndex: hasCheckedState,
     _kIsCheckedIndex: isChecked,
+    _kIsSelectedIndex: isSelected,
+    _kIsButtonIndex: isButton,
+    _kIsTextFieldIndex: isTextField,
+    _kIsFocusedIndex: isFocused,
   };
 
   @override
@@ -148,6 +193,14 @@ class SemanticsFlags {
         return 'SemanticsFlags.hasCheckedState';
       case _kIsCheckedIndex:
         return 'SemanticsFlags.isChecked';
+      case _kIsSelectedIndex:
+        return 'SemanticsFlags.isSelected';
+      case _kIsButtonIndex:
+        return 'SemanticsFlags.isButton';
+      case _kIsTextFieldIndex:
+        return 'SemanticsFlags.isTextField';
+      case _kIsFocusedIndex:
+        return 'SemanticsFlags.isFocused';
     }
     return null;
   }
@@ -180,24 +233,35 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// asynchronously, the [Window.onSemanticsAction] callback might be called
   /// with an action that is no longer possible.
   ///
-  /// The `label` is a string that describes this node.
+  /// The `label` is a string that describes this node. The `value` property
+  /// describes the current value of the node as a string. The `increasedValue`
+  /// string will become the `value` string after a [SemanticsAction.increase]
+  /// action is performed. The `decreasedValue` string will become the `value`
+  /// string after a [SemanticsAction.decrease] action is performed. The `hint`
+  /// string describes what result an action performed on this node has. The
+  /// reading direction of all these strings is given by `textDirection`.
   ///
   /// The `rect` is the region occupied by this node in its own coordinate
   /// system.
   ///
   /// The `transform` is a matrix that maps this node's coodinate system into
-  /// its parent's coordate system.
+  /// its parent's coordinate system.
   void updateNode({
     int id,
     int flags,
     int actions,
     Rect rect,
     String label,
+    String hint,
+    String value,
+    String increasedValue,
+    String decreasedValue,
+    TextDirection textDirection,
     Float64List transform,
     Int32List children
   }) {
     if (transform.length != 16)
-      throw new ArgumentError("[transform] must have 16 entries.");
+      throw new ArgumentError('transform argument must have 16 entries.');
     _updateNode(id,
                 flags,
                 actions,
@@ -206,6 +270,11 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
                 rect.right,
                 rect.bottom,
                 label,
+                hint,
+                value,
+                increasedValue,
+                decreasedValue,
+                textDirection != null ? textDirection.index + 1 : 0,
                 transform,
                 children);
   }
@@ -218,6 +287,11 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     double right,
     double bottom,
     String label,
+    String hint,
+    String value,
+    String increasedValue,
+    String decreasedValue,
+    int textDirection,
     Float64List transform,
     Int32List children
   ) native "SemanticsUpdateBuilder_updateNode";

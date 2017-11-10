@@ -14,15 +14,15 @@ class DartLibraryNatives;
 
 namespace blink {
 
-class CanvasImage final : public ftl::RefCountedThreadSafe<CanvasImage>,
+class CanvasImage final : public fxl::RefCountedThreadSafe<CanvasImage>,
                           public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
   FRIEND_MAKE_REF_COUNTED(CanvasImage);
 
  public:
   ~CanvasImage() override;
-  static ftl::RefPtr<CanvasImage> Create() {
-    return ftl::MakeRefCounted<CanvasImage>();
+  static fxl::RefPtr<CanvasImage> Create() {
+    return fxl::MakeRefCounted<CanvasImage>();
   }
 
   int width() { return image_->width(); }
@@ -31,6 +31,8 @@ class CanvasImage final : public ftl::RefCountedThreadSafe<CanvasImage>,
 
   const sk_sp<SkImage>& image() const { return image_; }
   void set_image(sk_sp<SkImage> image) { image_ = std::move(image); }
+
+  virtual size_t GetAllocationSize() override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

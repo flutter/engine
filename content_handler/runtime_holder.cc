@@ -5,13 +5,14 @@
 #include "flutter/content_handler/runtime_holder.h"
 
 #include <dlfcn.h>
-#include <magenta/dlfcn.h>
+#include <fdio/namespace.h>
+#include <zircon/dlfcn.h>
 #include <utility>
 
-#include "application/lib/app/connect.h"
-#include "dart/runtime/include/dart_api.h"
+#include "dart-pkg/zircon/sdk_ext/handle.h"
 #include "flutter/assets/zip_asset_store.h"
 #include "flutter/common/threads.h"
+#include "flutter/content_handler/accessibility_bridge.h"
 #include "flutter/content_handler/rasterizer.h"
 #include "flutter/content_handler/service_protocol_hooks.h"
 #include "flutter/lib/snapshot/snapshot.h"
@@ -20,13 +21,13 @@
 #include "flutter/runtime/dart_controller.h"
 #include "flutter/runtime/dart_init.h"
 #include "flutter/runtime/runtime_init.h"
-#include "lib/fidl/dart/sdk_ext/src/natives.h"
-#include "lib/ftl/functional/make_copyable.h"
-#include "lib/ftl/logging.h"
-#include "lib/ftl/time/time_delta.h"
-#include "lib/mtl/vmo/vector.h"
-#include "lib/tonic/mx/mx_converter.h"
+#include "lib/app/cpp/connect.h"
+#include "lib/fsl/vmo/vector.h"
+#include "lib/fxl/functional/make_copyable.h"
+#include "lib/fxl/logging.h"
+#include "lib/fxl/time/time_delta.h"
 #include "lib/zip/create_unzipper.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/rapidjson/rapidjson/document.h"
 #include "third_party/rapidjson/rapidjson/stringbuffer.h"
 #include "third_party/rapidjson/rapidjson/writer.h"
@@ -41,13 +42,15 @@ constexpr char kKernelKey[] = "kernel_blob.bin";
 constexpr char kSnapshotKey[] = "snapshot_blob.bin";
 constexpr char kDylibKey[] = "libapp.so";
 constexpr char kAssetChannel[] = "flutter/assets";
+constexpr char kKeyEventChannel[] = "flutter/keyevent";
+constexpr char kTextInputChannel[] = "flutter/textinput";
 
-// Maximum number of frames in flight.
-constexpr int kMaxPipelineDepth = 3;
-
-// When the max pipeline depth is exceeded, drain to this number of frames
-// to recover before acknowleding the invalidation and scheduling more frames.
-constexpr int kRecoveryPipelineDepth = 1;
+void SetThreadName(fxl::RefPtr<fxl::TaskRunner> runner, std::string name) {
+  runner->PostTask([name]() {
+    zx::thread::self().set_property(ZX_PROP_NAME, name.c_str(), name.size());
+    Dart_SetThreadName(name.c_str());
+  });
+}
 
 blink::PointerData::Change GetChangeFromPointerEventPhase(
     mozart::PointerEvent::Phase phase) {
@@ -88,27 +91,30 @@ blink::PointerData::DeviceKind GetKindFromPointerType(
 RuntimeHolder::RuntimeHolder()
     : view_listener_binding_(this),
       input_listener_binding_(this),
+      text_input_binding_(this),
       weak_factory_(this) {}
 
 RuntimeHolder::~RuntimeHolder() {
   blink::Threads::Gpu()->PostTask(
-      ftl::MakeCopyable([rasterizer = std::move(rasterizer_)](){
+      fxl::MakeCopyable([rasterizer = std::move(rasterizer_)](){
           // Deletes rasterizer.
       }));
 }
 
 void RuntimeHolder::Init(
-    fidl::InterfaceHandle<app::ApplicationEnvironment> environment,
+    fdio_ns_t* namespc,
+    std::unique_ptr<app::ApplicationContext> context,
     fidl::InterfaceRequest<app::ServiceProvider> outgoing_services,
     std::vector<char> bundle) {
-  FTL_DCHECK(!rasterizer_);
+  FXL_DCHECK(!rasterizer_);
   rasterizer_ = Rasterizer::Create();
-  FTL_DCHECK(rasterizer_);
+  FXL_DCHECK(rasterizer_);
 
-  environment_.Bind(std::move(environment));
-  environment_->GetServices(fidl::GetProxy(&environment_services_));
-  ConnectToService(environment_services_.get(), fidl::GetProxy(&view_manager_));
+  namespc_ = namespc;
+  context_ = std::move(context);
   outgoing_services_ = std::move(outgoing_services);
+
+  context_->ConnectToEnvironmentService(view_manager_.NewRequest());
 
   InitRootBundle(std::move(bundle));
 
@@ -124,20 +130,20 @@ void RuntimeHolder::Init(
   } else {
     std::vector<uint8_t> dylib_blob;
     if (!asset_store_->GetAsBuffer(kDylibKey, &dylib_blob)) {
-      FTL_LOG(ERROR) << "Failed to extract app dylib";
+      FXL_LOG(ERROR) << "Failed to extract app dylib";
       return;
     }
 
-    mx::vmo dylib_vmo;
-    if (!mtl::VmoFromVector(dylib_blob, &dylib_vmo)) {
-      FTL_LOG(ERROR) << "Failed to load app dylib";
+    zx::vmo dylib_vmo;
+    if (!fsl::VmoFromVector(dylib_blob, &dylib_vmo)) {
+      FXL_LOG(ERROR) << "Failed to load app dylib";
       return;
     }
 
     dlerror();
     dylib_handle_ = dlopen_vmo(dylib_vmo.get(), RTLD_LAZY);
     if (dylib_handle_ == nullptr) {
-      FTL_LOG(ERROR) << "dlopen failed: " << dlerror();
+      FXL_LOG(ERROR) << "dlopen failed: " << dlerror();
       return;
     }
     vm_snapshot_data = reinterpret_cast<const uint8_t*>(
@@ -157,11 +163,19 @@ void RuntimeHolder::Init(
     first_app = false;
     blink::InitRuntime(vm_snapshot_data, vm_snapshot_instr,
                        default_isolate_snapshot_data,
-                       default_isolate_snapshot_instr);
+                       default_isolate_snapshot_instr,
+                       /* bundle_path = */ "");
+
+    // This has to happen after the Dart runtime is initialized.
+    SetThreadName(blink::Threads::UI(), "ui");
+    SetThreadName(blink::Threads::Gpu(), "gpu");
+    SetThreadName(blink::Threads::IO(), "io");
 
     blink::SetRegisterNativeServiceProtocolExtensionHook(
         ServiceProtocolHooks::RegisterHooks);
   }
+
+  accessibility_bridge_ = std::make_unique<AccessibilityBridge>(context_.get());
 }
 
 void RuntimeHolder::CreateView(
@@ -171,7 +185,7 @@ void RuntimeHolder::CreateView(
   if (view_listener_binding_.is_bound()) {
     // TODO(jeffbrown): Refactor this to support multiple view instances
     // sharing the same underlying root bundle (but with different runtimes).
-    FTL_LOG(ERROR) << "The view has already been created.";
+    FXL_LOG(ERROR) << "The view has already been created.";
     return;
   }
 
@@ -180,32 +194,66 @@ void RuntimeHolder::CreateView(
   if (!Dart_IsPrecompiledRuntime()) {
     if (!asset_store_->GetAsBuffer(kKernelKey, &kernel) &&
         !asset_store_->GetAsBuffer(kSnapshotKey, &snapshot)) {
-      FTL_LOG(ERROR) << "Unable to load kernel or snapshot from root bundle.";
+      FXL_LOG(ERROR) << "Unable to load kernel or snapshot from root bundle.";
       return;
     }
   }
 
+  // Create the view.
+  zx::eventpair import_token, export_token;
+  zx_status_t status = zx::eventpair::create(0u, &import_token, &export_token);
+  if (status != ZX_OK) {
+    FXL_LOG(ERROR) << "Could not create an event pair.";
+    return;
+  }
   mozart::ViewListenerPtr view_listener;
-  view_listener_binding_.Bind(fidl::GetProxy(&view_listener));
-  view_manager_->CreateView(fidl::GetProxy(&view_),
-                            std::move(view_owner_request),
-                            std::move(view_listener), script_uri);
-
+  view_listener_binding_.Bind(view_listener.NewRequest());
+  view_manager_->CreateView(view_.NewRequest(),             // view
+                            std::move(view_owner_request),  // view owner
+                            std::move(view_listener),       // view listener
+                            std::move(export_token),        // export token
+                            script_uri                      // diagnostic label
+  );
   app::ServiceProviderPtr view_services;
-  view_->GetServiceProvider(GetProxy(&view_services));
+  view_->GetServiceProvider(view_services.NewRequest());
 
   // Listen for input events.
-  ConnectToService(view_services.get(), GetProxy(&input_connection_));
+  ConnectToService(view_services.get(), fidl::GetProxy(&input_connection_));
   mozart::InputListenerPtr input_listener;
   input_listener_binding_.Bind(GetProxy(&input_listener));
   input_connection_->SetEventListener(std::move(input_listener));
 
-  mozart::ScenePtr scene;
-  view_->CreateScene(fidl::GetProxy(&scene));
-  blink::Threads::Gpu()->PostTask(ftl::MakeCopyable([
-    rasterizer = rasterizer_.get(), scene = std::move(scene)
-  ]() mutable { rasterizer->SetScene(std::move(scene)); }));
+  // Setup the session.
+  fidl::InterfaceHandle<scenic::SceneManager> scene_manager;
+  view_manager_->GetSceneManager(scene_manager.NewRequest());
 
+  blink::Threads::Gpu()->PostTask(fxl::MakeCopyable([
+    rasterizer = rasterizer_.get(),            //
+    scene_manager = std::move(scene_manager),  //
+    import_token = std::move(import_token),    //
+    weak_runtime_holder = GetWeakPtr()
+  ]() mutable {
+    ASSERT_IS_GPU_THREAD;
+    rasterizer->SetScene(
+        std::move(scene_manager), std::move(import_token),
+        // TODO(MZ-222): Ideally we would immediately redraw the previous layer
+        // tree when the metrics change since there's no need to rerecord it.
+        // However, we want to make sure there's only one outstanding frame.
+        // We should improve the frame scheduling so that the rasterizer thread
+        // can self-schedule re-rasterization.
+        [weak_runtime_holder] {
+          // This is on the GPU thread thread. Post to the Platform/UI
+          // thread for the completion callback.
+          ASSERT_IS_GPU_THREAD;
+          blink::Threads::Platform()->PostTask([weak_runtime_holder]() {
+            // On the Platform/UI thread.
+            ASSERT_IS_UI_THREAD;
+            if (weak_runtime_holder) {
+              weak_runtime_holder->OnRedrawFrame();
+            }
+          });
+        });
+  }));
   runtime_ = blink::RuntimeController::Create(this);
 
   const uint8_t* isolate_snapshot_data;
@@ -227,11 +275,14 @@ void RuntimeHolder::CreateView(
   if (Dart_IsPrecompiledRuntime()) {
     runtime_->dart_controller()->RunFromPrecompiledSnapshot();
   } else if (!kernel.empty()) {
-    runtime_->dart_controller()->RunFromKernel(kernel.data(), kernel.size());
+    runtime_->dart_controller()->RunFromKernel(std::move(kernel));
   } else {
     runtime_->dart_controller()->RunFromScriptSnapshot(snapshot.data(),
                                                        snapshot.size());
   }
+
+  runtime_->dart_controller()->dart_state()->SetReturnCodeCallback(
+      [this](int32_t return_code) { return_code_ = return_code; });
 }
 
 Dart_Port RuntimeHolder::GetUIIsolateMainPort() {
@@ -247,40 +298,74 @@ std::string RuntimeHolder::GetUIIsolateName() {
   return runtime_->GetIsolateName();
 }
 
-void RuntimeHolder::ScheduleFrame() {
-  if (pending_invalidation_ || deferred_invalidation_callback_)
-    return;
-  pending_invalidation_ = true;
-  view_->Invalidate();
+std::string RuntimeHolder::DefaultRouteName() {
+  return "/";
+}
+
+void RuntimeHolder::ScheduleFrame(bool regenerate_layer_tree) {
+  ASSERT_IS_UI_THREAD;
+  // TODO(mravn): We assume regenerate_layer_tree is true (and thus ignore
+  // that we may be able to reuse the current layer tree.)
+  if (!frame_scheduled_) {
+    frame_scheduled_ = true;
+    if (!frame_outstanding_)
+      PostBeginFrame();
+  }
 }
 
 void RuntimeHolder::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
-  if (!is_ready_to_draw_)
-    return;  // Only draw once per frame.
-  is_ready_to_draw_ = false;
+  if (!frame_outstanding_ || frame_rendering_) {
+    // TODO(MZ-193): We probably shouldn't be discarding the layer tree here.
+    // But then, Flutter shouldn't be calling Render() if we didn't call
+    // BeginFrame().
+    return;  // Spurious.
+  }
 
+  frame_rendering_ = true;
+
+  layer_tree->set_construction_time(fxl::TimePoint::Now() -
+                                    last_begin_frame_time_);
   layer_tree->set_frame_size(SkISize::Make(viewport_metrics_.physical_width,
                                            viewport_metrics_.physical_height));
-  layer_tree->set_scene_version(scene_version_);
+  layer_tree->set_device_pixel_ratio(viewport_metrics_.device_pixel_ratio);
 
-  blink::Threads::Gpu()->PostTask(ftl::MakeCopyable([
-    rasterizer = rasterizer_.get(), layer_tree = std::move(layer_tree),
-    self = GetWeakPtr()
+  // We are on the Platform/UI thread. Post to the GPU thread to render.
+  ASSERT_IS_PLATFORM_THREAD;
+  blink::Threads::Gpu()->PostTask(fxl::MakeCopyable([
+    rasterizer = rasterizer_.get(),      //
+    layer_tree = std::move(layer_tree),  //
+    weak_runtime_holder = GetWeakPtr()   //
   ]() mutable {
-    rasterizer->Draw(std::move(layer_tree), [self]() {
-      if (self)
-        self->OnFrameComplete();
+    // On the GPU Thread.
+    ASSERT_IS_GPU_THREAD;
+    rasterizer->Draw(std::move(layer_tree), [weak_runtime_holder]() {
+      // This is on the GPU thread thread. Post to the Platform/UI thread
+      // for the completion callback.
+      ASSERT_IS_GPU_THREAD;
+      blink::Threads::Platform()->PostTask([weak_runtime_holder]() {
+        // On the Platform/UI thread.
+        ASSERT_IS_UI_THREAD;
+        if (weak_runtime_holder) {
+          weak_runtime_holder->frame_rendering_ = false;
+          weak_runtime_holder->OnFrameComplete();
+        }
+      });
     });
   }));
 }
 
-void RuntimeHolder::UpdateSemantics(std::vector<blink::SemanticsNode> update) {}
+void RuntimeHolder::UpdateSemantics(std::vector<blink::SemanticsNode> update) {
+  accessibility_bridge_->UpdateSemantics(update);
+}
 
 void RuntimeHolder::HandlePlatformMessage(
-    ftl::RefPtr<blink::PlatformMessage> message) {
+    fxl::RefPtr<blink::PlatformMessage> message) {
   if (message->channel() == kAssetChannel) {
-    HandleAssetPlatformMessage(std::move(message));
-    return;
+    if (HandleAssetPlatformMessage(message.get()))
+      return;
+  } else if (message->channel() == kTextInputChannel) {
+    if (HandleTextInputPlatformMessage(message.get()))
+      return;
   }
   if (auto response = message->response())
     response->CompleteEmpty();
@@ -289,26 +374,37 @@ void RuntimeHolder::HandlePlatformMessage(
 void RuntimeHolder::DidCreateMainIsolate(Dart_Isolate isolate) {
   if (asset_store_)
     blink::AssetFontSelector::Install(asset_store_);
-  InitFidlInternal();
+  InitDartIoInternal();
+  InitFuchsia();
   InitMozartInternal();
 }
 
-void RuntimeHolder::InitFidlInternal() {
+void RuntimeHolder::InitDartIoInternal() {
+  Dart_Handle io_lib = Dart_LookupLibrary(ToDart("dart:io"));
+
+  // Set up the namespace.
+  Dart_Handle namespace_type =
+      Dart_GetType(io_lib, ToDart("_Namespace"), 0, nullptr);
+  DART_CHECK_VALID(namespace_type);
+  Dart_Handle namespace_args[1];
+  namespace_args[0] = Dart_NewInteger(reinterpret_cast<intptr_t>(namespc_));
+  DART_CHECK_VALID(namespace_args[0]);
+  DART_CHECK_VALID(Dart_Invoke(namespace_type, ToDart("_setupNamespace"), 1,
+                               namespace_args));
+
+  // Disable dart:io exit()
+  Dart_Handle embedder_config_type =
+      Dart_GetType(io_lib, ToDart("_EmbedderConfig"), 0, nullptr);
+  DART_CHECK_VALID(embedder_config_type);
+  DART_CHECK_VALID(
+      Dart_SetField(embedder_config_type, ToDart("_mayExit"), Dart_False()));
+}
+
+void RuntimeHolder::InitFuchsia() {
   fidl::InterfaceHandle<app::ApplicationEnvironment> environment;
-  environment_->Duplicate(GetProxy(&environment));
-
-  Dart_Handle fidl_internal = Dart_LookupLibrary(ToDart("dart:fidl.internal"));
-
-  DART_CHECK_VALID(Dart_SetNativeResolver(
-      fidl_internal, fidl::dart::NativeLookup, fidl::dart::NativeSymbol));
-
-  DART_CHECK_VALID(Dart_SetField(
-      fidl_internal, ToDart("_environment"),
-      DartConverter<mx::channel>::ToDart(environment.PassHandle())));
-
-  DART_CHECK_VALID(Dart_SetField(
-      fidl_internal, ToDart("_outgoingServices"),
-      DartConverter<mx::channel>::ToDart(outgoing_services_.PassChannel())));
+  context_->ConnectToEnvironmentService(environment.NewRequest());
+  fuchsia::dart::Initialize(std::move(environment),
+                            std::move(outgoing_services_));
 }
 
 void RuntimeHolder::InitMozartInternal() {
@@ -318,22 +414,34 @@ void RuntimeHolder::InitMozartInternal() {
   Dart_Handle mozart_internal =
       Dart_LookupLibrary(ToDart("dart:mozart.internal"));
 
-  DART_CHECK_VALID(Dart_SetField(
-      mozart_internal, ToDart("_viewContainer"),
-      DartConverter<mx::channel>::ToDart(view_container.PassHandle())));
+  DART_CHECK_VALID(Dart_SetNativeResolver(mozart_internal, mozart::NativeLookup,
+                                          mozart::NativeSymbol));
+
+  DART_CHECK_VALID(
+      Dart_SetField(mozart_internal, ToDart("_context"),
+                    DartConverter<uint64_t>::ToDart(reinterpret_cast<intptr_t>(
+                        static_cast<mozart::NativesDelegate*>(this)))));
+
+  DART_CHECK_VALID(Dart_SetField(mozart_internal, ToDart("_viewContainer"),
+                                 ToDart(zircon::dart::Handle::Create(
+                                     view_container.PassHandle().release()))));
 }
 
 void RuntimeHolder::InitRootBundle(std::vector<char> bundle) {
   root_bundle_data_ = std::move(bundle);
-  asset_store_ = ftl::MakeRefCounted<blink::ZipAssetStore>(
+  asset_store_ = fxl::MakeRefCounted<blink::ZipAssetStore>(
       GetUnzipperProviderForRootBundle());
 }
 
-void RuntimeHolder::HandleAssetPlatformMessage(
-    ftl::RefPtr<blink::PlatformMessage> message) {
-  ftl::RefPtr<blink::PlatformMessageResponse> response = message->response();
+mozart::View* RuntimeHolder::GetMozartView() {
+  return view_.get();
+}
+
+bool RuntimeHolder::HandleAssetPlatformMessage(
+    blink::PlatformMessage* message) {
+  fxl::RefPtr<blink::PlatformMessageResponse> response = message->response();
   if (!response)
-    return;
+    return false;
   const auto& data = message->data();
   std::string asset_name(reinterpret_cast<const char*>(data.data()),
                          data.size());
@@ -343,6 +451,102 @@ void RuntimeHolder::HandleAssetPlatformMessage(
   } else {
     response->CompleteEmpty();
   }
+  return true;
+}
+
+bool RuntimeHolder::HandleTextInputPlatformMessage(
+    blink::PlatformMessage* message) {
+  const auto& data = message->data();
+
+  rapidjson::Document document;
+  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+  if (document.HasParseError() || !document.IsObject())
+    return false;
+  auto root = document.GetObject();
+  auto method = root.FindMember("method");
+  if (method == root.MemberEnd() || !method->value.IsString())
+    return false;
+
+  if (method->value == "TextInput.show") {
+    if (input_method_editor_) {
+      input_method_editor_->Show();
+    }
+  } else if (method->value == "TextInput.hide") {
+    if (input_method_editor_) {
+      input_method_editor_->Hide();
+    }
+  } else if (method->value == "TextInput.setClient") {
+    current_text_input_client_ = 0;
+    if (text_input_binding_.is_bound())
+      text_input_binding_.Close();
+    input_method_editor_ = nullptr;
+
+    auto args = root.FindMember("args");
+    if (args == root.MemberEnd() || !args->value.IsArray() ||
+        args->value.Size() != 2)
+      return false;
+    const auto& configuration = args->value[1];
+    if (!configuration.IsObject())
+      return false;
+    // TODO(abarth): Read the keyboard type form the configuration.
+    current_text_input_client_ = args->value[0].GetInt();
+    mozart::TextInputStatePtr state = mozart::TextInputState::New();
+    state->text = std::string();
+    state->selection = mozart::TextSelection::New();
+    state->composing = mozart::TextRange::New();
+    input_connection_->GetInputMethodEditor(
+        mozart::KeyboardType::TEXT, mozart::InputMethodAction::DONE,
+        std::move(state), text_input_binding_.NewBinding(),
+        fidl::GetProxy(&input_method_editor_));
+  } else if (method->value == "TextInput.setEditingState") {
+    if (input_method_editor_) {
+      auto args_it = root.FindMember("args");
+      if (args_it == root.MemberEnd() || !args_it->value.IsObject())
+        return false;
+      const auto& args = args_it->value;
+      mozart::TextInputStatePtr state = mozart::TextInputState::New();
+      state->selection = mozart::TextSelection::New();
+      state->composing = mozart::TextRange::New();
+      // TODO(abarth): Deserialize state.
+      auto text = args.FindMember("text");
+      if (text != args.MemberEnd() && text->value.IsString())
+        state->text = text->value.GetString();
+      auto selection_base = args.FindMember("selectionBase");
+      if (selection_base != args.MemberEnd() && selection_base->value.IsInt())
+        state->selection->base = selection_base->value.GetInt();
+      auto selection_extent = args.FindMember("selectionExtent");
+      if (selection_extent != args.MemberEnd() &&
+          selection_extent->value.IsInt())
+        state->selection->extent = selection_extent->value.GetInt();
+      auto selection_affinity = args.FindMember("selectionAffinity");
+      if (selection_affinity != args.MemberEnd() &&
+          selection_affinity->value.IsString() &&
+          selection_affinity->value == "TextAffinity.upstream")
+        state->selection->affinity = mozart::TextAffinity::UPSTREAM;
+      else
+        state->selection->affinity = mozart::TextAffinity::DOWNSTREAM;
+      // We ignore selectionIsDirectional because that concept doesn't exist on
+      // Fuchsia.
+      auto composing_base = args.FindMember("composingBase");
+      if (composing_base != args.MemberEnd() && composing_base->value.IsInt())
+        state->composing->start = composing_base->value.GetInt();
+      auto composing_extent = args.FindMember("composingExtent");
+      if (composing_extent != args.MemberEnd() &&
+          composing_extent->value.IsInt())
+        state->composing->end = composing_extent->value.GetInt();
+      input_method_editor_->SetState(std::move(state));
+    }
+  } else if (method->value == "TextInput.clearClient") {
+    current_text_input_client_ = 0;
+    if (text_input_binding_.is_bound())
+      text_input_binding_.Close();
+    input_method_editor_ = nullptr;
+  } else {
+    FXL_DLOG(ERROR) << "Unknown " << kTextInputChannel << " method "
+                    << method->value.GetString();
+  }
+
+  return false;
 }
 
 blink::UnzipperProvider RuntimeHolder::GetUnzipperProviderForRootBundle() {
@@ -359,12 +563,12 @@ void RuntimeHolder::OnEvent(mozart::InputEventPtr event,
   if (event->is_pointer()) {
     const mozart::PointerEventPtr& pointer = event->get_pointer();
     blink::PointerData pointer_data;
-    pointer_data.time_stamp = pointer->event_time;
+    pointer_data.time_stamp = pointer->event_time / 1000;
     pointer_data.change = GetChangeFromPointerEventPhase(pointer->phase);
     pointer_data.kind = GetKindFromPointerType(pointer->type);
     pointer_data.device = pointer->pointer_id;
-    pointer_data.physical_x = pointer->x;
-    pointer_data.physical_y = pointer->y;
+    pointer_data.physical_x = pointer->x * viewport_metrics_.device_pixel_ratio;
+    pointer_data.physical_y = pointer->y * viewport_metrics_.device_pixel_ratio;
 
     switch (pointer_data.change) {
       case blink::PointerData::Change::kDown:
@@ -379,9 +583,19 @@ void RuntimeHolder::OnEvent(mozart::InputEventPtr event,
           pointer_data.change = blink::PointerData::Change::kHover;
         break;
       case blink::PointerData::Change::kAdd:
+        if (down_pointers_.count(pointer_data.device) != 0) {
+          FXL_DLOG(ERROR) << "Received add event for down pointer.";
+        }
+        break;
       case blink::PointerData::Change::kRemove:
+        if (down_pointers_.count(pointer_data.device) != 0) {
+          FXL_DLOG(ERROR) << "Received remove event for down pointer.";
+        }
+        break;
       case blink::PointerData::Change::kHover:
-        FTL_DCHECK(down_pointers_.count(pointer_data.device) == 0);
+        if (down_pointers_.count(pointer_data.device) != 0) {
+          FXL_DLOG(ERROR) << "Received hover event for down pointer.";
+        }
         break;
     }
 
@@ -417,8 +631,8 @@ void RuntimeHolder::OnEvent(mozart::InputEventPtr event,
       const uint8_t* data =
           reinterpret_cast<const uint8_t*>(buffer.GetString());
       runtime_->DispatchPlatformMessage(
-          ftl::MakeRefCounted<blink::PlatformMessage>(
-              "flutter/keyevent",
+          fxl::MakeRefCounted<blink::PlatformMessage>(
+              kKeyEventChannel,
               std::vector<uint8_t>(data, data + buffer.GetSize()), nullptr));
       handled = true;
     }
@@ -426,80 +640,142 @@ void RuntimeHolder::OnEvent(mozart::InputEventPtr event,
   callback(handled);
 }
 
-void RuntimeHolder::OnInvalidation(mozart::ViewInvalidationPtr invalidation,
-                                   const OnInvalidationCallback& callback) {
-  FTL_DCHECK(invalidation);
-  pending_invalidation_ = false;
+void RuntimeHolder::OnPropertiesChanged(
+    mozart::ViewPropertiesPtr properties,
+    const OnPropertiesChangedCallback& callback) {
+  FXL_DCHECK(properties);
+
+  // Attempt to read the device pixel ratio.
+  float pixel_ratio = 1.f;
+  if (auto& metrics = properties->display_metrics) {
+    pixel_ratio = metrics->device_pixel_ratio;
+  }
 
   // Apply view property changes.
-  if (invalidation->properties) {
-    view_properties_ = std::move(invalidation->properties);
-    viewport_metrics_.physical_width =
-        view_properties_->view_layout->size->width;
-    viewport_metrics_.physical_height =
-        view_properties_->view_layout->size->height;
-    viewport_metrics_.device_pixel_ratio = 2.0;
-    // TODO(abarth): Use view_properties_->display_metrics->device_pixel_ratio
-    // once that's reasonable.
+  if (auto& layout = properties->view_layout) {
+    viewport_metrics_.physical_width = layout->size->width * pixel_ratio;
+    viewport_metrics_.physical_height = layout->size->height * pixel_ratio;
+    viewport_metrics_.physical_padding_top = layout->inset->top * pixel_ratio;
+    viewport_metrics_.physical_padding_right =
+        layout->inset->right * pixel_ratio;
+    viewport_metrics_.physical_padding_bottom =
+        layout->inset->bottom * pixel_ratio;
+    viewport_metrics_.physical_padding_left = layout->inset->left * pixel_ratio;
+    viewport_metrics_.device_pixel_ratio = pixel_ratio;
     runtime_->SetViewportMetrics(viewport_metrics_);
   }
 
-  // Remember the scene version for rendering.
-  scene_version_ = invalidation->scene_version;
+  ScheduleFrame();
 
-  // TODO(jeffbrown): Flow the frame time through the rendering pipeline.
-  if (outstanding_requests_ >= kMaxPipelineDepth) {
-    FTL_DCHECK(!deferred_invalidation_callback_);
-    deferred_invalidation_callback_ = callback;
-    return;
-  }
-
-  ++outstanding_requests_;
-  BeginFrame();
-
-  // TODO(jeffbrown): Consider running the callback earlier.
-  // Note that this may result in the view processing stale view properties
-  // (such as size) if it prematurely acks the frame but takes too long
-  // to handle it.
   callback();
 }
 
-ftl::WeakPtr<RuntimeHolder> RuntimeHolder::GetWeakPtr() {
+void RuntimeHolder::DidUpdateState(mozart::TextInputStatePtr state,
+                                   mozart::InputEventPtr event) {
+  rapidjson::Document document;
+  auto& allocator = document.GetAllocator();
+
+  rapidjson::Value encoded_state(rapidjson::kObjectType);
+  encoded_state.AddMember("text", state->text.get(), allocator);
+  encoded_state.AddMember("selectionBase", state->selection->base, allocator);
+  encoded_state.AddMember("selectionExtent", state->selection->extent,
+                          allocator);
+  switch (state->selection->affinity) {
+    case mozart::TextAffinity::UPSTREAM:
+      encoded_state.AddMember("selectionAffinity",
+                              rapidjson::Value("TextAffinity.upstream"),
+                              allocator);
+      break;
+    case mozart::TextAffinity::DOWNSTREAM:
+      encoded_state.AddMember("selectionAffinity",
+                              rapidjson::Value("TextAffinity.downstream"),
+                              allocator);
+      break;
+  }
+  encoded_state.AddMember("selectionIsDirectional", true, allocator);
+  encoded_state.AddMember("composingBase", state->composing->start, allocator);
+  encoded_state.AddMember("composingExtent", state->composing->end, allocator);
+
+  rapidjson::Value args(rapidjson::kArrayType);
+  args.PushBack(current_text_input_client_, allocator);
+  args.PushBack(encoded_state, allocator);
+
+  document.SetObject();
+  document.AddMember("method",
+                     rapidjson::Value("TextInputClient.updateEditingState"),
+                     allocator);
+  document.AddMember("args", args, allocator);
+
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  document.Accept(writer);
+
+  const uint8_t* data = reinterpret_cast<const uint8_t*>(buffer.GetString());
+  runtime_->DispatchPlatformMessage(fxl::MakeRefCounted<blink::PlatformMessage>(
+      kTextInputChannel, std::vector<uint8_t>(data, data + buffer.GetSize()),
+      nullptr));
+}
+
+void RuntimeHolder::OnAction(mozart::InputMethodAction action) {
+  rapidjson::Document document;
+  auto& allocator = document.GetAllocator();
+
+  rapidjson::Value args(rapidjson::kArrayType);
+  args.PushBack(current_text_input_client_, allocator);
+
+  // Done is currently the only text input action defined by Flutter.
+  args.PushBack("TextInputAction.done", allocator);
+
+  document.SetObject();
+  document.AddMember(
+      "method", rapidjson::Value("TextInputClient.performAction"), allocator);
+  document.AddMember("args", args, allocator);
+
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  document.Accept(writer);
+
+  const uint8_t* data = reinterpret_cast<const uint8_t*>(buffer.GetString());
+  runtime_->DispatchPlatformMessage(fxl::MakeRefCounted<blink::PlatformMessage>(
+      kTextInputChannel, std::vector<uint8_t>(data, data + buffer.GetSize()),
+      nullptr));
+}
+
+fxl::WeakPtr<RuntimeHolder> RuntimeHolder::GetWeakPtr() {
   return weak_factory_.GetWeakPtr();
 }
 
+void RuntimeHolder::PostBeginFrame() {
+  blink::Threads::Platform()->PostTask([weak_runtime_holder = GetWeakPtr()]() {
+    // On the Platform/UI thread.
+    ASSERT_IS_UI_THREAD;
+    if (weak_runtime_holder) {
+      weak_runtime_holder->BeginFrame();
+    }
+  });
+}
+
 void RuntimeHolder::BeginFrame() {
-  FTL_DCHECK(outstanding_requests_ > 0);
-  FTL_DCHECK(outstanding_requests_ <= kMaxPipelineDepth)
-      << outstanding_requests_;
-
-  FTL_DCHECK(!is_ready_to_draw_);
-  is_ready_to_draw_ = true;
-  runtime_->BeginFrame(ftl::TimePoint::Now());
-  const bool was_ready_to_draw = is_ready_to_draw_;
-  is_ready_to_draw_ = false;
-
-  // If we were still ready to draw when done with the frame, that means we
-  // didn't draw anything this frame and we should acknowledge the frame
-  // ourselves instead of waiting for the rasterizer to acknowledge it.
-  if (was_ready_to_draw)
-    OnFrameComplete();
+  ASSERT_IS_UI_THREAD
+  FXL_DCHECK(frame_scheduled_);
+  FXL_DCHECK(!frame_outstanding_);
+  frame_scheduled_ = false;
+  frame_outstanding_ = true;
+  last_begin_frame_time_ = fxl::TimePoint::Now();
+  runtime_->BeginFrame(last_begin_frame_time_);
 }
 
 void RuntimeHolder::OnFrameComplete() {
-  FTL_DCHECK(outstanding_requests_ > 0);
-  --outstanding_requests_;
+  ASSERT_IS_UI_THREAD
+  FXL_DCHECK(frame_outstanding_);
+  frame_outstanding_ = false;
+  if (frame_scheduled_)
+    PostBeginFrame();
+}
 
-  if (deferred_invalidation_callback_ &&
-      outstanding_requests_ <= kRecoveryPipelineDepth) {
-    // Schedule frame first to avoid potentially generating a second
-    // invalidation in case the view manager already has one pending
-    // awaiting acknowledgement of the deferred invalidation.
-    OnInvalidationCallback callback =
-        std::move(deferred_invalidation_callback_);
+void RuntimeHolder::OnRedrawFrame() {
+  if (!frame_outstanding_)
     ScheduleFrame();
-    callback();
-  }
 }
 
 }  // namespace flutter_runner

@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_PICTURE_H_
 #define FLUTTER_LIB_UI_PAINTING_PICTURE_H_
 
+#include "flutter/lib/ui/painting/image.h"
 #include "lib/tonic/dart_wrappable.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
@@ -15,18 +16,22 @@ class DartLibraryNatives;
 namespace blink {
 class Canvas;
 
-class Picture : public ftl::RefCountedThreadSafe<Picture>,
+class Picture : public fxl::RefCountedThreadSafe<Picture>,
                 public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
   FRIEND_MAKE_REF_COUNTED(Picture);
 
  public:
   ~Picture() override;
-  static ftl::RefPtr<Picture> Create(sk_sp<SkPicture> picture);
+  static fxl::RefPtr<Picture> Create(sk_sp<SkPicture> picture);
 
   const sk_sp<SkPicture>& picture() const { return picture_; }
 
+  fxl::RefPtr<CanvasImage> toImage(int width, int height);
+
   void dispose();
+
+  virtual size_t GetAllocationSize() override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

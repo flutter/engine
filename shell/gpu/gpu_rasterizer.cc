@@ -17,25 +17,19 @@
 namespace shell {
 
 GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info)
-    : compositor_context_(std::move(info)), weak_factory_(this) {
-  auto weak_ptr = weak_factory_.GetWeakPtr();
-  blink::Threads::Gpu()->PostTask(
-      [weak_ptr]() { Shell::Shared().AddRasterizer(weak_ptr); });
-}
+    : compositor_context_(std::move(info)), weak_factory_(this) {}
 
-GPURasterizer::~GPURasterizer() {
-  weak_factory_.InvalidateWeakPtrs();
-  Shell::Shared().PurgeRasterizers();
-}
+GPURasterizer::~GPURasterizer() = default;
 
-ftl::WeakPtr<Rasterizer> GPURasterizer::GetWeakRasterizerPtr() {
+fml::WeakPtr<Rasterizer> GPURasterizer::GetWeakRasterizerPtr() {
   return weak_factory_.GetWeakPtr();
 }
 
 void GPURasterizer::Setup(std::unique_ptr<Surface> surface,
-                          ftl::Closure continuation,
-                          ftl::AutoResetWaitableEvent* setup_completion_event) {
+                          fxl::Closure continuation,
+                          fxl::AutoResetWaitableEvent* setup_completion_event) {
   surface_ = std::move(surface);
+  compositor_context_.OnGrContextCreated();
 
   continuation();
 
@@ -65,12 +59,12 @@ void GPURasterizer::Clear(SkColor color, const SkISize& size) {
 }
 
 void GPURasterizer::Teardown(
-    ftl::AutoResetWaitableEvent* teardown_completion_event) {
+    fxl::AutoResetWaitableEvent* teardown_completion_event) {
+  compositor_context_.OnGrContextDestroyed();
   if (surface_) {
     surface_.reset();
   }
   last_layer_tree_.reset();
-  compositor_context_.OnGrContextDestroyed();
   teardown_completion_event->Signal();
 }
 
@@ -78,8 +72,19 @@ flow::LayerTree* GPURasterizer::GetLastLayerTree() {
   return last_layer_tree_.get();
 }
 
+void GPURasterizer::DrawLastLayerTree() {
+  if (!last_layer_tree_ || !surface_) {
+    return;
+  }
+  DrawToSurface(*last_layer_tree_);
+}
+
+flow::TextureRegistry& GPURasterizer::GetTextureRegistry() {
+  return compositor_context_.texture_registry();
+}
+
 void GPURasterizer::Draw(
-    ftl::RefPtr<flutter::Pipeline<flow::LayerTree>> pipeline) {
+    fxl::RefPtr<flutter::Pipeline<flow::LayerTree>> pipeline) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
 
   flutter::Pipeline<flow::LayerTree>::Consumer consumer =
@@ -114,6 +119,8 @@ void GPURasterizer::DoDraw(std::unique_ptr<flow::LayerTree> layer_tree) {
 
   DrawToSurface(*layer_tree);
 
+  NotifyNextFrameOnce();
+
   last_layer_tree_ = std::move(layer_tree);
 }
 
@@ -138,6 +145,20 @@ void GPURasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
   layer_tree.Raster(compositor_frame);
 
   frame->Submit();
+}
+
+void GPURasterizer::AddNextFrameCallback(fxl::Closure nextFrameCallback) {
+  nextFrameCallback_ = nextFrameCallback;
+}
+
+void GPURasterizer::NotifyNextFrameOnce() {
+  if (nextFrameCallback_) {
+    blink::Threads::Platform()->PostTask([callback = nextFrameCallback_] {
+      TRACE_EVENT0("flutter", "GPURasterizer::NotifyNextFrameOnce");
+      callback();
+    });
+    nextFrameCallback_ = nullptr;
+  }
 }
 
 }  // namespace shell

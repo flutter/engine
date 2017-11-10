@@ -14,8 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "dart/runtime/bin/embedded_dart_io.h"
-#include "dart/runtime/include/dart_mirrors_api.h"
 #include "flutter/assets/unzipper_provider.h"
 #include "flutter/assets/zip_asset_store.h"
 #include "flutter/common/settings.h"
@@ -24,24 +22,26 @@
 #include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/runtime/start_up.h"
-#include "lib/ftl/arraysize.h"
-#include "lib/ftl/build_config.h"
-#include "lib/ftl/logging.h"
-#include "lib/ftl/time/time_delta.h"
+#include "lib/fxl/arraysize.h"
+#include "lib/fxl/build_config.h"
+#include "lib/fxl/logging.h"
+#include "lib/fxl/time/time_delta.h"
 #include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_class_library.h"
 #include "lib/tonic/dart_state.h"
 #include "lib/tonic/dart_sticky_error.h"
 #include "lib/tonic/dart_wrappable.h"
-#include "lib/tonic/debugger/dart_debugger.h"
 #include "lib/tonic/file_loader/file_loader.h"
 #include "lib/tonic/logging/dart_error.h"
 #include "lib/tonic/logging/dart_invoke.h"
 #include "lib/tonic/scopes/dart_api_scope.h"
 #include "lib/tonic/scopes/dart_isolate_scope.h"
 #include "lib/tonic/typed_data/uint8_list.h"
+#include "third_party/dart/runtime/bin/embedded_dart_io.h"
+#include "third_party/dart/runtime/include/dart_mirrors_api.h"
 
 using tonic::DartClassProvider;
 using tonic::LogIfError;
@@ -53,8 +53,9 @@ namespace observatory {
 #if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
 
 // These two symbols are defined in |observatory_archive.cc| which is generated
-// by the |//dart/runtime/observatory:archive_observatory| rule. Both of these
-// symbols will be part of the data segment and therefore are read only.
+// by the |//third_party/dart/runtime/observatory:archive_observatory| rule.
+// Both of these symbols will be part of the data segment and therefore are read
+// only.
 extern unsigned int observatory_assets_archive_len;
 extern const uint8_t* observatory_assets_archive;
 
@@ -67,22 +68,21 @@ namespace blink {
 
 const char kKernelAssetKey[] = "kernel_blob.bin";
 const char kSnapshotAssetKey[] = "snapshot_blob.bin";
+const char kPlatformKernelAssetKey[] = "platform.dill";
 
 namespace {
 
 // Arguments passed to the Dart VM in all configurations.
 static const char* kDartLanguageArgs[] = {
-    "--enable_mirrors=false",
-    "--background_compilation",
-    "--await_is_keyword",
-    "--assert_initializer",
+    "--enable_mirrors=false", "--background_compilation", "--await_is_keyword",
+    "--causal_async_stacks",  "--limit-ints-to-64-bits",
 };
 
 static const char* kDartPrecompilationArgs[] = {
     "--precompilation",
 };
 
-static const char* kDartWriteProtectCodeArgs[] FTL_ALLOW_UNUSED_TYPE = {
+static const char* kDartWriteProtectCodeArgs[] FXL_ALLOW_UNUSED_TYPE = {
     "--no_write_protect_code",
 };
 
@@ -107,6 +107,11 @@ static const char* kDartEndlessTraceBufferArgs[]{
     "--timeline_recorder=endless",
 };
 
+static const char* kDartFuchsiaTraceArgs[] FXL_ALLOW_UNUSED_TYPE = {
+    "--systrace_timeline",
+    "--timeline_streams=VM,Isolate,Compiler,Dart,GC",
+};
+
 constexpr char kFileUriPrefix[] = "file://";
 constexpr size_t kFileUriPrefixLength = sizeof(kFileUriPrefix) - 1;
 
@@ -117,16 +122,26 @@ static ServiceIsolateHook g_service_isolate_hook = nullptr;
 static RegisterNativeServiceProtocolExtensionHook
     g_register_native_service_protocol_extensions_hook = nullptr;
 
+// Kernel representation of core dart libraries(loaded from platform.dill).
+// TODO(aam): This (and platform_data below) have to be released when engine
+// gets torn down. At that point we could also call Dart_Cleanup to complete
+// Dart VM cleanup.
+static void* kernel_platform = nullptr;
+// Bytes actually read from platform.dill that are referenced by kernel_platform
+static std::vector<uint8_t> platform_data;
+
 void IsolateShutdownCallback(void* callback_data) {
   if (tonic::DartStickyError::IsSet()) {
     tonic::DartApiScope api_scope;
-    FTL_LOG(ERROR) << "Isolate " << tonic::StdStringFromDart(Dart_DebugName())
+    FXL_LOG(ERROR) << "Isolate " << tonic::StdStringFromDart(Dart_DebugName())
                    << " exited with an error";
     Dart_Handle sticky_error = Dart_GetStickyError();
-    FTL_CHECK(LogIfError(sticky_error));
+    FXL_CHECK(LogIfError(sticky_error));
   }
-  tonic::DartState* dart_state = static_cast<tonic::DartState*>(callback_data);
-  delete dart_state;
+  UIDartState* dart_state = static_cast<UIDartState*>(callback_data);
+  if ((dart_state != NULL) && !dart_state->is_controller_state()) {
+    delete dart_state;
+  }
 }
 
 bool DartFileModifiedCallback(const char* source_url, int64_t since_ms) {
@@ -152,8 +167,8 @@ bool DartFileModifiedCallback(const char* source_url, int64_t since_ms) {
   // We add one to st_mtime because st_mtime has less precision than since_ms
   // and we want to treat the file as modified if the since time is between
   // ticks of the mtime.
-  ftl::TimeDelta mtime = ftl::TimeDelta::FromSeconds(info.st_mtime + 1);
-  ftl::TimeDelta since = ftl::TimeDelta::FromMilliseconds(since_ms);
+  fxl::TimeDelta mtime = fxl::TimeDelta::FromSeconds(info.st_mtime + 1);
+  fxl::TimeDelta since = fxl::TimeDelta::FromMilliseconds(since_ms);
 
   return mtime > since;
 }
@@ -174,20 +189,35 @@ static bool StringEndsWith(const std::string& string,
          0;
 }
 
+static void ReleaseFetchedBytes(uint8_t* buffer) {
+  free(buffer);
+}
+
 Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
                                           char** error) {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
   // No VM-service in release mode.
   return nullptr;
-#else  // FLUTTER_RUNTIME_MODE
-  tonic::DartState* dart_state = new tonic::DartState();
-  Dart_Isolate isolate = Dart_CreateIsolate(
-      script_uri, "main", g_default_isolate_snapshot_data,
-      g_default_isolate_snapshot_instructions, nullptr, dart_state, error);
-  FTL_CHECK(isolate) << error;
+#else   // FLUTTER_RUNTIME_MODE
+  UIDartState* dart_state = new UIDartState(nullptr, nullptr);
+
+  bool is_running_from_kernel = GetKernelPlatformBinary() != nullptr;
+
+  Dart_Isolate isolate =
+      is_running_from_kernel
+          ? Dart_CreateIsolateFromKernel(
+                script_uri, "main", kernel_platform, nullptr /* flags */,
+                static_cast<tonic::DartState*>(dart_state), error)
+          : Dart_CreateIsolate(
+                script_uri, "main", g_default_isolate_snapshot_data,
+                g_default_isolate_snapshot_instructions, nullptr,
+                static_cast<tonic::DartState*>(dart_state), error);
+
+  FXL_CHECK(isolate) << error;
+  dart_state->set_debug_name_prefix(script_uri);
   dart_state->SetIsolate(isolate);
-  FTL_CHECK(Dart_IsServiceIsolate(isolate));
-  FTL_CHECK(!LogIfError(
+  FXL_CHECK(Dart_IsServiceIsolate(isolate));
+  FXL_CHECK(!LogIfError(
       Dart_SetLibraryTagHandler(tonic::DartState::HandleLibraryTag)));
   {
     tonic::DartApiScope dart_api_scope;
@@ -201,8 +231,9 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
       const bool disable_websocket_origin_check = false;
       const bool service_isolate_booted = DartServiceIsolate::Startup(
           ip, port, tonic::DartState::HandleLibraryTag,
-          IsRunningPrecompiledCode(), disable_websocket_origin_check, error);
-      FTL_CHECK(service_isolate_booted) << error;
+          !IsRunningPrecompiledCode() && !is_running_from_kernel,
+          disable_websocket_origin_check, error);
+      FXL_CHECK(service_isolate_booted) << error;
     }
 
     if (g_service_isolate_hook)
@@ -219,7 +250,6 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
   return isolate;
 #endif  // FLUTTER_RUNTIME_MODE
 }
-
 
 Dart_Isolate IsolateCreateCallback(const char* script_uri,
                                    const char* main,
@@ -252,8 +282,8 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
     if (!running_from_source) {
       // Attempt to copy the snapshot from the asset bundle.
       const std::string& bundle_path = entry_path;
-      ftl::RefPtr<ZipAssetStore> zip_asset_store =
-          ftl::MakeRefCounted<ZipAssetStore>(
+      fxl::RefPtr<ZipAssetStore> zip_asset_store =
+          fxl::MakeRefCounted<ZipAssetStore>(
               GetUnzipperProviderForPath(std::move(bundle_path)));
       zip_asset_store->GetAsBuffer(kKernelAssetKey, &kernel_data);
       zip_asset_store->GetAsBuffer(kSnapshotAssetKey, &snapshot_data);
@@ -263,12 +293,18 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
   UIDartState* parent_dart_state = static_cast<UIDartState*>(callback_data);
   UIDartState* dart_state = parent_dart_state->CreateForChildIsolate();
 
-  Dart_Isolate isolate = Dart_CreateIsolate(
-      script_uri, main, g_default_isolate_snapshot_data,
-      g_default_isolate_snapshot_instructions, nullptr, dart_state, error);
-  FTL_CHECK(isolate) << error;
+  Dart_Isolate isolate =
+      kernel_platform != nullptr
+          ? Dart_CreateIsolateFromKernel(script_uri, main, kernel_platform,
+                                         nullptr /* flags */, dart_state, error)
+          : Dart_CreateIsolate(script_uri, main,
+                               g_default_isolate_snapshot_data,
+                               g_default_isolate_snapshot_instructions, nullptr,
+                               dart_state, error);
+  FXL_CHECK(isolate) << error;
+  dart_state->set_debug_name_prefix(script_uri);
   dart_state->SetIsolate(isolate);
-  FTL_CHECK(!LogIfError(
+  FXL_CHECK(!LogIfError(
       Dart_SetLibraryTagHandler(tonic::DartState::HandleLibraryTag)));
 
   {
@@ -284,11 +320,11 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
 
     if (!kernel_data.empty()) {
       // We are running kernel code.
-      FTL_CHECK(!LogIfError(Dart_LoadKernel(Dart_ReadKernelBinary(kernel_data.data(),
-                                                                  kernel_data.size()))));
+      FXL_CHECK(!LogIfError(Dart_LoadKernel(Dart_ReadKernelBinary(
+          kernel_data.data(), kernel_data.size(), ReleaseFetchedBytes))));
     } else if (!snapshot_data.empty()) {
       // We are running from a script snapshot.
-      FTL_CHECK(!LogIfError(Dart_LoadScriptFromSnapshot(snapshot_data.data(),
+      FXL_CHECK(!LogIfError(Dart_LoadScriptFromSnapshot(snapshot_data.data(),
                                                         snapshot_data.size())));
     } else if (running_from_source) {
       // We are running from source.
@@ -298,10 +334,10 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
       const std::string& packages = parent_loader.packages();
       tonic::FileLoader& loader = dart_state->file_loader();
       if (!packages.empty() && !loader.LoadPackagesMap(packages)) {
-        FTL_LOG(WARNING) << "Failed to load package map: " << packages;
+        FXL_LOG(WARNING) << "Failed to load package map: " << packages;
       }
       // Load the script.
-      FTL_CHECK(!LogIfError(loader.LoadScript(entry_path)));
+      FXL_CHECK(!LogIfError(loader.LoadScript(entry_path)));
     }
 
     dart_state->isolate_client()->DidCreateSecondaryIsolate(isolate);
@@ -309,7 +345,7 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
 
   Dart_ExitIsolate();
 
-  FTL_CHECK(Dart_IsolateMakeRunnable(isolate));
+  FXL_CHECK(Dart_IsolateMakeRunnable(isolate));
   return isolate;
 }
 
@@ -391,20 +427,23 @@ static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
         // Raspberry Pi devices but quite low for current smartphones.
         "--profile_period=1000",
         // This is the default. But just be explicit.
-        "--profiler"};
+        "--profiler",
+        // This instructs the profiler to walk C++ frames, and to include
+        // them in the profile.
+        "--profile-vm"};
   } else {
     return {"--no-profiler"};
   }
 }
 
 void SetServiceIsolateHook(ServiceIsolateHook hook) {
-  FTL_CHECK(!g_service_isolate_initialized);
+  FXL_CHECK(!g_service_isolate_initialized);
   g_service_isolate_hook = hook;
 }
 
 void SetRegisterNativeServiceProtocolExtensionHook(
     RegisterNativeServiceProtocolExtensionHook hook) {
-  FTL_CHECK(!g_service_isolate_initialized);
+  FXL_CHECK(!g_service_isolate_initialized);
   g_register_native_service_protocol_extensions_hook = hook;
 }
 
@@ -416,10 +455,21 @@ void PushBackAll(std::vector<const char*>* args,
   }
 }
 
+static void EmbedderInformationCallback(Dart_EmbedderInformation* info) {
+  info->version = DART_EMBEDDER_INFORMATION_CURRENT_VERSION;
+  dart::bin::GetIOEmbedderInformation(info);
+  info->name = "Flutter";
+}
+
+void* GetKernelPlatformBinary() {
+  return kernel_platform;
+}
+
 void InitDartVM(const uint8_t* vm_snapshot_data,
                 const uint8_t* vm_snapshot_instructions,
                 const uint8_t* default_isolate_snapshot_data,
-                const uint8_t* default_isolate_snapshot_instructions) {
+                const uint8_t* default_isolate_snapshot_instructions,
+                const std::string& bundle_path) {
   TRACE_EVENT0("flutter", __func__);
 
   g_default_isolate_snapshot_data = default_isolate_snapshot_data;
@@ -492,18 +542,25 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
     PushBackAll(&args, kDartTraceStartupArgs, arraysize(kDartTraceStartupArgs));
   }
 
+#if defined(OS_FUCHSIA)
+  PushBackAll(&args, kDartFuchsiaTraceArgs, arraysize(kDartFuchsiaTraceArgs));
+#endif
+
+  if (!bundle_path.empty()) {
+    auto zip_asset_store = fxl::MakeRefCounted<ZipAssetStore>(
+        GetUnzipperProviderForPath(std::move(bundle_path)));
+    zip_asset_store->GetAsBuffer(kPlatformKernelAssetKey, &platform_data);
+    if (!platform_data.empty()) {
+      kernel_platform = Dart_ReadKernelBinary(
+          platform_data.data(), platform_data.size(), ReleaseFetchedBytes);
+      FXL_DCHECK(kernel_platform != nullptr);
+    }
+  }
+
   for (size_t i = 0; i < settings.dart_flags.size(); i++)
     args.push_back(settings.dart_flags[i].c_str());
 
-  FTL_CHECK(Dart_SetVMFlags(args.size(), args.data()));
-
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
-  if (!IsRunningPrecompiledCode()) {
-    TRACE_EVENT0("flutter", "DartDebugger::InitDebugger");
-    // This should be called before calling Dart_Initialize.
-    tonic::DartDebugger::InitDebugger();
-  }
-#endif
+  FXL_CHECK(Dart_SetVMFlags(args.size(), args.data()));
 
   DartUI::InitForGlobal();
 
@@ -524,9 +581,10 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
     params.shutdown = IsolateShutdownCallback;
     params.thread_exit = ThreadExitCallback;
     params.get_service_assets = GetVMServiceAssetsArchiveCallback;
+    params.entropy_source = DartIO::EntropySource;
     char* init_error = Dart_Initialize(&params);
     if (init_error != nullptr)
-      FTL_LOG(FATAL) << "Error while initializing the Dart VM: " << init_error;
+      FXL_LOG(FATAL) << "Error while initializing the Dart VM: " << init_error;
     free(init_error);
 
     // Send the earliest available timestamp in the application lifecycle to
@@ -542,13 +600,15 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
                          0,                             // argument_count
                          nullptr,                       // argument_names
                          nullptr                        // argument_values
-                         );
+      );
     }
   }
 
   // Allow streaming of stdout and stderr by the Dart vm.
   Dart_SetServiceStreamCallbacks(&ServiceStreamListenCallback,
                                  &ServiceStreamCancelCallback);
+
+  Dart_SetEmbedderInformationCallback(&EmbedderInformationCallback);
 }
 
 }  // namespace blink

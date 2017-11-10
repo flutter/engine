@@ -1,0 +1,195 @@
+# Copyright 2017 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+config("txt_config") {
+  visibility = [ ":*" ]
+  include_dirs = [ "src" ]
+}
+
+source_set("txt") {
+  if (current_toolchain == host_toolchain && !is_mac) {
+    defines = [ "DIRECTORY_FONT_MANAGER_AVAILABLE" ]
+  }
+  if (is_android) {
+    defines = [ "ANDROID_FONT_MANAGER_AVAILABLE" ]
+  }
+
+  sources = [
+    "src/log/log.cc",
+    "src/log/log.h",
+    "src/minikin/CmapCoverage.cpp",
+    "src/minikin/CmapCoverage.h",
+    "src/minikin/Emoji.cpp",
+    "src/minikin/Emoji.h",
+    "src/minikin/FontCollection.cpp",
+    "src/minikin/FontCollection.h",
+    "src/minikin/FontFamily.cpp",
+    "src/minikin/FontFamily.h",
+    "src/minikin/FontLanguage.cpp",
+    "src/minikin/FontLanguage.h",
+    "src/minikin/FontLanguageListCache.cpp",
+    "src/minikin/FontLanguageListCache.h",
+    "src/minikin/FontUtils.cpp",
+    "src/minikin/FontUtils.h",
+    "src/minikin/GraphemeBreak.cpp",
+    "src/minikin/GraphemeBreak.h",
+    "src/minikin/HbFontCache.cpp",
+    "src/minikin/HbFontCache.h",
+    "src/minikin/Hyphenator.cpp",
+    "src/minikin/Hyphenator.h",
+    "src/minikin/Layout.cpp",
+    "src/minikin/Layout.h",
+    "src/minikin/LayoutUtils.cpp",
+    "src/minikin/LayoutUtils.h",
+    "src/minikin/LineBreaker.cpp",
+    "src/minikin/LineBreaker.h",
+    "src/minikin/Measurement.cpp",
+    "src/minikin/Measurement.h",
+    "src/minikin/MinikinFont.cpp",
+    "src/minikin/MinikinFont.h",
+    "src/minikin/MinikinInternal.cpp",
+    "src/minikin/MinikinInternal.h",
+    "src/minikin/SparseBitSet.cpp",
+    "src/minikin/SparseBitSet.h",
+    "src/minikin/WordBreaker.cpp",
+    "src/minikin/WordBreaker.h",
+    "src/txt/asset_data_provider.cc",
+    "src/txt/asset_data_provider.h",
+    "src/txt/asset_font_manager.cc",
+    "src/txt/asset_font_manager.h",
+    "src/txt/asset_font_style_set.cc",
+    "src/txt/asset_font_style_set.h",
+    "src/txt/directory_asset_data_provider.cc",
+    "src/txt/directory_asset_data_provider.h",
+    "src/txt/font_collection.cc",
+    "src/txt/font_collection.h",
+    "src/txt/font_skia.cc",
+    "src/txt/font_skia.h",
+    "src/txt/font_style.h",
+    "src/txt/font_weight.h",
+    "src/txt/paint_record.cc",
+    "src/txt/paint_record.h",
+    "src/txt/paragraph.cc",
+    "src/txt/paragraph.h",
+    "src/txt/paragraph_builder.cc",
+    "src/txt/paragraph_builder.h",
+    "src/txt/paragraph_style.cc",
+    "src/txt/paragraph_style.h",
+    "src/txt/platform.h",
+    "src/txt/styled_runs.cc",
+    "src/txt/styled_runs.h",
+    "src/txt/test_font_manager.cc",
+    "src/txt/test_font_manager.h",
+    "src/txt/text_baseline.h",
+    "src/txt/text_decoration.cc",
+    "src/txt/text_decoration.h",
+    "src/txt/text_style.cc",
+    "src/txt/text_style.h",
+    "src/utils/JenkinsHash.cpp",
+    "src/utils/JenkinsHash.h",
+    "src/utils/LruCache.h",
+    "src/utils/TypeHelpers.h",
+  ]
+
+  if (is_mac || is_ios) {
+    set_sources_assignment_filter([])
+    sources += [ "src/txt/platform_mac.mm" ]
+    set_sources_assignment_filter(sources_assignment_filter)
+  } else if (is_android) {
+    sources += [ "src/txt/platform_android.cc" ]
+  } else {
+    sources += [ "src/txt/platform.cc" ]
+  }
+
+  public_configs = [ ":txt_config" ]
+
+  public_deps = [
+    "//garnet/public/lib/fxl",
+    "//third_party/harfbuzz",
+    "//third_party/icu",
+    "//third_party/skia",
+  ]
+
+  deps = [
+    "//third_party/skia:effects",
+  ]
+}
+
+txt_common_executable_deps = [
+  "//third_party/dart/runtime:libdart_jit",  # For logging.
+  "$flutter_root/fml",  # For ICU initialization.
+]
+
+executable("txt_unittests") {
+  testonly = true
+
+  sources = [
+    "tests/CmapCoverageTest.cpp",
+    "tests/EmojiTest.cpp",
+    "tests/FileUtils.cpp",
+    "tests/FileUtils.h",
+    "tests/FontTestUtils.h",
+    "tests/GraphemeBreakTests.cpp",
+    "tests/ICUTestBase.h",
+    "tests/LayoutUtilsTest.cpp",
+    "tests/MeasurementTests.cpp",
+    "tests/MinikinFontForTest.cpp",
+    "tests/MinikinFontForTest.h",
+    "tests/SparseBitSetTest.cpp",
+    "tests/UnicodeUtils.cpp",
+    "tests/UnicodeUtils.h",
+    "tests/UnicodeUtilsTest.cpp",
+    "tests/font_collection_unittests.cc",
+    "tests/paragraph_unittests.cc",
+    "tests/render_test.cc",
+    "tests/render_test.h",
+    "tests/txt_run_all_unittests.cc",
+    "tests/utils.cc",
+    "tests/utils.h",
+
+    # These tests require static fixtures.
+    # "tests/FontCollectionItemizeTest.cpp",
+    # "tests/FontCollectionTest.cpp",
+    # "tests/FontFamilyTest.cpp",
+    # "tests/FontLanguageListCacheTest.cpp",
+    # "tests/FontTestUtils.cpp",
+    # "tests/HbFontCacheTest.cpp",
+    # "tests/HyphenatorTest.cpp",
+    # "tests/LayoutTest.cpp",
+  ]
+
+  deps = [
+           ":txt",
+           "//third_party/gtest",
+         ] + txt_common_executable_deps
+}
+
+executable("txt_benchmarks") {
+  testonly = true
+
+  sources = [
+    "benchmarks/paint_record_benchmarks.cc",
+    "benchmarks/paragraph_benchmarks.cc",
+    "benchmarks/paragraph_builder_benchmarks.cc",
+    "benchmarks/styled_runs_benchmarks.cc",
+    "benchmarks/txt_run_all_benchmarks.cc",
+    "benchmarks/utils.cc",
+    "benchmarks/utils.h",
+  ]
+
+  deps = [
+           ":txt",
+           "//third_party/benchmark",
+         ] + txt_common_executable_deps
+}

@@ -92,7 +92,7 @@ abstract class OffsetBase {
   int get hashCode => hashValues(_dx, _dy);
 
   @override
-  String toString() => "$runtimeType(${_dx?.toStringAsFixed(1)}, ${_dy?.toStringAsFixed(1)})";
+  String toString() => '$runtimeType(${_dx?.toStringAsFixed(1)}, ${_dy?.toStringAsFixed(1)})';
 }
 
 /// An immutable 2D floating-point offset.
@@ -284,7 +284,7 @@ class Offset extends OffsetBase {
   }
 
   @override
-  String toString() => "Offset(${dx?.toStringAsFixed(1)}, ${dy?.toStringAsFixed(1)})";
+  String toString() => 'Offset(${dx?.toStringAsFixed(1)}, ${dy?.toStringAsFixed(1)})';
 }
 
 /// Holds a 2D floating-point size.
@@ -405,12 +405,11 @@ class Size extends OffsetBase {
   /// [double]).
   Size operator %(double operand) => new Size(width % operand, height % operand);
 
-  /// The lesser of the [width] and the [height].
-  double get shortestSide {
-    double w = width.abs();
-    double h = height.abs();
-    return w < h ? w : h;
-  }
+  /// The lesser of the magnitudes of the [width] and the [height].
+  double get shortestSide => math.min(width.abs(), height.abs());
+
+  /// The greater of the magnitudes of the [width] and the [height].
+  double get longestSide => math.max(width.abs(), height.abs());
 
   // Convenience methods that do the equivalent of calling the similarly named
   // methods on a Rect constructed from the given origin and this size.
@@ -513,7 +512,7 @@ class Size extends OffsetBase {
   }
 
   @override
-  String toString() => "Size(${width?.toStringAsFixed(1)}, ${height?.toStringAsFixed(1)})";
+  String toString() => 'Size(${width?.toStringAsFixed(1)}, ${height?.toStringAsFixed(1)})';
 }
 
 /// An immutable, 2D, axis-aligned, floating-point rectangle whose coordinates
@@ -653,13 +652,33 @@ class Rect {
     );
   }
 
-  /// The lesser of the magnitudes of the width and the height of this
-  /// rectangle.
-  double get shortestSide {
-    double w = width.abs();
-    double h = height.abs();
-    return w < h ? w : h;
+  /// Returns a new rectangle which is the bounding box containing this
+  /// rectangle and the given rectangle.
+  Rect expandToInclude(Rect other) {
+    return new Rect.fromLTRB(
+        math.min(left, other.left),
+        math.min(top, other.top),
+        math.max(right, other.right),
+        math.max(bottom, other.bottom),
+    );
   }
+
+  /// Whether `other` has a nonzero area of overlap with this rectangle.
+  bool overlaps(Rect other) {
+    if (right <= other.left || other.right <= left)
+      return false;
+    if (bottom <= other.top || other.bottom <= top)
+      return false;
+    return true;
+  }
+
+  /// The lesser of the magnitudes of the [width] and the [height] of this
+  /// rectangle.
+  double get shortestSide => math.min(width.abs(), height.abs());
+
+  /// The greater of the magnitudes of the [width] and the [height] of this
+  /// rectangle.
+  double get longestSide => math.max(width.abs(), height.abs());
 
   /// The offset to the intersection of the top and left edges of this rectangle.
   ///
@@ -726,7 +745,7 @@ class Rect {
     if (a == null)
       return new Rect.fromLTRB(b.left * t, b.top * t, b.right * t, b.bottom * t);
     if (b == null) {
-      double k = 1.0 - t;
+      final double k = 1.0 - t;
       return new Rect.fromLTRB(a.left * k, a.top * k, a.right * k, a.bottom * k);
     }
     return new Rect.fromLTRB(
@@ -755,7 +774,7 @@ class Rect {
   int get hashCode => hashList(_value);
 
   @override
-  String toString() => "Rect.fromLTRB(${left.toStringAsFixed(1)}, ${top.toStringAsFixed(1)}, ${right.toStringAsFixed(1)}, ${bottom.toStringAsFixed(1)})";
+  String toString() => 'Rect.fromLTRB(${left.toStringAsFixed(1)}, ${top.toStringAsFixed(1)}, ${right.toStringAsFixed(1)}, ${bottom.toStringAsFixed(1)})';
 }
 
 /// A radius for either circular or elliptical shapes.
@@ -777,6 +796,58 @@ class Radius {
   /// You can use [Radius.zero] with [RRect] to have right-angle corners.
   static const Radius zero = const Radius.circular(0.0);
 
+  /// Unary negation operator.
+  ///
+  /// Returns a Radius with the distances negated.
+  ///
+  /// Radiuses with negative values aren't geometrically meaningful, but could
+  /// occur as part of expressions. For example, negating a radius of one pixel
+  /// and then adding the result to another radius is equivalent to subtracting
+  /// a radius of one pixel from the other.
+  Radius operator -() => new Radius.elliptical(-x, -y);
+
+  /// Binary subtraction operator.
+  ///
+  /// Returns a radius whose [x] value is the left-hand-side operand's [x]
+  /// minus the right-hand-side operand's [x] and whose [y] value is the
+  /// left-hand-side operand's [y] minus the right-hand-side operand's [y].
+  Radius operator -(Radius other) => new Radius.elliptical(x - other.x, y - other.y);
+
+  /// Binary addition operator.
+  ///
+  /// Returns a radius whose [x] value is the sum of the [x] values of the
+  /// two operands, and whose [y] value is the sum of the [y] values of the
+  /// two operands.
+  Radius operator +(Radius other) => new Radius.elliptical(x + other.x, y + other.y);
+
+  /// Multiplication operator.
+  ///
+  /// Returns a radius whose coordinates are the coordinates of the
+  /// left-hand-side operand (a radius) multiplied by the scalar
+  /// right-hand-side operand (a double).
+  Radius operator *(double operand) => new Radius.elliptical(x * operand, y * operand);
+
+  /// Division operator.
+  ///
+  /// Returns a radius whose coordinates are the coordinates of the
+  /// left-hand-side operand (a radius) divided by the scalar right-hand-side
+  /// operand (a double).
+  Radius operator /(double operand) => new Radius.elliptical(x / operand, y / operand);
+
+  /// Integer (truncating) division operator.
+  ///
+  /// Returns a radius whose coordinates are the coordinates of the
+  /// left-hand-side operand (a radius) divided by the scalar right-hand-side
+  /// operand (a double), rounded towards zero.
+  Radius operator ~/(double operand) => new Radius.elliptical((x ~/ operand).toDouble(), (y ~/ operand).toDouble());
+
+  /// Modulo (remainder) operator.
+  ///
+  /// Returns a radius whose coordinates are the remainder of dividing the
+  /// coordinates of the left-hand-side operand (a radius) by the scalar
+  /// right-hand-side operand (a double).
+  Radius operator %(double operand) => new Radius.elliptical(x % operand, y % operand);
+
   /// Linearly interpolate between two radii.
   ///
   /// If either is null, this function substitutes [Radius.zero] instead.
@@ -786,7 +857,7 @@ class Radius {
     if (a == null)
       return new Radius.elliptical(b.x * t, b.y * t);
     if (b == null) {
-      double k = 1.0 - t;
+      final double k = 1.0 - t;
       return new Radius.elliptical(a.x * k, a.y * k);
     }
     return new Radius.elliptical(
@@ -1149,6 +1220,18 @@ class RRect {
   /// Negative areas are considered empty.
   bool get isEmpty => left >= right || top >= bottom;
 
+  /// Whether all coordinates of this rounded rectangle are finite.
+  bool get isFinite => left.isFinite && top.isFinite && right.isFinite && bottom.isFinite;
+
+  /// Whether this rounded rectangle is a simple rectangle with zero
+  /// corner radii.
+  bool get isRect {
+    return (tlRadiusX == 0.0 || tlRadiusY == 0.0) &&
+           (trRadiusX == 0.0 || trRadiusY == 0.0) &&
+           (blRadiusX == 0.0 || blRadiusY == 0.0) &&
+           (brRadiusX == 0.0 || brRadiusY == 0.0);
+  }
+
   /// Whether this rounded rectangle has a side with no straight section.
   bool get isStadium {
     return (
@@ -1168,13 +1251,14 @@ class RRect {
   /// Whether this rounded rectangle would draw as a circle.
   bool get isCircle => width == height && isEllipse;
 
-  /// The lesser of the magnitudes of the width and the height of this rounded
-  /// rectangle.
-  double get shortestSide {
-    double w = width.abs();
-    double h = height.abs();
-    return w < h ? w : h;
-  }
+  /// The lesser of the magnitudes of the [width] and the [height] of this
+  /// rounded rectangle.
+  double get shortestSide => math.min(width.abs(), height.abs());
+
+  /// The greater of the magnitudes of the [width] and the [height] of this
+  /// rounded rectangle.
+  double get longestSide => math.max(width.abs(), height.abs());
+
 
   /// The offset to the point halfway between the left and right and the top and
   /// bottom edges of this rectangle.
@@ -1183,7 +1267,7 @@ class RRect {
   // Returns the minimum between min and scale to which radius1 and radius2
   // should be scaled with in order not to exceed the limit.
   double _getMin(double min, double radius1, double radius2, double limit) {
-    double sum = radius1 + radius2;
+    final double sum = radius1 + radius2;
     if (sum > limit && sum != 0.0)
       return math.min(min, limit / sum);
     return min;
@@ -1197,7 +1281,7 @@ class RRect {
   void _scaleRadii() {
     if (_scaled == null) {
       double scale = 1.0;
-      final List<double> scaled = new List.from(_value);
+      final List<double> scaled = new List<double>.from(_value);
 
       scale = _getMin(scale, scaled[11], scaled[5], height);
       scale = _getMin(scale, scaled[4], scaled[6], width);
@@ -1291,7 +1375,7 @@ class RRect {
       ]);
     }
     if (b == null) {
-      double k = 1.0 - t;
+      final double k = 1.0 - t;
       return new RRect._fromList(<double>[
         a.left * k,
         a.top * k,
@@ -1342,11 +1426,24 @@ class RRect {
 
   @override
   String toString() {
-    return 'RRect.fromLTRBAndCorners(${left.toStringAsFixed(1)}, '
-           '${top.toStringAsFixed(1)}, ${right.toStringAsFixed(1)}, '
-           '${bottom.toStringAsFixed(1)}, '
-           'topLeft: $tlRadius, topRight: $trRadius, '
-           'bottomRight: $brRadius, bottomLeft: $blRadius)';
+    final String rect = '${left.toStringAsFixed(1)}, '
+                        '${top.toStringAsFixed(1)}, '
+                        '${right.toStringAsFixed(1)}, '
+                        '${bottom.toStringAsFixed(1)}';
+    if (tlRadius == trRadius &&
+        trRadius == brRadius &&
+        brRadius == blRadius) {
+      if (tlRadius.x == tlRadius.y)
+        return 'RRect.fromLTRBR($rect, ${tlRadius.x.toStringAsFixed(1)})';
+      return 'RRect.fromLTRBXY($rect, ${tlRadius.x.toStringAsFixed(1)}, ${tlRadius.y.toStringAsFixed(1)})';
+    }
+    return 'RRect.fromLTRBAndCorners('
+             '$rect, '
+             'topLeft: $tlRadius, '
+             'topRight: $trRadius, '
+             'bottomRight: $brRadius, '
+             'bottomLeft: $blRadius'
+           ')';
   }
 }
 

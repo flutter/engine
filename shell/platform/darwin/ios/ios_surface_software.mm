@@ -10,7 +10,7 @@
 
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/trace_event.h"
-#include "lib/ftl/logging.h"
+#include "lib/fxl/logging.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
 namespace shell {
@@ -63,8 +63,8 @@ sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {
     return sk_surface_;
   }
 
-  sk_surface_ = SkSurface::MakeRasterN32Premul(size.fWidth, size.fHeight,
-                                               nullptr /* SkSurfaceProps as out */);
+  SkImageInfo info = SkImageInfo::MakeS32(size.fWidth, size.fHeight, kPremul_SkAlphaType);
+  sk_surface_ = SkSurface::MakeRaster(info, nullptr);
   return sk_surface_;
 }
 
@@ -82,7 +82,9 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
   // Some basic sanity checking.
   uint64_t expected_pixmap_data_size = pixmap.width() * pixmap.height() * 4;
 
-  if (expected_pixmap_data_size != pixmap.getSize64()) {
+  const size_t pixmap_size = pixmap.computeByteSize();
+
+  if (expected_pixmap_data_size != pixmap_size) {
     return false;
   }
 
@@ -90,10 +92,10 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
 
   // Setup the data provider that gives CG a view into the pixmap.
   fml::CFRef<CGDataProviderRef> pixmap_data_provider(CGDataProviderCreateWithData(
-      nullptr,             // info
-      pixmap.addr32(),     // data
-      pixmap.getSize64(),  // size
-      nullptr              // release callback
+      nullptr,          // info
+      pixmap.addr32(),  // data
+      pixmap_size,      // size
+      nullptr           // release callback
       ));
 
   if (!pixmap_data_provider) {

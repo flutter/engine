@@ -5,16 +5,19 @@
 #ifndef FLUTTER_LIB_IO_DART_IO_H_
 #define FLUTTER_LIB_IO_DART_IO_H_
 
-#include "lib/ftl/macros.h"
+#include <cstdint>
+
+#include "lib/fxl/macros.h"
 
 namespace blink {
 
 class DartIO {
  public:
   static void InitForIsolate();
+  static bool EntropySource(uint8_t* buffer, intptr_t length);
 
  private:
-  FTL_DISALLOW_IMPLICIT_CONSTRUCTORS(DartIO);
+  FXL_DISALLOW_IMPLICIT_CONSTRUCTORS(DartIO);
 };
 
 }  // namespace blink

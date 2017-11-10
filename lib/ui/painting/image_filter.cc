@@ -4,9 +4,9 @@
 
 #include "flutter/lib/ui/painting/image_filter.h"
 
+#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_args.h"
 #include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_library_natives.h"
 #include "third_party/skia/include/effects/SkBlurImageFilter.h"
 #include "third_party/skia/include/effects/SkImageSource.h"
@@ -33,8 +33,8 @@ void ImageFilter::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-ftl::RefPtr<ImageFilter> ImageFilter::Create() {
-  return ftl::MakeRefCounted<ImageFilter>();
+fxl::RefPtr<ImageFilter> ImageFilter::Create() {
+  return fxl::MakeRefCounted<ImageFilter>();
 }
 
 ImageFilter::ImageFilter() {}

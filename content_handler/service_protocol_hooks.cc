@@ -11,7 +11,7 @@
 
 #include "flutter/common/threads.h"
 #include "flutter/content_handler/app.h"
-#include "lib/ftl/memory/weak_ptr.h"
+#include "lib/fxl/memory/weak_ptr.h"
 
 namespace flutter_runner {
 namespace {
@@ -49,16 +49,15 @@ void ServiceProtocolHooks::RegisterHooks(bool running_precompiled_code) {
                                           nullptr);
 }
 
-
 const char* ServiceProtocolHooks::kListViewsExtensionName =
     "_flutter.listViews";
 
 bool ServiceProtocolHooks::ListViews(const char* method,
-                                            const char** param_keys,
-                                            const char** param_values,
-                                            intptr_t num_params,
-                                            void* user_data,
-                                            const char** json_object) {
+                                     const char** param_keys,
+                                     const char** param_values,
+                                     intptr_t num_params,
+                                     void* user_data,
+                                     const char** json_object) {
   // Ask the App for the list of platform views. This will run a task on
   // the UI thread before returning.
   App& app = App::Shared();

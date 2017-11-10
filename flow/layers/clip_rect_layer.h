@@ -16,19 +16,17 @@ class ClipRectLayer : public ContainerLayer {
 
   void set_clip_rect(const SkRect& clip_rect) { clip_rect_ = clip_rect; }
 
- protected:
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-  void Paint(PaintContext& context) override;
+  void Paint(PaintContext& context) const override;
 
 #if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context,
-                   mozart::Node* container) override;
+  void UpdateScene(SceneUpdateContext& context) override;
 #endif  // defined(OS_FUCHSIA)
 
  private:
   SkRect clip_rect_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(ClipRectLayer);
+  FXL_DISALLOW_COPY_AND_ASSIGN(ClipRectLayer);
 };
 
 }  // namespace flow

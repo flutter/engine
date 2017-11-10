@@ -5,7 +5,11 @@
 #ifndef FLUTTER_LIB_UI_TEXT_PARAGRAPH_BUILDER_H_
 #define FLUTTER_LIB_UI_TEXT_PARAGRAPH_BUILDER_H_
 
+#include <memory>
 #include "flutter/lib/ui/text/paragraph.h"
+#include "flutter/sky/engine/core/rendering/RenderObject.h"
+#include "flutter/sky/engine/wtf/OwnPtr.h"
+#include "flutter/third_party/txt/src/txt/paragraph_builder.h"
 #include "lib/tonic/dart_wrappable.h"
 #include "lib/tonic/typed_data/int32_list.h"
 
@@ -15,17 +19,19 @@ class DartLibraryNatives;
 
 namespace blink {
 
-class ParagraphBuilder : public ftl::RefCountedThreadSafe<ParagraphBuilder>,
+class Paragraph;
+
+class ParagraphBuilder : public fxl::RefCountedThreadSafe<ParagraphBuilder>,
                          public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
   FRIEND_MAKE_REF_COUNTED(ParagraphBuilder);
 
  public:
-  static ftl::RefPtr<ParagraphBuilder> create(tonic::Int32List& encoded,
+  static fxl::RefPtr<ParagraphBuilder> create(tonic::Int32List& encoded,
                                               const std::string& fontFamily,
                                               double fontSize,
                                               double lineHeight,
-                                              const std::string& ellipsis);
+                                              const std::u16string& ellipsis);
 
   ~ParagraphBuilder() override;
 
@@ -35,11 +41,12 @@ class ParagraphBuilder : public ftl::RefCountedThreadSafe<ParagraphBuilder>,
                  double letterSpacing,
                  double wordSpacing,
                  double height);
+
   void pop();
 
-  void addText(const std::string& text);
+  Dart_Handle addText(const std::u16string& text);
 
-  ftl::RefPtr<Paragraph> build();
+  fxl::RefPtr<Paragraph> build();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
@@ -48,13 +55,14 @@ class ParagraphBuilder : public ftl::RefCountedThreadSafe<ParagraphBuilder>,
                             const std::string& fontFamily,
                             double fontSize,
                             double lineHeight,
-                            const std::string& ellipsis);
+                            const std::u16string& ellipsis);
 
   void createRenderView();
 
   OwnPtr<RenderView> m_renderView;
   RenderObject* m_renderParagraph;
   RenderObject* m_currentRenderObject;
+  std::unique_ptr<txt::ParagraphBuilder> m_paragraphBuilder;
 };
 
 }  // namespace blink

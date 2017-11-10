@@ -27,6 +27,12 @@ def get_out_dir(args):
     if args.android_cpu != 'arm':
         target_dir.append(args.android_cpu)
 
+    if args.ios_cpu != 'arm64':
+        target_dir.append(args.ios_cpu)
+
+    if args.linux_cpu is not None:
+      target_dir.append(args.linux_cpu)
+
     if args.enable_vulkan:
         target_dir.append('vulkan')
 
@@ -61,26 +67,35 @@ def to_gn_args(args):
     gn_args = {}
 
     # Skia GN args.
+    gn_args['skia_enable_flutter_defines'] = True # Enable Flutter API guards in Skia.
     gn_args['skia_use_dng_sdk'] = False    # RAW image handling.
     gn_args['skia_use_sfntly'] = False     # PDF handling.
     gn_args['skia_use_libwebp'] = False    # Needs third_party/libwebp.
     gn_args['skia_use_fontconfig'] = False # Use the custom font manager instead.
+    gn_args['is_official_build'] = True    # Disable Skia test utilities.
 
     gn_args['is_debug'] = args.unoptimized
     gn_args['android_full_debug'] = args.target_os == 'android' and args.unoptimized
     gn_args['is_clang'] = not sys.platform.startswith(('cygwin', 'win'))
+
+    enable_lto = args.lto
+    if args.unoptimized:
+      # There is no point in enabling LTO in unoptimized builds.
+      enable_lto = False
+
+    if args.target_os != 'win':
+      # The GN arg is not available in the windows toolchain.
+      gn_args['enable_lto'] = enable_lto
 
     aot = args.runtime_mode != 'debug'
     if args.target_os == 'android':
         gn_args['target_os'] = 'android'
     elif args.target_os == 'ios':
         gn_args['target_os'] = 'ios'
-        gn_args['ios_deployment_target'] = '7.0'
         gn_args['use_ios_simulator'] = args.simulator
         if not args.simulator:
           aot = True
     else:
-      gn_args['use_system_harfbuzz'] = False
       aot = False
 
     if args.runtime_mode == 'debug':
@@ -94,11 +109,21 @@ def to_gn_args(args):
         if args.simulator:
             gn_args['target_cpu'] = 'x64'
         else:
-            gn_args['target_cpu'] = 'arm64'
+            gn_args['target_cpu'] = args.ios_cpu
+    elif args.target_os == 'linux':
+      gn_args['target_cpu'] = args.linux_cpu
+    else:
+        # Building host artifacts
+        gn_args['target_cpu'] = 'x64'
 
-    gn_args['flutter_aot'] = aot
-    if aot:
-        gn_args['dart_target_arch'] = gn_args['target_cpu']
+    # On iOS Devices, use the Dart bytecode interpreter so we don't incur
+    # snapshotting and linking costs of the precompiler during development.
+    # We can still use the JIT on the simulator though.
+    use_dbc = args.target_os == 'ios' and not args.simulator and args.runtime_mode == 'debug'
+    if use_dbc:
+      gn_args['dart_target_arch'] = 'dbc'
+    else:
+      gn_args['dart_target_arch'] = gn_args['target_cpu']
 
     # No cross-compilation on Windows (for now).
     if sys.platform.startswith(('cygwin', 'win')):
@@ -107,14 +132,13 @@ def to_gn_args(args):
       if 'target_cpu' in gn_args:
         gn_args['target_cpu'] = cpu_for_target_arch(gn_args['target_cpu'])
 
-    # On iOS Devices, use the Dart bytecode interpreter so we don't incur
-    # snapshotting and linking costs of the precompiler during development.
-    # We can still use the JIT on the simulator though.
-    use_dbc = args.target_os == 'ios' and not args.simulator and args.runtime_mode == 'debug'
-    if use_dbc:
-      gn_args['dart_target_arch'] = 'dbc'
+    # Make sure host_cpu matches the bit width of target_cpu.
+    target_is_32_bit = gn_args['target_cpu'] == 'arm' or gn_args['target_cpu'] == 'x86'
+    if target_is_32_bit:
+      gn_args["host_cpu"] = "x86"
 
     gn_args['flutter_runtime_mode'] = args.runtime_mode
+    gn_args['flutter_aot'] = aot
 
     if args.target_sysroot:
       gn_args['target_sysroot'] = args.target_sysroot
@@ -134,14 +158,16 @@ def to_gn_args(args):
       gn_args['use_goma'] = False
       gn_args['goma_dir'] = None
 
-    gn_args['use_glfw'] = args.use_glfw
-
     if args.enable_vulkan:
       # Enable vulkan in the Flutter shell.
       gn_args['shell_enable_vulkan'] = True
       # Configure Skia for Vulkan support.
       gn_args['skia_use_vulkan'] = True
-      gn_args['skia_link_with_vulkan'] = False
+      gn_args['skia_vulkan_headers'] = "//third_party/vulkan/src"
+
+    # We should not need a special case for x86, but this seems to introduce text relocations
+    # even with -fPIC everywhere.
+    # gn_args['enable_profiling'] = args.runtime_mode != 'release' and args.android_cpu != 'x86'
 
     return gn_args
 
@@ -153,14 +179,19 @@ def parse_args(args):
 
   parser.add_argument('--runtime-mode', type=str, choices=['debug', 'profile', 'release'], default='debug')
 
-  parser.add_argument('--target-os', type=str, choices=['android', 'ios'])
+  parser.add_argument('--target-os', type=str, choices=['android', 'ios', 'linux'])
   parser.add_argument('--android', dest='target_os', action='store_const', const='android')
   parser.add_argument('--android-cpu', type=str, choices=['arm', 'x64', 'x86', 'arm64'], default='arm')
   parser.add_argument('--ios', dest='target_os', action='store_const', const='ios')
+  parser.add_argument('--ios-cpu', type=str, choices=['arm', 'arm64'], default='arm64')
   parser.add_argument('--simulator', action='store_true', default=False)
+  parser.add_argument('--linux-cpu', type=str, choices=['x64', 'x86', 'arm64'])
 
   parser.add_argument('--goma', default=True, action='store_true')
   parser.add_argument('--no-goma', dest='goma', action='store_false')
+
+  parser.add_argument('--lto', default=True, action='store_true')
+  parser.add_argument('--no-lto', dest='lto', action='store_false')
 
   parser.add_argument('--clang', default=True, action='store_true')
   parser.add_argument('--no-clang', dest='clang', action='store_false')

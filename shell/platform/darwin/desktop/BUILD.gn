@@ -22,16 +22,20 @@ source_set("mac_desktop_platform") {
   ]
 
   deps = [
-    "//dart/runtime:libdart_jit",
-    "//flutter/common",
-    "//flutter/fml",
-    "//flutter/shell/common",
-    "//flutter/shell/gpu",
-    "//flutter/shell/platform/darwin/common",
-    "//flutter/shell/testing",
-    "//flutter/synchronization",
-    "//lib/ftl",
+    "//third_party/dart/runtime:libdart_jit",
+    "$flutter_root/common",
+    "$flutter_root/fml",
+    "$flutter_root/shell/common",
+    "$flutter_root/shell/gpu",
+    "$flutter_root/shell/platform/darwin/common",
+    "$flutter_root/shell/testing",
+    "$flutter_root/synchronization",
+    "//garnet/public/lib/fxl",
     "//third_party/skia",
+  ]
+
+  public_configs = [
+    "$flutter_root:config",
   ]
 }
 
@@ -48,11 +52,7 @@ if (!is_fuchsia_host) {
 
   resource_copy_mac("mac_desktop_resources") {
     app_name = "FlutterTester"
-    if (is_fuchsia_host) {
-      resources = [ "//third_party/icu/common/icudtl.dat" ]
-    } else {
-      resources = [ "//third_party/icu/android/icudtl.dat" ]
-    }
+    resources = [ "//third_party/icu/common/icudtl.dat" ]
     bundle_directory = "."
   }
 

@@ -2,16 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/lib/snapshot/toolchain.gni")
-
 group("sky") {
   testonly = true
 
   deps = [
-    "//flutter/sky/packages",
+    "$flutter_root/sky/packages",
   ]
 
   if (!is_fuchsia) {
-    deps += [ "//flutter/shell" ]
+    deps += [ "$flutter_root/shell" ]
   }
 }

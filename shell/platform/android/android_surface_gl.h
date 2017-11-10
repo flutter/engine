@@ -5,13 +5,14 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_GL_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_GL_H_
 
+#include <jni.h>
 #include <memory>
 
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 #include "flutter/shell/platform/android/android_context_gl.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
 #include "flutter/shell/platform/android/android_surface.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 
 namespace shell {
 
@@ -21,7 +22,7 @@ class AndroidSurfaceGL : public GPUSurfaceGLDelegate, public AndroidSurface {
 
   ~AndroidSurfaceGL() override;
 
-  bool IsValid() const;
+  bool IsValid() const override;
 
   bool IsOffscreenContextValid() const;
 
@@ -35,7 +36,7 @@ class AndroidSurfaceGL : public GPUSurfaceGLDelegate, public AndroidSurface {
 
   bool ResourceContextMakeCurrent() override;
 
-  bool SetNativeWindow(ftl::RefPtr<AndroidNativeWindow> window,
+  bool SetNativeWindow(fxl::RefPtr<AndroidNativeWindow> window,
                        PlatformView::SurfaceConfig config) override;
 
   bool GLContextMakeCurrent() override;
@@ -46,11 +47,14 @@ class AndroidSurfaceGL : public GPUSurfaceGLDelegate, public AndroidSurface {
 
   intptr_t GLContextFBO() const override;
 
- private:
-  ftl::RefPtr<AndroidContextGL> onscreen_context_;
-  ftl::RefPtr<AndroidContextGL> offscreen_context_;
+  bool SurfaceSupportsSRGB() const override;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGL);
+ private:
+  fxl::RefPtr<AndroidContextGL> onscreen_context_;
+  fxl::RefPtr<AndroidContextGL> offscreen_context_;
+  sk_sp<GrContext> gr_context_;
+
+  FXL_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGL);
 };
 
 }  // namespace shell

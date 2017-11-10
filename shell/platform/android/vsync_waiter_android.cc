@@ -4,13 +4,15 @@
 
 #include "flutter/shell/platform/android/vsync_waiter_android.h"
 
+#include <cmath>
 #include <utility>
 
 #include "flutter/common/threads.h"
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
-#include "lib/ftl/arraysize.h"
-#include "lib/ftl/logging.h"
+#include "flutter/fml/trace_event.h"
+#include "lib/fxl/arraysize.h"
+#include "lib/fxl/logging.h"
 
 namespace shell {
 
@@ -22,10 +24,10 @@ VsyncWaiterAndroid::VsyncWaiterAndroid() : weak_factory_(this) {}
 VsyncWaiterAndroid::~VsyncWaiterAndroid() = default;
 
 void VsyncWaiterAndroid::AsyncWaitForVsync(Callback callback) {
-  FTL_DCHECK(!callback_);
+  FXL_DCHECK(!callback_);
   callback_ = std::move(callback);
-  ftl::WeakPtr<VsyncWaiterAndroid>* weak =
-      new ftl::WeakPtr<VsyncWaiterAndroid>();
+  fml::WeakPtr<VsyncWaiterAndroid>* weak =
+      new fml::WeakPtr<VsyncWaiterAndroid>();
   *weak = weak_factory_.GetWeakPtr();
 
   blink::Threads::Platform()->PostTask([weak] {
@@ -36,32 +38,52 @@ void VsyncWaiterAndroid::AsyncWaitForVsync(Callback callback) {
   });
 }
 
-void VsyncWaiterAndroid::OnVsync(long frameTimeNanos) {
+void VsyncWaiterAndroid::OnVsync(int64_t frameTimeNanos,
+                                 int64_t frameTargetTimeNanos) {
   Callback callback = std::move(callback_);
   callback_ = Callback();
-
-  blink::Threads::UI()->PostTask([callback, frameTimeNanos] {
-    callback(ftl::TimePoint::FromEpochDelta(
-        ftl::TimeDelta::FromNanoseconds(frameTimeNanos)));
-  });
+  blink::Threads::UI()->PostTask(
+      [callback, frameTimeNanos, frameTargetTimeNanos] {
+        callback(fxl::TimePoint::FromEpochDelta(
+                     fxl::TimeDelta::FromNanoseconds(frameTimeNanos)),
+                 fxl::TimePoint::FromEpochDelta(
+                     fxl::TimeDelta::FromNanoseconds(frameTargetTimeNanos)));
+      });
 }
 
 static void OnNativeVsync(JNIEnv* env,
                           jclass jcaller,
                           jlong frameTimeNanos,
+                          jlong frameTargetTimeNanos,
                           jlong cookie) {
-  ftl::WeakPtr<VsyncWaiterAndroid>* weak =
-      reinterpret_cast<ftl::WeakPtr<VsyncWaiterAndroid>*>(cookie);
+  // Note: The tag name must be "VSYNC" (it is special) so that the "Highlight
+  // Vsync" checkbox in the timeline can be enabled.
+  // See: https://github.com/catapult-project/catapult/blob/2091404475cbba9b786
+  // 442979b6ec631305275a6/tracing/tracing/extras/vsync/vsync_auditor.html#L26
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
+  TRACE_EVENT1("flutter", "VSYNC", "mode", "basic");
+#else
+  {
+    constexpr size_t num_chars = sizeof(jlong) * CHAR_BIT * 3.4 + 2;
+    char deadline[num_chars];
+    sprintf(deadline, "%lld", frameTargetTimeNanos / 1000);  // microseconds
+    TRACE_EVENT2("flutter", "VSYNC", "mode", "basic", "deadline", deadline);
+  }
+#endif
+  fml::WeakPtr<VsyncWaiterAndroid>* weak =
+      reinterpret_cast<fml::WeakPtr<VsyncWaiterAndroid>*>(cookie);
   VsyncWaiterAndroid* waiter = weak->get();
   delete weak;
-  if (waiter)
-    waiter->OnVsync(frameTimeNanos);
+  if (waiter) {
+    waiter->OnVsync(static_cast<int64_t>(frameTimeNanos),
+                    static_cast<int64_t>(frameTargetTimeNanos));
+  }
 }
 
 bool VsyncWaiterAndroid::Register(JNIEnv* env) {
   static const JNINativeMethod methods[] = {{
       .name = "nativeOnVsync",
-      .signature = "(JJ)V",
+      .signature = "(JJJ)V",
       .fnPtr = reinterpret_cast<void*>(&OnNativeVsync),
   }};
 
@@ -73,12 +95,12 @@ bool VsyncWaiterAndroid::Register(JNIEnv* env) {
 
   g_vsync_waiter_class = new fml::jni::ScopedJavaGlobalRef<jclass>(env, clazz);
 
-  FTL_CHECK(!g_vsync_waiter_class->is_null());
+  FXL_CHECK(!g_vsync_waiter_class->is_null());
 
   g_async_wait_for_vsync_method_ = env->GetStaticMethodID(
       g_vsync_waiter_class->obj(), "asyncWaitForVsync", "(J)V");
 
-  FTL_CHECK(g_async_wait_for_vsync_method_ != nullptr);
+  FXL_CHECK(g_async_wait_for_vsync_method_ != nullptr);
 
   return env->RegisterNatives(clazz, methods, arraysize(methods)) == 0;
 }

@@ -9,7 +9,7 @@
 #include "flutter/sky/engine/platform/fonts/FontData.h"
 #include "flutter/sky/engine/platform/fonts/FontFaceCreationParams.h"
 #include "flutter/sky/engine/platform/fonts/SimpleFontData.h"
-#include "lib/ftl/arraysize.h"
+#include "lib/fxl/arraysize.h"
 #include "third_party/rapidjson/rapidjson/document.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "third_party/skia/include/core/SkTypeface.h"
@@ -35,6 +35,7 @@ struct AssetFontSelector::TypefaceAsset {
 };
 
 namespace {
+
 const char kFontManifestAssetPath[] = "FontManifest.json";
 
 // Weight values corresponding to the members of the FontWeight enum.
@@ -76,16 +77,17 @@ struct FontMatcher {
   const FontDescription& description_;
   int target_weight_;
 };
-}
 
-void AssetFontSelector::Install(ftl::RefPtr<ZipAssetStore> asset_store) {
+}  // namespace
+
+void AssetFontSelector::Install(fxl::RefPtr<ZipAssetStore> asset_store) {
   RefPtr<AssetFontSelector> font_selector =
       adoptRef(new AssetFontSelector(std::move(asset_store)));
   font_selector->parseFontManifest();
   UIDartState::Current()->set_font_selector(font_selector);
 }
 
-AssetFontSelector::AssetFontSelector(ftl::RefPtr<ZipAssetStore> asset_store)
+AssetFontSelector::AssetFontSelector(fxl::RefPtr<ZipAssetStore> asset_store)
     : asset_store_(std::move(asset_store)) {}
 
 AssetFontSelector::~AssetFontSelector() {}
@@ -226,10 +228,11 @@ sk_sp<SkTypeface> AssetFontSelector::getTypefaceAsset(
   }
 
   sk_sp<SkFontMgr> font_mgr(SkFontMgr::RefDefault());
-  SkMemoryStream* typeface_stream = new SkMemoryStream(
-      typeface_asset->data.data(), typeface_asset->data.size());
+  std::unique_ptr<SkStreamAsset> typeface_stream =
+      std::make_unique<SkMemoryStream>(typeface_asset->data.data(),
+                                       typeface_asset->data.size());
   typeface_asset->typeface =
-      sk_sp<SkTypeface>(font_mgr->createFromStream(typeface_stream));
+      font_mgr->makeFromStream(std::move(typeface_stream));
   if (typeface_asset->typeface == nullptr) {
     typeface_cache_.insert(std::make_pair(asset_path, nullptr));
     return nullptr;

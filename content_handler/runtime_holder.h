@@ -5,36 +5,46 @@
 #ifndef FLUTTER_CONTENT_HANDLER_RUNTIME_HOLDER_H_
 #define FLUTTER_CONTENT_HANDLER_RUNTIME_HOLDER_H_
 
-#include <mx/channel.h>
+#include <fdio/namespace.h>
+#include <zx/channel.h>
 
 #include <unordered_set>
 
-#include "application/services/application_environment.fidl.h"
-#include "application/services/service_provider.fidl.h"
-#include "apps/mozart/services/input/input_connection.fidl.h"
-#include "apps/mozart/services/views/view_manager.fidl.h"
+#include "dart-pkg/fuchsia/sdk_ext/fuchsia.h"
 #include "flutter/assets/unzipper_provider.h"
 #include "flutter/assets/zip_asset_store.h"
+#include "flutter/content_handler/accessibility_bridge.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/runtime/runtime_controller.h"
 #include "flutter/runtime/runtime_delegate.h"
+#include "lib/app/cpp/application_context.h"
+#include "lib/app/fidl/application_environment.fidl.h"
+#include "lib/app/fidl/service_provider.fidl.h"
 #include "lib/fidl/cpp/bindings/binding.h"
-#include "lib/ftl/functional/closure.h"
-#include "lib/ftl/macros.h"
-#include "lib/ftl/memory/weak_ptr.h"
+#include "lib/fxl/functional/closure.h"
+#include "lib/fxl/macros.h"
+#include "lib/fxl/memory/weak_ptr.h"
+#include "lib/ui/flutter/sdk_ext/src/natives.h"
+#include "lib/ui/input/fidl/input_connection.fidl.h"
+#include "lib/ui/input/fidl/text_input.fidl.h"
+#include "lib/ui/views/fidl/view_manager.fidl.h"
 
 namespace flutter_runner {
+
 class Rasterizer;
 
 class RuntimeHolder : public blink::RuntimeDelegate,
+                      public mozart::NativesDelegate,
                       public mozart::ViewListener,
-                      public mozart::InputListener {
+                      public mozart::InputListener,
+                      public mozart::InputMethodEditorClient {
  public:
   RuntimeHolder();
   ~RuntimeHolder();
 
-  void Init(fidl::InterfaceHandle<app::ApplicationEnvironment> environment,
+  void Init(fdio_ns_t* namespc,
+            std::unique_ptr<app::ApplicationContext> context,
             fidl::InterfaceRequest<app::ServiceProvider> outgoing_services,
             std::vector<char> bundle);
   void CreateView(const std::string& script_uri,
@@ -44,66 +54,81 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   Dart_Port GetUIIsolateMainPort();
   std::string GetUIIsolateName();
 
+  int32_t return_code() { return return_code_; }
+
  private:
   // |blink::RuntimeDelegate| implementation:
-  void ScheduleFrame() override;
+  std::string DefaultRouteName() override;
+  void ScheduleFrame(bool regenerate_layer_tree = true) override;
   void Render(std::unique_ptr<flow::LayerTree> layer_tree) override;
   void UpdateSemantics(std::vector<blink::SemanticsNode> update) override;
   void HandlePlatformMessage(
-      ftl::RefPtr<blink::PlatformMessage> message) override;
+      fxl::RefPtr<blink::PlatformMessage> message) override;
   void DidCreateMainIsolate(Dart_Isolate isolate) override;
+
+  // |mozart::NativesDelegate| implementation:
+  mozart::View* GetMozartView() override;
 
   // |mozart::InputListener| implementation:
   void OnEvent(mozart::InputEventPtr event,
                const OnEventCallback& callback) override;
 
   // |mozart::ViewListener| implementation:
-  void OnInvalidation(mozart::ViewInvalidationPtr invalidation,
-                      const OnInvalidationCallback& callback) override;
+  void OnPropertiesChanged(
+      mozart::ViewPropertiesPtr properties,
+      const OnPropertiesChangedCallback& callback) override;
 
-  ftl::WeakPtr<RuntimeHolder> GetWeakPtr();
+  // |mozart::InputMethodEditorClient| implementation:
+  void DidUpdateState(mozart::TextInputStatePtr state,
+                      mozart::InputEventPtr event) override;
+  void OnAction(mozart::InputMethodAction action) override;
+
+  fxl::WeakPtr<RuntimeHolder> GetWeakPtr();
 
   void InitRootBundle(std::vector<char> bundle);
   blink::UnzipperProvider GetUnzipperProviderForRootBundle();
-  void HandleAssetPlatformMessage(ftl::RefPtr<blink::PlatformMessage> message);
+  bool HandleAssetPlatformMessage(blink::PlatformMessage* message);
+  bool HandleTextInputPlatformMessage(blink::PlatformMessage* message);
 
-  void InitFidlInternal();
+  void InitDartIoInternal();
+  void InitFuchsia();
   void InitMozartInternal();
 
+  void PostBeginFrame();
   void BeginFrame();
   void OnFrameComplete();
+  void OnRedrawFrame();
   void Invalidate();
 
-  app::ApplicationEnvironmentPtr environment_;
-  app::ServiceProviderPtr environment_services_;
+  fdio_ns_t* namespc_;
+  std::unique_ptr<app::ApplicationContext> context_;
   fidl::InterfaceRequest<app::ServiceProvider> outgoing_services_;
-
   std::vector<char> root_bundle_data_;
-  ftl::RefPtr<blink::ZipAssetStore> asset_store_;
+  fxl::RefPtr<blink::ZipAssetStore> asset_store_;
   void* dylib_handle_ = nullptr;
-
   std::unique_ptr<Rasterizer> rasterizer_;
   std::unique_ptr<blink::RuntimeController> runtime_;
   blink::ViewportMetrics viewport_metrics_;
-
   mozart::ViewManagerPtr view_manager_;
   fidl::Binding<mozart::ViewListener> view_listener_binding_;
   fidl::Binding<mozart::InputListener> input_listener_binding_;
   mozart::InputConnectionPtr input_connection_;
   mozart::ViewPtr view_;
-  mozart::ViewPropertiesPtr view_properties_;
-  uint32_t scene_version_ = mozart::kSceneVersionNone;
-
   std::unordered_set<int> down_pointers_;
+  mozart::InputMethodEditorPtr input_method_editor_;
+  fidl::Binding<mozart::InputMethodEditorClient> text_input_binding_;
+  int current_text_input_client_ = 0;
+  fxl::TimePoint last_begin_frame_time_;
+  bool frame_outstanding_ = false;
+  bool frame_scheduled_ = false;
+  bool frame_rendering_ = false;
+  int32_t return_code_ = 0;
 
-  bool pending_invalidation_ = false;
-  OnInvalidationCallback deferred_invalidation_callback_;
-  bool is_ready_to_draw_ = false;
-  int outstanding_requests_ = 0;
+  fxl::WeakPtrFactory<RuntimeHolder> weak_factory_;
 
-  ftl::WeakPtrFactory<RuntimeHolder> weak_factory_;
+  std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(RuntimeHolder);
+  FXL_DISALLOW_COPY_AND_ASSIGN(RuntimeHolder);
 };
 
 }  // namespace flutter_runner

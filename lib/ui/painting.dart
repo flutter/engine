@@ -4,8 +4,44 @@
 
 part of dart.ui;
 
+// Some methods in this file assert that their arguments are not null. These
+// asserts are just to improve the error messages; they should only cover
+// arguments that are either dereferenced _in Dart_, before being passed to the
+// engine, or that the engine explicitly null-checks itself (after attempting to
+// convert the argument to a native type). It should not be possible for a null
+// or invalid value to be used by the engine even in release mode, since that
+// would cause a crash. It is, however, acceptable for error messages to be much
+// less useful or correct in release mode than in debug mode.
+//
+// Painting APIs will also warn about arguments representing NaN coordinates,
+// which can not be rendered by Skia.
+
+bool _rectIsValid(Rect rect) {
+  assert(rect != null, 'Rect argument was null.');
+  assert(!rect._value.any((double value) => value.isNaN), 'Rect argument contained a NaN value.');
+  return true;
+}
+
+bool _rrectIsValid(RRect rrect) {
+  assert(rrect != null, 'RRect argument was null.');
+  assert(!rrect._value.any((double value) => value.isNaN), 'RRect argument contained a NaN value.');
+  return true;
+}
+
+bool _offsetIsValid(Offset offset) {
+  assert(offset != null, 'Offset argument was null.');
+  assert(!offset.dx.isNaN && !offset.dy.isNaN, 'Offset argument contained a NaN value.');
+  return true;
+}
+
+bool _radiusIsValid(Radius radius) {
+  assert(radius != null, 'Radius argument was null.');
+  assert(!radius.x.isNaN && !radius.y.isNaN, 'Radius argument contained a NaN value.');
+  return true;
+}
+
 Color _scaleAlpha(Color a, double factor) {
-  return a.withAlpha((a.alpha * factor).round());
+  return a.withAlpha((a.alpha * factor).round().clamp(0, 255));
 }
 
 /// An immutable 32 bit color value in ARGB format.
@@ -70,10 +106,10 @@ class Color {
   /// See also [fromARGB], which takes the alpha value as a floating point
   /// value.
   const Color.fromARGB(int a, int r, int g, int b) :
-    value = ((((a & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) & 0xFFFFFFFF);
+    value = (((a & 0xff) << 24) |
+             ((r & 0xff) << 16) |
+             ((g & 0xff) << 8)  |
+             ((b & 0xff) << 0)) & 0xFFFFFFFF;
 
   /// Create a color from red, green, blue, and opacity, similar to `rgba()` in CSS.
   ///
@@ -87,10 +123,10 @@ class Color {
   ///
   /// See also [fromARGB], which takes the opacity as an integer value.
   const Color.fromRGBO(int r, int g, int b, double opacity) :
-    value = (((((opacity * 0xff ~/ 1) & 0xff) << 24) |
-                ((r & 0xff) << 16) |
-                ((g & 0xff) << 8) |
-                ((b & 0xff) << 0)) & 0xFFFFFFFF);
+    value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
+              ((r                    & 0xff) << 16) |
+              ((g                    & 0xff) << 8)  |
+              ((b                    & 0xff) << 0)) & 0xFFFFFFFF;
 
   /// A 32 bit value representing this color.
   ///
@@ -125,39 +161,76 @@ class Color {
 
   /// Returns a new color that matches this color with the alpha channel
   /// replaced with `a` (which ranges from 0 to 255).
+  ///
+  /// Out of range values will have unexpected effects.
   Color withAlpha(int a) {
     return new Color.fromARGB(a, red, green, blue);
   }
 
   /// Returns a new color that matches this color with the alpha channel
   /// replaced with the given `opacity` (which ranges from 0.0 to 1.0).
+  ///
+  /// Out of range values will have unexpected effects.
   Color withOpacity(double opacity) {
     assert(opacity >= 0.0 && opacity <= 1.0);
     return withAlpha((255.0 * opacity).round());
   }
 
   /// Returns a new color that matches this color with the red channel replaced
-  /// with `r`.
+  /// with `r` (which ranges from 0 to 255).
+  ///
+  /// Out of range values will have unexpected effects.
   Color withRed(int r) {
     return new Color.fromARGB(alpha, r, green, blue);
   }
 
   /// Returns a new color that matches this color with the green channel
-  /// replaced with `g`.
+  /// replaced with `g` (which ranges from 0 to 255).
+  ///
+  /// Out of range values will have unexpected effects.
   Color withGreen(int g) {
     return new Color.fromARGB(alpha, red, g, blue);
   }
 
   /// Returns a new color that matches this color with the blue channel replaced
-  /// with `b`.
+  /// with `b` (which ranges from 0 to 255).
+  ///
+  /// Out of range values will have unexpected effects.
   Color withBlue(int b) {
     return new Color.fromARGB(alpha, red, green, b);
+  }
+
+  // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
+  static double _linearizeColorComponent(double component) {
+    if (component <= 0.03928)
+      return component / 12.92;
+    return math.pow((component + 0.055) / 1.055, 2.4);
+  }
+
+  /// Returns a brightness value between 0 for darkest and 1 for lightest.
+  ///
+  /// Represents the relative luminance of the color. This value is computationally
+  /// expensive to calculate.
+  ///
+  /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
+  double computeLuminance() {
+    // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
+    final double R = _linearizeColorComponent(red / 0xFF);
+    final double G = _linearizeColorComponent(green / 0xFF);
+    final double B = _linearizeColorComponent(blue / 0xFF);
+    return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
   /// Linearly interpolate between two colors.
   ///
   /// If either color is null, this function linearly interpolates from a
   /// transparent instance of the other color.
+  ///
+  /// Values of `t` less that 0.0 or greater than 1.0 are supported. Each
+  /// channel will be clamped to the range 0 to 255.
+  ///
+  /// This is intended to be fast but as a result may be ugly. Consider
+  /// [HSVColor] or writing custom logic for interpolating colors.
   static Color lerp(Color a, Color b, double t) {
     if (a == null && b == null)
       return null;
@@ -166,10 +239,10 @@ class Color {
     if (b == null)
       return _scaleAlpha(a, 1.0 - t);
     return new Color.fromARGB(
-      lerpDouble(a.alpha, b.alpha, t).toInt(),
-      lerpDouble(a.red, b.red, t).toInt(),
-      lerpDouble(a.green, b.green, t).toInt(),
-      lerpDouble(a.blue, b.blue, t).toInt()
+      lerpDouble(a.alpha, b.alpha, t).toInt().clamp(0, 255),
+      lerpDouble(a.red, b.red, t).toInt().clamp(0, 255),
+      lerpDouble(a.green, b.green, t).toInt().clamp(0, 255),
+      lerpDouble(a.blue, b.blue, t).toInt().clamp(0, 255),
     );
   }
 
@@ -196,27 +269,135 @@ class Color {
 /// can be used to blend the pixels. The image below shows the effects
 /// of these modes.
 ///
-/// [![Open Skia fiddle to view image.](https://flutter.github.io/assets-for-api-docs/transfer_mode.png)](https://fiddle.skia.org/c/864acd0659c7a866ea7296a3184b8bdd)
+/// [![Open Skia fiddle to view image.](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode.png)](https://fiddle.skia.org/c/864acd0659c7a866ea7296a3184b8bdd)
 ///
-/// See [Paint.blendMode].
+/// The "src" (source) image is the shape or image being drawn, the "dst"
+/// (destination) image is the current contents of the canvas onto which the
+/// source is being drawn.
+///
+/// When using [saveLayer] and [restore], the blend mode of the [Paint] given to
+/// the [saveLayer] will be applied when [restore] is called. Each call to
+/// [saveLayer] introduces a new layer onto which shapes and images are painted;
+/// when [restore] is called, that layer is then _composited_ onto the parent
+/// layer, with the "src" being the most-recently-drawn shapes and images, and
+/// the "dst" being the parent layer. (For the first [saveLayer] call, the
+/// parent layer is the canvas itself.)
+///
+/// See also:
+///
+///  * [Paint.blendMode], which uses [BlendMode] to define the compositing
+///    strategy.
 enum BlendMode {
   // This list comes from Skia's SkXfermode.h and the values (order) should be
   // kept in sync.
   // See: https://skia.org/user/api/skpaint#SkXfermode
 
+  /// Drop both the source and destination images, leaving nothing.
+  ///
+  /// This corresponds to the "clear" Porter-Duff operator.
   clear,
+
+  /// Drop the destination image, only paint the source image.
+  ///
+  /// Conceptually, the destination is first cleared, then the source image is
+  /// painted.
+  ///
+  /// This corresponds to the "Copy" Porter-Duff operator.
   src,
+
+  /// Drop the source image, only paint the destination image.
+  ///
+  /// Conceptually, the source image is discarded, leaving the destination
+  /// untouched.
+  ///
+  /// This corresponds to the "Destination" Porter-Duff operator.
   dst,
+
+  /// Composite the source image over the destination image.
+  ///
+  /// This is the default value. It represents the most intuitive case, where
+  /// shapes are painted on top of what is below, with transparent areas showing
+  /// the destination layer.
+  ///
+  /// This corresponds to the "Source over Destination" Porter-Duff operator,
+  /// also known as the Painter's Algorithm.
   srcOver,
+
+  /// Composite the source image under the destination image.
+  ///
+  /// This is the opposite of [srcOver].
+  ///
+  /// This corresponds to the "Destination over Source" Porter-Duff operator.
   dstOver,
+
+  /// Show the source image, but only where the two images overlap. The
+  /// destination image is not rendered, it is treated merely as a mask.
+  ///
+  /// To show the destination image instead, consider [dstIn].
+  ///
+  /// To reverse the semantic of the mask (only showing the source where the
+  /// destination is absent, rather than where it is present), consider
+  /// [srcOut].
+  ///
+  /// This corresponds to the "Source in Destination" Porter-Duff operator.
   srcIn,
+
+  /// Show the destination image, but only where the two images overlap. The
+  /// source image is not rendered, it is treated merely as a mask.
+  ///
+  /// To show the source image instead, consider [srcIn].
+  ///
+  /// To reverse the semantic of the mask (only showing the source where the
+  /// destination is present, rather than where it is absent), consider [srcIn].
+  ///
+  /// This corresponds to the "Destination in Source" Porter-Duff operator.
   dstIn,
+
+  /// Show the source image, but only where the two images do not overlap. The
+  /// destination image is not rendered, it is treated merely as a mask.
+  ///
+  /// To show the destination image instead, consider [dstOut].
+  ///
+  /// To reverse the semantic of the mask (only showing the source where the
+  /// destination is present, rather than where it is absent), consider [srcIn].
+  ///
+  /// This corresponds to the "Source out Destination" Porter-Duff operator.
   srcOut,
+
+  /// Show the destination image, but only where the two images do not overlap. The
+  /// source image is not rendered, it is treated merely as a mask.
+  ///
+  /// To show the source image instead, consider [srcOut].
+  ///
+  /// To reverse the semantic of the mask (only showing the destination where the
+  /// source is present, rather than where it is absent), consider [dstIn].
+  ///
+  /// This corresponds to the "Destination out Source" Porter-Duff operator.
   dstOut,
+
+  /// Composite the source image over the destination image, but only where it
+  /// overlaps the destination.
+  ///
+  /// This corresponds to the "Source atop Destination" Porter-Duff operator.
   srcATop,
+
+  /// Composite the destination image over the source image, but only where it
+  /// overlaps the source.
+  ///
+  /// This corresponds to the "Destination atop Source" Porter-Duff operator.
   dstATop,
+
+  /// Composite the source and destination images, leaving transparency where
+  /// they would overlap.
+  ///
+  /// This corresponds to the "Source xor Destination" Porter-Duff operator.
   xor,
+
+  /// Composite the source and destination images by summing their components.
+  ///
+  /// This corresponds to the "Source plus Destination" Porter-Duff operator.
   plus,
+
   modulate,
 
   // Following blend modes are defined in the CSS Compositing standard.
@@ -272,6 +453,7 @@ enum FilterQuality {
 /// Styles to use for line endings.
 ///
 /// See [Paint.strokeCap].
+// These enum values must be kept in sync with SkPaint::Cap.
 enum StrokeCap {
   /// Begin and end contours with a flat edge and no extension.
   butt,
@@ -285,9 +467,29 @@ enum StrokeCap {
   square,
 }
 
+/// Styles to use for line joins.
+///
+/// This only affects line joins for polygons drawn by [Canvas.drawPath] and
+/// rectangles, not points drawn as lines with [Canvas.drawPoints].
+///
+/// See [Paint.strokeJoin].
+// These enum values must be kept in sync with SkPaint::Join.
+enum StrokeJoin {
+  /// Joins between line segments form sharp corners.
+  miter,
+
+  /// Joins between line segments are semi-circular.
+  round,
+
+  /// Joins between line segments connect the corners of the butt ends of the
+  /// line segments to give a beveled appearance.
+  bevel,
+}
+
 /// Strategies for painting shapes and paths on a canvas.
 ///
 /// See [Paint.style].
+// These enum values must be kept in sync with SkPaint::Style.
 enum PaintingStyle {
   // This list comes from Skia's SkPaint.h and the values (order) should be kept
   // in sync.
@@ -319,7 +521,7 @@ class Paint {
   // * _data is binary data in four-byte fields, each of which is either a
   //   uint32_t or a float. The default value for each field is encoded as
   //   zero to make initialization trivial. Most values already have a default
-  //   value of zero, but some, such a color, have a non-zero default value.
+  //   value of zero, but some, such as color, have a non-zero default value.
   //   To encode or decode these values, XOR the value with the default value.
   //
   // * _objects is a list of unencodable objects, typically wrappers for native
@@ -335,10 +537,12 @@ class Paint {
   static const int _kStyleIndex = 3;
   static const int _kStrokeWidthIndex = 4;
   static const int _kStrokeCapIndex = 5;
-  static const int _kFilterQualityIndex = 6;
-  static const int _kColorFilterIndex = 7;
-  static const int _kColorFilterColorIndex = 8;
-  static const int _kColorFilterBlendModeIndex = 9;
+  static const int _kStrokeJoinIndex = 6;
+  static const int _kStrokeMiterLimitIndex = 7;
+  static const int _kFilterQualityIndex = 8;
+  static const int _kColorFilterIndex = 9;
+  static const int _kColorFilterColorIndex = 10;
+  static const int _kColorFilterBlendModeIndex = 11;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
   static const int _kColorOffset = _kColorIndex << 2;
@@ -346,12 +550,14 @@ class Paint {
   static const int _kStyleOffset = _kStyleIndex << 2;
   static const int _kStrokeWidthOffset = _kStrokeWidthIndex << 2;
   static const int _kStrokeCapOffset = _kStrokeCapIndex << 2;
+  static const int _kStrokeJoinOffset = _kStrokeJoinIndex << 2;
+  static const int _kStrokeMiterLimitOffset = _kStrokeMiterLimitIndex << 2;
   static const int _kFilterQualityOffset = _kFilterQualityIndex << 2;
   static const int _kColorFilterOffset = _kColorFilterIndex << 2;
   static const int _kColorFilterColorOffset = _kColorFilterColorIndex << 2;
   static const int _kColorFilterBlendModeOffset = _kColorFilterBlendModeIndex << 2;
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 40;
+  static const int _kDataByteCount = 48;
 
   // Binary format must match the deserialization code in paint.cc.
   List<dynamic> _objects;
@@ -373,6 +579,7 @@ class Paint {
     _data.setInt32(_kIsAntiAliasOffset, encoded, _kFakeHostEndian);
   }
 
+  // Must be kept in sync with the default in paint.cc.
   static const int _kColorDefault = 0xFF000000;
 
   /// The color to use when stroking or filling a shape.
@@ -397,6 +604,7 @@ class Paint {
     _data.setInt32(_kColorOffset, encoded, _kFakeHostEndian);
   }
 
+  // Must be kept in sync with the default in paint.cc.
   static final int _kBlendModeDefault = BlendMode.srcOver.index;
 
   /// A blend mode to apply when a shape is drawn or a layer is composited.
@@ -410,6 +618,12 @@ class Paint {
   /// layer is being composited.
   ///
   /// Defaults to [BlendMode.srcOver].
+  ///
+  /// See also:
+  ///
+  ///  * [Canvas.saveLayer], which uses its [Paint]'s [blendMode] to composite
+  ///    the layer when [restore] is called.
+  ///  * [BlendMode], which discusses the user of [saveLayer] with [blendMode].
   BlendMode get blendMode {
     final int encoded = _data.getInt32(_kBlendModeOffset, _kFakeHostEndian);
     return BlendMode.values[encoded ^ _kBlendModeDefault];
@@ -457,6 +671,44 @@ class Paint {
     assert(value != null);
     final int encoded = value.index;
     _data.setInt32(_kStrokeCapOffset, encoded, _kFakeHostEndian);
+  }
+
+  /// The kind of finish to place on the joins between segments.
+  ///
+  /// This applies to paths drawn when [style] is set to [PaintingStyle.stroke],
+  /// It does not apply to points drawn as lines with [Canvas.drawPoints].
+  ///
+  /// Defaults to [StrokeJoin.miter], i.e. sharp corners. See also
+  /// [strokeMiterLimit] to control when miters are replaced by bevels.
+  StrokeJoin get strokeJoin {
+    return StrokeJoin.values[_data.getInt32(_kStrokeJoinOffset, _kFakeHostEndian)];
+  }
+  set strokeJoin(StrokeJoin value) {
+    assert(value != null);
+    final int encoded = value.index;
+    _data.setInt32(_kStrokeJoinOffset, encoded, _kFakeHostEndian);
+  }
+
+  // Must be kept in sync with the default in paint.cc.
+  static final double _kStrokeMiterLimitDefault = 4.0;
+
+  /// The limit for miters to be drawn on segments when the join is set to
+  /// [StrokeJoin.miter] and the [style] is set to [PaintingStyle.stroke]. If
+  /// this limit is exceeded, then a [StrokeJoin.bevel] join will be drawn
+  /// instead. This may cause some 'popping' of the corners of a path if the
+  /// angle between line segments is animated.
+  ///
+  /// This limit is expressed as a limit on the length of the miter.
+  ///
+  /// Defaults to 4.0.  Using zero as a limit will cause a [StrokeJoin.bevel]
+  /// join to be used all the time.
+  double get strokeMiterLimit {
+    return _data.getFloat32(_kStrokeMiterLimitOffset, _kFakeHostEndian);
+  }
+  set strokeMiterLimit(double value) {
+    assert(value != null);
+    final double encoded = value - _kStrokeMiterLimitDefault;
+    _data.setFloat32(_kStrokeMiterLimitOffset, encoded, _kFakeHostEndian);
   }
 
   /// A mask filter (for example, a blur) to apply to a shape after it has been
@@ -545,25 +797,31 @@ class Paint {
     if (style == PaintingStyle.stroke) {
       result.write('$style');
       if (strokeWidth != 0.0)
-        result.write(' $strokeWidth');
+        result.write(' ${strokeWidth.toStringAsFixed(1)}');
       else
         result.write(' hairline');
       if (strokeCap != StrokeCap.butt)
         result.write(' $strokeCap');
+      if (strokeJoin == StrokeJoin.miter) {
+        if (strokeMiterLimit != _kStrokeMiterLimitDefault)
+          result.write(' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
+      } else {
+        result.write(' $strokeJoin');
+      }
       semicolon = '; ';
     }
     if (isAntiAlias != true) {
       result.write('${semicolon}antialias off');
       semicolon = '; ';
     }
-    if (color != const Color(0xFF000000)) {
+    if (color != const Color(_kColorDefault)) {
       if (color != null)
         result.write('$semicolon$color');
       else
         result.write('${semicolon}no color');
       semicolon = '; ';
     }
-    if (blendMode != BlendMode.srcOver) {
+    if (blendMode.index != _kBlendModeDefault) {
       result.write('$semicolon$blendMode');
       semicolon = '; ';
     }
@@ -609,6 +867,66 @@ abstract class Image extends NativeFieldWrapperClass2 {
 
 /// Callback signature for [decodeImageFromList].
 typedef void ImageDecoderCallback(Image result);
+
+/// Information for a single animation frame.
+///
+/// Obtain a FrameInfo with [Codec.getNextFrame].
+abstract class FrameInfo extends NativeFieldWrapperClass2 {
+  // The duration this frame should be shown.
+  Duration get duration => new Duration(milliseconds: _durationMillis);
+
+  int get _durationMillis native "FrameInfo_durationMillis";
+
+  // The Image object for this frame.
+  Image get image native "FrameInfo_image";
+}
+
+/// A handle to an image codec.
+abstract class Codec extends NativeFieldWrapperClass2 {
+  /// Number of frames in this image.
+  int get frameCount native "Codec_frameCount";
+
+  /// Number of times to repeat the animation.
+  ///
+  /// * 0 when the animation should be played once.
+  /// * -1 for infinity repetitions.
+  int get repetitionCount native "Codec_repetitionCount";
+
+  /// Fetches the next animation frame.
+  ///
+  /// Wraps back to the first frame after returning the last frame.
+  ///
+  /// The returned future can complete with an error if the decoding has failed.
+  Future<FrameInfo> getNextFrame() {
+    return _futurize(_getNextFrame);
+  }
+
+  /// Returns an error message on failure, null on success.
+  String _getNextFrame(_Callback<FrameInfo> callback) native "Codec_getNextFrame";
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  void dispose() native "Codec_dispose";
+}
+
+/// Instantiates an image codec [Codec] object.
+///
+/// [list] is the binary image data (e.g a PNG or GIF binary data).
+/// The data can be for either static or animated images.
+///
+/// The returned future can complete with an error if the image decoding has
+/// failed.
+Future<Codec> instantiateImageCodec(Uint8List list) {
+  return _futurize(
+    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback)
+  );
+}
+
+/// Instantiates a [Codec] object for an image binary data.
+///
+/// Returns an error message if the instantiation has failed, null otherwise.
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback)
+  native "instantiateImageCodec";
 
 /// Convert an image file from a byte array into an [Image] object.
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback)
@@ -720,10 +1038,10 @@ class Path extends NativeFieldWrapperClass2 {
   /// is less than 1, it is an ellipse.
   void relativeConicTo(double x1, double y1, double x2, double y2, double w) native "Path_relativeConicTo";
 
-  /// If the [forceMoveTo] argument is false, adds a straight line
+  /// If the `forceMoveTo` argument is false, adds a straight line
   /// segment and an arc segment.
   ///
-  /// If the [forceMoveTo] argument is true, starts a new subpath
+  /// If the `forceMoveTo` argument is true, starts a new subpath
   /// consisting of an arc segment.
   ///
   /// In either case, the arc segment consists of the arc that follows
@@ -734,17 +1052,77 @@ class Path extends NativeFieldWrapperClass2 {
   /// that intersects the center of the rectangle and with positive
   /// angles going clockwise around the oval.
   ///
-  /// The line segment added if [forceMoveTo] is false starts at the
+  /// The line segment added if `forceMoveTo` is false starts at the
   /// current point and ends at the start of the arc.
   void arcTo(Rect rect, double startAngle, double sweepAngle, bool forceMoveTo) {
+    assert(_rectIsValid(rect));
     _arcTo(rect.left, rect.top, rect.right, rect.bottom, startAngle, sweepAngle, forceMoveTo);
   }
   void _arcTo(double left, double top, double right, double bottom,
               double startAngle, double sweepAngle, bool forceMoveTo) native "Path_arcTo";
 
+  /// Appends up to four conic curves weighted to describe an oval of `radius`
+  /// and rotated by `rotation`.
+  ///
+  /// The first curve begins from the last point in the path and the last ends
+  /// at `arcEnd`. The curves follow a path in a direction determined by
+  /// `clockwise` and `largeArc` in such a way that the sweep angle
+  /// is always less than 360 degrees.
+  ///
+  /// A simple line is appended if either either radii are zero or the last
+  /// point in the path is `arcEnd`. The radii are scaled to fit the last path
+  /// point if both are greater than zero but too small to describe an arc.
+  ///
+  void arcToPoint(Offset arcEnd, {
+    Radius radius: Radius.zero,
+    double rotation: 0.0,
+    bool largeArc: false,
+    bool clockwise: true,
+    }) {
+    assert(_offsetIsValid(arcEnd));
+    assert(_radiusIsValid(radius));
+    _arcToPoint(arcEnd.dx, arcEnd.dy, radius.x, radius.y, rotation,
+                largeArc, clockwise);
+  }
+  void _arcToPoint(double arcEndX, double arcEndY, double radiusX,
+                   double radiusY, double rotation, bool largeArc,
+                   bool clockwise) native "Path_arcToPoint";
+
+
+  /// Appends up to four conic curves weighted to describe an oval of `radius`
+  /// and rotated by `rotation`.
+  ///
+  /// The last path point is described by (px, py).
+  ///
+  /// The first curve begins from the last point in the path and the last ends
+  /// at `arcEndDelta.dx + px` and `arcEndDelta.dy + py`. The curves follow a
+  /// path in a direction determined by `clockwise` and `largeArc`
+  /// in such a way that the sweep angle is always less than 360 degrees.
+  ///
+  /// A simple line is appended if either either radii are zero, or, both
+  /// `arcEndDelta.dx` and `arcEndDelta.dy` are zero. The radii are scaled to
+  /// fit the last path point if both are greater than zero but too small to
+  /// describe an arc.
+  void relativeArcToPoint(Offset arcEndDelta, {
+    Radius radius: Radius.zero,
+    double rotation: 0.0,
+    bool largeArc: false,
+    bool clockwise: true,
+    }) {
+    assert(_offsetIsValid(arcEndDelta));
+    assert(_radiusIsValid(radius));
+    _relativeArcToPoint(arcEndDelta.dx, arcEndDelta.dy, radius.x, radius.y,
+                        rotation, largeArc, clockwise);
+  }
+  void _relativeArcToPoint(double arcEndX, double arcEndY, double radiusX,
+                           double radiusY, double rotation,
+                           bool largeArc, bool clockwise)
+                           native "Path_relativeArcToPoint";
+
   /// Adds a new subpath that consists of four lines that outline the
   /// given rectangle.
   void addRect(Rect rect) {
+    assert(_rectIsValid(rect));
     _addRect(rect.left, rect.top, rect.right, rect.bottom);
   }
   void _addRect(double left, double top, double right, double bottom) native "Path_addRect";
@@ -752,6 +1130,7 @@ class Path extends NativeFieldWrapperClass2 {
   /// Adds a new subpath that consists of a curve that forms the
   /// ellipse that fills the given rectangle.
   void addOval(Rect oval) {
+    assert(_rectIsValid(oval));
     _addOval(oval.left, oval.top, oval.right, oval.bottom);
   }
   void _addOval(double left, double top, double right, double bottom) native "Path_addOval";
@@ -765,6 +1144,7 @@ class Path extends NativeFieldWrapperClass2 {
   /// rectangle and with positive angles going clockwise around the
   /// oval.
   void addArc(Rect oval, double startAngle, double sweepAngle) {
+    assert(_rectIsValid(oval));
     _addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle);
   }
   void _addArc(double left, double top, double right, double bottom,
@@ -778,6 +1158,7 @@ class Path extends NativeFieldWrapperClass2 {
   ///
   /// The `points` argument is interpreted as offsets from the origin.
   void addPolygon(List<Offset> points, bool close) {
+    assert(points != null);
     _addPolygon(_encodePointList(points), close);
   }
   void _addPolygon(Float32List points, bool close) native "Path_addPolygon";
@@ -785,17 +1166,28 @@ class Path extends NativeFieldWrapperClass2 {
   /// Adds a new subpath that consists of the straight lines and
   /// curves needed to form the rounded rectangle described by the
   /// argument.
-  void addRRect(RRect rrect) => _addRRect(rrect._value);
+  void addRRect(RRect rrect) {
+    assert(_rrectIsValid(rrect));
+    _addRRect(rrect._value);
+  }
   void _addRRect(Float32List rrect) native "Path_addRRect";
 
   /// Adds a new subpath that consists of the given path offset by the given
   /// offset.
-  void addPath(Path path, Offset offset) => _addPath(path, offset.dx, offset.dy);
+  void addPath(Path path, Offset offset) {
+    assert(path != null); // path is checked on the engine side
+    assert(_offsetIsValid(offset));
+    _addPath(path, offset.dx, offset.dy);
+  }
   void _addPath(Path path, double dx, double dy) native "Path_addPath";
 
   /// Adds the given path to this path by extending the current segment of this
   /// path with the the first segment of the given path.
-  void extendWithPath(Path path, Offset offset) => _extendWithPath(path, offset.dx, offset.dy);
+  void extendWithPath(Path path, Offset offset) {
+    assert(path != null); // path is checked on the engine side
+    assert(_offsetIsValid(offset));
+    _extendWithPath(path, offset.dx, offset.dy);
+  }
   void _extendWithPath(Path path, double dx, double dy) native "Path_extendWithPath";
 
   /// Closes the last subpath, as if a straight line had been drawn
@@ -814,25 +1206,33 @@ class Path extends NativeFieldWrapperClass2 {
   /// The `point` argument is interpreted as an offset from the origin.
   ///
   /// Returns true if the point is in the path, and false otherwise.
-  bool contains(Offset point) => _contains(point.dx, point.dy);
+  bool contains(Offset point) {
+    assert(_offsetIsValid(point));
+    return _contains(point.dx, point.dy);
+  }
   bool _contains(double x, double y) native "Path_contains";
 
   /// Returns a copy of the path with all the segments of every
   /// subpath translated by the given offset.
-  Path shift(Offset offset) => _shift(offset.dx, offset.dy);
+  Path shift(Offset offset) {
+    assert(_offsetIsValid(offset));
+    return _shift(offset.dx, offset.dy);
+  }
   Path _shift(double dx, double dy) native "Path_shift";
 
   /// Returns a copy of the path with all the segments of every
   /// subpath transformed by the given matrix.
   Path transform(Float64List matrix4) {
+    assert(matrix4 != null);
     if (matrix4.length != 16)
-      throw new ArgumentError("[matrix4] must have 16 entries.");
+      throw new ArgumentError('"matrix4" must have 16 entries.');
     return _transform(matrix4);
   }
   Path _transform(Float64List matrix4) native "Path_transform";
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
+// These enum values must be kept in sync with SkBlurStyle.
 enum BlurStyle {
   // These mirror SkBlurStyle and must be kept in sync.
 
@@ -874,6 +1274,7 @@ class MaskFilter extends NativeFieldWrapperClass2 {
   ///
   /// A blur is an expensive operation and should therefore be used sparingly.
   MaskFilter.blur(BlurStyle style, double sigma) {
+    assert(style != null);
     _constructor(style.index, sigma);
   }
   void _constructor(int style, double sigma) native "MaskFilter_constructor";
@@ -950,14 +1351,54 @@ class ImageFilter extends NativeFieldWrapperClass2 {
 abstract class Shader extends NativeFieldWrapperClass2 { }
 
 /// Defines what happens at the edge of the gradient.
+///
+/// A gradient is defined along a finite inner area. In the case of a linear
+/// gradient, it's between the parallel lines that are orthogonal to the line
+/// drawn between two points. In the case of radial gradients, it's the disc
+/// that covers the circle centered on a particular point up to a given radius.
+///
+/// This enum is used to define how the gradient should paint the regions
+/// outside that defined inner area.
+///
+/// See also:
+///
+///  * [painting.Gradient], the superclass for [LinearGradient] and
+///    [RadialGradient], as used by [BoxDecoration] et al, which works in
+///    relative coordinates and can create a [Shader] representing the gradient
+///    for a particular [Rect] on demand.
+///  * [dart:ui.Gradient], the low-level class used when dealing with the
+///    [Paint.shader] property directly, with its [new Gradient.linear] and [new
+///    Gradient.radial] constructors.
+// These enum values must be kept in sync with SkShader::TileMode.
 enum TileMode {
   /// Edge is clamped to the final color.
+  ///
+  /// The gradient will paint the all the regions outside the inner area with
+  /// the color of the point closest to that region.
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_radial.png)
   clamp,
 
   /// Edge is repeated from first color to last.
+  ///
+  /// This is as if the stop points from 0.0 to 1.0 were then repeated from 1.0
+  /// to 2.0, 2.0 to 3.0, and so forth (and for linear gradients, similarly from
+  /// -1.0 to 0.0, -2.0 to -1.0, etc).
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_radial.png)
   repeated,
 
   /// Edge is mirrored from last color to first.
+  ///
+  /// This is as if the stop points from 0.0 to 1.0 were then repeated backwards
+  /// from 2.0 to 1.0, then forwards from 2.0 to 3.0, then backwards again from
+  /// 4.0 to 3.0, and so forth (and for linear gradients, similarly from in the
+  /// negative direction).
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_radial.png)
   mirror,
 }
 
@@ -970,12 +1411,14 @@ Int32List _encodeColorList(List<Color> colors) {
 }
 
 Float32List _encodePointList(List<Offset> points) {
+  assert(points != null);
   final int pointCount = points.length;
   final Float32List result = new Float32List(pointCount * 2);
   for (int i = 0; i < pointCount; ++i) {
     final int xIndex = i * 2;
     final int yIndex = xIndex + 1;
     final Offset point = points[i];
+    assert(_offsetIsValid(point));
     result[xIndex] = point.dx;
     result[yIndex] = point.dy;
   }
@@ -983,6 +1426,8 @@ Float32List _encodePointList(List<Offset> points) {
 }
 
 Float32List _encodeTwoPoints(Offset pointA, Offset pointB) {
+  assert(_offsetIsValid(pointA));
+  assert(_offsetIsValid(pointB));
   final Float32List result = new Float32List(4);
   result[0] = pointA.dx;
   result[1] = pointA.dy;
@@ -1011,7 +1456,11 @@ class Gradient extends Shader {
   /// `color` must therefore only have two entries).
   ///
   /// The behavior before `from` and after `to` is described by the `tileMode`
-  /// argument.
+  /// argument. For details, see the [TileMode] enum.
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_linear.png)
   ///
   /// If `from`, `to`, `colors`, or `tileMode` are null, or if `colors` or
   /// `colorStops` contain null values, this constructor will throw a
@@ -1021,8 +1470,12 @@ class Gradient extends Shader {
     Offset to,
     List<Color> colors, [
     List<double> colorStops = null,
-    TileMode tileMode = TileMode.clamp
+    TileMode tileMode = TileMode.clamp,
   ]) {
+    assert(_offsetIsValid(from));
+    assert(_offsetIsValid(to));
+    assert(colors != null);
+    assert(tileMode != null);
     _validateColorStops(colors, colorStops);
     final Float32List endPointsBuffer = _encodeTwoPoints(from, to);
     final Int32List colorsBuffer = _encodeColorList(colors);
@@ -1041,16 +1494,24 @@ class Gradient extends Shader {
   /// `color` must therefore only have two entries).
   ///
   /// The behavior before and after the radius is described by the `tileMode`
-  /// argument.
+  /// argument. For details, see the [TileMode] enum.
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_radial.png)
   ///
   /// If `center`, `radius`, `colors`, or `tileMode` are null, or if `colors` or
   /// `colorStops` contain null values, this constructor will throw a
   /// [NoSuchMethodError].
   Gradient.radial(Offset center,
                   double radius,
-                  List<Color> colors,
-                  [List<double> colorStops = null,
-                  TileMode tileMode = TileMode.clamp]) {
+                  List<Color> colors, [
+                  List<double> colorStops = null,
+                  TileMode tileMode = TileMode.clamp,
+  ]) {
+    assert(_offsetIsValid(center));
+    assert(colors != null);
+    assert(tileMode != null);
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : new Float32List.fromList(colorStops);
@@ -1062,10 +1523,10 @@ class Gradient extends Shader {
   static void _validateColorStops(List<Color> colors, List<double> colorStops) {
     if (colorStops == null) {
       if (colors.length != 2)
-        throw new ArgumentError("[colors] must have length 2 if [colorStops] is omitted.");
+        throw new ArgumentError('"colors" must have length 2 if "colorStops" is omitted.');
     } else {
       if (colors.length != colorStops.length)
-        throw new ArgumentError("[colors] and [colorStops] arguments must have equal length.");
+        throw new ArgumentError('"colors" and "colorStops" arguments must have equal length.');
     }
   }
 }
@@ -1078,16 +1539,12 @@ class ImageShader extends Shader {
   /// matrix to apply to the effect. All the arguments are required and must not
   /// be null.
   ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4) {
-    if (image == null)
-      throw new ArgumentError("[image] argument cannot be null");
-    if (tmx == null)
-      throw new ArgumentError("[tmx] argument cannot be null");
-    if (tmy == null)
-      throw new ArgumentError("[tmy] argument cannot be null");
-    if (matrix4 == null)
-      throw new ArgumentError("[matrix4] argument cannot be null");
+    assert(image != null); // image is checked on the engine side
+    assert(tmx != null);
+    assert(tmy != null);
+    assert(matrix4 != null);
     if (matrix4.length != 16)
-      throw new ArgumentError("[matrix4] must have 16 entries.");
+      throw new ArgumentError('"matrix4" must have 16 entries.');
     _constructor();
     _initWithImage(image, tmx.index, tmy.index, matrix4);
   }
@@ -1098,6 +1555,7 @@ class ImageShader extends Shader {
 /// Defines how a list of points is interpreted when drawing a set of triangles.
 ///
 /// Used by [Canvas.drawVertices].
+// These enum values must be kept in sync with SkVertices::VertexMode.
 enum VertexMode {
   /// Draw each sequence of three points as the vertices of a triangle.
   triangles,
@@ -1118,21 +1576,43 @@ class Vertices extends NativeFieldWrapperClass2 {
     List<Color> colors,
     List<int> indices,
   }) {
+    assert(mode != null);
+    assert(positions != null);
     if (textureCoordinates != null && textureCoordinates.length != positions.length)
-      throw new ArgumentError("[positions] and [textureCoordinates] lengths must match");
+      throw new ArgumentError('"positions" and "textureCoordinates" lengths must match.');
     if (colors != null && colors.length != positions.length)
-      throw new ArgumentError("[positions] and [colors] lengths must match");
+      throw new ArgumentError('"positions" and "colors" lengths must match.');
     if (indices != null && indices.any((int i) => i < 0 || i >= positions.length))
-      throw new ArgumentError("[indices] values must be valid indices in the positions list");
+      throw new ArgumentError('"indices" values must be valid indices in the positions list.');
 
     Float32List encodedPositions = _encodePointList(positions);
-    Float32List encodedTexs = (textureCoordinates != null) ?
+    Float32List encodedTextureCoordinates = (textureCoordinates != null) ?
       _encodePointList(textureCoordinates) : null;
-    Int32List encodedColors = (colors != null) ? _encodeColorList(colors) : null;
-    Int32List encodedIndices = (indices != null) ? new Int32List.fromList(indices) : null;
+    Int32List encodedColors = colors != null ? _encodeColorList(colors) : null;
+    Int32List encodedIndices = indices != null ? new Int32List.fromList(indices) : null;
 
     _constructor();
-    _init(mode.index, encodedPositions, encodedTexs, encodedColors, encodedIndices);
+    _init(mode.index, encodedPositions, encodedTextureCoordinates, encodedColors, encodedIndices);
+  }
+
+  Vertices.raw(
+    VertexMode mode,
+    Float32List positions, {
+    Float32List textureCoordinates,
+    Int32List colors,
+    Int32List indices,
+  }) {
+    assert(mode != null);
+    assert(positions != null);
+    if (textureCoordinates != null && textureCoordinates.length != positions.length)
+      throw new ArgumentError('"positions" and "textureCoordinates" lengths must match.');
+    if (colors != null && colors.length * 2 != positions.length)
+      throw new ArgumentError('"positions" and "colors" lengths must match.');
+    if (indices != null && indices.any((int i) => i < 0 || i >= positions.length))
+      throw new ArgumentError('"indices" values must be valid indices in the positions list.');
+
+    _constructor();
+    _init(mode.index, positions, textureCoordinates, colors, indices);
   }
 
   void _constructor() native "Vertices_constructor";
@@ -1146,7 +1626,9 @@ class Vertices extends NativeFieldWrapperClass2 {
 
 /// Defines how a list of points is interpreted when drawing a set of points.
 ///
+// ignore: deprecated_member_use
 /// Used by [Canvas.drawPoints].
+// These enum values must be kept in sync with SkCanvas::PointMode.
 enum PointMode {
   /// Draw each point separately.
   ///
@@ -1174,6 +1656,18 @@ enum PointMode {
   polygon,
 }
 
+/// Defines how a new clip region should be merged with the existing clip
+/// region.
+///
+/// Used by [Canvas.clipRect].
+enum ClipOp {
+  /// Subtract the new region from the existing region.
+  difference,
+
+  /// Intersect the new region from the existing region.
+  intersect,
+}
+
 /// An interface for recording graphical operations.
 ///
 /// [Canvas] objects are used in creating [Picture] objects, which can
@@ -1198,19 +1692,16 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// Graphical operations that affect pixels entirely outside the given
   /// cullRect might be discarded by the implementation. However, the
   /// implementation might draw outside these bounds if, for example, a command
-  /// draws partially inside and outside the cullRect. To ensure that pixels
+  /// draws partially inside and outside the `cullRect`. To ensure that pixels
   /// outside a given region are discarded, consider using a [clipRect].
   ///
   /// To end the recording, call [PictureRecorder.endRecording] on the
   /// given recorder.
   Canvas(PictureRecorder recorder, Rect cullRect) {
-    if (recorder == null)
-      throw new ArgumentError('The given PictureRecorder was null.');
+    assert(recorder != null);
     if (recorder.isRecording)
-      throw new ArgumentError('The given PictureRecorder is already associated with another Canvas.');
-    if (!cullRect.isFinite)
-      throw new ArgumentError('The cullRect contains infinite or NaN coordinates.');
-    // TODO(ianh): throw if recorder is defunct (https://github.com/flutter/flutter/issues/2531)
+      throw new ArgumentError('"recorder" must not already be associated with another Canvas.');
+    assert(cullRect != null);
     _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
   }
   void _constructor(PictureRecorder recorder,
@@ -1222,6 +1713,11 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// Saves a copy of the current transform and clip on the save stack.
   ///
   /// Call [restore] to pop the save stack.
+  ///
+  /// See also:
+  ///
+  ///  * [saveLayer], which does the same thing but additionally also groups the
+  ///    commands done until the matching [restore].
   void save() native "Canvas_save";
 
   /// Saves a copy of the current transform and clip on the save stack, and then
@@ -1238,7 +1734,104 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// entire group can be made transparent using the [saveLayer]'s paint.
   ///
   /// Call [restore] to pop the save stack and apply the paint to the group.
+  ///
+  /// ## Using saveLayer with clips
+  ///
+  /// When a rectanglular clip operation (from [clipRect]) is not axis-aligned
+  /// with the raster buffer, or when the clip operation is not rectalinear (e.g.
+  /// because it is a rounded rectangle clip created by [clipRRect] or an
+  /// arbitrarily complicated path clip created by [clipPath]), the edge of the
+  /// clip needs to be anti-aliased.
+  ///
+  /// If two draw calls overlap at the edge of such a clipped region, without
+  /// using [saveLayer], the first drawing will be anti-aliased with the
+  /// background first, and then the second will be anti-aliased with the result
+  /// of blending the first drawing and the background. On the other hand, if
+  /// [saveLayer] is used immediately after establishing the clip, the second
+  /// drawing will cover the first in the layer, and thus the second alone will
+  /// be anti-aliased with the background when the layer is clipped and
+  /// composited (when [restore] is called).
+  ///
+  /// For example, this [CustomPainter.paint] method paints a clean white
+  /// rounded rectangle:
+  ///
+  /// ```dart
+  /// void paint(Canvas canvas, Size size) {
+  ///   Rect rect = Offset.zero & size;
+  ///   canvas.save();
+  ///   canvas.clipRRect(new RRect.fromRectXY(rect, 100.0, 100.0));
+  ///   canvas.saveLayer(rect, new Paint());
+  ///   canvas.drawPaint(new Paint()..color = Colors.red);
+  ///   canvas.drawPaint(new Paint()..color = Colors.white);
+  ///   canvas.restore();
+  ///   canvas.restore();
+  /// }
+  /// ```
+  ///
+  /// On the other hand, this one renders a red outline, the result of the red
+  /// paint being anti-aliased with the background at the clip edge, then the
+  /// white paint being similarly anti-aliased with the background _including
+  /// the clipped red paint_:
+  ///
+  /// ```dart
+  /// void paint(Canvas canvas, Size size) {
+  ///   // (this example renders poorly, prefer the example above)
+  ///   Rect rect = Offset.zero & size;
+  ///   canvas.save();
+  ///   canvas.clipRRect(new RRect.fromRectXY(rect, 100.0, 100.0));
+  ///   canvas.drawPaint(new Paint()..color = Colors.red);
+  ///   canvas.drawPaint(new Paint()..color = Colors.white);
+  ///   canvas.restore();
+  /// }
+  /// ```
+  ///
+  /// This point is moot if the clip only clips one draw operation. For example,
+  /// the following paint method paints a pair of clean white rounded
+  /// rectangles, even though the clips are not done on a separate layer:
+  ///
+  /// ```dart
+  /// void paint(Canvas canvas, Size size) {
+  ///   canvas.save();
+  ///   canvas.clipRRect(new RRect.fromRectXY(Offset.zero & (size / 2.0), 50.0, 50.0));
+  ///   canvas.drawPaint(new Paint()..color = Colors.white);
+  ///   canvas.restore();
+  ///   canvas.save();
+  ///   canvas.clipRRect(new RRect.fromRectXY(size.center(Offset.zero) & (size / 2.0), 50.0, 50.0));
+  ///   canvas.drawPaint(new Paint()..color = Colors.white);
+  ///   canvas.restore();
+  /// }
+  /// ```
+  ///
+  /// (Incidentally, rather than using [clipRRect] and [drawPaint] to draw
+  /// rounded rectangles like this, prefer the [drawRRect] method. These
+  /// examples are using [drawPaint] as a proxy for "complicated draw operations
+  /// that will get clipped", to illustrate the point.)
+  ///
+  /// ## Performance considerations
+  ///
+  /// Generally speaking, [saveLayer] is relatively expensive.
+  ///
+  /// There are a several different hardware architectures for GPUs (graphics
+  /// processing units, the hardware that handles graphics), but most of them
+  /// involve batching commands and reordering them for performance. When layers
+  /// are used, they cause the rendering pipeline to have to switch render
+  /// target (from one layer to another). Render target switches can flush the
+  /// GPU's command buffer, which typically means that optimizations that one
+  /// could get with larger batching are lost. Render target switches also
+  /// generate a lot of memory churn because the GPU needs to copy out the
+  /// current frame buffer contents from the part of memory that's optimized for
+  /// writing, and then needs to copy it back in once the previous render target
+  /// (layer) is restored.
+  ///
+  /// See also:
+  ///
+  ///  * [save], which saves the current state, but does not create a new layer
+  ///    for subsequent commands.
+  ///  * [BlendMode], which discusses the use of [Paint.blendMode] with
+  ///    [saveLayer].
   void saveLayer(Rect bounds, Paint paint) {
+    assert(_rectIsValid(bounds));
+    assert(paint != null);
     if (bounds == null) {
       _saveLayerWithoutBounds(paint._objects, paint._data);
     } else {
@@ -1248,7 +1841,6 @@ class Canvas extends NativeFieldWrapperClass2 {
   }
   void _saveLayerWithoutBounds(List<dynamic> paintObjects, ByteData paintData)
       native "Canvas_saveLayerWithoutBounds";
-  // TODO(jackson): Paint should be optional, but making it optional causes crash
   void _saveLayer(double left,
                   double top,
                   double right,
@@ -1294,35 +1886,67 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// Multiply the current transform by the specified 4⨉4 transformation matrix
   /// specified as a list of values in column-major order.
   void transform(Float64List matrix4) {
+    assert(matrix4 != null);
     if (matrix4.length != 16)
-      throw new ArgumentError("[matrix4] must have 16 entries.");
+      throw new ArgumentError('"matrix4" must have 16 entries.');
     _transform(matrix4);
   }
   void _transform(Float64List matrix4) native "Canvas_transform";
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rectangle.
-  void clipRect(Rect rect) {
-    _clipRect(rect.left, rect.top, rect.right, rect.bottom);
+  ///
+  /// If the clip is not axis-aligned with the display device, and [isAntiAlias]
+  /// is true, then the clip will be anti-aliased. If multiple draw commands
+  /// intersect with the clip boundary, this can result in incorrect blending at
+  /// the clip boundary. See [saveLayer] for a discussion of how to address
+  /// that.
+  ///
+  /// Use [ClipOp.difference] to subtract the provided rectangle from the
+  /// current clip.
+  void clipRect(Rect rect, { ClipOp clipOp: ClipOp.intersect }) {
+    assert(_rectIsValid(rect));
+    assert(clipOp != null);
+    _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index);
   }
   void _clipRect(double left,
                  double top,
                  double right,
-                 double bottom) native "Canvas_clipRect";
+                 double bottom,
+                 int clipOp) native "Canvas_clipRect";
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rounded rectangle.
-  void clipRRect(RRect rrect) => _clipRRect(rrect._value);
+  ///
+  /// If [isAntiAlias] is true, then the clip will be anti-aliased. If multiple
+  /// draw commands intersect with the clip boundary, this can result in
+  /// incorrect blending at the clip boundary. See [saveLayer] for a discussion
+  /// of how to address that and some examples of using [clipRRect].
+  void clipRRect(RRect rrect) {
+    assert(_rrectIsValid(rrect));
+    _clipRRect(rrect._value);
+  }
   void _clipRRect(Float32List rrect) native "Canvas_clipRRect";
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given [Path].
-  void clipPath(Path path) native "Canvas_clipPath";
+  ///
+  /// If [isAntiAlias] is true, then the clip will be anti-aliased. If multiple
+  /// draw commands intersect with the clip boundary, this can result in
+  /// incorrect blending at the clip boundary. See [saveLayer] for a discussion
+  /// of how to address that.
+  void clipPath(Path path) {
+    assert(path != null); // path is checked on the engine side
+    _clipPath(path);
+  }
+  void _clipPath(Path path) native "Canvas_clipPath";
 
   /// Paints the given [Color] onto the canvas, applying the given
   /// [BlendMode], with the given color being the source and the background
   /// being the destination.
   void drawColor(Color color, BlendMode blendMode) {
+    assert(color != null);
+    assert(blendMode != null);
     _drawColor(color.value, blendMode.index);
   }
   void _drawColor(int color, int blendMode) native "Canvas_drawColor";
@@ -1332,6 +1956,9 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// The `p1` and `p2` arguments are interpreted as offsets from the origin.
   void drawLine(Offset p1, Offset p2, Paint paint) {
+    assert(_offsetIsValid(p1));
+    assert(_offsetIsValid(p2));
+    assert(paint != null);
     _drawLine(p1.dx, p1.dy, p2.dx, p2.dy, paint._objects, paint._data);
   }
   void _drawLine(double x1,
@@ -1345,12 +1972,17 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// To fill the canvas with a solid color and blend mode, consider
   /// [drawColor] instead.
-  void drawPaint(Paint paint) => _drawPaint(paint._objects, paint._data);
+  void drawPaint(Paint paint) {
+    assert(paint != null);
+    _drawPaint(paint._objects, paint._data);
+  }
   void _drawPaint(List<dynamic> paintObjects, ByteData paintData) native "Canvas_drawPaint";
 
   /// Draws a rectangle with the given [Paint]. Whether the rectangle is filled
   /// or stroked (or both) is controlled by [Paint.style].
   void drawRect(Rect rect, Paint paint) {
+    assert(_rectIsValid(rect));
+    assert(paint != null);
     _drawRect(rect.left, rect.top, rect.right, rect.bottom,
               paint._objects, paint._data);
   }
@@ -1364,6 +1996,8 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// Draws a rounded rectangle with the given [Paint]. Whether the rectangle is
   /// filled or stroked (or both) is controlled by [Paint.style].
   void drawRRect(RRect rrect, Paint paint) {
+    assert(_rrectIsValid(rrect));
+    assert(paint != null);
     _drawRRect(rrect._value, paint._objects, paint._data);
   }
   void _drawRRect(Float32List rrect,
@@ -1376,6 +2010,9 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// This shape is almost but not quite entirely unlike an annulus.
   void drawDRRect(RRect outer, RRect inner, Paint paint) {
+    assert(_rrectIsValid(outer));
+    assert(_rrectIsValid(inner));
+    assert(paint != null);
     _drawDRRect(outer._value, inner._value, paint._objects, paint._data);
   }
   void _drawDRRect(Float32List outer,
@@ -1387,6 +2024,8 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// with the given [Paint]. Whether the oval is filled or stroked (or both) is
   /// controlled by [Paint.style].
   void drawOval(Rect rect, Paint paint) {
+    assert(_rectIsValid(rect));
+    assert(paint != null);
     _drawOval(rect.left, rect.top, rect.right, rect.bottom,
               paint._objects, paint._data);
   }
@@ -1402,6 +2041,8 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// the third argument. Whether the circle is filled or stroked (or both) is
   /// controlled by [Paint.style].
   void drawCircle(Offset c, double radius, Paint paint) {
+    assert(_offsetIsValid(c));
+    assert(paint != null);
     _drawCircle(c.dx, c.dy, radius, paint._objects, paint._data);
   }
   void _drawCircle(double x,
@@ -1421,6 +2062,8 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// This method is optimized for drawing arcs and should be faster than [Path.arcTo].
   void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter, Paint paint) {
+    assert(_rectIsValid(rect));
+    assert(paint != null);
     _drawArc(rect.left, rect.top, rect.right, rect.bottom, startAngle,
              sweepAngle, useCenter, paint._objects, paint._data);
   }
@@ -1438,6 +2081,8 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// filled or stroked (or both) is controlled by [Paint.style]. If the path is
   /// filled, then subpaths within it are implicitly closed (see [Path.close]).
   void drawPath(Path path, Paint paint) {
+    assert(path != null); // path is checked on the engine side
+    assert(paint != null);
     _drawPath(path, paint._objects, paint._data);
   }
   void _drawPath(Path path,
@@ -1447,6 +2092,9 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// Draws the given [Image] into the canvas with its top-left corner at the
   /// given [Offset]. The image is composited into the canvas using the given [Paint].
   void drawImage(Image image, Offset p, Paint paint) {
+    assert(image != null); // image is checked on the engine side
+    assert(_offsetIsValid(p));
+    assert(paint != null);
     _drawImage(image, p.dx, p.dy, paint._objects, paint._data);
   }
   void _drawImage(Image image,
@@ -1460,7 +2108,15 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// This might sample from outside the `src` rect by up to half the width of
   /// an applied filter.
+  ///
+  /// Multiple calls to this method with different arguments (from the same
+  /// image) can be batched into a single call to [drawAtlas] to improve
+  /// performance.
   void drawImageRect(Image image, Rect src, Rect dst, Paint paint) {
+    assert(image != null); // image is checked on the engine side
+    assert(_rectIsValid(src));
+    assert(_rectIsValid(dst));
+    assert(paint != null);
     _drawImageRect(image,
                    src.left,
                    src.top,
@@ -1499,6 +2155,10 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// cover the destination rectangle while maintaining their relative
   /// positions.
   void drawImageNine(Image image, Rect center, Rect dst, Paint paint) {
+    assert(image != null); // image is checked on the engine side
+    assert(_rectIsValid(center));
+    assert(_rectIsValid(dst));
+    assert(paint != null);
     _drawImageNine(image,
                    center.left,
                    center.top,
@@ -1525,7 +2185,11 @@ class Canvas extends NativeFieldWrapperClass2 {
 
   /// Draw the given picture onto the canvas. To create a picture, see
   /// [PictureRecorder].
-  void drawPicture(Picture picture) native "Canvas_drawPicture";
+  void drawPicture(Picture picture) {
+    assert(picture != null); // picture is checked on the engine side
+    _drawPicture(picture);
+  }
+  void _drawPicture(Picture picture) native "Canvas_drawPicture";
 
   /// Draws the text in the given [Paragraph] into this canvas at the given
   /// [Offset].
@@ -1548,29 +2212,65 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// described by adding half of the [ParagraphConstraints.width] given to
   /// [Paragraph.layout], to the `offset` argument's [Offset.dx] coordinate.
   void drawParagraph(Paragraph paragraph, Offset offset) {
+    assert(paragraph != null);
+    assert(_offsetIsValid(offset));
     paragraph._paint(this, offset.dx, offset.dy);
   }
 
   /// Draws a sequence of points according to the given [PointMode].
   ///
   /// The `points` argument is interpreted as offsets from the origin.
+  ///
+  /// See also:
+  ///
+  ///  * [drawRawPoints], which takes `points` as a [Float32List] rather than a
+  ///    [List<Offset>].
   void drawPoints(PointMode pointMode, List<Offset> points, Paint paint) {
+    assert(pointMode != null);
+    assert(points != null);
+    assert(paint != null);
     _drawPoints(paint._objects, paint._data, pointMode.index, _encodePointList(points));
   }
+
+  /// Draws a sequence of points according to the given [PointMode].
+  ///
+  /// The `points` argument is interpreted as a list of pairs of floating point
+  /// numbers, where each pair represents an x and y offset from the origin.
+  ///
+  /// See also:
+  ///
+  ///  * [drawPoints], which takes `points` as a [List<Offset>] rather than a
+  ///    [List<Float32List>].
+  void drawRawPoints(PointMode pointMode, Float32List points, Paint paint) {
+    assert(pointMode != null);
+    assert(points != null);
+    assert(paint != null);
+    if (points.length % 2 != 0)
+      throw new ArgumentError('"points" must have an even number of values.');
+    _drawPoints(paint._objects, paint._data, pointMode.index, points);
+  }
+
   void _drawPoints(List<dynamic> paintObjects,
                    ByteData paintData,
                    int pointMode,
                    Float32List points) native "Canvas_drawPoints";
 
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
-    _drawVertices(vertices, blendMode, paint._objects, paint._data);
+    assert(vertices != null); // vertices is checked on the engine side
+    assert(paint != null);
+    assert(blendMode != null);
+    _drawVertices(vertices, blendMode.index, paint._objects, paint._data);
   }
   void _drawVertices(Vertices vertices,
-                     BlendMode blendMode,
+                     int blendMode,
                      List<dynamic> paintObjects,
                      ByteData paintData) native "Canvas_drawVertices";
 
-  // TODO(eseidel): Paint should be optional, but optional doesn't work.
+  //
+  // See also:
+  //
+  //  * [drawRawAtlas], which takes its arguments as typed data lists rather
+  //    than objects.
   void drawAtlas(Image atlas,
                  List<RSTransform> transforms,
                  List<Rect> rects,
@@ -1578,12 +2278,18 @@ class Canvas extends NativeFieldWrapperClass2 {
                  BlendMode blendMode,
                  Rect cullRect,
                  Paint paint) {
-    final int rectCount = rects.length;
+    assert(atlas != null); // atlas is checked on the engine side
+    assert(transforms != null);
+    assert(rects != null);
+    assert(colors != null);
+    assert(blendMode != null);
+    assert(paint != null);
 
+    final int rectCount = rects.length;
     if (transforms.length != rectCount)
-      throw new ArgumentError("[transforms] and [rects] lengths must match");
+      throw new ArgumentError('"transforms" and "rects" lengths must match.');
     if (colors.isNotEmpty && colors.length != rectCount)
-      throw new ArgumentError("if supplied, [colors] length must match that of [transforms] and [rects]");
+      throw new ArgumentError('If non-null, "colors" length must match that of "transforms" and "rects".');
 
     final Float32List rstTransformBuffer = new Float32List(rectCount * 4);
     final Float32List rectBuffer = new Float32List(rectCount * 4);
@@ -1595,6 +2301,7 @@ class Canvas extends NativeFieldWrapperClass2 {
       final int index3 = index0 + 3;
       final RSTransform rstTransform = transforms[i];
       final Rect rect = rects[i];
+      assert(_rectIsValid(rect));
       rstTransformBuffer[index0] = rstTransform.scos;
       rstTransformBuffer[index1] = rstTransform.ssin;
       rstTransformBuffer[index2] = rstTransform.tx;
@@ -1613,6 +2320,50 @@ class Canvas extends NativeFieldWrapperClass2 {
       colorBuffer, blendMode.index, cullRectBuffer
     );
   }
+
+  //
+  // The `rstTransforms` argument is interpreted as a list of four-tuples, with
+  // each tuple being ([RSTransform.scos], [RSTransform.ssin],
+  // [RSTransform.tx], [RSTransform.ty]).
+  //
+  // The `rects` argument is interpreted as a list of four-tuples, with each
+  // tuple being ([Rect.left], [Rect.top], [Rect.right], [Rect.bottom]).
+  //
+  // The `colors` argument, which can be null, is interpreted as a list of
+  // 32-bit colors, with the same packing as [Color.value].
+  //
+  // See also:
+  //
+  //  * [drawAtlas], which takes its arguments as objects rather than typed
+  //    data lists.
+  void drawRawAtlas(Image atlas,
+                    Float32List rstTransforms,
+                    Float32List rects,
+                    Int32List colors,
+                    BlendMode blendMode,
+                    Rect cullRect,
+                    Paint paint) {
+    assert(atlas != null); // atlas is checked on the engine side
+    assert(rstTransforms != null);
+    assert(rects != null);
+    assert(colors != null);
+    assert(blendMode != null);
+    assert(paint != null);
+
+    final int rectCount = rects.length;
+    if (rstTransforms.length != rectCount)
+      throw new ArgumentError('"rstTransforms" and "rects" lengths must match.');
+    if (rectCount % 4 != 0)
+      throw new ArgumentError('"rstTransforms" and "rects" lengths must be a multiple of four.');
+    if (colors != null && colors.length * 4 != rectCount)
+      throw new ArgumentError('If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
+
+    _drawAtlas(
+      paint._objects, paint._data, atlas, rstTransforms, rects,
+      colors, blendMode.index, cullRect?._value
+    );
+  }
+
   void _drawAtlas(List<dynamic> paintObjects,
                   ByteData paintData,
                   Image atlas,
@@ -1626,9 +2377,10 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// transparentOccluder should be true if the occluding object is not opaque.
   void drawShadow(Path path, Color color, double elevation, bool transparentOccluder) {
+    assert(path != null); // path is checked on the engine side
+    assert(color != null);
     _drawShadow(path, color.value, elevation, transparentOccluder);
   }
-
   void _drawShadow(Path path,
                    int color,
                    double elevation,
@@ -1648,6 +2400,15 @@ abstract class Picture extends NativeFieldWrapperClass2 {
   /// Calling the Picture constructor directly will not create a useable
   /// object. To create a Picture object, use a [PictureRecorder].
   Picture(); // (this constructor is here just so we can document it)
+
+  /// Creates an image from this picture.
+  ///
+  /// The picture is rasterized using the number of pixels specified by the
+  /// given width and height.
+  ///
+  /// Although the image is returned synchronously, the picture is actually
+  /// rasterized the first time the image is drawn and then cached.
+  Image toImage(int width, int height) native "Picture_toImage";
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -1683,3 +2444,42 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   /// Returns null if the PictureRecorder is not associated with a canvas.
   Picture endRecording() native "PictureRecorder_endRecording";
 }
+
+/// Generic callback signature, used by [_futurize].
+typedef void _Callback<T>(T result);
+
+/// Signature for a method that receives a [_Callback].
+///
+/// Return value should be null on success, and a string error message on
+/// failure.
+typedef String _Callbacker<T>(_Callback<T> callback);
+
+/// Converts a method that receives a value-returning callback to a method that
+/// returns a Future.
+///
+/// Example usage:
+/// ```dart
+/// typedef void IntCallback(int result);
+/// 
+/// void doSomethingAndCallback(IntCallback callback) {
+///   new Timer(new Duration(seconds: 1), () { callback(1); });
+/// }
+/// 
+/// Future<int> doSomething() {
+///   return _futurize(domeSomethingAndCallback);
+/// }
+/// ```
+///
+Future<T> _futurize<T>(_Callbacker<T> callbacker) async {
+  Completer<T> completer = new Completer<T>();
+  String err = callbacker(completer.complete);
+  if (err != null) {
+    throw new Exception(err);
+  }
+  T result = await completer.future;
+  if (result == null) {
+    throw new Exception('operation failed');
+  }
+  return result;
+}
+

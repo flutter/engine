@@ -6,6 +6,8 @@ source_set("flow") {
   sources = [
     "compositor_context.cc",
     "compositor_context.h",
+    "debug_print.cc",
+    "debug_print.h",
     "instrumentation.cc",
     "instrumentation.h",
     "layers/backdrop_filter_layer.cc",
@@ -20,8 +22,12 @@ source_set("flow") {
     "layers/color_filter_layer.h",
     "layers/container_layer.cc",
     "layers/container_layer.h",
+    "layers/default_layer_builder.cc",
+    "layers/default_layer_builder.h",
     "layers/layer.cc",
     "layers/layer.h",
+    "layers/layer_builder.cc",
+    "layers/layer_builder.h",
     "layers/layer_tree.cc",
     "layers/layer_tree.h",
     "layers/opacity_layer.cc",
@@ -34,32 +40,71 @@ source_set("flow") {
     "layers/picture_layer.h",
     "layers/shader_mask_layer.cc",
     "layers/shader_mask_layer.h",
+    "layers/texture_layer.cc",
+    "layers/texture_layer.h",
     "layers/transform_layer.cc",
     "layers/transform_layer.h",
+    "matrix_decomposition.cc",
+    "matrix_decomposition.h",
+    "paint_utils.cc",
+    "paint_utils.h",
     "process_info.h",
     "raster_cache.cc",
     "raster_cache.h",
-    "scene_update_context.cc",
-    "scene_update_context.h",
+    "raster_cache_key.cc",
+    "raster_cache_key.h",
+    "texture.cc",
+    "texture.h",
+  ]
+
+  public_deps = [
+    "//garnet/public/lib/fxl",
+  ]
+
+  public_configs = [
+    "$flutter_root:config",
   ]
 
   deps = [
-    "//flutter/common",
-    "//flutter/glue",
-    "//flutter/synchronization",
-    "//lib/ftl",
+    "$flutter_root/common",
+    "$flutter_root/glue",
+    "$flutter_root/synchronization",
     "//third_party/skia",
     "//third_party/skia:gpu",
   ]
 
   if (is_fuchsia) {
     sources += [
+      "export_node.cc",
+      "export_node.h",
       "layers/child_scene_layer.cc",
       "layers/child_scene_layer.h",
+      "scene_update_context.cc",
+      "scene_update_context.h",
     ]
-    public_deps = [
-      "//apps/mozart/lib/skia",
-      "//apps/mozart/services/composition",
+
+    deps += [
+      "//garnet/public/lib/ui/scenic:client",
+      "//garnet/public/lib/ui/scenic/fidl",
+      "//topaz/public/dart-pkg/zircon",
     ]
+
+    public_deps += [ "//zircon/system/ulib/zx" ]
   }
+}
+
+executable("flow_unittests") {
+  testonly = true
+
+  sources = [
+    "matrix_decomposition_unittests.cc",
+    "raster_cache_unittests.cc",
+  ]
+
+  deps = [
+    ":flow",
+    "//third_party/dart/runtime:libdart_jit",  # for tracing
+    "$flutter_root/testing",
+    "//third_party/skia",
+  ]
 }

@@ -12,10 +12,14 @@ import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
+import io.flutter.plugin.common.BasicMessageChannel;
+import io.flutter.plugin.common.StandardMessageCodec;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -23,14 +27,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-class AccessibilityBridge extends AccessibilityNodeProvider {
+class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMessageChannel.MessageHandler<Object> {
     private static final String TAG = "FlutterView";
 
     private Map<Integer, SemanticsObject> mObjects;
-    private FlutterView mOwner;
+    private final FlutterView mOwner;
     private boolean mAccessibilityEnabled = false;
     private SemanticsObject mFocusedObject;
     private SemanticsObject mHoveredObject;
+
+    private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
     private static final int SEMANTICS_ACTION_TAP = 1 << 0;
     private static final int SEMANTICS_ACTION_LONG_PRESS = 1 << 1;
@@ -40,6 +46,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
     private static final int SEMANTICS_ACTION_SCROLL_DOWN = 1 << 5;
     private static final int SEMANTICS_ACTION_INCREASE = 1 << 6;
     private static final int SEMANTICS_ACTION_DECREASE = 1 << 7;
+    private static final int SEMANTICS_ACTION_SHOW_ON_SCREEN = 1 << 8;
 
     private static final int SEMANTICS_ACTION_SCROLLABLE = SEMANTICS_ACTION_SCROLL_LEFT |
                                                            SEMANTICS_ACTION_SCROLL_RIGHT |
@@ -48,18 +55,30 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
 
     private static final int SEMANTICS_FLAG_HAS_CHECKED_STATE = 1 << 0;
     private static final int SEMANTICS_FLAG_IS_CHECKED = 1 << 1;
+    private static final int SEMANTICS_FLAG_IS_SELECTED = 1 << 2;
+    private static final int SEMANTICS_FLAG_IS_BUTTON = 1 << 3;
+    private static final int SEMANTICS_FLAG_IS_TEXT_FIELD = 1 << 4;
+    private static final int SEMANTICS_FLAG_IS_FOCUSED = 1 << 5;
 
     AccessibilityBridge(FlutterView owner) {
         assert owner != null;
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
+        mFlutterAccessibilityChannel = new BasicMessageChannel<>(owner, "flutter/accessibility",
+            StandardMessageCodec.INSTANCE);
     }
 
     void setAccessibilityEnabled(boolean accessibilityEnabled) {
         mAccessibilityEnabled = accessibilityEnabled;
+        if (accessibilityEnabled) {
+            mFlutterAccessibilityChannel.setMessageHandler(this);
+        } else {
+            mFlutterAccessibilityChannel.setMessageHandler(null);
+        }
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
         if (virtualViewId == View.NO_ID) {
             AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner);
@@ -75,8 +94,16 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
 
         AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner, virtualViewId);
         result.setPackageName(mOwner.getContext().getPackageName());
-        result.setClassName("Flutter"); // Prettier than the more conventional node.getClass().getName()
+        result.setClassName("Flutter"); // TODO(goderbauer): Set proper class names
         result.setSource(mOwner, virtualViewId);
+        result.setFocusable(object.isFocusable());
+        result.setFocused((object.flags & SEMANTICS_FLAG_IS_FOCUSED) != 0);
+
+        if (mFocusedObject != null)
+            result.setAccessibilityFocused(mFocusedObject.id == virtualViewId);
+
+        if ((object.flags & SEMANTICS_FLAG_IS_TEXT_FIELD) != 0)
+            result.setClassName("android.widget.EditText");
 
         if (object.parent != null) {
             assert object.id > 0;
@@ -100,42 +127,68 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
         result.setEnabled(true); // TODO(ianh): Expose disabled subtrees
 
         if ((object.actions & SEMANTICS_ACTION_TAP) != 0) {
-            result.addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLICK);
+            result.addAction(AccessibilityNodeInfo.ACTION_CLICK);
             result.setClickable(true);
         }
         if ((object.actions & SEMANTICS_ACTION_LONG_PRESS) != 0) {
-            result.addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_LONG_CLICK);
+            result.addAction(AccessibilityNodeInfo.ACTION_LONG_CLICK);
             result.setLongClickable(true);
         }
         if ((object.actions & SEMANTICS_ACTION_SCROLLABLE) != 0) {
+            result.setScrollable(true);
+            // This tells Android's a11y to send scroll events when reaching the end of
+            // the visible viewport of a scrollable.
+            result.setClassName("android.widget.ScrollView");
             // TODO(ianh): Once we're on SDK v23+, call addAction to
             // expose AccessibilityAction.ACTION_SCROLL_LEFT, _RIGHT,
             // _UP, and _DOWN when appropriate.
-            // TODO(ianh): Only include the actions if you can actually scroll that way.
-            result.addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_FORWARD);
-            result.addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_BACKWARD);
-            result.setScrollable(true);
+            if ((object.actions & SEMANTICS_ACTION_SCROLL_LEFT) != 0
+                    || (object.actions & SEMANTICS_ACTION_SCROLL_UP) != 0) {
+                result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
+            }
+            if ((object.actions & SEMANTICS_ACTION_SCROLL_RIGHT) != 0
+                    || (object.actions & SEMANTICS_ACTION_SCROLL_DOWN) != 0) {
+                result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
+            }
+        }
+        if ((object.actions & SEMANTICS_ACTION_INCREASE) != 0
+                || (object.actions & SEMANTICS_ACTION_DECREASE) != 0 ) {
+            result.setClassName("android.widget.SeekBar");
+            if ((object.actions & SEMANTICS_ACTION_INCREASE) != 0) {
+                result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
+            }
+            if ((object.actions & SEMANTICS_ACTION_DECREASE) != 0) {
+                result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
+            }
         }
 
         result.setCheckable((object.flags & SEMANTICS_FLAG_HAS_CHECKED_STATE) != 0);
         result.setChecked((object.flags & SEMANTICS_FLAG_IS_CHECKED) != 0);
-        result.setText(object.label);
+        result.setSelected((object.flags & SEMANTICS_FLAG_IS_SELECTED) != 0);
+        result.setText(object.getValueLabelHint());
 
-        // TODO(ianh): use setTraversalBefore/setTraversalAfter to set
-        // the relative order of the views. For each set of siblings,
-        // the views should be ordered top-to-bottom, tie-breaking
-        // left-to-right (right-to-left in rtl environments), height,
-        // width, and finally by list order.
+        if ((object.flags & SEMANTICS_FLAG_IS_BUTTON) != 0) {
+          result.setClassName("android.widget.Button");
+        }
 
         // Accessibility Focus
         if (mFocusedObject != null && mFocusedObject.id == virtualViewId) {
-            result.addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_CLEAR_ACCESSIBILITY_FOCUS);
+            result.addAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS);
         } else {
-            result.addAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_ACCESSIBILITY_FOCUS);
+            result.addAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
         }
 
         if (object.children != null) {
-            for (SemanticsObject child : object.children) {
+            List<SemanticsObject> childrenInTraversalOrder =
+                new ArrayList<SemanticsObject>(object.children);
+            Collections.sort(childrenInTraversalOrder, new Comparator<SemanticsObject>() {
+                public int compare(SemanticsObject a, SemanticsObject b) {
+                    final int top = Integer.compare(a.globalRect.top, b.globalRect.top);
+                    // TODO(goderbauer): sort right-to-left in rtl environments.
+                    return top == 0 ? Integer.compare(a.globalRect.left, b.globalRect.left) : top;
+                }
+            });
+            for (SemanticsObject child : childrenInTraversalOrder) {
                 result.addChild(mOwner, child.id);
             }
         }
@@ -158,23 +211,33 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
                 mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_LONG_PRESS);
                 return true;
             }
-            case AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD: {
+            case AccessibilityNodeInfo.ACTION_SCROLL_FORWARD: {
                 if ((object.actions & SEMANTICS_ACTION_SCROLL_UP) != 0) {
                     mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_SCROLL_UP);
                 } else if ((object.actions & SEMANTICS_ACTION_SCROLL_LEFT) != 0) {
-                    // TODO(ianh): bidi support
+                    // TODO(ianh): bidi support using textDirection
                     mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_SCROLL_LEFT);
+                } else if ((object.actions & SEMANTICS_ACTION_INCREASE) != 0) {
+                    object.value = object.increasedValue;
+                    // Event causes Android to read out the updated value.
+                    sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_SELECTED);
+                    mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_INCREASE);
                 } else {
                     return false;
                 }
                 return true;
             }
-            case AccessibilityNodeInfo.ACTION_SCROLL_FORWARD: {
+            case AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD: {
                 if ((object.actions & SEMANTICS_ACTION_SCROLL_DOWN) != 0) {
                     mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_SCROLL_DOWN);
                 } else if ((object.actions & SEMANTICS_ACTION_SCROLL_RIGHT) != 0) {
-                    // TODO(ianh): bidi support
+                    // TODO(ianh): bidi support using textDirection
                     mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_SCROLL_RIGHT);
+                } else if ((object.actions & SEMANTICS_ACTION_DECREASE) != 0) {
+                    object.value = object.decreasedValue;
+                    // Event causes Android to read out the updated value.
+                    sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_SELECTED);
+                    mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_DECREASE);
                 } else {
                     return false;
                 }
@@ -187,6 +250,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
             }
             case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS: {
                 sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
+
                 if (mFocusedObject == null) {
                     // When Android focuses a node, it doesn't invalidate the view.
                     // (It does when it sends ACTION_CLEAR_ACCESSIBILITY_FOCUS, so
@@ -194,6 +258,18 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
                     mOwner.invalidate();
                 }
                 mFocusedObject = object;
+
+                if ((object.actions & (SEMANTICS_ACTION_INCREASE | SEMANTICS_ACTION_DECREASE)) != 0) {
+                    // SeekBars only announce themselves after this event.
+                    sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_SELECTED);
+                }
+
+                return true;
+            }
+            // TODO(goderbauer): Use ACTION_SHOW_ON_SCREEN from Android Support Library after
+            //     https://github.com/flutter/flutter/issues/11099 is resolved.
+            case 16908342: { // ACTION_SHOW_ON_SCREEN, added in API level 23
+                mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_SHOW_ON_SCREEN);
                 return true;
             }
         }
@@ -273,6 +349,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
         }
     }
 
+    private AccessibilityEvent obtainAccessibilityEvent(int virtualViewId, int eventType) {
+        assert virtualViewId != 0;
+        AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
+        event.setPackageName(mOwner.getContext().getPackageName());
+        event.setSource(mOwner, virtualViewId);
+        return event;
+    }
+
     private void sendAccessibilityEvent(int virtualViewId, int eventType) {
         if (!mAccessibilityEnabled) {
             return;
@@ -280,10 +364,49 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
         if (virtualViewId == 0) {
             mOwner.sendAccessibilityEvent(eventType);
         } else {
-            AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
-            event.setPackageName(mOwner.getContext().getPackageName());
-            event.setSource(mOwner, virtualViewId);
-            mOwner.getParent().requestSendAccessibilityEvent(mOwner, event);
+            sendAccessibilityEvent(obtainAccessibilityEvent(virtualViewId, eventType));
+        }
+    }
+
+    private void sendAccessibilityEvent(AccessibilityEvent event) {
+        if (!mAccessibilityEnabled) {
+            return;
+        }
+        mOwner.getParent().requestSendAccessibilityEvent(mOwner, event);
+    }
+
+    // Message Handler for [mFlutterAccessibilityChannel].
+    public void onMessage(Object message, BasicMessageChannel.Reply<Object> reply) {
+        @SuppressWarnings("unchecked")
+        final HashMap<String, Object> annotatedEvent = (HashMap<String, Object>)message;
+        final String type = (String)annotatedEvent.get("type");
+        @SuppressWarnings("unchecked")
+        final HashMap<String, Object> data = (HashMap<String, Object>)annotatedEvent.get("data");
+
+        switch (type) {
+            case "scroll":
+                final int nodeId = (int)annotatedEvent.get("nodeId");
+                AccessibilityEvent event =
+                    obtainAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_SCROLLED);
+                char axis = ((String)data.get("axis")).charAt(0);
+                double minPosition = (double)data.get("minScrollExtent");
+                double maxPosition = (double)data.get("maxScrollExtent") - minPosition;
+                double position = (double)data.get("pixels") - minPosition;
+                if (axis == 'v') {
+                    event.setScrollY((int)position);
+                    event.setMaxScrollY((int)maxPosition);
+                } else {
+                    assert axis == 'h';
+                    event.setScrollX((int)position);
+                    event.setMaxScrollX((int)maxPosition);
+                }
+                sendAccessibilityEvent(event);
+                break;
+            case "announce":
+                mOwner.announceForAccessibility((String) data.get("message"));
+                break;
+            default:
+                assert false;
         }
     }
 
@@ -309,6 +432,20 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
         sendAccessibilityEvent(0, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
     }
 
+    private enum TextDirection {
+        UNKNOWN, LTR, RTL;
+
+        public static TextDirection fromInt(int value) {
+            switch (value) {
+                case 1:
+                    return RTL;
+                case 2:
+                    return LTR;
+            }
+            return UNKNOWN;
+        }
+    }
+
     private class SemanticsObject {
         SemanticsObject() { }
 
@@ -317,6 +454,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
         int flags;
         int actions;
         String label;
+        String value;
+        String increasedValue;
+        String decreasedValue;
+        String hint;
+        TextDirection textDirection;
 
         private float left;
         private float top;
@@ -325,7 +467,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
         private float[] transform;
 
         SemanticsObject parent;
-        List<SemanticsObject> children;
+        List<SemanticsObject> children;  // In inverse hit test order (i.e. paint order).
 
         private boolean inverseTransformDirty = true;
         private float[] inverseTransform;
@@ -350,11 +492,22 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
             flags = buffer.getInt();
             actions = buffer.getInt();
 
-            final int stringIndex = buffer.getInt();
-            if (stringIndex == -1)
-                label = null;
-            else
-                label = strings[stringIndex];
+            int stringIndex = buffer.getInt();
+            label = stringIndex == -1 ? null : strings[stringIndex];
+
+            stringIndex = buffer.getInt();
+            value = stringIndex == -1 ? null : strings[stringIndex];
+
+            stringIndex = buffer.getInt();
+            increasedValue = stringIndex == -1 ? null : strings[stringIndex];
+
+            stringIndex = buffer.getInt();
+            decreasedValue = stringIndex == -1 ? null : strings[stringIndex];
+
+            stringIndex = buffer.getInt();
+            hint = stringIndex == -1 ? null : strings[stringIndex];
+
+            textDirection = TextDirection.fromInt(buffer.getInt());
 
             left = buffer.getFloat();
             top = buffer.getFloat();
@@ -421,6 +574,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
             return this;
         }
 
+        boolean isFocusable() {
+            return flags != 0 || (label != null && !label.isEmpty()) || (actions & ~SEMANTICS_ACTION_SCROLLABLE) != 0;
+        }
+
         void updateRecursively(float[] ancestorTransform, Set<SemanticsObject> visitedObjects, boolean forceUpdate) {
             visitedObjects.add(this);
 
@@ -430,7 +587,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
             if (forceUpdate) {
                 if (globalTransform == null)
                     globalTransform = new float[16];
-                Matrix.multiplyMM(globalTransform, 0, transform, 0, ancestorTransform, 0);
+                Matrix.multiplyMM(globalTransform, 0, ancestorTransform, 0, transform, 0);
 
                 final float[] sample = new float[4];
                 sample[2] = 0;
@@ -495,6 +652,19 @@ class AccessibilityBridge extends AccessibilityNodeProvider {
 
         private float max(float a, float b, float c, float d) {
             return Math.max(a, Math.max(b, Math.max(c, d)));
+        }
+
+        private String getValueLabelHint() {
+            StringBuilder sb = new StringBuilder();
+            String[] array = { value, label, hint };
+            for (String word: array) {
+                if (word != null && (word = word.trim()).length() > 0) {
+                    if (sb.length() > 0)
+                        sb.append(", ");
+                    sb.append(word);
+                }
+            }
+            return sb.length() > 0 ? sb.toString() : null;
         }
     }
 }

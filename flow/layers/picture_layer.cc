@@ -5,12 +5,11 @@
 #include "flutter/flow/layers/picture_layer.h"
 
 #include "flutter/common/threads.h"
-#include "flutter/flow/raster_cache.h"
-#include "lib/ftl/logging.h"
+#include "lib/fxl/logging.h"
 
 namespace flow {
 
-PictureLayer::PictureLayer() {}
+PictureLayer::PictureLayer() = default;
 
 PictureLayer::~PictureLayer() {
   // The picture may contain references to textures that are associated
@@ -23,27 +22,36 @@ PictureLayer::~PictureLayer() {
 
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   if (auto cache = context->raster_cache) {
-    image_ = cache->GetPrerolledImage(context->gr_context, picture_.get(),
-                                      matrix, is_complex_, will_change_);
+    raster_cache_result_ = cache->GetPrerolledImage(
+        context->gr_context, picture_.get(), matrix, context->dst_color_space,
+#if defined(OS_FUCHSIA)
+        context->metrics,
+#endif
+        is_complex_, will_change_);
   }
 
   SkRect bounds = picture_->cullRect().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);
-  context->child_paint_bounds = bounds;
 }
 
-void PictureLayer::Paint(PaintContext& context) {
-  FTL_DCHECK(picture_);
-
-  TRACE_EVENT1("flutter", "PictureLayer::Paint", "image",
-               image_ ? "prerolled" : "normal");
+void PictureLayer::Paint(PaintContext& context) const {
+  TRACE_EVENT0("flutter", "PictureLayer::Paint");
+  FXL_DCHECK(picture_);
+  FXL_DCHECK(needs_painting());
 
   SkAutoCanvasRestore save(&context.canvas, true);
   context.canvas.translate(offset_.x(), offset_.y());
 
-  if (image_) {
-    context.canvas.drawImageRect(image_.get(), picture_->cullRect(), nullptr,
-                                 SkCanvas::kFast_SrcRectConstraint);
+  if (raster_cache_result_.is_valid()) {
+    SkPaint paint;
+    paint.setFilterQuality(kLow_SkFilterQuality);
+    context.canvas.drawImageRect(
+        raster_cache_result_.image(),             // image
+        raster_cache_result_.source_rect(),       // source
+        raster_cache_result_.destination_rect(),  // destination
+        &paint,                                   // paint
+        SkCanvas::kStrict_SrcRectConstraint       // source constraint
+    );
   } else {
     context.canvas.drawPicture(picture_.get());
   }

@@ -10,11 +10,13 @@
 
 #include "flutter/vulkan/vulkan_handle.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 
 namespace vulkan {
 
 bool IsDebuggingEnabled();
+bool ValidationLayerInfoMessagesEnabled();
+bool ValidationErrorsFatal();
 
 std::vector<std::string> InstanceLayersToEnable(const VulkanProcTable& vk);
 

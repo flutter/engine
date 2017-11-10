@@ -10,11 +10,11 @@
 
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
-#include "flutter/flow/scene_update_context.h"
+#include "flutter/flow/texture.h"
 #include "flutter/glue/trace_event.h"
-#include "lib/ftl/build_config.h"
-#include "lib/ftl/logging.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/build_config.h"
+#include "lib/fxl/logging.h"
+#include "lib/fxl/macros.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -24,17 +24,32 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 
+#if defined(OS_FUCHSIA)
+
+#include "flutter/flow/scene_update_context.h"  //nogncheck
+#include "lib/ui/scenic/client/resources.h"     //nogncheck
+#include "lib/ui/scenic/client/session.h"       //nogncheck
+
+#endif  // defined(OS_FUCHSIA)
+
 namespace flow {
+
 class ContainerLayer;
 
+// Represents a single composited layer. Created on the UI thread but then
+// subquently used on the Rasterizer thread.
 class Layer {
  public:
   Layer();
   virtual ~Layer();
 
   struct PrerollContext {
+#if defined(OS_FUCHSIA)
+    scenic::Metrics* metrics = nullptr;
+#endif
     RasterCache* raster_cache;
     GrContext* gr_context;
+    SkColorSpace* dst_color_space;
     SkRect child_paint_bounds;
   };
 
@@ -45,13 +60,33 @@ class Layer {
     const Stopwatch& frame_time;
     const Stopwatch& engine_time;
     const CounterValues& memory_usage;
+    TextureRegistry& texture_registry;
+    const bool checkerboard_offscreen_layers;
   };
 
-  virtual void Paint(PaintContext& context) = 0;
+  // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also
+  // draws a checkerboard over the layer if that is enabled in the PaintContext.
+  class AutoSaveLayer {
+   public:
+    AutoSaveLayer(const PaintContext& paint_context,
+                  const SkRect& bounds,
+                  const SkPaint* paint);
+
+    AutoSaveLayer(const PaintContext& paint_context,
+                  const SkCanvas::SaveLayerRec& layer_rec);
+
+    ~AutoSaveLayer();
+
+   private:
+    const PaintContext& paint_context_;
+    const SkRect bounds_;
+  };
+
+  virtual void Paint(PaintContext& context) const = 0;
 
 #if defined(OS_FUCHSIA)
-  virtual void UpdateScene(SceneUpdateContext& context,
-                           mozart::Node* container);
+  // Updates the system composited scene.
+  virtual void UpdateScene(SceneUpdateContext& context);
 #endif
 
   ContainerLayer* parent() const { return parent_; }
@@ -63,26 +98,22 @@ class Layer {
     needs_system_composite_ = value;
   }
 
-  // subclasses should assume this will be true by the time Paint() is called
-  bool has_paint_bounds() const { return has_paint_bounds_; }
+  const SkRect& paint_bounds() const { return paint_bounds_; }
 
-  const SkRect& paint_bounds() const {
-    FTL_DCHECK(has_paint_bounds_);
-    return paint_bounds_;
-  }
-
+  // This must be set by the time Preroll() returns otherwise the layer will
+  // be assumed to have empty paint bounds (paints no content).
   void set_paint_bounds(const SkRect& paint_bounds) {
-    has_paint_bounds_ = true;
     paint_bounds_ = paint_bounds;
   }
+
+  bool needs_painting() const { return !paint_bounds_.isEmpty(); }
 
  private:
   ContainerLayer* parent_;
   bool needs_system_composite_;
-  bool has_paint_bounds_;  // if false, paint_bounds_ is not valid
   SkRect paint_bounds_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(Layer);
+  FXL_DISALLOW_COPY_AND_ASSIGN(Layer);
 };
 
 }  // namespace flow

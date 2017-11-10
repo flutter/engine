@@ -2,25 +2,19 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/common/config.gni")
-
-vmservice_sources_gypi =
-    exec_script(
-        "//build/gypi_to_gn.py",
-        [ rebase_path("//dart/runtime/bin/vmservice/vmservice_sources.gypi") ],
-        "scope",
-        [ rebase_path("//dart/runtime/bin/vmservice/vmservice_sources.gypi") ])
+import("//third_party/dart/runtime/bin/vmservice/vmservice_sources.gni")
+import("$flutter_root/common/config.gni")
 
 action("gen_embedded_resources_cc") {
-  script = "//dart/runtime/tools/create_resources.py"
+  script = "//third_party/dart/runtime/tools/create_resources.py"
   output_file = "$target_gen_dir/embedded_resources.cc"
   outputs = [
     output_file,
   ]
 
-  inputs = rebase_path(vmservice_sources_gypi.sources,
+  inputs = rebase_path(vmservice_sources,
                        "",
-                       "//dart/runtime/bin/vmservice")
+                       "//third_party/dart/runtime/bin/vmservice")
 
   args = [
            "--output",
@@ -32,7 +26,7 @@ action("gen_embedded_resources_cc") {
            "--table_name",
            "flutter_embedded_service_isolate",
            "--root_prefix",
-           rebase_path("//dart/runtime/bin/"),
+           rebase_path("//third_party/dart/runtime/bin/"),
          ] + rebase_path(inputs)
 }
 
@@ -43,9 +37,33 @@ source_set("embedded_resources_cc") {
   deps = [
     ":gen_embedded_resources_cc",
   ]
+  public_configs = [
+    "$flutter_root:config",
+  ]
+}
+
+source_set("test_font") {
+  sources = [
+    "test_font_data.cc",
+    "test_font_data.h",
+  ]
+  deps = [
+    "//third_party/skia",
+  ]
+  public_configs = [
+    "$flutter_root:config",
+  ]
+  defines = []
+  if (flutter_runtime_mode == "debug" || current_toolchain == host_toolchain) {
+    # Though the test font data is small, we dont want to add to the binary size
+    # on the device (in profile and release modes). We only add the same on the
+    # host test shells and the debug device shell.
+    defines += [ "EMBED_TEST_FONT_DATA=1" ]
+  }
 }
 
 source_set("runtime") {
+
   sources = [
     "asset_font_selector.cc",
     "asset_font_selector.h",
@@ -67,46 +85,37 @@ source_set("runtime") {
     "runtime_init.h",
     "start_up.cc",
     "start_up.h",
-    "test_font_data.cc",
-    "test_font_data.h",
     "test_font_selector.cc",
     "test_font_selector.h",
   ]
 
   deps = [
     ":embedded_resources_cc",
-    "//dart/runtime:dart_api",
-    "//dart/runtime/bin:embedded_dart_io",
-    "//flutter/assets",
-    "//flutter/common",
-    "//flutter/flow",
-    "//flutter/glue",
-    "//flutter/lib/io",
-    "//flutter/lib/ui",
-    "//flutter/sky/engine/platform",
-    "//lib/ftl",
-    "//lib/tonic",
+    ":test_font",
+    "//third_party/dart/runtime:dart_api",
+    "//third_party/dart/runtime/bin:embedded_dart_io",
+    "$flutter_root/assets",
+    "$flutter_root/common",
+    "$flutter_root/flow",
+    "$flutter_root/glue",
+    "$flutter_root/lib/io",
+    "$flutter_root/lib/ui",
+    "$flutter_root/sky/engine/platform",
+    "$flutter_root/third_party/txt",
+    "//garnet/public/lib/fxl",
     "//third_party/rapidjson",
     "//third_party/skia",
+    "//topaz/lib/tonic",
   ]
 
-  defines = []
-
-  if (flutter_runtime_mode == "debug" || current_toolchain == host_toolchain) {
-    # Though the test font data is small, we dont want to add to the binary size
-    # on the device (in profile and release modes). We only add the same on the
-    # host test shells and the debug device shell.
-    defines += [ "EMBED_TEST_FONT_DATA=1" ]
-  }
-
-  if (flutter_runtime_mode != "release") {
-    deps += [ "//lib/tonic/debugger" ]
-  }
+  public_configs = [
+    "$flutter_root:config",
+  ]
 
   # In AOT mode, precompiled snapshots contain the instruction buffer.
   # Generation of the same requires all application specific script code to be
   # specified up front. In such cases, there can be no generic snapshot.
   if (!flutter_aot) {
-    deps += [ "//flutter/lib/snapshot" ]
+    deps += [ "$flutter_root/lib/snapshot" ]
   }
 }

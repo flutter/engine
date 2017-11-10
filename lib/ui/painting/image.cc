@@ -6,9 +6,9 @@
 
 #include "flutter/common/threads.h"
 #include "flutter/lib/ui/painting/utils.h"
+#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_args.h"
 #include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_library_natives.h"
 
 namespace blink {
@@ -38,6 +38,14 @@ CanvasImage::~CanvasImage() {
 
 void CanvasImage::dispose() {
   ClearDartWrapper();
+}
+
+size_t CanvasImage::GetAllocationSize() {
+  if (image_) {
+    return image_->width() * image_->height() * 4;
+  } else {
+    return sizeof(CanvasImage);
+  }
 }
 
 }  // namespace blink

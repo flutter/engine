@@ -13,13 +13,6 @@ namespace {
 
 constexpr char kTextPlainFormat[] = "text/plain";
 
-NSString* GetDirectoryOfType(NSSearchPathDirectory dir) {
-  NSArray* paths = NSSearchPathForDirectoriesInDomains(dir, NSUserDomainMask, YES);
-  if (paths.count == 0)
-    return nil;
-  return paths.firstObject;
-}
-
 }  // namespaces
 
 namespace shell {
@@ -49,9 +42,6 @@ using namespace shell;
   } else if ([method isEqualToString:@"HapticFeedback.vibrate"]) {
     [self vibrateHapticFeedback];
     result(nil);
-  } else if ([method isEqualToString:@"UrlLauncher.launch"]) {
-    [self launchURL:args];
-    result(nil);
   } else if ([method isEqualToString:@"SystemChrome.setPreferredOrientations"]) {
     [self setSystemChromePreferredOrientations:args];
     result(nil);
@@ -72,10 +62,6 @@ using namespace shell;
   } else if ([method isEqualToString:@"Clipboard.setData"]) {
     [self setClipboardData:args];
     result(nil);
-  } else if ([method isEqualToString:@"PathProvider.getTemporaryDirectory"]) {
-    result([self getPathProviderTemporaryDirectory]);
-  } else if ([method isEqualToString:@"PathProvider.getApplicationDocumentsDirectory"]) {
-    result([self getPathProviderApplicationDocumentsDirectory]);
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -91,14 +77,7 @@ using namespace shell;
 }
 
 - (void)vibrateHapticFeedback {
-  AudioServicesPlayAlertSound(kSystemSoundID_Vibrate);
-}
-
-- (NSDictionary*)launchURL:(NSString*)urlString {
-  NSURL* url = [NSURL URLWithString:urlString];
-  UIApplication* application = [UIApplication sharedApplication];
-  bool success = [application canOpenURL:url] && [application openURL:url];
-  return @{ @"succes" : @(success) };
+  AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
 }
 
 - (void)setSystemChromePreferredOrientations:(NSArray*)orientations {
@@ -172,7 +151,13 @@ using namespace shell;
 }
 
 - (void)popSystemNavigator {
-  // Apple's human user guidelines say not to terminate iOS applications.
+  // Apple's human user guidelines say not to terminate iOS applications. However, if the
+  // root view of the app is a navigation controller, it is instructed to back up a level
+  // in the navigation hierarchy.
+  UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
+  if ([viewController isKindOfClass:[UINavigationController class]]) {
+    [((UINavigationController*)viewController) popViewControllerAnimated:NO];
+  }
 }
 
 - (NSDictionary*)getClipboardData:(NSString*)format {
@@ -188,14 +173,6 @@ using namespace shell;
 - (void)setClipboardData:(NSDictionary*)data {
   UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
   pasteboard.string = data[@"text"];
-}
-
-- (NSString*)getPathProviderTemporaryDirectory {
-  return GetDirectoryOfType(NSCachesDirectory);
-}
-
-- (NSString*)getPathProviderApplicationDocumentsDirectory {
-  return GetDirectoryOfType(NSDocumentDirectory);
 }
 
 @end
