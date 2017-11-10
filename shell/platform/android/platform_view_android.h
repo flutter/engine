@@ -99,7 +99,7 @@ class PlatformViewAndroid : public PlatformView {
                      const std::string& main,
                      const std::string& packages) override;
 
-  void SetAssetBundlePathOnUI(std::string bundle_path);
+  void SetAssetBundlePathOnUI(std::string bundle_path) override;
 
   virtual void SetAssetBundlePath(const std::string& assets_directory) override;
 
