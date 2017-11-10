@@ -19,9 +19,7 @@ namespace shell {
 GPURasterizer::GPURasterizer(std::unique_ptr<flow::ProcessInfo> info)
     : compositor_context_(std::move(info)), weak_factory_(this) {}
 
-GPURasterizer::~GPURasterizer() {
-    FXL_LOG(INFO) << "Deleting the rasterizer";
-};
+GPURasterizer::~GPURasterizer() = default;
 
 fml::WeakPtr<Rasterizer> GPURasterizer::GetWeakRasterizerPtr() {
   return weak_factory_.GetWeakPtr();

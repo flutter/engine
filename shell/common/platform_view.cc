@@ -22,7 +22,6 @@ PlatformView::PlatformView(std::unique_ptr<Rasterizer> rasterizer)
 }
 
 PlatformView::~PlatformView() {
-  FXL_DLOG(INFO) << "Destroying platform view";
   Shell::Shared().RemovePlatformView(this);
 
   Rasterizer* rasterizer = rasterizer_.release();
@@ -33,7 +32,6 @@ PlatformView::~PlatformView() {
 }
 
 void PlatformView::SetRasterizer(std::unique_ptr<Rasterizer> rasterizer) {
-  FXL_DLOG(INFO) << "Setting rasterizer";
   Rasterizer* r = rasterizer_.release();
   blink::Threads::Gpu()->PostTask([r]() { delete r; });
   rasterizer_ = std::move(rasterizer);
@@ -81,7 +79,6 @@ void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
                                  fxl::Closure caller_continuation) {
   fxl::AutoResetWaitableEvent latch;
 
-  FXL_LOG(INFO) << "Platform view Notify created";
   auto ui_continuation = fxl::MakeCopyable([
     this,                          //
     surface = std::move(surface),  //
@@ -109,7 +106,7 @@ void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
 
 void PlatformView::NotifyDestroyed() {
   fxl::AutoResetWaitableEvent latch;
-  FXL_LOG(INFO) << "Platform view Notify destroyed";
+
   auto engine_continuation = [this, &latch]() {
     rasterizer_->Teardown(&latch);
   };
