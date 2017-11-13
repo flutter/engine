@@ -266,12 +266,10 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
     FlutterMethodCall* call = [_codec decodeMethodCall:message];
     if ([call.method isEqual:@"listen"]) {
       if (currentSink) {
-        currentSink = nil;
         FlutterError* error = [handler onCancelWithArguments:nil];
-        if (error) {
+        if (error)
           NSLog(@"Failed to cancel existing stream: %@. %@ (%@)", error.code, error.message,
                 error.details);
-        }
       }
       currentSink = ^(id event) {
         if (event == FlutterEndOfEventStream)
