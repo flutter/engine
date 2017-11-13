@@ -33,8 +33,8 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
   auto backend_context =
       reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface());
 
-  auto context = sk_sp<GrContext>(
-      GrContext::Create(kOpenGL_GrBackend, backend_context));
+  auto context =
+      sk_sp<GrContext>(GrContext::Create(kOpenGL_GrBackend, backend_context));
 
   if (context == nullptr) {
     FXL_LOG(ERROR) << "Failed to setup Skia Gr context.";
@@ -136,8 +136,8 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
 
   sk_sp<SkSurface> onscreen_surface;
 
-  onscreen_surface = WrapOnscreenSurface(context_.get(), size,
-                                         delegate_->GLContextFBO());
+  onscreen_surface =
+      WrapOnscreenSurface(context_.get(), size, delegate_->GLContextFBO());
 
   if (onscreen_surface == nullptr) {
     // If the onscreen surface could not be wrapped. There is absolutely no
