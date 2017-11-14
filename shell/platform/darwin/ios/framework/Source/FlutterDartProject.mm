@@ -60,6 +60,16 @@ static NSURL* URLForSwitch(const fxl::StringView name) {
   return self;
 }
 
+- (instancetype)initWithFLXArchive:(NSURL*)archiveURL
+                          dartMain:(NSURL*)dartMainURL
+                          packages:(NSURL*)dartPackages {
+  return nil;
+}
+
+- (instancetype)initWithFLXArchiveWithScriptSnapshot:(NSURL*)archiveURL {
+  return nil;
+}
+
 - (instancetype)initWithFlutterAssets:(NSURL*)flutterAssetsURL
                              dartMain:(NSURL*)dartMainURL
                              packages:(NSURL*)dartPackages {
@@ -145,7 +155,7 @@ static NSURL* URLForSwitch(const fxl::StringView name) {
 }
 
 - (NSString*)pathForFlutterAssetsFromBundle:(NSBundle*)bundle {
-  NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTFlxName"];
+  NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
   if (flutterAssetsName == nil) {
     // Default to "flutter_assets"
     flutterAssetsName = @"flutter_assets";

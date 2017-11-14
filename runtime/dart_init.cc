@@ -315,7 +315,7 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
           zip_asset_store = fxl::MakeRefCounted<ZipAssetStore>(
               GetUnzipperProviderForPath(flx_path));
         }
-        GetAssetAsBuffer(kKernelAssetKey, &kernel_data, directory_asset_,
+        GetAssetAsBuffer(kKernelAssetKey, &kernel_data, directory_asset_bundle,
                          zip_asset_store);
         GetAssetAsBuffer(kSnapshotAssetKey, &snapshot_data,
                          directory_asset_bundle, zip_asset_store);
