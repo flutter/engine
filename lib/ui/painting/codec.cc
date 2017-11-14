@@ -15,6 +15,7 @@
 #include "lib/tonic/logging/dart_invoke.h"
 #include "lib/tonic/typed_data/uint8_list.h"
 #include "third_party/skia/include/codec/SkCodec.h"
+#include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkPixelRef.h"
 
 using tonic::DartInvoke;
@@ -69,18 +70,24 @@ fxl::RefPtr<Codec> InitCodec(sk_sp<SkData> buffer, size_t trace_id) {
   TRACE_EVENT0("blink", "InitCodec");
 
   if (buffer == nullptr || buffer->isEmpty()) {
+    FXL_LOG(ERROR) << "InitCodec failed - buffer was empty ";
     return nullptr;
   }
 
   std::unique_ptr<SkCodec> skCodec = SkCodec::MakeFromData(buffer);
   if (!skCodec) {
+    FXL_LOG(ERROR) << "SkCodec::MakeFromData failed";
     return nullptr;
   }
-  if (skCodec->getFrameCount() > 1) {
+  if (skCodec->getFrameCount() > 1
+      // Temporarily disable WebP animations due to:
+      // https://github.com/flutter/flutter/issues/13017
+      && skCodec->getEncodedFormat() != SkEncodedImageFormat::kWEBP) {
     return fxl::MakeRefCounted<MultiFrameCodec>(std::move(skCodec));
   }
   auto skImage = DecodeImage(buffer, trace_id);
   if (!skImage) {
+    FXL_LOG(ERROR) << "DecodeImage failed";
     return nullptr;
   }
   auto image = CanvasImage::Create();
