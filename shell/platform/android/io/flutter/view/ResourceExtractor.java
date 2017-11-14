@@ -71,31 +71,19 @@ class ResourceExtractor {
                     if (output.getParentFile() != null) {
                         output.getParentFile().mkdirs();
                     }
-                    InputStream is = null;
-                    OutputStream os = null;
-                    try {
-                        is = manager.open(asset);
-                        os = new FileOutputStream(output);
-                        if (buffer == null) {
-                            buffer = new byte[BUFFER_SIZE];
-                        }
+                    try (InputStream is = manager.open(asset)) {
+                        try (OutputStream os = new FileOutputStream(output)) {
+                            if (buffer == null) {
+                                buffer = new byte[BUFFER_SIZE];
+                             }
 
-                        int count = 0;
-                        while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
-                            os.write(buffer, 0, count);
-                        }
-                        os.flush();
-                    } finally {
-                        try {
-                            if (is != null) {
-                                is.close();
+                            int count = 0;
+                            while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
+                                os.write(buffer, 0, count);
                             }
-                        } finally {
-                            if (os != null) {
-                                os.close();
-                            }
-                        }
-                    }
+                            os.flush();
+			}
+		    }
                 }
             } catch (IOException e) {
                 Log.w(TAG, "Exception unpacking resources: " + e.getMessage());
