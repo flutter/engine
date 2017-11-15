@@ -66,7 +66,7 @@ ApplicationControllerImpl::ApplicationControllerImpl(
 
   url_ = startup_info->launch_info->url;
   runtime_holder_.reset(new RuntimeHolder());
-  runtime_holder_->SetMainIsolateTerminatedCallback([this]() {
+  runtime_holder_->SetMainIsolateShutdownCallback([this]() {
     Kill();
   });
   runtime_holder_->Init(
