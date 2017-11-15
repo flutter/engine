@@ -50,7 +50,8 @@ DartController::~DartController() {
     ui_dart_state_->set_isolate_client(nullptr);
 
     if (!ui_dart_state_->shutting_down()) {
-      // Don't use a tonic::DartIsolateScope here since we never exit the isolate.
+      // Don't use a tonic::DartIsolateScope here since we never exit the
+      // isolate.
       Dart_EnterIsolate(ui_dart_state_->isolate());
       // Clear the message notify callback.
       Dart_SetMessageNotifyCallback(nullptr);

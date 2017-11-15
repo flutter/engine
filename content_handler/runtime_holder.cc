@@ -297,7 +297,8 @@ void RuntimeHolder::DidShutdownMainIsolate() {
   }
 }
 
-void RuntimeHolder::SetMainIsolateShutdownCallback(std::function<void()> callback) {
+void RuntimeHolder::SetMainIsolateShutdownCallback(
+    std::function<void()> callback) {
   main_isolate_shutdown_callback_ = callback;
 }
 
