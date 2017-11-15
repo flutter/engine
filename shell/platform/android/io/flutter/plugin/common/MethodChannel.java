@@ -86,6 +86,10 @@ public final class MethodChannel {
     /**
      * Invokes a method on this channel, blocking while waiting for a result.
      *
+     * <p>This method should be used only when the semantics of the caller's context precludes
+     * the use of asynchronous alternatives. Examples include implementing
+     * {@link android.app.Activity#onSaveInstanceState(android.os.Bundle)}.</p>
+     *
      * @param method the name String of the method.
      * @param arguments the arguments for the invocation, possibly null.
      * @return the invocation result, possibly null.

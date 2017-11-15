@@ -42,7 +42,7 @@ public interface BinaryMessenger {
     /**
      * Sends a binary message to the Flutter application and blocks waiting for a reply.
      *
-     * <p>The method should be used only when the semantics of the caller's context precludes the use of
+     * <p>This method should be used only when the semantics of the caller's context precludes the use of
      * asynchronous alternatives. Examples include implementing
      * {@link android.app.Activity#onSaveInstanceState(android.os.Bundle)}.</p>
      *

@@ -66,6 +66,19 @@ FLUTTER_EXPORT
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData* _Nullable)message
           binaryReply:(FlutterBinaryReply _Nullable)callback;
+/**
+ Sends a binary message to the Flutter side on the specified channel, blocking
+ while waiting for a reply.
+
+ Should be used only when the semantics of the caller's context precludes
+ the use of asynchronous alternatives.
+
+ - Parameters:
+   - channel: The channel name.
+   - message: The message.
+- Returns: The reply.
+ */
+- (NSData* _Nullable)sendBlockingOnChannel:(NSString*)channel message:(NSData* _Nullable)message;
 
 /**
  Registers a message handler for incoming binary messages from the Flutter side
