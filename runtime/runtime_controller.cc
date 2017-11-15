@@ -10,6 +10,8 @@
 #include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_controller.h"
 #include "flutter/runtime/runtime_delegate.h"
+#include "flutter/sky/engine/platform/Language.h"
+#include "flutter/sky/engine/wtf/text/AtomicString.h"
 #include "lib/tonic/dart_message_handler.h"
 
 using tonic::DartState;
@@ -62,6 +64,12 @@ void RuntimeController::SetLocale(const std::string& language_code,
   language_code_ = language_code;
   country_code_ = country_code;
   GetWindow()->UpdateLocale(language_code_, country_code_);
+
+  std::string language = language_code + "-" + country_code;
+  Vector<AtomicString> languages;
+  languages.reserveInitialCapacity(1);
+  languages.append(AtomicString::fromUTF8(language.data(), language.size()));
+  overrideUserPreferredLanguages(languages);
 }
 
 void RuntimeController::SetUserSettingsData(const std::string& data) {
