@@ -79,10 +79,7 @@ fxl::RefPtr<Codec> InitCodec(sk_sp<SkData> buffer, size_t trace_id) {
     FXL_LOG(ERROR) << "SkCodec::MakeFromData failed";
     return nullptr;
   }
-  if (skCodec->getFrameCount() > 1
-      // Temporarily disable WebP animations due to:
-      // https://github.com/flutter/flutter/issues/13017
-      && skCodec->getEncodedFormat() != SkEncodedImageFormat::kWEBP) {
+  if (skCodec->getFrameCount() > 1) {
     return fxl::MakeRefCounted<MultiFrameCodec>(std::move(skCodec));
   }
   auto skImage = DecodeImage(buffer, trace_id);
