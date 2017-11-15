@@ -22,7 +22,6 @@ vars = {
   'dart_git': 'https://dart.googlesource.com',
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
-  'libwebp_git': 'https://chromium.googlesource.com/webm',
   'skia_git': 'https://skia.googlesource.com',
   'skia_revision': '42bae8faa4b9b6a3341b15c6ac7c6b466e95625c',
 
@@ -357,7 +356,7 @@ deps = {
    Var('skia_git') + '/third_party/libjpeg-turbo.git' + '@' + 'debddedc75850bcdeb8a57258572f48b802a4bb3',
 
   'src/third_party/libwebp':
-   Var('libwebp_git') + '/libwebp.git' + '@' + '0.6.0',
+   Var('chromium_git') + '/webm/libwebp.git' + '@' + '0.6.0',
 
   'src/third_party/gyp':
    Var('chromium_git') + '/external/gyp.git' + '@' + '4801a5331ae62da9769a327f11c4213d32fb0dad',
