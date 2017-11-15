@@ -92,8 +92,8 @@ public final class MethodChannel {
      * @throws UnsupportedOperationException, if no method handler has been registered
      * on the Dart side.
      */
-    public Object invokeMethodSync(String method, Object arguments) {
-        final ByteBuffer reply = messenger.sendSync(name,
+    public Object invokeMethodBlocking(String method, Object arguments) {
+        final ByteBuffer reply = messenger.sendBlocking(name,
             codec.encodeMethodCall(new MethodCall(method, arguments)));
         if (reply == null) {
             throw new UnsupportedOperationException(

@@ -212,21 +212,21 @@ static void DispatchEmptyPlatformMessage(JNIEnv* env,
       env, fml::jni::JavaStringToString(env, channel), responseId);
 }
 
-static jbyteArray DispatchPlatformMessageSync(JNIEnv* env,
-                                              jobject jcaller,
-                                              jlong platform_view,
-                                              jstring channel,
-                                              jobject message,
-                                              jint position) {
-  return PLATFORM_VIEW->DispatchPlatformMessageSync(
+static jbyteArray DispatchPlatformMessageBlocking(JNIEnv* env,
+                                                  jobject jcaller,
+                                                  jlong platform_view,
+                                                  jstring channel,
+                                                  jobject message,
+                                                  jint position) {
+  return PLATFORM_VIEW->DispatchPlatformMessageBlocking(
       env, fml::jni::JavaStringToString(env, channel), message, position);
 }
 
-static jbyteArray DispatchEmptyPlatformMessageSync(JNIEnv* env,
-                                                   jobject jcaller,
-                                                   jlong platform_view,
-                                                   jstring channel) {
-  return PLATFORM_VIEW->DispatchEmptyPlatformMessageSync(
+static jbyteArray DispatchEmptyPlatformMessageBlocking(JNIEnv* env,
+                                                       jobject jcaller,
+                                                       jlong platform_view,
+                                                       jstring channel) {
+  return PLATFORM_VIEW->DispatchEmptyPlatformMessageBlocking(
       env, fml::jni::JavaStringToString(env, channel));
 }
 
@@ -363,15 +363,16 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&shell::DispatchPlatformMessage),
       },
       {
-          .name = "nativeDispatchEmptyPlatformMessageSync",
+          .name = "nativeDispatchEmptyPlatformMessageBlocking",
           .signature = "(JLjava/lang/String;)[B",
-          .fnPtr =
-              reinterpret_cast<void*>(&shell::DispatchEmptyPlatformMessageSync),
+          .fnPtr = reinterpret_cast<void*>(
+              &shell::DispatchEmptyPlatformMessageBlocking),
       },
       {
-          .name = "nativeDispatchPlatformMessageSync",
+          .name = "nativeDispatchPlatformMessageBlocking",
           .signature = "(JLjava/lang/String;Ljava/nio/ByteBuffer;I)[B",
-          .fnPtr = reinterpret_cast<void*>(&shell::DispatchPlatformMessageSync),
+          .fnPtr =
+              reinterpret_cast<void*>(&shell::DispatchPlatformMessageBlocking),
       },
       {
           .name = "nativeInvokePlatformMessageResponseCallback",

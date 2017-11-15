@@ -40,7 +40,7 @@ public interface BinaryMessenger {
     void send(String channel, ByteBuffer message, BinaryReply callback);
 
     /**
-     * Synchronously sends a binary message to the Flutter application and blocks waiting for a reply.
+     * Sends a binary message to the Flutter application and blocks waiting for a reply.
      *
      * <p>The method should be used only when the semantics of the caller's context precludes the use of
      * asynchronous alternatives. Examples include implementing
@@ -51,7 +51,7 @@ public interface BinaryMessenger {
      * bytes between position zero and current position, or null.
      * @return a {@link ByteBuffer} containing the reply payload, or null.
      */
-    ByteBuffer sendSync(String channel, ByteBuffer message);
+    ByteBuffer sendBlocking(String channel, ByteBuffer message);
 
     /**
      * Registers a handler to be invoked when the Flutter application sends a message

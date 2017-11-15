@@ -91,17 +91,17 @@ class FlutterNativeView implements BinaryMessenger {
     }
 
     @Override
-    public ByteBuffer sendSync(String channel, ByteBuffer message) {
+    public ByteBuffer sendBlocking(String channel, ByteBuffer message) {
         if (!isAttached()) {
-            Log.d(TAG, "FlutterView.sendSync called on a detached view, channel=" + channel);
+            Log.d(TAG, "FlutterView.sendBlocking called on a detached view, channel=" + channel);
             return null;
         }
         final byte[] reply;
         if (message == null) {
-            reply = nativeDispatchEmptyPlatformMessageSync(mNativePlatformView, channel);
+            reply = nativeDispatchEmptyPlatformMessageBlocking(mNativePlatformView, channel);
         } else {
-            reply = nativeDispatchPlatformMessageSync(
-                    mNativePlatformView, channel, message, message.position());
+            reply = nativeDispatchPlatformMessageBlocking(
+                mNativePlatformView, channel, message, message.position());
         }
         return (reply == null ? null : ByteBuffer.wrap(reply));
     }
@@ -207,12 +207,12 @@ class FlutterNativeView implements BinaryMessenger {
         String channel, ByteBuffer message, int position, int responseId);
 
     // Send an empty platform message to Dart and block waiting for the reply.
-    private static native byte[] nativeDispatchEmptyPlatformMessageSync(
+    private static native byte[] nativeDispatchEmptyPlatformMessageBlocking(
         long nativePlatformViewAndroid, String channel);
 
     // Send a data-carrying platform message to Dart and block waiting for the reply.
-    private static native byte[] nativeDispatchPlatformMessageSync(long nativePlatformViewAndroid,
-        String channel, ByteBuffer message, int position);
+    private static native byte[] nativeDispatchPlatformMessageBlocking(
+        long nativePlatformViewAndroid, String channel, ByteBuffer message, int position);
 
     // Send an empty response to a platform message received from Dart.
     private static native void nativeInvokePlatformMessageEmptyResponseCallback(

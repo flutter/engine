@@ -329,7 +329,7 @@ void PlatformViewAndroid::DispatchEmptyPlatformMessage(JNIEnv* env,
                                                   std::move(response)));
 }
 
-jbyteArray PlatformViewAndroid::DispatchPlatformMessageSync(
+jbyteArray PlatformViewAndroid::DispatchPlatformMessageBlocking(
     JNIEnv* env,
     std::string name,
     jobject java_message_data,
@@ -347,7 +347,7 @@ jbyteArray PlatformViewAndroid::DispatchPlatformMessageSync(
   return response->ToJavaByteArray(env);
 }
 
-jbyteArray PlatformViewAndroid::DispatchEmptyPlatformMessageSync(
+jbyteArray PlatformViewAndroid::DispatchEmptyPlatformMessageBlocking(
     JNIEnv* env,
     std::string name) {
   fxl::RefPtr<LatchedPlatformMessageResponseAndroid> response =

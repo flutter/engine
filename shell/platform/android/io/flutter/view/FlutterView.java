@@ -812,8 +812,8 @@ public class FlutterView extends SurfaceView
     }
 
     @Override
-    public ByteBuffer sendSync(String channel, ByteBuffer message) {
-        return mNativeView.sendSync(channel, message);
+    public ByteBuffer sendBlocking(String channel, ByteBuffer message) {
+        return mNativeView.sendBlocking(channel, message);
     }
 
     @Override
