@@ -278,6 +278,10 @@ public class FlutterMain {
             sAotIsolateSnapshotInstr
         ));
         sIsPrecompiledAsSharedLibrary = assets.contains(sAotSharedLibraryPath);
+        if (sIsPrecompiled && sIsPrecompiledAsSharedLibrary) {
+          throw new RuntimeException(
+              "Found precompiled app as shared library and as Dart VM snapshots.");
+        }
     }
 
     public static boolean isRunningPrecompiledCode() {
