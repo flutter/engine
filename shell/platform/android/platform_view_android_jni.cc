@@ -202,7 +202,7 @@ static void DispatchPlatformMessage(JNIEnv* env,
                                     jobject message,
                                     jint position,
                                     jint responseId) {
-  return PLATFORM_VIEW->DispatchPlatformMessage(
+  PLATFORM_VIEW->DispatchPlatformMessage(
       env, fml::jni::JavaStringToString(env, channel), message, position,
       responseId);
 }
@@ -212,8 +212,26 @@ static void DispatchEmptyPlatformMessage(JNIEnv* env,
                                          jlong platform_view,
                                          jstring channel,
                                          jint responseId) {
-  return PLATFORM_VIEW->DispatchEmptyPlatformMessage(
+  PLATFORM_VIEW->DispatchEmptyPlatformMessage(
       env, fml::jni::JavaStringToString(env, channel), responseId);
+}
+
+static jbyteArray DispatchPlatformMessageBlocking(JNIEnv* env,
+                                                  jobject jcaller,
+                                                  jlong platform_view,
+                                                  jstring channel,
+                                                  jobject message,
+                                                  jint position) {
+  return PLATFORM_VIEW->DispatchPlatformMessageBlocking(
+      env, fml::jni::JavaStringToString(env, channel), message, position);
+}
+
+static jbyteArray DispatchEmptyPlatformMessageBlocking(JNIEnv* env,
+                                                       jobject jcaller,
+                                                       jlong platform_view,
+                                                       jstring channel) {
+  return PLATFORM_VIEW->DispatchEmptyPlatformMessageBlocking(
+      env, fml::jni::JavaStringToString(env, channel));
 }
 
 static void DispatchPointerDataPacket(JNIEnv* env,
@@ -357,6 +375,18 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .name = "nativeDispatchPlatformMessage",
           .signature = "(JLjava/lang/String;Ljava/nio/ByteBuffer;II)V",
           .fnPtr = reinterpret_cast<void*>(&shell::DispatchPlatformMessage),
+      },
+      {
+          .name = "nativeDispatchEmptyPlatformMessageBlocking",
+          .signature = "(JLjava/lang/String;)[B",
+          .fnPtr = reinterpret_cast<void*>(
+              &shell::DispatchEmptyPlatformMessageBlocking),
+      },
+      {
+          .name = "nativeDispatchPlatformMessageBlocking",
+          .signature = "(JLjava/lang/String;Ljava/nio/ByteBuffer;I)[B",
+          .fnPtr =
+              reinterpret_cast<void*>(&shell::DispatchPlatformMessageBlocking),
       },
       {
           .name = "nativeInvokePlatformMessageResponseCallback",

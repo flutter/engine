@@ -65,6 +65,14 @@ class PlatformViewAndroid : public PlatformView {
                                     std::string name,
                                     jint response_id);
 
+  jbyteArray DispatchPlatformMessageBlocking(JNIEnv* env,
+                                             std::string name,
+                                             jobject message_data,
+                                             jint message_position);
+
+  jbyteArray DispatchEmptyPlatformMessageBlocking(JNIEnv* env,
+                                                  std::string name);
+
   void DispatchPointerDataPacket(JNIEnv* env, jobject buffer, jint position);
 
   void InvokePlatformMessageResponseCallback(JNIEnv* env,

@@ -40,6 +40,20 @@ public interface BinaryMessenger {
     void send(String channel, ByteBuffer message, BinaryReply callback);
 
     /**
+     * Sends a binary message to the Flutter application and blocks waiting for a reply.
+     *
+     * <p>This method should be used only when the semantics of the caller's context precludes the use of
+     * asynchronous alternatives. Examples include implementing
+     * {@link android.app.Activity#onSaveInstanceState(android.os.Bundle)}.</p>
+     *
+     * @param channel the name {@link String} of the logical channel used for the message.
+     * @param message the message payload, a direct-allocated {@link ByteBuffer} with the message
+     * bytes between position zero and current position, or null.
+     * @return a {@link ByteBuffer} containing the reply payload, or null.
+     */
+    ByteBuffer sendBlocking(String channel, ByteBuffer message);
+
+    /**
      * Registers a handler to be invoked when the Flutter application sends a message
      * to its host platform.
      *

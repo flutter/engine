@@ -68,6 +68,41 @@ class PlatformMessageResponseAndroid : public blink::PlatformMessageResponse {
   std::weak_ptr<PlatformView> view_;
 };
 
+class LatchedPlatformMessageResponseAndroid
+    : public blink::PlatformMessageResponse {
+  FRIEND_MAKE_REF_COUNTED(LatchedPlatformMessageResponseAndroid);
+
+ public:
+  void Complete(std::vector<uint8_t> data) override {
+    reply_ = std::move(data);
+    hasReply_ = true;
+    latch_.Signal();
+  }
+
+  void CompleteEmpty() override {
+    hasReply_ = false;
+    latch_.Signal();
+  }
+
+  void Wait() { latch_.Wait(); }
+
+  jbyteArray ToJavaByteArray(JNIEnv* env) {
+    if (hasReply_) {
+      jbyteArray reply_array = env->NewByteArray(reply_.size());
+      env->SetByteArrayRegion(reply_array, 0, reply_.size(),
+                              reinterpret_cast<const jbyte*>(reply_.data()));
+      return reply_array;
+    } else {
+      return nullptr;
+    }
+  }
+
+ private:
+  fxl::AutoResetWaitableEvent latch_;
+  bool hasReply_;
+  std::vector<uint8_t> reply_;
+};
+
 static std::unique_ptr<AndroidSurface> InitializePlatformSurfaceGL() {
   const PlatformView::SurfaceConfig offscreen_config = {
       .red_bits = 8,
@@ -292,6 +327,35 @@ void PlatformViewAndroid::DispatchEmptyPlatformMessage(JNIEnv* env,
   PlatformView::DispatchPlatformMessage(
       fxl::MakeRefCounted<blink::PlatformMessage>(std::move(name),
                                                   std::move(response)));
+}
+
+jbyteArray PlatformViewAndroid::DispatchPlatformMessageBlocking(
+    JNIEnv* env,
+    std::string name,
+    jobject java_message_data,
+    jint java_message_position) {
+  uint8_t* message_data =
+      static_cast<uint8_t*>(env->GetDirectBufferAddress(java_message_data));
+  std::vector<uint8_t> message =
+      std::vector<uint8_t>(message_data, message_data + java_message_position);
+  fxl::RefPtr<LatchedPlatformMessageResponseAndroid> response =
+      fxl::MakeRefCounted<LatchedPlatformMessageResponseAndroid>();
+  PlatformView::DispatchPlatformMessage(
+      fxl::MakeRefCounted<blink::PlatformMessage>(
+          std::move(name), std::move(message), response));
+  response->Wait();
+  return response->ToJavaByteArray(env);
+}
+
+jbyteArray PlatformViewAndroid::DispatchEmptyPlatformMessageBlocking(
+    JNIEnv* env,
+    std::string name) {
+  fxl::RefPtr<LatchedPlatformMessageResponseAndroid> response =
+      fxl::MakeRefCounted<LatchedPlatformMessageResponseAndroid>();
+  PlatformView::DispatchPlatformMessage(
+      fxl::MakeRefCounted<blink::PlatformMessage>(std::move(name), response));
+  response->Wait();
+  return response->ToJavaByteArray(env);
 }
 
 void PlatformViewAndroid::DispatchPointerDataPacket(JNIEnv* env,

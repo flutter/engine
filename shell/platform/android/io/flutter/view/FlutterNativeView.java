@@ -76,7 +76,7 @@ public class FlutterNativeView implements BinaryMessenger {
 
     @Override
     public void send(String channel, ByteBuffer message) {
-      send(channel, message, null);
+        send(channel, message, null);
     }
 
     @Override
@@ -97,6 +97,22 @@ public class FlutterNativeView implements BinaryMessenger {
             nativeDispatchPlatformMessage(mNativePlatformView, channel, message,
                 message.position(), replyId);
         }
+    }
+
+    @Override
+    public ByteBuffer sendBlocking(String channel, ByteBuffer message) {
+        if (!isAttached()) {
+            Log.d(TAG, "FlutterView.sendBlocking called on a detached view, channel=" + channel);
+            return null;
+        }
+        final byte[] reply;
+        if (message == null) {
+            reply = nativeDispatchEmptyPlatformMessageBlocking(mNativePlatformView, channel);
+        } else {
+            reply = nativeDispatchPlatformMessageBlocking(
+                mNativePlatformView, channel, message, message.position());
+        }
+        return (reply == null ? null : ByteBuffer.wrap(reply));
     }
 
     @Override
@@ -199,6 +215,14 @@ public class FlutterNativeView implements BinaryMessenger {
     // Send a data-carrying platform message to Dart.
     private static native void nativeDispatchPlatformMessage(long nativePlatformViewAndroid,
         String channel, ByteBuffer message, int position, int responseId);
+
+    // Send an empty platform message to Dart and block waiting for the reply.
+    private static native byte[] nativeDispatchEmptyPlatformMessageBlocking(
+        long nativePlatformViewAndroid, String channel);
+
+    // Send a data-carrying platform message to Dart and block waiting for the reply.
+    private static native byte[] nativeDispatchPlatformMessageBlocking(
+        long nativePlatformViewAndroid, String channel, ByteBuffer message, int position);
 
     // Send an empty response to a platform message received from Dart.
     private static native void nativeInvokePlatformMessageEmptyResponseCallback(

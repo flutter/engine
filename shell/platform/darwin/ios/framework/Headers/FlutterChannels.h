@@ -112,6 +112,19 @@ FLUTTER_EXPORT
 - (void)sendMessage:(id _Nullable)message reply:(FlutterReply _Nullable)callback;
 
 /**
+ Sends the specified message to the Flutter side, blocking while waiting for
+ a reply.
+
+ Should be used only when the semantics of the caller's context precludes
+ the use of asynchronous alternatives.
+
+ - Parameters:
+   - message: The message. Must be supported by the codec of this channel.
+ - Returns: The reply.
+ */
+- (id _Nullable)sendBlockingMessage:(id _Nullable)message;
+
+/**
  Registers a message handler with this channel.
 
  Replaces any existing handler. Use a `nil` handler for unregistering the
@@ -243,6 +256,25 @@ FLUTTER_EXPORT
 - (void)invokeMethod:(NSString*)method
            arguments:(id _Nullable)arguments
               result:(FlutterResult _Nullable)callback;
+
+/**
+ Invokes the specified Flutter method with the specified arguments, blocking
+ while waiting for a reply.
+
+ Should be used only when the semantics of the caller's context precludes
+ the use of asynchronous alternatives.
+
+ - Parameters:
+   - method: The name of the method to invoke.
+   - arguments: The arguments. Must be a value supported by the codec of this
+     channel.
+ - Returns: The result of the invocation. The result will be a `FlutterError`
+     instance, if the method call resulted in an error on the Flutter side.
+     Will be `FlutterMethodNotImplemented`, if the method called was not
+     implemented on the Flutter side. Any other value, including `nil`, should
+     be interpreted as successful results.
+ */
+- (id _Nullable)invokeBlockingMethod:(NSString*)method arguments:(id _Nullable)arguments;
 
 /**
  Registers a handler for method calls from the Flutter side.

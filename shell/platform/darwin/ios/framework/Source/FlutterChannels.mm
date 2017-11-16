@@ -56,6 +56,10 @@
   [_messenger sendOnChannel:_name message:[_codec encode:message] binaryReply:reply];
 }
 
+- (id)sendBlockingMessage:(id)message {
+  return [_codec decode:[_messenger sendBlockingOnChannel:_name message:[_codec encode:message]]];
+}
+
 - (void)setMessageHandler:(FlutterMessageHandler)handler {
   if (!handler) {
     [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
@@ -201,6 +205,14 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
     }
   };
   [_messenger sendOnChannel:_name message:message binaryReply:reply];
+}
+
+- (id)invokeBlockingMethod:(NSString*)method arguments:(id)arguments {
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:method arguments:arguments];
+  NSData* message = [_codec encodeMethodCall:methodCall];
+  NSData* reply = [_messenger sendBlockingOnChannel:_name message:message];
+  return (reply == nil) ? FlutterMethodNotImplemented : [_codec decodeEnvelope:reply];
 }
 
 - (void)setMethodCallHandler:(FlutterMethodCallHandler)handler {

@@ -84,6 +84,29 @@ public final class MethodChannel {
     }
 
     /**
+     * Invokes a method on this channel, blocking while waiting for a result.
+     *
+     * <p>This method should be used only when the semantics of the caller's context precludes
+     * the use of asynchronous alternatives. Examples include implementing
+     * {@link android.app.Activity#onSaveInstanceState(android.os.Bundle)}.</p>
+     *
+     * @param method the name String of the method.
+     * @param arguments the arguments for the invocation, possibly null.
+     * @return the invocation result, possibly null.
+     * @throws UnsupportedOperationException, if no method handler has been registered
+     * on the Dart side.
+     */
+    public Object invokeMethodBlocking(String method, Object arguments) {
+        final ByteBuffer reply = messenger.sendBlocking(name,
+            codec.encodeMethodCall(new MethodCall(method, arguments)));
+        if (reply == null) {
+            throw new UnsupportedOperationException(
+                "Method " + method + " not implemented by Dart code");
+        }
+        return codec.decodeEnvelope(reply);
+    }
+
+    /**
      * Registers a method call handler on this channel.
      *
      * <p>Overrides any existing handler registration for (the name of) this channel.</p>

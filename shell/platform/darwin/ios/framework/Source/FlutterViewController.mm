@@ -54,6 +54,37 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   fml::ScopedBlock<PlatformMessageResponseCallback> callback_;
 };
 
+class LatchedPlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
+  FRIEND_MAKE_REF_COUNTED(LatchedPlatformMessageResponseDarwin);
+
+ public:
+  void Complete(std::vector<uint8_t> data) override {
+    reply_ = std::move(data);
+    hasReply_ = true;
+    latch_.Signal();
+  }
+
+  void CompleteEmpty() override {
+    hasReply_ = false;
+    latch_.Signal();
+  }
+
+  void Wait() { latch_.Wait(); }
+
+  NSData* ToNSData() {
+    if (hasReply_) {
+      return shell::GetNSDataFromVector(reply_);
+    } else {
+      return nullptr;
+    }
+  }
+
+ private:
+  fxl::AutoResetWaitableEvent latch_;
+  bool hasReply_;
+  std::vector<uint8_t> reply_;
+};
+
 }  // namespace
 
 @interface FlutterViewController ()<UIAlertViewDelegate, FlutterTextInputDelegate>
@@ -870,6 +901,19 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
                        : fxl::MakeRefCounted<blink::PlatformMessage>(
                              channel.UTF8String, shell::GetVectorFromNSData(message), response);
   _platformView->DispatchPlatformMessage(platformMessage);
+}
+
+- (NSData*)sendBlockingOnChannel:(NSString*)channel message:(NSData*)message {
+  NSAssert(channel, @"The channel must not be null");
+  fxl::RefPtr<LatchedPlatformMessageResponseDarwin> response =
+      fxl::MakeRefCounted<LatchedPlatformMessageResponseDarwin>();
+  fxl::RefPtr<blink::PlatformMessage> platformMessage =
+      (message == nil) ? fxl::MakeRefCounted<blink::PlatformMessage>(channel.UTF8String, response)
+                       : fxl::MakeRefCounted<blink::PlatformMessage>(
+                             channel.UTF8String, shell::GetVectorFromNSData(message), response);
+  _platformView->DispatchPlatformMessage(platformMessage);
+  response->Wait();
+  return response->ToNSData();
 }
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel

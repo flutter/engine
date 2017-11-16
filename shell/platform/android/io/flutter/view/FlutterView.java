@@ -842,6 +842,11 @@ public class FlutterView extends SurfaceView
     }
 
     @Override
+    public ByteBuffer sendBlocking(String channel, ByteBuffer message) {
+        return mNativeView.sendBlocking(channel, message);
+    }
+
+    @Override
     public void setMessageHandler(String channel, BinaryMessageHandler handler) {
         mNativeView.setMessageHandler(channel, handler);
     }

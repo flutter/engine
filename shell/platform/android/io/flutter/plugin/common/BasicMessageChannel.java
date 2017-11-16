@@ -70,6 +70,20 @@ public final class BasicMessageChannel<T> {
     }
 
     /**
+     * Sends the specified message to the Flutter application, then blocks waiting for a reply.
+     *
+     * <p>This method should be used only when the semantics of the caller's context precludes
+     * the use of asynchronous alternatives. Examples include implementing
+     * {@link android.app.Activity#onSaveInstanceState(android.os.Bundle)}.</p>
+     *
+     * @param message the message, possibly null.
+     * @return the reply, possibly null.
+     */
+    public T sendBlocking(T message) {
+        return codec.decodeMessage(messenger.sendBlocking(name, codec.encodeMessage(message)));
+    }
+
+    /**
      * Registers a message handler on this channel for receiving messages sent from the Flutter
      * application.
      *
