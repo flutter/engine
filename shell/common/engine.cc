@@ -459,8 +459,7 @@ void Engine::SetSemanticsEnabled(bool enabled) {
 void Engine::ConfigureAssetBundle(const std::string& path) {
   struct stat stat_result = {};
 
-  directory_asset_bundle_.reset();
-  // TODO(abarth): We should reset asset_store_ as well, but that might break
+  // TODO(abarth): We should reset directory_asset_bundle_, but that might break
   // custom font loading in hot reload.
 
   if (::stat(path.c_str(), &stat_result) != 0) {
@@ -471,7 +470,7 @@ void Engine::ConfigureAssetBundle(const std::string& path) {
   std::string flx_path;
   if (S_ISDIR(stat_result.st_mode)) {
     directory_asset_bundle_ =
-        std::make_unique<blink::DirectoryAssetBundle>(path);
+        fxl::MakeRefCounted<blink::DirectoryAssetBundle>(path);
     flx_path = files::GetDirectoryName(path) + "/app.flx";
   } else if (S_ISREG(stat_result.st_mode)) {
     flx_path = path;
@@ -503,11 +502,11 @@ void Engine::DidCreateMainIsolate(Dart_Isolate isolate) {
     blink::TestFontSelector::Install();
     if (!blink::Settings::Get().using_blink)
       blink::FontCollection::ForProcess().RegisterTestFonts();
-  } else if (asset_store_) {
-    blink::AssetFontSelector::Install(asset_store_);
+  } else if (directory_asset_bundle_) {
+    blink::AssetFontSelector::Install(directory_asset_bundle_);
     if (!blink::Settings::Get().using_blink) {
-      blink::FontCollection::ForProcess().RegisterFontsFromAssetStore(
-          asset_store_);
+      blink::FontCollection::ForProcess().RegisterFontsFromDirectoryAssetBundle(
+          directory_asset_bundle_);
     }
   }
 }
