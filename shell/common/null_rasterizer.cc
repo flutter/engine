@@ -59,7 +59,8 @@ void NullRasterizer::AddNextFrameCallback(fxl::Closure nextFrameCallback) {
   // Null rasterizer. Nothing to do.
 }
 
-void NullRasterizer::SetTextureRegistry(flow::TextureRegistry* textureRegistry) {
+void NullRasterizer::SetTextureRegistry(
+    flow::TextureRegistry* textureRegistry) {
   texture_registry_ = textureRegistry;
 }
 

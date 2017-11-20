@@ -72,7 +72,9 @@ class CompositorContext {
 
   const CounterValues& memory_usage() const { return memory_usage_; }
 
-  void SetTextureRegistry(TextureRegistry* textureRegistry) { texture_registry_ = textureRegistry; }
+  void SetTextureRegistry(TextureRegistry* textureRegistry) {
+    texture_registry_ = textureRegistry;
+  }
 
  private:
   RasterCache raster_cache_;
