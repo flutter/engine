@@ -930,7 +930,7 @@ String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback)
 
 /// Loads a single image frame from a byte array into an [Image] object.
 ///
-/// This is a convinience wrapper around [instantiateImageCodec].
+/// This is a convenience wrapper around [instantiateImageCodec].
 /// Prefer using [instantiateImageCodec] which also supports multi frame images.
 // We only keep this method for backward compatibility.
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
