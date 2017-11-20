@@ -932,7 +932,6 @@ String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback)
 ///
 /// This is a convenience wrapper around [instantiateImageCodec].
 /// Prefer using [instantiateImageCodec] which also supports multi frame images.
-// We only keep this method for backward compatibility.
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);
 }
