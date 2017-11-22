@@ -16,21 +16,30 @@ static volatile bool g_freeze = false;
 
 }  // namespace
 
-ResourceContext::ResourceContext() { g_mutex.Lock(); }
+ResourceContext::ResourceContext() {
+  FXL_DLOG(ERROR) << "Locking";
+  g_mutex.Lock();
+}
 
-ResourceContext::~ResourceContext() { g_mutex.Unlock(); }
+ResourceContext::~ResourceContext() {
+  FXL_DLOG(ERROR) << "Unlocking";
+  g_mutex.Unlock();
+}
 
 void ResourceContext::Set(GrContext* context) {
   FXL_DCHECK(!g_context);
+  FXL_DLOG(ERROR) << "Setting";
   g_context = context;
 }
 
 GrContext* ResourceContext::Get() {
+  FXL_DLOG(ERROR) << "Getting";
   return g_freeze ? nullptr : g_context;
 }
 
 ResourceContext* ResourceContext::Acquire() {
-  return new ResourceContext;
+  FXL_DLOG(ERROR) << "Acquiring";
+  return std::make_unique<ResourceContext>();
 }
 
 void ResourceContext::Freeze() {

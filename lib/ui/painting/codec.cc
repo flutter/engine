@@ -53,6 +53,7 @@ sk_sp<SkImage> DecodeImage(sk_sp<SkData> buffer, size_t trace_id) {
     return nullptr;
   }
 
+  FXL_LOG(ERROR) << "DecodeImage";
   ResourceContext* resourceContext = ResourceContext::Acquire();
   GrContext* context = resourceContext->Get();
   if (context) {
@@ -241,6 +242,7 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage() {
     }
   }
 
+  FXL_LOG(ERROR) << "GetNextFrameImage";
   ResourceContext* resourceContext = ResourceContext::Acquire();
   GrContext* context = resourceContext->Get();
   if (context) {

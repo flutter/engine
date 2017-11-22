@@ -165,6 +165,7 @@ void PlatformView::SetupResourceContextOnIOThread() {
 
 void PlatformView::SetupResourceContextOnIOThreadPerform(
     fxl::AutoResetWaitableEvent* latch) {
+  FXL_LOG(ERROR) << "SetupResourceContextOnIOThreadPerform";
   blink::ResourceContext* resourceContext = blink::ResourceContext::Acquire();
   if (resourceContext->Get() != nullptr) {
     // The resource context was already setup. This could happen if platforms
