@@ -28,7 +28,8 @@ class ResourceContext {
   /**
    * Synchronously signal a freeze on GrContext operations.
    *
-   * ResourceContext instances will return nullptr on GrContext Get until unfrozen.
+   * ResourceContext instances will return nullptr on GrContext Get until
+   * unfrozen.
    */
   static void Freeze();
 
@@ -44,7 +45,8 @@ class ResourceContext {
   ~ResourceContext();
 
   /**
-   * Returns global GrContext instance. May return null when operations are frozen.
+   * Returns global GrContext instance. May return null when operations are
+   * frozen.
    *
    * Happens on iOS when background operations on GrContext are forbidden.
    */

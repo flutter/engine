@@ -16,9 +16,13 @@ static volatile bool g_freeze = false;
 
 }  // namespace
 
-ResourceContext::ResourceContext() { g_mutex.Lock(); }
+ResourceContext::ResourceContext() {
+  g_mutex.Lock();
+}
 
-ResourceContext::~ResourceContext() { g_mutex.Unlock(); }
+ResourceContext::~ResourceContext() {
+  g_mutex.Unlock();
+}
 
 void ResourceContext::Set(GrContext* context) {
   FXL_DCHECK(!g_context);

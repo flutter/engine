@@ -165,7 +165,8 @@ void PlatformView::SetupResourceContextOnIOThread() {
 
 void PlatformView::SetupResourceContextOnIOThreadPerform(
     fxl::AutoResetWaitableEvent* latch) {
-  std::unique_ptr<blink::ResourceContext> resourceContext = blink::ResourceContext::Acquire();
+  std::unique_ptr<blink::ResourceContext> resourceContext =
+      blink::ResourceContext::Acquire();
   if (resourceContext->Get() != nullptr) {
     // The resource context was already setup. This could happen if platforms
     // try to setup a context multiple times, or, if there are multiple platform
