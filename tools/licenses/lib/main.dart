@@ -1740,6 +1740,18 @@ class RepositoryLibPngDirectory extends RepositoryDirectory {
   }
 }
 
+class RepositoryLibWebpDirectory extends RepositoryDirectory {
+  RepositoryLibWebpDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'examples' // contains nothing that ends up in the binary executable
+      && entry.name != 'swig' // not included in our build
+      && entry.name != 'gradle' // not included in our build
+      && super.shouldRecurse(entry);
+  }
+}
+
 class RepositoryPkgDirectory extends RepositoryDirectory {
   RepositoryPkgDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
@@ -1903,6 +1915,8 @@ class RepositoryRootThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
       return new RepositoryLibJpegTurboDirectory(this, entry);
     if (entry.name == 'libpng')
       return new RepositoryLibPngDirectory(this, entry);
+    if (entry.name == 'libwebp')
+      return new RepositoryLibWebpDirectory(this, entry);
     if (entry.name == 'okhttp')
       return new RepositoryOkHttpDirectory(this, entry);
     if (entry.name == 'pkg')
@@ -2145,9 +2159,11 @@ class RepositoryGarnetDirectory extends RepositoryDirectory {
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'bin'
         && entry.name != 'docs'
+        && entry.name != 'drivers'
         && entry.name != 'examples'
         && entry.name != 'go'
         && entry.name != 'lib'
+        && entry.name != 'packages'
         && super.shouldRecurse(entry);
   }
 
@@ -2163,6 +2179,14 @@ class RepositoryGarnetPublicDirectory extends RepositoryDirectory {
   RepositoryGarnetPublicDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
   @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'dart-pkg'
+        && entry.name != 'build'
+        && entry.name != 'rust'
+        && super.shouldRecurse(entry);
+  }
+
+  @override
   RepositoryDirectory createSubdirectory(fs.Directory entry) {
     if (entry.name == 'lib')
       return new RepositoryGarnetLibDirectory(this, entry);
@@ -2175,7 +2199,9 @@ class RepositoryGarnetLibDirectory extends RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'url'
+    return entry.name != 'app'
+        && entry.name != 'escher'
+        && entry.name != 'url'
         && super.shouldRecurse(entry);
   }
 
@@ -2202,6 +2228,44 @@ class RepositoryGarnetFidlDirectory extends RepositoryDirectory {
     if (entry.name == 'public')
       return new RepositoryGarnetPublicDirectory(this, entry);
     return super.createSubdirectory(entry);
+  }
+}
+
+class RepositoryTopazDirectory extends RepositoryDirectory {
+  RepositoryTopazDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+      return entry.name != 'tools'
+          && super.shouldRecurse(entry);
+  }
+
+  @override
+  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'shell')
+      return new RepositoryTopazShellDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class RepositoryTopazShellDirectory extends RepositoryDirectory {
+  RepositoryTopazShellDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'third_party')
+      return new RepositoryTopazShellThirdPartyDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class RepositoryTopazShellThirdPartyDirectory extends RepositoryDirectory {
+  RepositoryTopazShellThirdPartyDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+      return entry.name != 'QR-Code-generator'
+          && super.shouldRecurse(entry);
   }
 }
 
@@ -2241,13 +2305,21 @@ class RepositoryRoot extends RepositoryDirectory {
       return new RepositoryFlutterDirectory(this, entry);
     if (entry.name == 'garnet')
       return new RepositoryGarnetDirectory(this, entry);
+    if (entry.name == 'topaz')
+      return new RepositoryTopazDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
 }
 
 
 class Progress {
-  Progress(this.max);
+  Progress(this.max) {
+    // This may happen when a git client contains left-over empty component
+    // directories after DEPS file changes.
+    if (max <= 0)
+      throw new ArgumentError('Progress.max must be > 0 but was: $max');
+  }
+
   final int max;
   int get withLicense => _withLicense;
   int _withLicense = 0;
@@ -2277,9 +2349,8 @@ class Progress {
       _lastUpdate ??= new Stopwatch();
       final String line = toString();
       system.stderr.write('\r$line');
-      if (_lastLength > line.length) {
-	system.stderr.write(' ' * (_lastLength - line.length));
-      }
+      if (_lastLength > line.length)
+        system.stderr.write(' ' * (_lastLength - line.length));
       _lastLength = line.length;
       _lastUpdate.reset();
       _lastUpdate.start();

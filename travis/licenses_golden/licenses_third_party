@@ -1,4 +1,4 @@
-Signature: da188c38001e49debfe857685f335453
+Signature: a4c565121c4fd07173a7e4985a3d989c
 
 UNUSED LICENSES:
 
@@ -4965,7 +4965,6 @@ FILE: ../../../third_party/dart/runtime/vm/virtual_memory_fuchsia.cc
 FILE: ../../../third_party/dart/sdk/lib/developer/service.dart
 FILE: ../../../third_party/dart/sdk/lib/js_util/dart2js/js_util_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/vmservice/devfs.dart
-FILE: ../../../third_party/dart/utils/kernel-service/kernel-service.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2016, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
@@ -5042,6 +5041,7 @@ FILE: ../../../third_party/dart/runtime/bin/sync_socket_macos.cc
 FILE: ../../../third_party/dart/runtime/bin/sync_socket_patch.dart
 FILE: ../../../third_party/dart/runtime/bin/sync_socket_win.cc
 FILE: ../../../third_party/dart/runtime/lib/async.cc
+FILE: ../../../third_party/dart/runtime/lib/class_id_fasta.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/containers/search_bar.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/memory/allocations.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/memory/dashboard.dart
@@ -5090,6 +5090,10 @@ FILE: ../../../third_party/dart/runtime/vm/fixed_cache_test.cc
 FILE: ../../../third_party/dart/runtime/vm/gc_compactor.cc
 FILE: ../../../third_party/dart/runtime/vm/gc_compactor.h
 FILE: ../../../third_party/dart/runtime/vm/gdb_helpers.cc
+FILE: ../../../third_party/dart/runtime/vm/image_snapshot.cc
+FILE: ../../../third_party/dart/runtime/vm/image_snapshot.h
+FILE: ../../../third_party/dart/runtime/vm/json_writer.cc
+FILE: ../../../third_party/dart/runtime/vm/json_writer.h
 FILE: ../../../third_party/dart/runtime/vm/kernel_binary.h
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks.h
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_arm.cc
@@ -5100,6 +5104,7 @@ FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_tcmalloc.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_test.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_unsupported.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_x64.cc
+FILE: ../../../third_party/dart/runtime/vm/mixin_test.cc
 FILE: ../../../third_party/dart/runtime/vm/stack_trace.cc
 FILE: ../../../third_party/dart/runtime/vm/stack_trace.h
 FILE: ../../../third_party/dart/runtime/vm/timeline_android.cc
@@ -5111,6 +5116,7 @@ FILE: ../../../third_party/dart/runtime/vm/zone_text_buffer.cc
 FILE: ../../../third_party/dart/runtime/vm/zone_text_buffer.h
 FILE: ../../../third_party/dart/sdk/lib/_http/overrides.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/linked_list.dart
+FILE: ../../../third_party/dart/sdk/lib/internal/patch.dart
 FILE: ../../../third_party/dart/sdk/lib/io/embedder_config.dart
 FILE: ../../../third_party/dart/sdk/lib/io/namespace_impl.dart
 FILE: ../../../third_party/dart/sdk/lib/io/overrides.dart
@@ -14840,7 +14846,7 @@ FILE: ../../../third_party/skia/src/gpu/ops/GrRegionOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrRegionOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrShadowRRectOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrShadowRRectOp.h
-FILE: ../../../third_party/skia/src/gpu/text/GrAtlasTextBlob_regenInOp.cpp
+FILE: ../../../third_party/skia/src/gpu/text/GrAtlasTextBlobVertexRegenerator.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkCopyManager.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkCopyManager.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkCopyPipeline.cpp
@@ -15050,6 +15056,523 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
 OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libwebp
+ORIGIN: ../../../third_party/libwebp/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/libwebp/.mailmap
+FILE: ../../../third_party/libwebp/Makefile.vc
+FILE: ../../../third_party/libwebp/cmake/config.h.in
+FILE: ../../../third_party/libwebp/doc/TODO
+FILE: ../../../third_party/libwebp/doc/template.html
+FILE: ../../../third_party/libwebp/extras/webp_quality.c
+FILE: ../../../third_party/libwebp/gradle.properties
+FILE: ../../../third_party/libwebp/makefile.unix
+FILE: ../../../third_party/libwebp/src/demux/libwebpdemux.pc.in
+FILE: ../../../third_party/libwebp/src/demux/libwebpdemux.rc
+FILE: ../../../third_party/libwebp/src/libwebp.pc.in
+FILE: ../../../third_party/libwebp/src/libwebp.rc
+FILE: ../../../third_party/libwebp/src/libwebpdecoder.pc.in
+FILE: ../../../third_party/libwebp/src/libwebpdecoder.rc
+FILE: ../../../third_party/libwebp/src/mux/libwebpmux.pc.in
+FILE: ../../../third_party/libwebp/src/mux/libwebpmux.rc
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2010, Google Inc. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libwebp
+ORIGIN: ../../../third_party/libwebp/extras/extras.c + ../../../third_party/libwebp/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/libwebp/extras/extras.c
+FILE: ../../../third_party/libwebp/extras/extras.h
+FILE: ../../../third_party/libwebp/src/dec/common_dec.h
+FILE: ../../../third_party/libwebp/src/demux/anim_decode.c
+FILE: ../../../third_party/libwebp/src/dsp/alpha_processing_sse41.c
+FILE: ../../../third_party/libwebp/src/dsp/cost_sse2.c
+FILE: ../../../third_party/libwebp/src/dsp/dec_sse41.c
+FILE: ../../../third_party/libwebp/src/dsp/enc_sse41.c
+FILE: ../../../third_party/libwebp/src/dsp/filters_sse2.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless_enc.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless_enc_mips32.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless_enc_mips_dsp_r2.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless_enc_neon.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless_enc_sse2.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless_enc_sse41.c
+FILE: ../../../third_party/libwebp/src/dsp/rescaler_neon.c
+FILE: ../../../third_party/libwebp/src/dsp/rescaler_sse2.c
+FILE: ../../../third_party/libwebp/src/enc/delta_palettization_enc.c
+FILE: ../../../third_party/libwebp/src/enc/delta_palettization_enc.h
+----------------------------------------------------------------------------------------------------
+Copyright 2015 Google Inc. All Rights Reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libwebp
+ORIGIN: ../../../third_party/libwebp/extras/get_disto.c + ../../../third_party/libwebp/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/libwebp/extras/get_disto.c
+FILE: ../../../third_party/libwebp/extras/quality_estimate.c
+FILE: ../../../third_party/libwebp/imageio/image_dec.c
+FILE: ../../../third_party/libwebp/imageio/image_dec.h
+FILE: ../../../third_party/libwebp/imageio/image_enc.c
+FILE: ../../../third_party/libwebp/imageio/image_enc.h
+FILE: ../../../third_party/libwebp/imageio/imageio_util.c
+FILE: ../../../third_party/libwebp/imageio/imageio_util.h
+FILE: ../../../third_party/libwebp/src/dsp/common_sse2.h
+FILE: ../../../third_party/libwebp/src/dsp/dec_msa.c
+FILE: ../../../third_party/libwebp/src/dsp/enc_msa.c
+FILE: ../../../third_party/libwebp/src/dsp/filters_msa.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless_enc_msa.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless_msa.c
+FILE: ../../../third_party/libwebp/src/dsp/msa_macro.h
+FILE: ../../../third_party/libwebp/src/dsp/rescaler_msa.c
+FILE: ../../../third_party/libwebp/src/dsp/upsampling_msa.c
+FILE: ../../../third_party/libwebp/src/enc/predictor_enc.c
+FILE: ../../../third_party/libwebp/src/mux/animi.h
+----------------------------------------------------------------------------------------------------
+Copyright 2016 Google Inc. All Rights Reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libwebp
+ORIGIN: ../../../third_party/libwebp/imageio/jpegdec.c + ../../../third_party/libwebp/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/libwebp/imageio/jpegdec.c
+FILE: ../../../third_party/libwebp/imageio/jpegdec.h
+FILE: ../../../third_party/libwebp/imageio/metadata.c
+FILE: ../../../third_party/libwebp/imageio/metadata.h
+FILE: ../../../third_party/libwebp/imageio/pngdec.c
+FILE: ../../../third_party/libwebp/imageio/pngdec.h
+FILE: ../../../third_party/libwebp/imageio/tiffdec.c
+FILE: ../../../third_party/libwebp/imageio/tiffdec.h
+FILE: ../../../third_party/libwebp/src/dec/vp8l_dec.c
+FILE: ../../../third_party/libwebp/src/dec/vp8li_dec.h
+FILE: ../../../third_party/libwebp/src/demux/demux.c
+FILE: ../../../third_party/libwebp/src/dsp/dec_neon.c
+FILE: ../../../third_party/libwebp/src/dsp/enc_neon.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless.h
+FILE: ../../../third_party/libwebp/src/dsp/lossless_common.h
+FILE: ../../../third_party/libwebp/src/enc/backward_references_enc.c
+FILE: ../../../third_party/libwebp/src/enc/backward_references_enc.h
+FILE: ../../../third_party/libwebp/src/enc/histogram_enc.c
+FILE: ../../../third_party/libwebp/src/enc/histogram_enc.h
+FILE: ../../../third_party/libwebp/src/enc/vp8l_enc.c
+FILE: ../../../third_party/libwebp/src/enc/vp8li_enc.h
+FILE: ../../../third_party/libwebp/src/utils/color_cache_utils.c
+FILE: ../../../third_party/libwebp/src/utils/color_cache_utils.h
+FILE: ../../../third_party/libwebp/src/utils/huffman_utils.c
+FILE: ../../../third_party/libwebp/src/utils/huffman_utils.h
+FILE: ../../../third_party/libwebp/src/utils/rescaler_utils.c
+FILE: ../../../third_party/libwebp/src/utils/rescaler_utils.h
+FILE: ../../../third_party/libwebp/src/utils/utils.c
+FILE: ../../../third_party/libwebp/src/utils/utils.h
+FILE: ../../../third_party/libwebp/src/webp/demux.h
+FILE: ../../../third_party/libwebp/src/webp/format_constants.h
+FILE: ../../../third_party/libwebp/src/webp/mux_types.h
+----------------------------------------------------------------------------------------------------
+Copyright 2012 Google Inc. All Rights Reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libwebp
+ORIGIN: ../../../third_party/libwebp/imageio/webpdec.c + ../../../third_party/libwebp/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/libwebp/imageio/webpdec.c
+FILE: ../../../third_party/libwebp/imageio/webpdec.h
+FILE: ../../../third_party/libwebp/src/dsp/alpha_processing_mips_dsp_r2.c
+FILE: ../../../third_party/libwebp/src/dsp/alpha_processing_sse2.c
+FILE: ../../../third_party/libwebp/src/dsp/argb.c
+FILE: ../../../third_party/libwebp/src/dsp/argb_mips_dsp_r2.c
+FILE: ../../../third_party/libwebp/src/dsp/argb_sse2.c
+FILE: ../../../third_party/libwebp/src/dsp/cost.c
+FILE: ../../../third_party/libwebp/src/dsp/cost_mips32.c
+FILE: ../../../third_party/libwebp/src/dsp/cost_mips_dsp_r2.c
+FILE: ../../../third_party/libwebp/src/dsp/dec_clip_tables.c
+FILE: ../../../third_party/libwebp/src/dsp/dec_mips32.c
+FILE: ../../../third_party/libwebp/src/dsp/dec_mips_dsp_r2.c
+FILE: ../../../third_party/libwebp/src/dsp/enc_avx2.c
+FILE: ../../../third_party/libwebp/src/dsp/enc_mips32.c
+FILE: ../../../third_party/libwebp/src/dsp/enc_mips_dsp_r2.c
+FILE: ../../../third_party/libwebp/src/dsp/filters_mips_dsp_r2.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless_mips_dsp_r2.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless_neon.c
+FILE: ../../../third_party/libwebp/src/dsp/lossless_sse2.c
+FILE: ../../../third_party/libwebp/src/dsp/mips_macro.h
+FILE: ../../../third_party/libwebp/src/dsp/neon.h
+FILE: ../../../third_party/libwebp/src/dsp/rescaler.c
+FILE: ../../../third_party/libwebp/src/dsp/rescaler_mips32.c
+FILE: ../../../third_party/libwebp/src/dsp/rescaler_mips_dsp_r2.c
+FILE: ../../../third_party/libwebp/src/dsp/upsampling_mips_dsp_r2.c
+FILE: ../../../third_party/libwebp/src/dsp/yuv_mips32.c
+FILE: ../../../third_party/libwebp/src/dsp/yuv_mips_dsp_r2.c
+FILE: ../../../third_party/libwebp/src/dsp/yuv_sse2.c
+FILE: ../../../third_party/libwebp/src/enc/near_lossless_enc.c
+FILE: ../../../third_party/libwebp/src/enc/picture_csp_enc.c
+FILE: ../../../third_party/libwebp/src/enc/picture_psnr_enc.c
+FILE: ../../../third_party/libwebp/src/enc/picture_rescale_enc.c
+FILE: ../../../third_party/libwebp/src/enc/picture_tools_enc.c
+FILE: ../../../third_party/libwebp/src/mux/anim_encode.c
+FILE: ../../../third_party/libwebp/src/utils/bit_reader_inl_utils.h
+FILE: ../../../third_party/libwebp/src/utils/endian_inl_utils.h
+----------------------------------------------------------------------------------------------------
+Copyright 2014 Google Inc. All Rights Reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libwebp
+ORIGIN: ../../../third_party/libwebp/imageio/wicdec.c + ../../../third_party/libwebp/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/libwebp/imageio/wicdec.c
+FILE: ../../../third_party/libwebp/imageio/wicdec.h
+FILE: ../../../third_party/libwebp/src/dec/alphai_dec.h
+FILE: ../../../third_party/libwebp/src/dsp/alpha_processing.c
+FILE: ../../../third_party/libwebp/src/utils/quant_levels_dec_utils.c
+FILE: ../../../third_party/libwebp/src/utils/quant_levels_dec_utils.h
+FILE: ../../../third_party/libwebp/src/utils/random_utils.c
+FILE: ../../../third_party/libwebp/src/utils/random_utils.h
+----------------------------------------------------------------------------------------------------
+Copyright 2013 Google Inc. All Rights Reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libwebp
+ORIGIN: ../../../third_party/libwebp/src/dec/alpha_dec.c + ../../../third_party/libwebp/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/libwebp/src/dec/alpha_dec.c
+FILE: ../../../third_party/libwebp/src/dec/buffer_dec.c
+FILE: ../../../third_party/libwebp/src/dec/idec_dec.c
+FILE: ../../../third_party/libwebp/src/dec/io_dec.c
+FILE: ../../../third_party/libwebp/src/dec/webpi_dec.h
+FILE: ../../../third_party/libwebp/src/dsp/cpu.c
+FILE: ../../../third_party/libwebp/src/dsp/dec_sse2.c
+FILE: ../../../third_party/libwebp/src/dsp/dsp.h
+FILE: ../../../third_party/libwebp/src/dsp/enc.c
+FILE: ../../../third_party/libwebp/src/dsp/enc_sse2.c
+FILE: ../../../third_party/libwebp/src/dsp/filters.c
+FILE: ../../../third_party/libwebp/src/dsp/upsampling.c
+FILE: ../../../third_party/libwebp/src/dsp/upsampling_neon.c
+FILE: ../../../third_party/libwebp/src/dsp/upsampling_sse2.c
+FILE: ../../../third_party/libwebp/src/enc/alpha_enc.c
+FILE: ../../../third_party/libwebp/src/enc/analysis_enc.c
+FILE: ../../../third_party/libwebp/src/enc/config_enc.c
+FILE: ../../../third_party/libwebp/src/enc/cost_enc.c
+FILE: ../../../third_party/libwebp/src/enc/cost_enc.h
+FILE: ../../../third_party/libwebp/src/enc/filter_enc.c
+FILE: ../../../third_party/libwebp/src/enc/frame_enc.c
+FILE: ../../../third_party/libwebp/src/enc/iterator_enc.c
+FILE: ../../../third_party/libwebp/src/enc/picture_enc.c
+FILE: ../../../third_party/libwebp/src/enc/quant_enc.c
+FILE: ../../../third_party/libwebp/src/enc/syntax_enc.c
+FILE: ../../../third_party/libwebp/src/enc/token_enc.c
+FILE: ../../../third_party/libwebp/src/enc/tree_enc.c
+FILE: ../../../third_party/libwebp/src/enc/vp8i_enc.h
+FILE: ../../../third_party/libwebp/src/enc/webp_enc.c
+FILE: ../../../third_party/libwebp/src/mux/muxedit.c
+FILE: ../../../third_party/libwebp/src/mux/muxi.h
+FILE: ../../../third_party/libwebp/src/mux/muxinternal.c
+FILE: ../../../third_party/libwebp/src/mux/muxread.c
+FILE: ../../../third_party/libwebp/src/utils/bit_writer_utils.c
+FILE: ../../../third_party/libwebp/src/utils/bit_writer_utils.h
+FILE: ../../../third_party/libwebp/src/utils/filters_utils.c
+FILE: ../../../third_party/libwebp/src/utils/filters_utils.h
+FILE: ../../../third_party/libwebp/src/utils/huffman_encode_utils.c
+FILE: ../../../third_party/libwebp/src/utils/huffman_encode_utils.h
+FILE: ../../../third_party/libwebp/src/utils/quant_levels_utils.c
+FILE: ../../../third_party/libwebp/src/utils/quant_levels_utils.h
+FILE: ../../../third_party/libwebp/src/utils/thread_utils.c
+FILE: ../../../third_party/libwebp/src/utils/thread_utils.h
+FILE: ../../../third_party/libwebp/src/webp/encode.h
+FILE: ../../../third_party/libwebp/src/webp/mux.h
+----------------------------------------------------------------------------------------------------
+Copyright 2011 Google Inc. All Rights Reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libwebp
+ORIGIN: ../../../third_party/libwebp/src/dec/frame_dec.c + ../../../third_party/libwebp/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/libwebp/src/dec/frame_dec.c
+FILE: ../../../third_party/libwebp/src/dec/quant_dec.c
+FILE: ../../../third_party/libwebp/src/dec/tree_dec.c
+FILE: ../../../third_party/libwebp/src/dec/vp8_dec.c
+FILE: ../../../third_party/libwebp/src/dec/vp8_dec.h
+FILE: ../../../third_party/libwebp/src/dec/vp8i_dec.h
+FILE: ../../../third_party/libwebp/src/dec/webp_dec.c
+FILE: ../../../third_party/libwebp/src/dsp/dec.c
+FILE: ../../../third_party/libwebp/src/dsp/yuv.c
+FILE: ../../../third_party/libwebp/src/dsp/yuv.h
+FILE: ../../../third_party/libwebp/src/utils/bit_reader_utils.c
+FILE: ../../../third_party/libwebp/src/utils/bit_reader_utils.h
+FILE: ../../../third_party/libwebp/src/webp/decode.h
+FILE: ../../../third_party/libwebp/src/webp/types.h
+----------------------------------------------------------------------------------------------------
+Copyright 2010 Google Inc. All Rights Reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libwebp
+ORIGIN: ../../../third_party/libwebp/src/dsp/alpha_processing_neon.c + ../../../third_party/libwebp/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/libwebp/src/dsp/alpha_processing_neon.c
+FILE: ../../../third_party/libwebp/src/dsp/filters_neon.c
+----------------------------------------------------------------------------------------------------
+Copyright 2017 Google Inc. All Rights Reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
 SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
 LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
 DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
@@ -17587,7 +18110,6 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.e
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Build-Debian9-EMCC-wasm-Release.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Build-Debian9-GCC-x86_64-Release-ANGLE.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Build-Debian9-GCC-x86_64-Release-Flutter_Android.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Build-Debian9-GCC-x86_64-Release-Mesa.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Build-Debian9-GCC-x86_64-Release-NoGPU.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Build-Debian9-GCC-x86_64-Release-PDFium.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Build-Debian9-GCC-x86_64-Release-PDFium_SkiaPaths.json
@@ -17690,7 +18212,6 @@ FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Debian
 FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Debian9-GCC-x86_64-Debug-NoGPU.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Debian9-GCC-x86_64-Release-ANGLE.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Debian9-GCC-x86_64-Release-Flutter_Android.json
-FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Debian9-GCC-x86_64-Release-Mesa.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Debian9-GCC-x86_64-Release-PDFium.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Debian9-GCC-x86_64-Release-PDFium_SkiaPaths.json
 FILE: ../../../third_party/skia/infra/bots/recipes/compile.expected/Build-Debian9-GCC-x86_64-Release-Shared.json
@@ -17751,8 +18272,8 @@ FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win10-Clan
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win10-Clang-NUC6i5SYK-GPU-IntelIris540-x86_64-Release-All-ANGLE.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win10-Clang-NUC6i5SYK-GPU-IntelIris540-x86_64-Release-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win10-Clang-ShuttleC-GPU-GTX960-x86_64-Release-All-ANGLE.json
-FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win2k8-MSVC-GCE-CPU-AVX2-x86_64-Debug-All.json
-FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win2k8-MSVC-GCE-CPU-AVX2-x86_64-Release-All.json
+FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win2016-MSVC-GCE-CPU-AVX2-x86_64-Debug-All.json
+FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win2016-MSVC-GCE-CPU-AVX2-x86_64-Release-All.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-iOS-Clang-iPadPro-GPU-GT7800-arm64-Release-All.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/failed_push.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/trybot.json
@@ -17801,6 +18322,8 @@ FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Ubuntu17-G
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-AlphaR2-GPU-RadeonR9M470X-x86_64-Debug-All-ANGLE.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-AlphaR2-GPU-RadeonR9M470X-x86_64-Debug-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-Golo-GPU-QuadroP400-x86_64-Release-All-ReleaseAndAbandonGpuContext.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-NUC5i7RYH-CPU-AVX2-x86_64-Debug-All-NativeFonts.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-NUC5i7RYH-CPU-AVX2-x86_64-Debug-All-NativeFonts_GDI.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-NUC6i5SYK-GPU-IntelIris540-x86_64-Debug-All-ANGLE.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-NUC6i5SYK-GPU-IntelIris540-x86_64-Debug-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-NUCD34010WYKH-GPU-IntelHD4400-x86_64-Release-All-ANGLE.json
@@ -17808,10 +18331,9 @@ FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clan
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-ShuttleC-GPU-GTX960-x86_64-Debug-All-ANGLE.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-ZBOX-GPU-GTX1070-x86_64-Debug-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-ZBOX-GPU-GTX1070-x86_64-Debug-All.json
-FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win2k8-Clang-GCE-CPU-AVX2-x86_64-Debug-All-FAAA.json
-FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win2k8-Clang-GCE-CPU-AVX2-x86_64-Debug-All-FDAA.json
-FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win2k8-Clang-GCE-CPU-AVX2-x86_64-Debug-All-FSAA.json
-FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win2k8-Clang-GCE-CPU-AVX2-x86_64-Debug-All-NativeFonts.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win2016-Clang-GCE-CPU-AVX2-x86_64-Debug-All-FAAA.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win2016-Clang-GCE-CPU-AVX2-x86_64-Debug-All-FDAA.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win2016-Clang-GCE-CPU-AVX2-x86_64-Debug-All-FSAA.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win8-MSVC-Golo-CPU-AVX-x86-Debug-All.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-iOS-Clang-iPadPro-GPU-GT7800-arm64-Release-All.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/failed_dm.json
@@ -17888,9 +18410,11 @@ FILE: ../../../third_party/skia/site/user/sample/transfer_fn.png
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/effects/GrAlphaThresholdFragmentProcessor.fp
 FILE: ../../../third_party/skia/src/effects/GrCircleBlurFragmentProcessor.fp
+FILE: ../../../third_party/skia/src/gpu/effects/GrAARectEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrArithmeticFP.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrConfigConversionEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrDitherEffect.fp
+FILE: ../../../third_party/skia/src/gpu/effects/GrLumaColorFilterEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrOverdrawFragmentProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrRectBlurEffect.fp
 FILE: ../../../third_party/skia/src/sksl/lex/layout.lex
@@ -18476,8 +19000,6 @@ FILE: ../../../third_party/skia/src/core/SkVertState.cpp
 FILE: ../../../third_party/skia/src/core/SkVertState.h
 FILE: ../../../third_party/skia/src/fonts/SkFontMgr_indirect.cpp
 FILE: ../../../third_party/skia/src/fonts/SkRemotableFontMgr.cpp
-FILE: ../../../third_party/skia/src/fonts/SkTestScalerContext.cpp
-FILE: ../../../third_party/skia/src/fonts/SkTestScalerContext.h
 FILE: ../../../third_party/skia/src/gpu/GrDefaultGeoProcFactory.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDefaultGeoProcFactory.h
 FILE: ../../../third_party/skia/src/gpu/GrFragmentProcessor.h
@@ -19094,8 +19616,6 @@ FILE: ../../../third_party/skia/src/core/SkYUVPlanesCache.cpp
 FILE: ../../../third_party/skia/src/core/SkYUVPlanesCache.h
 FILE: ../../../third_party/skia/src/effects/SkImageSource.cpp
 FILE: ../../../third_party/skia/src/effects/SkTableColorFilter.cpp
-FILE: ../../../third_party/skia/src/fonts/SkRandomScalerContext.cpp
-FILE: ../../../third_party/skia/src/fonts/SkRandomScalerContext.h
 FILE: ../../../third_party/skia/src/gpu/GrAutoLocaleSetter.h
 FILE: ../../../third_party/skia/src/gpu/GrBlend.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBlurUtils.cpp
@@ -19269,7 +19789,6 @@ FILE: ../../../third_party/skia/src/ports/SkFontMgr_custom_directory_factory.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_custom_embedded_factory.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_fontconfig_factory.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_win_dw_factory.cpp
-FILE: ../../../third_party/skia/src/ports/SkFontMgr_win_gdi_factory.cpp
 FILE: ../../../third_party/skia/src/ports/SkOSLibrary.h
 FILE: ../../../third_party/skia/src/ports/SkOSLibrary_posix.cpp
 FILE: ../../../third_party/skia/src/ports/SkOSLibrary_win.cpp
@@ -19503,7 +20022,6 @@ FILE: ../../../third_party/skia/src/gpu/gl/GrGLContext.h
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLExtensions.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLVertexArray.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLVertexArray.h
-FILE: ../../../third_party/skia/src/gpu/gl/mesa/osmesa_wrapper.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLFragmentProcessor.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLGeometryProcessor.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLPrimitiveProcessor.h
@@ -19635,6 +20153,7 @@ FILE: ../../../third_party/skia/include/gpu/GrBackendSemaphore.h
 FILE: ../../../third_party/skia/include/gpu/GrBackendSurface.h
 FILE: ../../../third_party/skia/include/gpu/mock/GrMockTypes.h
 FILE: ../../../third_party/skia/include/gpu/mtl/GrMtlTypes.h
+FILE: ../../../third_party/skia/include/private/GrSharedEnums.h
 FILE: ../../../third_party/skia/include/private/SkDeferredDisplayList.h
 FILE: ../../../third_party/skia/include/private/SkMalloc.h
 FILE: ../../../third_party/skia/include/private/SkShadowFlags.h
@@ -19676,6 +20195,8 @@ FILE: ../../../third_party/skia/src/core/SkDrawShadowInfo.h
 FILE: ../../../third_party/skia/src/core/SkDraw_vertices.cpp
 FILE: ../../../third_party/skia/src/core/SkExecutor.cpp
 FILE: ../../../third_party/skia/src/core/SkFDot6Constants.cpp
+FILE: ../../../third_party/skia/src/core/SkGaussFilter.cpp
+FILE: ../../../third_party/skia/src/core/SkGaussFilter.h
 FILE: ../../../third_party/skia/src/core/SkImageFilterPriv.h
 FILE: ../../../third_party/skia/src/core/SkImageInfoPriv.h
 FILE: ../../../third_party/skia/src/core/SkMaskBlurFilter.cpp
@@ -19711,6 +20232,7 @@ FILE: ../../../third_party/skia/src/gpu/GrProcessorSet.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceAllocator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrResourceAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrSemaphore.h
+FILE: ../../../third_party/skia/src/gpu/GrStencilClip.h
 FILE: ../../../third_party/skia/src/gpu/GrSurfaceProxyPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrTextureProxyCacheAccess.h
 FILE: ../../../third_party/skia/src/gpu/GrTextureProxyPriv.h
@@ -19734,6 +20256,8 @@ FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCPRTriangleShader.cpp
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCPRTriangleShader.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCoverageCountingPathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCoverageCountingPathRenderer.h
+FILE: ../../../third_party/skia/src/gpu/effects/GrAARectEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/GrAARectEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrArithmeticFP.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrArithmeticFP.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrAtlasedShaderHelpers.h
@@ -19750,6 +20274,8 @@ FILE: ../../../third_party/skia/src/gpu/effects/GrDitherEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrEllipseEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrEllipseEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrEllipseEffect.h
+FILE: ../../../third_party/skia/src/gpu/effects/GrLumaColorFilterEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/GrLumaColorFilterEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrNonlinearColorSpaceXformEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrNonlinearColorSpaceXformEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrOverdrawFragmentProcessor.cpp
@@ -19835,8 +20361,10 @@ FILE: ../../../third_party/skia/src/sksl/SkSLSectionAndParameterHelper.h
 FILE: ../../../third_party/skia/src/sksl/SkSLString.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLString.h
 FILE: ../../../third_party/skia/src/sksl/SkSLStringStream.h
+FILE: ../../../third_party/skia/src/sksl/ast/SkSLASTEnum.h
 FILE: ../../../third_party/skia/src/sksl/ast/SkSLASTSwitchCase.h
 FILE: ../../../third_party/skia/src/sksl/ast/SkSLASTSwitchStatement.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLEnum.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSetting.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwitchCase.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwitchStatement.h
@@ -19852,6 +20380,7 @@ FILE: ../../../third_party/skia/src/sksl/lex/RegexNode.cpp
 FILE: ../../../third_party/skia/src/sksl/lex/RegexNode.h
 FILE: ../../../third_party/skia/src/sksl/lex/RegexParser.cpp
 FILE: ../../../third_party/skia/src/sksl/lex/RegexParser.h
+FILE: ../../../third_party/skia/src/sksl/sksl_enums.include
 FILE: ../../../third_party/skia/src/utils/SkInsetConvexPolygon.cpp
 FILE: ../../../third_party/skia/src/utils/SkInsetConvexPolygon.h
 FILE: ../../../third_party/skia/src/utils/SkJSONWriter.cpp
@@ -20129,6 +20658,7 @@ FILE: ../../../third_party/skia/src/core/SkOSFile.h
 FILE: ../../../third_party/skia/src/core/SkPaint.cpp
 FILE: ../../../third_party/skia/src/core/SkPath.cpp
 FILE: ../../../third_party/skia/src/core/SkPathEffect.cpp
+FILE: ../../../third_party/skia/src/core/SkPointPriv.h
 FILE: ../../../third_party/skia/src/core/SkRasterizer.cpp
 FILE: ../../../third_party/skia/src/core/SkRect.cpp
 FILE: ../../../third_party/skia/src/core/SkRegion.cpp
@@ -21989,4 +22519,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 313
+Total license count: 322

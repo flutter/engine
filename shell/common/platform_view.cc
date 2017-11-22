@@ -35,6 +35,7 @@ void PlatformView::SetRasterizer(std::unique_ptr<Rasterizer> rasterizer) {
   Rasterizer* r = rasterizer_.release();
   blink::Threads::Gpu()->PostTask([r]() { delete r; });
   rasterizer_ = std::move(rasterizer);
+  rasterizer_->SetTextureRegistry(&texture_registry_);
   engine_->set_rasterizer(rasterizer_->GetWeakRasterizerPtr());
 }
 
@@ -189,7 +190,6 @@ void PlatformView::SetupResourceContextOnIOThreadPerform(
   // other threads correctly, so the textures end up blank.  For now, suppress
   // that feature, which will cause texture uploads to do CPU YUV conversion.
   options.fDisableGpuYUVConversion = true;
-  options.fRequireDecodeDisableForSRGB = false;
 
   blink::ResourceContext::Set(GrContext::Create(
       GrBackend::kOpenGL_GrBackend,
