@@ -7,6 +7,7 @@
 #include "flutter/common/threads.h"
 #include "flutter/glue/trace_event.h"
 #include "flutter/lib/ui/painting/frame_info.h"
+#include "flutter/lib/ui/painting/resource_context.h"
 #include "lib/fxl/functional/make_copyable.h"
 #include "lib/tonic/dart_binding_macros.h"
 #include "lib/tonic/dart_library_natives.h"
@@ -14,6 +15,7 @@
 #include "lib/tonic/logging/dart_invoke.h"
 #include "lib/tonic/typed_data/uint8_list.h"
 #include "third_party/skia/include/codec/SkCodec.h"
+#include "third_party/skia/include/core/SkPixelRef.h"
 
 using tonic::DartInvoke;
 using tonic::DartPersistentValue;
@@ -26,18 +28,7 @@ namespace {
 static constexpr const char* kInitCodecTraceTag = "InitCodec";
 static constexpr const char* kCodecNextFrameTraceTag = "CodecNextFrame";
 
-std::unique_ptr<SkCodec> InitCodec(sk_sp<SkData> buffer, size_t trace_id) {
-  TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
-  TRACE_EVENT0("blink", "InitCodec");
-
-  if (buffer == nullptr || buffer->isEmpty()) {
-    return nullptr;
-  }
-
-  return SkCodec::MakeFromData(buffer);
-}
-
-void InvokeCodecCallback(std::unique_ptr<SkCodec> codec,
+void InvokeCodecCallback(fxl::RefPtr<Codec> codec,
                          std::unique_ptr<DartPersistentValue> callback,
                          size_t trace_id) {
   tonic::DartState* dart_state = callback->dart_state().get();
@@ -49,18 +40,63 @@ void InvokeCodecCallback(std::unique_ptr<SkCodec> codec,
   if (!codec) {
     DartInvoke(callback->value(), {Dart_Null()});
   } else {
-    fxl::RefPtr<Codec> resultCodec =
-        fxl::MakeRefCounted<MultiFrameCodec>(std::move(codec));
-    DartInvoke(callback->value(), {ToDart(resultCodec)});
+    DartInvoke(callback->value(), {ToDart(codec)});
   }
   TRACE_FLOW_END("flutter", kInitCodecTraceTag, trace_id);
+}
+
+sk_sp<SkImage> DecodeImage(sk_sp<SkData> buffer, size_t trace_id) {
+  TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
+  TRACE_EVENT0("flutter", "DecodeImage");
+
+  if (buffer == nullptr || buffer->isEmpty()) {
+    return nullptr;
+  }
+
+  GrContext* context = ResourceContext::Get();
+  if (context) {
+    // This indicates that we do not want a "linear blending" decode.
+    sk_sp<SkColorSpace> dstColorSpace = nullptr;
+    return SkImage::MakeCrossContextFromEncoded(context, std::move(buffer),
+                                                false, dstColorSpace.get());
+  } else {
+    return SkImage::MakeFromEncoded(std::move(buffer));
+  }
+}
+
+fxl::RefPtr<Codec> InitCodec(sk_sp<SkData> buffer, size_t trace_id) {
+  TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
+  TRACE_EVENT0("blink", "InitCodec");
+
+  if (buffer == nullptr || buffer->isEmpty()) {
+    FXL_LOG(ERROR) << "InitCodec failed - buffer was empty ";
+    return nullptr;
+  }
+
+  std::unique_ptr<SkCodec> skCodec = SkCodec::MakeFromData(buffer);
+  if (!skCodec) {
+    FXL_LOG(ERROR) << "SkCodec::MakeFromData failed";
+    return nullptr;
+  }
+  if (skCodec->getFrameCount() > 1) {
+    return fxl::MakeRefCounted<MultiFrameCodec>(std::move(skCodec));
+  }
+  auto skImage = DecodeImage(buffer, trace_id);
+  if (!skImage) {
+    FXL_LOG(ERROR) << "DecodeImage failed";
+    return nullptr;
+  }
+  auto image = CanvasImage::Create();
+  image->set_image(skImage);
+  auto frameInfo = fxl::MakeRefCounted<FrameInfo>(std::move(image), 0);
+  return fxl::MakeRefCounted<SingleFrameCodec>(std::move(frameInfo));
 }
 
 void InitCodecAndInvokeCodecCallback(
     std::unique_ptr<DartPersistentValue> callback,
     sk_sp<SkData> buffer,
     size_t trace_id) {
-  std::unique_ptr<SkCodec> codec = InitCodec(std::move(buffer), trace_id);
+  auto codec = InitCodec(std::move(buffer), trace_id);
   Threads::UI()->PostTask(fxl::MakeCopyable([
     callback = std::move(callback), codec = std::move(codec), trace_id
   ]() mutable {
@@ -204,7 +240,17 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage() {
     }
   }
 
-  return SkImage::MakeFromBitmap(bitmap);
+  GrContext* context = ResourceContext::Get();
+  if (context) {
+    SkPixmap pixmap(bitmap.info(), bitmap.pixelRef()->pixels(),
+                    bitmap.pixelRef()->rowBytes());
+    // This indicates that we do not want a "linear blending" decode.
+    sk_sp<SkColorSpace> dstColorSpace = nullptr;
+    return SkImage::MakeCrossContextFromPixmap(context, pixmap, false,
+                                               dstColorSpace.get());
+  } else {
+    return SkImage::MakeFromBitmap(bitmap);
+  }
 }
 
 void MultiFrameCodec::GetNextFrameAndInvokeCallback(
@@ -246,6 +292,23 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
     GetNextFrameAndInvokeCallback(std::move(callback), trace_id);
   }));
 
+  return Dart_Null();
+}
+
+Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
+  if (!Dart_IsClosure(callback_handle)) {
+    return ToDart("Callback must be a function");
+  }
+
+  auto callback = std::make_unique<DartPersistentValue>(
+      tonic::DartState::Current(), callback_handle);
+  tonic::DartState* dart_state = callback->dart_state().get();
+  if (!dart_state) {
+    return ToDart("Invalid dart state");
+  }
+
+  tonic::DartState::Scope scope(dart_state);
+  DartInvoke(callback->value(), {ToDart(frame_)});
   return Dart_Null();
 }
 

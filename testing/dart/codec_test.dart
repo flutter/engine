@@ -14,54 +14,34 @@ void main() {
 
   test('Animation metadata', () async {
     Uint8List data = await _getSkiaResource('alphabetAnim.gif').readAsBytes();
-    Completer<ui.Codec> completer = new Completer<ui.Codec>();
-    expect(ui.instantiateImageCodec(data, completer.complete), null);
-    ui.Codec codec = await completer.future;
+    ui.Codec codec = await ui.instantiateImageCodec(data);
+    expect(codec, isNotNull);
     expect(codec.frameCount, 13);
     expect(codec.repetitionCount, 0);
     codec.dispose();
 
     data = await _getSkiaResource('test640x479.gif').readAsBytes();
-    completer = new Completer<ui.Codec>();
-    expect(ui.instantiateImageCodec(data, completer.complete), null);
-    codec = await completer.future;
+    codec = await ui.instantiateImageCodec(data);
     expect(codec.frameCount, 4);
     expect(codec.repetitionCount, -1);
   });
 
-  test('Fails when no callback provided', () async {
-    Uint8List data = await _getSkiaResource('alphabetAnim.gif').readAsBytes();
-    expect(ui.instantiateImageCodec(data, null), 'Callback must be a function');
-  });
-
   test('Fails with invalid data', () async {
     Uint8List data = new Uint8List.fromList([1, 2, 3]);
-    Completer<ui.Codec> completer = new Completer<ui.Codec>();
-    expect(ui.instantiateImageCodec(data, completer.complete), null);
-    ui.Codec codec = await completer.future;
-    expect(codec, null);
-  });
-
-  test('nextFrame fails when no callback provided', () async {
-    Uint8List data = await _getSkiaResource('alphabetAnim.gif').readAsBytes();
-    Completer<ui.Codec> completer = new Completer<ui.Codec>();
-    expect(ui.instantiateImageCodec(data, completer.complete), null);
-    ui.Codec codec = await completer.future;
-    expect(codec.getNextFrame(null), 'Callback must be a function');
+    expect(
+      ui.instantiateImageCodec(data),
+      throwsA(exceptionWithMessage('operation failed'))
+    );
   });
 
   test('nextFrame', () async {
     Uint8List data = await _getSkiaResource('test640x479.gif').readAsBytes();
-    Completer<ui.Codec> completer = new Completer<ui.Codec>();
-    expect(ui.instantiateImageCodec(data, completer.complete), null);
-    ui.Codec codec = await completer.future;
+    ui.Codec codec = await ui.instantiateImageCodec(data);
     List<List<int>> decodedFrameInfos = [];
     for (int i = 0; i < 5; i++) {
-      Completer<ui.FrameInfo> frameCompleter = new Completer<ui.FrameInfo>();
-      codec.getNextFrame(frameCompleter.complete);
-      ui.FrameInfo frameInfo = await frameCompleter.future;
+      ui.FrameInfo frameInfo = await codec.getNextFrame();
       decodedFrameInfos.add([
-        frameInfo.durationMillis,
+        frameInfo.duration.inMilliseconds,
         frameInfo.image.width,
         frameInfo.image.height,
       ]);
@@ -72,6 +52,24 @@ void main() {
       [200, 640, 479],
       [200, 640, 479],
       [200, 640, 479],
+    ]));
+  });
+
+  test('non animated image', () async {
+    Uint8List data = await _getSkiaResource('baby_tux.png').readAsBytes();
+    ui.Codec codec = await ui.instantiateImageCodec(data);
+    List<List<int>> decodedFrameInfos = [];
+    for (int i = 0; i < 2; i++) {
+      ui.FrameInfo frameInfo = await codec.getNextFrame();
+      decodedFrameInfos.add([
+        frameInfo.duration.inMilliseconds,
+        frameInfo.image.width,
+        frameInfo.image.height,
+      ]);
+    }
+    expect(decodedFrameInfos, equals([
+      [0, 240, 246],
+      [0, 240, 246],
     ]));
   });
 }
@@ -86,4 +84,10 @@ File _getSkiaResource(String fileName) {
   String assetPath =
     path.join('third_party', 'skia', 'resources', fileName);
   return new File(assetPath);
+}
+
+Matcher exceptionWithMessage(String m) {
+  return predicate((e) {
+    return e is Exception && e.message == m;
+  });
 }

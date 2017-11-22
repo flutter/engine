@@ -1174,6 +1174,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StandardM
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/StringCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/Preconditions.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterNativeView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/TextureRegistry.java
 FILE: ../../../flutter/shell/platform/android/platform_view_android_jni.cc
 FILE: ../../../flutter/shell/platform/android/platform_view_android_jni.h
@@ -9386,8 +9387,6 @@ FILE: ../../../flutter/lib/ui/painting/canvas.cc
 FILE: ../../../flutter/lib/ui/painting/canvas.h
 FILE: ../../../flutter/lib/ui/painting/gradient.cc
 FILE: ../../../flutter/lib/ui/painting/gradient.h
-FILE: ../../../flutter/lib/ui/painting/image_decoding.cc
-FILE: ../../../flutter/lib/ui/painting/image_decoding.h
 FILE: ../../../flutter/lib/ui/painting/image_shader.cc
 FILE: ../../../flutter/lib/ui/painting/image_shader.h
 FILE: ../../../flutter/lib/ui/painting/mask_filter.cc
@@ -9517,7 +9516,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: engine
-ORIGIN: ../../../topaz/lib/tonic/LICENSE
+ORIGIN: ../../../topaz/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/fml/memory/weak_ptr.h
 FILE: ../../../flutter/fml/memory/weak_ptr_internal.cc

@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-assert(is_fuchsia)
+assert(is_fuchsia || is_fuchsia_host)
 
 import("//build/dart/dart_package.gni")
 import("//build/dart/toolchain.gni")
@@ -257,7 +257,7 @@ template("flutter_aot_app") {
       "--url-mapping",
       "dart:mozart.internal," + rebase_path(mozart_dart_sdk_ext_lib),
       "--url-mapping",
-      "dart:vmservice_sky," + rebase_path(
+      "dart:vmservice_io," + rebase_path(
               "$dart_root_gen_dir/dart-pkg/sky_engine/sdk_ext/vmservice_io.dart"),
 
       "--entry-points-manifest",
