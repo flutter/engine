@@ -12,13 +12,42 @@ namespace blink {
 
 class ResourceContext {
  public:
+  /**
+   * Globally set the GrContext singleton instance.
+   */
   static void Set(GrContext* context);
-  static ResourceContext* Acquire();
+
+  /**
+   * Acquire a GrContext wrapping ResourceContext that's also an exclusive mutex
+   * on GrContext operations.
+   *
+   * Destructing the ResourceContext frees the mutex.
+   */
+  static std::unique_ptr<ResourceContext> Acquire();
+
+  /**
+   * Synchronously signal a freeze on GrContext operations.
+   *
+   * ResourceContext instances will return nullptr on GrContext Get until unfrozen.
+   */
   static void Freeze();
+
+  /**
+   * Synchronously unfreeze GrContext operations.
+   *
+   * ResourceContext instances will continue to return the global GrContext
+   * instance on Get.
+   */
   static void Unfreeze();
 
   ResourceContext();
   ~ResourceContext();
+
+  /**
+   * Returns global GrContext instance. May return null when operations are frozen.
+   *
+   * Happens on iOS when background operations on GrContext are forbidden.
+   */
   GrContext* Get();
 
   FXL_DISALLOW_COPY_AND_ASSIGN(ResourceContext);

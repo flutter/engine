@@ -53,8 +53,7 @@ sk_sp<SkImage> DecodeImage(sk_sp<SkData> buffer, size_t trace_id) {
     return nullptr;
   }
 
-  FXL_LOG(ERROR) << "DecodeImage";
-  ResourceContext* resourceContext = ResourceContext::Acquire();
+  std::unique_ptr<ResourceContext> resourceContext = ResourceContext::Acquire();
   GrContext* context = resourceContext->Get();
   if (context) {
     // This indicates that we do not want a "linear blending" decode.
@@ -242,8 +241,7 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage() {
     }
   }
 
-  FXL_LOG(ERROR) << "GetNextFrameImage";
-  ResourceContext* resourceContext = ResourceContext::Acquire();
+  std::unique_ptr<ResourceContext> resourceContext = ResourceContext::Acquire();
   GrContext* context = resourceContext->Get();
   if (context) {
     SkPixmap pixmap(bitmap.info(), bitmap.pixelRef()->pixels(),
