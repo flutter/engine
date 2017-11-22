@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_RESOURCE_CONTEXT_H_
 #define FLUTTER_LIB_UI_PAINTING_RESOURCE_CONTEXT_H_
 
+#include "lib/fxl/macros.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
 namespace blink {
@@ -12,7 +13,15 @@ namespace blink {
 class ResourceContext {
  public:
   static void Set(GrContext* context);
-  static GrContext* Get();
+  static ResourceContext* Acquire();
+  static void Freeze();
+  static void Unfreeze();
+
+  ResourceContext();
+  ~ResourceContext();
+  GrContext* Get();
+
+  FXL_DISALLOW_COPY_AND_ASSIGN(ResourceContext);
 };
 
 }  // namespace blink

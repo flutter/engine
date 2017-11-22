@@ -53,7 +53,8 @@ sk_sp<SkImage> DecodeImage(sk_sp<SkData> buffer, size_t trace_id) {
     return nullptr;
   }
 
-  GrContext* context = ResourceContext::Get();
+  ResourceContext* resourceContext = ResourceContext::Acquire();
+  GrContext* context = resourceContext->Get();
   if (context) {
     // This indicates that we do not want a "linear blending" decode.
     sk_sp<SkColorSpace> dstColorSpace = nullptr;
@@ -240,7 +241,8 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage() {
     }
   }
 
-  GrContext* context = ResourceContext::Get();
+  ResourceContext* resourceContext = ResourceContext::Acquire();
+  GrContext* context = resourceContext->Get();
   if (context) {
     SkPixmap pixmap(bitmap.info(), bitmap.pixelRef()->pixels(),
                     bitmap.pixelRef()->rowBytes());
