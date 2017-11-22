@@ -162,7 +162,7 @@ void GPURasterizer::NotifyNextFrameOnce() {
 }
 
 void GPURasterizer::SetTextureRegistry(flow::TextureRegistry* textureRegistry) {
-  compositor_context_.SetTextureRegistry(std::move(textureRegistry));
+  compositor_context_.SetTextureRegistry(textureRegistry);
 }
 
 }  // namespace shell
