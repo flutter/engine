@@ -61,6 +61,9 @@ sk_sp<SkImage> DecodeImage(sk_sp<SkData> buffer, size_t trace_id) {
     return SkImage::MakeCrossContextFromEncoded(context, std::move(buffer),
                                                 false, dstColorSpace.get());
   } else {
+    // Defer decoding until time of draw later on the GPU thread. Can happen
+    // when GL operations are currently forbidden such as in the background
+    // on iOS.
     return SkImage::MakeFromEncoded(std::move(buffer));
   }
 }
@@ -251,6 +254,9 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage() {
     return SkImage::MakeCrossContextFromPixmap(context, pixmap, false,
                                                dstColorSpace.get());
   } else {
+    // Defer decoding until time of draw later on the GPU thread. Can happen
+    // when GL operations are currently forbidden such as in the background
+    // on iOS.
     return SkImage::MakeFromBitmap(bitmap);
   }
 }
