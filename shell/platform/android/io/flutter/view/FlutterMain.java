@@ -243,8 +243,8 @@ public class FlutterMain {
         new ResourceCleaner(context).start();
         sResourceExtractor = new ResourceExtractor(context)
             .addResources(SKY_RESOURCES)
-            .addResource(sFlx);
-            .addResource(sFlutterAssetsDir)	
+            .addResource(sFlx)
+            .addResource(sFlutterAssetsDir);
         if (sIsPrecompiledAsSharedLibrary) {
           sResourceExtractor
             .addResource(sAotSharedLibraryPath);
