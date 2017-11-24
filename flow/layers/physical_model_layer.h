@@ -28,6 +28,8 @@ class PhysicalModelLayer : public ContainerLayer {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
+  void PunchHole(const SkPoint& offset, const SkSize& size) override;
+
   void Paint(PaintContext& context) const override;
 
 #if defined(OS_FUCHSIA)
@@ -39,6 +41,7 @@ class PhysicalModelLayer : public ContainerLayer {
   float elevation_;
   SkColor color_;
   SkScalar device_pixel_ratio_;
+  std::vector<SkRect> holes_;
 };
 
 }  // namespace flow

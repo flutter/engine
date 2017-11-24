@@ -65,6 +65,11 @@ class SceneBuilder : public fxl::RefCountedThreadSafe<SceneBuilder>,
                   double height,
                   int64_t textureId);
 
+  void addHole(double dx,
+               double dy,
+               double width,
+               double height);
+
   void addChildScene(double dx,
                      double dy,
                      double width,

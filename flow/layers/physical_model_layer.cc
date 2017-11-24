@@ -13,6 +13,13 @@ PhysicalModelLayer::PhysicalModelLayer() = default;
 
 PhysicalModelLayer::~PhysicalModelLayer() = default;
 
+void PhysicalModelLayer::PunchHole(const SkPoint& offset, const SkSize& size) {
+  InsertHoleBeforeLastChild(offset, size);
+  holes_.push_back(SkRect::MakeLTRB(offset.x(), offset.y(),
+                                    offset.x() + size.width(),
+                                    offset.y() + size.height()));
+}
+
 void PhysicalModelLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
   SkRect child_paint_bounds;
@@ -68,6 +75,13 @@ void PhysicalModelLayer::Paint(PaintContext& context) const {
   SkPaint paint;
   paint.setColor(color_);
   context.canvas.drawPath(path, paint);
+
+  for (SkRect hole : holes_) {
+    SkPaint transparent;
+    transparent.setColor(0);
+    transparent.setBlendMode(SkBlendMode::kSrc);
+    context.canvas.drawRect(hole, transparent);
+  }
 
   SkAutoCanvasRestore save(&context.canvas, false);
   if (rrect_.isRect()) {

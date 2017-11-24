@@ -15,6 +15,17 @@ void ContainerLayer::Add(std::unique_ptr<Layer> layer) {
   layers_.push_back(std::move(layer));
 }
 
+void ContainerLayer::PunchHole(const SkPoint& offset, const SkSize& size) {
+  InsertHoleBeforeLastChild(offset, size);
+}
+
+void ContainerLayer::InsertHoleBeforeLastChild(const SkPoint& offset, const SkSize& size) {
+  auto hole = std::make_unique<HoleLayer>();
+  hole->set_offset(offset);
+  hole->set_size(size);
+  layers_.insert(layers_.end() - 1, std::move(hole));
+}
+
 void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "ContainerLayer::Preroll");
 

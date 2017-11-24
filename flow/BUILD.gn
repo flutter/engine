@@ -24,6 +24,8 @@ source_set("flow") {
     "layers/container_layer.h",
     "layers/default_layer_builder.cc",
     "layers/default_layer_builder.h",
+    "layers/hole_layer.cc",
+    "layers/hole_layer.h",
     "layers/layer.cc",
     "layers/layer.h",
     "layers/layer_builder.cc",
