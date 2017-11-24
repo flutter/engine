@@ -587,18 +587,20 @@ void Engine::ConfigureAssetBundle(const std::string& path) {
     return;
   }
 
-  std::string flx_path;
+  if (S_ISREG(stat_result.st_mode)) {
+    FXL_LOG(INFO) << "Could not configure asset bundle at path: " << path
+                  << ", directory expected.";
+    return;
+  }
+
   if (S_ISDIR(stat_result.st_mode)) {
     directory_asset_bundle_ =
         std::make_unique<blink::DirectoryAssetBundle>(path);
-    flx_path = files::GetDirectoryName(path) + "/app.flx";
-  } else if (S_ISREG(stat_result.st_mode)) {
-    flx_path = path;
-  }
-
-  if (PathExists(flx_path)) {
-    asset_store_ = fxl::MakeRefCounted<blink::ZipAssetStore>(
-        blink::GetUnzipperProviderForPath(flx_path));
+    std::string flx_path = files::GetDirectoryName(path) + "/app.flx";
+    if (PathExists(flx_path)) {
+      asset_store_ = fxl::MakeRefCounted<blink::ZipAssetStore>(
+          blink::GetUnzipperProviderForPath(flx_path));
+    }
   }
 }
 
