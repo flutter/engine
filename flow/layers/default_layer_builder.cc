@@ -171,6 +171,7 @@ void DefaultLayerBuilder::PushHole(const SkPoint& offset,
   if (!current_layer_) {
     return;
   }
+  // See explanation in container_layer.h
   auto layer = std::make_unique<flow::HoleLayer>();
   layer->set_offset(offset);
   layer->set_size(size);

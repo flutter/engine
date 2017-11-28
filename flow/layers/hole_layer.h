@@ -9,6 +9,8 @@
 
 namespace flow {
 
+// A layer that makes the underlying pixels visible by drawing
+// with transparent paint and blend mode SkBlendMode::kSrc.
 class HoleLayer : public Layer {
  public:
   HoleLayer();
