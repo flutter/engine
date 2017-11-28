@@ -10,6 +10,13 @@ TransformLayer::TransformLayer() = default;
 
 TransformLayer::~TransformLayer() = default;
 
+std::unique_ptr<Layer> TransformLayer::WrapHoleForAncestor(std::unique_ptr<Layer> hole) {
+  std::unique_ptr<TransformLayer> transformedHole = std::make_unique<TransformLayer>();
+  transformedHole->set_transform(transform_);
+  transformedHole->Add(std::move(hole));
+  return std::move(transformedHole);
+}
+
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkMatrix child_matrix;
   child_matrix.setConcat(matrix, transform_);

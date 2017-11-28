@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/physical_model_layer.h"
 
+#include "flutter/flow/layers/hole_rrect_layer.h"
 #include "flutter/flow/paint_utils.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
@@ -13,11 +14,23 @@ PhysicalModelLayer::PhysicalModelLayer() = default;
 
 PhysicalModelLayer::~PhysicalModelLayer() = default;
 
-void PhysicalModelLayer::PunchHole(const SkPoint& offset, const SkSize& size) {
-  InsertHoleBeforeLastChild(offset, size);
-  holes_.push_back(SkRect::MakeLTRB(offset.x(), offset.y(),
-                                    offset.x() + size.width(),
-                                    offset.y() + size.height()));
+void PhysicalModelLayer::AddHole(std::unique_ptr<Layer> hole) {
+  holes_.push_back(layers().size());
+  Add(std::move(hole));
+}
+
+void PhysicalModelLayer::PunchHoleIn(ContainerLayer* ancestor, std::unique_ptr<Layer> hole) {
+  if (ancestor == this) {
+    holes_.push_back(layers().size() - 1);
+  }
+  DefaultPunchHoleIn(ancestor, std::move(hole));
+}
+
+std::unique_ptr<Layer> PhysicalModelLayer::WrapHoleForAncestor(std::unique_ptr<Layer> hole) {
+  std::unique_ptr<HoleRRectLayer> physicalHole = std::make_unique<HoleRRectLayer>();
+  physicalHole->set_clip_rrect(rrect_);
+  physicalHole->Add(std::move(hole));
+  return std::move(physicalHole);
 }
 
 void PhysicalModelLayer::Preroll(PrerollContext* context,
@@ -76,11 +89,12 @@ void PhysicalModelLayer::Paint(PaintContext& context) const {
   paint.setColor(color_);
   context.canvas.drawPath(path, paint);
 
-  for (SkRect hole : holes_) {
-    SkPaint transparent;
-    transparent.setColor(0);
-    transparent.setBlendMode(SkBlendMode::kSrc);
-    context.canvas.drawRect(hole, transparent);
+  if (!holes_.empty()) {
+    // Ensure any holes are visible through background and shadow.
+    SkAutoCanvasRestore save(&context.canvas, true);
+    for (int hole : holes_) {
+      layers()[hole]->Paint(context);
+    }
   }
 
   SkAutoCanvasRestore save(&context.canvas, false);

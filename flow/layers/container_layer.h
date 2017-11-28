@@ -7,7 +7,6 @@
 
 #include <vector>
 #include "flutter/flow/layers/layer.h"
-#include "flutter/flow/layers/hole_layer.h"
 
 namespace flow {
 
@@ -17,7 +16,9 @@ class ContainerLayer : public Layer {
   ~ContainerLayer() override;
 
   void Add(std::unique_ptr<Layer> layer);
-  virtual void PunchHole(const SkPoint& offset, const SkSize& size);
+  virtual void AddHole(std::unique_ptr<Layer> hole);
+  virtual void PunchHoleIn(ContainerLayer* ancestor, std::unique_ptr<Layer> hole);
+  virtual std::unique_ptr<Layer> WrapHoleForAncestor(std::unique_ptr<Layer> hole) { return hole; };
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
@@ -28,7 +29,7 @@ class ContainerLayer : public Layer {
   const std::vector<std::unique_ptr<Layer>>& layers() const { return layers_; }
 
  protected:
-  void InsertHoleBeforeLastChild(const SkPoint& offset, const SkSize& size);
+  void DefaultPunchHoleIn(ContainerLayer* ancestor, std::unique_ptr<Layer> hole);
   void PrerollChildren(PrerollContext* context,
                        const SkMatrix& child_matrix,
                        SkRect* child_paint_bounds);

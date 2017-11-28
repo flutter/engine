@@ -3,12 +3,20 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/clip_rrect_layer.h"
+#include "flutter/flow/layers/hole_rrect_layer.h"
 
 namespace flow {
 
 ClipRRectLayer::ClipRRectLayer() = default;
 
 ClipRRectLayer::~ClipRRectLayer() = default;
+
+std::unique_ptr<Layer> ClipRRectLayer::WrapHoleForAncestor(std::unique_ptr<Layer> hole) {
+  std::unique_ptr<HoleRRectLayer> clippedHole = std::make_unique<HoleRRectLayer>();
+  clippedHole->set_clip_rrect(clip_rrect_);
+  clippedHole->Add(std::move(hole));
+  return clippedHole;
+}
 
 void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect child_paint_bounds = SkRect::MakeEmpty();
