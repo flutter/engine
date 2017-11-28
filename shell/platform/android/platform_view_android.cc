@@ -574,7 +574,7 @@ void PlatformViewAndroid::SetAssetBundlePath(
 
     // Grab the setAssetBundlePath method id.
     jmethodID method_id = env->GetMethodID(
-        flutter_view_class, "setAssetBundlePath", "(Ljava/lang/String;)V");
+        flutter_view_class, "setAssetBundlePathOnUI", "(Ljava/lang/String;)V");
     FXL_CHECK(method_id);
 
     // Invoke setAssetBundlePath on the Android UI thread.

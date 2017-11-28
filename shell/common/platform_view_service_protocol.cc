@@ -418,7 +418,7 @@ bool PlatformViewServiceProtocol::SetAssetBundlePath(const char* method,
                                                      const char** json_object) {
   const char* view_id =
       ValueForKey(param_keys, param_values, num_params, "viewId");
-  if (view_id == NULL) {
+  if (view_id == nullptr) {
     return ErrorMissingParameter(json_object, "viewId");
   }
   if (strncmp(view_id, kViewIdPrefx, kViewIdPrefxLength) != 0) {
@@ -426,7 +426,7 @@ bool PlatformViewServiceProtocol::SetAssetBundlePath(const char* method,
   }
   const char* asset_directory =
       ValueForKey(param_keys, param_values, num_params, "assetDirectory");
-  if (asset_directory == NULL) {
+  if (asset_directory == nullptr) {
     return ErrorMissingParameter(json_object, "assetDirectory");
   }
 
