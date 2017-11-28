@@ -261,7 +261,7 @@ Future<int> starter(List<String> args, {
   // Has to be a directory, that won't have any of the compiled application
   // sources, so that no relative paths could show up in the kernel file.
   Directory.current = Directory.systemTemp;
-  Directory workingDirectory = new Directory("flutter_frontend_server");
+  final Directory workingDirectory = new Directory("flutter_frontend_server");
   workingDirectory.createSync();
   Directory.current = workingDirectory;
 
