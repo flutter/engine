@@ -257,6 +257,7 @@ Future<int> starter(List<String> args, {
 
   compiler ??= new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
   input ??= stdin;
+  Directory.current = Directory.systemTemp;
 
   if (options.rest.isNotEmpty) {
     await compiler.compile(options.rest[0], options, generator: generator);
