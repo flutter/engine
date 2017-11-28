@@ -1346,7 +1346,6 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(NewlineParagraph)) {
   EXPECT_DOUBLE_EQ(paragraph->records_[6].offset().x(), 0);
 }
 
-
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(EmojiParagraph)) {
   const char* text =
       "😀😃😄😁😆😅😂🤣☺😇🙂😍😡😟😢😻👽💩👍👎🙏👌👋👄👁👦👼👨‍🚀👨‍🚒🙋‍♂️👳👨‍👨‍👧‍👧\

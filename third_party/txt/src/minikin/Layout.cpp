@@ -527,9 +527,7 @@ void BidiText::Iter::updateRunInfo() {
       ubidi_getVisualRun(mBidi, mNextRunIndex, &startRun, &lengthRun);
   mNextRunIndex++;
   if (startRun == -1 || lengthRun == -1) {
-    //ALOGE("invalid visual run");
-    FXL_LOG(ERROR) << "invalid visual run";
-
+    ALOGE("invalid visual run");
     // skip the invalid run.
     updateRunInfo();
     return;
