@@ -28,6 +28,7 @@
 #include <log/log.h>
 #include <utils/JenkinsHash.h>
 #include <utils/LruCache.h>
+#include <utils/WindowsUtils.h>
 
 #include <hb-icu.h>
 #include <hb-ot.h>
@@ -526,7 +527,9 @@ void BidiText::Iter::updateRunInfo() {
       ubidi_getVisualRun(mBidi, mNextRunIndex, &startRun, &lengthRun);
   mNextRunIndex++;
   if (startRun == -1 || lengthRun == -1) {
-    ALOGE("invalid visual run");
+    //ALOGE("invalid visual run");
+    FXL_LOG(ERROR) << "invalid visual run";
+
     // skip the invalid run.
     updateRunInfo();
     return;
@@ -577,7 +580,8 @@ BidiText::BidiText(const uint16_t* buf,
   } else if (bidiFlags == kBidi_Default_RTL) {
     bidiReq = UBIDI_DEFAULT_RTL;
   }
-  ubidi_setPara(mBidi, buf, mBufSize, bidiReq, NULL, &status);
+  ubidi_setPara(mBidi, reinterpret_cast<const UChar*>(buf), mBufSize, bidiReq,
+      NULL, &status);
   if (!U_SUCCESS(status)) {
     ALOGE("error calling ubidi_setPara, status = %d", status);
     return;
