@@ -7,17 +7,22 @@
 
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "lib/fxl/macros.h"
 
 namespace shell {
 
 class PlatformViewEmbedder : public PlatformView, public GPUSurfaceGLDelegate {
  public:
+  using PlatformMessageResponseCallback =
+      std::function<void(fxl::RefPtr<blink::PlatformMessage>)>;
   struct DispatchTable {
-    std::function<bool(void)> gl_make_current_callback;
-    std::function<bool(void)> gl_clear_current_callback;
-    std::function<bool(void)> gl_present_callback;
-    std::function<intptr_t(void)> gl_fbo_callback;
+    std::function<bool(void)> gl_make_current_callback;   // required
+    std::function<bool(void)> gl_clear_current_callback;  // required
+    std::function<bool(void)> gl_present_callback;        // required
+    std::function<intptr_t(void)> gl_fbo_callback;        // required
+    PlatformMessageResponseCallback
+        platform_message_response_callback;  // optional
   };
 
   PlatformViewEmbedder(DispatchTable dispatch_table);
@@ -36,9 +41,6 @@ class PlatformViewEmbedder : public PlatformView, public GPUSurfaceGLDelegate {
   // |shell::GPUSurfaceGLDelegate|
   intptr_t GLContextFBO() const override;
 
-  // |shell::GPUSurfaceGLDelegate|
-  bool SurfaceSupportsSRGB() const override;
-
   // |shell::PlatformView|
   void Attach() override;
 
@@ -52,6 +54,10 @@ class PlatformViewEmbedder : public PlatformView, public GPUSurfaceGLDelegate {
 
   // |shell::PlatformView|
   void SetAssetBundlePath(const std::string& assets_directory) override;
+
+  // |shell::PlatformView|
+  void HandlePlatformMessage(
+      fxl::RefPtr<blink::PlatformMessage> message) override;
 
  private:
   DispatchTable dispatch_table_;

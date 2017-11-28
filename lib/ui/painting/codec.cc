@@ -55,8 +55,8 @@ sk_sp<SkImage> DecodeImage(sk_sp<SkData> buffer, size_t trace_id) {
 
   GrContext* context = ResourceContext::Get();
   if (context) {
-    // This acts as a flag to indicate that we want a color space aware decode.
-    sk_sp<SkColorSpace> dstColorSpace = SkColorSpace::MakeSRGB();
+    // This indicates that we do not want a "linear blending" decode.
+    sk_sp<SkColorSpace> dstColorSpace = nullptr;
     return SkImage::MakeCrossContextFromEncoded(context, std::move(buffer),
                                                 false, dstColorSpace.get());
   } else {
@@ -69,11 +69,14 @@ fxl::RefPtr<Codec> InitCodec(sk_sp<SkData> buffer, size_t trace_id) {
   TRACE_EVENT0("blink", "InitCodec");
 
   if (buffer == nullptr || buffer->isEmpty()) {
+    FXL_LOG(ERROR) << "InitCodec failed - buffer was empty ";
     return nullptr;
   }
 
   std::unique_ptr<SkCodec> skCodec = SkCodec::MakeFromData(buffer);
   if (!skCodec) {
+    FXL_LOG(ERROR) << "Failed decoding image. Data is either invalid, or it is "
+                      "encoded using an unsupported format.";
     return nullptr;
   }
   if (skCodec->getFrameCount() > 1) {
@@ -81,6 +84,7 @@ fxl::RefPtr<Codec> InitCodec(sk_sp<SkData> buffer, size_t trace_id) {
   }
   auto skImage = DecodeImage(buffer, trace_id);
   if (!skImage) {
+    FXL_LOG(ERROR) << "DecodeImage failed";
     return nullptr;
   }
   auto image = CanvasImage::Create();
@@ -241,8 +245,8 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage() {
   if (context) {
     SkPixmap pixmap(bitmap.info(), bitmap.pixelRef()->pixels(),
                     bitmap.pixelRef()->rowBytes());
-    // This acts as a flag to indicate that we want a color space aware decode.
-    sk_sp<SkColorSpace> dstColorSpace = SkColorSpace::MakeSRGB();
+    // This indicates that we do not want a "linear blending" decode.
+    sk_sp<SkColorSpace> dstColorSpace = nullptr;
     return SkImage::MakeCrossContextFromPixmap(context, pixmap, false,
                                                dstColorSpace.get());
   } else {

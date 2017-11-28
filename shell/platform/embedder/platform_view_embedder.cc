@@ -31,10 +31,6 @@ intptr_t PlatformViewEmbedder::GLContextFBO() const {
   return dispatch_table_.gl_fbo_callback();
 }
 
-bool PlatformViewEmbedder::SurfaceSupportsSRGB() const {
-  return true;
-}
-
 void PlatformViewEmbedder::Attach() {
   CreateEngine();
   NotifyCreated(std::make_unique<shell::GPUSurfaceGL>(this));
@@ -54,6 +50,24 @@ void PlatformViewEmbedder::RunFromSource(const std::string& assets_directory,
 void PlatformViewEmbedder::SetAssetBundlePath(
     const std::string& assets_directory) {
   FXL_LOG(INFO) << "Set asset bundle path is unsupported on this platform.";
+}
+
+void PlatformViewEmbedder::HandlePlatformMessage(
+    fxl::RefPtr<blink::PlatformMessage> message) {
+  if (!message) {
+    return;
+  }
+
+  if (!message->response()) {
+    return;
+  }
+
+  if (dispatch_table_.platform_message_response_callback == nullptr) {
+    message->response()->CompleteEmpty();
+    return;
+  }
+
+  dispatch_table_.platform_message_response_callback(std::move(message));
 }
 
 }  // namespace shell

@@ -21,9 +21,9 @@ vars = {
   'chromium_git': 'https://chromium.googlesource.com',
   'dart_git': 'https://dart.googlesource.com',
   'fuchsia_git': 'https://fuchsia.googlesource.com',
-  'skia_git': 'https://skia.googlesource.com',
   'github_git': 'https://github.com',
-  'skia_revision': '0658f765d0242434cd00ceef473529a6a634dba2',
+  'skia_git': 'https://skia.googlesource.com',
+  'skia_revision': '03588412c89899fba09893e1812866f0069fc6f6',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '4dd4fd745e588eef64b8d85811d847ab72633cb7',
+  'dart_revision': '70e5deacb54aea295665215837adaedd3d6a5bfa',
 
   'dart_args_tag': '0.13.7',
   'dart_async_tag': '2.0.0',
@@ -56,7 +56,7 @@ vars = {
   'dart_http_parser_tag': '3.1.1',
   'dart_http_tag': '0.11.3+14',
   'dart_http_throttle_tag': '1.0.1',
-  'dart_intl_tag': '0.15.1',
+  'dart_intl_tag': '0.15.2',
   'dart_isolate_tag': '1.1.0',
   'dart_json_rpc_2_tag': '2.0.4',
   'dart_linter_tag': '0.1.39',
@@ -114,7 +114,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'd65893e469b3cdff75e0a157a5a219096ca6193a',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '82a50e874d17d810886ec6d782662ab79ebbd921',
 
    # Fuchsia compatibility
    #
@@ -126,7 +126,7 @@ deps = {
    Var('fuchsia_git') + '/garnet' + '@' + 'b3ba6b6d6ab8ef658278cc43c9f839a8a8d1718e',
 
   'src/topaz':
-   Var('fuchsia_git') + '/topaz' + '@' + 'da66b94839f788a0bffc34fd9bdfef3360af8c18',
+   Var('fuchsia_git') + '/topaz' + '@' + '1eb2e77be92ed968223b0cea19fe2108e689dcd5',
 
   'src/third_party/benchmark':
    Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',
@@ -346,6 +346,12 @@ deps = {
   'src/third_party/dart/third_party/pkg/yaml':
    Var('chromium_git') + '/external/github.com/dart-lang/yaml' + '@' + Var('dart_yaml_tag'),
 
+  'src/third_party/colorama/src':
+   Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
+
+  'src/third_party/freetype2':
+   Var('fuchsia_git') + '/third_party/freetype2' + '@' + 'e23a030e9b43c648249477fdf7bf5305d2cc8f59',
+
   'src/third_party/root_certificates':
    Var('chromium_git') + '/external/github.com/dart-lang/root_certificates' + '@' + Var('dart_root_certificates_rev'),
 
@@ -354,6 +360,9 @@ deps = {
 
   'src/third_party/libjpeg-turbo':
    Var('skia_git') + '/third_party/libjpeg-turbo.git' + '@' + 'debddedc75850bcdeb8a57258572f48b802a4bb3',
+
+  'src/third_party/libwebp':
+   Var('chromium_git') + '/webm/libwebp.git' + '@' + '0.6.0',
 
   'src/third_party/gyp':
    Var('chromium_git') + '/external/gyp.git' + '@' + '4801a5331ae62da9769a327f11c4213d32fb0dad',
@@ -369,17 +378,6 @@ deps = {
 recursedeps = [
   'src/buildtools',
 ]
-
-deps_os = {
-  'android': {
-    'src/third_party/colorama/src':
-     Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
-
-    'src/third_party/freetype2':
-       Var('fuchsia_git') + '/third_party/freetype2' + '@' + 'e23a030e9b43c648249477fdf7bf5305d2cc8f59',
-  },
-}
-
 
 hooks = [
   {

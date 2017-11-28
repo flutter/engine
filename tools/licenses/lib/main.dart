@@ -1740,6 +1740,18 @@ class RepositoryLibPngDirectory extends RepositoryDirectory {
   }
 }
 
+class RepositoryLibWebpDirectory extends RepositoryDirectory {
+  RepositoryLibWebpDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'examples' // contains nothing that ends up in the binary executable
+      && entry.name != 'swig' // not included in our build
+      && entry.name != 'gradle' // not included in our build
+      && super.shouldRecurse(entry);
+  }
+}
+
 class RepositoryPkgDirectory extends RepositoryDirectory {
   RepositoryPkgDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
@@ -1903,6 +1915,8 @@ class RepositoryRootThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
       return new RepositoryLibJpegTurboDirectory(this, entry);
     if (entry.name == 'libpng')
       return new RepositoryLibPngDirectory(this, entry);
+    if (entry.name == 'libwebp')
+      return new RepositoryLibWebpDirectory(this, entry);
     if (entry.name == 'okhttp')
       return new RepositoryOkHttpDirectory(this, entry);
     if (entry.name == 'pkg')
@@ -2299,7 +2313,13 @@ class RepositoryRoot extends RepositoryDirectory {
 
 
 class Progress {
-  Progress(this.max);
+  Progress(this.max) {
+    // This may happen when a git client contains left-over empty component
+    // directories after DEPS file changes.
+    if (max <= 0)
+      throw new ArgumentError('Progress.max must be > 0 but was: $max');
+  }
+
   final int max;
   int get withLicense => _withLicense;
   int _withLicense = 0;
@@ -2329,9 +2349,8 @@ class Progress {
       _lastUpdate ??= new Stopwatch();
       final String line = toString();
       system.stderr.write('\r$line');
-      if (_lastLength > line.length) {
-	system.stderr.write(' ' * (_lastLength - line.length));
-      }
+      if (_lastLength > line.length)
+        system.stderr.write(' ' * (_lastLength - line.length));
       _lastLength = line.length;
       _lastUpdate.reset();
       _lastUpdate.start();
