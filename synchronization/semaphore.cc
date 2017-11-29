@@ -55,31 +55,31 @@ namespace flutter {
 
 class PlatformSemaphore {
  public:
-   explicit PlatformSemaphore(uint32_t count)
-     : _sem(CreateSemaphore(NULL, count, 1024, NULL)) {}
+  explicit PlatformSemaphore(uint32_t count)
+      : _sem(CreateSemaphore(NULL, count, 1024, NULL)) {}
 
-   ~PlatformSemaphore() {
-     if (_sem != nullptr) {
-       CloseHandle(_sem);
-       _sem = nullptr;
-     }
-   }
+  ~PlatformSemaphore() {
+    if (_sem != nullptr) {
+      CloseHandle(_sem);
+      _sem = nullptr;
+    }
+  }
 
-   bool IsValid() const { return _sem != nullptr; }
+  bool IsValid() const { return _sem != nullptr; }
 
-   bool TryWait() {
-     if (_sem == nullptr) {
-        return false;
-     }
+  bool TryWait() {
+    if (_sem == nullptr) {
+       return false;
+    }
 
-     return (WaitForSingleObject(_sem, 0) == 0);
-   }
+    return (WaitForSingleObject(_sem, 0) == 0);
+  }
 
-   void Signal() {
-     if (_sem != nullptr) {
-       ReleaseSemaphore(_sem, 1, NULL);
-     }
-   }
+  void Signal() {
+    if (_sem != nullptr) {
+      ReleaseSemaphore(_sem, 1, NULL);
+    }
+  }
 
  private:
   HANDLE _sem;
