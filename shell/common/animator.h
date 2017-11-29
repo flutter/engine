@@ -36,8 +36,6 @@ class Animator {
 
   void Stop();
 
-  void SetDimensionChangePending();
-
  private:
   using LayerTreePipeline = flutter::Pipeline<flow::LayerTree>;
 
@@ -64,8 +62,6 @@ class Animator {
   bool paused_;
   bool regenerate_layer_tree_;
   bool frame_scheduled_;
-  bool dimension_change_pending_;
-  SkISize last_layer_tree_size_;
 
   fml::WeakPtrFactory<Animator> weak_factory_;
 
