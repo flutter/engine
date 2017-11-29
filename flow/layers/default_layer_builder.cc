@@ -171,19 +171,7 @@ void DefaultLayerBuilder::PushHole(const SkPoint& offset,
   if (!current_layer_) {
     return;
   }
-  // See explanation in container_layer.h
-  auto layer = std::make_unique<flow::HoleLayer>();
-  layer->set_offset(offset);
-  layer->set_size(size);
-  current_layer_->AddHole(std::move(layer));
-  auto ancestor = current_layer_->parent();
-  while (ancestor) {
-    auto hole = std::make_unique<flow::HoleLayer>();
-    hole->set_offset(offset);
-    hole->set_size(size);
-    current_layer_->PunchHoleIn(ancestor, std::move(hole));
-    ancestor = ancestor->parent();
-  }
+  current_layer_->AddHole(offset, size);
 }
 
 #if defined(OS_FUCHSIA)

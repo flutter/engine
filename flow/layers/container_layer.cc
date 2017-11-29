@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/hole_layer.h"
 
 namespace flow {
 
@@ -15,15 +16,22 @@ void ContainerLayer::Add(std::unique_ptr<Layer> layer) {
   layers_.push_back(std::move(layer));
 }
 
-void ContainerLayer::AddHole(std::unique_ptr<Layer> layer) {
+void ContainerLayer::AddHole(const SkPoint& offset, const SkSize& size) {
+  auto layer = std::make_unique<flow::HoleLayer>();
+  layer->set_offset(offset);
+  layer->set_size(size);
   Add(std::move(layer));
+  auto ancestor = parent();
+  while (ancestor) {
+    auto hole = std::make_unique<flow::HoleLayer>();
+    hole->set_offset(offset);
+    hole->set_size(size);
+    PunchHoleIn(ancestor, std::move(hole));
+    ancestor = ancestor->parent();
+  }
 }
 
 void ContainerLayer::PunchHoleIn(ContainerLayer* ancestor, std::unique_ptr<Layer> hole) {
-  DefaultPunchHoleIn(ancestor, std::move(hole));
-}
-
-void ContainerLayer::DefaultPunchHoleIn(ContainerLayer* ancestor, std::unique_ptr<Layer> hole) {
   if (ancestor == this) {
     layers_.insert(layers_.end() - 1, std::move(hole));
   } else {

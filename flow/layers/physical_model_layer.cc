@@ -14,16 +14,16 @@ PhysicalModelLayer::PhysicalModelLayer() = default;
 
 PhysicalModelLayer::~PhysicalModelLayer() = default;
 
-void PhysicalModelLayer::AddHole(std::unique_ptr<Layer> hole) {
+void PhysicalModelLayer::AddHole(const SkPoint& offset, const SkSize& size) {
   holes_.push_back(layers().size());
-  Add(std::move(hole));
+  ContainerLayer::AddHole(std::move(offset), std::move(size));
 }
 
 void PhysicalModelLayer::PunchHoleIn(ContainerLayer* ancestor, std::unique_ptr<Layer> hole) {
   if (ancestor == this) {
     holes_.push_back(layers().size() - 1);
   }
-  DefaultPunchHoleIn(ancestor, std::move(hole));
+  ContainerLayer::PunchHoleIn(ancestor, std::move(hole));
 }
 
 std::unique_ptr<Layer> PhysicalModelLayer::WrapHoleForAncestor(std::unique_ptr<Layer> hole) {

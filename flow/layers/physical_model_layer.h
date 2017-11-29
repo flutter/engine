@@ -26,7 +26,7 @@ class PhysicalModelLayer : public ContainerLayer {
                          bool transparentOccluder,
                          SkScalar dpr);
 
-  void AddHole(std::unique_ptr<Layer> hole) override;
+  void AddHole(const SkPoint& offset, const SkSize& size) override;
   void PunchHoleIn(ContainerLayer* ancestor, std::unique_ptr<Layer> hole) override;
   std::unique_ptr<Layer> WrapHoleForAncestor(std::unique_ptr<Layer> hole) override;
 
