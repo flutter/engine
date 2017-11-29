@@ -579,7 +579,7 @@ BidiText::BidiText(const uint16_t* buf,
     bidiReq = UBIDI_DEFAULT_RTL;
   }
   ubidi_setPara(mBidi, reinterpret_cast<const UChar*>(buf), mBufSize, bidiReq,
-      NULL, &status);
+                NULL, &status);
   if (!U_SUCCESS(status)) {
     ALOGE("error calling ubidi_setPara, status = %d", status);
     return;

@@ -87,9 +87,7 @@ class StyledRuns {
     size_t end = 0;
 
     explicit IndexedRun(size_t style_index, size_t start, size_t end)
-      : style_index(style_index)
-      , start(start)
-      , end(end) {}
+        : style_index(style_index), start(start), end(end) {}
   };
 
   std::vector<TextStyle> styles_;
