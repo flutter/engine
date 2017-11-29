@@ -56,7 +56,7 @@ namespace flutter {
 class PlatformSemaphore {
  public:
   explicit PlatformSemaphore(uint32_t count)
-      : _sem(CreateSemaphore(NULL, count, 1024, NULL)) {}
+      : _sem(CreateSemaphore(NULL, count, LONG_MAX, NULL)) {}
 
   ~PlatformSemaphore() {
     if (_sem != nullptr) {
@@ -72,7 +72,7 @@ class PlatformSemaphore {
       return false;
     }
 
-    return (WaitForSingleObject(_sem, 0) == 0);
+    return WaitForSingleObject(_sem, 0) == WAIT_OBJECT_0;
   }
 
   void Signal() {
