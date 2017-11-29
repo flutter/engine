@@ -26,8 +26,7 @@ DirectoryAssetDataProvider::DirectoryAssetDataProvider(
   }
 
   do {
-    // Fonts are archivable, so we only care about archiveable files.
-    if ((ffd.dwFileAttributes & FILE_ATTRIBUTE_ARCHIVE) == 0) {
+    if ((ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
       continue;
     }
 
