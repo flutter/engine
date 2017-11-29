@@ -24,9 +24,10 @@ class ContainerLayer : public Layer {
   // SkBlendMode::kSrc. As each parent layer above the hole may involve painting
   // its children to a separate bitmap and blending that in using
   // SkBlendMode::kSrcOver, we need to do extra work at each such layer. Rather
-  // than adding hole-related logic to every layer, this is done by tree
-  // surgery, ensuring that the main canvas at each level already has
-  // transparent pixels in the hole when the childrens' pixels are blended in.
+  // than adding hole-related fields and paint logic to every layer, this is
+  // done by tree surgery, ensuring that the main canvas at each level already
+  // has transparent pixels in the hole when the childrens' pixels are blended
+  // in.
   //
   // Consider a layer tree like the following where the intention is to make
   // H a hole, so that underlying views are visible through R, A, B, D, E,
