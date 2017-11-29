@@ -5,6 +5,12 @@
 #ifndef FLUTTER_FLUTTER_H_
 #define FLUTTER_FLUTTER_H_
 
+/**
+ CHANGELOG:
+
+ November 29, 2017: Added a CHANGELOG section.
+ */
+
 #include "FlutterAppDelegate.h"
 #include "FlutterBinaryMessenger.h"
 #include "FlutterChannels.h"
