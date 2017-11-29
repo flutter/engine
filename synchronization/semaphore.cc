@@ -69,7 +69,7 @@ class PlatformSemaphore {
 
   bool TryWait() {
     if (_sem == nullptr) {
-       return false;
+      return false;
     }
 
     return (WaitForSingleObject(_sem, 0) == 0);
