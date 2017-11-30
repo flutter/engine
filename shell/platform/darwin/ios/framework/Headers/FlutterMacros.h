@@ -24,8 +24,8 @@
  Indicates that the API has been deprecated for the specifed reason. Code that
  uses the deprecated API will continue to work as before. However, the API will
  soon become unavailable and users are encouraged to immediately take the
- appropriate action mentioned in the deprecation message and the changelog
- section present in the Flutter.h umbrella header.
+ appropriate action mentioned in the deprecation message and the BREAKING
+ CHANGES section present in the Flutter.h umbrella header.
  */
 #define FLUTTER_DEPRECATED(msg) __attribute__((__deprecated__(msg)))
 

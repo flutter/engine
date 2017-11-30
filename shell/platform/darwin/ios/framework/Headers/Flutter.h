@@ -6,9 +6,9 @@
 #define FLUTTER_FLUTTER_H_
 
 /**
- CHANGELOG:
+ BREAKING CHANGES:
 
- November 29, 2017: Added a CHANGELOG section.
+ November 29, 2017: Added a BREAKING CHANGES section.
  */
 
 #include "FlutterAppDelegate.h"
