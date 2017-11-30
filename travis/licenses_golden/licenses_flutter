@@ -1255,6 +1255,7 @@ LIBRARY: engine
 ORIGIN: ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/DEPS
+FILE: ../../../flutter/core
 FILE: ../../../flutter/frontend_server/.packages
 FILE: ../../../flutter/frontend_server/bin/starter.dart
 FILE: ../../../flutter/frontend_server/lib/server.dart
@@ -9632,6 +9633,7 @@ FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.cpp
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.h
 FILE: ../../../flutter/third_party/txt/src/utils/LruCache.h
 FILE: ../../../flutter/third_party/txt/src/utils/TypeHelpers.h
+FILE: ../../../flutter/third_party/txt/src/utils/WindowsUtils.h
 ----------------------------------------------------------------------------------------------------
 Apache License
 Version 2.0, January 2004
