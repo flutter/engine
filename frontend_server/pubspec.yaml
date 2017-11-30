@@ -21,6 +21,7 @@ dependencies:
   source_span: any
   typed_data: any
   usage: any
+  vm: any
 
 dev_dependencies:
   analyzer: any
