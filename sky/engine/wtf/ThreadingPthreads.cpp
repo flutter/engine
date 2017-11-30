@@ -29,6 +29,7 @@
  */
 
 #include "flutter/sky/engine/wtf/Threading.h"
+#include "flutter/sky/engine/wtf/OperatingSystem.h"
 
 #if USE(PTHREADS)
 
