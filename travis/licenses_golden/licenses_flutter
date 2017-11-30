@@ -1255,7 +1255,6 @@ LIBRARY: engine
 ORIGIN: ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/DEPS
-FILE: ../../../flutter/core
 FILE: ../../../flutter/frontend_server/.packages
 FILE: ../../../flutter/frontend_server/bin/starter.dart
 FILE: ../../../flutter/frontend_server/lib/server.dart
