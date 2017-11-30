@@ -5,24 +5,24 @@
 #include "flutter/shell/common/engine.h"
 
 #if OS(WIN)
-#include <windows.h>
 #include <io.h>
+#include <windows.h>
 #define access _access
 #define R_OK 0x4
 
 #ifndef S_ISDIR
-#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
 #endif
 
 #ifndef S_ISREG
-#define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
+#define S_ISREG(mode) (((mode)&S_IFMT) == S_IFREG)
 #endif
 
 #else
 #include <dlfcn.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#endif // OS(WIN)
+#endif  // OS(WIN)
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -64,7 +64,8 @@ constexpr char kLocalizationChannel[] = "flutter/localization";
 constexpr char kSettingsChannel[] = "flutter/settings";
 
 void FindAndReplaceInPlace(std::string& str,
-    const std::string& findStr, const std::string& replaceStr) {
+                           const std::string& findStr,
+                           const std::string& replaceStr) {
   size_t pos = 0;
   while ((pos = str.find(findStr, pos)) != std::string::npos) {
     str.replace(pos, findStr.length(), replaceStr);
@@ -145,11 +146,11 @@ static const uint8_t* MemMapSnapshot(const std::string& aot_snapshot_path,
     asset_path = aot_snapshot_path + "/" + settings_file_name;
   }
 
-
 #if OS(WIN)
-  HANDLE file_handle_ = CreateFileA(reinterpret_cast<LPCSTR>(path.c_str()),
-    GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
-    FILE_ATTRIBUTE_NORMAL|FILE_FLAG_RANDOM_ACCESS,nullptr);
+  HANDLE file_handle_ =
+      CreateFileA(reinterpret_cast<LPCSTR>(path.c_str()), GENERIC_READ,
+                  FILE_SHARE_READ, nullptr, OPEN_EXISTING,
+                  FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, nullptr);
 
   if (file_handle_ == INVALID_HANDLE_VALUE) {
     return;
@@ -163,7 +164,7 @@ static const uint8_t* MemMapSnapshot(const std::string& aot_snapshot_path,
 
   int mapping_flags = executable ? PAGE_EXECUTE_READ : PAGE_READONLY;
   mapping_handle_ = CreateFileMapping(file_handle_, nullptr, mapping_flags, 0,
-      size_, nullptr);
+                                      size_, nullptr);
 
   CloseHandle(file_handle_);
 

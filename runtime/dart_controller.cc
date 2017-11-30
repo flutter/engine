@@ -42,7 +42,8 @@ namespace {
 #if defined(OS_WIN)
 
 std::string FindAndReplace(const std::string& str,
-    const std::string& findStr, const std::string& replaceStr) {
+                           const std::string& findStr,
+                           const std::string& replaceStr) {
   std::string rStr = str;
   size_t pos = 0;
   while ((pos = rStr.find(findStr, pos)) != std::string::npos) {
@@ -64,7 +65,7 @@ std::string ResolvePath(std::string path) {
   return files::SimplifyPath(files::GetCurrentDirectory() + "/" + sanitized);
 }
 
-#else // defined(OS_WIN)
+#else  // defined(OS_WIN)
 
 std::string SanitizePath(const std::string& path) {
   return path;
