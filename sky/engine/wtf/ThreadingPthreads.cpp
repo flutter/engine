@@ -28,8 +28,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "flutter/sky/engine/wtf/Threading.h"
 #include "flutter/sky/engine/wtf/OperatingSystem.h"
+#include "flutter/sky/engine/wtf/Threading.h"
 
 #if USE(PTHREADS)
 
