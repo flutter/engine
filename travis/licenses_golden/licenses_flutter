@@ -1157,6 +1157,7 @@ FILE: ../../../flutter/shell/platform/android/android_surface_software.h
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityDelegate.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityEvents.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterFragmentActivity.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPluginRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BasicMessageChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BinaryCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BinaryMessenger.java
@@ -9750,6 +9751,7 @@ FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.cpp
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.h
 FILE: ../../../flutter/third_party/txt/src/utils/LruCache.h
 FILE: ../../../flutter/third_party/txt/src/utils/TypeHelpers.h
+FILE: ../../../flutter/third_party/txt/src/utils/WindowsUtils.h
 ----------------------------------------------------------------------------------------------------
 Apache License
 Version 2.0, January 2004

@@ -73,8 +73,10 @@ enum AppLifecycleState {
 }
 
 /// A representation of distances for each of the four edges of a rectangle,
-/// used to encode the padding that applications should place around their user
-/// interface, as exposed by [Window.padding].
+/// used to encode the view insets and padding that applications should place
+/// around their user interface, as exposed by [Window.viewInsets] and
+/// [Window.padding]. View insets and padding are preferrably read via
+/// [MediaQuery.of].
 ///
 /// For a generic class that represents distances around a rectangle, see the
 /// [EdgeInsets] class.
@@ -83,22 +85,22 @@ enum AppLifecycleState {
 ///
 ///  * [WidgetsBindingObserver], for a widgets layer mechanism to receive
 ///    notifications when the padding changes.
-///  * [MediaQuery.of], a simpler mechanism for the same.
+///  * [MediaQuery.of], for the preferred mechanism for accessing these values.
 ///  * [Scaffold], which automatically applies the padding in material design
 ///    applications.
 class WindowPadding {
   const WindowPadding._({ this.left, this.top, this.right, this.bottom });
 
-  /// The distance from the left edge to the first unobscured pixel, in physical pixels.
+  /// The distance from the left edge to the first unpadded pixel, in physical pixels.
   final double left;
 
-  /// The distance from the top edge to the first unobscured pixel, in physical pixels.
+  /// The distance from the top edge to the first unpadded pixel, in physical pixels.
   final double top;
 
-  /// The distance from the right edge to the first unobscured pixel, in physical pixels.
+  /// The distance from the right edge to the first unpadded pixel, in physical pixels.
   final double right;
 
-  /// The distance from the bottom edge to the first unobscured pixel, in physical pixels.
+  /// The distance from the bottom edge to the first unpadded pixel, in physical pixels.
   final double bottom;
 
   /// A window padding that has zeros for each edge.
@@ -193,10 +195,25 @@ class Window {
   Size _physicalSize = Size.zero;
 
   /// The number of physical pixels on each side of the display rectangle into
-  /// which the application can render, but over which the operating system will
-  /// likely place system UI (such as the Android system notification area), or
-  /// which might be rendered outside of the physical display (e.g. overscan
-  /// regions on television screens).
+  /// which the application can render, but over which the operating system
+  /// will likely place system UI, such as the keyboard, that fully obscures
+  /// any content.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this value changes.
+  ///  * [MediaQuery.of], a simpler mechanism for the same.
+  ///  * [Scaffold], which automatically applies the view insets in material
+  ///    design applications.
+  WindowPadding get viewInsets => _viewInsets;
+  WindowPadding _viewInsets = WindowPadding.zero;
+
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the application can render, but which may be partially obscured by
+  /// system UI (such as the system notification area), or or physical
+  /// intrusions in the display (e.g. overscan regions on television screens or
+  /// phone sensor housings).
   ///
   /// See also:
   ///
@@ -209,9 +226,9 @@ class Window {
   WindowPadding _padding = WindowPadding.zero;
 
   /// A callback that is invoked whenever the [devicePixelRatio],
-  /// [physicalSize], or [padding] values change, for example when the device is
-  /// rotated or when the application is resized (e.g. when showing applications
-  /// side-by-side on Android).
+  /// [physicalSize], [padding], or [viewInsets] values change, for example
+  /// when the device is rotated or when the application is resized (e.g. when
+  /// showing applications side-by-side on Android).
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
