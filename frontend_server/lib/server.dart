@@ -37,7 +37,9 @@ ArgParser _argParser = new ArgParser(allowTrailingOptions: true)
       help: 'Path to file byte store used to keep incremental compiler state.'
           ' If omitted, then memory byte store is used.',
       defaultsTo: null)
-  ..addFlag('aot', help: 'Run compiler in AOT mode', defaultsTo: false)
+  ..addFlag('aot',
+      help: 'Run compiler in AOT mode (enables whole-program transformations)',
+      defaultsTo: false)
   ..addFlag('link-platform',
       help: 'When in batch mode, link platform kernel file into result kernel file.'
           ' Intended use is to satisfy different loading strategies implemented'
