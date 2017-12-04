@@ -267,9 +267,17 @@ void Shell::RunInPlatformViewUIThread(uintptr_t view_id,
   IteratePlatformViews(
       [
         view_id,                                         // argument
+#if !defined(OS_WIN)
+        // Using std::move on const references inside lambda capture is not
+        // supported on Windows for some reason.
         assets_directory = std::move(assets_directory),  // argument
         main = std::move(main),                          // argument
         packages = std::move(packages),                  // argument
+#else
+        assets_directory,                                // argument
+        main,                                            // argument
+        packages,                                        // argument
+#endif
         &view_existed,                                   // out
         &dart_isolate_id,                                // out
         &isolate_name                                    // out
