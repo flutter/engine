@@ -38,27 +38,40 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
-    private static final int SEMANTICS_ACTION_TAP = 1 << 0;
-    private static final int SEMANTICS_ACTION_LONG_PRESS = 1 << 1;
-    private static final int SEMANTICS_ACTION_SCROLL_LEFT = 1 << 2;
-    private static final int SEMANTICS_ACTION_SCROLL_RIGHT = 1 << 3;
-    private static final int SEMANTICS_ACTION_SCROLL_UP = 1 << 4;
-    private static final int SEMANTICS_ACTION_SCROLL_DOWN = 1 << 5;
-    private static final int SEMANTICS_ACTION_INCREASE = 1 << 6;
-    private static final int SEMANTICS_ACTION_DECREASE = 1 << 7;
-    private static final int SEMANTICS_ACTION_SHOW_ON_SCREEN = 1 << 8;
+    enum Action {
+        TAP(1 << 0),
+        LONG_PRESS(1 << 1),
+        SCROLL_LEFT(1 << 2),
+        SCROLL_RIGHT(1 << 3),
+        SCROLL_UP(1 << 4),
+        SCROLL_DOWN(1 << 5),
+        INCREASE(1 << 6),
+        DECREASE(1 << 7),
+        SHOW_ON_SCREEN(1 << 8),
+        MOVE_CURSOR_FORWARD_BY_CHARACTER(1 << 9),
+        MOVE_CURSOR_BACKWARD_BY_CHARACTER(1 << 10);
 
-    private static final int SEMANTICS_ACTION_SCROLLABLE = SEMANTICS_ACTION_SCROLL_LEFT |
-                                                           SEMANTICS_ACTION_SCROLL_RIGHT |
-                                                           SEMANTICS_ACTION_SCROLL_UP |
-                                                           SEMANTICS_ACTION_SCROLL_DOWN;
+        Action(int value) {
+            this.value = value;
+        }
 
-    private static final int SEMANTICS_FLAG_HAS_CHECKED_STATE = 1 << 0;
-    private static final int SEMANTICS_FLAG_IS_CHECKED = 1 << 1;
-    private static final int SEMANTICS_FLAG_IS_SELECTED = 1 << 2;
-    private static final int SEMANTICS_FLAG_IS_BUTTON = 1 << 3;
-    private static final int SEMANTICS_FLAG_IS_TEXT_FIELD = 1 << 4;
-    private static final int SEMANTICS_FLAG_IS_FOCUSED = 1 << 5;
+        final int value;
+    }
+
+    enum Flag {
+        HAS_CHECKED_STATE(1 << 0),
+        IS_CHECKED(1 << 1),
+        IS_SELECTED(1 << 2),
+        IS_BUTTON(1 << 3),
+        IS_TEXT_FIELD(1 << 4),
+        IS_FOCUSED(1 << 5);
+
+        Flag(int value) {
+            this.value = value;
+        }
+
+        final int value;
+    }
 
     AccessibilityBridge(FlutterView owner) {
         assert owner != null;
@@ -97,13 +110,31 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         result.setClassName("Flutter"); // TODO(goderbauer): Set proper class names
         result.setSource(mOwner, virtualViewId);
         result.setFocusable(object.isFocusable());
-        result.setFocused((object.flags & SEMANTICS_FLAG_IS_FOCUSED) != 0);
+        result.setFocused(object.hasFlag(Flag.IS_FOCUSED));
 
         if (mFocusedObject != null)
             result.setAccessibilityFocused(mFocusedObject.id == virtualViewId);
 
-        if ((object.flags & SEMANTICS_FLAG_IS_TEXT_FIELD) != 0)
+        if (object.hasFlag(Flag.IS_TEXT_FIELD)) {
             result.setClassName("android.widget.EditText");
+            result.setEditable(true);
+
+            // Cursor movements
+            int granularities = 0;
+            if (object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_CHARACTER)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY);
+                granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER;
+            }
+            if (object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_CHARACTER)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY);
+                granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER;
+            }
+            result.setMovementGranularities(granularities);
+        }
+
+        if (object.hasFlag(Flag.IS_BUTTON)) {
+          result.setClassName("android.widget.Button");
+        }
 
         if (object.parent != null) {
             assert object.id > 0;
@@ -126,15 +157,16 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         result.setVisibleToUser(true);
         result.setEnabled(true); // TODO(ianh): Expose disabled subtrees
 
-        if ((object.actions & SEMANTICS_ACTION_TAP) != 0) {
+        if (object.hasAction(Action.TAP)) {
             result.addAction(AccessibilityNodeInfo.ACTION_CLICK);
             result.setClickable(true);
         }
-        if ((object.actions & SEMANTICS_ACTION_LONG_PRESS) != 0) {
+        if (object.hasAction(Action.LONG_PRESS)) {
             result.addAction(AccessibilityNodeInfo.ACTION_LONG_CLICK);
             result.setLongClickable(true);
         }
-        if ((object.actions & SEMANTICS_ACTION_SCROLLABLE) != 0) {
+        if (object.hasAction(Action.SCROLL_LEFT) || object.hasAction(Action.SCROLL_UP)
+                || object.hasAction(Action.SCROLL_RIGHT) || object.hasAction(Action.SCROLL_DOWN)) {
             result.setScrollable(true);
             // This tells Android's a11y to send scroll events when reaching the end of
             // the visible viewport of a scrollable.
@@ -142,34 +174,27 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             // TODO(ianh): Once we're on SDK v23+, call addAction to
             // expose AccessibilityAction.ACTION_SCROLL_LEFT, _RIGHT,
             // _UP, and _DOWN when appropriate.
-            if ((object.actions & SEMANTICS_ACTION_SCROLL_LEFT) != 0
-                    || (object.actions & SEMANTICS_ACTION_SCROLL_UP) != 0) {
+            if (object.hasAction(Action.SCROLL_LEFT) || object.hasAction(Action.SCROLL_UP)) {
                 result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
             }
-            if ((object.actions & SEMANTICS_ACTION_SCROLL_RIGHT) != 0
-                    || (object.actions & SEMANTICS_ACTION_SCROLL_DOWN) != 0) {
+            if (object.hasAction(Action.SCROLL_RIGHT) || object.hasAction(Action.SCROLL_DOWN)) {
                 result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
             }
         }
-        if ((object.actions & SEMANTICS_ACTION_INCREASE) != 0
-                || (object.actions & SEMANTICS_ACTION_DECREASE) != 0 ) {
+        if (object.hasAction(Action.INCREASE) || object.hasAction(Action.DECREASE)) {
             result.setClassName("android.widget.SeekBar");
-            if ((object.actions & SEMANTICS_ACTION_INCREASE) != 0) {
+            if (object.hasAction(Action.INCREASE)) {
                 result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
             }
-            if ((object.actions & SEMANTICS_ACTION_DECREASE) != 0) {
+            if (object.hasAction(Action.DECREASE)) {
                 result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
             }
         }
 
-        result.setCheckable((object.flags & SEMANTICS_FLAG_HAS_CHECKED_STATE) != 0);
-        result.setChecked((object.flags & SEMANTICS_FLAG_IS_CHECKED) != 0);
-        result.setSelected((object.flags & SEMANTICS_FLAG_IS_SELECTED) != 0);
+        result.setCheckable(object.hasFlag(Flag.HAS_CHECKED_STATE));
+        result.setChecked(object.hasFlag(Flag.IS_CHECKED));
+        result.setSelected(object.hasFlag(Flag.IS_SELECTED));
         result.setText(object.getValueLabelHint());
-
-        if ((object.flags & SEMANTICS_FLAG_IS_BUTTON) != 0) {
-          result.setClassName("android.widget.Button");
-        }
 
         // Accessibility Focus
         if (mFocusedObject != null && mFocusedObject.id == virtualViewId) {
@@ -204,44 +229,50 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
         switch (action) {
             case AccessibilityNodeInfo.ACTION_CLICK: {
-                mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_TAP);
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.TAP);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_LONG_CLICK: {
-                mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_LONG_PRESS);
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.LONG_PRESS);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_SCROLL_FORWARD: {
-                if ((object.actions & SEMANTICS_ACTION_SCROLL_UP) != 0) {
-                    mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_SCROLL_UP);
-                } else if ((object.actions & SEMANTICS_ACTION_SCROLL_LEFT) != 0) {
+                if (object.hasAction(Action.SCROLL_UP)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId, Action.SCROLL_UP);
+                } else if (object.hasAction(Action.SCROLL_LEFT)) {
                     // TODO(ianh): bidi support using textDirection
-                    mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_SCROLL_LEFT);
-                } else if ((object.actions & SEMANTICS_ACTION_INCREASE) != 0) {
+                    mOwner.dispatchSemanticsAction(virtualViewId, Action.SCROLL_LEFT);
+                } else if (object.hasAction(Action.INCREASE)) {
                     object.value = object.increasedValue;
                     // Event causes Android to read out the updated value.
                     sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_SELECTED);
-                    mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_INCREASE);
+                    mOwner.dispatchSemanticsAction(virtualViewId, Action.INCREASE);
                 } else {
                     return false;
                 }
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD: {
-                if ((object.actions & SEMANTICS_ACTION_SCROLL_DOWN) != 0) {
-                    mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_SCROLL_DOWN);
-                } else if ((object.actions & SEMANTICS_ACTION_SCROLL_RIGHT) != 0) {
+                if (object.hasAction(Action.SCROLL_DOWN)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId, Action.SCROLL_DOWN);
+                } else if (object.hasAction(Action.SCROLL_RIGHT)) {
                     // TODO(ianh): bidi support using textDirection
-                    mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_SCROLL_RIGHT);
-                } else if ((object.actions & SEMANTICS_ACTION_DECREASE) != 0) {
+                    mOwner.dispatchSemanticsAction(virtualViewId, Action.SCROLL_RIGHT);
+                } else if (object.hasAction(Action.DECREASE)) {
                     object.value = object.decreasedValue;
                     // Event causes Android to read out the updated value.
                     sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_SELECTED);
-                    mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_DECREASE);
+                    mOwner.dispatchSemanticsAction(virtualViewId, Action.DECREASE);
                 } else {
                     return false;
                 }
                 return true;
+            }
+            case AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY: {
+                return performCursorMoveAction(object, virtualViewId, arguments, false);
+            }
+            case AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY: {
+                return performCursorMoveAction(object, virtualViewId, arguments, true);
             }
             case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS: {
                 sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
@@ -259,7 +290,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 }
                 mFocusedObject = object;
 
-                if ((object.actions & (SEMANTICS_ACTION_INCREASE | SEMANTICS_ACTION_DECREASE)) != 0) {
+                if (object.hasAction(Action.INCREASE) || object.hasAction(Action.DECREASE)) {
                     // SeekBars only announce themselves after this event.
                     sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_SELECTED);
                 }
@@ -269,8 +300,29 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             // TODO(goderbauer): Use ACTION_SHOW_ON_SCREEN from Android Support Library after
             //     https://github.com/flutter/flutter/issues/11099 is resolved.
             case 16908342: { // ACTION_SHOW_ON_SCREEN, added in API level 23
-                mOwner.dispatchSemanticsAction(virtualViewId, SEMANTICS_ACTION_SHOW_ON_SCREEN);
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.SHOW_ON_SCREEN);
                 return true;
+            }
+        }
+        return false;
+    }
+
+    boolean performCursorMoveAction(SemanticsObject object, int virtualViewId, Bundle arguments, boolean forward) {
+        final int granularity = arguments.getInt(
+            AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT);
+        // TODO(goderbauer): support extending selections.
+        // final boolean extendSelection = arguments.getBoolean(
+        //     AccessibilityNodeInfo.ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN);
+        switch (granularity) {
+            case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER: {
+                if (forward && object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_CHARACTER)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId, Action.MOVE_CURSOR_FORWARD_BY_CHARACTER);
+                    return true;
+                }
+                if (!forward && object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_CHARACTER)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId, Action.MOVE_CURSOR_BACKWARD_BY_CHARACTER);
+                    return true;
+                }
             }
         }
         return false;
@@ -476,6 +528,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         private float[] globalTransform;
         private Rect globalRect;
 
+        boolean hasAction(Action action) {
+            return (actions & action.value) != 0;
+        }
+
+        boolean hasFlag(Flag flag) {
+            return (flags & flag.value) != 0;
+        }
+
         void log(String indent) {
           Log.i(TAG, indent + "SemanticsObject id=" + id + " label=" + label + " actions=" +  actions + " flags=" + flags + "\n" +
                      indent + "  +-- rect.ltrb=(" + left + ", " + top + ", " + right + ", " + bottom + ")\n" +
@@ -575,7 +635,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         boolean isFocusable() {
-            return flags != 0 || (label != null && !label.isEmpty()) || (actions & ~SEMANTICS_ACTION_SCROLLABLE) != 0;
+            int scrollableActions = Action.SCROLL_RIGHT.value | Action.SCROLL_LEFT.value
+                    | Action.SCROLL_UP.value | Action.SCROLL_DOWN.value;
+            return flags != 0 || (label != null && !label.isEmpty()) || (actions & ~scrollableActions) != 0;
         }
 
         void updateRecursively(float[] ancestorTransform, Set<SemanticsObject> visitedObjects, boolean forceUpdate) {
