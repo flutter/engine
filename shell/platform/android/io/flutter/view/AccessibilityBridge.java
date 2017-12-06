@@ -326,6 +326,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                     return true;
                 }
             }
+            // TODO(goderbauer): support other granularities.
         }
         return false;
     }
