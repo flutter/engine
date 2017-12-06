@@ -33,7 +33,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private Map<Integer, SemanticsObject> mObjects;
     private final FlutterView mOwner;
     private boolean mAccessibilityEnabled = false;
-    private SemanticsObject mFocusedObject;
+    private SemanticsObject mA11yFocusedObject;
+    private SemanticsObject mInputFocusedObject;
     private SemanticsObject mHoveredObject;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
@@ -110,10 +111,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         result.setClassName("Flutter"); // TODO(goderbauer): Set proper class names
         result.setSource(mOwner, virtualViewId);
         result.setFocusable(object.isFocusable());
-        result.setFocused(object.hasFlag(Flag.IS_FOCUSED));
+        if (mInputFocusedObject != null)
+            result.setFocused(mInputFocusedObject.id == virtualViewId);
 
-        if (mFocusedObject != null)
-            result.setAccessibilityFocused(mFocusedObject.id == virtualViewId);
+        if (mA11yFocusedObject != null)
+            result.setAccessibilityFocused(mA11yFocusedObject.id == virtualViewId);
 
         if (object.hasFlag(Flag.IS_TEXT_FIELD)) {
             result.setClassName("android.widget.EditText");
@@ -197,7 +199,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         result.setText(object.getValueLabelHint());
 
         // Accessibility Focus
-        if (mFocusedObject != null && mFocusedObject.id == virtualViewId) {
+        if (mA11yFocusedObject != null && mA11yFocusedObject.id == virtualViewId) {
             result.addAction(AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS);
         } else {
             result.addAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
@@ -276,19 +278,19 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             }
             case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS: {
                 sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
-                mFocusedObject = null;
+                mA11yFocusedObject = null;
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS: {
                 sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
 
-                if (mFocusedObject == null) {
+                if (mA11yFocusedObject == null) {
                     // When Android focuses a node, it doesn't invalidate the view.
                     // (It does when it sends ACTION_CLEAR_ACCESSIBILITY_FOCUS, so
                     // we only have to worry about this when the focused node is null.)
                     mOwner.invalidate();
                 }
-                mFocusedObject = object;
+                mA11yFocusedObject = object;
 
                 if (object.hasAction(Action.INCREASE) || object.hasAction(Action.DECREASE)) {
                     // SeekBars only announce themselves after this event.
@@ -329,7 +331,22 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     }
 
     // TODO(ianh): implement findAccessibilityNodeInfosByText()
-    // TODO(ianh): implement findFocus()
+
+    @Override
+    public AccessibilityNodeInfo findFocus(int focus) {
+        switch (focus) {
+            case AccessibilityNodeInfo.FOCUS_INPUT: {
+                if (mInputFocusedObject != null)
+                    return createAccessibilityNodeInfo(mInputFocusedObject.id);
+            }
+            case AccessibilityNodeInfo.FOCUS_ACCESSIBILITY: {
+                if (mA11yFocusedObject != null)
+                    return createAccessibilityNodeInfo(mA11yFocusedObject.id);
+            }
+        }
+        return null;
+    }
+
 
     private SemanticsObject getRootObject() {
       assert mObjects.containsKey(0);
@@ -374,7 +391,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         ArrayList<Integer> updated = new ArrayList<Integer>();
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
-            getOrCreateObject(id).updateWith(buffer, strings);
+            SemanticsObject object = getOrCreateObject(id);
+            object.updateWith(buffer, strings);
+            if (object.hasFlag(Flag.IS_FOCUSED)) {
+                mInputFocusedObject = object;
+            }
             updated.add(id);
         }
 
@@ -466,9 +487,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         assert mObjects.containsKey(object.id);
         assert mObjects.get(object.id) == object;
         object.parent = null;
-        if (mFocusedObject == object) {
-            sendAccessibilityEvent(mFocusedObject.id, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
-            mFocusedObject = null;
+        if (mA11yFocusedObject == object) {
+            sendAccessibilityEvent(mA11yFocusedObject.id, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
+            mA11yFocusedObject = null;
+        }
+        if (mInputFocusedObject == object) {
+            mInputFocusedObject = null;
         }
         if (mHoveredObject == object) {
             mHoveredObject = null;
@@ -477,9 +501,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
     void reset() {
         mObjects.clear();
-        if (mFocusedObject != null)
-            sendAccessibilityEvent(mFocusedObject.id, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
-        mFocusedObject = null;
+        if (mA11yFocusedObject != null)
+            sendAccessibilityEvent(mA11yFocusedObject.id, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
+        mA11yFocusedObject = null;
         mHoveredObject = null;
         sendAccessibilityEvent(0, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
     }
@@ -634,6 +658,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             return this;
         }
 
+        // TODO(goderbauer): This should be decided by the framework once we have more information
+        //     about focusability there.
         boolean isFocusable() {
             int scrollableActions = Action.SCROLL_RIGHT.value | Action.SCROLL_LEFT.value
                     | Action.SCROLL_UP.value | Action.SCROLL_DOWN.value;
