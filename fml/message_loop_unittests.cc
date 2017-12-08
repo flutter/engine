@@ -197,7 +197,12 @@ TEST(MessageLoop, TIME_SENSITIVE(SingleDelayedTaskForTime)) {
 TEST(MessageLoop, TIME_SENSITIVE(MultipleDelayedTasksWithIncreasingDeltas)) {
   const auto count = 10;
   int checked = false;
-  std::thread thread([&checked, count]() {
+  std::thread thread([&checked
+#if OS_WIN
+                      ,
+                      count
+#endif
+  ]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     auto& loop = fml::MessageLoop::GetCurrent();
     for (int target_ms = 0 + 2; target_ms < count + 2; target_ms++) {
@@ -229,7 +234,12 @@ TEST(MessageLoop, TIME_SENSITIVE(MultipleDelayedTasksWithIncreasingDeltas)) {
 TEST(MessageLoop, TIME_SENSITIVE(MultipleDelayedTasksWithDecreasingDeltas)) {
   const auto count = 10;
   int checked = false;
-  std::thread thread([&checked, count]() {
+  std::thread thread([&checked
+#if OS_WIN
+                      ,
+                      count
+#endif
+  ]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
     auto& loop = fml::MessageLoop::GetCurrent();
     for (int target_ms = count + 2; target_ms > 0 + 2; target_ms--) {
