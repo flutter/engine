@@ -5,15 +5,14 @@
 #include "flutter/fml/mapping.h"
 
 #include <fcntl.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include <type_traits>
 
 #include "lib/fxl/build_config.h"
 #include "lib/fxl/files/eintr_wrapper.h"
-
-#include <sys/mman.h>
-#include <unistd.h>
 
 #if OS_MACOSX
 
@@ -42,7 +41,7 @@ std::unique_ptr<Mapping> GetResourceMapping(const std::string& resource_name) {
 
 FileMapping::FileMapping(const std::string& path)
     : FileMapping(fxl::UniqueFD{HANDLE_EINTR(::open(path.c_str(), O_RDONLY))}) {
-    }
+}
 
 FileMapping::FileMapping(const fxl::UniqueFD& handle)
     : size_(0), mapping_(nullptr) {

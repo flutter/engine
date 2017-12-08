@@ -10,8 +10,8 @@
 
 #include "lib/fxl/build_config.h"
 
-#include <windows.h>
 #include <io.h>
+#include <windows.h>
 
 using PlatformResourceMapping = fml::FileMapping;
 
@@ -31,9 +31,10 @@ std::unique_ptr<Mapping> GetResourceMapping(const std::string& resource_name) {
 
 FileMapping::FileMapping(const std::string& path)
     : size_(0), mapping_(nullptr) {
-  HANDLE file_handle_ = CreateFileA(reinterpret_cast<LPCSTR>(path.c_str()),
-      GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
-      FILE_ATTRIBUTE_NORMAL|FILE_FLAG_RANDOM_ACCESS,nullptr);
+  HANDLE file_handle_ =
+      CreateFileA(reinterpret_cast<LPCSTR>(path.c_str()), GENERIC_READ,
+                  FILE_SHARE_READ, nullptr, OPEN_EXISTING,
+                  FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, nullptr);
 
   if (file_handle_ == INVALID_HANDLE_VALUE) {
     return;
@@ -46,7 +47,7 @@ FileMapping::FileMapping(const std::string& path)
   }
 
   mapping_handle_ = CreateFileMapping(file_handle_, nullptr, PAGE_READONLY, 0,
-      size_, nullptr);
+                                      size_, nullptr);
 
   CloseHandle(file_handle_);
 
