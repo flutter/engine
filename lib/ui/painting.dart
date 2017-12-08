@@ -234,9 +234,9 @@ class Color {
   static Color lerp(Color a, Color b, double t) {
     if (a == null && b == null)
       return null;
-    if (a == null)
+    if (a == null || a == const Color(0x00000000))
       return _scaleAlpha(b, t);
-    if (b == null)
+    if (b == null || b == const Color(0x00000000))
       return _scaleAlpha(a, 1.0 - t);
     return new Color.fromARGB(
       lerpDouble(a.alpha, b.alpha, t).toInt().clamp(0, 255),
