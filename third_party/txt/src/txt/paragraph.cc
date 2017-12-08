@@ -763,8 +763,8 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
   }
 
   paint.setStrokeWidth(
-      (SkToBool(metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
-                                     kUnderlineThicknessIsValid_Flag))
+      (metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
+                                     kUnderlineThicknessIsValid_Flag)
           ? metrics.fUnderlineThickness *
                 record.style().decoration_thickness_multiplier
           // Backup value if the fUnderlineThickness metric is not available:
@@ -834,8 +834,8 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
     // Underline
     if (record.style().decoration & 0x1) {
       y_offset +=
-          (SkToBool(metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
-                                         kUnderlinePositionIsValid_Flag))
+          (metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
+                                         kUnderlinePositionIsValid_Flag)
               ? metrics.fUnderlinePosition
               : metrics.fUnderlineThickness;
       if (record.style().decoration_style != TextDecorationStyle::kWavy) {
@@ -863,16 +863,16 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
     }
     // Strikethrough
     if (record.style().decoration & 0x4) {
-      if (SkToBool(metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
-                                        kStrikeoutThicknessIsValid_Flag))
+      if (metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
+                                        kStrikeoutThicknessIsValid_Flag)
         paint.setStrokeWidth(metrics.fStrikeoutThickness *
                              record.style().decoration_thickness_multiplier);
       // Make sure the double line is "centered" vertically.
       y_offset += (decoration_count - 1.0) * metrics.fUnderlineThickness *
                   kDoubleDecorationSpacing / -2.0;
       y_offset +=
-          (SkToBool(metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
-                                         kStrikeoutThicknessIsValid_Flag))
+          (metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
+                                         kStrikeoutThicknessIsValid_Flag)
               ? metrics.fStrikeoutPosition
               // Backup value if the strikeoutposition metric is not
               // available:
