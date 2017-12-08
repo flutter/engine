@@ -25,6 +25,8 @@ group("flutter") {
     public_deps += [
       "$flutter_root/content_handler:aot",
       "$flutter_root/content_handler:jit",
+      "$flutter_root/content_handler:aot_no_flx",
+      "$flutter_root/content_handler:jit_no_flx",
       "$flutter_root/flow",
     ]
   }
@@ -80,6 +82,32 @@ if (is_fuchsia) {
     ]
 
     binary = "flutter_jit_runner"
+
+    meta = [ {
+      path = rebase_path("content_handler/meta/sandbox")
+      dest = "sandbox"
+    } ]
+  }
+
+  package("flutter_aot_runner_no_flx") {
+    deps = [
+      "$flutter_root/content_handler:aot_no_flx",
+    ]
+
+    binary = "flutter_aot_runner_no_flx"
+
+    meta = [ {
+      path = rebase_path("content_handler/meta/sandbox")
+      dest = "sandbox"
+    } ]
+  }
+
+  package("flutter_jit_runner_no_flx") {
+    deps = [
+      "$flutter_root/content_handler:jit_no_flx",
+    ]
+
+    binary = "flutter_jit_runner_no_flx"
 
     meta = [ {
       path = rebase_path("content_handler/meta/sandbox")
