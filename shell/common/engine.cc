@@ -558,7 +558,7 @@ void Engine::DispatchSemanticsAction(int id,
                                      blink::SemanticsAction action,
                                      std::vector<uint8_t> args) {
   if (runtime_)
-    runtime_->DispatchSemanticsAction(id, action, args);
+    runtime_->DispatchSemanticsAction(id, action, std::move(args));
 }
 
 void Engine::SetSemanticsEnabled(bool enabled) {
