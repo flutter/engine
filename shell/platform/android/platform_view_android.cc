@@ -410,15 +410,19 @@ void PlatformViewAndroid::HandlePlatformMessageEmptyResponse(int response_id) {
                                            nullptr);
 }
 
-void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env, jint id, jint action, jobject args, jint args_position) {
+void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env,
+                                                  jint id,
+                                                  jint action,
+                                                  jobject args,
+                                                  jint args_position) {
   if (env->IsSameObject(args, NULL)) {
     std::vector<uint8_t> args_vector;
-    PlatformView::DispatchSemanticsAction(id, static_cast<blink::SemanticsAction>(action), args_vector);
+    PlatformView::DispatchSemanticsAction(
+        id, static_cast<blink::SemanticsAction>(action), args_vector);
     return;
   }
 
-  uint8_t* args_data =
-      static_cast<uint8_t*>(env->GetDirectBufferAddress(args));
+  uint8_t* args_data = static_cast<uint8_t*>(env->GetDirectBufferAddress(args));
   std::vector<uint8_t> args_vector =
       std::vector<uint8_t>(args_data, args_data + args_position);
 

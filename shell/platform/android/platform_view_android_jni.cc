@@ -239,7 +239,8 @@ static void DispatchSemanticsAction(JNIEnv* env,
                                     jint action,
                                     jobject args,
                                     jint args_position) {
-  return PLATFORM_VIEW->DispatchSemanticsAction(env, id, action, args, args_position);
+  return PLATFORM_VIEW->DispatchSemanticsAction(env, id, action, args,
+                                                args_position);
 }
 
 static void SetSemanticsEnabled(JNIEnv* env,

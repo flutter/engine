@@ -554,7 +554,9 @@ void Engine::DispatchPointerDataPacket(const PointerDataPacket& packet) {
     runtime_->DispatchPointerDataPacket(packet);
 }
 
-void Engine::DispatchSemanticsAction(int id, blink::SemanticsAction action, std::vector<uint8_t> args) {
+void Engine::DispatchSemanticsAction(int id,
+                                     blink::SemanticsAction action,
+                                     std::vector<uint8_t> args) {
   if (runtime_)
     runtime_->DispatchSemanticsAction(id, action, args);
 }
