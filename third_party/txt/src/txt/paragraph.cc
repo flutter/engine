@@ -268,9 +268,9 @@ bool Paragraph::ComputeBidiRuns() {
                              ? UBIDI_DEFAULT_RTL
                              : UBIDI_DEFAULT_LTR;
   UErrorCode status = U_ZERO_ERROR;
-  ubidi_setPara(bidi.get(), text_.data(), text_.size(), paraLevel, nullptr,
-                &status);
-  if (!U_SUCCESS(status))
+  ubidi_setPara(bidi.get(), reinterpret_cast<const UChar*>(text_.data()),
+                text_.size(), paraLevel, nullptr, &status);
+S  if (!U_SUCCESS(status))
     return false;
 
   int32_t bidi_run_count = ubidi_countRuns(bidi.get(), &status);
@@ -763,8 +763,8 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
   }
 
   paint.setStrokeWidth(
-      (SkToBool(metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
-                                     kUnderlineThicknessIsValid_Flag))
+      (metrics.fFlags &
+       SkPaint::FontMetrics::FontMetricsFlags::kUnderlineThicknessIsValid_Flag)
           ? metrics.fUnderlineThickness *
                 record.style().decoration_thickness_multiplier
           // Backup value if the fUnderlineThickness metric is not available:
@@ -833,11 +833,10 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
     double y_offset_original = y_offset;
     // Underline
     if (record.style().decoration & 0x1) {
-      y_offset +=
-          (SkToBool(metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
-                                         kUnderlinePositionIsValid_Flag))
-              ? metrics.fUnderlinePosition
-              : metrics.fUnderlineThickness;
+      y_offset += (metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
+                                        kUnderlinePositionIsValid_Flag)
+                      ? metrics.fUnderlinePosition
+                      : metrics.fUnderlineThickness;
       if (record.style().decoration_style != TextDecorationStyle::kWavy) {
         canvas->drawLine(x, y + y_offset, x + width, y + y_offset, paint);
       } else {
@@ -863,20 +862,19 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
     }
     // Strikethrough
     if (record.style().decoration & 0x4) {
-      if (SkToBool(metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
-                                        kStrikeoutThicknessIsValid_Flag))
+      if (metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
+                               kStrikeoutThicknessIsValid_Flag)
         paint.setStrokeWidth(metrics.fStrikeoutThickness *
                              record.style().decoration_thickness_multiplier);
       // Make sure the double line is "centered" vertically.
       y_offset += (decoration_count - 1.0) * metrics.fUnderlineThickness *
                   kDoubleDecorationSpacing / -2.0;
-      y_offset +=
-          (SkToBool(metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
-                                         kStrikeoutThicknessIsValid_Flag))
-              ? metrics.fStrikeoutPosition
-              // Backup value if the strikeoutposition metric is not
-              // available:
-              : metrics.fXHeight / -2.0;
+      y_offset += (metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
+                                        kStrikeoutThicknessIsValid_Flag)
+                      ? metrics.fStrikeoutPosition
+                      // Backup value if the strikeoutposition metric is not
+                      // available:
+                      : metrics.fXHeight / -2.0;
       if (record.style().decoration_style != TextDecorationStyle::kWavy) {
         canvas->drawLine(x, y + y_offset, x + width, y + y_offset, paint);
       } else {
@@ -941,9 +939,17 @@ Paragraph::PositionWithAffinity Paragraph::GetGlyphPositionAtCoordinate(
   const std::vector<GlyphPosition>& line_glyph_position =
       glyph_lines_[y_index].positions;
   if (line_glyph_position.empty()) {
+<<<<<<< HEAD
     int line_start_index = std::accumulate(
         glyph_lines_.begin(), glyph_lines_.begin() + y_index, 0,
         [](const int a, const GlyphLine& b) { return a + b.total_code_units; });
+=======
+    int line_start_index =
+        std::accumulate(glyph_lines_.begin(), glyph_lines_.begin() + y_index, 0,
+                        [](const int a, const GlyphLine& b) {
+                          return a + static_cast<int>(b.total_code_units);
+                        });
+>>>>>>> edb0201fa258d6a2c05899c185a4e5cba0dc26a3
     return PositionWithAffinity(line_start_index, DOWNSTREAM);
   }
 
