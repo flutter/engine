@@ -229,7 +229,9 @@ void Window::DispatchSemanticsAction(int32_t id, SemanticsAction action, std::ve
     return;
   tonic::DartState::Scope scope(dart_state);
 
-  Dart_Handle args_handle = ToByteData(args);
+  Dart_Handle args_handle =
+      (args.empty()) ?  Dart_Null() : ToByteData(args);
+
   if (Dart_IsError(args_handle))
     return;
 
