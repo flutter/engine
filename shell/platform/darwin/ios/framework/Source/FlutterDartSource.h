@@ -14,7 +14,7 @@ typedef void (^ValidationResult)(BOOL result, NSString* message);
 @property(nonatomic, readonly) NSURL* dartMain;
 @property(nonatomic, readonly) NSURL* packages;
 @property(nonatomic, readonly) NSURL* flutterAssets;
-@property(nonatomic, readonly) BOOL archiveContainsScriptSnapshot;
+@property(nonatomic, readonly) BOOL assetsDirContainsScriptSnapshot;
 
 - (instancetype)initWithDartMain:(NSURL*)dartMain
                         packages:(NSURL*)packages

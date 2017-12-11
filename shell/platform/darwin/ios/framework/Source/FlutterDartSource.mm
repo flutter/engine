@@ -9,7 +9,7 @@
 @synthesize dartMain = _dartMain;
 @synthesize packages = _packages;
 @synthesize flutterAssets = _flutterAssets;
-@synthesize archiveContainsScriptSnapshot = _archiveContainsScriptSnapshot;
+@synthesize assetsDirContainsScriptSnapshot = _assetsDirContainsScriptSnapshot;
 
 #pragma mark - Convenience Initializers
 
@@ -35,9 +35,9 @@
     const BOOL packagesExists = [fileManager fileExistsAtPath:packages.absoluteURL.path];
 
     if (!dartMainExists || !packagesExists) {
-      // We cannot actually verify this without opening up the archive. This is
+      // We cannot actually verify this without opening up the directory. This is
       // just an assumption.
-      _archiveContainsScriptSnapshot = YES;
+      _assetsDirContainsScriptSnapshot = YES;
     }
   }
 
@@ -49,7 +49,7 @@
 
   if (self) {
     _flutterAssets = [flutterAssets copy];
-    _archiveContainsScriptSnapshot = YES;
+    _assetsDirContainsScriptSnapshot = YES;
   }
 
   return self;
@@ -81,7 +81,7 @@ static BOOL CheckDartProjectURL(NSMutableString* log, NSURL* url, NSString* logL
 
   isValid &= CheckDartProjectURL(log, _flutterAssets, @"Flutter assets");
 
-  if (!_archiveContainsScriptSnapshot) {
+  if (!_assetsDirContainsScriptSnapshot) {
     isValid &= CheckDartProjectURL(log, _dartMain, @"Dart main");
     isValid &= CheckDartProjectURL(log, _packages, @"Dart packages");
   }

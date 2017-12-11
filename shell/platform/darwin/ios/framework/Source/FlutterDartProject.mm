@@ -307,7 +307,7 @@ static NSString* NSStringFromVMType(VMType type) {
 
     std::string bundle_path = _dartSource.flutterAssets.absoluteURL.path.UTF8String;
 
-    if (_dartSource.archiveContainsScriptSnapshot) {
+    if (_dartSource.assetsDirContainsScriptSnapshot) {
       blink::Threads::UI()->PostTask([
         engine = engine->GetWeakPtr(), bundle_path,
         entrypoint = std::string([entrypoint UTF8String])
