@@ -680,7 +680,7 @@ public class FlutterView extends SurfaceView
     private static native void nativeDispatchPointerDataPacket(long nativePlatformViewAndroid,
         ByteBuffer buffer, int position);
 
-     private static native void nativeDispatchSemanticsAction(long nativePlatformViewAndroid, int id,
+    private static native void nativeDispatchSemanticsAction(long nativePlatformViewAndroid, int id,
         int action, ByteBuffer args, int argsPosition);
 
     private static native void nativeSetSemanticsEnabled(long nativePlatformViewAndroid,
