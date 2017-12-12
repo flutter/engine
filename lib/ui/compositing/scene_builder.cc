@@ -36,6 +36,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
   V(SceneBuilder, pop)                              \
   V(SceneBuilder, addPicture)                       \
   V(SceneBuilder, addTexture)                       \
+  V(SceneBuilder, addHole)                          \
   V(SceneBuilder, addChildScene)                    \
   V(SceneBuilder, addPerformanceOverlay)            \
   V(SceneBuilder, setRasterizerTracingThreshold)    \
@@ -132,6 +133,14 @@ void SceneBuilder::addTexture(double dx,
                               int64_t textureId) {
   layer_builder_->PushTexture(SkPoint::Make(dx, dy),
                               SkSize::Make(width, height), textureId);
+}
+
+void SceneBuilder::addHole(double dx,
+                           double dy,
+                           double width,
+                           double height) {
+  layer_builder_->PushHole(SkPoint::Make(dx, dy),
+                           SkSize::Make(width, height));
 }
 
 void SceneBuilder::addChildScene(double dx,

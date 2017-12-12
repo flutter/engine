@@ -206,6 +206,12 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   }
   void _addTexture(double dx, double dy, double width, double height, int textureId) native "SceneBuilder_addTexture";
 
+  void addHole({ Offset offset: Offset.zero, double width: 0.0, double height: 0.0 }) {
+    assert(offset != null, 'Offset argument was null');
+    _addHole(offset.dx, offset.dy, width, height);
+  }
+  void _addHole(double dx, double dy, double width, double height) native "SceneBuilder_addHole";
+
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.
   void addChildScene({

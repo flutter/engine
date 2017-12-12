@@ -16,6 +16,8 @@ class TransformLayer : public ContainerLayer {
 
   void set_transform(const SkMatrix& transform) { transform_ = transform; }
 
+  std::unique_ptr<Layer> WrapHoleForAncestor(std::unique_ptr<Layer> hole) override;
+
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;

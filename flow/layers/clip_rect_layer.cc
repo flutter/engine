@@ -10,6 +10,13 @@ ClipRectLayer::ClipRectLayer() = default;
 
 ClipRectLayer::~ClipRectLayer() = default;
 
+std::unique_ptr<Layer> ClipRectLayer::WrapHoleForAncestor(std::unique_ptr<Layer> hole) {
+  std::unique_ptr<ClipRectLayer> clippedHole = std::make_unique<ClipRectLayer>();
+  clippedHole->set_clip_rect(clip_rect_);
+  clippedHole->Add(std::move(hole));
+  return clippedHole;
+}
+
 void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);

@@ -26,6 +26,10 @@ class PhysicalModelLayer : public ContainerLayer {
                          bool transparentOccluder,
                          SkScalar dpr);
 
+  void AddHole(const SkPoint& offset, const SkSize& size) override;
+  void PunchHoleIn(ContainerLayer* ancestor, std::unique_ptr<Layer> hole) override;
+  std::unique_ptr<Layer> WrapHoleForAncestor(std::unique_ptr<Layer> hole) override;
+
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
@@ -39,6 +43,7 @@ class PhysicalModelLayer : public ContainerLayer {
   float elevation_;
   SkColor color_;
   SkScalar device_pixel_ratio_;
+  std::vector<int> holes_;
 };
 
 }  // namespace flow

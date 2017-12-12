@@ -16,8 +16,8 @@ class ClipRRectLayer : public ContainerLayer {
 
   void set_clip_rrect(const SkRRect& clip_rrect) { clip_rrect_ = clip_rrect; }
 
+  std::unique_ptr<Layer> WrapHoleForAncestor(std::unique_ptr<Layer> hole) override;
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
 
 #if defined(OS_FUCHSIA)

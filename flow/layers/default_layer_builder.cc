@@ -10,6 +10,7 @@
 #include "flutter/flow/layers/clip_rrect_layer.h"
 #include "flutter/flow/layers/color_filter_layer.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/hole_layer.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/opacity_layer.h"
@@ -163,6 +164,14 @@ void DefaultLayerBuilder::PushTexture(const SkPoint& offset,
   layer->set_size(size);
   layer->set_texture_id(texture_id);
   current_layer_->Add(std::move(layer));
+}
+
+void DefaultLayerBuilder::PushHole(const SkPoint& offset,
+                                   const SkSize& size) {
+  if (!current_layer_) {
+    return;
+  }
+  current_layer_->AddHole(offset, size);
 }
 
 #if defined(OS_FUCHSIA)
