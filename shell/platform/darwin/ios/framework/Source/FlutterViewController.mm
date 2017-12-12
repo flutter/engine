@@ -483,7 +483,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
     }
 
     FXL_DCHECK(device_id != 0);
-    CGPoint windowCoordinates = [touch locationInView:self.view];
+    CGPoint windowCoordinates = [touch locationInView:nil];
 
     blink::PointerData pointer_data;
     pointer_data.Clear();
