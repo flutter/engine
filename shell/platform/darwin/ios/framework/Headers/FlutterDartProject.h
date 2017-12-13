@@ -21,8 +21,8 @@ FLUTTER_EXPORT
         "This initializer is no longer used since the FLX will be deprecated. "
         "Instead, use [initWithFlutterAssets].");
 
-- (instancetype)initWithFLXArchiveWithScriptSnapshot:(NSURL*)flutterAssetsURL
-    NS_DESIGNATED_INITIALIZER FLUTTER_DEPRECATED(
+- (instancetype)initWithFLXArchiveWithScriptSnapshot:(NSURL*)archiveURL NS_DESIGNATED_INITIALIZER
+    FLUTTER_DEPRECATED(
         "This initializer is no longer used since the FLX will be deprecated. "
         "Instead, use [initWithFlutterAssetsWithScriptSnapshot].");
 
