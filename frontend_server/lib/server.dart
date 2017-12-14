@@ -51,9 +51,9 @@ ArgParser _argParser = new ArgParser(allowTrailingOptions: true)
 String _usage = '''
 Usage: server [options] [input.dart]
 
-If input dart source code is provided on the command line, then the server 
+If input dart source code is provided on the command line, then the server
 compiles it, generates dill file and exits.
-If no input dart source is provided on the command line, server waits for 
+If no input dart source is provided on the command line, server waits for
 instructions from stdin.
 
 Instructions:
@@ -148,20 +148,8 @@ class _FrontendCompiler implements CompilerInterface {
       ..sdkRoot = sdkRoot
       ..strongMode = false
       ..target = new FlutterTarget(new TargetFlags())
-      ..onError = (CompilationMessage message) {
-        final StringBuffer outputMessage = new StringBuffer()
-          ..write(_severityName(message.severity))
-          ..write(': ');
-        if (message.span != null) {
-          outputMessage.writeln(message.span.message(message.message));
-        } else {
-          outputMessage.writeln(message.message);
-        }
-        if (message.tip != null) {
-          outputMessage.writeln(message.tip);
-        }
-        _outputStream.write(outputMessage);
-      };
+      ..reportMessages = true;
+
     Program program;
     if (options['incremental']) {
       _generator = generator != null
@@ -170,7 +158,7 @@ class _FrontendCompiler implements CompilerInterface {
           compilerOptions, Uri.base.resolve(_filename),
           useMinimalGenerator: true
         );
-      final DeltaProgram deltaProgram = await _generator.computeDelta();
+      final DeltaProgram deltaProgram = await _runWithPrintRedirection(() => _generator.computeDelta());
       program = deltaProgram.newProgram;
     } else {
       if (options['link-platform']) {
@@ -180,9 +168,9 @@ class _FrontendCompiler implements CompilerInterface {
           sdkRoot.resolve('platform.dill')
         ];
       }
-      program = await compileToKernel(
+      program = await _runWithPrintRedirection(() => compileToKernel(
           Uri.base.resolve(_filename), compilerOptions,
-          aot: options['aot']);
+          aot: options['aot']));
     }
     if (program != null) {
       final IOSink sink = new File(_kernelBinaryFilename).openWrite();
@@ -249,6 +237,12 @@ class _FrontendCompiler implements CompilerInterface {
       default:
         return severity.toString();
     }
+  }
+
+  Future<T> _runWithPrintRedirection<T>(Future<T> f()) {
+    return runZoned(() => new Future<T>(f),
+        zoneSpecification: new ZoneSpecification(
+            print: (_1, _2, _3, String line) => _outputStream.writeln(line)));
   }
 }
 
