@@ -11,11 +11,10 @@ import 'package:args/args.dart';
 // that would replace api used below. This api was made private in
 // an effort to discourage further use.
 // ignore_for_file: implementation_imports
-import 'package:front_end/src/api_prototype/compilation_message.dart';
-
 import 'package:front_end/src/api_prototype/byte_store.dart';
 import 'package:front_end/src/api_prototype/compiler_options.dart';
 import 'package:front_end/src/api_prototype/incremental_kernel_generator.dart';
+
 import 'package:kernel/ast.dart';
 import 'package:kernel/binary/ast_to_binary.dart';
 import 'package:kernel/binary/limited_ast_to_binary.dart';
@@ -222,29 +221,19 @@ class _FrontendCompiler implements CompilerInterface {
   Uri _ensureFolderPath(String path) {
     // This is a URI, not a file path, so the forward slash is correct even
     // on Windows.
-    if (!path.endsWith('/')) path = '$path/';
+    if (!path.endsWith('/')) {
+      path = '$path/';
+    }
     return Uri.base.resolve(path);
   }
 
-  static String _severityName(Severity severity) {
-    switch (severity) {
-      case Severity.error:
-        return "Error";
-      case Severity.internalProblem:
-        return "Internal problem";
-      case Severity.nit:
-        return "Nit";
-      case Severity.warning:
-        return "Warning";
-      default:
-        return severity.toString();
-    }
-  }
-
+  /// Runs the given function [f] in a Zone that redirects all prints into
+  /// [_outputStream].
   Future<T> _runWithPrintRedirection<T>(Future<T> f()) {
     return runZoned(() => new Future<T>(f),
         zoneSpecification: new ZoneSpecification(
-            print: (_1, _2, _3, String line) => _outputStream.writeln(line)));
+            print: (Zone self, ZoneDelegate parent, Zone zone, String line) =>
+                _outputStream.writeln(line)));
   }
 }
 
@@ -260,8 +249,18 @@ Future<int> starter(
   IncrementalKernelGenerator generator,
   BinaryPrinterFactory binaryPrinterFactory,
 }) async {
-  final ArgResults options = _argParser.parse(args);
-  if (options['train']) return 0;
+  ArgResults options;
+  try {
+    options = _argParser.parse(args);
+  } catch (error) {
+    print('ERROR: $error\n');
+    print(_usage);
+    return 1;
+  }
+
+  if (options['train']) {
+    return 0;
+  }
 
   compiler ??=
       new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
@@ -296,13 +295,15 @@ Future<int> starter(
         } else if (string.startsWith(RECOMPILE_INSTRUCTION_SPACE)) {
           boundaryKey = string.substring(RECOMPILE_INSTRUCTION_SPACE.length);
           state = _State.RECOMPILE_LIST;
-        } else if (string == 'accept')
+        } else if (string == 'accept') {
           compiler.acceptLastDelta();
-        else if (string == 'reject')
+        } else if (string == 'reject') {
           compiler.rejectLastDelta();
-        else if (string == 'reset')
+        } else if (string == 'reset') {
           compiler.resetIncrementalCompiler();
-        else if (string == 'quit') exit(0);
+        } else if (string == 'quit') {
+          exit(0);
+        }
         break;
       case _State.RECOMPILE_LIST:
         if (string == boundaryKey) {
