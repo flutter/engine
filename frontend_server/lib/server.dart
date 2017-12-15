@@ -39,6 +39,9 @@ ArgParser _argParser = new ArgParser(allowTrailingOptions: true)
   ..addFlag('aot',
       help: 'Run compiler in AOT mode (enables whole-program transformations)',
       defaultsTo: false)
+  ..addFlag('strong',
+      help: 'Run compiler in strong mode (uses strong mode semantics)',
+      defaultsTo: false)
   ..addFlag('link-platform',
       help:
           'When in batch mode, link platform kernel file into result kernel file.'
@@ -148,7 +151,7 @@ class _FrontendCompiler implements CompilerInterface {
           ? new FileByteStore(byteStorePath)
           : new MemoryByteStore()
       ..sdkRoot = sdkRoot
-      ..strongMode = false
+      ..strongMode = options['strong']
       ..target = new FlutterTarget(new TargetFlags())
       ..reportMessages = true;
 
