@@ -47,12 +47,11 @@ size_t StyledRuns::AddStyle(const TextStyle& style) {
   return style_index;
 }
 
-const TextStyle& StyledRuns::GetStyle(size_t style_index) const {
-  return styles_[style_index];
+const TextStyle& StyledRuns::PeekStyle() const {
+  return styles_.back();
 }
 
 void StyledRuns::StartRun(size_t style_index, size_t start) {
-  EndRunIfNeeded(start);
   runs_.push_back(IndexedRun{style_index, start, start});
 }
 
