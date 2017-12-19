@@ -90,7 +90,7 @@ void AssetFontSelector::Install(
 
 void AssetFontSelector::Install(fxl::RefPtr<ZipAssetStore> asset_store) {
   RefPtr<AssetFontSelector> font_selector =
-    adoptRef(new AssetFontSelector(std::move(asset_store)));
+      adoptRef(new AssetFontSelector(std::move(asset_store)));
   font_selector->parseFontManifest();
   UIDartState::Current()->set_font_selector(font_selector);
 }
@@ -118,9 +118,11 @@ AssetFontSelector::FlutterFontAttributes::~FlutterFontAttributes() {}
 
 void AssetFontSelector::parseFontManifest() {
   std::vector<uint8_t> font_manifest_data;
-  if (!directory_asset_bundle_->GetAsBuffer(kFontManifestAssetPath,
+  if (!directory_asset_bundle_ ||
+      !directory_asset_bundle_->GetAsBuffer(kFontManifestAssetPath,
                                             &font_manifest_data)) {
-    if (!asset_store_->GetAsBuffer(kFontManifestAssetPath, &font_manifest_data))
+    if (!asset_store_ ||
+        !asset_store_->GetAsBuffer(kFontManifestAssetPath, &font_manifest_data))
       return;
   }
 
@@ -237,9 +239,10 @@ sk_sp<SkTypeface> AssetFontSelector::getTypefaceAsset(
   }
 
   std::unique_ptr<TypefaceAsset> typeface_asset(new TypefaceAsset);
-  if (!directory_asset_bundle_->GetAsBuffer(asset_path,
-                                            &typeface_asset->data)) {
-    if (!asset_store_->GetAsBuffer(asset_path, &typeface_asset->data)) {
+  if (!directory_asset_bundle_ || !directory_asset_bundle_->GetAsBuffer(
+                                     asset_path, &typeface_asset->data)) {
+    if (!asset_store_ ||
+        !asset_store_->GetAsBuffer(asset_path, &typeface_asset->data)) {
       typeface_cache_.insert(std::make_pair(asset_path, nullptr));
       return nullptr;
     }
