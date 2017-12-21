@@ -99,10 +99,14 @@ bool GetItalic(const TextStyle& style) {
   }
 }
 
+minikin::FontStyle GetMinikinFontStyle(const TextStyle& style) {
+  return minikin::FontStyle(GetWeight(style), GetItalic(style));
+}
+
 void GetFontAndMinikinPaint(const TextStyle& style,
                             minikin::FontStyle* font,
                             minikin::MinikinPaint* paint) {
-  *font = minikin::FontStyle(GetWeight(style), GetItalic(style));
+  *font = GetMinikinFontStyle(style);
   paint->size = style.font_size;
   // Divide by font size so letter spacing is pixels, not proportional to font
   // size.
@@ -115,8 +119,14 @@ void GetFontAndMinikinPaint(const TextStyle& style,
   paint->paintFlags |= minikin::LinearTextFlag;
 }
 
-void GetPaint(const TextStyle& style, SkPaint* paint) {
-  paint->setTextSize(style.font_size);
+sk_sp<SkTypeface> GetDefaultSkiaTypeface(
+    const std::shared_ptr<txt::FontCollection>& font_collection,
+    const TextStyle& style) {
+  std::shared_ptr<minikin::FontCollection> collection =
+      font_collection->GetMinikinFontCollectionForFamily(style.font_family);
+  minikin::FakedFont faked_font =
+      collection->baseFontFaked(GetMinikinFontStyle(style));
+  return static_cast<FontSkia*>(faked_font.font)->GetSkTypeface();
 }
 
 void FindWords(const std::vector<uint16_t>& text,
@@ -258,6 +268,9 @@ bool Paragraph::ComputeLineBreaks() {
 }
 
 bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
+  if (text_.empty())
+    return true;
+
   auto ubidi_closer = [](UBiDi* b) { ubidi_close(b); };
   std::unique_ptr<UBiDi, decltype(ubidi_closer)> bidi(ubidi_open(),
                                                       ubidi_closer);
@@ -406,7 +419,7 @@ void Paragraph::Layout(double width, bool force) {
       minikin::FontStyle font;
       minikin::MinikinPaint minikin_paint;
       GetFontAndMinikinPaint(run.style, &font, &minikin_paint);
-      GetPaint(run.style, &paint);
+      paint.setTextSize(run.style.font_size);
 
       std::shared_ptr<minikin::FontCollection> minikin_font_collection =
           font_collection_->GetMinikinFontCollectionForFamily(
@@ -426,7 +439,7 @@ void Paragraph::Layout(double width, bool force) {
       std::vector<uint16_t> ellipsized_text;
       if (ellipsis.length() && !isinf(width_) && !line_range.hard_break &&
           (line_number == line_limit - 1 ||
-           paragraph_style_.max_lines == std::numeric_limits<size_t>::max())) {
+           paragraph_style_.unlimited_lines())) {
         float ellipsis_width = layout.measureText(
             reinterpret_cast<const uint16_t*>(ellipsis.data()), 0,
             ellipsis.length(), ellipsis.length(), bidiFlags, font,
@@ -458,7 +471,7 @@ void Paragraph::Layout(double width, bool force) {
 
         // If there is no line limit, then skip all lines after the ellipsized
         // line.
-        if (paragraph_style_.max_lines == std::numeric_limits<size_t>::max()) {
+        if (paragraph_style_.unlimited_lines()) {
           line_limit = line_number + 1;
           did_exceed_max_lines_ = true;
         }
@@ -467,16 +480,8 @@ void Paragraph::Layout(double width, bool force) {
       layout.doLayout(text_ptr, text_start, text_count, text_.size(), bidiFlags,
                       font, minikin_paint, minikin_font_collection);
 
-      if (layout.nGlyphs() == 0) {
-        // This run is empty, so insert a placeholder paint record that captures
-        // the current font metrics.
-        SkPaint::FontMetrics metrics;
-        paint.getFontMetrics(&metrics);
-        paint_records.emplace_back(run.style, SkPoint::Make(run_x_offset, 0),
-                                   builder.make(), metrics, line_number,
-                                   layout.getAdvance());
+      if (layout.nGlyphs() == 0)
         continue;
-      }
 
       // Break the layout into blobs that share the same SkPaint parameters.
       std::vector<Range<size_t>> glyph_blobs;
@@ -604,26 +609,38 @@ void Paragraph::Layout(double width, bool force) {
 
     double max_line_spacing = 0;
     double max_descent = 0;
-    for (const PaintRecord& paint_record : paint_records) {
-      const SkPaint::FontMetrics& metrics = paint_record.metrics();
-      double style_height = paint_record.style().height;
+    auto update_line_metrics = [&](const SkPaint::FontMetrics& metrics,
+                                   const TextStyle& style) {
       double line_spacing =
           (line_number == 0)
-              ? -metrics.fAscent * style_height
-              : (-metrics.fAscent + metrics.fLeading) * style_height;
+              ? -metrics.fAscent * style.height
+              : (-metrics.fAscent + metrics.fLeading) * style.height;
       if (line_spacing > max_line_spacing) {
         max_line_spacing = line_spacing;
         if (line_number == 0) {
           alphabetic_baseline_ = line_spacing;
           // TODO(garyq): Properly implement ideographic_baseline_.
           ideographic_baseline_ =
-              (metrics.fUnderlinePosition - metrics.fAscent) * style_height;
+              (metrics.fUnderlinePosition - metrics.fAscent) * style.height;
         }
       }
       max_line_spacing = std::max(line_spacing, max_line_spacing);
 
-      double descent = metrics.fDescent * style_height;
+      double descent = metrics.fDescent * style.height;
       max_descent = std::max(descent, max_descent);
+    };
+    for (const PaintRecord& paint_record : paint_records) {
+      update_line_metrics(paint_record.metrics(), paint_record.style());
+    }
+    // If no fonts were actually rendered, then compute a baseline based on the
+    // font of the paragraph style.
+    if (paint_records.empty()) {
+      SkPaint::FontMetrics metrics;
+      TextStyle style(paragraph_style_.GetTextStyle());
+      paint.setTypeface(GetDefaultSkiaTypeface(font_collection_, style));
+      paint.setTextSize(style.font_size);
+      paint.getFontMetrics(&metrics);
+      update_line_metrics(metrics, style);
     }
 
     line_heights_.push_back((line_heights_.empty() ? 0 : line_heights_.back()) +
@@ -649,7 +666,12 @@ void Paragraph::Layout(double width, bool force) {
   for (double line_width : line_widths_) {
     max_intrinsic_width_ += line_width;
   }
-  min_intrinsic_width_ = std::min(max_word_width, max_intrinsic_width_);
+  if (paragraph_style_.max_lines == 1 ||
+      (paragraph_style_.unlimited_lines() && paragraph_style_.ellipsized())) {
+    min_intrinsic_width_ = max_intrinsic_width_;
+  } else {
+    min_intrinsic_width_ = std::min(max_word_width, max_intrinsic_width_);
+  }
 
   std::sort(code_unit_runs_.begin(), code_unit_runs_.end(),
             [](const CodeUnitRun& a, const CodeUnitRun& b) {
@@ -766,15 +788,18 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
     width = record.GetRunWidth();
   }
 
-  paint.setStrokeWidth(
-      (metrics.fFlags &
-       SkPaint::FontMetrics::FontMetricsFlags::kUnderlineThicknessIsValid_Flag)
-          ? metrics.fUnderlineThickness *
-                record.style().decoration_thickness_multiplier
-          // Backup value if the fUnderlineThickness metric is not available:
-          // Divide by 14pt as it is the default size.
-          : record.style().font_size / 14.0f *
-                record.style().decoration_thickness_multiplier);
+  SkScalar underline_thickness;
+  if ((metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
+                            kUnderlineThicknessIsValid_Flag) &&
+      metrics.fUnderlineThickness > 0) {
+    underline_thickness = metrics.fUnderlineThickness;
+  } else {
+    // Backup value if the fUnderlineThickness metric is not available:
+    // Divide by 14pt as it is the default size.
+    underline_thickness = record.style().font_size / 14.0f;
+  }
+  paint.setStrokeWidth(underline_thickness *
+                       record.style().decoration_thickness_multiplier);
 
   // Setup the decorations.
   switch (record.style().decoration_style) {
@@ -816,8 +841,8 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
     case TextDecorationStyle::kWavy: {
       int wave_count = 0;
       double x_start = 0;
-      double wavelength = metrics.fUnderlineThickness *
-                          record.style().decoration_thickness_multiplier;
+      double wavelength =
+          underline_thickness * record.style().decoration_thickness_multiplier;
       path.moveTo(x, y);
       while (x_start + wavelength * 2 < width) {
         path.rQuadTo(wavelength, wave_count % 2 != 0 ? wavelength : -wavelength,
@@ -832,15 +857,14 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
   // Draw the decorations.
   // Use a for loop for "kDouble" decoration style
   for (int i = 0; i < decoration_count; i++) {
-    double y_offset =
-        i * metrics.fUnderlineThickness * kDoubleDecorationSpacing;
+    double y_offset = i * underline_thickness * kDoubleDecorationSpacing;
     double y_offset_original = y_offset;
     // Underline
     if (record.style().decoration & 0x1) {
       y_offset += (metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
                                         kUnderlinePositionIsValid_Flag)
                       ? metrics.fUnderlinePosition
-                      : metrics.fUnderlineThickness;
+                      : underline_thickness;
       if (record.style().decoration_style != TextDecorationStyle::kWavy) {
         canvas->drawLine(x, y + y_offset, x + width, y + y_offset, paint);
       } else {
@@ -871,7 +895,7 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
         paint.setStrokeWidth(metrics.fStrikeoutThickness *
                              record.style().decoration_thickness_multiplier);
       // Make sure the double line is "centered" vertically.
-      y_offset += (decoration_count - 1.0) * metrics.fUnderlineThickness *
+      y_offset += (decoration_count - 1.0) * underline_thickness *
                   kDoubleDecorationSpacing / -2.0;
       y_offset += (metrics.fFlags & SkPaint::FontMetrics::FontMetricsFlags::
                                         kStrikeoutThicknessIsValid_Flag)

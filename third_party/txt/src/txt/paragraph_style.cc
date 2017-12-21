@@ -18,6 +18,21 @@
 
 namespace txt {
 
-//
+TextStyle ParagraphStyle::GetTextStyle() const {
+  TextStyle result;
+  result.font_weight = font_weight;
+  result.font_style = font_style;
+  result.font_family = font_family;
+  result.font_size = font_size;
+  return result;
+}
+
+bool ParagraphStyle::unlimited_lines() const {
+  return max_lines == std::numeric_limits<size_t>::max();
+};
+
+bool ParagraphStyle::ellipsized() const {
+  return !ellipsis.empty();
+}
 
 }  // namespace txt
