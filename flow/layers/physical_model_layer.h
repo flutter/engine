@@ -54,7 +54,7 @@ class PhysicalModelLayer : public ContainerLayer {
 class PhysicalLayerShape {
  public:
   virtual const SkRect& getBounds() const = 0;
-  virtual const SkPath getPath() const = 0;
+  virtual SkPath getPath() const = 0;
   virtual void clipCanvas(SkCanvas& canvas) const = 0;
   virtual bool isRect() const = 0;
 #if defined(OS_FUCHSIA)
@@ -70,7 +70,7 @@ class PhysicalLayerRRect final : public PhysicalLayerShape {
   const SkRect& getBounds() const override { return rrect_.getBounds(); }
 
   // |flow::PhysicalLayerShape|
-  const SkPath getPath() const override;
+  SkPath getPath() const override;
 
   // |flow::PhysicalLayerShape|
   void clipCanvas(SkCanvas& canvas) const override {
@@ -102,7 +102,7 @@ class PhysicalLayerPath final : public PhysicalLayerShape {
   const SkRect& getBounds() const override { return path_.getBounds(); }
 
   // |flow::PhysicalLayerShape|
-  const SkPath getPath() const override { return path_; }
+  SkPath getPath() const override { return path_; }
 
   // |flow::PhysicalLayerShape|
   void clipCanvas(SkCanvas& canvas) const override {
