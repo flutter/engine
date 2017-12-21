@@ -122,6 +122,22 @@ void DefaultLayerBuilder::PushPhysicalModel(const SkRRect& sk_rrect,
   PushLayer(std::move(layer), cullRect);
 }
 
+void DefaultLayerBuilder::PushPhysicalModel(const SkPath& sk_path,
+                                            double elevation,
+                                            SkColor color,
+                                            SkScalar device_pixel_ratio) {
+  SkRect cullRect;
+  if (!cullRect.intersect(sk_path.getBounds(), cull_rects_.top())) {
+    cullRect = SkRect::MakeEmpty();
+  }
+  auto layer = std::make_unique<flow::PhysicalModelLayer>();
+  layer->set_shape(std::make_unique<PhysicalLayerPath>(sk_path));
+  layer->set_elevation(elevation);
+  layer->set_color(color);
+  layer->set_device_pixel_ratio(device_pixel_ratio);
+  PushLayer(std::move(layer), cullRect);
+}
+
 void DefaultLayerBuilder::PushPerformanceOverlay(uint64_t enabled_options,
                                                  const SkRect& rect) {
   if (!current_layer_) {
