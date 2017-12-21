@@ -115,7 +115,7 @@ void DefaultLayerBuilder::PushPhysicalModel(const SkRRect& sk_rrect,
     cullRect = SkRect::MakeEmpty();
   }
   auto layer = std::make_unique<flow::PhysicalModelLayer>();
-  layer->set_rrect(sk_rrect);
+  layer->set_shape(std::make_unique<PhysicalLayerRRect>(sk_rrect));
   layer->set_elevation(elevation);
   layer->set_color(color);
   layer->set_device_pixel_ratio(device_pixel_ratio);
