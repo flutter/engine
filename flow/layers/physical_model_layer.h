@@ -46,6 +46,11 @@ class PhysicalModelLayer : public ContainerLayer {
 };
 
 // Common interface for the shape operations needed by PhysicalModelLayer.
+//
+// Once Scenic supports specifying physical layers with paths we can get rid
+// of this class and the subclasses, and have a single implementation of
+// PhysicalModelLayer that holds an SkPath.
+// TODO(amirh): remove this once Scenic supports arbitrary shaped layers.
 class PhysicalLayerShape {
  public:
   virtual const SkRect& getBounds() const = 0;
@@ -57,32 +62,34 @@ class PhysicalLayerShape {
 #endif  // defined(OS_FUCHSIA)
 };
 
-class PhysicalLayerRRect : public PhysicalLayerShape {
+class PhysicalLayerRRect final : public PhysicalLayerShape {
  public:
   PhysicalLayerRRect(const SkRRect& rrect) { rrect_ = rrect; }
 
   // |flow::PhysicalLayerShape|
-  const SkRect& getBounds() const { return rrect_.getBounds(); }
+  const SkRect& getBounds() const override { return rrect_.getBounds(); }
 
   // |flow::PhysicalLayerShape|
-  const SkPath getPath() const;
+  const SkPath getPath() const override;
 
   // |flow::PhysicalLayerShape|
-  void clipCanvas(SkCanvas& canvas) const { canvas.clipRRect(rrect_, true); }
+  void clipCanvas(SkCanvas& canvas) const override {
+    canvas.clipRRect(rrect_, true);
+  }
 
   // |flow::PhysicalLayerShape|
-  bool isRect() const { return rrect_.isRect(); }
+  bool isRect() const override { return rrect_.isRect(); }
 
 #if defined(OS_FUCHSIA)
   // |flow::PhysicalLayerShape|
-  const SkRRect& getFrameRRect() const { return rrect_; }
+  const SkRRect& getFrameRRect() const override { return rrect_; }
 #endif  // defined(OS_FUCHSIA)
 
  private:
   SkRRect rrect_;
 };
 
-class PhysicalLayerPath : public PhysicalLayerShape {
+class PhysicalLayerPath final : public PhysicalLayerShape {
  public:
   PhysicalLayerPath(const SkPath& path) {
     path_ = path;
@@ -92,22 +99,24 @@ class PhysicalLayerPath : public PhysicalLayerShape {
   }
 
   // |flow::PhysicalLayerShape|
-  const SkRect& getBounds() const { return path_.getBounds(); }
+  const SkRect& getBounds() const override { return path_.getBounds(); }
 
   // |flow::PhysicalLayerShape|
-  const SkPath getPath() const { return path_; }
+  const SkPath getPath() const override { return path_; }
 
   // |flow::PhysicalLayerShape|
-  void clipCanvas(SkCanvas& canvas) const { canvas.clipPath(path_, true); }
+  void clipCanvas(SkCanvas& canvas) const override {
+    canvas.clipPath(path_, true);
+  }
 
   // |flow::PhysicalLayerShape|
-  bool isRect() const { return false; }
+  bool isRect() const override { return false; }
 
 #if defined(OS_FUCHSIA)
   // Scenic does not currently support compositing arbitrary shaped layers,
   // so we just use the path's bounding rectangle.
   // |flow::PhysicalLayerShape|
-  const SkRRect& getFrameRRect() const { return frameRRect_; }
+  const SkRRect& getFrameRRect() const override { return frameRRect_; }
 #endif  // defined(OS_FUCHSIA)
  private:
   SkPath path_;
