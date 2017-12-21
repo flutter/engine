@@ -136,7 +136,7 @@ class _FrontendCompiler implements CompilerInterface {
     ArgResults options, {
     IncrementalKernelGenerator generator,
   }) async {
-    Uri _filenameUri = Uri.base.resolve(new Uri.file(filename).toString());
+    final Uri _filenameUri = Uri.base.resolve(new Uri.file(filename).toString());
     _kernelBinaryFilename = "$filename.dill";
     final String boundaryKey = new Uuid().generateV4();
     _outputStream.writeln("result $boundaryKey");
