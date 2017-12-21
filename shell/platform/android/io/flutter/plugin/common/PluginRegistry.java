@@ -120,10 +120,10 @@ public interface PluginRegistry {
          * calls to {@link Activity#onRequestPermissionsResult(int, String[], int[])}
          * or {android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
          *
-         * @param listener a {@link RequestPermissionResultListener} callback.
+         * @param listener a {@link RequestPermissionsResultListener} callback.
          * @return this {@link Registrar}.
          */
-        Registrar addRequestPermissionResultListener(RequestPermissionResultListener listener);
+        Registrar addRequestPermissionsResultListener(RequestPermissionsResultListener listener);
 
         /**
          * Adds a callback allowing the plugin to take part in handling incoming
@@ -163,14 +163,14 @@ public interface PluginRegistry {
     }
 
     /**
-     * Delegate interface for handling results of permission requests on
+     * Delegate interface for handling result of permissions requests on
      * behalf of the main {@link Activity}.
      */
-    interface RequestPermissionResultListener {
+    interface RequestPermissionsResultListener {
         /**
          * @return true if the result has been handled.
          */
-        boolean onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults);
+        boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults);
     }
 
     /**
