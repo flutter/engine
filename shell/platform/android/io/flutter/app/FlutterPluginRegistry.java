@@ -20,6 +20,7 @@ import java.util.Map;
 
 public class FlutterPluginRegistry
   implements PluginRegistry,
+             PluginRegistry.RequestPermissionResultListener,
              PluginRegistry.RequestPermissionsResultListener,
              PluginRegistry.ActivityResultListener,
              PluginRegistry.NewIntentListener,
@@ -113,6 +114,18 @@ public class FlutterPluginRegistry
         }
 
         @Override
+        @Deprecated
+        public Registrar addRequestPermissionResultListener(
+                final RequestPermissionResultListener listener) {
+            return addRequestPermissionsResultListener(new RequestPermissionsResultListener() {
+                @Override
+                public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+                    return listener.onRequestPermissionResult(requestCode, permissions, grantResults);
+                }
+            });
+        }
+
+        @Override
         public Registrar addRequestPermissionsResultListener(
                 RequestPermissionsResultListener listener) {
             mRequestPermissionsResultListeners.add(listener);
@@ -152,6 +165,12 @@ public class FlutterPluginRegistry
             }
         }
         return false;
+    }
+
+    @Deprecated
+    @Override
+    public boolean onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) {
+      return onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override

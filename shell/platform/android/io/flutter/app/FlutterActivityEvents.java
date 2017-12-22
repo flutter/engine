@@ -8,6 +8,7 @@ import android.content.ComponentCallbacks2;
 import android.content.Intent;
 import android.os.Bundle;
 import io.flutter.plugin.common.PluginRegistry.ActivityResultListener;
+import io.flutter.plugin.common.PluginRegistry.RequestPermissionResultListener;
 import io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
 
 /**
@@ -21,7 +22,10 @@ import io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
  * {@code FlutterActivity}.</p>
  */
 public interface FlutterActivityEvents
-        extends ComponentCallbacks2, ActivityResultListener, RequestPermissionsResultListener {
+        extends ComponentCallbacks2,
+                ActivityResultListener,
+                RequestPermissionResultListener,
+                RequestPermissionsResultListener {
     /**
      * @see android.app.Activity#onCreate(android.os.Bundle)
      */

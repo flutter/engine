@@ -29,9 +29,7 @@ import android.view.WindowManager.LayoutParams;
 import android.widget.FrameLayout;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.PluginRegistry;
-import io.flutter.plugin.common.PluginRegistry.ActivityResultListener;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
-import io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.Preconditions;
 import io.flutter.view.FlutterMain;
@@ -123,6 +121,13 @@ public final class FlutterActivityDelegate
 
     @Override
     public boolean onRequestPermissionsResult(
+            int requestCode, String[] permissions, int[] grantResults) {
+        return flutterView.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    @Deprecated
+    public boolean onRequestPermissionResult(
             int requestCode, String[] permissions, int[] grantResults) {
         return flutterView.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
