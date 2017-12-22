@@ -48,10 +48,9 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds) {
       canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
       SkAlphaType::kPremul_SkAlphaType, nullptr);
   if (image) {
-    SkMatrix originalMatrix(canvas.getTotalMatrix());
+    SkAutoCanvasRestore autoRestore(&canvas, true);
     canvas.translate(bounds.x(), bounds.y());
     canvas.scale(bounds.width(), bounds.height());
-
     if (!transform.isIdentity()) {
       SkMatrix transformAroundCenter(transform);
 
@@ -61,7 +60,6 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds) {
       canvas.concat(transformAroundCenter);
     }
     canvas.drawImage(image, 0, 0);
-    canvas.setMatrix(originalMatrix);
   }
 }
 
