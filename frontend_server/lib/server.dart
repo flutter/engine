@@ -34,7 +34,9 @@ ArgParser _argParser = new ArgParser(allowTrailingOptions: true)
       defaultsTo: '../../out/android_debug/flutter_patched_sdk')
   ..addOption('byte-store',
       help: 'Path to file byte store used to keep incremental compiler state.'
-          ' If omitted, then memory byte store is used.',
+          ' If omitted, then memory byte store is used.'
+          ' Note, that this option currently doesn''t have any efect, so memory'
+          ' byte store is always used.',
       defaultsTo: null)
   ..addFlag('aot',
       help: 'Run compiler in AOT mode (enables whole-program transformations)',
