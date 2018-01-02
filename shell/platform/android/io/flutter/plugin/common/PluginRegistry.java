@@ -134,7 +134,7 @@ public interface PluginRegistry {
          * @return this {@link Registrar}.
 
          * @deprecated on 2018-01-02 because of misspelling. This method will be made unavailable
-         * on 2018-02-06. Use
+         * on 2018-02-06 (or at least four weeks after the deprecation is released). Use
          * {@link #addRequestPermissionsResultListener(RequestPermissionsResultListener)} instead.
          */
         @Deprecated
@@ -193,13 +193,15 @@ public interface PluginRegistry {
      * behalf of the main {@link Activity}.
      *
      * Deprecated on 2018-01-02 because of misspelling. This interface will be made
-     * unavailable on 2018-02-06. Use {@link RequestPermissionsResultListener} instead.
+     * unavailable on 2018-02-06 (or at least four weeks after the deprecation is released).
+     * Use {@link RequestPermissionsResultListener} instead.
      */
     interface RequestPermissionResultListener {
         /**
          * @return true if the result has been handled.
          * @deprecated on 2018-01-02 because of misspelling. This method will be made
-         * unavailable on 2018-02-06. Use {@link RequestPermissionsResultListener} instead.
+         * unavailable on 2018-02-06 (or at least four weeks after the deprecation is released).
+         * Use {@link RequestPermissionsResultListener} instead.
          */
         @Deprecated
         boolean onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults);
