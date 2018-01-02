@@ -130,6 +130,9 @@ public interface PluginRegistry {
          * calls to {@link Activity#onRequestPermissionsResult(int, String[], int[])}
          * or {android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
          *
+         * @param listener a {@link RequestPermissionResultListener} callback.
+         * @return this {@link Registrar}.
+
          * @deprecated on 2018-01-02 because of misspelling. This method will be made unavailable
          * on 2018-02-06. Use
          * {@link #addRequestPermissionsResultListener(RequestPermissionsResultListener)} instead.
