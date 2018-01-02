@@ -152,7 +152,7 @@ class _FrontendCompiler implements CompilerInterface {
           : new MemoryByteStore()
       ..sdkRoot = sdkRoot
       ..strongMode = options['strong']
-      ..target = new FlutterTarget(new TargetFlags())
+      ..target = new FlutterTarget(new TargetFlags(strongMode: options['strong']))
       ..reportMessages = true;
 
     Program program;

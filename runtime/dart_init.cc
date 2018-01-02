@@ -115,6 +115,14 @@ static const char* kDartCheckedModeArgs[] = {
     // clang-format on
 };
 
+static const char* kDartStrongModeArgs[] = {
+    // clang-format off
+    "--strong",
+    "--reify_generic_functions",
+    "--limit_ints_to_64_bits",
+    // clang-format on
+};
+
 static const char* kDartStartPausedArgs[]{
     "--pause_isolates_on_start",
 };
@@ -586,8 +594,11 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
               arraysize(kDartWriteProtectCodeArgs));
 #endif
 
-  if (use_checked_mode)
+  if (settings.dart_strong_mode) {
+    PushBackAll(&args, kDartStrongModeArgs, arraysize(kDartStrongModeArgs));
+  } else if (use_checked_mode) {
     PushBackAll(&args, kDartCheckedModeArgs, arraysize(kDartCheckedModeArgs));
+  }
 
   if (settings.start_paused)
     PushBackAll(&args, kDartStartPausedArgs, arraysize(kDartStartPausedArgs));
