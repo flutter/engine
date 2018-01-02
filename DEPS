@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '03588412c89899fba09893e1812866f0069fc6f6',
+  'skia_revision': 'ef0384835757df463f5157145650a60ba8b14a63',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,14 +31,14 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '70e5deacb54aea295665215837adaedd3d6a5bfa',
+  'dart_revision': 'e122f4825726035e4579471ef83848b1aa796444',
 
   'dart_args_tag': '0.13.7',
   'dart_async_tag': '2.0.0',
   'dart_barback_tag': '0.15.2+13',
   'dart_bazel_worker_tag': 'v0.1.4',
   'dart_boolean_selector_tag': '1.0.2',
-  'dart_boringssl_gen_rev': '753224969dbe43dad29343146529727b5066c0f3',
+  'dart_boringssl_gen_rev': 'd2b56d1b7657e52eb5a1f075968c773aa3e53614',
   'dart_boringssl_rev': 'd519bf6be0b447fb80fbc539d4bff4479b5482a2',
   'dart_charcode_tag': 'v1.1.1',
   'dart_cli_util_tag': '0.1.2+1',
@@ -48,41 +48,42 @@ vars = {
   'dart_csslib_tag': '0.14.1',
   'dart_dart2js_info_tag': '0.5.5+1',
   'dart_dart_style_tag': '1.0.7',
-  'dart_dartdoc_tag': 'v0.14.1',
+  'dart_dartdoc_tag': 'v0.15.0+1',
   'dart_fixnum_tag': '0.10.5',
   'dart_glob_tag': '1.1.5',
   'dart_html_tag': '0.13.2',
   'dart_http_multi_server_tag': '2.0.4',
   'dart_http_parser_tag': '3.1.1',
+  'dart_http_retry_tag': '0.1.0',
   'dart_http_tag': '0.11.3+14',
   'dart_http_throttle_tag': '1.0.1',
   'dart_intl_tag': '0.15.2',
   'dart_isolate_tag': '1.1.0',
   'dart_json_rpc_2_tag': '2.0.4',
-  'dart_linter_tag': '0.1.39',
+  'dart_linter_tag': '0.1.41',
   'dart_logging_tag': '0.11.3+1',
-  'dart_markdown_tag': '0.11.4',
+  'dart_markdown_tag': '1.0.0',
   'dart_matcher_tag': '0.12.1+4',
   'dart_mime_tag': '0.9.4',
   'dart_mockito_tag': '2.0.2',
-  'dart_mustache4dart_tag': 'v1.1.0',
+  'dart_mustache4dart_tag': 'v2.1.0',
   'dart_oauth2_tag': '1.1.0',
   'dart_observatory_pub_packages_rev': '4c282bb240b68f407c8c7779a65c68eeb0139dc6',
   'dart_package_config_tag': '1.0.3',
   'dart_package_resolver_tag': '1.0.2+1',
   'dart_path_tag': '1.4.2',
-  'dart_plugin_tag': '0.2.0',
+  'dart_plugin_tag': '0.2.0+2',
   'dart_pool_tag': '1.3.3',
   'dart_protobuf_tag': '0.5.4',
-  'dart_pub_rev': 'cde958f157d3662bf968bcbed05580d5c0355e89',
+  'dart_pub_rev': '667281eef93b4be648cceca400e954e000edba38',
   'dart_pub_semver_tag': '1.3.2',
   'dart_quiver_tag': '0.25.0',
   'dart_resource_rev': 'af5a5bf65511943398146cf146e466e5f0b95cb9',
   'dart_root_certificates_rev': 'a4c7c6f23a664a37bc1b6f15a819e3f2a292791a',
   'dart_shelf_packages_handler_tag': '1.0.3',
-  'dart_shelf_static_tag': '0.2.5',
-  'dart_shelf_tag': '0.6.8',
-  'dart_shelf_web_socket_tag': '0.2.1',
+  'dart_shelf_static_rev': '3558aa35a0d2f0f35868c3fd64b258e140db0122',
+  'dart_shelf_tag': '0.7.1',
+  'dart_shelf_web_socket_tag': '0.2.2',
   'dart_source_map_stack_trace_tag': '1.1.4',
   'dart_source_maps_tag': '0.10.4',
   'dart_source_span_tag': '1.4.0',
@@ -96,7 +97,7 @@ vars = {
   'dart_utf_tag': '0.9.0+3',
   'dart_watcher_tag': '0.9.7+4',
   'dart_web_socket_channel_tag': '1.0.6',
-  'dart_yaml_tag': '2.1.12',
+  'dart_yaml_tag': '2.1.13',
 
   # Build bot tooling for iOS
   'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
@@ -114,7 +115,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '82a50e874d17d810886ec6d782662ab79ebbd921',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'd02d9495056421aa41705a3f5a403db63ee213c0',
 
    # Fuchsia compatibility
    #
@@ -232,6 +233,9 @@ deps = {
   'src/third_party/dart/third_party/pkg/http_parser':
    Var('chromium_git') + '/external/github.com/dart-lang/http_parser' + '@' + Var('dart_http_parser_tag'),
 
+  'src/third_party/dart/third_party/pkg/http_retry':
+   Var('chromium_git') + '/external/github.com/dart-lang/http_retry' + '@' + Var('dart_http_retry_tag'),
+
   'src/third_party/dart/third_party/pkg/http_throttle':
    Var('chromium_git') + '/external/github.com/dart-lang/http_throttle' + '@' + Var('dart_http_throttle_tag'),
 
@@ -296,7 +300,7 @@ deps = {
    Var('chromium_git') + '/external/github.com/dart-lang/shelf_packages_handler' + '@' + Var('dart_shelf_packages_handler_tag'),
 
   'src/third_party/dart/third_party/pkg/shelf_static':
-   Var('chromium_git') + '/external/github.com/dart-lang/shelf_static' + '@' + Var('dart_shelf_static_tag'),
+   Var('chromium_git') + '/external/github.com/dart-lang/shelf_static' + '@' + Var('dart_shelf_static_rev'),
 
   'src/third_party/dart/third_party/pkg/shelf_web_socket':
    Var('chromium_git') + '/external/github.com/dart-lang/shelf_web_socket' + '@' + Var('dart_shelf_web_socket_tag'),

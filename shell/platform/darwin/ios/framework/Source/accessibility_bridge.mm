@@ -159,7 +159,7 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
   // Note: hit detection will only apply to elements that report
   // -isAccessibilityElement of YES. The framework will continue scanning the
   // entire element tree looking for such a hit.
-  return _node.flags != 0 || !_node.label.empty() ||
+  return _node.flags != 0 || !_node.label.empty() || !_node.value.empty() || !_node.hint.empty() ||
          (_node.actions & ~blink::kScrollableSemanticsActions) != 0;
 }
 
@@ -423,7 +423,8 @@ void AccessibilityBridge::UpdateSemantics(std::vector<blink::SemanticsNode> node
 }
 
 void AccessibilityBridge::DispatchSemanticsAction(int32_t uid, blink::SemanticsAction action) {
-  platform_view_->DispatchSemanticsAction(uid, action);
+  std::vector<uint8_t> args;
+  platform_view_->DispatchSemanticsAction(uid, action, args);
 }
 
 SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid) {

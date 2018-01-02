@@ -90,6 +90,15 @@ void SurfaceTextureUpdateTexImage(JNIEnv* env, jobject obj) {
   FXL_CHECK(CheckException(env));
 }
 
+static jmethodID g_get_transform_matrix_method = nullptr;
+void SurfaceTextureGetTransformMatrix(JNIEnv* env,
+                                      jobject obj,
+                                      jfloatArray result) {
+  ASSERT_IS_GPU_THREAD;
+  env->CallVoidMethod(obj, g_get_transform_matrix_method, result);
+  FXL_CHECK(CheckException(env));
+}
+
 static jmethodID g_detach_from_gl_context_method = nullptr;
 void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj) {
   ASSERT_IS_GPU_THREAD;
@@ -189,14 +198,22 @@ static void SetViewportMetrics(JNIEnv* env,
                                jint physicalPaddingTop,
                                jint physicalPaddingRight,
                                jint physicalPaddingBottom,
-                               jint physicalPaddingLeft) {
-  return PLATFORM_VIEW->SetViewportMetrics(devicePixelRatio,       //
-                                           physicalWidth,          //
-                                           physicalHeight,         //
-                                           physicalPaddingTop,     //
-                                           physicalPaddingRight,   //
-                                           physicalPaddingBottom,  //
-                                           physicalPaddingLeft);
+                               jint physicalPaddingLeft,
+                               jint physicalViewInsetTop,
+                               jint physicalViewInsetRight,
+                               jint physicalViewInsetBottom,
+                               jint physicalViewInsetLeft) {
+  return PLATFORM_VIEW->SetViewportMetrics(devicePixelRatio,         //
+                                           physicalWidth,            //
+                                           physicalHeight,           //
+                                           physicalPaddingTop,       //
+                                           physicalPaddingRight,     //
+                                           physicalPaddingBottom,    //
+                                           physicalPaddingLeft,      //
+                                           physicalViewInsetTop,     //
+                                           physicalViewInsetRight,   //
+                                           physicalViewInsetBottom,  //
+                                           physicalViewInsetLeft);
 }
 
 static jobject GetBitmap(JNIEnv* env, jobject jcaller, jlong platform_view) {
@@ -236,8 +253,11 @@ static void DispatchSemanticsAction(JNIEnv* env,
                                     jobject jcaller,
                                     jlong platform_view,
                                     jint id,
-                                    jint action) {
-  return PLATFORM_VIEW->DispatchSemanticsAction(id, action);
+                                    jint action,
+                                    jobject args,
+                                    jint args_position) {
+  return PLATFORM_VIEW->DispatchSemanticsAction(env, id, action, args,
+                                                args_position);
 }
 
 static void SetSemanticsEnabled(JNIEnv* env,
@@ -403,7 +423,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       },
       {
           .name = "nativeSetViewportMetrics",
-          .signature = "(JFIIIIII)V",
+          .signature = "(JFIIIIIIIIII)V",
           .fnPtr = reinterpret_cast<void*>(&shell::SetViewportMetrics),
       },
       {
@@ -418,7 +438,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       },
       {
           .name = "nativeDispatchSemanticsAction",
-          .signature = "(JII)V",
+          .signature = "(JIILjava/nio/ByteBuffer;I)V",
           .fnPtr = reinterpret_cast<void*>(&shell::DispatchSemanticsAction),
       },
       {
@@ -501,6 +521,13 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       env->GetMethodID(g_surface_texture_class->obj(), "updateTexImage", "()V");
 
   if (g_update_tex_image_method == nullptr) {
+    return false;
+  }
+
+  g_get_transform_matrix_method = env->GetMethodID(
+      g_surface_texture_class->obj(), "getTransformMatrix", "([F)V");
+
+  if (g_get_transform_matrix_method == nullptr) {
     return false;
   }
 

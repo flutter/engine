@@ -12,7 +12,7 @@ group("flutter") {
     "$flutter_root/third_party/txt",
   ]
 
-  if (!is_fuchsia) {
+  if (!is_fuchsia && !is_fuchsia_host) {
     if (current_toolchain == host_toolchain) {
       public_deps += [
         "$flutter_root/frontend_server",
@@ -23,8 +23,8 @@ group("flutter") {
 
   if (is_fuchsia) {
     public_deps += [
-      "$flutter_root/content_handler",
-      "$flutter_root/content_handler:aot_content_handler",
+      "$flutter_root/content_handler:aot",
+      "$flutter_root/content_handler:jit",
       "$flutter_root/examples",
       "$flutter_root/flow",
     ]
@@ -49,7 +49,6 @@ group("flutter") {
       "$flutter_root/fml:fml_unittests",
       "$flutter_root/sky/engine/wtf:wtf_unittests",
       "$flutter_root/synchronization:synchronization_unittests",
-      "$flutter_root/third_party/txt:txt_benchmarks",
       "$flutter_root/third_party/txt:txt_unittests",
       "//garnet/public/lib/fxl:fxl_unittests",
     ]
@@ -63,25 +62,32 @@ config("config") {
 if (is_fuchsia) {
   import("//build/package.gni")
 
-  package("package") {
-    system_image = true
-    testonly = true
-
-    package_name = "flutter"
-
+  package("flutter_aot_runner") {
     deps = [
-      ":flutter",
+      "$flutter_root/content_handler:aot",
     ]
 
-    binaries = [
-      {
-        name = "flutter_jit_runner"
-      },
-      {
-        name = "flutter_aot_runner"
-      },
-    ]
+    binary = "flutter_aot_runner"
+
+    meta = [ {
+      path = rebase_path("content_handler/meta/sandbox")
+      dest = "sandbox"
+    } ]
   }
+
+  package("flutter_jit_runner") {
+    deps = [
+      "$flutter_root/content_handler:jit",
+    ]
+
+    binary = "flutter_jit_runner"
+
+    meta = [ {
+      path = rebase_path("content_handler/meta/sandbox")
+      dest = "sandbox"
+    } ]
+  }
+
 } else {
   group("dist") {
     testonly = true

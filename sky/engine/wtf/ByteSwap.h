@@ -36,22 +36,39 @@
 
 #include <stdint.h>
 
+#if COMPILER(MSVC)
+#include <stdlib.h>
+#endif
+
 namespace WTF {
 
 inline uint32_t wswap32(uint32_t x) {
   return ((x & 0xffff0000) >> 16) | ((x & 0x0000ffff) << 16);
 }
 
+#if COMPILER(MSVC)
+ALWAYS_INLINE uint64_t bswap64(uint64_t x) {
+  return _byteswap_uint64(x);
+}
+ALWAYS_INLINE uint32_t bswap32(uint32_t x) {
+  return _byteswap_ulong(x);
+}
+#else
 ALWAYS_INLINE uint64_t bswap64(uint64_t x) {
   return __builtin_bswap64(x);
 }
 ALWAYS_INLINE uint32_t bswap32(uint32_t x) {
   return __builtin_bswap32(x);
 }
+#endif
 // GCC 4.6 lacks __builtin_bswap16. Newer versions have it but we support 4.6.
 #if COMPILER(CLANG)
 ALWAYS_INLINE uint16_t bswap16(uint16_t x) {
   return __builtin_bswap16(x);
+}
+#elif COMPILER(MSVC)
+ALWAYS_INLINE uint16_t bswap16(uint16_t x) {
+  return _byteswap_ushort(x);
 }
 #else
 inline uint16_t bswap16(uint16_t x) {

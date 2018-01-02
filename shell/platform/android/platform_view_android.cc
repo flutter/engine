@@ -251,7 +251,11 @@ void PlatformViewAndroid::SetViewportMetrics(jfloat device_pixel_ratio,
                                              jint physical_padding_top,
                                              jint physical_padding_right,
                                              jint physical_padding_bottom,
-                                             jint physical_padding_left) {
+                                             jint physical_padding_left,
+                                             jint physical_view_inset_top,
+                                             jint physical_view_inset_right,
+                                             jint physical_view_inset_bottom,
+                                             jint physical_view_inset_left) {
   blink::ViewportMetrics metrics;
   metrics.device_pixel_ratio = device_pixel_ratio;
   metrics.physical_width = physical_width;
@@ -260,6 +264,10 @@ void PlatformViewAndroid::SetViewportMetrics(jfloat device_pixel_ratio,
   metrics.physical_padding_right = physical_padding_right;
   metrics.physical_padding_bottom = physical_padding_bottom;
   metrics.physical_padding_left = physical_padding_left;
+  metrics.physical_view_inset_top = physical_view_inset_top;
+  metrics.physical_view_inset_right = physical_view_inset_right;
+  metrics.physical_view_inset_bottom = physical_view_inset_bottom;
+  metrics.physical_view_inset_left = physical_view_inset_left;
 
   blink::Threads::UI()->PostTask([ engine = engine_->GetWeakPtr(), metrics ] {
     if (engine)
@@ -410,9 +418,24 @@ void PlatformViewAndroid::HandlePlatformMessageEmptyResponse(int response_id) {
                                            nullptr);
 }
 
-void PlatformViewAndroid::DispatchSemanticsAction(jint id, jint action) {
+void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env,
+                                                  jint id,
+                                                  jint action,
+                                                  jobject args,
+                                                  jint args_position) {
+  if (env->IsSameObject(args, NULL)) {
+    std::vector<uint8_t> args_vector;
+    PlatformView::DispatchSemanticsAction(
+        id, static_cast<blink::SemanticsAction>(action), args_vector);
+    return;
+  }
+
+  uint8_t* args_data = static_cast<uint8_t*>(env->GetDirectBufferAddress(args));
+  std::vector<uint8_t> args_vector =
+      std::vector<uint8_t>(args_data, args_data + args_position);
+
   PlatformView::DispatchSemanticsAction(
-      id, static_cast<blink::SemanticsAction>(action));
+      id, static_cast<blink::SemanticsAction>(action), std::move(args_vector));
 }
 
 void PlatformViewAndroid::SetSemanticsEnabled(jboolean enabled) {

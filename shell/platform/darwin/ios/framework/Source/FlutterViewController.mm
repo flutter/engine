@@ -11,6 +11,7 @@
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_block.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/lib/ui/painting/resource_context.h"
 #include "flutter/shell/platform/darwin/common/buffer_conversions.h"
 #include "flutter/shell/platform/darwin/common/platform_mac.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs.h"
@@ -398,6 +399,8 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
   [self surfaceUpdated:NO];
+  // GrContext operations are blocked when the app is in the background.
+  blink::ResourceContext::Freeze();
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
 }
 
@@ -405,6 +408,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
+  blink::ResourceContext::Unfreeze();
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
 }
 
@@ -479,7 +483,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
     }
 
     FXL_DCHECK(device_id != 0);
-    CGPoint windowCoordinates = [touch locationInView:nil];
+    CGPoint windowCoordinates = [touch locationInView:self.view];
 
     blink::PointerData pointer_data;
     pointer_data.Clear();
@@ -637,10 +641,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
     _viewportMetrics.physical_padding_top = self.view.safeAreaInsets.top * scale;
     _viewportMetrics.physical_padding_left = self.view.safeAreaInsets.left * scale;
     _viewportMetrics.physical_padding_right = self.view.safeAreaInsets.right * scale;
-    // TODO(cbracken) enable bottom padding once safe area and keyboard view
-    // occlusion are differentiated as two different Window getters (margin,
-    // padding).
-    // _viewportMetrics.physical_padding_bottom = self.view.safeAreaInsets.bottom * scale;
+    _viewportMetrics.physical_padding_bottom = self.view.safeAreaInsets.bottom * scale;
 #pragma clang diagnostic pop
   } else {
     _viewportMetrics.physical_padding_top = [self statusBarPadding] * scale;
@@ -653,12 +654,12 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   NSDictionary* info = [notification userInfo];
   CGFloat bottom = CGRectGetHeight([[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue]);
   CGFloat scale = [UIScreen mainScreen].scale;
-  _viewportMetrics.physical_padding_bottom = bottom * scale;
+  _viewportMetrics.physical_view_inset_bottom = bottom * scale;
   [self updateViewportMetrics];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
-  _viewportMetrics.physical_padding_bottom = 0;
+  _viewportMetrics.physical_view_inset_bottom = 0;
   [self updateViewportMetrics];
 }
 
@@ -802,10 +803,18 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 - (void)handleStatusBarTouches:(UIEvent*)event {
+  CGFloat standardStatusBarHeight = kStandardStatusBarHeight;
+  if (_platformSupportsSafeAreaInsets) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+    standardStatusBarHeight = self.view.safeAreaInsets.top;
+#pragma clang diagnostic pop
+  }
+
   // If the status bar is double-height, don't handle status bar taps. iOS
   // should open the app associated with the status bar.
   CGRect statusBarFrame = [UIApplication sharedApplication].statusBarFrame;
-  if (statusBarFrame.size.height != kStandardStatusBarHeight) {
+  if (statusBarFrame.size.height != standardStatusBarHeight) {
     return;
   }
 
