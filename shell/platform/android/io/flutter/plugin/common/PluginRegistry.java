@@ -126,7 +126,12 @@ public interface PluginRegistry {
         Registrar addRequestPermissionsResultListener(RequestPermissionsResultListener listener);
 
         /**
-         * @deprecated This method will be removed. Use
+         * Adds a callback allowing the plugin to take part in handling incoming
+         * calls to {@link Activity#onRequestPermissionsResult(int, String[], int[])}
+         * or {android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
+         *
+         * @deprecated on 2018-01-02 because of misspelling. This method will be made unavailable
+         * on 2018-02-06. Use
          * {@link #addRequestPermissionsResultListener(RequestPermissionsResultListener)} instead.
          */
         @Deprecated
@@ -181,10 +186,18 @@ public interface PluginRegistry {
     }
 
     /**
-     * This interface is deprecated, and will be removed.
-     * Use {@link RequestPermissionsResultListener} instead.
+     * Delegate interface for handling result of permissions requests on
+     * behalf of the main {@link Activity}.
+     *
+     * Deprecated on 2018-01-02 because of misspelling. This interface will be made
+     * unavailable on 2018-02-06. Use {@link RequestPermissionsResultListener} instead.
      */
     interface RequestPermissionResultListener {
+        /**
+         * @return true if the result has been handled.
+         * @deprecated on 2018-01-02 because of misspelling. This method will be made
+         * unavailable on 2018-02-06. Use {@link RequestPermissionsResultListener} instead.
+         */
         @Deprecated
         boolean onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults);
     }
