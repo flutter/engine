@@ -129,7 +129,7 @@ public final class FlutterActivityDelegate
     @Deprecated
     public boolean onRequestPermissionResult(
             int requestCode, String[] permissions, int[] grantResults) {
-        return flutterView.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
+        return onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
