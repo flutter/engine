@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '075720c352685b6c4fbfa3b6300b270714562f62',
+  'dart_revision': 'e122f4825726035e4579471ef83848b1aa796444',
 
   'dart_args_tag': '0.13.7',
   'dart_async_tag': '2.0.0',
@@ -54,6 +54,7 @@ vars = {
   'dart_html_tag': '0.13.2',
   'dart_http_multi_server_tag': '2.0.4',
   'dart_http_parser_tag': '3.1.1',
+  'dart_http_retry_tag': '0.1.0',
   'dart_http_tag': '0.11.3+14',
   'dart_http_throttle_tag': '1.0.1',
   'dart_intl_tag': '0.15.2',
@@ -74,13 +75,13 @@ vars = {
   'dart_plugin_tag': '0.2.0+2',
   'dart_pool_tag': '1.3.3',
   'dart_protobuf_tag': '0.5.4',
-  'dart_pub_rev': 'cde958f157d3662bf968bcbed05580d5c0355e89',
+  'dart_pub_rev': '667281eef93b4be648cceca400e954e000edba38',
   'dart_pub_semver_tag': '1.3.2',
   'dart_quiver_tag': '0.25.0',
   'dart_resource_rev': 'af5a5bf65511943398146cf146e466e5f0b95cb9',
   'dart_root_certificates_rev': 'a4c7c6f23a664a37bc1b6f15a819e3f2a292791a',
   'dart_shelf_packages_handler_tag': '1.0.3',
-  'dart_shelf_static_tag': '0.2.5',
+  'dart_shelf_static_rev': '3558aa35a0d2f0f35868c3fd64b258e140db0122',
   'dart_shelf_tag': '0.7.1',
   'dart_shelf_web_socket_tag': '0.2.2',
   'dart_source_map_stack_trace_tag': '1.1.4',
@@ -232,6 +233,9 @@ deps = {
   'src/third_party/dart/third_party/pkg/http_parser':
    Var('chromium_git') + '/external/github.com/dart-lang/http_parser' + '@' + Var('dart_http_parser_tag'),
 
+  'src/third_party/dart/third_party/pkg/http_retry':
+   Var('chromium_git') + '/external/github.com/dart-lang/http_retry' + '@' + Var('dart_http_retry_tag'),
+
   'src/third_party/dart/third_party/pkg/http_throttle':
    Var('chromium_git') + '/external/github.com/dart-lang/http_throttle' + '@' + Var('dart_http_throttle_tag'),
 
@@ -296,7 +300,7 @@ deps = {
    Var('chromium_git') + '/external/github.com/dart-lang/shelf_packages_handler' + '@' + Var('dart_shelf_packages_handler_tag'),
 
   'src/third_party/dart/third_party/pkg/shelf_static':
-   Var('chromium_git') + '/external/github.com/dart-lang/shelf_static' + '@' + Var('dart_shelf_static_tag'),
+   Var('chromium_git') + '/external/github.com/dart-lang/shelf_static' + '@' + Var('dart_shelf_static_rev'),
 
   'src/third_party/dart/third_party/pkg/shelf_web_socket':
    Var('chromium_git') + '/external/github.com/dart-lang/shelf_web_socket' + '@' + Var('dart_shelf_web_socket_tag'),
