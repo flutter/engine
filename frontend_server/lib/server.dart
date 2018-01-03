@@ -136,7 +136,7 @@ class _FrontendCompiler implements CompilerInterface {
     ArgResults options, {
     IncrementalKernelGenerator generator,
   }) async {
-    final Uri _filenameUri = Uri.base.resolve(new Uri.file(filename).toString());
+    final Uri filenameUri = Uri.base.resolveUri(new Uri.file(filename));
     _kernelBinaryFilename = "$filename.dill";
     final String boundaryKey = new Uuid().generateV4();
     _outputStream.writeln("result $boundaryKey");
@@ -156,7 +156,7 @@ class _FrontendCompiler implements CompilerInterface {
       _generator = generator != null
           ? generator
           : await IncrementalKernelGenerator.newInstance(
-              compilerOptions, _filenameUri,
+              compilerOptions, filenameUri,
               useMinimalGenerator: true);
       final DeltaProgram deltaProgram =
           await _runWithPrintRedirection(() => _generator.computeDelta());
