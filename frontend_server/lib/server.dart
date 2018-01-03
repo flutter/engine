@@ -169,8 +169,10 @@ class _FrontendCompiler implements CompilerInterface {
       if (options['link-platform']) {
         // TODO(aam): Remove linkedDependencies once platform is directly embedded
         // into VM snapshot and http://dartbug.com/30111 is fixed.
+        final String platformKernelDill =
+            options['strong'] ? 'platform_strong.dill' : 'platform.dill';
         compilerOptions.linkedDependencies = <Uri>[
-          sdkRoot.resolve('platform.dill')
+          sdkRoot.resolve(platformKernelDill)
         ];
       }
       program = await _runWithPrintRedirection(() => compileToKernel(
