@@ -104,9 +104,14 @@ static const char* kDartWriteProtectCodeArgs[] FXL_ALLOW_UNUSED_TYPE = {
     "--no_write_protect_code",
 };
 
-static const char* kDartCheckedModeArgs[] = {
+static const char* kDartAssertArgs[] = {
     // clang-format off
     "--enable_asserts",
+    // clang-format on
+};
+
+static const char* kDartCheckedModeArgs[] = {
+    // clang-format off
     "--enable_type_checks",
     "--error_on_bad_type",
     "--error_on_bad_override",
@@ -593,8 +598,14 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
 #endif
 
   if (settings.dart_strong_mode) {
+    // In strong mode we enable all the strong mode options and if running
+    // debug product mode we also enable asserts.
     PushBackAll(&args, kDartStrongModeArgs, arraysize(kDartStrongModeArgs));
+    if (use_checked_mode) {
+      PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
+    }
   } else if (use_checked_mode) {
+    PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
     PushBackAll(&args, kDartCheckedModeArgs, arraysize(kDartCheckedModeArgs));
   }
 
