@@ -170,7 +170,7 @@ class _FrontendCompiler implements CompilerInterface {
         ];
       }
       program = await _runWithPrintRedirection(() =>
-          compileToKernel(_filenameUri, compilerOptions, aot: options['aot']));
+          compileToKernel(filenameUri, compilerOptions, aot: options['aot']));
     }
     if (program != null) {
       final IOSink sink = new File(_kernelBinaryFilename).openWrite();
