@@ -333,7 +333,13 @@ void Shell::SetAssetBundlePathInPlatformViewUIThread(
 
   IteratePlatformViews([
     view_id,                                         // argument
+#if !defined(OS_WIN)
+                 // Using std::move on const references inside lambda capture is
+                 // not supported on Windows for some reason.
     assets_directory = std::move(assets_directory),  // argument
+#else
+    assets_directory,                                // argument
+#endif
     &view_existed,                                   // out
     &dart_isolate_id,                                // out
     &isolate_name                                    // out
