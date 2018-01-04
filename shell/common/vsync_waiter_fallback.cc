@@ -4,7 +4,6 @@
 
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 
-#include "flutter/common/threads.h"
 #include "lib/fxl/logging.h"
 
 namespace shell {
@@ -21,8 +20,10 @@ fxl::TimePoint SnapToNextTick(fxl::TimePoint value,
 
 }  // namespace
 
-VsyncWaiterFallback::VsyncWaiterFallback()
-    : phase_(fxl::TimePoint::Now()), weak_factory_(this) {}
+VsyncWaiterFallback::VsyncWaiterFallback(blink::TaskRunners task_runners)
+    : VsyncWaiter(std::move(task_runners)),
+      phase_(fxl::TimePoint::Now()),
+      weak_factory_(this) {}
 
 VsyncWaiterFallback::~VsyncWaiterFallback() = default;
 
@@ -35,7 +36,7 @@ void VsyncWaiterFallback::AsyncWaitForVsync(Callback callback) {
   fxl::TimePoint now = fxl::TimePoint::Now();
   fxl::TimePoint next = SnapToNextTick(now, phase_, interval);
 
-  blink::Threads::UI()->PostDelayedTask(
+  task_runners_.GetUITaskRunner()->PostDelayedTask(
       [self = weak_factory_.GetWeakPtr()] {
         if (!self)
           return;

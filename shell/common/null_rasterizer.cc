@@ -6,27 +6,15 @@
 
 namespace shell {
 
-NullRasterizer::NullRasterizer() : weak_factory_(this) {}
+NullRasterizer::NullRasterizer(blink::TaskRunners task_runners)
+    : Rasterizer(std::move(task_runners)) {}
 
-void NullRasterizer::Setup(
-    std::unique_ptr<Surface> surface_or_null,
-    fxl::Closure rasterizer_continuation,
-    fxl::AutoResetWaitableEvent* setup_completion_event) {
+void NullRasterizer::Setup(std::unique_ptr<Surface> surface_or_null) {
   surface_ = std::move(surface_or_null);
-  rasterizer_continuation();
-  setup_completion_event->Signal();
 }
 
-void NullRasterizer::Teardown(
-    fxl::AutoResetWaitableEvent* teardown_completion_event) {
-  if (surface_) {
-    surface_.reset();
-  }
-  teardown_completion_event->Signal();
-}
-
-fml::WeakPtr<Rasterizer> NullRasterizer::GetWeakRasterizerPtr() {
-  return weak_factory_.GetWeakPtr();
+void NullRasterizer::Teardown() {
+  surface_.reset();
 }
 
 flow::LayerTree* NullRasterizer::GetLastLayerTree() {
@@ -57,11 +45,6 @@ void NullRasterizer::Draw(
 
 void NullRasterizer::AddNextFrameCallback(fxl::Closure nextFrameCallback) {
   // Null rasterizer. Nothing to do.
-}
-
-void NullRasterizer::SetTextureRegistry(
-    flow::TextureRegistry* textureRegistry) {
-  texture_registry_ = textureRegistry;
 }
 
 }  // namespace shell

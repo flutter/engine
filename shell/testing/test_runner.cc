@@ -6,25 +6,51 @@
 
 #include <iostream>
 
-#include "flutter/common/threads.h"
+#include "flutter/fml/message_loop.h"
+#include "flutter/shell/common/null_rasterizer.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
-#include "flutter/shell/testing/platform_view_test.h"
 
 namespace shell {
 
-TestRunner::TestRunner()
-    : platform_view_(std::make_shared<PlatformViewTest>()) {
-  platform_view_->Attach();
+TestRunner::TestRunner() {
+  // We'll use the current thread as the platform thread.
+  thread_host_ = {"io.flutter.test.", ThreadHost::Type::GPU |
+                                          ThreadHost::Type::UI |
+                                          ThreadHost::Type::IO};
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  blink::TaskRunners task_runners(
+      "io.flutter.test", fml::MessageLoop::GetCurrent().GetTaskRunner(),
+      thread_host_.gpu_thread->GetTaskRunner(),
+      thread_host_.ui_thread->GetTaskRunner(),
+      thread_host_.io_thread->GetTaskRunner());
+
+  Shell::CreateCallback<PlatformView> on_create_platform_view =
+      [](Shell& shell) {
+        return std::make_unique<PlatformView>(shell, shell.GetTaskRunners());
+      };
+
+  Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
+    return std::make_unique<NullRasterizer>(shell.GetTaskRunners());
+  };
+
+  const blink::Settings settings{};
+
+  shell_ = Shell::Create(std::move(task_runners), settings,
+                         on_create_platform_view, on_create_rasterizer);
+  FXL_CHECK(shell_);
+
   blink::ViewportMetrics metrics;
   metrics.device_pixel_ratio = 3.0;
   metrics.physical_width = 2400;   // 800 at 3x resolution
   metrics.physical_height = 1800;  // 600 at 3x resolution
 
-  blink::Threads::UI()->PostTask(
-      [ engine = platform_view_->engine().GetWeakPtr(), metrics ] {
-        if (engine)
+  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
+      [ engine = shell_->GetEngine(), metrics ] {
+        if (engine) {
           engine->SetViewportMetrics(metrics);
+        }
       });
 }
 
@@ -37,11 +63,16 @@ TestRunner& TestRunner::Shared() {
   return *g_test_runner;
 }
 
-void TestRunner::Run(const TestDescriptor& test) {
-  blink::Threads::UI()->PostTask(
-      [ engine = platform_view_->engine().GetWeakPtr(), test ] {
-        if (engine)
-          engine->RunBundleAndSource(std::string(), test.path, test.packages);
+void TestRunner::Run(RunConfiguration config) {
+  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
+      [ engine = shell_->GetEngine(), config = std::move(config) ] {
+        if (engine) {
+          auto success = engine->Run(config);
+          if (!success) {
+            FXL_LOG(INFO) << "Could not run test with configuration: "
+                          << config.ToString();
+          }
+        }
       });
 }
 

@@ -6,6 +6,9 @@
 
 namespace shell {
 
+VsyncWaiter::VsyncWaiter(blink::TaskRunners task_runners)
+    : task_runners_(std::move(task_runners)) {}
+
 VsyncWaiter::~VsyncWaiter() = default;
 
 }  // namespace shell

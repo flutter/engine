@@ -7,6 +7,7 @@ source_set("fml") {
     "icu_util.cc",
     "icu_util.h",
     "mapping.h",
+    "memory/thread_checker.h",
     "memory/weak_ptr.h",
     "memory/weak_ptr_internal.cc",
     "memory/weak_ptr_internal.h",

@@ -13,18 +13,13 @@ namespace shell {
 
 class NullRasterizer : public Rasterizer {
  public:
-  NullRasterizer();
+  NullRasterizer(blink::TaskRunners task_runners);
 
-  void Setup(std::unique_ptr<Surface> surface_or_null,
-             fxl::Closure rasterizer_continuation,
-             fxl::AutoResetWaitableEvent* setup_completion_event) override;
+  void Setup(std::unique_ptr<Surface> surface_or_null) override;
 
-  void Teardown(
-      fxl::AutoResetWaitableEvent* teardown_completion_event) override;
+  void Teardown() override;
 
   void Clear(SkColor color, const SkISize& size) override;
-
-  fml::WeakPtr<Rasterizer> GetWeakRasterizerPtr() override;
 
   flow::LayerTree* GetLastLayerTree() override;
 
@@ -36,11 +31,8 @@ class NullRasterizer : public Rasterizer {
 
   void AddNextFrameCallback(fxl::Closure nextFrameCallback) override;
 
-  void SetTextureRegistry(flow::TextureRegistry* textureRegistry) override;
-
  private:
   std::unique_ptr<Surface> surface_;
-  fml::WeakPtrFactory<NullRasterizer> weak_factory_;
   flow::TextureRegistry* texture_registry_;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(NullRasterizer);

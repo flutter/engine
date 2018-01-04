@@ -5,11 +5,13 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 
 #include "flutter/common/settings.h"
-#include "flutter/common/threads.h"
+#include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell.h"
+#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+#include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "lib/fxl/synchronization/waitable_event.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
@@ -38,6 +40,14 @@
 #else   // TARGET_IPHONE_SIMULATOR
   return [CAEAGLLayer class];
 #endif  // TARGET_IPHONE_SIMULATOR
+}
+
+- (std::unique_ptr<IOSSurface>)createSurface {
+  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
+    return std::make_unique<IOSSurfaceGL>({reinterpret_cast<CAEAGLLayer*>([self.layer retain])});
+  } else {
+    return std::make_unique<IOSSurfaceSoftware>({reinterpret_cast<CALayer*>([self.layer retain])});
+  }
 }
 
 - (BOOL)enableInputClicksWhenVisible {

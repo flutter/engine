@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/surface.h"
@@ -18,18 +19,17 @@ namespace shell {
 
 class Rasterizer {
  public:
+  Rasterizer(blink::TaskRunners task_runners);
+
   virtual ~Rasterizer();
 
-  virtual void Setup(std::unique_ptr<Surface> surface_or_null,
-                     fxl::Closure rasterizer_continuation,
-                     fxl::AutoResetWaitableEvent* setup_completion_event) = 0;
+  virtual void Setup(std::unique_ptr<Surface> surface) = 0;
 
-  virtual void Teardown(
-      fxl::AutoResetWaitableEvent* teardown_completion_event) = 0;
+  virtual void Teardown() = 0;
 
   virtual void Clear(SkColor color, const SkISize& size) = 0;
 
-  virtual fml::WeakPtr<Rasterizer> GetWeakRasterizerPtr() = 0;
+  fml::WeakPtr<Rasterizer> GetWeakPtr() const;
 
   virtual flow::LayerTree* GetLastLayerTree() = 0;
 
@@ -43,7 +43,13 @@ class Rasterizer {
   // Set a callback to be called once when the next frame is drawn.
   virtual void AddNextFrameCallback(fxl::Closure nextFrameCallback) = 0;
 
-  virtual void SetTextureRegistry(flow::TextureRegistry* textureRegistry) = 0;
+ protected:
+  blink::TaskRunners task_runners_;
+  fml::WeakPtr<Rasterizer> weak_prototype_;
+  fml::WeakPtrFactory<Rasterizer> weak_factory_;
+
+ private:
+  FXL_DISALLOW_COPY_AND_ASSIGN(Rasterizer);
 };
 
 }  // namespace shell

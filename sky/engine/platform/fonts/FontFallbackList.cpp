@@ -37,7 +37,7 @@
 
 namespace blink {
 
-FontFallbackList::FontFallbackList()
+FontFallbackList::FontFallbackList(bool useTestFonts)
     : m_pageZero(0),
       m_cachedPrimarySimpleFontData(0),
       m_fontSelector(nullptr),
@@ -45,7 +45,8 @@ FontFallbackList::FontFallbackList()
       m_familyIndex(0),
       m_generation(FontCache::fontCache()->generation()),
       m_pitch(UnknownPitch),
-      m_hasLoadingFallback(false) {}
+      m_hasLoadingFallback(false),
+      m_useTestFonts(useTestFonts) {}
 
 void FontFallbackList::invalidate(PassRefPtr<FontSelector> fontSelector) {
   releaseFontData();
@@ -193,7 +194,7 @@ PassRefPtr<FontData> FontFallbackList::getFontData(
   const FontFamily* currFamily = startFamily;
   while (currFamily && !result) {
     familyIndex++;
-    if (currFamily->family().length() || Settings::Get().use_test_fonts) {
+    if (currFamily->family().length() || m_useTestFonts) {
       if (m_fontSelector)
         result =
             m_fontSelector->getFontData(fontDescription, currFamily->family());

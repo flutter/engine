@@ -55,14 +55,20 @@ class ParagraphBuilder : public fxl::RefCountedThreadSafe<ParagraphBuilder>,
                             const std::string& fontFamily,
                             double fontSize,
                             double lineHeight,
-                            const std::u16string& ellipsis);
+                            const std::u16string& ellipsis,
+                            bool use_blink);
 
   void createRenderView();
 
+  // TODO: This can be removed when the render view association for the legacy
+  // runtime is removed.
+  fxl::RefPtr<fxl::TaskRunner> destruction_task_runner_ =
+      fml::MessageLoop::GetCurrent().GetTaskRunner();
   OwnPtr<RenderView> m_renderView;
   RenderObject* m_renderParagraph;
   RenderObject* m_currentRenderObject;
   std::unique_ptr<txt::ParagraphBuilder> m_paragraphBuilder;
+  bool m_useBlink;
 };
 
 }  // namespace blink

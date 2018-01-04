@@ -12,7 +12,7 @@ namespace shell {
 
 class VsyncWaiterMac : public VsyncWaiter {
  public:
-  VsyncWaiterMac();
+  VsyncWaiterMac(blink::TaskRunners task_runners);
 
   ~VsyncWaiterMac() override;
 

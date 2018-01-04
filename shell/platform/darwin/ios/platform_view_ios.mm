@@ -8,45 +8,29 @@
 
 #include <utility>
 
-#include "flutter/common/threads.h"
+#include "flutter/common/task_runners.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/shell/common/io_manager.h"
 #include "flutter/shell/gpu/gpu_rasterizer.h"
 #include "flutter/shell/platform/darwin/common/process_info_mac.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
 #include "lib/fxl/synchronization/waitable_event.h"
+#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
 namespace shell {
 
-PlatformViewIOS::PlatformViewIOS(CALayer* layer, NSObject<FlutterBinaryMessenger>* binaryMessenger)
-    : PlatformView(std::make_unique<GPURasterizer>(std::make_unique<ProcessInfoMac>())),
-      ios_surface_(IOSSurface::Create(surface_config_, layer)),
-      weak_factory_(this),
-      binary_messenger_(binaryMessenger) {}
+PlatformViewIOS::PlatformViewIOS(PlatformView::Delegate& delegate,
+                                 blink::TaskRunners task_runners,
+                                 std::unique_ptr<IOSSurface> surface,
+                                 NSObject<FlutterBinaryMessenger>* binaryMessenger)
+    : PlatformView(delegate, std::move(task_runners)),
+      ios_surface_(std::move(surface)),
+      binary_messenger_(binaryMessenger) {
+  FXL_DCHECK(ios_surface_ != nullptr);
+}
 
 PlatformViewIOS::~PlatformViewIOS() = default;
-
-void PlatformViewIOS::Attach() {
-  Attach(NULL);
-}
-
-void PlatformViewIOS::Attach(fxl::Closure firstFrameCallback) {
-  CreateEngine();
-
-  if (firstFrameCallback) {
-    firstFrameCallback_ = firstFrameCallback;
-    rasterizer_->AddNextFrameCallback([weakSelf = GetWeakPtr()] {
-      if (weakSelf) {
-        weakSelf->firstFrameCallback_();
-        weakSelf->firstFrameCallback_ = nullptr;
-      }
-    });
-  }
-}
-
-void PlatformViewIOS::NotifyCreated() {
-  PlatformView::NotifyCreated(ios_surface_->CreateGPUSurface());
-}
 
 void PlatformViewIOS::ToggleAccessibility(UIView* view, bool enabled) {
   if (enabled) {
@@ -57,39 +41,6 @@ void PlatformViewIOS::ToggleAccessibility(UIView* view, bool enabled) {
     accessibility_bridge_ = nullptr;
   }
   SetSemanticsEnabled(enabled);
-}
-
-void PlatformViewIOS::SetupAndLoadFromSource(const std::string& assets_directory,
-                                             const std::string& main,
-                                             const std::string& packages) {
-  blink::Threads::UI()->PostTask(
-      [ engine = engine().GetWeakPtr(), assets_directory, main, packages ] {
-        if (engine)
-          engine->RunBundleAndSource(assets_directory, main, packages);
-      });
-}
-
-fml::WeakPtr<PlatformViewIOS> PlatformViewIOS::GetWeakPtr() {
-  return weak_factory_.GetWeakPtr();
-}
-
-void PlatformViewIOS::UpdateSurfaceSize() {
-  blink::Threads::Gpu()->PostTask([self = GetWeakPtr()]() {
-    if (self && self->ios_surface_ != nullptr) {
-      self->ios_surface_->UpdateStorageSizeIfNecessary();
-    }
-  });
-}
-
-VsyncWaiter* PlatformViewIOS::GetVsyncWaiter() {
-  if (!vsync_waiter_) {
-    vsync_waiter_ = std::make_unique<VsyncWaiterIOS>();
-  }
-  return vsync_waiter_.get();
-}
-
-bool PlatformViewIOS::ResourceContextMakeCurrent() {
-  return ios_surface_ != nullptr ? ios_surface_->ResourceContextMakeCurrent() : false;
 }
 
 void PlatformViewIOS::UpdateSemantics(std::vector<blink::SemanticsNode> update) {
@@ -106,18 +57,20 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
 }
 
-void PlatformViewIOS::RunFromSource(const std::string& assets_directory,
-                                    const std::string& main,
-                                    const std::string& packages) {
-  auto latch = new fxl::ManualResetWaitableEvent();
+std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
+  return ios_surface_->CreateGPUSurface();
+}
 
-  dispatch_async(dispatch_get_main_queue(), ^{
-    SetupAndLoadFromSource(assets_directory, main, packages);
-    latch->Signal();
-  });
+sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
+  if (!ios_surface_->CreateResourceMakeCurrent()) {
+    FLX_LOG(INFO) << "Could not make resource context current on IO thread. Async texture uploads "
+                     "will be disabled.";
+    return nullptr;
+  }
 
-  latch->Wait();
-  delete latch;
+  return IOManager::CreateCompatibleResourceLoadingContext(
+      GrBackend::kOpenGL_GrBackend,
+      reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface()));
 }
 
 }  // namespace shell

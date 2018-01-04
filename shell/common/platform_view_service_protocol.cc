@@ -9,7 +9,8 @@
 #include <string>
 #include <vector>
 
-#include "flutter/common/threads.h"
+#include "flutter/common/task_runners.h"
+#include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/picture_serializer.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell.h"
@@ -99,11 +100,11 @@ static void AppendIsolateRef(std::stringstream* stream,
 }
 
 static void AppendFlutterView(std::stringstream* stream,
-                              uintptr_t view_id,
+                              uintptr_t view,
                               int64_t isolate_id,
                               const std::string isolate_name) {
   *stream << "{\"type\":\"FlutterView\", \"id\": \"" << kViewIdPrefx << "0x"
-          << std::hex << view_id << std::dec << "\"";
+          << std::hex << view << std::dec << "\"";
   if (isolate_id != ILLEGAL_PORT) {
     // Append the isolate (if it exists).
     *stream << ","
@@ -115,38 +116,14 @@ static void AppendFlutterView(std::stringstream* stream,
 
 }  // namespace
 
-void PlatformViewServiceProtocol::RegisterHook(bool running_precompiled_code) {
-  // Listing of FlutterViews.
-  Dart_RegisterRootServiceRequestCallback(kListViewsExtensionName, &ListViews,
-                                          nullptr);
-  // Screenshot.
-  Dart_RegisterRootServiceRequestCallback(kScreenshotExtensionName, &Screenshot,
-                                          nullptr);
+static const char* kRunInViewExtensionName = "_flutter.runInView";
 
-  // SkPicture Screenshot.
-  Dart_RegisterRootServiceRequestCallback(kScreenshotSkpExtensionName,
-                                          &ScreenshotSkp, nullptr);
-
-  // The following set of service protocol extensions require debug build
-  if (running_precompiled_code) {
-    return;
-  }
-  Dart_RegisterRootServiceRequestCallback(kRunInViewExtensionName, &RunInView,
-                                          nullptr);
-  // [benchmark helper] Wait for the UI Thread to idle.
-  Dart_RegisterRootServiceRequestCallback(kFlushUIThreadTasksExtensionName,
-                                          &FlushUIThreadTasks, nullptr);
-}
-
-const char* PlatformViewServiceProtocol::kRunInViewExtensionName =
-    "_flutter.runInView";
-
-bool PlatformViewServiceProtocol::RunInView(const char* method,
-                                            const char** param_keys,
-                                            const char** param_values,
-                                            intptr_t num_params,
-                                            void* user_data,
-                                            const char** json_object) {
+static bool RunInView(const char* method,
+                      const char** param_keys,
+                      const char** param_values,
+                      intptr_t num_params,
+                      void* user_data,
+                      const char** json_object) {
   const char* view_id =
       ValueForKey(param_keys, param_values, num_params, "viewId");
   const char* asset_directory =
@@ -177,13 +154,13 @@ bool PlatformViewServiceProtocol::RunInView(const char* method,
 
   // Ask the Shell to run this script in the specified view. This will run a
   // task on the UI thread before returning.
-  Shell& shell = Shell::Shared();
+  Shell* shell = static_cast<Shell*>(user_data);
   bool view_existed = false;
   Dart_Port main_port = ILLEGAL_PORT;
   std::string isolate_name;
-  shell.RunInPlatformView(view_id_as_num, main_script, packages_file,
-                          asset_directory, &view_existed, &main_port,
-                          &isolate_name);
+  shell->RunInPlatformView(view_id_as_num, main_script, packages_file,
+                           asset_directory, &view_existed, &main_port,
+                           &isolate_name);
 
   if (!view_existed) {
     // If the view did not exist this request has definitely failed.
@@ -201,89 +178,44 @@ bool PlatformViewServiceProtocol::RunInView(const char* method,
   return true;
 }
 
-const char* PlatformViewServiceProtocol::kListViewsExtensionName =
-    "_flutter.listViews";
+static const char* kListViewsExtensionName = "_flutter.listViews";
 
-bool PlatformViewServiceProtocol::ListViews(const char* method,
-                                            const char** param_keys,
-                                            const char** param_values,
-                                            intptr_t num_params,
-                                            void* user_data,
-                                            const char** json_object) {
+static bool ListViews(const char* method,
+                      const char** param_keys,
+                      const char** param_values,
+                      intptr_t num_params,
+                      void* user_data,
+                      const char** json_object) {
   std::stringstream response;
   response << "{\"type\":\"FlutterViewList\",\"views\":[";
   bool prefix_comma = false;
-  Shell::Shared().IteratePlatformViews(
-      [&response, &prefix_comma](PlatformView* view) -> bool {
-        if (prefix_comma) {
-          response << ',';
-        } else {
-          prefix_comma = true;
-        }
-        AppendFlutterView(&response, reinterpret_cast<uintptr_t>(view),
-                          view->engine().GetUIIsolateMainPort(),
-                          view->engine().GetUIIsolateName());
-        return true;
-      });
+  Shell* shell = static_cast<Shell*>(user_data);
+  auto engine = shell->GetEngine();
+  auto view = shell->GetPlatformView();
+  if (engine && view) {
+    if (prefix_comma) {
+      response << ',';
+    } else {
+      prefix_comma = true;
+    }
+    AppendFlutterView(&response, reinterpret_cast<uintptr_t>(view.get()),
+                      engine->GetUIIsolateMainPort(),
+                      engine->GetUIIsolateName());
+  }
   response << "]}";
   // Copy the response.
   *json_object = strdup(response.str().c_str());
   return true;
 }
 
-const char* PlatformViewServiceProtocol::kScreenshotExtensionName =
-    "_flutter.screenshot";
+static const char* kScreenshotExtensionName = "_flutter.screenshot";
 
 static sk_sp<SkData> EncodeBitmapAsPNG(const SkBitmap& bitmap) {
   return SkEncodeBitmap(bitmap, SkEncodedImageFormat::kPNG, 100);
 }
 
-static fml::WeakPtr<Rasterizer> GetRandomRasterizer() {
-  fml::WeakPtr<Rasterizer> rasterizer;
-  Shell::Shared().IteratePlatformViews(
-      [&rasterizer](PlatformView* view) -> bool {
-        rasterizer = view->rasterizer().GetWeakRasterizerPtr();
-        // We just grab the first rasterizer so there is no need to iterate
-        // further.
-        return false;
-      });
-  return rasterizer;
-}
-
-bool PlatformViewServiceProtocol::Screenshot(const char* method,
-                                             const char** param_keys,
-                                             const char** param_values,
-                                             intptr_t num_params,
-                                             void* user_data,
-                                             const char** json_object) {
-  fxl::AutoResetWaitableEvent latch;
-  SkBitmap bitmap;
-  blink::Threads::Gpu()->PostTask([&latch, &bitmap]() {
-    ScreenshotGpuTask(&bitmap);
-    latch.Signal();
-  });
-
-  latch.Wait();
-
-  sk_sp<SkData> png(EncodeBitmapAsPNG(bitmap));
-
-  if (!png)
-    return ErrorServer(json_object, "can not encode screenshot");
-
-  size_t b64_size = SkBase64::Encode(png->data(), png->size(), nullptr);
-  SkAutoTMalloc<char> b64_data(b64_size);
-  SkBase64::Encode(png->data(), png->size(), b64_data.get());
-
-  std::stringstream response;
-  response << "{\"type\":\"Screenshot\","
-           << "\"screenshot\":\"" << std::string{b64_data.get(), b64_size}
-           << "\"}";
-  *json_object = strdup(response.str().c_str());
-  return true;
-}
-
-void PlatformViewServiceProtocol::ScreenshotGpuTask(SkBitmap* bitmap) {
-  auto rasterizer = GetRandomRasterizer();
+static void ScreenshotGpuTask(Shell* shell, SkBitmap* bitmap) {
+  auto rasterizer = shell->GetRasterizer();
 
   if (!rasterizer)
     return;
@@ -309,40 +241,44 @@ void PlatformViewServiceProtocol::ScreenshotGpuTask(SkBitmap* bitmap) {
   canvas->flush();
 }
 
-const char* PlatformViewServiceProtocol::kScreenshotSkpExtensionName =
-    "_flutter.screenshotSkp";
-
-bool PlatformViewServiceProtocol::ScreenshotSkp(const char* method,
-                                                const char** param_keys,
-                                                const char** param_values,
-                                                intptr_t num_params,
-                                                void* user_data,
-                                                const char** json_object) {
+static bool Screenshot(const char* method,
+                       const char** param_keys,
+                       const char** param_values,
+                       intptr_t num_params,
+                       void* user_data,
+                       const char** json_object) {
   fxl::AutoResetWaitableEvent latch;
-  sk_sp<SkPicture> picture;
-  blink::Threads::Gpu()->PostTask([&latch, &picture]() {
-    picture = ScreenshotSkpGpuTask();
-    latch.Signal();
-  });
+  SkBitmap bitmap;
+  auto shell = static_cast<Shell*>(user_data);
+  shell->GetTaskRunners().GetGPUTaskRunner()->PostTask(
+      [&latch, &bitmap, shell]() {
+        ScreenshotGpuTask(shell, &bitmap);
+        latch.Signal();
+      });
 
   latch.Wait();
 
-  sk_sp<SkData> skp_data = picture->serialize();
+  sk_sp<SkData> png(EncodeBitmapAsPNG(bitmap));
 
-  size_t b64_size =
-      SkBase64::Encode(skp_data->data(), skp_data->size(), nullptr);
+  if (!png)
+    return ErrorServer(json_object, "can not encode screenshot");
+
+  size_t b64_size = SkBase64::Encode(png->data(), png->size(), nullptr);
   SkAutoTMalloc<char> b64_data(b64_size);
-  SkBase64::Encode(skp_data->data(), skp_data->size(), b64_data.get());
+  SkBase64::Encode(png->data(), png->size(), b64_data.get());
 
   std::stringstream response;
-  response << "{\"type\":\"ScreenshotSkp\","
-           << "\"skp\":\"" << std::string{b64_data.get(), b64_size} << "\"}";
+  response << "{\"type\":\"Screenshot\","
+           << "\"screenshot\":\"" << std::string{b64_data.get(), b64_size}
+           << "\"}";
   *json_object = strdup(response.str().c_str());
   return true;
 }
 
-sk_sp<SkPicture> PlatformViewServiceProtocol::ScreenshotSkpGpuTask() {
-  auto rasterizer = GetRandomRasterizer();
+static const char* kScreenshotSkpExtensionName = "_flutter.screenshotSkp";
+
+static sk_sp<SkPicture> ScreenshotSkpGpuTask(Shell* shell) {
+  auto rasterizer = shell->GetRasterizer();
 
   if (!rasterizer)
     return nullptr;
@@ -363,7 +299,38 @@ sk_sp<SkPicture> PlatformViewServiceProtocol::ScreenshotSkpGpuTask() {
   return recorder.finishRecordingAsPicture();
 }
 
-const char* PlatformViewServiceProtocol::kFlushUIThreadTasksExtensionName =
+static bool ScreenshotSkp(const char* method,
+                          const char** param_keys,
+                          const char** param_values,
+                          intptr_t num_params,
+                          void* user_data,
+                          const char** json_object) {
+  fxl::AutoResetWaitableEvent latch;
+  sk_sp<SkPicture> picture;
+  auto shell = static_cast<Shell*>(user_data);
+  shell->GetTaskRunners().GetGPUTaskRunner()->PostTask(
+      [&latch, &picture, shell]() {
+        picture = ScreenshotSkpGpuTask(shell);
+        latch.Signal();
+      });
+
+  latch.Wait();
+
+  sk_sp<SkData> skp_data = picture->serialize();
+
+  size_t b64_size =
+      SkBase64::Encode(skp_data->data(), skp_data->size(), nullptr);
+  SkAutoTMalloc<char> b64_data(b64_size);
+  SkBase64::Encode(skp_data->data(), skp_data->size(), b64_data.get());
+
+  std::stringstream response;
+  response << "{\"type\":\"ScreenshotSkp\","
+           << "\"skp\":\"" << std::string{b64_data.get(), b64_size} << "\"}";
+  *json_object = strdup(response.str().c_str());
+  return true;
+}
+
+static const char* kFlushUIThreadTasksExtensionName =
     "_flutter.flushUIThreadTasks";
 
 // This API should not be invoked by production code.
@@ -372,14 +339,16 @@ const char* PlatformViewServiceProtocol::kFlushUIThreadTasksExtensionName =
 //
 // It should be invoked from the VM Service and and blocks it until UI thread
 // tasks are processed.
-bool PlatformViewServiceProtocol::FlushUIThreadTasks(const char* method,
-                                                     const char** param_keys,
-                                                     const char** param_values,
-                                                     intptr_t num_params,
-                                                     void* user_data,
-                                                     const char** json_object) {
+static bool FlushUIThreadTasks(const char* method,
+                               const char** param_keys,
+                               const char** param_values,
+                               intptr_t num_params,
+                               void* user_data,
+                               const char** json_object) {
   fxl::AutoResetWaitableEvent latch;
-  blink::Threads::UI()->PostTask([&latch]() {
+
+  auto shell = static_cast<Shell*>(user_data);
+  shell->GetTaskRunners().GetUITaskRunner()->PostTask([&latch]() {
     // This task is empty because we just need to synchronize this RPC with the
     // UI Thread
     latch.Signal();
@@ -389,6 +358,29 @@ bool PlatformViewServiceProtocol::FlushUIThreadTasks(const char* method,
 
   *json_object = strdup("{\"type\":\"Success\"}");
   return true;
+}
+
+struct ServiceProtocolHook {
+  const char* method;
+  Dart_ServiceRequestCallback callback;
+};
+
+#define DEF_HOOK(name, callback_method) \
+  { .method = name, .callback = &callback_method, }
+
+void PlatformViewServiceProtocol::RegisterHook(Shell* shell) {
+  static const ServiceProtocolHook hooks[] = {
+      DEF_HOOK(kListViewsExtensionName, ListViews),
+      DEF_HOOK(kScreenshotExtensionName, Screenshot),
+      DEF_HOOK(kScreenshotSkpExtensionName, ScreenshotSkp),
+      DEF_HOOK(kRunInViewExtensionName, RunInView),
+      DEF_HOOK(kFlushUIThreadTasksExtensionName, FlushUIThreadTasks),
+  };
+
+  for (size_t i = 0; i < sizeof(hooks) / sizeof(hooks[0]); i++) {
+    Dart_RegisterRootServiceRequestCallback(hooks[i].method, hooks[i].callback,
+                                            shell);
+  }
 }
 
 }  // namespace shell

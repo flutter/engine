@@ -10,29 +10,53 @@
 #include <QuartzCore/CADisplayLink.h>
 #include <mach/mach_time.h>
 
-#include "flutter/common/threads.h"
+#include "flutter/common/task_runners.h"
 #include "flutter/glue/trace_event.h"
 #include "lib/fxl/logging.h"
 
 @interface VSyncClient : NSObject
 
+- (instancetype)initWithTaskRunner:(fxl::RefPtr<fml::TaskRunner> task_runner);
+
+- (void)await:(shell::VsyncWaiter::Callback)callback;
+
 @end
 
+namespace shell {
+
+VsyncWaiterIOS::VsyncWaiterIOS(blink::TaskRunners task_runners)
+    : VsyncWaiter(std::move(task_runners)),
+      client_([[VSyncClient alloc] initWithTaskRunner:task_runners_.GetUITaskRunner()]) {}
+
+VsyncWaiterIOS::~VsyncWaiterIOS() = default;
+
+void VsyncWaiterIOS::AsyncWaitForVsync(Callback callback) {
+  [client_.get() await:callback];
+}
+
+}  // namespace shell
+
 @implementation VSyncClient {
-  CADisplayLink* _displayLink;
+  fxl::RefPtr<fml::TaskRunner> task_runner_;
+  fml::scoped_nsobject<CADisplayLink> _displayLink;
   shell::VsyncWaiter::Callback _pendingCallback;
 }
 
-- (instancetype)init {
+- (instancetype)initWithTaskRunner:(fxl::RefPtr<fml::TaskRunner> task_runner) {
   self = [super init];
 
   if (self) {
-    _displayLink =
-        [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain];
-    _displayLink.paused = YES;
+    task_runner_ = std::move(task_runner);
+    FXL_DCHECK(task_runner_);
 
-    blink::Threads::UI()->PostTask([client = [self retain]]() {
-      [client->_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+    _displayLink = {
+      [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain]
+    };
+    _displayLink.get().paused = YES;
+
+    task_runner_->PostTask([client = [self retain]]() {
+      [client->_displayLink.get() addToRunLoop:[NSRunLoop currentRunLoop]
+                                       forMode:NSRunLoopCommonModes];
       [client release];
     });
   }
@@ -43,14 +67,14 @@
 - (void)await:(shell::VsyncWaiter::Callback)callback {
   FXL_DCHECK(!_pendingCallback);
   _pendingCallback = std::move(callback);
-  _displayLink.paused = NO;
+  _displayLink.get().paused = NO;
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
   fxl::TimePoint frame_start_time = fxl::TimePoint::Now();
   fxl::TimePoint frame_target_time = frame_start_time + fxl::TimeDelta::FromSecondsF(link.duration);
 
-  _displayLink.paused = YES;
+  _displayLink.get().paused = YES;
 
   // Note: The tag name must be "VSYNC" (it is special) so that the "Highlight
   // Vsync" checkbox in the timeline can be enabled.
@@ -76,32 +100,17 @@
   //
   // We are not using the PostTask for thread switching, but to make task
   // observers work.
-  blink::Threads::UI()->PostTask([
-    callback = _pendingCallback, frame_start_time, frame_target_time
-  ]() { callback(frame_start_time, frame_target_time); });
+  task_runner_->PostTask([ callback = _pendingCallback, frame_start_time, frame_target_time ]() {
+    callback(frame_start_time, frame_target_time);
+  });
 
   _pendingCallback = nullptr;
 }
 
 - (void)dealloc {
-  [_displayLink invalidate];
-  [_displayLink release];
+  [_displayLink.get() invalidate];
 
   [super dealloc];
 }
 
 @end
-
-namespace shell {
-
-VsyncWaiterIOS::VsyncWaiterIOS() : client_([[VSyncClient alloc] init]) {}
-
-VsyncWaiterIOS::~VsyncWaiterIOS() {
-  [client_ release];
-}
-
-void VsyncWaiterIOS::AsyncWaitForVsync(Callback callback) {
-  [client_ await:callback];
-}
-
-}  // namespace shell

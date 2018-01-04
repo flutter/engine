@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "flutter/common/settings.h"
+#include "flutter/lib/ui/ui_dart_state.h"
 #include "lib/fxl/build_config.h"
 #include "lib/fxl/logging.h"
 #include "lib/tonic/converter/dart_converter.h"
@@ -176,9 +177,7 @@ void Logger_PrintString(Dart_NativeArguments args) {
 
 void ScheduleMicrotask(Dart_NativeArguments args) {
   Dart_Handle closure = Dart_GetNativeArgument(args, 0);
-  if (LogIfError(closure) || !Dart_IsClosure(closure))
-    return;
-  tonic::DartMicrotaskQueue::GetForCurrentThread()->ScheduleMicrotask(closure);
+  UIDartState::Current()->ScheduleMicrotask(closure);
 }
 
 }  // namespace blink

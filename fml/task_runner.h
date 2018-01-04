@@ -15,6 +15,8 @@ class MessageLoopImpl;
 
 class TaskRunner : public fxl::TaskRunner {
  public:
+  void RunNowOrPostTask(fxl::Closure task);
+
   void PostTask(fxl::Closure task) override;
 
   void PostTaskForTime(fxl::Closure task, fxl::TimePoint target_time) override;

@@ -55,7 +55,7 @@ void MessageLoop::Terminate() {
   loop_->DoTerminate();
 }
 
-fxl::RefPtr<fxl::TaskRunner> MessageLoop::GetTaskRunner() const {
+fxl::RefPtr<fml::TaskRunner> MessageLoop::GetTaskRunner() const {
   return task_runner_;
 }
 

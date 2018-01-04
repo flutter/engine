@@ -28,7 +28,7 @@ class MessageLoop {
 
   void RemoveTaskObserver(TaskObserver* observer);
 
-  fxl::RefPtr<fxl::TaskRunner> GetTaskRunner() const;
+  fxl::RefPtr<fml::TaskRunner> GetTaskRunner() const;
 
   static void EnsureInitializedForCurrentThread();
 

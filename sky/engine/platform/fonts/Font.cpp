@@ -97,7 +97,7 @@ void Font::update(PassRefPtr<FontSelector> fontSelector) const {
   // in trouble). Still, this is pretty disgusting, and could eventually be
   // rectified by using RefPtrs for Fonts themselves.
   if (!m_fontFallbackList)
-    m_fontFallbackList = FontFallbackList::create();
+    m_fontFallbackList = FontFallbackList::create(false /* WIP */);
   m_fontFallbackList->invalidate(fontSelector);
 }
 
