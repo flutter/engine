@@ -334,10 +334,10 @@ void Shell::SetAssetBundlePathInPlatformViewUIThread(
   IteratePlatformViews(
       [view_id,  // argument
 #if !defined(OS_WIN)
-       // Using std::move on const references inside lambda capture is
-       // not supported on Windows for some reason.
-       // TODO(https://github.com/flutter/flutter/issues/13908): Investigate
-       // the root cause of the difference.
+                 // Using std::move on const references inside lambda capture is
+                 // not supported on Windows for some reason.
+                 // TODO(https://github.com/flutter/flutter/issues/13908):
+                 // Investigate the root cause of the difference.
        assets_directory = std::move(assets_directory),  // argument
 #else
        assets_directory,  // argument
