@@ -67,15 +67,16 @@ void AndroidExternalTextureGL::UpdateTransform() {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   fml::jni::ScopedJavaLocalRef<jobject> surfaceTexture =
       surface_texture_.get(env);
-  jfloatArray transformMatrix = env->NewFloatArray(16);
-  SurfaceTextureGetTransformMatrix(env, surfaceTexture.obj(), transformMatrix);
-  float* m = env->GetFloatArrayElements(transformMatrix, nullptr);
+  fml::jni::ScopedJavaLocalRef<jfloatArray> transformMatrix(
+      env, env->NewFloatArray(16));
+  SurfaceTextureGetTransformMatrix(env, surfaceTexture.obj(), transformMatrix.obj());
+  float* m = env->GetFloatArrayElements(transformMatrix.obj(), nullptr);
   SkScalar matrix3[] = {
       m[0], m[1], m[2],   //
       m[4], m[5], m[6],   //
       m[8], m[9], m[10],  //
   };
-  env->ReleaseFloatArrayElements(transformMatrix, m, JNI_ABORT);
+  env->ReleaseFloatArrayElements(transformMatrix.obj(), m, JNI_ABORT);
   transform.set9(matrix3);
 }
 
