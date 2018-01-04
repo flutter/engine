@@ -198,9 +198,9 @@ class SemanticsFlags {
   /// The semantics node has the quality of either being "enabled" or
   /// "disabled".
   ///
-  /// For example, a button can be enabled or disabled and therefore has enabled
-  /// state. Static text is usually either enabled nor disabled and does not
-  /// have enabled state.
+  /// For example, a button can be enabled or disabled and therefore has an
+  /// "enabled" state. Static text is usually neither enabled nor disabled and
+  /// therefore does not have an "enabled" state.
   static const SemanticsFlags hasEnabledState = const SemanticsFlags._(_kHasEnabledStateIndex);
 
   /// Whether a semantic node that [hasEnabledState] is currently enabled.
