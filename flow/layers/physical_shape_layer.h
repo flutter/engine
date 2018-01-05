@@ -2,19 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_LAYERS_PHYSICAL_MODEL_LAYER_H_
-#define FLUTTER_FLOW_LAYERS_PHYSICAL_MODEL_LAYER_H_
+#ifndef FLUTTER_FLOW_LAYERS_PHYSICAL_SHAPE_LAYER_H_
+#define FLUTTER_FLOW_LAYERS_PHYSICAL_SHAPE_LAYER_H_
 
 #include "flutter/flow/layers/container_layer.h"
 
 namespace flow {
 
-class PhysicalLayerShape;
-
-class PhysicalModelLayer : public ContainerLayer {
+class PhysicalShapeLayer : public ContainerLayer {
  public:
-  PhysicalModelLayer();
-  ~PhysicalModelLayer() override;
+  PhysicalShapeLayer();
+  ~PhysicalShapeLayer() override;
 
   void set_path(const SkPath& path) {
     path_ = path;
@@ -55,4 +53,4 @@ class PhysicalModelLayer : public ContainerLayer {
 
 }  // namespace flow
 
-#endif  // FLUTTER_FLOW_LAYERS_PHYSICAL_MODEL_LAYER_H_
+#endif  // FLUTTER_FLOW_LAYERS_PHYSICAL_SHAPE_LAYER_H_

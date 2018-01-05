@@ -2,21 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/layers/physical_model_layer.h"
+#include "flutter/flow/layers/physical_shape_layer.h"
 
 #include "flutter/flow/paint_utils.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
 namespace flow {
 
-PhysicalModelLayer::PhysicalModelLayer() {
+PhysicalShapeLayer::PhysicalShapeLayer() {
   isRect_ = false;
   frameRRect_ = SkRRect::MakeEmpty();
 }
 
-PhysicalModelLayer::~PhysicalModelLayer() = default;
+PhysicalShapeLayer::~PhysicalShapeLayer() = default;
 
-void PhysicalModelLayer::Preroll(PrerollContext* context,
+void PhysicalShapeLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
   SkRect child_paint_bounds;
   PrerollChildren(context, matrix, &child_paint_bounds);
@@ -41,7 +41,7 @@ void PhysicalModelLayer::Preroll(PrerollContext* context,
 
 #if defined(OS_FUCHSIA)
 
-void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context) {
+void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
   FXL_DCHECK(needs_system_composite());
 
   SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_);
@@ -56,8 +56,8 @@ void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context) {
 
 #endif  // defined(OS_FUCHSIA)
 
-void PhysicalModelLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "PhysicalModelLayer::Paint");
+void PhysicalShapeLayer::Paint(PaintContext& context) const {
+  TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FXL_DCHECK(needs_painting());
 
   if (elevation_ != 0) {
@@ -81,7 +81,7 @@ void PhysicalModelLayer::Paint(PaintContext& context) const {
     DrawCheckerboard(&context.canvas, path_.getBounds());
 }
 
-void PhysicalModelLayer::DrawShadow(SkCanvas* canvas,
+void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
                                     const SkPath& path,
                                     SkColor color,
                                     float elevation,

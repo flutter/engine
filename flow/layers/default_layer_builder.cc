@@ -14,7 +14,7 @@
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/layers/performance_overlay_layer.h"
-#include "flutter/flow/layers/physical_model_layer.h"
+#include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/layers/shader_mask_layer.h"
 #include "flutter/flow/layers/texture_layer.h"
@@ -106,7 +106,7 @@ void DefaultLayerBuilder::PushShaderMask(sk_sp<SkShader> shader,
   PushLayer(std::move(layer), cull_rects_.top());
 }
 
-void DefaultLayerBuilder::PushPhysicalModel(const SkPath& sk_path,
+void DefaultLayerBuilder::PushPhysicalShape(const SkPath& sk_path,
                                             double elevation,
                                             SkColor color,
                                             SkScalar device_pixel_ratio) {
@@ -114,7 +114,7 @@ void DefaultLayerBuilder::PushPhysicalModel(const SkPath& sk_path,
   if (!cullRect.intersect(sk_path.getBounds(), cull_rects_.top())) {
     cullRect = SkRect::MakeEmpty();
   }
-  auto layer = std::make_unique<flow::PhysicalModelLayer>();
+  auto layer = std::make_unique<flow::PhysicalShapeLayer>();
   layer->set_path(sk_path);
   layer->set_elevation(elevation);
   layer->set_color(color);

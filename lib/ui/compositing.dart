@@ -127,17 +127,17 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
                        double maskRectBottom,
                        int blendMode) native "SceneBuilder_pushShaderMask";
 
-  /// Pushes a physical model operation for an arbitrary shape onto the
+  /// Pushes a physical layer operation for an arbitrary shape onto the
   /// operation stack.
   ///
   /// Rasterization will be clipped to the given shape.
   ///
   /// See [pop] for details about the operation stack.
-  void pushPhysicalModel({ Path path, double elevation, Color color }) {
-    _pushPhysicalModel(path, elevation, color.value);
+  void pushPhysicalShape({ Path path, double elevation, Color color }) {
+    _pushPhysicalShape(path, elevation, color.value);
   }
-  void _pushPhysicalModel(Path path, double elevation, int color) native 
-    "SceneBuilder_pushPhysicalModel";
+  void _pushPhysicalShape(Path path, double elevation, int color) native 
+    "SceneBuilder_pushPhysicalShape";
 
   /// Ends the effect of the most recently pushed operation.
   ///
