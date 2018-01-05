@@ -9,10 +9,7 @@
 
 namespace flow {
 
-PhysicalShapeLayer::PhysicalShapeLayer() {
-  isRect_ = false;
-  frameRRect_ = SkRRect::MakeEmpty();
-}
+PhysicalShapeLayer::PhysicalShapeLayer() : isRect_(false) {}
 
 PhysicalShapeLayer::~PhysicalShapeLayer() = default;
 
