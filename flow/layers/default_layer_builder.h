@@ -47,12 +47,6 @@ class DefaultLayerBuilder final : public LayerBuilder {
                       SkBlendMode blend_mode) override;
 
   // |flow::LayerBuilder|
-  void PushPhysicalModel(const SkRRect& rect,
-                         double elevation,
-                         SkColor color,
-                         SkScalar device_pixel_ratio) override;
-
-  // |flow::LayerBuilder|
   void PushPhysicalModel(const SkPath& path,
                          double elevation,
                          SkColor color,
