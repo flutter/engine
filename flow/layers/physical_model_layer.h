@@ -13,24 +13,16 @@ class PhysicalLayerShape;
 
 class PhysicalModelLayer : public ContainerLayer {
  public:
-  PhysicalModelLayer() : isRect_(false){};
+  PhysicalModelLayer();
   ~PhysicalModelLayer() override;
 
   void set_path(const SkPath& path) {
     path_ = path;
-    SkRRect rrect = SkRRect::MakeEmpty();
-    if (path.isRRect(&rrect)) {
-      isRect_ = rrect.isRect();
+    if (path.isRRect(&frameRRect_)) {
+      isRect_ = frameRRect_.isRect();
     } else {
       isRect_ = false;
     }
-#if defined(OS_FUCHSIA)
-    if (path.isRRect(&rrect)) {
-      frameRRect_ = rrect;
-    } else {
-      isRect_ = false;
-    }
-#endif  // defined(OS_FUCHSIA)
   }
 
   void set_elevation(float elevation) { elevation_ = elevation; }
@@ -58,9 +50,7 @@ class PhysicalModelLayer : public ContainerLayer {
   SkScalar device_pixel_ratio_;
   SkPath path_;
   bool isRect_;
-#if defined(OS_FUCHSIA)
   SkRRect frameRRect_;
-#endif  // defined(OS_FUCHSIA)
 };
 
 }  // namespace flow

@@ -9,6 +9,11 @@
 
 namespace flow {
 
+PhysicalModelLayer::PhysicalModelLayer() {
+  isRect_ = false;
+  frameRRect_ = SkRRect::MakeEmpty();
+}
+
 PhysicalModelLayer::~PhysicalModelLayer() = default;
 
 void PhysicalModelLayer::Preroll(PrerollContext* context,
