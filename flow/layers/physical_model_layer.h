@@ -13,19 +13,22 @@ class PhysicalLayerShape;
 
 class PhysicalModelLayer : public ContainerLayer {
  public:
-  PhysicalModelLayer();
+  PhysicalModelLayer() : isRect_(false){};
   ~PhysicalModelLayer() override;
 
   void set_path(const SkPath& path) {
     path_ = path;
-#if defined(OS_FUCHSIA)
     SkRRect rrect = SkRRect::MakeEmpty();
     if (path.isRRect(&rrect)) {
-      frameRRect_ = rrect;
       isRect_ = rrect.isRect();
     } else {
       isRect_ = false;
-      frameRRect_ = SkRRect::MakeRect(path.getBounds());
+    }
+#if defined(OS_FUCHSIA)
+    if (path.isRRect(&rrect)) {
+      frameRRect_ = rrect;
+    } else {
+      isRect_ = false;
     }
 #endif  // defined(OS_FUCHSIA)
   }

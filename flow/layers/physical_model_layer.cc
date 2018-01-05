@@ -9,8 +9,6 @@
 
 namespace flow {
 
-PhysicalModelLayer::PhysicalModelLayer() = default;
-
 PhysicalModelLayer::~PhysicalModelLayer() = default;
 
 void PhysicalModelLayer::Preroll(PrerollContext* context,
