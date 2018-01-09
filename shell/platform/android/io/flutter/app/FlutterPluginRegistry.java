@@ -92,6 +92,11 @@ public class FlutterPluginRegistry
         }
 
         @Override
+        public Context activeContext() {
+            return (mActivity != null) ? mActivity : mAppContext;
+        }
+
+        @Override
         public BinaryMessenger messenger() {
             return mNativeView;
         }
