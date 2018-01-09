@@ -53,7 +53,7 @@ import android.util.Log;
  *     <li>Map: Map</li>
  * </ul>
  *
- * <p>Direct support for BigIntegers has been deprecated on 2018-01-08 to be made
+ * <p>Direct support for BigIntegers has been deprecated on 2018-01-09 to be made
  * unavailable four weeks after this change is available on the Flutter alpha
  * branch. BigIntegers were needed because the Dart 1.0 int type had no size
  * limit. With Dart 2.0, the int type is a fixed-size, 64-bit signed integer.

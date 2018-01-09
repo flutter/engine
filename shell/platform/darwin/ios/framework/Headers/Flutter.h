@@ -8,7 +8,7 @@
 /**
  BREAKING CHANGES:
 
- January 08, 2018: Deprecated FlutterStandardBigInteger and its use in
+ January 09, 2018: Deprecated FlutterStandardBigInteger and its use in
  FlutterStandardMessageCodec and FlutterStandardMethodCodec. Scheduled to
  be marked as unavailable once the deprecation has been available on the
  flutter/flutter alpha branch for four weeks. FlutterStandardBigInteger was

@@ -105,7 +105,7 @@ FLUTTER_EXPORT
  - `NSArray`: `List`
  - `NSDictionary`: `Map`
 
- Support for `FlutterStandardBigInteger` has been deprecated on 2018-01-08 to be
+ Support for `FlutterStandardBigInteger` has been deprecated on 2018-01-09 to be
  made unavailable four weeks after this change is available on the Flutter alpha
  branch. `FlutterStandardBigInteger` were needed because the Dart 1.0 `int` type
  had no size limit. With Dart 2.0, the `int` type is a fixed-size, 64-bit signed
@@ -259,7 +259,7 @@ FLUTTER_EXPORT
  */
 FLUTTER_EXPORT
 FLUTTER_DEPRECATED(
-  "Deprecated on 2018-01-08 to be made unavailable four weeks after the "
+  "Deprecated on 2018-01-09 to be made unavailable four weeks after the "
   "deprecation is available on the flutter/flutter alpha branch. "
   "FlutterStandardBigInteger was needed because the Dart 1.0 int type had no "
   "size limit. With Dart 2.0, the int type is a fixed-size, 64-bit signed "
