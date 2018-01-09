@@ -259,13 +259,12 @@ FLUTTER_EXPORT
  */
 FLUTTER_EXPORT
 FLUTTER_DEPRECATED(
-  "Deprecated on 2018-01-09 to be made unavailable four weeks after the "
-  "deprecation is available on the flutter/flutter alpha branch. "
-  "FlutterStandardBigInteger was needed because the Dart 1.0 int type had no "
-  "size limit. With Dart 2.0, the int type is a fixed-size, 64-bit signed "
-  "integer. If you need to communicate larger integers, use NSString encoding "
-  "instead."
-)
+    "Deprecated on 2018-01-09 to be made unavailable four weeks after the "
+    "deprecation is available on the flutter/flutter alpha branch. "
+    "FlutterStandardBigInteger was needed because the Dart 1.0 int type had no "
+    "size limit. With Dart 2.0, the int type is a fixed-size, 64-bit signed "
+    "integer. If you need to communicate larger integers, use NSString encoding "
+    "instead.")
 @interface FlutterStandardBigInteger : NSObject
 /**
  Creates a `FlutterStandardBigInteger` from a hexadecimal representation.
