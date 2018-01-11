@@ -16,10 +16,13 @@ class PhysicalShapeLayer : public ContainerLayer {
 
   void set_path(const SkPath& path) {
     path_ = path;
-    if (path.isRRect(&frameRRect_)) {
+    isRect_ = false;
+    SkRect rect;
+    if (path.isRect(&rect)) {
+      isRect_ = true;
+      frameRRect_ = SkRRect::MakeRect(rect);
+    } else if (path.isRRect(&frameRRect_)) {
       isRect_ = frameRRect_.isRect();
-    } else {
-      isRect_ = false;
     }
   }
 
