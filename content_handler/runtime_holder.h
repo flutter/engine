@@ -93,6 +93,7 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   void InitRootBundle(std::vector<char> bundle);
   blink::UnzipperProvider GetUnzipperProviderForRootBundle();
   bool HandleAssetPlatformMessage(blink::PlatformMessage* message);
+  bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
   bool HandleTextInputPlatformMessage(blink::PlatformMessage* message);
   bool HandleFlutterPlatformMessage(blink::PlatformMessage* message);
 

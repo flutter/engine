@@ -9,12 +9,6 @@ import("//build/vulkan/config.gni")
 template("flutter_content_handler") {
   invoker_output_name = invoker.output_name
   extra_deps = invoker.extra_deps
-  if (invoker.flx) {
-    runtime_holder = [ "runtime_holder.cc" ]
-  } else {
-    # Replace runtime_holder.cc with runtime_holder_no_flx.cc when flx is removed.
-    runtime_holder = [ "runtime_holder_no_flx.cc" ]
-  }
 
   executable(target_name) {
     output_name = invoker_output_name
@@ -33,6 +27,7 @@ template("flutter_content_handler") {
       "main.cc",
       "rasterizer.cc",
       "rasterizer.h",
+      "runtime_holder.cc",
       "runtime_holder.h",
       "service_protocol_hooks.cc",
       "service_protocol_hooks.h",
@@ -46,7 +41,7 @@ template("flutter_content_handler") {
       "vulkan_surface_pool.h",
       "vulkan_surface_producer.cc",
       "vulkan_surface_producer.h",
-    ] + runtime_holder
+    ]
 
     deps = [
              "//third_party/dart/runtime/bin:libdart_builtin",
@@ -93,25 +88,11 @@ template("flutter_content_handler") {
 }
 
 flutter_content_handler("aot") {
-  flx = true
   output_name = "flutter_aot_runner"
   extra_deps = [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
 }
 
 flutter_content_handler("jit") {
-  flx = true
   output_name = "flutter_jit_runner"
-  extra_deps = [ "//third_party/dart/runtime:libdart_jit" ]
-}
-
-flutter_content_handler("aot_no_flx") {
-  flx = false
-  output_name = "flutter_aot_runner_no_flx"
-  extra_deps = [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
-}
-
-flutter_content_handler("jit_no_flx") {
-  flx = false
-  output_name = "flutter_jit_runner_no_flx"
   extra_deps = [ "//third_party/dart/runtime:libdart_jit" ]
 }
