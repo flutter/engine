@@ -96,14 +96,6 @@ abstract class CompilerInterface {
   /// taking into account some changed(invalidated) sources.
   Future<Null> recompileDelta();
 
-  /// Accept results of previous compilation so that next recompilation cycle
-  /// won't recompile sources that were previously reported as changed.
-  void acceptLastDelta();
-
-  /// Reject results of previous compilation. Next recompilation cycle will
-  /// recompile sources indicated as changed.
-  void rejectLastDelta();
-
   /// This let's compiler know that source file identifed by `uri` was changed.
   void invalidate(Uri uri);
 
@@ -196,16 +188,6 @@ class _FrontendCompiler implements CompilerInterface {
     await sink.close();
     _outputStream.writeln("$boundaryKey $_kernelBinaryFilename");
     return null;
-  }
-
-  @override
-  void acceptLastDelta() {
-    _generator.acceptLastDelta();
-  }
-
-  @override
-  void rejectLastDelta() {
-    _generator.rejectLastDelta();
   }
 
   @override
@@ -306,9 +288,9 @@ Future<int> starter(
           boundaryKey = string.substring(RECOMPILE_INSTRUCTION_SPACE.length);
           state = _State.RECOMPILE_LIST;
         } else if (string == 'accept') {
-          compiler.acceptLastDelta();
+          // NOP
         } else if (string == 'reject') {
-          compiler.rejectLastDelta();
+          // NOP
         } else if (string == 'reset') {
           compiler.resetIncrementalCompiler();
         } else if (string == 'quit') {
