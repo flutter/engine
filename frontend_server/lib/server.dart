@@ -158,12 +158,9 @@ class _FrontendCompiler implements CompilerInterface {
     if (options['incremental']) {
       _generator = generator != null
           ? generator
-          : await IncrementalKernelGenerator.newInstance(
-              compilerOptions, filenameUri,
-              useMinimalGenerator: true);
-      final DeltaProgram deltaProgram =
+          : new IncrementalKernelGenerator(compilerOptions, filenameUri);
+      program =
           await _runWithPrintRedirection(() => _generator.computeDelta());
-      program = deltaProgram.newProgram;
     } else {
       if (options['link-platform']) {
         // TODO(aam): Remove linkedDependencies once platform is directly embedded
