@@ -260,15 +260,9 @@ Future<int> starter(
 
   if (options['train']) {
     String sdkRoot = options['sdk-root'];
-    if (sdkRoot.startsWith("//out/") && sdkRoot.endsWith("/gen")) {
-      // This becomes '../../out/whatnot/flutter_patched_sdk'
-      sdkRoot = '../..${sdkRoot.substring(1, sdkRoot.length-4)}/flutter_patched_sdk';
-    }
     options = _argParser.parse(<String>['--incremental', '--sdk-root=$sdkRoot']);
-    compiler ??=
-    new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
-    await compiler.compile(Platform.script.toFilePath(), options,
-        generator: generator);
+    compiler ??= new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
+    await compiler.compile(Platform.script.toFilePath(), options, generator: generator);
     compiler.acceptLastDelta();
     await compiler.recompileDelta();
     compiler.acceptLastDelta();
