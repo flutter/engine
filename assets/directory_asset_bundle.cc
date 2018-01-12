@@ -7,16 +7,13 @@
 
 #include <fcntl.h>
 
-#if !defined(OS_WIN)
-#include <unistd.h>
-#endif
-
 #include <utility>
 
 #include "lib/fxl/files/eintr_wrapper.h"
 #include "lib/fxl/files/file.h"
 #include "lib/fxl/files/path.h"
 #include "lib/fxl/files/unique_fd.h"
+#include "lib/fxl/portable_unistd.h"
 
 namespace blink {
 
@@ -28,7 +25,12 @@ bool DirectoryAssetBundle::GetAsBuffer(const std::string& asset_name,
     return false;
 
   if (fd_.is_valid()) {
+#if defined(OS_WIN)
+    // This code path is not valid in a Windows environment
+    return false;
+#else
     fxl::UniqueFD asset_file(openat(fd_.get(), asset_path.c_str(), O_RDONLY));
+#endif
     if (!asset_file.is_valid()) {
       FXL_LOG(ERROR) << "Could not load asset " << asset_name << " from "
                      << asset_path;
