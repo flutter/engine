@@ -167,6 +167,9 @@ FlutterResult FlutterEngineSendPlatformMessageResponse(
     const uint8_t* data,
     size_t data_length);
 
+FLUTTER_EXPORT
+FlutterResult FlutterEnginePollPlatformEvents();
+
 #if defined(__cplusplus)
 }  // extern "C"
 #endif
