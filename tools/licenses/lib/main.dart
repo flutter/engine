@@ -47,22 +47,29 @@ abstract class RepositoryFile extends RepositoryEntry {
   fs.File get io => super.io;
 }
 
+// File names that we are confident won't be included in the final build
+// product, and that also don't contain licenses.
+final RegExp _buildTimePattern = new RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|vms_make\.com|pom\.xml|\.project|source\.properties)$', caseSensitive: false);
+final RegExp _devPattern = new RegExp(r'^(?:codereview\.settings|.+\.~|.+\.sw[op]|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml)$', caseSensitive: false);
+final RegExp _testsPattern = new RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
+
+bool shouldIgnoreCompletely(String filename) {
+  return filename.contains(_buildTimePattern)
+      || filename.contains(_devPattern)
+      || filename.contains(_testsPattern);
+}
+
 abstract class RepositoryLicensedFile extends RepositoryFile {
   RepositoryLicensedFile(RepositoryDirectory parent, fs.File io) : super(parent, io);
 
-  // file names that we are confident won't be included in the final build product
+  // File names that we are confident won't be included in the final build
+  // product, but that might contain licenses.
   static final RegExp _readmeNamePattern = new RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
-  static final RegExp _buildTimePattern = new RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|vms_make\.com|pom\.xml|\.project|source\.properties)$', caseSensitive: false);
   static final RegExp _docsPattern = new RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|.+\.spec(?:\.in)?)$', caseSensitive: false);
-  static final RegExp _devPattern = new RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml)$', caseSensitive: false);
-  static final RegExp _testsPattern = new RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
-
   bool get isIncludedInBuildProducts {
     return !io.name.contains(_readmeNamePattern)
-        && !io.name.contains(_buildTimePattern)
         && !io.name.contains(_docsPattern)
-        && !io.name.contains(_devPattern)
-        && !io.name.contains(_testsPattern)
+        && !shouldIgnoreCompletely(io.name)
         && !isShellScript;
   }
 
@@ -860,19 +867,21 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
           _subdirectories.add(child);
           _childrenByName[child.name] = child;
         } else if (entry is fs.File) {
-          try {
-            RepositoryFile child = createFile(entry);
-            assert(child != null);
-            if (child is RepositoryLicensedFile) {
-              _files.add(child);
-            } else {
-              assert(child is RepositoryLicenseFile);
-              _licenses.add(child);
+          if (!shouldIgnoreCompletely(entry.name)) {
+            try {
+              RepositoryFile child = createFile(entry);
+              assert(child != null);
+              if (child is RepositoryLicensedFile) {
+                _files.add(child);
+              } else {
+                assert(child is RepositoryLicenseFile);
+                _licenses.add(child);
+              }
+              _childrenByName[child.name] = child;
+            } catch (e) {
+              system.stderr.writeln('failed to handle $entry: $e');
+              rethrow;
             }
-            _childrenByName[child.name] = child;
-          } catch (e) {
-            system.stderr.writeln('failed to handle $entry: $e');
-            rethrow;
           }
         } else {
           assert(entry is fs.Link);
