@@ -19,7 +19,7 @@ class DirectoryAssetBundle
  public:
   explicit DirectoryAssetBundle(std::string directory);
   // Expects fd to be valid, otherwise the file descriptor is ignored.
-  explicit DirectoryAssetBundle(fxl::UniqueFD fd, std::string directory);
+  explicit DirectoryAssetBundle(fxl::UniqueFD fd);
   ~DirectoryAssetBundle();
 
   bool GetAsBuffer(const std::string& asset_name, std::vector<uint8_t>* data);

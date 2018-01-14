@@ -19,21 +19,14 @@ namespace blink {
 
 bool DirectoryAssetBundle::GetAsBuffer(const std::string& asset_name,
                                        std::vector<uint8_t>* data) {
-  std::string asset_path = GetPathForAsset(asset_name);
-
-  if (asset_path.empty())
-    return false;
-
   if (fd_.is_valid()) {
 #if defined(OS_WIN)
-    // This code path is not valid in a Windows environment
+    // This code path is not valid in a Windows environment.
     return false;
 #else
-    fxl::UniqueFD asset_file(openat(fd_.get(), asset_path.c_str(), O_RDONLY));
-#endif
+    fxl::UniqueFD asset_file(openat(fd_.get(), asset_name.c_str(), O_RDONLY));
     if (!asset_file.is_valid()) {
-      FXL_LOG(ERROR) << "Could not load asset " << asset_name << " from "
-                     << asset_path;
+      FXL_LOG(ERROR) << "Could not load asset " << asset_name;
       return false;
     }
 
@@ -54,20 +47,21 @@ bool DirectoryAssetBundle::GetAsBuffer(const std::string& asset_name,
 
     data->resize(offset + bytes_read);
     return true;
+#endif
   }
-
+  std::string asset_path = GetPathForAsset(asset_name);
+  if (asset_path.empty())
+    return false;
   return files::ReadFileToVector(asset_path, data);
 }
 
 DirectoryAssetBundle::~DirectoryAssetBundle() {}
 
 DirectoryAssetBundle::DirectoryAssetBundle(std::string directory)
-    : directory_(std::move(directory)),
-      fd_(fxl::internal::UniqueFDTraits::InvalidValue()) {}
+    : directory_(std::move(directory)), fd_() {}
 
-DirectoryAssetBundle::DirectoryAssetBundle(fxl::UniqueFD fd,
-                                           std::string directory)
-    : directory_(std::move(directory)), fd_(std::move(fd)) {}
+DirectoryAssetBundle::DirectoryAssetBundle(fxl::UniqueFD fd)
+    : directory_(""), fd_(std::move(fd)) {}
 
 std::string DirectoryAssetBundle::GetPathForAsset(
     const std::string& asset_name) {
