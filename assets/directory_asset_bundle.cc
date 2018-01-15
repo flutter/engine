@@ -61,7 +61,7 @@ DirectoryAssetBundle::DirectoryAssetBundle(std::string directory)
     : directory_(std::move(directory)), fd_() {}
 
 DirectoryAssetBundle::DirectoryAssetBundle(fxl::UniqueFD fd)
-    : directory_(""), fd_(std::move(fd)) {}
+    : fd_(std::move(fd)) {}
 
 std::string DirectoryAssetBundle::GetPathForAsset(
     const std::string& asset_name) {

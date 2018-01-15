@@ -5,6 +5,7 @@
 #include "flutter/content_handler/runtime_holder.h"
 
 #include <dlfcn.h>
+#include <fcntl.h>
 #include <fdio/namespace.h>
 #include <zircon/dlfcn.h>
 #include <utility>
@@ -459,10 +460,6 @@ void RuntimeHolder::InitRootBundle(std::vector<char> bundle) {
     asset_store_ = fxl::MakeRefCounted<blink::ZipAssetStore>(
         GetUnzipperProviderForRootBundle());
   } else {
-#if defined(OS_WIN)
-    // This code path is not valid in a Windows environment.
-    return;
-#else
     fxl::UniqueFD root_dir(fdio_ns_opendir(namespc_));
     if (!root_dir.is_valid()) {
       FXL_LOG(ERROR) << "Unable to load root dir";
@@ -470,14 +467,13 @@ void RuntimeHolder::InitRootBundle(std::vector<char> bundle) {
     }
     fxl::UniqueFD data_dir(openat(root_dir.get(),
                                   kFuchsiaPackageResourceDirectory,
-				  O_RDONLY)));
+                                  O_RDONLY | O_DIRECTORY));
     if (!data_dir.is_valid()) {
       FXL_LOG(ERROR) << "Unable to load data dir";
       return;
     }
     directory_asset_bundle_ =
         fxl::MakeRefCounted<blink::DirectoryAssetBundle>(std::move(data_dir));
-#endif
   }
 }
 
