@@ -24,7 +24,7 @@ FLUTTER_EXPORT
 - (instancetype)initWithFLXArchiveWithScriptSnapshot:(NSURL*)archiveURL NS_DESIGNATED_INITIALIZER
     FLUTTER_UNAVAILABLE(
         "This initializer is no longer available. See the deprecation message from "
-        "December 11, 2017 in Flutter.h. Instead, use [initWithFlutterAssets].");
+        "December 11, 2017 in Flutter.h. Instead, use [initWithFlutterAssetsWithScriptSnapshot].");
 
 - (instancetype)initWithFlutterAssets:(NSURL*)flutterAssetsURL
                              dartMain:(NSURL*)dartMainURL
