@@ -181,10 +181,10 @@ class _FrontendCompiler implements CompilerInterface {
   Future<Null> recompileDelta() async {
     final String boundaryKey = new Uuid().generateV4();
     _outputStream.writeln("result $boundaryKey");
-    final DeltaProgram deltaProgram = await _generator.computeDelta();
+    final Program deltaProgram = await _generator.computeDelta();
     final IOSink sink = new File(_kernelBinaryFilename).openWrite();
     final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
-    printer.writeProgramFile(deltaProgram.newProgram);
+    printer.writeProgramFile(deltaProgram);
     await sink.close();
     _outputStream.writeln("$boundaryKey $_kernelBinaryFilename");
     return null;
