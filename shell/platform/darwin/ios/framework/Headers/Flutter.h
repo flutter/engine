@@ -8,6 +8,11 @@
 /**
  BREAKING CHANGES:
 
+ January 15, 2018: Marked initWithFLXArchive" and
+ "initWithFLXArchiveWithScriptSnapshot" as unavailable following the
+ deprecation from December 11, 2017. Scheduled to be removed on February
+ 19, 2018.
+
  January 09, 2018: Deprecated FlutterStandardBigInteger and its use in
  FlutterStandardMessageCodec and FlutterStandardMethodCodec. Scheduled to
  be marked as unavailable once the deprecation has been available on the
