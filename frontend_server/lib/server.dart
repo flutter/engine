@@ -122,6 +122,9 @@ class _FrontendCompiler implements CompilerInterface {
   StringSink _outputStream;
   BinaryPrinterFactory printerFactory;
 
+  CompilerOptions _compilerOptions;
+  Uri _entryPoint;
+
   IncrementalKernelGenerator _generator;
   String _kernelBinaryFilename;
 
@@ -148,9 +151,9 @@ class _FrontendCompiler implements CompilerInterface {
 
     Program program;
     if (options['incremental']) {
-      _generator = generator != null
-          ? generator
-          : new IncrementalKernelGenerator(compilerOptions, filenameUri);
+      _entryPoint = filenameUri;
+      _compilerOptions = compilerOptions;
+      _generator = generator ?? _createGenerator();
       program =
           await _runWithPrintRedirection(() => _generator.computeDelta());
     } else {
@@ -192,13 +195,16 @@ class _FrontendCompiler implements CompilerInterface {
 
   @override
   void invalidate(Uri uri) {
-    _generator.invalidate(uri);
+    _generator?.invalidate(uri);
   }
 
   @override
   void resetIncrementalCompiler() {
-    _generator.reset();
+    _generator = _createGenerator();
   }
+
+  IncrementalKernelGenerator _createGenerator() =>
+    new IncrementalKernelGenerator(_compilerOptions, _entryPoint);
 
   Uri _ensureFolderPath(String path) {
     String uriPath = new Uri.file(path).toString();
@@ -244,13 +250,10 @@ Future<int> starter(
     options = _argParser.parse(<String>['--incremental', '--sdk-root=$sdkRoot']);
     compiler ??= new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
     await compiler.compile(Platform.script.toFilePath(), options, generator: generator);
-    compiler.acceptLastDelta();
     await compiler.recompileDelta();
-    compiler.acceptLastDelta();
+    await compiler.resetIncrementalCompiler();
     await compiler.recompileDelta();
-    compiler.acceptLastDelta();
     await compiler.recompileDelta();
-    compiler.acceptLastDelta();
     return 0;
   }
 
@@ -288,9 +291,9 @@ Future<int> starter(
           boundaryKey = string.substring(RECOMPILE_INSTRUCTION_SPACE.length);
           state = _State.RECOMPILE_LIST;
         } else if (string == 'accept') {
-          // NOP
+          // TODO(vegorov) remove this command from the protocol
         } else if (string == 'reject') {
-          // NOP
+          // TODO(vegorov) remove this command from the protocol
         } else if (string == 'reset') {
           compiler.resetIncrementalCompiler();
         } else if (string == 'quit') {

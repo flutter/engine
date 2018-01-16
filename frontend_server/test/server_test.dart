@@ -12,6 +12,7 @@ import 'package:frontend_server/server.dart';
 // ignore_for_file: implementation_imports
 import 'package:front_end/src/api_prototype/incremental_kernel_generator.dart';
 import 'package:kernel/binary/ast_to_binary.dart';
+import 'package:kernel/ast.dart' show Program;
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
@@ -354,7 +355,7 @@ Future<int> main() async {
       final _MockedIncrementalKernelGenerator generator =
         new _MockedIncrementalKernelGenerator();
       when(generator.computeDelta()).thenReturn(new Future<DeltaProgram>.value(
-        new DeltaProgram("", null /* program stub */)
+        new Program()
       ));
       final _MockedBinaryPrinterFactory printerFactory =
         new _MockedBinaryPrinterFactory();
