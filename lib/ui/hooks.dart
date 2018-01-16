@@ -41,7 +41,11 @@ void _updateWindowMetrics(double devicePixelRatio,
 
 typedef String LocaleClosure();
 
-String _localeClosure() => window._locale.toString();
+String _localeClosure() {
+  const String enUS = 'en_US';
+  final String locale = window?._locale?.toString() ?? enUS;
+  return (locale == '_') ? enUS : locale;
+}
 
 LocaleClosure _getLocaleClosure() => _localeClosure;
 
