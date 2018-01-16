@@ -293,7 +293,9 @@ Future<int> starter(
         } else if (string == 'accept') {
           // TODO(vegorov) remove this command from the protocol
         } else if (string == 'reject') {
-          // TODO(vegorov) remove this command from the protocol
+          // TODO(vegorov) evaluate conditions under which deltas can be
+          // rejected by the VM.
+          compiler.resetIncrementalCompiler();
         } else if (string == 'reset') {
           compiler.resetIncrementalCompiler();
         } else if (string == 'quit') {
