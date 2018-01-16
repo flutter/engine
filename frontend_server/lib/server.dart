@@ -195,7 +195,7 @@ class _FrontendCompiler implements CompilerInterface {
 
   @override
   void invalidate(Uri uri) {
-    _generator?.invalidate(uri);
+    _generator.invalidate(uri);
   }
 
   @override
