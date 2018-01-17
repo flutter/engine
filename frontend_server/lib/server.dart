@@ -32,10 +32,6 @@ ArgParser _argParser = new ArgParser(allowTrailingOptions: true)
   ..addOption('sdk-root',
       help: 'Path to sdk root',
       defaultsTo: '../../out/android_debug/flutter_patched_sdk')
-  ..addOption('byte-store',
-      help: 'Path to file byte store used to keep incremental compiler state.'
-          ' If omitted, then memory byte store is used.',
-      defaultsTo: null)
   ..addFlag('aot',
       help: 'Run compiler in AOT mode (enables whole-program transformations)',
       defaultsTo: false)
@@ -48,7 +44,10 @@ ArgParser _argParser = new ArgParser(allowTrailingOptions: true)
           ' Intended use is to satisfy different loading strategies implemented'
           ' by gen_snapshot(which needs platform embedded) vs'
           ' Flutter engine(which does not)',
-      defaultsTo: true);
+      defaultsTo: true)
+  ..addOption('packages',
+      help: '.packages file to use for compilation',
+      defaultsTo: '.packages');
 
 String _usage = '''
 Usage: server [options] [input.dart]
@@ -144,12 +143,9 @@ class _FrontendCompiler implements CompilerInterface {
     final String boundaryKey = new Uuid().generateV4();
     _outputStream.writeln("result $boundaryKey");
     final Uri sdkRoot = _ensureFolderPath(options['sdk-root']);
-    final String byteStorePath = options['byte-store'];
     final CompilerOptions compilerOptions = new CompilerOptions()
-      ..byteStore = byteStorePath != null
-          ? new FileByteStore(byteStorePath)
-          : new MemoryByteStore()
       ..sdkRoot = sdkRoot
+      ..packagesFileUri = options['packages'] != null ? Uri.base.resolveUri(new Uri.file(options['packages'])) : null
       ..strongMode = options['strong']
       ..target = new FlutterTarget(new TargetFlags(strongMode: options['strong']))
       ..reportMessages = true;
