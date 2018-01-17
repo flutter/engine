@@ -6,6 +6,7 @@ package io.flutter.view;
 
 import android.graphics.Rect;
 import android.opengl.Matrix;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -65,7 +66,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         IS_SELECTED(1 << 2),
         IS_BUTTON(1 << 3),
         IS_TEXT_FIELD(1 << 4),
-        IS_FOCUSED(1 << 5);
+        IS_FOCUSED(1 << 5),
+        HAS_ENABLED_STATE(1 << 6),
+        IS_ENABLED(1 << 7),
+        IS_IN_MUTUALLY_EXCLUSIVE_GROUP(1 << 8);
 
         Flag(int value) {
             this.value = value;
@@ -119,7 +123,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         if (object.hasFlag(Flag.IS_TEXT_FIELD)) {
             result.setClassName("android.widget.EditText");
-            result.setEditable(true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
+                result.setEditable(true);
 
             // Cursor movements
             int granularities = 0;
@@ -157,7 +162,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
         result.setBoundsInScreen(bounds);
         result.setVisibleToUser(true);
-        result.setEnabled(true); // TODO(ianh): Expose disabled subtrees
+        result.setEnabled(!object.hasFlag(Flag.HAS_ENABLED_STATE) ||
+                          object.hasFlag(Flag.IS_ENABLED));
 
         if (object.hasAction(Action.TAP)) {
             result.addAction(AccessibilityNodeInfo.ACTION_CLICK);
@@ -193,8 +199,16 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             }
         }
 
-        result.setCheckable(object.hasFlag(Flag.HAS_CHECKED_STATE));
-        result.setChecked(object.hasFlag(Flag.IS_CHECKED));
+        boolean hasCheckedState = object.hasFlag(Flag.HAS_CHECKED_STATE);
+        result.setCheckable(hasCheckedState);
+        if (hasCheckedState) {
+            result.setChecked(object.hasFlag(Flag.IS_CHECKED));
+            if (object.hasFlag(Flag.IS_IN_MUTUALLY_EXCLUSIVE_GROUP))
+                result.setClassName("android.widget.RadioButton");
+            else
+                result.setClassName("android.widget.CheckBox");
+        }
+
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
         result.setText(object.getValueLabelHint());
 
@@ -389,12 +403,20 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
     void updateSemantics(ByteBuffer buffer, String[] strings) {
         ArrayList<Integer> updated = new ArrayList<Integer>();
+        ArrayList<Integer> checkedChanged = new ArrayList<Integer>();
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
             SemanticsObject object = getOrCreateObject(id);
+            boolean hadCheckedState = object.hasFlag(Flag.HAS_CHECKED_STATE);
+            boolean wasChecked = object.hasFlag(Flag.IS_CHECKED);
             object.updateWith(buffer, strings);
             if (object.hasFlag(Flag.IS_FOCUSED)) {
                 mInputFocusedObject = object;
+            }
+            if (mA11yFocusedObject != null && mA11yFocusedObject.id == id
+                    && hadCheckedState && object.hasFlag(Flag.HAS_CHECKED_STATE)
+                    && wasChecked != object.hasFlag(Flag.IS_CHECKED)) {
+                checkedChanged.add(id);
             }
             updated.add(id);
         }
@@ -419,6 +441,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         for (Integer id : updated) {
             sendAccessibilityEvent(id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+        }
+        for (Integer id : checkedChanged) {
+            // Simulate a click so TalkBack announces the change in checked state.
+            sendAccessibilityEvent(id, AccessibilityEvent.TYPE_VIEW_CLICKED);
         }
     }
 

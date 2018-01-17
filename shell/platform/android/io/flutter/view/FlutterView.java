@@ -647,6 +647,30 @@ public class FlutterView extends SurfaceView
         }
     }
 
+    private void setAssetBundlePath(final String assetsDirectory) {
+        Runnable runnable = new Runnable() {
+            public void run() {
+                assertAttached();
+                mNativeView.setAssetBundlePathOnUI(assetsDirectory);
+                synchronized (this) {
+                    notify();
+                }
+            }
+        };
+
+        try {
+            synchronized (runnable) {
+                // Post to the Android UI thread and wait for the response.
+                post(runnable);
+                runnable.wait();
+            }
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Thread got interrupted waiting for " +
+                "setAssetBundlePath to finish", e);
+        }
+    }
+
+
     /**
      * Return the most recent frame as a bitmap.
      *
@@ -831,8 +855,10 @@ public class FlutterView extends SurfaceView
 
     @Override
     public AccessibilityNodeProvider getAccessibilityNodeProvider() {
-        ensureAccessibilityEnabled();
-        return mAccessibilityNodeProvider;
+        if (mAccessibilityEnabled)
+            return mAccessibilityNodeProvider;
+        // TODO(goderbauer): when a11y is off this should return a one-off snapshot of the a11y tree.
+        return null;
     }
 
     private AccessibilityBridge mAccessibilityNodeProvider;

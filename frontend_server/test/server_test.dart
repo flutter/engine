@@ -53,6 +53,28 @@ Future<int> main() async {
           )
         ).captured;
       expect(capturedArgs.single['sdk-root'], equals('sdkroot'));
+      expect(capturedArgs.single['strong'], equals(false));
+    });
+
+    test('compile from command line (strong mode)', () async {
+      final List<String> args = <String>[
+        'server.dart',
+        '--sdk-root',
+        'sdkroot',
+        '--strong',
+      ];
+      final int exitcode = await starter(args, compiler: compiler);
+      expect(exitcode, equals(0));
+      final List<ArgResults> capturedArgs =
+        verify(
+          compiler.compile(
+            argThat(equals('server.dart')),
+            captureAny,
+            generator: any,
+          )
+        ).captured;
+      expect(capturedArgs.single['sdk-root'], equals('sdkroot'));
+      expect(capturedArgs.single['strong'], equals(true));
     });
 
     test('compile from command line with file byte store', () async {
@@ -75,6 +97,7 @@ Future<int> main() async {
           ).captured;
       expect(capturedArgs.single['sdk-root'], equals('sdkroot'));
       expect(capturedArgs.single['byte-store'], equals('path/to/bytestore'));
+      expect(capturedArgs.single['strong'], equals(false));
     });
 
     test('compile from command line with link platform', () async {
@@ -96,6 +119,7 @@ Future<int> main() async {
           ).captured;
       expect(capturedArgs.single['sdk-root'], equals('sdkroot'));
       expect(capturedArgs.single['link-platform'], equals(true));
+      expect(capturedArgs.single['strong'], equals(false));
     });
   });
 
@@ -120,6 +144,7 @@ Future<int> main() async {
                 equals('sdkroot'));
             expect(invocation.positionalArguments[1]['byte-store'],
                 equals('path/to/bytestore'));
+            expect(invocation.positionalArguments[1]['strong'], equals(false));
             compileCalled.sendPort.send(true);
           }
       );
@@ -141,6 +166,11 @@ Future<int> main() async {
       '--sdk-root',
       'sdkroot',
     ];
+    final List<String> strongArgs = <String>[
+      '--sdk-root',
+      'sdkroot',
+      '--strong',
+    ];
 
     test('compile one file', () async {
       final StreamController<List<int>> inputStreamController =
@@ -150,11 +180,34 @@ Future<int> main() async {
         (Invocation invocation) {
           expect(invocation.positionalArguments[0], equals('server.dart'));
           expect(invocation.positionalArguments[1]['sdk-root'], equals('sdkroot'));
+          expect(invocation.positionalArguments[1]['strong'], equals(false));
           compileCalled.sendPort.send(true);
         }
       );
 
       final int exitcode = await starter(args, compiler: compiler,
+        input: inputStreamController.stream,
+      );
+      expect(exitcode, equals(0));
+      inputStreamController.add('compile server.dart\n'.codeUnits);
+      await compileCalled.first;
+      inputStreamController.close();
+    });
+    
+    test('compile one file (strong mode)', () async {
+      final StreamController<List<int>> inputStreamController =
+        new StreamController<List<int>>();
+      final ReceivePort compileCalled = new ReceivePort();
+      when(compiler.compile(any, any, generator: any)).thenAnswer(
+        (Invocation invocation) {
+          expect(invocation.positionalArguments[0], equals('server.dart'));
+          expect(invocation.positionalArguments[1]['sdk-root'], equals('sdkroot'));
+          expect(invocation.positionalArguments[1]['strong'], equals(true));
+          compileCalled.sendPort.send(true);
+        }
+      );
+
+      final int exitcode = await starter(strongArgs, compiler: compiler,
         input: inputStreamController.stream,
       );
       expect(exitcode, equals(0));
@@ -172,6 +225,7 @@ Future<int> main() async {
         (Invocation invocation) {
           expect(invocation.positionalArguments[0], equals('server${counter++}.dart'));
           expect(invocation.positionalArguments[1]['sdk-root'], equals('sdkroot'));
+          expect(invocation.positionalArguments[1]['strong'], equals(false));
           compileCalled.sendPort.send(true);
         }
       );

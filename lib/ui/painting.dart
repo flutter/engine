@@ -233,8 +233,8 @@ class Color {
   ///
   /// If either color is null, this function linearly interpolates from a
   /// transparent instance of the other color. This is usually preferable to
-  /// interpolating from [Colors.transparent] (`const Color(0x00000000)`), which
-  /// is specifically transparent _black_.
+  /// interpolating from [material.Colors.transparent] (`const
+  /// Color(0x00000000)`), which is specifically transparent _black_.
   ///
   /// The `t` argument represents position on the timeline, with 0.0 meaning
   /// that the interpolation has not started, returning `a` (or something
@@ -293,13 +293,14 @@ class Color {
 /// (destination) image is the current contents of the canvas onto which the
 /// source is being drawn.
 ///
-/// When using [saveLayer] and [restore], the blend mode of the [Paint] given to
-/// the [saveLayer] will be applied when [restore] is called. Each call to
-/// [saveLayer] introduces a new layer onto which shapes and images are painted;
-/// when [restore] is called, that layer is then _composited_ onto the parent
-/// layer, with the "src" being the most-recently-drawn shapes and images, and
-/// the "dst" being the parent layer. (For the first [saveLayer] call, the
-/// parent layer is the canvas itself.)
+/// When using [Canvas.saveLayer] and [Canvas.restore], the blend mode of the
+/// [Paint] given to the [Canvas.saveLayer] will be applied when
+/// [Canvas.restore] is called. Each call to [Canvas.saveLayer] introduces a new
+/// layer onto which shapes and images are painted; when [Canvas.restore] is
+/// called, that layer is then _composited_ onto the parent layer, with the
+/// "src" being the most-recently-drawn shapes and images, and the "dst" being
+/// the parent layer. (For the first [Canvas.saveLayer] call, the parent layer
+/// is the canvas itself.)
 ///
 /// See also:
 ///
@@ -561,6 +562,9 @@ class Paint {
   static const int _kColorFilterIndex = 9;
   static const int _kColorFilterColorIndex = 10;
   static const int _kColorFilterBlendModeIndex = 11;
+  static const int _kMaskFilterIndex = 12;
+  static const int _kMaskFilterBlurStyleIndex = 13;
+  static const int _kMaskFilterSigmaIndex = 14;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
   static const int _kColorOffset = _kColorIndex << 2;
@@ -574,14 +578,16 @@ class Paint {
   static const int _kColorFilterOffset = _kColorFilterIndex << 2;
   static const int _kColorFilterColorOffset = _kColorFilterColorIndex << 2;
   static const int _kColorFilterBlendModeOffset = _kColorFilterBlendModeIndex << 2;
+  static const int _kMaskFilterOffset = _kMaskFilterIndex << 2;
+  static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
+  static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 48;
+  static const int _kDataByteCount = 75;
 
   // Binary format must match the deserialization code in paint.cc.
   List<dynamic> _objects;
-  static const int _kMaskFilterIndex = 0;
-  static const int _kShaderIndex = 1;
-  static const int _kObjectCount = 2;  // Must be one larger than the largest index
+  static const int _kShaderIndex = 0;
+  static const int _kObjectCount = 1; // Must be one larger than the largest index.
 
   /// Whether to apply anti-aliasing to lines and images drawn on the
   /// canvas.
@@ -734,13 +740,29 @@ class Paint {
   ///
   /// See [MaskFilter] for details.
   MaskFilter get maskFilter {
-    if (_objects == null)
-      return null;
-    return _objects[_kMaskFilterIndex];
+    switch (_data.getInt32(_kMaskFilterOffset, _kFakeHostEndian)) {
+      case MaskFilter._TypeNone:
+        return null;
+      case MaskFilter._TypeBlur:
+        return new MaskFilter.blur(
+          BlurStyle.values[_data.getInt32(_kMaskFilterBlurStyleOffset, _kFakeHostEndian)],
+          _data.getFloat32(_kMaskFilterSigmaOffset, _kFakeHostEndian),
+        );
+    }
+    return null;
   }
   set maskFilter(MaskFilter value) {
-    _objects ??= new List<dynamic>(_kObjectCount);
-    _objects[_kMaskFilterIndex] = value;
+    if (value == null) {
+      _data.setInt32(_kMaskFilterOffset, MaskFilter._TypeNone, _kFakeHostEndian);
+      _data.setInt32(_kMaskFilterBlurStyleOffset, 0, _kFakeHostEndian);
+      _data.setFloat32(_kMaskFilterSigmaOffset, 0.0, _kFakeHostEndian);
+    } else {
+      // For now we only support one kind of MaskFilter, so we don't need to
+      // check what the type is if it's not null.
+      _data.setInt32(_kMaskFilterOffset, MaskFilter._TypeBlur, _kFakeHostEndian);
+      _data.setInt32(_kMaskFilterBlurStyleOffset, value._style.index, _kFakeHostEndian);
+      _data.setFloat32(_kMaskFilterSigmaOffset, value._sigma, _kFakeHostEndian);
+    }
   }
 
   /// Controls the performance vs quality trade-off to use when applying
@@ -864,9 +886,9 @@ class Paint {
 
 /// Opaque handle to raw decoded image data (pixels).
 ///
-/// To obtain an Image object, use [decodeImageFromList].
+/// To obtain an [Image] object, use [instantiateImageCodec].
 ///
-/// To draw an Image, use one of the methods on the [Canvas] class, such as
+/// To draw an [Image], use one of the methods on the [Canvas] class, such as
 /// [Canvas.drawImage].
 abstract class Image extends NativeFieldWrapperClass2 {
   /// The number of image pixels along the image's horizontal axis.
@@ -1290,7 +1312,7 @@ enum BlurStyle {
 /// color pixels.
 ///
 /// Instances of this class are used with [Paint.maskFilter] on [Paint] objects.
-class MaskFilter extends NativeFieldWrapperClass2 {
+class MaskFilter {
   /// Creates a mask filter that takes the shape being drawn and blurs it.
   ///
   /// This is commonly used to approximate shadows.
@@ -1303,11 +1325,40 @@ class MaskFilter extends NativeFieldWrapperClass2 {
   /// in pixels.
   ///
   /// A blur is an expensive operation and should therefore be used sparingly.
-  MaskFilter.blur(BlurStyle style, double sigma) {
-    assert(style != null);
-    _constructor(style.index, sigma);
+  ///
+  /// The arguments must not be null.
+  ///
+  /// See also:
+  ///
+  ///  * [Canvas.drawShadow], which is a more efficient way to draw shadows.
+  const MaskFilter.blur(
+    this._style,
+    this._sigma,
+  ) : assert(_style != null),
+      assert(_sigma != null);
+
+  final BlurStyle _style;
+  final double _sigma;
+
+  // The type of MaskFilter class to create for Skia.
+  // These constants must be kept in sync with MaskFilterType in paint.cc.
+  static const int _TypeNone = 0; // null
+  static const int _TypeBlur = 1; // SkBlurMaskFilter
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other is! MaskFilter)
+      return false;
+    final MaskFilter typedOther = other;
+    return _style == typedOther._style &&
+           _sigma == typedOther._sigma;
   }
-  void _constructor(int style, double sigma) native "MaskFilter_constructor";
+
+  @override
+  int get hashCode => hashValues(_style, _sigma);
+
+  @override
+  String toString() => "MaskFilter.blur($_style, ${_sigma.toStringAsFixed(1)})";
 }
 
 /// A description of a color filter to apply when drawing a shape or compositing
@@ -1720,18 +1771,19 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// given picture recorder.
   ///
   /// Graphical operations that affect pixels entirely outside the given
-  /// cullRect might be discarded by the implementation. However, the
+  /// `cullRect` might be discarded by the implementation. However, the
   /// implementation might draw outside these bounds if, for example, a command
   /// draws partially inside and outside the `cullRect`. To ensure that pixels
-  /// outside a given region are discarded, consider using a [clipRect].
+  /// outside a given region are discarded, consider using a [clipRect]. The
+  /// `cullRect` is optional; by default, all operations are kept.
   ///
   /// To end the recording, call [PictureRecorder.endRecording] on the
   /// given recorder.
-  Canvas(PictureRecorder recorder, Rect cullRect) {
+  Canvas(PictureRecorder recorder, [ Rect cullRect ]) {
     assert(recorder != null);
     if (recorder.isRecording)
       throw new ArgumentError('"recorder" must not already be associated with another Canvas.');
-    assert(cullRect != null);
+    cullRect ??= Rect.largest;
     _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
   }
   void _constructor(PictureRecorder recorder,
@@ -1926,11 +1978,11 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rectangle.
   ///
-  /// If the clip is not axis-aligned with the display device, and [isAntiAlias]
-  /// is true, then the clip will be anti-aliased. If multiple draw commands
-  /// intersect with the clip boundary, this can result in incorrect blending at
-  /// the clip boundary. See [saveLayer] for a discussion of how to address
-  /// that.
+  /// If the clip is not axis-aligned with the display device, and
+  /// [Paint.isAntiAlias] is true, then the clip will be anti-aliased. If
+  /// multiple draw commands intersect with the clip boundary, this can result
+  /// in incorrect blending at the clip boundary. See [saveLayer] for a
+  /// discussion of how to address that.
   ///
   /// Use [ClipOp.difference] to subtract the provided rectangle from the
   /// current clip.
@@ -1948,10 +2000,10 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rounded rectangle.
   ///
-  /// If [isAntiAlias] is true, then the clip will be anti-aliased. If multiple
-  /// draw commands intersect with the clip boundary, this can result in
-  /// incorrect blending at the clip boundary. See [saveLayer] for a discussion
-  /// of how to address that and some examples of using [clipRRect].
+  /// If [Paint.isAntiAlias] is true, then the clip will be anti-aliased. If
+  /// multiple draw commands intersect with the clip boundary, this can result
+  /// in incorrect blending at the clip boundary. See [saveLayer] for a
+  /// discussion of how to address that and some examples of using [clipRRect].
   void clipRRect(RRect rrect) {
     assert(_rrectIsValid(rrect));
     _clipRRect(rrect._value);
@@ -1961,10 +2013,10 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// Reduces the clip region to the intersection of the current clip and the
   /// given [Path].
   ///
-  /// If [isAntiAlias] is true, then the clip will be anti-aliased. If multiple
-  /// draw commands intersect with the clip boundary, this can result in
-  /// incorrect blending at the clip boundary. See [saveLayer] for a discussion
-  /// of how to address that.
+  /// If [Paint.isAntiAlias] is true, then the clip will be anti-aliased. If
+  /// multiple draw commands intersect with the clip boundary, this can result
+  /// in incorrect blending at the clip boundary. See [saveLayer] for a
+  /// discussion of how to address that.
   void clipPath(Path path) {
     assert(path != null); // path is checked on the engine side
     _clipPath(path);
@@ -2405,10 +2457,14 @@ class Canvas extends NativeFieldWrapperClass2 {
 
   /// Draws a shadow for a [Path] representing the given material elevation.
   ///
-  /// transparentOccluder should be true if the occluding object is not opaque.
+  /// The `transparentOccluder` argument should be true if the occluding object
+  /// is not opaque.
+  ///
+  /// The arguments must not be null.
   void drawShadow(Path path, Color color, double elevation, bool transparentOccluder) {
     assert(path != null); // path is checked on the engine side
     assert(color != null);
+    assert(transparentOccluder != null);
     _drawShadow(path, color.value, elevation, transparentOccluder);
   }
   void _drawShadow(Path path,

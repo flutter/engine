@@ -194,6 +194,10 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
   if (_node.HasFlag(blink::SemanticsFlags::kIsButton)) {
     traits |= UIAccessibilityTraitButton;
   }
+  if (_node.HasFlag(blink::SemanticsFlags::kHasEnabledState) &&
+      !_node.HasFlag(blink::SemanticsFlags::kIsEnabled)) {
+    traits |= UIAccessibilityTraitNotEnabled;
+  }
   return traits;
 }
 
