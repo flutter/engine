@@ -11,7 +11,6 @@ import 'package:args/args.dart';
 // that would replace api used below. This api was made private in
 // an effort to discourage further use.
 // ignore_for_file: implementation_imports
-import 'package:front_end/src/api_prototype/byte_store.dart';
 import 'package:front_end/src/api_prototype/compiler_options.dart';
 import 'package:front_end/src/api_prototype/incremental_kernel_generator.dart';
 
