@@ -327,4 +327,3 @@ FlutterResult __FlutterEngineFlushPendingTasksNow() {
   fml::MessageLoop::GetCurrent().RunExpiredTasksNow();
   return kSuccess;
 }
-
