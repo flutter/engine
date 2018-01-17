@@ -6,6 +6,9 @@ import("//third_party/dart/utils/application_snapshot.gni")
 
 application_snapshot("frontend_server") {
   main_dart = "bin/starter.dart"
+  deps = [
+    "$flutter_root/lib/snapshot:kernel_platform_files",
+  ]
   dot_packages = rebase_path(".packages")
   flutter_patched_sdk = rebase_path("$root_out_dir/flutter_patched_sdk")
   training_args = [ "--train", "--sdk-root=$flutter_patched_sdk" ]
