@@ -79,12 +79,11 @@ void RunNonInteractive(fxl::CommandLine initial_command_line,
 
   std::string bundle_path = "";
   initial_command_line.GetOptionValue(
-    FlagForSwitch(shell::Switch::FlutterAssetsDir), &bundle_path);
+      FlagForSwitch(shell::Switch::FlutterAssetsDir), &bundle_path);
 
   shell::Shell::InitStandalone(initial_command_line,
-    /* icu_data_path= */ "",
-    /* application_library_path= */ "",
-    bundle_path);
+                               /* icu_data_path= */ "",
+                               /* application_library_path= */ "", bundle_path);
 
   // Note that this task observer must be added after the observer that drains
   // the microtask queue.
