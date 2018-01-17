@@ -96,14 +96,6 @@ abstract class CompilerInterface {
   /// taking into account some changed(invalidated) sources.
   Future<Null> recompileDelta();
 
-  /// Accept results of previous compilation so that next recompilation cycle
-  /// won't recompile sources that were previously reported as changed.
-  void acceptLastDelta();
-
-  /// Reject results of previous compilation. Next recompilation cycle will
-  /// recompile sources indicated as changed.
-  void rejectLastDelta();
-
   /// This let's compiler know that source file identifed by `uri` was changed.
   void invalidate(Uri uri);
 
@@ -129,6 +121,9 @@ class _FrontendCompiler implements CompilerInterface {
 
   StringSink _outputStream;
   BinaryPrinterFactory printerFactory;
+
+  CompilerOptions _compilerOptions;
+  Uri _entryPoint;
 
   IncrementalKernelGenerator _generator;
   String _kernelBinaryFilename;
@@ -156,14 +151,11 @@ class _FrontendCompiler implements CompilerInterface {
 
     Program program;
     if (options['incremental']) {
-      _generator = generator != null
-          ? generator
-          : await IncrementalKernelGenerator.newInstance(
-              compilerOptions, filenameUri,
-              useMinimalGenerator: true);
-      final DeltaProgram deltaProgram =
+      _entryPoint = filenameUri;
+      _compilerOptions = compilerOptions;
+      _generator = generator ?? _createGenerator();
+      program =
           await _runWithPrintRedirection(() => _generator.computeDelta());
-      program = deltaProgram.newProgram;
     } else {
       if (options['link-platform']) {
         // TODO(aam): Remove linkedDependencies once platform is directly embedded
@@ -192,23 +184,13 @@ class _FrontendCompiler implements CompilerInterface {
   Future<Null> recompileDelta() async {
     final String boundaryKey = new Uuid().generateV4();
     _outputStream.writeln("result $boundaryKey");
-    final DeltaProgram deltaProgram = await _generator.computeDelta();
+    final Program deltaProgram = await _generator.computeDelta();
     final IOSink sink = new File(_kernelBinaryFilename).openWrite();
     final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
-    printer.writeProgramFile(deltaProgram.newProgram);
+    printer.writeProgramFile(deltaProgram);
     await sink.close();
     _outputStream.writeln("$boundaryKey $_kernelBinaryFilename");
     return null;
-  }
-
-  @override
-  void acceptLastDelta() {
-    _generator.acceptLastDelta();
-  }
-
-  @override
-  void rejectLastDelta() {
-    _generator.rejectLastDelta();
   }
 
   @override
@@ -218,8 +200,11 @@ class _FrontendCompiler implements CompilerInterface {
 
   @override
   void resetIncrementalCompiler() {
-    _generator.reset();
+    _generator = _createGenerator();
   }
+
+  IncrementalKernelGenerator _createGenerator() =>
+    new IncrementalKernelGenerator(_compilerOptions, _entryPoint);
 
   Uri _ensureFolderPath(String path) {
     String uriPath = new Uri.file(path).toString();
@@ -261,6 +246,14 @@ Future<int> starter(
   }
 
   if (options['train']) {
+    final String sdkRoot = options['sdk-root'];
+    options = _argParser.parse(<String>['--incremental', '--sdk-root=$sdkRoot']);
+    compiler ??= new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
+    await compiler.compile(Platform.script.toFilePath(), options, generator: generator);
+    await compiler.recompileDelta();
+    await compiler.resetIncrementalCompiler();
+    await compiler.recompileDelta();
+    await compiler.recompileDelta();
     return 0;
   }
 
@@ -298,9 +291,11 @@ Future<int> starter(
           boundaryKey = string.substring(RECOMPILE_INSTRUCTION_SPACE.length);
           state = _State.RECOMPILE_LIST;
         } else if (string == 'accept') {
-          compiler.acceptLastDelta();
+          // TODO(vegorov) remove this command from the protocol
         } else if (string == 'reject') {
-          compiler.rejectLastDelta();
+          // TODO(vegorov) evaluate conditions under which deltas can be
+          // rejected by the VM.
+          compiler.resetIncrementalCompiler();
         } else if (string == 'reset') {
           compiler.resetIncrementalCompiler();
         } else if (string == 'quit') {

@@ -12,6 +12,7 @@ import 'package:frontend_server/server.dart';
 // ignore_for_file: implementation_imports
 import 'package:front_end/src/api_prototype/incremental_kernel_generator.dart';
 import 'package:kernel/binary/ast_to_binary.dart';
+import 'package:kernel/ast.dart' show Program;
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
@@ -191,7 +192,7 @@ Future<int> main() async {
       await compileCalled.first;
       inputStreamController.close();
     });
-    
+
     test('compile one file (strong mode)', () async {
       final StreamController<List<int>> inputStreamController =
         new StreamController<List<int>>();
@@ -273,38 +274,6 @@ Future<int> main() async {
       streamController.close();
     });
 
-    test('accept', () async {
-      final StreamController<List<int>> inputStreamController =
-        new StreamController<List<int>>();
-      final ReceivePort acceptCalled = new ReceivePort();
-      when(compiler.acceptLastDelta()).thenAnswer((Invocation invocation) {
-        acceptCalled.sendPort.send(true);
-      });
-      final int exitcode = await starter(args, compiler: compiler,
-        input: inputStreamController.stream,
-      );
-      expect(exitcode, equals(0));
-      inputStreamController.add('accept\n'.codeUnits);
-      await acceptCalled.first;
-      inputStreamController.close();
-    });
-
-    test('reject', () async {
-      final StreamController<List<int>> inputStreamController =
-        new StreamController<List<int>>();
-      final ReceivePort rejectCalled = new ReceivePort();
-      when(compiler.rejectLastDelta()).thenAnswer((Invocation invocation) {
-        rejectCalled.sendPort.send(true);
-      });
-      final int exitcode = await starter(args, compiler: compiler,
-        input: inputStreamController.stream,
-      );
-      expect(exitcode, equals(0));
-      inputStreamController.add('reject\n'.codeUnits);
-      await rejectCalled.first;
-      inputStreamController.close();
-    });
-
     test('reset', () async {
       final StreamController<List<int>> inputStreamController =
         new StreamController<List<int>>();
@@ -340,7 +309,6 @@ Future<int> main() async {
 
       verifyInOrder(<dynamic>[
         compiler.compile('file1.dart', any, generator: any),
-        compiler.acceptLastDelta(),
         compiler.invalidate(Uri.base.resolve('file2.dart')),
         compiler.invalidate(Uri.base.resolve('file3.dart')),
         compiler.recompileDelta(),
@@ -385,7 +353,7 @@ Future<int> main() async {
       final _MockedIncrementalKernelGenerator generator =
         new _MockedIncrementalKernelGenerator();
       when(generator.computeDelta()).thenReturn(new Future<DeltaProgram>.value(
-        new DeltaProgram("", null /* program stub */)
+        new Program()
       ));
       final _MockedBinaryPrinterFactory printerFactory =
         new _MockedBinaryPrinterFactory();
