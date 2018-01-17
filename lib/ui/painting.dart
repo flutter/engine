@@ -2096,8 +2096,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// To end the recording, call [PictureRecorder.endRecording] on the
   /// given recorder.
-  Canvas(PictureRecorder recorder, [ Rect cullRect ]) : assert(recorder != null),
-    assert(recorder != null);
+  Canvas(PictureRecorder recorder, [ Rect cullRect ]) : assert(recorder != null); {
     if (recorder.isRecording)
       throw new ArgumentError('"recorder" must not already be associated with another Canvas.');
     cullRect ??= Rect.largest;
