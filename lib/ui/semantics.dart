@@ -147,6 +147,7 @@ class SemanticsFlag {
   static const int _kIsFocusedIndex = 1 << 5;
   static const int _kHasEnabledStateIndex = 1 << 6;
   static const int _kIsEnabledIndex = 1 << 7;
+  static const int _kIsInMutuallyExclusiveGroupIndex = 1 << 8;
 
   const SemanticsFlag._(this.index);
 
@@ -210,6 +211,12 @@ class SemanticsFlag {
   /// marked as disabled.
   static const SemanticsFlag isEnabled = const SemanticsFlag._(_kIsEnabledIndex);
 
+  /// Whether a semantic node is in a mutually exclusive group.
+  ///
+  /// For example, a radio button is in a mutually exclusive group because
+  /// only one radio button in that group can be marked as [isChecked].
+  static const SemanticsFlag isInMutuallyExclusiveGroup = const SemanticsFlag._(_kIsInMutuallyExclusiveGroupIndex);
+
   /// The possible semantics flags.
   ///
   /// The map's key is the [index] of the flag and the value is the flag itself.
@@ -222,6 +229,7 @@ class SemanticsFlag {
     _kIsFocusedIndex: isFocused,
     _kHasEnabledStateIndex: hasEnabledState,
     _kIsEnabledIndex: isEnabled,
+    _kIsInMutuallyExclusiveGroupIndex: isInMutuallyExclusiveGroup,
   };
 
   @override
@@ -243,6 +251,8 @@ class SemanticsFlag {
         return 'SemanticsFlag.hasEnabledState';
       case _kIsEnabledIndex:
         return 'SemanticsFlag.isEnabled';
+      case _kIsInMutuallyExclusiveGroupIndex:
+        return 'SemanticsFlag.isInMutuallyExclusiveGroup';
     }
     return null;
   }
@@ -255,7 +265,7 @@ class SemanticsFlag {
 class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Creates an empty [SemanticsUpdateBuilder] object.
   SemanticsUpdateBuilder() { _constructor(); }
-  void _constructor() native "SemanticsUpdateBuilder_constructor";
+  void _constructor() native 'SemanticsUpdateBuilder_constructor';
 
   /// Update the information associated with the node with the given `id`.
   ///
@@ -300,25 +310,27 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String decreasedValue,
     TextDirection textDirection,
     Float64List transform,
-    Int32List children
+    Int32List children,
   }) {
     if (transform.length != 16)
       throw new ArgumentError('transform argument must have 16 entries.');
-    _updateNode(id,
-                flags,
-                actions,
-                rect.left,
-                rect.top,
-                rect.right,
-                rect.bottom,
-                label,
-                hint,
-                value,
-                increasedValue,
-                decreasedValue,
-                textDirection != null ? textDirection.index + 1 : 0,
-                transform,
-                children);
+    _updateNode(
+      id,
+      flags,
+      actions,
+      rect.left,
+      rect.top,
+      rect.right,
+      rect.bottom,
+      label,
+      hint,
+      value,
+      increasedValue,
+      decreasedValue,
+      textDirection != null ? textDirection.index + 1 : 0,
+      transform,
+      children,
+    );
   }
   void _updateNode(
     int id,
@@ -335,15 +347,15 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String decreasedValue,
     int textDirection,
     Float64List transform,
-    Int32List children
-  ) native "SemanticsUpdateBuilder_updateNode";
+    Int32List children,
+  ) native 'SemanticsUpdateBuilder_updateNode';
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
   ///
   /// The returned object can be passed to [Window.updateSemantics] to actually
   /// update the semantics retained by the system.
-  SemanticsUpdate build() native "SemanticsUpdateBuilder_build";
+  SemanticsUpdate build() native 'SemanticsUpdateBuilder_build';
 }
 
 /// An opaque object representing a batch of semantics updates.
@@ -363,5 +375,5 @@ class SemanticsUpdate extends NativeFieldWrapperClass2 {
   ///
   /// After calling this function, the semantics update is cannot be used
   /// further.
-  void dispose() native "SemanticsUpdateBuilder_dispose";
+  void dispose() native 'SemanticsUpdateBuilder_dispose';
 }

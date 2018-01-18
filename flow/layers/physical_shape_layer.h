@@ -23,6 +23,14 @@ class PhysicalShapeLayer : public ContainerLayer {
       frameRRect_ = SkRRect::MakeRect(rect);
     } else if (path.isRRect(&frameRRect_)) {
       isRect_ = frameRRect_.isRect();
+    } else {
+      // Scenic currently doesn't provide an easy way to create shapes from
+      // arbitrary paths.
+      // For shapes that cannot be represented as a rounded rectangle we
+      // default to use the bounding rectangle.
+      // TODO(amirh): fix this once we have a way to create a Scenic shape from
+      // an SkPath.
+      frameRRect_ = SkRRect::MakeRect(path.getBounds());
     }
   }
 

@@ -128,6 +128,9 @@ class _FrontendCompiler implements CompilerInterface {
   StringSink _outputStream;
   BinaryPrinterFactory printerFactory;
 
+  CompilerOptions _compilerOptions;
+  Uri _entryPoint;
+
   IncrementalKernelGenerator _generator;
   String _kernelBinaryFilename;
 
@@ -138,9 +141,9 @@ class _FrontendCompiler implements CompilerInterface {
     IncrementalKernelGenerator generator,
   }) async {
     final Uri filenameUri = Uri.base.resolveUri(new Uri.file(filename));
-    _kernelBinaryFilename = "$filename.dill";
+    _kernelBinaryFilename = '$filename.dill';
     final String boundaryKey = new Uuid().generateV4();
-    _outputStream.writeln("result $boundaryKey");
+    _outputStream.writeln('result $boundaryKey');
     final Uri sdkRoot = _ensureFolderPath(options['sdk-root']);
     final CompilerOptions compilerOptions = new CompilerOptions()
       ..sdkRoot = sdkRoot
@@ -151,14 +154,11 @@ class _FrontendCompiler implements CompilerInterface {
 
     Program program;
     if (options['incremental']) {
-      _generator = generator != null
-          ? generator
-          : await IncrementalKernelGenerator.newInstance(
-              compilerOptions, filenameUri,
-              useMinimalGenerator: true);
-      final DeltaProgram deltaProgram =
+      _entryPoint = filenameUri;
+      _compilerOptions = compilerOptions;
+      _generator = generator ?? _createGenerator();
+      program =
           await _runWithPrintRedirection(() => _generator.computeDelta());
-      program = deltaProgram.newProgram;
     } else {
       if (options['link-platform']) {
         // TODO(aam): Remove linkedDependencies once platform is directly embedded
@@ -177,7 +177,7 @@ class _FrontendCompiler implements CompilerInterface {
       final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
       printer.writeProgramFile(program);
       await sink.close();
-      _outputStream.writeln("$boundaryKey $_kernelBinaryFilename");
+      _outputStream.writeln('$boundaryKey $_kernelBinaryFilename');
     } else
       _outputStream.writeln(boundaryKey);
     return null;
@@ -186,24 +186,24 @@ class _FrontendCompiler implements CompilerInterface {
   @override
   Future<Null> recompileDelta() async {
     final String boundaryKey = new Uuid().generateV4();
-    _outputStream.writeln("result $boundaryKey");
-    final DeltaProgram deltaProgram = await _generator.computeDelta();
+    _outputStream.writeln('result $boundaryKey');
+    final Program deltaProgram = await _generator.computeDelta();
     final IOSink sink = new File(_kernelBinaryFilename).openWrite();
     final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
-    printer.writeProgramFile(deltaProgram.newProgram);
+    printer.writeProgramFile(deltaProgram);
     await sink.close();
-    _outputStream.writeln("$boundaryKey $_kernelBinaryFilename");
+    _outputStream.writeln('$boundaryKey $_kernelBinaryFilename');
     return null;
   }
 
   @override
   void acceptLastDelta() {
-    _generator.acceptLastDelta();
+    // TODO(aam): implement this considering new incremental compiler API.
   }
 
   @override
   void rejectLastDelta() {
-    _generator.rejectLastDelta();
+    // TODO(aam): implement this considering new incremental compiler API.
   }
 
   @override
@@ -213,8 +213,11 @@ class _FrontendCompiler implements CompilerInterface {
 
   @override
   void resetIncrementalCompiler() {
-    _generator.reset();
+    _generator = _createGenerator();
   }
+
+  IncrementalKernelGenerator _createGenerator() =>
+    new IncrementalKernelGenerator(_compilerOptions, _entryPoint);
 
   Uri _ensureFolderPath(String path) {
     String uriPath = new Uri.file(path).toString();
@@ -256,6 +259,18 @@ Future<int> starter(
   }
 
   if (options['train']) {
+    final String sdkRoot = options['sdk-root'];
+    options = _argParser.parse(<String>['--incremental', '--sdk-root=$sdkRoot']);
+    compiler ??= new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
+    await compiler.compile(Platform.script.toFilePath(), options, generator: generator);
+    compiler.acceptLastDelta();
+    await compiler.recompileDelta();
+    compiler.acceptLastDelta();
+    compiler.resetIncrementalCompiler();
+    await compiler.recompileDelta();
+    compiler.acceptLastDelta();
+    await compiler.recompileDelta();
+    compiler.acceptLastDelta();
     return 0;
   }
 
@@ -266,7 +281,7 @@ Future<int> starter(
   // Has to be a directory, that won't have any of the compiled application
   // sources, so that no relative paths could show up in the kernel file.
   Directory.current = Directory.systemTemp;
-  final Directory workingDirectory = new Directory("flutter_frontend_server");
+  final Directory workingDirectory = new Directory('flutter_frontend_server');
   workingDirectory.createSync();
   Directory.current = workingDirectory;
 
@@ -279,7 +294,7 @@ Future<int> starter(
   String boundaryKey;
   input
       .transform(UTF8.decoder)
-      .transform(new LineSplitter())
+      .transform(const LineSplitter())
       .listen((String string) async {
     switch (state) {
       case _State.READY_FOR_INSTRUCTION:
@@ -295,7 +310,8 @@ Future<int> starter(
         } else if (string == 'accept') {
           compiler.acceptLastDelta();
         } else if (string == 'reject') {
-          compiler.rejectLastDelta();
+          // TODO(aam) implement reject so it won't reset compiler.
+          compiler.resetIncrementalCompiler();
         } else if (string == 'reset') {
           compiler.resetIncrementalCompiler();
         } else if (string == 'quit') {
