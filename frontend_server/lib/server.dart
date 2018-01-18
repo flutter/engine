@@ -96,6 +96,14 @@ abstract class CompilerInterface {
   /// taking into account some changed(invalidated) sources.
   Future<Null> recompileDelta();
 
+  /// Accept results of previous compilation so that next recompilation cycle
+  /// won't recompile sources that were previously reported as changed.
+  void acceptLastDelta();
+
+  /// Reject results of previous compilation. Next recompilation cycle will
+  /// recompile sources indicated as changed.
+  void rejectLastDelta();
+
   /// This let's compiler know that source file identifed by `uri` was changed.
   void invalidate(Uri uri);
 
@@ -194,6 +202,16 @@ class _FrontendCompiler implements CompilerInterface {
   }
 
   @override
+  void acceptLastDelta() {
+    // TODO(aam): implement this considering new incremental compiler API.
+  }
+
+  @override
+  void rejectLastDelta() {
+    // TODO(aam): implement this considering new incremental compiler API.
+  }
+
+  @override
   void invalidate(Uri uri) {
     _generator.invalidate(uri);
   }
@@ -250,10 +268,14 @@ Future<int> starter(
     options = _argParser.parse(<String>['--incremental', '--sdk-root=$sdkRoot']);
     compiler ??= new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
     await compiler.compile(Platform.script.toFilePath(), options, generator: generator);
+    compiler.acceptLastDelta();
     await compiler.recompileDelta();
+    compiler.acceptLastDelta();
     compiler.resetIncrementalCompiler();
     await compiler.recompileDelta();
+    compiler.acceptLastDelta();
     await compiler.recompileDelta();
+    compiler.acceptLastDelta();
     return 0;
   }
 
@@ -291,10 +313,9 @@ Future<int> starter(
           boundaryKey = string.substring(RECOMPILE_INSTRUCTION_SPACE.length);
           state = _State.RECOMPILE_LIST;
         } else if (string == 'accept') {
-          // TODO(vegorov) remove this command from the protocol
+          compiler.acceptLastDelta();
         } else if (string == 'reject') {
-          // TODO(vegorov) evaluate conditions under which deltas can be
-          // rejected by the VM.
+          // TODO(aam) implement reject so it won't reset compiler.
           compiler.resetIncrementalCompiler();
         } else if (string == 'reset') {
           compiler.resetIncrementalCompiler();
