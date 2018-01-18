@@ -183,7 +183,7 @@ class _FrontendCompiler implements CompilerInterface {
   @override
   Future<Null> recompileDelta() async {
     final String boundaryKey = new Uuid().generateV4();
-    _outputStream.writeln("result $boundaryKey");
+    _outputStream.writeln('result $boundaryKey');
     final Program deltaProgram = await _generator.computeDelta();
     final IOSink sink = new File(_kernelBinaryFilename).openWrite();
     final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
@@ -251,7 +251,7 @@ Future<int> starter(
     compiler ??= new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
     await compiler.compile(Platform.script.toFilePath(), options, generator: generator);
     await compiler.recompileDelta();
-    await compiler.resetIncrementalCompiler();
+    compiler.resetIncrementalCompiler();
     await compiler.recompileDelta();
     await compiler.recompileDelta();
     return 0;
