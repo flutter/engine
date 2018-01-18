@@ -447,7 +447,7 @@ hooks = [
     'condition': 'host_os == "win"',
     'cwd': 'src/flutter/frontend_server/',
     'action': [
-      '../../../src/third_party/dart/tools/sdks/win/dart-sdk/bin/pub.bat', 'get',
+      '..\\..\\..\\src\\third_party\\dart\\tools\\sdks\\win\\dart-sdk\\bin\\pub.bat', 'get',
     ],
   },
   {
