@@ -27,8 +27,10 @@ class _MockedBinaryPrinter extends Mock implements BinaryPrinter {}
 
 Future<int> main() async {
   group('basic', () {
-    test('train completes', () async {
-      expect(await starter(<String>['--train']), equals(0));
+    final CompilerInterface compiler = new _MockedCompiler();
+
+    test('train with mocked compiler completes', () async {
+      expect(await starter(<String>['--train'], compiler: compiler), equals(0));
     });
   });
 
@@ -335,7 +337,7 @@ Future<int> main() async {
       String boundaryKey;
       stdoutStreamController.stream
         .transform(UTF8.decoder)
-        .transform(new LineSplitter())
+        .transform(const LineSplitter())
         .listen((String s) {
           const String RESULT_OUTPUT_SPACE = 'result ';
           if (boundaryKey == null) {
@@ -352,7 +354,7 @@ Future<int> main() async {
 
       final _MockedIncrementalKernelGenerator generator =
         new _MockedIncrementalKernelGenerator();
-      when(generator.computeDelta()).thenReturn(new Future<DeltaProgram>.value(
+      when(generator.computeDelta()).thenReturn(new Future<Program>.value(
         new Program()
       ));
       final _MockedBinaryPrinterFactory printerFactory =
