@@ -100,7 +100,8 @@ class SemanticsAction {
   ///
   /// The provided argument is a Map<String, int> which includes the keys `base`
   /// and `extent` indicating where the selection within the `value` of the
-  /// semantics node should start and where it should end.
+  /// semantics node should start and where it should end. Values for both
+  /// keys can range from 0 to length of `value` (inclusive).
   ///
   /// Setting `base` and `extent` to the same value will move the cursor to
   /// that position (without selecting anything).
