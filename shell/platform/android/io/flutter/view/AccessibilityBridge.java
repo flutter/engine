@@ -460,6 +460,17 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 if (event != null) {
                     sendAccessibilityEvent(event);
                 }
+
+                if (object.previousTextSelectionStart != object.textSelectionStart
+                        || object.previousTextSelectionEnd != object.textSelectionEnd) {
+                    AccessibilityEvent selectionEvent = obtainAccessibilityEvent(
+                        object.id, AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED);
+                    selectionEvent.getText().add(newValue);
+                    selectionEvent.setFromIndex(object.textSelectionStart);
+                    selectionEvent.setToIndex(object.textSelectionEnd);
+                    selectionEvent.setItemCount(newValue.length());
+                    sendAccessibilityEvent(selectionEvent);
+                }
             }
         }
     }
@@ -614,6 +625,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         boolean hadPreviousConfig = false;
         int previousFlags;
+        int previousTextSelectionStart;
+        int previousTextSelectionEnd;
         String previousValue;
 
         private float left;
@@ -658,9 +671,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         void updateWith(ByteBuffer buffer, String[] strings) {
+            hadPreviousConfig = true;
             previousValue = value;
             previousFlags = flags;
-            hadPreviousConfig = true;
+            previousTextSelectionStart = textSelectionStart;
+            previousTextSelectionEnd = textSelectionEnd;
 
             flags = buffer.getInt();
             actions = buffer.getInt();
