@@ -332,19 +332,20 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             }
             case AccessibilityNodeInfo.ACTION_SET_SELECTION: {
                 final Map<String, Integer> selection = new HashMap<String, Integer>();
-                final boolean clearSelection = arguments == null
-                    || !arguments.containsKey(
+                final boolean hasSelection = arguments != null
+                    && arguments.containsKey(
                             AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT)
-                    || !arguments.containsKey(
+                    && arguments.containsKey(
                             AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT);
-                if (clearSelection) {
-                    selection.put("base", object.textSelectionExtent);
-                    selection.put("extent", object.textSelectionExtent);
-                } else {
+                if (hasSelection) {
                     selection.put("base", arguments.getInt(
                         AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT));
                     selection.put("extent", arguments.getInt(
                         AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT));
+                } else {
+                    // Clear the selection
+                    selection.put("base", object.textSelectionExtent);
+                    selection.put("extent", object.textSelectionExtent);
                 }
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.SET_SELECTION, selection);
                 return true;
