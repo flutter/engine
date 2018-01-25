@@ -31,6 +31,11 @@ import java.util.Set;
 class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMessageChannel.MessageHandler<Object> {
     private static final String TAG = "FlutterView";
 
+    // Constants from higher API levels.
+    // TODO(goderbauer): Get these from Android Support Library when
+    // https://github.com/flutter/flutter/issues/11099 is resolved.
+    public static final int ACTION_SHOW_ON_SCREEN = 16908342; // API level 23
+
     private Map<Integer, SemanticsObject> mObjects;
     private final FlutterView mOwner;
     private boolean mAccessibilityEnabled = false;
@@ -51,7 +56,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         DECREASE(1 << 7),
         SHOW_ON_SCREEN(1 << 8),
         MOVE_CURSOR_FORWARD_BY_CHARACTER(1 << 9),
-        MOVE_CURSOR_BACKWARD_BY_CHARACTER(1 << 10);
+        MOVE_CURSOR_BACKWARD_BY_CHARACTER(1 << 10),
+        SET_SELECTION(1 << 11);
 
         Action(int value) {
             this.value = value;
@@ -141,6 +147,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER;
             }
             result.setMovementGranularities(granularities);
+        }
+        if (object.hasAction(Action.SET_SELECTION)) {
+            result.addAction(AccessibilityNodeInfo.ACTION_SET_SELECTION);
         }
 
         if (object.hasFlag(Flag.IS_BUTTON)) {
@@ -317,11 +326,17 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
                 return true;
             }
-            // TODO(goderbauer): Use ACTION_SHOW_ON_SCREEN from Android Support Library after
-            //     https://github.com/flutter/flutter/issues/11099 is resolved.
-            case 16908342: { // ACTION_SHOW_ON_SCREEN, added in API level 23
+            case ACTION_SHOW_ON_SCREEN: {
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.SHOW_ON_SCREEN);
                 return true;
+            }
+            case AccessibilityNodeInfo.ACTION_SET_SELECTION: {
+                Map<String, Integer> selection = new HashMap<String, Integer>();
+                selection.put("base",
+                    arguments.getInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT));
+                selection.put("extent",
+                    arguments.getInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT));
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.SET_SELECTION, selection);
             }
         }
         return false;
