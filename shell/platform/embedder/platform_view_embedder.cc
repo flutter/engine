@@ -41,7 +41,6 @@ void PlatformViewEmbedder::Attach() {
 }
 
 bool PlatformViewEmbedder::ResourceContextMakeCurrent() {
-  FXL_LOG(INFO) << (dispatch_table_.gl_make_resource_current_callback == nullptr);
   if (dispatch_table_.gl_make_resource_current_callback == nullptr) {
     return false;
   }
