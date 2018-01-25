@@ -22,7 +22,7 @@ class PlatformViewEmbedder : public PlatformView, public GPUSurfaceGLDelegate {
     std::function<bool(void)> gl_present_callback;        // required
     std::function<intptr_t(void)> gl_fbo_callback;        // required
     PlatformMessageResponseCallback
-        platform_message_response_callback;  // optional
+        platform_message_response_callback;                       // optional
     std::function<bool(void)> gl_make_resource_current_callback;  // optional
   };
 

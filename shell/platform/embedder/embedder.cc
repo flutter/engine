@@ -125,10 +125,10 @@ FlutterResult FlutterEngineRun(size_t version,
     };
   }
 
-  std::function<bool ()> make_resource_current_callback = nullptr;
+  std::function<bool()> make_resource_current_callback = nullptr;
   if (config->open_gl.make_resource_current != nullptr) {
-    make_resource_current_callback = 
-        [ ptr =  config->open_gl.make_resource_current, user_data ]()->intptr_t {
+    make_resource_current_callback =
+        [ ptr = config->open_gl.make_resource_current, user_data ]()->intptr_t {
       return ptr(user_data);
     };
   }
