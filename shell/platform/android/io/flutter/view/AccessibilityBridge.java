@@ -482,7 +482,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                         object.id, AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED);
                     selectionEvent.getText().add(newValue);
                     selectionEvent.setFromIndex(object.textSelectionBase);
-                    selectionEvent.setToIndex(object.previousTextSelectionExtent);
+                    selectionEvent.setToIndex(object.textSelectionExtent);
                     selectionEvent.setItemCount(newValue.length());
                     sendAccessibilityEvent(selectionEvent);
                 }
