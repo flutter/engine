@@ -331,19 +331,23 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_SET_SELECTION: {
-                Map<String, Integer> selection = new HashMap<String, Integer>();
-                // Missing keys means clear selection.
-                final int base = arguments != null && arguments.containsKey(
-                    AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT)
-                        ? arguments.getInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT)
-                        : object.textSelectionExtent;
-                final int extent = arguments != null && arguments.containsKey(
-                    AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT)
-                        ? arguments.getInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT)
-                        : object.textSelectionExtent;
-                selection.put("base", base);
-                selection.put("extent", extent);
+                final Map<String, Integer> selection = new HashMap<String, Integer>();
+                final boolean clearSelection = arguments == null
+                    || !arguments.containsKey(
+                            AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT)
+                    || !arguments.containsKey(
+                            AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT);
+                if (clearSelection) {
+                    selection.put("base", object.textSelectionExtent);
+                    selection.put("extent", object.textSelectionExtent);
+                } else {
+                    selection.put("base", arguments.getInt(
+                        AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT));
+                    selection.put("extent", arguments.getInt(
+                        AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT));
+                }
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.SET_SELECTION, selection);
+                return true;
             }
         }
         return false;
