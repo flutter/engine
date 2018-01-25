@@ -125,8 +125,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             result.setClassName("android.widget.EditText");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 result.setEditable(true);
-                if (object.textSelectionStart != -1 && object.textSelectionEnd != -1) {
-                    result.setTextSelection(object.textSelectionStart, object.textSelectionEnd);
+                if (object.textSelectionBase != -1 && object.textSelectionExtent != -1) {
+                    result.setTextSelection(object.textSelectionBase, object.textSelectionExtent);
                 }
             }
 
@@ -461,13 +461,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                     sendAccessibilityEvent(event);
                 }
 
-                if (object.previousTextSelectionStart != object.textSelectionStart
-                        || object.previousTextSelectionEnd != object.textSelectionEnd) {
+                if (object.previousTextSelectionBase != object.textSelectionBase
+                        || object.previousTextSelectionExtent != object.textSelectionExtent) {
                     AccessibilityEvent selectionEvent = obtainAccessibilityEvent(
                         object.id, AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED);
                     selectionEvent.getText().add(newValue);
-                    selectionEvent.setFromIndex(object.textSelectionStart);
-                    selectionEvent.setToIndex(object.textSelectionEnd);
+                    selectionEvent.setFromIndex(object.textSelectionBase);
+                    selectionEvent.setToIndex(object.previousTextSelectionExtent);
                     selectionEvent.setItemCount(newValue.length());
                     sendAccessibilityEvent(selectionEvent);
                 }
@@ -614,8 +614,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         int flags;
         int actions;
-        int textSelectionStart;
-        int textSelectionEnd;
+        int textSelectionBase;
+        int textSelectionExtent;
         String label;
         String value;
         String increasedValue;
@@ -625,8 +625,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         boolean hadPreviousConfig = false;
         int previousFlags;
-        int previousTextSelectionStart;
-        int previousTextSelectionEnd;
+        int previousTextSelectionBase;
+        int previousTextSelectionExtent;
         String previousValue;
 
         private float left;
@@ -674,13 +674,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             hadPreviousConfig = true;
             previousValue = value;
             previousFlags = flags;
-            previousTextSelectionStart = textSelectionStart;
-            previousTextSelectionEnd = textSelectionEnd;
+            previousTextSelectionBase = textSelectionBase;
+            previousTextSelectionExtent = textSelectionExtent;
 
             flags = buffer.getInt();
             actions = buffer.getInt();
-            textSelectionStart = buffer.getInt();
-            textSelectionEnd = buffer.getInt();
+            textSelectionBase = buffer.getInt();
+            textSelectionExtent = buffer.getInt();
 
             int stringIndex = buffer.getInt();
             label = stringIndex == -1 ? null : strings[stringIndex];
