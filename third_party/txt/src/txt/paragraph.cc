@@ -331,15 +331,22 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
         direction == UBIDI_RTL ? TextDirection::rtl : TextDirection::ltr;
 
     // Break this bidi run into chunks based on text style.
+    std::vector<BidiRun> chunks;
     size_t chunk_start = bidi_run_start;
     while (chunk_start < bidi_run_end) {
       auto styled_run_iter = styled_run_map.upper_bound(chunk_start);
       styled_run_iter--;
       const StyledRuns::Run& styled_run = styled_run_iter->second;
       size_t chunk_end = std::min(bidi_run_end, styled_run.end);
-      result->emplace_back(chunk_start, chunk_end, text_direction,
-                           styled_run.style);
+      chunks.emplace_back(chunk_start, chunk_end, text_direction,
+                          styled_run.style);
       chunk_start = chunk_end;
+    }
+
+    if (text_direction == TextDirection::ltr) {
+      result->insert(result->end(), chunks.begin(), chunks.end());
+    } else {
+      result->insert(result->end(), chunks.rbegin(), chunks.rend());
     }
   }
 
@@ -361,6 +368,14 @@ void Paragraph::Layout(double width, bool force) {
   std::vector<BidiRun> bidi_runs;
   if (!ComputeBidiRuns(&bidi_runs))
     return;
+
+  if (!grapheme_breaker_) {
+    UErrorCode icu_status = U_ZERO_ERROR;
+    grapheme_breaker_.reset(
+        icu::BreakIterator::createCharacterInstance(icu::Locale(), icu_status));
+    if (!U_SUCCESS(icu_status))
+      return;
+  }
 
   SkPaint paint;
   paint.setAntiAlias(true);
@@ -403,10 +418,11 @@ void Paragraph::Layout(double width, bool force) {
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
     for (const BidiRun& bidi_run : bidi_runs) {
-      if (bidi_run.start < line_range.end && bidi_run.end > line_range.start) {
-        line_runs.emplace_back(std::max(bidi_run.start, line_range.start),
-                               std::min(bidi_run.end, line_range.end),
-                               bidi_run.direction, bidi_run.style);
+      if (bidi_run.start() < line_range.end &&
+          bidi_run.end() > line_range.start) {
+        line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
+                               std::min(bidi_run.end(), line_range.end),
+                               bidi_run.direction(), bidi_run.style());
       }
     }
 
@@ -418,20 +434,17 @@ void Paragraph::Layout(double width, bool force) {
     for (const BidiRun& run : line_runs) {
       minikin::FontStyle font;
       minikin::MinikinPaint minikin_paint;
-      GetFontAndMinikinPaint(run.style, &font, &minikin_paint);
-      paint.setTextSize(run.style.font_size);
+      GetFontAndMinikinPaint(run.style(), &font, &minikin_paint);
+      paint.setTextSize(run.style().font_size);
 
       std::shared_ptr<minikin::FontCollection> minikin_font_collection =
           font_collection_->GetMinikinFontCollectionForFamily(
-              run.style.font_family);
+              run.style().font_family);
 
       // Lay out this run.
       uint16_t* text_ptr = text_.data();
-      size_t text_start = run.start;
-      size_t text_count = run.end - run.start;
-      int bidiFlags = (paragraph_style_.text_direction == TextDirection::rtl)
-                          ? minikin::kBidi_RTL
-                          : minikin::kBidi_LTR;
+      size_t text_start = run.start();
+      size_t text_count = run.end() - run.start();
 
       // Apply ellipsizing if the run was not completely laid out and this
       // is the last line (or lines are unlimited).
@@ -442,12 +455,12 @@ void Paragraph::Layout(double width, bool force) {
            paragraph_style_.unlimited_lines())) {
         float ellipsis_width = layout.measureText(
             reinterpret_cast<const uint16_t*>(ellipsis.data()), 0,
-            ellipsis.length(), ellipsis.length(), bidiFlags, font,
+            ellipsis.length(), ellipsis.length(), run.is_rtl(), font,
             minikin_paint, minikin_font_collection, nullptr);
 
         std::vector<float> text_advances(text_count);
         float text_width = layout.measureText(
-            text_ptr, text_start, text_count, text_.size(), bidiFlags, font,
+            text_ptr, text_start, text_count, text_.size(), run.is_rtl(), font,
             minikin_paint, minikin_font_collection, text_advances.data());
 
         // Truncate characters from the text until the ellipsis fits.
@@ -461,8 +474,8 @@ void Paragraph::Layout(double width, bool force) {
         ellipsized_text.reserve(text_count - truncate_count +
                                 ellipsis.length());
         ellipsized_text.insert(ellipsized_text.begin(),
-                               text_.begin() + run.start,
-                               text_.begin() + run.end - truncate_count);
+                               text_.begin() + run.start(),
+                               text_.begin() + run.end() - truncate_count);
         ellipsized_text.insert(ellipsized_text.end(), ellipsis.begin(),
                                ellipsis.end());
         text_ptr = ellipsized_text.data();
@@ -477,8 +490,9 @@ void Paragraph::Layout(double width, bool force) {
         }
       }
 
-      layout.doLayout(text_ptr, text_start, text_count, text_.size(), bidiFlags,
-                      font, minikin_paint, minikin_font_collection);
+      layout.doLayout(text_ptr, text_start, text_count, text_.size(),
+                      run.is_rtl(), font, minikin_paint,
+                      minikin_font_collection);
 
       if (layout.nGlyphs() == 0)
         continue;
@@ -491,13 +505,11 @@ void Paragraph::Layout(double width, bool force) {
         blob_start += blob_len;
       }
 
-      size_t code_unit_index;
-      if (run.is_rtl()) {
-        code_unit_index = text_count;
-        U16_BACK_1(text_ptr + text_start, 0, code_unit_index);
-      } else {
-        code_unit_index = 0;
-      }
+      grapheme_breaker_->setText(
+          icu::UnicodeString(false, text_ptr + text_start, text_count));
+      if (run.is_rtl())
+        grapheme_breaker_->preceding(text_count);
+
       double word_start_position = std::numeric_limits<double>::quiet_NaN();
 
       // Build a Skia text blob from each group of glyphs.
@@ -518,34 +530,33 @@ void Paragraph::Layout(double width, bool force) {
           blob_buffer.pos[pos_index] = glyph_x_offset;
           blob_buffer.pos[pos_index + 1] = layout.getY(glyph_index);
 
+          int32_t current_grapheme = grapheme_breaker_->current();
           if (word_index < words.size() &&
-              words[word_index].start == run.start + code_unit_index) {
+              words[word_index].start == run.start() + current_grapheme) {
             word_start_position = run_x_offset + glyph_x_offset;
           }
 
-          float glyph_advance = layout.getCharAdvance(code_unit_index);
+          float glyph_advance = layout.getCharAdvance(current_grapheme);
 
           // The glyph may be a ligature.  Determine how many input characters
           // are joined into this glyph.  Note that each character may be
           // encoded as multiple UTF-16 code units.
           std::vector<size_t> subglyph_code_unit_counts;
-          size_t next_code_unit_index = code_unit_index;
+          int32_t next_grapheme;
           if (run.is_rtl()) {
-            U16_BACK_1(text_ptr + text_start, 0, next_code_unit_index);
-            subglyph_code_unit_counts.push_back(code_unit_index -
-                                                next_code_unit_index);
+            next_grapheme = grapheme_breaker_->previous();
+            subglyph_code_unit_counts.push_back(current_grapheme -
+                                                next_grapheme);
           } else {
-            U16_FWD_1(text_ptr + text_start, next_code_unit_index, text_count);
-            subglyph_code_unit_counts.push_back(next_code_unit_index -
-                                                code_unit_index);
-            while (next_code_unit_index < text_count) {
-              if (layout.getCharAdvance(next_code_unit_index) != 0)
+            next_grapheme = grapheme_breaker_->next();
+            subglyph_code_unit_counts.push_back(next_grapheme -
+                                                current_grapheme);
+            while (next_grapheme < static_cast<int32_t>(text_count)) {
+              if (layout.getCharAdvance(next_grapheme) != 0)
                 break;
-              size_t cur_code_unit_index = next_code_unit_index;
-              U16_FWD_1(text_ptr + text_start, next_code_unit_index,
-                        text_count);
-              subglyph_code_unit_counts.push_back(next_code_unit_index -
-                                                  cur_code_unit_index);
+              size_t sub_grapheme = grapheme_breaker_->current();
+              next_grapheme = grapheme_breaker_->next();
+              subglyph_code_unit_counts.push_back(next_grapheme - sub_grapheme);
             }
           }
           float subglyph_advance =
@@ -553,7 +564,7 @@ void Paragraph::Layout(double width, bool force) {
 
           glyph_positions.emplace_back(
               run_x_offset + glyph_x_offset, subglyph_advance,
-              run.start + code_unit_index, subglyph_code_unit_counts[0]);
+              run.start() + current_grapheme, subglyph_code_unit_counts[0]);
 
           // Compute positions for the additional characters in the ligature.
           for (size_t i = 1; i < subglyph_code_unit_counts.size(); ++i) {
@@ -565,7 +576,7 @@ void Paragraph::Layout(double width, bool force) {
           }
 
           if (word_index < words.size() &&
-              words[word_index].end == run.start + next_code_unit_index) {
+              words[word_index].end == run.start() + next_grapheme) {
             if (justify_line)
               justify_x_offset += word_gap_width;
             word_index++;
@@ -577,13 +588,11 @@ void Paragraph::Layout(double width, bool force) {
               word_start_position = std::numeric_limits<double>::quiet_NaN();
             }
           }
-
-          code_unit_index = next_code_unit_index;
         }
 
         SkPaint::FontMetrics metrics;
         paint.getFontMetrics(&metrics);
-        paint_records.emplace_back(run.style, SkPoint::Make(run_x_offset, 0),
+        paint_records.emplace_back(run.style(), SkPoint::Make(run_x_offset, 0),
                                    builder.make(), metrics, line_number,
                                    layout.getAdvance());
 
@@ -598,10 +607,11 @@ void Paragraph::Layout(double width, bool force) {
                     return a.code_units.start < b.code_units.start;
                   });
         code_unit_runs_.emplace_back(
-            std::move(code_unit_positions), Range<size_t>(run.start, run.end),
+            std::move(code_unit_positions),
+            Range<size_t>(run.start(), run.end()),
             Range<double>(glyph_positions.front().x_pos.start,
                           glyph_positions.back().x_pos.end),
-            line_number, metrics, run.direction);
+            line_number, metrics, run.direction());
       }
 
       run_x_offset += layout.getAdvance();
@@ -955,7 +965,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(size_t start,
 Paragraph::PositionWithAffinity Paragraph::GetGlyphPositionAtCoordinate(
     double dx,
     double dy) const {
-  if (line_heights_.empty() || dy < 0)
+  if (line_heights_.empty())
     return PositionWithAffinity(0, DOWNSTREAM);
 
   size_t y_index;

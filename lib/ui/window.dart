@@ -328,6 +328,8 @@ class Window {
   /// The Flutter framework operates in logical pixels, so it is rarely
   /// necessary to directly deal with this property.
   ///
+  /// When this changes, [onMetricsChanged] is called.
+  ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
@@ -337,6 +339,16 @@ class Window {
 
   /// The dimensions of the rectangle into which the application will be drawn,
   /// in physical pixels.
+  ///
+  /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// At startup, the size of the application window may not be know before Dart
+  /// code runs. If this value is observed early in the application lifecycle,
+  /// it may report [Size.zero].
+  ///
+  /// This value does not take into account any on-screen keyboards or other
+  /// system UI. The [padding] and [viewInsets] properties provide a view into
+  /// how much of each side of the application may be obscured by system UI.
   ///
   /// See also:
   ///
@@ -349,6 +361,8 @@ class Window {
   /// which the application can render, but over which the operating system
   /// will likely place system UI, such as the keyboard, that fully obscures
   /// any content.
+  ///
+  /// When this changes, [onMetricsChanged] is called.
   ///
   /// See also:
   ///
@@ -366,6 +380,8 @@ class Window {
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
   ///
+  /// When this changes, [onMetricsChanged] is called.
+  ///
   /// See also:
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
@@ -381,8 +397,17 @@ class Window {
   /// when the device is rotated or when the application is resized (e.g. when
   /// showing applications side-by-side on Android).
   ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
+  /// The engine invokes this callback in the same zone in which the callback
+  /// was set.
+  ///
+  /// The framework registers with this callback and updates the layout
+  /// appropriately.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    register for notifications when this is called.
+  ///  * [MediaQuery.of], a simpler mechanism for the same.
   VoidCallback get onMetricsChanged => _onMetricsChanged;
   VoidCallback _onMetricsChanged;
   Zone _onMetricsChangedZone;
@@ -530,7 +555,7 @@ class Window {
   /// The route or path that the operating system requested when the application
   /// was launched.
   String get defaultRouteName => _defaultRouteName();
-  String _defaultRouteName() native "Window_defaultRouteName";
+  String _defaultRouteName() native 'Window_defaultRouteName';
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame]
   /// and [onDrawFrame] callbacks be invoked.
@@ -539,7 +564,7 @@ class Window {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
-  void scheduleFrame() native "Window_scheduleFrame";
+  void scheduleFrame() native 'Window_scheduleFrame';
 
   /// Updates the application's rendering on the GPU with the newly provided
   /// [Scene]. This function must be called within the scope of the
@@ -565,7 +590,7 @@ class Window {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  void render(Scene scene) native "Window_render";
+  void render(Scene scene) native 'Window_render';
 
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.
@@ -610,7 +635,7 @@ class Window {
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) native "Window_updateSemantics";
+  void updateSemantics(SemanticsUpdate update) native 'Window_updateSemantics';
 
   /// Sends a message to a platform-specific plugin.
   ///
@@ -628,7 +653,7 @@ class Window {
   }
   void _sendPlatformMessage(String name,
                             PlatformMessageResponseCallback callback,
-                            ByteData data) native "Window_sendPlatformMessage";
+                            ByteData data) native 'Window_sendPlatformMessage';
 
   /// Called whenever this window receives a message from a platform-specific
   /// plugin.
@@ -653,7 +678,7 @@ class Window {
 
   /// Called by [_dispatchPlatformMessage].
   void _respondToPlatformMessage(int responseId, ByteData data)
-      native "Window_respondToPlatformMessage";
+      native 'Window_respondToPlatformMessage';
 
   /// Wraps the given [callback] in another callback that ensures that the
   /// original callback is called in the zone it was registered in.
