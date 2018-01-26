@@ -15,11 +15,12 @@ void FlutterMain() {
 
   NSBundle* mainBundle = [NSBundle mainBundle];
 
-  NSString* flutterAssetsPath = [mainBundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
-  if (flutterAssetsPath == nil) {
+  NSString* flutterAssetsName = [mainBundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
+  if (flutterAssetsName == nil) {
     // Default to "flutter_assets"
-    flutterAssetsPath = @"flutter_assets";
+   flutterAssetsName = @"flutter_assets";
   }
+  NSString* flutterAssetsPath = [mainBundle pathForResource:flutterAssetsName ofType:nil];
 
   shell::PlatformMacMain(icuDataPath.UTF8String, libraryName != nil ? libraryName.UTF8String : "",
                          flutterAssetsPath.UTF8String);
