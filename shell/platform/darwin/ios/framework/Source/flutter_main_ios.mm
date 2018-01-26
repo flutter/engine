@@ -18,7 +18,7 @@ void FlutterMain() {
   NSString* flutterAssetsName = [mainBundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
   if (flutterAssetsName == nil) {
     // Default to "flutter_assets"
-   flutterAssetsName = @"flutter_assets";
+    flutterAssetsName = @"flutter_assets";
   }
   NSString* flutterAssetsPath = [mainBundle pathForResource:flutterAssetsName ofType:nil];
 
