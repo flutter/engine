@@ -175,79 +175,85 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
       return false;
     }
 
-    vk_image_ = {vk_image,
-                 [& vulkan_provider = vulkan_provider_](VkImage image) {
-                   vulkan_provider.vk().DestroyImage(
-                       vulkan_provider.vk_device(), image, NULL);
-                 }};
+    vk_image_ = {vk_image, [& vulkan_provider = vulkan_provider_](
+                               VkImage image){vulkan_provider.vk().DestroyImage(
+                               vulkan_provider.vk_device(), image, NULL);
   }
+};
+}  // namespace flutter_runner
 
-  // Create the memory.
-  VkMemoryRequirements memory_reqs;
-  vulkan_provider_.vk().GetImageMemoryRequirements(vulkan_provider_.vk_device(),
-                                                   vk_image_, &memory_reqs);
+// Create the memory.
+VkMemoryRequirements memory_reqs;
+vulkan_provider_.vk().GetImageMemoryRequirements(vulkan_provider_.vk_device(),
+                                                 vk_image_,
+                                                 &memory_reqs);
 
-  uint32_t memory_type = 0;
-  for (; memory_type < 32; memory_type++) {
-    if ((memory_reqs.memoryTypeBits & (1 << memory_type))) {
-      break;
-    }
+uint32_t memory_type = 0;
+for (; memory_type < 32; memory_type++) {
+  if ((memory_reqs.memoryTypeBits & (1 << memory_type))) {
+    break;
   }
+}
 
-  const VkMemoryAllocateInfo alloc_info = {
-      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-      .pNext = nullptr,
-      .allocationSize = memory_reqs.size,
-      .memoryTypeIndex = memory_type,
-  };
+const VkMemoryAllocateInfo alloc_info = {
+    .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+    .pNext = nullptr,
+    .allocationSize = memory_reqs.size,
+    .memoryTypeIndex = memory_type,
+};
 
-  {
-    VkDeviceMemory vk_memory = VK_NULL_HANDLE;
-    if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().AllocateMemory(
-            vulkan_provider_.vk_device(), &alloc_info, NULL, &vk_memory)) !=
-        VK_SUCCESS) {
-      return false;
-    }
-
-    vk_memory_ = {vk_memory, [& vulkan_provider =
-                                  vulkan_provider_](VkDeviceMemory memory) {
-                    vulkan_provider.vk().FreeMemory(vulkan_provider.vk_device(),
-                                                    memory, NULL);
-                  }};
-  }
-
-  // Bind image memory.
-  if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().BindImageMemory(
-          vulkan_provider_.vk_device(), vk_image_, vk_memory_, 0)) !=
+{
+  VkDeviceMemory vk_memory = VK_NULL_HANDLE;
+  if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().AllocateMemory(
+          vulkan_provider_.vk_device(), &alloc_info, NULL, &vk_memory)) !=
       VK_SUCCESS) {
     return false;
   }
 
-  {
-    // Acquire the VMO for the device memory.
-    uint32_t vmo_handle = 0;
+  vk_memory_ = {
+      vk_memory, [& vulkan_provider = vulkan_provider_](VkDeviceMemory memory){
+                     vulkan_provider.vk().FreeMemory(
+                         vulkan_provider.vk_device(), memory, NULL);
+}
+}
+;
+}
 
-    VkMemoryGetFuchsiaHandleInfoKHR get_handle_info = {
-        VK_STRUCTURE_TYPE_MEMORY_GET_FUCHSIA_HANDLE_INFO_KHR, nullptr,
-        vk_memory_, VK_EXTERNAL_MEMORY_HANDLE_TYPE_FUCHSIA_VMO_BIT_KHR};
-    if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().GetMemoryFuchsiaHandleKHR(
-            vulkan_provider_.vk_device(), &get_handle_info, &vmo_handle)) !=
-        VK_SUCCESS) {
-      return false;
-    }
+// Bind image memory.
+if (VK_CALL_LOG_ERROR(
+        vulkan_provider_.vk().BindImageMemory(vulkan_provider_.vk_device(),
+                                              vk_image_,
+                                              vk_memory_,
+                                              0)) != VK_SUCCESS) {
+  return false;
+}
 
-    exported_vmo.reset(static_cast<zx_handle_t>(vmo_handle));
-  }
+{
+  // Acquire the VMO for the device memory.
+  uint32_t vmo_handle = 0;
 
-  // Assert that the VMO size was sufficient.
-  size_t vmo_size = 0;
-  if (exported_vmo.get_size(&vmo_size) != ZX_OK ||
-      vmo_size < memory_reqs.size) {
+  VkMemoryGetFuchsiaHandleInfoKHR get_handle_info = {
+      VK_STRUCTURE_TYPE_MEMORY_GET_FUCHSIA_HANDLE_INFO_KHR, nullptr, vk_memory_,
+      VK_EXTERNAL_MEMORY_HANDLE_TYPE_FUCHSIA_VMO_BIT_KHR};
+  if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().GetMemoryFuchsiaHandleKHR(
+          vulkan_provider_.vk_device(), &get_handle_info, &vmo_handle)) !=
+      VK_SUCCESS) {
     return false;
   }
 
-  return SetupSkiaSurface(std::move(context), size, image_create_info,
-                          memory_reqs);
+  exported_vmo.reset(static_cast<zx_handle_t>(vmo_handle));
+}
+
+// Assert that the VMO size was sufficient.
+size_t vmo_size = 0;
+if (exported_vmo.get_size(&vmo_size) != ZX_OK || vmo_size < memory_reqs.size) {
+  return false;
+}
+
+return SetupSkiaSurface(std::move(context),
+                        size,
+                        image_create_info,
+                        memory_reqs);
 }
 
 bool VulkanSurface::SetupSkiaSurface(sk_sp<GrContext> context,
