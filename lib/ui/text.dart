@@ -890,7 +890,7 @@ class ParagraphConstraints {
 ///
 /// Paragraphs can be displayed on a [Canvas] using the [Canvas.drawParagraph]
 /// method.
-abstract class Paragraph extends NativeFieldWrapperClass2 {
+class Paragraph extends NativeFieldWrapperClass2 {
   /// Creates an uninitialized Paragraph object.
   ///
   /// Calling the [Paragraph] constructor directly will not create a useable

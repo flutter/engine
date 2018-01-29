@@ -1202,7 +1202,7 @@ class Paint {
 ///
 /// To draw an [Image], use one of the methods on the [Canvas] class, such as
 /// [Canvas.drawImage].
-abstract class Image extends NativeFieldWrapperClass2 {
+class Image extends NativeFieldWrapperClass2 {
   /// The number of image pixels along the image's horizontal axis.
   int get width native 'Image_width';
 
@@ -1224,7 +1224,7 @@ typedef void ImageDecoderCallback(Image result);
 ///
 /// To obtain an instance of the [FrameInfo] interface, see
 /// [Codec.getNextFrame].
-abstract class FrameInfo extends NativeFieldWrapperClass2 {
+class FrameInfo extends NativeFieldWrapperClass2 {
   /// The duration this frame should be shown.
   Duration get duration => new Duration(milliseconds: _durationMillis);
   int get _durationMillis native 'FrameInfo_durationMillis';
@@ -1234,7 +1234,7 @@ abstract class FrameInfo extends NativeFieldWrapperClass2 {
 }
 
 /// A handle to an image codec.
-abstract class Codec extends NativeFieldWrapperClass2 {
+class Codec extends NativeFieldWrapperClass2 {
   /// Number of frames in this image.
   int get frameCount native 'Codec_frameCount';
 
@@ -1744,7 +1744,7 @@ class ImageFilter extends NativeFieldWrapperClass2 {
 
 /// Base class for objects such as [Gradient] and [ImageShader] which
 /// correspond to shaders as used by [Paint.shader].
-abstract class Shader extends NativeFieldWrapperClass2 { }
+class Shader extends NativeFieldWrapperClass2 { }
 
 /// Defines what happens at the edge of the gradient.
 ///
@@ -2795,7 +2795,7 @@ class Canvas extends NativeFieldWrapperClass2 {
 /// A [Picture] can be placed in a [Scene] using a [SceneBuilder], via
 /// the [SceneBuilder.addPicture] method. A [Picture] can also be
 /// drawn into a [Canvas], using the [Canvas.drawPicture] method.
-abstract class Picture extends NativeFieldWrapperClass2 {
+class Picture extends NativeFieldWrapperClass2 {
   /// Creates an uninitialized Picture object.
   ///
   /// Calling the Picture constructor directly will not create a useable
