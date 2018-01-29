@@ -38,6 +38,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
   V(Path, contains)                  \
   V(Path, cubicTo)                   \
   V(Path, extendWithPath)            \
+  V(Path, equals)                    \
   V(Path, getFillType)               \
   V(Path, lineTo)                    \
   V(Path, moveTo)                    \
@@ -224,6 +225,10 @@ void CanvasPath::reset() {
 
 bool CanvasPath::contains(double x, double y) {
   return path_.contains(x, y);
+}
+
+bool CanvasPath::equals(CanvasPath* other) {
+  return path_ == other->path_;
 }
 
 fxl::RefPtr<CanvasPath> CanvasPath::shift(double dx, double dy) {

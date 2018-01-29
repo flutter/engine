@@ -1593,6 +1593,16 @@ class Path extends NativeFieldWrapperClass2 {
     return _transform(matrix4);
   }
   Path _transform(Float64List matrix4) native 'Path_transform';
+
+  bool operator ==(dynamic other) {
+    if (runtimeType != other.runtimeType)
+      return false;
+    if (identical(this, other))
+      return true;
+    return _equals(other);
+  }
+
+  bool _equals(Path other) native 'Path_equals';
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
