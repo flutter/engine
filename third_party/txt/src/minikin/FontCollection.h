@@ -36,6 +36,7 @@ class FontCollection {
   // that do not match this collection's font families.
   class FallbackFontProvider {
    public:
+    virtual ~FallbackFontProvider() {}
     virtual const std::shared_ptr<FontFamily>& matchFallbackFont(
         uint32_t ch) = 0;
   };
