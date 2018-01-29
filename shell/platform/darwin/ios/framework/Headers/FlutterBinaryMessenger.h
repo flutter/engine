@@ -43,7 +43,7 @@ typedef void (^FlutterBinaryMessageHandler)(NSData* _Nullable message, FlutterBi
    - `FlutterEventChannel`, which supports commuication using event streams.
  */
 FLUTTER_EXPORT
-@protocol FlutterBinaryMessenger<NSObject>
+@protocol FlutterBinaryMessenger <NSObject>
 /**
  Sends a binary message to the Flutter side on the specified channel, expecting
  no reply.

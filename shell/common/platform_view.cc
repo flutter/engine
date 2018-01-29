@@ -47,7 +47,7 @@ void PlatformView::CreateEngine() {
 void PlatformView::DispatchPlatformMessage(
     fxl::RefPtr<blink::PlatformMessage> message) {
   blink::Threads::UI()->PostTask(
-      [ engine = engine_->GetWeakPtr(), message = std::move(message) ] {
+      [engine = engine_->GetWeakPtr(), message = std::move(message)] {
         if (engine) {
           engine->DispatchPlatformMessage(message);
         }
@@ -58,7 +58,7 @@ void PlatformView::DispatchSemanticsAction(int32_t id,
                                            blink::SemanticsAction action,
                                            std::vector<uint8_t> args) {
   blink::Threads::UI()->PostTask(
-      [ engine = engine_->GetWeakPtr(), id, action, args = std::move(args) ] {
+      [engine = engine_->GetWeakPtr(), id, action, args = std::move(args)] {
         if (engine) {
           engine->DispatchSemanticsAction(
               id, static_cast<blink::SemanticsAction>(action), std::move(args));
@@ -67,7 +67,7 @@ void PlatformView::DispatchSemanticsAction(int32_t id,
 }
 
 void PlatformView::SetSemanticsEnabled(bool enabled) {
-  blink::Threads::UI()->PostTask([ engine = engine_->GetWeakPtr(), enabled ] {
+  blink::Threads::UI()->PostTask([engine = engine_->GetWeakPtr(), enabled] {
     if (engine)
       engine->SetSemanticsEnabled(enabled);
   });
@@ -81,18 +81,14 @@ void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
                                  fxl::Closure caller_continuation) {
   fxl::AutoResetWaitableEvent latch;
 
-  auto ui_continuation = fxl::MakeCopyable([
-    this,                          //
-    surface = std::move(surface),  //
-    caller_continuation,           //
-    &latch
-  ]() mutable {
-    auto gpu_continuation = fxl::MakeCopyable([
-      this,                          //
-      surface = std::move(surface),  //
-      caller_continuation,           //
-      &latch
-    ]() mutable {
+  auto ui_continuation = fxl::MakeCopyable([this,                          //
+                                            surface = std::move(surface),  //
+                                            caller_continuation,           //
+                                            &latch]() mutable {
+    auto gpu_continuation = fxl::MakeCopyable([this,                          //
+                                               surface = std::move(surface),  //
+                                               caller_continuation,           //
+                                               &latch]() mutable {
       // Runs on the GPU Thread. So does the Caller Continuation.
       rasterizer_->Setup(std::move(surface), caller_continuation, &latch);
     });

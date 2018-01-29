@@ -7,7 +7,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface FlutterAppDelegate : NSObject<NSApplicationDelegate>
+@interface FlutterAppDelegate : NSObject <NSApplicationDelegate>
 
 @end
 

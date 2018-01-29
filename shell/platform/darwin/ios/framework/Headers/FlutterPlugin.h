@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
  Defines a set of optional callback methods and a method to set up the plugin
  and register it to be called by other application components.
  */
-@protocol FlutterPlugin<NSObject>
+@protocol FlutterPlugin <NSObject>
 @required
 /**
  Registers this plugin.
@@ -134,7 +134,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  Registration context for a single `FlutterPlugin`.
  */
-@protocol FlutterPluginRegistrar<NSObject>
+@protocol FlutterPluginRegistrar <NSObject>
 /**
  Returns a `FlutterBinaryMessenger` for creating Dart/iOS communication
  channels to be used by the plugin.
@@ -190,7 +190,7 @@ NS_ASSUME_NONNULL_BEGIN
  Plugins are identified by unique string keys, typically the name of the
  plugin's main class.
  */
-@protocol FlutterPluginRegistry<NSObject>
+@protocol FlutterPluginRegistry <NSObject>
 /**
  Returns a registrar for registering a plugin.
 

@@ -11,7 +11,7 @@
 @property(readonly, nonatomic) NSMutableDictionary* pluginPublications;
 @end
 
-@interface FlutterAppDelegateRegistrar : NSObject<FlutterPluginRegistrar>
+@interface FlutterAppDelegateRegistrar : NSObject <FlutterPluginRegistrar>
 - (instancetype)initWithPlugin:(NSString*)pluginKey appDelegate:(FlutterAppDelegate*)delegate;
 @end
 
