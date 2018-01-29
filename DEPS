@@ -90,7 +90,7 @@ vars = {
   'dart_stack_trace_tag': '1.9.0',
   'dart_stream_channel_tag': '1.6.2',
   'dart_string_scanner_tag': '1.0.2',
-  'dart_test_tag': '0.12.29+1',
+  'dart_test_tag': '0.12.30+1',
   'dart_tuple_tag': 'v1.0.1',
   'dart_typed_data_tag': '1.1.3',
   'dart_usage_tag': '3.3.0',
