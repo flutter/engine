@@ -31,6 +31,11 @@ import java.util.Set;
 class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMessageChannel.MessageHandler<Object> {
     private static final String TAG = "FlutterView";
 
+    // Constants from higher API levels.
+    // TODO(goderbauer): Get these from Android Support Library when
+    // https://github.com/flutter/flutter/issues/11099 is resolved.
+    public static final int ACTION_SHOW_ON_SCREEN = 16908342; // API level 23
+
     private Map<Integer, SemanticsObject> mObjects;
     private final FlutterView mOwner;
     private boolean mAccessibilityEnabled = false;
@@ -51,7 +56,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         DECREASE(1 << 7),
         SHOW_ON_SCREEN(1 << 8),
         MOVE_CURSOR_FORWARD_BY_CHARACTER(1 << 9),
-        MOVE_CURSOR_BACKWARD_BY_CHARACTER(1 << 10);
+        MOVE_CURSOR_BACKWARD_BY_CHARACTER(1 << 10),
+        SET_SELECTION(1 << 11),
+        COPY(1 << 12),
+        CUT(1 << 13),
+        PASTE(1 << 14);
 
         Action(int value) {
             this.value = value;
@@ -125,8 +134,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             result.setClassName("android.widget.EditText");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 result.setEditable(true);
-                if (object.textSelectionStart != -1 && object.textSelectionEnd != -1) {
-                    result.setTextSelection(object.textSelectionStart, object.textSelectionEnd);
+                if (object.textSelectionBase != -1 && object.textSelectionExtent != -1) {
+                    result.setTextSelection(object.textSelectionBase, object.textSelectionExtent);
                 }
             }
 
@@ -141,6 +150,18 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER;
             }
             result.setMovementGranularities(granularities);
+        }
+        if (object.hasAction(Action.SET_SELECTION)) {
+            result.addAction(AccessibilityNodeInfo.ACTION_SET_SELECTION);
+        }
+        if (object.hasAction(Action.COPY)) {
+            result.addAction(AccessibilityNodeInfo.ACTION_COPY);
+        }
+        if (object.hasAction(Action.CUT)) {
+            result.addAction(AccessibilityNodeInfo.ACTION_CUT);
+        }
+        if (object.hasAction(Action.PASTE)) {
+            result.addAction(AccessibilityNodeInfo.ACTION_PASTE);
         }
 
         if (object.hasFlag(Flag.IS_BUTTON)) {
@@ -317,10 +338,40 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
                 return true;
             }
-            // TODO(goderbauer): Use ACTION_SHOW_ON_SCREEN from Android Support Library after
-            //     https://github.com/flutter/flutter/issues/11099 is resolved.
-            case 16908342: { // ACTION_SHOW_ON_SCREEN, added in API level 23
+            case ACTION_SHOW_ON_SCREEN: {
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.SHOW_ON_SCREEN);
+                return true;
+            }
+            case AccessibilityNodeInfo.ACTION_SET_SELECTION: {
+                final Map<String, Integer> selection = new HashMap<String, Integer>();
+                final boolean hasSelection = arguments != null
+                    && arguments.containsKey(
+                            AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT)
+                    && arguments.containsKey(
+                            AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT);
+                if (hasSelection) {
+                    selection.put("base", arguments.getInt(
+                        AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT));
+                    selection.put("extent", arguments.getInt(
+                        AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT));
+                } else {
+                    // Clear the selection
+                    selection.put("base", object.textSelectionExtent);
+                    selection.put("extent", object.textSelectionExtent);
+                }
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.SET_SELECTION, selection);
+                return true;
+            }
+            case AccessibilityNodeInfo.ACTION_COPY: {
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.COPY);
+                return true;
+            }
+            case AccessibilityNodeInfo.ACTION_CUT: {
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.CUT);
+                return true;
+            }
+            case AccessibilityNodeInfo.ACTION_PASTE: {
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.PASTE);
                 return true;
             }
         }
@@ -459,6 +510,17 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 AccessibilityEvent event = createTextChangedEvent(object.id, oldValue, newValue);
                 if (event != null) {
                     sendAccessibilityEvent(event);
+                }
+
+                if (object.previousTextSelectionBase != object.textSelectionBase
+                        || object.previousTextSelectionExtent != object.textSelectionExtent) {
+                    AccessibilityEvent selectionEvent = obtainAccessibilityEvent(
+                        object.id, AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED);
+                    selectionEvent.getText().add(newValue);
+                    selectionEvent.setFromIndex(object.textSelectionBase);
+                    selectionEvent.setToIndex(object.textSelectionExtent);
+                    selectionEvent.setItemCount(newValue.length());
+                    sendAccessibilityEvent(selectionEvent);
                 }
             }
         }
@@ -603,8 +665,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         int flags;
         int actions;
-        int textSelectionStart;
-        int textSelectionEnd;
+        int textSelectionBase;
+        int textSelectionExtent;
         String label;
         String value;
         String increasedValue;
@@ -614,6 +676,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         boolean hadPreviousConfig = false;
         int previousFlags;
+        int previousTextSelectionBase;
+        int previousTextSelectionExtent;
         String previousValue;
 
         private float left;
@@ -658,14 +722,16 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         void updateWith(ByteBuffer buffer, String[] strings) {
+            hadPreviousConfig = true;
             previousValue = value;
             previousFlags = flags;
-            hadPreviousConfig = true;
+            previousTextSelectionBase = textSelectionBase;
+            previousTextSelectionExtent = textSelectionExtent;
 
             flags = buffer.getInt();
             actions = buffer.getInt();
-            textSelectionStart = buffer.getInt();
-            textSelectionEnd = buffer.getInt();
+            textSelectionBase = buffer.getInt();
+            textSelectionExtent = buffer.getInt();
 
             int stringIndex = buffer.getInt();
             label = stringIndex == -1 ? null : strings[stringIndex];
@@ -841,7 +907,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             StringBuilder sb = new StringBuilder();
             String[] array = { value, label, hint };
             for (String word: array) {
-                if (word != null && (word = word.trim()).length() > 0) {
+                if (word != null && word.length() > 0) {
                     if (sb.length() > 0)
                         sb.append(", ");
                     sb.append(word);

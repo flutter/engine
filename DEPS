@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': 'da1f52592ef73fe3afa485385cb995b9aec0181a',
+  'dart_revision': '7af4db0ea091dddca6b2da851e6dda8d7f9467e8',
 
   'dart_args_tag': '0.13.7',
   'dart_async_tag': '2.0.2',
@@ -90,7 +90,7 @@ vars = {
   'dart_stack_trace_tag': '1.9.0',
   'dart_stream_channel_tag': '1.6.2',
   'dart_string_scanner_tag': '1.0.2',
-  'dart_test_tag': '0.12.29+1',
+  'dart_test_tag': '0.12.30+1',
   'dart_tuple_tag': 'v1.0.1',
   'dart_typed_data_tag': '1.1.3',
   'dart_usage_tag': '3.3.0',
@@ -102,7 +102,7 @@ vars = {
   # Build bot tooling for iOS
   'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
 
-  'buildtools_revision': '5b8eb38aaf523f0124756454276cd0a5b720c17e',
+  'buildtools_revision': 'ae85410691b10aa2469695c2421b1fe751843e64',
 }
 
 # Only these hosts are allowed for dependencies in this DEPS file.

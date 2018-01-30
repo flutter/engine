@@ -17,9 +17,13 @@ class SemanticsAction {
   static const int _kScrollDownIndex = 1 << 5;
   static const int _kIncreaseIndex = 1 << 6;
   static const int _kDecreaseIndex = 1 << 7;
-  static const int _kShowOnScreen = 1 << 8;
-  static const int _kMoveCursorForwardByCharacter = 1 << 9;
-  static const int _kMoveCursorBackwardByCharacter = 1 << 10;
+  static const int _kShowOnScreenIndex = 1 << 8;
+  static const int _kMoveCursorForwardByCharacterIndex = 1 << 9;
+  static const int _kMoveCursorBackwardByCharacterIndex = 1 << 10;
+  static const int _kSetSelectionIndex = 1 << 11;
+  static const int _kCopyIndex = 1 << 12;
+  static const int _kCutIndex = 1 << 13;
+  static const int _kPasteIndex = 1 << 14;
 
   /// The numerical value for this action.
   ///
@@ -76,18 +80,43 @@ class SemanticsAction {
   ///
   /// For example, this action might be send to a node in a scrollable list that
   /// is partially off screen to bring it on screen.
-  static const SemanticsAction showOnScreen = const SemanticsAction._(_kShowOnScreen);
-
+  static const SemanticsAction showOnScreen = const SemanticsAction._(_kShowOnScreenIndex);
 
   /// Move the cursor forward by one character.
   ///
   /// This is for example used by the cursor control in text fields.
-  static const SemanticsAction moveCursorForwardByCharacter = const SemanticsAction._(_kMoveCursorForwardByCharacter);
+  ///
+  /// The action includes a boolean argument, which indicates whether the cursor
+  /// movement should extend (or start) a selection.
+  static const SemanticsAction moveCursorForwardByCharacter = const SemanticsAction._(_kMoveCursorForwardByCharacterIndex);
 
   /// Move the cursor backward by one character.
   ///
   /// This is for example used by the cursor control in text fields.
-  static const SemanticsAction moveCursorBackwardByCharacter = const SemanticsAction._(_kMoveCursorBackwardByCharacter);
+  ///
+  /// The action includes a boolean argument, which indicates whether the cursor
+  /// movement should extend (or start) a selection.
+  static const SemanticsAction moveCursorBackwardByCharacter = const SemanticsAction._(_kMoveCursorBackwardByCharacterIndex);
+
+  /// Set the text selection to the given range.
+  ///
+  /// The provided argument is a Map<String, int> which includes the keys `base`
+  /// and `extent` indicating where the selection within the `value` of the
+  /// semantics node should start and where it should end. Values for both
+  /// keys can range from 0 to length of `value` (inclusive).
+  ///
+  /// Setting `base` and `extent` to the same value will move the cursor to
+  /// that position (without selecting anything).
+  static const SemanticsAction setSelection = const SemanticsAction._(_kSetSelectionIndex);
+
+  /// Copy the current selection to the clipboard.
+  static const SemanticsAction copy = const SemanticsAction._(_kCopyIndex);
+
+  /// Cut the current selection and place it in the clipboard.
+  static const SemanticsAction cut = const SemanticsAction._(_kCutIndex);
+
+  /// Paste the current content of the clipboard.
+  static const SemanticsAction paste = const SemanticsAction._(_kPasteIndex);
 
   /// The possible semantics actions.
   ///
@@ -102,9 +131,13 @@ class SemanticsAction {
     _kScrollDownIndex: scrollDown,
     _kIncreaseIndex: increase,
     _kDecreaseIndex: decrease,
-    _kShowOnScreen: showOnScreen,
-    _kMoveCursorForwardByCharacter: moveCursorForwardByCharacter,
-    _kMoveCursorBackwardByCharacter: moveCursorBackwardByCharacter,
+    _kShowOnScreenIndex: showOnScreen,
+    _kMoveCursorForwardByCharacterIndex: moveCursorForwardByCharacter,
+    _kMoveCursorBackwardByCharacterIndex: moveCursorBackwardByCharacter,
+    _kSetSelectionIndex: setSelection,
+    _kCopyIndex: copy,
+    _kCutIndex: cut,
+    _kPasteIndex: paste,
   };
 
   @override
@@ -126,12 +159,20 @@ class SemanticsAction {
         return 'SemanticsAction.increase';
       case _kDecreaseIndex:
         return 'SemanticsAction.decrease';
-      case _kShowOnScreen:
+      case _kShowOnScreenIndex:
         return 'SemanticsAction.showOnScreen';
-      case _kMoveCursorForwardByCharacter:
+      case _kMoveCursorForwardByCharacterIndex:
         return 'SemanticsAction.moveCursorForwardByCharacter';
-      case _kMoveCursorBackwardByCharacter:
+      case _kMoveCursorBackwardByCharacterIndex:
         return 'SemanticsAction.moveCursorBackwardByCharacter';
+      case _kSetSelectionIndex:
+        return 'SemanticsAction.setSelection';
+      case _kCopyIndex:
+        return 'SemanticsAction.copy';
+      case _kCutIndex:
+        return 'SemanticsAction.cut';
+      case _kPasteIndex:
+        return 'SemanticsAction.paste';
     }
     return null;
   }
@@ -293,7 +334,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// string describes what result an action performed on this node has. The
   /// reading direction of all these strings is given by `textDirection`.
   ///
-  /// The fields 'textSelectionStart' and 'textSelectionEnd' describe the
+  /// The fields 'textSelectionBase' and 'textSelectionExtent' describe the
   /// currently selected text within `value`.
   ///
   /// The `rect` is the region occupied by this node in its own coordinate
@@ -305,8 +346,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int id,
     int flags,
     int actions,
-    int textSelectionStart,
-    int textSelectionEnd,
+    int textSelectionBase,
+    int textSelectionExtent,
     Rect rect,
     String label,
     String hint,
@@ -323,8 +364,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       id,
       flags,
       actions,
-      textSelectionStart,
-      textSelectionEnd,
+      textSelectionBase,
+      textSelectionExtent,
       rect.left,
       rect.top,
       rect.right,
@@ -343,8 +384,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int id,
     int flags,
     int actions,
-    int textSelectionStart,
-    int textSelectionEnd,
+    int textSelectionBase,
+    int textSelectionExtent,
     double left,
     double top,
     double right,
