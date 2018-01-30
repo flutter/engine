@@ -24,7 +24,7 @@
  * code as necessary from FlutterAppDelegate.mm.
  */
 FLUTTER_EXPORT
-@interface FlutterAppDelegate : UIResponder<UIApplicationDelegate, FlutterPluginRegistry>
+@interface FlutterAppDelegate : UIResponder <UIApplicationDelegate, FlutterPluginRegistry>
 
 @property(strong, nonatomic) UIWindow* window;
 

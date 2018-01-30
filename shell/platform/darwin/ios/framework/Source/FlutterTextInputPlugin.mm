@@ -70,7 +70,7 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 #pragma mark - FlutterTextRange
 
 /** A range of text in the buffer of a Flutter text editing widget. */
-@interface FlutterTextRange : UITextRange<NSCopying>
+@interface FlutterTextRange : UITextRange <NSCopying>
 
 @property(nonatomic, readonly) NSRange range;
 
@@ -110,7 +110,7 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 
 @end
 
-@interface FlutterTextInputView : UIView<UITextInput>
+@interface FlutterTextInputView : UIView <UITextInput>
 
 // UITextInput
 @property(nonatomic, readonly) NSMutableString* text;

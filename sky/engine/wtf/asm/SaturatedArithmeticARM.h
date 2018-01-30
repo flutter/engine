@@ -58,8 +58,7 @@ ALWAYS_INLINE int saturatedSet(int value, int FractionalShift) {
   asm("ssat %[output],%[saturate],%[value]\n\t"
       "lsl  %[output],%[shift]"
       : [output] "=r"(result)
-      : [value] "r"(value), [saturate] "n"(saturate),
-        [shift] "n"(FractionalShift));
+      : [value] "r"(value), [saturate] "n"(saturate), [shift] "n"(FractionalShift));
 
   return result;
 }
@@ -85,8 +84,7 @@ ALWAYS_INLINE int saturatedSet(unsigned value, int FractionalShift) {
   asm("usat %[output],%[saturate],%[value]\n\t"
       "lsl  %[output],%[shift]"
       : [output] "=r"(result)
-      : [value] "r"(value), [saturate] "n"(saturate),
-        [shift] "n"(FractionalShift));
+      : [value] "r"(value), [saturate] "n"(saturate), [shift] "n"(FractionalShift));
 
   return result;
 }
