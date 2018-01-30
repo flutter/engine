@@ -82,6 +82,7 @@ class CanvasPath : public fxl::RefCountedThreadSafe<CanvasPath>,
   void close();
   void reset();
   bool contains(double x, double y);
+  bool equals(CanvasPath* other);
   fxl::RefPtr<CanvasPath> shift(double dx, double dy);
   fxl::RefPtr<CanvasPath> transform(tonic::Float64List& matrix4);
 
