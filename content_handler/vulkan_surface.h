@@ -4,23 +4,23 @@
 
 #pragma once
 
+#include <async/cpp/wait.h>
+#include <zx/event.h>
+#include <zx/vmo.h>
+
 #include <memory>
+
 #include "flutter/flow/scene_update_context.h"
 #include "flutter/vulkan/vulkan_handle.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
-#include "lib/fsl/tasks/message_loop.h"
-#include "lib/fsl/tasks/message_loop_handler.h"
 #include "lib/fxl/macros.h"
 #include "lib/ui/scenic/client/resources.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
-#include "zx/event.h"
-#include "zx/vmo.h"
 
 namespace flutter_runner {
 
-class VulkanSurface : public flow::SceneUpdateContext::SurfaceProducerSurface,
-                      public fsl::MessageLoopHandler {
+class VulkanSurface : public flow::SceneUpdateContext::SurfaceProducerSurface {
  public:
   VulkanSurface(vulkan::VulkanProcTable& p_vk,
                 sk_sp<GrContext> context,
@@ -56,25 +56,9 @@ class VulkanSurface : public flow::SceneUpdateContext::SurfaceProducerSurface,
   GrBackendSemaphore GetAcquireSemaphore() const;
 
  private:
-  vulkan::VulkanProcTable& vk_;
-  sk_sp<GrVkBackendContext> backend_context_;
-  scenic_lib::Session* session_;
-  vulkan::VulkanHandle<VkImage> vk_image_;
-  vulkan::VulkanHandle<VkDeviceMemory> vk_memory_;
-  sk_sp<SkSurface> sk_surface_;
-  std::unique_ptr<scenic_lib::Image> session_image_;
-  zx::event acquire_event_;
-  vulkan::VulkanHandle<VkSemaphore> acquire_semaphore_;
-  zx::event release_event_;
-  fsl::MessageLoop::HandlerKey event_handler_key_ = 0;
-  std::function<void(void)> pending_on_writes_committed_;
-  size_t age_ = 0;
-  bool valid_ = false;
-
-  // |fsl::MessageLoopHandler|
-  void OnHandleReady(zx_handle_t handle,
-                     zx_signals_t pending,
-                     uint64_t count) override;
+  async_wait_result_t OnHandleReady(async_t* async,
+                                    zx_status_t status,
+                                    const zx_packet_signal_t* signal);
 
   bool AllocateDeviceMemory(sk_sp<GrContext> context,
                             const SkISize& size,
@@ -94,6 +78,22 @@ class VulkanSurface : public flow::SceneUpdateContext::SurfaceProducerSurface,
 
   vulkan::VulkanHandle<VkSemaphore> SemaphoreFromEvent(
       const zx::event& event) const;
+
+  vulkan::VulkanProcTable& vk_;
+  sk_sp<GrVkBackendContext> backend_context_;
+  scenic_lib::Session* session_;
+  vulkan::VulkanHandle<VkImage> vk_image_;
+  vulkan::VulkanHandle<VkDeviceMemory> vk_memory_;
+  sk_sp<SkSurface> sk_surface_;
+  std::unique_ptr<scenic_lib::Image> session_image_;
+  zx::event acquire_event_;
+  vulkan::VulkanHandle<VkSemaphore> acquire_semaphore_;
+  zx::event release_event_;
+  async_t* async_;
+  async::WaitMethod<VulkanSurface, &VulkanSurface::OnHandleReady> wait_;
+  std::function<void()> pending_on_writes_committed_;
+  size_t age_ = 0;
+  bool valid_ = false;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(VulkanSurface);
 };
