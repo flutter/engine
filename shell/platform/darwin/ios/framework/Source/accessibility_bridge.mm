@@ -126,8 +126,7 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
   _bridge = nullptr;
   _children.clear();
   [_parent release];
-  if (_container != nil)
-    [_container release];
+  [_container release];
   [super dealloc];
 }
 

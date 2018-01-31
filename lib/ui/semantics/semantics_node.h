@@ -71,12 +71,10 @@ struct SemanticsNode {
   std::vector<int32_t> children;
 };
 
-/**
- * Contains semantic nodes that need to be updated.
- *
- * The keys in the map are stable node IDd, and the values contain
- * semantic information for the node corresponding to the ID.
- */
+// Contains semantic nodes that need to be updated.
+//
+// The keys in the map are stable node IDd, and the values contain
+// semantic information for the node corresponding to the ID.
 using SemanticsNodeUpdates = std::unordered_map<int32_t, SemanticsNode>;
 
 }  // namespace blink
