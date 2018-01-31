@@ -199,10 +199,10 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
-  CGFloat scale = [[[self bridge]->view() window] screen].scale;
+  CGFloat scale = [[[self bridge] -> view() window] screen].scale;
   auto result =
       CGRectMake(rect.x() / scale, rect.y() / scale, rect.width() / scale, rect.height() / scale);
-  return UIAccessibilityConvertFrameToScreenCoordinates(result, [self bridge]->view());
+  return UIAccessibilityConvertFrameToScreenCoordinates(result, [self bridge] -> view());
 }
 
 #pragma mark - UIAccessibilityElement protocol
@@ -223,21 +223,21 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
 - (BOOL)accessibilityActivate {
   if (![self node].HasAction(blink::SemanticsAction::kTap))
     return NO;
-  [self bridge]->DispatchSemanticsAction([self uid], blink::SemanticsAction::kTap);
+  [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kTap);
   return YES;
 }
 
 - (void)accessibilityIncrement {
   if ([self node].HasAction(blink::SemanticsAction::kIncrease)) {
     [self node].value = [self node].increasedValue;
-    [self bridge]->DispatchSemanticsAction([self uid], blink::SemanticsAction::kIncrease);
+    [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kIncrease);
   }
 }
 
 - (void)accessibilityDecrement {
   if ([self node].HasAction(blink::SemanticsAction::kDecrease)) {
     [self node].value = [self node].decreasedValue;
-    [self bridge]->DispatchSemanticsAction([self uid], blink::SemanticsAction::kDecrease);
+    [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kDecrease);
   }
 }
 
@@ -245,7 +245,7 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
   blink::SemanticsAction action = GetSemanticsActionForScrollDirection(direction);
   if (![self node].HasAction(action))
     return NO;
-  [self bridge]->DispatchSemanticsAction([self uid], action);
+  [self bridge] -> DispatchSemanticsAction([self uid], action);
   return YES;
 }
 
@@ -485,6 +485,8 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
         // The node changed its type from text field to something else, or vice versa. In this
         // case, we cannot reuse the existing SemanticsObject implementation. Instead, we replace
         // it with a new instance.
+        auto positionInChildlist =
+            std::find(object.parent.children->begin(), object.parent.children->end(), object);
         [objects_ removeObjectForKey:@(node.id)];
         if (isTextField) {
           // Text fields are backed by objects that implement UITextInput.
@@ -492,6 +494,7 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
         } else {
           object = [[[FlutterSemanticsObject alloc] initWithBridge:this uid:uid] autorelease];
         }
+        *positionInChildlist = object;
         objects_.get()[@(node.id)] = object;
       }
     }

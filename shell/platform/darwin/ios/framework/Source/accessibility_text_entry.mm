@@ -27,6 +27,10 @@
   return [self.text substringWithRange:textRange];
 }
 
+- (NSString*)accessibilityLabel {
+  return self.text;
+}
+
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
   // This method is required but not called by accessibility API for
   // features we are using it for. It may need to be implemented if
