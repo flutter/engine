@@ -621,8 +621,8 @@ void Engine::DidCreateMainIsolate(Dart_Isolate isolate) {
   } else if (directory_asset_bundle_) {
     blink::AssetFontSelector::Install(directory_asset_bundle_);
     if (!blink::Settings::Get().using_blink) {
-      blink::FontCollection::ForProcess().RegisterFontsFromDirectoryAssetBundle(
-          directory_asset_bundle_);
+      blink::FontCollection::ForProcess().RegisterFontsFromAssetProvider(
+          *directory_asset_bundle_);
     }
   }
 }

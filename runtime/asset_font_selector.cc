@@ -116,14 +116,19 @@ AssetFontSelector::FlutterFontAttributes::FlutterFontAttributes(
 
 AssetFontSelector::FlutterFontAttributes::~FlutterFontAttributes() {}
 
+AssetProvider* AssetFontSelector::asset_provider() {
+  if (directory_asset_bundle_) {
+    return directory_asset_bundle_.get();
+  } else {
+    return asset_store_.get();
+  }
+}
+
 void AssetFontSelector::parseFontManifest() {
   std::vector<uint8_t> font_manifest_data;
-  if (!directory_asset_bundle_ ||
-      !directory_asset_bundle_->GetAsBuffer(kFontManifestAssetPath,
-                                            &font_manifest_data)) {
-    if (!asset_store_ ||
-        !asset_store_->GetAsBuffer(kFontManifestAssetPath, &font_manifest_data))
-      return;
+  if (!asset_provider()->GetAsBuffer(kFontManifestAssetPath,
+                                     &font_manifest_data)) {
+    return;
   }
 
   rapidjson::Document document;
@@ -239,13 +244,9 @@ sk_sp<SkTypeface> AssetFontSelector::getTypefaceAsset(
   }
 
   std::unique_ptr<TypefaceAsset> typeface_asset(new TypefaceAsset);
-  if (!directory_asset_bundle_ || !directory_asset_bundle_->GetAsBuffer(
-                                      asset_path, &typeface_asset->data)) {
-    if (!asset_store_ ||
-        !asset_store_->GetAsBuffer(asset_path, &typeface_asset->data)) {
-      typeface_cache_.insert(std::make_pair(asset_path, nullptr));
-      return nullptr;
-    }
+  if (!asset_provider()->GetAsBuffer(asset_path, &typeface_asset->data)) {
+    typeface_cache_.insert(std::make_pair(asset_path, nullptr));
+    return nullptr;
   }
 
   sk_sp<SkFontMgr> font_mgr(SkFontMgr::RefDefault());

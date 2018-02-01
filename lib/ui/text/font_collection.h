@@ -21,8 +21,7 @@ class FontCollection {
 
   std::shared_ptr<txt::FontCollection> GetFontCollection() const;
 
-  void RegisterFontsFromDirectoryAssetBundle(
-      fxl::RefPtr<blink::DirectoryAssetBundle> directory_asset_bundle);
+  void RegisterFontsFromAssetProvider(blink::AssetProvider& asset_provider);
 
   void RegisterTestFonts();
 
