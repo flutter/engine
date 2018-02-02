@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 
+#include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/assets/unzipper_provider.h"
 #include "lib/fxl/macros.h"
 #include "lib/fxl/memory/ref_counted.h"
@@ -15,12 +16,14 @@
 
 namespace blink {
 
-class ZipAssetStore : public fxl::RefCountedThreadSafe<ZipAssetStore> {
+class ZipAssetStore : public fxl::RefCountedThreadSafe<ZipAssetStore>,
+                      public blink::AssetProvider {
  public:
   explicit ZipAssetStore(UnzipperProvider unzipper_provider);
-  ~ZipAssetStore();
+  virtual ~ZipAssetStore();
 
-  bool GetAsBuffer(const std::string& asset_name, std::vector<uint8_t>* data);
+  virtual bool GetAsBuffer(const std::string& asset_name,
+                           std::vector<uint8_t>* data);
 
  private:
   struct CacheEntry {

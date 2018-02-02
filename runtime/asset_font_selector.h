@@ -49,6 +49,8 @@ class AssetFontSelector : public FontSelector {
 
   explicit AssetFontSelector(fxl::RefPtr<ZipAssetStore> asset_store);
 
+  AssetProvider* asset_provider();
+
   void parseFontManifest();
 
   sk_sp<SkTypeface> getTypefaceAsset(const FontDescription& font_description,
