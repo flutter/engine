@@ -12,6 +12,7 @@ import 'package:args/args.dart';
 // an effort to discourage further use.
 // ignore_for_file: implementation_imports
 import 'package:front_end/src/api_prototype/compiler_options.dart';
+import 'package:front_end/src/api_prototype/compilation_message.dart';
 import 'package:front_end/src/api_prototype/incremental_kernel_generator.dart';
 
 import 'package:kernel/ast.dart';
@@ -150,7 +151,20 @@ class _FrontendCompiler implements CompilerInterface {
       ..packagesFileUri = options['packages'] != null ? Uri.base.resolveUri(new Uri.file(options['packages'])) : null
       ..strongMode = options['strong']
       ..target = new FlutterTarget(new TargetFlags(strongMode: options['strong']))
-      ..reportMessages = true;
+      ..reportMessages = true
+      ..filterProblem = (LocatedMessage problem, Severity severity) {
+        // Suppress errors related to super-calls in mixins, as long as they
+        // are annotated with appropriate analyzer annotation.
+        if (problem.code == codeSuperclassHasNoMethod) {
+          if (problem.uri.isScheme('file')) {
+            final source = new File(problem.uri.toFilePath()).readAsStringSync();
+            final lineEnd = source.indexOf('\n', problem.charOffset);
+            final lineChunk = source.substring(problem.charOffset, lineEnd);
+            return !lineChunk.contains('// ignore: abstract_super_member_reference');
+          }
+        }
+        return true;
+      };
 
     Program program;
     if (options['incremental']) {
