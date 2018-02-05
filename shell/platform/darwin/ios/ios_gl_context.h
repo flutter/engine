@@ -31,10 +31,13 @@ class IOSGLContext {
   bool UpdateStorageSizeIfNecessary();
 
   bool MakeCurrent();
+  bool MakeCurrent2();
 
   bool ResourceMakeCurrent();
 
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
+
+  CAEAGLLayer *layer() {return layer_;}
 
  private:
   fml::scoped_nsobject<CAEAGLLayer> layer_;

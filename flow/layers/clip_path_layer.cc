@@ -25,26 +25,23 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   }
 }
 
-#if defined(OS_FUCHSIA)
-
-void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
+\
+void ClipPathLayer::UpdateScene(LayeredPaintContext &layers) {
   FXL_DCHECK(needs_system_composite());
 
-  // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
-  //               Treating the shape as a rectangle for now.
-  auto bounds = clip_path_.getBounds();
-  scenic_lib::Rectangle shape(context.session(),  // session
-                              bounds.width(),     //  width
-                              bounds.height()     //  height
-  );
+  // // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
+  // //               Treating the shape as a rectangle for now.
+  // auto bounds = clip_path_.getBounds();
+  // scenic_lib::Rectangle shape(context.session(),  // session
+  //                             bounds.width(),     //  width
+  //                             bounds.height()     //  height
+  // );
 
-  SceneUpdateContext::Clip clip(context, shape, bounds);
-  UpdateSceneChildren(context);
+  // SceneUpdateContext::Clip clip(context, shape, bounds);
+  UpdateSceneChildren(layers);
 }
 
-#endif  // defined(OS_FUCHSIA)
-
-void ClipPathLayer::Paint(PaintContext& context) const {
+void ClipPathLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "ClipPathLayer::Paint");
   FXL_DCHECK(needs_painting());
 

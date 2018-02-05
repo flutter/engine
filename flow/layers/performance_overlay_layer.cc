@@ -90,9 +90,8 @@ void VisualizeCounterValuesBytes(SkCanvas& canvas,
 PerformanceOverlayLayer::PerformanceOverlayLayer(uint64_t options)
     : options_(options) {}
 
-void PerformanceOverlayLayer::Paint(PaintContext& context) const {
+void PerformanceOverlayLayer::Paint(PaintContext& context) {
   const int padding = 8;
-
   if (!options_)
     return;
 

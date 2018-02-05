@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
 #include "flutter/shell/gpu/gpu_surface_gl.h"
+#include "flutter/shell/platform/darwin/ios/ios_layered_paint_context.h"
 
 namespace shell {
 
@@ -28,7 +29,7 @@ void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
   }
 }
 
-std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface() {
+std::unique_ptr<GPUSurfaceGL> IOSSurfaceGL::CreateGPUSurface() {
   return std::make_unique<GPUSurfaceGL>(this);
 }
 
@@ -40,14 +41,33 @@ bool IOSSurfaceGL::GLContextMakeCurrent() {
   return IsValid() ? context_.MakeCurrent() : false;
 }
 
+bool IOSSurfaceGL::GLContextMakeCurrent2() {
+  return IsValid() ? context_.MakeCurrent2() : false;
+}
+
 bool IOSSurfaceGL::GLContextClearCurrent() {
   [EAGLContext setCurrentContext:nil];
   return true;
 }
 
+flow::LayeredPaintContext* IOSSurfaceGL::CreateLayeredPaintContext() {
+  layered_paint_context_ = new IOSLayeredPaintContext(this);
+  return layered_paint_context_;
+}
+
 bool IOSSurfaceGL::GLContextPresent() {
   TRACE_EVENT0("flutter", "IOSSurfaceGL::GLContextPresent");
-  return IsValid() ? context_.PresentRenderBuffer() : false;
+  if (IsValid()) {
+    bool result = true;
+    if (layered_paint_context_) {
+      layered_paint_context_->Finish();
+    } else {
+      result = context_.PresentRenderBuffer();
+    }
+    return result;
+  } else {
+    return false;
+  }
 }
 
 }  // namespace shell

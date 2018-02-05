@@ -26,15 +26,21 @@ class IOSSurfaceGL : public IOSSurface, public GPUSurfaceGLDelegate {
 
   void UpdateStorageSizeIfNecessary() override;
 
-  std::unique_ptr<Surface> CreateGPUSurface() override;
+  std::unique_ptr<GPUSurfaceGL> CreateGPUSurface() override;
 
   bool GLContextMakeCurrent() override;
+
+  bool GLContextMakeCurrent2() override;
 
   bool GLContextClearCurrent() override;
 
   bool GLContextPresent() override;
 
   intptr_t GLContextFBO() const override;
+
+  flow::LayeredPaintContext* CreateLayeredPaintContext() override;
+
+  CAEAGLLayer *layer() { return context_.layer(); }
 
  private:
   IOSGLContext context_;

@@ -16,6 +16,7 @@ namespace shell {
 class GPUSurfaceGLDelegate {
  public:
   virtual bool GLContextMakeCurrent() = 0;
+  virtual bool GLContextMakeCurrent2() = 0;
 
   virtual bool GLContextClearCurrent() = 0;
 
@@ -36,6 +37,14 @@ class GPUSurfaceGL : public Surface {
 
   GrContext* GetContext() override;
 
+  sk_sp<SkSurface> AcquireRenderSurface(const SkISize& size);
+
+  bool PresentSurface(SkCanvas* canvas);
+  bool PresentSurface();
+
+  bool MakeCurrent();
+  bool MakeCurrent2();
+
  private:
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrContext> context_;
@@ -44,10 +53,6 @@ class GPUSurfaceGL : public Surface {
   fml::WeakPtrFactory<GPUSurfaceGL> weak_factory_;
 
   bool CreateOrUpdateSurfaces(const SkISize& size);
-
-  sk_sp<SkSurface> AcquireRenderSurface(const SkISize& size);
-
-  bool PresentSurface(SkCanvas* canvas);
 
   bool SelectPixelConfig(GrPixelConfig* config);
 

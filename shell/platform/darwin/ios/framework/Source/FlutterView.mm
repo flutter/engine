@@ -79,7 +79,9 @@ void SnapshotRasterizer(fml::WeakPtr<shell::Rasterizer> rasterizer,
 
   {
     flow::CompositorContext compositor_context(nullptr);
-    auto frame = compositor_context.AcquireFrame(nullptr, &canvas, false /* instrumentation */);
+    auto frame = compositor_context.AcquireFrame(nullptr, &canvas,
+     nullptr, // XXX
+     false /* instrumentation */);
     layer_tree->Raster(frame, false /* ignore raster cache. */);
   }
 
@@ -132,6 +134,7 @@ void SnapshotContentsSync(CGContextRef context, UIView* view) {
 // 2: The call is made of the platform thread and not the GPU thread.
 // 3: There may be a software rasterizer.
 - (void)drawLayer:(CALayer*)layer inContext:(CGContextRef)context {
+  NSLog(@"Draw layer in context");
   SnapshotContentsSync(context, self);
 }
 

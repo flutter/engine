@@ -37,7 +37,7 @@ void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
   // Android oddities.
 }
 
-std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface() {
+std::unique_ptr<GPUSurfaceGL> IOSSurfaceSoftware::CreateGPUSurface() {
   if (!IsValid()) {
     return nullptr;
   }
@@ -48,7 +48,7 @@ std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface() {
     return nullptr;
   }
 
-  return surface;
+  return nullptr;
 }
 
 sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {

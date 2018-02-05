@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/transform_layer.h"
+#include "flutter/flow/layered_paint_context.h"
 
 namespace flow {
 
@@ -21,18 +22,16 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(child_paint_bounds);
 }
 
-#if defined(OS_FUCHSIA)
-
-void TransformLayer::UpdateScene(SceneUpdateContext& context) {
+void TransformLayer::UpdateScene(LayeredPaintContext &layers) {
   FXL_DCHECK(needs_system_composite());
-
-  SceneUpdateContext::Transform transform(context, transform_);
-  UpdateSceneChildren(context);
+  layers.Transform(transform_);
+//  SceneUpdateContext::Transform transform(context, transform_);
+  UpdateSceneChildren(layers);
+  layers.PopTransform();
 }
 
-#endif  // defined(OS_FUCHSIA)
 
-void TransformLayer::Paint(PaintContext& context) const {
+void TransformLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "TransformLayer::Paint");
   FXL_DCHECK(needs_painting());
 

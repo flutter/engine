@@ -28,6 +28,10 @@ void AndroidExternalTextureGL::MarkNewFrameAvailable() {
   new_frame_ready_ = true;
 }
 
+void AndroidExternalTextureGL::UpdateScene(flow::LayeredPaintContext *context, const SkRect& bounds) {
+  ASSERT_IS_GPU_THREAD;
+}
+
 void AndroidExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds) {
   ASSERT_IS_GPU_THREAD;
   if (state_ == AttachmentState::detached) {

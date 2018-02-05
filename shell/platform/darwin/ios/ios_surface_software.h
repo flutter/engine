@@ -25,11 +25,13 @@ class IOSSurfaceSoftware : public IOSSurface,
 
   void UpdateStorageSizeIfNecessary() override;
 
-  std::unique_ptr<Surface> CreateGPUSurface() override;
+  std::unique_ptr<GPUSurfaceGL> CreateGPUSurface() override;
 
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
 
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
+
+  flow::LayeredPaintContext* CreateLayeredPaintContext() override { return nullptr; };
 
  private:
   sk_sp<SkSurface> sk_surface_;

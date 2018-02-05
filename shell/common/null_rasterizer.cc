@@ -10,9 +10,13 @@ NullRasterizer::NullRasterizer() : weak_factory_(this) {}
 
 void NullRasterizer::Setup(
     std::unique_ptr<Surface> surface_or_null,
+                         #if defined(OS_IOS)
+                         flow::LayeredPaintContext* layeredPaintContext,
+                         #endif
     fxl::Closure rasterizer_continuation,
     fxl::AutoResetWaitableEvent* setup_completion_event) {
   surface_ = std::move(surface_or_null);
+  layered_paint_context_ = layeredPaintContext;
   rasterizer_continuation();
   setup_completion_event->Signal();
 }

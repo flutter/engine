@@ -81,7 +81,7 @@ void SceneUpdateContext::CreateFrame(scenic_lib::EntityNode& entity_node,
   entity_node.AddPart(shape_node);
 
   // Check whether the painted layers will be visible.
-  if (paint_bounds.isEmpty() || !paint_bounds.intersects(shape_bounds))
+  if (paint_bounds.isxxEmpty() || !paint_bounds.intersects(shape_bounds))
     paint_layers.clear();
 
   // Check whether a solid color will suffice.

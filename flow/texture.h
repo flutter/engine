@@ -9,6 +9,7 @@
 #include "flutter/common/threads.h"
 #include "lib/fxl/synchronization/waitable_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "flutter/flow/layers/layer.h"
 
 namespace flow {
 
@@ -20,8 +21,10 @@ class Texture {
   // Called from GPU thread.
   virtual ~Texture();
 
+  virtual void UpdateScene(LayeredPaintContext *context, const SkRect& bounds) = 0;
+
   // Called from GPU thread.
-  virtual void Paint(SkCanvas& canvas, const SkRect& bounds) = 0;
+  virtual void Paint(Layer::PaintContext context, const SkRect& bounds) = 0;
 
   // Called from GPU thread.
   virtual void OnGrContextCreated() = 0;

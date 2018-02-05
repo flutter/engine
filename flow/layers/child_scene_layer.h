@@ -29,9 +29,9 @@ class ChildSceneLayer : public Layer {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  void Paint(PaintContext& context) const override;
+  void Paint(PaintContext& context) override;
 
-  void UpdateScene(SceneUpdateContext& context) override;
+  void UpdateScene(LayeredPaintContext &layers) override;
 
  private:
   SkPoint offset_;

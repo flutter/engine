@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/clip_rect_layer.h"
+#include "flutter/flow/layered_paint_context.h"
 
 namespace flow {
 
@@ -19,29 +20,40 @@ void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   }
 }
 
-#if defined(OS_FUCHSIA)
 
-void ClipRectLayer::UpdateScene(SceneUpdateContext& context) {
+void ClipRectLayer::UpdateScene(LayeredPaintContext &layers) {
   FXL_DCHECK(needs_system_composite());
 
-  scenic_lib::Rectangle shape(context.session(),   // session
-                              clip_rect_.width(),  //  width
-                              clip_rect_.height()  //  height
-  );
+  // scenic_lib::Rectangle shape(context.session(),   // session
+  //                             clip_rect_.width(),  //  width
+  //                             clip_rect_.height()  //  height
+  // );
 
-  SceneUpdateContext::Clip clip(context, shape, clip_rect_);
-  UpdateSceneChildren(context);
+  // SceneUpdateContext::Clip clip(context, shape, clip_rect_);
+      FXL_LOG(INFO) << "cliprect";
+
+  layers.PushLayer(clip_rect_);
+  layers.ClipRect();
+  UpdateSceneChildren(layers);
+  layers.PopLayer();
+
 }
 
-#endif  // defined(OS_FUCHSIA)
 
-void ClipRectLayer::Paint(PaintContext& context) const {
+void ClipRectLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "ClipRectLayer::Paint");
   FXL_DCHECK(needs_painting());
 
-  SkAutoCanvasRestore save(&context.canvas, true);
-  context.canvas.clipRect(paint_bounds());
-  PaintChildren(context);
+  // if (needs_system_composite()) {
+  //   context.layers.PushLayer(clip_rect_);
+  //   context.layers.ClipRect();
+  //   PaintChildren(context);
+  //   context.layers.PopLayer();
+  // } else {
+    SkAutoCanvasRestore save(&context.canvas, true);
+    context.canvas.clipRect(paint_bounds());
+    PaintChildren(context);
+ // }
 }
 
 }  // namespace flow

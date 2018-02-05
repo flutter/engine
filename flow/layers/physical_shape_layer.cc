@@ -6,6 +6,8 @@
 
 #include "flutter/flow/paint_utils.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
+#include "flutter/flow/layered_paint_context.h"
+
 
 namespace flow {
 
@@ -60,24 +62,32 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
   }
 }
 
-#if defined(OS_FUCHSIA)
 
-void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
+void PhysicalShapeLayer::UpdateScene(LayeredPaintContext &context) {
   FXL_DCHECK(needs_system_composite());
 
-  SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_);
-  for (auto& layer : layers()) {
-    if (layer->needs_painting()) {
-      frame.AddPaintedLayer(layer.get());
-    }
-  }
+      //  SkRRect rrect = path_.getFrameRRect();
+      FXL_LOG(INFO) << "PhysShapeLayer";
+        context.PushLayer(path_.getBounds());
+        context.ClipRect();
+        context.Elevate(elevation_);
+        context.SetColor(color_);
+        //context.SetColor(SK_ColorRED);
+    //    context.SetCornerRadius(rrect.getSimpleRadii().length());
+  // SceneUpdateContext::Frame frame(context, shape_->getFrameRRect(), color_,
+  //                                 elevation_);
+  // for (auto& layer : layers()) {
+  //   if (layer->needs_painting()) {
+  //     context.AddPaintedLayer(layer.get());
+  //   }
+  // }
 
   UpdateSceneChildren(context);
+  context.PopLayer();
+
 }
 
-#endif  // defined(OS_FUCHSIA)
-
-void PhysicalShapeLayer::Paint(PaintContext& context) const {
+void PhysicalShapeLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FXL_DCHECK(needs_painting());
 
@@ -86,9 +96,9 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
                SkColorGetA(color_) != 0xff, device_pixel_ratio_);
   }
 
-  SkPaint paint;
-  paint.setColor(color_);
-  context.canvas.drawPath(path_, paint);
+ SkPaint paint;
+ paint.setColor(color_);
+ context.canvas.drawPath(path_, paint);
 
   SkAutoCanvasRestore save(&context.canvas, false);
   if (isRect_) {

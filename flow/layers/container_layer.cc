@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layered_paint_context.h"
 
 namespace flow {
 
@@ -40,33 +41,93 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 void ContainerLayer::PaintChildren(PaintContext& context) const {
   FXL_DCHECK(needs_painting());
 
+
+ // SkCanvas *currentCanvas = &context.canvas;
   // Intentionally not tracing here as there should be no self-time
   // and the trace event on this common function has a small overhead.
+ // bool lastWasSystemComposite = false;
+//  int pushCount = 0;
+
   for (auto& layer : layers_) {
     if (layer->needs_painting()) {
       layer->Paint(context);
     }
   }
+
+//      if (lastWasSystemComposite && !layer->needs_system_composite()) {
+//        context.layers.PushLayer(paint_bounds());
+//        pushCount++;
+//        lastWasSystemComposite = false;
+//        SkPaint paint;
+//        paint.setColor(SK_ColorGREEN);
+//        context.layers.CurrentCanvas()->drawString("HEJ", 10, 10, paint);
+//        currentCanvas = context.layers.CurrentCanvas();
+//      } else {
+//        PaintContext newContext { (*currentCanvas),
+//                                                   context.frame_time,
+//                                                   context.engine_time,
+//                                                   context.memory_usage,
+//                                                   context.texture_registry,
+//                                                   context.checkerboard_offscreen_layers,
+//                                                   context.layers
+//                                                   };
+//
+//        layer->Paint(newContext);
+//      }
+//      if (layer->needs_system_composite()) {
+//        lastWasSystemComposite = true;
+//      }
+//      if (this->needs_system_composite()) {
+//        context.layers.PushLayer(layer->paint_bounds());
+//        //currentCanvas = context.layers.CurrentCanvas();
+//        PaintContext newContext { *(context.layers.CurrentCanvas()),
+//                                                   context.frame_time,
+//                                                   context.engine_time,
+//                                                   context.memory_usage,
+//                                                   context.texture_registry,
+//                                                   context.checkerboard_offscreen_layers,
+//                                                   context.layers
+//                                                   };
+//
+//        layer->Paint(newContext);
+//        context.layers.PopLayer();
+//      }
+//    }
+//  }
+//  for (int i = 0; i < pushCount; i++) {
+//    context.layers.PopLayer();
+//  }
 }
 
-#if defined(OS_FUCHSIA)
 
-void ContainerLayer::UpdateScene(SceneUpdateContext& context) {
-  UpdateSceneChildren(context);
+void ContainerLayer::UpdateScene(LayeredPaintContext &layers) {
+  UpdateSceneChildren(layers);
 }
 
-void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
+void ContainerLayer::UpdateSceneChildren(LayeredPaintContext &layers) {
   FXL_DCHECK(needs_system_composite());
 
   // Paint all of the layers which need to be drawn into the container.
   // These may be flattened down to a containing
+  bool lastWasSystemComposite = false;
+  int pushCount = 0;
   for (auto& layer : layers_) {
     if (layer->needs_system_composite()) {
-      layer->UpdateScene(context);
+      layer->UpdateScene(layers);
+      lastWasSystemComposite = false; // XXX
+    } else if (layer->needs_painting()) {
+      if (lastWasSystemComposite) {
+        layers.PushLayer(paint_bounds());
+        pushCount++;
+        lastWasSystemComposite = false;
+      }
+      layers.AddPaintedLayer(layer.get());
     }
+  }
+  for (int i = 0; i < pushCount; i++) {
+    layers.PopLayer();
   }
 }
 
-#endif  // defined(OS_FUCHSIA)
 
 }  // namespace flow

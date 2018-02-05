@@ -145,10 +145,17 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   }
 
   onscreen_surface_ = std::move(onscreen_surface);
-
+  FXL_LOG(INFO) << "Created onscreen surface";
   return true;
 }
 
+bool GPUSurfaceGL::MakeCurrent() {
+   return delegate_->GLContextMakeCurrent();
+}
+
+bool GPUSurfaceGL::MakeCurrent2() {
+   return delegate_->GLContextMakeCurrent2();
+}
 std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
@@ -176,6 +183,22 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   return std::make_unique<SurfaceFrame>(surface, submit_callback);
 }
 
+bool GPUSurfaceGL::PresentSurface() {
+  if (delegate_ == nullptr || context_ == nullptr) {
+    return false;
+  }
+
+  {
+    TRACE_EVENT0("flutter", "SkCanvas::Flush");
+   //   MakeCurrent();
+  //  onscreen_surface_->getCanvas()->flush();
+  }
+
+  delegate_->GLContextPresent();
+
+  return true;
+}
+
 bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
   if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
     return false;
@@ -183,10 +206,11 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
 
   {
     TRACE_EVENT0("flutter", "SkCanvas::Flush");
-    onscreen_surface_->getCanvas()->flush();
+  //    MakeCurrent();
+ //   onscreen_surface_->getCanvas()->flush();
   }
 
-  delegate_->GLContextPresent();
+  //delegate_->GLContextPresent();
 
   return true;
 }

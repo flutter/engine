@@ -14,6 +14,7 @@
 #include "flutter/shell/platform/darwin/common/process_info_mac.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
+#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #include "lib/fxl/synchronization/waitable_event.h"
 
 namespace shell {
@@ -45,7 +46,7 @@ void PlatformViewIOS::Attach(fxl::Closure firstFrameCallback) {
 }
 
 void PlatformViewIOS::NotifyCreated() {
-  PlatformView::NotifyCreated(ios_surface_->CreateGPUSurface());
+  PlatformView::NotifyCreated(ios_surface_->CreateGPUSurface(), ios_surface_->CreateLayeredPaintContext());
 }
 
 void PlatformViewIOS::ToggleAccessibility(UIView* view, bool enabled) {
@@ -111,6 +112,11 @@ void PlatformViewIOS::HandlePlatformMessage(fxl::RefPtr<blink::PlatformMessage> 
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
                                               NSObject<FlutterTexture>* texture) {
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
+}
+
+void PlatformViewIOS::RegisterExternalLayer(int64_t texture_id,
+                                            CALayer *layer) {
+  RegisterTexture(std::make_shared<IOSExternalTextureLayer>(texture_id, layer));
 }
 
 void PlatformViewIOS::RunFromSource(const std::string& assets_directory,

@@ -908,6 +908,12 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   return textureId;
 }
 
+- (int64_t)registerLayer:(CALayer*)layer {
+  int64_t textureId = _nextTextureId++;
+  _platformView->RegisterExternalLayer(textureId, layer);
+  return textureId;
+}
+
 - (void)unregisterTexture:(int64_t)textureId {
   _platformView->UnregisterTexture(textureId);
 }

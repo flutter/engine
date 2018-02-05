@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SURFACE_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SURFACE_H_
 
+#include "flutter/shell/gpu/gpu_surface_gl.h"
+
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
 #include "lib/fxl/macros.h"
@@ -33,11 +35,14 @@ class IOSSurface {
 
   virtual void UpdateStorageSizeIfNecessary() = 0;
 
-  virtual std::unique_ptr<Surface> CreateGPUSurface() = 0;
+  virtual std::unique_ptr<GPUSurfaceGL> CreateGPUSurface() = 0;
+
+  virtual flow::LayeredPaintContext* CreateLayeredPaintContext() = 0;
 
  public:
   PlatformView::SurfaceConfig surface_config_;
   fml::scoped_nsobject<CALayer> layer_;
+  flow::LayeredPaintContext* layered_paint_context_ = nullptr;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(IOSSurface);
 };

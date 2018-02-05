@@ -1,6 +1,7 @@
 // Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+#include "flutter/flow/layered_paint_context.h"
 
 #include "flutter/flow/layers/layer_tree.h"
 
@@ -30,7 +31,12 @@ void LayerTree::Raster(CompositorContext::ScopedFrame& frame,
           metrics,
 #endif
           ignore_raster_cache);
-  Paint(frame);
+          frame.layeredPaintContext()->texture_registry = &(frame.context().texture_registry());
+ frame.layeredPaintContext()->Reset();
+ UpdateScene(*(frame.layeredPaintContext()));
+ frame.layeredPaintContext()->ExecutePaintTasks(frame);
+ frame.layeredPaintContext()->Finish();
+ // Paint(frame);
 }
 
 void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
@@ -59,35 +65,38 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   root_layer_->Preroll(&context, SkMatrix::I());
 }
 
-#if defined(OS_FUCHSIA)
-void LayerTree::UpdateScene(SceneUpdateContext& context,
-                            scenic_lib::ContainerNode& container) {
+void LayerTree::UpdateScene(LayeredPaintContext& context) {
   TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
+  // SceneUpdateContext::Transform transform(context, 1.f / device_pixel_ratio_,
+  //                                         1.f / device_pixel_ratio_, 1.f);
 
-  SceneUpdateContext::Transform transform(context, 1.f / device_pixel_ratio_,
-                                          1.f / device_pixel_ratio_, 1.f);
-  SceneUpdateContext::Frame frame(
-      context,
-      SkRRect::MakeRect(
-          SkRect::MakeWH(frame_size_.width(), frame_size_.height())),
-      SK_ColorTRANSPARENT, 0.f);
   if (root_layer_->needs_system_composite()) {
-    root_layer_->UpdateScene(context);
+     root_layer_->UpdateScene(context);
+  } else  if (root_layer_->needs_painting()) {
+  // SceneUpdateContext::Frame frame(
+  //     context,
+  //     SkRRect::MakeRect(
+  //         SkRect::MakeWH(frame_size_.width(), frame_size_.height())),
+  //     SK_ColorTRANSPARENT, 0.f);
+    context.PushLayer(SkRect::MakeWH(frame_size_.width(), frame_size_.height()));
+    context.AddPaintedLayer(root_layer_.get());
+    context.PopLayer();
+    // frame.AddPaintedLayer(root_layer_.get());
   }
-  if (root_layer_->needs_painting()) {
-    frame.AddPaintedLayer(root_layer_.get());
-  }
-  container.AddChild(transform.entity_node());
+
+  // container.AddChild(transform.entity_node());
 }
-#endif
 
 void LayerTree::Paint(CompositorContext::ScopedFrame& frame) const {
+
   Layer::PaintContext context = {*frame.canvas(),
                                  frame.context().frame_time(),
                                  frame.context().engine_time(),
                                  frame.context().memory_usage(),
                                  frame.context().texture_registry(),
-                                 checkerboard_offscreen_layers_};
+                                 checkerboard_offscreen_layers_,
+                                // *frame.layeredPaintContext(),
+                                 };
   TRACE_EVENT0("flutter", "LayerTree::Paint");
 
   if (root_layer_->needs_painting())

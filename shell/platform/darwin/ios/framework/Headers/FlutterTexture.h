@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 
 #include "FlutterMacros.h"
+@class CALayer;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -20,6 +21,7 @@ FLUTTER_EXPORT
 FLUTTER_EXPORT
 @protocol FlutterTextureRegistry<NSObject>
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture;
+- (int64_t)registerLayer:(CALayer*)layer;
 - (void)textureFrameAvailable:(int64_t)textureId;
 - (void)unregisterTexture:(int64_t)textureId;
 @end

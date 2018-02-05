@@ -14,11 +14,11 @@ void ChildSceneLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_needs_system_composite(true);
 }
 
-void ChildSceneLayer::Paint(PaintContext& context) const {
+void ChildSceneLayer::Paint(PaintContext& context) {
   FXL_NOTREACHED() << "This layer never needs painting.";
 }
 
-void ChildSceneLayer::UpdateScene(SceneUpdateContext& context) {
+void ChildSceneLayer::UpdateScene(LayeredPaintContext &layers) {
   FXL_DCHECK(needs_system_composite());
 
   // TODO(MZ-191): Set clip.

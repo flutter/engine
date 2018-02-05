@@ -25,7 +25,7 @@ class PictureLayer : public Layer {
 
   void Preroll(PrerollContext* frame, const SkMatrix& matrix) override;
 
-  void Paint(PaintContext& context) const override;
+  void Paint(PaintContext& context) override;
 
  private:
   SkPoint offset_;

@@ -19,30 +19,30 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   }
 }
 
-#if defined(OS_FUCHSIA)
 
-void ClipRRectLayer::UpdateScene(SceneUpdateContext& context) {
+void ClipRRectLayer::UpdateScene(LayeredPaintContext &layers) {
   FXL_DCHECK(needs_system_composite());
+  // XXX(sigurdm): Do the right thing.
 
-  // TODO(MZ-137): Need to be able to express the radii as vectors.
-  scenic_lib::RoundedRectangle shape(
-      context.session(),                                   // session
-      clip_rrect_.width(),                                 //  width
-      clip_rrect_.height(),                                //  height
-      clip_rrect_.radii(SkRRect::kUpperLeft_Corner).x(),   //  top_left_radius
-      clip_rrect_.radii(SkRRect::kUpperRight_Corner).x(),  //  top_right_radius
-      clip_rrect_.radii(SkRRect::kLowerRight_Corner)
-          .x(),                                          //  bottom_right_radius
-      clip_rrect_.radii(SkRRect::kLowerLeft_Corner).x()  //  bottom_left_radius
-  );
 
-  SceneUpdateContext::Clip clip(context, shape, clip_rrect_.getBounds());
-  UpdateSceneChildren(context);
+  // // TODO(MZ-137): Need to be able to express the radii as vectors.
+  // scenic_lib::RoundedRectangle shape(
+  //     context.session(),                                   // session
+  //     clip_rrect_.width(),                                 //  width
+  //     clip_rrect_.height(),                                //  height
+  //     clip_rrect_.radii(SkRRect::kUpperLeft_Corner).x(),   //  top_left_radius
+  //     clip_rrect_.radii(SkRRect::kUpperRight_Corner).x(),  //  top_right_radius
+  //     clip_rrect_.radii(SkRRect::kLowerRight_Corner)
+  //         .x(),                                          //  bottom_right_radius
+  //     clip_rrect_.radii(SkRRect::kLowerLeft_Corner).x()  //  bottom_left_radius
+  // );
+
+  // SceneUpdateContext::Clip clip(context, shape, clip_rrect_.getBounds());
+  UpdateSceneChildren(layers);
 }
 
-#endif  // defined(OS_FUCHSIA)
 
-void ClipRRectLayer::Paint(PaintContext& context) const {
+void ClipRRectLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "ClipRRectLayer::Paint");
   FXL_DCHECK(needs_painting());
 

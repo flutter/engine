@@ -29,11 +29,9 @@ class PhysicalShapeLayer : public ContainerLayer {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  void Paint(PaintContext& context) const override;
+  void Paint(PaintContext& context) override;
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
+  void UpdateScene(LayeredPaintContext &context) override;
 
  private:
   float elevation_;

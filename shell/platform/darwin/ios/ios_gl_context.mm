@@ -33,6 +33,8 @@ IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* laye
   VERIFY(context_ != nullptr);
   VERIFY(resource_context_ != nullptr);
 
+ // EAGLContext *prevContext = [EAGLContext currentContext];
+
   bool context_current = [EAGLContext setCurrentContext:context_];
 
   VERIFY(context_current);
@@ -98,6 +100,8 @@ IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* laye
                                 stencilbuffer_);
       VERIFY(glGetError() == GL_NO_ERROR);
     }
+
+//    [EAGLContext setCurrentContext: prevContext];
   }
 
   // TODO:
@@ -150,6 +154,8 @@ bool IOSGLContext::IsValid() const {
 }
 
 bool IOSGLContext::PresentRenderBuffer() const {
+  FXL_DLOG(INFO) << "Presenting from iosglcontext";
+  [EAGLContext setCurrentContext:context_.get()];
   const GLenum discards[] = {
       GL_DEPTH_ATTACHMENT,
       GL_STENCIL_ATTACHMENT,
@@ -158,12 +164,16 @@ bool IOSGLContext::PresentRenderBuffer() const {
   glDiscardFramebufferEXT(GL_FRAMEBUFFER, sizeof(discards) / sizeof(GLenum), discards);
 
   glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer_);
-  return [[EAGLContext currentContext] presentRenderbuffer:GL_RENDERBUFFER];
+  return [context_.get() presentRenderbuffer:GL_RENDERBUFFER];
 }
 
 bool IOSGLContext::UpdateStorageSizeIfNecessary() {
-  const CGSize layer_size = [layer_.get() bounds].size;
+ // CGRect frame = [layer_.get() frame];
+  CGRect bounds = [layer_.get() bounds];
+  const CGSize layer_size =  bounds.size;
+
   const CGFloat contents_scale = layer_.get().contentsScale;
+  FXL_DLOG(INFO) << "scale " << contents_scale;
   const GLint size_width = layer_size.width * contents_scale;
   const GLint size_height = layer_size.height * contents_scale;
 
@@ -238,7 +248,23 @@ bool IOSGLContext::UpdateStorageSizeIfNecessary() {
 }
 
 bool IOSGLContext::MakeCurrent() {
-  return UpdateStorageSizeIfNecessary() && [EAGLContext setCurrentContext:context_.get()];
+     [EAGLContext setCurrentContext:context_.get()];
+
+     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_);
+      glBindRenderbuffer(GL_RENDERBUFFER, stencilbuffer_);
+
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER,
+                                stencilbuffer_);
+     glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer_);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, colorbuffer_);
+ bool res = UpdateStorageSizeIfNecessary();
+
+    FXL_DCHECK(glGetError() == GL_NO_ERROR);
+    return res;
+}
+
+bool IOSGLContext::MakeCurrent2() {
+  return [EAGLContext setCurrentContext:context_.get()];
 }
 
 bool IOSGLContext::ResourceMakeCurrent() {

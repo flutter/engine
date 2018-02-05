@@ -16,8 +16,12 @@ class NullRasterizer : public Rasterizer {
   NullRasterizer();
 
   void Setup(std::unique_ptr<Surface> surface_or_null,
+                       #if defined(OS_IOS)
+                       flow::LayeredPaintContext* layeredPaintContext,
+                       #endif
              fxl::Closure rasterizer_continuation,
-             fxl::AutoResetWaitableEvent* setup_completion_event) override;
+             fxl::AutoResetWaitableEvent* setup_completion_event
+             ) override;
 
   void Teardown(
       fxl::AutoResetWaitableEvent* teardown_completion_event) override;
@@ -40,6 +44,7 @@ class NullRasterizer : public Rasterizer {
 
  private:
   std::unique_ptr<Surface> surface_;
+  flow::LayeredPaintContext *layered_paint_context_;
   fml::WeakPtrFactory<NullRasterizer> weak_factory_;
   flow::TextureRegistry* texture_registry_;
 
