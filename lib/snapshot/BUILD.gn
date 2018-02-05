@@ -306,7 +306,9 @@ action("compile_non_strong_platform") {
     "$root_out_dir/flutter_patched_sdk/vm_outline.dill",
   ]
 
-  inputs = []
+  inputs = [
+    "libraries.json",
+  ]
 
   depfile = "$root_out_dir/flutter_patched_sdk/platform.dill.d"
 
@@ -333,7 +335,9 @@ action("compile_platform") {
     "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill",
   ]
 
-  inputs = []
+  inputs = [
+    "libraries.json",
+  ]
 
   depfile = "$root_out_dir/flutter_patched_sdk/platform_strong.dill.d"
 
