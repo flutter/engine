@@ -31,10 +31,10 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '402e69b53d59083d34d7538126837c4381aa0c4a',
+  'dart_revision': '2cbcb175cc1e6d2ed095385a4c48492e1fee8638',
 
   'dart_args_tag': '0.13.7',
-  'dart_async_tag': '2.0.2',
+  'dart_async_tag': 'corelib_2_2_1',
   'dart_barback_tag': '0.15.2+14',
   'dart_bazel_worker_tag': 'v0.1.9',
   'dart_boolean_selector_tag': '1.0.2',
@@ -64,7 +64,7 @@ vars = {
   'dart_logging_tag': '0.11.3+1',
   'dart_markdown_tag': '1.0.0',
   'dart_matcher_tag': '0.12.1+4',
-  'dart_mime_tag': '0.9.4',
+  'dart_mime_tag': '0.9.6',
   'dart_mockito_tag': '2.0.2',
   'dart_mustache4dart_tag': 'v2.1.0',
   'dart_oauth2_tag': '1.1.0',
@@ -94,9 +94,9 @@ vars = {
   'dart_tuple_tag': 'v1.0.1',
   'dart_typed_data_tag': '1.1.3',
   'dart_usage_tag': '3.3.0',
-  'dart_utf_tag': '0.9.0+3',
-  'dart_watcher_tag': '0.9.7+4',
-  'dart_web_socket_channel_tag': '1.0.6',
+  'dart_utf_tag': '0.9.0+4',
+  'dart_watcher_tag': '0.9.7+7',
+  'dart_web_socket_channel_tag': 'corelib_2_2_1',
   'dart_yaml_tag': '2.1.13',
 
   # Build bot tooling for iOS
