@@ -40,6 +40,7 @@ class SemanticsUpdateBuilder
                   std::string increasedValue,
                   std::string decreasedValue,
                   int textDirection,
+                  int nextNodeId,
                   const tonic::Float64List& transform,
                   const tonic::Int32List& children);
 
@@ -50,7 +51,7 @@ class SemanticsUpdateBuilder
  private:
   explicit SemanticsUpdateBuilder();
 
-  std::vector<SemanticsNode> nodes_;
+  SemanticsNodeUpdates nodes_;
 };
 
 }  // namespace blink
