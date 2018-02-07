@@ -192,31 +192,39 @@ class _FrontendCompiler implements CompilerInterface {
     if (_kernelBinaryFilename != _kernelBinaryFilenameFull)
       return null;
 
-    final File f = new File(_kernelBinaryFilenameFull);
-    if (!f.existsSync())
-      return null;
+    try {
+      final File f = new File(_kernelBinaryFilenameFull);
+      if (!f.existsSync())
+        return null;
 
-    final Program program = loadProgramFromBytes(f.readAsBytesSync());
-    for (Uri uri in program.uriToSource.keys) {
-      if ('$uri' == '')
-        continue;
-      final List<int> oldBytes = program.uriToSource[uri].source;
-      final FileSystemEntity entity = _compilerOptions.fileSystem.entityForUri(uri);
-      if (!await entity.exists()) {
-        _generator.invalidate(uri);
-        continue;
-      }
-      final List<int> newBytes = await entity.readAsBytes();
-      if (oldBytes.length != newBytes.length) {
-        _generator.invalidate(uri);
-        continue;
-      }
-      for (int i = 0; i < oldBytes.length; ++i) {
-        if (oldBytes[i] != newBytes[i]) {
+      final Program program = loadProgramFromBytes(f.readAsBytesSync());
+      for (Uri uri in program.uriToSource.keys) {
+        if ('$uri' == '')
+          continue;
+
+        final List<int> oldBytes = program.uriToSource[uri].source;
+        final FileSystemEntity entity = _compilerOptions.fileSystem.entityForUri(uri);
+        if (!await entity.exists()) {
           _generator.invalidate(uri);
           continue;
         }
+        final List<int> newBytes = await entity.readAsBytes();
+        if (oldBytes.length != newBytes.length) {
+          _generator.invalidate(uri);
+          continue;
+        }
+        for (int i = 0; i < oldBytes.length; ++i) {
+          if (oldBytes[i] != newBytes[i]) {
+            _generator.invalidate(uri);
+            continue;
+          }
+        }
       }
+    } catch(e) {
+      // If there's a failure in the above block we might not have invalidated
+      // correctly. Create a new generator that doesn't bootstrap to avoid missing
+      // any changes.
+      _generator = _createGenerator(null);
     }
   }
 
