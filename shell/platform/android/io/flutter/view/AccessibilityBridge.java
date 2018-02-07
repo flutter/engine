@@ -460,7 +460,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             if (object.hasFlag(Flag.IS_FOCUSED)) {
                 mInputFocusedObject = object;
             }
-            updated.add(object);
+            if (object.hadPreviousConfig) {
+                updated.add(object);
+            }
         }
 
         Set<SemanticsObject> visitedObjects = new HashSet<SemanticsObject>();
@@ -481,13 +483,25 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             }
         }
 
-        // Send accessibility events for updated nodes
-        for (SemanticsObject object : updated) {
-            sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-            if (!object.hadPreviousConfig) {
-                continue;
-            }
+        // TODO(goderbauer): Send this event only once (!) for changed subtrees,
+        //     see https://github.com/flutter/flutter/issues/14534
+        sendAccessibilityEvent(0, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
 
+        for (SemanticsObject object : updated) {
+            if (object.previousScrollProgress >= 0.0
+                    && object.scrollProgress >= 0.0
+                    && object.previousScrollProgress != object.scrollProgress) {
+                AccessibilityEvent event =
+                    obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_SCROLLED);
+                if (object.hadAction(Action.SCROLL_UP) || object.hadAction(Action.SCROLL_DOWN)) {
+                    event.setScrollY((int)(object.scrollProgress * 100));
+                    event.setMaxScrollY(100);
+                } else if (object.hadAction(Action.SCROLL_LEFT) || object.hadAction(Action.SCROLL_RIGHT)) {
+                    event.setScrollX((int)(object.scrollProgress * 100));
+                    event.setMaxScrollX(100);
+                }
+                sendAccessibilityEvent(event);
+            }
             if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
                     && object.hadFlag(Flag.HAS_CHECKED_STATE)
                     && object.hasFlag(Flag.HAS_CHECKED_STATE)
@@ -586,24 +600,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         final HashMap<String, Object> data = (HashMap<String, Object>)annotatedEvent.get("data");
 
         switch (type) {
-            case "scroll":
-                final int nodeId = (int)annotatedEvent.get("nodeId");
-                AccessibilityEvent event =
-                    obtainAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_SCROLLED);
-                char axis = ((String)data.get("axis")).charAt(0);
-                double minPosition = (double)data.get("minScrollExtent");
-                double maxPosition = (double)data.get("maxScrollExtent") - minPosition;
-                double position = (double)data.get("pixels") - minPosition;
-                if (axis == 'v') {
-                    event.setScrollY((int)position);
-                    event.setMaxScrollY((int)maxPosition);
-                } else {
-                    assert axis == 'h';
-                    event.setScrollX((int)position);
-                    event.setMaxScrollX((int)maxPosition);
-                }
-                sendAccessibilityEvent(event);
-                break;
             case "announce":
                 mOwner.announceForAccessibility((String) data.get("message"));
                 break;
@@ -660,6 +656,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         int actions;
         int textSelectionBase;
         int textSelectionExtent;
+        float scrollProgress;
         String label;
         String value;
         String increasedValue;
@@ -670,8 +667,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         boolean hadPreviousConfig = false;
         int previousFlags;
+        int previousActions;
         int previousTextSelectionBase;
         int previousTextSelectionExtent;
+        float previousScrollProgress;
         String previousValue;
 
         private float left;
@@ -692,6 +691,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         boolean hasAction(Action action) {
             return (actions & action.value) != 0;
+        }
+
+        boolean hadAction(Action action) {
+            return (previousActions & action.value) != 0;
         }
 
         boolean hasFlag(Flag flag) {
@@ -721,13 +724,16 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             hadPreviousConfig = true;
             previousValue = value;
             previousFlags = flags;
+            previousActions = actions;
             previousTextSelectionBase = textSelectionBase;
             previousTextSelectionExtent = textSelectionExtent;
+            previousScrollProgress = scrollProgress;
 
             flags = buffer.getInt();
             actions = buffer.getInt();
             textSelectionBase = buffer.getInt();
             textSelectionExtent = buffer.getInt();
+            scrollProgress = buffer.getFloat();
 
             int stringIndex = buffer.getInt();
             label = stringIndex == -1 ? null : strings[stringIndex];

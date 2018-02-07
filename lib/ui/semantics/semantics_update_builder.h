@@ -30,6 +30,7 @@ class SemanticsUpdateBuilder
                   int actions,
                   int textSelectionBase,
                   int textSelectionExtent,
+                  double scrollProgress,
                   double left,
                   double top,
                   double right,

@@ -337,6 +337,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// The fields 'textSelectionBase' and 'textSelectionExtent' describe the
   /// currently selected text within `value`.
   ///
+  /// If this is a scrollable node, `scrollProgress` describes how far the
+  /// node has has been scrolled (value range: [0.0, 1.0]).
+  ///
   /// The `rect` is the region occupied by this node in its own coordinate
   /// system.
   ///
@@ -348,6 +351,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int actions,
     int textSelectionBase,
     int textSelectionExtent,
+    double scrollProgress,
     Rect rect,
     String label,
     String hint,
@@ -366,6 +370,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
                 actions,
                 textSelectionBase,
                 textSelectionExtent,
+                scrollProgress,
                 rect.left,
                 rect.top,
                 rect.right,
@@ -386,6 +391,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int actions,
     int textSelectionBase,
     int textSelectionExtent,
+    double scrollProgress,
     double left,
     double top,
     double right,

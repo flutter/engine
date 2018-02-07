@@ -461,7 +461,7 @@ bool PlatformViewAndroid::ResourceContextMakeCurrent() {
 
 void PlatformViewAndroid::UpdateSemantics(
     blink::SemanticsNodeUpdates update) {
-  constexpr size_t kBytesPerNode = 33 * sizeof(int32_t);
+  constexpr size_t kBytesPerNode = 34 * sizeof(int32_t);
   constexpr size_t kBytesPerChild = sizeof(int32_t);
 
   JNIEnv* env = fml::jni::AttachCurrentThread();
@@ -492,6 +492,7 @@ void PlatformViewAndroid::UpdateSemantics(
       buffer_int32[position++] = node.actions;
       buffer_int32[position++] = node.textSelectionBase;
       buffer_int32[position++] = node.textSelectionExtent;
+      buffer_float32[position++] = (float)node.scrollProgress;
       if (node.label.empty()) {
         buffer_int32[position++] = -1;
       } else {
