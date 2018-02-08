@@ -488,17 +488,30 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         sendAccessibilityEvent(0, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
 
         for (SemanticsObject object : updated) {
-            if (object.previousScrollProgress >= 0.0
-                    && object.scrollProgress >= 0.0
-                    && object.previousScrollProgress != object.scrollProgress) {
+            if (object.didScroll()) {
                 AccessibilityEvent event =
                     obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_SCROLLED);
+
+                boolean maxUnbound = Float.isInfinite(object.scrollExtentMax);
+                boolean minUnbound = Float.isInfinite(object.scrollExtentMin);
+                float max = maxUnbound ? 100000.0f : object.scrollExtentMax;
+                max -= minUnbound ? -100000.0f : object.scrollExtentMin;
+
+                float position = object.scrollPosition;
+                if (maxUnbound && position > 70000.0f) {
+                    position = 70000.0f;
+                } else if (minUnbound && position < -70000.0f) {
+                    position = -70000.0f;
+                }
+                position -= minUnbound ? -100000.0f : object.scrollExtentMin;
+                Log.d("MIKE", "P : " + position + " max: " + max);
+
                 if (object.hadAction(Action.SCROLL_UP) || object.hadAction(Action.SCROLL_DOWN)) {
-                    event.setScrollY((int)(object.scrollProgress * 100));
-                    event.setMaxScrollY(100);
+                    event.setScrollY((int)position);
+                    event.setMaxScrollY((int)max);
                 } else if (object.hadAction(Action.SCROLL_LEFT) || object.hadAction(Action.SCROLL_RIGHT)) {
-                    event.setScrollX((int)(object.scrollProgress * 100));
-                    event.setMaxScrollX(100);
+                    event.setScrollX((int)position);
+                    event.setMaxScrollX((int)max);
                 }
                 sendAccessibilityEvent(event);
             }
@@ -656,7 +669,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         int actions;
         int textSelectionBase;
         int textSelectionExtent;
-        float scrollProgress;
+        float scrollPosition;
+        float scrollExtentMax;
+        float scrollExtentMin;
         String label;
         String value;
         String increasedValue;
@@ -670,7 +685,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         int previousActions;
         int previousTextSelectionBase;
         int previousTextSelectionExtent;
-        float previousScrollProgress;
+        float previousScrollPosition;
+        float previousScrollExtentMax;
+        float previousScrollExtentMin;
         String previousValue;
 
         private float left;
@@ -706,6 +723,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             return (previousFlags & flag.value) != 0;
         }
 
+        boolean didScroll() {
+            return !Float.isNaN(scrollPosition)
+                && !Float.isNaN(previousScrollPosition)
+                && previousScrollPosition != scrollPosition;
+        }
+
         void log(String indent, boolean recursive) {
           Log.i(TAG, indent + "SemanticsObject id=" + id + " label=" + label + " actions=" +  actions + " flags=" + flags + "\n" +
                      indent + "  +-- textDirection=" + textDirection  + "\n"+
@@ -727,13 +750,17 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             previousActions = actions;
             previousTextSelectionBase = textSelectionBase;
             previousTextSelectionExtent = textSelectionExtent;
-            previousScrollProgress = scrollProgress;
+            previousScrollPosition = scrollPosition;
+            previousScrollExtentMax = scrollExtentMax;
+            previousScrollExtentMin = scrollExtentMin;
 
             flags = buffer.getInt();
             actions = buffer.getInt();
             textSelectionBase = buffer.getInt();
             textSelectionExtent = buffer.getInt();
-            scrollProgress = buffer.getFloat();
+            scrollPosition = buffer.getFloat();
+            scrollExtentMax = buffer.getFloat();
+            scrollExtentMin = buffer.getFloat();
 
             int stringIndex = buffer.getInt();
             label = stringIndex == -1 ? null : strings[stringIndex];

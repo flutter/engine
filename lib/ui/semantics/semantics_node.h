@@ -58,7 +58,9 @@ struct SemanticsNode {
   int32_t actions = 0;
   int32_t textSelectionBase = -1;
   int32_t textSelectionExtent = -1;
-  double scrollProgress = -1.0;
+  double scrollPosition = std::NAN;
+  double scrollExtentMax = std::NAN;
+  double scrollExtentMin = std::NAN;
   std::string label;
   std::string hint;
   std::string value;
