@@ -34,7 +34,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     // Constants from higher API levels.
     // TODO(goderbauer): Get these from Android Support Library when
     // https://github.com/flutter/flutter/issues/11099 is resolved.
-    public static final int ACTION_SHOW_ON_SCREEN = 16908342; // API level 23
+    private static final int ACTION_SHOW_ON_SCREEN = 16908342; // API level 23
+
+    private static final float SCROLL_EXTENT_FOR_INFINITY = 100000.0f;
+    private static final float SCROLL_POSITION_CAP_FOR_INFINITY = 70000.0f;
 
     private Map<Integer, SemanticsObject> mObjects;
     private final FlutterView mOwner;
@@ -492,19 +495,26 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 AccessibilityEvent event =
                     obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_SCROLLED);
 
-                boolean maxUnbound = Float.isInfinite(object.scrollExtentMax);
-                boolean minUnbound = Float.isInfinite(object.scrollExtentMin);
-                float max = maxUnbound ? 100000.0f : object.scrollExtentMax;
-                max -= minUnbound ? -100000.0f : object.scrollExtentMin;
-
+                // Android doesn't support unbound scrolling. So we pretend there is a large
+                // bound (SCROLL_EXTENT_FOR_INFINITY), which you can never reach.
                 float position = object.scrollPosition;
-                if (maxUnbound && position > 70000.0f) {
-                    position = 70000.0f;
-                } else if (minUnbound && position < -70000.0f) {
-                    position = -70000.0f;
+                float max = object.scrollExtentMax;
+                if (Float.isInfinite(object.scrollExtentMax)) {
+                    max = SCROLL_EXTENT_FOR_INFINITY;
+                    if (position > SCROLL_POSITION_CAP_FOR_INFINITY) {
+                        position = SCROLL_POSITION_CAP_FOR_INFINITY;
+                    }
                 }
-                position -= minUnbound ? -100000.0f : object.scrollExtentMin;
-                Log.d("MIKE", "P : " + position + " max: " + max);
+                if (Float.isInfinite(object.scrollExtentMin)) {
+                    max += SCROLL_EXTENT_FOR_INFINITY;
+                    if (position < -SCROLL_POSITION_CAP_FOR_INFINITY) {
+                        position = -SCROLL_POSITION_CAP_FOR_INFINITY;
+                    }
+                    position += SCROLL_EXTENT_FOR_INFINITY;
+                } else {
+                    max -= object.scrollExtentMin;
+                    position -= object.scrollExtentMin;
+                }
 
                 if (object.hadAction(Action.SCROLL_UP) || object.hadAction(Action.SCROLL_DOWN)) {
                     event.setScrollY((int)position);
