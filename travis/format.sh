@@ -24,4 +24,5 @@ if [[ ! -z "$DIFFS" ]]; then
   echo ""
   echo "ERROR: Some files are formatted incorrectly. To fix, apply diffs below:"
   echo "$DIFFS"
+  exit 1;
 fi
