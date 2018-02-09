@@ -60,7 +60,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         SET_SELECTION(1 << 11),
         COPY(1 << 12),
         CUT(1 << 13),
-        PASTE(1 << 14);
+        PASTE(1 << 14),
+        ACCESSIBILITY_FOCUS(1 << 15),
+        LOSE_ACCESSIBILITY_FOCUS(1 << 16);
 
         Action(int value) {
             this.value = value;
@@ -309,11 +311,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 return performCursorMoveAction(object, virtualViewId, arguments, true);
             }
             case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS: {
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.LOSE_ACCESSIBILITY_FOCUS);
                 sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
                 mA11yFocusedObject = null;
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS: {
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.ACCESSIBILITY_FOCUS);
                 sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
 
                 if (mA11yFocusedObject == null) {

@@ -26,6 +26,15 @@ enum class SemanticsAction : int32_t {
   kScrollDown = 1 << 5,
   kIncrease = 1 << 6,
   kDecrease = 1 << 7,
+  kShowOnScreenIndex = 1 << 8,
+  kMoveCursorForwardByCharacterIndex = 1 << 9,
+  kMoveCursorBackwardByCharacterIndex = 1 << 10,
+  kSetSelectionIndex = 1 << 11,
+  kCopyIndex = 1 << 12,
+  kCutIndex = 1 << 13,
+  kPasteIndex = 1 << 14,
+  kAccessibilityFocus = 1 << 15,
+  kLoseAccessibilityFocus = 1 << 16,
 };
 
 const int kScrollableSemanticsActions =

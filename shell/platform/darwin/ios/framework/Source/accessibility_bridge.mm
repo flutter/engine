@@ -249,6 +249,20 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
   return YES;
 }
 
+#pragma mark UIAccessibilityFocus overrides
+
+- (void)accessibilityElementDidBecomeFocused {
+  if ([self node].HasAction(blink::SemanticsAction::kAccessibilityFocus)) {
+    [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kAccessibilityFocus);
+  }
+}
+
+- (void)accessibilityElementDidLoseFocus {
+  if ([self node].HasAction(blink::SemanticsAction::kLoseAccessibilityFocus)) {
+    [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kLoseAccessibilityFocus);
+  }
+}
+
 @end
 
 @implementation FlutterSemanticsObject {

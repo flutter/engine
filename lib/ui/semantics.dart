@@ -24,6 +24,8 @@ class SemanticsAction {
   static const int _kCopyIndex = 1 << 12;
   static const int _kCutIndex = 1 << 13;
   static const int _kPasteIndex = 1 << 14;
+  static const int _kAccessibilityFocus = 1 << 15;
+  static const int _kLoseAccessibilityFocus = 1 << 16;
 
   /// The numerical value for this action.
   ///
@@ -118,6 +120,32 @@ class SemanticsAction {
   /// Paste the current content of the clipboard.
   static const SemanticsAction paste = const SemanticsAction._(_kPasteIndex);
 
+  /// Accessibility focus is moved to the node.
+  ///
+  /// This handler is invoked when the accessibility focus is moved
+  /// to the node annotated with this handler. The accessibility focus is the
+  /// green (on Android with  TalkBack) or black (on iOS with VoiceOver)
+  /// rectangular show on screen to indicate with what element an accessibility
+  /// user is currently interacting with.
+  ///
+  /// The accessibility focus is different from the input focus. The input focus
+  /// is usually held by the element that currently response to keyboard inputs.
+  /// Accessibility focus and input focus can be held by two different nodes!
+  static const SemanticsAction accessibilityFocus = const SemanticsAction._(_kAccessibilityFocus);
+
+  /// Accessibility focus is removed from the node.
+  ///
+  /// This handler is invoked when the accessibility focus is moved
+  /// away from the node annotated with this handler. The accessibility focus is
+  /// the green (on Android with  TalkBack) or black (on iOS with VoiceOver)
+  /// rectangular show on screen to indicate with what element an accessibility
+  /// user is currently interacting with.
+  ///
+  /// The accessibility focus is different from the input focus. The input focus
+  /// is usually held by the element that currently response to keyboard inputs.
+  /// Accessibility focus and input focus can be held by two different nodes!
+  static const SemanticsAction loseAccessibilityFocus = const SemanticsAction._(_kLoseAccessibilityFocus);
+
   /// The possible semantics actions.
   ///
   /// The map's key is the [index] of the action and the value is the action
@@ -138,6 +166,8 @@ class SemanticsAction {
     _kCopyIndex: copy,
     _kCutIndex: cut,
     _kPasteIndex: paste,
+    _kAccessibilityFocus: accessibilityFocus,
+    _kLoseAccessibilityFocus: loseAccessibilityFocus,
   };
 
   @override
@@ -173,6 +203,10 @@ class SemanticsAction {
         return 'SemanticsAction.cut';
       case _kPasteIndex:
         return 'SemanticsAction.paste';
+      case _kAccessibilityFocus:
+        return 'SemanticsAction.accessibilityFocus';
+      case _kLoseAccessibilityFocus:
+        return 'SemanticsAction.loseAccessibilityFocus';
     }
     return null;
   }
