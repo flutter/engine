@@ -493,7 +493,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         for (SemanticsObject object : updated) {
             if (object.didScroll()) {
                 AccessibilityEvent event =
-                    obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_SCROLLED);
+                        obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_SCROLLED);
 
                 // Android doesn't support unbound scrolling. So we pretend there is a large
                 // bound (SCROLL_EXTENT_FOR_INFINITY), which you can never reach.
@@ -517,11 +517,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 }
 
                 if (object.hadAction(Action.SCROLL_UP) || object.hadAction(Action.SCROLL_DOWN)) {
-                    event.setScrollY((int)position);
-                    event.setMaxScrollY((int)max);
-                } else if (object.hadAction(Action.SCROLL_LEFT) || object.hadAction(Action.SCROLL_RIGHT)) {
-                    event.setScrollX((int)position);
-                    event.setMaxScrollX((int)max);
+                    event.setScrollY((int) position);
+                    event.setMaxScrollY((int) max);
+                } else if (object.hadAction(Action.SCROLL_LEFT)
+                        || object.hadAction(Action.SCROLL_RIGHT)) {
+                    event.setScrollX((int) position);
+                    event.setMaxScrollX((int) max);
                 }
                 sendAccessibilityEvent(event);
             }
@@ -734,9 +735,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         boolean didScroll() {
-            return !Float.isNaN(scrollPosition)
-                && !Float.isNaN(previousScrollPosition)
-                && previousScrollPosition != scrollPosition;
+            return !Float.isNaN(scrollPosition) && !Float.isNaN(previousScrollPosition)
+                    && previousScrollPosition != scrollPosition;
         }
 
         void log(String indent, boolean recursive) {

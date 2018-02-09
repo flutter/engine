@@ -147,7 +147,8 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
  * Whether calling `setSemanticsNode:` with `node` would cause a scroll event.
  */
 - (BOOL)nodeWillCauseScroll:(const blink::SemanticsNode*)node {
-  return !isnan([self node].scrollPosition) && !isnan(node->scrollPosition) && [self node].scrollPosition != node->scrollPosition;
+  return !isnan([self node].scrollPosition) && !isnan(node->scrollPosition) &&
+         [self node].scrollPosition != node->scrollPosition;
 }
 
 - (std::vector<SemanticsObject*>*)children {
