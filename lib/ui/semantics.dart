@@ -355,7 +355,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String increasedValue,
     String decreasedValue,
     TextDirection textDirection,
-    int nextNodeId,
+    int previousNodeId,
     Float64List transform,
     Int32List children,
   }) {
@@ -376,7 +376,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
                 increasedValue,
                 decreasedValue,
                 textDirection != null ? textDirection.index + 1 : 0,
-                nextNodeId ?? -1,
+                previousNodeId ?? -1,
                 transform,
                 children,);
   }
@@ -396,7 +396,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String increasedValue,
     String decreasedValue,
     int textDirection,
-    int nextNodeId,
+    int previousNodeId,
     Float64List transform,
     Int32List children,
   ) native 'SemanticsUpdateBuilder_updateNode';
