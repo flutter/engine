@@ -33,8 +33,8 @@ enum class SemanticsAction : int32_t {
   kCopy = 1 << 12,
   kCut = 1 << 13,
   kPaste = 1 << 14,
-  kAccessibilityFocus = 1 << 15,
-  kLoseAccessibilityFocus = 1 << 16,
+  kDidGainAccessibilityFocus = 1 << 15,
+  kDidLoseAccessibilityFocus = 1 << 16,
 };
 
 const int kScrollableSemanticsActions =

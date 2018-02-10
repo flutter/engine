@@ -252,14 +252,14 @@ bool GeometryComparator(SemanticsObject* a, SemanticsObject* b) {
 #pragma mark UIAccessibilityFocus overrides
 
 - (void)accessibilityElementDidBecomeFocused {
-  if ([self node].HasAction(blink::SemanticsAction::kAccessibilityFocus)) {
-    [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kAccessibilityFocus);
+  if ([self node].HasAction(blink::SemanticsAction::kDidGainAccessibilityFocus)) {
+    [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kDidGainAccessibilityFocus);
   }
 }
 
 - (void)accessibilityElementDidLoseFocus {
-  if ([self node].HasAction(blink::SemanticsAction::kLoseAccessibilityFocus)) {
-    [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kLoseAccessibilityFocus);
+  if ([self node].HasAction(blink::SemanticsAction::kDidLoseAccessibilityFocus)) {
+    [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kDidLoseAccessibilityFocus);
   }
 }
 
