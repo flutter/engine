@@ -166,7 +166,7 @@ class SemanticsAction {
     _kCopyIndex: copy,
     _kCutIndex: cut,
     _kPasteIndex: paste,
-    _kDidLoseAccessibilityFocusIndex: didLoseAccessibilityFocus,
+    _kDidGainAccessibilityFocusIndex: didGainAccessibilityFocus,
     _kDidLoseAccessibilityFocusIndex: didLoseAccessibilityFocus,
   };
 
