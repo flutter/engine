@@ -599,18 +599,6 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
               arraysize(kDartWriteProtectCodeArgs));
 #endif
 
-  if (settings.dart_strong_mode) {
-    // In strong mode we enable all the strong mode options and if running
-    // debug product mode we also enable asserts.
-    PushBackAll(&args, kDartStrongModeArgs, arraysize(kDartStrongModeArgs));
-    if (use_checked_mode) {
-      PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
-    }
-  } else if (use_checked_mode) {
-    PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
-    PushBackAll(&args, kDartCheckedModeArgs, arraysize(kDartCheckedModeArgs));
-  }
-
   if (settings.start_paused)
     PushBackAll(&args, kDartStartPausedArgs, arraysize(kDartStartPausedArgs));
 
@@ -639,7 +627,19 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
       kernel_platform = Dart_ReadKernelBinary(
           platform_data.data(), platform_data.size(), ReleaseFetchedBytes);
       FXL_DCHECK(kernel_platform != nullptr);
+      // In strong mode we enable all the strong mode options and if running
+      // debug product mode we also enable asserts.
+      PushBackAll(&args, kDartStrongModeArgs, arraysize(kDartStrongModeArgs));
+      if (use_checked_mode) {
+        PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
+      }
+    } else if (use_checked_mode) {
+      PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
+      PushBackAll(&args, kDartCheckedModeArgs, arraysize(kDartCheckedModeArgs));
     }
+  } else if (use_checked_mode) {
+    PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
+    PushBackAll(&args, kDartCheckedModeArgs, arraysize(kDartCheckedModeArgs));
   }
 
   for (size_t i = 0; i < settings.dart_flags.size(); i++)
