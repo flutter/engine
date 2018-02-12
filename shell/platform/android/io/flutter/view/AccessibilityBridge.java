@@ -34,7 +34,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     // Constants from higher API levels.
     // TODO(goderbauer): Get these from Android Support Library when
     // https://github.com/flutter/flutter/issues/11099 is resolved.
-    public static final int ACTION_SHOW_ON_SCREEN = 16908342; // API level 23
+    private static final int ACTION_SHOW_ON_SCREEN = 16908342; // API level 23
+
+    private static final float SCROLL_EXTENT_FOR_INFINITY = 100000.0f;
+    private static final float SCROLL_POSITION_CAP_FOR_INFINITY = 70000.0f;
 
     private Map<Integer, SemanticsObject> mObjects;
     private final FlutterView mOwner;
@@ -60,7 +63,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         SET_SELECTION(1 << 11),
         COPY(1 << 12),
         CUT(1 << 13),
-        PASTE(1 << 14);
+        PASTE(1 << 14),
+        DID_GAIN_ACCESSIBILITY_FOCUS(1 << 15),
+        DID_LOSE_ACCESSIBILITY_FOCUS(1 << 16);
 
         Action(int value) {
             this.value = value;
@@ -236,6 +241,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
         result.setText(object.getValueLabelHint());
+        result.setTraversalBefore(mOwner,
+            object.nextNodeId == -1 ? View.NO_ID : object.nextNodeId);
 
         // Accessibility Focus
         if (mA11yFocusedObject != null && mA11yFocusedObject.id == virtualViewId) {
@@ -245,16 +252,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         if (object.children != null) {
-            List<SemanticsObject> childrenInTraversalOrder =
-                new ArrayList<SemanticsObject>(object.children);
-            Collections.sort(childrenInTraversalOrder, new Comparator<SemanticsObject>() {
-                public int compare(SemanticsObject a, SemanticsObject b) {
-                    final int top = Integer.compare(a.globalRect.top, b.globalRect.top);
-                    // TODO(goderbauer): sort right-to-left in rtl environments.
-                    return top == 0 ? Integer.compare(a.globalRect.left, b.globalRect.left) : top;
-                }
-            });
-            for (SemanticsObject child : childrenInTraversalOrder) {
+            for (SemanticsObject child : object.children) {
                 result.addChild(mOwner, child.id);
             }
         }
@@ -316,11 +314,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 return performCursorMoveAction(object, virtualViewId, arguments, true);
             }
             case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS: {
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.DID_LOSE_ACCESSIBILITY_FOCUS);
                 sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
                 mA11yFocusedObject = null;
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS: {
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
                 sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
 
                 if (mA11yFocusedObject == null) {
@@ -467,7 +467,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             if (object.hasFlag(Flag.IS_FOCUSED)) {
                 mInputFocusedObject = object;
             }
-            updated.add(object);
+            if (object.hadPreviousConfig) {
+                updated.add(object);
+            }
         }
 
         Set<SemanticsObject> visitedObjects = new HashSet<SemanticsObject>();
@@ -488,13 +490,46 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             }
         }
 
-        // Send accessibility events for updated nodes
-        for (SemanticsObject object : updated) {
-            sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-            if (!object.hadPreviousConfig) {
-                continue;
-            }
+        // TODO(goderbauer): Send this event only once (!) for changed subtrees,
+        //     see https://github.com/flutter/flutter/issues/14534
+        sendAccessibilityEvent(0, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
 
+        for (SemanticsObject object : updated) {
+            if (object.didScroll()) {
+                AccessibilityEvent event =
+                        obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_SCROLLED);
+
+                // Android doesn't support unbound scrolling. So we pretend there is a large
+                // bound (SCROLL_EXTENT_FOR_INFINITY), which you can never reach.
+                float position = object.scrollPosition;
+                float max = object.scrollExtentMax;
+                if (Float.isInfinite(object.scrollExtentMax)) {
+                    max = SCROLL_EXTENT_FOR_INFINITY;
+                    if (position > SCROLL_POSITION_CAP_FOR_INFINITY) {
+                        position = SCROLL_POSITION_CAP_FOR_INFINITY;
+                    }
+                }
+                if (Float.isInfinite(object.scrollExtentMin)) {
+                    max += SCROLL_EXTENT_FOR_INFINITY;
+                    if (position < -SCROLL_POSITION_CAP_FOR_INFINITY) {
+                        position = -SCROLL_POSITION_CAP_FOR_INFINITY;
+                    }
+                    position += SCROLL_EXTENT_FOR_INFINITY;
+                } else {
+                    max -= object.scrollExtentMin;
+                    position -= object.scrollExtentMin;
+                }
+
+                if (object.hadAction(Action.SCROLL_UP) || object.hadAction(Action.SCROLL_DOWN)) {
+                    event.setScrollY((int) position);
+                    event.setMaxScrollY((int) max);
+                } else if (object.hadAction(Action.SCROLL_LEFT)
+                        || object.hadAction(Action.SCROLL_RIGHT)) {
+                    event.setScrollX((int) position);
+                    event.setMaxScrollX((int) max);
+                }
+                sendAccessibilityEvent(event);
+            }
             if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
                     && object.hadFlag(Flag.HAS_CHECKED_STATE)
                     && object.hasFlag(Flag.HAS_CHECKED_STATE)
@@ -593,24 +628,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         final HashMap<String, Object> data = (HashMap<String, Object>)annotatedEvent.get("data");
 
         switch (type) {
-            case "scroll":
-                final int nodeId = (int)annotatedEvent.get("nodeId");
-                AccessibilityEvent event =
-                    obtainAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_SCROLLED);
-                char axis = ((String)data.get("axis")).charAt(0);
-                double minPosition = (double)data.get("minScrollExtent");
-                double maxPosition = (double)data.get("maxScrollExtent") - minPosition;
-                double position = (double)data.get("pixels") - minPosition;
-                if (axis == 'v') {
-                    event.setScrollY((int)position);
-                    event.setMaxScrollY((int)maxPosition);
-                } else {
-                    assert axis == 'h';
-                    event.setScrollX((int)position);
-                    event.setMaxScrollX((int)maxPosition);
-                }
-                sendAccessibilityEvent(event);
-                break;
             case "announce":
                 mOwner.announceForAccessibility((String) data.get("message"));
                 break;
@@ -667,17 +684,25 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         int actions;
         int textSelectionBase;
         int textSelectionExtent;
+        float scrollPosition;
+        float scrollExtentMax;
+        float scrollExtentMin;
         String label;
         String value;
         String increasedValue;
         String decreasedValue;
         String hint;
         TextDirection textDirection;
+        int nextNodeId;
 
         boolean hadPreviousConfig = false;
         int previousFlags;
+        int previousActions;
         int previousTextSelectionBase;
         int previousTextSelectionExtent;
+        float previousScrollPosition;
+        float previousScrollExtentMax;
+        float previousScrollExtentMin;
         String previousValue;
 
         private float left;
@@ -700,6 +725,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             return (actions & action.value) != 0;
         }
 
+        boolean hadAction(Action action) {
+            return (previousActions & action.value) != 0;
+        }
+
         boolean hasFlag(Flag flag) {
             return (flags & flag.value) != 0;
         }
@@ -709,14 +738,21 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             return (previousFlags & flag.value) != 0;
         }
 
-        void log(String indent) {
+        boolean didScroll() {
+            return !Float.isNaN(scrollPosition) && !Float.isNaN(previousScrollPosition)
+                    && previousScrollPosition != scrollPosition;
+        }
+
+        void log(String indent, boolean recursive) {
           Log.i(TAG, indent + "SemanticsObject id=" + id + " label=" + label + " actions=" +  actions + " flags=" + flags + "\n" +
+                     indent + "  +-- textDirection=" + textDirection  + "\n"+
+                     indent + "  +-- nextNodeId=" + nextNodeId  + "\n"+
                      indent + "  +-- rect.ltrb=(" + left + ", " + top + ", " + right + ", " + bottom + ")\n" +
                      indent + "  +-- transform=" + Arrays.toString(transform) + "\n");
-          if (children != null) {
+          if (children != null && recursive) {
               String childIndent = indent + "  ";
               for (SemanticsObject child : children) {
-                  child.log(childIndent);
+                  child.log(childIndent, recursive);
               }
           }
         }
@@ -725,13 +761,20 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             hadPreviousConfig = true;
             previousValue = value;
             previousFlags = flags;
+            previousActions = actions;
             previousTextSelectionBase = textSelectionBase;
             previousTextSelectionExtent = textSelectionExtent;
+            previousScrollPosition = scrollPosition;
+            previousScrollExtentMax = scrollExtentMax;
+            previousScrollExtentMin = scrollExtentMin;
 
             flags = buffer.getInt();
             actions = buffer.getInt();
             textSelectionBase = buffer.getInt();
             textSelectionExtent = buffer.getInt();
+            scrollPosition = buffer.getFloat();
+            scrollExtentMax = buffer.getFloat();
+            scrollExtentMin = buffer.getFloat();
 
             int stringIndex = buffer.getInt();
             label = stringIndex == -1 ? null : strings[stringIndex];
@@ -749,6 +792,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             hint = stringIndex == -1 ? null : strings[stringIndex];
 
             textDirection = TextDirection.fromInt(buffer.getInt());
+
+            nextNodeId = buffer.getInt();
 
             left = buffer.getFloat();
             top = buffer.getFloat();
@@ -907,7 +952,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             StringBuilder sb = new StringBuilder();
             String[] array = { value, label, hint };
             for (String word: array) {
-                if (word != null && (word = word.trim()).length() > 0) {
+                if (word != null && word.length() > 0) {
                     if (sb.length() > 0)
                         sb.append(", ");
                     sb.append(word);

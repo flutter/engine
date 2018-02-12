@@ -65,7 +65,7 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   std::string DefaultRouteName() override;
   void ScheduleFrame(bool regenerate_layer_tree = true) override;
   void Render(std::unique_ptr<flow::LayerTree> layer_tree) override;
-  void UpdateSemantics(std::vector<blink::SemanticsNode> update) override;
+  void UpdateSemantics(blink::SemanticsNodeUpdates update) override;
   void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message) override;
   void DidCreateMainIsolate(Dart_Isolate isolate) override;
@@ -99,6 +99,7 @@ class RuntimeHolder : public blink::RuntimeDelegate,
 
   void InitDartIoInternal();
   void InitFuchsia();
+  void InitZircon();
   void InitMozartInternal();
 
   void PostBeginFrame();
@@ -108,6 +109,7 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   void Invalidate();
 
   fdio_ns_t* namespc_;
+  int dirfd_;
   std::unique_ptr<app::ApplicationContext> context_;
   fidl::InterfaceRequest<app::ServiceProvider> outgoing_services_;
   std::vector<char> root_bundle_data_;

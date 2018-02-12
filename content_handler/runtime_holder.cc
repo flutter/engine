@@ -24,10 +24,12 @@
 #include "flutter/runtime/runtime_init.h"
 #include "lib/app/cpp/connect.h"
 #include "lib/fsl/vmo/vector.h"
+#include "lib/fxl/files/path.h"
 #include "lib/fxl/files/unique_fd.h"
 #include "lib/fxl/functional/make_copyable.h"
 #include "lib/fxl/logging.h"
 #include "lib/fxl/time/time_delta.h"
+#include "lib/tonic/logging/dart_error.h"
 #include "lib/zip/create_unzipper.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/rapidjson/rapidjson/document.h"
@@ -115,6 +117,11 @@ void RuntimeHolder::Init(
   FXL_DCHECK(rasterizer_);
 
   namespc_ = namespc;
+  dirfd_ = fdio_ns_opendir(namespc);
+  if (dirfd_ == -1) {
+    FXL_LOG(ERROR) << "Failed to get fd for namespace";
+    return;
+  }
   context_ = std::move(context);
   outgoing_services_ = std::move(outgoing_services);
 
@@ -196,11 +203,12 @@ void RuntimeHolder::CreateView(
 
   std::vector<uint8_t> kernel;
   std::vector<uint8_t> snapshot;
+  bool maybe_running_from_source = false;
   if (!Dart_IsPrecompiledRuntime()) {
     if (!GetAssetAsBuffer(kKernelKey, &kernel) &&
         !GetAssetAsBuffer(kSnapshotKey, &snapshot)) {
-      FXL_LOG(ERROR) << "Unable to load kernel or snapshot from root bundle.";
-      return;
+      maybe_running_from_source = true;
+      FXL_LOG(INFO) << "No kernel or snapshot in root bundle.";
     }
   }
 
@@ -223,9 +231,9 @@ void RuntimeHolder::CreateView(
   view_->GetServiceProvider(view_services.NewRequest());
 
   // Listen for input events.
-  ConnectToService(view_services.get(), fidl::GetProxy(&input_connection_));
+  ConnectToService(view_services.get(), input_connection_.NewRequest());
   mozart::InputListenerPtr input_listener;
-  input_listener_binding_.Bind(GetProxy(&input_listener));
+  input_listener_binding_.Bind(input_listener.NewRequest());
   input_connection_->SetEventListener(std::move(input_listener));
 
   // Setup the session.
@@ -273,7 +281,7 @@ void RuntimeHolder::CreateView(
         dlsym(dylib_handle_, "_kDartIsolateSnapshotInstructions"));
   }
   runtime_->CreateDartController(script_uri, isolate_snapshot_data,
-                                 isolate_snapshot_instr);
+                                 isolate_snapshot_instr, dirfd_);
 
   runtime_->SetViewportMetrics(viewport_metrics_);
 
@@ -281,6 +289,12 @@ void RuntimeHolder::CreateView(
     runtime_->dart_controller()->RunFromPrecompiledSnapshot();
   } else if (!kernel.empty()) {
     runtime_->dart_controller()->RunFromKernel(std::move(kernel));
+  } else if (maybe_running_from_source) {
+    std::string basename = files::GetBaseName(script_uri);
+    std::string main_dart = "pkg/data/" + basename + "/lib/main.dart";
+    FXL_LOG(INFO) << "Running from source with entrypoint: '" << main_dart
+                  << "'";
+    runtime_->dart_controller()->RunFromSource(main_dart, "pkg/data/.packages");
   } else {
     runtime_->dart_controller()->RunFromScriptSnapshot(snapshot.data(),
                                                        snapshot.size());
@@ -370,7 +384,7 @@ void RuntimeHolder::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
   }));
 }
 
-void RuntimeHolder::UpdateSemantics(std::vector<blink::SemanticsNode> update) {
+void RuntimeHolder::UpdateSemantics(blink::SemanticsNodeUpdates update) {
   accessibility_bridge_->UpdateSemantics(update);
 }
 
@@ -398,6 +412,7 @@ void RuntimeHolder::DidCreateMainIsolate(Dart_Isolate isolate) {
   }
   InitDartIoInternal();
   InitFuchsia();
+  InitZircon();
   InitMozartInternal();
 }
 
@@ -434,9 +449,20 @@ void RuntimeHolder::InitFuchsia() {
   ConnectToService(parent_env_service_provider.get(), clipboard_.NewRequest());
 }
 
+void RuntimeHolder::InitZircon() {
+  Dart_Handle zircon_lib = Dart_LookupLibrary(ToDart("dart:zircon"));
+  DART_CHECK_VALID(zircon_lib);
+
+  Dart_Handle namespace_type =
+      Dart_GetType(zircon_lib, ToDart("_Namespace"), 0, nullptr);
+  DART_CHECK_VALID(namespace_type);
+  DART_CHECK_VALID(Dart_SetField(namespace_type, ToDart("_namespace"),
+                                 ToDart(reinterpret_cast<intptr_t>(namespc_))));
+}
+
 void RuntimeHolder::InitMozartInternal() {
   fidl::InterfaceHandle<mozart::ViewContainer> view_container;
-  view_->GetContainer(fidl::GetProxy(&view_container));
+  view_->GetContainer(view_container.NewRequest());
 
   Dart_Handle mozart_internal =
       Dart_LookupLibrary(ToDart("dart:mozart.internal"));
@@ -451,7 +477,7 @@ void RuntimeHolder::InitMozartInternal() {
 
   DART_CHECK_VALID(Dart_SetField(mozart_internal, ToDart("_viewContainer"),
                                  ToDart(zircon::dart::Handle::Create(
-                                     view_container.PassHandle().release()))));
+                                     view_container.TakeChannel().release()))));
 }
 
 void RuntimeHolder::InitRootBundle(std::vector<char> bundle) {
@@ -569,7 +595,7 @@ bool RuntimeHolder::HandleTextInputPlatformMessage(
   } else if (method->value == "TextInput.setClient") {
     current_text_input_client_ = 0;
     if (text_input_binding_.is_bound())
-      text_input_binding_.Close();
+      text_input_binding_.Unbind();
     input_method_editor_ = nullptr;
 
     auto args = root.FindMember("args");
@@ -588,7 +614,7 @@ bool RuntimeHolder::HandleTextInputPlatformMessage(
     input_connection_->GetInputMethodEditor(
         mozart::KeyboardType::TEXT, mozart::InputMethodAction::DONE,
         std::move(state), text_input_binding_.NewBinding(),
-        fidl::GetProxy(&input_method_editor_));
+        input_method_editor_.NewRequest());
   } else if (method->value == "TextInput.setEditingState") {
     if (input_method_editor_) {
       auto args_it = root.FindMember("args");
@@ -630,7 +656,7 @@ bool RuntimeHolder::HandleTextInputPlatformMessage(
   } else if (method->value == "TextInput.clearClient") {
     current_text_input_client_ = 0;
     if (text_input_binding_.is_bound())
-      text_input_binding_.Close();
+      text_input_binding_.Unbind();
     input_method_editor_ = nullptr;
   } else {
     FXL_DLOG(ERROR) << "Unknown " << kTextInputChannel << " method "

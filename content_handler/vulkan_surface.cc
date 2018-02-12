@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <async/default.h>
+
 #include "flutter/content_handler/vulkan_surface.h"
 #include "flutter/common/threads.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -12,14 +14,15 @@
 
 namespace flutter_runner {
 
-VulkanSurface::VulkanSurface(vulkan::VulkanProcTable& p_vk,
+VulkanSurface::VulkanSurface(vulkan::VulkanProvider& vulkan_provider,
                              sk_sp<GrContext> context,
                              sk_sp<GrVkBackendContext> backend_context,
                              scenic_lib::Session* session,
                              const SkISize& size)
-    : vk_(p_vk),
+    : vulkan_provider_(vulkan_provider),
       backend_context_(std::move(backend_context)),
-      session_(session) {
+      session_(session),
+      wait_(this) {
   ASSERT_IS_GPU_THREAD;
 
   FXL_DCHECK(session_);
@@ -40,8 +43,10 @@ VulkanSurface::VulkanSurface(vulkan::VulkanProcTable& p_vk,
     return;
   }
 
-  event_handler_key_ = fsl::MessageLoop::GetCurrent()->AddHandler(
-      this, release_event_.get(), ZX_EVENT_SIGNALED);
+  wait_.set_object(release_event_.get());
+  wait_.set_trigger(ZX_EVENT_SIGNALED);
+  async_ = async_get_default();
+  wait_.Begin(async_);
 
   // Probably not necessary as the events should be in the unsignalled state
   // already.
@@ -52,9 +57,10 @@ VulkanSurface::VulkanSurface(vulkan::VulkanProcTable& p_vk,
 
 VulkanSurface::~VulkanSurface() {
   ASSERT_IS_GPU_THREAD;
-  if (event_handler_key_ != 0) {
-    fsl::MessageLoop::GetCurrent()->RemoveHandler(event_handler_key_);
-    event_handler_key_ = 0;
+  if (async_) {
+    wait_.Cancel(async_);
+    wait_.set_object(ZX_HANDLE_INVALID);
+    async_ = nullptr;
   }
 }
 
@@ -68,12 +74,6 @@ SkISize VulkanSurface::GetSize() const {
   }
 
   return SkISize::Make(sk_surface_->width(), sk_surface_->height());
-}
-
-GrBackendSemaphore VulkanSurface::GetAcquireSemaphore() const {
-  GrBackendSemaphore gr_semaphore;
-  gr_semaphore.initVulkan(acquire_semaphore_);
-  return gr_semaphore;
 }
 
 vulkan::VulkanHandle<VkSemaphore> VulkanSurface::SemaphoreFromEvent(
@@ -94,8 +94,8 @@ vulkan::VulkanHandle<VkSemaphore> VulkanSurface::SemaphoreFromEvent(
       .flags = 0,
   };
 
-  result = VK_CALL_LOG_ERROR(vk_.CreateSemaphore(
-      backend_context_->fDevice, &create_info, nullptr, &semaphore));
+  result = VK_CALL_LOG_ERROR(vulkan_provider_.vk().CreateSemaphore(
+      vulkan_provider_.vk_device(), &create_info, nullptr, &semaphore));
   if (result != VK_SUCCESS) {
     return vulkan::VulkanHandle<VkSemaphore>();
   }
@@ -107,15 +107,17 @@ vulkan::VulkanHandle<VkSemaphore> VulkanSurface::SemaphoreFromEvent(
       .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_FUCHSIA_FENCE_BIT_KHR,
       .handle = static_cast<uint32_t>(semaphore_event.release())};
 
-  result = VK_CALL_LOG_ERROR(vk_.ImportSemaphoreFuchsiaHandleKHR(
-      backend_context_->fDevice, &import_info));
+  result =
+      VK_CALL_LOG_ERROR(vulkan_provider_.vk().ImportSemaphoreFuchsiaHandleKHR(
+          vulkan_provider_.vk_device(), &import_info));
   if (result != VK_SUCCESS) {
     return vulkan::VulkanHandle<VkSemaphore>();
   }
 
   return vulkan::VulkanHandle<VkSemaphore>(
-      semaphore, [this](VkSemaphore semaphore) {
-        vk_.DestroySemaphore(backend_context_->fDevice, semaphore, nullptr);
+      semaphore, [&vulkan_provider = vulkan_provider_](VkSemaphore semaphore) {
+        vulkan_provider.vk().DestroySemaphore(vulkan_provider.vk_device(),
+                                              semaphore, nullptr);
       });
 }
 
@@ -133,6 +135,8 @@ bool VulkanSurface::CreateFences() {
   if (zx::event::create(0, &release_event_) != ZX_OK) {
     return false;
   }
+
+  command_buffer_fence_ = vulkan_provider_.CreateFence();
 
   return true;
 }
@@ -171,23 +175,23 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
   {
     VkImage vk_image = VK_NULL_HANDLE;
 
-    if (VK_CALL_LOG_ERROR(vk_.CreateImage(backend_context_->fDevice,
-                                          &image_create_info, nullptr,
-                                          &vk_image)) != VK_SUCCESS) {
+    if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().CreateImage(
+            vulkan_provider_.vk_device(), &image_create_info, nullptr,
+            &vk_image)) != VK_SUCCESS) {
       return false;
     }
 
-    vk_image_ = {vk_image, [this](VkImage image) {
-                   vk_.DestroyImage(backend_context_->fDevice, image, NULL);
+    vk_image_ = {vk_image,
+                 [& vulkan_provider = vulkan_provider_](VkImage image) {
+                   vulkan_provider.vk().DestroyImage(
+                       vulkan_provider.vk_device(), image, NULL);
                  }};
   }
 
   // Create the memory.
   VkMemoryRequirements memory_reqs;
-  vk_.GetImageMemoryRequirements(backend_context_->fDevice,  //
-                                 vk_image_,                  //
-                                 &memory_reqs                //
-  );
+  vulkan_provider_.vk().GetImageMemoryRequirements(vulkan_provider_.vk_device(),
+                                                   vk_image_, &memory_reqs);
 
   uint32_t memory_type = 0;
   for (; memory_type < 32; memory_type++) {
@@ -205,20 +209,23 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
 
   {
     VkDeviceMemory vk_memory = VK_NULL_HANDLE;
-    if (VK_CALL_LOG_ERROR(vk_.AllocateMemory(backend_context_->fDevice,
-                                             &alloc_info, NULL, &vk_memory)) !=
+    if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().AllocateMemory(
+            vulkan_provider_.vk_device(), &alloc_info, NULL, &vk_memory)) !=
         VK_SUCCESS) {
       return false;
     }
 
-    vk_memory_ = {vk_memory, [this](VkDeviceMemory memory) {
-                    vk_.FreeMemory(backend_context_->fDevice, memory, NULL);
+    vk_memory_ = {vk_memory, [& vulkan_provider =
+                                  vulkan_provider_](VkDeviceMemory memory) {
+                    vulkan_provider.vk().FreeMemory(vulkan_provider.vk_device(),
+                                                    memory, NULL);
                   }};
   }
 
   // Bind image memory.
-  if (VK_CALL_LOG_ERROR(vk_.BindImageMemory(
-          backend_context_->fDevice, vk_image_, vk_memory_, 0)) != VK_SUCCESS) {
+  if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().BindImageMemory(
+          vulkan_provider_.vk_device(), vk_image_, vk_memory_, 0)) !=
+      VK_SUCCESS) {
     return false;
   }
 
@@ -229,8 +236,8 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
     VkMemoryGetFuchsiaHandleInfoKHR get_handle_info = {
         VK_STRUCTURE_TYPE_MEMORY_GET_FUCHSIA_HANDLE_INFO_KHR, nullptr,
         vk_memory_, VK_EXTERNAL_MEMORY_HANDLE_TYPE_FUCHSIA_VMO_BIT_KHR};
-    if (VK_CALL_LOG_ERROR(vk_.GetMemoryFuchsiaHandleKHR(
-            backend_context_->fDevice, &get_handle_info, &vmo_handle)) !=
+    if (VK_CALL_LOG_ERROR(vulkan_provider_.vk().GetMemoryFuchsiaHandleKHR(
+            vulkan_provider_.vk_device(), &get_handle_info, &vmo_handle)) !=
         VK_SUCCESS) {
       return false;
     }
@@ -370,6 +377,17 @@ void VulkanSurface::Reset() {
         << "Could not reset fences. The surface is no longer valid.";
   }
 
+  VkFence fence = command_buffer_fence_;
+
+  if (command_buffer_) {
+    VK_CALL_LOG_ERROR(vulkan_provider_.vk().WaitForFences(
+        vulkan_provider_.vk_device(), 1, &fence, VK_TRUE, UINT64_MAX));
+    command_buffer_.reset();
+  }
+
+  VK_CALL_LOG_ERROR(vulkan_provider_.vk().ResetFences(
+      vulkan_provider_.vk_device(), 1, &fence));
+
   // Need to make a new  acquire semaphore every frame or else validation layers
   // get confused about why no one is waiting on it in this VkInstance
   acquire_semaphore_.Reset();
@@ -386,13 +404,15 @@ void VulkanSurface::Reset() {
   }
 }
 
-void VulkanSurface::OnHandleReady(zx_handle_t handle,
-                                  zx_signals_t pending,
-                                  uint64_t count) {
+async_wait_result_t VulkanSurface::OnHandleReady(async_t* async,
+                                                 zx_status_t status,
+                                                 const zx_packet_signal_t* signal) {
   ASSERT_IS_GPU_THREAD;
-  FXL_DCHECK(pending & ZX_EVENT_SIGNALED);
-  FXL_DCHECK(handle == release_event_.get());
+  if (status != ZX_OK)
+    return ASYNC_WAIT_FINISHED;
+  FXL_DCHECK(signal->observed & ZX_EVENT_SIGNALED);
   Reset();
+  return ASYNC_WAIT_AGAIN;
 }
 
 }  // namespace flutter_runner

@@ -31,10 +31,10 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': 'da1f52592ef73fe3afa485385cb995b9aec0181a',
+  'dart_revision': '32396138ff733cbe8d9ac32178e6cffccdf80644',
 
   'dart_args_tag': '0.13.7',
-  'dart_async_tag': '2.0.2',
+  'dart_async_tag': 'corelib_2_2_1',
   'dart_barback_tag': '0.15.2+14',
   'dart_bazel_worker_tag': 'v0.1.9',
   'dart_boolean_selector_tag': '1.0.2',
@@ -64,7 +64,7 @@ vars = {
   'dart_logging_tag': '0.11.3+1',
   'dart_markdown_tag': '1.0.0',
   'dart_matcher_tag': '0.12.1+4',
-  'dart_mime_tag': '0.9.4',
+  'dart_mime_tag': '0.9.6',
   'dart_mockito_tag': '2.0.2',
   'dart_mustache4dart_tag': 'v2.1.0',
   'dart_oauth2_tag': '1.1.0',
@@ -90,19 +90,19 @@ vars = {
   'dart_stack_trace_tag': '1.9.0',
   'dart_stream_channel_tag': '1.6.2',
   'dart_string_scanner_tag': '1.0.2',
-  'dart_test_tag': '0.12.29+1',
+  'dart_test_tag': '0.12.30+1',
   'dart_tuple_tag': 'v1.0.1',
   'dart_typed_data_tag': '1.1.3',
   'dart_usage_tag': '3.3.0',
-  'dart_utf_tag': '0.9.0+3',
-  'dart_watcher_tag': '0.9.7+4',
-  'dart_web_socket_channel_tag': '1.0.6',
+  'dart_utf_tag': '0.9.0+4',
+  'dart_watcher_tag': '0.9.7+7',
+  'dart_web_socket_channel_tag': 'corelib_2_2_1',
   'dart_yaml_tag': '2.1.13',
 
   # Build bot tooling for iOS
   'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
 
-  'buildtools_revision': '5b8eb38aaf523f0124756454276cd0a5b720c17e',
+  'buildtools_revision': 'ae85410691b10aa2469695c2421b1fe751843e64',
 }
 
 # Only these hosts are allowed for dependencies in this DEPS file.
@@ -115,7 +115,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'e8854a250de400815604f2394352fa198b0b8c25',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '9881cb0513c95c341e432670dbd1add0c76b7da9',
 
    # Fuchsia compatibility
    #
@@ -127,7 +127,7 @@ deps = {
    Var('fuchsia_git') + '/garnet' + '@' + 'b3ba6b6d6ab8ef658278cc43c9f839a8a8d1718e',
 
   'src/topaz':
-   Var('fuchsia_git') + '/topaz' + '@' + '1eb2e77be92ed968223b0cea19fe2108e689dcd5',
+   Var('fuchsia_git') + '/topaz' + '@' + '531e2778d86b213bc663ea51bb0e0dde33d8ac8c',
 
   'src/third_party/benchmark':
    Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',

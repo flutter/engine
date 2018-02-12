@@ -23,9 +23,9 @@ ApplicationControllerImpl::ApplicationControllerImpl(
     app::ApplicationStartupInfoPtr startup_info,
     fidl::InterfaceRequest<app::ApplicationController> controller)
     : app_(app), binding_(this) {
-  if (controller.is_pending()) {
+  if (controller.is_valid()) {
     binding_.Bind(std::move(controller));
-    binding_.set_connection_error_handler([this] {
+    binding_.set_error_handler([this] {
       app_->Destroy(this);
       // |this| has been deleted at this point.
     });
@@ -64,6 +64,7 @@ ApplicationControllerImpl::ApplicationControllerImpl(
   fdio_ns_t* fdio_ns = SetupNamespace(startup_info->flat_namespace);
   if (fdio_ns == nullptr) {
     FXL_LOG(ERROR) << "Failed to initialize namespace";
+    return;
   }
 
   url_ = startup_info->launch_info->url;
@@ -113,7 +114,7 @@ void ApplicationControllerImpl::Kill() {
 }
 
 void ApplicationControllerImpl::Detach() {
-  binding_.set_connection_error_handler(fxl::Closure());
+  binding_.set_error_handler(fxl::Closure());
 }
 
 void ApplicationControllerImpl::Wait(const WaitCallback& callback) {

@@ -1,7 +1,16 @@
 #!/bin/bash
+#
+# Code formatting presubmit
+#
+# This presubmit script ensures that code under the src/flutter directory is
+# formatted according to the Flutter engine style requirements. On failure, a
+# diff is emitted that can be applied from within the src/flutter directory
+# via:
+#
+# patch -p0 < diff.patch
+
 set -e
 echo "Checking formatting..."
-cd ..
 
 case "$(uname -s)" in
   Darwin)
@@ -16,24 +25,19 @@ case "$(uname -s)" in
     ;;
 esac
 
-CLANG_FORMAT="buildtools/$OS/clang/bin/clang-format"
+# Tools
+CLANG_FORMAT="../buildtools/$OS/clang/bin/clang-format"
+CLANG_FORMAT_DIFF="../buildtools/$OS/clang/share/clang/clang-format-diff.py"
 $CLANG_FORMAT --version
 
-FILES="$(find flutter/ -name '*.cpp' -or -name '*.h' -or -name '*.c' -or -name '*.cc' -or -name '*.m' -or -name '*.mm')"
-FAILED_CHECKS=0
+# Compute the diffs.
+FILETYPES="*.c *.cc *.cpp *.h *.m *.mm"
+DIFF_OPTS="-U0 --no-color"
+DIFFS="$(git diff $DIFF_OPTS -- master $FILETYPES | "$CLANG_FORMAT_DIFF" -p1 -binary "$CLANG_FORMAT")"
 
-for FILE in $FILES; do
-  set +e
-  RESULT="$(diff -u "$FILE" <($CLANG_FORMAT --style=file "$FILE"))"
-  set -e
-  if ! [ -z "$RESULT" ]; then
-    echo "$RESULT"
-    FAILED_CHECKS=$(($counter+1))
-  fi
-done
-
-if [ $FAILED_CHECKS -ne 0 ]; then
-  echo "Some files are formatted incorrectly. To fix, apply diffs from above."
+if [[ ! -z "$DIFFS" ]]; then
+  echo ""
+  echo "ERROR: Some files are formatted incorrectly. To fix, apply diffs below via patch -p0:"
+  echo "$DIFFS"
+  exit 1
 fi
-
-exit $FAILED_CHECKS

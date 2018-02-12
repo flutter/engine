@@ -2,20 +2,20 @@ library frontend_server;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' hide FileSystemEntity;
 
 import 'package:args/args.dart';
-
 // front_end/src imports below that require lint `ignore_for_file`
 // are a temporary state of things until frontend team builds better api
 // that would replace api used below. This api was made private in
 // an effort to discourage further use.
 // ignore_for_file: implementation_imports
 import 'package:front_end/src/api_prototype/compiler_options.dart';
-
+import 'package:front_end/src/api_prototype/file_system.dart' show FileSystemEntity;
 import 'package:kernel/ast.dart';
 import 'package:kernel/binary/ast_to_binary.dart';
 import 'package:kernel/binary/limited_ast_to_binary.dart';
+import 'package:kernel/kernel.dart' show Program, loadProgramFromBytes;
 import 'package:kernel/target/flutter.dart';
 import 'package:kernel/target/targets.dart';
 import 'package:usage/uuid/uuid.dart';
@@ -128,6 +128,8 @@ class _FrontendCompiler implements CompilerInterface {
 
   IncrementalCompiler _generator;
   String _kernelBinaryFilename;
+  String _kernelBinaryFilenameIncremental;
+  String _kernelBinaryFilenameFull;
 
   @override
   Future<Null> compile(
@@ -136,7 +138,9 @@ class _FrontendCompiler implements CompilerInterface {
     IncrementalCompiler generator,
   }) async {
     final Uri filenameUri = Uri.base.resolveUri(new Uri.file(filename));
-    _kernelBinaryFilename = '$filename.dill';
+    _kernelBinaryFilenameFull = '$filename.dill';
+    _kernelBinaryFilenameIncremental = '$filename.incremental.dill';
+    _kernelBinaryFilename = _kernelBinaryFilenameFull;
     final String boundaryKey = new Uuid().generateV4();
     _outputStream.writeln('result $boundaryKey');
     final Uri sdkRoot = _ensureFolderPath(options['sdk-root']);
@@ -151,9 +155,9 @@ class _FrontendCompiler implements CompilerInterface {
     if (options['incremental']) {
       _entryPoint = filenameUri;
       _compilerOptions = compilerOptions;
-      _generator = generator ?? _createGenerator();
-      program =
-          await _runWithPrintRedirection(() => _generator.compile());
+      _generator = generator ?? _createGenerator(new Uri.file(_kernelBinaryFilenameFull));
+      await invalidateIfBootstrapping();
+      program = await _runWithPrintRedirection(() => _generator.compile());
     } else {
       if (options['link-platform']) {
         // TODO(aam): Remove linkedDependencies once platform is directly embedded
@@ -173,22 +177,64 @@ class _FrontendCompiler implements CompilerInterface {
       printer.writeProgramFile(program);
       await sink.close();
       _outputStream.writeln('$boundaryKey $_kernelBinaryFilename');
+      _kernelBinaryFilename = _kernelBinaryFilenameIncremental;
     } else
       _outputStream.writeln(boundaryKey);
     return null;
+  }
+
+  Future<Null> invalidateIfBootstrapping() async {
+    if (_kernelBinaryFilename != _kernelBinaryFilenameFull)
+      return null;
+
+    try {
+      final File f = new File(_kernelBinaryFilenameFull);
+      if (!f.existsSync())
+        return null;
+
+      final Program program = loadProgramFromBytes(f.readAsBytesSync());
+      for (Uri uri in program.uriToSource.keys) {
+        if ('$uri' == '')
+          continue;
+
+        final List<int> oldBytes = program.uriToSource[uri].source;
+        final FileSystemEntity entity = _compilerOptions.fileSystem.entityForUri(uri);
+        if (!await entity.exists()) {
+          _generator.invalidate(uri);
+          continue;
+        }
+        final List<int> newBytes = await entity.readAsBytes();
+        if (oldBytes.length != newBytes.length) {
+          _generator.invalidate(uri);
+          continue;
+        }
+        for (int i = 0; i < oldBytes.length; ++i) {
+          if (oldBytes[i] != newBytes[i]) {
+            _generator.invalidate(uri);
+            continue;
+          }
+        }
+      }
+    } catch(e) {
+      // If there's a failure in the above block we might not have invalidated
+      // correctly. Create a new generator that doesn't bootstrap to avoid missing
+      // any changes.
+      _generator = _createGenerator(null);
+    }
   }
 
   @override
   Future<Null> recompileDelta() async {
     final String boundaryKey = new Uuid().generateV4();
     _outputStream.writeln('result $boundaryKey');
+    await invalidateIfBootstrapping();
     final Program deltaProgram = await _generator.compile();
-
     final IOSink sink = new File(_kernelBinaryFilename).openWrite();
     final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
     printer.writeProgramFile(deltaProgram);
     await sink.close();
     _outputStream.writeln('$boundaryKey $_kernelBinaryFilename');
+    _kernelBinaryFilename = _kernelBinaryFilenameIncremental;
     return null;
   }
 
@@ -204,11 +250,13 @@ class _FrontendCompiler implements CompilerInterface {
 
   @override
   void resetIncrementalCompiler() {
-    _generator = _createGenerator();
+    _generator = _createGenerator(new Uri.file(_kernelBinaryFilenameFull));
+    _kernelBinaryFilename = _kernelBinaryFilenameFull;
   }
 
-  IncrementalCompiler _createGenerator() =>
-    new IncrementalCompiler(_compilerOptions, _entryPoint);
+  IncrementalCompiler _createGenerator(Uri bootstrapDill) {
+    return new IncrementalCompiler(_compilerOptions, _entryPoint, bootstrapDill);
+  }
 
   Uri _ensureFolderPath(String path) {
     String uriPath = new Uri.file(path).toString();

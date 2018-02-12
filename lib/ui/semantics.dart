@@ -24,6 +24,8 @@ class SemanticsAction {
   static const int _kCopyIndex = 1 << 12;
   static const int _kCutIndex = 1 << 13;
   static const int _kPasteIndex = 1 << 14;
+  static const int _kDidGainAccessibilityFocusIndex = 1 << 15;
+  static const int _kDidLoseAccessibilityFocusIndex = 1 << 16;
 
   /// The numerical value for this action.
   ///
@@ -118,6 +120,32 @@ class SemanticsAction {
   /// Paste the current content of the clipboard.
   static const SemanticsAction paste = const SemanticsAction._(_kPasteIndex);
 
+  /// Indicates that the nodes has gained accessibility focus.
+  ///
+  /// This handler is invoked when the node annotated with this handler gains
+  /// the accessibility focus. The accessibility focus is the
+  /// green (on Android with TalkBack) or black (on iOS with VoiceOver)
+  /// rectangle shown on screen to indicate what element an accessibility
+  /// user is currently interacting with.
+  ///
+  /// The accessibility focus is different from the input focus. The input focus
+  /// is usually held by the element that currently responds to keyboard inputs.
+  /// Accessibility focus and input focus can be held by two different nodes!
+  static const SemanticsAction didGainAccessibilityFocus = const SemanticsAction._(_kDidGainAccessibilityFocusIndex);
+
+  /// Indicates that the nodes has lost accessibility focus.
+  ///
+  /// This handler is invoked when the node annotated with this handler
+  /// loses the accessibility focus. The accessibility focus is
+  /// the green (on Android with TalkBack) or black (on iOS with VoiceOver)
+  /// rectangle shown on screen to indicate what element an accessibility
+  /// user is currently interacting with.
+  ///
+  /// The accessibility focus is different from the input focus. The input focus
+  /// is usually held by the element that currently responds to keyboard inputs.
+  /// Accessibility focus and input focus can be held by two different nodes!
+  static const SemanticsAction didLoseAccessibilityFocus = const SemanticsAction._(_kDidLoseAccessibilityFocusIndex);
+
   /// The possible semantics actions.
   ///
   /// The map's key is the [index] of the action and the value is the action
@@ -138,6 +166,8 @@ class SemanticsAction {
     _kCopyIndex: copy,
     _kCutIndex: cut,
     _kPasteIndex: paste,
+    _kDidGainAccessibilityFocusIndex: didGainAccessibilityFocus,
+    _kDidLoseAccessibilityFocusIndex: didLoseAccessibilityFocus,
   };
 
   @override
@@ -173,6 +203,10 @@ class SemanticsAction {
         return 'SemanticsAction.cut';
       case _kPasteIndex:
         return 'SemanticsAction.paste';
+      case _kDidGainAccessibilityFocusIndex:
+        return 'SemanticsAction.didGainAccessibilityFocus';
+      case _kDidLoseAccessibilityFocusIndex:
+        return 'SemanticsAction.didLoseAccessibilityFocus';
     }
     return null;
   }
@@ -337,10 +371,17 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// The fields 'textSelectionBase' and 'textSelectionExtent' describe the
   /// currently selected text within `value`.
   ///
+  /// For scrollable nodes `scrollPosition` describes the current scroll
+  /// position in logical pixel. `scrollExtentMax` and `scrollExtentMin`
+  /// describe the maximum and minimum in-rage values that `scrollPosition` can
+  /// be. Both or either may be infinity to indicate unbound scrolling. The
+  /// value for `scrollPosition` can (temporarily) be outside this range, for
+  /// example during an overscroll.
+  ///
   /// The `rect` is the region occupied by this node in its own coordinate
   /// system.
   ///
-  /// The `transform` is a matrix that maps this node's coodinate system into
+  /// The `transform` is a matrix that maps this node's coordinate system into
   /// its parent's coordinate system.
   void updateNode({
     int id,
@@ -348,6 +389,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int actions,
     int textSelectionBase,
     int textSelectionExtent,
+    double scrollPosition,
+    double scrollExtentMax,
+    double scrollExtentMin,
     Rect rect,
     String label,
     String hint,
@@ -355,30 +399,33 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String increasedValue,
     String decreasedValue,
     TextDirection textDirection,
+    int nextNodeId,
     Float64List transform,
     Int32List children,
   }) {
     if (transform.length != 16)
       throw new ArgumentError('transform argument must have 16 entries.');
-    _updateNode(
-      id,
-      flags,
-      actions,
-      textSelectionBase,
-      textSelectionExtent,
-      rect.left,
-      rect.top,
-      rect.right,
-      rect.bottom,
-      label,
-      hint,
-      value,
-      increasedValue,
-      decreasedValue,
-      textDirection != null ? textDirection.index + 1 : 0,
-      transform,
-      children,
-    );
+    _updateNode(id,
+                flags,
+                actions,
+                textSelectionBase,
+                textSelectionExtent,
+                scrollPosition,
+                scrollExtentMax,
+                scrollExtentMin,
+                rect.left,
+                rect.top,
+                rect.right,
+                rect.bottom,
+                label,
+                hint,
+                value,
+                increasedValue,
+                decreasedValue,
+                textDirection != null ? textDirection.index + 1 : 0,
+                nextNodeId ?? -1,
+                transform,
+                children,);
   }
   void _updateNode(
     int id,
@@ -386,6 +433,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int actions,
     int textSelectionBase,
     int textSelectionExtent,
+    double scrollPosition,
+    double scrollExtentMax,
+    double scrollExtentMin,
     double left,
     double top,
     double right,
@@ -396,6 +446,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String increasedValue,
     String decreasedValue,
     int textDirection,
+    int nextNodeId,
     Float64List transform,
     Int32List children,
   ) native 'SemanticsUpdateBuilder_updateNode';
@@ -415,11 +466,11 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
 /// Semantics updates can be applied to the system's retained semantics tree
 /// using the [Window.updateSemantics] method.
 class SemanticsUpdate extends NativeFieldWrapperClass2 {
-  /// Creates an uninitialized SemanticsUpdate object.
+  /// This class is created by the engine, and should not be instantiated
+  /// or extended directly.
   ///
-  /// Calling the SemanticsUpdate constructor directly will not create a useable
-  /// object. To create a SemanticsUpdate object, use a [SemanticsUpdateBuilder].
-  SemanticsUpdate(); // (this constructor is here just so we can document it)
+  /// To create a SemanticsUpdate object, use a [SemanticsUpdateBuilder].
+  SemanticsUpdate._();
 
   /// Releases the resources used by this semantics update.
   ///
