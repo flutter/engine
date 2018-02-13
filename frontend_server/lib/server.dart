@@ -255,7 +255,8 @@ class _FrontendCompiler implements CompilerInterface {
   }
 
   IncrementalCompiler _createGenerator(Uri bootstrapDill) {
-    return new IncrementalCompiler(_compilerOptions, _entryPoint, bootstrapDill);
+    return new IncrementalCompiler(_compilerOptions, _entryPoint,
+        bootstrapDill: bootstrapDill);
   }
 
   Uri _ensureFolderPath(String path) {
