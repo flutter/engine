@@ -627,13 +627,17 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
       kernel_platform = Dart_ReadKernelBinary(
           platform_data.data(), platform_data.size(), ReleaseFetchedBytes);
       FXL_DCHECK(kernel_platform != nullptr);
-      // In strong mode we enable all the strong mode options and if running
-      // debug product mode we also enable asserts.
+      // The presence of the kernel platform file indicates we are running
+      // in preview-dart-2 mode and in this mode enable strong mode options
+      // by default.
+      // In addition if we are running in debug mode we also enable asserts.
       PushBackAll(&args, kDartStrongModeArgs, arraysize(kDartStrongModeArgs));
       if (use_checked_mode) {
         PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
       }
     } else if (use_checked_mode) {
+      // In non preview-dart-2 mode we enable checked mode and asserts if
+      // we are running in debug mode.
       PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
       PushBackAll(&args, kDartCheckedModeArgs, arraysize(kDartCheckedModeArgs));
     }
