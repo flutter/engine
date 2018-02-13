@@ -1549,10 +1549,6 @@ ORIGIN: ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/DEPS
 FILE: ../../../flutter/content_handler/meta/sandbox
-FILE: ../../../flutter/flutter_kernel_transformers/.idea/flutter_kernel_transformers.iml
-FILE: ../../../flutter/flutter_kernel_transformers/.idea/libraries/Dart_SDK.xml
-FILE: ../../../flutter/flutter_kernel_transformers/.idea/modules.xml
-FILE: ../../../flutter/flutter_kernel_transformers/.idea/workspace.xml
 FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries.json
