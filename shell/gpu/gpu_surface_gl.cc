@@ -139,6 +139,7 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
 
   // Either way, we need to get rid of previous surface.
   onscreen_surface_ = nullptr;
+  offscreen_surface_ = nullptr;
 
   if (size.isEmpty()) {
     FXL_LOG(ERROR) << "Cannot create surfaces of empty size.";
