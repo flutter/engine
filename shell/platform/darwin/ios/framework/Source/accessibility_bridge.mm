@@ -266,13 +266,15 @@ NSComparisonResult intToComparisonResult(int32_t value) {
 
 - (void)accessibilityElementDidBecomeFocused {
   if ([self node].HasAction(blink::SemanticsAction::kDidGainAccessibilityFocus)) {
-    [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kDidGainAccessibilityFocus);
+    [self bridge] -> DispatchSemanticsAction([self uid],
+                                             blink::SemanticsAction::kDidGainAccessibilityFocus);
   }
 }
 
 - (void)accessibilityElementDidLoseFocus {
   if ([self node].HasAction(blink::SemanticsAction::kDidLoseAccessibilityFocus)) {
-    [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kDidLoseAccessibilityFocus);
+    [self bridge] -> DispatchSemanticsAction([self uid],
+                                             blink::SemanticsAction::kDidLoseAccessibilityFocus);
   }
 }
 
@@ -447,7 +449,8 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
     scrollOccured = scrollOccured || [object nodeWillCauseScroll:&node];
     [object setSemanticsNode:&node];
     const NSUInteger newChildCount = node.children.size();
-    NSMutableArray* newChildren = [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
+    NSMutableArray* newChildren =
+        [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
     for (NSUInteger i = 0; i < newChildCount; i++) {
       [newChildren addObject:[NSNull null]];
     }
@@ -466,7 +469,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
 
   // Bring children into traversal order.
   for (SemanticsObject* object in childOrdersToUpdate) {
-    [object.children sortUsingComparator: ^(SemanticsObject* a, SemanticsObject* b) {
+    [object.children sortUsingComparator:^(SemanticsObject* a, SemanticsObject* b) {
       // Should a go before b?
       CGRect rectA = [a accessibilityFrame];
       CGRect rectB = [b accessibilityFrame];
