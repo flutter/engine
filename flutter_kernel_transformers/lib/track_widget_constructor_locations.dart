@@ -415,7 +415,6 @@ class WidgetCreatorTracker {
 
     // Add named parameters to all constructors.
     clazz.constructors.forEach(handleConstructor);
-    hierarchy.applyChanges(<Class>[clazz]);
   }
 
   Program _computeFullProgram(Program deltaProgram) {
@@ -479,9 +478,6 @@ class WidgetCreatorTracker {
         );
       }
     }
-    // Given the hierarchy we are using and the transforms we are applying,
-    // calling this method probably isn't really necessary.
-    hierarchy.applyChanges(transformedClasses);
 
     // Transform call sites to pass the location parameter.
     final _WidgetCallSiteTransformer callsiteTransformer =
