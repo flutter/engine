@@ -1,3 +1,7 @@
+// Copyright 2017 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 library frontend_server;
 
 import 'dart:async';
@@ -12,7 +16,6 @@ import 'package:args/args.dart';
 // ignore_for_file: implementation_imports
 import 'package:front_end/src/api_prototype/compiler_options.dart';
 import 'package:front_end/src/api_prototype/file_system.dart' show FileSystemEntity;
-import 'package:front_end/src/api_prototype/incremental_kernel_generator.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/binary/ast_to_binary.dart';
 import 'package:kernel/binary/limited_ast_to_binary.dart';
@@ -20,7 +23,10 @@ import 'package:kernel/kernel.dart' show Program, loadProgramFromBytes;
 import 'package:kernel/target/flutter.dart';
 import 'package:kernel/target/targets.dart';
 import 'package:usage/uuid/uuid.dart';
+import 'package:vm/incremental_compiler.dart' show IncrementalCompiler;
 import 'package:vm/kernel_front_end.dart' show compileToKernel;
+
+import 'package:flutter_kernel_transformers/track_widget_constructor_locations.dart';
 
 ArgParser _argParser = new ArgParser(allowTrailingOptions: true)
   ..addFlag('train',
@@ -44,9 +50,18 @@ ArgParser _argParser = new ArgParser(allowTrailingOptions: true)
           ' by gen_snapshot(which needs platform embedded) vs'
           ' Flutter engine(which does not)',
       defaultsTo: true)
+  ..addOption('output-dill',
+      help: 'Output path for the generated dill',
+      defaultsTo: null)
+  ..addOption('output-incremental-dill',
+      help: 'Output path for the generated incremental dill',
+      defaultsTo: null)
   ..addOption('packages',
       help: '.packages file to use for compilation',
-      defaultsTo: null);
+      defaultsTo: null)
+  ..addFlag('track-widget-creation',
+      help: 'Run a kernel transformer to track creation locations for widgets.',
+      defaultsTo: false);
 
 String _usage = '''
 Usage: server [options] [input.dart]
@@ -64,7 +79,6 @@ Instructions:
 ...
 <boundary-key>
 - accept
-- reject
 - quit
 
 Output:
@@ -87,7 +101,7 @@ abstract class CompilerInterface {
   Future<Null> compile(
     String filename,
     ArgResults options, {
-    IncrementalKernelGenerator generator,
+    IncrementalCompiler generator,
   });
 
   /// Assuming some Dart program was previously compiled, recompile it again
@@ -97,10 +111,6 @@ abstract class CompilerInterface {
   /// Accept results of previous compilation so that next recompilation cycle
   /// won't recompile sources that were previously reported as changed.
   void acceptLastDelta();
-
-  /// Reject results of previous compilation. Next recompilation cycle will
-  /// recompile sources indicated as changed.
-  void rejectLastDelta();
 
   /// This let's compiler know that source file identifed by `uri` was changed.
   void invalidate(Uri uri);
@@ -120,9 +130,12 @@ class BinaryPrinterFactory {
 }
 
 class _FrontendCompiler implements CompilerInterface {
-  _FrontendCompiler(this._outputStream, {this.printerFactory}) {
+  _FrontendCompiler(this._outputStream, {this.printerFactory, this.trackWidgetCreation}) {
     _outputStream ??= stdout;
     printerFactory ??= new BinaryPrinterFactory();
+    if (trackWidgetCreation) {
+      widgetCreatorTracker = new WidgetCreatorTracker();
+    }
   }
 
   StringSink _outputStream;
@@ -131,20 +144,26 @@ class _FrontendCompiler implements CompilerInterface {
   CompilerOptions _compilerOptions;
   Uri _entryPoint;
 
-  IncrementalKernelGenerator _generator;
+  IncrementalCompiler _generator;
   String _kernelBinaryFilename;
   String _kernelBinaryFilenameIncremental;
   String _kernelBinaryFilenameFull;
+  final bool trackWidgetCreation;
+  WidgetCreatorTracker widgetCreatorTracker;
 
   @override
   Future<Null> compile(
     String filename,
     ArgResults options, {
-    IncrementalKernelGenerator generator,
+    IncrementalCompiler generator,
   }) async {
     final Uri filenameUri = Uri.base.resolveUri(new Uri.file(filename));
-    _kernelBinaryFilenameFull = '$filename.dill';
-    _kernelBinaryFilenameIncremental = '$filename.incremental.dill';
+    _kernelBinaryFilenameFull = options['output-dill'] ?? '$filename.dill';
+    _kernelBinaryFilenameIncremental =
+        options['output-incremental-dill'] ??
+          options['output-dill'] != null
+            ? '${options["output-dill"]}.incremental.dill'
+            : '$filename.incremental.dill';
     _kernelBinaryFilename = _kernelBinaryFilenameFull;
     final String boundaryKey = new Uuid().generateV4();
     _outputStream.writeln('result $boundaryKey');
@@ -162,7 +181,7 @@ class _FrontendCompiler implements CompilerInterface {
       _compilerOptions = compilerOptions;
       _generator = generator ?? _createGenerator(new Uri.file(_kernelBinaryFilenameFull));
       await invalidateIfBootstrapping();
-      program = await _runWithPrintRedirection(() => _generator.computeDelta());
+      program = await _runWithPrintRedirection(() => _generator.compile());
     } else {
       if (options['link-platform']) {
         // TODO(aam): Remove linkedDependencies once platform is directly embedded
@@ -176,6 +195,7 @@ class _FrontendCompiler implements CompilerInterface {
       program = await _runWithPrintRedirection(() =>
           compileToKernel(filenameUri, compilerOptions, aot: options['aot']));
     }
+    runFlutterSpecificKernelTransforms(program);
     if (program != null) {
       final IOSink sink = new File(_kernelBinaryFilename).openWrite();
       final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
@@ -228,12 +248,23 @@ class _FrontendCompiler implements CompilerInterface {
     }
   }
 
+  void runFlutterSpecificKernelTransforms(Program program) {
+    if (program == null) {
+      return;
+    }
+
+    if (trackWidgetCreation) {
+      widgetCreatorTracker.transform(program);
+    }
+  }
+
   @override
   Future<Null> recompileDelta() async {
     final String boundaryKey = new Uuid().generateV4();
     _outputStream.writeln('result $boundaryKey');
     await invalidateIfBootstrapping();
-    final Program deltaProgram = await _generator.computeDelta();
+    final Program deltaProgram = await _generator.compile();
+    runFlutterSpecificKernelTransforms(deltaProgram);
     final IOSink sink = new File(_kernelBinaryFilename).openWrite();
     final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
     printer.writeProgramFile(deltaProgram);
@@ -245,12 +276,7 @@ class _FrontendCompiler implements CompilerInterface {
 
   @override
   void acceptLastDelta() {
-    // TODO(aam): implement this considering new incremental compiler API.
-  }
-
-  @override
-  void rejectLastDelta() {
-    // TODO(aam): implement this considering new incremental compiler API.
+    _generator.accept();
   }
 
   @override
@@ -264,8 +290,9 @@ class _FrontendCompiler implements CompilerInterface {
     _kernelBinaryFilename = _kernelBinaryFilenameFull;
   }
 
-  IncrementalKernelGenerator _createGenerator(Uri bootstrapDill) {
-    return new IncrementalKernelGenerator(_compilerOptions, _entryPoint, bootstrapDill);
+  IncrementalCompiler _createGenerator(Uri bootstrapDill) {
+    return new IncrementalCompiler(_compilerOptions, _entryPoint,
+        bootstrapDill: bootstrapDill);
   }
 
   Uri _ensureFolderPath(String path) {
@@ -275,6 +302,7 @@ class _FrontendCompiler implements CompilerInterface {
     }
     return Uri.base.resolve(uriPath);
   }
+
 
   /// Runs the given function [f] in a Zone that redirects all prints into
   /// [_outputStream].
@@ -295,7 +323,7 @@ Future<int> starter(
   CompilerInterface compiler,
   Stream<List<int>> input,
   StringSink output,
-  IncrementalKernelGenerator generator,
+  IncrementalCompiler generator,
   BinaryPrinterFactory binaryPrinterFactory,
 }) async {
   ArgResults options;
@@ -323,16 +351,12 @@ Future<int> starter(
     return 0;
   }
 
-  compiler ??=
-      new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
+  compiler ??= new _FrontendCompiler(
+    output,
+    printerFactory: binaryPrinterFactory,
+    trackWidgetCreation: options['track-widget-creation'],
+  );
   input ??= stdin;
-
-  // Has to be a directory, that won't have any of the compiled application
-  // sources, so that no relative paths could show up in the kernel file.
-  Directory.current = Directory.systemTemp;
-  final Directory workingDirectory = new Directory('flutter_frontend_server');
-  workingDirectory.createSync();
-  Directory.current = workingDirectory;
 
   if (options.rest.isNotEmpty) {
     await compiler.compile(options.rest[0], options, generator: generator);
@@ -358,9 +382,6 @@ Future<int> starter(
           state = _State.RECOMPILE_LIST;
         } else if (string == 'accept') {
           compiler.acceptLastDelta();
-        } else if (string == 'reject') {
-          // TODO(aam) implement reject so it won't reset compiler.
-          compiler.resetIncrementalCompiler();
         } else if (string == 'reset') {
           compiler.resetIncrementalCompiler();
         } else if (string == 'quit') {

@@ -10,16 +10,16 @@ import 'package:frontend_server/server.dart';
 // that would replace api used below. This api was made private in
 // an effort to discourage further use.
 // ignore_for_file: implementation_imports
-import 'package:front_end/src/api_prototype/incremental_kernel_generator.dart';
 import 'package:kernel/binary/ast_to_binary.dart';
 import 'package:kernel/ast.dart' show Program;
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
+import 'package:vm/incremental_compiler.dart';
 
 class _MockedCompiler extends Mock implements CompilerInterface {}
 
-class _MockedIncrementalKernelGenerator extends Mock
-  implements IncrementalKernelGenerator {}
+class _MockedIncrementalCompiler extends Mock
+  implements IncrementalCompiler {}
 
 class _MockedBinaryPrinterFactory extends Mock implements BinaryPrinterFactory {}
 
@@ -265,22 +265,6 @@ Future<int> main() async {
       inputStreamController.close();
     });
 
-    test('reject', () async {
-      final StreamController<List<int>> inputStreamController =
-      new StreamController<List<int>>();
-      final ReceivePort resetCalled = new ReceivePort();
-      when(compiler.resetIncrementalCompiler()).thenAnswer((Invocation invocation) {
-        resetCalled.sendPort.send(true);
-      });
-      final int exitcode = await starter(args, compiler: compiler,
-        input: inputStreamController.stream,
-      );
-      expect(exitcode, equals(0));
-      inputStreamController.add('reject\n'.codeUnits);
-      await resetCalled.first;
-      inputStreamController.close();
-    });
-
     test('reset', () async {
       final StreamController<List<int>> inputStreamController =
         new StreamController<List<int>>();
@@ -358,9 +342,9 @@ Future<int> main() async {
           }
         });
 
-      final _MockedIncrementalKernelGenerator generator =
-        new _MockedIncrementalKernelGenerator();
-      when(generator.computeDelta())
+      final _MockedIncrementalCompiler generator =
+        new _MockedIncrementalCompiler();
+      when(generator.compile())
           .thenAnswer((_) => new Future<Program>.value(new Program()));
       final _MockedBinaryPrinterFactory printerFactory =
         new _MockedBinaryPrinterFactory();
@@ -383,6 +367,36 @@ Future<int> main() async {
 
       streamController.close();
     });
+
+    group('compile with output path', ()
+    {
+      final CompilerInterface compiler = new _MockedCompiler();
+
+      test('compile from command line', () async {
+        final List<String> args = <String>[
+          'server.dart',
+          '--sdk-root',
+          'sdkroot',
+          '--output-dill',
+          '/foo/bar/server.dart.dill',
+          '--output-incremental-dill',
+          '/foo/bar/server.incremental.dart.dill',
+        ];
+        final int exitcode = await starter(args, compiler: compiler);
+        expect(exitcode, equals(0));
+        final List<ArgResults> capturedArgs =
+            verify(
+                compiler.compile(
+                  argThat(equals('server.dart')),
+                  captureAny,
+                  generator: any,
+                )
+            ).captured;
+        expect(capturedArgs.single['sdk-root'], equals('sdkroot'));
+        expect(capturedArgs.single['strong'], equals(false));
+      });
+    });
+
 
   });
   return 0;
