@@ -41,10 +41,6 @@ bool IOSSurfaceGL::GLContextMakeCurrent() {
   return IsValid() ? context_.MakeCurrent() : false;
 }
 
-bool IOSSurfaceGL::GLContextMakeCurrent2() {
-  return IsValid() ? context_.MakeCurrent2() : false;
-}
-
 bool IOSSurfaceGL::GLContextClearCurrent() {
   [EAGLContext setCurrentContext:nil];
   return true;

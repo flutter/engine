@@ -56,7 +56,9 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     // doesn't provide a way to calculate it.  We fill this whole region
     // and clip children to it so we don't need to join the child paint bounds.
     SkRect bounds(path_.getBounds());
-    bounds.outset(20.0, 20.0);
+    if (!needs_system_composite()) {
+     // bounds.outset(20.0, 20.0);
+    }
     set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
   }
@@ -67,13 +69,18 @@ void PhysicalShapeLayer::UpdateScene(LayeredPaintContext &context) {
   FXL_DCHECK(needs_system_composite());
 
       //  SkRRect rrect = path_.getFrameRRect();
-      FXL_LOG(INFO) << "PhysShapeLayer";
+        context.PushLayer(path_.getBounds());
+        context.Elevate(elevation_);
+        if (isRect_) {
+          context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
+        }
         context.PushLayer(path_.getBounds());
         context.ClipRect();
-        context.Elevate(elevation_);
         context.SetColor(color_);
         //context.SetColor(SK_ColorRED);
-    //    context.SetCornerRadius(rrect.getSimpleRadii().length());
+        if (isRect_) {
+          context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
+        }
   // SceneUpdateContext::Frame frame(context, shape_->getFrameRRect(), color_,
   //                                 elevation_);
   // for (auto& layer : layers()) {
@@ -83,6 +90,7 @@ void PhysicalShapeLayer::UpdateScene(LayeredPaintContext &context) {
   // }
 
   UpdateSceneChildren(context);
+  context.PopLayer();
   context.PopLayer();
 
 }

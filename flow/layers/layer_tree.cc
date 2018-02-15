@@ -70,20 +70,23 @@ void LayerTree::UpdateScene(LayeredPaintContext& context) {
   // SceneUpdateContext::Transform transform(context, 1.f / device_pixel_ratio_,
   //                                         1.f / device_pixel_ratio_, 1.f);
 
+  context.Transform(SkMatrix::MakeScale(1.f / 2,
+                                        1.f / 2));
+  
   if (root_layer_->needs_system_composite()) {
      root_layer_->UpdateScene(context);
-  } else  if (root_layer_->needs_painting()) {
-  // SceneUpdateContext::Frame frame(
+  } else if (root_layer_->needs_painting()) {
+   context.PushLayer(SkRect::MakeWH(frame_size_.width(), frame_size_.height()));
+// SceneUpdateContext::Frame frame(
   //     context,
   //     SkRRect::MakeRect(
   //         SkRect::MakeWH(frame_size_.width(), frame_size_.height())),
   //     SK_ColorTRANSPARENT, 0.f);
-    context.PushLayer(SkRect::MakeWH(frame_size_.width(), frame_size_.height()));
     context.AddPaintedLayer(root_layer_.get());
-    context.PopLayer();
     // frame.AddPaintedLayer(root_layer_.get());
+    context.PopLayer();
   }
-
+    context.PopTransform();
   // container.AddChild(transform.entity_node());
 }
 

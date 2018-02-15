@@ -14,14 +14,13 @@ ClipRectLayer::~ClipRectLayer() = default;
 void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
-
   if (child_paint_bounds.intersect(clip_rect_)) {
     set_paint_bounds(child_paint_bounds);
   }
 }
 
 
-void ClipRectLayer::UpdateScene(LayeredPaintContext &layers) {
+void ClipRectLayer::UpdateScene(LayeredPaintContext &context) {
   FXL_DCHECK(needs_system_composite());
 
   // scenic_lib::Rectangle shape(context.session(),   // session
@@ -30,12 +29,12 @@ void ClipRectLayer::UpdateScene(LayeredPaintContext &layers) {
   // );
 
   // SceneUpdateContext::Clip clip(context, shape, clip_rect_);
-      FXL_LOG(INFO) << "cliprect";
+      // FXL_LOG(INFO) << "cliprect";
 
-  layers.PushLayer(clip_rect_);
-  layers.ClipRect();
-  UpdateSceneChildren(layers);
-  layers.PopLayer();
+  context.PushLayer(clip_rect_);
+  context.ClipRect();
+  UpdateSceneChildren(context);
+  context.PopLayer();
 
 }
 

@@ -25,6 +25,8 @@
     layer.allowsGroupOpacity = YES;
     layer.opaque = YES;
     CGFloat screenScale = [UIScreen mainScreen].scale;
+    CGRect originalFrame = layer.frame;
+    layer.frame = originalFrame;
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
   }

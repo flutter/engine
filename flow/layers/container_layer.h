@@ -19,7 +19,7 @@ class ContainerLayer : public Layer {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  void UpdateScene(LayeredPaintContext &layers) override;
+  void UpdateScene(LayeredPaintContext &context) override;
 
   const std::vector<std::unique_ptr<Layer>>& layers() const { return layers_; }
 
@@ -29,7 +29,7 @@ class ContainerLayer : public Layer {
                        SkRect* child_paint_bounds);
   void PaintChildren(PaintContext& context) const;
 
-  void UpdateSceneChildren(LayeredPaintContext &layers);
+  void UpdateSceneChildren(LayeredPaintContext &context);
 
  private:
   std::vector<std::unique_ptr<Layer>> layers_;

@@ -22,14 +22,15 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(child_paint_bounds);
 }
 
-void TransformLayer::UpdateScene(LayeredPaintContext &layers) {
+void TransformLayer::UpdateScene(LayeredPaintContext &context) {
   FXL_DCHECK(needs_system_composite());
-  layers.Transform(transform_);
+//  layers.PushLayer(paint_bounds());
+  context.Transform(transform_);
 //  SceneUpdateContext::Transform transform(context, transform_);
-  UpdateSceneChildren(layers);
-  layers.PopTransform();
+  UpdateSceneChildren(context);
+  context.PopTransform();
+ // layers.PopLayer();
 }
-
 
 void TransformLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "TransformLayer::Paint");

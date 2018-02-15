@@ -31,7 +31,6 @@ class IOSGLContext {
   bool UpdateStorageSizeIfNecessary();
 
   bool MakeCurrent();
-  bool MakeCurrent2();
 
   bool ResourceMakeCurrent();
 

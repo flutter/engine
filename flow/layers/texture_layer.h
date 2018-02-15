@@ -25,7 +25,7 @@ class TextureLayer : public Layer {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) override;
-  void UpdateScene(LayeredPaintContext &layers) override;
+  void UpdateScene(LayeredPaintContext &context) override;
 
  private:
   SkPoint offset_;

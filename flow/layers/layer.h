@@ -86,7 +86,7 @@ class Layer {
   virtual void Paint(PaintContext& context) = 0;
 
   // Updates the system composited scene.
-  virtual void UpdateScene(LayeredPaintContext &layers);
+  virtual void UpdateScene(LayeredPaintContext &context);
 
   ContainerLayer* parent() const { return parent_; }
 
@@ -106,9 +106,6 @@ class Layer {
   }
 
   bool needs_painting() const { return !paint_bounds_.isEmpty(); }
-
- protected:
-  int paint_count = 0;
 
  private:
   ContainerLayer* parent_;

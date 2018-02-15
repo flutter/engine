@@ -25,8 +25,7 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   }
 }
 
-\
-void ClipPathLayer::UpdateScene(LayeredPaintContext &layers) {
+void ClipPathLayer::UpdateScene(LayeredPaintContext &context) {
   FXL_DCHECK(needs_system_composite());
 
   // // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
@@ -38,7 +37,7 @@ void ClipPathLayer::UpdateScene(LayeredPaintContext &layers) {
   // );
 
   // SceneUpdateContext::Clip clip(context, shape, bounds);
-  UpdateSceneChildren(layers);
+  UpdateSceneChildren(context);
 }
 
 void ClipPathLayer::Paint(PaintContext& context) {

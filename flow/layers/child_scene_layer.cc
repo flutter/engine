@@ -18,7 +18,7 @@ void ChildSceneLayer::Paint(PaintContext& context) {
   FXL_NOTREACHED() << "This layer never needs painting.";
 }
 
-void ChildSceneLayer::UpdateScene(LayeredPaintContext &layers) {
+void ChildSceneLayer::UpdateScene(LayeredPaintContext &context) {
   FXL_DCHECK(needs_system_composite());
 
   // TODO(MZ-191): Set clip.

@@ -21,7 +21,6 @@ class IOSLayeredPaintContext : public flow::LayeredPaintContext {
   explicit IOSLayeredPaintContext(IOSSurface *context);
   void Reset() override;
   void Finish() override;
-  void MakeTopLayerCurrent() override;
   void PushLayer(SkRect bounds) override;
   void PopLayer() override;
   SkCanvas *CurrentCanvas() override;
@@ -29,34 +28,55 @@ class IOSLayeredPaintContext : public flow::LayeredPaintContext {
   void Elevate(float elevation) override;
   void SetColor(SkColor color) override;
   void SetCornerRadius(float radius) override;
-  void AddExternalLayer(flow::Texture* texture, SkRect frame) override;
+  void AddExternalLayer(flow::Texture* texture, SkRect bounds) override;
   void ExecutePaintTasks(flow::CompositorContext::ScopedFrame& frame) override;
   void AddPaintedLayer(flow::Layer *layer) override;
   void Transform(SkMatrix transform) override;
   void PopTransform() override;
+  SkRect SystemCompositedRect() override;
 
 //  void AddPaintTask(PaintTask task) override;
 
  private:
+  struct Surface {
+    Surface(CAEAGLLayer *caLayer, IOSSurfaceGL *iosSurface);
+    CAEAGLLayer *caLayer;
+    IOSSurfaceGL *iosSurface;
+    std::unique_ptr<GPUSurfaceGL> gpuSurface;
+  };
+  
   class Layer {
    public:
-    explicit Layer(IOSSurfaceGL *surface);
+    explicit Layer();
     bool makeCurrent();
-    bool makeCurrent2();
-    CAEAGLLayer *layer();
+    CALayer *layer();
     void present();
     SkCanvas *canvas();
     void AddPaintedLayer(flow::Layer *layer);
+    void makePainted(Surface *surface);
+    void makeBasic(CALayer *layer);
     
-   std::vector<flow::Layer*> paint_layers_;
+    std::vector<flow::Layer*> paint_layers_;
+    SkColor background_color_;
+    float corner_radius_;
+    bool clip_ = false;
+    float elevation_ = 0.0f;
+
+    int id;
+    Layer *parent_;
+    SkRect frame_;
+    std::vector<CALayer*> externalLayers;
+    std::vector<SkRect> externalLayerFrames;
+    Surface *surface;
+    CALayer *layer_;
+    void manifest();
    private:
-   IOSSurfaceGL *iosSurface_;
-   std::unique_ptr<GPUSurfaceGL> gpuSurface_;
- //   sk_sp<GrContext> grContext_;
- //   IOSGLContext* context_;
- //   sk_sp<SkSurface> surface_;
-   SkCanvas *canvas_ = nullptr;
+    SkCanvas *canvas_ = nullptr;
   };
+
+  Layer *acquireLayer();
+  CALayer *basicLayer();
+  Surface *drawLayer();
 
   struct PaintTask {
     Layer *layer;
@@ -70,14 +90,21 @@ class IOSLayeredPaintContext : public flow::LayeredPaintContext {
   SkPoint current_offset();
   CAEAGLLayer *alloc_layer();
   IOSSurfaceGL *root_surface_;
-
-  CAEAGLLayer *CurrentLayer();
+  CAEAGLLayer *bottomLayer;
   std::vector<Layer*> stack_;
   std::vector<SkPoint> offsets_;
   std::vector<Layer*> cache_;
+
+  std::vector<CALayer*> CALayerCache_;
+  std::vector<Surface*> CAEAGLLayerCache_;
+  size_t CALayerCache_index_;
+  size_t CAEAGLLayerCache_index_;
+
   size_t cache_index_;
   std::vector<PaintTask> paint_tasks_;
   std::vector<SkMatrix> transforms_;
+  int height;
+  SkRect system_composited_rect_;
 };
 
 } // namespace shell

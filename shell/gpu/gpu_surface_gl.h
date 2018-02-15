@@ -16,7 +16,6 @@ namespace shell {
 class GPUSurfaceGLDelegate {
  public:
   virtual bool GLContextMakeCurrent() = 0;
-  virtual bool GLContextMakeCurrent2() = 0;
 
   virtual bool GLContextClearCurrent() = 0;
 
@@ -43,7 +42,6 @@ class GPUSurfaceGL : public Surface {
   bool PresentSurface();
 
   bool MakeCurrent();
-  bool MakeCurrent2();
 
  private:
   GPUSurfaceGLDelegate* delegate_;

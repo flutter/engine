@@ -15,6 +15,8 @@
 
 namespace shell {
 
+sk_sp<GrContext> global_context;
+
 // Default maximum number of budgeted resources in the cache.
 static const int kGrCacheMaxCount = 8192;
 
@@ -30,6 +32,7 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
     return;
   }
 
+if (!global_context) {
   GrContextOptions options;
   options.fAvoidStencilBuffers = true;
 
@@ -40,12 +43,14 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
     return;
   }
 
-  context_ = std::move(context);
+  global_context = std::move(context);
 
-  context_->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
+  global_context->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
 
   delegate_->GLContextClearCurrent();
+  }
 
+  context_ = global_context;
   valid_ = true;
 }
 
@@ -153,9 +158,6 @@ bool GPUSurfaceGL::MakeCurrent() {
    return delegate_->GLContextMakeCurrent();
 }
 
-bool GPUSurfaceGL::MakeCurrent2() {
-   return delegate_->GLContextMakeCurrent2();
-}
 std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
@@ -164,6 +166,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (!delegate_->GLContextMakeCurrent()) {
     FXL_LOG(ERROR)
         << "Could not make the context current to acquire the frame.";
+    assert(false);
     return nullptr;
   }
 

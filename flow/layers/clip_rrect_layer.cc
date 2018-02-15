@@ -20,7 +20,7 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 
-void ClipRRectLayer::UpdateScene(LayeredPaintContext &layers) {
+void ClipRRectLayer::UpdateScene(LayeredPaintContext &context) {
   FXL_DCHECK(needs_system_composite());
   // XXX(sigurdm): Do the right thing.
 
@@ -38,7 +38,7 @@ void ClipRRectLayer::UpdateScene(LayeredPaintContext &layers) {
   // );
 
   // SceneUpdateContext::Clip clip(context, shape, clip_rrect_.getBounds());
-  UpdateSceneChildren(layers);
+  UpdateSceneChildren(context);
 }
 
 

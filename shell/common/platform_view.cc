@@ -95,7 +95,8 @@ void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
     auto gpu_continuation = fxl::MakeCopyable([
       this,                          //
       surface = std::move(surface),  //
-      caller_continuation,           //#if defined(OS_IOS)
+      caller_continuation,           //
+      #if defined(OS_IOS)
       layeredPaintContext,
       #endif
       &latch

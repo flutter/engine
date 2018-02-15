@@ -20,7 +20,7 @@ class TransformLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) override;
 
-  void UpdateScene(LayeredPaintContext &layers) override;
+  void UpdateScene(LayeredPaintContext &context) override;
 
  private:
   SkMatrix transform_;

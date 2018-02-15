@@ -35,14 +35,13 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 void PictureLayer::Paint(PaintContext& context) {
-  TRACE_EVENT0("flutter", "PictureLayer::Paint");
   FXL_DCHECK(picture_);
   FXL_DCHECK(needs_painting());
 
   SkAutoCanvasRestore save(&context.canvas, true);
   context.canvas.translate(offset_.x(), offset_.y());
 
-  if (false) {
+  if (raster_cache_result_.is_valid()) {
     SkPaint paint;
     paint.setFilterQuality(kLow_SkFilterQuality);
     context.canvas.drawImageRect(
@@ -54,10 +53,6 @@ void PictureLayer::Paint(PaintContext& context) {
     );
   } else {
     context.canvas.drawPicture(picture_.get());
-  }
-  paint_count++;
-  if (paint_count > 1) {
-    FXL_LOG(INFO) << "painted " << paint_count << " times";
   }
 }
 
