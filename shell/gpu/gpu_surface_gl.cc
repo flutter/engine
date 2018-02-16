@@ -150,7 +150,6 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   }
 
   onscreen_surface_ = std::move(onscreen_surface);
-  FXL_LOG(INFO) << "Created onscreen surface";
   return true;
 }
 

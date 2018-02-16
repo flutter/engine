@@ -32,6 +32,8 @@ class Texture {
   // Called from GPU thread.
   virtual void OnGrContextDestroyed() = 0;
 
+  virtual bool NeedsSystemComposite() = 0;
+
   int64_t Id() { return id_; }
 
  private:

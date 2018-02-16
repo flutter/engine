@@ -35,4 +35,8 @@ void IOSExternalTextureLayer::OnGrContextDestroyed() {
   ASSERT_IS_GPU_THREAD
 }
 
+bool IOSExternalTextureLayer::NeedsSystemComposite() {
+  return true;
+}
+
 }  // namespace shell

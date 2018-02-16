@@ -82,4 +82,8 @@ void IOSExternalTextureGL::OnGrContextDestroyed() {
   cache_ref_.Reset(nullptr);
 }
 
+bool IOSExternalTextureGL::NeedsSystemComposite() {
+  return false;
+}
+
 }  // namespace shell

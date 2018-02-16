@@ -17,7 +17,12 @@ TextureLayer::~TextureLayer() = default;
 void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
                                     size_.height()));
-  set_needs_system_composite(true); // XXX
+  std::shared_ptr<Texture> texture =
+      context->texture_registry.GetTexture(texture_id_);
+  if (!texture) {
+    return;
+  }
+  set_needs_system_composite(texture->NeedsSystemComposite());
 }
 
 void TextureLayer::UpdateScene(LayeredPaintContext& context) {

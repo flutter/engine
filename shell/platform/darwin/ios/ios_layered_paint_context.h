@@ -55,6 +55,7 @@ class IOSLayeredPaintContext : public flow::LayeredPaintContext {
     void AddPaintedLayer(flow::Layer *layer);
     void makePainted(Surface *surface);
     void makeBasic(CALayer *layer);
+    void installChildren();
     
     std::vector<flow::Layer*> paint_layers_;
     SkColor background_color_;
@@ -63,8 +64,9 @@ class IOSLayeredPaintContext : public flow::LayeredPaintContext {
     float elevation_ = 0.0f;
 
     int id;
-    Layer *parent_;
+    std::vector<Layer*> children_;
     SkRect frame_;
+    std::vector<size_t> externalLayerHeights;
     std::vector<CALayer*> externalLayers;
     std::vector<SkRect> externalLayerFrames;
     Surface *surface;
@@ -80,8 +82,7 @@ class IOSLayeredPaintContext : public flow::LayeredPaintContext {
 
   struct PaintTask {
     Layer *layer;
-    SkScalar left;
-    SkScalar top;
+    SkPoint offset;
     SkMatrix transform;
     SkColor background_color;
     std::vector<flow::Layer*> layers;

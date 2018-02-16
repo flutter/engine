@@ -60,6 +60,7 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
     frame.gr_context(),
     color_space,
     SkRect::MakeEmpty(),
+    frame.context().texture_registry(),
   };
 
   root_layer_->Preroll(&context, SkMatrix::I());
@@ -98,7 +99,6 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame) const {
                                  frame.context().memory_usage(),
                                  frame.context().texture_registry(),
                                  checkerboard_offscreen_layers_,
-                                // *frame.layeredPaintContext(),
                                  };
   TRACE_EVENT0("flutter", "LayerTree::Paint");
 

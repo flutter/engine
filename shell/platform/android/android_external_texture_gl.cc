@@ -32,6 +32,10 @@ void AndroidExternalTextureGL::UpdateScene(flow::LayeredPaintContext *context, c
   ASSERT_IS_GPU_THREAD;
 }
 
+bool AndroidExternalTextureGL::NeedsSystemComposite() {
+  return false;
+}
+
 void AndroidExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds) {
   ASSERT_IS_GPU_THREAD;
   if (state_ == AttachmentState::detached) {

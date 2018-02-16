@@ -18,14 +18,15 @@ class IOSExternalTextureGL : public flow::Texture {
 
   ~IOSExternalTextureGL() override;
 
-  virtual void UpdateScene(flow::LayeredPaintContext *context, const SkRect& bounds) override;
+  void UpdateScene(flow::LayeredPaintContext *context, const SkRect& bounds) override;
 
-  // Called from GPU thread.
-  virtual void Paint(flow::Layer::PaintContext context, const SkRect& bounds) override;
+  void Paint(flow::Layer::PaintContext context, const SkRect& bounds) override;
 
-  virtual void OnGrContextCreated() override;
+  void OnGrContextCreated() override;
 
-  virtual void OnGrContextDestroyed() override;
+  void OnGrContextDestroyed() override;
+
+  bool NeedsSystemComposite() override;
 
  private:
   NSObject<FlutterTexture>* external_texture_;

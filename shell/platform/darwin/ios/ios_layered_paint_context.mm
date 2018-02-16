@@ -39,7 +39,7 @@ static CATransform3D skiaToCATransform(SkMatrix transform) {
   result.m43 = 0.0;
   result.m44 = 1.0;
   return result;
-} 
+}
 
 IOSLayeredPaintContext::Surface::Surface(CAEAGLLayer *caLayer, IOSSurfaceGL *iosSurface) :
   caLayer(caLayer), iosSurface(iosSurface), gpuSurface(iosSurface->CreateGPUSurface()) {}
@@ -68,6 +68,23 @@ void IOSLayeredPaintContext::Layer::makeBasic(CALayer *layer) {
   layer_ = layer;
 }
 
+void IOSLayeredPaintContext::Layer::installChildren() {
+  CALayer *parentCALayer = layer();
+  int zPosition = 0;
+  for (Layer *childLayer : children_) {
+    CALayer *childCALayer = childLayer->layer();
+    if ([childCALayer superlayer] != parentCALayer) {
+      [parentCALayer addSublayer:childCALayer];
+    }
+    if (childCALayer.zPosition != zPosition) {
+      childCALayer.zPosition = zPosition;
+    }
+    zPosition++;
+    childLayer->installChildren();
+  }
+  children_.clear();
+}
+
 void IOSLayeredPaintContext::Layer::manifest() {
   int alpha = SkColorGetA(background_color_);
   layer_.backgroundColor = [UIColor colorWithRed: SkColorGetR(background_color_) green: SkColorGetG(background_color_) blue: SkColorGetB(background_color_) alpha: alpha].CGColor;
@@ -90,13 +107,14 @@ void IOSLayeredPaintContext::Layer::manifest() {
   if (elevation_ == 0.0f) {
     layer_.shadowOpacity = 0.0;
   } else {
-     layer_.shadowOpacity = 0.3;
+     layer_.shadowOpacity = 0.2;
      layer_.opaque = YES; /// XXX
      // CurrentLayer().shadowPath = CGPathCreateWithRect(CurrentLayer().bounds, nullptr);
      layer_.shadowRadius = 2.0;
      layer_.shadowOffset = CGSizeMake(0 , 2);
-     layer_.borderWidth = 0.0;
   }
+  layer_.borderWidth = 0.0;
+  layer_.borderColor = [UIColor purpleColor].CGColor;
 
   CGRect newFrame = CGRectMake(frame_.x(), frame_.y(), frame_.width(), frame_.height());
   if (!CGRectEqualToRect(layer_.frame, newFrame)) {
@@ -105,21 +123,33 @@ void IOSLayeredPaintContext::Layer::manifest() {
 
   for (size_t i = 0; i < externalLayers.size(); i++) {
     CALayer *externalLayer = externalLayers[i];
+    //[externalLayer setNeedsDisplay];
+    //UIView *delegate = (UIView*)externalLayer.delegate ;
+    //[delegate setNeedsDisplay];
+  //  NSLog(@"Delegate %@", delegate);
+    // for (CALayer *sublayer in [externalLayer sublayers]) {
+    //   [sublayer setNeedsDisplay];
+    //   for (CALayer *sublayer2 in [sublayer sublayers]) {
+    //           [sublayer2 setNeedsDisplay];
+    //   }
+    // }
+    externalLayer.needsDisplayOnBoundsChange = true;
     SkRect externalFrame = externalLayerFrames[i];
+    size_t height = externalLayerHeights[i];
     if (externalLayer.superlayer != layer_) {
       [layer_ addSublayer: externalLayer];
-         CGFloat screenScale = [UIScreen mainScreen].scale;
-         externalLayer.contentsScale = screenScale;
+        //  CGFloat screenScale = [UIScreen mainScreen].scale;
+        //  externalLayer.contentsScale = screenScale;
     }
     CGRect newFrame = CGRectMake(externalFrame.x(), externalFrame.y(), externalFrame.width(), externalFrame.height());
-  
     if (!CGRectEqualToRect(externalLayer.frame, newFrame)) {
       externalLayer.frame = newFrame;
-      FXL_DLOG(INFO) << "New frame";
     }
+    externalLayer.zPosition = height + 0.5;
   }
   externalLayers.clear();
   externalLayerFrames.clear();
+  externalLayerHeights.clear();
 }
 
 CALayer *IOSLayeredPaintContext::Layer::layer() { return layer_; }
@@ -191,10 +221,10 @@ void IOSLayeredPaintContext::Reset() {
   cache_index_ = 0;
   CALayerCache_index_ = 0;
   CAEAGLLayerCache_index_ = 0;
-  NSLog(@"Begin");
   [CATransaction begin];
   [CATransaction setValue:(id)kCFBooleanTrue
                    forKey:kCATransactionDisableActions];
+  //NSLog(@"Begin");
 }
 
 void IOSLayeredPaintContext::Finish() {
@@ -205,7 +235,7 @@ void IOSLayeredPaintContext::Finish() {
     [CAEAGLLayerCache_[i]->caLayer removeFromSuperlayer];
   }
 
-  NSLog(@"Finishing %lu",stack_.size());
+  //NSLog(@"Finishing %lu",stack_.size());
 
   [CATransaction commit];
 }
@@ -224,7 +254,6 @@ void IOSLayeredPaintContext::Finish() {
 }
 
 void IOSLayeredPaintContext::PushLayer(SkRect bounds) {
-
 //  std::stringstream indent;
 //  for (uint i = 0; i < stack_.size(); i++) {
 //    indent << "  ";
@@ -233,13 +262,13 @@ void IOSLayeredPaintContext::PushLayer(SkRect bounds) {
   Layer *newLayer = acquireLayer();
 
   SkRect newBounds = bounds.makeOffset(-current_offset().x(), -current_offset().y());
-  
+
   transforms_.back().mapRect(&newBounds);
   newLayer->frame_ = newBounds;
   // FXL_DLOG(INFO) << indent.str() << "frame " << newBounds.x() << ", " << newBounds.y();
 
   if (! stack_.empty()) {
-    newLayer->parent_ = stack_.back();
+    stack_.back()->children_.push_back(newLayer);
   }
 
   stack_.push_back(newLayer);
@@ -249,17 +278,15 @@ void IOSLayeredPaintContext::PushLayer(SkRect bounds) {
 void IOSLayeredPaintContext::PopLayer() {
   Layer* top = stack_.back();
   SkPoint top_offset = offsets_.back();
- // if (!top->paint_layers_.empty()) {
-    paint_tasks_.push_back({
+  paint_tasks_.push_back({
     .layer = top,
     .transform = transforms_.back(),
-    .left = top_offset.x(),
-    .top  = top_offset.y(),
+    .offset = top_offset,
     .background_color = top->background_color_,
     .layers = top->paint_layers_,
   });
 
-  if (false || top->paint_layers_.empty()) {
+  if (top->paint_layers_.empty()) {
     top->makeBasic(basicLayer());
   } else {
     top->makePainted(drawLayer());
@@ -268,7 +295,7 @@ void IOSLayeredPaintContext::PopLayer() {
   top->paint_layers_.clear();
  // }
   stack_.pop_back();
-  offsets_.pop_back(); 
+  offsets_.pop_back();
   // std::stringstream indent;
   // for (uint i = 0; i < stack_.size(); i++) {
   //   indent << "  ";
@@ -291,9 +318,10 @@ void IOSLayeredPaintContext::AddExternalLayer(flow::Texture* texture, SkRect bou
 
   CALayer *externalLayer = (static_cast<IOSExternalTextureLayer*>(texture))->layer();
   stack_.back()->externalLayers.push_back(externalLayer);
-  
+
   SkRect newBounds = bounds.makeOffset(-current_offset().x(), -current_offset().y());
   stack_.back()->externalLayerFrames.push_back(newBounds);
+  stack_.back()->externalLayerHeights.push_back(stack_.back()->children_.size());
 
   system_composited_rect_.join(newBounds);
 }
@@ -303,7 +331,7 @@ void IOSLayeredPaintContext::SetColor(SkColor color) {
 }
 
 void IOSLayeredPaintContext::SetCornerRadius(float radius) {
- // NSLog(@"Setting corner radius to %f", radius);
+  // NSLog(@"SetCornerRadius %f", radius);
   stack_.back()->corner_radius_ = radius;
 }
 
@@ -312,9 +340,7 @@ void IOSLayeredPaintContext::ClipRect() {
 }
 
 void IOSLayeredPaintContext::Elevate(float elevation) {
- // CurrentLayer().zPosition = elevation;
   stack_.back()->elevation_ = elevation;
-//  CurrentLayer().borderColor = [UIColor purpleColor].CGColor;
 }
 
   // SkShadowFlags flags = transparentOccluder
@@ -331,16 +357,13 @@ void IOSLayeredPaintContext::Elevate(float elevation) {
   void IOSLayeredPaintContext::ExecutePaintTasks(flow::CompositorContext::ScopedFrame& frame) {
 //      NSLog(@"Execute %lu", paint_tasks_.size());
   FXL_DCHECK(glGetError() == GL_NO_ERROR);
+
+  stack_[0]->installChildren();
   for (auto& task : paint_tasks_) {
     FXL_DCHECK(task.layer);
   //  FXL_DLOG(INFO) << "Layer id: " << task.layer->id;
   //  FXL_DLOG(INFO) << "Layer Size: " << task.layer->layer().frame.size.width << "x" << task.layer->layer().frame.size.height;
-    CALayer *parentCALayer = task.layer->parent_->layer();
-    CALayer *childCALayer = task.layer->layer();
 
-    if ([childCALayer superlayer] != parentCALayer) {
-      [parentCALayer addSublayer:childCALayer];
-    }
     task.layer->manifest();
     if (!task.layers.empty()) {
       task.layer->makeCurrent();
@@ -356,7 +379,7 @@ void IOSLayeredPaintContext::Elevate(float elevation) {
       int saveCount = canvas->save();
       canvas->clear(task.background_color);
       context.canvas.scale(2, 2);
-      canvas->translate(-task.left, -task.top);
+      canvas->translate(-task.offset.x(), -task.offset.y());
       context.canvas.concat(task.transform);
       // NSLog(@"Task  %f %f", task.left, task.top);
 
@@ -373,9 +396,9 @@ void IOSLayeredPaintContext::Elevate(float elevation) {
       for (flow::Layer* layer : task.layers) {
         layer->Paint(context);
       }
-      std::stringstream a;
-      a << "Layer " << task.layer->id;
-      canvas->drawString(a.str().c_str(), task.left + 2, task.top + 20, paint);
+      // std::stringstream a;
+      // a << "Layer " << task.layer->id;
+      // canvas->drawString(a.str().c_str(), task.offset.x() + 2, task.offset.y() + 20, paint);
       canvas->restoreToCount(saveCount);
       task.layers.clear();
       task.layer->present();
@@ -388,10 +411,10 @@ void IOSLayeredPaintContext::Elevate(float elevation) {
 void IOSLayeredPaintContext::Transform(SkMatrix transform) {
   // [CurrentLayer() setAffineTransform:
   //  CGAffineTransformMake(
-  //    transform[0], transform[1], 
-  //    transform[3], transform[4], 
+  //    transform[0], transform[1],
+  //    transform[3], transform[4],
   //    transform[6], transform[7])];
-  // CurrentLayer().transform = 
+  // CurrentLayer().transform =
        skiaToCATransform(transform); // XXX
   transforms_.push_back(SkMatrix::Concat(transforms_.back(), transform));
 //  SkMatrix currentTransform = transforms_.back();

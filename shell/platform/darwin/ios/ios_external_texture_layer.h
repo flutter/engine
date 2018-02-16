@@ -29,6 +29,8 @@ class IOSExternalTextureLayer : public flow::Texture {
 
   void OnGrContextDestroyed() override;
 
+  bool NeedsSystemComposite() override;
+
   CALayer *layer() { return external_layer_; }
 
  private:

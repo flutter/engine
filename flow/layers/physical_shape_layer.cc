@@ -71,16 +71,12 @@ void PhysicalShapeLayer::UpdateScene(LayeredPaintContext &context) {
       //  SkRRect rrect = path_.getFrameRRect();
         context.PushLayer(path_.getBounds());
         context.Elevate(elevation_);
-        if (isRect_) {
-          context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
-        }
+        context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
         context.PushLayer(path_.getBounds());
         context.ClipRect();
         context.SetColor(color_);
         //context.SetColor(SK_ColorRED);
-        if (isRect_) {
-          context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
-        }
+        context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
   // SceneUpdateContext::Frame frame(context, shape_->getFrameRRect(), color_,
   //                                 elevation_);
   // for (auto& layer : layers()) {
