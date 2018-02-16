@@ -199,6 +199,7 @@ class _FrontendCompiler implements CompilerInterface {
     if (program != null) {
       final IOSink sink = new File(_kernelBinaryFilename).openWrite();
       final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
+      program.unbindCanonicalNames();
       printer.writeProgramFile(program);
       await sink.close();
       _outputStream.writeln('$boundaryKey $_kernelBinaryFilename');
@@ -267,6 +268,7 @@ class _FrontendCompiler implements CompilerInterface {
     runFlutterSpecificKernelTransforms(deltaProgram);
     final IOSink sink = new File(_kernelBinaryFilename).openWrite();
     final BinaryPrinter printer = printerFactory.newBinaryPrinter(sink);
+    deltaProgram.unbindCanonicalNames();
     printer.writeProgramFile(deltaProgram);
     await sink.close();
     _outputStream.writeln('$boundaryKey $_kernelBinaryFilename');
