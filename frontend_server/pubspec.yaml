@@ -127,6 +127,8 @@ dependency_overrides:
     path: ../../third_party/dart/third_party/pkg/mockito
   package_resolver:
     path: ../../third_party/dart/third_party/pkg_tested/package_resolver
+  path:
+    path: ../../third_party/dart/third_party/pkg/path
   plugin:
     path: ../../third_party/dart/third_party/pkg/plugin
   pool:

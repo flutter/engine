@@ -22,6 +22,7 @@ import 'package:kernel/binary/limited_ast_to_binary.dart';
 import 'package:kernel/kernel.dart' show Program, loadProgramFromBytes;
 import 'package:kernel/target/flutter.dart';
 import 'package:kernel/target/targets.dart';
+import 'package:path/path.dart' as p;
 import 'package:usage/uuid/uuid.dart';
 import 'package:vm/incremental_compiler.dart' show IncrementalCompiler;
 import 'package:vm/kernel_front_end.dart' show compileToKernel;
@@ -337,8 +338,13 @@ Future<int> starter(
 
   if (options['train']) {
     final String sdkRoot = options['sdk-root'];
-    options = _argParser.parse(<String>['--incremental', '--sdk-root=$sdkRoot']);
+    final File outputTrainingDill = new File(p.join(
+        Directory.systemTemp.createTempSync('train_frontend_server').path,
+        'app.dill'));
+    options = _argParser.parse(<String>['--incremental', '--sdk-root=$sdkRoot',
+      '--output-dill=$outputTrainingDill']);
     compiler ??= new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
+
     await compiler.compile(Platform.script.toFilePath(), options, generator: generator);
     compiler.acceptLastDelta();
     await compiler.recompileDelta();
