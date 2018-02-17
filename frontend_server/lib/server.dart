@@ -338,9 +338,9 @@ Future<int> starter(
 
   if (options['train']) {
     final String sdkRoot = options['sdk-root'];
-    final File outputTrainingDill = new File(p.join(
+    final String outputTrainingDill = p.join(
         Directory.systemTemp.createTempSync('train_frontend_server').path,
-        'app.dill'));
+        'app.dill');
     options = _argParser.parse(<String>['--incremental', '--sdk-root=$sdkRoot',
       '--output-dill=$outputTrainingDill']);
     compiler ??= new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
