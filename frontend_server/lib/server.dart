@@ -338,23 +338,30 @@ Future<int> starter(
 
   if (options['train']) {
     final String sdkRoot = options['sdk-root'];
-    Directory temp = Directory.systemTemp.createTempSync('train_frontend_server');
-    final String outputTrainingDill = path.join(temp.path, 'app.dill');
-    options = _argParser.parse(<String>['--incremental', '--sdk-root=$sdkRoot',
-      '--output-dill=$outputTrainingDill']);
-    compiler ??= new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
+    final Directory temp = Directory.systemTemp.createTempSync('train_frontend_server');
+    try {
+      final String outputTrainingDill = path.join(temp.path, 'app.dill');
+      options =
+          _argParser.parse(<String>['--incremental', '--sdk-root=$sdkRoot',
+          '--output-dill=$outputTrainingDill'
+          ]);
+      compiler ??=
+      new _FrontendCompiler(output, printerFactory: binaryPrinterFactory);
 
-    await compiler.compile(Platform.script.toFilePath(), options, generator: generator);
-    compiler.acceptLastDelta();
-    await compiler.recompileDelta();
-    compiler.acceptLastDelta();
-    compiler.resetIncrementalCompiler();
-    await compiler.recompileDelta();
-    compiler.acceptLastDelta();
-    await compiler.recompileDelta();
-    compiler.acceptLastDelta();
-    temp.deleteSync(recursive: true);
-    return 0;
+      await compiler.compile(
+          Platform.script.toFilePath(), options, generator: generator);
+      compiler.acceptLastDelta();
+      await compiler.recompileDelta();
+      compiler.acceptLastDelta();
+      compiler.resetIncrementalCompiler();
+      await compiler.recompileDelta();
+      compiler.acceptLastDelta();
+      await compiler.recompileDelta();
+      compiler.acceptLastDelta();
+      return 0;
+    } finally {
+      temp.deleteSync(recursive: true);
+    }
   }
 
   compiler ??= new _FrontendCompiler(
