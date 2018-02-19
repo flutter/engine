@@ -8,22 +8,24 @@
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "lib/tonic/dart_wrappable.h"
+#include "lib/tonic/typed_data/float64_list.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
 
 namespace blink {
 
-class ImageFilter : public ftl::RefCountedThreadSafe<ImageFilter>,
+class ImageFilter : public fxl::RefCountedThreadSafe<ImageFilter>,
                     public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
   FRIEND_MAKE_REF_COUNTED(ImageFilter);
 
  public:
   ~ImageFilter() override;
-  static ftl::RefPtr<ImageFilter> Create();
+  static fxl::RefPtr<ImageFilter> Create();
 
   void initImage(CanvasImage* image);
   void initPicture(Picture*);
   void initBlur(double sigma_x, double sigma_y);
+  void initMatrix(const tonic::Float64List& matrix4, int filter_quality);
 
   const sk_sp<SkImageFilter>& filter() { return filter_; }
 

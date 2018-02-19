@@ -7,10 +7,11 @@
 
 #include "flutter/flow/matrix_decomposition.h"
 #include "flutter/flow/raster_cache_key.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkMatrix44.h"
 #include "third_party/skia/include/core/SkPoint3.h"
+#include "third_party/skia/include/core/SkRRect.h"
 
 #define DEF_PRINTER(x) std::ostream& operator<<(std::ostream&, const x&);
 
@@ -20,5 +21,8 @@ DEF_PRINTER(SkMatrix);
 DEF_PRINTER(SkMatrix44);
 DEF_PRINTER(SkVector3);
 DEF_PRINTER(SkVector4);
+DEF_PRINTER(SkRect);
+DEF_PRINTER(SkRRect);
+DEF_PRINTER(SkPoint);
 
 #endif  // FLUTTER_FLOW_DEBUG_PRINT_H_

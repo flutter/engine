@@ -7,16 +7,18 @@
 
 #include <memory>
 
-#include "application/lib/svc/service_provider_bridge.h"
-#include "application/services/application_controller.fidl.h"
-#include "application/services/application_runner.fidl.h"
-#include "application/services/service_provider.fidl.h"
-#include "apps/mozart/services/views/view_provider.fidl.h"
-#include "dart/runtime/include/dart_api.h"
+#include <fdio/namespace.h>
+
+#include "lib/app/fidl/application_controller.fidl.h"
+#include "lib/app/fidl/application_runner.fidl.h"
+#include "lib/app/fidl/service_provider.fidl.h"
 #include "lib/fidl/cpp/bindings/binding.h"
 #include "lib/fidl/cpp/bindings/binding_set.h"
-#include "lib/ftl/macros.h"
-#include "lib/ftl/synchronization/waitable_event.h"
+#include "lib/fxl/macros.h"
+#include "lib/fxl/synchronization/waitable_event.h"
+#include "lib/svc/cpp/service_provider_bridge.h"
+#include "lib/ui/views/fidl/view_provider.fidl.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
 namespace flutter_runner {
 class App;
@@ -37,6 +39,7 @@ class ApplicationControllerImpl : public app::ApplicationController,
 
   void Kill() override;
   void Detach() override;
+  void Wait(const WaitCallback& callback) override;
 
   // |mozart::ViewProvider| implementation
 
@@ -49,6 +52,9 @@ class ApplicationControllerImpl : public app::ApplicationController,
 
  private:
   void StartRuntimeIfReady();
+  void SendReturnCode(int32_t return_code);
+
+  fdio_ns_t* SetupNamespace(const app::FlatNamespacePtr& flat);
 
   App* app_;
   fidl::Binding<app::ApplicationController> binding_;
@@ -60,7 +66,9 @@ class ApplicationControllerImpl : public app::ApplicationController,
   std::string url_;
   std::unique_ptr<RuntimeHolder> runtime_holder_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(ApplicationControllerImpl);
+  std::vector<WaitCallback> wait_callbacks_;
+
+  FXL_DISALLOW_COPY_AND_ASSIGN(ApplicationControllerImpl);
 };
 
 }  // namespace flutter_runner

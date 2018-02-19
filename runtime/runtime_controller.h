@@ -11,7 +11,7 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/window.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 
 namespace blink {
 class DartController;
@@ -28,19 +28,24 @@ class RuntimeController : public WindowClient, public IsolateClient {
 
   void CreateDartController(const std::string& script_uri,
                             const uint8_t* isolate_snapshot_data,
-                            const uint8_t* isolate_snapshot_instr);
+                            const uint8_t* isolate_snapshot_instr,
+                            int dirfd = -1);
   DartController* dart_controller() const { return dart_controller_.get(); }
 
   void SetViewportMetrics(const ViewportMetrics& metrics);
   void SetLocale(const std::string& language_code,
                  const std::string& country_code);
+  void SetUserSettingsData(const std::string& data);
   void SetSemanticsEnabled(bool enabled);
 
-  void BeginFrame(ftl::TimePoint frame_time);
+  void BeginFrame(fxl::TimePoint frame_time);
+  void NotifyIdle(int64_t deadline);
 
-  void DispatchPlatformMessage(ftl::RefPtr<PlatformMessage> message);
+  void DispatchPlatformMessage(fxl::RefPtr<PlatformMessage> message);
   void DispatchPointerDataPacket(const PointerDataPacket& packet);
-  void DispatchSemanticsAction(int32_t id, SemanticsAction action);
+  void DispatchSemanticsAction(int32_t id,
+                               SemanticsAction action,
+                               std::vector<uint8_t> args);
 
   Dart_Port GetMainPort();
   std::string GetIsolateName();
@@ -56,18 +61,19 @@ class RuntimeController : public WindowClient, public IsolateClient {
   void ScheduleFrame() override;
   void Render(Scene* scene) override;
   void UpdateSemantics(SemanticsUpdate* update) override;
-  void HandlePlatformMessage(ftl::RefPtr<PlatformMessage> message) override;
+  void HandlePlatformMessage(fxl::RefPtr<PlatformMessage> message) override;
 
   void DidCreateSecondaryIsolate(Dart_Isolate isolate) override;
+  void DidShutdownMainIsolate() override;
 
   RuntimeDelegate* client_;
-  ViewportMetrics viewport_metrics_;
   std::string language_code_;
   std::string country_code_;
+  std::string user_settings_data_ = "{}";
   bool semantics_enabled_ = false;
   std::unique_ptr<DartController> dart_controller_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
+  FXL_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
 };
 
 }  // namespace blink

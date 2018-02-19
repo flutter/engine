@@ -6,7 +6,7 @@
 #define FLUTTER_FLOW_LAYERS_PERFORMANCE_OVERLAY_LAYER_H_
 
 #include "flutter/flow/layers/layer.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 
 namespace flow {
 
@@ -21,12 +21,12 @@ class PerformanceOverlayLayer : public Layer {
  public:
   explicit PerformanceOverlayLayer(uint64_t options);
 
-  void Paint(PaintContext& context) override;
+  void Paint(PaintContext& context) const override;
 
  private:
   int options_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(PerformanceOverlayLayer);
+  FXL_DISALLOW_COPY_AND_ASSIGN(PerformanceOverlayLayer);
 };
 
 }  // namespace flow

@@ -16,18 +16,15 @@ class OpacityLayer : public ContainerLayer {
 
   void set_alpha(int alpha) { alpha_ = alpha; }
 
- protected:
-  void Paint(PaintContext& context) override;
+  void Paint(PaintContext& context) const override;
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context,
-                   mozart::Node* container) override;
-#endif  // defined(OS_FUCHSIA)
+  // TODO(chinmaygarde): Once MZ-139 is addressed, introduce a new node in the
+  // session scene hierarchy.
 
  private:
   int alpha_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);
+  FXL_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);
 };
 
 }  // namespace flow

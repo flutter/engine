@@ -4,9 +4,9 @@
 
 #include "flutter/lib/ui/painting/gradient.h"
 
+#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_args.h"
 #include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_library_natives.h"
 
 namespace blink {
@@ -31,16 +31,16 @@ void CanvasGradient::RegisterNatives(tonic::DartLibraryNatives* natives) {
                      FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-ftl::RefPtr<CanvasGradient> CanvasGradient::Create() {
-  return ftl::MakeRefCounted<CanvasGradient>();
+fxl::RefPtr<CanvasGradient> CanvasGradient::Create() {
+  return fxl::MakeRefCounted<CanvasGradient>();
 }
 
 void CanvasGradient::initLinear(const tonic::Float32List& end_points,
                                 const tonic::Int32List& colors,
                                 const tonic::Float32List& color_stops,
                                 SkShader::TileMode tile_mode) {
-  FTL_DCHECK(end_points.num_elements() == 4);
-  FTL_DCHECK(colors.num_elements() == color_stops.num_elements() ||
+  FXL_DCHECK(end_points.num_elements() == 4);
+  FXL_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
 
   static_assert(sizeof(SkPoint) == sizeof(float) * 2,
@@ -60,7 +60,7 @@ void CanvasGradient::initRadial(double center_x,
                                 const tonic::Int32List& colors,
                                 const tonic::Float32List& color_stops,
                                 SkShader::TileMode tile_mode) {
-  FTL_DCHECK(colors.num_elements() == color_stops.num_elements() ||
+  FXL_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
 
   static_assert(sizeof(SkColor) == sizeof(int32_t),

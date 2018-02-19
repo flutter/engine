@@ -151,7 +151,13 @@ using namespace shell;
 }
 
 - (void)popSystemNavigator {
-  // Apple's human user guidelines say not to terminate iOS applications.
+  // Apple's human user guidelines say not to terminate iOS applications. However, if the
+  // root view of the app is a navigation controller, it is instructed to back up a level
+  // in the navigation hierarchy.
+  UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
+  if ([viewController isKindOfClass:[UINavigationController class]]) {
+    [((UINavigationController*)viewController) popViewControllerAnimated:NO];
+  }
 }
 
 - (NSDictionary*)getClipboardData:(NSString*)format {
@@ -163,7 +169,6 @@ using namespace shell;
   }
   return nil;
 }
-
 
 - (void)setClipboardData:(NSDictionary*)data {
   UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];

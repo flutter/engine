@@ -21,15 +21,25 @@ VulkanApplication::VulkanApplication(
     uint32_t api_version)
     : vk(p_vk), api_version_(api_version), valid_(false) {
   // Check if we want to enable debugging.
-
+  std::vector<VkExtensionProperties> supported_extensions =
+      GetSupportedInstanceExtensions(vk);
   bool enable_instance_debugging =
-      IsDebuggingEnabled() && VulkanDebugReport::DebugExtensionSupported(vk);
+      IsDebuggingEnabled() &&
+      ExtensionSupported(supported_extensions,
+                         VulkanDebugReport::DebugExtensionName());
 
   // Configure extensions.
 
   if (enable_instance_debugging) {
     enabled_extensions.emplace_back(VulkanDebugReport::DebugExtensionName());
   }
+#if OS_FUCHSIA
+  if (ExtensionSupported(supported_extensions,
+                         VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
+    enabled_extensions.emplace_back(
+        VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+  }
+#endif
 
   const char* extensions[enabled_extensions.size()];
 
@@ -76,29 +86,29 @@ VulkanApplication::VulkanApplication(
 
   if (VK_CALL_LOG_ERROR(vk.CreateInstance(&create_info, nullptr, &instance)) !=
       VK_SUCCESS) {
-    FTL_DLOG(INFO) << "Could not create application instance.";
+    FXL_DLOG(INFO) << "Could not create application instance.";
     return;
   }
 
   // Now that we have an instance, setup instance proc table entries.
   if (!vk.SetupInstanceProcAddresses(instance)) {
-    FTL_DLOG(INFO) << "Could not setup instance proc addresses.";
+    FXL_DLOG(INFO) << "Could not setup instance proc addresses.";
     return;
   }
 
   instance_ = {instance, [this](VkInstance i) {
-                 FTL_LOG(INFO) << "Destroying Vulkan instance";
+                 FXL_LOG(INFO) << "Destroying Vulkan instance";
                  vk.DestroyInstance(i, nullptr);
                }};
 
   if (enable_instance_debugging) {
     auto debug_report = std::make_unique<VulkanDebugReport>(vk, instance_);
     if (!debug_report->IsValid()) {
-      FTL_LOG(INFO) << "Vulkan debugging was enabled but could not be setup "
+      FXL_LOG(INFO) << "Vulkan debugging was enabled but could not be setup "
                        "for this instance.";
     } else {
       debug_report_ = std::move(debug_report);
-      FTL_DLOG(INFO) << "Debug reporting is enabled.";
+      FXL_DLOG(INFO) << "Debug reporting is enabled.";
     }
   }
 
@@ -131,13 +141,13 @@ std::vector<VkPhysicalDevice> VulkanApplication::GetPhysicalDevices() const {
   uint32_t device_count = 0;
   if (VK_CALL_LOG_ERROR(vk.EnumeratePhysicalDevices(instance_, &device_count,
                                                     nullptr)) != VK_SUCCESS) {
-    FTL_DLOG(INFO) << "Could not enumerate physical device.";
+    FXL_DLOG(INFO) << "Could not enumerate physical device.";
     return {};
   }
 
   if (device_count == 0) {
     // No available devices.
-    FTL_DLOG(INFO) << "No physical devices found.";
+    FXL_DLOG(INFO) << "No physical devices found.";
     return {};
   }
 
@@ -147,7 +157,7 @@ std::vector<VkPhysicalDevice> VulkanApplication::GetPhysicalDevices() const {
 
   if (VK_CALL_LOG_ERROR(vk.EnumeratePhysicalDevices(
           instance_, &device_count, physical_devices.data())) != VK_SUCCESS) {
-    FTL_DLOG(INFO) << "Could not enumerate physical device.";
+    FXL_DLOG(INFO) << "Could not enumerate physical device.";
     return {};
   }
 
@@ -162,8 +172,49 @@ VulkanApplication::AcquireFirstCompatibleLogicalDevice() const {
       return logical_device;
     }
   }
-  FTL_DLOG(INFO) << "Could not acquire compatible logical device.";
+  FXL_DLOG(INFO) << "Could not acquire compatible logical device.";
   return nullptr;
+}
+
+std::vector<VkExtensionProperties>
+VulkanApplication::GetSupportedInstanceExtensions(
+    const VulkanProcTable& vk) const {
+  if (!vk.EnumerateInstanceExtensionProperties) {
+    return std::vector<VkExtensionProperties>();
+  }
+
+  uint32_t count = 0;
+  if (VK_CALL_LOG_ERROR(vk.EnumerateInstanceExtensionProperties(
+          nullptr, &count, nullptr)) != VK_SUCCESS) {
+    return std::vector<VkExtensionProperties>();
+  }
+
+  if (count == 0) {
+    return std::vector<VkExtensionProperties>();
+  }
+
+  std::vector<VkExtensionProperties> properties;
+  properties.resize(count);
+  if (VK_CALL_LOG_ERROR(vk.EnumerateInstanceExtensionProperties(
+          nullptr, &count, properties.data())) != VK_SUCCESS) {
+    return std::vector<VkExtensionProperties>();
+  }
+
+  return properties;
+}
+
+bool VulkanApplication::ExtensionSupported(
+    const std::vector<VkExtensionProperties>& supported_instance_extensions,
+    std::string extension_name) {
+  uint32_t count = supported_instance_extensions.size();
+  for (size_t i = 0; i < count; i++) {
+    if (strncmp(supported_instance_extensions[i].extensionName,
+                extension_name.c_str(), extension_name.size()) == 0) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 }  // namespace vulkan

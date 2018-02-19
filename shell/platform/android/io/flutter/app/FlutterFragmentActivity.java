@@ -12,6 +12,7 @@ import android.support.v4.app.FragmentActivity;
 import io.flutter.app.FlutterActivityDelegate.ViewFactory;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
+import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterView;
 
 /**
@@ -55,6 +56,11 @@ public class FlutterFragmentActivity
      */
     @Override
     public FlutterView createFlutterView(Context context) {
+        return null;
+    }
+
+    @Override
+    public FlutterNativeView createFlutterNativeView() {
         return null;
     }
 
@@ -107,7 +113,7 @@ public class FlutterFragmentActivity
     // @Override - added in API level 23
     public void onRequestPermissionsResult(
             int requestCode, String[] permissions, int[] grantResults) {
-        eventDelegate.onRequestPermissionResult(requestCode, permissions, grantResults);
+        eventDelegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override

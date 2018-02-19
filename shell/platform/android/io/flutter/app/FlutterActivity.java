@@ -12,6 +12,7 @@ import android.os.Bundle;
 import io.flutter.app.FlutterActivityDelegate.ViewFactory;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
+import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterView;
 
 /**
@@ -36,15 +37,6 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     }
 
     /**
-     * Hook for subclasses to customize their startup behavior.
-     *
-     * @deprecated Just override {@link #onCreate(Bundle)} instead, and add your
-     * logic after calling {@code super.onCreate()}.
-     */
-    @Deprecated
-    protected void onFlutterReady() {}
-
-    /**
      * Hook for subclasses to customize the creation of the
      * {@code FlutterView}.
      *
@@ -53,6 +45,18 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
      */
     @Override
     public FlutterView createFlutterView(Context context) {
+        return null;
+    }
+
+    /**
+     * Hook for subclasses to customize the creation of the
+     * {@code FlutterNativeView}.
+     *
+     * <p>The default implementation returns {@code null}, which will cause the
+     * activity to use a newly instantiated native view object.</p>
+     */
+    @Override
+    public FlutterNativeView createFlutterNativeView() {
         return null;
     }
 
@@ -75,7 +79,12 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         eventDelegate.onCreate(savedInstanceState);
-        onFlutterReady();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        eventDelegate.onResume();
     }
 
     @Override
@@ -105,7 +114,7 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
 
     // @Override - added in API level 23
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        eventDelegate.onRequestPermissionResult(requestCode, permissions, grantResults);
+        eventDelegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override

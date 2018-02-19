@@ -8,7 +8,7 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
-#include "lib/ftl/memory/weak_ptr.h"
+#include "lib/fxl/memory/weak_ptr.h"
 
 @class NSOpenGLView;
 @class NSOpenGLContext;
@@ -20,6 +20,8 @@ class PlatformViewMac : public PlatformView, public GPUSurfaceGLDelegate {
   PlatformViewMac(NSOpenGLView* gl_view);
 
   ~PlatformViewMac() override;
+
+  virtual void Attach() override;
 
   void SetupAndLoadDart();
 
@@ -39,6 +41,8 @@ class PlatformViewMac : public PlatformView, public GPUSurfaceGLDelegate {
                      const std::string& main,
                      const std::string& packages) override;
 
+  void SetAssetBundlePath(const std::string& assets_directory) override;
+
  private:
   fml::scoped_nsobject<NSOpenGLView> opengl_view_;
   fml::scoped_nsobject<NSOpenGLContext> resource_loading_context_;
@@ -49,7 +53,9 @@ class PlatformViewMac : public PlatformView, public GPUSurfaceGLDelegate {
                               const std::string& main,
                               const std::string& packages);
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(PlatformViewMac);
+  void SetAssetBundlePathOnUI(const std::string& assets_directory);
+
+  FXL_DISALLOW_COPY_AND_ASSIGN(PlatformViewMac);
 };
 
 }  // namespace shell

@@ -245,11 +245,15 @@ source_set("platform") {
   ]
 
   public_deps = [
-    "//flutter/common",
-    "//flutter/sky/engine/wtf",
+    "$flutter_root/common",
+    "$flutter_root/sky/engine/wtf",
     "//third_party/skia",
     "//third_party/skia:effects",
     "//third_party/skia:gpu",
+  ]
+
+  public_configs = [
+    "$flutter_root:config",
   ]
 
   if (!is_mac) {
@@ -285,12 +289,12 @@ source_set("platform") {
       "fonts/fuchsia/FontCacheFuchsia.h",
     ]
 
-    deps += [ "//apps/fonts/services" ]
+    deps += [ "//garnet/public/lib/fonts/fidl" ]
   }
 
   configs += [
-    "//flutter/sky/engine:config",
-    "//flutter/sky/engine:non_test_config",
+    "$flutter_root/sky/engine:config",
+    "$flutter_root/sky/engine:non_test_config",
   ]
 
   defines = [
@@ -299,6 +303,18 @@ source_set("platform") {
   ]
 
   include_dirs = [ "$root_build_dir" ]
+  if (is_win) {
+     cflags = [
+       "/wd4334",  # Result of 32-bit shift implicity converted to 64 bits.
+       "/wd4724",  # Modulo by 0.
+     ]
+     sources += [
+       "fonts/win/FontCacheSkiaWin.cpp",
+       "fonts/win/FontFallbackWin.cpp",
+       "fonts/win/FontFallbackWin.h",
+       "fonts/win/FontPlatformDataWin.cpp",
+     ]
+  }
 
   if (is_android) {
     # Add in some Linux files also shared with Android.

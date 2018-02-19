@@ -27,14 +27,17 @@ RuntimeController::RuntimeController(RuntimeDelegate* client)
 RuntimeController::~RuntimeController() {}
 
 void RuntimeController::CreateDartController(
-    const std::string& script_uri, const uint8_t* isolate_snapshot_data,
-    const uint8_t* isolate_snapshot_instr) {
-  FTL_DCHECK(!dart_controller_);
+    const std::string& script_uri,
+    const uint8_t* isolate_snapshot_data,
+    const uint8_t* isolate_snapshot_instr,
+    int dirfd) {
+  FXL_DCHECK(!dart_controller_);
 
   dart_controller_.reset(new DartController());
   dart_controller_->CreateIsolateFor(
       script_uri, isolate_snapshot_data, isolate_snapshot_instr,
-      std::make_unique<UIDartState>(this, std::make_unique<Window>(this)));
+      std::make_unique<UIDartState>(this, std::make_unique<Window>(this),
+                                    dirfd));
 
   UIDartState* dart_state = dart_controller_->dart_state();
   DartState::Scope scope(dart_state);
@@ -43,7 +46,6 @@ void RuntimeController::CreateDartController(
 
   Window* window = GetWindow();
 
-  window->UpdateWindowMetrics(viewport_metrics_);
   window->UpdateLocale(language_code_, country_code_);
 
   if (semantics_enabled_)
@@ -51,8 +53,7 @@ void RuntimeController::CreateDartController(
 }
 
 void RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
-  viewport_metrics_ = metrics;
-  GetWindow()->UpdateWindowMetrics(viewport_metrics_);
+  GetWindow()->UpdateWindowMetrics(metrics);
 }
 
 void RuntimeController::SetLocale(const std::string& language_code,
@@ -65,6 +66,13 @@ void RuntimeController::SetLocale(const std::string& language_code,
   GetWindow()->UpdateLocale(language_code_, country_code_);
 }
 
+void RuntimeController::SetUserSettingsData(const std::string& data) {
+  if (user_settings_data_ == data)
+    return;
+  user_settings_data_ = data;
+  GetWindow()->UpdateUserSettingsData(user_settings_data_);
+}
+
 void RuntimeController::SetSemanticsEnabled(bool enabled) {
   if (semantics_enabled_ == enabled)
     return;
@@ -72,26 +80,39 @@ void RuntimeController::SetSemanticsEnabled(bool enabled) {
   GetWindow()->UpdateSemanticsEnabled(semantics_enabled_);
 }
 
-void RuntimeController::BeginFrame(ftl::TimePoint frame_time) {
+void RuntimeController::BeginFrame(fxl::TimePoint frame_time) {
   GetWindow()->BeginFrame(frame_time);
 }
 
+void RuntimeController::NotifyIdle(int64_t deadline) {
+  UIDartState* dart_state = dart_controller_->dart_state();
+  if (!dart_state) {
+    return;
+  }
+  DartState::Scope scope(dart_state);
+  Dart_NotifyIdle(deadline);
+}
+
 void RuntimeController::DispatchPlatformMessage(
-    ftl::RefPtr<PlatformMessage> message) {
-  TRACE_EVENT0("flutter", "RuntimeController::DispatchPlatformMessage");
+    fxl::RefPtr<PlatformMessage> message) {
+  TRACE_EVENT1("flutter", "RuntimeController::DispatchPlatformMessage", "mode",
+               "basic");
   GetWindow()->DispatchPlatformMessage(std::move(message));
 }
 
 void RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
-  TRACE_EVENT0("flutter", "RuntimeController::DispatchPointerDataPacket");
+  TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
+               "mode", "basic");
   GetWindow()->DispatchPointerDataPacket(packet);
 }
 
 void RuntimeController::DispatchSemanticsAction(int32_t id,
-                                                SemanticsAction action) {
-  TRACE_EVENT0("flutter", "RuntimeController::DispatchSemanticsAction");
-  GetWindow()->DispatchSemanticsAction(id, action);
+                                                SemanticsAction action,
+                                                std::vector<uint8_t> args) {
+  TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction", "mode",
+               "basic");
+  GetWindow()->DispatchSemanticsAction(id, action, std::move(args));
 }
 
 Window* RuntimeController::GetWindow() {
@@ -116,12 +137,16 @@ void RuntimeController::UpdateSemantics(SemanticsUpdate* update) {
 }
 
 void RuntimeController::HandlePlatformMessage(
-    ftl::RefPtr<PlatformMessage> message) {
+    fxl::RefPtr<PlatformMessage> message) {
   client_->HandlePlatformMessage(std::move(message));
 }
 
 void RuntimeController::DidCreateSecondaryIsolate(Dart_Isolate isolate) {
   client_->DidCreateSecondaryIsolate(isolate);
+}
+
+void RuntimeController::DidShutdownMainIsolate() {
+  client_->DidShutdownMainIsolate();
 }
 
 Dart_Port RuntimeController::GetMainPort() {

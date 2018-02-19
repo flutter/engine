@@ -4,25 +4,38 @@
 
 package io.flutter.app;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
+import android.content.res.Resources.NotFoundException;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
+import android.util.TypedValue;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
+import android.widget.FrameLayout;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.PluginRegistry;
-import io.flutter.plugin.common.PluginRegistry.ActivityResultListener;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
-import io.flutter.plugin.common.PluginRegistry.RequestPermissionResultListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.Preconditions;
 import io.flutter.view.FlutterMain;
+import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterView;
+import io.flutter.view.TextureRegistry;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -50,6 +63,11 @@ public final class FlutterActivityDelegate
         implements FlutterActivityEvents,
                    FlutterView.Provider,
                    PluginRegistry {
+    private static final String SPLASH_SCREEN_META_DATA_KEY = "io.flutter.app.android.SplashScreenUntilFirstFrame";
+    private static final String TAG = "FlutterActivityDelegate";
+    private static final LayoutParams matchParent =
+        new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+
     /**
      * Specifies the mechanism by which Flutter views are created during the
      * operation of a {@code FlutterActivityDelegate}.
@@ -57,20 +75,22 @@ public final class FlutterActivityDelegate
      * <p>A delegate's view factory will be consulted during
      * {@link #onCreate(Bundle)}. If it returns {@code null}, then the delegate
      * will fall back to instantiating a new full-screen {@code FlutterView}.</p>
+     *
+     * <p>A delegate's native view factory will be consulted during
+     * {@link #onCreate(Bundle)}. If it returns {@code null}, then the delegate
+     * will fall back to instantiating a new {@code FlutterNativeView}. This is
+     * useful for applications to override to reuse the FlutterNativeView held
+     * e.g. by a pre-existing background service.</p>
      */
     public interface ViewFactory {
         FlutterView createFlutterView(Context context);
+        FlutterNativeView createFlutterNativeView();
     }
 
     private final Activity activity;
     private final ViewFactory viewFactory;
-    private final Map<String, Object> pluginMap = new LinkedHashMap<>(0);
-    private final List<RequestPermissionResultListener> requestPermissionResultListeners = new ArrayList<>(0);
-    private final List<ActivityResultListener> activityResultListeners = new ArrayList<>(0);
-    private final List<NewIntentListener> newIntentListeners = new ArrayList<>(0);
-    private final List<UserLeaveHintListener> userLeaveHintListeners = new ArrayList<>(0);
-
     private FlutterView flutterView;
+    private View launchView;
 
     public FlutterActivityDelegate(Activity activity, ViewFactory viewFactory) {
         this.activity = Preconditions.checkNotNull(activity);
@@ -82,45 +102,39 @@ public final class FlutterActivityDelegate
         return flutterView;
     }
 
+    // The implementation of PluginRegistry forwards to flutterView.
     @Override
     public boolean hasPlugin(String key) {
-        return pluginMap.containsKey(key);
+        return flutterView.getPluginRegistry().hasPlugin(key);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T valuePublishedByPlugin(String pluginKey) {
-        return (T) pluginMap.get(pluginKey);
+        return (T) flutterView.getPluginRegistry().valuePublishedByPlugin(pluginKey);
     }
 
     @Override
     public Registrar registrarFor(String pluginKey) {
-        if (pluginMap.containsKey(pluginKey)) {
-            throw new IllegalStateException("Plugin key " + pluginKey + " is already in use");
-        }
-        pluginMap.put(pluginKey, null);
-        return new FlutterRegistrar(pluginKey);
+        return flutterView.getPluginRegistry().registrarFor(pluginKey);
     }
 
     @Override
+    public boolean onRequestPermissionsResult(
+            int requestCode, String[] permissions, int[] grantResults) {
+        return flutterView.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    @Deprecated
     public boolean onRequestPermissionResult(
             int requestCode, String[] permissions, int[] grantResults) {
-        for (RequestPermissionResultListener listener : requestPermissionResultListeners) {
-            if (listener.onRequestPermissionResult(requestCode, permissions, grantResults)) {
-                return true;
-            }
-        }
-        return false;
+        return onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
-        for (ActivityResultListener listener : activityResultListeners) {
-            if (listener.onActivityResult(requestCode, resultCode, data)) {
-                return true;
-            }
-        }
-        return false;
+        return flutterView.getPluginRegistry().onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
@@ -137,18 +151,28 @@ public final class FlutterActivityDelegate
 
         flutterView = viewFactory.createFlutterView(activity);
         if (flutterView == null) {
-            flutterView = new FlutterView(activity);
-            flutterView.setLayoutParams(
-                    new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+            FlutterNativeView nativeView = viewFactory.createFlutterNativeView();
+            flutterView = new FlutterView(activity, null, nativeView);
+            flutterView.setLayoutParams(matchParent);
             activity.setContentView(flutterView);
+            launchView = createLaunchView();
+            if (launchView != null) {
+                addLaunchView();
+            }
         }
 
-        if (loadIntent(activity.getIntent())) {
+        // When an activity is created for the first time, we direct the
+        // FlutterView to re-use a pre-existing Isolate rather than create a new
+        // one. This is so that an Isolate coming in from the ViewFactory is
+        // used.
+        final boolean reuseIsolate = true;
+
+        if (loadIntent(activity.getIntent(), reuseIsolate)) {
             return;
         }
         String appBundlePath = FlutterMain.findAppBundlePath(activity.getApplicationContext());
         if (appBundlePath != null) {
-            flutterView.runFromBundle(appBundlePath, null);
+            flutterView.runFromBundle(appBundlePath, null, "main", reuseIsolate);
         }
     }
 
@@ -157,11 +181,7 @@ public final class FlutterActivityDelegate
         // Only attempt to reload the Flutter Dart code during development. Use
         // the debuggable flag as an indicator that we are in development mode.
         if (!isDebuggable() || !loadIntent(intent)) {
-            for (NewIntentListener listener : newIntentListeners) {
-                if (listener.onNewIntent(intent)) {
-                    return;
-                }
-            }
+            flutterView.getPluginRegistry().onNewIntent(intent);
         }
     }
 
@@ -171,6 +191,14 @@ public final class FlutterActivityDelegate
 
     @Override
     public void onPause() {
+        Application app = (Application) activity.getApplicationContext();
+        if (app instanceof FlutterApplication) {
+            FlutterApplication flutterApp = (FlutterApplication) app;
+            if (this.equals(flutterApp.getCurrentActivity())) {
+                Log.i(TAG, "onPause setting current activity to null");
+                flutterApp.setCurrentActivity(null);
+            }
+        }
         if (flutterView != null) {
             flutterView.onPause();
         }
@@ -178,6 +206,14 @@ public final class FlutterActivityDelegate
 
     @Override
     public void onResume() {
+        Application app = (Application) activity.getApplicationContext();
+        if (app instanceof FlutterApplication) {
+            FlutterApplication flutterApp = (FlutterApplication) app;
+            Log.i(TAG, "onResume setting current activity to this");
+            flutterApp.setCurrentActivity(activity);
+        } else {
+            Log.i(TAG, "onResume app wasn't a FlutterApplication!!");
+        }
     }
 
     @Override
@@ -189,8 +225,24 @@ public final class FlutterActivityDelegate
 
     @Override
     public void onDestroy() {
+        Application app = (Application) activity.getApplicationContext();
+        if (app instanceof FlutterApplication) {
+            FlutterApplication flutterApp = (FlutterApplication) app;
+            if (this.equals(flutterApp.getCurrentActivity())) {
+                Log.i(TAG, "onDestroy setting current activity to null");
+                flutterApp.setCurrentActivity(null);
+            }
+        }
         if (flutterView != null) {
-            flutterView.destroy();
+            final boolean detach =
+                flutterView.getPluginRegistry().onViewDestroy(flutterView.getFlutterNativeView());
+            if (detach) {
+                // Detach, but do not destroy the FlutterView if a plugin
+                // expressed interest in its FlutterNativeView.
+                flutterView.detach();
+            } else {
+                flutterView.destroy();
+            }
         }
     }
 
@@ -205,6 +257,7 @@ public final class FlutterActivityDelegate
 
     @Override
     public void onUserLeaveHint() {
+        flutterView.getPluginRegistry().onUserLeaveHint();
     }
 
     @Override
@@ -245,6 +298,9 @@ public final class FlutterActivityDelegate
         if (intent.getBooleanExtra("enable-software-rendering", false)) {
             args.add("--enable-software-rendering");
         }
+        if (intent.getBooleanExtra("trace-skia", false)) {
+            args.add("--trace-skia");
+        }
         if (!args.isEmpty()) {
             String[] argsArray = new String[args.size()];
             return args.toArray(argsArray);
@@ -253,6 +309,11 @@ public final class FlutterActivityDelegate
     }
 
     private boolean loadIntent(Intent intent) {
+        final boolean reuseIsolate = false;
+        return loadIntent(intent, reuseIsolate);
+    }
+
+    private boolean loadIntent(Intent intent, boolean reuseIsolate) {
         String action = intent.getAction();
         if (Intent.ACTION_RUN.equals(action)) {
             String route = intent.getStringExtra("route");
@@ -265,72 +326,119 @@ public final class FlutterActivityDelegate
             if (route != null) {
                 flutterView.setInitialRoute(route);
             }
-            flutterView.runFromBundle(appBundlePath, intent.getStringExtra("snapshot"));
+            flutterView.runFromBundle(appBundlePath, intent.getStringExtra("snapshot"), "main", reuseIsolate);
             return true;
         }
 
         return false;
     }
 
-    private class FlutterRegistrar implements Registrar {
-        private final String pluginKey;
+    /**
+     * Creates a {@link View} containing the same {@link Drawable} as the one set as the
+     * {@code windowBackground} of the parent activity for use as a launch splash view.
+     *
+     * Returns null if no {@code windowBackground} is set for the activity.
+     */
+    private View createLaunchView() {
+        if (!showSplashScreenUntilFirstFrame()) {
+            return null;
+        }
+        final Drawable launchScreenDrawable = getLaunchScreenDrawableFromActivityTheme();
+        if (launchScreenDrawable == null) {
+            return null;
+        }
+        final View view = new View(activity);
+        view.setLayoutParams(matchParent);
+        view.setBackground(launchScreenDrawable);
+        return view;
+    }
 
-        FlutterRegistrar(String pluginKey) {
-            this.pluginKey = pluginKey;
+    /**
+     * Extracts a {@link Drawable} from the parent activity's {@code windowBackground}.
+     *
+     * {@code android:windowBackground} is specifically reused instead of a other attributes
+     * because the Android framework can display it fast enough when launching the app as opposed
+     * to anything defined in the Activity subclass.
+     *
+     * Returns null if no {@code windowBackground} is set for the activity.
+     */
+    @SuppressWarnings("deprecation")
+    private Drawable getLaunchScreenDrawableFromActivityTheme() {
+        TypedValue typedValue = new TypedValue();
+        if (!activity.getTheme().resolveAttribute(
+            android.R.attr.windowBackground,
+            typedValue,
+            true)) {;
+            return null;
+        }
+        if (typedValue.resourceId == 0) {
+            return null;
+        }
+        try {
+            return activity.getResources().getDrawable(typedValue.resourceId);
+        } catch (NotFoundException e) {
+            Log.e(TAG, "Referenced launch screen windowBackground resource does not exist");
+            return null;
+        }
+    }
+
+    /**
+     * Let the user specify whether the activity's {@code windowBackground} is a launch screen
+     * and should be shown until the first frame via a <meta-data> tag in the activity.
+     */
+    private Boolean showSplashScreenUntilFirstFrame() {
+        try {
+            ActivityInfo activityInfo = activity.getPackageManager().getActivityInfo(
+                activity.getComponentName(),
+                PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES);
+            Bundle metadata = activityInfo.metaData;
+            return metadata != null && metadata.getBoolean(SPLASH_SCREEN_META_DATA_KEY);
+        } catch (NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Show and then automatically animate out the launch view.
+     *
+     * If a launch screen is defined in the user application's AndroidManifest.xml as the
+     * activity's {@code windowBackground}, display it on top of the {@link FlutterView} and
+     * remove the activity's {@code windowBackground}.
+     *
+     * Fade it out and remove it when the {@link FlutterView} renders its first frame.
+     */
+    private void addLaunchView() {
+        if (launchView == null) {
+            return;
         }
 
-        @Override
-        public Activity activity() {
-            return activity;
-        }
+        activity.addContentView(launchView, matchParent);
+        flutterView.addFirstFrameListener(new FlutterView.FirstFrameListener() {
+            @Override
+            public void onFirstFrame() {
+                FlutterActivityDelegate.this.launchView.animate()
+                    .alpha(0f)
+                    // Use Android's default animation duration.
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            // Views added to an Activity's addContentView is always added to its
+                            // root FrameLayout.
+                            ((ViewGroup) FlutterActivityDelegate.this.launchView.getParent())
+                                .removeView(FlutterActivityDelegate.this.launchView);
+                            FlutterActivityDelegate.this.launchView = null;
+                        }
+                    });
 
-        @Override
-        public BinaryMessenger messenger() {
-            return flutterView;
-        }
+                FlutterActivityDelegate.this.flutterView.removeFirstFrameListener(this);
+            }
+        });
 
-        /**
-         * Publishes a value associated with the plugin being registered.
-         *
-         * <p>The published value is available to interested clients via
-         * {@link PluginRegistry#valuePublishedByPlugin(String)}.</p>
-         *
-         * <p>Publication should be done only when there is an interesting value
-         * to be shared with other code. This would typically be an instance of
-         * the plugin's main class itself that must be wired up to receive
-         * notifications or events from an Android API.
-         *
-         * <p>Overwrites any previously published value.</p>
-         */
-        @Override
-        public Registrar publish(Object value) {
-            pluginMap.put(pluginKey, value);
-            return this;
-        }
-
-        @Override
-        public Registrar addRequestPermissionResultListener(
-                RequestPermissionResultListener listener) {
-            requestPermissionResultListeners.add(listener);
-            return this;
-        }
-
-        @Override
-        public Registrar addActivityResultListener(ActivityResultListener listener) {
-            activityResultListeners.add(listener);
-            return this;
-        }
-
-        @Override
-        public Registrar addNewIntentListener(NewIntentListener listener) {
-            newIntentListeners.add(listener);
-            return this;
-        }
-
-        @Override
-        public Registrar addUserLeaveHintListener(UserLeaveHintListener listener) {
-            userLeaveHintListeners.add(listener);
-            return this;
-        }
+        // Resets the activity theme from the one containing the launch screen in the window
+        // background to a blank one since the launch screen is now in a view in front of the
+        // FlutterView.
+        //
+        // We can make this configurable if users want it.
+        activity.setTheme(android.R.style.Theme_Black_NoTitleBar);
     }
 }

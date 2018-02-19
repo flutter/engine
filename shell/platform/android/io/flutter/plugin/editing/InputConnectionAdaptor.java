@@ -8,6 +8,7 @@ import android.content.Context;
 import android.text.Editable;
 import android.text.Selection;
 import android.view.inputmethod.BaseInputConnection;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.view.KeyEvent;
 
@@ -90,6 +91,10 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
     @Override
     public boolean deleteSurroundingText(int beforeLength, int afterLength) {
+        if (Selection.getSelectionStart(mEditable) == -1 ||
+            Selection.getSelectionStart(mEditable) == -1)
+            return true;
+
         boolean result = super.deleteSurroundingText(beforeLength, afterLength);
         updateEditingState();
         return result;
@@ -137,9 +142,19 @@ class InputConnectionAdaptor extends BaseInputConnection {
                     Selection.setSelection(mEditable, selStart - 1);
                     deleteSurroundingText(0, 1);
                 }
+            } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
+                int selStart = Selection.getSelectionStart(mEditable);
+                int newSel = Math.max(selStart - 1, 0);
+                setSelection(newSel, newSel);
+            } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                int selStart = Selection.getSelectionStart(mEditable);
+                int newSel = Math.min(selStart + 1, mEditable.length());
+                setSelection(newSel, newSel);
             } else {
                 // Enter a character.
-                commitText(String.valueOf(event.getNumber()), 1);
+                int character = event.getUnicodeChar();
+                if (character != 0)
+                    commitText(String.valueOf((char) character), 1);
             }
         }
         return result;
@@ -148,8 +163,17 @@ class InputConnectionAdaptor extends BaseInputConnection {
     @Override
     public boolean performEditorAction(int actionCode) {
         // TODO(abarth): Support more actions.
-        mFlutterChannel.invokeMethod("TextInputClient.performAction",
-            Arrays.asList(mClient, "TextInputAction.done"));
+        switch (actionCode) {
+            case EditorInfo.IME_ACTION_NONE:
+                mFlutterChannel.invokeMethod("TextInputClient.performAction",
+                    Arrays.asList(mClient, "TextInputAction.newline"));
+                break;
+            default:
+            case EditorInfo.IME_ACTION_DONE:
+                mFlutterChannel.invokeMethod("TextInputClient.performAction",
+                    Arrays.asList(mClient, "TextInputAction.done"));
+                break;
+        }
         return true;
     }
 }

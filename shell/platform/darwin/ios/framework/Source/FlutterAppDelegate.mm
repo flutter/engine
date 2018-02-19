@@ -4,7 +4,7 @@
 
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
-#include "lib/ftl/logging.h"
+#include "lib/fxl/logging.h"
 
 @interface FlutterAppDelegate ()
 @property(readonly, nonatomic) NSMutableArray* pluginDelegates;
@@ -74,7 +74,7 @@
   _debugBackgroundTask = [application
       beginBackgroundTaskWithName:@"Flutter debug task"
                 expirationHandler:^{
-                  FTL_LOG(WARNING)
+                  FXL_LOG(WARNING)
                       << "\nThe OS has terminated the Flutter debug connection for being "
                          "inactive in the background for too long.\n\n"
                          "There are no errors with your Flutter application.\n\n"
@@ -160,9 +160,7 @@
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
-      if ([plugin application:application
-                      openURL:url
-                      options:options]) {
+      if ([plugin application:application openURL:url options:options]) {
         return YES;
       }
     }
@@ -200,7 +198,7 @@
 
 - (void)application:(UIApplication*)application
     performActionForShortcutItem:(UIApplicationShortcutItem*)shortcutItem
-               completionHandler:(void (^)(BOOL succeeded))completionHandler {
+               completionHandler:(void (^)(BOOL succeeded))completionHandler NS_AVAILABLE_IOS(9_0) {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       if ([plugin application:application
@@ -210,6 +208,23 @@
       }
     }
   }
+}
+
+// TODO(xster): move when doing https://github.com/flutter/flutter/issues/3671.
+- (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
+  UIViewController* rootViewController = _window.rootViewController;
+  if ([rootViewController conformsToProtocol:@protocol(FlutterBinaryMessenger)]) {
+    return (NSObject<FlutterBinaryMessenger>*)rootViewController;
+  }
+  return nil;
+}
+
+- (NSObject<FlutterTextureRegistry>*)textures {
+  UIViewController* rootViewController = _window.rootViewController;
+  if ([rootViewController conformsToProtocol:@protocol(FlutterTextureRegistry)]) {
+    return (NSObject<FlutterTextureRegistry>*)rootViewController;
+  }
+  return nil;
 }
 
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
@@ -248,7 +263,11 @@
 }
 
 - (NSObject<FlutterBinaryMessenger>*)messenger {
-  return (FlutterViewController*)_appDelegate.window.rootViewController;
+  return [_appDelegate binaryMessenger];
+}
+
+- (NSObject<FlutterTextureRegistry>*)textures {
+  return [_appDelegate textures];
 }
 
 - (void)publish:(NSObject*)value {

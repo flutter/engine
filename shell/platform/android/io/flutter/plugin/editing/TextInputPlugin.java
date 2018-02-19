@@ -38,6 +38,7 @@ public class TextInputPlugin implements MethodCallHandler {
     private int mClient = 0;
     private JSONObject mConfiguration;
     private Editable mEditable;
+    private boolean mRestartInputPending;
 
     public TextInputPlugin(FlutterView view) {
         mView = view;
@@ -76,7 +77,9 @@ public class TextInputPlugin implements MethodCallHandler {
         }
     }
 
-    private static int inputTypeFromTextInputType(String inputType, boolean obscureText) {
+    private static int inputTypeFromTextInputType(String inputType,
+                                                  boolean obscureText,
+                                                  boolean autocorrect) {
         if (inputType.equals("TextInputType.datetime"))
             return InputType.TYPE_CLASS_DATETIME;
         if (inputType.equals("TextInputType.number"))
@@ -85,7 +88,9 @@ public class TextInputPlugin implements MethodCallHandler {
             return InputType.TYPE_CLASS_PHONE;
 
         int textType = InputType.TYPE_CLASS_TEXT;
-        if (inputType.equals("TextInputType.emailAddress"))
+        if (inputType.equals("TextInputType.multiline"))
+            textType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+        else if (inputType.equals("TextInputType.emailAddress"))
             textType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
         else if (inputType.equals("TextInputType.url"))
             textType |= InputType.TYPE_TEXT_VARIATION_URI;
@@ -93,8 +98,19 @@ public class TextInputPlugin implements MethodCallHandler {
             // Note: both required. Some devices ignore TYPE_TEXT_FLAG_NO_SUGGESTIONS.
             textType |= InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS;
             textType |= InputType.TYPE_TEXT_VARIATION_PASSWORD;
+        } else {
+          if (autocorrect)
+            textType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT;
+          if (inputType.equals("TextInputType.text") || inputType.equals("TextInputType.multiline"))
+            textType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
         }
         return textType;
+    }
+
+    private static int inputActionFromTextInputAction(String inputAction) {
+        if (inputAction.equals("TextInputAction.newline"))
+            return EditorInfo.IME_ACTION_NONE;
+        return EditorInfo.IME_ACTION_DONE;
     }
 
     public InputConnection createInputConnection(FlutterView view, EditorInfo outAttrs)
@@ -102,15 +118,30 @@ public class TextInputPlugin implements MethodCallHandler {
         if (mClient == 0)
             return null;
 
-        outAttrs.inputType = inputTypeFromTextInputType(mConfiguration.getString("inputType"),
-            mConfiguration.optBoolean("obscureText"));
-        if (!mConfiguration.isNull("actionLabel"))
-          outAttrs.actionLabel = mConfiguration.getString("actionLabel");
-        outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_FULLSCREEN;
+        outAttrs.inputType = inputTypeFromTextInputType(
+            mConfiguration.getString("inputType"),
+            mConfiguration.optBoolean("obscureText"),
+            mConfiguration.optBoolean("autocorrect", true));
+        outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
+        int enterAction;
+        if (mConfiguration.isNull("inputAction")) {
+            // If an explicit input action isn't set, then default to none for multi-line fields
+            // and done for single line fields.
+            enterAction = (InputType.TYPE_TEXT_FLAG_MULTI_LINE & outAttrs.inputType) != 0
+                ? EditorInfo.IME_ACTION_NONE
+                : EditorInfo.IME_ACTION_DONE;
+        } else {
+            enterAction = inputActionFromTextInputAction(mConfiguration.getString("inputAction"));
+        }
+        if (!mConfiguration.isNull("actionLabel")) {
+            outAttrs.actionLabel = mConfiguration.getString("actionLabel");
+            outAttrs.actionId = enterAction;
+        }
+        outAttrs.imeOptions |= enterAction;
 
         InputConnectionAdaptor connection = new InputConnectionAdaptor(view, mClient, mFlutterChannel, mEditable);
-        outAttrs.initialSelStart = Math.max(Selection.getSelectionStart(mEditable), 0);
-        outAttrs.initialSelEnd = Math.max(Selection.getSelectionEnd(mEditable), 0);
+        outAttrs.initialSelStart = Selection.getSelectionStart(mEditable);
+        outAttrs.initialSelEnd = Selection.getSelectionEnd(mEditable);
 
         return connection;
     }
@@ -128,13 +159,16 @@ public class TextInputPlugin implements MethodCallHandler {
         mConfiguration = configuration;
         mEditable = Editable.Factory.getInstance().newEditable("");
 
-        mImm.restartInput(view);
+        // setTextInputClient will be followed by a call to setTextInputEditingState.
+        // Do a restartInput at that time.
+        mRestartInputPending = true;
     }
 
     private void applyStateToSelection(JSONObject state) throws JSONException {
         int selStart = state.getInt("selectionBase");
         int selEnd = state.getInt("selectionExtent");
-        if (selStart != -1 && selEnd != -1) {
+        if (selStart >= 0 && selStart <= mEditable.length() &&
+            selEnd >= 0 && selEnd <= mEditable.length()) {
             Selection.setSelection(mEditable, selStart, selEnd);
         } else {
             Selection.removeSelection(mEditable);
@@ -143,7 +177,8 @@ public class TextInputPlugin implements MethodCallHandler {
 
     private void setTextInputEditingState(FlutterView view, JSONObject state)
         throws JSONException {
-        if (state.getString("text").equals(mEditable.toString())) {
+        if (!mRestartInputPending &&
+            state.getString("text").equals(mEditable.toString())) {
             applyStateToSelection(state);
             mImm.updateSelection(
                 mView,
@@ -155,6 +190,7 @@ public class TextInputPlugin implements MethodCallHandler {
             mEditable.replace(0, mEditable.length(), state.getString("text"));
             applyStateToSelection(state);
             mImm.restartInput(view);
+            mRestartInputPending = false;
         }
     }
 

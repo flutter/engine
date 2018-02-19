@@ -12,7 +12,7 @@
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 
 namespace shell {
 
@@ -34,6 +34,8 @@ class IOSGLContext {
 
   bool ResourceMakeCurrent();
 
+  sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
+
  private:
   fml::scoped_nsobject<CAEAGLLayer> layer_;
   fml::scoped_nsobject<EAGLContext> context_;
@@ -45,9 +47,10 @@ class IOSGLContext {
   GLuint depth_stencil_packed_buffer_;
   GLint storage_size_width_;
   GLint storage_size_height_;
+  sk_sp<SkColorSpace> color_space_;
   bool valid_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(IOSGLContext);
+  FXL_DISALLOW_COPY_AND_ASSIGN(IOSGLContext);
 };
 
 }  // namespace shell

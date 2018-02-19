@@ -9,8 +9,9 @@
 #include "flutter/common/threads.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/glue/trace_event.h"
-#include "lib/ftl/logging.h"
+#include "lib/fxl/logging.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkColorSpaceXformCanvas.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -71,18 +72,33 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
 RasterCacheResult RasterizePicture(SkPicture* picture,
                                    GrContext* context,
                                    const MatrixDecomposition& matrix,
+                                   SkColorSpace* dst_color_space,
+#if defined(OS_FUCHSIA)
+                                   scenic::Metrics* metrics,
+#endif
                                    bool checkerboard) {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
   const SkVector3& scale = matrix.scale();
-  SkRect logical_rect = picture->cullRect();
+
+  const SkRect logical_rect = picture->cullRect();
+
+#if defined(OS_FUCHSIA)
+  float metrics_scale_x = metrics->scale_x;
+  float metrics_scale_y = metrics->scale_y;
+#else
+  float metrics_scale_x = 1.f;
+  float metrics_scale_y = 1.f;
+#endif
+
+  const SkRect physical_rect = SkRect::MakeWH(
+      std::fabs(logical_rect.width() * metrics_scale_x * scale.x()),
+      std::fabs(logical_rect.height() * metrics_scale_y * scale.y()));
 
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      std::ceil(logical_rect.width() * std::abs(scale.x())),  // physical width
-      std::ceil(logical_rect.height() *
-                std::abs(scale.y())),  // physical height
-      nullptr                          // colorspace
-      );
+      std::ceil(physical_rect.width()),  // physical width
+      std::ceil(physical_rect.height())  // physical height
+  );
 
   sk_sp<SkSurface> surface =
       context
@@ -90,14 +106,22 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
           : SkSurface::MakeRaster(image_info);
 
   if (!surface) {
-    FTL_DCHECK(false);
     return {};
   }
 
   SkCanvas* canvas = surface->getCanvas();
+  std::unique_ptr<SkCanvas> xformCanvas;
+  if (dst_color_space) {
+    xformCanvas = SkCreateColorSpaceXformCanvas(surface->getCanvas(),
+                                                sk_ref_sp(dst_color_space));
+    if (xformCanvas) {
+      canvas = xformCanvas.get();
+    }
+  }
 
   canvas->clear(SK_ColorTRANSPARENT);
-  canvas->scale(std::abs(scale.x()), std::abs(scale.y()));
+  canvas->scale(std::abs(scale.x() * metrics_scale_x),
+                std::abs(scale.y() * metrics_scale_y));
   canvas->translate(-logical_rect.left(), -logical_rect.top());
   canvas->drawPicture(picture);
 
@@ -107,10 +131,8 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
 
   return {
       surface->makeImageSnapshot(),  // image
-      SkRect::MakeWH(
-          logical_rect.width() * std::abs(scale.x()),
-          logical_rect.height() * std::abs(scale.y())),  // source rect
-      logical_rect                                       // destination rect
+      physical_rect,                 // source rect
+      logical_rect                   // destination rect
   };
 }
 
@@ -130,6 +152,10 @@ RasterCacheResult RasterCache::GetPrerolledImage(
     GrContext* context,
     SkPicture* picture,
     const SkMatrix& transformation_matrix,
+    SkColorSpace* dst_color_space,
+#if defined(OS_FUCHSIA)
+    scenic::Metrics* metrics,
+#endif
     bool is_complex,
     bool will_change) {
   if (!IsPictureWorthRasterizing(picture, will_change, is_complex)) {
@@ -146,7 +172,11 @@ RasterCacheResult RasterCache::GetPrerolledImage(
     return {};
   }
 
-  RasterCacheKey cache_key(*picture, matrix);
+  RasterCacheKey cache_key(*picture,
+#if defined(OS_FUCHSIA)
+                           metrics->scale_x, metrics->scale_y,
+#endif
+                           matrix);
 
   Entry& entry = cache_[cache_key];
   entry.access_count = ClampSize(entry.access_count + 1, 0, threshold_);
@@ -158,13 +188,12 @@ RasterCacheResult RasterCache::GetPrerolledImage(
   }
 
   if (!entry.image.is_valid()) {
-    entry.image =
-        RasterizePicture(picture, context, matrix, checkerboard_images_);
+    entry.image = RasterizePicture(picture, context, matrix, dst_color_space,
+#if defined(OS_FUCHSIA)
+                                   metrics,
+#endif
+                                   checkerboard_images_);
   }
-
-  // We are not considering unrasterizable images. So if we don't have an image
-  // by now, we know that rasterization itself failed.
-  FTL_DCHECK(entry.image.is_valid());
 
   return entry.image;
 }

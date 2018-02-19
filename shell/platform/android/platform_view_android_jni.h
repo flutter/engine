@@ -7,7 +7,7 @@
 
 #include <jni.h>
 #include "flutter/shell/platform/android/platform_view_android.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 
 namespace shell {
 
@@ -26,6 +26,18 @@ void FlutterViewUpdateSemantics(JNIEnv* env,
                                 jobject obj,
                                 jobject buffer,
                                 jobjectArray strings);
+
+void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj);
+
+void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId);
+
+void SurfaceTextureUpdateTexImage(JNIEnv* env, jobject obj);
+
+void SurfaceTextureGetTransformMatrix(JNIEnv* env,
+                                      jobject obj,
+                                      jfloatArray result);
+
+void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj);
 
 }  // namespace shell
 

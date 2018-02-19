@@ -3,12 +3,16 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
+#include "third_party/skia/include/gpu/GrContextOptions.h"
+#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
+
+#include <UIKit/UIKit.h>
 
 namespace shell {
 
 #define VERIFY(x)                     \
   if (!(x)) {                         \
-    FTL_DLOG(ERROR) << "Failed: " #x; \
+    FXL_DLOG(ERROR) << "Failed: " #x; \
     return;                           \
   };
 
@@ -96,14 +100,28 @@ IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* laye
     }
   }
 
-  // The default is RGBA
-  NSString* drawableColorFormat = kEAGLColorFormatRGBA8;
-
-  if (config.red_bits <= 5 && config.green_bits <= 6 && config.blue_bits <= 5 &&
-      config.alpha_bits == 0) {
-    drawableColorFormat = kEAGLColorFormatRGB565;
+  // TODO:
+  // iOS displays are more variable than just P3 or sRGB.  Reading the display
+  // gamut just tells us what color space it makes sense to render into.  We
+  // should use iOS APIs to perform the final correction step based on the
+  // device properties.  Ex: We can indicate that we have rendered in P3, and
+  // the framework will do the final adjustment for us.
+  color_space_ = SkColorSpace::MakeSRGB();
+  if (@available(iOS 10, *)) {
+    UIDisplayGamut displayGamut = [UIScreen mainScreen].traitCollection.displayGamut;
+    switch (displayGamut) {
+      case UIDisplayGamutP3:
+        // Should we consider using more than 8-bits of precision given that
+        // P3 specifies a wider range of colors?
+        color_space_ = SkColorSpace::MakeRGB(SkColorSpace::kSRGB_RenderTargetGamma,
+                                             SkColorSpace::kDCIP3_D65_Gamut);
+        break;
+      default:
+        break;
+    }
   }
 
+  NSString* drawableColorFormat = kEAGLColorFormatRGBA8;
   layer_.get().drawableProperties = @{
     kEAGLDrawablePropertyColorFormat : drawableColorFormat,
     kEAGLDrawablePropertyRetainedBacking : @(NO),
@@ -113,7 +131,7 @@ IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* laye
 }
 
 IOSGLContext::~IOSGLContext() {
-  FTL_DCHECK(glGetError() == GL_NO_ERROR);
+  FXL_DCHECK(glGetError() == GL_NO_ERROR);
 
   // Deletes on GL_NONEs are ignored
   glDeleteFramebuffers(1, &framebuffer_);
@@ -123,7 +141,7 @@ IOSGLContext::~IOSGLContext() {
   glDeleteRenderbuffers(1, &stencilbuffer_);
   glDeleteRenderbuffers(1, &depth_stencil_packed_buffer_);
 
-  FTL_DCHECK(glGetError() == GL_NO_ERROR);
+  FXL_DCHECK(glGetError() == GL_NO_ERROR);
 }
 
 bool IOSGLContext::IsValid() const {
@@ -132,7 +150,8 @@ bool IOSGLContext::IsValid() const {
 
 bool IOSGLContext::PresentRenderBuffer() const {
   const GLenum discards[] = {
-      GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT,
+      GL_DEPTH_ATTACHMENT,
+      GL_STENCIL_ATTACHMENT,
   };
 
   glDiscardFramebufferEXT(GL_FRAMEBUFFER, sizeof(discards) / sizeof(GLenum), discards);
@@ -143,25 +162,27 @@ bool IOSGLContext::PresentRenderBuffer() const {
 
 bool IOSGLContext::UpdateStorageSizeIfNecessary() {
   const CGSize layer_size = [layer_.get() bounds].size;
-
-  const GLint size_width = layer_size.width;
-  const GLint size_height = layer_size.height;
+  const CGFloat contents_scale = layer_.get().contentsScale;
+  const GLint size_width = layer_size.width * contents_scale;
+  const GLint size_height = layer_size.height * contents_scale;
 
   if (size_width == storage_size_width_ && size_height == storage_size_height_) {
     // Nothing to since the stoage size is already consistent with the layer.
     return true;
   }
+  TRACE_EVENT_INSTANT0("flutter", "IOSGLContext::UpdateStorageSizeIfNecessary");
+  FXL_DLOG(INFO) << "Updating render buffer storage size.";
 
   if (![EAGLContext setCurrentContext:context_]) {
     return false;
   }
 
-  FTL_DCHECK(glGetError() == GL_NO_ERROR);
+  FXL_DCHECK(glGetError() == GL_NO_ERROR);
 
   glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_);
 
   glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer_);
-  FTL_DCHECK(glGetError() == GL_NO_ERROR);
+  FXL_DCHECK(glGetError() == GL_NO_ERROR);
 
   if (![context_.get() renderbufferStorage:GL_RENDERBUFFER fromDrawable:layer_.get()]) {
     return false;
@@ -176,10 +197,10 @@ bool IOSGLContext::UpdateStorageSizeIfNecessary() {
     // Fetch the dimensions of the color buffer whose backing was just updated
     // so that backing of the attachments can be updated
     glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &width);
-    FTL_DCHECK(glGetError() == GL_NO_ERROR);
+    FXL_DCHECK(glGetError() == GL_NO_ERROR);
 
     glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &height);
-    FTL_DCHECK(glGetError() == GL_NO_ERROR);
+    FXL_DCHECK(glGetError() == GL_NO_ERROR);
 
     rebind_color_buffer = true;
   }
@@ -187,30 +208,30 @@ bool IOSGLContext::UpdateStorageSizeIfNecessary() {
   if (depth_stencil_packed_buffer_ != GL_NONE) {
     glBindRenderbuffer(GL_RENDERBUFFER, depth_stencil_packed_buffer_);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8_OES, width, height);
-    FTL_DCHECK(glGetError() == GL_NO_ERROR);
+    FXL_DCHECK(glGetError() == GL_NO_ERROR);
   }
 
   if (depthbuffer_ != GL_NONE) {
     glBindRenderbuffer(GL_RENDERBUFFER, depthbuffer_);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height);
-    FTL_DCHECK(glGetError() == GL_NO_ERROR);
+    FXL_DCHECK(glGetError() == GL_NO_ERROR);
   }
 
   if (stencilbuffer_ != GL_NONE) {
     glBindRenderbuffer(GL_RENDERBUFFER, stencilbuffer_);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, width, height);
-    FTL_DCHECK(glGetError() == GL_NO_ERROR);
+    FXL_DCHECK(glGetError() == GL_NO_ERROR);
   }
 
   if (rebind_color_buffer) {
     glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer_);
-    FTL_DCHECK(glGetError() == GL_NO_ERROR);
+    FXL_DCHECK(glGetError() == GL_NO_ERROR);
   }
 
   storage_size_width_ = width;
   storage_size_height_ = height;
 
-  FTL_DCHECK(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+  FXL_DCHECK(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 
   return true;
 }

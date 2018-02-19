@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "third_party/skia/include/core/SkMatrix44.h"
@@ -25,13 +26,33 @@ enum class SemanticsAction : int32_t {
   kScrollDown = 1 << 5,
   kIncrease = 1 << 6,
   kDecrease = 1 << 7,
+  kShowOnScreen = 1 << 8,
+  kMoveCursorForwardByCharacter = 1 << 9,
+  kMoveCursorBackwardByCharacter = 1 << 10,
+  kSetSelection = 1 << 11,
+  kCopy = 1 << 12,
+  kCut = 1 << 13,
+  kPaste = 1 << 14,
+  kDidGainAccessibilityFocus = 1 << 15,
+  kDidLoseAccessibilityFocus = 1 << 16,
 };
+
+const int kScrollableSemanticsActions =
+    static_cast<int32_t>(SemanticsAction::kScrollLeft) |
+    static_cast<int32_t>(SemanticsAction::kScrollRight) |
+    static_cast<int32_t>(SemanticsAction::kScrollUp) |
+    static_cast<int32_t>(SemanticsAction::kScrollDown);
 
 // Must match the SemanticsFlags enum in semantics.dart.
 enum class SemanticsFlags : int32_t {
   kHasCheckedState = 1 << 0,
   kIsChecked = 1 << 1,
   kIsSelected = 1 << 2,
+  kIsButton = 1 << 3,
+  kIsTextField = 1 << 4,
+  kIsFocused = 1 << 5,
+  kHasEnabledState = 1 << 6,
+  kIsEnabled = 1 << 7,
 };
 
 struct SemanticsNode {
@@ -44,11 +65,30 @@ struct SemanticsNode {
   int32_t id = 0;
   int32_t flags = 0;
   int32_t actions = 0;
+  int32_t textSelectionBase = -1;
+  int32_t textSelectionExtent = -1;
+  double scrollPosition = std::nan("");
+  double scrollExtentMax = std::nan("");
+  double scrollExtentMin = std::nan("");
   std::string label;
+  std::string hint;
+  std::string value;
+  std::string increasedValue;
+  std::string decreasedValue;
+  int32_t textDirection = 0;  // 0=unknown, 1=rtl, 2=ltr
+  int32_t nextNodeId = -1;
+  int32_t previousNodeId = -1;
+
   SkRect rect = SkRect::MakeEmpty();
   SkMatrix44 transform = SkMatrix44(SkMatrix44::kIdentity_Constructor);
   std::vector<int32_t> children;
 };
+
+// Contains semantic nodes that need to be updated.
+//
+// The keys in the map are stable node IDd, and the values contain
+// semantic information for the node corresponding to the ID.
+using SemanticsNodeUpdates = std::unordered_map<int32_t, SemanticsNode>;
 
 }  // namespace blink
 

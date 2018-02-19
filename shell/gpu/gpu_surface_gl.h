@@ -5,10 +5,10 @@
 #ifndef SHELL_GPU_GPU_SURFACE_GL_H_
 #define SHELL_GPU_GPU_SURFACE_GL_H_
 
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/surface.h"
 #include "flutter/synchronization/debug_thread_checker.h"
-#include "lib/ftl/macros.h"
-#include "lib/ftl/memory/weak_ptr.h"
+#include "lib/fxl/macros.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
 namespace shell {
@@ -22,6 +22,8 @@ class GPUSurfaceGLDelegate {
   virtual bool GLContextPresent() = 0;
 
   virtual intptr_t GLContextFBO() const = 0;
+
+  virtual bool UseOffscreenSurface() const { return false; }
 };
 
 class GPUSurfaceGL : public Surface {
@@ -29,8 +31,6 @@ class GPUSurfaceGL : public Surface {
   GPUSurfaceGL(GPUSurfaceGLDelegate* delegate);
 
   ~GPUSurfaceGL() override;
-
-  bool Setup() override;
 
   bool IsValid() override;
 
@@ -41,18 +41,20 @@ class GPUSurfaceGL : public Surface {
  private:
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrContext> context_;
-  sk_sp<SkSurface> cached_surface_;
-  ftl::WeakPtrFactory<GPUSurfaceGL> weak_factory_;
+  sk_sp<SkSurface> onscreen_surface_;
+  sk_sp<SkSurface> offscreen_surface_;
+  bool valid_ = false;
+  fml::WeakPtrFactory<GPUSurfaceGL> weak_factory_;
 
-  sk_sp<SkSurface> CreateSurface(const SkISize& size);
+  bool CreateOrUpdateSurfaces(const SkISize& size);
 
-  sk_sp<SkSurface> AcquireSurface(const SkISize& size);
+  sk_sp<SkSurface> AcquireRenderSurface(const SkISize& size);
 
   bool PresentSurface(SkCanvas* canvas);
 
   bool SelectPixelConfig(GrPixelConfig* config);
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
+  FXL_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
 };
 
 }  // namespace shell

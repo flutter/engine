@@ -11,53 +11,15 @@
 
 namespace vulkan {
 
-static const VkDebugReportFlagsEXT kVulkanErrorFlags FTL_ALLOW_UNUSED_TYPE =
+static const VkDebugReportFlagsEXT kVulkanErrorFlags FXL_ALLOW_UNUSED_TYPE =
     VK_DEBUG_REPORT_WARNING_BIT_EXT |
     VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT | VK_DEBUG_REPORT_ERROR_BIT_EXT;
 
-static const VkDebugReportFlagsEXT kVulkanInfoFlags FTL_ALLOW_UNUSED_TYPE =
+static const VkDebugReportFlagsEXT kVulkanInfoFlags FXL_ALLOW_UNUSED_TYPE =
     VK_DEBUG_REPORT_INFORMATION_BIT_EXT | VK_DEBUG_REPORT_DEBUG_BIT_EXT;
 
 std::string VulkanDebugReport::DebugExtensionName() {
   return VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
-}
-
-bool VulkanDebugReport::DebugExtensionSupported(const VulkanProcTable& vk) {
-  if (!IsDebuggingEnabled()) {
-    return false;
-  }
-
-  if (!vk.EnumerateInstanceExtensionProperties) {
-    return false;
-  }
-
-  uint32_t count = 0;
-  if (VK_CALL_LOG_ERROR(vk.EnumerateInstanceExtensionProperties(
-          nullptr, &count, nullptr)) != VK_SUCCESS) {
-    return false;
-  }
-
-  if (count == 0) {
-    return false;
-  }
-
-  std::vector<VkExtensionProperties> properties;
-  properties.resize(count);
-  if (VK_CALL_LOG_ERROR(vk.EnumerateInstanceExtensionProperties(
-          nullptr, &count, properties.data())) != VK_SUCCESS) {
-    return false;
-  }
-
-  auto debug_extension_name = DebugExtensionName();
-
-  for (size_t i = 0; i < count; i++) {
-    if (strncmp(properties[i].extensionName, debug_extension_name.c_str(),
-                debug_extension_name.size()) == 0) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 static const char* VkDebugReportFlagsEXTToString(VkDebugReportFlagsEXT flags) {
@@ -202,12 +164,12 @@ OnVulkanDebugReportCallback(VkDebugReportFlagsEXT flags,
 
   if (flags & kVulkanErrorFlags) {
     if (ValidationErrorsFatal()) {
-      FTL_DCHECK(false) << stream.str();
+      FXL_DCHECK(false) << stream.str();
     } else {
-      FTL_LOG(ERROR) << stream.str();
+      FXL_LOG(ERROR) << stream.str();
     }
   } else {
-    FTL_LOG(INFO) << stream.str();
+    FXL_LOG(INFO) << stream.str();
   }
 
   // Returning false tells the layer not to stop when the event occurs, so

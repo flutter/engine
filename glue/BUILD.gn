@@ -9,18 +9,22 @@ source_set("glue") {
   ]
 
   deps = [
-    "//lib/ftl",
+    "//garnet/public/lib/fxl",
+  ]
+
+  public_configs = [
+    "$flutter_root:config",
   ]
 
   if (is_fuchsia) {
     sources += [ "stack_trace_fuchsia.cc" ]
 
     public_deps = [
-      "//apps/tracing/lib/trace",
+      "//zircon/public/lib/trace",
     ]
   } else {
     sources += [ "stack_trace_base.cc" ]
 
-    deps += [ "//flutter/fml" ]
+    deps += [ "$flutter_root/fml" ]
   }
 }

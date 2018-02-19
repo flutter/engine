@@ -5,10 +5,17 @@
 #ifndef FLUTTER_FML_MAPPING_H_
 #define FLUTTER_FML_MAPPING_H_
 
+#include <memory>
 #include <string>
 
-#include "lib/ftl/files/unique_fd.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/build_config.h"
+
+#if OS_WIN
+#include <windows.h>
+#endif
+
+#include "lib/fxl/files/unique_fd.h"
+#include "lib/fxl/macros.h"
 
 namespace fml {
 
@@ -23,7 +30,7 @@ class Mapping {
   virtual const uint8_t* GetMapping() const = 0;
 
  private:
-  FTL_DISALLOW_COPY_AND_ASSIGN(Mapping);
+  FXL_DISALLOW_COPY_AND_ASSIGN(Mapping);
 };
 
 bool PlatformHasResourcesBundle();
@@ -34,7 +41,10 @@ class FileMapping : public Mapping {
  public:
   FileMapping(const std::string& path);
 
-  FileMapping(const ftl::UniqueFD& fd);
+// fxl::UniqueFD isn't supported for Windows handles.
+#if !OS_WIN
+  FileMapping(const fxl::UniqueFD& fd);
+#endif
 
   ~FileMapping() override;
 
@@ -46,7 +56,11 @@ class FileMapping : public Mapping {
   size_t size_;
   uint8_t* mapping_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(FileMapping);
+#if OS_WIN
+  HANDLE mapping_handle_;
+#endif
+
+  FXL_DISALLOW_COPY_AND_ASSIGN(FileMapping);
 };
 
 }  // namespace fml

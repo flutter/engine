@@ -6,11 +6,14 @@
 
 #include <utility>
 
-#include "application/lib/app/connect.h"
+#include <fdio/namespace.h>
+#include <zircon/status.h>
+
 #include "flutter/content_handler/app.h"
 #include "flutter/content_handler/runtime_holder.h"
-#include "lib/ftl/logging.h"
-#include "lib/mtl/vmo/vector.h"
+#include "lib/app/cpp/connect.h"
+#include "lib/fsl/vmo/vector.h"
+#include "lib/fxl/logging.h"
 
 namespace flutter_runner {
 
@@ -20,18 +23,20 @@ ApplicationControllerImpl::ApplicationControllerImpl(
     app::ApplicationStartupInfoPtr startup_info,
     fidl::InterfaceRequest<app::ApplicationController> controller)
     : app_(app), binding_(this) {
-  if (controller.is_pending()) {
+  if (controller.is_valid()) {
     binding_.Bind(std::move(controller));
-    binding_.set_connection_error_handler([this] {
+    binding_.set_error_handler([this] {
       app_->Destroy(this);
       // |this| has been deleted at this point.
     });
   }
 
   std::vector<char> bundle;
-  if (!mtl::VectorFromVmo(std::move(application->data), &bundle)) {
-    FTL_LOG(ERROR) << "Failed to receive bundle.";
-    return;
+  if (application->data) {
+    if (!fsl::VectorFromVmo(std::move(application->data), &bundle)) {
+      FXL_LOG(ERROR) << "Failed to receive bundle.";
+      return;
+    }
   }
 
   // TODO(jeffbrown): Decide what to do with command-line arguments and
@@ -49,30 +54,78 @@ ApplicationControllerImpl::ApplicationControllerImpl(
 
   service_provider_bridge_.AddService<mozart::ViewProvider>(
       [this](fidl::InterfaceRequest<mozart::ViewProvider> request) {
-    view_provider_bindings_.AddBinding(this, std::move(request));
-  });
+        view_provider_bindings_.AddBinding(this, std::move(request));
+      });
 
   app::ServiceProviderPtr service_provider;
   auto request = service_provider.NewRequest();
   service_provider_bridge_.set_backend(std::move(service_provider));
 
+  fdio_ns_t* fdio_ns = SetupNamespace(startup_info->flat_namespace);
+  if (fdio_ns == nullptr) {
+    FXL_LOG(ERROR) << "Failed to initialize namespace";
+    return;
+  }
+
   url_ = startup_info->launch_info->url;
   runtime_holder_.reset(new RuntimeHolder());
+  runtime_holder_->SetMainIsolateShutdownCallback([this]() { Kill(); });
   runtime_holder_->Init(
-      app::ApplicationContext::CreateFrom(std::move(startup_info)),
+      fdio_ns, app::ApplicationContext::CreateFrom(std::move(startup_info)),
       std::move(request), std::move(bundle));
 }
 
 ApplicationControllerImpl::~ApplicationControllerImpl() = default;
 
+constexpr char kServiceRootPath[] = "/svc";
+
+fdio_ns_t* ApplicationControllerImpl::SetupNamespace(
+    const app::FlatNamespacePtr& flat) {
+  fdio_ns_t* fdio_namespc;
+  zx_status_t status = fdio_ns_create(&fdio_namespc);
+  if (status != ZX_OK) {
+    FXL_LOG(ERROR) << "Failed to create namespace";
+    return nullptr;
+  }
+  for (size_t i = 0; i < flat->paths.size(); ++i) {
+    if (flat->paths[i] == kServiceRootPath) {
+      // Ownership of /svc goes to the ApplicationContext created above.
+      continue;
+    }
+    zx::channel dir = std::move(flat->directories[i]);
+    zx_handle_t dir_handle = dir.release();
+    const char* path = flat->paths[i].data();
+    status = fdio_ns_bind(fdio_namespc, path, dir_handle);
+    if (status != ZX_OK) {
+      FXL_LOG(ERROR) << "Failed to bind " << flat->paths[i] << " to namespace";
+      zx_handle_close(dir_handle);
+      fdio_ns_destroy(fdio_namespc);
+      return nullptr;
+    }
+  }
+  return fdio_namespc;
+}
+
 void ApplicationControllerImpl::Kill() {
+  SendReturnCode(runtime_holder_->return_code());
   runtime_holder_.reset();
   app_->Destroy(this);
   // |this| has been deleted at this point.
 }
 
 void ApplicationControllerImpl::Detach() {
-  binding_.set_connection_error_handler(ftl::Closure());
+  binding_.set_error_handler(fxl::Closure());
+}
+
+void ApplicationControllerImpl::Wait(const WaitCallback& callback) {
+  wait_callbacks_.push_back(callback);
+}
+
+void ApplicationControllerImpl::SendReturnCode(int32_t return_code) {
+  for (const auto& iter : wait_callbacks_) {
+    iter(return_code);
+  }
+  wait_callbacks_.clear();
 }
 
 void ApplicationControllerImpl::CreateView(

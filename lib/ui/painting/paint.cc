@@ -4,19 +4,20 @@
 
 #include "flutter/lib/ui/painting/paint.h"
 
-#include "flutter/lib/ui/painting/mask_filter.h"
 #include "flutter/lib/ui/painting/shader.h"
-#include "lib/ftl/logging.h"
+#include "lib/fxl/logging.h"
 #include "lib/tonic/typed_data/dart_byte_data.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkString.h"
+#include "third_party/skia/include/effects/SkBlurMaskFilter.h"
 
 using namespace blink;
 
 namespace tonic {
 
+// Indices for 32bit values.
 constexpr int kIsAntiAliasIndex = 0;
 constexpr int kColorIndex = 1;
 constexpr int kBlendModeIndex = 2;
@@ -29,11 +30,14 @@ constexpr int kFilterQualityIndex = 8;
 constexpr int kColorFilterIndex = 9;
 constexpr int kColorFilterColorIndex = 10;
 constexpr int kColorFilterBlendModeIndex = 11;
-constexpr size_t kDataByteCount = 48;
+constexpr int kMaskFilterIndex = 12;
+constexpr int kMaskFilterBlurStyleIndex = 13;
+constexpr int kMaskFilterSigmaIndex = 14;
+constexpr size_t kDataByteCount = 75;  // 4 * (last index + 1)
 
-constexpr int kMaskFilterIndex = 0;
-constexpr int kShaderIndex = 1;
-constexpr int kObjectCount = 2;  // Must be one larger than the largest index
+// Indices for objects.
+constexpr int kShaderIndex = 0;
+constexpr int kObjectCount = 1;  // One larger than largest object index.
 
 // Must be kept in sync with the default in painting.dart.
 constexpr uint32_t kColorDefault = 0xFF000000;
@@ -46,33 +50,30 @@ constexpr uint32_t kBlendModeDefault =
 // default SkPaintDefaults_MiterLimit in Skia (which is not in a public header).
 constexpr double kStrokeMiterLimitDefault = 4.0;
 
+// Must be kept in sync with the MaskFilter private constants in painting.dart.
+enum MaskFilterType { Null, Blur };
+
 Paint DartConverter<Paint>::FromArguments(Dart_NativeArguments args,
                                           int index,
                                           Dart_Handle& exception) {
   Dart_Handle paint_objects = Dart_GetNativeArgument(args, index);
-  FTL_DCHECK(!LogIfError(paint_objects));
+  FXL_DCHECK(!LogIfError(paint_objects));
 
   Dart_Handle paint_data = Dart_GetNativeArgument(args, index + 1);
-  FTL_DCHECK(!LogIfError(paint_data));
+  FXL_DCHECK(!LogIfError(paint_data));
 
   Paint result;
   SkPaint& paint = result.paint_;
 
   if (!Dart_IsNull(paint_objects)) {
-    FTL_DCHECK(Dart_IsList(paint_objects));
+    FXL_DCHECK(Dart_IsList(paint_objects));
     intptr_t length = 0;
     Dart_ListLength(paint_objects, &length);
 
-    FTL_CHECK(length == kObjectCount);
+    FXL_CHECK(length == kObjectCount);
     Dart_Handle values[kObjectCount];
     if (Dart_IsError(Dart_ListGetRange(paint_objects, 0, kObjectCount, values)))
       return result;
-
-    Dart_Handle mask_filter = values[kMaskFilterIndex];
-    if (!Dart_IsNull(mask_filter)) {
-      MaskFilter* decoded = DartConverter<MaskFilter*>::FromDart(mask_filter);
-      paint.setMaskFilter(decoded->filter());
-    }
 
     Dart_Handle shader = values[kShaderIndex];
     if (!Dart_IsNull(shader)) {
@@ -82,7 +83,7 @@ Paint DartConverter<Paint>::FromArguments(Dart_NativeArguments args,
   }
 
   tonic::DartByteData byte_data(paint_data);
-  FTL_CHECK(byte_data.length_in_bytes() == kDataByteCount);
+  FXL_CHECK(byte_data.length_in_bytes() == kDataByteCount);
 
   const uint32_t* uint_data = static_cast<const uint32_t*>(byte_data.data());
   const float* float_data = static_cast<const float*>(byte_data.data());
@@ -97,8 +98,7 @@ Paint DartConverter<Paint>::FromArguments(Dart_NativeArguments args,
 
   uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
   if (encoded_blend_mode) {
-    uint32_t blend_mode =
-        encoded_blend_mode ^ kBlendModeDefault;
+    uint32_t blend_mode = encoded_blend_mode ^ kBlendModeDefault;
     paint.setBlendMode(static_cast<SkBlendMode>(blend_mode));
   }
 
@@ -131,6 +131,17 @@ Paint DartConverter<Paint>::FromArguments(Dart_NativeArguments args,
     SkBlendMode blend_mode =
         static_cast<SkBlendMode>(uint_data[kColorFilterBlendModeIndex]);
     paint.setColorFilter(SkColorFilter::MakeModeFilter(color, blend_mode));
+  }
+
+  switch (uint_data[kMaskFilterIndex]) {
+    case Null:
+      break;
+    case Blur:
+      SkBlurStyle blur_style =
+          static_cast<SkBlurStyle>(uint_data[kMaskFilterBlurStyleIndex]);
+      double sigma = float_data[kMaskFilterSigmaIndex];
+      paint.setMaskFilter(SkBlurMaskFilter::Make(blur_style, sigma));
+      break;
   }
 
   result.is_null_ = false;

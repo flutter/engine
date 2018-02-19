@@ -9,8 +9,9 @@
 #include <memory>
 #include <stack>
 
-#include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/layer_builder.h"
 #include "flutter/lib/ui/compositing/scene.h"
+#include "flutter/lib/ui/compositing/scene_host.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/path.h"
 #include "flutter/lib/ui/painting/picture.h"
@@ -21,14 +22,14 @@
 
 namespace blink {
 
-class SceneBuilder : public ftl::RefCountedThreadSafe<SceneBuilder>,
+class SceneBuilder : public fxl::RefCountedThreadSafe<SceneBuilder>,
                      public tonic::DartWrappable {
   DEFINE_WRAPPERTYPEINFO();
   FRIEND_MAKE_REF_COUNTED(SceneBuilder);
 
  public:
-  static ftl::RefPtr<SceneBuilder> create() {
-    return ftl::MakeRefCounted<SceneBuilder>();
+  static fxl::RefPtr<SceneBuilder> create() {
+    return fxl::MakeRefCounted<SceneBuilder>();
   }
 
   ~SceneBuilder() override;
@@ -46,7 +47,7 @@ class SceneBuilder : public ftl::RefCountedThreadSafe<SceneBuilder>,
                       double maskRectTop,
                       double maskRectBottom,
                       int blendMode);
-  void pushPhysicalModel(const RRect& rrect, double elevation, int color);
+  void pushPhysicalShape(const CanvasPath* path, double elevation, int color);
 
   void pop();
 
@@ -55,13 +56,20 @@ class SceneBuilder : public ftl::RefCountedThreadSafe<SceneBuilder>,
                              double right,
                              double top,
                              double bottom);
+
   void addPicture(double dx, double dy, Picture* picture, int hints);
+
+  void addTexture(double dx,
+                  double dy,
+                  double width,
+                  double height,
+                  int64_t textureId);
+
   void addChildScene(double dx,
                      double dy,
-                     double devicePixelRatio,
-                     int physicalWidth,
-                     int physicalHeight,
-                     uint32_t sceneToken,
+                     double width,
+                     double height,
+                     SceneHost* sceneHost,
                      bool hitTestable);
 
   void setRasterizerTracingThreshold(uint32_t frameInterval);
@@ -69,22 +77,14 @@ class SceneBuilder : public ftl::RefCountedThreadSafe<SceneBuilder>,
   void setCheckerboardRasterCacheImages(bool checkerboard);
   void setCheckerboardOffscreenLayers(bool checkerboard);
 
-  ftl::RefPtr<Scene> build();
+  fxl::RefPtr<Scene> build();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   SceneBuilder();
 
-  void addLayer(std::unique_ptr<flow::ContainerLayer> layer,
-                const SkRect& cullRect);
-
-  std::unique_ptr<flow::ContainerLayer> m_rootLayer;
-  flow::ContainerLayer* m_currentLayer;
-  int32_t m_currentRasterizerTracingThreshold;
-  bool m_checkerboardRasterCacheImages;
-  bool m_checkerboardOffscreenLayers;
-  std::stack<SkRect> m_cullRects;
+  std::unique_ptr<flow::LayerBuilder> layer_builder_;
 };
 
 }  // namespace blink

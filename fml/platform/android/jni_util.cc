@@ -7,26 +7,26 @@
 #include <codecvt>
 #include <string>
 
-#include "lib/ftl/logging.h"
+#include "lib/fxl/logging.h"
 
 namespace fml {
 namespace jni {
 
 static JavaVM* g_jvm = nullptr;
 
-#define ASSERT_NO_EXCEPTION() FTL_CHECK(env->ExceptionCheck() == JNI_FALSE);
+#define ASSERT_NO_EXCEPTION() FXL_CHECK(env->ExceptionCheck() == JNI_FALSE);
 
 void InitJavaVM(JavaVM* vm) {
-  FTL_DCHECK(g_jvm == nullptr);
+  FXL_DCHECK(g_jvm == nullptr);
   g_jvm = vm;
 }
 
 JNIEnv* AttachCurrentThread() {
-  FTL_DCHECK(g_jvm != nullptr)
+  FXL_DCHECK(g_jvm != nullptr)
       << "Trying to attach to current thread without calling InitJavaVM first.";
   JNIEnv* env = nullptr;
   jint ret = g_jvm->AttachCurrentThread(&env, nullptr);
-  FTL_DCHECK(JNI_OK == ret);
+  FXL_DCHECK(JNI_OK == ret);
   return env;
 }
 
@@ -85,7 +85,7 @@ std::vector<std::string> StringArrayToVector(JNIEnv* env, jobjectArray array) {
   }
 
   out.resize(length);
-  for (size_t i = 0; i < length; ++i) {
+  for (jsize i = 0; i < length; ++i) {
     ScopedJavaLocalRef<jstring> java_string(
         env, static_cast<jstring>(env->GetObjectArrayElement(array, i)));
     out[i] = JavaStringToString(env, java_string.obj());
@@ -97,10 +97,10 @@ std::vector<std::string> StringArrayToVector(JNIEnv* env, jobjectArray array) {
 ScopedJavaLocalRef<jobjectArray> VectorToStringArray(
     JNIEnv* env,
     const std::vector<std::string>& vector) {
-  FTL_DCHECK(env);
+  FXL_DCHECK(env);
   ScopedJavaLocalRef<jclass> string_clazz(env,
                                           env->FindClass("java/lang/String"));
-  FTL_DCHECK(!string_clazz.is_null());
+  FXL_DCHECK(!string_clazz.is_null());
   jobjectArray joa =
       env->NewObjectArray(vector.size(), string_clazz.obj(), NULL);
   ASSERT_NO_EXCEPTION();
@@ -121,6 +121,48 @@ bool ClearException(JNIEnv* env) {
   env->ExceptionDescribe();
   env->ExceptionClear();
   return true;
+}
+
+std::string GetJavaExceptionInfo(JNIEnv* env, jthrowable java_throwable) {
+  ScopedJavaLocalRef<jclass> throwable_clazz(
+      env, env->FindClass("java/lang/Throwable"));
+  jmethodID throwable_printstacktrace = env->GetMethodID(
+      throwable_clazz.obj(), "printStackTrace", "(Ljava/io/PrintStream;)V");
+
+  // Create an instance of ByteArrayOutputStream.
+  ScopedJavaLocalRef<jclass> bytearray_output_stream_clazz(
+      env, env->FindClass("java/io/ByteArrayOutputStream"));
+  jmethodID bytearray_output_stream_constructor =
+      env->GetMethodID(bytearray_output_stream_clazz.obj(), "<init>", "()V");
+  jmethodID bytearray_output_stream_tostring = env->GetMethodID(
+      bytearray_output_stream_clazz.obj(), "toString", "()Ljava/lang/String;");
+  ScopedJavaLocalRef<jobject> bytearray_output_stream(
+      env, env->NewObject(bytearray_output_stream_clazz.obj(),
+                          bytearray_output_stream_constructor));
+
+  // Create an instance of PrintStream.
+  ScopedJavaLocalRef<jclass> printstream_clazz(
+      env, env->FindClass("java/io/PrintStream"));
+  jmethodID printstream_constructor = env->GetMethodID(
+      printstream_clazz.obj(), "<init>", "(Ljava/io/OutputStream;)V");
+  ScopedJavaLocalRef<jobject> printstream(
+      env, env->NewObject(printstream_clazz.obj(), printstream_constructor,
+                          bytearray_output_stream.obj()));
+
+  // Call Throwable.printStackTrace(PrintStream)
+  env->CallVoidMethod(java_throwable, throwable_printstacktrace,
+                      printstream.obj());
+
+  // Call ByteArrayOutputStream.toString()
+  ScopedJavaLocalRef<jstring> exception_string(
+      env,
+      static_cast<jstring>(env->CallObjectMethod(
+          bytearray_output_stream.obj(), bytearray_output_stream_tostring)));
+  if (ClearException(env)) {
+    return "Java OOM'd in exception handling, check logcat";
+  }
+
+  return JavaStringToString(env, exception_string.obj());
 }
 
 }  // namespace jni

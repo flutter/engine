@@ -5,7 +5,7 @@
 #include "flutter/shell/gpu/gpu_surface_software.h"
 
 #include <memory>
-#include "lib/ftl/logging.h"
+#include "lib/fxl/logging.h"
 
 namespace shell {
 
@@ -13,10 +13,6 @@ GPUSurfaceSoftware::GPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate)
     : delegate_(delegate), weak_factory_(this) {}
 
 GPUSurfaceSoftware::~GPUSurfaceSoftware() = default;
-
-bool GPUSurfaceSoftware::Setup() {
-  return IsValid();
-}
 
 bool GPUSurfaceSoftware::IsValid() {
   return delegate_ != nullptr;

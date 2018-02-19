@@ -38,16 +38,16 @@
 #include "flutter/sky/engine/wtf/WTF.h"
 #include "flutter/sky/engine/wtf/text/AtomicString.h"
 #include "flutter/sky/engine/wtf/text/TextEncoding.h"
-#include "lib/ftl/build_config.h"
+#include "lib/fxl/build_config.h"
 #include "lib/tonic/dart_microtask_queue.h"
 
 #if defined(OS_FUCHSIA)
 
-#include "lib/mtl/tasks/message_loop.h"
+#include "lib/fsl/tasks/message_loop.h"  // nogncheck
 
 #else  // defined(OS_FUCHSIA)
 
-#include "flutter/fml/message_loop.h"
+#include "flutter/fml/message_loop.h"  // nogncheck
 
 #endif  // defined(OS_FUCHSIA)
 
@@ -63,11 +63,11 @@ void didProcessTask() {
 #if defined(OS_FUCHSIA)
 
 void addMessageLoopObservers() {
-  mtl::MessageLoop::GetCurrent()->SetAfterTaskCallback(didProcessTask);
+  fsl::MessageLoop::GetCurrent()->SetAfterTaskCallback(didProcessTask);
 }
 
 void removeMessageLoopObservers() {
-  mtl::MessageLoop::GetCurrent()->ClearAfterTaskCallback();
+  fsl::MessageLoop::GetCurrent()->ClearAfterTaskCallback();
 }
 
 #else  // defined(OS_FUCHSIA)

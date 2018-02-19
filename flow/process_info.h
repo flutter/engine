@@ -5,7 +5,7 @@
 #ifndef FLUTTER_FLOW_PROCESS_INFO_H_
 #define FLUTTER_FLOW_PROCESS_INFO_H_
 
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 
 namespace flow {
 
@@ -15,6 +15,8 @@ namespace flow {
 /// can choose to provide this information however.
 class ProcessInfo {
  public:
+  virtual ~ProcessInfo() = default;
+
   virtual bool SampleNow() = 0;
 
   /// Virtual memory size in bytes.

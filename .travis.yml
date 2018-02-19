@@ -1,7 +1,13 @@
 language: dart
-dart: stable
+dart:
+  - dev
 sudo: false
 before_script:
   - ./travis/setup.sh
 script:
+  - ./travis/format.sh
   - ./travis/build.sh
+  - ./travis/test.sh
+
+# We don't build the engine or run the tests for the engine on Travis
+# See testing/run_tests.sh if that's what you're looking for though.

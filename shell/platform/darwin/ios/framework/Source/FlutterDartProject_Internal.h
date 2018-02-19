@@ -25,6 +25,13 @@ typedef void (^LaunchResult)(BOOL success, NSString* message);
         embedderVMType:(VMType)type
                 result:(LaunchResult)result;
 
+- (void)launchInEngine:(shell::Engine*)engine
+        withEntrypoint:(NSString*)entrypoint
+        embedderVMType:(VMType)type
+                result:(LaunchResult)result;
+
++ (NSString*)pathForFlutterAssetsFromBundle:(NSBundle*)bundle;
+
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERDARTPROJECT_INTERNAL_H_

@@ -22,20 +22,26 @@ source_set("flow") {
     "layers/color_filter_layer.h",
     "layers/container_layer.cc",
     "layers/container_layer.h",
+    "layers/default_layer_builder.cc",
+    "layers/default_layer_builder.h",
     "layers/layer.cc",
     "layers/layer.h",
+    "layers/layer_builder.cc",
+    "layers/layer_builder.h",
     "layers/layer_tree.cc",
     "layers/layer_tree.h",
     "layers/opacity_layer.cc",
     "layers/opacity_layer.h",
     "layers/performance_overlay_layer.cc",
     "layers/performance_overlay_layer.h",
-    "layers/physical_model_layer.cc",
-    "layers/physical_model_layer.h",
+    "layers/physical_shape_layer.cc",
+    "layers/physical_shape_layer.h",
     "layers/picture_layer.cc",
     "layers/picture_layer.h",
     "layers/shader_mask_layer.cc",
     "layers/shader_mask_layer.h",
+    "layers/texture_layer.cc",
+    "layers/texture_layer.h",
     "layers/transform_layer.cc",
     "layers/transform_layer.h",
     "matrix_decomposition.cc",
@@ -47,28 +53,43 @@ source_set("flow") {
     "raster_cache.h",
     "raster_cache_key.cc",
     "raster_cache_key.h",
-    "scene_update_context.cc",
-    "scene_update_context.h",
+    "texture.cc",
+    "texture.h",
+  ]
+
+  public_deps = [
+    "//garnet/public/lib/fxl",
+  ]
+
+  public_configs = [
+    "$flutter_root:config",
   ]
 
   deps = [
-    "//flutter/common",
-    "//flutter/glue",
-    "//flutter/synchronization",
-    "//lib/ftl",
+    "$flutter_root/common",
+    "$flutter_root/glue",
+    "$flutter_root/synchronization",
     "//third_party/skia",
     "//third_party/skia:gpu",
   ]
 
   if (is_fuchsia) {
     sources += [
+      "export_node.cc",
+      "export_node.h",
       "layers/child_scene_layer.cc",
       "layers/child_scene_layer.h",
+      "scene_update_context.cc",
+      "scene_update_context.h",
     ]
-    public_deps = [
-      "//apps/mozart/lib/skia",
-      "//apps/mozart/services/composition",
+
+    deps += [
+      "//garnet/public/lib/ui/scenic:client",
+      "//garnet/public/lib/ui/scenic/fidl",
+      "//topaz/public/dart-pkg/zircon",
     ]
+
+    public_deps += [ "//zircon/public/lib/zx" ]
   }
 }
 
@@ -82,8 +103,8 @@ executable("flow_unittests") {
 
   deps = [
     ":flow",
-    "//dart/runtime:libdart_jit",  # for tracing
-    "//flutter/testing",
+    "//third_party/dart/runtime:libdart_jit",  # for tracing
+    "$flutter_root/testing",
     "//third_party/skia",
   ]
 }

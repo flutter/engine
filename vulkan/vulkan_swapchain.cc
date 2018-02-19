@@ -9,6 +9,7 @@
 #include "flutter/vulkan/vulkan_image.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
 #include "flutter/vulkan/vulkan_surface.h"
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
 #include "third_party/skia/src/gpu/vk/GrVkUtil.h"
 
@@ -29,23 +30,23 @@ VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
       current_image_index_(0),
       valid_(false) {
   if (!device_.IsValid() || !surface.IsValid() || skia_context == nullptr) {
-    FTL_DLOG(INFO) << "Device or surface is invalid.";
+    FXL_DLOG(INFO) << "Device or surface is invalid.";
     return;
   }
 
   if (!device_.GetSurfaceCapabilities(surface, &capabilities_)) {
-    FTL_DLOG(INFO) << "Could not find surface capabilities.";
+    FXL_DLOG(INFO) << "Could not find surface capabilities.";
     return;
   }
 
   if (!device_.ChooseSurfaceFormat(surface, &surface_format_)) {
-    FTL_DLOG(INFO) << "Could not choose surface format.";
+    FXL_DLOG(INFO) << "Could not choose surface format.";
     return;
   }
 
   VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
   if (!device_.ChoosePresentMode(surface, &present_mode)) {
-    FTL_DLOG(INFO) << "Could not choose present mode.";
+    FXL_DLOG(INFO) << "Could not choose present mode.";
     return;
   }
 
@@ -57,12 +58,12 @@ VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
           queue_family_index,                 // queue family
           surface.Handle(),                   // surface to test
           &supported)) != VK_SUCCESS) {
-    FTL_DLOG(INFO) << "Could not get physical device surface support.";
+    FXL_DLOG(INFO) << "Could not get physical device surface support.";
     return;
   }
 
   if (supported != VK_TRUE) {
-    FTL_DLOG(INFO) << "Surface was not supported by the physical device.";
+    FXL_DLOG(INFO) << "Surface was not supported by the physical device.";
     return;
   }
 
@@ -104,18 +105,18 @@ VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
   if (VK_CALL_LOG_ERROR(vk.CreateSwapchainKHR(device_.GetHandle(), &create_info,
                                               nullptr, &swapchain)) !=
       VK_SUCCESS) {
-    FTL_DLOG(INFO) << "Could not create the swapchain.";
+    FXL_DLOG(INFO) << "Could not create the swapchain.";
     return;
   }
 
   swapchain_ = {swapchain, [this](VkSwapchainKHR swapchain) {
-                  FTL_ALLOW_UNUSED_LOCAL(device_.WaitIdle());
+                  FXL_ALLOW_UNUSED_LOCAL(device_.WaitIdle());
                   vk.DestroySwapchainKHR(device_.GetHandle(), swapchain,
                                          nullptr);
                 }};
 
   if (!CreateSwapchainImages(skia_context)) {
-    FTL_DLOG(INFO) << "Could not create swapchain images.";
+    FXL_DLOG(INFO) << "Could not create swapchain images.";
     return;
   }
 
@@ -205,26 +206,18 @@ sk_sp<SkSurface> VulkanSwapchain::CreateSkiaSurface(GrContext* gr_context,
       .fLevelCount = 1,
   };
 
-  GrBackendRenderTargetDesc desc;
-  desc.fWidth = size.fWidth;
-  desc.fHeight = size.fHeight;
-  desc.fConfig = pixel_config;
-  desc.fOrigin = kTopLeft_GrSurfaceOrigin;
-
   // TODO(chinmaygarde): Setup the stencil buffer and the sampleCnt.
-  desc.fSampleCnt = 0;
-  desc.fStencilBits = 0;
-
-  desc.fRenderTargetHandle = reinterpret_cast<GrBackendObject>(&image_info);
-
+  GrBackendRenderTarget backend_render_target(size.fWidth, size.fHeight, 0, 0,
+                                              image_info);
   SkSurfaceProps props(SkSurfaceProps::InitType::kLegacyFontHost_InitType);
 
   return SkSurface::MakeFromBackendRenderTarget(
-      gr_context,  // context
-      desc,        // backend render target description
+      gr_context,             // context
+      backend_render_target,  // backend render target
+      kTopLeft_GrSurfaceOrigin,
       SkColorSpaceFromVkFormat(surface_format_.format),  // colorspace
       &props                                             // surface properties
-      );
+  );
 }
 
 bool VulkanSwapchain::CreateSwapchainImages(GrContext* skia_context) {
@@ -266,8 +259,8 @@ bool VulkanSwapchain::CreateSwapchainImages(GrContext* skia_context) {
     surfaces_.emplace_back(std::move(surface));
   }
 
-  FTL_DCHECK(backbuffers_.size() == images_.size());
-  FTL_DCHECK(images_.size() == surfaces_.size());
+  FXL_DCHECK(backbuffers_.size() == images_.size());
+  FXL_DCHECK(images_.size() == surfaces_.size());
 
   return true;
 }
@@ -296,7 +289,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
   AcquireResult error = {AcquireStatus::ErrorSurfaceLost, nullptr};
 
   if (!IsValid()) {
-    FTL_DLOG(INFO) << "Swapchain was invalid.";
+    FXL_DLOG(INFO) << "Swapchain was invalid.";
     return error;
   }
 
@@ -307,7 +300,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
   auto backbuffer = GetNextBackbuffer();
 
   if (backbuffer == nullptr) {
-    FTL_DLOG(INFO) << "Could not get the next backbuffer.";
+    FXL_DLOG(INFO) << "Could not get the next backbuffer.";
     return error;
   }
 
@@ -316,7 +309,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
   // Wait for use readiness.
   // ---------------------------------------------------------------------------
   if (!backbuffer->WaitFences()) {
-    FTL_DLOG(INFO) << "Failed waiting on fences.";
+    FXL_DLOG(INFO) << "Failed waiting on fences.";
     return error;
   }
 
@@ -325,7 +318,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
   // Put semaphores in unsignaled state.
   // ---------------------------------------------------------------------------
   if (!backbuffer->ResetFences()) {
-    FTL_DLOG(INFO) << "Could not reset fences.";
+    FXL_DLOG(INFO) << "Could not reset fences.";
     return error;
   }
 
@@ -351,20 +344,20 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
     case VK_ERROR_SURFACE_LOST_KHR:
       return {AcquireStatus::ErrorSurfaceLost, nullptr};
     default:
-      FTL_LOG(INFO) << "Unexpected result from AcquireNextImageKHR: "
+      FXL_LOG(INFO) << "Unexpected result from AcquireNextImageKHR: "
                     << acquire_result;
       return {AcquireStatus::ErrorSurfaceLost, nullptr};
   }
 
   // Simple sanity checking of image index.
   if (next_image_index >= images_.size()) {
-    FTL_DLOG(INFO) << "Image index returned was out-of-bounds.";
+    FXL_DLOG(INFO) << "Image index returned was out-of-bounds.";
     return error;
   }
 
   auto& image = images_[next_image_index];
   if (!image->IsValid()) {
-    FTL_DLOG(INFO) << "Image at index was invalid.";
+    FXL_DLOG(INFO) << "Image at index was invalid.";
     return error;
   }
 
@@ -373,7 +366,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
   // Start recording to the command buffer.
   // ---------------------------------------------------------------------------
   if (!backbuffer->GetUsageCommandBuffer().Begin()) {
-    FTL_DLOG(INFO) << "Could not begin recording to the command buffer.";
+    FXL_DLOG(INFO) << "Could not begin recording to the command buffer.";
     return error;
   }
 
@@ -393,7 +386,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
           VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,  // dest_access_flags
           destination_image_layout               // dest_layout
           )) {
-    FTL_DLOG(INFO) << "Could not insert image memory barrier.";
+    FXL_DLOG(INFO) << "Could not insert image memory barrier.";
     return error;
   } else {
     current_pipeline_stage_ = destination_pipeline_stage;
@@ -404,7 +397,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
   // End recording to the command buffer.
   // ---------------------------------------------------------------------------
   if (!backbuffer->GetUsageCommandBuffer().End()) {
-    FTL_DLOG(INFO) << "Could not end recording to the command buffer.";
+    FXL_DLOG(INFO) << "Could not end recording to the command buffer.";
     return error;
   }
 
@@ -424,7 +417,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
           command_buffers,               // command_buffers
           backbuffer->GetUsageFence()    // fence
           )) {
-    FTL_DLOG(INFO) << "Could not submit to the device queue.";
+    FXL_DLOG(INFO) << "Could not submit to the device queue.";
     return error;
   }
 
@@ -435,7 +428,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
   sk_sp<SkSurface> surface = surfaces_[next_image_index];
 
   if (surface == nullptr) {
-    FTL_DLOG(INFO) << "Could not access surface at the image index.";
+    FXL_DLOG(INFO) << "Could not access surface at the image index.";
     return error;
   }
 
@@ -443,7 +436,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
   if (!surface->getRenderTargetHandle(
           reinterpret_cast<GrBackendObject*>(&image_info),
           SkSurface::kFlushRead_BackendHandleAccess)) {
-    FTL_DLOG(INFO) << "Could not get render target handle.";
+    FXL_DLOG(INFO) << "Could not get render target handle.";
     return error;
   }
 
@@ -455,7 +448,7 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
 
 bool VulkanSwapchain::Submit() {
   if (!IsValid()) {
-    FTL_DLOG(INFO) << "Swapchain was invalid.";
+    FXL_DLOG(INFO) << "Swapchain was invalid.";
     return false;
   }
 
@@ -471,7 +464,7 @@ bool VulkanSwapchain::Submit() {
   if (!surface->getRenderTargetHandle(
           reinterpret_cast<GrBackendObject*>(&image_info),
           SkSurface::kFlushRead_BackendHandleAccess)) {
-    FTL_DLOG(INFO) << "Could not get render target handle.";
+    FXL_DLOG(INFO) << "Could not get render target handle.";
     return false;
   }
 
@@ -480,7 +473,7 @@ bool VulkanSwapchain::Submit() {
   // Start recording to the command buffer.
   // ---------------------------------------------------------------------------
   if (!backbuffer->GetRenderCommandBuffer().Begin()) {
-    FTL_DLOG(INFO) << "Could not start recording to the command buffer.";
+    FXL_DLOG(INFO) << "Could not start recording to the command buffer.";
     return false;
   }
 
@@ -499,7 +492,7 @@ bool VulkanSwapchain::Submit() {
           VK_ACCESS_MEMORY_READ_BIT,             // dest_access_flags
           destination_image_layout               // dest_layout
           )) {
-    FTL_DLOG(INFO) << "Could not insert memory barrier.";
+    FXL_DLOG(INFO) << "Could not insert memory barrier.";
     return false;
   } else {
     current_pipeline_stage_ = destination_pipeline_stage;
@@ -510,7 +503,7 @@ bool VulkanSwapchain::Submit() {
   // End recording to the command buffer.
   // ---------------------------------------------------------------------------
   if (!backbuffer->GetRenderCommandBuffer().End()) {
-    FTL_DLOG(INFO) << "Could not end recording to the command buffer.";
+    FXL_DLOG(INFO) << "Could not end recording to the command buffer.";
     return false;
   }
 
@@ -532,7 +525,7 @@ bool VulkanSwapchain::Submit() {
           command_buffers,                     // command_buffers
           backbuffer->GetRenderFence()         // fence
           )) {
-    FTL_DLOG(INFO) << "Could not submit to the device queue.";
+    FXL_DLOG(INFO) << "Could not submit to the device queue.";
     return false;
   }
 
@@ -556,7 +549,7 @@ bool VulkanSwapchain::Submit() {
 
   if (VK_CALL_LOG_ERROR(vk.QueuePresentKHR(device_.GetQueueHandle(),
                                            &present_info)) != VK_SUCCESS) {
-    FTL_DLOG(INFO) << "Could not submit the present operation.";
+    FXL_DLOG(INFO) << "Could not submit the present operation.";
     return false;
   }
 

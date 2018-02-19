@@ -11,7 +11,7 @@
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
-#include "lib/ftl/time/time_point.h"
+#include "lib/fxl/time/time_point.h"
 #include "lib/tonic/dart_persistent_value.h"
 
 namespace tonic {
@@ -27,7 +27,7 @@ class WindowClient {
   virtual void ScheduleFrame() = 0;
   virtual void Render(Scene* scene) = 0;
   virtual void UpdateSemantics(SemanticsUpdate* update) = 0;
-  virtual void HandlePlatformMessage(ftl::RefPtr<PlatformMessage> message) = 0;
+  virtual void HandlePlatformMessage(fxl::RefPtr<PlatformMessage> message) = 0;
 
  protected:
   virtual ~WindowClient();
@@ -39,16 +39,20 @@ class Window {
   ~Window();
 
   WindowClient* client() const { return client_; }
+  const ViewportMetrics& viewport_metrics() { return viewport_metrics_; }
 
   void DidCreateIsolate();
   void UpdateWindowMetrics(const ViewportMetrics& metrics);
   void UpdateLocale(const std::string& language_code,
                     const std::string& country_code);
+  void UpdateUserSettingsData(const std::string& data);
   void UpdateSemanticsEnabled(bool enabled);
-  void DispatchPlatformMessage(ftl::RefPtr<PlatformMessage> message);
+  void DispatchPlatformMessage(fxl::RefPtr<PlatformMessage> message);
   void DispatchPointerDataPacket(const PointerDataPacket& packet);
-  void DispatchSemanticsAction(int32_t id, SemanticsAction action);
-  void BeginFrame(ftl::TimePoint frameTime);
+  void DispatchSemanticsAction(int32_t id,
+                               SemanticsAction action,
+                               std::vector<uint8_t> args);
+  void BeginFrame(fxl::TimePoint frameTime);
 
   void CompletePlatformMessageResponse(int response_id,
                                        std::vector<uint8_t> data);
@@ -59,10 +63,11 @@ class Window {
  private:
   WindowClient* client_;
   tonic::DartPersistentValue library_;
+  ViewportMetrics viewport_metrics_;
 
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;
-  std::unordered_map<int, ftl::RefPtr<blink::PlatformMessageResponse>>
+  std::unordered_map<int, fxl::RefPtr<blink::PlatformMessageResponse>>
       pending_responses_;
 };
 

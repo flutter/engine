@@ -19,7 +19,11 @@ config("config") {
     "$root_out_dir",
   ]
 
-  cflags = [ "-Wno-inconsistent-missing-override" ]
+  if (!is_win) {
+    cflags = [ "-Wno-inconsistent-missing-override" ]
+  } else {
+    defines = [ "_USE_MATH_DEFINES" ]
+  }
 
   if (is_fuchsia) {
     # TODO(abarth): Remove once the kernel support unmapping memory properly.
@@ -41,9 +45,9 @@ group("engine") {
   public_configs = [ ":config" ]
 
   public_deps = [
-    "//flutter/sky/engine/core",
-    "//flutter/sky/engine/platform",
-    "//flutter/sky/engine/web",
-    "//flutter/sky/engine/wtf",
+    "$flutter_root/sky/engine/core",
+    "$flutter_root/sky/engine/platform",
+    "$flutter_root/sky/engine/web",
+    "$flutter_root/sky/engine/wtf",
   ]
 }

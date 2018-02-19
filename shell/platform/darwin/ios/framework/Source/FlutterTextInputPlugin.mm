@@ -12,6 +12,8 @@ static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
 static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
   if ([inputType isEqualToString:@"TextInputType.text"])
     return UIKeyboardTypeDefault;
+  if ([inputType isEqualToString:@"TextInputType.multiline"])
+    return UIKeyboardTypeDefault;
   if ([inputType isEqualToString:@"TextInputType.number"])
     return UIKeyboardTypeDecimalPad;
   if ([inputType isEqualToString:@"TextInputType.phone"])
@@ -23,23 +25,21 @@ static UIKeyboardType ToUIKeyboardType(NSString* inputType) {
   return UIKeyboardTypeDefault;
 }
 
+static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
+  if ([inputType isEqualToString:@"TextInputType.multiline"])
+    return UIReturnKeyDefault;
+  return UIReturnKeyDone;
+}
+
 static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inputType) {
   if ([inputType isEqualToString:@"TextInputType.text"])
+    return UITextAutocapitalizationTypeSentences;
+  if ([inputType isEqualToString:@"TextInputType.multiline"])
     return UITextAutocapitalizationTypeSentences;
   return UITextAutocapitalizationTypeNone;
 }
 
 #pragma mark - FlutterTextPosition
-
-/** An indexed position in the buffer of a Flutter text editing widget. */
-@interface FlutterTextPosition : UITextPosition
-
-@property(nonatomic, readonly) NSUInteger index;
-
-+ (instancetype)positionWithIndex:(NSUInteger)index;
-- (instancetype)initWithIndex:(NSUInteger)index;
-
-@end
 
 @implementation FlutterTextPosition
 
@@ -58,15 +58,6 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 @end
 
 #pragma mark - FlutterTextRange
-
-/** A range of text in the buffer of a Flutter text editing widget. */
-@interface FlutterTextRange : UITextRange<NSCopying>
-
-@property(nonatomic, readonly) NSRange range;
-
-+ (instancetype)rangeWithNSRange:(NSRange)range;
-
-@end
 
 @implementation FlutterTextRange
 
@@ -181,9 +172,9 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 
   NSInteger selectionBase = [state[@"selectionBase"] intValue];
   NSInteger selectionExtent = [state[@"selectionExtent"] intValue];
-  NSUInteger start = MIN(MAX(0, MIN(selectionBase, selectionExtent)), (NSInteger)self.text.length);
-  NSUInteger end = MIN(MAX(0, MAX(selectionBase, selectionExtent)), (NSInteger)self.text.length);
-  NSRange selectedRange = NSMakeRange(start, end - start);
+  NSRange selectedRange = [self clampSelection:NSMakeRange(MIN(selectionBase, selectionExtent),
+                                                           ABS(selectionBase - selectionExtent))
+                                       forText:self.text];
   NSRange oldSelectedRange = [(FlutterTextRange*)self.selectedTextRange range];
   if (selectedRange.location != oldSelectedRange.location ||
       selectedRange.length != oldSelectedRange.length) {
@@ -196,8 +187,26 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
     [self.inputDelegate selectionDidChange:self];
   }
 
-  if (textChanged)
+  NSInteger composingBase = [state[@"composingBase"] intValue];
+  NSInteger composingExtent = [state[@"composingExtent"] intValue];
+  NSRange composingRange = [self clampSelection:NSMakeRange(MIN(composingBase, composingExtent),
+                                                            ABS(composingBase - composingExtent))
+                                        forText:self.text];
+  self.markedTextRange =
+      composingRange.length > 0 ? [FlutterTextRange rangeWithNSRange:composingRange] : nil;
+
+  if (textChanged) {
     [self.inputDelegate textDidChange:self];
+
+    // For consistency with Android behavior, send an update to the framework.
+    [self updateEditingState];
+  }
+}
+
+- (NSRange)clampSelection:(NSRange)range forText:(NSString*)text {
+  int start = MIN(MAX(range.location, 0), text.length);
+  int length = MIN(range.length, text.length - start);
+  return NSMakeRange(start, length);
 }
 
 #pragma mark - UIResponder Overrides
@@ -254,8 +263,10 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
     selectedRange.length -= intersectionRange.length;
   }
 
-  [self.text replaceCharactersInRange:replaceRange withString:text];
-  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
+  [self.text replaceCharactersInRange:[self clampSelection:replaceRange forText:self.text]
+                           withString:text];
+  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:[self clampSelection:selectedRange
+                                                                             forText:self.text]]
           updateEditingState:NO];
 
   [self updateEditingState];
@@ -268,6 +279,8 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
     [_textInputDelegate performAction:FlutterTextInputActionDone withClient:_textInputClient];
     return NO;
   }
+  if (self.returnKeyType == UIReturnKeyDefault && [text isEqualToString:@"\n"])
+    [_textInputDelegate performAction:FlutterTextInputActionNewline withClient:_textInputClient];
   return YES;
 }
 
@@ -293,7 +306,8 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 
   NSUInteger selectionLocation = markedSelectedRange.location + markedTextRange.location;
   selectedRange = NSMakeRange(selectionLocation, markedSelectedRange.length);
-  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:selectedRange]
+  [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:[self clampSelection:selectedRange
+                                                                             forText:self.text]]
           updateEditingState:YES];
 }
 
@@ -313,7 +327,7 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
  * text. */
 - (NSRange)rangeForCharacterAtIndex:(NSUInteger)index {
   if (index < self.text.length)
-    [self.text rangeOfComposedCharacterSequenceAtIndex:index];
+    return [self.text rangeOfComposedCharacterSequenceAtIndex:index];
   return NSMakeRange(index, 0);
 }
 
@@ -503,8 +517,28 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 
 @end
 
+/**
+ * Hides `FlutterTextInputView` from iOS accessibility system so it
+ * does not show up twice, once where it is in the `UIView` hierarchy,
+ * and a second time as part of the `SemanticsObject` hierarchy.
+ */
+@interface FlutterTextInputViewAccessibilityHider : UIView {
+}
+
+@end
+
+@implementation FlutterTextInputViewAccessibilityHider {
+}
+
+- (BOOL)accessibilityElementsHidden {
+  return YES;
+}
+
+@end
+
 @implementation FlutterTextInputPlugin {
   FlutterTextInputView* _view;
+  FlutterTextInputViewAccessibilityHider* _inputHider;
 }
 
 @synthesize textInputDelegate = _textInputDelegate;
@@ -514,6 +548,7 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 
   if (self) {
     _view = [[FlutterTextInputView alloc] init];
+    _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
   }
 
   return self;
@@ -522,8 +557,13 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
 - (void)dealloc {
   [self hideTextInput];
   [_view release];
+  [_inputHider release];
 
   [super dealloc];
+}
+
+- (UIView<UITextInput>*)textInputView {
+  return _view;
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
@@ -554,19 +594,26 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
            @"The application must have a key window since the keyboard client "
            @"must be part of the responder chain to function");
   _view.textInputDelegate = _textInputDelegate;
-  [[UIApplication sharedApplication].keyWindow addSubview:_view];
+  [_inputHider addSubview:_view];
+  [[UIApplication sharedApplication].keyWindow addSubview:_inputHider];
   [_view becomeFirstResponder];
 }
 
 - (void)hideTextInput {
   [_view resignFirstResponder];
   [_view removeFromSuperview];
+  [_inputHider removeFromSuperview];
 }
 
 - (void)setTextInputClient:(int)client withConfiguration:(NSDictionary*)configuration {
   _view.keyboardType = ToUIKeyboardType(configuration[@"inputType"]);
+  _view.returnKeyType = ToUIReturnKeyType(configuration[@"inputType"]);
   _view.autocapitalizationType = ToUITextAutocapitalizationType(configuration[@"inputType"]);
   _view.secureTextEntry = [configuration[@"obscureText"] boolValue];
+  NSString* autocorrect = configuration[@"autocorrect"];
+  _view.autocorrectionType = autocorrect && ![autocorrect boolValue]
+                                 ? UITextAutocorrectionTypeNo
+                                 : UITextAutocorrectionTypeDefault;
   [_view setTextInputClient:client];
   [_view reloadInputViews];
 }

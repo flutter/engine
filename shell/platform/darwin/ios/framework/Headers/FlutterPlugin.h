@@ -10,6 +10,7 @@
 #include "FlutterBinaryMessenger.h"
 #include "FlutterChannels.h"
 #include "FlutterCodecs.h"
+#include "FlutterTexture.h"
 
 NS_ASSUME_NONNULL_BEGIN
 @protocol FlutterPluginRegistrar;
@@ -126,7 +127,8 @@ NS_ASSUME_NONNULL_BEGIN
 */
 - (BOOL)application:(UIApplication*)application
     performActionForShortcutItem:(UIApplicationShortcutItem*)shortcutItem
-               completionHandler:(void (^)(BOOL succeeded))completionHandler;
+               completionHandler:(void (^)(BOOL succeeded))completionHandler
+    API_AVAILABLE(ios(9.0));
 
 @end
 
@@ -141,6 +143,14 @@ NS_ASSUME_NONNULL_BEGIN
  - Returns: The messenger.
  */
 - (NSObject<FlutterBinaryMessenger>*)messenger;
+
+/**
+ Returns a `FlutterTextureRegistry` for registering textures
+ provided by the plugin.
+
+ - Returns: The texture registry.
+ */
+- (NSObject<FlutterTextureRegistry>*)textures;
 
 /**
  Publishes a value for external use of the plugin.

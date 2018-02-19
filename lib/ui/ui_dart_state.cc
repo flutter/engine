@@ -15,8 +15,10 @@ namespace blink {
 IsolateClient::~IsolateClient() {}
 
 UIDartState::UIDartState(IsolateClient* isolate_client,
-                         std::unique_ptr<Window> window)
-    : isolate_client_(isolate_client),
+                         std::unique_ptr<Window> window,
+                         int dirfd)
+    : tonic::DartState(dirfd),
+      isolate_client_(isolate_client),
       main_port_(ILLEGAL_PORT),
       window_(std::move(window)) {}
 
@@ -34,12 +36,11 @@ UIDartState* UIDartState::CreateForChildIsolate() {
 }
 
 void UIDartState::DidSetIsolate() {
+  FXL_DCHECK(!debug_name_prefix_.empty());
   main_port_ = Dart_GetMainPortId();
-  tonic::DartApiScope api_scope;
-  Dart_Handle debug_name = Dart_DebugName();
-  if (Dart_IsString(debug_name)) {
-    debug_name_ = tonic::StdStringFromDart(debug_name);
-  }
+  std::ostringstream debug_name;
+  debug_name << debug_name_prefix_ << "$main-" << main_port_;
+  debug_name_ = debug_name.str();
 }
 
 UIDartState* UIDartState::Current() {
@@ -52,6 +53,10 @@ void UIDartState::set_font_selector(PassRefPtr<FontSelector> selector) {
 
 PassRefPtr<FontSelector> UIDartState::font_selector() {
   return font_selector_;
+}
+
+void UIDartState::set_debug_name_prefix(const std::string& debug_name_prefix) {
+  debug_name_prefix_ = debug_name_prefix;
 }
 
 }  // namespace blink

@@ -3,16 +3,31 @@ Contributing to the Flutter engine
 
 [![Build Status](https://travis-ci.org/flutter/engine.svg)](https://travis-ci.org/flutter/engine)
 
+I built it before. Remind me, how do I do it again?
+--------------------
+
+If you have previously built the engine (i.e. your environment is already setup) and just want a refresher, then feel free to skip to one of the following sections:
+
+- [Build for Android](#android-cross-compiling-from-mac-or-linux)
+- [Build for iOS](#ios-cross-compiling-from-mac)
+- [Build flutter_tester](#desktop-mac-and-linux-for-tests)
+
+Otherwise, begin from the next section, which will help you prepare your environment.
+
 Things you will need
 --------------------
 
- * Linux or Mac OS X. (Windows is not yet supported.)
+ * Linux, Mac OS X, or Windows
+     * Windows doesn't support cross-compiling artifacts for Android or iOS
+     * Linux doesn't support cross-compiling artifacts for iOS
  * git (used for source version control).
  * An IDE. We recommend [IntelliJ with the Flutter plugin](https://flutter.io/intellij-ide/) or Xcode.
  * An ssh client (used to authenticate with GitHub).
- * Chromium's [depot_tools](http://www.chromium.org/developers/how-tos/install-depot-tools) (make sure it's in your path). We use the `gclient` tool from depot_tools.
+ * Chromium's [depot_tools](http://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up) (make sure it's in your path). We use the `gclient` tool from depot_tools.
  * Python (used by many of our tools, including 'gclient').
- * curl and unzip (used by `gclient sync`).
+ * On Mac OS X and Linux: curl and unzip (used by `gclient sync`).
+ * On Windows: Visual Studio (required for non-Googlers only).
+ * Recommended for Googlers: Goma for distributed builds.
 
 You do not need [Dart](https://www.dartlang.org/downloads/linux.html) installed, as a Dart tool chain is automatically downloaded as part of the "getting the code" step. Similarly for the Android SDK, it's downloaded by the `gclient sync` step below.
 
@@ -38,7 +53,6 @@ solutions = [
     "safesync_url": "",
   },
 ]
-target_os = ["android"]
 ```
 
  * `cd engine` (Change to the directory in which you put the `.gclient` file.)
@@ -46,12 +60,11 @@ target_os = ["android"]
  * `cd src/flutter` (Change to the `flutter` directory of the `src` directory that `gclient sync` created in your `engine` directory.)
  * `git remote add upstream git@github.com:flutter/engine.git` (So that you fetch from the master `flutter/engine` repository, not your clone, when running `git fetch` et al.)
  * `cd ..` (Return to the `src` directory that `gclient sync` created in your `engine` directory.)
- * Add `.../engine/src/third_party/android_tools/sdk/platform-tools` to your path so that you can run the `adb` tool more easily. This is also required by the `flutter` tool, which is used to run Flutter apps.
- * Make sure you are still in the `src` directory that the `gclient sync` step created earlier.
  * If you're on Linux, run `sudo ./build/install-build-deps-android.sh`
  * If you're on Linux, run `sudo ./build/install-build-deps.sh`
  * If you're on Mac, install Oracle's Java JDK, version 1.7 or later.
  * If you're on Mac, install `ant`: `brew install ant`
+ * If you're on Windows, install Visual Studio (non-Google developers only)
  * If you're planning on working on the [buildroot](https://github.com/flutter/buildroot) repository as well, and have a local checkout of that repository, run the following commands in the `src` directory to update your git remotes accordingly:
 
  ```bash
@@ -82,7 +95,7 @@ Run the following steps, from the `src` directory created in the steps above:
 
 * `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
 * `gclient sync` to update your dependencies.
-* `./flutter/tools/gn --android --unoptimized` to prepare your build files (or `--android --android_cpu [x86|x64] --unoptimized` for x86/x64 emulators) .
+* `./flutter/tools/gn --android --unoptimized` to prepare your build files (or `--android --android-cpu [x86|x64] --unoptimized` for x86/x64 emulators) .
 * `ninja -C out/android_debug_unopt` to actually build the Android binary (or `out/android_debug_unopt_x64 for x86/x64 emulators).
 
 This builds a debug-enabled ("unoptimized") binary configured to run Dart in
@@ -121,7 +134,7 @@ to test the engine.
 
 ### iOS (cross-compiling from Mac)
 
-* Make sure you have Xcode 7.3.0+ installed.
+* Make sure you have Xcode 9.0+ installed.
 * `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
 * `gclient sync` to update dependencies.
 * `./flutter/tools/gn --ios --unoptimized` to prepare build files (or `--ios --simulator --unoptimized` for simulator).
@@ -148,6 +161,16 @@ To run the tests, you'll also need to clone [the main Flutter repository](https:
 See [the instructions for contributing](https://github.com/flutter/flutter/blob/master/CONTRIBUTING.md)
 to the main Flutter repository for detailed instructions.
 
+### Desktop (gen_snapshot for Windows)
+
+You can only build selected binaries on Windows (mainly `gen_snapshot`).
+
+* Make sure you have Visual Studio installed (non-Googlers only).
+* `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
+* `gclient sync` to update your dependencies.
+* `python .\flutter\tools\gn [--unoptimized] --runtime-mode=[debug|profile|release] [--android]` to prepare your build files.
+* `ninja -C .\out\<dir created by previous step> gen_snapshot` to build.
+
 ### Building all the builds that matter on Linux and Android
 
 The following script will update all the builds that matter if you're developing on Linux and testing on Android and created the `.gclient` file in `~/dev/engine`:
@@ -171,8 +194,6 @@ flutter/tools/gn --android --runtime-mode=release
 
 cd out
 find . -mindepth 1 -maxdepth 1 -type d | xargs -n 1 sh -c 'ninja -C $0 || exit 255'
-
-flutter update-packages --upgrade
 ```
 
 
@@ -186,11 +207,13 @@ To start working on a patch:
  * Make sure you are in the `engine/src/flutter` directory.
  * `git fetch upstream`
  * `git checkout upstream/master -b name_of_your_branch`
- * Hack away. Please peruse our
-   [style guides](https://flutter.io/style-guide/) and
-   [design principles](https://flutter.io/design-principles/) before
-   working on anything non-trivial. These guidelines are intended to
-   keep the code consistent and avoid common pitfalls.
+ * Hack away.
+   * Please peruse our [style guides](https://flutter.io/style-guide/) and
+     [design principles](https://flutter.io/design-principles/) before
+     working on anything non-trivial. These guidelines are intended to
+     keep the code consistent and avoid common pitfalls.
+   * C, C++, and Objective-C code should be formatted with `clang-format` before
+     submission (use `buildtools/<OS>/clang/bin/clang-format --style=file -i`).
  * `git commit -a -m "<your brief but informative commit message>"`
  * `git push origin name_of_your_branch`
 

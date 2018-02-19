@@ -28,8 +28,9 @@
 
 #include "flutter/common/threads.h"
 #include "flutter/sky/engine/public/platform/Platform.h"
-#include "flutter/sky/engine/wtf/unicode/Unicode.h"
 #include "flutter/sky/engine/wtf/unicode/UTF8.h"
+#include "flutter/sky/engine/wtf/unicode/Unicode.h"
+#include "third_party/skia/include/private/SkMalloc.h"
 
 #undef SHARED_BUFFER_STATS
 

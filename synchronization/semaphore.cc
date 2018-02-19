@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 #include "flutter/synchronization/semaphore.h"
-#include "lib/ftl/build_config.h"
-#include "lib/ftl/logging.h"
+
+#include "lib/fxl/build_config.h"
+#include "lib/fxl/logging.h"
 
 #if OS_MACOSX
-
 #include <dispatch/dispatch.h>
 
 namespace flutter {
@@ -43,15 +43,55 @@ class PlatformSemaphore {
  private:
   dispatch_semaphore_t _sem;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(PlatformSemaphore);
+  FXL_DISALLOW_COPY_AND_ASSIGN(PlatformSemaphore);
 };
 
 }  // namespace flutter
 
-#else  // OS_MACOSX
+#elif OS_WIN
+#include <windows.h>
 
+namespace flutter {
+
+class PlatformSemaphore {
+ public:
+  explicit PlatformSemaphore(uint32_t count)
+      : _sem(CreateSemaphore(NULL, count, LONG_MAX, NULL)) {}
+
+  ~PlatformSemaphore() {
+    if (_sem != nullptr) {
+      CloseHandle(_sem);
+      _sem = nullptr;
+    }
+  }
+
+  bool IsValid() const { return _sem != nullptr; }
+
+  bool TryWait() {
+    if (_sem == nullptr) {
+      return false;
+    }
+
+    return WaitForSingleObject(_sem, 0) == WAIT_OBJECT_0;
+  }
+
+  void Signal() {
+    if (_sem != nullptr) {
+      ReleaseSemaphore(_sem, 1, NULL);
+    }
+  }
+
+ private:
+  HANDLE _sem;
+
+  FXL_DISALLOW_COPY_AND_ASSIGN(PlatformSemaphore);
+};
+
+}  // namespace flutter
+
+#else
 #include <semaphore.h>
-#include "lib/ftl/files/eintr_wrapper.h"
+#include "lib/fxl/files/eintr_wrapper.h"
 
 namespace flutter {
 
@@ -65,7 +105,7 @@ class PlatformSemaphore {
       int result = ::sem_destroy(&sem_);
       // Can only be EINVAL which should not be possible since we checked for
       // validity.
-      FTL_DCHECK(result == 0);
+      FXL_DCHECK(result == 0);
     }
   }
 
@@ -93,7 +133,7 @@ class PlatformSemaphore {
   bool valid_;
   sem_t sem_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(PlatformSemaphore);
+  FXL_DISALLOW_COPY_AND_ASSIGN(PlatformSemaphore);
 };
 
 }  // namespace flutter

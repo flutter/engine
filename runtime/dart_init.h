@@ -5,24 +5,28 @@
 #ifndef FLUTTER_RUNTIME_DART_INIT_H_
 #define FLUTTER_RUNTIME_DART_INIT_H_
 
-#include "dart/runtime/include/dart_api.h"
-#include "lib/ftl/functional/closure.h"
-#include "lib/ftl/build_config.h"
+#include "lib/fxl/build_config.h"
+#include "lib/fxl/functional/closure.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace blink {
 
-// Name of the kernel blob asset within the FLX bundle.
+// Name of the kernel blob asset within the asset directory.
 extern const char kKernelAssetKey[];
 
-// Name of the snapshot blob asset within the FLX bundle.
+// Name of the snapshot blob asset within the asset directory.
 extern const char kSnapshotAssetKey[];
+
+// Name of the platform kernel blob asset within the asset directory.
+extern const char kPlatformKernelAssetKey[];
 
 bool IsRunningPrecompiledCode();
 
-using EmbedderTracingCallback = ftl::Closure;
+using EmbedderTracingCallback = fxl::Closure;
 
 typedef void (*ServiceIsolateHook)(bool);
 typedef void (*RegisterNativeServiceProtocolExtensionHook)(bool);
@@ -38,7 +42,10 @@ struct EmbedderTracingCallbacks {
 void InitDartVM(const uint8_t* vm_snapshot_data,
                 const uint8_t* vm_snapshot_instructions,
                 const uint8_t* default_isolate_snapshot_data,
-                const uint8_t* default_isolate_snapshot_instructions);
+                const uint8_t* default_isolate_snapshot_instructions,
+                const std::string& bundle_path);
+
+void* GetKernelPlatformBinary();
 
 void SetEmbedderTracingCallbacks(
     std::unique_ptr<EmbedderTracingCallbacks> callbacks);

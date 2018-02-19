@@ -16,13 +16,12 @@ class BackdropFilterLayer : public ContainerLayer {
 
   void set_filter(sk_sp<SkImageFilter> filter) { filter_ = std::move(filter); }
 
- protected:
-  void Paint(PaintContext& context) override;
+  void Paint(PaintContext& context) const override;
 
  private:
   sk_sp<SkImageFilter> filter_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(BackdropFilterLayer);
+  FXL_DISALLOW_COPY_AND_ASSIGN(BackdropFilterLayer);
 };
 
 }  // namespace flow

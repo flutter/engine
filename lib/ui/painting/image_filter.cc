@@ -4,13 +4,15 @@
 
 #include "flutter/lib/ui/painting/image_filter.h"
 
+#include "flutter/lib/ui/painting/matrix.h"
+#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_args.h"
 #include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_library_natives.h"
 #include "third_party/skia/include/effects/SkBlurImageFilter.h"
 #include "third_party/skia/include/effects/SkImageSource.h"
 #include "third_party/skia/include/effects/SkPictureImageFilter.h"
+#include "third_party/skia/src/core/SkMatrixImageFilter.h"
 
 namespace blink {
 
@@ -23,7 +25,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, ImageFilter);
 #define FOR_EACH_BINDING(V)   \
   V(ImageFilter, initImage)   \
   V(ImageFilter, initPicture) \
-  V(ImageFilter, initBlur)
+  V(ImageFilter, initBlur)    \
+  V(ImageFilter, initMatrix)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -33,8 +36,8 @@ void ImageFilter::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-ftl::RefPtr<ImageFilter> ImageFilter::Create() {
-  return ftl::MakeRefCounted<ImageFilter>();
+fxl::RefPtr<ImageFilter> ImageFilter::Create() {
+  return fxl::MakeRefCounted<ImageFilter>();
 }
 
 ImageFilter::ImageFilter() {}
@@ -50,7 +53,15 @@ void ImageFilter::initPicture(Picture* picture) {
 }
 
 void ImageFilter::initBlur(double sigma_x, double sigma_y) {
-  filter_ = SkBlurImageFilter::Make(sigma_x, sigma_y, nullptr);
+  filter_ = SkBlurImageFilter::Make(sigma_x, sigma_y, nullptr, nullptr,
+                                    SkBlurImageFilter::kClamp_TileMode);
+}
+
+void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
+                             int filterQuality) {
+  filter_ = SkMatrixImageFilter::Make(
+      ToSkMatrix(matrix4), static_cast<SkFilterQuality>(filterQuality),
+      nullptr);
 }
 
 }  // namespace blink

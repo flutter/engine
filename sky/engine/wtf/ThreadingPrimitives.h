@@ -37,6 +37,10 @@
 #include "flutter/sky/engine/wtf/Noncopyable.h"
 #include "flutter/sky/engine/wtf/WTFExport.h"
 
+#if OS(WIN)
+#include <windows.h>
+#endif
+
 #if USE(PTHREADS)
 #include <pthread.h>
 #endif
@@ -45,74 +49,100 @@ namespace WTF {
 
 #if USE(PTHREADS)
 struct PlatformMutex {
-    pthread_mutex_t m_internalMutex;
+  pthread_mutex_t m_internalMutex;
 #if ENABLE(ASSERT)
-    size_t m_recursionCount;
+  size_t m_recursionCount;
 #endif
 };
 typedef pthread_cond_t PlatformCondition;
+#elif OS(WIN)
+struct PlatformMutex {
+  CRITICAL_SECTION m_internalMutex;
+  size_t m_recursionCount;
+};
+struct PlatformCondition {
+  size_t m_waitersGone;
+  size_t m_waitersBlocked;
+  size_t m_waitersToUnblock;
+  HANDLE m_blockLock;
+  HANDLE m_blockQueue;
+  HANDLE m_unblockLock;
+
+  bool timedWait(PlatformMutex&, DWORD durationMilliseconds);
+  void signal(bool unblockAll);
+};
 #else
 typedef void* PlatformMutex;
 typedef void* PlatformCondition;
 #endif
 
 class WTF_EXPORT MutexBase {
-    WTF_MAKE_NONCOPYABLE(MutexBase); WTF_MAKE_FAST_ALLOCATED;
-public:
-    ~MutexBase();
+  WTF_MAKE_NONCOPYABLE(MutexBase);
+  WTF_MAKE_FAST_ALLOCATED;
 
-    void lock();
-    void unlock();
+ public:
+  ~MutexBase();
+
+  void lock();
+  void unlock();
 #if ENABLE(ASSERT)
-    bool locked() { return m_mutex.m_recursionCount > 0; }
+  bool locked() { return m_mutex.m_recursionCount > 0; }
 #endif
 
-public:
-    PlatformMutex& impl() { return m_mutex; }
+ public:
+  PlatformMutex& impl() { return m_mutex; }
 
-protected:
-    MutexBase(bool recursive);
+ protected:
+  MutexBase(bool recursive);
 
-    PlatformMutex m_mutex;
+  PlatformMutex m_mutex;
 };
 
 class WTF_EXPORT Mutex : public MutexBase {
-public:
-    Mutex() : MutexBase(false) { }
-    bool tryLock();
+ public:
+  Mutex() : MutexBase(false) {}
+  bool tryLock();
 };
 
 class WTF_EXPORT RecursiveMutex : public MutexBase {
-public:
-    RecursiveMutex() : MutexBase(true) { }
-    bool tryLock();
+ public:
+  RecursiveMutex() : MutexBase(true) {}
+  bool tryLock();
 };
 
 typedef Locker<MutexBase> MutexLocker;
 
 class MutexTryLocker {
-    WTF_MAKE_NONCOPYABLE(MutexTryLocker);
-public:
-    MutexTryLocker(Mutex& mutex) : m_mutex(mutex), m_locked(mutex.tryLock()) { }
-    ~MutexTryLocker()
-    {
-        if (m_locked)
-            m_mutex.unlock();
-    }
+  WTF_MAKE_NONCOPYABLE(MutexTryLocker);
 
-    bool locked() const { return m_locked; }
+ public:
+  MutexTryLocker(Mutex& mutex) : m_mutex(mutex), m_locked(mutex.tryLock()) {}
+  ~MutexTryLocker() {
+    if (m_locked)
+      m_mutex.unlock();
+  }
 
-private:
-    Mutex& m_mutex;
-    bool m_locked;
+  bool locked() const { return m_locked; }
+
+ private:
+  Mutex& m_mutex;
+  bool m_locked;
 };
 
-} // namespace WTF
+#if OS(WIN)
+// The absoluteTime is in seconds, starting on January 1, 1970. The time is
+// assumed to use the same time zone as WTF::currentTime(). Returns an interval
+// in milliseconds suitable for passing to one of the Win32 wait functions
+// (e.g., ::WaitForSingleObject).
+DWORD absoluteTimeToWaitTimeoutInterval(double absoluteTime);
+#endif
 
-using WTF::MutexBase;
+}  // namespace WTF
+
 using WTF::Mutex;
-using WTF::RecursiveMutex;
+using WTF::MutexBase;
 using WTF::MutexLocker;
 using WTF::MutexTryLocker;
+using WTF::RecursiveMutex;
 
 #endif  // SKY_ENGINE_WTF_THREADINGPRIMITIVES_H_

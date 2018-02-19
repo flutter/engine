@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include "dart/runtime/include/dart_api.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
 namespace blink {
 
@@ -18,7 +18,7 @@ class DartServiceIsolate {
   static bool Startup(std::string server_ip,
                       intptr_t server_port,
                       Dart_LibraryTagHandler embedder_tag_handler,
-                      bool running_precompiled,
+                      bool running_from_sources,
                       bool disable_origin_check,
                       char** error);
 

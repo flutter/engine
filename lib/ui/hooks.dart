@@ -15,36 +15,72 @@ dynamic _decodeJSON(String message) {
 void _updateWindowMetrics(double devicePixelRatio,
                           double width,
                           double height,
-                          double top,
-                          double right,
-                          double bottom,
-                          double left) {
+                          double paddingTop,
+                          double paddingRight,
+                          double paddingBottom,
+                          double paddingLeft,
+                          double viewInsetTop,
+                          double viewInsetRight,
+                          double viewInsetBottom,
+                          double viewInsetLeft) {
   window
     .._devicePixelRatio = devicePixelRatio
     .._physicalSize = new Size(width, height)
     .._padding = new WindowPadding._(
-      top: top, right: right, bottom: bottom, left: left);
-  if (window.onMetricsChanged != null)
-    window.onMetricsChanged();
+        top: paddingTop,
+        right: paddingRight,
+        bottom: paddingBottom,
+        left: paddingLeft)
+    .._viewInsets = new WindowPadding._(
+        top: viewInsetTop,
+        right: viewInsetRight,
+        bottom: viewInsetBottom,
+        left: viewInsetLeft);
+  _invoke(window.onMetricsChanged, window._onMetricsChangedZone);
 }
+
+typedef String _LocaleClosure();
+
+String _localeClosure() => window._locale.toString();
+
+_LocaleClosure _getLocaleClosure() => _localeClosure;
 
 void _updateLocale(String languageCode, String countryCode) {
   window._locale = new Locale(languageCode, countryCode);
-  if (window.onLocaleChanged != null)
-    window.onLocaleChanged();
+  _invoke(window.onLocaleChanged, window._onLocaleChangedZone);
+}
+
+void _updateUserSettingsData(String json) {
+  final Map<String, dynamic> data = JSON.decode(json);
+  _updateTextScaleFactor(data['textScaleFactor'].toDouble());
+  _updateAlwaysUse24HourFormat(data['alwaysUse24HourFormat']);
+}
+
+void _updateTextScaleFactor(double textScaleFactor) {
+  window._textScaleFactor = textScaleFactor;
+  _invoke(window.onTextScaleFactorChanged, window._onTextScaleFactorChangedZone);
+}
+
+void _updateAlwaysUse24HourFormat(bool alwaysUse24HourFormat) {
+  window._alwaysUse24HourFormat = alwaysUse24HourFormat;
 }
 
 void _updateSemanticsEnabled(bool enabled) {
   window._semanticsEnabled = enabled;
-  if (window.onSemanticsEnabledChanged != null)
-    window.onSemanticsEnabledChanged();
+  _invoke(window.onSemanticsEnabledChanged, window._onSemanticsEnabledChangedZone);
 }
 
 void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
   if (window.onPlatformMessage != null) {
-    window.onPlatformMessage(name, data, (ByteData responseData) {
-      window._respondToPlatformMessage(responseId, responseData);
-    });
+    _invoke3<String, ByteData, PlatformMessageResponseCallback>(
+      window.onPlatformMessage,
+      window._onPlatformMessageZone,
+      name,
+      data,
+      (ByteData responseData) {
+        window._respondToPlatformMessage(responseId, responseData);
+      },
+    );
   } else {
     window._respondToPlatformMessage(responseId, null);
   }
@@ -52,22 +88,83 @@ void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
 
 void _dispatchPointerDataPacket(ByteData packet) {
   if (window.onPointerDataPacket != null)
-    window.onPointerDataPacket(_unpackPointerDataPacket(packet));
+    _invoke1<PointerDataPacket>(window.onPointerDataPacket, window._onPointerDataPacketZone, _unpackPointerDataPacket(packet));
 }
 
-void _dispatchSemanticsAction(int id, int action) {
-  if (window.onSemanticsAction != null)
-    window.onSemanticsAction(id, SemanticsAction.values[action]);
+void _dispatchSemanticsAction(int id, int action, ByteData args) {
+  _invoke3<int, SemanticsAction, ByteData>(
+    window.onSemanticsAction,
+    window._onSemanticsActionZone,
+    id,
+    SemanticsAction.values[action],
+    args,
+  );
 }
 
 void _beginFrame(int microseconds) {
-  if (window.onBeginFrame != null)
-    window.onBeginFrame(new Duration(microseconds: microseconds));
+  _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone, new Duration(microseconds: microseconds));
 }
 
 void _drawFrame() {
-  if (window.onDrawFrame != null)
-    window.onDrawFrame();
+  _invoke(window.onDrawFrame, window._onDrawFrameZone);
+}
+
+/// Invokes [callback] inside the given [zone].
+void _invoke(void callback(), Zone zone) {
+  if (callback == null)
+    return;
+
+  assert(zone != null);
+
+  if (identical(zone, Zone.current)) {
+    callback();
+  } else {
+    zone.runGuarded(callback);
+  }
+}
+
+/// Invokes [callback] inside the given [zone] passing it [arg].
+void _invoke1<A>(void callback(A a), Zone zone, A arg) {
+  if (callback == null)
+    return;
+
+  assert(zone != null);
+
+  if (identical(zone, Zone.current)) {
+    callback(arg);
+  } else {
+    zone.runUnaryGuarded<A>(callback, arg);
+  }
+}
+
+/// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
+void _invoke2<A1, A2>(void callback(A1 a1, A2 a2), Zone zone, A1 arg1, A2 arg2) {
+  if (callback == null)
+    return;
+
+  assert(zone != null);
+
+  if (identical(zone, Zone.current)) {
+    callback(arg1, arg2);
+  } else {
+    zone.runBinaryGuarded<A1, A2>(callback, arg1, arg2);
+  }
+}
+
+/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2] and [arg3].
+void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1, A2 arg2, A3 arg3) {
+  if (callback == null)
+    return;
+
+  assert(zone != null);
+
+  if (identical(zone, Zone.current)) {
+    callback(arg1, arg2, arg3);
+  } else {
+    zone.runGuarded(() {
+      callback(arg1, arg2, arg3);
+    });
+  }
 }
 
 // If this value changes, update the encoding code in the following files:
@@ -81,7 +178,7 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   const int kBytesPerPointerData = _kPointerDataFieldCount * kStride;
   final int length = packet.lengthInBytes ~/ kBytesPerPointerData;
   assert(length * kBytesPerPointerData == packet.lengthInBytes);
-  List<PointerData> data = new List<PointerData>(length);
+  final List<PointerData> data = new List<PointerData>(length);
   for (int i = 0; i < length; ++i) {
     int offset = i * _kPointerDataFieldCount;
     data[i] = new PointerData(

@@ -42,37 +42,60 @@
 
 #include <stdint.h>
 
+#if COMPILER(MSVC)
+#include <intrin.h>
+#endif
+
 namespace WTF {
 
-#if COMPILER(GCC)
+#if COMPILER(MSVC)
+
+ALWAYS_INLINE uint32_t countLeadingZeros32(uint32_t x) {
+  unsigned long index;
+  return LIKELY(_BitScanReverse(&index, x)) ? (31 - index) : 32;
+}
+
+#if CPU(64BIT)
+
+// MSVC only supplies _BitScanForward64 when building for a 64-bit target.
+ALWAYS_INLINE uint64_t countLeadingZeros64(uint64_t x) {
+  unsigned long index;
+  return LIKELY(_BitScanReverse64(&index, x)) ? (63 - index) : 64;
+}
+
+#endif  // CPU(64BIT)
+
+#elif COMPILER(GCC)
 
 // This is very annoying. __builtin_clz has undefined behaviour for an input of
 // 0, even though these's clearly a return value that makes sense, and even
 // though nascent processor clz instructions have defined behaviour for 0.
 // We could drop to raw __asm__ to do better, but we'll avoid doing that unless
 // we see proof that we need to.
-ALWAYS_INLINE uint32_t countLeadingZeros32(uint32_t x)
-{
-    return LIKELY(x) ? __builtin_clz(x) : 32;
+ALWAYS_INLINE uint32_t countLeadingZeros32(uint32_t x) {
+  return LIKELY(x) ? __builtin_clz(x) : 32;
 }
 
-ALWAYS_INLINE uint64_t countLeadingZeros64(uint64_t x)
-{
-    return LIKELY(x) ? __builtin_clzll(x) : 64;
+ALWAYS_INLINE uint64_t countLeadingZeros64(uint64_t x) {
+  return LIKELY(x) ? __builtin_clzll(x) : 64;
 }
 
 #endif
 
 #if CPU(64BIT)
 
-ALWAYS_INLINE size_t countLeadingZerosSizet(size_t x) { return countLeadingZeros64(x); }
+ALWAYS_INLINE size_t countLeadingZerosSizet(size_t x) {
+  return countLeadingZeros64(x);
+}
 
 #else
 
-ALWAYS_INLINE size_t countLeadingZerosSizet(size_t x) { return countLeadingZeros32(x); }
+ALWAYS_INLINE size_t countLeadingZerosSizet(size_t x) {
+  return countLeadingZeros32(x);
+}
 
 #endif
 
-} // namespace WTF
+}  // namespace WTF
 
 #endif  // SKY_ENGINE_WTF_BITWISEOPERATIONS_H_

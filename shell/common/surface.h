@@ -7,8 +7,8 @@
 
 #include <memory>
 
-#include "lib/ftl/compiler_specific.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/compiler_specific.h"
+#include "lib/fxl/macros.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
 namespace shell {
@@ -33,11 +33,12 @@ class SurfaceFrame {
  private:
   bool submitted_;
   sk_sp<SkSurface> surface_;
+  std::unique_ptr<SkCanvas> xform_canvas_;
   SubmitCallback submit_callback_;
 
   bool PerformSubmit();
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(SurfaceFrame);
+  FXL_DISALLOW_COPY_AND_ASSIGN(SurfaceFrame);
 };
 
 class Surface {
@@ -45,8 +46,6 @@ class Surface {
   Surface();
 
   virtual ~Surface();
-
-  virtual bool Setup() = 0;
 
   virtual bool IsValid() = 0;
 

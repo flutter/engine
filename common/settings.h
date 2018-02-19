@@ -17,8 +17,6 @@ struct Settings {
   // Port on target will be auto selected by the OS. A message will be printed
   // on the target with the port after it has been selected.
   uint32_t observatory_port = 0;
-  bool enable_diagnostic = false;
-  uint32_t diagnostic_port = 0;
   bool ipv6 = false;
   bool start_paused = false;
   bool trace_startup = false;
@@ -27,6 +25,8 @@ struct Settings {
   bool use_test_fonts = false;
   bool dart_non_checked_mode = false;
   bool enable_software_rendering = false;
+  bool using_blink = true;
+  std::string aot_shared_library_path;
   std::string aot_snapshot_path;
   std::string aot_vm_snapshot_data_filename;
   std::string aot_vm_snapshot_instr_filename;

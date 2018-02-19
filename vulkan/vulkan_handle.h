@@ -7,8 +7,8 @@
 
 #include <functional>
 
-#include "lib/ftl/logging.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/logging.h"
+#include "lib/fxl/macros.h"
 #include "vulkan_interface.h"
 
 namespace vulkan {
@@ -55,6 +55,8 @@ class VulkanHandle {
   /// the lifetime of the handle extends past the lifetime of this object.
   void ReleaseOwnership() { disposer_ = nullptr; }
 
+  void Reset() { DisposeIfNecessary(); }
+
  private:
   Handle handle_;
   Disposer disposer_;
@@ -70,7 +72,7 @@ class VulkanHandle {
     disposer_ = nullptr;
   }
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(VulkanHandle);
+  FXL_DISALLOW_COPY_AND_ASSIGN(VulkanHandle);
 };
 
 }  // namespace vulkan

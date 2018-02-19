@@ -6,15 +6,15 @@
 
 #include <stdlib.h>
 
+#include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkShader.h"
 
 namespace flow {
 
 namespace {
 
-sk_sp<SkShader> CreateCheckerboardShader(SkColor c1,
-                                                SkColor c2,
-                                                int size) {
+sk_sp<SkShader> CreateCheckerboardShader(SkColor c1, SkColor c2, int size) {
   SkBitmap bm;
   bm.allocN32Pixels(2 * size, 2 * size);
   bm.eraseColor(c1);
@@ -26,10 +26,7 @@ sk_sp<SkShader> CreateCheckerboardShader(SkColor c1,
 
 }  // anonymous namespace
 
-void DrawCheckerboard(SkCanvas* canvas,
-                             SkColor c1,
-                             SkColor c2,
-                             int size) {
+void DrawCheckerboard(SkCanvas* canvas, SkColor c1, SkColor c2, int size) {
   SkPaint paint;
   paint.setShader(CreateCheckerboardShader(c1, c2, size));
   canvas->drawPaint(paint);

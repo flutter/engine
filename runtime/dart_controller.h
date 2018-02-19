@@ -6,10 +6,11 @@
 #define FLUTTER_RUNTIME_DART_CONTROLLER_H_
 
 #include <memory>
+#include <vector>
 
-#include "dart/runtime/include/dart_api.h"
-#include "lib/ftl/macros.h"
+#include "lib/fxl/macros.h"
 #include "lib/tonic/logging/dart_error.h"
+#include "third_party/dart/runtime/include/dart_api.h"
 
 namespace blink {
 class UIDartState;
@@ -19,10 +20,15 @@ class DartController {
   DartController();
   ~DartController();
 
-  tonic::DartErrorHandleType RunFromKernel(const uint8_t* buffer, size_t size);
-  tonic::DartErrorHandleType RunFromPrecompiledSnapshot();
-  tonic::DartErrorHandleType RunFromScriptSnapshot(const uint8_t* buffer,
-                                                   size_t size);
+  tonic::DartErrorHandleType RunFromKernel(
+      const std::vector<uint8_t>& kernel,
+      const std::string& entrypoint = main_entrypoint_);
+  tonic::DartErrorHandleType RunFromPrecompiledSnapshot(
+      const std::string& entrypoint = main_entrypoint_);
+  tonic::DartErrorHandleType RunFromScriptSnapshot(
+      const uint8_t* buffer,
+      size_t size,
+      const std::string& entrypoint = main_entrypoint_);
   tonic::DartErrorHandleType RunFromSource(const std::string& main,
                                            const std::string& packages);
 
@@ -34,14 +40,16 @@ class DartController {
   UIDartState* dart_state() const { return ui_dart_state_; }
 
  private:
-  bool SendStartMessage(Dart_Handle root_library);
+  bool SendStartMessage(Dart_Handle root_library,
+                        const std::string& entrypoint = main_entrypoint_);
 
-  // The DartState associated with the main isolate.  This will be deleted
-  // during isolate shutdown.
+  static const std::string main_entrypoint_;
+
+  // The DartState associated with the main isolate.
   UIDartState* ui_dart_state_;
 
-  FTL_DISALLOW_COPY_AND_ASSIGN(DartController);
+  FXL_DISALLOW_COPY_AND_ASSIGN(DartController);
 };
-}
+}  // namespace blink
 
 #endif  // FLUTTER_RUNTIME_DART_CONTROLLER_H_
