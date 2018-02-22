@@ -77,10 +77,12 @@ using namespace shell;
 }
 
 - (void)vibrateHapticFeedback:(NSString*)feedbackType {
+  if (!feedbackType) {
+    AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+  }
+
   if (@available(iOS 10, *)) {
-    if (!feedbackType) {
-      AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
-    } else if ([@"HapticFeedbackType.lightImpact" isEqualToString: feedbackType]) {
+    if ([@"HapticFeedbackType.lightImpact" isEqualToString: feedbackType]) {
       [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
     } else if ([@"HapticFeedbackType.mediumImpact" isEqualToString: feedbackType]) {
       [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium] impactOccurred];
@@ -89,8 +91,6 @@ using namespace shell;
     } else if ([@"HapticFeedbackType.selectionClick" isEqualToString: feedbackType]) {
       [[[UISelectionFeedbackGenerator alloc] init] selectionChanged];
     }
-  } else {
-    AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
   }
 }
 
