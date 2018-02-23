@@ -55,9 +55,7 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     // doesn't provide a way to calculate it.  We fill this whole region
     // and clip children to it so we don't need to join the child paint bounds.
     SkRect bounds(path_.getBounds());
-    if (!needs_system_composite()) {
-      // bounds.outset(20.0, 20.0);
-    }
+
     set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
   }

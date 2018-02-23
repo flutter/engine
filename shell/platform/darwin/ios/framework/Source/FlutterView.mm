@@ -136,7 +136,6 @@ void SnapshotContentsSync(CGContextRef context, UIView* view) {
 // 2: The call is made of the platform thread and not the GPU thread.
 // 3: There may be a software rasterizer.
 - (void)drawLayer:(CALayer*)layer inContext:(CGContextRef)context {
-  NSLog(@"Draw layer in context");
   SnapshotContentsSync(context, self);
 }
 

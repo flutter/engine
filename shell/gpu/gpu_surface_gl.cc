@@ -15,6 +15,7 @@
 
 namespace shell {
 
+// TODO(sigurdm): Avoid allocating statically.
 sk_sp<GrContext> global_context;
 
 // Default maximum number of budgeted resources in the cache.
@@ -166,7 +167,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (!delegate_->GLContextMakeCurrent()) {
     FXL_LOG(ERROR)
         << "Could not make the context current to acquire the frame.";
-    assert(false);
     return nullptr;
   }
 
@@ -193,8 +193,7 @@ bool GPUSurfaceGL::PresentSurface() {
 
   {
     TRACE_EVENT0("flutter", "SkCanvas::Flush");
-    //   MakeCurrent();
-    //  onscreen_surface_->getCanvas()->flush();
+
   }
 
   delegate_->GLContextPresent();
