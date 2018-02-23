@@ -44,7 +44,7 @@ void ClipPathLayer::UpdateScene(SystemCompositorContext& context) {
   // );
 }
 
-void ClipPathLayer::Paint(PaintContext& context) {
+void ClipPathLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipPathLayer::Paint");
   FXL_DCHECK(needs_painting());
 

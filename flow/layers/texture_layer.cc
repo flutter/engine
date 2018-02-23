@@ -34,7 +34,7 @@ void TextureLayer::UpdateScene(SystemCompositorContext& context) {
   texture->UpdateScene(&context, paint_bounds());
 }
 
-void TextureLayer::Paint(PaintContext& context) {
+void TextureLayer::Paint(PaintContext& context) const {
   std::shared_ptr<Texture> texture =
       context.texture_registry.GetTexture(texture_id_);
   if (!texture) {

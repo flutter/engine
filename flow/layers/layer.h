@@ -84,7 +84,7 @@ class Layer {
     const SkRect bounds_;
   };
 
-  virtual void Paint(PaintContext& context) = 0;
+  virtual void Paint(PaintContext& context) const = 0;
 
   // Updates the system composited scene.
   virtual void UpdateScene(SystemCompositorContext& context);

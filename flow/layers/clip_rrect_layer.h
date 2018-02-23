@@ -18,7 +18,7 @@ class ClipRRectLayer : public ContainerLayer {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
-  void Paint(PaintContext& context) override;
+  void Paint(PaintContext& context) const override;
 
   void UpdateScene(SystemCompositorContext& context) override;
 

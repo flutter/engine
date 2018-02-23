@@ -77,7 +77,7 @@ void PhysicalShapeLayer::UpdateScene(SystemCompositorContext& context) {
   context.PopLayer();
 }
 
-void PhysicalShapeLayer::Paint(PaintContext& context) {
+void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FXL_DCHECK(needs_painting());
 

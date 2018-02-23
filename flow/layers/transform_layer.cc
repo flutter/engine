@@ -34,7 +34,7 @@ void TransformLayer::UpdateScene(SystemCompositorContext& context) {
   context.PopTransform();
 }
 
-void TransformLayer::Paint(PaintContext& context) {
+void TransformLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "TransformLayer::Paint");
   FXL_DCHECK(needs_painting());
 

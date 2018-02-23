@@ -32,7 +32,7 @@ void ClipRRectLayer::UpdateScene(SystemCompositorContext& context) {
   context.PopLayer();
 }
 
-void ClipRRectLayer::Paint(PaintContext& context) {
+void ClipRRectLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipRRectLayer::Paint");
   FXL_DCHECK(needs_painting());
 

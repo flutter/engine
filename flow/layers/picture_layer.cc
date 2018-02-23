@@ -34,7 +34,7 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(bounds);
 }
 
-void PictureLayer::Paint(PaintContext& context) {
+void PictureLayer::Paint(PaintContext& context) const {
   FXL_DCHECK(picture_);
   FXL_DCHECK(needs_painting());
 
