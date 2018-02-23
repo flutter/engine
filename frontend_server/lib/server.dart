@@ -422,7 +422,6 @@ Future<int> starter(
         break;
       case _State.RECOMPILE_LIST:
         if (string == boundaryKey) {
-          print('recompileDelta filename:$recompileFilename');
           compiler.recompileDelta(filename: recompileFilename);
           state = _State.READY_FOR_INSTRUCTION;
         } else
