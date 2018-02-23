@@ -25,8 +25,15 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   }
 }
 
-void ClipPathLayer::UpdateScene(LayeredPaintContext &context) {
+void ClipPathLayer::UpdateScene(SystemCompositorContext &context) {
   FXL_DCHECK(needs_system_composite());
+  context.PushLayer(paint_bounds());
+  context.ClipFrame();
+
+  context.SetClipPath(clip_path_);
+
+  UpdateSceneChildren(context);
+  context.PopLayer();
 
   // // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
   // //               Treating the shape as a rectangle for now.
@@ -36,8 +43,6 @@ void ClipPathLayer::UpdateScene(LayeredPaintContext &context) {
   //                             bounds.height()     //  height
   // );
 
-  // SceneUpdateContext::Clip clip(context, shape, bounds);
-  UpdateSceneChildren(context);
 }
 
 void ClipPathLayer::Paint(PaintContext& context) {

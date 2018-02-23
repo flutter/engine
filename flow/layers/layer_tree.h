@@ -44,7 +44,7 @@ class LayerTree {
     device_pixel_ratio_ = device_pixel_ratio;
   }
 #endif
-  void UpdateScene(LayeredPaintContext& context);
+  void UpdateScene(SystemCompositorContext& context);
 
 
   void Paint(CompositorContext::ScopedFrame& frame) const;

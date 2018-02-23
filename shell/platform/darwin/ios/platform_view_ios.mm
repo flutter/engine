@@ -21,7 +21,7 @@ namespace shell {
 
 PlatformViewIOS::PlatformViewIOS(CALayer* layer, NSObject<FlutterBinaryMessenger>* binaryMessenger)
     : PlatformView(std::make_unique<GPURasterizer>(std::make_unique<ProcessInfoMac>())),
-      layered_paint_context_(std::make_unique<IOSLayeredPaintContext>(surface_config_, layer)),
+      system_compositor_context_(std::make_unique<IOSSystemCompositorContext>(surface_config_, layer)),
       weak_factory_(this),
       binary_messenger_(binaryMessenger) {}
 
@@ -47,7 +47,7 @@ void PlatformViewIOS::Attach(fxl::Closure firstFrameCallback) {
 
 void PlatformViewIOS::NotifyCreated() {
   PlatformView::NotifyCreated(
-    layered_paint_context_->rootIOSSurface()->CreateGPUSurface(), layered_paint_context_.get());
+    system_compositor_context_->rootIOSSurface()->CreateGPUSurface(), system_compositor_context_.get());
 }
 
 void PlatformViewIOS::ToggleAccessibility(UIView* view, bool enabled) {
@@ -84,8 +84,8 @@ fml::WeakPtr<PlatformViewIOS> PlatformViewIOS::GetWeakPtr() {
 
 void PlatformViewIOS::UpdateSurfaceSize() {
   blink::Threads::Gpu()->PostTask([self = GetWeakPtr()]() {
-    if (self && self->layered_paint_context_->rootIOSSurface()) {
-      self->layered_paint_context_->rootIOSSurface()->UpdateStorageSizeIfNecessary();
+    if (self && self->system_compositor_context_->rootIOSSurface()) {
+      self->system_compositor_context_->rootIOSSurface()->UpdateStorageSizeIfNecessary();
     }
   });
 }
@@ -98,7 +98,7 @@ VsyncWaiter* PlatformViewIOS::GetVsyncWaiter() {
 }
 
 bool PlatformViewIOS::ResourceContextMakeCurrent() {
-  return layered_paint_context_->rootIOSSurface() ? layered_paint_context_->rootIOSSurface()->ResourceContextMakeCurrent() : false;
+  return system_compositor_context_->rootIOSSurface() ? system_compositor_context_->rootIOSSurface()->ResourceContextMakeCurrent() : false;
 }
 
 void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update) {

@@ -8,7 +8,7 @@
 #include <utility>
 
 #include "flutter/common/threads.h"
-#include "flutter/flow/layered_paint_context.h"
+#include "flutter/flow/system_compositor_context.h"
 #include "flutter/glue/trace_event.h"
 #include "flutter/shell/common/picture_serializer.h"
 #include "flutter/shell/common/platform_view.h"
@@ -28,13 +28,13 @@ fml::WeakPtr<Rasterizer> GPURasterizer::GetWeakRasterizerPtr() {
 
 void GPURasterizer::Setup(std::unique_ptr<Surface> surface,
                           #if defined(OS_IOS)
-                          flow::LayeredPaintContext *layeredPaintContext,
+                          flow::SystemCompositorContext *systemCompositorContext,
                           #endif
                           fxl::Closure continuation,
                           fxl::AutoResetWaitableEvent* setup_completion_event) {
   surface_ = std::move(surface);
   #if defined(OS_IOS)
-  layered_paint_context_ = layeredPaintContext;
+  system_compositor_context_ = systemCompositorContext;
   #endif
   compositor_context_.OnGrContextCreated();
 
@@ -148,7 +148,7 @@ void GPURasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
       compositor_context_.AcquireFrame(surface_->GetContext(),
                                 canvas
                                 #if defined(OS_IOS)
-                                ,layered_paint_context_
+                                ,system_compositor_context_
                                 #endif
 
       );

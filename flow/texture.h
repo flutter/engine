@@ -21,7 +21,7 @@ class Texture {
   // Called from GPU thread.
   virtual ~Texture();
 
-  virtual void UpdateScene(LayeredPaintContext *context, const SkRect& bounds) = 0;
+  virtual void UpdateScene(SystemCompositorContext *context, const SkRect& bounds) = 0;
 
   // Called from GPU thread.
   virtual void Paint(Layer::PaintContext context, const SkRect& bounds) = 0;

@@ -17,7 +17,7 @@ class NullRasterizer : public Rasterizer {
 
   void Setup(std::unique_ptr<Surface> surface_or_null,
                        #if defined(OS_IOS)
-                       flow::LayeredPaintContext* layeredPaintContext,
+                       flow::SystemCompositorContext* systemCompositorContext,
                        #endif
              fxl::Closure rasterizer_continuation,
              fxl::AutoResetWaitableEvent* setup_completion_event
@@ -44,7 +44,7 @@ class NullRasterizer : public Rasterizer {
 
  private:
   std::unique_ptr<Surface> surface_;
-  flow::LayeredPaintContext *layered_paint_context_;
+  flow::SystemCompositorContext *system_compositor_context_;
   fml::WeakPtrFactory<NullRasterizer> weak_factory_;
   flow::TextureRegistry* texture_registry_;
 

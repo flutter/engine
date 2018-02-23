@@ -20,7 +20,7 @@ class ClipRRectLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) override;
 
-  void UpdateScene(LayeredPaintContext &context) override;
+  void UpdateScene(SystemCompositorContext &context) override;
 
  private:
   SkRRect clip_rrect_;

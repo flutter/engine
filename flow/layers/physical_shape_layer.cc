@@ -6,7 +6,7 @@
 
 #include "flutter/flow/paint_utils.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
-#include "flutter/flow/layered_paint_context.h"
+#include "flutter/flow/system_compositor_context.h"
 
 
 namespace flow {
@@ -65,32 +65,17 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 }
 
 
-void PhysicalShapeLayer::UpdateScene(LayeredPaintContext &context) {
+void PhysicalShapeLayer::UpdateScene(SystemCompositorContext &context) {
   FXL_DCHECK(needs_system_composite());
+  context.PushLayer(path_.getBounds());
+  context.ClipFrame();
+  context.SetColor(color_);
 
-      //  SkRRect rrect = path_.getFrameRRect();
-        context.PushLayer(path_.getBounds());
-        context.Elevate(elevation_);
-//        context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
-        // context.SetClipPath(path_);
-    
-        context.PushLayer(path_.getBounds());
-        context.ClipRect();
-        context.SetColor(color_);
-        //context.SetColor(SK_ColorRED);
-        context.SetClipPath(path_);
-      //  context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
-
-  // SceneUpdateContext::Frame frame(context, shape_->getFrameRRect(), color_,
-  //                                 elevation_);
-  // for (auto& layer : layers()) {
-  //   if (layer->needs_painting()) {
-  //     context.AddPaintedLayer(layer.get());
-  //   }
-  // }
+  if (!isRect_) {
+    context.SetClipPath(path_);
+  }
 
   UpdateSceneChildren(context);
-  context.PopLayer();
   context.PopLayer();
 
 }
@@ -99,10 +84,6 @@ void PhysicalShapeLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FXL_DCHECK(needs_painting());
 
-  if (elevation_ != 0) {
-    // DrawShadow(&context.canvas, path_, SK_ColorBLACK, elevation_,
-    //            SkColorGetA(color_) != 0xff, device_pixel_ratio_);
-  }
 
  SkPaint paint;
  paint.setColor(color_);

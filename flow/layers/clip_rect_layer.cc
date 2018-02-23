@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/clip_rect_layer.h"
-#include "flutter/flow/layered_paint_context.h"
+#include "flutter/flow/system_compositor_context.h"
 
 namespace flow {
 
@@ -20,7 +20,7 @@ void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 
-void ClipRectLayer::UpdateScene(LayeredPaintContext &context) {
+void ClipRectLayer::UpdateScene(SystemCompositorContext &context) {
   FXL_DCHECK(needs_system_composite());
 
   // scenic_lib::Rectangle shape(context.session(),   // session
@@ -31,8 +31,8 @@ void ClipRectLayer::UpdateScene(LayeredPaintContext &context) {
   // SceneUpdateContext::Clip clip(context, shape, clip_rect_);
       // FXL_LOG(INFO) << "cliprect";
 
-  context.PushLayer(clip_rect_);
-  context.ClipRect();
+  context.PushLayer(paint_bounds());
+  context.ClipFrame();
   UpdateSceneChildren(context);
   context.PopLayer();
 

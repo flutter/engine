@@ -9,7 +9,6 @@
 #include <string>
 
 #include "flutter/flow/instrumentation.h"
-// #include "flutter/flow/layered_paint_context.h"
 #include "flutter/flow/process_info.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/texture.h"
@@ -19,7 +18,7 @@
 
 namespace flow {
 
-class LayeredPaintContext;
+class SystemCompositorContext;
 
 class CompositorContext {
  public:
@@ -31,7 +30,7 @@ class CompositorContext {
 
     GrContext* gr_context() const { return gr_context_; }
 
-    LayeredPaintContext* layeredPaintContext() const { return layered_paint_context_; }
+    SystemCompositorContext* systemCompositorContext() const { return system_compositor_context_; }
 
     ScopedFrame(ScopedFrame&& frame);
 
@@ -41,13 +40,13 @@ class CompositorContext {
     CompositorContext& context_;
     GrContext* gr_context_;
     SkCanvas* canvas_;
-    LayeredPaintContext *layered_paint_context_;
+    SystemCompositorContext *system_compositor_context_;
     const bool instrumentation_enabled_;
 
     ScopedFrame(CompositorContext& context,
                 GrContext* gr_context,
                 SkCanvas* canvas,
-                LayeredPaintContext* layeredPaintContext,
+                SystemCompositorContext* systemCompositorContext,
                 bool instrumentation_enabled);
 
     friend class CompositorContext;
@@ -61,7 +60,7 @@ class CompositorContext {
 
   ScopedFrame AcquireFrame(GrContext* gr_context,
                            SkCanvas* canvas,
-                           LayeredPaintContext *layeredPaintContext,
+                           SystemCompositorContext *systemCompositorContext,
                            bool instrumentation_enabled = true);
 
   void OnGrContextCreated();

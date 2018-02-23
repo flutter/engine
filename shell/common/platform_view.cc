@@ -74,12 +74,12 @@ void PlatformView::SetSemanticsEnabled(bool enabled) {
 }
 
 void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
-            flow::LayeredPaintContext* layeredPaintContext) {
-  NotifyCreated(std::move(surface), layeredPaintContext, []() {});
+            flow::SystemCompositorContext* systemCompositorContext) {
+  NotifyCreated(std::move(surface), systemCompositorContext, []() {});
 }
 
 void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
-                                 flow::LayeredPaintContext* layeredPaintContext,
+                                 flow::SystemCompositorContext* systemCompositorContext,
                                  fxl::Closure caller_continuation) {
   fxl::AutoResetWaitableEvent latch;
 
@@ -88,7 +88,7 @@ void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
     surface = std::move(surface),  //
     caller_continuation,           //
     #if defined(OS_IOS)
-    layeredPaintContext,
+    systemCompositorContext,
     #endif
     &latch
   ]() mutable {
@@ -97,12 +97,12 @@ void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
       surface = std::move(surface),  //
       caller_continuation,           //
       #if defined(OS_IOS)
-      layeredPaintContext,
+      systemCompositorContext,
       #endif
       &latch
     ]() mutable {
       // Runs on the GPU Thread. So does the Caller Continuation.
-      rasterizer_->Setup(std::move(surface), layeredPaintContext, caller_continuation, &latch);
+      rasterizer_->Setup(std::move(surface), systemCompositorContext, caller_continuation, &latch);
     });
     // Runs on the UI Thread.
     engine_->OnOutputSurfaceCreated(std::move(gpu_continuation));

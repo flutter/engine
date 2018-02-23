@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/clip_rrect_layer.h"
+#include "flutter/flow/system_compositor_context.h"
 
 namespace flow {
 
@@ -20,25 +21,16 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 
-void ClipRRectLayer::UpdateScene(LayeredPaintContext &context) {
+void ClipRRectLayer::UpdateScene(SystemCompositorContext &context) {
   FXL_DCHECK(needs_system_composite());
-  // XXX(sigurdm): Do the right thing.
+  context.PushLayer(paint_bounds());
+  context.ClipFrame();
+  SkPath path;
+  path.addRRect(clip_rrect_);
+  context.SetClipPath(path);
 
-
-  // // TODO(MZ-137): Need to be able to express the radii as vectors.
-  // scenic_lib::RoundedRectangle shape(
-  //     context.session(),                                   // session
-  //     clip_rrect_.width(),                                 //  width
-  //     clip_rrect_.height(),                                //  height
-  //     clip_rrect_.radii(SkRRect::kUpperLeft_Corner).x(),   //  top_left_radius
-  //     clip_rrect_.radii(SkRRect::kUpperRight_Corner).x(),  //  top_right_radius
-  //     clip_rrect_.radii(SkRRect::kLowerRight_Corner)
-  //         .x(),                                          //  bottom_right_radius
-  //     clip_rrect_.radii(SkRRect::kLowerLeft_Corner).x()  //  bottom_left_radius
-  // );
-
-  // SceneUpdateContext::Clip clip(context, shape, clip_rrect_.getBounds());
   UpdateSceneChildren(context);
+  context.PopLayer();
 }
 
 

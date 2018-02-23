@@ -21,7 +21,7 @@ class GPURasterizer : public Rasterizer {
   ~GPURasterizer() override;
 
   void Setup(std::unique_ptr<Surface> surface,
-             flow::LayeredPaintContext* layeredPaintContext,
+             flow::SystemCompositorContext* systemCompositorContext,
              fxl::Closure continuation,
              fxl::AutoResetWaitableEvent* setup_completion_event) override;
 
@@ -47,7 +47,7 @@ class GPURasterizer : public Rasterizer {
 
  private:
   std::unique_ptr<Surface> surface_;
-  flow::LayeredPaintContext *layered_paint_context_;
+  flow::SystemCompositorContext *system_compositor_context_;
   flow::CompositorContext compositor_context_;
   std::unique_ptr<flow::LayerTree> last_layer_tree_;
   // A closure to be called when the underlaying surface presents a frame the

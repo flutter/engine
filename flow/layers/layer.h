@@ -35,7 +35,7 @@ namespace flow {
 
 class ContainerLayer;
 class TextureRegistry;
-class LayeredPaintContext;
+class SystemCompositorContext;
 
 // Represents a single composited layer. Created on the UI thread but then
 // subquently used on the Rasterizer thread.
@@ -87,7 +87,7 @@ class Layer {
   virtual void Paint(PaintContext& context) = 0;
 
   // Updates the system composited scene.
-  virtual void UpdateScene(LayeredPaintContext &context);
+  virtual void UpdateScene(SystemCompositorContext &context);
 
   ContainerLayer* parent() const { return parent_; }
 

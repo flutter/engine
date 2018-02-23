@@ -36,20 +36,20 @@ void CompositorContext::EndFrame(ScopedFrame& frame,
 CompositorContext::ScopedFrame CompositorContext::AcquireFrame(
     GrContext* gr_context,
     SkCanvas* canvas,
-    LayeredPaintContext* layeredPaintContext,
+    SystemCompositorContext* systemCompositorContext,
     bool instrumentation_enabled) {
-  return ScopedFrame(*this, gr_context, canvas, layeredPaintContext, instrumentation_enabled);
+  return ScopedFrame(*this, gr_context, canvas, systemCompositorContext, instrumentation_enabled);
 }
 
 CompositorContext::ScopedFrame::ScopedFrame(CompositorContext& context,
                                             GrContext* gr_context,
                                             SkCanvas* canvas,
-                                            LayeredPaintContext* layeredPaintContext,
+                                            SystemCompositorContext* systemCompositorContext,
                                             bool instrumentation_enabled)
     : context_(context),
       gr_context_(gr_context),
       canvas_(canvas),
-      layered_paint_context_(layeredPaintContext),
+      system_compositor_context_(systemCompositorContext),
       instrumentation_enabled_(instrumentation_enabled) {
   context_.BeginFrame(*this, instrumentation_enabled_);
 }

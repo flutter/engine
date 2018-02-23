@@ -18,7 +18,7 @@ class IOSExternalTextureGL : public flow::Texture {
 
   ~IOSExternalTextureGL() override;
 
-  void UpdateScene(flow::LayeredPaintContext *context, const SkRect& bounds) override;
+  void UpdateScene(flow::SystemCompositorContext *context, const SkRect& bounds) override;
 
   void Paint(flow::Layer::PaintContext context, const SkRect& bounds) override;
 

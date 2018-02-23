@@ -6,7 +6,7 @@
 
 #include "flutter/flow/texture.h"
 
-#include "flutter/flow/layered_paint_context.h"
+#include "flutter/flow/system_compositor_context.h"
 
 namespace flow {
 
@@ -25,7 +25,7 @@ void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_needs_system_composite(texture->NeedsSystemComposite());
 }
 
-void TextureLayer::UpdateScene(LayeredPaintContext& context) {
+void TextureLayer::UpdateScene(SystemCompositorContext& context) {
   std::shared_ptr<Texture> texture =
       context.texture_registry->GetTexture(texture_id_);
   if (!texture) {

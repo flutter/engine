@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/layered_paint_context.h"
+#include "flutter/flow/system_compositor_context.h"
 
 namespace flow {
 
-LayeredPaintContext::~LayeredPaintContext() = default;
+SystemCompositorContext::~SystemCompositorContext() = default;
 
 } // namespace flow

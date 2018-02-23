@@ -5,7 +5,7 @@
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
 #include "flutter/shell/gpu/gpu_surface_gl.h"
-#include "flutter/shell/platform/darwin/ios/ios_layered_paint_context.h"
+#include "flutter/shell/platform/darwin/ios/ios_system_compositor_context.h"
 
 namespace shell {
 

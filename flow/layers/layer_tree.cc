@@ -1,7 +1,7 @@
 // Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-#include "flutter/flow/layered_paint_context.h"
+#include "flutter/flow/system_compositor_context.h"
 
 #include "flutter/flow/layers/layer_tree.h"
 
@@ -31,11 +31,11 @@ void LayerTree::Raster(CompositorContext::ScopedFrame& frame,
           metrics,
 #endif
           ignore_raster_cache);
-          frame.layeredPaintContext()->texture_registry = &(frame.context().texture_registry());
- frame.layeredPaintContext()->Reset();
- UpdateScene(*(frame.layeredPaintContext()));
- frame.layeredPaintContext()->ExecutePaintTasks(frame);
- frame.layeredPaintContext()->Finish();
+          frame.systemCompositorContext()->texture_registry = &(frame.context().texture_registry());
+ frame.systemCompositorContext()->Reset();
+ UpdateScene(*(frame.systemCompositorContext()));
+ frame.systemCompositorContext()->ExecutePaintTasks(frame);
+ frame.systemCompositorContext()->Finish();
  // Paint(frame);
 }
 
@@ -66,7 +66,7 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   root_layer_->Preroll(&context, SkMatrix::I());
 }
 
-void LayerTree::UpdateScene(LayeredPaintContext& context) {
+void LayerTree::UpdateScene(SystemCompositorContext& context) {
   TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
   // SceneUpdateContext::Transform transform(context, 1.f / device_pixel_ratio_,
   //                                         1.f / device_pixel_ratio_, 1.f);

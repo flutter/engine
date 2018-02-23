@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/container_layer.h"
-#include "flutter/flow/layered_paint_context.h"
+#include "flutter/flow/system_compositor_context.h"
 
 namespace flow {
 
@@ -100,73 +100,55 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
 }
 
 
-void ContainerLayer::UpdateScene(LayeredPaintContext &context) {
+void ContainerLayer::UpdateScene(SystemCompositorContext &context) {
   UpdateSceneChildren(context);
 }
 
-void ContainerLayer::UpdateSceneChildren(LayeredPaintContext &context) {
-  FXL_DCHECK(needs_system_composite());
-  // FXL_DLOG(INFO) << "Container{";
-
-  // for (auto& layer : layers_) {
-  //   if (layer->needs_system_composite()) {
-  //     layer->UpdateScene(context);
-  //   } else {
-  //     context.PushLayer(layer->paint_bounds());
-  //     context.AddPaintedLayer(layer.get());
-  //     context.PopLayer();
-  //   }
-  // }
-
-  // Paint all of the layers which need to be drawn into the container.
-  // These may be flattened down to a containing
-  int pushCount = 0;
-  std::vector<Layer*> acc;
-  SkRect accBounds = SkRect::MakeEmpty();
-  SkRect systemLayerBounds = SkRect::MakeEmpty();
-
-  for (auto& layer : layers_) {
-    // FXL_DLOG(INFO) << "Composite " << layer->paint_bounds().x() << "x" << layer->paint_bounds().y() << " " << layer->paint_bounds().width() << "x" << layer->paint_bounds().height() << " updatescenechildren child: " << layer->needs_system_composite() << " needspainting" << layer->needs_painting();
-    // FXL_DLOG(INFO) << "Composite " << layer->paint_bounds().intersects(systemLayerBounds);
-    
-   // FXL_DLOG(INFO) << "system layer bounds " << context.SystemCompositedRect().x() << "x" << context.SystemCompositedRect().y() << " " << context.SystemCompositedRect().width() << "x" << context.SystemCompositedRect().height();
-    
-    if (layer->needs_system_composite()) {
-      systemLayerBounds.join(layer->paint_bounds());
-      if (!acc.empty()) {
-        if (accBounds.intersect(systemLayerBounds)) {
-          context.PushLayer(accBounds);
-          pushCount++;
-        }
-      }
-      for (Layer *child : acc) {
-        context.AddPaintedLayer(child);          
-      }
-      acc.clear();
-      accBounds = SkRect::MakeEmpty();
-      // FXL_DLOG(INFO) << "system layer bounds b" << systemLayerBounds.x() << "x" << systemLayerBounds.y() << " " << systemLayerBounds.width() << "x" << systemLayerBounds.height();
-      layer->UpdateScene(context);
-    } else if (layer->needs_painting()) {
-      if (!acc.empty() || layer->paint_bounds().intersects(systemLayerBounds)) {
-        // FXL_DLOG(INFO) << "Intersects";
-        acc.push_back(layer.get());
-        accBounds.join(layer->paint_bounds());
-      } else {
-        // FXL_DLOG(INFO) << "Doesn't intersect";
-        context.AddPaintedLayer(layer.get());
-      }
-    }
-      // FXL_DLOG(INFO) << "sytem layer bounds c" << systemLayerBounds.x() << "x" << systemLayerBounds.y() << " " << systemLayerBounds.width() << "x" << systemLayerBounds.height();
-  }
-  if (!acc.empty() && accBounds.intersects(systemLayerBounds)) {
-    if (accBounds.intersect(paint_bounds())) {
-      context.PushLayer(accBounds);
+static void flushAccumulator(
+  SystemCompositorContext &context,
+  int &pushCount,
+  std::vector<Layer*> accumulator, 
+  SkRect &accumulatorBounds,
+  SkRect &systemLayerBounds,
+  const SkRect &paintBounds) {
+  if (!accumulator.empty() && accumulatorBounds.intersects(systemLayerBounds)) {
+    if (accumulatorBounds.intersect(paintBounds)) {
+      context.PushLayer(accumulatorBounds);
       pushCount++;
     }
   }
-  for (Layer *child : acc) {
+  for (Layer *child : accumulator) {
     context.AddPaintedLayer(child);          
   }
+  accumulator.clear();
+  accumulatorBounds = SkRect::MakeEmpty();
+}
+
+void ContainerLayer::UpdateSceneChildren(SystemCompositorContext &context) {
+  FXL_DCHECK(needs_system_composite());
+
+  int pushCount = 0;
+  std::vector<Layer*> accumulator;
+  // Bounding box join of all layers in `accumulator`.
+  SkRect accumulatorBounds = SkRect::MakeEmpty();
+  SkRect systemLayerBounds = SkRect::MakeEmpty();
+
+  for (auto& layer : layers_) {
+
+    if (layer->needs_system_composite()) {
+      flushAccumulator(context, pushCount, accumulator, accumulatorBounds, systemLayerBounds, paint_bounds());
+      systemLayerBounds.join(layer->paint_bounds());
+      layer->UpdateScene(context);
+    } else if (layer->needs_painting()) {
+      if (!accumulator.empty() || layer->paint_bounds().intersects(systemLayerBounds)) {
+        accumulator.push_back(layer.get());
+        accumulatorBounds.join(layer->paint_bounds());
+      } else {
+        context.AddPaintedLayer(layer.get());
+      }
+    }
+  }
+  flushAccumulator(context, pushCount, accumulator, accumulatorBounds, systemLayerBounds, paint_bounds());
   for (int i = 0; i < pushCount; i++) {
     context.PopLayer();
   }

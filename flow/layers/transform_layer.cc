@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/transform_layer.h"
-#include "flutter/flow/layered_paint_context.h"
+#include "flutter/flow/system_compositor_context.h"
 
 namespace flow {
 
@@ -22,7 +22,7 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(child_paint_bounds);
 }
 
-void TransformLayer::UpdateScene(LayeredPaintContext &context) {
+void TransformLayer::UpdateScene(SystemCompositorContext &context) {
   FXL_DCHECK(needs_system_composite());
   context.Transform(transform_);
  // context.PushLayer(paint_bounds());

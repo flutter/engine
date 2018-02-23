@@ -6,7 +6,7 @@
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/flow/layers/layer.h"
-#include "flutter/flow/layered_paint_context.h"
+#include "flutter/flow/system_compositor_context.h"
 
 namespace shell {
 
@@ -18,7 +18,7 @@ IOSExternalTextureLayer::IOSExternalTextureLayer(int64_t textureId,
 
 IOSExternalTextureLayer::~IOSExternalTextureLayer() = default;
 
-void IOSExternalTextureLayer::UpdateScene(flow::LayeredPaintContext *context, const SkRect& bounds) {
+void IOSExternalTextureLayer::UpdateScene(flow::SystemCompositorContext *context, const SkRect& bounds) {
   ASSERT_IS_GPU_THREAD;
   context->AddExternalLayer(this, bounds);
 }
