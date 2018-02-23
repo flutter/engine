@@ -14,7 +14,6 @@ void OpacityLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "OpacityLayer::Paint");
   FXL_DCHECK(needs_painting());
 
-
   SkPaint paint;
   paint.setAlpha(alpha_);
 

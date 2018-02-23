@@ -26,16 +26,17 @@ fml::WeakPtr<Rasterizer> GPURasterizer::GetWeakRasterizerPtr() {
   return weak_factory_.GetWeakPtr();
 }
 
-void GPURasterizer::Setup(std::unique_ptr<Surface> surface,
-                          #if defined(OS_IOS)
-                          flow::SystemCompositorContext *systemCompositorContext,
-                          #endif
-                          fxl::Closure continuation,
-                          fxl::AutoResetWaitableEvent* setup_completion_event) {
+void GPURasterizer::Setup(
+    std::unique_ptr<Surface> surface,
+#if defined(OS_IOS)
+    flow::SystemCompositorContext* systemCompositorContext,
+#endif
+    fxl::Closure continuation,
+    fxl::AutoResetWaitableEvent* setup_completion_event) {
   surface_ = std::move(surface);
-  #if defined(OS_IOS)
+#if defined(OS_IOS)
   system_compositor_context_ = systemCompositorContext;
-  #endif
+#endif
   compositor_context_.OnGrContextCreated();
 
   continuation();
@@ -145,11 +146,11 @@ void GPURasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
   }
 
   auto compositor_frame =
-      compositor_context_.AcquireFrame(surface_->GetContext(),
-                                canvas
-                                #if defined(OS_IOS)
-                                ,system_compositor_context_
-                                #endif
+      compositor_context_.AcquireFrame(surface_->GetContext(), canvas
+#if defined(OS_IOS)
+                                       ,
+                                       system_compositor_context_
+#endif
 
       );
 

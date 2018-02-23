@@ -21,7 +21,7 @@ class ClipPathLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) override;
 
-  void UpdateScene(SystemCompositorContext &context) override;
+  void UpdateScene(SystemCompositorContext& context) override;
 
  private:
   SkPath clip_path_;

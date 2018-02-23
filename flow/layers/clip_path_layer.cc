@@ -25,7 +25,7 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   }
 }
 
-void ClipPathLayer::UpdateScene(SystemCompositorContext &context) {
+void ClipPathLayer::UpdateScene(SystemCompositorContext& context) {
   FXL_DCHECK(needs_system_composite());
   context.PushLayer(paint_bounds());
   context.ClipFrame();
@@ -42,7 +42,6 @@ void ClipPathLayer::UpdateScene(SystemCompositorContext &context) {
   //                             bounds.width(),     //  width
   //                             bounds.height()     //  height
   // );
-
 }
 
 void ClipPathLayer::Paint(PaintContext& context) {

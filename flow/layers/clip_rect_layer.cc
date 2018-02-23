@@ -19,8 +19,7 @@ void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   }
 }
 
-
-void ClipRectLayer::UpdateScene(SystemCompositorContext &context) {
+void ClipRectLayer::UpdateScene(SystemCompositorContext& context) {
   FXL_DCHECK(needs_system_composite());
 
   // scenic_lib::Rectangle shape(context.session(),   // session
@@ -29,15 +28,13 @@ void ClipRectLayer::UpdateScene(SystemCompositorContext &context) {
   // );
 
   // SceneUpdateContext::Clip clip(context, shape, clip_rect_);
-      // FXL_LOG(INFO) << "cliprect";
+  // FXL_LOG(INFO) << "cliprect";
 
   context.PushLayer(paint_bounds());
   context.ClipFrame();
   UpdateSceneChildren(context);
   context.PopLayer();
-
 }
-
 
 void ClipRectLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "ClipRectLayer::Paint");
@@ -49,10 +46,10 @@ void ClipRectLayer::Paint(PaintContext& context) {
   //   PaintChildren(context);
   //   context.layers.PopLayer();
   // } else {
-    SkAutoCanvasRestore save(&context.canvas, true);
-    context.canvas.clipRect(paint_bounds());
-    PaintChildren(context);
- // }
+  SkAutoCanvasRestore save(&context.canvas, true);
+  context.canvas.clipRect(paint_bounds());
+  PaintChildren(context);
+  // }
 }
 
 }  // namespace flow

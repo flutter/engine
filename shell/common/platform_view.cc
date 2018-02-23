@@ -73,36 +73,35 @@ void PlatformView::SetSemanticsEnabled(bool enabled) {
   });
 }
 
-void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
-            flow::SystemCompositorContext* systemCompositorContext) {
+void PlatformView::NotifyCreated(
+    std::unique_ptr<Surface> surface,
+    flow::SystemCompositorContext* systemCompositorContext) {
   NotifyCreated(std::move(surface), systemCompositorContext, []() {});
 }
 
-void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
-                                 flow::SystemCompositorContext* systemCompositorContext,
-                                 fxl::Closure caller_continuation) {
+void PlatformView::NotifyCreated(
+    std::unique_ptr<Surface> surface,
+    flow::SystemCompositorContext* systemCompositorContext,
+    fxl::Closure caller_continuation) {
   fxl::AutoResetWaitableEvent latch;
 
-  auto ui_continuation = fxl::MakeCopyable([
-    this,                          //
-    surface = std::move(surface),  //
-    caller_continuation,           //
-    #if defined(OS_IOS)
-    systemCompositorContext,
-    #endif
-    &latch
-  ]() mutable {
-    auto gpu_continuation = fxl::MakeCopyable([
-      this,                          //
-      surface = std::move(surface),  //
-      caller_continuation,           //
-      #if defined(OS_IOS)
-      systemCompositorContext,
-      #endif
-      &latch
-    ]() mutable {
+  auto ui_continuation = fxl::MakeCopyable([this,                          //
+                                            surface = std::move(surface),  //
+                                            caller_continuation,           //
+#if defined(OS_IOS)
+                                            systemCompositorContext,
+#endif
+                                            &latch]() mutable {
+    auto gpu_continuation = fxl::MakeCopyable([this,                          //
+                                               surface = std::move(surface),  //
+                                               caller_continuation,           //
+#if defined(OS_IOS)
+                                               systemCompositorContext,
+#endif
+                                               &latch]() mutable {
       // Runs on the GPU Thread. So does the Caller Continuation.
-      rasterizer_->Setup(std::move(surface), systemCompositorContext, caller_continuation, &latch);
+      rasterizer_->Setup(std::move(surface), systemCompositorContext,
+                         caller_continuation, &latch);
     });
     // Runs on the UI Thread.
     engine_->OnOutputSurfaceCreated(std::move(gpu_continuation));

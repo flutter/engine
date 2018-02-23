@@ -22,15 +22,15 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(child_paint_bounds);
 }
 
-void TransformLayer::UpdateScene(SystemCompositorContext &context) {
+void TransformLayer::UpdateScene(SystemCompositorContext& context) {
   FXL_DCHECK(needs_system_composite());
   context.Transform(transform_);
- // context.PushLayer(paint_bounds());
- // context.SetColor(SK_ColorTRANSPARENT);
+  // context.PushLayer(paint_bounds());
+  // context.SetColor(SK_ColorTRANSPARENT);
 
-//  SceneUpdateContext::Transform transform(context, transform_);
+  //  SceneUpdateContext::Transform transform(context, transform_);
   UpdateSceneChildren(context);
- // context.PopLayer();
+  // context.PopLayer();
   context.PopTransform();
 }
 

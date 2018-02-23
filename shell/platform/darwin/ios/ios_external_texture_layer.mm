@@ -4,21 +4,21 @@
 
 #include "flutter/shell/platform/darwin/ios/ios_external_texture_layer.h"
 
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/system_compositor_context.h"
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 
 namespace shell {
 
-IOSExternalTextureLayer::IOSExternalTextureLayer(int64_t textureId,
-                                                 CALayer *externalLayer)
+IOSExternalTextureLayer::IOSExternalTextureLayer(int64_t textureId, CALayer* externalLayer)
     : Texture(textureId), external_layer_(externalLayer) {
   FXL_DCHECK(external_layer_);
 }
 
 IOSExternalTextureLayer::~IOSExternalTextureLayer() = default;
 
-void IOSExternalTextureLayer::UpdateScene(flow::SystemCompositorContext *context, const SkRect& bounds) {
+void IOSExternalTextureLayer::UpdateScene(flow::SystemCompositorContext* context,
+                                          const SkRect& bounds) {
   ASSERT_IS_GPU_THREAD;
   context->AddExternalLayer(this, bounds);
 }

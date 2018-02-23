@@ -5,9 +5,8 @@
 #include "flutter/flow/layers/physical_shape_layer.h"
 
 #include "flutter/flow/paint_utils.h"
-#include "third_party/skia/include/utils/SkShadowUtils.h"
 #include "flutter/flow/system_compositor_context.h"
-
+#include "third_party/skia/include/utils/SkShadowUtils.h"
 
 namespace flow {
 
@@ -57,15 +56,14 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     // and clip children to it so we don't need to join the child paint bounds.
     SkRect bounds(path_.getBounds());
     if (!needs_system_composite()) {
-     // bounds.outset(20.0, 20.0);
+      // bounds.outset(20.0, 20.0);
     }
     set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
   }
 }
 
-
-void PhysicalShapeLayer::UpdateScene(SystemCompositorContext &context) {
+void PhysicalShapeLayer::UpdateScene(SystemCompositorContext& context) {
   FXL_DCHECK(needs_system_composite());
   context.PushLayer(path_.getBounds());
   context.ClipFrame();
@@ -77,17 +75,15 @@ void PhysicalShapeLayer::UpdateScene(SystemCompositorContext &context) {
 
   UpdateSceneChildren(context);
   context.PopLayer();
-
 }
 
 void PhysicalShapeLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FXL_DCHECK(needs_painting());
 
-
- SkPaint paint;
- paint.setColor(color_);
- context.canvas.drawPath(path_, paint);
+  SkPaint paint;
+  paint.setColor(color_);
+  context.canvas.drawPath(path_, paint);
 
   SkAutoCanvasRestore save(&context.canvas, false);
   if (isRect_) {

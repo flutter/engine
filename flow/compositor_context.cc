@@ -38,14 +38,16 @@ CompositorContext::ScopedFrame CompositorContext::AcquireFrame(
     SkCanvas* canvas,
     SystemCompositorContext* systemCompositorContext,
     bool instrumentation_enabled) {
-  return ScopedFrame(*this, gr_context, canvas, systemCompositorContext, instrumentation_enabled);
+  return ScopedFrame(*this, gr_context, canvas, systemCompositorContext,
+                     instrumentation_enabled);
 }
 
-CompositorContext::ScopedFrame::ScopedFrame(CompositorContext& context,
-                                            GrContext* gr_context,
-                                            SkCanvas* canvas,
-                                            SystemCompositorContext* systemCompositorContext,
-                                            bool instrumentation_enabled)
+CompositorContext::ScopedFrame::ScopedFrame(
+    CompositorContext& context,
+    GrContext* gr_context,
+    SkCanvas* canvas,
+    SystemCompositorContext* systemCompositorContext,
+    bool instrumentation_enabled)
     : context_(context),
       gr_context_(gr_context),
       canvas_(canvas),

@@ -14,12 +14,12 @@
 NS_ASSUME_NONNULL_BEGIN
 
 FLUTTER_EXPORT
-@protocol FlutterTexture<NSObject>
+@protocol FlutterTexture <NSObject>
 - (CVPixelBufferRef)copyPixelBuffer;
 @end
 
 FLUTTER_EXPORT
-@protocol FlutterTextureRegistry<NSObject>
+@protocol FlutterTextureRegistry <NSObject>
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture;
 - (int64_t)registerLayer:(CALayer*)layer;
 - (void)textureFrameAvailable:(int64_t)textureId;

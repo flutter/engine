@@ -16,7 +16,9 @@ namespace shell {
     return;                           \
   };
 
-IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* layer, EAGLContext *eaglContext)
+IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config,
+                           CAEAGLLayer* layer,
+                           EAGLContext* eaglContext)
     : layer_([layer retain]),
       context_(eaglContext),
       resource_context_([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
@@ -33,7 +35,7 @@ IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* laye
   VERIFY(context_ != nullptr);
   VERIFY(resource_context_ != nullptr);
 
- // EAGLContext *prevContext = [EAGLContext currentContext];
+  // EAGLContext *prevContext = [EAGLContext currentContext];
 
   bool context_current = [EAGLContext setCurrentContext:context_];
 
@@ -152,7 +154,6 @@ bool IOSGLContext::IsValid() const {
 }
 
 bool IOSGLContext::PresentRenderBuffer() const {
-
   [EAGLContext setCurrentContext:context_.get()];
   const GLenum discards[] = {
       GL_DEPTH_ATTACHMENT,
@@ -166,11 +167,11 @@ bool IOSGLContext::PresentRenderBuffer() const {
 }
 
 bool IOSGLContext::UpdateStorageSizeIfNecessary() {
-    FXL_DCHECK(glGetError() == GL_NO_ERROR);
+  FXL_DCHECK(glGetError() == GL_NO_ERROR);
 
- // CGRect frame = [layer_.get() frame];
+  // CGRect frame = [layer_.get() frame];
   CGRect bounds = [layer_.get() bounds];
-  const CGSize layer_size =  bounds.size;
+  const CGSize layer_size = bounds.size;
 
   const CGFloat contents_scale = layer_.get().contentsScale;
 
@@ -248,16 +249,7 @@ bool IOSGLContext::UpdateStorageSizeIfNecessary() {
 }
 
 bool IOSGLContext::MakeCurrent() {
-//     [EAGLContext setCurrentContext:context_.get()];
-//
-//     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_);
-//      glBindRenderbuffer(GL_RENDERBUFFER, stencilbuffer_);
-//
-//      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER,
-//                                stencilbuffer_);
-//     glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer_);
-//    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, colorbuffer_);
- return UpdateStorageSizeIfNecessary() && [EAGLContext setCurrentContext:context_.get()];
+  return UpdateStorageSizeIfNecessary() && [EAGLContext setCurrentContext:context_.get()];
 }
 
 bool IOSGLContext::ResourceMakeCurrent() {

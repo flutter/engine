@@ -9,7 +9,9 @@
 
 namespace shell {
 
-IOSSurfaceGL::IOSSurfaceGL(PlatformView::SurfaceConfig surface_config, CAEAGLLayer* layer, EAGLContext *eaglContext)
+IOSSurfaceGL::IOSSurfaceGL(PlatformView::SurfaceConfig surface_config,
+                           CAEAGLLayer* layer,
+                           EAGLContext* eaglContext)
     : IOSSurface(surface_config, reinterpret_cast<CALayer*>(layer)),
       context_(surface_config, layer, eaglContext) {}
 

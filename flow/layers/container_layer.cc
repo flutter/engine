@@ -41,90 +41,42 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 void ContainerLayer::PaintChildren(PaintContext& context) const {
   FXL_DCHECK(needs_painting());
 
-
- // SkCanvas *currentCanvas = &context.canvas;
   // Intentionally not tracing here as there should be no self-time
   // and the trace event on this common function has a small overhead.
- // bool lastWasSystemComposite = false;
-//  int pushCount = 0;
+  // bool lastWasSystemComposite = false;
+  //  int pushCount = 0;
 
   for (auto& layer : layers_) {
     if (layer->needs_painting()) {
       layer->Paint(context);
     }
   }
-
-//      if (lastWasSystemComposite && !layer->needs_system_composite()) {
-//        context.layers.PushLayer(paint_bounds());
-//        pushCount++;
-//        lastWasSystemComposite = false;
-//        SkPaint paint;
-//        paint.setColor(SK_ColorGREEN);
-//        context.layers.CurrentCanvas()->drawString("HEJ", 10, 10, paint);
-//        currentCanvas = context.layers.CurrentCanvas();
-//      } else {
-//        PaintContext newContext { (*currentCanvas),
-//                                                   context.frame_time,
-//                                                   context.engine_time,
-//                                                   context.memory_usage,
-//                                                   context.texture_registry,
-//                                                   context.checkerboard_offscreen_layers,
-//                                                   context.layers
-//                                                   };
-//
-//        layer->Paint(newContext);
-//      }
-//      if (layer->needs_system_composite()) {
-//        lastWasSystemComposite = true;
-//      }
-//      if (this->needs_system_composite()) {
-//        context.layers.PushLayer(layer->paint_bounds());
-//        //currentCanvas = context.layers.CurrentCanvas();
-//        PaintContext newContext { *(context.layers.CurrentCanvas()),
-//                                                   context.frame_time,
-//                                                   context.engine_time,
-//                                                   context.memory_usage,
-//                                                   context.texture_registry,
-//                                                   context.checkerboard_offscreen_layers,
-//                                                   context.layers
-//                                                   };
-//
-//        layer->Paint(newContext);
-//        context.layers.PopLayer();
-//      }
-//    }
-//  }
-//  for (int i = 0; i < pushCount; i++) {
-//    context.layers.PopLayer();
-//  }
 }
 
-
-void ContainerLayer::UpdateScene(SystemCompositorContext &context) {
+void ContainerLayer::UpdateScene(SystemCompositorContext& context) {
   UpdateSceneChildren(context);
 }
 
-static void flushAccumulator(
-  SystemCompositorContext &context,
-  int &pushCount,
-  std::vector<Layer*> accumulator, 
-  SkRect &accumulatorBounds,
-  SkRect &systemLayerBounds,
-  const SkRect &paintBounds) {
+static void flushAccumulator(SystemCompositorContext& context,
+                             int& pushCount,
+                             std::vector<Layer*> accumulator,
+                             SkRect& accumulatorBounds,
+                             SkRect& systemLayerBounds,
+                             const SkRect& paintBounds) {
   if (!accumulator.empty() && accumulatorBounds.intersects(systemLayerBounds)) {
     if (accumulatorBounds.intersect(paintBounds)) {
       context.PushLayer(accumulatorBounds);
       pushCount++;
     }
   }
-  for (Layer *child : accumulator) {
-    context.AddPaintedLayer(child);          
+  for (Layer* child : accumulator) {
+    context.AddPaintedLayer(child);
   }
   accumulator.clear();
   accumulatorBounds = SkRect::MakeEmpty();
 }
 
-void ContainerLayer::UpdateSceneChildren(SystemCompositorContext &context) {
+void ContainerLayer::UpdateSceneChildren(SystemCompositorContext& context) {
   FXL_DCHECK(needs_system_composite());
 
   int pushCount = 0;
@@ -134,13 +86,14 @@ void ContainerLayer::UpdateSceneChildren(SystemCompositorContext &context) {
   SkRect systemLayerBounds = SkRect::MakeEmpty();
 
   for (auto& layer : layers_) {
-
     if (layer->needs_system_composite()) {
-      flushAccumulator(context, pushCount, accumulator, accumulatorBounds, systemLayerBounds, paint_bounds());
+      flushAccumulator(context, pushCount, accumulator, accumulatorBounds,
+                       systemLayerBounds, paint_bounds());
       systemLayerBounds.join(layer->paint_bounds());
       layer->UpdateScene(context);
     } else if (layer->needs_painting()) {
-      if (!accumulator.empty() || layer->paint_bounds().intersects(systemLayerBounds)) {
+      if (!accumulator.empty() ||
+          layer->paint_bounds().intersects(systemLayerBounds)) {
         accumulator.push_back(layer.get());
         accumulatorBounds.join(layer->paint_bounds());
       } else {
@@ -148,12 +101,11 @@ void ContainerLayer::UpdateSceneChildren(SystemCompositorContext &context) {
       }
     }
   }
-  flushAccumulator(context, pushCount, accumulator, accumulatorBounds, systemLayerBounds, paint_bounds());
+  flushAccumulator(context, pushCount, accumulator, accumulatorBounds,
+                   systemLayerBounds, paint_bounds());
   for (int i = 0; i < pushCount; i++) {
     context.PopLayer();
   }
-    // FXL_DLOG(INFO) << "}Container";
 }
-
 
 }  // namespace flow

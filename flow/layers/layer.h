@@ -87,7 +87,7 @@ class Layer {
   virtual void Paint(PaintContext& context) = 0;
 
   // Updates the system composited scene.
-  virtual void UpdateScene(SystemCompositorContext &context);
+  virtual void UpdateScene(SystemCompositorContext& context);
 
   ContainerLayer* parent() const { return parent_; }
 

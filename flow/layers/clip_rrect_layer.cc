@@ -20,8 +20,7 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   }
 }
 
-
-void ClipRRectLayer::UpdateScene(SystemCompositorContext &context) {
+void ClipRRectLayer::UpdateScene(SystemCompositorContext& context) {
   FXL_DCHECK(needs_system_composite());
   context.PushLayer(paint_bounds());
   context.ClipFrame();
@@ -32,7 +31,6 @@ void ClipRRectLayer::UpdateScene(SystemCompositorContext &context) {
   UpdateSceneChildren(context);
   context.PopLayer();
 }
-
 
 void ClipRRectLayer::Paint(PaintContext& context) {
   TRACE_EVENT0("flutter", "ClipRRectLayer::Paint");

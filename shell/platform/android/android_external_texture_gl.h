@@ -19,7 +19,8 @@ class AndroidExternalTextureGL : public flow::Texture {
 
   ~AndroidExternalTextureGL() override;
 
-  void UpdateScene(flow::SystemCompositorContext *context, const SkRect& bounds) override;
+  void UpdateScene(flow::SystemCompositorContext* context,
+                   const SkRect& bounds) override;
 
   void Paint(SkCanvas& canvas, const SkRect& bounds) override;
 

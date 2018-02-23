@@ -32,22 +32,23 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
     return;
   }
 
-if (!global_context) {
-  GrContextOptions options;
-  options.fAvoidStencilBuffers = true;
+  if (!global_context) {
+    GrContextOptions options;
+    options.fAvoidStencilBuffers = true;
 
-  auto context = GrContext::MakeGL(GrGLMakeNativeInterface(), options);
+    auto context = GrContext::MakeGL(GrGLMakeNativeInterface(), options);
 
-  if (context == nullptr) {
-    FXL_LOG(ERROR) << "Failed to setup Skia Gr context.";
-    return;
-  }
+    if (context == nullptr) {
+      FXL_LOG(ERROR) << "Failed to setup Skia Gr context.";
+      return;
+    }
 
-  global_context = std::move(context);
+    global_context = std::move(context);
 
-  global_context->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
+    global_context->setResourceCacheLimits(kGrCacheMaxCount,
+                                           kGrCacheMaxByteSize);
 
-  delegate_->GLContextClearCurrent();
+    delegate_->GLContextClearCurrent();
   }
 
   context_ = global_context;
@@ -154,7 +155,7 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
 }
 
 bool GPUSurfaceGL::MakeCurrent() {
-   return delegate_->GLContextMakeCurrent();
+  return delegate_->GLContextMakeCurrent();
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
@@ -192,8 +193,8 @@ bool GPUSurfaceGL::PresentSurface() {
 
   {
     TRACE_EVENT0("flutter", "SkCanvas::Flush");
-   //   MakeCurrent();
-  //  onscreen_surface_->getCanvas()->flush();
+    //   MakeCurrent();
+    //  onscreen_surface_->getCanvas()->flush();
   }
 
   delegate_->GLContextPresent();
@@ -208,11 +209,11 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
 
   {
     TRACE_EVENT0("flutter", "SkCanvas::Flush");
-  //    MakeCurrent();
- //   onscreen_surface_->getCanvas()->flush();
+    //    MakeCurrent();
+    //   onscreen_surface_->getCanvas()->flush();
   }
 
-  //delegate_->GLContextPresent();
+  // delegate_->GLContextPresent();
 
   return true;
 }

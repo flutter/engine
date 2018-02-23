@@ -18,29 +18,30 @@ class GPUSurfaceGL;
 
 class IOSSystemCompositorContext : public flow::SystemCompositorContext {
  public:
-  explicit IOSSystemCompositorContext(PlatformView::SurfaceConfig surface_config,
+  explicit IOSSystemCompositorContext(
+      PlatformView::SurfaceConfig surface_config,
       CALayer* layer);
   void Reset() override;
   void Finish() override;
   void PushLayer(SkRect bounds) override;
   void PopLayer() override;
-  SkCanvas *CurrentCanvas() override;
+  SkCanvas* CurrentCanvas() override;
   void ClipFrame() override;
   void SetColor(SkColor color) override;
   void SetClipPath(SkPath path) override;
   void AddExternalLayer(flow::Texture* texture, SkRect bounds) override;
   void ExecutePaintTasks(flow::CompositorContext::ScopedFrame& frame) override;
-  void AddPaintedLayer(flow::Layer *layer) override;
+  void AddPaintedLayer(flow::Layer* layer) override;
   void Transform(SkMatrix transform) override;
   void PopTransform() override;
-  IOSSurface *rootIOSSurface() { return root_surface_.get(); }
- private:
+  IOSSurface* rootIOSSurface() { return root_surface_.get(); }
 
+ private:
   // TODO(sigurdm): Consider replacing this with just an IOSSurface.
   struct Surface {
-    Surface(CALayer *caLayer, IOSSurfaceGL *iosSurface);
-    CALayer *caLayer;
-    IOSSurfaceGL *iosSurface;
+    Surface(CALayer* caLayer, IOSSurfaceGL* iosSurface);
+    CALayer* caLayer;
+    IOSSurfaceGL* iosSurface;
     std::unique_ptr<GPUSurfaceGL> gpuSurface;
   };
 
@@ -51,8 +52,8 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
     virtual void installChildren() = 0;
 
     // Update the backing CALayer properties to reflect `this`.
-    virtual void manifest(IOSSystemCompositorContext &context) = 0;
-    CALayer *layer();
+    virtual void manifest(IOSSystemCompositorContext& context) = 0;
+    CALayer* layer();
 
     fml::scoped_nsobject<CALayer> layer_;
     SkMatrix transform_;
@@ -62,43 +63,44 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
 
   class ExternalCompositingLayer : public CompositingLayer {
    public:
-    ExternalCompositingLayer(CALayer *externalLayer);
+    ExternalCompositingLayer(CALayer* externalLayer);
     ~ExternalCompositingLayer() override = default;
     void installChildren() override;
-    void manifest(IOSSystemCompositorContext &context) override;
+    void manifest(IOSSystemCompositorContext& context) override;
   };
 
-  class FlowCompositingLayer : public CompositingLayer  {
+  class FlowCompositingLayer : public CompositingLayer {
    public:
     FlowCompositingLayer();
-    ~FlowCompositingLayer() override = default; 
+    ~FlowCompositingLayer() override = default;
     bool makeCurrent();
     void present();
-    SkCanvas *canvas();
-    void AddPaintedLayer(flow::Layer *layer);
+    SkCanvas* canvas();
+    void AddPaintedLayer(flow::Layer* layer);
     void installChildren() override;
-    void manifest(IOSSystemCompositorContext &context) override;
-    
+    void manifest(IOSSystemCompositorContext& context) override;
+
     std::vector<flow::Layer*> paint_layers_;
     SkColor background_color_;
     float corner_radius_ = 0.0;
     bool clip_ = false;
     std::vector<std::unique_ptr<CompositingLayer>> children_;
-    Surface *surface_;
+    Surface* surface_;
     SkPath path_;
+
    private:
-    SkCanvas *canvas_;
+    SkCanvas* canvas_;
   };
 
-  CALayer *createBasicLayer();
-  Surface *createDrawLayer();
+  CALayer* createBasicLayer();
+  Surface* createDrawLayer();
 
   SkPoint currentOffset();
   std::vector<FlowCompositingLayer*> stack_;
   std::vector<SkPoint> offsets_;
 
-  // TODO(sigurdm): Make a proper cache of these layers indexed by size and deallocating after aging.
-  // Like  vulkan_surface_pool.
+  // TODO(sigurdm): Make a proper cache of these layers indexed by size and
+  // deallocating after aging. Like  vulkan_surface_pool.
   std::vector<CALayer*> CALayerCache_;
   std::vector<Surface*> CAEAGLLayerCache_;
   size_t CALayerCache_index_;
@@ -115,6 +117,6 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   PlatformView::SurfaceConfig surface_config_;
 };
 
-} // namespace shell
+}  // namespace shell
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SYSTEM_COMPOSITOR_CONTEXT_H_

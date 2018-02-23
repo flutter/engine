@@ -18,7 +18,7 @@ Layer::~Layer() = default;
 
 void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}
 
-void Layer::UpdateScene(SystemCompositorContext &context) {}
+void Layer::UpdateScene(SystemCompositorContext& context) {}
 
 Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
                                     const SkRect& bounds,

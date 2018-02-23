@@ -8,4 +8,4 @@ namespace flow {
 
 SystemCompositorContext::~SystemCompositorContext() = default;
 
-} // namespace flow
+}  // namespace flow

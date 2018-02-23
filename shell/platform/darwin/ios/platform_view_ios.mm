@@ -21,7 +21,8 @@ namespace shell {
 
 PlatformViewIOS::PlatformViewIOS(CALayer* layer, NSObject<FlutterBinaryMessenger>* binaryMessenger)
     : PlatformView(std::make_unique<GPURasterizer>(std::make_unique<ProcessInfoMac>())),
-      system_compositor_context_(std::make_unique<IOSSystemCompositorContext>(surface_config_, layer)),
+      system_compositor_context_(
+          std::make_unique<IOSSystemCompositorContext>(surface_config_, layer)),
       weak_factory_(this),
       binary_messenger_(binaryMessenger) {}
 
@@ -46,8 +47,8 @@ void PlatformViewIOS::Attach(fxl::Closure firstFrameCallback) {
 }
 
 void PlatformViewIOS::NotifyCreated() {
-  PlatformView::NotifyCreated(
-    system_compositor_context_->rootIOSSurface()->CreateGPUSurface(), system_compositor_context_.get());
+  PlatformView::NotifyCreated(system_compositor_context_->rootIOSSurface()->CreateGPUSurface(),
+                              system_compositor_context_.get());
 }
 
 void PlatformViewIOS::ToggleAccessibility(UIView* view, bool enabled) {
@@ -65,14 +66,14 @@ void PlatformViewIOS::SetupAndLoadFromSource(const std::string& assets_directory
                                              const std::string& main,
                                              const std::string& packages) {
   blink::Threads::UI()->PostTask(
-      [ engine = engine().GetWeakPtr(), assets_directory, main, packages ] {
+      [engine = engine().GetWeakPtr(), assets_directory, main, packages] {
         if (engine)
           engine->RunBundleAndSource(assets_directory, main, packages);
       });
 }
 
 void PlatformViewIOS::SetAssetBundlePathOnUI(const std::string& assets_directory) {
-  blink::Threads::UI()->PostTask([ engine = engine().GetWeakPtr(), assets_directory ] {
+  blink::Threads::UI()->PostTask([engine = engine().GetWeakPtr(), assets_directory] {
     if (engine)
       engine->SetAssetBundlePath(assets_directory);
   });
@@ -98,7 +99,9 @@ VsyncWaiter* PlatformViewIOS::GetVsyncWaiter() {
 }
 
 bool PlatformViewIOS::ResourceContextMakeCurrent() {
-  return system_compositor_context_->rootIOSSurface() ? system_compositor_context_->rootIOSSurface()->ResourceContextMakeCurrent() : false;
+  return system_compositor_context_->rootIOSSurface()
+             ? system_compositor_context_->rootIOSSurface()->ResourceContextMakeCurrent()
+             : false;
 }
 
 void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update) {
@@ -115,8 +118,7 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
 }
 
-void PlatformViewIOS::RegisterExternalLayer(int64_t texture_id,
-                                            CALayer *layer) {
+void PlatformViewIOS::RegisterExternalLayer(int64_t texture_id, CALayer* layer) {
   RegisterTexture(std::make_shared<IOSExternalTextureLayer>(texture_id, layer));
 }
 

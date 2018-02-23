@@ -31,12 +31,13 @@ void LayerTree::Raster(CompositorContext::ScopedFrame& frame,
           metrics,
 #endif
           ignore_raster_cache);
-          frame.systemCompositorContext()->texture_registry = &(frame.context().texture_registry());
- frame.systemCompositorContext()->Reset();
- UpdateScene(*(frame.systemCompositorContext()));
- frame.systemCompositorContext()->ExecutePaintTasks(frame);
- frame.systemCompositorContext()->Finish();
- // Paint(frame);
+  frame.systemCompositorContext()->texture_registry =
+      &(frame.context().texture_registry());
+  frame.systemCompositorContext()->Reset();
+  UpdateScene(*(frame.systemCompositorContext()));
+  frame.systemCompositorContext()->ExecutePaintTasks(frame);
+  frame.systemCompositorContext()->Finish();
+  // Paint(frame);
 }
 
 void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
@@ -71,35 +72,35 @@ void LayerTree::UpdateScene(SystemCompositorContext& context) {
   // SceneUpdateContext::Transform transform(context, 1.f / device_pixel_ratio_,
   //                                         1.f / device_pixel_ratio_, 1.f);
 
-  context.Transform(SkMatrix::MakeScale(1.f / 2,
-                                        1.f / 2));
-  
+  context.Transform(SkMatrix::MakeScale(1.f / 2, 1.f / 2));
+
   if (root_layer_->needs_system_composite()) {
-     root_layer_->UpdateScene(context);
+    root_layer_->UpdateScene(context);
   } else if (root_layer_->needs_painting()) {
-   context.PushLayer(SkRect::MakeWH(frame_size_.width(), frame_size_.height()));
-// SceneUpdateContext::Frame frame(
-  //     context,
-  //     SkRRect::MakeRect(
-  //         SkRect::MakeWH(frame_size_.width(), frame_size_.height())),
-  //     SK_ColorTRANSPARENT, 0.f);
+    context.PushLayer(
+        SkRect::MakeWH(frame_size_.width(), frame_size_.height()));
+    // SceneUpdateContext::Frame frame(
+    //     context,
+    //     SkRRect::MakeRect(
+    //         SkRect::MakeWH(frame_size_.width(), frame_size_.height())),
+    //     SK_ColorTRANSPARENT, 0.f);
     context.AddPaintedLayer(root_layer_.get());
     // frame.AddPaintedLayer(root_layer_.get());
     context.PopLayer();
   }
-    context.PopTransform();
+  context.PopTransform();
   // container.AddChild(transform.entity_node());
 }
 
 void LayerTree::Paint(CompositorContext::ScopedFrame& frame) const {
-
-  Layer::PaintContext context = {*frame.canvas(),
-                                 frame.context().frame_time(),
-                                 frame.context().engine_time(),
-                                 frame.context().memory_usage(),
-                                 frame.context().texture_registry(),
-                                 checkerboard_offscreen_layers_,
-                                 };
+  Layer::PaintContext context = {
+      *frame.canvas(),
+      frame.context().frame_time(),
+      frame.context().engine_time(),
+      frame.context().memory_usage(),
+      frame.context().texture_registry(),
+      checkerboard_offscreen_layers_,
+  };
   TRACE_EVENT0("flutter", "LayerTree::Paint");
 
   if (root_layer_->needs_painting())

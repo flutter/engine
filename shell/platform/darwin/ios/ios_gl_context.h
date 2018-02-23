@@ -18,7 +18,9 @@ namespace shell {
 
 class IOSGLContext {
  public:
-  IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* layer, EAGLContext *eaglContext);
+  IOSGLContext(PlatformView::SurfaceConfig config,
+               CAEAGLLayer* layer,
+               EAGLContext* eaglContext);
 
   ~IOSGLContext();
 
@@ -36,7 +38,7 @@ class IOSGLContext {
 
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 
-  CAEAGLLayer *layer() {return layer_;}
+  CAEAGLLayer* layer() { return layer_; }
 
  private:
   fml::scoped_nsobject<CAEAGLLayer> layer_;

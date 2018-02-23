@@ -303,12 +303,11 @@ void PlatformViewServiceProtocol::ScreenshotGpuTask(SkBitmap* bitmap) {
   flow::CompositorContext compositor_context(nullptr);
   SkCanvas* canvas = surface->getCanvas();
   flow::CompositorContext::ScopedFrame frame =
-      compositor_context.AcquireFrame(nullptr,
-      canvas,
-      #if defined(OS_IOS)
-      nullptr, // XXX
-      #endif
-      false);
+      compositor_context.AcquireFrame(nullptr, canvas,
+#if defined(OS_IOS)
+                                      nullptr,  // XXX
+#endif
+                                      false);
 
   canvas->clear(SK_ColorBLACK);
   layer_tree->Raster(frame);

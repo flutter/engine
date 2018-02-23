@@ -165,7 +165,6 @@ void DefaultLayerBuilder::PushTexture(const SkPoint& offset,
   current_layer_->Add(std::move(layer));
 }
 
-
 // void DefaultLayerBuilder::PushChildScene(
 //     const SkPoint& offset,
 //     const SkSize& size,

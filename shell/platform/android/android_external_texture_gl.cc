@@ -28,7 +28,9 @@ void AndroidExternalTextureGL::MarkNewFrameAvailable() {
   new_frame_ready_ = true;
 }
 
-void AndroidExternalTextureGL::UpdateScene(flow::SystemCompositorContext *context, const SkRect& bounds) {
+void AndroidExternalTextureGL::UpdateScene(
+    flow::SystemCompositorContext* context,
+    const SkRect& bounds) {
   ASSERT_IS_GPU_THREAD;
 }
 

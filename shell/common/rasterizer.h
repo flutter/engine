@@ -21,9 +21,9 @@ class Rasterizer {
   virtual ~Rasterizer();
 
   virtual void Setup(std::unique_ptr<Surface> surface_or_null,
-                     #if defined(OS_IOS)
+#if defined(OS_IOS)
                      flow::SystemCompositorContext* systemCompositorContext,
-                     #endif
+#endif
                      fxl::Closure rasterizer_continuation,
                      fxl::AutoResetWaitableEvent* setup_completion_event) = 0;
 

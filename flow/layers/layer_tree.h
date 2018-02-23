@@ -46,7 +46,6 @@ class LayerTree {
 #endif
   void UpdateScene(SystemCompositorContext& context);
 
-
   void Paint(CompositorContext::ScopedFrame& frame) const;
 
   Layer* root_layer() const { return root_layer_.get(); }

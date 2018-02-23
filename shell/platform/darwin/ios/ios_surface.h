@@ -5,8 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SURFACE_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SURFACE_H_
 
-#include "flutter/shell/gpu/gpu_surface_gl.h"
 #import <OpenGLES/EAGL.h>
+#include "flutter/shell/gpu/gpu_surface_gl.h"
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
@@ -20,7 +20,8 @@ class IOSSurface {
  public:
   static std::unique_ptr<IOSSurface> Create(
       PlatformView::SurfaceConfig surface_config,
-      CALayer* layer, EAGLContext *eaglContext);
+      CALayer* layer,
+      EAGLContext* eaglContext);
 
   IOSSurface(PlatformView::SurfaceConfig surface_config, CALayer* layer);
 

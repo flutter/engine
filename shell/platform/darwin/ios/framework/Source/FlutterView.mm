@@ -13,7 +13,7 @@
 #include "lib/fxl/synchronization/waitable_event.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-@interface FlutterView ()<UIInputViewAudioFeedback>
+@interface FlutterView () <UIInputViewAudioFeedback>
 
 @end
 
@@ -82,8 +82,8 @@ void SnapshotRasterizer(fml::WeakPtr<shell::Rasterizer> rasterizer,
   {
     flow::CompositorContext compositor_context(nullptr);
     auto frame = compositor_context.AcquireFrame(nullptr, &canvas,
-     nullptr, // XXX
-     false /* instrumentation */);
+                                                 nullptr,  // XXX
+                                                 false /* instrumentation */);
     layer_tree->Raster(frame, false /* ignore raster cache. */);
   }
 

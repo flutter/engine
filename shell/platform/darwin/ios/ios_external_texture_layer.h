@@ -5,22 +5,22 @@
 #ifndef FLUTTER_SHELL_PLATFORM_IOS_EXTERNAL_TEXTURE_LAYER_H_
 #define FLUTTER_SHELL_PLATFORM_IOS_EXTERNAL_TEXTURE_LAYER_H_
 
-#include "flutter/flow/texture.h"
+#import <QuartzCore/CAEAGLLayer.h>
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/texture.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterTexture.h"
-#import <QuartzCore/CAEAGLLayer.h>
 
 namespace shell {
 
 class IOSExternalTextureLayer : public flow::Texture {
  public:
-  IOSExternalTextureLayer(int64_t textureId,
-                          CALayer *externalLayer);
+  IOSExternalTextureLayer(int64_t textureId, CALayer* externalLayer);
 
   ~IOSExternalTextureLayer() override;
 
-  void UpdateScene(flow::SystemCompositorContext *context, const SkRect& bounds) override;
+  void UpdateScene(flow::SystemCompositorContext* context,
+                   const SkRect& bounds) override;
 
   // Called from GPU thread.
   void Paint(flow::Layer::PaintContext context, const SkRect& bounds) override;
@@ -31,10 +31,10 @@ class IOSExternalTextureLayer : public flow::Texture {
 
   bool NeedsSystemComposite() override;
 
-  CALayer *layer() { return external_layer_; }
+  CALayer* layer() { return external_layer_; }
 
  private:
-  CALayer *external_layer_;
+  CALayer* external_layer_;
   fml::CFRef<CVOpenGLESTextureCacheRef> cache_ref_;
   fml::CFRef<CVOpenGLESTextureRef> texture_ref_;
   FXL_DISALLOW_COPY_AND_ASSIGN(IOSExternalTextureLayer);
