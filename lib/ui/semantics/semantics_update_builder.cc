@@ -37,6 +37,11 @@ SemanticsUpdateBuilder::~SemanticsUpdateBuilder() = default;
 void SemanticsUpdateBuilder::updateNode(int id,
                                         int flags,
                                         int actions,
+                                        int textSelectionBase,
+                                        int textSelectionExtent,
+                                        double scrollPosition,
+                                        double scrollExtentMax,
+                                        double scrollExtentMin,
                                         double left,
                                         double top,
                                         double right,
@@ -47,12 +52,19 @@ void SemanticsUpdateBuilder::updateNode(int id,
                                         std::string increasedValue,
                                         std::string decreasedValue,
                                         int textDirection,
+                                        int nextNodeId,
+                                        int previousNodeId,
                                         const tonic::Float64List& transform,
                                         const tonic::Int32List& children) {
   SemanticsNode node;
   node.id = id;
   node.flags = flags;
   node.actions = actions;
+  node.textSelectionBase = textSelectionBase;
+  node.textSelectionExtent = textSelectionExtent;
+  node.scrollPosition = scrollPosition;
+  node.scrollExtentMax = scrollExtentMax;
+  node.scrollExtentMin = scrollExtentMin;
   node.rect = SkRect::MakeLTRB(left, top, right, bottom);
   node.label = label;
   node.hint = hint;
@@ -60,10 +72,12 @@ void SemanticsUpdateBuilder::updateNode(int id,
   node.increasedValue = increasedValue;
   node.decreasedValue = decreasedValue;
   node.textDirection = textDirection;
+  node.nextNodeId = nextNodeId;
+  node.previousNodeId = previousNodeId;
   node.transform.setColMajord(transform.data());
   node.children = std::vector<int32_t>(
       children.data(), children.data() + children.num_elements());
-  nodes_.push_back(node);
+  nodes_[id] = node;
 }
 
 fxl::RefPtr<SemanticsUpdate> SemanticsUpdateBuilder::build() {

@@ -4,38 +4,53 @@
 
 package io.flutter.view;
 
+import android.app.Activity;
+import android.content.Context;
 import android.util.Log;
+import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.plugin.common.*;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.HashMap;
 import java.util.Map;
 
-class FlutterNativeView implements BinaryMessenger {
+public class FlutterNativeView implements BinaryMessenger {
     private static final String TAG = "FlutterNativeView";
 
     private final Map<String, BinaryMessageHandler> mMessageHandlers;
     private int mNextReplyId = 1;
     private final Map<Integer, BinaryReply> mPendingReplies = new HashMap<>();
 
+    private final FlutterPluginRegistry mPluginRegistry;
     private long mNativePlatformView;
     private FlutterView mFlutterView;
 
-    FlutterNativeView(FlutterView flutterView) {
-        mFlutterView = flutterView;
+    public FlutterNativeView(Context context) {
+        mPluginRegistry = new FlutterPluginRegistry(this, context);
         attach(this);
         assertAttached();
         mMessageHandlers = new HashMap<>();
     }
 
-    FlutterNativeView() {
-        this(null);
+    public void detach() {
+        mPluginRegistry.detach();
+        mFlutterView = null;
+        nativeDetach(mNativePlatformView);
     }
 
     public void destroy() {
         mFlutterView = null;
         nativeDestroy(mNativePlatformView);
         mNativePlatformView = 0;
+    }
+
+    public FlutterPluginRegistry getPluginRegistry() {
+        return mPluginRegistry;
+    }
+
+    public void attachViewAndActivity(FlutterView flutterView, Activity activity) {
+        mFlutterView = flutterView;
+        mPluginRegistry.attach(flutterView, activity);
     }
 
     public boolean isAttached() {
@@ -59,6 +74,11 @@ class FlutterNativeView implements BinaryMessenger {
     public void runFromSource(final String assetsDirectory, final String main, final String packages) {
         assertAttached();
         nativeRunBundleAndSource(mNativePlatformView, assetsDirectory, main, packages);
+    }
+
+    public void setAssetBundlePathOnUI(final String assetsDirectory) {
+        assertAttached();
+        nativeSetAssetBundlePathOnUI(mNativePlatformView, assetsDirectory);
     }
 
     public static String getObservatoryUri() {
@@ -168,6 +188,7 @@ class FlutterNativeView implements BinaryMessenger {
 
     private static native long nativeAttach(FlutterNativeView view);
     private static native void nativeDestroy(long nativePlatformViewAndroid);
+    private static native void nativeDetach(long nativePlatformViewAndroid);
 
     private static native void nativeRunBundleAndSnapshot(long nativePlatformViewAndroid,
         String bundlePath,
@@ -179,6 +200,9 @@ class FlutterNativeView implements BinaryMessenger {
         String bundlePath,
         String main,
         String packages);
+
+    private static native void nativeSetAssetBundlePathOnUI(long nativePlatformViewAndroid,
+        String bundlePath);
 
     private static native String nativeGetObservatoryUri();
 

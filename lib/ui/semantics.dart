@@ -17,7 +17,15 @@ class SemanticsAction {
   static const int _kScrollDownIndex = 1 << 5;
   static const int _kIncreaseIndex = 1 << 6;
   static const int _kDecreaseIndex = 1 << 7;
-  static const int _kShowOnScreen = 1 << 8;
+  static const int _kShowOnScreenIndex = 1 << 8;
+  static const int _kMoveCursorForwardByCharacterIndex = 1 << 9;
+  static const int _kMoveCursorBackwardByCharacterIndex = 1 << 10;
+  static const int _kSetSelectionIndex = 1 << 11;
+  static const int _kCopyIndex = 1 << 12;
+  static const int _kCutIndex = 1 << 13;
+  static const int _kPasteIndex = 1 << 14;
+  static const int _kDidGainAccessibilityFocusIndex = 1 << 15;
+  static const int _kDidLoseAccessibilityFocusIndex = 1 << 16;
 
   /// The numerical value for this action.
   ///
@@ -74,7 +82,69 @@ class SemanticsAction {
   ///
   /// For example, this action might be send to a node in a scrollable list that
   /// is partially off screen to bring it on screen.
-  static const SemanticsAction showOnScreen = const SemanticsAction._(_kShowOnScreen);
+  static const SemanticsAction showOnScreen = const SemanticsAction._(_kShowOnScreenIndex);
+
+  /// Move the cursor forward by one character.
+  ///
+  /// This is for example used by the cursor control in text fields.
+  ///
+  /// The action includes a boolean argument, which indicates whether the cursor
+  /// movement should extend (or start) a selection.
+  static const SemanticsAction moveCursorForwardByCharacter = const SemanticsAction._(_kMoveCursorForwardByCharacterIndex);
+
+  /// Move the cursor backward by one character.
+  ///
+  /// This is for example used by the cursor control in text fields.
+  ///
+  /// The action includes a boolean argument, which indicates whether the cursor
+  /// movement should extend (or start) a selection.
+  static const SemanticsAction moveCursorBackwardByCharacter = const SemanticsAction._(_kMoveCursorBackwardByCharacterIndex);
+
+  /// Set the text selection to the given range.
+  ///
+  /// The provided argument is a Map<String, int> which includes the keys `base`
+  /// and `extent` indicating where the selection within the `value` of the
+  /// semantics node should start and where it should end. Values for both
+  /// keys can range from 0 to length of `value` (inclusive).
+  ///
+  /// Setting `base` and `extent` to the same value will move the cursor to
+  /// that position (without selecting anything).
+  static const SemanticsAction setSelection = const SemanticsAction._(_kSetSelectionIndex);
+
+  /// Copy the current selection to the clipboard.
+  static const SemanticsAction copy = const SemanticsAction._(_kCopyIndex);
+
+  /// Cut the current selection and place it in the clipboard.
+  static const SemanticsAction cut = const SemanticsAction._(_kCutIndex);
+
+  /// Paste the current content of the clipboard.
+  static const SemanticsAction paste = const SemanticsAction._(_kPasteIndex);
+
+  /// Indicates that the nodes has gained accessibility focus.
+  ///
+  /// This handler is invoked when the node annotated with this handler gains
+  /// the accessibility focus. The accessibility focus is the
+  /// green (on Android with TalkBack) or black (on iOS with VoiceOver)
+  /// rectangle shown on screen to indicate what element an accessibility
+  /// user is currently interacting with.
+  ///
+  /// The accessibility focus is different from the input focus. The input focus
+  /// is usually held by the element that currently responds to keyboard inputs.
+  /// Accessibility focus and input focus can be held by two different nodes!
+  static const SemanticsAction didGainAccessibilityFocus = const SemanticsAction._(_kDidGainAccessibilityFocusIndex);
+
+  /// Indicates that the nodes has lost accessibility focus.
+  ///
+  /// This handler is invoked when the node annotated with this handler
+  /// loses the accessibility focus. The accessibility focus is
+  /// the green (on Android with TalkBack) or black (on iOS with VoiceOver)
+  /// rectangle shown on screen to indicate what element an accessibility
+  /// user is currently interacting with.
+  ///
+  /// The accessibility focus is different from the input focus. The input focus
+  /// is usually held by the element that currently responds to keyboard inputs.
+  /// Accessibility focus and input focus can be held by two different nodes!
+  static const SemanticsAction didLoseAccessibilityFocus = const SemanticsAction._(_kDidLoseAccessibilityFocusIndex);
 
   /// The possible semantics actions.
   ///
@@ -89,7 +159,15 @@ class SemanticsAction {
     _kScrollDownIndex: scrollDown,
     _kIncreaseIndex: increase,
     _kDecreaseIndex: decrease,
-    _kShowOnScreen: showOnScreen,
+    _kShowOnScreenIndex: showOnScreen,
+    _kMoveCursorForwardByCharacterIndex: moveCursorForwardByCharacter,
+    _kMoveCursorBackwardByCharacterIndex: moveCursorBackwardByCharacter,
+    _kSetSelectionIndex: setSelection,
+    _kCopyIndex: copy,
+    _kCutIndex: cut,
+    _kPasteIndex: paste,
+    _kDidGainAccessibilityFocusIndex: didGainAccessibilityFocus,
+    _kDidLoseAccessibilityFocusIndex: didLoseAccessibilityFocus,
   };
 
   @override
@@ -111,23 +189,42 @@ class SemanticsAction {
         return 'SemanticsAction.increase';
       case _kDecreaseIndex:
         return 'SemanticsAction.decrease';
-      case _kShowOnScreen:
+      case _kShowOnScreenIndex:
         return 'SemanticsAction.showOnScreen';
+      case _kMoveCursorForwardByCharacterIndex:
+        return 'SemanticsAction.moveCursorForwardByCharacter';
+      case _kMoveCursorBackwardByCharacterIndex:
+        return 'SemanticsAction.moveCursorBackwardByCharacter';
+      case _kSetSelectionIndex:
+        return 'SemanticsAction.setSelection';
+      case _kCopyIndex:
+        return 'SemanticsAction.copy';
+      case _kCutIndex:
+        return 'SemanticsAction.cut';
+      case _kPasteIndex:
+        return 'SemanticsAction.paste';
+      case _kDidGainAccessibilityFocusIndex:
+        return 'SemanticsAction.didGainAccessibilityFocus';
+      case _kDidLoseAccessibilityFocusIndex:
+        return 'SemanticsAction.didLoseAccessibilityFocus';
     }
     return null;
   }
 }
 
 /// A Boolean value that can be associated with a semantics node.
-class SemanticsFlags {
+class SemanticsFlag {
   static const int _kHasCheckedStateIndex = 1 << 0;
   static const int _kIsCheckedIndex = 1 << 1;
   static const int _kIsSelectedIndex = 1 << 2;
   static const int _kIsButtonIndex = 1 << 3;
   static const int _kIsTextFieldIndex = 1 << 4;
   static const int _kIsFocusedIndex = 1 << 5;
+  static const int _kHasEnabledStateIndex = 1 << 6;
+  static const int _kIsEnabledIndex = 1 << 7;
+  static const int _kIsInMutuallyExclusiveGroupIndex = 1 << 8;
 
-  const SemanticsFlags._(this.index);
+  const SemanticsFlag._(this.index);
 
   /// The numerical value for this flag.
   ///
@@ -137,7 +234,7 @@ class SemanticsFlags {
   /// The semantics node has the quality of either being "checked" or "unchecked".
   ///
   /// For example, a checkbox or a radio button widget has checked state.
-  static const SemanticsFlags hasCheckedState = const SemanticsFlags._(_kHasCheckedStateIndex);
+  static const SemanticsFlag hasCheckedState = const SemanticsFlag._(_kHasCheckedStateIndex);
 
   /// Whether a semantics node that [hasCheckedState] is checked.
   ///
@@ -145,7 +242,7 @@ class SemanticsFlags {
   /// "unchecked".
   ///
   /// For example, if a checkbox has a visible checkmark, [isChecked] is true.
-  static const SemanticsFlags isChecked = const SemanticsFlags._(_kIsCheckedIndex);
+  static const SemanticsFlag isChecked = const SemanticsFlag._(_kIsCheckedIndex);
 
 
   /// Whether a semantics node is selected.
@@ -154,53 +251,83 @@ class SemanticsFlags {
   /// "unselected".
   ///
   /// For example, the active tab in a tab bar has [isSelected] set to true.
-  static const SemanticsFlags isSelected = const SemanticsFlags._(_kIsSelectedIndex);
+  static const SemanticsFlag isSelected = const SemanticsFlag._(_kIsSelectedIndex);
 
   /// Whether the semantic node represents a button.
   ///
   /// Platforms has special handling for buttons, for example Android's TalkBack
   /// and iOS's VoiceOver provides an additional hint when the focused object is
   /// a button.
-  static const SemanticsFlags isButton = const SemanticsFlags._(_kIsButtonIndex);
+  static const SemanticsFlag isButton = const SemanticsFlag._(_kIsButtonIndex);
 
   /// Whether the semantic node represents a text field.
   ///
   /// Text fields are announced as such and allow text input via accessibility
   /// affordances.
-  static const SemanticsFlags isTextField = const SemanticsFlags._(_kIsTextFieldIndex);
+  static const SemanticsFlag isTextField = const SemanticsFlag._(_kIsTextFieldIndex);
 
   /// Whether the semantic node currently holds the user's focus.
   ///
   /// The focused element is usually the current receiver of keyboard inputs.
-  static const SemanticsFlags isFocused = const SemanticsFlags._(_kIsFocusedIndex);
+  static const SemanticsFlag isFocused = const SemanticsFlag._(_kIsFocusedIndex);
+
+  /// The semantics node has the quality of either being "enabled" or
+  /// "disabled".
+  ///
+  /// For example, a button can be enabled or disabled and therefore has an
+  /// "enabled" state. Static text is usually neither enabled nor disabled and
+  /// therefore does not have an "enabled" state.
+  static const SemanticsFlag hasEnabledState = const SemanticsFlag._(_kHasEnabledStateIndex);
+
+  /// Whether a semantic node that [hasEnabledState] is currently enabled.
+  ///
+  /// A disabled element does not respond to user interaction. For example, a
+  /// button that currently does not respond to user interaction should be
+  /// marked as disabled.
+  static const SemanticsFlag isEnabled = const SemanticsFlag._(_kIsEnabledIndex);
+
+  /// Whether a semantic node is in a mutually exclusive group.
+  ///
+  /// For example, a radio button is in a mutually exclusive group because
+  /// only one radio button in that group can be marked as [isChecked].
+  static const SemanticsFlag isInMutuallyExclusiveGroup = const SemanticsFlag._(_kIsInMutuallyExclusiveGroupIndex);
 
   /// The possible semantics flags.
   ///
   /// The map's key is the [index] of the flag and the value is the flag itself.
-  static final Map<int, SemanticsFlags> values = const <int, SemanticsFlags>{
+  static final Map<int, SemanticsFlag> values = const <int, SemanticsFlag>{
     _kHasCheckedStateIndex: hasCheckedState,
     _kIsCheckedIndex: isChecked,
     _kIsSelectedIndex: isSelected,
     _kIsButtonIndex: isButton,
     _kIsTextFieldIndex: isTextField,
     _kIsFocusedIndex: isFocused,
+    _kHasEnabledStateIndex: hasEnabledState,
+    _kIsEnabledIndex: isEnabled,
+    _kIsInMutuallyExclusiveGroupIndex: isInMutuallyExclusiveGroup,
   };
 
   @override
   String toString() {
     switch (index) {
       case _kHasCheckedStateIndex:
-        return 'SemanticsFlags.hasCheckedState';
+        return 'SemanticsFlag.hasCheckedState';
       case _kIsCheckedIndex:
-        return 'SemanticsFlags.isChecked';
+        return 'SemanticsFlag.isChecked';
       case _kIsSelectedIndex:
-        return 'SemanticsFlags.isSelected';
+        return 'SemanticsFlag.isSelected';
       case _kIsButtonIndex:
-        return 'SemanticsFlags.isButton';
+        return 'SemanticsFlag.isButton';
       case _kIsTextFieldIndex:
-        return 'SemanticsFlags.isTextField';
+        return 'SemanticsFlag.isTextField';
       case _kIsFocusedIndex:
-        return 'SemanticsFlags.isFocused';
+        return 'SemanticsFlag.isFocused';
+      case _kHasEnabledStateIndex:
+        return 'SemanticsFlag.hasEnabledState';
+      case _kIsEnabledIndex:
+        return 'SemanticsFlag.isEnabled';
+      case _kIsInMutuallyExclusiveGroupIndex:
+        return 'SemanticsFlag.isInMutuallyExclusiveGroup';
     }
     return null;
   }
@@ -213,7 +340,7 @@ class SemanticsFlags {
 class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Creates an empty [SemanticsUpdateBuilder] object.
   SemanticsUpdateBuilder() { _constructor(); }
-  void _constructor() native "SemanticsUpdateBuilder_constructor";
+  void _constructor() native 'SemanticsUpdateBuilder_constructor';
 
   /// Update the information associated with the node with the given `id`.
   ///
@@ -224,7 +351,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// nodes that do not change in the update. If a node is not reachable from
   /// the root after an update, the node will be discarded from the tree.
   ///
-  /// The `flags` are a bit field of [SemanticsFlags] that apply to this node.
+  /// The `flags` are a bit field of [SemanticsFlag]s that apply to this node.
   ///
   /// The `actions` are a bit field of [SemanticsAction]s that can be undertaken
   /// by this node. If the user wishes to undertake one of these actions on this
@@ -241,15 +368,30 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// string describes what result an action performed on this node has. The
   /// reading direction of all these strings is given by `textDirection`.
   ///
+  /// The fields 'textSelectionBase' and 'textSelectionExtent' describe the
+  /// currently selected text within `value`.
+  ///
+  /// For scrollable nodes `scrollPosition` describes the current scroll
+  /// position in logical pixel. `scrollExtentMax` and `scrollExtentMin`
+  /// describe the maximum and minimum in-rage values that `scrollPosition` can
+  /// be. Both or either may be infinity to indicate unbound scrolling. The
+  /// value for `scrollPosition` can (temporarily) be outside this range, for
+  /// example during an overscroll.
+  ///
   /// The `rect` is the region occupied by this node in its own coordinate
   /// system.
   ///
-  /// The `transform` is a matrix that maps this node's coodinate system into
+  /// The `transform` is a matrix that maps this node's coordinate system into
   /// its parent's coordinate system.
   void updateNode({
     int id,
     int flags,
     int actions,
+    int textSelectionBase,
+    int textSelectionExtent,
+    double scrollPosition,
+    double scrollExtentMax,
+    double scrollExtentMin,
     Rect rect,
     String label,
     String hint,
@@ -257,14 +399,21 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String increasedValue,
     String decreasedValue,
     TextDirection textDirection,
+    int nextNodeId,
+    int previousNodeId,
     Float64List transform,
-    Int32List children
+    Int32List children,
   }) {
     if (transform.length != 16)
       throw new ArgumentError('transform argument must have 16 entries.');
     _updateNode(id,
                 flags,
                 actions,
+                textSelectionBase,
+                textSelectionExtent,
+                scrollPosition,
+                scrollExtentMax,
+                scrollExtentMin,
                 rect.left,
                 rect.top,
                 rect.right,
@@ -275,13 +424,20 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
                 increasedValue,
                 decreasedValue,
                 textDirection != null ? textDirection.index + 1 : 0,
+                nextNodeId ?? -1,
+                previousNodeId ?? -1,
                 transform,
-                children);
+                children,);
   }
   void _updateNode(
     int id,
     int flags,
     int actions,
+    int textSelectionBase,
+    int textSelectionExtent,
+    double scrollPosition,
+    double scrollExtentMax,
+    double scrollExtentMin,
     double left,
     double top,
     double right,
@@ -292,16 +448,18 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String increasedValue,
     String decreasedValue,
     int textDirection,
+    int nextNodeId,
+    int previousNodeId,
     Float64List transform,
-    Int32List children
-  ) native "SemanticsUpdateBuilder_updateNode";
+    Int32List children,
+  ) native 'SemanticsUpdateBuilder_updateNode';
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
   ///
   /// The returned object can be passed to [Window.updateSemantics] to actually
   /// update the semantics retained by the system.
-  SemanticsUpdate build() native "SemanticsUpdateBuilder_build";
+  SemanticsUpdate build() native 'SemanticsUpdateBuilder_build';
 }
 
 /// An opaque object representing a batch of semantics updates.
@@ -311,15 +469,15 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
 /// Semantics updates can be applied to the system's retained semantics tree
 /// using the [Window.updateSemantics] method.
 class SemanticsUpdate extends NativeFieldWrapperClass2 {
-  /// Creates an uninitialized SemanticsUpdate object.
+  /// This class is created by the engine, and should not be instantiated
+  /// or extended directly.
   ///
-  /// Calling the SemanticsUpdate constructor directly will not create a useable
-  /// object. To create a SemanticsUpdate object, use a [SemanticsUpdateBuilder].
-  SemanticsUpdate(); // (this constructor is here just so we can document it)
+  /// To create a SemanticsUpdate object, use a [SemanticsUpdateBuilder].
+  SemanticsUpdate._();
 
   /// Releases the resources used by this semantics update.
   ///
   /// After calling this function, the semantics update is cannot be used
   /// further.
-  void dispose() native "SemanticsUpdateBuilder_dispose";
+  void dispose() native 'SemanticsUpdateBuilder_dispose';
 }

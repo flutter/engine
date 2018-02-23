@@ -52,7 +52,7 @@ abstract class RepositoryLicensedFile extends RepositoryFile {
 
   // file names that we are confident won't be included in the final build product
   static final RegExp _readmeNamePattern = new RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
-  static final RegExp _buildTimePattern = new RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|vms_make\.com|pom\.xml|\.project|source\.properties)$', caseSensitive: false);
+  static final RegExp _buildTimePattern = new RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties)$', caseSensitive: false);
   static final RegExp _docsPattern = new RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|.+\.spec(?:\.in)?)$', caseSensitive: false);
   static final RegExp _devPattern = new RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml)$', caseSensitive: false);
   static final RegExp _testsPattern = new RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
@@ -1740,6 +1740,18 @@ class RepositoryLibPngDirectory extends RepositoryDirectory {
   }
 }
 
+class RepositoryLibWebpDirectory extends RepositoryDirectory {
+  RepositoryLibWebpDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'examples' // contains nothing that ends up in the binary executable
+      && entry.name != 'swig' // not included in our build
+      && entry.name != 'gradle' // not included in our build
+      && super.shouldRecurse(entry);
+  }
+}
+
 class RepositoryPkgDirectory extends RepositoryDirectory {
   RepositoryPkgDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
@@ -1797,6 +1809,8 @@ class RepositorySkiaThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'giflib' // contains nothing that ends up in the binary executable
         && entry.name != 'freetype' // we use our own version
+        && entry.name != 'icu' // we use our own version
+        && entry.name != 'libjpeg-turbo' // we use our own version
         && entry.name != 'libpng' // we use our own version
         && entry.name != 'lua' // not linked in
         && entry.name != 'yasm' // build tool (assembler)
@@ -1903,6 +1917,8 @@ class RepositoryRootThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
       return new RepositoryLibJpegTurboDirectory(this, entry);
     if (entry.name == 'libpng')
       return new RepositoryLibPngDirectory(this, entry);
+    if (entry.name == 'libwebp')
+      return new RepositoryLibWebpDirectory(this, entry);
     if (entry.name == 'okhttp')
       return new RepositoryOkHttpDirectory(this, entry);
     if (entry.name == 'pkg')
@@ -2091,6 +2107,7 @@ class RepositoryFlutterDirectory extends RepositoryDirectory {
         && entry.name != 'examples'
         && entry.name != 'build'
         && entry.name != 'travis'
+        && entry.name != 'frontend_server'
         && super.shouldRecurse(entry);
   }
 
@@ -2299,7 +2316,13 @@ class RepositoryRoot extends RepositoryDirectory {
 
 
 class Progress {
-  Progress(this.max);
+  Progress(this.max) {
+    // This may happen when a git client contains left-over empty component
+    // directories after DEPS file changes.
+    if (max <= 0)
+      throw new ArgumentError('Progress.max must be > 0 but was: $max');
+  }
+
   final int max;
   int get withLicense => _withLicense;
   int _withLicense = 0;
@@ -2329,9 +2352,8 @@ class Progress {
       _lastUpdate ??= new Stopwatch();
       final String line = toString();
       system.stderr.write('\r$line');
-      if (_lastLength > line.length) {
-	system.stderr.write(' ' * (_lastLength - line.length));
-      }
+      if (_lastLength > line.length)
+        system.stderr.write(' ' * (_lastLength - line.length));
       _lastLength = line.length;
       _lastUpdate.reset();
       _lastUpdate.start();

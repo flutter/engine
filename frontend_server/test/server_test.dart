@@ -5,15 +5,21 @@ import 'dart:isolate';
 
 import 'package:args/src/arg_results.dart';
 import 'package:frontend_server/server.dart';
-import 'package:front_end/incremental_kernel_generator.dart';
+// front_end/src imports below that require lint `ignore_for_file`
+// are a temporary state of things until frontend team builds better api
+// that would replace api used below. This api was made private in
+// an effort to discourage further use.
+// ignore_for_file: implementation_imports
 import 'package:kernel/binary/ast_to_binary.dart';
+import 'package:kernel/ast.dart' show Program;
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
+import 'package:vm/incremental_compiler.dart';
 
 class _MockedCompiler extends Mock implements CompilerInterface {}
 
-class _MockedIncrementalKernelGenerator extends Mock
-  implements IncrementalKernelGenerator {}
+class _MockedIncrementalCompiler extends Mock
+  implements IncrementalCompiler {}
 
 class _MockedBinaryPrinterFactory extends Mock implements BinaryPrinterFactory {}
 
@@ -21,8 +27,10 @@ class _MockedBinaryPrinter extends Mock implements BinaryPrinter {}
 
 Future<int> main() async {
   group('basic', () {
-    test('train completes', () async {
-      expect(await starter(<String>['--train']), equals(0));
+    final CompilerInterface compiler = new _MockedCompiler();
+
+    test('train with mocked compiler completes', () async {
+      expect(await starter(<String>['--train'], compiler: compiler), equals(0));
     });
   });
 
@@ -46,28 +54,28 @@ Future<int> main() async {
           )
         ).captured;
       expect(capturedArgs.single['sdk-root'], equals('sdkroot'));
+      expect(capturedArgs.single['strong'], equals(false));
     });
 
-    test('compile from command line with file byte store', () async {
+    test('compile from command line (strong mode)', () async {
       final List<String> args = <String>[
         'server.dart',
         '--sdk-root',
         'sdkroot',
-        '--byte-store',
-        'path/to/bytestore'
+        '--strong',
       ];
       final int exitcode = await starter(args, compiler: compiler);
       expect(exitcode, equals(0));
       final List<ArgResults> capturedArgs =
-          verify(
-              compiler.compile(
-                argThat(equals('server.dart')),
-                captureAny,
-                generator: any,
-              )
-          ).captured;
+        verify(
+          compiler.compile(
+            argThat(equals('server.dart')),
+            captureAny,
+            generator: any,
+          )
+        ).captured;
       expect(capturedArgs.single['sdk-root'], equals('sdkroot'));
-      expect(capturedArgs.single['byte-store'], equals('path/to/bytestore'));
+      expect(capturedArgs.single['strong'], equals(true));
     });
 
     test('compile from command line with link platform', () async {
@@ -89,17 +97,16 @@ Future<int> main() async {
           ).captured;
       expect(capturedArgs.single['sdk-root'], equals('sdkroot'));
       expect(capturedArgs.single['link-platform'], equals(true));
+      expect(capturedArgs.single['strong'], equals(false));
     });
   });
 
-  group('interactive file store compile with mocked compiler', () {
+  group('interactive compile with mocked compiler', () {
     final CompilerInterface compiler = new _MockedCompiler();
 
     final List<String> args = <String>[
       '--sdk-root',
       'sdkroot',
-      '--byte-store',
-      'path/to/bytestore',
     ];
 
     test('compile one file', () async {
@@ -111,8 +118,7 @@ Future<int> main() async {
             expect(invocation.positionalArguments[0], equals('server.dart'));
             expect(invocation.positionalArguments[1]['sdk-root'],
                 equals('sdkroot'));
-            expect(invocation.positionalArguments[1]['byte-store'],
-                equals('path/to/bytestore'));
+            expect(invocation.positionalArguments[1]['strong'], equals(false));
             compileCalled.sendPort.send(true);
           }
       );
@@ -134,6 +140,11 @@ Future<int> main() async {
       '--sdk-root',
       'sdkroot',
     ];
+    final List<String> strongArgs = <String>[
+      '--sdk-root',
+      'sdkroot',
+      '--strong',
+    ];
 
     test('compile one file', () async {
       final StreamController<List<int>> inputStreamController =
@@ -143,11 +154,34 @@ Future<int> main() async {
         (Invocation invocation) {
           expect(invocation.positionalArguments[0], equals('server.dart'));
           expect(invocation.positionalArguments[1]['sdk-root'], equals('sdkroot'));
+          expect(invocation.positionalArguments[1]['strong'], equals(false));
           compileCalled.sendPort.send(true);
         }
       );
 
       final int exitcode = await starter(args, compiler: compiler,
+        input: inputStreamController.stream,
+      );
+      expect(exitcode, equals(0));
+      inputStreamController.add('compile server.dart\n'.codeUnits);
+      await compileCalled.first;
+      inputStreamController.close();
+    });
+
+    test('compile one file (strong mode)', () async {
+      final StreamController<List<int>> inputStreamController =
+        new StreamController<List<int>>();
+      final ReceivePort compileCalled = new ReceivePort();
+      when(compiler.compile(any, any, generator: any)).thenAnswer(
+        (Invocation invocation) {
+          expect(invocation.positionalArguments[0], equals('server.dart'));
+          expect(invocation.positionalArguments[1]['sdk-root'], equals('sdkroot'));
+          expect(invocation.positionalArguments[1]['strong'], equals(true));
+          compileCalled.sendPort.send(true);
+        }
+      );
+
+      final int exitcode = await starter(strongArgs, compiler: compiler,
         input: inputStreamController.stream,
       );
       expect(exitcode, equals(0));
@@ -165,6 +199,7 @@ Future<int> main() async {
         (Invocation invocation) {
           expect(invocation.positionalArguments[0], equals('server${counter++}.dart'));
           expect(invocation.positionalArguments[1]['sdk-root'], equals('sdkroot'));
+          expect(invocation.positionalArguments[1]['strong'], equals(false));
           compileCalled.sendPort.send(true);
         }
       );
@@ -194,7 +229,7 @@ Future<int> main() async {
         new StreamController<List<int>>();
       final ReceivePort recompileCalled = new ReceivePort();
 
-      when(compiler.recompileDelta()).thenAnswer((Invocation invocation) {
+      when(compiler.recompileDelta(filename: null)).thenAnswer((Invocation invocation) {
         recompileCalled.sendPort.send(true);
       });
       final int exitcode = await starter(args, compiler: compiler,
@@ -205,18 +240,43 @@ Future<int> main() async {
       await recompileCalled.first;
 
       verifyInOrder(
-        <dynamic>[
+        <void>[
           compiler.invalidate(Uri.base.resolve('file1.dart')),
           compiler.invalidate(Uri.base.resolve('file2.dart')),
-          compiler.recompileDelta(),
+          await compiler.recompileDelta(filename: null),
         ]
+      );
+      streamController.close();
+    });
+
+    test('recompile few files with new entrypoint', () async {
+      final StreamController<List<int>> streamController =
+      new StreamController<List<int>>();
+      final ReceivePort recompileCalled = new ReceivePort();
+
+      when(compiler.recompileDelta(filename: 'file2.dart')).thenAnswer((Invocation invocation) {
+        recompileCalled.sendPort.send(true);
+      });
+      final int exitcode = await starter(args, compiler: compiler,
+        input: streamController.stream,
+      );
+      expect(exitcode, equals(0));
+      streamController.add('recompile file2.dart abc\nfile1.dart\nfile2.dart\nabc\n'.codeUnits);
+      await recompileCalled.first;
+
+      verifyInOrder(
+          <void>[
+            compiler.invalidate(Uri.base.resolve('file1.dart')),
+            compiler.invalidate(Uri.base.resolve('file2.dart')),
+            await compiler.recompileDelta(filename: 'file2.dart'),
+          ]
       );
       streamController.close();
     });
 
     test('accept', () async {
       final StreamController<List<int>> inputStreamController =
-        new StreamController<List<int>>();
+      new StreamController<List<int>>();
       final ReceivePort acceptCalled = new ReceivePort();
       when(compiler.acceptLastDelta()).thenAnswer((Invocation invocation) {
         acceptCalled.sendPort.send(true);
@@ -227,22 +287,6 @@ Future<int> main() async {
       expect(exitcode, equals(0));
       inputStreamController.add('accept\n'.codeUnits);
       await acceptCalled.first;
-      inputStreamController.close();
-    });
-
-    test('reject', () async {
-      final StreamController<List<int>> inputStreamController =
-        new StreamController<List<int>>();
-      final ReceivePort rejectCalled = new ReceivePort();
-      when(compiler.rejectLastDelta()).thenAnswer((Invocation invocation) {
-        rejectCalled.sendPort.send(true);
-      });
-      final int exitcode = await starter(args, compiler: compiler,
-        input: inputStreamController.stream,
-      );
-      expect(exitcode, equals(0));
-      inputStreamController.add('reject\n'.codeUnits);
-      await rejectCalled.first;
       inputStreamController.close();
     });
 
@@ -267,7 +311,7 @@ Future<int> main() async {
         new StreamController<List<int>>();
       final ReceivePort recompileCalled = new ReceivePort();
 
-      when(compiler.recompileDelta()).thenAnswer((Invocation invocation) {
+      when(compiler.recompileDelta(filename: null)).thenAnswer((Invocation invocation) {
         recompileCalled.sendPort.send(true);
       });
       final int exitcode = await starter(args, compiler: compiler,
@@ -279,12 +323,12 @@ Future<int> main() async {
       streamController.add('recompile def\nfile2.dart\nfile3.dart\ndef\n'.codeUnits);
       await recompileCalled.first;
 
-      verifyInOrder(<dynamic>[
-        compiler.compile('file1.dart', any, generator: any),
+      verifyInOrder(<void>[
+        await compiler.compile('file1.dart', any, generator: any),
         compiler.acceptLastDelta(),
         compiler.invalidate(Uri.base.resolve('file2.dart')),
         compiler.invalidate(Uri.base.resolve('file3.dart')),
-        compiler.recompileDelta(),
+        await compiler.recompileDelta(filename: null),
       ]);
       streamController.close();
     });
@@ -308,7 +352,7 @@ Future<int> main() async {
       String boundaryKey;
       stdoutStreamController.stream
         .transform(UTF8.decoder)
-        .transform(new LineSplitter())
+        .transform(const LineSplitter())
         .listen((String s) {
           const String RESULT_OUTPUT_SPACE = 'result ';
           if (boundaryKey == null) {
@@ -323,11 +367,10 @@ Future<int> main() async {
           }
         });
 
-      final _MockedIncrementalKernelGenerator generator =
-        new _MockedIncrementalKernelGenerator();
-      when(generator.computeDelta()).thenReturn(new Future<DeltaProgram>.value(
-        new DeltaProgram("", null /* program stub */)
-      ));
+      final _MockedIncrementalCompiler generator =
+        new _MockedIncrementalCompiler();
+      when(generator.compile())
+          .thenAnswer((_) => new Future<Program>.value(new Program()));
       final _MockedBinaryPrinterFactory printerFactory =
         new _MockedBinaryPrinterFactory();
       when(printerFactory.newBinaryPrinter(any))
@@ -349,6 +392,36 @@ Future<int> main() async {
 
       streamController.close();
     });
+
+    group('compile with output path', ()
+    {
+      final CompilerInterface compiler = new _MockedCompiler();
+
+      test('compile from command line', () async {
+        final List<String> args = <String>[
+          'server.dart',
+          '--sdk-root',
+          'sdkroot',
+          '--output-dill',
+          '/foo/bar/server.dart.dill',
+          '--output-incremental-dill',
+          '/foo/bar/server.incremental.dart.dill',
+        ];
+        final int exitcode = await starter(args, compiler: compiler);
+        expect(exitcode, equals(0));
+        final List<ArgResults> capturedArgs =
+            verify(
+                compiler.compile(
+                  argThat(equals('server.dart')),
+                  captureAny,
+                  generator: any,
+                )
+            ).captured;
+        expect(capturedArgs.single['sdk-root'], equals('sdkroot'));
+        expect(capturedArgs.single['strong'], equals(false));
+      });
+    });
+
 
   });
   return 0;

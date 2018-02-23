@@ -3,17 +3,34 @@
 // found in the LICENSE file.
 
 #include "flutter/runtime/dart_init.h"
+#include "flutter/sky/engine/wtf/OperatingSystem.h"
 
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#if defined(OS_WIN)
+#include <io.h>
+#include <windows.h>
+#undef ERROR
+
+#define access _access
+#define R_OK 0x4
+
+#ifndef S_ISDIR
+#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
+#endif
+
+#else
 #include <unistd.h>
+#endif
 
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/assets/unzipper_provider.h"
 #include "flutter/assets/zip_asset_store.h"
 #include "flutter/common/settings.h"
@@ -27,6 +44,7 @@
 #include "flutter/runtime/start_up.h"
 #include "lib/fxl/arraysize.h"
 #include "lib/fxl/build_config.h"
+#include "lib/fxl/files/path.h"
 #include "lib/fxl/logging.h"
 #include "lib/fxl/time/time_delta.h"
 #include "lib/tonic/converter/dart_converter.h"
@@ -86,12 +104,25 @@ static const char* kDartWriteProtectCodeArgs[] FXL_ALLOW_UNUSED_TYPE = {
     "--no_write_protect_code",
 };
 
-static const char* kDartCheckedModeArgs[] = {
+static const char* kDartAssertArgs[] = {
     // clang-format off
     "--enable_asserts",
+    // clang-format on
+};
+
+static const char* kDartCheckedModeArgs[] = {
+    // clang-format off
     "--enable_type_checks",
     "--error_on_bad_type",
     "--error_on_bad_override",
+    // clang-format on
+};
+
+static const char* kDartStrongModeArgs[] = {
+    // clang-format off
+    "--strong",
+    "--reify_generic_functions",
+    "--limit_ints_to_64_bits",
     // clang-format on
 };
 
@@ -138,10 +169,22 @@ void IsolateShutdownCallback(void* callback_data) {
     Dart_Handle sticky_error = Dart_GetStickyError();
     FXL_CHECK(LogIfError(sticky_error));
   }
+
   UIDartState* dart_state = static_cast<UIDartState*>(callback_data);
-  if ((dart_state != NULL) && !dart_state->is_controller_state()) {
-    delete dart_state;
+  // If the isolate that's shutting down is the main one, tell the higher layers
+  // of the stack.
+  if ((dart_state != NULL) && dart_state->is_controller_state()) {
+    dart_state->set_shutting_down(true);
+    if (dart_state->isolate_client()) {
+      dart_state->isolate_client()->DidShutdownMainIsolate();
+    }
   }
+}
+
+// The cleanup callback frees the DartState object.
+void IsolateCleanupCallback(void* callback_data) {
+  UIDartState* dart_state = static_cast<UIDartState*>(callback_data);
+  delete dart_state;
 }
 
 bool DartFileModifiedCallback(const char* source_url, int64_t since_ms) {
@@ -194,6 +237,7 @@ static void ReleaseFetchedBytes(uint8_t* buffer) {
 }
 
 Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
+                                          Dart_IsolateFlags* flags,
                                           char** error) {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE
   // No VM-service in release mode.
@@ -203,14 +247,15 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
 
   bool is_running_from_kernel = GetKernelPlatformBinary() != nullptr;
 
+  flags->load_vmservice_library = true;
   Dart_Isolate isolate =
       is_running_from_kernel
           ? Dart_CreateIsolateFromKernel(
-                script_uri, "main", kernel_platform, nullptr /* flags */,
+                script_uri, "main", kernel_platform, flags,
                 static_cast<tonic::DartState*>(dart_state), error)
           : Dart_CreateIsolate(
                 script_uri, "main", g_default_isolate_snapshot_data,
-                g_default_isolate_snapshot_instructions, nullptr,
+                g_default_isolate_snapshot_instructions, flags,
                 static_cast<tonic::DartState*>(dart_state), error);
 
   FXL_CHECK(isolate) << error;
@@ -251,6 +296,16 @@ Dart_Isolate ServiceIsolateCreateCallback(const char* script_uri,
 #endif  // FLUTTER_RUNTIME_MODE
 }
 
+static bool GetAssetAsBuffer(
+    const std::string& name,
+    std::vector<uint8_t>* data,
+    fxl::RefPtr<DirectoryAssetBundle>& directory_asset_bundle,
+    fxl::RefPtr<ZipAssetStore>& asset_store) {
+  return (directory_asset_bundle &&
+          directory_asset_bundle->GetAsBuffer(name, data)) ||
+         (asset_store && asset_store->GetAsBuffer(name, data));
+}
+
 Dart_Isolate IsolateCreateCallback(const char* script_uri,
                                    const char* main,
                                    const char* package_root,
@@ -261,7 +316,7 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
   TRACE_EVENT0("flutter", __func__);
 
   if (IsServiceIsolateURL(script_uri)) {
-    return ServiceIsolateCreateCallback(script_uri, error);
+    return ServiceIsolateCreateCallback(script_uri, flags, error);
   }
 
   std::string entry_uri = script_uri;
@@ -282,11 +337,30 @@ Dart_Isolate IsolateCreateCallback(const char* script_uri,
     if (!running_from_source) {
       // Attempt to copy the snapshot from the asset bundle.
       const std::string& bundle_path = entry_path;
-      fxl::RefPtr<ZipAssetStore> zip_asset_store =
-          fxl::MakeRefCounted<ZipAssetStore>(
-              GetUnzipperProviderForPath(std::move(bundle_path)));
-      zip_asset_store->GetAsBuffer(kKernelAssetKey, &kernel_data);
-      zip_asset_store->GetAsBuffer(kSnapshotAssetKey, &snapshot_data);
+
+      struct stat stat_result = {};
+      if (::stat(bundle_path.c_str(), &stat_result) == 0) {
+        fxl::RefPtr<DirectoryAssetBundle> directory_asset_bundle;
+        // TODO(zarah): Remove usage of zip_asset_store once app.flx is removed.
+        fxl::RefPtr<ZipAssetStore> zip_asset_store;
+        // bundle_path is either the path to app.flx or the flutter assets
+        // directory.
+        std::string flx_path = bundle_path;
+        if (S_ISDIR(stat_result.st_mode)) {
+          directory_asset_bundle =
+              fxl::MakeRefCounted<DirectoryAssetBundle>(bundle_path);
+          flx_path = files::GetDirectoryName(bundle_path) + "/app.flx";
+        }
+
+        if (access(flx_path.c_str(), R_OK) == 0) {
+          zip_asset_store = fxl::MakeRefCounted<ZipAssetStore>(
+              GetUnzipperProviderForPath(flx_path));
+        }
+        GetAssetAsBuffer(kKernelAssetKey, &kernel_data, directory_asset_bundle,
+                         zip_asset_store);
+        GetAssetAsBuffer(kSnapshotAssetKey, &snapshot_data,
+                         directory_asset_bundle, zip_asset_store);
+      }
     }
   }
 
@@ -525,9 +599,6 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
               arraysize(kDartWriteProtectCodeArgs));
 #endif
 
-  if (use_checked_mode)
-    PushBackAll(&args, kDartCheckedModeArgs, arraysize(kDartCheckedModeArgs));
-
   if (settings.start_paused)
     PushBackAll(&args, kDartStartPausedArgs, arraysize(kDartStartPausedArgs));
 
@@ -547,14 +618,34 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
 #endif
 
   if (!bundle_path.empty()) {
-    auto zip_asset_store = fxl::MakeRefCounted<ZipAssetStore>(
-        GetUnzipperProviderForPath(std::move(bundle_path)));
-    zip_asset_store->GetAsBuffer(kPlatformKernelAssetKey, &platform_data);
+    fxl::RefPtr<blink::DirectoryAssetBundle> directory_asset_bundle =
+        fxl::MakeRefCounted<blink::DirectoryAssetBundle>(
+            std::move(bundle_path));
+    directory_asset_bundle->GetAsBuffer(kPlatformKernelAssetKey,
+                                        &platform_data);
     if (!platform_data.empty()) {
       kernel_platform = Dart_ReadKernelBinary(
           platform_data.data(), platform_data.size(), ReleaseFetchedBytes);
       FXL_DCHECK(kernel_platform != nullptr);
     }
+  }
+  if ((kernel_platform != nullptr) ||
+      Dart_IsDart2Snapshot(g_default_isolate_snapshot_data)) {
+    // The presence of the kernel platform file or a snapshot that was generated
+    // for Dart2 indicates we are running in preview-dart-2 mode and in this
+    // mode enable strong mode options by default.
+    // Note: When we start using core snapshots instead of the platform file
+    // in the engine just sniffing the snapshot file should be sufficient.
+    PushBackAll(&args, kDartStrongModeArgs, arraysize(kDartStrongModeArgs));
+    // In addition if we are running in debug mode we also enable asserts.
+    if (use_checked_mode) {
+      PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
+    }
+  } else if (use_checked_mode) {
+    // In non preview-dart-2 mode we enable checked mode and asserts if
+    // we are running in debug mode.
+    PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));
+    PushBackAll(&args, kDartCheckedModeArgs, arraysize(kDartCheckedModeArgs));
   }
 
   for (size_t i = 0; i < settings.dart_flags.size(); i++)
@@ -579,6 +670,7 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
     params.vm_snapshot_instructions = vm_snapshot_instructions;
     params.create = IsolateCreateCallback;
     params.shutdown = IsolateShutdownCallback;
+    params.cleanup = IsolateCleanupCallback;
     params.thread_exit = ThreadExitCallback;
     params.get_service_assets = GetVMServiceAssetsArchiveCallback;
     params.entropy_source = DartIO::EntropySource;

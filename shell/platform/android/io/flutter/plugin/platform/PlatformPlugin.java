@@ -144,7 +144,7 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
             case 0x0e: // portraitDown, landscapeLeft, and landscapeRight
                 // Android can't describe these cases, so just default to whatever the first
                 // specified value was.
-                switch (requestedOrientation) {
+                switch (firstRequestedOrientation) {
                     case 0x01:
                         mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
                         break;
@@ -227,10 +227,9 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
         if (clip == null)
             return null;
 
-        if ((format == null || format.equals(kTextPlainFormat)) &&
-            clip.getDescription().hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN)) {
+        if (format == null || format.equals(kTextPlainFormat)) {
             JSONObject result = new JSONObject();
-            result.put("text", clip.getItemAt(0).getText().toString());
+            result.put("text", clip.getItemAt(0).coerceToText(mActivity));
             return result;
         }
 

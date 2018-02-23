@@ -8,6 +8,7 @@
 
 #include <type_traits>
 #include "flutter/common/threads.h"
+#include "flutter/fml/message_loop.h"
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
 #include "lib/fxl/functional/make_copyable.h"
 
@@ -53,6 +54,10 @@ class PlatformViewHolder {
   std::shared_ptr<shell::PlatformViewEmbedder> platform_view_;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(PlatformViewHolder);
+};
+
+struct _FlutterPlatformMessageResponseHandle {
+  fxl::RefPtr<blink::PlatformMessage> message;
 };
 
 FlutterResult FlutterEngineRun(size_t version,
@@ -101,6 +106,34 @@ FlutterResult FlutterEngineRun(size_t version,
     return ptr(user_data);
   };
 
+  shell::PlatformViewEmbedder::PlatformMessageResponseCallback
+      platform_message_response_callback = nullptr;
+  if (SAFE_ACCESS(args, platform_message_callback, nullptr) != nullptr) {
+    platform_message_response_callback =
+        [ ptr = args->platform_message_callback,
+          user_data ](fxl::RefPtr<blink::PlatformMessage> message) {
+      auto handle = new FlutterPlatformMessageResponseHandle();
+      const FlutterPlatformMessage incoming_message = {
+          .struct_size = sizeof(FlutterPlatformMessage),
+          .channel = message->channel().c_str(),
+          .message = message->data().data(),
+          .message_size = message->data().size(),
+          .response_handle = handle,
+      };
+      handle->message = std::move(message);
+      return ptr(&incoming_message, user_data);
+    };
+  }
+
+  const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
+  std::function<bool()> make_resource_current_callback = nullptr;
+  if (SAFE_ACCESS(open_gl_config, make_resource_current, nullptr) != nullptr) {
+    make_resource_current_callback =
+        [ ptr = config->open_gl.make_resource_current, user_data ]() {
+      return ptr(user_data);
+    };
+  }
+
   std::string icu_data_path;
   if (SAFE_ACCESS(args, icu_data_path, nullptr) != nullptr) {
     icu_data_path = SAFE_ACCESS(args, icu_data_path, nullptr);
@@ -128,7 +161,10 @@ FlutterResult FlutterEngineRun(size_t version,
       .gl_make_current_callback = make_current,
       .gl_clear_current_callback = clear_current,
       .gl_present_callback = present,
-      .gl_fbo_callback = fbo_callback};
+      .gl_fbo_callback = fbo_callback,
+      .platform_message_response_callback = platform_message_response_callback,
+      .gl_make_resource_current_callback = make_resource_current_callback,
+  };
 
   auto platform_view = std::make_shared<shell::PlatformViewEmbedder>(table);
   platform_view->Attach();
@@ -272,5 +308,32 @@ FlutterResult FlutterEngineSendPlatformMessage(
           engine->DispatchPlatformMessage(message);
         }
       });
+  return kSuccess;
+}
+
+FlutterResult FlutterEngineSendPlatformMessageResponse(
+    FlutterEngine engine,
+    const FlutterPlatformMessageResponseHandle* handle,
+    const uint8_t* data,
+    size_t data_length) {
+  if (data_length != 0 && data == nullptr) {
+    return kInvalidArguments;
+  }
+
+  auto response = handle->message->response();
+
+  if (data_length == 0) {
+    response->CompleteEmpty();
+  } else {
+    response->Complete({data, data + data_length});
+  }
+
+  delete handle;
+
+  return kSuccess;
+}
+
+FlutterResult __FlutterEngineFlushPendingTasksNow() {
+  fml::MessageLoop::GetCurrent().RunExpiredTasksNow();
   return kSuccess;
 }

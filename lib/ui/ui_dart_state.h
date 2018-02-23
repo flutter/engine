@@ -20,6 +20,7 @@ class Window;
 class IsolateClient {
  public:
   virtual void DidCreateSecondaryIsolate(Dart_Isolate isolate) = 0;
+  virtual void DidShutdownMainIsolate() = 0;
 
  protected:
   virtual ~IsolateClient();
@@ -27,7 +28,9 @@ class IsolateClient {
 
 class UIDartState : public tonic::DartState {
  public:
-  UIDartState(IsolateClient* isolate_client, std::unique_ptr<Window> window);
+  UIDartState(IsolateClient* isolate_client,
+              std::unique_ptr<Window> window,
+              int dirfd = -1);
   ~UIDartState() override;
 
   static UIDartState* Current();
@@ -47,6 +50,8 @@ class UIDartState : public tonic::DartState {
   PassRefPtr<FontSelector> font_selector();
   bool is_controller_state() const { return is_controller_state_; }
   void set_is_controller_state(bool value) { is_controller_state_ = value; }
+  bool shutting_down() const { return shutting_down_; }
+  void set_shutting_down(bool value) { shutting_down_ = value; }
 
  private:
   void DidSetIsolate() override;
@@ -58,6 +63,7 @@ class UIDartState : public tonic::DartState {
   std::unique_ptr<Window> window_;
   RefPtr<FontSelector> font_selector_;
   bool is_controller_state_;
+  bool shutting_down_ = false;
 };
 
 }  // namespace blink

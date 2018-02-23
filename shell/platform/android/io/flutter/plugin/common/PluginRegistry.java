@@ -5,7 +5,9 @@
 package io.flutter.plugin.common;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterView;
 import io.flutter.view.TextureRegistry;
 
@@ -66,8 +68,24 @@ public interface PluginRegistry {
          * {@link io.flutter.app.FlutterActivity} or
          * {@link io.flutter.app.FlutterFragmentActivity}), as applications
          * are free to use any activity subclass.</p>
+         *
+         * <p>When there is no foreground activity in the application, this
+         * will return null. If a {@link Context} is needed, use context() to
+         * get the application's context.</p>
          */
         Activity activity();
+
+        /**
+         * Returns the {@link android.app.Application}'s {@link Context}.
+         */
+        Context context();
+
+        /**
+        * Returns the active {@link Context}.
+        *
+        * @return the current {@link #activity() Activity}, if not null, otherwise the {@link #context() Application}.
+        */
+        Context activeContext();
 
         /**
          * Returns a {@link BinaryMessenger} which the plugin can use for
@@ -106,12 +124,27 @@ public interface PluginRegistry {
 
         /**
          * Adds a callback allowing the plugin to take part in handling incoming
-         * calls to {@link Activity#onRequestPermissionsResult(int, String[], int[])}
-         * or {android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
+         * calls to {@code Activity#onRequestPermissionsResult(int, String[], int[])}
+         * or {@code android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
+         *
+         * @param listener a {@link RequestPermissionsResultListener} callback.
+         * @return this {@link Registrar}.
+         */
+        Registrar addRequestPermissionsResultListener(RequestPermissionsResultListener listener);
+
+        /**
+         * Adds a callback allowing the plugin to take part in handling incoming
+         * calls to {@code Activity#onRequestPermissionsResult(int, String[], int[])}
+         * or {@code android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
          *
          * @param listener a {@link RequestPermissionResultListener} callback.
          * @return this {@link Registrar}.
+
+         * @deprecated on 2018-01-02 because of misspelling. This method will be made unavailable
+         * on 2018-02-06 (or at least four weeks after the deprecation is released). Use
+         * {@link #addRequestPermissionsResultListener(RequestPermissionsResultListener)} instead.
          */
+        @Deprecated
         Registrar addRequestPermissionResultListener(RequestPermissionResultListener listener);
 
         /**
@@ -140,16 +173,44 @@ public interface PluginRegistry {
          * @return this {@link Registrar}.
          */
         Registrar addUserLeaveHintListener(UserLeaveHintListener listener);
+
+        /**
+         * Adds a callback allowing the plugin to take part in handling incoming
+         * calls to {@link Activity#onDestroy()}.
+         *
+         * @param listener a {@link ViewDestroyListener} callback.
+         * @return this {@link Registrar}.
+         */
+        Registrar addViewDestroyListener(ViewDestroyListener listener);
     }
 
     /**
-     * Delegate interface for handling results of permission requests on
+     * Delegate interface for handling result of permissions requests on
      * behalf of the main {@link Activity}.
+     */
+    interface RequestPermissionsResultListener {
+        /**
+         * @return true if the result has been handled.
+         */
+        boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults);
+    }
+
+    /**
+     * Delegate interface for handling result of permissions requests on
+     * behalf of the main {@link Activity}.
+     *
+     * Deprecated on 2018-01-02 because of misspelling. This interface will be made
+     * unavailable on 2018-02-06 (or at least four weeks after the deprecation is released).
+     * Use {@link RequestPermissionsResultListener} instead.
      */
     interface RequestPermissionResultListener {
         /**
          * @return true if the result has been handled.
+         * @deprecated on 2018-01-02 because of misspelling. This method will be made
+         * unavailable on 2018-02-06 (or at least four weeks after the deprecation is released).
+         * Use {@link RequestPermissionsResultListener} instead.
          */
+        @Deprecated
         boolean onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults);
     }
 
@@ -181,5 +242,25 @@ public interface PluginRegistry {
      */
     interface UserLeaveHintListener {
         void onUserLeaveHint();
+    }
+
+    /**
+     * Delegate interface for handling an {@link Activity}'s onDestroy
+     * method being called. A plugin that implements this interface can
+     * adopt the FlutterNativeView by retaining a reference and returning true.
+     */
+    interface ViewDestroyListener {
+        boolean onViewDestroy(FlutterNativeView view);
+    }
+
+    /**
+     * Callback interface for registering plugins with a plugin registry.
+     *
+     * <p>For example, an Application may use this callback interface to
+     * provide a background service with a callback for calling its
+     * GeneratedPluginRegistrant.registerWith method.</p>
+     */
+    interface PluginRegistrantCallback {
+        void registerWith(PluginRegistry registry);
     }
 }

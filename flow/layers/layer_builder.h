@@ -47,7 +47,7 @@ class LayerBuilder {
                               const SkRect& rect,
                               SkBlendMode blend_mode) = 0;
 
-  virtual void PushPhysicalModel(const SkRRect& rect,
+  virtual void PushPhysicalShape(const SkPath& path,
                                  double elevation,
                                  SkColor color,
                                  SkScalar device_pixel_ratio) = 0;

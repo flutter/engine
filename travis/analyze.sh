@@ -1,4 +1,26 @@
+#!/bin/bash
+echo "Analyzing dart:ui library..."
+RESULTS=`dartanalyzer                                                          \
+  --options flutter/analysis_options.yaml                                      \
+  out/host_debug_unopt/gen/sky/bindings/dart_ui/ui.dart                        \
+  2>&1                                                                         \
+  | grep -v "Native functions can only be declared in the SDK and code that is loaded through native extensions" \
+  | grep -Ev "The function '.+' (is not|isn't) used"                           \
+  | grep -Ev "The top level variable '.+' isn't used"                          \
+  | grep -Ev "Undefined name 'main'"                                           \
+  | grep -v "The library 'dart:_internal' is internal"                         \
+  | grep -Ev "Unused import.+ui\.dart"                                         \
+  | grep -Ev "[0-9]+ errors.*found\."                                          \
+  | grep -Ev "Analyzing.+out/host_debug_unopt/gen/sky/bindings/dart_ui/ui\.dart"`
+
+echo "$RESULTS"
+if [ -n "$RESULTS" ]; then
+  echo "Failed."
+  exit 1;
+fi
+
 echo "Analyzing frontend_server..."
+pushd flutter/frontend_server/; pub get; popd
 RESULTS=`dartanalyzer                                                          \
   --packages=flutter/frontend_server/.packages                                 \
   --options flutter/analysis_options.yaml                                      \
@@ -12,32 +34,15 @@ if [ -n "$RESULTS" ]; then
   exit 1;
 fi
 
-echo "Analyzing dart:ui library..."
+echo "Analyzing flutter_kernel_transformers..."
+pushd flutter/flutter_kernel_transformers/; pub get; popd
 RESULTS=`dartanalyzer                                                          \
-  --supermixin                                                                 \
-  --enable-assert-initializers                                                 \
-  --initializing-formal-access                                                 \
-  --enable-strict-call-checks                                                  \
-  --enable_type_checks                                                         \
-  --strong                                                                     \
-  --no-implicit-dynamic                                                        \
-  --package-warnings                                                           \
-  --fatal-warnings                                                             \
-  --fatal-hints                                                                \
-  --lints                                                                      \
-  --fatal-lints                                                                \
-  out/host_debug_unopt/gen/sky/bindings/dart_ui/ui.dart                        \
+  --packages=flutter/flutter_kernel_transformers/.packages                     \
+  --options flutter/analysis_options.yaml                                      \
+  flutter/flutter_kernel_transformers                                          \
   2>&1                                                                         \
-  | grep -v "Native functions can only be declared in the SDK and code that is loaded through native extensions" \
-  | grep -Ev "The function '.+' (is not|isn't) used"                           \
-  | grep -Ev "Undefined name 'main'"                                           \
-  | grep -Ev "Undefined name 'VMLibraryHooks"                                  \
-  | grep -v "The library ''dart:_internal'' is internal"                       \
-  | grep -Ev "Unused import.+ui\.dart"                                         \
-  | grep -v "TODO"                                                             \
-  | grep -Ev "[0-9]+ errors.*found\."                                          \
-  | grep -Ev "Analyzing.+out/host_debug_unopt/gen/sky/bindings/dart_ui/ui\.dart"`
-
+  | grep -Ev "No issues found!"                                                \
+  | grep -Ev "Analyzing.+flutter_kernel_transformers"`
 echo "$RESULTS"
 if [ -n "$RESULTS" ]; then
   echo "Failed."

@@ -18,6 +18,7 @@ namespace shell {
 
 PlatformView::PlatformView(std::unique_ptr<Rasterizer> rasterizer)
     : rasterizer_(std::move(rasterizer)), size_(SkISize::Make(0, 0)) {
+  rasterizer_->SetTextureRegistry(&texture_registry_);
   Shell::Shared().AddPlatformView(this);
 }
 
@@ -35,6 +36,7 @@ void PlatformView::SetRasterizer(std::unique_ptr<Rasterizer> rasterizer) {
   Rasterizer* r = rasterizer_.release();
   blink::Threads::Gpu()->PostTask([r]() { delete r; });
   rasterizer_ = std::move(rasterizer);
+  rasterizer_->SetTextureRegistry(&texture_registry_);
   engine_->set_rasterizer(rasterizer_->GetWeakRasterizerPtr());
 }
 
@@ -45,7 +47,7 @@ void PlatformView::CreateEngine() {
 void PlatformView::DispatchPlatformMessage(
     fxl::RefPtr<blink::PlatformMessage> message) {
   blink::Threads::UI()->PostTask(
-      [ engine = engine_->GetWeakPtr(), message = std::move(message) ] {
+      [engine = engine_->GetWeakPtr(), message = std::move(message)] {
         if (engine) {
           engine->DispatchPlatformMessage(message);
         }
@@ -53,18 +55,19 @@ void PlatformView::DispatchPlatformMessage(
 }
 
 void PlatformView::DispatchSemanticsAction(int32_t id,
-                                           blink::SemanticsAction action) {
+                                           blink::SemanticsAction action,
+                                           std::vector<uint8_t> args) {
   blink::Threads::UI()->PostTask(
-      [ engine = engine_->GetWeakPtr(), id, action ] {
+      [engine = engine_->GetWeakPtr(), id, action, args = std::move(args)] {
         if (engine) {
           engine->DispatchSemanticsAction(
-              id, static_cast<blink::SemanticsAction>(action));
+              id, static_cast<blink::SemanticsAction>(action), std::move(args));
         }
       });
 }
 
 void PlatformView::SetSemanticsEnabled(bool enabled) {
-  blink::Threads::UI()->PostTask([ engine = engine_->GetWeakPtr(), enabled ] {
+  blink::Threads::UI()->PostTask([engine = engine_->GetWeakPtr(), enabled] {
     if (engine)
       engine->SetSemanticsEnabled(enabled);
   });
@@ -78,18 +81,14 @@ void PlatformView::NotifyCreated(std::unique_ptr<Surface> surface,
                                  fxl::Closure caller_continuation) {
   fxl::AutoResetWaitableEvent latch;
 
-  auto ui_continuation = fxl::MakeCopyable([
-    this,                          //
-    surface = std::move(surface),  //
-    caller_continuation,           //
-    &latch
-  ]() mutable {
-    auto gpu_continuation = fxl::MakeCopyable([
-      this,                          //
-      surface = std::move(surface),  //
-      caller_continuation,           //
-      &latch
-    ]() mutable {
+  auto ui_continuation = fxl::MakeCopyable([this,                          //
+                                            surface = std::move(surface),  //
+                                            caller_continuation,           //
+                                            &latch]() mutable {
+    auto gpu_continuation = fxl::MakeCopyable([this,                          //
+                                               surface = std::move(surface),  //
+                                               caller_continuation,           //
+                                               &latch]() mutable {
       // Runs on the GPU Thread. So does the Caller Continuation.
       rasterizer_->Setup(std::move(surface), caller_continuation, &latch);
     });
@@ -127,7 +126,7 @@ VsyncWaiter* PlatformView::GetVsyncWaiter() {
   return vsync_waiter_.get();
 }
 
-void PlatformView::UpdateSemantics(std::vector<blink::SemanticsNode> update) {}
+void PlatformView::UpdateSemantics(blink::SemanticsNodeUpdates update) {}
 
 void PlatformView::HandlePlatformMessage(
     fxl::RefPtr<blink::PlatformMessage> message) {
@@ -165,7 +164,9 @@ void PlatformView::SetupResourceContextOnIOThread() {
 
 void PlatformView::SetupResourceContextOnIOThreadPerform(
     fxl::AutoResetWaitableEvent* latch) {
-  if (blink::ResourceContext::Get() != nullptr) {
+  std::unique_ptr<blink::ResourceContext> resourceContext =
+      blink::ResourceContext::Acquire();
+  if (resourceContext->Get() != nullptr) {
     // The resource context was already setup. This could happen if platforms
     // try to setup a context multiple times, or, if there are multiple platform
     // views. In any case, there is nothing else to do. So just signal the
@@ -189,17 +190,14 @@ void PlatformView::SetupResourceContextOnIOThreadPerform(
   // other threads correctly, so the textures end up blank.  For now, suppress
   // that feature, which will cause texture uploads to do CPU YUV conversion.
   options.fDisableGpuYUVConversion = true;
-  options.fRequireDecodeDisableForSRGB = false;
 
-  blink::ResourceContext::Set(GrContext::Create(
-      GrBackend::kOpenGL_GrBackend,
-      reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface()),
-      options));
+  blink::ResourceContext::Set(
+      GrContext::MakeGL(GrGLMakeNativeInterface(), options));
 
   // Do not cache textures created by the image decoder.  These textures should
   // be deleted when they are no longer referenced by an SkImage.
-  if (blink::ResourceContext::Get())
-    blink::ResourceContext::Get()->setResourceCacheLimits(0, 0);
+  if (resourceContext->Get())
+    resourceContext->Get()->setResourceCacheLimits(0, 0);
 
   latch->Signal();
 }

@@ -11,6 +11,7 @@
 #include <unordered_set>
 
 #include "dart-pkg/fuchsia/sdk_ext/fuchsia.h"
+#include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/assets/unzipper_provider.h"
 #include "flutter/assets/zip_asset_store.h"
 #include "flutter/content_handler/accessibility_bridge.h"
@@ -21,6 +22,7 @@
 #include "lib/app/cpp/application_context.h"
 #include "lib/app/fidl/application_environment.fidl.h"
 #include "lib/app/fidl/service_provider.fidl.h"
+#include "lib/clipboard/fidl/clipboard.fidl.h"
 #include "lib/fidl/cpp/bindings/binding.h"
 #include "lib/fxl/functional/closure.h"
 #include "lib/fxl/macros.h"
@@ -56,15 +58,18 @@ class RuntimeHolder : public blink::RuntimeDelegate,
 
   int32_t return_code() { return return_code_; }
 
+  void SetMainIsolateShutdownCallback(std::function<void()> callback);
+
  private:
   // |blink::RuntimeDelegate| implementation:
   std::string DefaultRouteName() override;
   void ScheduleFrame(bool regenerate_layer_tree = true) override;
   void Render(std::unique_ptr<flow::LayerTree> layer_tree) override;
-  void UpdateSemantics(std::vector<blink::SemanticsNode> update) override;
+  void UpdateSemantics(blink::SemanticsNodeUpdates update) override;
   void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message) override;
   void DidCreateMainIsolate(Dart_Isolate isolate) override;
+  void DidShutdownMainIsolate() override;
 
   // |mozart::NativesDelegate| implementation:
   mozart::View* GetMozartView() override;
@@ -88,10 +93,13 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   void InitRootBundle(std::vector<char> bundle);
   blink::UnzipperProvider GetUnzipperProviderForRootBundle();
   bool HandleAssetPlatformMessage(blink::PlatformMessage* message);
+  bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
   bool HandleTextInputPlatformMessage(blink::PlatformMessage* message);
+  bool HandleFlutterPlatformMessage(blink::PlatformMessage* message);
 
   void InitDartIoInternal();
   void InitFuchsia();
+  void InitZircon();
   void InitMozartInternal();
 
   void PostBeginFrame();
@@ -101,10 +109,13 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   void Invalidate();
 
   fdio_ns_t* namespc_;
+  int dirfd_;
   std::unique_ptr<app::ApplicationContext> context_;
   fidl::InterfaceRequest<app::ServiceProvider> outgoing_services_;
   std::vector<char> root_bundle_data_;
+  // TODO(zarah): Remove asset_store_ when flx is completely removed
   fxl::RefPtr<blink::ZipAssetStore> asset_store_;
+  fxl::RefPtr<blink::DirectoryAssetBundle> directory_asset_bundle_;
   void* dylib_handle_ = nullptr;
   std::unique_ptr<Rasterizer> rasterizer_;
   std::unique_ptr<blink::RuntimeController> runtime_;
@@ -127,6 +138,10 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   fxl::WeakPtrFactory<RuntimeHolder> weak_factory_;
 
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
+
+  std::function<void()> main_isolate_shutdown_callback_;
+
+  modular::ClipboardPtr clipboard_;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(RuntimeHolder);
 };

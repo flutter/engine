@@ -31,24 +31,49 @@ intptr_t PlatformViewEmbedder::GLContextFBO() const {
   return dispatch_table_.gl_fbo_callback();
 }
 
-bool PlatformViewEmbedder::SurfaceSupportsSRGB() const {
-  return true;
-}
-
 void PlatformViewEmbedder::Attach() {
   CreateEngine();
   NotifyCreated(std::make_unique<shell::GPUSurfaceGL>(this));
+
+  if (dispatch_table_.gl_make_resource_current_callback != nullptr) {
+    SetupResourceContextOnIOThread();
+  }
 }
 
 bool PlatformViewEmbedder::ResourceContextMakeCurrent() {
-  // Unsupported.
-  return false;
+  if (dispatch_table_.gl_make_resource_current_callback == nullptr) {
+    return false;
+  }
+  return dispatch_table_.gl_make_resource_current_callback();
 }
 
 void PlatformViewEmbedder::RunFromSource(const std::string& assets_directory,
                                          const std::string& main,
                                          const std::string& packages) {
   FXL_LOG(INFO) << "Hot reloading is unsupported on this platform.";
+}
+
+void PlatformViewEmbedder::SetAssetBundlePath(
+    const std::string& assets_directory) {
+  FXL_LOG(INFO) << "Set asset bundle path is unsupported on this platform.";
+}
+
+void PlatformViewEmbedder::HandlePlatformMessage(
+    fxl::RefPtr<blink::PlatformMessage> message) {
+  if (!message) {
+    return;
+  }
+
+  if (!message->response()) {
+    return;
+  }
+
+  if (dispatch_table_.platform_message_response_callback == nullptr) {
+    message->response()->CompleteEmpty();
+    return;
+  }
+
+  dispatch_table_.platform_message_response_callback(std::move(message));
 }
 
 }  // namespace shell

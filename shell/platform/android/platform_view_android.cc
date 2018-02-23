@@ -237,13 +237,25 @@ void PlatformViewAndroid::RunBundleAndSource(std::string bundle_path,
   });
 }
 
+void PlatformViewAndroid::SetAssetBundlePathOnUI(std::string bundle_path) {
+  blink::Threads::UI()->PostTask(
+      [ engine = engine_->GetWeakPtr(), bundle_path = std::move(bundle_path) ] {
+        if (engine)
+          engine->SetAssetBundlePath(std::move(bundle_path));
+      });
+}
+
 void PlatformViewAndroid::SetViewportMetrics(jfloat device_pixel_ratio,
                                              jint physical_width,
                                              jint physical_height,
                                              jint physical_padding_top,
                                              jint physical_padding_right,
                                              jint physical_padding_bottom,
-                                             jint physical_padding_left) {
+                                             jint physical_padding_left,
+                                             jint physical_view_inset_top,
+                                             jint physical_view_inset_right,
+                                             jint physical_view_inset_bottom,
+                                             jint physical_view_inset_left) {
   blink::ViewportMetrics metrics;
   metrics.device_pixel_ratio = device_pixel_ratio;
   metrics.physical_width = physical_width;
@@ -252,6 +264,10 @@ void PlatformViewAndroid::SetViewportMetrics(jfloat device_pixel_ratio,
   metrics.physical_padding_right = physical_padding_right;
   metrics.physical_padding_bottom = physical_padding_bottom;
   metrics.physical_padding_left = physical_padding_left;
+  metrics.physical_view_inset_top = physical_view_inset_top;
+  metrics.physical_view_inset_right = physical_view_inset_right;
+  metrics.physical_view_inset_bottom = physical_view_inset_bottom;
+  metrics.physical_view_inset_left = physical_view_inset_left;
 
   blink::Threads::UI()->PostTask([ engine = engine_->GetWeakPtr(), metrics ] {
     if (engine)
@@ -402,9 +418,24 @@ void PlatformViewAndroid::HandlePlatformMessageEmptyResponse(int response_id) {
                                            nullptr);
 }
 
-void PlatformViewAndroid::DispatchSemanticsAction(jint id, jint action) {
+void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env,
+                                                  jint id,
+                                                  jint action,
+                                                  jobject args,
+                                                  jint args_position) {
+  if (env->IsSameObject(args, NULL)) {
+    std::vector<uint8_t> args_vector;
+    PlatformView::DispatchSemanticsAction(
+        id, static_cast<blink::SemanticsAction>(action), args_vector);
+    return;
+  }
+
+  uint8_t* args_data = static_cast<uint8_t*>(env->GetDirectBufferAddress(args));
+  std::vector<uint8_t> args_vector =
+      std::vector<uint8_t>(args_data, args_data + args_position);
+
   PlatformView::DispatchSemanticsAction(
-      id, static_cast<blink::SemanticsAction>(action));
+      id, static_cast<blink::SemanticsAction>(action), std::move(args_vector));
 }
 
 void PlatformViewAndroid::SetSemanticsEnabled(jboolean enabled) {
@@ -429,8 +460,8 @@ bool PlatformViewAndroid::ResourceContextMakeCurrent() {
 }
 
 void PlatformViewAndroid::UpdateSemantics(
-    std::vector<blink::SemanticsNode> update) {
-  constexpr size_t kBytesPerNode = 30 * sizeof(int32_t);
+    blink::SemanticsNodeUpdates update) {
+  constexpr size_t kBytesPerNode = 36 * sizeof(int32_t);
   constexpr size_t kBytesPerChild = sizeof(int32_t);
 
   JNIEnv* env = fml::jni::AttachCurrentThread();
@@ -440,9 +471,9 @@ void PlatformViewAndroid::UpdateSemantics(
       return;
 
     size_t num_bytes = 0;
-    for (const blink::SemanticsNode& node : update) {
+    for (const auto& value : update) {
       num_bytes += kBytesPerNode;
-      num_bytes += node.children.size() * kBytesPerChild;
+      num_bytes += value.second.children.size() * kBytesPerChild;
     }
 
     std::vector<uint8_t> buffer(num_bytes);
@@ -451,12 +482,19 @@ void PlatformViewAndroid::UpdateSemantics(
 
     std::vector<std::string> strings;
     size_t position = 0;
-    for (const blink::SemanticsNode& node : update) {
+    for (const auto& value : update) {
       // If you edit this code, make sure you update kBytesPerNode
-      // above to match the number of values you are sending.
+      // and/or kBytesPerChild above to match the number of values you are
+      // sending.
+      const blink::SemanticsNode& node = value.second;
       buffer_int32[position++] = node.id;
       buffer_int32[position++] = node.flags;
       buffer_int32[position++] = node.actions;
+      buffer_int32[position++] = node.textSelectionBase;
+      buffer_int32[position++] = node.textSelectionExtent;
+      buffer_float32[position++] = (float)node.scrollPosition;
+      buffer_float32[position++] = (float)node.scrollExtentMax;
+      buffer_float32[position++] = (float)node.scrollExtentMin;
       if (node.label.empty()) {
         buffer_int32[position++] = -1;
       } else {
@@ -488,6 +526,7 @@ void PlatformViewAndroid::UpdateSemantics(
         strings.push_back(node.hint);
       }
       buffer_int32[position++] = node.textDirection;
+      buffer_int32[position++] = node.previousNodeId;
       buffer_float32[position++] = node.rect.left();
       buffer_float32[position++] = node.rect.top();
       buffer_float32[position++] = node.rect.right();
@@ -541,6 +580,40 @@ void PlatformViewAndroid::RunFromSource(const std::string& assets_directory,
     FXL_CHECK(java_packages);
     env->CallVoidMethod(local_flutter_view.obj(), run_from_source_method_id,
                         java_assets_directory, java_main, java_packages);
+  }
+
+  // Detaching from the VM deletes any stray local references.
+  fml::jni::DetachFromVM();
+}
+
+void PlatformViewAndroid::SetAssetBundlePath(
+    const std::string& assets_directory) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  FXL_CHECK(env);
+
+  {
+    fml::jni::ScopedJavaLocalRef<jobject> local_flutter_view =
+        flutter_view_.get(env);
+    if (local_flutter_view.is_null()) {
+      // Collected.
+      return;
+    }
+
+    // Grab the class of the flutter view.
+    jclass flutter_view_class = env->GetObjectClass(local_flutter_view.obj());
+    FXL_CHECK(flutter_view_class);
+
+    // Grab the setAssetBundlePath method id.
+    jmethodID method_id = env->GetMethodID(
+        flutter_view_class, "setAssetBundlePathOnUI", "(Ljava/lang/String;)V");
+    FXL_CHECK(method_id);
+
+    // Invoke setAssetBundlePath on the Android UI thread.
+    jstring java_assets_directory = env->NewStringUTF(assets_directory.c_str());
+    FXL_CHECK(java_assets_directory);
+
+    env->CallVoidMethod(local_flutter_view.obj(), method_id,
+                        java_assets_directory);
   }
 
   // Detaching from the VM deletes any stray local references.

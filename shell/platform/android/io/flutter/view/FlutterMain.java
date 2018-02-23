@@ -30,6 +30,7 @@ public class FlutterMain {
     private static final String TAG = "FlutterMain";
 
     // Must match values in sky::shell::switches
+    private static final String AOT_SHARED_LIBRARY_PATH = "aot-shared-library-path";
     private static final String AOT_SNAPSHOT_PATH_KEY = "aot-snapshot-path";
     private static final String AOT_VM_SNAPSHOT_DATA_KEY = "vm-snapshot-data";
     private static final String AOT_VM_SNAPSHOT_INSTR_KEY = "vm-snapshot-instr";
@@ -37,8 +38,11 @@ public class FlutterMain {
     private static final String AOT_ISOLATE_SNAPSHOT_INSTR_KEY = "isolate-snapshot-instr";
     private static final String FLX_KEY = "flx";
     private static final String SNAPSHOT_BLOB_KEY = "snapshot-blob";
+    private static final String FLUTTER_ASSETS_DIR_KEY = "flutter-assets-dir";
 
     // XML Attribute keys supported in AndroidManifest.xml
+    public static final String PUBLIC_AOT_AOT_SHARED_LIBRARY_PATH =
+        FlutterMain.class.getName() + '.' + AOT_SHARED_LIBRARY_PATH;
     public static final String PUBLIC_AOT_VM_SNAPSHOT_DATA_KEY =
         FlutterMain.class.getName() + '.' + AOT_VM_SNAPSHOT_DATA_KEY;
     public static final String PUBLIC_AOT_VM_SNAPSHOT_INSTR_KEY =
@@ -51,14 +55,18 @@ public class FlutterMain {
         FlutterMain.class.getName() + '.' + FLX_KEY;
     public static final String PUBLIC_SNAPSHOT_BLOB_KEY =
         FlutterMain.class.getName() + '.' + SNAPSHOT_BLOB_KEY;
+    public static final String PUBLIC_FLUTTER_ASSETS_DIR_KEY =
+        FlutterMain.class.getName() + '.' + FLUTTER_ASSETS_DIR_KEY;
 
     // Resource names used for components of the precompiled snapshot.
+    private static final String DEFAULT_AOT_SHARED_LIBRARY_PATH= "app.so";
     private static final String DEFAULT_AOT_VM_SNAPSHOT_DATA = "vm_snapshot_data";
     private static final String DEFAULT_AOT_VM_SNAPSHOT_INSTR = "vm_snapshot_instr";
     private static final String DEFAULT_AOT_ISOLATE_SNAPSHOT_DATA = "isolate_snapshot_data";
     private static final String DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR = "isolate_snapshot_instr";
     private static final String DEFAULT_FLX = "app.flx";
     private static final String DEFAULT_SNAPSHOT_BLOB = "snapshot_blob.bin";
+    private static final String DEFAULT_FLUTTER_ASSETS_DIR = "flutter_assets";
 
     private static final String MANIFEST = "flutter.yaml";
 
@@ -68,16 +76,19 @@ public class FlutterMain {
         .build();
 
     // Mutable because default values can be overridden via config properties
+    private static String sAotSharedLibraryPath = DEFAULT_AOT_SHARED_LIBRARY_PATH;
     private static String sAotVmSnapshotData = DEFAULT_AOT_VM_SNAPSHOT_DATA;
     private static String sAotVmSnapshotInstr = DEFAULT_AOT_VM_SNAPSHOT_INSTR;
     private static String sAotIsolateSnapshotData = DEFAULT_AOT_ISOLATE_SNAPSHOT_DATA;
     private static String sAotIsolateSnapshotInstr = DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR;
     private static String sFlx = DEFAULT_FLX;
     private static String sSnapshotBlob = DEFAULT_SNAPSHOT_BLOB;
+    private static String sFlutterAssetsDir = DEFAULT_FLUTTER_ASSETS_DIR;
 
     private static boolean sInitialized = false;
     private static ResourceExtractor sResourceExtractor;
     private static boolean sIsPrecompiled;
+    private static boolean sIsPrecompiledAsSharedLibrary;
     private static Settings sSettings;
 
     private static final class ImmutableSetBuilder<T> {
@@ -141,9 +152,9 @@ public class FlutterMain {
 
         long initStartTimestampMillis = SystemClock.uptimeMillis();
         initConfig(applicationContext);
+        initAot(applicationContext);
         initResources(applicationContext);
         System.loadLibrary("flutter");
-        initAot(applicationContext);
 
         // We record the initialization time using SystemClock because at the start of the
         // initialization we have not yet loaded the native library to call into dart_tools_api.h.
@@ -179,6 +190,9 @@ public class FlutterMain {
                 shellArgs.add("--" + AOT_VM_SNAPSHOT_INSTR_KEY + "=" + sAotVmSnapshotInstr);
                 shellArgs.add("--" + AOT_ISOLATE_SNAPSHOT_DATA_KEY + "=" + sAotIsolateSnapshotData);
                 shellArgs.add("--" + AOT_ISOLATE_SNAPSHOT_INSTR_KEY + "=" + sAotIsolateSnapshotInstr);
+            } else if (sIsPrecompiledAsSharedLibrary) {
+                shellArgs.add("--" + AOT_SHARED_LIBRARY_PATH + "=" +
+                    new File(PathUtils.getDataDirectory(applicationContext), sAotSharedLibraryPath));
             } else {
                 shellArgs.add("--cache-dir-path=" +
                     PathUtils.getCacheDirectory(applicationContext));
@@ -211,12 +225,14 @@ public class FlutterMain {
             Bundle metadata = applicationContext.getPackageManager().getApplicationInfo(
                 applicationContext.getPackageName(), PackageManager.GET_META_DATA).metaData;
             if (metadata != null) {
+                sAotSharedLibraryPath = metadata.getString(PUBLIC_AOT_AOT_SHARED_LIBRARY_PATH, DEFAULT_AOT_SHARED_LIBRARY_PATH);
                 sAotVmSnapshotData = metadata.getString(PUBLIC_AOT_VM_SNAPSHOT_DATA_KEY, DEFAULT_AOT_VM_SNAPSHOT_DATA);
                 sAotVmSnapshotInstr = metadata.getString(PUBLIC_AOT_VM_SNAPSHOT_INSTR_KEY, DEFAULT_AOT_VM_SNAPSHOT_INSTR);
                 sAotIsolateSnapshotData = metadata.getString(PUBLIC_AOT_ISOLATE_SNAPSHOT_DATA_KEY, DEFAULT_AOT_ISOLATE_SNAPSHOT_DATA);
                 sAotIsolateSnapshotInstr = metadata.getString(PUBLIC_AOT_ISOLATE_SNAPSHOT_INSTR_KEY, DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR);
                 sFlx = metadata.getString(PUBLIC_FLX_KEY, DEFAULT_FLX);
                 sSnapshotBlob = metadata.getString(PUBLIC_SNAPSHOT_BLOB_KEY, DEFAULT_SNAPSHOT_BLOB);
+                sFlutterAssetsDir = metadata.getString(PUBLIC_FLUTTER_ASSETS_DIR_KEY, DEFAULT_FLUTTER_ASSETS_DIR);
             }
         } catch (PackageManager.NameNotFoundException e) {
             throw new RuntimeException(e);
@@ -228,13 +244,20 @@ public class FlutterMain {
         new ResourceCleaner(context).start();
         sResourceExtractor = new ResourceExtractor(context)
             .addResources(SKY_RESOURCES)
+            .addResource(sFlx)
+            .addResource(sFlutterAssetsDir);
+        if (sIsPrecompiledAsSharedLibrary) {
+          sResourceExtractor
+            .addResource(sAotSharedLibraryPath);
+        } else {
+          sResourceExtractor
             .addResource(sAotVmSnapshotData)
             .addResource(sAotVmSnapshotInstr)
             .addResource(sAotIsolateSnapshotData)
             .addResource(sAotIsolateSnapshotInstr)
-            .addResource(sFlx)
-            .addResource(sSnapshotBlob)
-            .start();
+            .addResource(sSnapshotBlob);
+        }
+        sResourceExtractor.start();
     }
 
     /**
@@ -261,15 +284,20 @@ public class FlutterMain {
             sAotIsolateSnapshotData,
             sAotIsolateSnapshotInstr
         ));
+        sIsPrecompiledAsSharedLibrary = assets.contains(sAotSharedLibraryPath);
+        if (sIsPrecompiled && sIsPrecompiledAsSharedLibrary) {
+          throw new RuntimeException(
+              "Found precompiled app as shared library and as Dart VM snapshots.");
+        }
     }
 
     public static boolean isRunningPrecompiledCode() {
-        return sIsPrecompiled;
+        return sIsPrecompiled || sIsPrecompiledAsSharedLibrary;
     }
 
     public static String findAppBundlePath(Context applicationContext) {
         String dataDirectory = PathUtils.getDataDirectory(applicationContext);
-        File appBundle = new File(dataDirectory, sFlx);
+        File appBundle = new File(dataDirectory, sFlutterAssetsDir);
         return appBundle.exists() ? appBundle.getPath() : null;
     }
 }

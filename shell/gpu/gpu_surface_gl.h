@@ -23,7 +23,7 @@ class GPUSurfaceGLDelegate {
 
   virtual intptr_t GLContextFBO() const = 0;
 
-  virtual bool SurfaceSupportsSRGB() const = 0;
+  virtual bool UseOffscreenSurface() const { return false; }
 };
 
 class GPUSurfaceGL : public Surface {

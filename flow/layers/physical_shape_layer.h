@@ -2,19 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_LAYERS_PHYSICAL_MODEL_LAYER_H_
-#define FLUTTER_FLOW_LAYERS_PHYSICAL_MODEL_LAYER_H_
+#ifndef FLUTTER_FLOW_LAYERS_PHYSICAL_SHAPE_LAYER_H_
+#define FLUTTER_FLOW_LAYERS_PHYSICAL_SHAPE_LAYER_H_
 
 #include "flutter/flow/layers/container_layer.h"
 
 namespace flow {
 
-class PhysicalModelLayer : public ContainerLayer {
+class PhysicalShapeLayer : public ContainerLayer {
  public:
-  PhysicalModelLayer();
-  ~PhysicalModelLayer() override;
+  PhysicalShapeLayer();
+  ~PhysicalShapeLayer() override;
 
-  void set_rrect(const SkRRect& rrect) { rrect_ = rrect; }
+  void set_path(const SkPath& path);
+
   void set_elevation(float elevation) { elevation_ = elevation; }
   void set_color(SkColor color) { color_ = color; }
   void set_device_pixel_ratio(SkScalar dpr) { device_pixel_ratio_ = dpr; }
@@ -35,12 +36,14 @@ class PhysicalModelLayer : public ContainerLayer {
 #endif  // defined(OS_FUCHSIA)
 
  private:
-  SkRRect rrect_;
   float elevation_;
   SkColor color_;
   SkScalar device_pixel_ratio_;
+  SkPath path_;
+  bool isRect_;
+  SkRRect frameRRect_;
 };
 
 }  // namespace flow
 
-#endif  // FLUTTER_FLOW_LAYERS_PHYSICAL_MODEL_LAYER_H_
+#endif  // FLUTTER_FLOW_LAYERS_PHYSICAL_SHAPE_LAYER_H_

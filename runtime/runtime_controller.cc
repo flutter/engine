@@ -29,13 +29,15 @@ RuntimeController::~RuntimeController() {}
 void RuntimeController::CreateDartController(
     const std::string& script_uri,
     const uint8_t* isolate_snapshot_data,
-    const uint8_t* isolate_snapshot_instr) {
+    const uint8_t* isolate_snapshot_instr,
+    int dirfd) {
   FXL_DCHECK(!dart_controller_);
 
   dart_controller_.reset(new DartController());
   dart_controller_->CreateIsolateFor(
       script_uri, isolate_snapshot_data, isolate_snapshot_instr,
-      std::make_unique<UIDartState>(this, std::make_unique<Window>(this)));
+      std::make_unique<UIDartState>(this, std::make_unique<Window>(this),
+                                    dirfd));
 
   UIDartState* dart_state = dart_controller_->dart_state();
   DartState::Scope scope(dart_state);
@@ -106,10 +108,11 @@ void RuntimeController::DispatchPointerDataPacket(
 }
 
 void RuntimeController::DispatchSemanticsAction(int32_t id,
-                                                SemanticsAction action) {
+                                                SemanticsAction action,
+                                                std::vector<uint8_t> args) {
   TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction", "mode",
                "basic");
-  GetWindow()->DispatchSemanticsAction(id, action);
+  GetWindow()->DispatchSemanticsAction(id, action, std::move(args));
 }
 
 Window* RuntimeController::GetWindow() {
@@ -140,6 +143,10 @@ void RuntimeController::HandlePlatformMessage(
 
 void RuntimeController::DidCreateSecondaryIsolate(Dart_Isolate isolate) {
   client_->DidCreateSecondaryIsolate(isolate);
+}
+
+void RuntimeController::DidShutdownMainIsolate() {
+  client_->DidShutdownMainIsolate();
 }
 
 Dart_Port RuntimeController::GetMainPort() {

@@ -12,6 +12,7 @@ import android.os.Bundle;
 import io.flutter.app.FlutterActivityDelegate.ViewFactory;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
+import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterView;
 
 /**
@@ -47,6 +48,18 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
         return null;
     }
 
+    /**
+     * Hook for subclasses to customize the creation of the
+     * {@code FlutterNativeView}.
+     *
+     * <p>The default implementation returns {@code null}, which will cause the
+     * activity to use a newly instantiated native view object.</p>
+     */
+    @Override
+    public FlutterNativeView createFlutterNativeView() {
+        return null;
+    }
+
     @Override
     public final boolean hasPlugin(String key) {
         return pluginRegistry.hasPlugin(key);
@@ -66,6 +79,12 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         eventDelegate.onCreate(savedInstanceState);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        eventDelegate.onResume();
     }
 
     @Override
@@ -95,7 +114,7 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
 
     // @Override - added in API level 23
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        eventDelegate.onRequestPermissionResult(requestCode, permissions, grantResults);
+        eventDelegate.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override

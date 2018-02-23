@@ -28,7 +28,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "flutter/sky/engine/wtf/OperatingSystem.h"
 #include "flutter/sky/engine/wtf/Threading.h"
+
+#if USE(PTHREADS)
 
 #include <errno.h>
 #include "flutter/sky/engine/wtf/HashMap.h"
@@ -45,8 +48,6 @@
 #include <limits.h>
 #include <sched.h>
 #include <sys/time.h>
-
-#if USE(PTHREADS)
 
 namespace WTF {
 

@@ -90,6 +90,15 @@ void SurfaceTextureUpdateTexImage(JNIEnv* env, jobject obj) {
   FXL_CHECK(CheckException(env));
 }
 
+static jmethodID g_get_transform_matrix_method = nullptr;
+void SurfaceTextureGetTransformMatrix(JNIEnv* env,
+                                      jobject obj,
+                                      jfloatArray result) {
+  ASSERT_IS_GPU_THREAD;
+  env->CallVoidMethod(obj, g_get_transform_matrix_method, result);
+  FXL_CHECK(CheckException(env));
+}
+
 static jmethodID g_detach_from_gl_context_method = nullptr;
 void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj) {
   ASSERT_IS_GPU_THREAD;
@@ -107,6 +116,10 @@ static jlong Attach(JNIEnv* env, jclass clazz, jobject flutterView) {
   view->Attach();
   view->set_flutter_view(fml::jni::JavaObjectWeakGlobalRef(env, flutterView));
   return reinterpret_cast<jlong>(storage);
+}
+
+static void Detach(JNIEnv* env, jobject jcaller, jlong platform_view) {
+  PLATFORM_VIEW->Detach();
 }
 
 static void Destroy(JNIEnv* env, jobject jcaller, jlong platform_view) {
@@ -168,6 +181,14 @@ void RunBundleAndSource(JNIEnv* env,
       fml::jni::JavaStringToString(env, packages));
 }
 
+void SetAssetBundlePathOnUI(JNIEnv* env,
+                            jobject jcaller,
+                            jlong platform_view,
+                            jstring bundlePath) {
+  return PLATFORM_VIEW->SetAssetBundlePathOnUI(
+      fml::jni::JavaStringToString(env, bundlePath));
+}
+
 static void SetViewportMetrics(JNIEnv* env,
                                jobject jcaller,
                                jlong platform_view,
@@ -177,14 +198,22 @@ static void SetViewportMetrics(JNIEnv* env,
                                jint physicalPaddingTop,
                                jint physicalPaddingRight,
                                jint physicalPaddingBottom,
-                               jint physicalPaddingLeft) {
-  return PLATFORM_VIEW->SetViewportMetrics(devicePixelRatio,       //
-                                           physicalWidth,          //
-                                           physicalHeight,         //
-                                           physicalPaddingTop,     //
-                                           physicalPaddingRight,   //
-                                           physicalPaddingBottom,  //
-                                           physicalPaddingLeft);
+                               jint physicalPaddingLeft,
+                               jint physicalViewInsetTop,
+                               jint physicalViewInsetRight,
+                               jint physicalViewInsetBottom,
+                               jint physicalViewInsetLeft) {
+  return PLATFORM_VIEW->SetViewportMetrics(devicePixelRatio,         //
+                                           physicalWidth,            //
+                                           physicalHeight,           //
+                                           physicalPaddingTop,       //
+                                           physicalPaddingRight,     //
+                                           physicalPaddingBottom,    //
+                                           physicalPaddingLeft,      //
+                                           physicalViewInsetTop,     //
+                                           physicalViewInsetRight,   //
+                                           physicalViewInsetBottom,  //
+                                           physicalViewInsetLeft);
 }
 
 static jobject GetBitmap(JNIEnv* env, jobject jcaller, jlong platform_view) {
@@ -224,8 +253,11 @@ static void DispatchSemanticsAction(JNIEnv* env,
                                     jobject jcaller,
                                     jlong platform_view,
                                     jint id,
-                                    jint action) {
-  return PLATFORM_VIEW->DispatchSemanticsAction(id, action);
+                                    jint action,
+                                    jobject args,
+                                    jint args_position) {
+  return PLATFORM_VIEW->DispatchSemanticsAction(env, id, action, args,
+                                                args_position);
 }
 
 static void SetSemanticsEnabled(JNIEnv* env,
@@ -329,6 +361,21 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&shell::RunBundleAndSource),
       },
       {
+          .name = "nativeSetAssetBundlePathOnUI",
+          .signature = "(JLjava/lang/String;)V",
+          .fnPtr = reinterpret_cast<void*>(&shell::SetAssetBundlePathOnUI),
+      },
+      {
+          .name = "nativeDetach",
+          .signature = "(J)V",
+          .fnPtr = reinterpret_cast<void*>(&shell::Detach),
+      },
+      {
+          .name = "nativeDestroy",
+          .signature = "(J)V",
+          .fnPtr = reinterpret_cast<void*>(&shell::Destroy),
+      },
+      {
           .name = "nativeGetObservatoryUri",
           .signature = "()Ljava/lang/String;",
           .fnPtr = reinterpret_cast<void*>(&shell::GetObservatoryUri),
@@ -376,7 +423,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       },
       {
           .name = "nativeSetViewportMetrics",
-          .signature = "(JFIIIIII)V",
+          .signature = "(JFIIIIIIIIII)V",
           .fnPtr = reinterpret_cast<void*>(&shell::SetViewportMetrics),
       },
       {
@@ -391,7 +438,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       },
       {
           .name = "nativeDispatchSemanticsAction",
-          .signature = "(JII)V",
+          .signature = "(JIILjava/nio/ByteBuffer;I)V",
           .fnPtr = reinterpret_cast<void*>(&shell::DispatchSemanticsAction),
       },
       {
@@ -474,6 +521,13 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       env->GetMethodID(g_surface_texture_class->obj(), "updateTexImage", "()V");
 
   if (g_update_tex_image_method == nullptr) {
+    return false;
+  }
+
+  g_get_transform_matrix_method = env->GetMethodID(
+      g_surface_texture_class->obj(), "getTransformMatrix", "([F)V");
+
+  if (g_get_transform_matrix_method == nullptr) {
     return false;
   }
 

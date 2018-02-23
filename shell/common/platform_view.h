@@ -41,7 +41,9 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
   virtual void Attach() = 0;
 
   void DispatchPlatformMessage(fxl::RefPtr<blink::PlatformMessage> message);
-  void DispatchSemanticsAction(int32_t id, blink::SemanticsAction action);
+  void DispatchSemanticsAction(int32_t id,
+                               blink::SemanticsAction action,
+                               std::vector<uint8_t> args);
   void SetSemanticsEnabled(bool enabled);
 
   void NotifyCreated(std::unique_ptr<Surface> surface);
@@ -58,7 +60,7 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
 
   virtual bool ResourceContextMakeCurrent() = 0;
 
-  virtual void UpdateSemantics(std::vector<blink::SemanticsNode> update);
+  virtual void UpdateSemantics(blink::SemanticsNodeUpdates update);
   virtual void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message);
 
@@ -80,6 +82,8 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
                              const std::string& main,
                              const std::string& packages) = 0;
 
+  virtual void SetAssetBundlePath(const std::string& assets_directory) = 0;
+
  protected:
   explicit PlatformView(std::unique_ptr<Rasterizer> rasterizer);
 
@@ -90,6 +94,7 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
 
   SurfaceConfig surface_config_;
   std::unique_ptr<Rasterizer> rasterizer_;
+  flow::TextureRegistry texture_registry_;
   std::unique_ptr<Engine> engine_;
   std::unique_ptr<VsyncWaiter> vsync_waiter_;
   SkISize size_;

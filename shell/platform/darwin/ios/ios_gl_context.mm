@@ -106,9 +106,8 @@ IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* laye
   // should use iOS APIs to perform the final correction step based on the
   // device properties.  Ex: We can indicate that we have rendered in P3, and
   // the framework will do the final adjustment for us.
-  NSOperatingSystemVersion version = [[NSProcessInfo processInfo] operatingSystemVersion];
   color_space_ = SkColorSpace::MakeSRGB();
-  if (version.majorVersion >= 10) {
+  if (@available(iOS 10, *)) {
     UIDisplayGamut displayGamut = [UIScreen mainScreen].traitCollection.displayGamut;
     switch (displayGamut) {
       case UIDisplayGamutP3:
@@ -122,7 +121,7 @@ IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* laye
     }
   }
 
-  NSString* drawableColorFormat = kEAGLColorFormatSRGBA8;
+  NSString* drawableColorFormat = kEAGLColorFormatRGBA8;
   layer_.get().drawableProperties = @{
     kEAGLDrawablePropertyColorFormat : drawableColorFormat,
     kEAGLDrawablePropertyRetainedBacking : @(NO),
@@ -163,14 +162,16 @@ bool IOSGLContext::PresentRenderBuffer() const {
 
 bool IOSGLContext::UpdateStorageSizeIfNecessary() {
   const CGSize layer_size = [layer_.get() bounds].size;
-
-  const GLint size_width = layer_size.width;
-  const GLint size_height = layer_size.height;
+  const CGFloat contents_scale = layer_.get().contentsScale;
+  const GLint size_width = layer_size.width * contents_scale;
+  const GLint size_height = layer_size.height * contents_scale;
 
   if (size_width == storage_size_width_ && size_height == storage_size_height_) {
     // Nothing to since the stoage size is already consistent with the layer.
     return true;
   }
+  TRACE_EVENT_INSTANT0("flutter", "IOSGLContext::UpdateStorageSizeIfNecessary");
+  FXL_DLOG(INFO) << "Updating render buffer storage size.";
 
   if (![EAGLContext setCurrentContext:context_]) {
     return false;

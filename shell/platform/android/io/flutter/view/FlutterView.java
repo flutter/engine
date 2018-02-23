@@ -34,6 +34,7 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import io.flutter.app.FlutterActivity;
+import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.plugin.common.*;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
@@ -91,6 +92,10 @@ public class FlutterView extends SurfaceView
         int physicalPaddingRight = 0;
         int physicalPaddingBottom = 0;
         int physicalPaddingLeft = 0;
+        int physicalViewInsetTop = 0;
+        int physicalViewInsetRight = 0;
+        int physicalViewInsetBottom = 0;
+        int physicalViewInsetLeft = 0;
     }
 
     private final TextInputPlugin mTextInputPlugin;
@@ -115,6 +120,10 @@ public class FlutterView extends SurfaceView
     }
 
     public FlutterView(Context context, AttributeSet attrs) {
+        this(context, attrs, null);
+    }
+
+    public FlutterView(Context context, AttributeSet attrs, FlutterNativeView nativeView) {
         super(context, attrs);
 
         mIsSoftwareRenderingEnabled = nativeGetIsSoftwareRenderingEnabled();
@@ -124,7 +133,13 @@ public class FlutterView extends SurfaceView
         setFocusable(true);
         setFocusableInTouchMode(true);
 
-        mNativeView = new FlutterNativeView(this);
+        Activity activity = (Activity) getContext();
+        if (nativeView == null) {
+            mNativeView = new FlutterNativeView(activity.getApplicationContext());
+        } else {
+            mNativeView = nativeView;
+        }
+        mNativeView.attachViewAndActivity(this, activity);
 
         int color = 0xFF000000;
         TypedValue typedValue = new TypedValue();
@@ -177,15 +192,11 @@ public class FlutterView extends SurfaceView
         mFlutterSettingsChannel = new BasicMessageChannel<>(this, "flutter/settings",
             JSONMessageCodec.INSTANCE);
 
-        // TODO(plugins): Change PlatformPlugin to accept a Context. Disable the
-        // operations that require an Activity when a Context is passed.
-        if (getContext() instanceof Activity) {
-            PlatformPlugin platformPlugin = new PlatformPlugin((Activity) getContext());
-            MethodChannel flutterPlatformChannel = new MethodChannel(this,
-                "flutter/platform", JSONMethodCodec.INSTANCE);
-            flutterPlatformChannel.setMethodCallHandler(platformPlugin);
-            addActivityLifecycleListener(platformPlugin);
-        }
+        PlatformPlugin platformPlugin = new PlatformPlugin(activity);
+        MethodChannel flutterPlatformChannel = new MethodChannel(this,
+            "flutter/platform", JSONMethodCodec.INSTANCE);
+        flutterPlatformChannel.setMethodCallHandler(platformPlugin);
+        addActivityLifecycleListener(platformPlugin);
         mTextInputPlugin = new TextInputPlugin(this);
 
         setLocale(getResources().getConfiguration().locale);
@@ -233,6 +244,14 @@ public class FlutterView extends SurfaceView
         encodeKeyEvent(event, message);
         mFlutterKeyEventChannel.send(message);
         return super.onKeyDown(keyCode, event);
+    }
+
+    public FlutterNativeView getFlutterNativeView() {
+        return mNativeView;
+    }
+
+    public FlutterPluginRegistry getPluginRegistry() {
+        return mNativeView.getPluginRegistry();
     }
 
     public void addActivityLifecycleListener(ActivityLifecycleListener listener) {
@@ -310,6 +329,20 @@ public class FlutterView extends SurfaceView
         return mMetrics.devicePixelRatio;
     }
 
+    public FlutterNativeView detach() {
+        if (!isAttached())
+            return null;
+        if (mDiscoveryReceiver != null) {
+            getContext().unregisterReceiver(mDiscoveryReceiver);
+        }
+        getHolder().removeCallback(mSurfaceCallback);
+        mNativeView.detach();
+
+        FlutterNativeView view = mNativeView;
+        mNativeView = null;
+        return view;
+    }
+
     public void destroy() {
         if (!isAttached())
             return;
@@ -319,6 +352,9 @@ public class FlutterView extends SurfaceView
         }
 
         getHolder().removeCallback(mSurfaceCallback);
+
+        mNativeView.destroy();
+        mNativeView = null;
     }
 
     @Override
@@ -518,10 +554,17 @@ public class FlutterView extends SurfaceView
 
     @Override
     public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
+        // Status bar, left/right system insets partially obscure content (padding).
         mMetrics.physicalPaddingTop = insets.getSystemWindowInsetTop();
         mMetrics.physicalPaddingRight = insets.getSystemWindowInsetRight();
-        mMetrics.physicalPaddingBottom = insets.getSystemWindowInsetBottom();
+        mMetrics.physicalPaddingBottom = 0;
         mMetrics.physicalPaddingLeft = insets.getSystemWindowInsetLeft();
+
+        // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
+        mMetrics.physicalViewInsetTop = 0;
+        mMetrics.physicalViewInsetRight = 0;
+        mMetrics.physicalViewInsetBottom = insets.getSystemWindowInsetBottom();
+        mMetrics.physicalViewInsetLeft = 0;
         updateViewportMetrics();
         return super.onApplyWindowInsets(insets);
     }
@@ -530,10 +573,17 @@ public class FlutterView extends SurfaceView
     @SuppressWarnings("deprecation")
     protected boolean fitSystemWindows(Rect insets) {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
+            // Status bar, left/right system insets partially obscure content (padding).
             mMetrics.physicalPaddingTop = insets.top;
             mMetrics.physicalPaddingRight = insets.right;
-            mMetrics.physicalPaddingBottom = insets.bottom;
+            mMetrics.physicalPaddingBottom = 0;
             mMetrics.physicalPaddingLeft = insets.left;
+
+            // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
+            mMetrics.physicalViewInsetTop = 0;
+            mMetrics.physicalViewInsetRight = 0;
+            mMetrics.physicalViewInsetBottom = insets.bottom;
+            mMetrics.physicalViewInsetLeft = 0;
             updateViewportMetrics();
             return true;
         } else {
@@ -542,11 +592,12 @@ public class FlutterView extends SurfaceView
     }
 
     private boolean isAttached() {
-        return mNativeView.isAttached();
+        return mNativeView != null && mNativeView.isAttached();
     }
 
     void assertAttached() {
-        mNativeView.assertAttached();
+        if (!isAttached())
+            throw new AssertionError("Platform view is not attached");
     }
 
     private void preRun() {
@@ -596,6 +647,30 @@ public class FlutterView extends SurfaceView
         }
     }
 
+    private void setAssetBundlePath(final String assetsDirectory) {
+        Runnable runnable = new Runnable() {
+            public void run() {
+                assertAttached();
+                mNativeView.setAssetBundlePathOnUI(assetsDirectory);
+                synchronized (this) {
+                    notify();
+                }
+            }
+        };
+
+        try {
+            synchronized (runnable) {
+                // Post to the Android UI thread and wait for the response.
+                post(runnable);
+                runnable.wait();
+            }
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Thread got interrupted waiting for " +
+                "setAssetBundlePath to finish", e);
+        }
+    }
+
+
     /**
      * Return the most recent frame as a bitmap.
      *
@@ -623,7 +698,11 @@ public class FlutterView extends SurfaceView
         int physicalPaddingTop,
         int physicalPaddingRight,
         int physicalPaddingBottom,
-        int physicalPaddingLeft);
+        int physicalPaddingLeft,
+        int physicalViewInsetTop,
+        int physicalViewInsetRight,
+        int physicalViewInsetBottom,
+        int physicalViewInsetLeft);
 
     private static native Bitmap nativeGetBitmap(long nativePlatformViewAndroid);
 
@@ -631,7 +710,7 @@ public class FlutterView extends SurfaceView
         ByteBuffer buffer, int position);
 
     private static native void nativeDispatchSemanticsAction(long nativePlatformViewAndroid, int id,
-        int action);
+        int action, ByteBuffer args, int argsPosition);
 
     private static native void nativeSetSemanticsEnabled(long nativePlatformViewAndroid,
         boolean enabled);
@@ -654,7 +733,11 @@ public class FlutterView extends SurfaceView
             mMetrics.physicalPaddingTop,
             mMetrics.physicalPaddingRight,
             mMetrics.physicalPaddingBottom,
-            mMetrics.physicalPaddingLeft);
+            mMetrics.physicalPaddingLeft,
+            mMetrics.physicalViewInsetTop,
+            mMetrics.physicalViewInsetRight,
+            mMetrics.physicalViewInsetBottom,
+            mMetrics.physicalViewInsetLeft);
 
         WindowManager wm = (WindowManager) getContext()
             .getSystemService(Context.WINDOW_SERVICE);
@@ -687,10 +770,20 @@ public class FlutterView extends SurfaceView
     private boolean mTouchExplorationEnabled = false;
     private TouchExplorationListener mTouchExplorationListener;
 
-    protected void dispatchSemanticsAction(int id, int action) {
+    protected void dispatchSemanticsAction(int id, AccessibilityBridge.Action action) {
+        dispatchSemanticsAction(id, action, null);
+    }
+
+    protected void dispatchSemanticsAction(int id, AccessibilityBridge.Action action, Object args) {
         if (!isAttached())
             return;
-        nativeDispatchSemanticsAction(mNativeView.get(), id, action);
+        ByteBuffer encodedArgs = null;
+        int position = 0;
+        if (args != null) {
+            encodedArgs = StandardMessageCodec.INSTANCE.encodeMessage(args);
+            position = encodedArgs.position();
+        }
+        nativeDispatchSemanticsAction(mNativeView.get(), id, action.value, encodedArgs, position);
     }
 
     @Override
@@ -762,8 +855,10 @@ public class FlutterView extends SurfaceView
 
     @Override
     public AccessibilityNodeProvider getAccessibilityNodeProvider() {
-        ensureAccessibilityEnabled();
-        return mAccessibilityNodeProvider;
+        if (mAccessibilityEnabled)
+            return mAccessibilityNodeProvider;
+        // TODO(goderbauer): when a11y is off this should return a one-off snapshot of the a11y tree.
+        return null;
     }
 
     private AccessibilityBridge mAccessibilityNodeProvider;
@@ -803,11 +898,15 @@ public class FlutterView extends SurfaceView
 
     @Override
     public void send(String channel, ByteBuffer message) {
-        mNativeView.send(channel, message);
+        send(channel, message, null);
     }
 
     @Override
     public void send(String channel, ByteBuffer message, BinaryReply callback) {
+        if (!isAttached()) {
+            Log.d(TAG, "FlutterView.send called on a detached view, channel=" + channel);
+            return;
+        }
         mNativeView.send(channel, message, callback);
     }
 

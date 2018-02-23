@@ -3,6 +3,12 @@
 // found in the LICENSE file.
 
 #include "flutter/runtime/dart_controller.h"
+#include "lib/fxl/build_config.h"
+
+#if defined(OS_WIN)
+#include <windows.h>
+#undef GetCurrentDirectory
+#endif
 
 #include <utility>
 
@@ -33,6 +39,37 @@ using tonic::ToDart;
 
 namespace blink {
 namespace {
+#if defined(OS_WIN)
+
+std::string FindAndReplace(const std::string& str,
+                           const std::string& findStr,
+                           const std::string& replaceStr) {
+  std::string rStr = str;
+  size_t pos = 0;
+  while ((pos = rStr.find(findStr, pos)) != std::string::npos) {
+    rStr.replace(pos, findStr.length(), replaceStr);
+    pos += replaceStr.length();
+  }
+  return rStr;
+}
+
+std::string SanitizePath(const std::string& path) {
+  return FindAndReplace(path, "\\\\", "/");
+}
+
+std::string ResolvePath(std::string path) {
+  std::string sanitized = SanitizePath(path);
+  if ((sanitized.length() > 2) && (sanitized[1] == ':')) {
+    return sanitized;
+  }
+  return files::SimplifyPath(files::GetCurrentDirectory() + "/" + sanitized);
+}
+
+#else  // defined(OS_WIN)
+
+std::string SanitizePath(const std::string& path) {
+  return path;
+}
 
 // TODO(abarth): Consider adding this to //garnet/public/lib/fxl.
 std::string ResolvePath(std::string path) {
@@ -40,6 +77,8 @@ std::string ResolvePath(std::string path) {
     return path;
   return files::SimplifyPath(files::GetCurrentDirectory() + "/" + path);
 }
+
+#endif
 
 }  // namespace
 
@@ -49,12 +88,14 @@ DartController::~DartController() {
   if (ui_dart_state_) {
     ui_dart_state_->set_isolate_client(nullptr);
 
-    // Don't use a tonic::DartIsolateScope here since we never exit the isolate.
-    Dart_EnterIsolate(ui_dart_state_->isolate());
-    // Clear the message notify callback.
-    Dart_SetMessageNotifyCallback(nullptr);
-    Dart_ShutdownIsolate();
-    delete ui_dart_state_;
+    if (!ui_dart_state_->shutting_down()) {
+      // Don't use a tonic::DartIsolateScope here since we never exit the
+      // isolate.
+      Dart_EnterIsolate(ui_dart_state_->isolate());
+      // Clear the message notify callback.
+      Dart_SetMessageNotifyCallback(nullptr);
+      Dart_ShutdownIsolate();
+    }
   }
 }
 
@@ -167,7 +208,7 @@ tonic::DartErrorHandleType DartController::RunFromSource(
     tonic::FileLoader& loader = dart_state()->file_loader();
     if (!packages.empty() && !loader.LoadPackagesMap(ResolvePath(packages)))
       FXL_LOG(WARNING) << "Failed to load package map: " << packages;
-    Dart_Handle result = loader.LoadScript(main);
+    Dart_Handle result = loader.LoadScript(SanitizePath(main));
     LogIfError(result);
     error = tonic::GetErrorHandleType(result);
   }

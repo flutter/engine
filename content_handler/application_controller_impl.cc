@@ -23,27 +23,24 @@ ApplicationControllerImpl::ApplicationControllerImpl(
     app::ApplicationStartupInfoPtr startup_info,
     fidl::InterfaceRequest<app::ApplicationController> controller)
     : app_(app), binding_(this) {
-  if (controller.is_pending()) {
+  if (controller.is_valid()) {
     binding_.Bind(std::move(controller));
-    binding_.set_connection_error_handler([this] {
+    binding_.set_error_handler([this] {
       app_->Destroy(this);
       // |this| has been deleted at this point.
     });
   }
 
   std::vector<char> bundle;
-  if (!fsl::VectorFromVmo(std::move(application->data), &bundle)) {
-    FXL_LOG(ERROR) << "Failed to receive bundle.";
-    return;
+  if (application->data) {
+    if (!fsl::VectorFromVmo(std::move(application->data), &bundle)) {
+      FXL_LOG(ERROR) << "Failed to receive bundle.";
+      return;
+    }
   }
 
   // TODO(jeffbrown): Decide what to do with command-line arguments and
   // startup handles.
-
-  if (startup_info->launch_info->services) {
-    service_provider_bridge_.AddBinding(
-        std::move(startup_info->launch_info->services));
-  }
 
   if (startup_info->launch_info->service_request.is_valid()) {
     service_provider_bridge_.ServeDirectory(
@@ -62,10 +59,12 @@ ApplicationControllerImpl::ApplicationControllerImpl(
   fdio_ns_t* fdio_ns = SetupNamespace(startup_info->flat_namespace);
   if (fdio_ns == nullptr) {
     FXL_LOG(ERROR) << "Failed to initialize namespace";
+    return;
   }
 
   url_ = startup_info->launch_info->url;
   runtime_holder_.reset(new RuntimeHolder());
+  runtime_holder_->SetMainIsolateShutdownCallback([this]() { Kill(); });
   runtime_holder_->Init(
       fdio_ns, app::ApplicationContext::CreateFrom(std::move(startup_info)),
       std::move(request), std::move(bundle));
@@ -110,7 +109,7 @@ void ApplicationControllerImpl::Kill() {
 }
 
 void ApplicationControllerImpl::Detach() {
-  binding_.set_connection_error_handler(fxl::Closure());
+  binding_.set_error_handler(fxl::Closure());
 }
 
 void ApplicationControllerImpl::Wait(const WaitCallback& callback) {

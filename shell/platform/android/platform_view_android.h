@@ -53,7 +53,11 @@ class PlatformViewAndroid : public PlatformView {
                           jint physical_padding_top,
                           jint physical_padding_right,
                           jint physical_padding_bottom,
-                          jint physical_padding_left);
+                          jint physical_padding_left,
+                          jint physical_view_inset_top,
+                          jint physical_view_inset_right,
+                          jint physical_view_inset_bottom,
+                          jint physical_view_inset_left);
 
   void DispatchPlatformMessage(JNIEnv* env,
                                std::string name,
@@ -75,7 +79,11 @@ class PlatformViewAndroid : public PlatformView {
   void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
                                                   jint response_id);
 
-  void DispatchSemanticsAction(jint id, jint action);
+  void DispatchSemanticsAction(JNIEnv* env,
+                               jint id,
+                               jint action,
+                               jobject args,
+                               jint args_position);
 
   void SetSemanticsEnabled(jboolean enabled);
 
@@ -85,7 +93,7 @@ class PlatformViewAndroid : public PlatformView {
 
   bool ResourceContextMakeCurrent() override;
 
-  void UpdateSemantics(std::vector<blink::SemanticsNode> update) override;
+  void UpdateSemantics(blink::SemanticsNodeUpdates update) override;
 
   void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message) override;
@@ -98,6 +106,10 @@ class PlatformViewAndroid : public PlatformView {
   void RunFromSource(const std::string& assets_directory,
                      const std::string& main,
                      const std::string& packages) override;
+
+  void SetAssetBundlePathOnUI(std::string bundle_path);
+
+  void SetAssetBundlePath(const std::string& assets_directory) override;
 
   void RegisterExternalTexture(
       int64_t texture_id,

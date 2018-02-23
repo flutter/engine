@@ -28,7 +28,8 @@ class RuntimeController : public WindowClient, public IsolateClient {
 
   void CreateDartController(const std::string& script_uri,
                             const uint8_t* isolate_snapshot_data,
-                            const uint8_t* isolate_snapshot_instr);
+                            const uint8_t* isolate_snapshot_instr,
+                            int dirfd = -1);
   DartController* dart_controller() const { return dart_controller_.get(); }
 
   void SetViewportMetrics(const ViewportMetrics& metrics);
@@ -42,7 +43,9 @@ class RuntimeController : public WindowClient, public IsolateClient {
 
   void DispatchPlatformMessage(fxl::RefPtr<PlatformMessage> message);
   void DispatchPointerDataPacket(const PointerDataPacket& packet);
-  void DispatchSemanticsAction(int32_t id, SemanticsAction action);
+  void DispatchSemanticsAction(int32_t id,
+                               SemanticsAction action,
+                               std::vector<uint8_t> args);
 
   Dart_Port GetMainPort();
   std::string GetIsolateName();
@@ -61,6 +64,7 @@ class RuntimeController : public WindowClient, public IsolateClient {
   void HandlePlatformMessage(fxl::RefPtr<PlatformMessage> message) override;
 
   void DidCreateSecondaryIsolate(Dart_Isolate isolate) override;
+  void DidShutdownMainIsolate() override;
 
   RuntimeDelegate* client_;
   std::string language_code_;

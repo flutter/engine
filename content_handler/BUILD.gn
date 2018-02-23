@@ -24,6 +24,8 @@ template("flutter_content_handler") {
       "app.h",
       "application_controller_impl.cc",
       "application_controller_impl.h",
+      "fuchsia_font_manager.cc",
+      "fuchsia_font_manager.h",
       "main.cc",
       "rasterizer.cc",
       "rasterizer.h",
@@ -53,6 +55,7 @@ template("flutter_content_handler") {
              "$flutter_root/lib/ui",
              "$flutter_root/runtime",
              "$flutter_root/sky/engine/platform",
+             "$flutter_root/third_party/txt",
              "$flutter_root/vulkan",
              "//garnet/public/lib/app/cpp",
              "//garnet/public/lib/fsl",
@@ -64,13 +67,14 @@ template("flutter_content_handler") {
              "//garnet/public/lib/ui/views/fidl",
              "//garnet/public/lib/vulkan",
              "//garnet/public/lib/zip",
+             "//peridot/public/lib/clipboard/fidl",
              "//peridot/public/lib/context/fidl",
              "//third_party/rapidjson",
              "//third_party/skia",
              "//topaz/lib/tonic",
              "//topaz/public/dart-pkg/fuchsia",
              "//topaz/public/lib/ui/flutter/sdk_ext",
-             "//zircon/system/ulib/trace-provider",
+             "//zircon/public/lib/trace-provider",
            ] + extra_deps
 
     # The flags below are needed so that Dart's CPU profiler can walk the
@@ -86,12 +90,12 @@ template("flutter_content_handler") {
   }
 }
 
-flutter_content_handler("content_handler") {
-  output_name = "flutter_jit_runner"
-  extra_deps = [ "//third_party/dart/runtime:libdart_jit" ]
-}
-
-flutter_content_handler("aot_content_handler") {
+flutter_content_handler("aot") {
   output_name = "flutter_aot_runner"
   extra_deps = [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
+}
+
+flutter_content_handler("jit") {
+  output_name = "flutter_jit_runner"
+  extra_deps = [ "//third_party/dart/runtime:libdart_jit" ]
 }

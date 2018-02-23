@@ -14,7 +14,7 @@
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/layers/performance_overlay_layer.h"
-#include "flutter/flow/layers/physical_model_layer.h"
+#include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/layers/shader_mask_layer.h"
 #include "flutter/flow/layers/texture_layer.h"
@@ -106,16 +106,16 @@ void DefaultLayerBuilder::PushShaderMask(sk_sp<SkShader> shader,
   PushLayer(std::move(layer), cull_rects_.top());
 }
 
-void DefaultLayerBuilder::PushPhysicalModel(const SkRRect& sk_rrect,
+void DefaultLayerBuilder::PushPhysicalShape(const SkPath& sk_path,
                                             double elevation,
                                             SkColor color,
                                             SkScalar device_pixel_ratio) {
   SkRect cullRect;
-  if (!cullRect.intersect(sk_rrect.rect(), cull_rects_.top())) {
+  if (!cullRect.intersect(sk_path.getBounds(), cull_rects_.top())) {
     cullRect = SkRect::MakeEmpty();
   }
-  auto layer = std::make_unique<flow::PhysicalModelLayer>();
-  layer->set_rrect(sk_rrect);
+  auto layer = std::make_unique<flow::PhysicalShapeLayer>();
+  layer->set_path(sk_path);
   layer->set_elevation(elevation);
   layer->set_color(color);
   layer->set_device_pixel_ratio(device_pixel_ratio);

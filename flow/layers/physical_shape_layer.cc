@@ -2,24 +2,48 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/layers/physical_model_layer.h"
+#include "flutter/flow/layers/physical_shape_layer.h"
 
 #include "flutter/flow/paint_utils.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
 namespace flow {
 
-PhysicalModelLayer::PhysicalModelLayer() = default;
+PhysicalShapeLayer::PhysicalShapeLayer() : isRect_(false) {}
 
-PhysicalModelLayer::~PhysicalModelLayer() = default;
+PhysicalShapeLayer::~PhysicalShapeLayer() = default;
 
-void PhysicalModelLayer::Preroll(PrerollContext* context,
+void PhysicalShapeLayer::set_path(const SkPath& path) {
+  path_ = path;
+  isRect_ = false;
+  SkRect rect;
+  if (path.isRect(&rect)) {
+    isRect_ = true;
+    frameRRect_ = SkRRect::MakeRect(rect);
+  } else if (path.isRRect(&frameRRect_)) {
+    isRect_ = frameRRect_.isRect();
+  } else if (path.isOval(&rect)) {
+    // isRRect returns false for ovals, so we need to explicitly check isOval
+    // as well.
+    frameRRect_ = SkRRect::MakeOval(rect);
+  } else {
+    // Scenic currently doesn't provide an easy way to create shapes from
+    // arbitrary paths.
+    // For shapes that cannot be represented as a rounded rectangle we
+    // default to use the bounding rectangle.
+    // TODO(amirh): fix this once we have a way to create a Scenic shape from
+    // an SkPath.
+    frameRRect_ = SkRRect::MakeRect(path.getBounds());
+  }
+}
+
+void PhysicalShapeLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
   SkRect child_paint_bounds;
   PrerollChildren(context, matrix, &child_paint_bounds);
 
   if (elevation_ == 0) {
-    set_paint_bounds(rrect_.getBounds());
+    set_paint_bounds(path_.getBounds());
   } else {
 #if defined(OS_FUCHSIA)
     // Let the system compositor draw all shadows for us.
@@ -29,7 +53,7 @@ void PhysicalModelLayer::Preroll(PrerollContext* context,
     // The margin is hardcoded to an arbitrary maximum for now because Skia
     // doesn't provide a way to calculate it.  We fill this whole region
     // and clip children to it so we don't need to join the child paint bounds.
-    SkRect bounds(rrect_.getBounds());
+    SkRect bounds(path_.getBounds());
     bounds.outset(20.0, 20.0);
     set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
@@ -38,10 +62,10 @@ void PhysicalModelLayer::Preroll(PrerollContext* context,
 
 #if defined(OS_FUCHSIA)
 
-void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context) {
+void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
   FXL_DCHECK(needs_system_composite());
 
-  SceneUpdateContext::Frame frame(context, rrect_, color_, elevation_);
+  SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_);
   for (auto& layer : layers()) {
     if (layer->needs_painting()) {
       frame.AddPaintedLayer(layer.get());
@@ -53,35 +77,32 @@ void PhysicalModelLayer::UpdateScene(SceneUpdateContext& context) {
 
 #endif  // defined(OS_FUCHSIA)
 
-void PhysicalModelLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "PhysicalModelLayer::Paint");
+void PhysicalShapeLayer::Paint(PaintContext& context) const {
+  TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FXL_DCHECK(needs_painting());
 
-  SkPath path;
-  path.addRRect(rrect_);
-
   if (elevation_ != 0) {
-    DrawShadow(&context.canvas, path, SK_ColorBLACK, elevation_,
+    DrawShadow(&context.canvas, path_, SK_ColorBLACK, elevation_,
                SkColorGetA(color_) != 0xff, device_pixel_ratio_);
   }
 
   SkPaint paint;
   paint.setColor(color_);
-  context.canvas.drawPath(path, paint);
+  context.canvas.drawPath(path_, paint);
 
   SkAutoCanvasRestore save(&context.canvas, false);
-  if (rrect_.isRect()) {
+  if (isRect_) {
     context.canvas.save();
   } else {
-    context.canvas.saveLayer(&rrect_.getBounds(), nullptr);
+    context.canvas.saveLayer(path_.getBounds(), nullptr);
   }
-  context.canvas.clipRRect(rrect_, true);
+  context.canvas.clipPath(path_, true);
   PaintChildren(context);
-  if (context.checkerboard_offscreen_layers && !rrect_.isRect())
-    DrawCheckerboard(&context.canvas, rrect_.getBounds());
+  if (context.checkerboard_offscreen_layers && !isRect_)
+    DrawCheckerboard(&context.canvas, path_.getBounds());
 }
 
-void PhysicalModelLayer::DrawShadow(SkCanvas* canvas,
+void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
                                     const SkPath& path,
                                     SkColor color,
                                     float elevation,

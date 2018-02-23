@@ -11,6 +11,7 @@
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_block.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/lib/ui/painting/resource_context.h"
 #include "flutter/shell/platform/darwin/common/buffer_conversions.h"
 #include "flutter/shell/platform/darwin/common/platform_mac.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterCodecs.h"
@@ -77,10 +78,6 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> _settingsChannel;
   fml::scoped_nsprotocol<UIView*> _launchView;
   int64_t _nextTextureId;
-  bool _platformSupportsTouchTypes;
-  bool _platformSupportsTouchPressure;
-  bool _platformSupportsTouchOrientationAndTilt;
-  bool _platformSupportsSafeAreaInsets;
   BOOL _initialized;
   BOOL _connected;
 }
@@ -125,11 +122,6 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
     return;
 
   _initialized = YES;
-
-  _platformSupportsTouchTypes = fml::IsPlatformVersionAtLeast(9);
-  _platformSupportsTouchPressure = fml::IsPlatformVersionAtLeast(9);
-  _platformSupportsTouchOrientationAndTilt = fml::IsPlatformVersionAtLeast(9, 1);
-  _platformSupportsSafeAreaInsets = fml::IsPlatformVersionAtLeast(11, 0);
 
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
@@ -198,6 +190,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [_textInputPlugin.get() handleMethodCall:call result:result];
   }];
+  _platformView->SetTextInputPlugin(_textInputPlugin);
 
   [self setupNotificationCenterObservers];
 }
@@ -398,6 +391,8 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
   [self surfaceUpdated:NO];
+  // GrContext operations are blocked when the app is in the background.
+  blink::ResourceContext::Freeze();
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
 }
 
@@ -405,6 +400,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
+  blink::ResourceContext::Unfreeze();
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
 }
 
@@ -435,18 +431,17 @@ static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(UITouc
   return PointerChangeMapperPhase(blink::PointerData::Change::kCancel, MapperPhase::Accessed);
 }
 
-static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch,
-                                                                     bool touchTypeSupported) {
-  if (!touchTypeSupported) {
+static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
+  if (@available(iOS 9, *)) {
+    switch (touch.type) {
+      case UITouchTypeDirect:
+      case UITouchTypeIndirect:
+        return blink::PointerData::DeviceKind::kTouch;
+      case UITouchTypeStylus:
+        return blink::PointerData::DeviceKind::kStylus;
+    }
+  } else {
     return blink::PointerData::DeviceKind::kTouch;
-  }
-
-  switch (touch.type) {
-    case UITouchTypeDirect:
-    case UITouchTypeIndirect:
-      return blink::PointerData::DeviceKind::kTouch;
-    case UITouchTypeStylus:
-      return blink::PointerData::DeviceKind::kStylus;
   }
 
   return blink::PointerData::DeviceKind::kTouch;
@@ -479,7 +474,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
     }
 
     FXL_DCHECK(device_id != 0);
-    CGPoint windowCoordinates = [touch locationInView:nil];
+    CGPoint windowCoordinates = [touch locationInView:self.view];
 
     blink::PointerData pointer_data;
     pointer_data.Clear();
@@ -489,7 +484,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 
     pointer_data.change = eventTypePhase.first;
 
-    pointer_data.kind = DeviceKindFromTouchType(touch, _platformSupportsTouchTypes);
+    pointer_data.kind = DeviceKindFromTouchType(touch);
 
     pointer_data.device = device_id;
 
@@ -497,7 +492,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
     pointer_data.physical_y = windowCoordinates.y * scale;
 
     // pressure_min is always 0.0
-    if (_platformSupportsTouchPressure) {
+    if (@available(iOS 9, *)) {
       // These properties were introduced in iOS 9.0.
       pointer_data.pressure = touch.force;
       pointer_data.pressure_max = touch.maximumPossibleForce;
@@ -512,7 +507,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
     pointer_data.radius_max = touch.majorRadius + touch.majorRadiusTolerance;
 
     // These properties were introduced in iOS 9.1
-    if (_platformSupportsTouchOrientationAndTilt) {
+    if (@available(iOS 9.1, *)) {
       // iOS Documentation: altitudeAngle
       // A value of 0 radians indicates that the stylus is parallel to the surface. The value of
       // this property is Pi/2 when the stylus is perpendicular to the surface.
@@ -617,11 +612,9 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 }
 
 - (void)viewSafeAreaInsetsDidChange {
-  if (_platformSupportsSafeAreaInsets) {
-    [self updateViewportPadding];
-    [self updateViewportMetrics];
-    [super viewSafeAreaInsetsDidChange];
-  }
+  [self updateViewportPadding];
+  [self updateViewportMetrics];
+  [super viewSafeAreaInsetsDidChange];
 }
 
 // Updates _viewportMetrics physical padding.
@@ -629,19 +622,11 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 // Viewport padding represents the iOS safe area insets.
 - (void)updateViewportPadding {
   CGFloat scale = [UIScreen mainScreen].scale;
-  // TODO(cbracken) once clang toolchain compiler-rt has been updated, replace with
-  // if (@available(iOS 11, *)) {
-  if (_platformSupportsSafeAreaInsets) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+  if (@available(iOS 11, *)) {
     _viewportMetrics.physical_padding_top = self.view.safeAreaInsets.top * scale;
     _viewportMetrics.physical_padding_left = self.view.safeAreaInsets.left * scale;
     _viewportMetrics.physical_padding_right = self.view.safeAreaInsets.right * scale;
-    // TODO(cbracken) enable bottom padding once safe area and keyboard view
-    // occlusion are differentiated as two different Window getters (margin,
-    // padding).
-    // _viewportMetrics.physical_padding_bottom = self.view.safeAreaInsets.bottom * scale;
-#pragma clang diagnostic pop
+    _viewportMetrics.physical_padding_bottom = self.view.safeAreaInsets.bottom * scale;
   } else {
     _viewportMetrics.physical_padding_top = [self statusBarPadding] * scale;
   }
@@ -653,12 +638,12 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   NSDictionary* info = [notification userInfo];
   CGFloat bottom = CGRectGetHeight([[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue]);
   CGFloat scale = [UIScreen mainScreen].scale;
-  _viewportMetrics.physical_padding_bottom = bottom * scale;
+  _viewportMetrics.physical_view_inset_bottom = bottom * scale;
   [self updateViewportMetrics];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
-  _viewportMetrics.physical_padding_bottom = 0;
+  _viewportMetrics.physical_view_inset_bottom = 0;
   [self updateViewportMetrics];
 }
 
@@ -753,28 +738,52 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 
 - (CGFloat)textScaleFactor {
   UIContentSizeCategory category = [UIApplication sharedApplication].preferredContentSizeCategory;
-  // The delta is computed based on the following:
-  // - L (large) is the default 1.0 scale.
-  // - The scale is linear spanning from XS to XXXL.
-  // - XXXL = 1.4 * XS.
+  // The delta is computed by approximating Apple's typography guidelines:
+  // https://developer.apple.com/ios/human-interface-guidelines/visual-design/typography/
   //
-  // L    = 1.0      = XS + 3 * delta
-  // XXXL = 1.4 * XS = XS + 6 * delta
-  const CGFloat delta = 0.055555;
+  // Specifically:
+  // Non-accessibility sizes for "body" text are:
+  const CGFloat xs = 14;
+  const CGFloat s = 15;
+  const CGFloat m = 16;
+  const CGFloat l = 17;
+  const CGFloat xl = 19;
+  const CGFloat xxl = 21;
+  const CGFloat xxxl = 23;
+
+  // Accessibility sizes for "body" text are:
+  const CGFloat ax1 = 28;
+  const CGFloat ax2 = 33;
+  const CGFloat ax3 = 40;
+  const CGFloat ax4 = 47;
+  const CGFloat ax5 = 53;
+
+  // We compute the scale as relative difference from size L (large, the default size), where
+  // L is assumed to have scale 1.0.
   if ([category isEqualToString:UIContentSizeCategoryExtraSmall])
-    return 1.0 - 3 * delta;
+    return xs / l;
   else if ([category isEqualToString:UIContentSizeCategorySmall])
-    return 1.0 - 2 * delta;
+    return s / l;
   else if ([category isEqualToString:UIContentSizeCategoryMedium])
-    return 1.0 - delta;
+    return m / l;
   else if ([category isEqualToString:UIContentSizeCategoryLarge])
     return 1.0;
   else if ([category isEqualToString:UIContentSizeCategoryExtraLarge])
-    return 1.0 + delta;
+    return xl / l;
   else if ([category isEqualToString:UIContentSizeCategoryExtraExtraLarge])
-    return 1.0 + 2 * delta;
+    return xxl / l;
   else if ([category isEqualToString:UIContentSizeCategoryExtraExtraExtraLarge])
-    return 1.0 + 3 * delta;
+    return xxxl / l;
+  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityMedium])
+    return ax1 / l;
+  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityLarge])
+    return ax2 / l;
+  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraLarge])
+    return ax3 / l;
+  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraLarge])
+    return ax4 / l;
+  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraExtraLarge])
+    return ax5 / l;
   else
     return 1.0;
 }
@@ -802,10 +811,15 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 - (void)handleStatusBarTouches:(UIEvent*)event {
+  CGFloat standardStatusBarHeight = kStandardStatusBarHeight;
+  if (@available(iOS 11, *)) {
+    standardStatusBarHeight = self.view.safeAreaInsets.top;
+  }
+
   // If the status bar is double-height, don't handle status bar taps. iOS
   // should open the app associated with the status bar.
   CGRect statusBarFrame = [UIApplication sharedApplication].statusBarFrame;
-  if (statusBarFrame.size.height != kStandardStatusBarHeight) {
+  if (statusBarFrame.size.height != standardStatusBarHeight) {
     return;
   }
 

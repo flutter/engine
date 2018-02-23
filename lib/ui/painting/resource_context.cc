@@ -5,21 +5,46 @@
 #include "flutter/lib/ui/painting/resource_context.h"
 
 #include "lib/fxl/logging.h"
+#include "lib/fxl/synchronization/mutex.h"
 
 namespace blink {
 namespace {
 
 static GrContext* g_context = nullptr;
+static fxl::Mutex g_mutex;
+static volatile bool g_freeze = false;
 
 }  // namespace
 
-void ResourceContext::Set(GrContext* context) {
+ResourceContext::ResourceContext() {
+  g_mutex.Lock();
+}
+
+ResourceContext::~ResourceContext() {
+  g_mutex.Unlock();
+}
+
+void ResourceContext::Set(sk_sp<GrContext> context) {
   FXL_DCHECK(!g_context);
-  g_context = context;
+  g_context = context.release();
 }
 
 GrContext* ResourceContext::Get() {
-  return g_context;
+  return g_freeze ? nullptr : g_context;
+}
+
+std::unique_ptr<ResourceContext> ResourceContext::Acquire() {
+  return std::make_unique<ResourceContext>();
+}
+
+void ResourceContext::Freeze() {
+  fxl::MutexLocker lock(&g_mutex);
+  g_freeze = true;
+}
+
+void ResourceContext::Unfreeze() {
+  fxl::MutexLocker lock(&g_mutex);
+  g_freeze = false;
 }
 
 }  // namespace blink

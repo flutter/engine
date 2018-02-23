@@ -84,7 +84,8 @@ void Shell::InitStandalone(fxl::CommandLine command_line,
 
   fml::icu::InitializeICU(icu_data_path);
 
-  SkGraphics::Init();
+  if (!command_line.HasOption(FlagForSwitch(Switch::SkiaDeterministicRendering)))
+    SkGraphics::Init();
 
   blink::Settings settings;
   settings.application_library_path = application_library_path;
@@ -119,7 +120,7 @@ void Shell::InitStandalone(fxl::CommandLine command_line,
       command_line.HasOption(FlagForSwitch(Switch::EnableSoftwareRendering));
 
   settings.using_blink =
-      !command_line.HasOption(FlagForSwitch(Switch::EnableTxt));
+      command_line.HasOption(FlagForSwitch(Switch::EnableBlink));
 
   settings.endless_trace_buffer =
       command_line.HasOption(FlagForSwitch(Switch::EndlessTraceBuffer));
@@ -138,6 +139,9 @@ void Shell::InitStandalone(fxl::CommandLine command_line,
 
   command_line.GetOptionValue(FlagForSwitch(Switch::AotIsolateSnapshotData),
                               &settings.aot_isolate_snapshot_data_filename);
+
+  command_line.GetOptionValue(FlagForSwitch(Switch::AotSharedLibraryPath),
+                              &settings.aot_shared_library_path);
 
   command_line.GetOptionValue(
       FlagForSwitch(Switch::AotIsolateSnapshotInstructions),
@@ -262,27 +266,95 @@ void Shell::RunInPlatformViewUIThread(uintptr_t view_id,
   *view_existed = false;
 
   IteratePlatformViews(
-      [
-        view_id,                                         // argument
-        assets_directory = std::move(assets_directory),  // argument
-        main = std::move(main),                          // argument
-        packages = std::move(packages),                  // argument
-        &view_existed,                                   // out
-        &dart_isolate_id,                                // out
-        &isolate_name                                    // out
-      ](PlatformView * view)
-          ->bool {
-            if (reinterpret_cast<uintptr_t>(view) != view_id) {
-              // Keep looking.
-              return true;
-            }
-            *view_existed = true;
-            view->RunFromSource(assets_directory, main, packages);
-            *dart_isolate_id = view->engine().GetUIIsolateMainPort();
-            *isolate_name = view->engine().GetUIIsolateName();
-            // We found the requested view. Stop iterating over platform views.
-            return false;
-          });
+      [view_id,  // argument
+#if !defined(OS_WIN)
+                 // Using std::move on const references inside lambda capture is
+                 // not supported on Windows for some reason.
+       assets_directory = std::move(assets_directory),  // argument
+       main = std::move(main),                          // argument
+       packages = std::move(packages),                  // argument
+#else
+       assets_directory,  // argument
+       main,              // argument
+       packages,          // argument
+#endif
+       &view_existed,     // out
+       &dart_isolate_id,  // out
+       &isolate_name      // out
+  ](PlatformView* view) -> bool {
+        if (reinterpret_cast<uintptr_t>(view) != view_id) {
+          // Keep looking.
+          return true;
+        }
+        *view_existed = true;
+        view->RunFromSource(assets_directory, main, packages);
+        *dart_isolate_id = view->engine().GetUIIsolateMainPort();
+        *isolate_name = view->engine().GetUIIsolateName();
+        // We found the requested view. Stop iterating over platform views.
+        return false;
+      });
+
+  latch->Signal();
+}
+
+void Shell::SetAssetBundlePathInPlatformView(uintptr_t view_id,
+                                             const char* asset_directory,
+                                             bool* view_existed,
+                                             int64_t* dart_isolate_id,
+                                             std::string* isolate_name) {
+  fxl::AutoResetWaitableEvent latch;
+  FXL_DCHECK(view_id != 0);
+  FXL_DCHECK(asset_directory);
+  FXL_DCHECK(view_existed);
+
+  blink::Threads::UI()->PostTask([this, view_id, asset_directory, view_existed,
+                                  dart_isolate_id, isolate_name, &latch]() {
+    SetAssetBundlePathInPlatformViewUIThread(view_id, asset_directory,
+                                             view_existed, dart_isolate_id,
+                                             isolate_name, &latch);
+  });
+  latch.Wait();
+}
+
+void Shell::SetAssetBundlePathInPlatformViewUIThread(
+    uintptr_t view_id,
+    const std::string& assets_directory,
+    bool* view_existed,
+    int64_t* dart_isolate_id,
+    std::string* isolate_name,
+    fxl::AutoResetWaitableEvent* latch) {
+  FXL_DCHECK(ui_thread_checker_ &&
+             ui_thread_checker_->IsCreationThreadCurrent());
+
+  *view_existed = false;
+
+  IteratePlatformViews(
+      [view_id,  // argument
+#if !defined(OS_WIN)
+                 // Using std::move on const references inside lambda capture is
+                 // not supported on Windows for some reason.
+                 // TODO(https://github.com/flutter/flutter/issues/13908):
+                 // Investigate the root cause of the difference.
+       assets_directory = std::move(assets_directory),  // argument
+#else
+       assets_directory,  // argument
+#endif
+       &view_existed,     // out
+       &dart_isolate_id,  // out
+       &isolate_name      // out
+  ](PlatformView* view) -> bool {
+        if (reinterpret_cast<uintptr_t>(view) != view_id) {
+          // Keep looking.
+          return true;
+        }
+        *view_existed = true;
+        view->SetAssetBundlePath(assets_directory);
+        *dart_isolate_id = view->engine().GetUIIsolateMainPort();
+        *isolate_name = view->engine().GetUIIsolateName();
+        // We found the requested view. Stop iterating over
+        // platform views.
+        return false;
+      });
 
   latch->Signal();
 }

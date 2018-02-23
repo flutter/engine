@@ -28,6 +28,7 @@
 #include <log/log.h>
 #include <utils/JenkinsHash.h>
 #include <utils/LruCache.h>
+#include <utils/WindowsUtils.h>
 
 #include <hb-icu.h>
 #include <hb-ot.h>
@@ -577,7 +578,8 @@ BidiText::BidiText(const uint16_t* buf,
   } else if (bidiFlags == kBidi_Default_RTL) {
     bidiReq = UBIDI_DEFAULT_RTL;
   }
-  ubidi_setPara(mBidi, buf, mBufSize, bidiReq, NULL, &status);
+  ubidi_setPara(mBidi, reinterpret_cast<const UChar*>(buf), mBufSize, bidiReq,
+                NULL, &status);
   if (!U_SUCCESS(status)) {
     ALOGE("error calling ubidi_setPara, status = %d", status);
     return;
@@ -598,11 +600,11 @@ void Layout::doLayout(const uint16_t* buf,
                       size_t start,
                       size_t count,
                       size_t bufSize,
-                      int bidiFlags,
+                      bool isRtl,
                       const FontStyle& style,
                       const MinikinPaint& paint,
                       const std::shared_ptr<FontCollection>& collection) {
-  std::lock_guard<std::mutex> _l(gMinikinLock);
+  std::lock_guard<std::recursive_mutex> _l(gMinikinLock);
 
   LayoutContext ctx;
   ctx.style = style;
@@ -611,11 +613,9 @@ void Layout::doLayout(const uint16_t* buf,
   reset();
   mAdvances.resize(count, 0);
 
-  for (const BidiText::Iter::RunInfo& runInfo :
-       BidiText(buf, start, count, bufSize, bidiFlags)) {
-    doLayoutRunCached(buf, runInfo.mRunStart, runInfo.mRunLength, bufSize,
-                      runInfo.mIsRtl, &ctx, start, collection, this, NULL);
-  }
+  doLayoutRunCached(buf, start, count, bufSize, isRtl, &ctx, start, collection,
+                    this, NULL);
+
   ctx.clearHbFonts();
 }
 
@@ -623,26 +623,19 @@ float Layout::measureText(const uint16_t* buf,
                           size_t start,
                           size_t count,
                           size_t bufSize,
-                          int bidiFlags,
+                          bool isRtl,
                           const FontStyle& style,
                           const MinikinPaint& paint,
                           const std::shared_ptr<FontCollection>& collection,
                           float* advances) {
-  std::lock_guard<std::mutex> _l(gMinikinLock);
+  std::lock_guard<std::recursive_mutex> _l(gMinikinLock);
 
   LayoutContext ctx;
   ctx.style = style;
   ctx.paint = paint;
 
-  float advance = 0;
-  for (const BidiText::Iter::RunInfo& runInfo :
-       BidiText(buf, start, count, bufSize, bidiFlags)) {
-    float* advancesForRun =
-        advances ? advances + (runInfo.mRunStart - start) : advances;
-    advance += doLayoutRunCached(buf, runInfo.mRunStart, runInfo.mRunLength,
-                                 bufSize, runInfo.mIsRtl, &ctx, 0, collection,
-                                 NULL, advancesForRun);
-  }
+  float advance = doLayoutRunCached(buf, start, count, bufSize, isRtl, &ctx, 0,
+                                    collection, NULL, advances);
 
   ctx.clearHbFonts();
   return advance;
@@ -1204,7 +1197,7 @@ void Layout::getBounds(MinikinRect* bounds) const {
 }
 
 void Layout::purgeCaches() {
-  std::lock_guard<std::mutex> _l(gMinikinLock);
+  std::lock_guard<std::recursive_mutex> _l(gMinikinLock);
   LayoutCache& layoutCache = LayoutEngine::getInstance().layoutCache;
   layoutCache.clear();
   purgeHbFontCacheLocked();

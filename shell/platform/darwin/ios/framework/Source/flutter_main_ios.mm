@@ -3,8 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/darwin/ios/framework/Source/flutter_main_ios.h"
+
 #include "flutter/shell/platform/darwin/common/platform_mac.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 
 namespace shell {
 
@@ -12,7 +14,12 @@ void FlutterMain() {
   NSBundle* bundle = [NSBundle bundleForClass:[FlutterViewController class]];
   NSString* icuDataPath = [bundle pathForResource:@"icudtl" ofType:@"dat"];
   NSString* libraryName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTLibraryPath"];
-  shell::PlatformMacMain(icuDataPath.UTF8String, libraryName != nil ? libraryName.UTF8String : "");
+
+  NSBundle* mainBundle = [NSBundle mainBundle];
+  NSString* flutterAssetsPath = [FlutterDartProject pathForFlutterAssetsFromBundle:mainBundle];
+
+  shell::PlatformMacMain(icuDataPath.UTF8String, libraryName != nil ? libraryName.UTF8String : "",
+                         flutterAssetsPath.UTF8String);
 }
 
 }  // namespace shell
