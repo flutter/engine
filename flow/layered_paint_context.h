@@ -22,7 +22,7 @@ class LayeredPaintContext {
   virtual void ClipRect() = 0;
   virtual void Elevate(float elevation) = 0;
   virtual void SetColor(SkColor color) = 0;
-  virtual void SetCornerRadius(float radius) = 0;
+  virtual void SetClipPath(SkPath path) = 0;
   virtual void AddExternalLayer(Texture* texture, SkRect frame) = 0;;
   virtual void ExecutePaintTasks(CompositorContext::ScopedFrame& frame) = 0;
   virtual void AddPaintedLayer(flow::Layer *layer) = 0;

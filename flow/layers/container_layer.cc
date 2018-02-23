@@ -108,12 +108,23 @@ void ContainerLayer::UpdateSceneChildren(LayeredPaintContext &context) {
   FXL_DCHECK(needs_system_composite());
   // FXL_DLOG(INFO) << "Container{";
 
+  // for (auto& layer : layers_) {
+  //   if (layer->needs_system_composite()) {
+  //     layer->UpdateScene(context);
+  //   } else {
+  //     context.PushLayer(layer->paint_bounds());
+  //     context.AddPaintedLayer(layer.get());
+  //     context.PopLayer();
+  //   }
+  // }
+
   // Paint all of the layers which need to be drawn into the container.
   // These may be flattened down to a containing
   int pushCount = 0;
   std::vector<Layer*> acc;
   SkRect accBounds = SkRect::MakeEmpty();
   SkRect systemLayerBounds = SkRect::MakeEmpty();
+
   for (auto& layer : layers_) {
     // FXL_DLOG(INFO) << "Composite " << layer->paint_bounds().x() << "x" << layer->paint_bounds().y() << " " << layer->paint_bounds().width() << "x" << layer->paint_bounds().height() << " updatescenechildren child: " << layer->needs_system_composite() << " needspainting" << layer->needs_painting();
     // FXL_DLOG(INFO) << "Composite " << layer->paint_bounds().intersects(systemLayerBounds);

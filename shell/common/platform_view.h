@@ -47,10 +47,10 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
   void SetSemanticsEnabled(bool enabled);
 
   void NotifyCreated(std::unique_ptr<Surface> surface,
-                                   flow::LayeredPaintContext *layeredPaintContext);
+                     flow::LayeredPaintContext *layeredPaintContext);
 
   void NotifyCreated(std::unique_ptr<Surface> surface,
-                                   flow::LayeredPaintContext *layeredPaintContext,
+                     flow::LayeredPaintContext *layeredPaintContext,
                      fxl::Closure continuation);
 
   void NotifyDestroyed();

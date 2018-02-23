@@ -9,9 +9,9 @@
 
 namespace shell {
 
-IOSSurfaceGL::IOSSurfaceGL(PlatformView::SurfaceConfig surface_config, CAEAGLLayer* layer)
+IOSSurfaceGL::IOSSurfaceGL(PlatformView::SurfaceConfig surface_config, CAEAGLLayer* layer, EAGLContext *eaglContext)
     : IOSSurface(surface_config, reinterpret_cast<CALayer*>(layer)),
-      context_(surface_config, layer) {}
+      context_(surface_config, layer, eaglContext) {}
 
 IOSSurfaceGL::~IOSSurfaceGL() = default;
 
@@ -46,21 +46,10 @@ bool IOSSurfaceGL::GLContextClearCurrent() {
   return true;
 }
 
-flow::LayeredPaintContext* IOSSurfaceGL::CreateLayeredPaintContext() {
-  layered_paint_context_ = new IOSLayeredPaintContext(this);
-  return layered_paint_context_;
-}
-
 bool IOSSurfaceGL::GLContextPresent() {
   TRACE_EVENT0("flutter", "IOSSurfaceGL::GLContextPresent");
   if (IsValid()) {
-    bool result = true;
-    if (layered_paint_context_) {
-      layered_paint_context_->Finish();
-    } else {
-      result = context_.PresentRenderBuffer();
-    }
-    return result;
+    return context_.PresentRenderBuffer();
   } else {
     return false;
   }

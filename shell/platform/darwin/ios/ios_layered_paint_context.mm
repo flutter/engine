@@ -17,28 +17,70 @@ namespace shell {
 
 static int count = 0;
 
-static CATransform3D skiaToCATransform(SkMatrix transform) {
-  CATransform3D result;
-  result.m11 = transform[0];
-  result.m12 = transform[1];
-  result.m13 = transform[2];
-  result.m14 = 0.0;
+// static CATransform3D skiaToCATransform(SkMatrix transform) {
+//   CATransform3D result;
+//   result.m11 = transform[0];
+//   result.m12 = transform[1];
+//   result.m13 = transform[2];
+//   result.m14 = 0.0;
 
-  result.m21 = transform[3];
-  result.m22 = transform[4];
-  result.m23 = transform[5];
-  result.m24 = 0.0;
+//   result.m21 = transform[3];
+//   result.m22 = transform[4];
+//   result.m23 = transform[5];
+//   result.m24 = 0.0;
 
-  result.m31 = transform[6];
-  result.m32 = transform[7];
-  result.m33 = transform[8];
-  result.m34 = 0.0;
+//   result.m31 = transform[6];
+//   result.m32 = transform[7];
+//   result.m33 = transform[8];
+//   result.m34 = 0.0;
 
-  result.m41 = 0.0;
-  result.m42 = 0.0;
-  result.m43 = 0.0;
-  result.m44 = 1.0;
-  return result;
+//   result.m41 = 0.0;
+//   result.m42 = 0.0;
+//   result.m43 = 0.0;
+//   result.m44 = 1.0;
+//   return result;
+// }
+
+static CGPathRef SkPathToCGPath(SkPath path) {
+      CGMutablePathRef result = CGPathCreateMutable();
+      SkPoint points[4];
+      const size_t pow2 = 3;
+      const size_t quadCount = 1 << pow2;
+
+      SkPoint conicQuads[1 + 2 * quadCount];
+      SkPath::Iter iter(path, true);
+      while(true) {
+        SkPath::Verb verb = iter.next(points);
+        switch(verb) {
+          case SkPath::kMove_Verb:
+          CGPathMoveToPoint(result, nil, points[0].x(), points[0].y());
+          break;
+          case SkPath::kLine_Verb:
+          CGPathAddLineToPoint(result, nil,points[1].x(), points[1].y());
+          break;
+          case SkPath::kQuad_Verb:
+          CGPathAddQuadCurveToPoint(result, nil, points[1].x(), points[1].y(), points[2].x(), points[2].y());
+          break;
+          case SkPath::kConic_Verb:
+           
+          SkPath::ConvertConicToQuads	(points[0], points[1], points[2], iter.conicWeight(), conicQuads, pow2);
+          for (size_t i = 0; i < quadCount; i++) {
+            CGPathAddQuadCurveToPoint(
+              result, nil,
+              conicQuads[1 + 2 * i].x(), conicQuads[1 + 2 * i].y(),
+              conicQuads[1 + 2 * i + 1].x(), conicQuads[1 + 2 * i + 1].y());
+          }
+          break;
+          case SkPath::kCubic_Verb:
+          CGPathAddCurveToPoint(result, nil, points[1].x(), points[1].y(), points[2].x(), points[2].y(), points[3].x(), points[3].y());
+          break;
+          case SkPath::kClose_Verb:
+          CGPathCloseSubpath(result);
+          break;
+          case SkPath::kDone_Verb:
+          return result;
+        }
+      }
 }
 
 IOSLayeredPaintContext::Surface::Surface(CAEAGLLayer *caLayer, IOSSurfaceGL *iosSurface) :
@@ -59,19 +101,10 @@ void IOSLayeredPaintContext::Layer::present() {
    surface->iosSurface->GLContextPresent();
 }
 
-void IOSLayeredPaintContext::Layer::makePainted(Surface *surface) {
-  this->surface = surface;
-  layer_ = surface->caLayer;
-}
-
-void IOSLayeredPaintContext::Layer::makeBasic(CALayer *layer) {
-  layer_ = layer;
-}
-
 void IOSLayeredPaintContext::Layer::installChildren() {
   CALayer *parentCALayer = layer();
   int zPosition = 0;
-  for (Layer *childLayer : children_) {
+  for (auto &childLayer : children_) {
     CALayer *childCALayer = childLayer->layer();
     if ([childCALayer superlayer] != parentCALayer) {
       [parentCALayer addSublayer:childCALayer];
@@ -85,13 +118,22 @@ void IOSLayeredPaintContext::Layer::installChildren() {
   children_.clear();
 }
 
-void IOSLayeredPaintContext::Layer::manifest() {
+void IOSLayeredPaintContext::Layer::manifest(IOSLayeredPaintContext &context) {
+  if (paint_layers_.empty()) {
+    layer_  = context.basicLayer();
+  } else {
+    Surface *surface = context.drawLayer();
+    this->surface = surface;
+    layer_ = surface->caLayer;
+  }
+
   int alpha = SkColorGetA(background_color_);
-  layer_.backgroundColor = [UIColor colorWithRed: SkColorGetR(background_color_) green: SkColorGetG(background_color_) blue: SkColorGetB(background_color_) alpha: alpha].CGColor;
+  layer_.backgroundColor = [UIColor colorWithRed: SkColorGetR(background_color_)
+         green: SkColorGetG(background_color_) blue: SkColorGetB(background_color_) alpha: alpha].CGColor;
   if (alpha == 0xff) {
     layer_.opaque = true;
   } else {
-    layer_.opaque = NO;
+    layer_.opaque = false;
   }
 
   layer_.opacity = 1;
@@ -100,18 +142,24 @@ void IOSLayeredPaintContext::Layer::manifest() {
     layer_.masksToBounds = clip_;
   }
 
-  if (layer_.cornerRadius != corner_radius_) {
-    layer_.cornerRadius =  corner_radius_;
+  if (!path.isEmpty()) {
+    CAShapeLayer *shapeLayer = [[CAShapeLayer alloc] init];
+    shapeLayer.path = SkPathToCGPath(path);
+    layer_.mask = shapeLayer;
+  } else {
+    layer_.mask = nil;
   }
 
   if (elevation_ == 0.0f) {
     layer_.shadowOpacity = 0.0;
   } else {
-     layer_.shadowOpacity = 0.2;
-     layer_.opaque = YES; /// XXX
+     layer_.shadowOpacity = 0.0;
+     
+     // 0.2 XXX
+    // layer_.opaque = YES; /// XXX
      // CurrentLayer().shadowPath = CGPathCreateWithRect(CurrentLayer().bounds, nullptr);
-     layer_.shadowRadius = 2.0;
-     layer_.shadowOffset = CGSizeMake(0 , 2);
+    // layer_.shadowRadius = 2.0;
+    // layer_.shadowOffset = CGSizeMake(0 , 2);
   }
   layer_.borderWidth = 0.0;
   layer_.borderColor = [UIColor purpleColor].CGColor;
@@ -138,18 +186,22 @@ void IOSLayeredPaintContext::Layer::manifest() {
     size_t height = externalLayerHeights[i];
     if (externalLayer.superlayer != layer_) {
       [layer_ addSublayer: externalLayer];
+      externalLayer.anchorPoint = CGPointMake(0, 0);
         //  CGFloat screenScale = [UIScreen mainScreen].scale;
         //  externalLayer.contentsScale = screenScale;
     }
-    CGRect newFrame = CGRectMake(externalFrame.x(), externalFrame.y(), externalFrame.width(), externalFrame.height());
-    if (!CGRectEqualToRect(externalLayer.frame, newFrame)) {
-      externalLayer.frame = newFrame;
+    CGPoint newPosition = CGPointMake(externalFrame.x(), externalFrame.y());
+    if (!CGPointEqualToPoint(externalLayer.position, newPosition)) {
+      externalLayer.position = newPosition;
     }
+   
+   // TODO(sigurdm): Handle transforms...
+   // externalLayer.transform = skiaToCATransform(externalLayerTransforms[i]);
     externalLayer.zPosition = height + 0.5;
+      // NSLog(@"Canvastransform %f %f %f", externalLayer.transform.m11, externalLayer.transform.m21, externalLayer.transform.m31);
+      // NSLog(@"CanvasTransform %f %f %f", externalLayer.transform.m12, externalLayer.transform.m22, externalLayer.transform.m32);
+      // NSLog(@"CanvasTransform %f %f %f", externalLayer.transform.m13, externalLayer.transform.m23, externalLayer.transform.m33);
   }
-  externalLayers.clear();
-  externalLayerFrames.clear();
-  externalLayerHeights.clear();
 }
 
 CALayer *IOSLayeredPaintContext::Layer::layer() { return layer_; }
@@ -160,9 +212,12 @@ void  IOSLayeredPaintContext::Layer::AddPaintedLayer(flow::Layer *layer) {
   paint_layers_.push_back(layer);
 }
 
-
-IOSLayeredPaintContext::IOSLayeredPaintContext(IOSSurface *rootSurface) {
-  IOSSurfaceGL *rootSurfaceGL = static_cast<IOSSurfaceGL*>(rootSurface);
+IOSLayeredPaintContext::IOSLayeredPaintContext(PlatformView::SurfaceConfig surfaceConfig,
+      CALayer* layer) : 
+      eaglContext_([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]),
+      root_surface_(IOSSurface::Create(surfaceConfig, layer, eaglContext_.get())),
+      surface_config_(surfaceConfig) {
+  IOSSurfaceGL *rootSurfaceGL = static_cast<IOSSurfaceGL*>(root_surface_.get());
   Layer *rootLayer = new Layer();
 
   rootLayer->surface = new Surface(rootSurfaceGL->layer(), rootSurfaceGL);
@@ -172,7 +227,7 @@ IOSLayeredPaintContext::IOSLayeredPaintContext(IOSSurface *rootSurface) {
 
   offsets_.push_back(SkPoint::Make(0, 0));
   transforms_.push_back(SkMatrix::Concat(SkMatrix::I(), SkMatrix::I()));
-// root_surface_ = reinterpret_cast<IOSSurfaceGL*>(rootSurface);
+//  = reinterpret_cast<IOSSurfaceGL*>(rootSurface);
 }
 
 CALayer *IOSLayeredPaintContext::basicLayer() {
@@ -191,20 +246,13 @@ CALayer *IOSLayeredPaintContext::basicLayer() {
 IOSLayeredPaintContext::Surface *IOSLayeredPaintContext::drawLayer() {
   Surface *result;
   if (CAEAGLLayerCache_index_ >= CAEAGLLayerCache_.size()) {
-    CAEAGLLayer *newCALayer = [[CAEAGLLayer alloc] init];
+    CAEAGLLayer *newCALayer = [[[root_surface_->GetLayer() class] alloc] init];
     CGFloat screenScale = [UIScreen mainScreen].scale;
     newCALayer.contentsScale = screenScale;
     newCALayer.rasterizationScale = screenScale;
     newCALayer.presentsWithTransaction = YES;
-    const PlatformView::SurfaceConfig surface_config = {
-      .red_bits = 8,
-      .green_bits = 8,
-      .blue_bits = 8,
-      .alpha_bits = 8,
-      .depth_bits = 0,
-      .stencil_bits = 8,
-    };
-    IOSSurfaceGL *iosSurface = new IOSSurfaceGL(surface_config, newCALayer);
+
+    IOSSurfaceGL *iosSurface = new IOSSurfaceGL(surface_config_, newCALayer, eaglContext_);
     result = new Surface(newCALayer, iosSurface);
     CAEAGLLayerCache_.push_back(result);
   } else {
@@ -218,7 +266,6 @@ IOSLayeredPaintContext::Surface *IOSLayeredPaintContext::drawLayer() {
 
 void IOSLayeredPaintContext::Reset() {
   system_composited_rect_ = SkRect::MakeEmpty();
-  cache_index_ = 0;
   CALayerCache_index_ = 0;
   CAEAGLLayerCache_index_ = 0;
   [CATransaction begin];
@@ -240,71 +287,28 @@ void IOSLayeredPaintContext::Finish() {
   [CATransaction commit];
 }
 
- IOSLayeredPaintContext::Layer *IOSLayeredPaintContext::acquireLayer() {
- Layer *result;
- if (cache_index_ >= cache_.size()) {
-     result = new Layer();
-     cache_.push_back(result);
-  } else {
-      result = cache_[cache_index_];
-//      [newCALayer setAffineTransform: CGAffineTransformIdentity];
-  }
-  cache_index_++;
-  return result;
-}
-
 void IOSLayeredPaintContext::PushLayer(SkRect bounds) {
-//  std::stringstream indent;
-//  for (uint i = 0; i < stack_.size(); i++) {
-//    indent << "  ";
-//  }
-//   FXL_LOG(INFO) << indent.str() << "push" << bounds.x() << ", " << bounds.y() << " " << bounds.width() << " " << bounds.height();
-  Layer *newLayer = acquireLayer();
+  stack_.back()->children_.push_back(std::make_unique<Layer>());
+  Layer *newLayer = stack_.back()->children_.back().get();
 
-  SkRect newBounds = bounds.makeOffset(-current_offset().x(), -current_offset().y());
-
-  transforms_.back().mapRect(&newBounds);
-  newLayer->frame_ = newBounds;
-  // FXL_DLOG(INFO) << indent.str() << "frame " << newBounds.x() << ", " << newBounds.y();
-
-  if (! stack_.empty()) {
-    stack_.back()->children_.push_back(newLayer);
-  }
-
+  SkRect transformedBounds = bounds.makeOffset(-current_offset().x(), -current_offset().y());
+  transforms_.back().mapRect(&transformedBounds);
+  newLayer->frame_ = transformedBounds;
+  newLayer->transform = transforms_.back();
+  SkPoint offset = SkPoint::Make(bounds.x(), bounds.y());
+  newLayer->offset = offset;
   stack_.push_back(newLayer);
-  offsets_.push_back(SkPoint::Make(bounds.x(), bounds.y()));
+  offsets_.push_back(offset);
 }
 
 void IOSLayeredPaintContext::PopLayer() {
   Layer* top = stack_.back();
-  SkPoint top_offset = offsets_.back();
-  paint_tasks_.push_back({
-    .layer = top,
-    .transform = transforms_.back(),
-    .offset = top_offset,
-    .background_color = top->background_color_,
-    .layers = top->paint_layers_,
-  });
-
-  if (top->paint_layers_.empty()) {
-    top->makeBasic(basicLayer());
-  } else {
-    top->makePainted(drawLayer());
-  }
-
-  top->paint_layers_.clear();
- // }
+  paint_tasks_.push_back(top);
   stack_.pop_back();
   offsets_.pop_back();
-  // std::stringstream indent;
-  // for (uint i = 0; i < stack_.size(); i++) {
-  //   indent << "  ";
-  // }
-  // FXL_LOG(INFO) << indent.str() << "pop";
- // transforms_.pop_back();
 }
 
-SkPoint IOSLayeredPaintContext::current_offset() { return offsets_.back(); }
+SkPoint IOSLayeredPaintContext::current_offset() { return stack_.back()->offset; }
 
 SkCanvas *IOSLayeredPaintContext::CurrentCanvas() {
   return stack_.back()->canvas();
@@ -322,6 +326,9 @@ void IOSLayeredPaintContext::AddExternalLayer(flow::Texture* texture, SkRect bou
   SkRect newBounds = bounds.makeOffset(-current_offset().x(), -current_offset().y());
   stack_.back()->externalLayerFrames.push_back(newBounds);
   stack_.back()->externalLayerHeights.push_back(stack_.back()->children_.size());
+  SkMatrix transform = transforms_.back();
+  //transform.preTranslate(newBounds.x(), newBounds.y());
+  stack_.back()->externalLayerTransforms.push_back(transform);
 
   system_composited_rect_.join(newBounds);
 }
@@ -330,10 +337,14 @@ void IOSLayeredPaintContext::SetColor(SkColor color) {
   stack_.back()->background_color_ = color;
 }
 
-void IOSLayeredPaintContext::SetCornerRadius(float radius) {
-  // NSLog(@"SetCornerRadius %f", radius);
-  stack_.back()->corner_radius_ = radius;
+void IOSLayeredPaintContext::SetClipPath(SkPath path) {
+  path.offset(-current_offset().x(), -current_offset().y(), &(stack_.back()->path));
 }
+
+// void IOSLayeredPaintContext::SetCornerRadius(float radius) {
+//   // NSLog(@"SetCornerRadius %f", radius);
+//   stack_.back()->corner_radius_ = radius;
+// }
 
 void IOSLayeredPaintContext::ClipRect() {
   stack_.back()->clip_ = true;
@@ -358,16 +369,13 @@ void IOSLayeredPaintContext::Elevate(float elevation) {
 //      NSLog(@"Execute %lu", paint_tasks_.size());
   FXL_DCHECK(glGetError() == GL_NO_ERROR);
 
-  stack_[0]->installChildren();
   for (auto& task : paint_tasks_) {
-    FXL_DCHECK(task.layer);
   //  FXL_DLOG(INFO) << "Layer id: " << task.layer->id;
   //  FXL_DLOG(INFO) << "Layer Size: " << task.layer->layer().frame.size.width << "x" << task.layer->layer().frame.size.height;
-
-    task.layer->manifest();
-    if (!task.layers.empty()) {
-      task.layer->makeCurrent();
-      SkCanvas* canvas = task.layer->canvas();
+    task->manifest(*this);
+    if (!task->paint_layers_.empty()) {
+      task->makeCurrent();
+      SkCanvas* canvas = task->canvas();
       flow::Layer::PaintContext context = {
         *canvas,
         frame.context().frame_time(),
@@ -377,34 +385,28 @@ void IOSLayeredPaintContext::Elevate(float elevation) {
         false,};
       //canvas->restoreToCount(1);
       int saveCount = canvas->save();
-      canvas->clear(task.background_color);
-      context.canvas.scale(2, 2);
-      canvas->translate(-task.offset.x(), -task.offset.y());
-      context.canvas.concat(task.transform);
-      // NSLog(@"Task  %f %f", task.left, task.top);
-
-      // NSLog(@"Canvastransform %f %f %f", task.transform[0], task.transform[1], task.transform[2]);
-      // NSLog(@"CanvasTransform %f %f %f", task.transform[3], task.transform[4], task.transform[5]);
-      // NSLog(@"CanvasTransform %f %f %f", task.transform[6], task.transform[7], task.transform[8]);
-
-      //    canvas->scale(task.scale_x, task.scale_y);
+      canvas->clear(task->background_color_);
+      context.canvas.scale(2, 2); // Why??
+      canvas->translate(-task->offset.x(), -task->offset.y());
+      context.canvas.concat(task->transform);
 
       SkPaint paint;
       paint.setColor(SK_ColorGREEN);
       paint.setStyle(SkPaint::kStroke_Style);
 
-      for (flow::Layer* layer : task.layers) {
+      for (flow::Layer* layer : task->paint_layers_) {
         layer->Paint(context);
       }
       // std::stringstream a;
       // a << "Layer " << task.layer->id;
       // canvas->drawString(a.str().c_str(), task.offset.x() + 2, task.offset.y() + 20, paint);
       canvas->restoreToCount(saveCount);
-      task.layers.clear();
-      task.layer->present();
+      task->present();
       FXL_DCHECK(glGetError() == GL_NO_ERROR);
     }
   }
+  // Setting up parent-child relationship from the bottom to avoid creating temporary cycles.
+  stack_[0]->installChildren();
   paint_tasks_.clear();
 }
 
@@ -414,19 +416,14 @@ void IOSLayeredPaintContext::Transform(SkMatrix transform) {
   //    transform[0], transform[1],
   //    transform[3], transform[4],
   //    transform[6], transform[7])];
-  // CurrentLayer().transform =
-       skiaToCATransform(transform); // XXX
   transforms_.push_back(SkMatrix::Concat(transforms_.back(), transform));
-//  SkMatrix currentTransform = transforms_.back();
-
-    // NSLog(@"Pushtransform %f %f %f", transform[0], transform[1], transform[2]);
-    // NSLog(@"PushTransform %f %f %f", transform[3], transform[4], transform[5]);
-    // NSLog(@"PushTransform %f %f %f", transform[6], transform[7], transform[8]);
+//  NSLog(@"Transform {");
 }
 
 void IOSLayeredPaintContext::PopTransform() {
   // NSLog(@"Poptransform");
   transforms_.pop_back();
+ // NSLog(@"} Transform ");
 }
 
 void IOSLayeredPaintContext::AddPaintedLayer(flow::Layer *layer) {

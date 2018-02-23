@@ -31,8 +31,6 @@ class IOSSurfaceSoftware : public IOSSurface,
 
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
 
-  flow::LayeredPaintContext* CreateLayeredPaintContext() override { return nullptr; };
-
  private:
   sk_sp<SkSurface> sk_surface_;
 

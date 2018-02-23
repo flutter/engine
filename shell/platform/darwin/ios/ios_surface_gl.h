@@ -16,7 +16,7 @@ namespace shell {
 
 class IOSSurfaceGL : public IOSSurface, public GPUSurfaceGLDelegate {
  public:
-  IOSSurfaceGL(PlatformView::SurfaceConfig surface_config, CAEAGLLayer* layer);
+  IOSSurfaceGL(PlatformView::SurfaceConfig surface_config, CAEAGLLayer* layer, EAGLContext *eaglContext);
 
   ~IOSSurfaceGL() override;
 
@@ -35,8 +35,6 @@ class IOSSurfaceGL : public IOSSurface, public GPUSurfaceGLDelegate {
   bool GLContextPresent() override;
 
   intptr_t GLContextFBO() const override;
-
-  flow::LayeredPaintContext* CreateLayeredPaintContext() override;
 
   CAEAGLLayer *layer() { return context_.layer(); }
 

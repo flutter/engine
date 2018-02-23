@@ -13,6 +13,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.h"
+#include "flutter/shell/platform/darwin/ios/ios_layered_paint_context.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 #include "flutter/shell/platform/darwin/ios/ios_external_texture_layer.h"
 #include "lib/fxl/functional/closure.h"
@@ -87,7 +88,7 @@ class PlatformViewIOS : public PlatformView {
   }
 
  private:
-  std::unique_ptr<IOSSurface> ios_surface_;
+  std::unique_ptr<IOSLayeredPaintContext> layered_paint_context_;
   PlatformMessageRouter platform_message_router_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
   fxl::Closure firstFrameCallback_;

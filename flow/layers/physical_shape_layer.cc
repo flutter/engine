@@ -71,12 +71,16 @@ void PhysicalShapeLayer::UpdateScene(LayeredPaintContext &context) {
       //  SkRRect rrect = path_.getFrameRRect();
         context.PushLayer(path_.getBounds());
         context.Elevate(elevation_);
-        context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
+//        context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
+        // context.SetClipPath(path_);
+    
         context.PushLayer(path_.getBounds());
         context.ClipRect();
         context.SetColor(color_);
         //context.SetColor(SK_ColorRED);
-        context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
+        context.SetClipPath(path_);
+      //  context.SetCornerRadius(frameRRect_.getSimpleRadii().length());
+
   // SceneUpdateContext::Frame frame(context, shape_->getFrameRRect(), color_,
   //                                 elevation_);
   // for (auto& layer : layers()) {
@@ -96,8 +100,8 @@ void PhysicalShapeLayer::Paint(PaintContext& context) {
   FXL_DCHECK(needs_painting());
 
   if (elevation_ != 0) {
-    DrawShadow(&context.canvas, path_, SK_ColorBLACK, elevation_,
-               SkColorGetA(color_) != 0xff, device_pixel_ratio_);
+    // DrawShadow(&context.canvas, path_, SK_ColorBLACK, elevation_,
+    //            SkColorGetA(color_) != 0xff, device_pixel_ratio_);
   }
 
  SkPaint paint;

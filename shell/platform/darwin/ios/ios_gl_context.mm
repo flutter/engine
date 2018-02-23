@@ -16,9 +16,7 @@ namespace shell {
     return;                           \
   };
 
-EAGLContext *eaglContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
-
-IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* layer)
+IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* layer, EAGLContext *eaglContext)
     : layer_([layer retain]),
       context_(eaglContext),
       resource_context_([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2

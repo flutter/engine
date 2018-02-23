@@ -14,11 +14,11 @@
 namespace shell {
 
 std::unique_ptr<IOSSurface> IOSSurface::Create(PlatformView::SurfaceConfig surface_config,
-                                               CALayer* layer) {
+                                               CALayer* layer, EAGLContext *eaglContext) {
   // Check if we can use OpenGL.
   if ([layer isKindOfClass:[CAEAGLLayer class]]) {
     (reinterpret_cast<CAEAGLLayer*>(layer)).presentsWithTransaction = true;
-    return std::make_unique<IOSSurfaceGL>(surface_config, reinterpret_cast<CAEAGLLayer*>(layer));
+    return std::make_unique<IOSSurfaceGL>(surface_config, reinterpret_cast<CAEAGLLayer*>(layer), eaglContext);
   }
 
   // If we ever support the metal rendering API, a check for CAMetalLayer would
