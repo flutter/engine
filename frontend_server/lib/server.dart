@@ -338,18 +338,10 @@ String _escapePath(String path) {
 
 // https://ninja-build.org/manual.html#_depfile
 Future<void> _writeDepfile(Program program, String output, String depfile) async {
-  final List<Uri> deps = <Uri>[];
-  for (Library lib in program.libraries) {
-    deps.add(lib.fileUri);
-    for (LibraryPart part in lib.parts) {
-      deps.add(part.fileUri);
-    }
-  }
-
   final IOSink file = new File(depfile).openWrite();
   file.write(_escapePath(output));
   file.write(':');
-  for (Uri dep in deps) {
+  for (Uri dep in program.uriToSource.keys) {
     file.write(' ');
     file.write(_escapePath(dep.toFilePath()));
   }
