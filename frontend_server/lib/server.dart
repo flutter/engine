@@ -214,7 +214,7 @@ class _FrontendCompiler implements CompilerInterface {
 
       final String depfile = options['depfile'];
       if (depfile != null) {
-        await _writeDepfile(program, _kernelBinaryFilename, depfile);
+        _writeDepfile(program, _kernelBinaryFilename, depfile);
       }
 
       _kernelBinaryFilename = _kernelBinaryFilenameIncremental;
