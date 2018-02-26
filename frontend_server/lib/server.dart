@@ -337,7 +337,7 @@ String _escapePath(String path) {
 }
 
 // https://ninja-build.org/manual.html#_depfile
-Future<void> _writeDepfile(Program program, String output, String depfile) async {
+void _writeDepfile(Program program, String output, String depfile) async {
   final IOSink file = new File(depfile).openWrite();
   file.write(_escapePath(output));
   file.write(':');
