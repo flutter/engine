@@ -79,6 +79,7 @@ using namespace shell;
 - (void)vibrateHapticFeedback:(NSString*)feedbackType {
   if (!feedbackType) {
     AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+    return;
   }
 
   if (@available(iOS 10, *)) {
