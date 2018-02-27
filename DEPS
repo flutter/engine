@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '48661b868fbbf7a6193ef49bb6a05a0df61e7c45',
+  'skia_revision': 'f802e757646f424b563fdc1f5b5ee3c677659e98',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '32396138ff733cbe8d9ac32178e6cffccdf80644',
+  'dart_revision': '3c4dccbd46f152be9e1b6ca95c57357e8e48057c',
 
   'dart_args_tag': '0.13.7',
   'dart_async_tag': 'corelib_2_2_1',
@@ -48,7 +48,7 @@ vars = {
   'dart_csslib_tag': '0.14.1',
   'dart_dart2js_info_tag': '0.5.5+1',
   'dart_dart_style_tag': '1.0.9',
-  'dart_dartdoc_tag': 'v0.15.1',
+  'dart_dartdoc_tag': 'v0.16.0',
   'dart_fixnum_tag': '0.10.5',
   'dart_glob_tag': '1.1.5',
   'dart_html_tag': '0.13.2+2',
@@ -60,12 +60,12 @@ vars = {
   'dart_intl_tag': '0.15.2',
   'dart_isolate_tag': '1.1.0',
   'dart_json_rpc_2_tag': '2.0.6',
-  'dart_linter_tag': '0.1.42',
+  'dart_linter_tag': '0.1.43',
   'dart_logging_tag': '0.11.3+1',
   'dart_markdown_tag': '1.0.0',
   'dart_matcher_tag': '0.12.1+4',
   'dart_mime_tag': '0.9.6',
-  'dart_mockito_tag': '2.0.2',
+  'dart_mockito_tag': 'a92db054fba18bc2d605be7670aee74b7cadc00a',
   'dart_mustache4dart_tag': 'v2.1.0',
   'dart_oauth2_tag': '1.1.0',
   'dart_observatory_pub_packages_rev': '4c282bb240b68f407c8c7779a65c68eeb0139dc6',
@@ -79,7 +79,7 @@ vars = {
   'dart_pub_semver_tag': '1.3.2',
   'dart_quiver_tag': '0.28.0',
   'dart_resource_rev': 'af5a5bf65511943398146cf146e466e5f0b95cb9',
-  'dart_root_certificates_rev': 'a4c7c6f23a664a37bc1b6f15a819e3f2a292791a',
+  'dart_root_certificates_rev': '16ef64be64c7dfdff2b9f4b910726e635ccc519e',
   'dart_shelf_packages_handler_tag': '1.0.3',
   'dart_shelf_static_rev': '3558aa35a0d2f0f35868c3fd64b258e140db0122',
   'dart_shelf_tag': '0.7.1',
@@ -115,7 +115,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '9881cb0513c95c341e432670dbd1add0c76b7da9',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '06e2d5a3e84459931ca9bedd3171c76f9953ebfa',
 
    # Fuchsia compatibility
    #
@@ -127,7 +127,7 @@ deps = {
    Var('fuchsia_git') + '/garnet' + '@' + 'b3ba6b6d6ab8ef658278cc43c9f839a8a8d1718e',
 
   'src/topaz':
-   Var('fuchsia_git') + '/topaz' + '@' + '531e2778d86b213bc663ea51bb0e0dde33d8ac8c',
+   Var('fuchsia_git') + '/topaz' + '@' + 'acf6b391d5ddad479427260b8683799685319dba',
 
   'src/third_party/benchmark':
    Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',
