@@ -116,7 +116,6 @@ void IOSSystemCompositorContext::ExternalCompositingLayer::installChildren() {
   if (!CGPointEqualToPoint(externalLayer.position, newPosition)) {
     externalLayer.position = newPosition;
   }
-  // No children.
 }
 
 void IOSSystemCompositorContext::FlowCompositingLayer::installChildren() {
@@ -181,8 +180,11 @@ void IOSSystemCompositorContext::FlowCompositingLayer::manifest(
 
   if (!path_.isEmpty()) {
     CAShapeLayer* shapeLayer = [[CAShapeLayer alloc] init];
-    shapeLayer.path = SkPathToCGPath(path_);
+    CGPathRef path = SkPathToCGPath(path_);
+    shapeLayer.path = path;
+    CGPathRelease(path);
     layer.mask = shapeLayer;
+
   } else {
     layer.mask = nil;
   }
@@ -219,8 +221,7 @@ IOSSystemCompositorContext::IOSSystemCompositorContext(PlatformView::SurfaceConf
   root_layer_->layer_.reset(layer);
 
   root_layer_->frame_ = SkRect::MakeWH(layer.bounds.size.width, layer.bounds.size.height);
-  // FXL_DCHECK(!root_layer_->frame_.isEmpty());
-  stack_.push_back(root_layer_.get());
+  // stack_.push_back(root_layer_.get());
 
   offsets_.push_back(SkPoint::Make(0, 0));
   transforms_.push_back(SkMatrix::Concat(SkMatrix::I(), SkMatrix::I()));
@@ -262,7 +263,7 @@ void IOSSystemCompositorContext::Reset() {
   CAEAGLLayerCache_index_ = 0;
   [CATransaction begin];
   [CATransaction setValue:(id)kCFBooleanTrue forKey:kCATransactionDisableActions];
-  // paint_tasks_.push_back(root_layer_.get());
+  paint_tasks_.push_back(root_layer_.get());
 }
 
 void IOSSystemCompositorContext::Finish() {
