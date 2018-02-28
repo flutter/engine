@@ -1615,6 +1615,67 @@ class Path extends NativeFieldWrapperClass2 {
   Path _transform(Float64List matrix4) native 'Path_transform';
 }
 
+
+class PositionAndTangent {
+  final Offset position;
+  final Offset tangent;
+
+  const PositionAndTangent(this.position, this.tangent);
+}
+/// Utilities for measuring a [Path]
+///
+/// Call [setPath] to set the target Path.  Once a path is set to
+/// the path measure object, measures will only be valid while the path
+/// remains unmodified.  If the path is modified, the behavior of the
+/// PathMeasure object is undefined.
+class PathMeasure extends NativeFieldWrapperClass2 {
+  /// Create a new empty [Path] object.
+  PathMeasure({Path p = null, bool forceClosed = false}) { _constructor(p, forceClosed); }
+  void _constructor(Path p, bool forceClosed) native 'PathMeasure_constructor';
+
+  /// Sets the [Path] target of this [PathMeasure].
+  /// 
+  /// Once set, the path should not be modified.
+  void setPath(Path path, bool isClosed) native 'PathMeasure_setPath';
+
+  /// Return the total length of the current contour, or 0 if no path is associated
+  double getLength() native 'PathMeasuer_getLength';
+
+  /// Pins distance to 0 <= distance <= getLength(), and then computes the corresponding 3x3 matrix 
+  /// 
+  /// Matrix is computed by calling getPosTan.
+  /// Returns identity matrix if there is no path, or a zero-length path was specified.
+  Float64List getMatrix(double distance, int flags) native 'PathMeasure_getMatrix';
+
+  /// Pins distance to 0 <= distance <= getLength(), and then computes the corresponding position and tangent
+  /// 
+  /// Position is a point, tangent is a vector.  Both set to 0,0 if no or zero-length [Path]
+  PositionAndTangent getPosTan(double distance) {
+    Float32List posTan = _getPosTan(distance);
+    return new PositionAndTangent(
+      new Offset(posTan[0], posTan[1]), 
+      new Offset(posTan[2], posTan[3])
+    );
+  }
+
+  Float32List _getPosTan(double distance) native 'PathMeasure_getPosTan';
+
+  /// Given a start and stop distance, return the intervening segment(s).
+  /// 
+  /// startD and stopD are pinned to legal values (0..[getLength()])
+  /// Returns null if the segment is 0 length or startD > stopD.
+  /// Begin the segment with a moveTo if startWithMoveTo is true.
+  Path getSegment(double startD, double endD, bool startWithMoveTo) native 'PathMeasure_getSegment';
+
+  /// 
+  bool isClosed() native 'PathMeasure_isClosed';
+
+  /// Move to the next contour in the path.
+  ///
+  /// Return true if one exists, or false if we're done with the path.
+  bool nextContour() native 'PathMeasure_nextContour';
+}
+
 /// Styles to use for blurs in [MaskFilter] objects.
 // These enum values must be kept in sync with SkBlurStyle.
 enum BlurStyle {
