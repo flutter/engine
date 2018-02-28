@@ -10,6 +10,7 @@ group("flutter") {
   public_deps = [
     "$flutter_root/lib/snapshot:generate_snapshot_bin",
     "$flutter_root/lib/snapshot:kernel_platform_files",
+    "$flutter_root/lib/snapshot:entry_points_json_files",
     "$flutter_root/sky",
     "$flutter_root/third_party/txt",
   ]
