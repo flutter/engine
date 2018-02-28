@@ -206,9 +206,9 @@ class _FrontendCompiler implements CompilerInterface {
         ];
       }
       final bool aot = options['aot'];
-      final List<String> entryPoints = [];
+      final List<String> entryPoints = <String>[];
       if (aot) {
-        for (String entryPointsFile in [
+        for (String entryPointsFile in <String>[
           'entry_points.json',
           'entry_points_extra.json',
         ]) {
