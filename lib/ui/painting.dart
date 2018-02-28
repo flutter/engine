@@ -1630,8 +1630,8 @@ class PositionAndTangent {
 /// PathMeasure object is undefined.
 class PathMeasure extends NativeFieldWrapperClass2 {
   /// Create a new empty [Path] object.
-  PathMeasure({Path p = null, bool forceClosed = false}) { _constructor(p, forceClosed); }
-  void _constructor(Path p, bool forceClosed) native 'PathMeasure_constructor';
+  PathMeasure({Path path = null, bool forceClosed = false}) { _constructor(path, forceClosed); }
+  void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
 
   /// Sets the [Path] target of this [PathMeasure].
   /// 
@@ -1639,7 +1639,7 @@ class PathMeasure extends NativeFieldWrapperClass2 {
   void setPath(Path path, bool isClosed) native 'PathMeasure_setPath';
 
   /// Return the total length of the current contour, or 0 if no path is associated
-  double getLength() native 'PathMeasuer_getLength';
+  double getLength() native 'PathMeasure_getLength';
 
   /// Pins distance to 0 <= distance <= getLength(), and then computes the corresponding 3x3 matrix 
   /// 
