@@ -130,6 +130,8 @@ public final class FlutterActivityDelegate
      * unavailable on 2018-02-28, following deprecation. This comment is left as
      * a temporary tombstone for reference, to be removed on 2018-03-28 (or at
      * least four weeks after release of unavailability).
+     *
+     * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
      */
 
     @Override

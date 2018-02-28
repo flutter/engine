@@ -138,6 +138,8 @@ public interface PluginRegistry {
          * tombstone for reference. This comment will be removed on 2018-03-28
          * (or at least four weeks after the unavailability is released).
          *
+         * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
+         *
          * Adds a callback allowing the plugin to take part in handling incoming
          * calls to {@code Activity#onRequestPermissionsResult(int, String[], int[])}
          * or {@code android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
@@ -203,6 +205,8 @@ public interface PluginRegistry {
      * 2018-02-28, leaving this comment as a temporary tombstone for reference.
      * This comment will be removed on 2018-03-28 (or at least four weeks after
      * the unavailability is released).
+     *
+     * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
      *
      * Delegate interface for handling result of permissions requests on
      * behalf of the main {@link Activity}.
