@@ -125,12 +125,12 @@ public final class FlutterActivityDelegate
         return flutterView.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    @Override
-    @Deprecated
-    public boolean onRequestPermissionResult(
-            int requestCode, String[] permissions, int[] grantResults) {
-        return onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
+    /*
+     * Method onRequestPermissionResult(int, String[], int[]) was made
+     * unavailable on 2018-02-28, following deprecation. This comment is left as
+     * a temporary tombstone for reference, to be removed on 2018-03-28 (or at
+     * least four weeks after release of unavailability).
+     */
 
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
