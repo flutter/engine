@@ -28,6 +28,12 @@ class CanvasPath : public fxl::RefCountedThreadSafe<CanvasPath>,
     return fxl::MakeRefCounted<CanvasPath>();
   }
 
+  static fxl::RefPtr<CanvasPath> CreateFrom(SkPath src) {
+    fxl::RefPtr<CanvasPath> path = CanvasPath::Create();
+    path->path_ = src;
+    return path;
+  }
+
   int getFillType();
   void setFillType(int fill_type);
 
