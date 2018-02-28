@@ -47,7 +47,7 @@ ArgParser _argParser = new ArgParser(allowTrailingOptions: true)
   ..addFlag('tfa',
       help:
           'Enable global type flow analysis and related transformations in AOT mode.',
-      defaultsTo: false)
+      defaultsTo: true)
   ..addFlag('link-platform',
       help:
           'When in batch mode, link platform kernel file into result kernel file.'
