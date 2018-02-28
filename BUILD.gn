@@ -14,7 +14,7 @@ group("flutter") {
     "$flutter_root/third_party/txt",
   ]
 
-  if (flutter_aot) {
+  if (flutter_runtime_mode != "debug") {
     public_deps += [
       "$flutter_root/lib/snapshot:entry_points_json_files",
     ]
