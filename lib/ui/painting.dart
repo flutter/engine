@@ -1340,6 +1340,18 @@ enum PathFillType {
   evenOdd,
 }
 
+/// Path operation enums
+/// 
+/// For use with [Path.op]
+/// Must be kept in sync with SkPathOp
+enum PathOp {
+    difference,         //!< subtract the op path from the first path
+    intersect,          //!< intersect the two paths
+    union,              //!< union (inclusive-or) the two paths
+    xor,                //!< exclusive-or the two paths
+    reverseDifference,  //!< subtract the first path from the op path
+}
+
 /// A complex, one-dimensional subset of a plane.
 ///
 /// A path consists of a number of subpaths, and a _current point_.
@@ -1623,11 +1635,32 @@ class Path extends NativeFieldWrapperClass2 {
     return new Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
   }
   Float32List _getBounds() native 'Path_getBounds';
+
+  /// Sets this path to the result of operation [PathOp]
+  /// 
+  /// If only one path is specified, this path will be used as the first 
+  /// operand, otherwise path1 will be the first operand and path2 the
+  /// second.
+  /// 
+  /// The resulting path will be constructed from non-overlapping contours. The
+  /// curve order is reduced where possible so that cubics may be turned into
+  /// quadratics, and quadratics maybe turned into lines.
+  void op(PathOp operation, Path path1, [Path path2 = null]) {
+    assert(path1 != null);
+    if (path2 != null) {
+      _op(path1, path2, operation.index);
+    } else {
+      _op(this, path1, operation.index);
+    }
+  }
+  void _op(Path path1, Path path2, int operation) native 'Path_op';
 }
 
-
+/// Convenience class to return the result of [PathMeasure.getPosTan]
 class PositionAndTangent {
+  /// The position Offset/point
   final Offset position;
+  /// The tangent vector
   final Offset tangent;
 
   const PositionAndTangent(this.position, this.tangent);

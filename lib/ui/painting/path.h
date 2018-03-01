@@ -10,6 +10,7 @@
 #include "lib/tonic/typed_data/float32_list.h"
 #include "lib/tonic/typed_data/float64_list.h"
 #include "third_party/skia/include/core/SkPath.h"
+#include "third_party/skia/include/pathops/SkPathOps.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -92,6 +93,7 @@ class CanvasPath : public fxl::RefCountedThreadSafe<CanvasPath>,
   fxl::RefPtr<CanvasPath> shift(double dx, double dy);
   fxl::RefPtr<CanvasPath> transform(tonic::Float64List& matrix4);
   tonic::Float32List getBounds();
+  void op(CanvasPath* path1, CanvasPath* path2, int operation);
 
   const SkPath& path() const { return path_; }
 

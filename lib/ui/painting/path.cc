@@ -53,7 +53,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
   V(Path, shift)                     \
   V(Path, transform)                 \
   V(Path, getBounds)                 \
-  V(Path, addPathWithMatrix)
+  V(Path, addPathWithMatrix)         \
+  V(Path, op)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -261,6 +262,11 @@ tonic::Float32List CanvasPath::getBounds() {
   rect[2] = bounds.right();
   rect[3] = bounds.bottom();
   return rect;
+}
+
+
+void CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
+  Op(path1->path(), path2->path(), (SkPathOp)operation, &path_);
 }
 
 }  // namespace blink
