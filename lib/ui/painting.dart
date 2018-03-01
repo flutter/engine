@@ -1565,6 +1565,9 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addPath(Path path, double dx, double dy) native 'Path_addPath';
 
+  /// Append subpath (transformed by matrix) to this path
+  void addPathWithMatrix(Path path, Float64List matrix3) native 'Path_addPathWithMatrix';
+  
   /// Adds the given path to this path by extending the current segment of this
   /// path with the the first segment of the given path.
   void extendWithPath(Path path, Offset offset) {
@@ -1613,6 +1616,13 @@ class Path extends NativeFieldWrapperClass2 {
     return _transform(matrix4);
   }
   Path _transform(Float64List matrix4) native 'Path_transform';
+
+  /// Gets the bounding rectangle for this path
+  Rect getBounds() {
+    Float32List rect = _getBounds();
+    return new Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
+  }
+  Float32List _getBounds() native 'Path_getBounds';
 }
 
 

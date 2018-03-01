@@ -51,7 +51,9 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
   V(Path, reset)                     \
   V(Path, setFillType)               \
   V(Path, shift)                     \
-  V(Path, transform)
+  V(Path, transform)                 \
+  V(Path, getBounds)                 \
+  V(Path, addPathWithMatrix)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -207,6 +209,18 @@ void CanvasPath::addPath(CanvasPath* path, double dx, double dy) {
   path_.addPath(path->path(), dx, dy, SkPath::kAppend_AddPathMode);
 }
 
+void CanvasPath::addPathWithMatrix(CanvasPath* path, tonic::Float64List& matrix3) {
+  if (!path)
+    Dart_ThrowException(ToDart("Path.addPathWithMatrix called with non-genuine Path."));
+  
+  SkMatrix matrix;
+  for (int i = 0; i < 9; ++i) {
+    matrix[i] = matrix3[i];
+  }
+  matrix3.Release();
+  path_.addPath(path->path(), matrix);
+}
+
 void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {
   if (!path)
     Dart_ThrowException(
@@ -237,6 +251,16 @@ fxl::RefPtr<CanvasPath> CanvasPath::transform(tonic::Float64List& matrix4) {
   path_.transform(ToSkMatrix(matrix4), &path->path_);
   matrix4.Release();
   return path;
+}
+
+tonic::Float32List CanvasPath::getBounds() {
+  tonic::Float32List rect(Dart_NewTypedData(Dart_TypedData_kFloat32, 4));
+  const SkRect& bounds = path_.getBounds();
+  rect[0] = bounds.left();
+  rect[1] = bounds.top();
+  rect[2] = bounds.right();
+  rect[3] = bounds.bottom();
+  return rect;
 }
 
 }  // namespace blink

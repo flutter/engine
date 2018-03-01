@@ -84,12 +84,14 @@ class CanvasPath : public fxl::RefCountedThreadSafe<CanvasPath>,
   void addPolygon(const tonic::Float32List& points, bool close);
   void addRRect(const RRect& rrect);
   void addPath(CanvasPath* path, double dx, double dy);
+  void addPathWithMatrix(CanvasPath* path, tonic::Float64List& matrix3);
   void extendWithPath(CanvasPath* path, double dx, double dy);
   void close();
   void reset();
   bool contains(double x, double y);
   fxl::RefPtr<CanvasPath> shift(double dx, double dy);
   fxl::RefPtr<CanvasPath> transform(tonic::Float64List& matrix4);
+  tonic::Float32List getBounds();
 
   const SkPath& path() const { return path_; }
 
