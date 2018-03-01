@@ -74,14 +74,11 @@ tonic::Float64List CanvasPathMeasure::getMatrix(float distance,
   matrix.reset();
   bool success = path_measure_->getMatrix(distance, &matrix, (SkPathMeasure::MatrixFlags)flags);
   
-  tonic::Float64List matrix3(Dart_NewTypedData(Dart_TypedData_kFloat64, 9));
   if (!success) {
     matrix.reset();
   }
-  for (int i = 0; i < 9; ++i)
-    matrix3[i] = matrix[i];
-
-  return matrix3;
+  
+  return ToMatrix4(matrix);
 }
 
 tonic::Float32List CanvasPathMeasure::getPosTan(float distance) {

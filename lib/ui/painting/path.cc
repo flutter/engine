@@ -210,16 +210,13 @@ void CanvasPath::addPath(CanvasPath* path, double dx, double dy) {
   path_.addPath(path->path(), dx, dy, SkPath::kAppend_AddPathMode);
 }
 
-void CanvasPath::addPathWithMatrix(CanvasPath* path, tonic::Float64List& matrix3) {
+void CanvasPath::addPathWithMatrix(CanvasPath* path, tonic::Float64List& matrix4) {
   if (!path)
     Dart_ThrowException(ToDart("Path.addPathWithMatrix called with non-genuine Path."));
   
-  SkMatrix matrix;
-  for (int i = 0; i < 9; ++i) {
-    matrix[i] = matrix3[i];
-  }
-  matrix3.Release();
-  path_.addPath(path->path(), matrix);
+  path_.addPath(path->path(), ToSkMatrix(matrix4));
+  matrix4.Release();
+  
 }
 
 void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {

@@ -1578,7 +1578,14 @@ class Path extends NativeFieldWrapperClass2 {
   void _addPath(Path path, double dx, double dy) native 'Path_addPath';
 
   /// Append subpath (transformed by matrix) to this path
-  void addPathWithMatrix(Path path, Float64List matrix3) native 'Path_addPathWithMatrix';
+  void addPathWithMatrix(Path path, Float64List matrix4) {
+    assert(matrix4 != null);
+    if (matrix4.length != 16)
+      throw new ArgumentError('"matrix4" must have 16 entries.');
+    return _addPathWithMatrix(path, matrix4);
+  }
+  
+  void _addPathWithMatrix(Path path, Float64List matrix) native 'Path_addPathWithMatrix';
   
   /// Adds the given path to this path by extending the current segment of this
   /// path with the the first segment of the given path.
@@ -1684,7 +1691,7 @@ class PathMeasure extends NativeFieldWrapperClass2 {
   /// Return the total length of the current contour, or 0 if no path is associated
   double getLength() native 'PathMeasure_getLength';
 
-  /// Pins distance to 0 <= distance <= getLength(), and then computes the corresponding 3x3 matrix 
+  /// Pins distance to 0 <= distance <= getLength(), and then computes the corresponding Matrix4 
   /// 
   /// Matrix is computed by calling getPosTan.
   /// Returns identity matrix if there is no path, or a zero-length path was specified.
