@@ -1631,7 +1631,7 @@ class Path extends NativeFieldWrapperClass2 {
 
   /// Gets the bounding rectangle for this path
   Rect getBounds() {
-    Float32List rect = _getBounds();
+    final Float32List rect = _getBounds();
     return new Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
   }
   Float32List _getBounds() native 'Path_getBounds';
@@ -1645,7 +1645,7 @@ class Path extends NativeFieldWrapperClass2 {
   /// The resulting path will be constructed from non-overlapping contours. The
   /// curve order is reduced where possible so that cubics may be turned into
   /// quadratics, and quadratics maybe turned into lines.
-  void op(PathOp operation, Path path1, [Path path2 = null]) {
+  void op(PathOp operation, Path path1, [Path path2]) {
     assert(path1 != null);
     if (path2 != null) {
       _op(path1, path2, operation.index);
@@ -1673,7 +1673,7 @@ class PositionAndTangent {
 /// PathMeasure object is undefined.
 class PathMeasure extends NativeFieldWrapperClass2 {
   /// Create a new empty [Path] object.
-  PathMeasure({Path path = null, bool forceClosed = false}) { _constructor(path, forceClosed); }
+  PathMeasure({Path path, bool forceClosed = false}) { _constructor(path, forceClosed); }
   void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
 
   /// Sets the [Path] target of this [PathMeasure].
@@ -1694,7 +1694,7 @@ class PathMeasure extends NativeFieldWrapperClass2 {
   /// 
   /// Position is a point, tangent is a vector.  Both set to 0,0 if no or zero-length [Path]
   PositionAndTangent getPosTan(double distance) {
-    Float32List posTan = _getPosTan(distance);
+    final Float32List posTan = _getPosTan(distance);
     return new PositionAndTangent(
       new Offset(posTan[0], posTan[1]), 
       new Offset(posTan[2], posTan[3])
