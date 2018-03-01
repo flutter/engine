@@ -17,7 +17,7 @@ import 'package:flutter_kernel_transformers/track_widget_constructor_locations.d
 /// Wrapper around [FrontendCompiler] that adds [wdgetCreatorTracker] kernel
 /// transformation to the compilation.
 class _FlutterFrontendCompiler {
-  final frontend.FrontendCompiler _compiler;
+  final frontend.CompilerInterface _compiler;
 
   _FlutterFrontendCompiler(StringSink output, {bool trackWidgetCreation: false}):
       _compiler = new frontend.FrontendCompiler(output,
@@ -46,10 +46,6 @@ class _FlutterFrontendCompiler {
   @override
   void resetIncrementalCompiler() {
     _compiler.resetIncrementalCompiler();
-  }
-
-  void listenAndCompile(Stream<List<int>> input, ArgResults options, void quit()) {
-    _compiler.listenAndCompile(input, options, quit);
   }
 }
 
@@ -111,6 +107,6 @@ Future<int> starter(
     return 0;
   }
 
-  compiler.listenAndCompile(input ?? stdin, options, () { exit(0); } );
+  frontend.listenAndCompile(input ?? stdin, options, () { exit(0); } );
   return 0;
 }
