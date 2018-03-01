@@ -13,7 +13,6 @@ import 'package:vm/frontend_server.dart' as frontend show FrontendCompiler, argP
 
 import 'package:flutter_kernel_transformers/track_widget_constructor_locations.dart';
 
-//
 /// Wrapper around [FrontendCompiler] that adds [wdgetCreatorTracker] kernel
 /// transformation to the compilation.
 class _FlutterFrontendCompiler {
