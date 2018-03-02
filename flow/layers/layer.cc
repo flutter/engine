@@ -9,6 +9,7 @@
 
 namespace flow {
 
+int indent = 0;
 Layer::Layer()
     : parent_(nullptr),
       needs_system_composite_(false),

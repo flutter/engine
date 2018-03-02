@@ -10,7 +10,7 @@
 
 namespace shell {
 
-IOSExternalTextureLayer::IOSExternalTextureLayer(int64_t textureId, CALayer* externalLayer)
+IOSExternalTextureLayer::IOSExternalTextureLayer(int64_t textureId, UIView* externalLayer)
     : Texture(textureId), external_layer_(externalLayer) {
   FXL_DCHECK(external_layer_);
 }
@@ -20,7 +20,7 @@ IOSExternalTextureLayer::~IOSExternalTextureLayer() = default;
 void IOSExternalTextureLayer::UpdateScene(flow::SystemCompositorContext* context,
                                           const SkRect& bounds) {
   ASSERT_IS_GPU_THREAD;
-  context->AddExternalLayer(this, bounds);
+  context->AddChildScene(this, bounds);
 }
 
 void IOSExternalTextureLayer::Paint(flow::Layer::PaintContext context, const SkRect& bounds) {

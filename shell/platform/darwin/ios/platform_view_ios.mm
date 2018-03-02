@@ -22,7 +22,7 @@ namespace shell {
 PlatformViewIOS::PlatformViewIOS(CALayer* layer, NSObject<FlutterBinaryMessenger>* binaryMessenger)
     : PlatformView(std::make_unique<GPURasterizer>(std::make_unique<ProcessInfoMac>())),
       system_compositor_context_(
-          std::make_unique<IOSSystemCompositorContext>(surface_config_, layer)),
+          std::make_unique<IOSSystemCompositorContext>(surface_config_, (UIView*)(layer.delegate))),
       weak_factory_(this),
       binary_messenger_(binaryMessenger) {}
 
@@ -118,7 +118,7 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
 }
 
-void PlatformViewIOS::RegisterExternalLayer(int64_t texture_id, CALayer* layer) {
+void PlatformViewIOS::RegisterExternalLayer(int64_t texture_id, UIView* layer) {
   RegisterTexture(std::make_shared<IOSExternalTextureLayer>(texture_id, layer));
 }
 

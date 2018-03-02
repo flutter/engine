@@ -22,6 +22,8 @@ class GPUSurfaceGLDelegate {
   virtual bool GLContextPresent() = 0;
 
   virtual intptr_t GLContextFBO() const = 0;
+
+  virtual bool UseOffscreenSurface() const { return false; }
 };
 
 class GPUSurfaceGL : public Surface {
@@ -37,6 +39,7 @@ class GPUSurfaceGL : public Surface {
   GrContext* GetContext() override;
 
   sk_sp<SkSurface> AcquireRenderSurface(const SkISize& size);
+  bool PointIsTransparent(SkPoint point);
 
   bool PresentSurface(SkCanvas* canvas);
   bool PresentSurface();
@@ -47,6 +50,8 @@ class GPUSurfaceGL : public Surface {
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrContext> context_;
   sk_sp<SkSurface> onscreen_surface_;
+  sk_sp<SkSurface> offscreen_surface_;
+  sk_sp<SkImage> saved_image_;
   bool valid_ = false;
   fml::WeakPtrFactory<GPUSurfaceGL> weak_factory_;
 

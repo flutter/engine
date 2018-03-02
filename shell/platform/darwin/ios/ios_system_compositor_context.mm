@@ -13,6 +13,65 @@
 
 #include <UIKit/UIKit.h>
 
+@interface FlutterTouchIgnoringCALayer : CALayer
+@end
+
+@interface FlutterTouchIgnoringCAEGLLayer : CAEAGLLayer
+@end
+
+@interface FlutterTouchIgnoringGLView : UIView
+@end
+
+@interface FlutterTouchIgnoringView : UIView
+@end
+
+@implementation FlutterTouchIgnoringView
++ (Class)layerClass {
+  return [FlutterTouchIgnoringCALayer class];
+}
+@end
+
+@implementation FlutterTouchIgnoringGLView
++ (Class)layerClass {
+#if TARGET_IPHONE_SIMULATOR
+  return [FlutterTouchIgnoringCALayer class];
+#else   // TARGET_IPHONE_SIMULATOR
+  return [FlutterTouchIgnoringCAEGLLayer class];
+#endif  // TARGET_IPHONE_SIMULATOR
+}
+@end
+
+static BOOL layerHasSublayerContainingPoint(CALayer* layer, CGPoint point) {
+  // Letting all touches fall through, unless they land on some sublayer 
+  // interested in the event.
+  if (!CGRectContainsPoint(layer.bounds, point)) {
+    return false;
+  }
+  for (CALayer *sublayer in layer.sublayers) {
+    CGPoint converted = [layer convertPoint:point toLayer:sublayer];
+    if ([sublayer containsPoint: converted])  {
+      return true;
+    }
+  }
+  // TODO(sigurdm): Do transparency checking to allow getting touches from 
+  // flutter layers on top of of external views.
+  return false;
+}
+
+@implementation FlutterTouchIgnoringCALayer
+
+-(BOOL)containsPoint:(CGPoint)point {
+  return layerHasSublayerContainingPoint(self, point);
+}
+
+@end
+
+@implementation FlutterTouchIgnoringCAEGLLayer
+-(BOOL)containsPoint:(CGPoint)point {
+  return layerHasSublayerContainingPoint(self, point);
+}
+@end
+
 namespace shell {
 
 // static CATransform3D skMatrixToCATransform(SkMatrix transform) {
@@ -83,8 +142,8 @@ static CGPathRef SkPathToCGPath(SkPath path) {
   }
 }
 
-IOSSystemCompositorContext::Surface::Surface(CALayer* caLayer, IOSSurfaceGL* iosSurface)
-    : caLayer(caLayer), iosSurface(iosSurface), gpuSurface(iosSurface->CreateGPUSurface()) {}
+IOSSystemCompositorContext::Surface::Surface(UIView* view, IOSSurfaceGL* iosSurface)
+    : view(view), iosSurface(iosSurface), gpuSurface(iosSurface->CreateGPUSurface()) {}
 
 IOSSystemCompositorContext::FlowCompositingLayer::FlowCompositingLayer()
     : background_color_(SK_ColorTRANSPARENT) {}
@@ -99,17 +158,17 @@ SkCanvas* IOSSystemCompositorContext::FlowCompositingLayer::canvas() {
 
 void IOSSystemCompositorContext::FlowCompositingLayer::present() {
   canvas_->flush();
-  surface_->iosSurface->GLContextPresent();
+  surface_->gpuSurface->PresentSurface(canvas_);
 }
 
 IOSSystemCompositorContext::ExternalCompositingLayer::ExternalCompositingLayer(
-    CALayer* externalLayer) {
-  [externalLayer retain];
-  layer_.reset(externalLayer);
+    UIView* externalView) {
+  [externalView retain];
+  view_.reset(externalView);
 }
 
 void IOSSystemCompositorContext::ExternalCompositingLayer::installChildren() {
-  CALayer* externalLayer = layer_.get();
+  CALayer* externalLayer = view_.get().layer;
   externalLayer.needsDisplayOnBoundsChange = true;
   externalLayer.anchorPoint = CGPointMake(0, 0);
   CGPoint newPosition = CGPointMake(frame_.x(), frame_.y());
@@ -119,21 +178,21 @@ void IOSSystemCompositorContext::ExternalCompositingLayer::installChildren() {
 }
 
 void IOSSystemCompositorContext::FlowCompositingLayer::installChildren() {
-  CALayer* parentCALayer = layer();
-  // Using zPosition to keep the right stackingorder even if the cached CALayers happens to be in
+  UIView* parentView = view();
+  // Using zPosition to keep the right stacking order even if the cached Views happens to be in
   // the wrong order.
   int zPosition = 0;
-  for (auto& childLayer : children_) {
-    CALayer* childCALayer = childLayer->layer();
+  for (auto& child : children_) {
+    UIView* childView = child->view();
 
-    if ([childCALayer superlayer] != parentCALayer) {
-      [parentCALayer addSublayer:childCALayer];
+    if ([childView superview] != parentView) {
+      [parentView addSubview:childView];
     }
-    if (childCALayer.zPosition != zPosition) {
-      childCALayer.zPosition = zPosition;
+    if (childView.layer.zPosition != zPosition) {
+      childView.layer.zPosition = zPosition;
     }
     zPosition++;
-    childLayer->installChildren();
+    child->installChildren();
   }
   children_.clear();
 }
@@ -146,36 +205,35 @@ void IOSSystemCompositorContext::ExternalCompositingLayer::manifest(
 
 void IOSSystemCompositorContext::FlowCompositingLayer::manifest(
     IOSSystemCompositorContext& context) {
-  CALayer* layer;
+  UIView* view;
 
   if (paint_layers_.empty()) {
-    layer = context.createBasicLayer();
+    view = context.createBasicLayer();
   } else {
     Surface* surface = context.createDrawLayer();
     surface_ = surface;
-    layer = surface->caLayer;
+    view = surface->view;
   }
-
-  [layer retain];
-  layer_.reset(layer);
+  [view retain];
+  view_.reset(view);
 
   int alpha = SkColorGetA(background_color_);
-  layer.backgroundColor = [UIColor colorWithRed:SkColorGetR(background_color_)
+  view.layer.backgroundColor = [UIColor colorWithRed:SkColorGetR(background_color_)
                                           green:SkColorGetG(background_color_)
                                            blue:SkColorGetB(background_color_)
                                           alpha:alpha]
                               .CGColor;
   if (alpha == 0xff) {
-    layer.opaque = true;
+    view.layer.opaque = true;
   } else {
-    layer.opaque = false;
+    view.layer.opaque = false;
   }
 
   // TODO(sigurdm): handle opacity.
-  layer.opacity = 1;
+  view.layer.opacity = 1;
 
-  if (layer.masksToBounds != clip_) {
-    layer.masksToBounds = clip_;
+  if (view.layer.masksToBounds != clip_) {
+    view.layer.masksToBounds = clip_;
   }
 
   if (!path_.isEmpty()) {
@@ -183,22 +241,25 @@ void IOSSystemCompositorContext::FlowCompositingLayer::manifest(
     CGPathRef path = SkPathToCGPath(path_);
     shapeLayer.path = path;
     CGPathRelease(path);
-    layer.mask = shapeLayer;
-
+    view.layer.mask = shapeLayer;
   } else {
-    layer.mask = nil;
+    view.layer.mask = nil;
   }
 
   if (!frame_.isEmpty()) {
     CGRect newFrame = CGRectMake(frame_.x(), frame_.y(), frame_.width(), frame_.height());
-    if (!CGRectEqualToRect(layer.frame, newFrame)) {
-      layer.frame = newFrame;
+    if (!CGRectEqualToRect(view.layer.frame, newFrame)) {
+      view.layer.frame = newFrame;
     }
   }
 }
 
 CALayer* IOSSystemCompositorContext::CompositingLayer::layer() {
-  return layer_;
+  return view_.get().layer;
+}
+
+UIView* IOSSystemCompositorContext::CompositingLayer::view() {
+  return view_;
 }
 
 bool IOSSystemCompositorContext::FlowCompositingLayer::makeCurrent() {
@@ -210,28 +271,28 @@ void IOSSystemCompositorContext::FlowCompositingLayer::AddPaintedLayer(flow::Lay
 }
 
 IOSSystemCompositorContext::IOSSystemCompositorContext(PlatformView::SurfaceConfig surfaceConfig,
-                                                       CALayer* layer)
+                                                       UIView* root_view)
     : eaglContext_([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]),
-      root_surface_(IOSSurface::Create(surfaceConfig, layer, eaglContext_.get())),
+      root_surface_(IOSSurface::Create(surfaceConfig, root_view.layer, eaglContext_.get())),
       surface_config_(surfaceConfig) {
   IOSSurfaceGL* rootSurfaceGL = static_cast<IOSSurfaceGL*>(root_surface_.get());
   root_layer_ = std::make_unique<FlowCompositingLayer>();
-  root_layer_->surface_ = new Surface(layer, rootSurfaceGL);
-  [layer retain];
-  root_layer_->layer_.reset(layer);
+  root_layer_->surface_ = new Surface(root_view, rootSurfaceGL);
+  [root_view retain];
+  root_layer_->view_.reset(root_view);
 
-  root_layer_->frame_ = SkRect::MakeWH(layer.bounds.size.width, layer.bounds.size.height);
+  root_layer_->frame_ = SkRect::MakeWH(root_view.bounds.size.width, root_view.bounds.size.height);
   stack_.push_back(root_layer_.get());
 
   offsets_.push_back(SkPoint::Make(0, 0));
   transforms_.push_back(SkMatrix::Concat(SkMatrix::I(), SkMatrix::I()));
 }
 
-CALayer* IOSSystemCompositorContext::createBasicLayer() {
-  CALayer* result;
+UIView* IOSSystemCompositorContext::createBasicLayer() {
+  UIView* result;
   if (CALayerCache_index_ >= CALayerCache_.size()) {
-    result = [[CALayer alloc] init];
-    CALayerCache_.push_back(result);
+    result = [[FlutterTouchIgnoringView alloc] init];
+    CALayerCache_.emplace_back(result);
   } else {
     result = CALayerCache_[CALayerCache_index_];
   }
@@ -242,14 +303,17 @@ CALayer* IOSSystemCompositorContext::createBasicLayer() {
 IOSSystemCompositorContext::Surface* IOSSystemCompositorContext::createDrawLayer() {
   Surface* result;
   if (CAEAGLLayerCache_index_ >= CAEAGLLayerCache_.size()) {
-    CAEAGLLayer* newCALayer = [[[root_surface_->GetLayer() class] alloc] init];
+    UIView *view = [[FlutterTouchIgnoringGLView alloc] init];
+    CAEAGLLayer* newCALayer = (CAEAGLLayer*)(view.layer);
     CGFloat screenScale = [UIScreen mainScreen].scale;
     newCALayer.contentsScale = screenScale;
     newCALayer.rasterizationScale = screenScale;
-    newCALayer.presentsWithTransaction = YES;
+    if (@available(iOS 9.0, *)) {
+      newCALayer.presentsWithTransaction = YES;
+    }
 
     IOSSurfaceGL* iosSurface = new IOSSurfaceGL(surface_config_, newCALayer, eaglContext_);
-    result = new Surface(newCALayer, iosSurface);
+    result = new Surface(view, iosSurface);
     CAEAGLLayerCache_.push_back(result);
   } else {
     result = CAEAGLLayerCache_[CAEAGLLayerCache_index_];
@@ -263,15 +327,15 @@ void IOSSystemCompositorContext::Reset() {
   CAEAGLLayerCache_index_ = 0;
   [CATransaction begin];
   [CATransaction setValue:(id)kCFBooleanTrue forKey:kCATransactionDisableActions];
-  // paint_tasks_.push_back(root_layer_.get());
+  //paint_tasks_.push_back(root_layer_.get());
 }
 
 void IOSSystemCompositorContext::Finish() {
   for (size_t i = CALayerCache_index_; i < CALayerCache_.size(); i++) {
-    [CALayerCache_[i] removeFromSuperlayer];
+    [CALayerCache_[i] removeFromSuperview];
   }
   for (size_t i = CAEAGLLayerCache_index_; i < CAEAGLLayerCache_.size(); i++) {
-    [CAEAGLLayerCache_[i]->caLayer removeFromSuperlayer];
+    [CAEAGLLayerCache_[i]->view removeFromSuperview];
   }
 
   [CATransaction commit];
@@ -309,9 +373,9 @@ SkCanvas* IOSSystemCompositorContext::CurrentCanvas() {
   return stack_.back()->canvas();
 }
 
-void IOSSystemCompositorContext::AddExternalLayer(flow::Texture* texture, SkRect bounds) {
-  CALayer* externalLayer = (static_cast<IOSExternalTextureLayer*>(texture))->layer();
-  auto compositingLayer = std::make_unique<ExternalCompositingLayer>(externalLayer);
+void IOSSystemCompositorContext::AddChildScene(flow::Texture* texture, SkRect bounds) {
+  UIView* externalView = (static_cast<IOSExternalTextureLayer*>(texture))->layer();
+  auto compositingLayer = std::make_unique<ExternalCompositingLayer>(externalView);
   SkRect newBounds = bounds.makeOffset(-currentOffset().x(), -currentOffset().y());
   compositingLayer->frame_ = newBounds;
 

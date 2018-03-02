@@ -30,6 +30,13 @@ void ClipRectLayer::UpdateScene(SystemCompositorContext& context) {
   // SceneUpdateContext::Clip clip(context, shape, clip_rect_);
   // FXL_LOG(INFO) << "cliprect";
 
+  std::string s = "";
+  for (int i = 0; i < indent; i++) {
+    s += "  ";
+  }
+
+  FXL_DLOG(INFO) << s << "ClipRect";
+
   context.PushLayer(paint_bounds());
   context.ClipFrame();
   UpdateSceneChildren(context);

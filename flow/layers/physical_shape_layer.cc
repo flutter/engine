@@ -62,6 +62,12 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 }
 
 void PhysicalShapeLayer::UpdateScene(SystemCompositorContext& context) {
+  std::string s = "";
+  for (int i = 0; i < indent; i++) {
+    s += "  ";
+  }
+
+  FXL_DLOG(INFO) << s << "PhysicalShape";
   FXL_DCHECK(needs_system_composite());
   context.PushLayer(path_.getBounds());
   context.ClipFrame();

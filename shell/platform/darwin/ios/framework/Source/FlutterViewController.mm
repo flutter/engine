@@ -555,7 +555,6 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  NSLog(@"AA %@", self.view.accessibilityElements);
   [self dispatchTouches:touches phase:UITouchPhaseBegan];
 }
 
@@ -901,9 +900,9 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   return textureId;
 }
 
-- (int64_t)registerLayer:(CALayer*)layer {
+- (int64_t)registerUIView:(UIView*)view {
   int64_t textureId = _nextTextureId++;
-  _platformView->RegisterExternalLayer(textureId, layer);
+  _platformView->RegisterExternalLayer(textureId, view);
   return textureId;
 }
 

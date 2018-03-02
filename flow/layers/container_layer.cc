@@ -77,6 +77,13 @@ static void flushAccumulator(SystemCompositorContext& context,
 void ContainerLayer::UpdateSceneChildren(SystemCompositorContext& context) {
   FXL_DCHECK(needs_system_composite());
 
+  std::string s = "";
+  for (int i = 0; i < indent; i++) {
+    s += "  ";
+  }
+
+  FXL_DLOG(INFO) << s << "Container";
+
   int pushCount = 0;
   std::vector<Layer*> accumulator;
   // Bounding box join of all layers in `accumulator`.
@@ -88,7 +95,9 @@ void ContainerLayer::UpdateSceneChildren(SystemCompositorContext& context) {
       flushAccumulator(context, pushCount, accumulator, accumulatorBounds,
                        systemLayerBounds, paint_bounds());
       systemLayerBounds.join(layer->paint_bounds());
+      indent ++;
       layer->UpdateScene(context);
+      indent --;
     } else if (layer->needs_painting()) {
       if (!accumulator.empty() ||
           layer->paint_bounds().intersects(systemLayerBounds)) {

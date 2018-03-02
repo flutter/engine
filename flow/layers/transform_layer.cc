@@ -25,7 +25,12 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void TransformLayer::UpdateScene(SystemCompositorContext& context) {
   FXL_DCHECK(needs_system_composite());
   context.Transform(transform_);
+  std::string s = "";
+  for (int i = 0; i < indent; i++) {
+    s += "  ";
+  }
 
+  FXL_DLOG(INFO) << s << "Transform";
   UpdateSceneChildren(context);
 
   context.PopTransform();

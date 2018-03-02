@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLUTTERTEXTURE_H_
 #define FLUTTER_FLUTTERTEXTURE_H_
 
+#import <UIKit/UIKit.h>
 #import <CoreMedia/CoreMedia.h>
 #import <Foundation/Foundation.h>
 
@@ -21,7 +22,7 @@ FLUTTER_EXPORT
 FLUTTER_EXPORT
 @protocol FlutterTextureRegistry <NSObject>
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture;
-- (int64_t)registerLayer:(CALayer*)layer;
+- (int64_t)registerUIView:(UIView*)view;
 - (void)textureFrameAvailable:(int64_t)textureId;
 - (void)unregisterTexture:(int64_t)textureId;
 @end

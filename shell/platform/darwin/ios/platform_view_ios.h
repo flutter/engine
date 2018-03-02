@@ -56,7 +56,7 @@ class PlatformViewIOS : public PlatformView {
 
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
-  void RegisterExternalLayer(int64_t id, CALayer* layer);
+  void RegisterExternalLayer(int64_t id, UIView* layer);
 
   void UpdateSemantics(blink::SemanticsNodeUpdates update) override;
 

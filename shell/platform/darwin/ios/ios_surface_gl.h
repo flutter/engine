@@ -40,6 +40,8 @@ class IOSSurfaceGL : public IOSSurface, public GPUSurfaceGLDelegate {
 
   CAEAGLLayer* layer() { return context_.layer(); }
 
+  bool UseOffscreenSurface() const override;
+
  private:
   IOSGLContext context_;
 

@@ -120,6 +120,19 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
   );
 }
 
+static sk_sp<SkSurface> CreateOffscreenSurface(GrContext* context,
+                                               const SkISize& size) {
+  const SkImageInfo image_info =
+      SkImageInfo::MakeN32Premul(size.fWidth, size.fHeight);
+
+  const SkSurfaceProps surface_props(
+      SkSurfaceProps::InitType::kLegacyFontHost_InitType);
+
+  return SkSurface::MakeRenderTarget(context, SkBudgeted::kNo, image_info, 0,
+                                     kBottomLeft_GrSurfaceOrigin,
+                                     &surface_props);
+}
+
 bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   if (onscreen_surface_ != nullptr &&
       size == SkISize::Make(onscreen_surface_->width(),
@@ -133,13 +146,14 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
 
   // Either way, we need to get rid of previous surface.
   onscreen_surface_ = nullptr;
+  offscreen_surface_ = nullptr;
 
   if (size.isEmpty()) {
     FXL_LOG(ERROR) << "Cannot create surfaces of empty size.";
     return false;
   }
 
-  sk_sp<SkSurface> onscreen_surface;
+  sk_sp<SkSurface> onscreen_surface, offscreen_surface;
 
   onscreen_surface =
       WrapOnscreenSurface(context_.get(), size, delegate_->GLContextFBO());
@@ -151,7 +165,17 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
     return false;
   }
 
+  if (delegate_->UseOffscreenSurface()) {
+    offscreen_surface = CreateOffscreenSurface(context_.get(), size);
+    if (offscreen_surface == nullptr) {
+      FXL_LOG(ERROR) << "Could not create offscreen surface.";
+      return false;
+    }
+  }
+
   onscreen_surface_ = std::move(onscreen_surface);
+  offscreen_surface_ = std::move(offscreen_surface);
+
   return true;
 }
 
@@ -186,6 +210,16 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   return std::make_unique<SurfaceFrame>(surface, submit_callback);
 }
 
+bool GPUSurfaceGL::PointIsTransparent(SkPoint point) {
+  if (!saved_image_) return false;
+  SkColor pixel;
+  SkImageInfo dstInfo = SkImageInfo::MakeN32Premul(1, 1);
+  saved_image_->readPixels(dstInfo, &pixel, 4, point.x(), point.y());
+  FXL_DLOG(INFO) << SkColorGetA(pixel);
+  return SkColorGetA(pixel) == 0xFF;
+}
+
+
 bool GPUSurfaceGL::PresentSurface() {
   if (delegate_ == nullptr || context_ == nullptr) {
     return false;
@@ -206,13 +240,20 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     return false;
   }
 
+  if (offscreen_surface_ != nullptr) {
+    TRACE_EVENT0("flutter", "CopyTextureOnscreen");
+    SkPaint paint;
+    paint.setBlendMode(SkBlendMode::kSrc);
+    saved_image_ = offscreen_surface_->makeImageSnapshot();
+    onscreen_surface_->getCanvas()->drawImage(
+    saved_image_, 0, 0, &paint);
+  }
   {
     TRACE_EVENT0("flutter", "SkCanvas::Flush");
-    //    MakeCurrent();
-    //   onscreen_surface_->getCanvas()->flush();
+    onscreen_surface_->getCanvas()->flush();
   }
 
-  // delegate_->GLContextPresent();
+  delegate_->GLContextPresent();
 
   return true;
 }
@@ -222,7 +263,7 @@ sk_sp<SkSurface> GPUSurfaceGL::AcquireRenderSurface(const SkISize& size) {
     return nullptr;
   }
 
-  return onscreen_surface_;
+  return offscreen_surface_ != nullptr ? offscreen_surface_ : onscreen_surface_;
 }
 
 GrContext* GPUSurfaceGL::GetContext() {

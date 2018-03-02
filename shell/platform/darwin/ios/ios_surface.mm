@@ -18,7 +18,9 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(PlatformView::SurfaceConfig surfa
                                                EAGLContext* eaglContext) {
   // Check if we can use OpenGL.
   if ([layer isKindOfClass:[CAEAGLLayer class]]) {
-    (reinterpret_cast<CAEAGLLayer*>(layer)).presentsWithTransaction = true;
+    if (@available(iOS 9.0, *)) {
+      (reinterpret_cast<CAEAGLLayer*>(layer)).presentsWithTransaction = true;
+    }
     return std::make_unique<IOSSurfaceGL>(surface_config, reinterpret_cast<CAEAGLLayer*>(layer),
                                           eaglContext);
   }

@@ -5,7 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SYSTEM_COMPOSITOR_CONTEXT_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SYSTEM_COMPOSITOR_CONTEXT_H_
 
-#import <QuartzCore/CAEAGLLayer.h>
+#import <UIKit/UIKit.h>
 #include "flutter/flow/system_compositor_context.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
@@ -20,7 +20,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
  public:
   explicit IOSSystemCompositorContext(
       PlatformView::SurfaceConfig surface_config,
-      CALayer* layer);
+      UIView* root_view);
   void Reset() override;
   void Finish() override;
   void PushLayer(SkRect bounds) override;
@@ -29,21 +29,22 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   void ClipFrame() override;
   void SetColor(SkColor color) override;
   void SetClipPath(SkPath path) override;
-  void AddExternalLayer(flow::Texture* texture, SkRect bounds) override;
+  void AddChildScene(flow::Texture* texture, SkRect bounds) override;
   void ExecutePaintTasks(flow::CompositorContext::ScopedFrame& frame) override;
   void AddPaintedLayer(flow::Layer* layer) override;
   void Transform(SkMatrix transform) override;
   void PopTransform() override;
   IOSSurface* rootIOSSurface() { return root_surface_.get(); }
 
- private:
   // TODO(sigurdm): Consider replacing this with just an IOSSurface.
   struct Surface {
-    Surface(CALayer* caLayer, IOSSurfaceGL* iosSurface);
-    CALayer* caLayer;
+    Surface(UIView* view, IOSSurfaceGL* iosSurface);
+    fml::scoped_nsobject<UIView> view;
     IOSSurfaceGL* iosSurface;
     std::unique_ptr<GPUSurfaceGL> gpuSurface;
   };
+
+ private:
 
   class CompositingLayer {
    public:
@@ -54,8 +55,9 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
     // Update the backing CALayer properties to reflect `this`.
     virtual void manifest(IOSSystemCompositorContext& context) = 0;
     CALayer* layer();
+    UIView* view();
 
-    fml::scoped_nsobject<CALayer> layer_;
+    fml::scoped_nsobject<UIView> view_;
     SkMatrix transform_;
     SkPoint offset_;
     SkRect frame_;
@@ -63,7 +65,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
 
   class ExternalCompositingLayer : public CompositingLayer {
    public:
-    ExternalCompositingLayer(CALayer* externalLayer);
+    ExternalCompositingLayer(UIView* externalLayer);
     ~ExternalCompositingLayer() override = default;
     void installChildren() override;
     void manifest(IOSSystemCompositorContext& context) override;
@@ -92,7 +94,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
     SkCanvas* canvas_;
   };
 
-  CALayer* createBasicLayer();
+  UIView* createBasicLayer();
   Surface* createDrawLayer();
 
   SkPoint currentOffset();
@@ -101,7 +103,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
 
   // TODO(sigurdm): Make a proper cache of these layers indexed by size and
   // deallocating after aging. Like  vulkan_surface_pool.
-  std::vector<CALayer*> CALayerCache_;
+  std::vector<fml::scoped_nsobject<UIView>> CALayerCache_;
   std::vector<Surface*> CAEAGLLayerCache_;
   size_t CALayerCache_index_;
   size_t CAEAGLLayerCache_index_;
