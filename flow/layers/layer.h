@@ -33,8 +33,6 @@
 
 namespace flow {
 
-extern int indent;
-
 class ContainerLayer;
 class TextureRegistry;
 class SystemCompositorContext;

@@ -26,13 +26,6 @@ void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 void TextureLayer::UpdateScene(SystemCompositorContext& context) {
-  std::string s = "";
-  for (int i = 0; i < indent; i++) {
-    s += "  ";
-  }
-
-  FXL_DLOG(INFO) << s << "Texture";
-
   std::shared_ptr<Texture> texture =
       context.texture_registry->GetTexture(texture_id_);
   if (!texture) {

@@ -22,21 +22,6 @@ void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void ClipRectLayer::UpdateScene(SystemCompositorContext& context) {
   FXL_DCHECK(needs_system_composite());
 
-  // scenic_lib::Rectangle shape(context.session(),   // session
-  //                             clip_rect_.width(),  //  width
-  //                             clip_rect_.height()  //  height
-  // );
-
-  // SceneUpdateContext::Clip clip(context, shape, clip_rect_);
-  // FXL_LOG(INFO) << "cliprect";
-
-  std::string s = "";
-  for (int i = 0; i < indent; i++) {
-    s += "  ";
-  }
-
-  FXL_DLOG(INFO) << s << "ClipRect";
-
   context.PushLayer(paint_bounds());
   context.ClipFrame();
   UpdateSceneChildren(context);
@@ -47,16 +32,9 @@ void ClipRectLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipRectLayer::Paint");
   FXL_DCHECK(needs_painting());
 
-  // if (needs_system_composite()) {
-  //   context.layers.PushLayer(clip_rect_);
-  //   context.layers.ClipRect();
-  //   PaintChildren(context);
-  //   context.layers.PopLayer();
-  // } else {
   SkAutoCanvasRestore save(&context.canvas, true);
   context.canvas.clipRect(paint_bounds());
   PaintChildren(context);
-  // }
 }
 
 }  // namespace flow
