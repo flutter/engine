@@ -1,4 +1,4 @@
-Signature: d746f1aba15c36df1bde4c8259ace073
+Signature: 760da5baa5ca7f39360c7d0ccdc84a44
 
 UNUSED LICENSES:
 
@@ -5175,7 +5175,6 @@ FILE: ../../../third_party/dart/runtime/observatory/web/favicon.ico
 FILE: ../../../third_party/dart/runtime/observatory/web/index.html
 FILE: ../../../third_party/dart/runtime/observatory/web/third_party/trace_viewer_full.html
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.html
-FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_binary_flowgraph.cc.rej
 FILE: ../../../third_party/dart/runtime/vm/snapshot_test_in.dat
 FILE: ../../../third_party/dart/samples/build_dart/test.foo
 FILE: ../../../third_party/dart/samples/build_dart_simple/test.foo
@@ -5868,7 +5867,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: dart
 ORIGIN: ../../../third_party/dart/runtime/bin/crypto_fuchsia.cc + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/BUILD.gn.orig
 FILE: ../../../third_party/dart/runtime/bin/crypto_fuchsia.cc
 FILE: ../../../third_party/dart/runtime/bin/crypto_test.cc
 FILE: ../../../third_party/dart/runtime/bin/directory_fuchsia.cc
@@ -6066,7 +6064,6 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/redundancy_eliminati
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/redundancy_elimination.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/flow_graph_builder_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_binary_flowgraph.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_binary_flowgraph.cc.orig
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_to_il.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_to_il.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/intrinsifier_dbc.cc
