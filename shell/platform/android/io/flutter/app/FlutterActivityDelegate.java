@@ -298,11 +298,11 @@ public final class FlutterActivityDelegate
         if (intent.getBooleanExtra("enable-software-rendering", false)) {
             args.add("--enable-software-rendering");
         }
+        if (intent.getBooleanExtra("skia-deterministic-rendering", false)) {
+            args.add("--skia-deterministic-rendering");
+        }
         if (intent.getBooleanExtra("trace-skia", false)) {
             args.add("--trace-skia");
-        }
-        if (intent.getBooleanExtra("strong", false)) {
-            args.add("--strong");
         }
         if (!args.isEmpty()) {
             String[] argsArray = new String[args.size()];

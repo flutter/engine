@@ -84,7 +84,8 @@ void Shell::InitStandalone(fxl::CommandLine command_line,
 
   fml::icu::InitializeICU(icu_data_path);
 
-  SkGraphics::Init();
+  if (!command_line.HasOption(FlagForSwitch(Switch::SkiaDeterministicRendering)))
+    SkGraphics::Init();
 
   blink::Settings settings;
   settings.application_library_path = application_library_path;
@@ -107,10 +108,6 @@ void Shell::InitStandalone(fxl::CommandLine command_line,
   settings.dart_non_checked_mode =
       command_line.HasOption(FlagForSwitch(Switch::DartNonCheckedMode));
 
-  // strong mode setting.
-  settings.dart_strong_mode =
-      command_line.HasOption(FlagForSwitch(Switch::DartStrongMode));
-
   settings.ipv6 = command_line.HasOption(FlagForSwitch(Switch::IPv6));
 
   settings.start_paused =
@@ -123,7 +120,7 @@ void Shell::InitStandalone(fxl::CommandLine command_line,
       command_line.HasOption(FlagForSwitch(Switch::EnableSoftwareRendering));
 
   settings.using_blink =
-      !command_line.HasOption(FlagForSwitch(Switch::EnableTxt));
+      command_line.HasOption(FlagForSwitch(Switch::EnableBlink));
 
   settings.endless_trace_buffer =
       command_line.HasOption(FlagForSwitch(Switch::EndlessTraceBuffer));

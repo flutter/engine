@@ -7,9 +7,9 @@
 
 namespace flutter_runner {
 
-SessionConnection::SessionConnection(scenic::SceneManagerPtr scene_manager,
+SessionConnection::SessionConnection(ui_mozart::MozartPtr mozart,
                                      zx::eventpair import_token)
-    : session_(scene_manager.get()),
+    : session_(mozart.get()),
       root_node_(&session_),
       surface_producer_(std::make_unique<VulkanSurfaceProducer>(&session_)),
       scene_update_context_(&session_, surface_producer_.get()) {
@@ -22,7 +22,7 @@ SessionConnection::SessionConnection(scenic::SceneManagerPtr scene_manager,
 
   root_node_.Bind(std::move(import_token));
   root_node_.SetEventMask(scenic::kMetricsEventMask);
-  session_.Present(0, [](scenic::PresentationInfoPtr info) {});
+  session_.Present(0, [](ui_mozart::PresentationInfoPtr info) {});
 
   present_callback_ =
       std::bind(&SessionConnection::OnPresent, this, std::placeholders::_1);
@@ -38,12 +38,13 @@ void SessionConnection::OnSessionError() {
   FXL_CHECK(false) << "Session connection was terminated.";
 }
 
-void SessionConnection::OnSessionEvents(fidl::Array<scenic::EventPtr> events) {
+void SessionConnection::OnSessionEvents(
+    f1dl::Array<ui_mozart::EventPtr> events) {
   scenic::MetricsPtr new_metrics;
   for (const auto& event : events) {
-    if (event->is_metrics() &&
-        event->get_metrics()->node_id == root_node_.id()) {
-      new_metrics = std::move(event->get_metrics()->metrics);
+    if (event->is_scenic() && event->get_scenic()->is_metrics() &&
+        event->get_scenic()->get_metrics()->node_id == root_node_.id()) {
+      new_metrics = std::move(event->get_scenic()->get_metrics()->metrics);
     }
   }
   if (!new_metrics)
@@ -80,7 +81,7 @@ void SessionConnection::Present(flow::CompositorContext::ScopedFrame& frame,
   EnqueueClearOps();
 }
 
-void SessionConnection::OnPresent(scenic::PresentationInfoPtr info) {
+void SessionConnection::OnPresent(ui_mozart::PresentationInfoPtr info) {
   ASSERT_IS_GPU_THREAD;
   auto callback = pending_on_present_callback_;
   pending_on_present_callback_ = nullptr;

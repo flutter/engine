@@ -111,7 +111,7 @@ RuntimeHolder::~RuntimeHolder() {
 void RuntimeHolder::Init(
     fdio_ns_t* namespc,
     std::unique_ptr<app::ApplicationContext> context,
-    fidl::InterfaceRequest<app::ServiceProvider> outgoing_services,
+    f1dl::InterfaceRequest<app::ServiceProvider> outgoing_services,
     std::vector<char> bundle) {
   FXL_DCHECK(!rasterizer_);
   rasterizer_ = Rasterizer::Create();
@@ -193,8 +193,8 @@ void RuntimeHolder::Init(
 
 void RuntimeHolder::CreateView(
     const std::string& script_uri,
-    fidl::InterfaceRequest<mozart::ViewOwner> view_owner_request,
-    fidl::InterfaceRequest<app::ServiceProvider> services) {
+    f1dl::InterfaceRequest<mozart::ViewOwner> view_owner_request,
+    f1dl::InterfaceRequest<app::ServiceProvider> services) {
   if (view_listener_binding_.is_bound()) {
     // TODO(jeffbrown): Refactor this to support multiple view instances
     // sharing the same underlying root bundle (but with different runtimes).
@@ -238,18 +238,18 @@ void RuntimeHolder::CreateView(
   input_connection_->SetEventListener(std::move(input_listener));
 
   // Setup the session.
-  fidl::InterfaceHandle<scenic::SceneManager> scene_manager;
-  view_manager_->GetSceneManager(scene_manager.NewRequest());
+  f1dl::InterfaceHandle<ui_mozart::Mozart> mozart;
+  view_manager_->GetMozart(mozart.NewRequest());
 
   blink::Threads::Gpu()->PostTask(fxl::MakeCopyable([
     rasterizer = rasterizer_.get(),            //
-    scene_manager = std::move(scene_manager),  //
+    mozart = std::move(mozart),  //
     import_token = std::move(import_token),    //
     weak_runtime_holder = GetWeakPtr()
   ]() mutable {
     ASSERT_IS_GPU_THREAD;
     rasterizer->SetScene(
-        std::move(scene_manager), std::move(import_token),
+        std::move(mozart), std::move(import_token),
         // TODO(MZ-222): Ideally we would immediately redraw the previous layer
         // tree when the metrics change since there's no need to rerecord it.
         // However, we want to make sure there's only one outstanding frame.
@@ -444,7 +444,7 @@ void RuntimeHolder::InitDartIoInternal() {
 }
 
 void RuntimeHolder::InitFuchsia() {
-  fidl::InterfaceHandle<app::ApplicationEnvironment> environment;
+  f1dl::InterfaceHandle<app::ApplicationEnvironment> environment;
   context_->ConnectToEnvironmentService(environment.NewRequest());
   fuchsia::dart::Initialize(std::move(environment),
                             std::move(outgoing_services_));
@@ -467,7 +467,7 @@ void RuntimeHolder::InitZircon() {
 }
 
 void RuntimeHolder::InitMozartInternal() {
-  fidl::InterfaceHandle<mozart::ViewContainer> view_container;
+  f1dl::InterfaceHandle<mozart::ViewContainer> view_container;
   view_->GetContainer(view_container.NewRequest());
 
   Dart_Handle mozart_internal =
@@ -558,7 +558,7 @@ bool RuntimeHolder::HandleFlutterPlatformMessage(
     clipboard_->Push(text);
     response->CompleteEmpty();
   } else if (method->value == "Clipboard.getData") {
-    clipboard_->Peek([response](const ::fidl::String& text) {
+    clipboard_->Peek([response](const ::f1dl::String& text) {
       rapidjson::StringBuffer json_buffer;
       rapidjson::Writer<rapidjson::StringBuffer> writer(json_buffer);
       writer.StartArray();
@@ -692,6 +692,8 @@ void RuntimeHolder::OnEvent(mozart::InputEventPtr event,
     pointer_data.device = pointer->pointer_id;
     pointer_data.physical_x = pointer->x * viewport_metrics_.device_pixel_ratio;
     pointer_data.physical_y = pointer->y * viewport_metrics_.device_pixel_ratio;
+    // Buttons are single bit values starting with kMousePrimaryButton = 1.
+    pointer_data.buttons = static_cast<uint64_t>(pointer->buttons);
 
     switch (pointer_data.change) {
       case blink::PointerData::Change::kDown:

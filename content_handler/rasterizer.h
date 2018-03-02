@@ -22,7 +22,7 @@ class Rasterizer {
   static std::unique_ptr<Rasterizer> Create();
 
   virtual void SetScene(
-      fidl::InterfaceHandle<scenic::SceneManager> scene_manager,
+      f1dl::InterfaceHandle<ui_mozart::Mozart> mozart,
       zx::eventpair import_token,
       fxl::Closure metrics_changed_callback) = 0;
 

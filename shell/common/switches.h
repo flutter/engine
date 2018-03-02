@@ -58,9 +58,14 @@ DEF_SWITCH(EnableSoftwareRendering,
            "Enable rendering using the Skia software backend. This is useful"
            "when testing Flutter on emulators. By default, Flutter will"
            "attempt to either use OpenGL or Vulkan.")
-DEF_SWITCH(EnableTxt,
-           "enable-txt",
-           "Enable libtxt as the text shaping library instead of Blink.")
+DEF_SWITCH(SkiaDeterministicRendering,
+           "skia-deterministic-rendering",
+           "Skips the call to SkGraphics::Init(), thus avoiding swapping out"
+           "some Skia function pointers based on available CPU features. This"
+           "is used to obtain 100% deterministic behavior in Skia rendering.")
+DEF_SWITCH(EnableBlink,
+           "enable-blink",
+           "Enable Blink as the text shaping library instead of libtxt.")
 DEF_SWITCH(FLX, "flx", "Specify the FLX path.")
 DEF_SWITCH(FlutterAssetsDir,
            "flutter-assets-dir",
@@ -104,7 +109,6 @@ DEF_SWITCH(DartNonCheckedMode,
            "precompiled and checked mode is unsupported. However, this flag "
            "may be specified if the user wishes to run in the debug product "
            "mode (i.e. with JIT or DBC) with checked mode off.")
-DEF_SWITCH(DartStrongMode, "strong", "Enable Dart 2.0 strong mode.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);
