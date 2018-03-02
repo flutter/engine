@@ -9,13 +9,15 @@ import 'dart:io' hide FileSystemEntity;
 
 import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
-import 'package:vm/frontend_server.dart' as frontend show FrontendCompiler, argParser, usage;
 
 import 'package:flutter_kernel_transformers/track_widget_constructor_locations.dart';
+import 'package:vm/incremental_compiler.dart';
+import 'package:vm/frontend_server.dart' as frontend show FrontendCompiler,
+    CompilerInterface, listenAndCompile, argParser, usage;
 
 /// Wrapper around [FrontendCompiler] that adds [widgetCreatorTracker] kernel
 /// transformation to the compilation.
-class _FlutterFrontendCompiler {
+class _FlutterFrontendCompiler implements frontend.CompilerInterface{
   final frontend.CompilerInterface _compiler;
 
   _FlutterFrontendCompiler(StringSink output, {bool trackWidgetCreation: false}):
@@ -23,8 +25,8 @@ class _FlutterFrontendCompiler {
           transformer: (trackWidgetCreation ? new WidgetCreatorTracker() : null));
 
   @override
-  Future<Null> compile(String filename, ArgResults options) async {
-    return _compiler.compile(filename, options);
+  Future<Null> compile(String filename, ArgResults options, {IncrementalCompiler generator}) async {
+    return _compiler.compile(filename, options, generator: generator);
   }
 
   @override
@@ -106,6 +108,6 @@ Future<int> starter(
     return 0;
   }
 
-  frontend.listenAndCompile(input ?? stdin, options, () { exit(0); } );
+  frontend.listenAndCompile(compiler, input ?? stdin, options, () { exit(0); } );
   return 0;
 }
