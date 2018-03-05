@@ -193,28 +193,8 @@ public final class FlutterActivityDelegate
 
     @Override
     public void onPause() {
-        Application app = (Application) activity.getApplicationContext();
-        if (app instanceof FlutterApplication) {
-            FlutterApplication flutterApp = (FlutterApplication) app;
-            if (this.equals(flutterApp.getCurrentActivity())) {
-                Log.i(TAG, "onPause setting current activity to null");
-                flutterApp.setCurrentActivity(null);
-            }
-        }
         if (flutterView != null) {
             flutterView.onPause();
-        }
-    }
-
-    @Override
-    public void onResume() {
-        Application app = (Application) activity.getApplicationContext();
-        if (app instanceof FlutterApplication) {
-            FlutterApplication flutterApp = (FlutterApplication) app;
-            Log.i(TAG, "onResume setting current activity to this");
-            flutterApp.setCurrentActivity(activity);
-        } else {
-            Log.i(TAG, "onResume app wasn't a FlutterApplication!!");
         }
     }
 
@@ -227,14 +207,6 @@ public final class FlutterActivityDelegate
 
     @Override
     public void onDestroy() {
-        Application app = (Application) activity.getApplicationContext();
-        if (app instanceof FlutterApplication) {
-            FlutterApplication flutterApp = (FlutterApplication) app;
-            if (this.equals(flutterApp.getCurrentActivity())) {
-                Log.i(TAG, "onDestroy setting current activity to null");
-                flutterApp.setCurrentActivity(null);
-            }
-        }
         if (flutterView != null) {
             final boolean detach =
                 flutterView.getPluginRegistry().onViewDestroy(flutterView.getFlutterNativeView());

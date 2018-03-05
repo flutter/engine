@@ -12,19 +12,15 @@ import io.flutter.view.FlutterMain;
 /**
  * Flutter implementation of {@link android.app.Application}, managing
  * application-level global initializations.
+ *
+ * Existing applications can modify their {@link #onCreate} method to
+ * avoid using {@link FlutterApplication} if their application class
+ * already implements other interfaces.
  */
 public class FlutterApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
         FlutterMain.startInitialization(this);
-    }
-
-    private Activity mCurrentActivity = null;
-    public Activity getCurrentActivity() {
-        return mCurrentActivity;
-    }
-    public void setCurrentActivity(Activity mCurrentActivity) {
-        this.mCurrentActivity = mCurrentActivity;
     }
 }
