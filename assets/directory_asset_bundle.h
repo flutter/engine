@@ -16,7 +16,7 @@
 namespace blink {
 
 class DirectoryAssetBundle
-    : public blink::AssetProvider {
+    : public AssetProvider {
  public:
   explicit DirectoryAssetBundle(std::string directory);
   // Expects fd to be valid, otherwise the file descriptor is ignored.

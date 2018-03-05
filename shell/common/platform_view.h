@@ -65,7 +65,7 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
   virtual void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message);
 
-  virtual  fxl::RefPtr<blink::AssetProvider> GetAssetProvider();
+  virtual fxl::RefPtr<blink::AssetProvider> GetAssetProvider();
 
   // Called once per texture, on the platform thread.
   void RegisterTexture(std::shared_ptr<flow::Texture> texture);

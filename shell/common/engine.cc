@@ -302,7 +302,6 @@ void Engine::RunBundle(const std::string& bundle_path,
   TRACE_EVENT0("flutter", "Engine::RunBundle");
   ConfigureAssetBundle(bundle_path);
   ConfigureRuntime(GetScriptUriFromPath(bundle_path), reuse_runtime_controller);
-
   if (blink::IsRunningPrecompiledCode()) {
     runtime_->dart_controller()->RunFromPrecompiledSnapshot(entrypoint);
   } else {
@@ -312,7 +311,7 @@ void Engine::RunBundle(const std::string& bundle_path,
       return;
     }
     std::vector<uint8_t> snapshot;
-   if (!GetAssetAsBuffer(blink::kSnapshotAssetKey, &snapshot))
+    if (!GetAssetAsBuffer(blink::kSnapshotAssetKey, &snapshot))
       return;
     runtime_->dart_controller()->RunFromScriptSnapshot(
         snapshot.data(), snapshot.size(), entrypoint);

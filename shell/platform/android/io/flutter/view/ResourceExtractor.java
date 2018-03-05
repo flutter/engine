@@ -37,7 +37,7 @@ class ResourceExtractor {
     private class ExtractTask extends AsyncTask<Void, Void, Void> {
         private static final int BUFFER_SIZE = 16 * 1024;
 
-        ExtractTask() {}
+        ExtractTask() { }
 
         private void extractResources() {
             final File dataDir = new File(PathUtils.getDataDirectory(mContext));
@@ -61,30 +61,17 @@ class ResourceExtractor {
                         output.getParentFile().mkdirs();
                     }
 
-                    OutputStream os = null;
-                    InputStream is = null;
-                    try {
-                        os = new FileOutputStream(output);
-                        is = manager.open(asset);
-
-                        if (buffer == null) {
-                            buffer = new byte[BUFFER_SIZE];
-                        }
-
-                        int count = 0;
-                        while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
-                            os.write(buffer, 0, count);
-                        }
-                        os.flush();
-                    } finally {
-                        try {
-                            if (os != null) {
-                                os.close();
+                    try (InputStream is = manager.open(asset)) {
+                        try (OutputStream os = new FileOutputStream(output)) {
+                            if (buffer == null) {
+                                buffer = new byte[BUFFER_SIZE];
                             }
-                        } finally {
-                            if (is != null) {
-                                is.close();
+
+                            int count = 0;
+                            while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
+                                os.write(buffer, 0, count);
                             }
+                            os.flush();
                         }
                     }
                 } catch (FileNotFoundException fnfe) {

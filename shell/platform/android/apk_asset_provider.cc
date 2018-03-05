@@ -11,7 +11,7 @@ bool APKAssetProvider::GetAsBuffer(const std::string& asset_name,
                                    std::vector<uint8_t>* data) {
   std::stringstream ss;
   ss << directory_.c_str() << "/" << asset_name;
-  AAsset* asset = AAssetManager_open(assetManager_, ss.str().c_str(), AASSET_MODE_RANDOM);
+  AAsset* asset = AAssetManager_open(assetManager_, ss.str().c_str(), AASSET_MODE_BUFFER);
   if (!asset) {
      return false;
   }
@@ -23,7 +23,7 @@ bool APKAssetProvider::GetAsBuffer(const std::string& asset_name,
   }
 
   data->resize(AAsset_getLength(asset));
-  std::copy(buffer, buffer + data->size() , data->begin());
+  std::copy(buffer, buffer + data->size(), data->begin());
   AAsset_close(asset);
   return true;
 }
