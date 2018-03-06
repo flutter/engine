@@ -21,6 +21,7 @@
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
 #include "flutter/shell/platform/android/android_surface_gl.h"
 #include "flutter/shell/platform/android/android_surface_software.h"
+#include "flutter/shell/platform/android/apk_asset_provider.h"
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/vsync_waiter_android.h"
 #include "lib/fxl/functional/make_copyable.h"
@@ -207,21 +208,33 @@ void PlatformViewAndroid::SurfaceDestroyed() {
   ReleaseSurface();
 }
 
-void PlatformViewAndroid::RunBundleAndSnapshot(std::string bundle_path,
+void PlatformViewAndroid::RunBundleAndSnapshot(JNIEnv* env, std::string bundle_path,
                                                std::string snapshot_override,
                                                std::string entrypoint,
-                                               bool reuse_runtime_controller) {
-  blink::Threads::UI()->PostTask([
-    engine = engine_->GetWeakPtr(), bundle_path = std::move(bundle_path),
-    snapshot_override = std::move(snapshot_override),
-    entrypoint = std::move(entrypoint),
-    reuse_runtime_controller = reuse_runtime_controller
-  ] {
-    if (engine)
-      engine->RunBundleAndSnapshot(
-          std::move(bundle_path), std::move(snapshot_override),
-          std::move(entrypoint), reuse_runtime_controller);
-  });
+                                               bool reuse_runtime_controller,
+                                               jobject assetManager) {
+  // TODO(jsimmons): remove snapshot_override from the public FlutterView API
+  FXL_CHECK(snapshot_override.empty()) << "snapshot_override is obsolete";
+
+  // The flutter assets directory name is the last directory of the bundle_path
+  // and the path into the APK
+  size_t last_slash_idx = bundle_path.rfind("/", bundle_path.size());
+  std::string flutter_assets_dir = bundle_path.substr(
+      last_slash_idx + 1, bundle_path.size() - last_slash_idx);
+
+  fxl::RefPtr<blink::AssetProvider> asset_provider =
+      fxl::MakeRefCounted<blink::APKAssetProvider>(env, assetManager,
+                                                   flutter_assets_dir);
+  blink::Threads::UI()->PostTask(
+      [engine = engine_->GetWeakPtr(),
+       asset_provider = std::move(asset_provider),
+       bundle_path = std::move(bundle_path), entrypoint = std::move(entrypoint),
+       reuse_runtime_controller = reuse_runtime_controller] {
+        if (engine)
+          engine->RunBundleWithAssets(
+              std::move(asset_provider), std::move(bundle_path),
+              std::move(entrypoint), reuse_runtime_controller);
+      });
 }
 
 void PlatformViewAndroid::RunBundleAndSource(std::string bundle_path,
