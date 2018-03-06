@@ -770,23 +770,17 @@ void RuntimeHolder::OnPropertiesChanged(
     const OnPropertiesChangedCallback& callback) {
   FXL_DCHECK(properties);
 
-  // Attempt to read the device pixel ratio.
-  float pixel_ratio = 1.f;
-  if (auto& metrics = properties->display_metrics) {
-    pixel_ratio = metrics->device_pixel_ratio;
-  }
-
   // Apply view property changes.
   if (auto& layout = properties->view_layout) {
-    viewport_metrics_.physical_width = layout->size->width * pixel_ratio;
-    viewport_metrics_.physical_height = layout->size->height * pixel_ratio;
-    viewport_metrics_.physical_padding_top = layout->inset->top * pixel_ratio;
+    viewport_metrics_.physical_width = layout->size->width;
+    viewport_metrics_.physical_height = layout->size->height;
+    viewport_metrics_.physical_padding_top = layout->inset->top;
     viewport_metrics_.physical_padding_right =
-        layout->inset->right * pixel_ratio;
+        layout->inset->right;
     viewport_metrics_.physical_padding_bottom =
-        layout->inset->bottom * pixel_ratio;
-    viewport_metrics_.physical_padding_left = layout->inset->left * pixel_ratio;
-    viewport_metrics_.device_pixel_ratio = pixel_ratio;
+        layout->inset->bottom;
+    viewport_metrics_.physical_padding_left = layout->inset->left;
+    viewport_metrics_.device_pixel_ratio = 1.f;
     runtime_->SetViewportMetrics(viewport_metrics_);
   }
 
