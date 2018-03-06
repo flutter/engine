@@ -18,12 +18,14 @@ class SystemCompositorContext {
   virtual void Finish() = 0;
   virtual void PushLayer(SkRect bounds) = 0;
   virtual void PopLayer() = 0;
+  virtual void Clear() = 0;
+  virtual void TearDown() = 0;
   virtual SkCanvas* CurrentCanvas() = 0;
   virtual void ClipFrame() = 0;
   virtual void SetColor(SkColor color) = 0;
   virtual void SetClipPath(SkPath path) = 0;
   virtual void AddChildScene(Texture* texture, SkRect frame) = 0;
-  ;
+  virtual GrContext *GetGrContext() = 0;
   virtual void ExecutePaintTasks(CompositorContext::ScopedFrame& frame) = 0;
   virtual void AddPaintedLayer(flow::Layer* layer) = 0;
   virtual void Transform(SkMatrix transform) = 0;

@@ -48,16 +48,17 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   FXL_DCHECK(metrics);
 #endif
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
-  SkColorSpace* color_space =
-      frame.canvas() ? frame.canvas()->imageInfo().colorSpace() : nullptr;
+  // TODO(sigurdm): get color space from system compositor context.
+  SkColorSpace* color_space = nullptr;
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
+
   Layer::PrerollContext context = {
 #if defined(OS_FUCHSIA)
     metrics,
 #endif
     ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
-    frame.gr_context(),
+    frame.systemCompositorContext()->GetGrContext(),
     color_space,
     SkRect::MakeEmpty(),
     frame.context().texture_registry(),
@@ -79,21 +80,6 @@ void LayerTree::UpdateScene(SystemCompositorContext& context) {
     context.PopLayer();
   }
   context.PopTransform();
-}
-
-void LayerTree::Paint(CompositorContext::ScopedFrame& frame) const {
-  Layer::PaintContext context = {
-      *frame.canvas(),
-      frame.context().frame_time(),
-      frame.context().engine_time(),
-      frame.context().memory_usage(),
-      frame.context().texture_registry(),
-      checkerboard_offscreen_layers_,
-  };
-  TRACE_EVENT0("flutter", "LayerTree::Paint");
-
-  if (root_layer_->needs_painting())
-    root_layer_->Paint(context);
 }
 
 }  // namespace flow

@@ -15,10 +15,7 @@ class NullRasterizer : public Rasterizer {
  public:
   NullRasterizer();
 
-  void Setup(std::unique_ptr<Surface> surface_or_null,
-#if defined(OS_IOS)
-             flow::SystemCompositorContext* systemCompositorContext,
-#endif
+  void Setup(flow::SystemCompositorContext* systemCompositorContext,
              fxl::Closure rasterizer_continuation,
              fxl::AutoResetWaitableEvent* setup_completion_event) override;
 

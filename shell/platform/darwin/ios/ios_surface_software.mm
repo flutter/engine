@@ -37,7 +37,7 @@ void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
   // Android oddities.
 }
 
-std::unique_ptr<GPUSurfaceGL> IOSSurfaceSoftware::CreateGPUSurface() {
+std::unique_ptr<GPUSurfaceGL> IOSSurfaceSoftware::CreateGPUSurface(GrContext *grContext) {
   if (!IsValid()) {
     return nullptr;
   }

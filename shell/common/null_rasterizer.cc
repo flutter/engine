@@ -9,13 +9,9 @@ namespace shell {
 NullRasterizer::NullRasterizer() : weak_factory_(this) {}
 
 void NullRasterizer::Setup(
-    std::unique_ptr<Surface> surface_or_null,
-#if defined(OS_IOS)
     flow::SystemCompositorContext* systemCompositorContext,
-#endif
     fxl::Closure rasterizer_continuation,
     fxl::AutoResetWaitableEvent* setup_completion_event) {
-  surface_ = std::move(surface_or_null);
   system_compositor_context_ = systemCompositorContext;
   rasterizer_continuation();
   setup_completion_event->Signal();

@@ -168,7 +168,6 @@ bool IOSGLContext::PresentRenderBuffer() const {
 bool IOSGLContext::UpdateStorageSizeIfNecessary() {
   FXL_DCHECK(glGetError() == GL_NO_ERROR);
 
-  // CGRect frame = [layer_.get() frame];
   CGRect bounds = [layer_.get() bounds];
   const CGSize layer_size = bounds.size;
 

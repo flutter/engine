@@ -47,7 +47,7 @@ void PlatformViewIOS::Attach(fxl::Closure firstFrameCallback) {
 }
 
 void PlatformViewIOS::NotifyCreated() {
-  PlatformView::NotifyCreated(system_compositor_context_->rootIOSSurface()->CreateGPUSurface(),
+  PlatformView::NotifyCreated(system_compositor_context_->rootIOSSurface()->CreateGPUSurface(system_compositor_context_->GetGrContext()),
                               system_compositor_context_.get());
 }
 

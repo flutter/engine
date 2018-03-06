@@ -20,8 +20,7 @@ class GPURasterizer : public Rasterizer {
 
   ~GPURasterizer() override;
 
-  void Setup(std::unique_ptr<Surface> surface,
-             flow::SystemCompositorContext* systemCompositorContext,
+  void Setup(flow::SystemCompositorContext* systemCompositorContext,
              fxl::Closure continuation,
              fxl::AutoResetWaitableEvent* setup_completion_event) override;
 
@@ -46,7 +45,6 @@ class GPURasterizer : public Rasterizer {
   void SetTextureRegistry(flow::TextureRegistry* textureRegistry) override;
 
  private:
-  std::unique_ptr<Surface> surface_;
   flow::SystemCompositorContext* system_compositor_context_;
   flow::CompositorContext compositor_context_;
   std::unique_ptr<flow::LayerTree> last_layer_tree_;

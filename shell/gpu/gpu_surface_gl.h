@@ -6,6 +6,7 @@
 #define SHELL_GPU_GPU_SURFACE_GL_H_
 
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/shell/gpu/gpu_gr_context.h"
 #include "flutter/shell/common/surface.h"
 #include "flutter/synchronization/debug_thread_checker.h"
 #include "lib/fxl/macros.h"
@@ -28,7 +29,7 @@ class GPUSurfaceGLDelegate {
 
 class GPUSurfaceGL : public Surface {
  public:
-  GPUSurfaceGL(GPUSurfaceGLDelegate* delegate);
+  GPUSurfaceGL(GPUSurfaceGLDelegate* delegate, GrContext *grContext);
 
   ~GPUSurfaceGL() override;
 
@@ -48,7 +49,7 @@ class GPUSurfaceGL : public Surface {
 
  private:
   GPUSurfaceGLDelegate* delegate_;
-  sk_sp<GrContext> context_;
+  GrContext *gr_context_;
   sk_sp<SkSurface> onscreen_surface_;
   sk_sp<SkSurface> offscreen_surface_;
   sk_sp<SkImage> saved_image_;

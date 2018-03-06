@@ -9,6 +9,7 @@
 #include "flutter/flow/system_compositor_context.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/platform/darwin/ios/ios_gl_context.h"
+#include "flutter/shell/gpu/gpu_gr_context.h"
 
 namespace shell {
 
@@ -21,6 +22,9 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   explicit IOSSystemCompositorContext(
       PlatformView::SurfaceConfig surface_config,
       UIView* root_view);
+  GrContext *GetGrContext() override;
+  void Clear() override;
+  void TearDown() override;
   void Reset() override;
   void Finish() override;
   void PushLayer(SkRect bounds) override;
@@ -38,7 +42,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
 
   // TODO(sigurdm): Consider replacing this with just an IOSSurface.
   struct Surface {
-    Surface(UIView* view, IOSSurfaceGL* iosSurface);
+    Surface(UIView* view, IOSSurfaceGL* iosSurface, GrContext *grContext);
     fml::scoped_nsobject<UIView> view;
     IOSSurfaceGL* iosSurface;
     std::unique_ptr<GPUSurfaceGL> gpuSurface;
@@ -113,6 +117,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   std::vector<FlowCompositingLayer*> paint_tasks_;
   std::vector<SkMatrix> transforms_;
   fml::scoped_nsobject<EAGLContext> eaglContext_;
+  std::unique_ptr<GpuGrContext> gr_context_;
 
   std::unique_ptr<IOSSurface> root_surface_;
 

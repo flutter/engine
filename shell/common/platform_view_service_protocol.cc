@@ -303,10 +303,8 @@ void PlatformViewServiceProtocol::ScreenshotGpuTask(SkBitmap* bitmap) {
   flow::CompositorContext compositor_context(nullptr);
   SkCanvas* canvas = surface->getCanvas();
   flow::CompositorContext::ScopedFrame frame =
-      compositor_context.AcquireFrame(nullptr, canvas,
-#if defined(OS_IOS)
-                                      nullptr,  // XXX
-#endif
+      compositor_context.AcquireFrame(
+                                      nullptr,
                                       false);
 
   canvas->clear(SK_ColorBLACK);
@@ -361,8 +359,8 @@ sk_sp<SkPicture> PlatformViewServiceProtocol::ScreenshotSkpGpuTask() {
                                          layer_tree->frame_size().height()));
 
   flow::CompositorContext compositor_context(nullptr);
-  flow::CompositorContext::ScopedFrame frame = compositor_context.AcquireFrame(
-      nullptr, recorder.getRecordingCanvas(), nullptr, false);
+  /// TODO(sigurdm): Restore screen-shotting functionality.
+  flow::CompositorContext::ScopedFrame frame = compositor_context.AcquireFrame(nullptr, false);
   layer_tree->Raster(frame);
 
   return recorder.finishRecordingAsPicture();

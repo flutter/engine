@@ -100,7 +100,7 @@ void PlatformView::NotifyCreated(
 #endif
                                                &latch]() mutable {
       // Runs on the GPU Thread. So does the Caller Continuation.
-      rasterizer_->Setup(std::move(surface), systemCompositorContext,
+      rasterizer_->Setup(systemCompositorContext,
                          caller_continuation, &latch);
     });
     // Runs on the UI Thread.

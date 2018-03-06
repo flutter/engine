@@ -28,7 +28,7 @@ class IOSSurfaceGL : public IOSSurface, public GPUSurfaceGLDelegate {
 
   void UpdateStorageSizeIfNecessary() override;
 
-  std::unique_ptr<GPUSurfaceGL> CreateGPUSurface() override;
+  std::unique_ptr<GPUSurfaceGL> CreateGPUSurface(GrContext *grContext) override;
 
   bool GLContextMakeCurrent() override;
 

@@ -11,6 +11,7 @@
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
+
 #include <UIKit/UIKit.h>
 
 @interface FlutterTouchIgnoringCALayer : CALayer
@@ -142,8 +143,10 @@ static CGPathRef SkPathToCGPath(SkPath path) {
   }
 }
 
-IOSSystemCompositorContext::Surface::Surface(UIView* view, IOSSurfaceGL* iosSurface)
-    : view(view), iosSurface(iosSurface), gpuSurface(iosSurface->CreateGPUSurface()) {}
+IOSSystemCompositorContext::Surface::Surface(UIView* view,
+    IOSSurfaceGL* iosSurface, 
+    GrContext *grContext)
+    : view(view), iosSurface(iosSurface), gpuSurface(iosSurface->CreateGPUSurface(grContext)) {}
 
 IOSSystemCompositorContext::FlowCompositingLayer::FlowCompositingLayer()
     : background_color_(SK_ColorTRANSPARENT) {}
@@ -277,9 +280,12 @@ IOSSystemCompositorContext::IOSSystemCompositorContext(PlatformView::SurfaceConf
       surface_config_(surfaceConfig) {
   IOSSurfaceGL* rootSurfaceGL = static_cast<IOSSurfaceGL*>(root_surface_.get());
   root_layer_ = std::make_unique<FlowCompositingLayer>();
-  root_layer_->surface_ = new Surface(root_view, rootSurfaceGL);
+  [EAGLContext setCurrentContext:eaglContext_.get()];
+  gr_context_ = std::make_unique<GpuGrContext>();
+  root_layer_->surface_ = new Surface(root_view, rootSurfaceGL, gr_context_->GetContext());
   [root_view retain];
   root_layer_->view_.reset(root_view);
+
 
   root_layer_->frame_ = SkRect::MakeWH(root_view.bounds.size.width, root_view.bounds.size.height);
   stack_.push_back(root_layer_.get());
@@ -313,7 +319,7 @@ IOSSystemCompositorContext::Surface* IOSSystemCompositorContext::createDrawLayer
     }
 
     IOSSurfaceGL* iosSurface = new IOSSurfaceGL(surface_config_, newCALayer, eaglContext_);
-    result = new Surface(view, iosSurface);
+    result = new Surface(view, iosSurface, gr_context_->GetContext());
     CAEAGLLayerCache_.push_back(result);
   } else {
     result = CAEAGLLayerCache_[CAEAGLLayerCache_index_];
@@ -444,5 +450,38 @@ void IOSSystemCompositorContext::PopTransform() {
 void IOSSystemCompositorContext::AddPaintedLayer(flow::Layer* layer) {
   stack_.back()->AddPaintedLayer(layer);
 }
+
+
+void IOSSystemCompositorContext::TearDown() {
+  // TODO(sigurdm): Implement.
+}
+
+void IOSSystemCompositorContext::Clear() {
+  // TODO(sigurdm): Implement.
+  // if (surface_ == nullptr) {
+  //   return;
+  // }
+
+  // auto frame = surface_->AcquireFrame(size);
+
+  // if (frame == nullptr) {
+  //   return;
+  // }
+
+  // SkCanvas* canvas = frame->SkiaCanvas();
+
+  // if (canvas == nullptr) {
+  //   return;
+  // }
+
+  // canvas->clear(color);
+
+  // frame->Submit();
+}
+
+GrContext *IOSSystemCompositorContext::GetGrContext() {
+  return gr_context_->GetContext();
+}
+
 
 }  // namespace shell
