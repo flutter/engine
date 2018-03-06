@@ -11,7 +11,6 @@
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
-
 #include <UIKit/UIKit.h>
 
 @interface FlutterTouchIgnoringCALayer : CALayer
@@ -43,32 +42,32 @@
 @end
 
 static BOOL layerHasSublayerContainingPoint(CALayer* layer, CGPoint point) {
-  // Letting all touches fall through, unless they land on some sublayer 
+  // Letting all touches fall through, unless they land on some sublayer
   // interested in the event.
   if (!CGRectContainsPoint(layer.bounds, point)) {
     return false;
   }
-  for (CALayer *sublayer in layer.sublayers) {
+  for (CALayer* sublayer in layer.sublayers) {
     CGPoint converted = [layer convertPoint:point toLayer:sublayer];
-    if ([sublayer containsPoint: converted])  {
+    if ([sublayer containsPoint:converted]) {
       return true;
     }
   }
-  // TODO(sigurdm): Do transparency checking to allow getting touches from 
+  // TODO(sigurdm): Do transparency checking to allow getting touches from
   // flutter layers on top of of external views.
   return false;
 }
 
 @implementation FlutterTouchIgnoringCALayer
 
--(BOOL)containsPoint:(CGPoint)point {
+- (BOOL)containsPoint:(CGPoint)point {
   return layerHasSublayerContainingPoint(self, point);
 }
 
 @end
 
 @implementation FlutterTouchIgnoringCAEGLLayer
--(BOOL)containsPoint:(CGPoint)point {
+- (BOOL)containsPoint:(CGPoint)point {
   return layerHasSublayerContainingPoint(self, point);
 }
 @end
@@ -144,8 +143,8 @@ static CGPathRef SkPathToCGPath(SkPath path) {
 }
 
 IOSSystemCompositorContext::Surface::Surface(UIView* view,
-    IOSSurfaceGL* iosSurface, 
-    GrContext *grContext)
+                                             IOSSurfaceGL* iosSurface,
+                                             GrContext* grContext)
     : view(view), iosSurface(iosSurface), gpuSurface(iosSurface->CreateGPUSurface(grContext)) {}
 
 IOSSystemCompositorContext::FlowCompositingLayer::FlowCompositingLayer()
@@ -222,10 +221,10 @@ void IOSSystemCompositorContext::FlowCompositingLayer::manifest(
 
   int alpha = SkColorGetA(background_color_);
   view.layer.backgroundColor = [UIColor colorWithRed:SkColorGetR(background_color_)
-                                          green:SkColorGetG(background_color_)
-                                           blue:SkColorGetB(background_color_)
-                                          alpha:alpha]
-                              .CGColor;
+                                               green:SkColorGetG(background_color_)
+                                                blue:SkColorGetB(background_color_)
+                                               alpha:alpha]
+                                   .CGColor;
   if (alpha == 0xff) {
     view.layer.opaque = true;
   } else {
@@ -286,7 +285,6 @@ IOSSystemCompositorContext::IOSSystemCompositorContext(PlatformView::SurfaceConf
   [root_view retain];
   root_layer_->view_.reset(root_view);
 
-
   root_layer_->frame_ = SkRect::MakeWH(root_view.bounds.size.width, root_view.bounds.size.height);
   stack_.push_back(root_layer_.get());
 
@@ -309,7 +307,7 @@ UIView* IOSSystemCompositorContext::createBasicLayer() {
 IOSSystemCompositorContext::Surface* IOSSystemCompositorContext::createDrawLayer() {
   Surface* result;
   if (CAEAGLLayerCache_index_ >= CAEAGLLayerCache_.size()) {
-    UIView *view = [[FlutterTouchIgnoringGLView alloc] init];
+    UIView* view = [[FlutterTouchIgnoringGLView alloc] init];
     CAEAGLLayer* newCALayer = (CAEAGLLayer*)(view.layer);
     CGFloat screenScale = [UIScreen mainScreen].scale;
     newCALayer.contentsScale = screenScale;
@@ -333,7 +331,7 @@ void IOSSystemCompositorContext::Reset() {
   CAEAGLLayerCache_index_ = 0;
   [CATransaction begin];
   [CATransaction setValue:(id)kCFBooleanTrue forKey:kCATransactionDisableActions];
-  //paint_tasks_.push_back(root_layer_.get());
+  // paint_tasks_.push_back(root_layer_.get());
 }
 
 void IOSSystemCompositorContext::Finish() {
@@ -451,7 +449,6 @@ void IOSSystemCompositorContext::AddPaintedLayer(flow::Layer* layer) {
   stack_.back()->AddPaintedLayer(layer);
 }
 
-
 void IOSSystemCompositorContext::TearDown() {
   // TODO(sigurdm): Implement.
 }
@@ -479,9 +476,8 @@ void IOSSystemCompositorContext::Clear() {
   // frame->Submit();
 }
 
-GrContext *IOSSystemCompositorContext::GetGrContext() {
+GrContext* IOSSystemCompositorContext::GetGrContext() {
   return gr_context_->GetContext();
 }
-
 
 }  // namespace shell

@@ -31,7 +31,7 @@ void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
   }
 }
 
-std::unique_ptr<GPUSurfaceGL> IOSSurfaceGL::CreateGPUSurface(GrContext *grContext) {
+std::unique_ptr<GPUSurfaceGL> IOSSurfaceGL::CreateGPUSurface(GrContext* grContext) {
   return std::make_unique<GPUSurfaceGL>(this, grContext);
 }
 
