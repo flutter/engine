@@ -28,6 +28,8 @@ source_set("flow") {
     "layers/default_layer_builder.h",
     "layers/layer.cc",
     "layers/layer.h",
+    "layers/native_widget_layer.cc",
+    "layers/native_widget_layer.h",
     "layers/layer_builder.cc",
     "layers/layer_builder.h",
     "layers/layer_tree.cc",
