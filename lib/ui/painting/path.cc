@@ -262,8 +262,8 @@ tonic::Float32List CanvasPath::getBounds() {
 }
 
 
-void CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
-  Op(path1->path(), path2->path(), (SkPathOp)operation, &path_);
+bool CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
+  return Op(path1->path(), path2->path(), (SkPathOp)operation, &path_);
 }
 
 }  // namespace blink
