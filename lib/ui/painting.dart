@@ -1652,15 +1652,15 @@ class Path extends NativeFieldWrapperClass2 {
   /// The resulting path will be constructed from non-overlapping contours. The
   /// curve order is reduced where possible so that cubics may be turned into
   /// quadratics, and quadratics maybe turned into lines.
-  void op(PathOp operation, Path path1, [Path path2]) {
+  bool op(PathOp operation, Path path1, [Path path2]) {
     assert(path1 != null);
     if (path2 != null) {
-      _op(path1, path2, operation.index);
+      return _op(path1, path2, operation.index);
     } else {
-      _op(this, path1, operation.index);
+      return _op(this, path1, operation.index);
     }
   }
-  void _op(Path path1, Path path2, int operation) native 'Path_op';
+  bool _op(Path path1, Path path2, int operation) native 'Path_op';
 }
 
 /// Convenience class to return the result of [PathMeasure.getPosTan]
