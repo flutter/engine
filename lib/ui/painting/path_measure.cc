@@ -101,10 +101,10 @@ fxl::RefPtr<CanvasPath> CanvasPathMeasure::getSegment(float startD,
                                    float stopD, 
                                    bool startWithMoveTo) {
   SkPath* dst = new SkPath();
-  bool returnNull = path_measure_->getSegment(startD, stopD, dst, startWithMoveTo);
-  if (returnNull) {
+  bool success = path_measure_->getSegment(startD, stopD, dst, startWithMoveTo);
+  if (!goodToReturn) {
     delete dst;
-    return nullptr;
+    return CanvasPath::Create();
   } else {
     return CanvasPath::CreateFrom(*dst);
   }
