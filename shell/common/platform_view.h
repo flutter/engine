@@ -97,6 +97,7 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
   flow::TextureRegistry texture_registry_;
   std::unique_ptr<Engine> engine_;
   std::unique_ptr<VsyncWaiter> vsync_waiter_;
+
   SkISize size_;
 
  private:
