@@ -26,10 +26,6 @@ bool IOSSurfaceSoftware::IsValid() const {
   return GetLayer() != nullptr;
 }
 
-bool IOSSurfaceSoftware::ResourceContextMakeCurrent() {
-  return false;
-}
-
 void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
   // Nothing to do here. We don't need an external entity to tell us when our
   // backing store needs to be updated. Instead, we let the frame tell us its
@@ -37,18 +33,20 @@ void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
   // Android oddities.
 }
 
-std::unique_ptr<GPUSurfaceGL> IOSSurfaceSoftware::CreateGPUSurface(GrContext* grContext) {
+std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrContext* grContext) {
   if (!IsValid()) {
+    FXL_DLOG(INFO) << "Not valid";
     return nullptr;
   }
 
   auto surface = std::make_unique<GPUSurfaceSoftware>(this);
 
   if (!surface->IsValid()) {
+        FXL_DLOG(INFO) << "surface Not valid";
     return nullptr;
   }
 
-  return nullptr;
+  return surface;
 }
 
 sk_sp<SkSurface> IOSSurfaceSoftware::AcquireBackingStore(const SkISize& size) {

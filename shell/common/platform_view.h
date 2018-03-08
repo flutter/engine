@@ -47,11 +47,9 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
                                std::vector<uint8_t> args);
   void SetSemanticsEnabled(bool enabled);
 
-  void NotifyCreated(std::unique_ptr<Surface> surface,
-                     flow::SystemCompositorContext* systemCompositorContext);
+  void NotifyCreated(flow::SystemCompositorContext* systemCompositorContext);
 
-  void NotifyCreated(std::unique_ptr<Surface> surface,
-                     flow::SystemCompositorContext* systemCompositorContext,
+  void NotifyCreated(flow::SystemCompositorContext* systemCompositorContext,
                      fxl::Closure continuation);
 
   void NotifyDestroyed();

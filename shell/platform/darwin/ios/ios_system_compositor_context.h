@@ -27,6 +27,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   void TearDown() override;
   void Reset() override;
   void Finish() override;
+  bool ResourceContextMakeCurrent() override;
   void PushLayer(SkRect bounds) override;
   void PopLayer() override;
   SkCanvas* CurrentCanvas() override;
@@ -42,10 +43,10 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
 
   // TODO(sigurdm): Consider replacing this with just an IOSSurface.
   struct Surface {
-    Surface(UIView* view, IOSSurfaceGL* iosSurface, GrContext *grContext);
+    Surface(UIView* view, std::unique_ptr<IOSSurface> iosSurface, GrContext *grContext);
     fml::scoped_nsobject<UIView> view;
-    IOSSurfaceGL* iosSurface;
-    std::unique_ptr<GPUSurfaceGL> gpuSurface;
+    std::unique_ptr<IOSSurface> iosSurface;
+    std::unique_ptr<shell::Surface> gpuSurface;
   };
 
  private:
@@ -79,7 +80,6 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
    public:
     FlowCompositingLayer();
     ~FlowCompositingLayer() override = default;
-    bool makeCurrent();
     void present();
     SkCanvas* canvas();
     void AddPaintedLayer(flow::Layer* layer);
@@ -90,6 +90,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
     SkColor background_color_;
     float corner_radius_ = 0.0;
     bool clip_ = false;
+    std::unique_ptr<SurfaceFrame> surface_frame_;
     std::vector<std::unique_ptr<CompositingLayer>> children_;
     Surface* surface_;
     SkPath path_;
@@ -102,6 +103,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   Surface* createDrawLayer();
 
   SkPoint currentOffset();
+
   std::vector<FlowCompositingLayer*> stack_;
   std::vector<SkPoint> offsets_;
 
@@ -116,7 +118,9 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
 
   std::vector<FlowCompositingLayer*> paint_tasks_;
   std::vector<SkMatrix> transforms_;
+
   fml::scoped_nsobject<EAGLContext> eaglContext_;
+  fml::scoped_nsobject<EAGLContext> resource_context_;
   std::unique_ptr<GpuGrContext> gr_context_;
 
   std::unique_ptr<IOSSurface> root_surface_;

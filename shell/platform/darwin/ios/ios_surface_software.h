@@ -21,11 +21,9 @@ class IOSSurfaceSoftware : public IOSSurface,
 
   bool IsValid() const override;
 
-  bool ResourceContextMakeCurrent() override;
-
   void UpdateStorageSizeIfNecessary() override;
 
-  std::unique_ptr<GPUSurfaceGL> CreateGPUSurface(GrContext *grContext) override;
+  std::unique_ptr<Surface> CreateGPUSurface(GrContext *grContext) override;
 
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
 

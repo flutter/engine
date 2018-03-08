@@ -28,7 +28,6 @@
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
   }
-
   [super layoutSubviews];
 }
 

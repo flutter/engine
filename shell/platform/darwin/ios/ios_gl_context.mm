@@ -21,8 +21,6 @@ IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config,
                            EAGLContext* eaglContext)
     : layer_([layer retain]),
       context_(eaglContext),
-      resource_context_([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
-                                              sharegroup:context_.get().sharegroup]),
       framebuffer_(GL_NONE),
       colorbuffer_(GL_NONE),
       depthbuffer_(GL_NONE),
@@ -33,9 +31,6 @@ IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config,
       valid_(false) {
   VERIFY(layer_ != nullptr);
   VERIFY(context_ != nullptr);
-  VERIFY(resource_context_ != nullptr);
-
-  // EAGLContext *prevContext = [EAGLContext currentContext];
 
   bool context_current = [EAGLContext setCurrentContext:context_];
 
@@ -248,10 +243,6 @@ bool IOSGLContext::UpdateStorageSizeIfNecessary() {
 
 bool IOSGLContext::MakeCurrent() {
   return UpdateStorageSizeIfNecessary() && [EAGLContext setCurrentContext:context_.get()];
-}
-
-bool IOSGLContext::ResourceMakeCurrent() {
-  return [EAGLContext setCurrentContext:resource_context_.get()];
 }
 
 }  // namespace shell

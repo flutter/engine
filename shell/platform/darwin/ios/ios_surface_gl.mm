@@ -21,17 +21,13 @@ bool IOSSurfaceGL::IsValid() const {
   return context_.IsValid();
 }
 
-bool IOSSurfaceGL::ResourceContextMakeCurrent() {
-  return IsValid() ? context_.ResourceMakeCurrent() : false;
-}
-
 void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
   if (IsValid()) {
     context_.UpdateStorageSizeIfNecessary();
   }
 }
 
-std::unique_ptr<GPUSurfaceGL> IOSSurfaceGL::CreateGPUSurface(GrContext* grContext) {
+std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface(GrContext* grContext) {
   return std::make_unique<GPUSurfaceGL>(this, grContext);
 }
 

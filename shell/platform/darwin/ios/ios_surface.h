@@ -33,11 +33,9 @@ class IOSSurface {
 
   virtual bool IsValid() const = 0;
 
-  virtual bool ResourceContextMakeCurrent() = 0;
-
   virtual void UpdateStorageSizeIfNecessary() = 0;
 
-  virtual std::unique_ptr<GPUSurfaceGL> CreateGPUSurface(GrContext *grContext) = 0;
+  virtual std::unique_ptr<Surface> CreateGPUSurface(GrContext *grContext) = 0;
 
  public:
   PlatformView::SurfaceConfig surface_config_;

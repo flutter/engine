@@ -34,8 +34,6 @@ class IOSGLContext {
 
   bool MakeCurrent();
 
-  bool ResourceMakeCurrent();
-
   sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
 
   CAEAGLLayer* layer() { return layer_; }
@@ -43,7 +41,6 @@ class IOSGLContext {
  private:
   fml::scoped_nsobject<CAEAGLLayer> layer_;
   fml::scoped_nsobject<EAGLContext> context_;
-  fml::scoped_nsobject<EAGLContext> resource_context_;
   GLuint framebuffer_;
   GLuint colorbuffer_;
   GLuint depthbuffer_;

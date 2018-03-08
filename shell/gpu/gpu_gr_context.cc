@@ -17,9 +17,14 @@ static const int kGrCacheMaxCount = 8192;
 // cache.
 static const size_t kGrCacheMaxByteSize = 512 * (1 << 20);
 
-GpuGrContext::GpuGrContext() {
+GpuGrContext::GpuGrContext(bool createContext) {
   GrContextOptions options;
   options.fAvoidStencilBuffers = true;
+
+  if (!createContext) {
+    context_ = nullptr;
+    return;
+  }
 
   auto context = GrContext::MakeGL(GrGLMakeNativeInterface(), options);
 
@@ -35,8 +40,10 @@ GpuGrContext::GpuGrContext() {
 }
 
 GpuGrContext::~GpuGrContext() {
-  context_->releaseResourcesAndAbandonContext();
-  context_ = nullptr;
+  if (context_) {
+    context_->releaseResourcesAndAbandonContext();
+    context_ = nullptr;
+  }
 }
 
 GrContext *GpuGrContext::GetContext() {

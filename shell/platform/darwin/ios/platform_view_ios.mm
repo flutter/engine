@@ -47,9 +47,7 @@ void PlatformViewIOS::Attach(fxl::Closure firstFrameCallback) {
 }
 
 void PlatformViewIOS::NotifyCreated() {
-  PlatformView::NotifyCreated(system_compositor_context_->rootIOSSurface()->CreateGPUSurface(
-                                  system_compositor_context_->GetGrContext()),
-                              system_compositor_context_.get());
+  PlatformView::NotifyCreated(system_compositor_context_.get());
 }
 
 void PlatformViewIOS::ToggleAccessibility(UIView* view, bool enabled) {
@@ -100,9 +98,7 @@ VsyncWaiter* PlatformViewIOS::GetVsyncWaiter() {
 }
 
 bool PlatformViewIOS::ResourceContextMakeCurrent() {
-  return system_compositor_context_->rootIOSSurface()
-             ? system_compositor_context_->rootIOSSurface()->ResourceContextMakeCurrent()
-             : false;
+  return system_compositor_context_->ResourceContextMakeCurrent();
 }
 
 void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update) {

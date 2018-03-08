@@ -12,9 +12,10 @@ namespace shell {
   
 class GpuGrContext {
 public:
-    GpuGrContext();
+    GpuGrContext(bool createContext);
     ~GpuGrContext();
     
+    // Pass createContext=false for software rendering.
     GrContext *GetContext();
 private:
     sk_sp<GrContext> context_;

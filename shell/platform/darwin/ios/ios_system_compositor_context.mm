@@ -13,13 +13,15 @@
 
 #include <UIKit/UIKit.h>
 
+#define SOFTWARE_RENDERING TARGET_IPHONE_SIMULATOR
+
 @interface FlutterTouchIgnoringCALayer : CALayer
 @end
 
 @interface FlutterTouchIgnoringCAEGLLayer : CAEAGLLayer
 @end
 
-@interface FlutterTouchIgnoringGLView : UIView
+@interface FlutterTouchIgnoringDrawingView : UIView
 @end
 
 @interface FlutterTouchIgnoringView : UIView
@@ -31,13 +33,14 @@
 }
 @end
 
-@implementation FlutterTouchIgnoringGLView
+@implementation FlutterTouchIgnoringDrawingView
+- (void)layoutSublayersOfLayer:(CALayer *)layer {}
 + (Class)layerClass {
-#if TARGET_IPHONE_SIMULATOR
+#if SOFTWARE_RENDERING
   return [FlutterTouchIgnoringCALayer class];
-#else   // TARGET_IPHONE_SIMULATOR
+#else   // SOFTWARE_RENDERING
   return [FlutterTouchIgnoringCAEGLLayer class];
-#endif  // TARGET_IPHONE_SIMULATOR
+#endif  // SOFTWARE_RENDERING
 }
 @end
 
@@ -63,10 +66,19 @@ static BOOL layerHasSublayerContainingPoint(CALayer* layer, CGPoint point) {
 - (BOOL)containsPoint:(CGPoint)point {
   return layerHasSublayerContainingPoint(self, point);
 }
-
+-(void)layoutSublayers {}
 @end
 
 @implementation FlutterTouchIgnoringCAEGLLayer
+-(id)init {
+  self = [super init];
+  NSAssert(self, @"Failed to initialize CAEGLLayer");
+  if (@available(iOS 9.0, *)) {
+    self.presentsWithTransaction = YES;
+  }
+  return self;
+}
+
 - (BOOL)containsPoint:(CGPoint)point {
   return layerHasSublayerContainingPoint(self, point);
 }
@@ -143,24 +155,26 @@ static CGPathRef SkPathToCGPath(SkPath path) {
 }
 
 IOSSystemCompositorContext::Surface::Surface(UIView* view,
-                                             IOSSurfaceGL* iosSurface,
+                                             std::unique_ptr<IOSSurface> surface,
                                              GrContext* grContext)
-    : view(view), iosSurface(iosSurface), gpuSurface(iosSurface->CreateGPUSurface(grContext)) {}
+    : view(view), iosSurface(std::move(surface)), gpuSurface(iosSurface->CreateGPUSurface(grContext)) {
+        if(!gpuSurface) {
+            NSLog(@"Must have gpusurface");
+        }
+    }
 
 IOSSystemCompositorContext::FlowCompositingLayer::FlowCompositingLayer()
     : background_color_(SK_ColorTRANSPARENT) {}
 
 SkCanvas* IOSSystemCompositorContext::FlowCompositingLayer::canvas() {
   CGSize size = layer().frame.size;
-  canvas_ =
-      surface_->gpuSurface->AcquireRenderSurface(SkISize::Make(size.width * 2, size.height * 2))
-          ->getCanvas();
+  surface_frame_ = surface_->gpuSurface->AcquireFrame(SkISize::Make(size.width * 2, size.height * 2));
+  canvas_ = surface_frame_->SkiaCanvas();
   return canvas_;
 }
 
 void IOSSystemCompositorContext::FlowCompositingLayer::present() {
-  canvas_->flush();
-  surface_->gpuSurface->PresentSurface(canvas_);
+  surface_frame_->Submit();
 }
 
 IOSSystemCompositorContext::ExternalCompositingLayer::ExternalCompositingLayer(
@@ -264,10 +278,6 @@ UIView* IOSSystemCompositorContext::CompositingLayer::view() {
   return view_;
 }
 
-bool IOSSystemCompositorContext::FlowCompositingLayer::makeCurrent() {
-  return surface_->gpuSurface->MakeCurrent();
-}
-
 void IOSSystemCompositorContext::FlowCompositingLayer::AddPaintedLayer(flow::Layer* layer) {
   paint_layers_.push_back(layer);
 }
@@ -275,13 +285,14 @@ void IOSSystemCompositorContext::FlowCompositingLayer::AddPaintedLayer(flow::Lay
 IOSSystemCompositorContext::IOSSystemCompositorContext(PlatformView::SurfaceConfig surfaceConfig,
                                                        UIView* root_view)
     : eaglContext_([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]),
-      root_surface_(IOSSurface::Create(surfaceConfig, root_view.layer, eaglContext_.get())),
+      resource_context_([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
+                                          sharegroup:eaglContext_.get().sharegroup]),
       surface_config_(surfaceConfig) {
-  IOSSurfaceGL* rootSurfaceGL = static_cast<IOSSurfaceGL*>(root_surface_.get());
   root_layer_ = std::make_unique<FlowCompositingLayer>();
   [EAGLContext setCurrentContext:eaglContext_.get()];
-  gr_context_ = std::make_unique<GpuGrContext>();
-  root_layer_->surface_ = new Surface(root_view, rootSurfaceGL, gr_context_->GetContext());
+  gr_context_ = std::make_unique<GpuGrContext>(!SOFTWARE_RENDERING);
+  auto iosSurface = IOSSurface::Create(surfaceConfig, root_view.layer, eaglContext_.get());
+  root_layer_->surface_ = new Surface(root_view, std::move(iosSurface), gr_context_->GetContext());
   [root_view retain];
   root_layer_->view_.reset(root_view);
 
@@ -307,17 +318,14 @@ UIView* IOSSystemCompositorContext::createBasicLayer() {
 IOSSystemCompositorContext::Surface* IOSSystemCompositorContext::createDrawLayer() {
   Surface* result;
   if (CAEAGLLayerCache_index_ >= CAEAGLLayerCache_.size()) {
-    UIView* view = [[FlutterTouchIgnoringGLView alloc] init];
-    CAEAGLLayer* newCALayer = (CAEAGLLayer*)(view.layer);
+    UIView* view = [[FlutterTouchIgnoringDrawingView alloc] init];
+    CALayer* newCALayer = (CALayer*)(view.layer);
     CGFloat screenScale = [UIScreen mainScreen].scale;
     newCALayer.contentsScale = screenScale;
     newCALayer.rasterizationScale = screenScale;
-    if (@available(iOS 9.0, *)) {
-      newCALayer.presentsWithTransaction = YES;
-    }
 
-    IOSSurfaceGL* iosSurface = new IOSSurfaceGL(surface_config_, newCALayer, eaglContext_);
-    result = new Surface(view, iosSurface, gr_context_->GetContext());
+    std::unique_ptr<IOSSurface> iosSurface = IOSSurface::Create(surface_config_, newCALayer, eaglContext_);
+    result = new Surface(view, std::move(iosSurface), gr_context_->GetContext());
     CAEAGLLayerCache_.push_back(result);
   } else {
     result = CAEAGLLayerCache_[CAEAGLLayerCache_index_];
@@ -343,6 +351,10 @@ void IOSSystemCompositorContext::Finish() {
   }
 
   [CATransaction commit];
+}
+
+bool IOSSystemCompositorContext::ResourceContextMakeCurrent() {
+  return [EAGLContext setCurrentContext:resource_context_.get()];
 }
 
 void IOSSystemCompositorContext::PushLayer(SkRect bounds) {
@@ -406,7 +418,6 @@ void IOSSystemCompositorContext::ExecutePaintTasks(flow::CompositorContext::Scop
   for (auto& task : paint_tasks_) {
     task->manifest(*this);
     if (!task->paint_layers_.empty()) {
-      task->makeCurrent();
       SkCanvas* canvas = task->canvas();
       flow::Layer::PaintContext context = {
           *canvas,
