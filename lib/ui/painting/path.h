@@ -29,7 +29,7 @@ class CanvasPath : public fxl::RefCountedThreadSafe<CanvasPath>,
     return fxl::MakeRefCounted<CanvasPath>();
   }
 
-  static fxl::RefPtr<CanvasPath> CreateFrom(SkPath src) {
+  static fxl::RefPtr<CanvasPath> CreateFrom(const SkPath& src) {
     fxl::RefPtr<CanvasPath> path = CanvasPath::Create();
     path->path_ = src;
     return path;
@@ -85,8 +85,15 @@ class CanvasPath : public fxl::RefCountedThreadSafe<CanvasPath>,
   void addPolygon(const tonic::Float32List& points, bool close);
   void addRRect(const RRect& rrect);
   void addPath(CanvasPath* path, double dx, double dy);
-  void addPathWithMatrix(CanvasPath* path, tonic::Float64List& matrix4);
+  void addPathWithMatrix(CanvasPath* path, 
+                         double dx, 
+                         double dy, 
+                         tonic::Float64List& matrix4);
   void extendWithPath(CanvasPath* path, double dx, double dy);
+  void extendWithPathAndMatrix(CanvasPath* path, 
+                               double dx, 
+                               double dy, 
+                               tonic::Float64List& matrix4);
   void close();
   void reset();
   bool contains(double x, double y);

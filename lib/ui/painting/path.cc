@@ -210,11 +210,14 @@ void CanvasPath::addPath(CanvasPath* path, double dx, double dy) {
   path_.addPath(path->path(), dx, dy, SkPath::kAppend_AddPathMode);
 }
 
-void CanvasPath::addPathWithMatrix(CanvasPath* path, tonic::Float64List& matrix4) {
+void CanvasPath::addPathWithMatrix(CanvasPath* path, double dx, double dy, tonic::Float64List& matrix4) {
   if (!path)
     Dart_ThrowException(ToDart("Path.addPathWithMatrix called with non-genuine Path."));
   
-  path_.addPath(path->path(), ToSkMatrix(matrix4));
+  SkMatrix matrix = ToSkMatrix(matrix4);
+  matrix.setScaleX(matrix.getScaleX() + dx);
+  matrix.setScaleY(matrix.getScaleY() + dy);
+  path_.addPath(path->path(), matrix, SkPath::kAppend_AddPathMode);
   matrix4.Release();
   
 }
@@ -224,6 +227,17 @@ void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {
     Dart_ThrowException(
         ToDart("Path.extendWithPath called with non-genuine Path."));
   path_.addPath(path->path(), dx, dy, SkPath::kExtend_AddPathMode);
+}
+
+void CanvasPath::extendWithPathAndMatrix(CanvasPath* path, double dx, double dy, tonic::Float64List& matrix4) {
+  if (!path)
+    Dart_ThrowException(ToDart("Path.addPathWithMatrix called with non-genuine Path."));
+  
+  SkMatrix matrix = ToSkMatrix(matrix4);
+  matrix.setScaleX(matrix.getScaleX() + dx);
+  matrix.setScaleY(matrix.getScaleY() + dy);
+  path_.addPath(path->path(), matrix, SkPath::kExtend_AddPathMode);
+  matrix4.Release();
 }
 
 void CanvasPath::close() {

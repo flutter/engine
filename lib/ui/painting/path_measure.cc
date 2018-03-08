@@ -27,7 +27,6 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, PathMeasure);
 #define FOR_EACH_BINDING(V)          \
   V(PathMeasure, setPath)            \
   V(PathMeasure, getLength)          \
-  V(PathMeasure, getMatrix)          \
   V(PathMeasure, getPosTan)          \
   V(PathMeasure, getSegment)         \
   V(PathMeasure, isClosed)           \
@@ -45,18 +44,16 @@ fxl::RefPtr<CanvasPathMeasure> CanvasPathMeasure::Create(const CanvasPath* path,
   fxl::RefPtr<CanvasPathMeasure> pathMeasure = fxl::MakeRefCounted<CanvasPathMeasure>();
   if (path) {
     const SkPath skPath = path->path();
-    pathMeasure->path_measure_ = new SkPathMeasure(skPath, forceClosed, 1);
+    pathMeasure->path_measure_ = std::unique_ptr<SkPathMeasure>(new SkPathMeasure(skPath, forceClosed, 1));
   } else {
-    pathMeasure->path_measure_ = new SkPathMeasure();
+    pathMeasure->path_measure_ = std::unique_ptr<SkPathMeasure>(new SkPathMeasure());
   }
   return pathMeasure;
 }
 
 CanvasPathMeasure::CanvasPathMeasure() {}
 
-CanvasPathMeasure::~CanvasPathMeasure() {
-  delete path_measure_;
-}
+CanvasPathMeasure::~CanvasPathMeasure() {}
 
 void CanvasPathMeasure::setPath(const CanvasPath* path, 
                                 bool isClosed) {
@@ -68,30 +65,20 @@ float CanvasPathMeasure::getLength() {
   return path_measure_->getLength();
 }
 
-tonic::Float64List CanvasPathMeasure::getMatrix(float distance, 
-                                                int flags) {
-  SkMatrix matrix;
-  matrix.reset();
-  bool success = path_measure_->getMatrix(distance, &matrix, (SkPathMeasure::MatrixFlags)flags);
-  
-  if (!success) {
-    matrix.reset();
-  }
-  
-  return ToMatrix4(matrix);
-}
-
 tonic::Float32List CanvasPathMeasure::getPosTan(float distance) {
   SkPoint pos;
   SkVector tan;
   bool success = path_measure_->getPosTan(distance, &pos, &tan);
 
-  tonic::Float32List posTan(Dart_NewTypedData(Dart_TypedData_kFloat32, 4));
+  tonic::Float32List posTan(Dart_NewTypedData(Dart_TypedData_kFloat32, 5));
   if (success) {
-    posTan[0] = pos.x();
-    posTan[1] = pos.y();
-    posTan[2] = tan.x();
-    posTan[3] = tan.y();
+    posTan[0] = 1; // dart code will check for this for success
+    posTan[1] = pos.x();
+    posTan[2] = pos.y();
+    posTan[3] = tan.x();
+    posTan[4] = tan.y();
+  } else {
+    posTan[0] = 0; // dart code will check for this for failure
   }
 
   return posTan;
@@ -100,13 +87,12 @@ tonic::Float32List CanvasPathMeasure::getPosTan(float distance) {
 fxl::RefPtr<CanvasPath> CanvasPathMeasure::getSegment(float startD, 
                                    float stopD, 
                                    bool startWithMoveTo) {
-  SkPath* dst = new SkPath();
-  bool success = path_measure_->getSegment(startD, stopD, dst, startWithMoveTo);
+  SkPath dst;
+  bool success = path_measure_->getSegment(startD, stopD, &dst, startWithMoveTo);
   if (!success) {
-    delete dst;
     return CanvasPath::Create();
   } else {
-    return CanvasPath::CreateFrom(*dst);
+    return CanvasPath::CreateFrom(dst);
   }
 }
 
