@@ -39,6 +39,13 @@ bool _offsetIsValid(Offset offset) {
   return true;
 }
 
+bool _matrix4IsValid(Float64List matrix4) {
+  assert(matrix4 != null, 'Matrix4 argument was null.');
+  if (matrix4.length != 16)
+    throw new ArgumentError('"matrix4" must have 16 entries.');
+  return true;
+}
+
 bool _radiusIsValid(Radius radius) {
   assert(radius != null, 'Radius argument was null.');
   assert(!radius.x.isNaN && !radius.y.isNaN, 'Radius argument contained a NaN value.');
@@ -1342,9 +1349,9 @@ enum PathFillType {
 
 /// Path operation enums
 /// 
-/// For use with [Path.op]
+/// For use with [Path.combine]
 /// Must be kept in sync with SkPathOp
-enum PathOp {
+enum PathOperation {
     difference,         //!< subtract the op path from the first path
     intersect,          //!< intersect the two paths
     union,              //!< union (inclusive-or) the two paths
@@ -1570,31 +1577,40 @@ class Path extends NativeFieldWrapperClass2 {
 
   /// Adds a new subpath that consists of the given path offset by the given
   /// offset.
-  void addPath(Path path, Offset offset) {
+  /// 
+  /// If matrix4 is specified, the path will be transformed by this matrix
+  /// (after the matrix is translated by the given offset)
+  void addPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
-    _addPath(path, offset.dx, offset.dy);
+    
+    if (matrix4 != null) {
+      assert(_matrix4IsValid(matrix4));
+      _addPathWithMatrix(path, offset.dx, offset.dy, matrix4);
+    } else {
+      _addPath(path, offset.dx, offset.dy);
+    }
   }
   void _addPath(Path path, double dx, double dy) native 'Path_addPath';
-
-  /// Append subpath (transformed by matrix) to this path
-  void addPathWithMatrix(Path path, Float64List matrix4) {
-    assert(matrix4 != null);
-    if (matrix4.length != 16)
-      throw new ArgumentError('"matrix4" must have 16 entries.');
-    return _addPathWithMatrix(path, matrix4);
-  }
-  
-  void _addPathWithMatrix(Path path, Float64List matrix) native 'Path_addPathWithMatrix';
+  void _addPathWithMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_addPathWithMatrix';
   
   /// Adds the given path to this path by extending the current segment of this
   /// path with the the first segment of the given path.
-  void extendWithPath(Path path, Offset offset) {
+  /// 
+  /// If matrix4 is specified, the path will be transformed by this matrix
+  /// (after the matrix is translated by the given offset)
+  void extendWithPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
+
+    if (matrix4 != null) {
+      assert(_matrix4IsValid(matrix4));
+      _extendWithPathAndMatrix(path, offset.dx, offset.dy, matrix4);
+    }
     _extendWithPath(path, offset.dx, offset.dy);
   }
   void _extendWithPath(Path path, double dx, double dy) native 'Path_extendWithPath';
+  void _extendWithPathAndMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_extendWithPathAndMatrix';
 
   /// Closes the last subpath, as if a straight line had been drawn
   /// from the current point to the first point of the subpath.
@@ -1629,9 +1645,7 @@ class Path extends NativeFieldWrapperClass2 {
   /// Returns a copy of the path with all the segments of every
   /// subpath transformed by the given matrix.
   Path transform(Float64List matrix4) {
-    assert(matrix4 != null);
-    if (matrix4.length != 16)
-      throw new ArgumentError('"matrix4" must have 16 entries.');
+    assert(_matrix4IsValid(matrix4));
     return _transform(matrix4);
   }
   Path _transform(Float64List matrix4) native 'Path_transform';
@@ -1643,7 +1657,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   Float32List _getBounds() native 'Path_getBounds';
 
-  /// Sets this path to the result of operation [PathOp]
+  /// Sets this path to the result of operation [PathOperation]
   /// 
   /// If only one path is specified, this path will be used as the first 
   /// operand, otherwise path1 will be the first operand and path2 the
@@ -1652,8 +1666,9 @@ class Path extends NativeFieldWrapperClass2 {
   /// The resulting path will be constructed from non-overlapping contours. The
   /// curve order is reduced where possible so that cubics may be turned into
   /// quadratics, and quadratics maybe turned into lines.
-  bool op(PathOp operation, Path path1, [Path path2]) {
+  bool combine(PathOperation operation, Path path1, [Path path2]) {
     assert(path1 != null);
+
     if (path2 != null) {
       return _op(path1, path2, operation.index);
     } else {
@@ -1691,21 +1706,21 @@ class PathMeasure extends NativeFieldWrapperClass2 {
   /// Return the total length of the current contour, or 0 if no path is associated
   double getLength() native 'PathMeasure_getLength';
 
-  /// Pins distance to 0 <= distance <= getLength(), and then computes the corresponding Matrix4 
-  /// 
-  /// Matrix is computed by calling getPosTan.
-  /// Returns identity matrix if there is no path, or a zero-length path was specified.
-  Float64List getMatrix(double distance, int flags) native 'PathMeasure_getMatrix';
-
   /// Pins distance to 0 <= distance <= getLength(), and then computes the corresponding position and tangent
   /// 
   /// Position is a point, tangent is a vector.  Both set to 0,0 if no or zero-length [Path]
   PositionAndTangent getPosTan(double distance) {
     final Float32List posTan = _getPosTan(distance);
-    return new PositionAndTangent(
-      new Offset(posTan[0], posTan[1]), 
-      new Offset(posTan[2], posTan[3])
-    );
+    // first entry == 0 indicates that Skia returned false
+    // doing this rather than trying to mess with some kind of callback or channel
+    if (posTan[0] == 0) {
+      return null;
+    } else {
+      return new PositionAndTangent(
+        new Offset(posTan[1], posTan[2]), 
+        new Offset(posTan[3], posTan[4])
+      );
+    }
   }
 
   Float32List _getPosTan(double distance) native 'PathMeasure_getPosTan';

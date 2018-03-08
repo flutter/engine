@@ -31,7 +31,6 @@ class CanvasPathMeasure : public fxl::RefCountedThreadSafe<CanvasPathMeasure>,
 
   void setPath(const CanvasPath* path, bool isClosed);
   float getLength();
-  tonic::Float64List getMatrix(float distance, int flags);
   tonic::Float32List getPosTan(float distance);
   fxl::RefPtr<CanvasPath> getSegment(float startD, float stopD, bool startWithMoveTo);
   bool isClosed();
@@ -44,7 +43,7 @@ class CanvasPathMeasure : public fxl::RefCountedThreadSafe<CanvasPathMeasure>,
  private:
   CanvasPathMeasure();
 
-  SkPathMeasure* path_measure_;
+  std::unique_ptr<SkPathMeasure> path_measure_;
 };
 
 }  // namespace blink
