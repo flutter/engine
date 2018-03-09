@@ -1334,7 +1334,7 @@ typedef void ImageEncoderCallback(Uint8List result);
 ///
 /// [quality] is a value in [0, 100] where 0 corresponds to the lowest quality.
 void encodeImage(Image image, EncodedImageFormat format, int quality, ImageEncoderCallback callback)
-    native "encodeImage";
+    native 'encodeImage';
 
 /// Determines the winding rule that decides how the interior of a [Path] is
 /// calculated.
