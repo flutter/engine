@@ -54,7 +54,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
   V(Path, transform)                 \
   V(Path, getBounds)                 \
   V(Path, addPathWithMatrix)         \
-  V(Path, op)
+  V(Path, op)                        \
+  V(Path, clone)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
