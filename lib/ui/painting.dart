@@ -1381,6 +1381,15 @@ class Path extends NativeFieldWrapperClass2 {
   Path() { _constructor(); }
   void _constructor() native 'Path_constructor';
 
+  /// Creates a new [Path] object from src path
+  /// 
+  /// This copy is fast and does not require additional memory unless the src or
+  /// new path are mutated.
+  factory Path.from(Path src) {
+    return src._clone();
+  }
+  Path _clone() native 'Path_clone';
+
   /// Determines how the interior of this path is calculated.
   ///
   /// Defaults to the non-zero winding rule, [PathFillType.nonZero].
@@ -1682,7 +1691,7 @@ class Path extends NativeFieldWrapperClass2 {
 
   /// Creates a [PathMetrics] object for this path
   PathMetrics computeMetrics({bool forceClosed = false}) {
-    return new PathMetrics._(path: this, forceClosed: forceClosed);
+    return new PathMetrics._(path: new Path.from(this), forceClosed: forceClosed);
   }
 }
 

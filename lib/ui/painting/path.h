@@ -101,6 +101,7 @@ class CanvasPath : public fxl::RefCountedThreadSafe<CanvasPath>,
   fxl::RefPtr<CanvasPath> transform(tonic::Float64List& matrix4);
   tonic::Float32List getBounds();
   bool op(CanvasPath* path1, CanvasPath* path2, int operation);
+  fxl::RefPtr<CanvasPath> clone();
 
   const SkPath& path() const { return path_; }
 
