@@ -1666,59 +1666,62 @@ class Path extends NativeFieldWrapperClass2 {
   /// The resulting path will be constructed from non-overlapping contours. The
   /// curve order is reduced where possible so that cubics may be turned into
   /// quadratics, and quadratics maybe turned into lines.
-  bool combine(PathOperation operation, Path path1, [Path path2]) {
+  static Path combine(PathOperation operation, Path path1, Path path2, {Path orElse()}) {
     assert(path1 != null);
+    assert(path2 != null);
 
-    if (path2 != null) {
-      return _op(path1, path2, operation.index);
-    } else {
-      return _op(this, path1, operation.index);
+    Path path = new Path();
+    if (path._op(path1, path2, operation.index)) {
+      return path;
+    } else if (orElse != null) {
+      return orElse();
     }
+    return null;
   }
   bool _op(Path path1, Path path2, int operation) native 'Path_op';
+
+  PathMetrics computeMetrics({bool forceClosed = false}) {
+    return new PathMetrics._(path: this, forceClosed: forceClosed);
+  }
 }
 
-/// Convenience class to return the result of [PathMeasure.getPosTan]
-class PositionAndTangent {
-  /// The position Offset/point
+/// Convenience class to return the result of [PathMetrics.getTangentForOffset]
+class Tangent {
+  /// Position of the tangent
   final Offset position;
-  /// The tangent vector
-  final Offset tangent;
+  /// Angle of the tangent in radians
+  final double angle;
 
-  const PositionAndTangent(this.position, this.tangent);
+  const Tangent(this.position, this.angle);
 }
-/// Utilities for measuring a [Path]
+/// Utilities for measuring a [Path] 
 ///
-/// Call [setPath] to set the target Path.  Once a path is set to
-/// the path measure object, measures will only be valid while the path
-/// remains unmodified.  If the path is modified, the behavior of the
-/// PathMeasure object is undefined.
-class PathMeasure extends NativeFieldWrapperClass2 {
+/// Call [Path.computeMetrics] to create this object. Once created, measures
+/// will only be valid while the path remains unmodified.  If the path is 
+/// modified, the behavior of the PathMetrics object is undefined.
+class PathMetrics extends NativeFieldWrapperClass2 {
   /// Create a new empty [Path] object.
-  PathMeasure({Path path, bool forceClosed = false}) { _constructor(path, forceClosed); }
+  PathMetrics._({Path path, bool forceClosed = false}) { _constructor(path, forceClosed); }
   void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
 
-  /// Sets the [Path] target of this [PathMeasure].
-  /// 
-  /// Once set, the path should not be modified.
-  void setPath(Path path, bool isClosed) native 'PathMeasure_setPath';
+  /// Return the total length of the current contour
+  double get length native 'PathMeasure_getLength';
 
-  /// Return the total length of the current contour, or 0 if no path is associated
-  double getLength() native 'PathMeasure_getLength';
-
-  /// Pins distance to 0 <= distance <= getLength(), and then computes the corresponding position and tangent
+  /// Pins distance to 0 <= distance <= getLength(), and then computes the 
+  /// corresponding position and tangent
   /// 
-  /// Position is a point, tangent is a vector.  Both set to 0,0 if no or zero-length [Path]
-  PositionAndTangent getPosTan(double distance) {
+  /// The [Tangent] object returns contains the position and angle (in radians)
+  /// of the tangent at specified distance. 
+  /// Returns null no or zero-length [Path]
+  Tangent getTangentForOffset(double distance) {
     final Float32List posTan = _getPosTan(distance);
     // first entry == 0 indicates that Skia returned false
-    // doing this rather than trying to mess with some kind of callback or channel
-    if (posTan[0] == 0) {
+    if (posTan[0] == 0.0) {
       return null;
     } else {
-      return new PositionAndTangent(
+      return new Tangent(
         new Offset(posTan[1], posTan[2]), 
-        new Offset(posTan[3], posTan[4])
+        math.atan2(posTan[3], posTan[4])
       );
     }
   }
@@ -1727,18 +1730,19 @@ class PathMeasure extends NativeFieldWrapperClass2 {
 
   /// Given a start and stop distance, return the intervening segment(s).
   /// 
-  /// startD and stopD are pinned to legal values (0..[getLength()])
+  /// startD and stopD are pinned to legal values (0..[length])
   /// Returns null if the segment is 0 length or startD > stopD.
   /// Begin the segment with a moveTo if startWithMoveTo is true.
-  Path getSegment(double startD, double endD, bool startWithMoveTo) native 'PathMeasure_getSegment';
+  Path extractPath(double startD, double endD, bool startWithMoveTo) native 'PathMeasure_getSegment';
 
-  /// 
-  bool isClosed() native 'PathMeasure_isClosed';
+  /// Returns true if the path is closed
+  bool get closed native 'PathMeasure_isClosed';
 
   /// Move to the next contour in the path.
   ///
-  /// Return true if one exists, or false if we're done with the path.
-  bool nextContour() native 'PathMeasure_nextContour';
+  /// A path can have a next contour if [Path.moveTo] was called after drawing began.
+  /// Return true if one exists, or false.
+  bool moveNext() native 'PathMeasure_nextContour';
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
