@@ -1680,6 +1680,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   bool _op(Path path1, Path path2, int operation) native 'Path_op';
 
+  /// Creates a [PathMetrics] object for this path
   PathMetrics computeMetrics({bool forceClosed = false}) {
     return new PathMetrics._(path: this, forceClosed: forceClosed);
   }
