@@ -280,4 +280,12 @@ bool CanvasPath::op(CanvasPath* path1, CanvasPath* path2, int operation) {
   return Op(path1->path(), path2->path(), (SkPathOp)operation, &path_);
 }
 
+fxl::RefPtr<CanvasPath> CanvasPath::clone() {
+  fxl::RefPtr<CanvasPath> path = CanvasPath::Create();
+  // per Skia docs, this will create a fast copy
+  // data is shared until the source path or dest path are mutated
+  path->path_ = path_;
+  return path;
+}
+
 }  // namespace blink
