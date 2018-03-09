@@ -1670,7 +1670,7 @@ class Path extends NativeFieldWrapperClass2 {
     assert(path1 != null);
     assert(path2 != null);
 
-    Path path = new Path();
+    final Path path = new Path();
     if (path._op(path1, path2, operation.index)) {
       return path;
     } else if (orElse != null) {
