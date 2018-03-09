@@ -44,7 +44,8 @@ class AccessibilityBridge;
 
 /**
  * The accessibility bridge that this semantics object is attached to. This
- * object may use the bridge to access contextual application information.
+ * object may use the bridge to access contextual application information. A weak pointer is used
+ * because the platform view owns the accessibility bridge.
  */
 @property(nonatomic, readonly) fml::WeakPtr<shell::AccessibilityBridge> bridge;
 
