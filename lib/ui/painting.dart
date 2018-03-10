@@ -1685,14 +1685,20 @@ class Path extends NativeFieldWrapperClass2 {
     } else if (orElse != null) {
       return orElse();
     }
-    return null;
+    throw new InvalidPathOperationException();
   }
   bool _op(Path path1, Path path2, int operation) native 'Path_op';
 
   /// Creates a [PathMetrics] object for this path
   PathMetrics computeMetrics({bool forceClosed = false}) {
-    return new PathMetrics._(path: new Path.from(this), forceClosed: forceClosed);
+    return new PathMetrics._(new Path.from(this), forceClosed);
   }
+}
+
+/// Exception thrown by [Path.combine] if a failure occurs
+class InvalidPathOperationException implements Exception {
+  final String message;
+  InvalidPathOperationException([this.message]);
 }
 
 /// Convenience class to return the result of [PathMetrics.getTangentForOffset]
@@ -1704,14 +1710,43 @@ class Tangent {
 
   const Tangent(this.position, this.angle);
 }
+
+class PathMetrics extends collection.IterableBase<PathMetric> {
+  final Iterator<PathMetric> _iterator;
+
+  PathMetrics._(Path path, bool forceClosed) :
+    _iterator = new PathMetricIterator._(new PathMetric._(path, forceClosed));
+
+  @override
+  Iterator<PathMetric> get iterator => _iterator;
+}
+
+class PathMetricIterator implements Iterator<PathMetric> {
+  PathMetric _pathMetric;
+
+  PathMetricIterator._(this._pathMetric);
+
+  @override
+  PathMetric get current => _pathMetric;
+
+  @override
+  bool moveNext() {
+    if(_pathMetric?._moveNext() == true) {
+      return true;
+    } else {
+      _pathMetric = null;
+      return false;
+    }
+  }
+}
 /// Utilities for measuring a [Path] 
 ///
 /// Call [Path.computeMetrics] to create this object. Once created, measures
 /// will only be valid while the path remains unmodified.  If the path is 
 /// modified, the behavior of the PathMetrics object is undefined.
-class PathMetrics extends NativeFieldWrapperClass2 {
+class PathMetric extends NativeFieldWrapperClass2 {
   /// Create a new empty [Path] object.
-  PathMetrics._({Path path, bool forceClosed = false}) { _constructor(path, forceClosed); }
+  PathMetric._(Path path, bool forceClosed) { _constructor(path, forceClosed); }
   void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
 
   /// Return the total length of the current contour
@@ -1731,7 +1766,7 @@ class PathMetrics extends NativeFieldWrapperClass2 {
     } else {
       return new Tangent(
         new Offset(posTan[1], posTan[2]), 
-        math.atan2(posTan[3], posTan[4])
+        math.atan2(posTan[4], posTan[3])
       );
     }
   }
@@ -1752,7 +1787,7 @@ class PathMetrics extends NativeFieldWrapperClass2 {
   ///
   /// A path can have a next contour if [Path.moveTo] was called after drawing began.
   /// Return true if one exists, or false.
-  bool moveNext() native 'PathMeasure_nextContour';
+  bool _moveNext() native 'PathMeasure_nextContour';
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
