@@ -1689,19 +1689,19 @@ class Path extends NativeFieldWrapperClass2 {
   }
   bool _op(Path path1, Path path2, int operation) native 'Path_op';
 
-  /// Creates a [PathMetrics] object for this path
+  /// Creates a [PathMetrics] object for this path.
   PathMetrics computeMetrics({bool forceClosed = false}) {
     return new PathMetrics._(new Path.from(this), forceClosed);
   }
 }
 
-/// Exception thrown by [Path.combine] if a failure occurs
+/// Exception thrown by [Path.combine] if a failure occurs.
 class InvalidPathOperationException implements Exception {
   final String message;
   InvalidPathOperationException([this.message]);
 }
 
-/// Convenience class to return the result of [PathMetrics.getTangentForOffset]
+/// Convenience class to return the result of [PathMetric.getTangentForOffset].
 class Tangent {
   /// Position of the tangent
   final Offset position;
@@ -1711,6 +1711,13 @@ class Tangent {
   const Tangent(this.position, this.angle);
 }
 
+/// An iterable collection of [PathMetric] objects.
+/// 
+/// Each path metric corresponds to a segment of a path.
+/// 
+/// For example, if you call [Path.moveTo] once in the middle of drawing, you
+/// would get two PathMetric objects in this iterable.  Call 
+/// [Path.computeMetrics] to create the iterable.
 class PathMetrics extends collection.IterableBase<PathMetric> {
   final Iterator<PathMetric> _iterator;
 
@@ -1721,6 +1728,7 @@ class PathMetrics extends collection.IterableBase<PathMetric> {
   Iterator<PathMetric> get iterator => _iterator;
 }
 
+/// Tracks iteration from one segment of a path to the next for measurement.
 class PathMetricIterator implements Iterator<PathMetric> {
   PathMetric _pathMetric;
 
@@ -1739,11 +1747,12 @@ class PathMetricIterator implements Iterator<PathMetric> {
     }
   }
 }
-/// Utilities for measuring a [Path] 
+
+/// Utilities for measuring a [Path] and extracting subpaths.
 ///
-/// Call [Path.computeMetrics] to create this object. Once created, measures
+/// Call [Path.computeMetrics] to create these objects. Once created, measures
 /// will only be valid while the path remains unmodified.  If the path is 
-/// modified, the behavior of the PathMetrics object is undefined.
+/// modified, the behavior of the PathMetric object is undefined.
 class PathMetric extends NativeFieldWrapperClass2 {
   /// Create a new empty [Path] object.
   PathMetric._(Path path, bool forceClosed) { _constructor(path, forceClosed); }
