@@ -12,7 +12,8 @@
 + (instancetype)sharedInstance {
   static id _sharedInstance = nil;
   if (!_sharedInstance) {
-    _sharedInstance = [FlutterStandardMessageCodec withReaderWriter:[FlutterStandardReaderWriter new]];
+    _sharedInstance =
+        [FlutterStandardMessageCodec withReaderWriter:[FlutterStandardReaderWriter new]];
   }
   return _sharedInstance;
 }
@@ -60,7 +61,8 @@
 + (instancetype)sharedInstance {
   static id _sharedInstance = nil;
   if (!_sharedInstance) {
-    _sharedInstance = [FlutterStandardMethodCodec withReaderWriter:[FlutterStandardReaderWriter new]];
+    _sharedInstance =
+        [FlutterStandardMethodCodec withReaderWriter:[FlutterStandardReaderWriter new]];
   }
   return _sharedInstance;
 }

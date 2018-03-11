@@ -48,7 +48,7 @@ FLUTTER_EXPORT
  On the Dart side, messages are represented using `ByteData`.
  */
 FLUTTER_EXPORT
-@interface FlutterBinaryCodec : NSObject<FlutterMessageCodec>
+@interface FlutterBinaryCodec : NSObject <FlutterMessageCodec>
 @end
 
 /**
@@ -59,7 +59,7 @@ FLUTTER_EXPORT
  on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  */
 FLUTTER_EXPORT
-@interface FlutterStringCodec : NSObject<FlutterMessageCodec>
+@interface FlutterStringCodec : NSObject <FlutterMessageCodec>
 @end
 
 /**
@@ -77,7 +77,7 @@ FLUTTER_EXPORT
  package.
  */
 FLUTTER_EXPORT
-@interface FlutterJSONMessageCodec : NSObject<FlutterMessageCodec>
+@interface FlutterJSONMessageCodec : NSObject <FlutterMessageCodec>
 @end
 
 /**
@@ -164,7 +164,7 @@ FLUTTER_EXPORT
  instead.
  */
 FLUTTER_EXPORT
-@interface FlutterStandardMessageCodec : NSObject<FlutterMessageCodec>
+@interface FlutterStandardMessageCodec : NSObject <FlutterMessageCodec>
 + (instancetype)withReaderWriter:(FlutterStandardReaderWriter*)readerWriter;
 @end
 
@@ -411,7 +411,7 @@ FLUTTER_EXPORT
  those supported as top-level or leaf values by `FlutterJSONMessageCodec`.
  */
 FLUTTER_EXPORT
-@interface FlutterJSONMethodCodec : NSObject<FlutterMethodCodec>
+@interface FlutterJSONMethodCodec : NSObject <FlutterMethodCodec>
 @end
 
 /**
@@ -425,7 +425,7 @@ FLUTTER_EXPORT
  `FlutterStandardMessageCodec`.
  */
 FLUTTER_EXPORT
-@interface FlutterStandardMethodCodec : NSObject<FlutterMethodCodec>
+@interface FlutterStandardMethodCodec : NSObject <FlutterMethodCodec>
 + (instancetype)withReaderWriter:(FlutterStandardReaderWriter*)readerWriter;
 @end
 
