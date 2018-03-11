@@ -297,28 +297,6 @@ public class StandardMessageCodec implements MessageCodec<Object> {
      * Writes the specified unknown value to the specified stream. Hook point
      * for codec extensions. The default implementation throws.
      *
-     * <p>Example override for supporting String[] and java.util.Date:</p>
-     * <pre>
-     * private static final byte STRING_ARRAY = 0;
-     * private static final byte DATE = 1;
-     * protected void writeUnknown(ByteArrayOutputStream stream, Object value) {
-     *   if (value instanceof String[]) {
-     *     stream.write(STRING_ARRAY);
-     *     final String[] array = (String[]) value;
-     *     writeSize(stream, array.length);
-     *     for (final String s : array) {
-     *       writeBytes(stream, s.getBytes(UTF8));
-     *     }
-     *   } else if (value instanceof Date) {
-     *     stream.write(DATE);
-     *     final Date date = (Date) value;
-     *     writeLong(date.getTime());
-     *   } else {
-     *     super.writeUnknown(stream, value);
-     *   }
-     * }
-     * </pre>
-     *
      * @param stream a ByteArrayOutputStream into which value should be written.
      * @param value the value to write.
      * @throws IllegalArgumentException if the value is unknown to this codec.
@@ -465,27 +443,6 @@ public class StandardMessageCodec implements MessageCodec<Object> {
     /**
      * Reads an unknown value as written by writeUnknown. Hook point
      * for codec extensions. The default implementation throws.
-     *
-     * <p>Example override for supporting String[] and java.util.Date directly:</p>
-     * <pre>
-     * protected Object readUnknown(ByteBuffer buffer) {
-     *   final byte type = buffer.get();
-     *   switch (type) {
-     *     case STRING_ARRAY: {
-     *       final int length = readSize(buffer);
-     *       final String[] array = new String[length];
-     *       for (int i = 0; i < length; i++) {
-     *         array[i] = new String(readBytes(buffer), UTF8);
-     *       }
-     *       return array;
-     *     }
-     *     case DATE:
-     *       return new Date(buffer.getLong());
-     *     default:
-     *       return super.readUnknown(type, buffer);
-     *   }
-     * }
-     * </pre>
      *
      * @param buffer the ByteBuffer to read from.
      * @throws IllegalArgumentException if the type is unknown to this codec.
