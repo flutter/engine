@@ -81,6 +81,57 @@ FLUTTER_EXPORT
 @end
 
 /**
+ A writer of the Flutter standard binary encoding.
+
+ See `FlutterStandardMessageCodec` for details on the encoding.
+
+ The encoding is extensible via subclasses overriding `writeUnknownValue`.
+ */
+FLUTTER_EXPORT
+@interface FlutterStandardWriter : NSObject
+- (instancetype)initWithData:(NSMutableData*)data;
+- (void)writeByte:(UInt8)value;
+- (void)writeBytes:(const void*)bytes length:(NSUInteger)length;
+- (void)writeData:(NSData*)data;
+- (void)writeSize:(UInt32)size;
+- (void)writeAlignment:(UInt8)alignment;
+- (void)writeUTF8:(NSString*)value;
+- (void)writeValue:(id)value;
+- (void)writeUnknownValue:(id)value;
+@end
+
+/**
+ A reader of the Flutter standard binary encoding.
+
+ See `FlutterStandardMessageCodec` for details on the encoding.
+
+ The encoding is extensible via subclasses overriding `readUnknownValue`.
+ */
+FLUTTER_EXPORT
+@interface FlutterStandardReader : NSObject
+- (instancetype)initWithData:(NSData*)data;
+- (BOOL)hasMore;
+- (UInt8)readByte;
+- (void)readBytes:(void*)destination length:(NSUInteger)length;
+- (NSData*)readData:(NSUInteger)length;
+- (UInt32)readSize;
+- (void)readAlignment:(UInt8)alignment;
+- (NSString*)readUTF8;
+- (id)readValue;
+- (id)readUnknownValue;
+@end
+
+/**
+ A factory of compatible reader/writer instances using the Flutter standard
+ binary encoding or extensions thereof.
+ */
+FLUTTER_EXPORT
+@interface FlutterStandardReaderWriter : NSObject
+- (FlutterStandardWriter*)writerWithData:(NSMutableData*)data;
+- (FlutterStandardReader*)readerWithData:(NSData*)data;
+@end
+
+/**
  A `FlutterMessageCodec` using the Flutter standard binary encoding.
 
  This codec is guaranteed to be compatible with the corresponding
@@ -114,6 +165,7 @@ FLUTTER_EXPORT
  */
 FLUTTER_EXPORT
 @interface FlutterStandardMessageCodec : NSObject<FlutterMessageCodec>
++ (instancetype)withReaderWriter:(FlutterStandardReaderWriter*)readerWriter;
 @end
 
 /**
@@ -374,6 +426,7 @@ FLUTTER_EXPORT
  */
 FLUTTER_EXPORT
 @interface FlutterStandardMethodCodec : NSObject<FlutterMethodCodec>
++ (instancetype)withReaderWriter:(FlutterStandardReaderWriter*)readerWriter;
 @end
 
 NS_ASSUME_NONNULL_END
