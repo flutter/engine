@@ -58,12 +58,11 @@ import android.util.Log;
  * branch. BigIntegers were needed because the Dart 1.0 int type had no size
  * limit. With Dart 2.0, the int type is a fixed-size, 64-bit signed integer.
  * If you need to communicate larger integers, use String encoding instead.</p>
+ *
+ * <p>To extend the codec, overwrite the writeUnknown and readUnknown methods.</p>
  */
-public final class StandardMessageCodec implements MessageCodec<Object> {
+public class StandardMessageCodec implements MessageCodec<Object> {
     public static final StandardMessageCodec INSTANCE = new StandardMessageCodec();
-
-    private StandardMessageCodec() {
-    }
 
     @Override
     public ByteBuffer encodeMessage(Object message) {
@@ -107,8 +106,13 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
     private static final byte DOUBLE_ARRAY = 11;
     private static final byte LIST = 12;
     private static final byte MAP = 13;
+    private static final byte UNKNOWN = -1;
 
-    private static void writeSize(ByteArrayOutputStream stream, int value) {
+    /**
+     * Writes an int representing a size to the specified stream.
+     * Uses an expanding code of 1 to 5 bytes to optimize for small values.
+     */
+    protected static final void writeSize(ByteArrayOutputStream stream, int value) {
         assert 0 <= value;
         if (value < 254) {
             stream.write(value);
@@ -121,7 +125,11 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
         }
     }
 
-    private static void writeChar(ByteArrayOutputStream stream, int value) {
+    /**
+     * Writes the least significant two bytes of the specified int to the
+     * specified stream.
+     */
+    protected static final void writeChar(ByteArrayOutputStream stream, int value) {
         if (LITTLE_ENDIAN) {
             stream.write(value);
             stream.write(value >>> 8);
@@ -131,7 +139,10 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
         }
     }
 
-    private static void writeInt(ByteArrayOutputStream stream, int value) {
+    /**
+     * Writes the specified int as 4 bytes to the specified stream.
+     */
+    protected static final void writeInt(ByteArrayOutputStream stream, int value) {
         if (LITTLE_ENDIAN) {
             stream.write(value);
             stream.write(value >>> 8);
@@ -145,7 +156,10 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
         }
     }
 
-    private static void writeLong(ByteArrayOutputStream stream, long value) {
+    /**
+     * Writes the specified long as 8 bytes to the specified stream.
+     */
+    protected static final void writeLong(ByteArrayOutputStream stream, long value) {
         if (LITTLE_ENDIAN) {
             stream.write((byte) value);
             stream.write((byte) (value >>> 8));
@@ -167,16 +181,29 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
         }
     }
 
-    private static void writeDouble(ByteArrayOutputStream stream, double value) {
+    /**
+     * Writes the specified double as 8 bytes to the specified stream.
+     */
+    protected static final void writeDouble(ByteArrayOutputStream stream, double value) {
         writeLong(stream, Double.doubleToLongBits(value));
     }
 
-    private static void writeBytes(ByteArrayOutputStream stream, byte[] bytes) {
+    /**
+     * Writes the length and then the actual bytes of the specified array to
+     * the specified stream.
+     */
+    protected static final void writeBytes(ByteArrayOutputStream stream, byte[] bytes) {
         writeSize(stream, bytes.length);
         stream.write(bytes, 0, bytes.length);
     }
 
-    private static void writeAlignment(ByteArrayOutputStream stream, int alignment) {
+    /**
+     * Writes a number of padding bytes to the specified stream to ensure that
+     * the next value is aligned to a whole multiple of the specified alignment.
+     * An example usage with alignment = 8 is to ensure doubles are word-aligned
+     * in the stream.
+     */
+    protected static final void writeAlignment(ByteArrayOutputStream stream, int alignment) {
         final int mod = stream.size() % alignment;
         if (mod != 0) {
             for (int i = 0; i < alignment - mod; i++) {
@@ -185,7 +212,11 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
         }
     }
 
-    static void writeValue(ByteArrayOutputStream stream, Object value) {
+    /**
+     * Writes a type discriminator byte and then a byte serialization of the
+     * specified value to the specified stream.
+     */
+    protected final void writeValue(ByteArrayOutputStream stream, Object value) {
         if (value == null) {
             stream.write(NULL);
         } else if (value == Boolean.TRUE) {
@@ -257,11 +288,49 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
                 writeValue(stream, entry.getValue());
             }
         } else {
-            throw new IllegalArgumentException("Unsupported value: " + value);
+            stream.write(UNKNOWN);
+            writeUnknown(stream, value);
         }
     }
 
-    private static int readSize(ByteBuffer buffer) {
+    /**
+     * Writes the specified unknown value to the specified stream. Hook point
+     * for codec extensions. The default implementation throws.
+     *
+     * <p>Example override for supporting String[] and java.util.Date:</p>
+     * <pre>
+     * private static final byte STRING_ARRAY = 0;
+     * private static final byte DATE = 1;
+     * protected void writeUnknown(ByteArrayOutputStream stream, Object value) {
+     *   if (value instanceof String[]) {
+     *     stream.write(STRING_ARRAY);
+     *     final String[] array = (String[]) value;
+     *     writeSize(stream, array.length);
+     *     for (final String s : array) {
+     *       writeBytes(stream, s.getBytes(UTF8));
+     *     }
+     *   } else if (value instanceof Date) {
+     *     stream.write(DATE);
+     *     final Date date = (Date) value;
+     *     writeLong(date.getTime());
+     *   } else {
+     *     super.writeUnknown(stream, value);
+     *   }
+     * }
+     * </pre>
+     *
+     * @param stream a ByteArrayOutputStream into which value should be written.
+     * @param value the value to write.
+     * @throws IllegalArgumentException if the value is unknown to this codec.
+     */
+    protected void writeUnknown(ByteArrayOutputStream stream, Object value) {
+        throw new IllegalArgumentException("Unsupported value: " + value);
+    }
+
+    /**
+     * Reads an int representing a size as written by writeSize.
+     */
+    protected static final int readSize(ByteBuffer buffer) {
         if (!buffer.hasRemaining()) {
             throw new IllegalArgumentException("Message corrupted");
         }
@@ -275,26 +344,36 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
         }
     }
 
-    private static byte[] readBytes(ByteBuffer buffer) {
+    /**
+     * Reads a byte array as written by writeBytes.
+     */
+    protected static final byte[] readBytes(ByteBuffer buffer) {
         final int length = readSize(buffer);
         final byte[] bytes = new byte[length];
         buffer.get(bytes);
         return bytes;
     }
 
-    private static void readAlignment(ByteBuffer buffer, int alignment) {
+    /**
+     * Reads alignment padding bytes as written by writeAlignment.
+     */
+    protected static final void readAlignment(ByteBuffer buffer, int alignment) {
         final int mod = buffer.position() % alignment;
         if (mod != 0) {
             buffer.position(buffer.position() + alignment - mod);
         }
     }
 
-    static Object readValue(ByteBuffer buffer) {
+    /**
+     * Reads a value as written by writeValue.
+     */
+    protected final Object readValue(ByteBuffer buffer) {
         if (!buffer.hasRemaining()) {
             throw new IllegalArgumentException("Message corrupted");
         }
         final Object result;
-        switch (buffer.get()) {
+        final byte type = buffer.get();
+        switch (type) {
             case NULL:
                 result = null;
                 break;
@@ -374,10 +453,45 @@ public final class StandardMessageCodec implements MessageCodec<Object> {
                 result = map;
                 break;
             }
+            case UNKNOWN:
+                result = readUnknown(buffer);
+                break;
             default:
                 throw new IllegalArgumentException("Message corrupted");
         }
         return result;
+    }
+
+    /**
+     * Reads an unknown value as written by writeUnknown. Hook point
+     * for codec extensions. The default implementation throws.
+     *
+     * <p>Example override for supporting String[] and java.util.Date directly:</p>
+     * <pre>
+     * protected Object readUnknown(ByteBuffer buffer) {
+     *   final byte type = buffer.get();
+     *   switch (type) {
+     *     case STRING_ARRAY: {
+     *       final int length = readSize(buffer);
+     *       final String[] array = new String[length];
+     *       for (int i = 0; i < length; i++) {
+     *         array[i] = new String(readBytes(buffer), UTF8);
+     *       }
+     *       return array;
+     *     }
+     *     case DATE:
+     *       return new Date(buffer.getLong());
+     *     default:
+     *       return super.readUnknown(type, buffer);
+     *   }
+     * }
+     * </pre>
+     *
+     * @param buffer the ByteBuffer to read from.
+     * @throws IllegalArgumentException if the type is unknown to this codec.
+     */
+    protected Object readUnknown(ByteBuffer buffer) {
+        throw new IllegalArgumentException("Message corrupted");
     }
 
     static final class ExposedByteArrayOutputStream extends ByteArrayOutputStream {
