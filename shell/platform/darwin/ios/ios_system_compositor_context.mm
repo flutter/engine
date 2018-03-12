@@ -18,6 +18,11 @@
 @interface FlutterTouchIgnoringCALayer : CALayer
 @end
 
+@interface CAEAGLLayer ()
+// This revealing a private method for supporting iOS versions less than 9.0.
+-(void)setAsynchronous:(BOOL)value;
+@end
+
 @interface FlutterTouchIgnoringCAEGLLayer : CAEAGLLayer
 @end
 
@@ -75,6 +80,8 @@ static BOOL layerHasSublayerContainingPoint(CALayer* layer, CGPoint point) {
   NSAssert(self, @"Failed to initialize CAEGLLayer");
   if (@available(iOS 9.0, *)) {
     self.presentsWithTransaction = YES;
+  } else {
+    self.asynchronous = NO;
   }
   return self;
 }
