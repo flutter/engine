@@ -41,6 +41,8 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   void PopTransform() override;
   IOSSurface* rootIOSSurface() { return root_surface_.get(); }
 
+ private:
+
   // TODO(sigurdm): Consider replacing this with just an IOSSurface.
   struct Surface {
     Surface(UIView* view, std::unique_ptr<IOSSurface> iosSurface, GrContext *grContext);
@@ -48,9 +50,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
     std::unique_ptr<IOSSurface> iosSurface;
     std::unique_ptr<shell::Surface> gpuSurface;
   };
-
- private:
-
+  
   class CompositingLayer {
    public:
     virtual ~CompositingLayer() = default;
