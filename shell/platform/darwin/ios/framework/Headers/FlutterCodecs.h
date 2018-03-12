@@ -85,7 +85,7 @@ FLUTTER_EXPORT
 
  See `FlutterStandardMessageCodec` for details on the encoding.
 
- The encoding is extensible via subclasses overriding `writeUnknownValue`.
+ The encoding is extensible via subclasses overriding `writeValue`.
  */
 FLUTTER_EXPORT
 @interface FlutterStandardWriter : NSObject
@@ -104,7 +104,7 @@ FLUTTER_EXPORT
 
  See `FlutterStandardMessageCodec` for details on the encoding.
 
- The encoding is extensible via subclasses overriding `readUnknownValue`.
+ The encoding is extensible via subclasses overriding `readValueOfType`.
  */
 FLUTTER_EXPORT
 @interface FlutterStandardReader : NSObject
