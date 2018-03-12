@@ -264,6 +264,7 @@ void IOSSystemCompositorContext::FlowCompositingLayer::manifest(
     shapeLayer.path = path;
     CGPathRelease(path);
     view.layer.mask = shapeLayer;
+    [shapeLayer release];
   } else {
     view.layer.mask = nil;
   }
