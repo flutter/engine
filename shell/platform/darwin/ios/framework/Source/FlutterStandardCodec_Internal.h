@@ -22,7 +22,6 @@ typedef NS_ENUM(NSInteger, FlutterStandardField) {
   FlutterStandardFieldFloat64Data,
   FlutterStandardFieldList,
   FlutterStandardFieldMap,
-  FlutterStandardFieldUnknown = 255,
 };
 
 namespace shell {

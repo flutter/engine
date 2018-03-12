@@ -360,14 +360,9 @@ using namespace shell;
       [self writeValue:[dict objectForKey:key]];
     }
   } else {
-    [self writeByte:FlutterStandardFieldUnknown];
-    [self writeUnknownValue:value];
+    NSLog(@"Unsupported value: %@ of type %@", value, [value class]);
+    NSAssert(NO, @"Unsupported value for standard codec");
   }
-}
-
-- (void)writeUnknownValue:(id)value {
-  NSLog(@"Unsupported value: %@ of type %@", value, [value class]);
-  NSAssert(NO, @"Unsupported value for standard codec");
 }
 
 - (BOOL)isBool:(NSNumber*)number type:(const char*)type {
@@ -453,7 +448,11 @@ using namespace shell;
 }
 
 - (id)readValue {
-  FlutterStandardField field = (FlutterStandardField)[self readByte];
+  return [self readValueOfType:[self readByte]];
+}
+
+- (id)readValueOfType:(UInt8)type {
+  FlutterStandardField field = (FlutterStandardField)type;
   switch (field) {
     case FlutterStandardFieldNil:
       return nil;
@@ -506,15 +505,9 @@ using namespace shell;
       }
       return dict;
     }
-    case FlutterStandardFieldUnknown:
-      return [self readUnknownValue];
     default:
       NSAssert(NO, @"Corrupted standard message");
   }
-}
-- (id)readUnknownValue {
-  NSAssert(NO, @"Corrupted standard message");
-  return nil;
 }
 @end
 

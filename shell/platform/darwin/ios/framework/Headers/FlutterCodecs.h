@@ -97,7 +97,6 @@ FLUTTER_EXPORT
 - (void)writeAlignment:(UInt8)alignment;
 - (void)writeUTF8:(NSString*)value;
 - (void)writeValue:(id)value;
-- (void)writeUnknownValue:(id)value;
 @end
 
 /**
@@ -118,7 +117,7 @@ FLUTTER_EXPORT
 - (void)readAlignment:(UInt8)alignment;
 - (NSString*)readUTF8;
 - (id)readValue;
-- (id)readUnknownValue;
+- (id)readValueOfType:(UInt8)type;
 @end
 
 /**
