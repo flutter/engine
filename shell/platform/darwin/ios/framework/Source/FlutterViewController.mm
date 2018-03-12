@@ -903,7 +903,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 - (int64_t)registerUIView:(UIView*)view {
   int64_t textureId = _nextTextureId++;
-  _platformView->RegisterExternalLayer(textureId, view);
+  _platformView->RegisterNativeWidget(textureId, view);
   return textureId;
 }
 

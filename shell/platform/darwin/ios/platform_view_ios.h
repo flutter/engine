@@ -13,7 +13,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.h"
-#include "flutter/shell/platform/darwin/ios/ios_external_texture_layer.h"
+#include "flutter/shell/platform/darwin/ios/ios_native_widget.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 #include "flutter/shell/platform/darwin/ios/ios_system_compositor_context.h"
 #include "lib/fxl/functional/closure.h"
@@ -56,7 +56,7 @@ class PlatformViewIOS : public PlatformView {
 
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
-  void RegisterExternalLayer(int64_t id, UIView* layer);
+  void RegisterNativeWidget(int64_t id, UIView* view);
 
   void UpdateSemantics(blink::SemanticsNodeUpdates update) override;
 

@@ -34,7 +34,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   void ClipFrame() override;
   void SetColor(SkColor color) override;
   void SetClipPath(SkPath path) override;
-  void AddChildScene(flow::Texture* texture, SkRect bounds) override;
+  void AddNativeWidget(flow::Texture* texture, SkRect bounds) override;
   void ExecutePaintTasks(flow::CompositorContext::ScopedFrame& frame) override;
   void AddPaintedLayer(flow::Layer* layer) override;
   void Transform(SkMatrix transform) override;
@@ -50,7 +50,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
     std::unique_ptr<IOSSurface> iosSurface;
     std::unique_ptr<shell::Surface> gpuSurface;
   };
-  
+
   class CompositingLayer {
    public:
     virtual ~CompositingLayer() = default;

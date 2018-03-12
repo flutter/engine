@@ -25,7 +25,7 @@ class SystemCompositorContext {
   virtual void ClipFrame() = 0;
   virtual void SetColor(SkColor color) = 0;
   virtual void SetClipPath(SkPath path) = 0;
-  virtual void AddChildScene(Texture* texture, SkRect frame) = 0;
+  virtual void AddNativeWidget(Texture* texture, SkRect frame) = 0;
   virtual GrContext *GetGrContext() = 0;
   virtual void ExecutePaintTasks(CompositorContext::ScopedFrame& frame) = 0;
   virtual void AddPaintedLayer(flow::Layer* layer) = 0;

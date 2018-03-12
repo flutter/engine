@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/darwin/ios/ios_system_compositor_context.h"
-#include "flutter/shell/platform/darwin/ios/ios_external_texture_layer.h"
+#include "flutter/shell/platform/darwin/ios/ios_native_widget.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
@@ -396,8 +396,8 @@ SkCanvas* IOSSystemCompositorContext::CurrentCanvas() {
   return stack_.back()->canvas();
 }
 
-void IOSSystemCompositorContext::AddChildScene(flow::Texture* texture, SkRect bounds) {
-  UIView* externalView = (static_cast<IOSExternalTextureLayer*>(texture))->layer();
+void IOSSystemCompositorContext::AddNativeWidget(flow::Texture* texture, SkRect bounds) {
+  UIView* externalView = (static_cast<IOSNativeWidget*>(texture))->view();
   auto compositingLayer = std::make_unique<ExternalCompositingLayer>(externalView);
   SkRect newBounds = bounds.makeOffset(-currentOffset().x(), -currentOffset().y());
   compositingLayer->frame_ = newBounds;

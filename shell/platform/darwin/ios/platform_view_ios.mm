@@ -115,8 +115,8 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
 }
 
-void PlatformViewIOS::RegisterExternalLayer(int64_t texture_id, UIView* layer) {
-  RegisterTexture(std::make_shared<IOSExternalTextureLayer>(texture_id, layer));
+void PlatformViewIOS::RegisterNativeWidget(int64_t texture_id, UIView* view) {
+  RegisterTexture(std::make_shared<IOSNativeWidget>(texture_id, view));
 }
 
 void PlatformViewIOS::RunFromSource(const std::string& assets_directory,
