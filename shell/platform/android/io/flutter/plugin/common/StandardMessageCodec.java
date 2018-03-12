@@ -59,7 +59,7 @@ import android.util.Log;
  * limit. With Dart 2.0, the int type is a fixed-size, 64-bit signed integer.
  * If you need to communicate larger integers, use String encoding instead.</p>
  *
- * <p>To extend the codec, overwrite the writeUnknown and readUnknown methods.</p>
+ * <p>To extend the codec, overwrite the writeValue and readValueOfType methods.</p>
  */
 public class StandardMessageCodec implements MessageCodec<Object> {
     public static final StandardMessageCodec INSTANCE = new StandardMessageCodec();
@@ -106,7 +106,6 @@ public class StandardMessageCodec implements MessageCodec<Object> {
     private static final byte DOUBLE_ARRAY = 11;
     private static final byte LIST = 12;
     private static final byte MAP = 13;
-    private static final byte UNKNOWN = -1;
 
     /**
      * Writes an int representing a size to the specified stream.
@@ -215,8 +214,11 @@ public class StandardMessageCodec implements MessageCodec<Object> {
     /**
      * Writes a type discriminator byte and then a byte serialization of the
      * specified value to the specified stream.
+     *
+     * <p>Subclasses can extend the codec by overriding this method, calling
+     * super for values that the extension does not handle.</p>
      */
-    protected final void writeValue(ByteArrayOutputStream stream, Object value) {
+    protected void writeValue(ByteArrayOutputStream stream, Object value) {
         if (value == null) {
             stream.write(NULL);
         } else if (value == Boolean.TRUE) {
@@ -288,21 +290,8 @@ public class StandardMessageCodec implements MessageCodec<Object> {
                 writeValue(stream, entry.getValue());
             }
         } else {
-            stream.write(UNKNOWN);
-            writeUnknown(stream, value);
+            throw new IllegalArgumentException("Unsupported value: " + value);
         }
-    }
-
-    /**
-     * Writes the specified unknown value to the specified stream. Hook point
-     * for codec extensions. The default implementation throws.
-     *
-     * @param stream a ByteArrayOutputStream into which value should be written.
-     * @param value the value to write.
-     * @throws IllegalArgumentException if the value is unknown to this codec.
-     */
-    protected void writeUnknown(ByteArrayOutputStream stream, Object value) {
-        throw new IllegalArgumentException("Unsupported value: " + value);
     }
 
     /**
@@ -349,8 +338,18 @@ public class StandardMessageCodec implements MessageCodec<Object> {
         if (!buffer.hasRemaining()) {
             throw new IllegalArgumentException("Message corrupted");
         }
-        final Object result;
         final byte type = buffer.get();
+        return readValueOfType(type, buffer);
+    }
+
+    /**
+     * Reads a value of the specified type.
+     *
+     * <p>Subclasses may extend the codec by overriding this method, calling
+     * super for types that the extension does not handle.</p>
+     */
+    protected Object readValueOfType(byte type, ByteBuffer buffer) {
+        final Object result;
         switch (type) {
             case NULL:
                 result = null;
@@ -431,24 +430,9 @@ public class StandardMessageCodec implements MessageCodec<Object> {
                 result = map;
                 break;
             }
-            case UNKNOWN:
-                result = readUnknown(buffer);
-                break;
-            default:
-                throw new IllegalArgumentException("Message corrupted");
+            default: throw new IllegalArgumentException("Message corrupted");
         }
         return result;
-    }
-
-    /**
-     * Reads an unknown value as written by writeUnknown. Hook point
-     * for codec extensions. The default implementation throws.
-     *
-     * @param buffer the ByteBuffer to read from.
-     * @throws IllegalArgumentException if the type is unknown to this codec.
-     */
-    protected Object readUnknown(ByteBuffer buffer) {
-        throw new IllegalArgumentException("Message corrupted");
     }
 
     static final class ExposedByteArrayOutputStream extends ByteArrayOutputStream {
