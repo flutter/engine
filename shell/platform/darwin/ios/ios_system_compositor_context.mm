@@ -185,7 +185,6 @@ IOSSystemCompositorContext::ExternalCompositingLayer::ExternalCompositingLayer(
 
 void IOSSystemCompositorContext::ExternalCompositingLayer::installChildren() {
   CALayer* externalLayer = view_.get().layer;
-  externalLayer.needsDisplayOnBoundsChange = true;
   externalLayer.anchorPoint = CGPointMake(0, 0);
   CGPoint newPosition = CGPointMake(frame_.x(), frame_.y());
   if (!CGPointEqualToPoint(externalLayer.position, newPosition)) {
