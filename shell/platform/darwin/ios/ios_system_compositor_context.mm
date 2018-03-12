@@ -175,7 +175,9 @@ IOSSystemCompositorContext::FlowCompositingLayer::FlowCompositingLayer()
 
 SkCanvas* IOSSystemCompositorContext::FlowCompositingLayer::canvas() {
   CGSize size = layer().frame.size;
-  surface_frame_ = surface_->gpuSurface->AcquireFrame(SkISize::Make(size.width * 2, size.height * 2));
+  CGFloat screenScale = [UIScreen mainScreen].scale;
+  surface_frame_ = surface_->gpuSurface->AcquireFrame(
+      SkISize::Make(size.width * screenScale, size.height * screenScale));
   canvas_ = surface_frame_->SkiaCanvas();
   return canvas_;
 }
@@ -496,6 +498,12 @@ void IOSSystemCompositorContext::Clear() {
 
 GrContext* IOSSystemCompositorContext::GetGrContext() {
   return gr_context_->GetContext();
+}
+
+void IOSSystemCompositorContext::UpdateSurfaceSize() {
+  if (root_surface_) {
+    root_surface_.get()->UpdateStorageSizeIfNecessary();
+  }
 }
 
 }  // namespace shell

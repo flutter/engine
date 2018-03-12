@@ -10,7 +10,6 @@
 #import <Foundation/Foundation.h>
 
 #include "FlutterMacros.h"
-@class CALayer;
 
 NS_ASSUME_NONNULL_BEGIN
 

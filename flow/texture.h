@@ -25,15 +25,13 @@ class Texture {
                            const SkRect& bounds) = 0;
 
   // Called from GPU thread.
-  virtual void Paint(Layer::PaintContext context, const SkRect& bounds) = 0;
+  virtual void Paint(SkCanvas& canvas, const SkRect& bounds) = 0;
 
   // Called from GPU thread.
   virtual void OnGrContextCreated() = 0;
 
   // Called from GPU thread.
   virtual void OnGrContextDestroyed() = 0;
-
-  virtual bool NeedsSystemComposite() = 0;
 
   int64_t Id() { return id_; }
 

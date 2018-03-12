@@ -31,7 +31,7 @@ class ChildSceneLayer : public Layer {
 
   void Paint(PaintContext& context) const override;
 
-  void UpdateScene(SystemCompositorContext& context) override;
+  void UpdateScene(SceneUpdateContext& context) override;
 
  private:
   SkPoint offset_;

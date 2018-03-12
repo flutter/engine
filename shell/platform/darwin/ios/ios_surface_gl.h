@@ -24,9 +24,9 @@ class IOSSurfaceGL : public IOSSurface, public GPUSurfaceGLDelegate {
 
   bool IsValid() const override;
 
-  void UpdateStorageSizeIfNecessary() override;
-
   std::unique_ptr<Surface> CreateGPUSurface(GrContext *grContext) override;
+
+  void UpdateStorageSizeIfNecessary() override;
 
   bool GLContextMakeCurrent() override;
 
@@ -35,8 +35,6 @@ class IOSSurfaceGL : public IOSSurface, public GPUSurfaceGLDelegate {
   bool GLContextPresent() override;
 
   intptr_t GLContextFBO() const override;
-
-  CAEAGLLayer* layer() { return context_.layer(); }
 
   bool UseOffscreenSurface() const override;
 

@@ -30,7 +30,7 @@ void IOSExternalTextureGL::UpdateScene(flow::SystemCompositorContext* context,
   ASSERT_IS_GPU_THREAD;
 }
 
-void IOSExternalTextureGL::Paint(flow::Layer::PaintContext context, const SkRect& bounds) {
+void IOSExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds) {
   ASSERT_IS_GPU_THREAD;
   if (!cache_ref_) {
     CVOpenGLESTextureCacheRef cache;
@@ -66,10 +66,10 @@ void IOSExternalTextureGL::Paint(flow::Layer::PaintContext context, const SkRect
   GrBackendTexture backendTexture(bounds.width(), bounds.height(), kRGBA_8888_GrPixelConfig,
                                   textureInfo);
   sk_sp<SkImage> image =
-      SkImage::MakeFromTexture(context.canvas.getGrContext(), backendTexture,
-                               kTopLeft_GrSurfaceOrigin, SkAlphaType::kPremul_SkAlphaType, nullptr);
+      SkImage::MakeFromTexture(canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
+                               SkAlphaType::kPremul_SkAlphaType, nullptr);
   if (image) {
-    context.canvas.drawImage(image, bounds.x(), bounds.y());
+    canvas.drawImage(image, bounds.x(), bounds.y());
   }
 }
 
@@ -81,10 +81,6 @@ void IOSExternalTextureGL::OnGrContextDestroyed() {
   ASSERT_IS_GPU_THREAD
   texture_ref_.Reset(nullptr);
   cache_ref_.Reset(nullptr);
-}
-
-bool IOSExternalTextureGL::NeedsSystemComposite() {
-  return false;
 }
 
 }  // namespace shell

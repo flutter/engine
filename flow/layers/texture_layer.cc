@@ -6,8 +6,6 @@
 
 #include "flutter/flow/texture.h"
 
-#include "flutter/flow/system_compositor_context.h"
-
 namespace flow {
 
 TextureLayer::TextureLayer() = default;
@@ -15,11 +13,8 @@ TextureLayer::TextureLayer() = default;
 TextureLayer::~TextureLayer() = default;
 
 void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  set_paint_bounds(SkRect::MakeXYWH(
-    offset_.x(),
-    offset_.y(),
-    size_.width(),
-    size_.height()));
+  set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
+                                    size_.height()));
 }
 
 void TextureLayer::Paint(PaintContext& context) const {
@@ -28,7 +23,7 @@ void TextureLayer::Paint(PaintContext& context) const {
   if (!texture) {
     return;
   }
-  texture->Paint(context, paint_bounds());
+  texture->Paint(context.canvas, paint_bounds());
 }
 
 }  // namespace flow

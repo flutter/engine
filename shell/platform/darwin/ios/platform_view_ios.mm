@@ -84,8 +84,8 @@ fml::WeakPtr<PlatformViewIOS> PlatformViewIOS::GetWeakPtr() {
 
 void PlatformViewIOS::UpdateSurfaceSize() {
   blink::Threads::Gpu()->PostTask([self = GetWeakPtr()]() {
-    if (self && self->system_compositor_context_->rootIOSSurface()) {
-      self->system_compositor_context_->rootIOSSurface()->UpdateStorageSizeIfNecessary();
+    if (self) {
+      self->system_compositor_context_->UpdateSurfaceSize();
     }
   });
 }

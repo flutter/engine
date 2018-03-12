@@ -19,16 +19,11 @@ class AndroidExternalTextureGL : public flow::Texture {
 
   ~AndroidExternalTextureGL() override;
 
-  void UpdateScene(flow::SystemCompositorContext* context,
-                   const SkRect& bounds) override;
+  virtual void Paint(SkCanvas& canvas, const SkRect& bounds) override;
 
-  void Paint(SkCanvas& canvas, const SkRect& bounds) override;
+  virtual void OnGrContextCreated() override;
 
-  void OnGrContextCreated() override;
-
-  void OnGrContextDestroyed() override;
-
-  bool NeedsSystemComposite() override;
+  virtual void OnGrContextDestroyed() override;
 
   // Called on GPU thread.
   void MarkNewFrameAvailable();

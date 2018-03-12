@@ -39,8 +39,8 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   void AddPaintedLayer(flow::Layer* layer) override;
   void Transform(SkMatrix transform) override;
   void PopTransform() override;
-  IOSSurface* rootIOSSurface() { return root_surface_.get(); }
-
+  void UpdateSurfaceSize();
+  
  private:
 
   // TODO(sigurdm): Consider replacing this with just an IOSSurface.
@@ -121,6 +121,7 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
 
   fml::scoped_nsobject<EAGLContext> eaglContext_;
   fml::scoped_nsobject<EAGLContext> resource_context_;
+
   std::unique_ptr<GpuGrContext> gr_context_;
 
   std::unique_ptr<IOSSurface> root_surface_;

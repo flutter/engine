@@ -28,16 +28,6 @@ void AndroidExternalTextureGL::MarkNewFrameAvailable() {
   new_frame_ready_ = true;
 }
 
-void AndroidExternalTextureGL::UpdateScene(
-    flow::SystemCompositorContext* context,
-    const SkRect& bounds) {
-  ASSERT_IS_GPU_THREAD;
-}
-
-bool AndroidExternalTextureGL::NeedsSystemComposite() {
-  return false;
-}
-
 void AndroidExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds) {
   ASSERT_IS_GPU_THREAD;
   if (state_ == AttachmentState::detached) {

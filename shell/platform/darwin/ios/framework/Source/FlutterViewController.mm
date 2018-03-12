@@ -37,7 +37,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   void Complete(std::vector<uint8_t> data) override {
     fxl::RefPtr<PlatformMessageResponseDarwin> self(this);
     blink::Threads::Platform()->PostTask(
-        fxl::MakeCopyable([self, data = std::move(data)]() mutable {
+        fxl::MakeCopyable([ self, data = std::move(data) ]() mutable {
           self->callback_.get()(shell::GetNSDataFromVector(data));
         }));
   }
@@ -57,7 +57,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 
 }  // namespace
 
-@interface FlutterViewController () <UIAlertViewDelegate, FlutterTextInputDelegate>
+@interface FlutterViewController ()<UIAlertViewDelegate, FlutterTextInputDelegate>
 @end
 
 @implementation FlutterViewController {
@@ -548,7 +548,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   }
 
   blink::Threads::UI()->PostTask(fxl::MakeCopyable(
-      [engine = _platformView->engine().GetWeakPtr(), packet = std::move(packet)] {
+      [ engine = _platformView->engine().GetWeakPtr(), packet = std::move(packet) ] {
         if (engine.get())
           engine->DispatchPointerDataPacket(*packet);
       }));
@@ -574,7 +574,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 
 - (void)updateViewportMetrics {
   blink::Threads::UI()->PostTask(
-      [weak_platform_view = _platformView->GetWeakPtr(), metrics = _viewportMetrics] {
+      [ weak_platform_view = _platformView->GetWeakPtr(), metrics = _viewportMetrics ] {
         if (!weak_platform_view) {
           return;
         }

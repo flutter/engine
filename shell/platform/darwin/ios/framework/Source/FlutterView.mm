@@ -13,7 +13,7 @@
 #include "lib/fxl/synchronization/waitable_event.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
-@interface FlutterView () <UIInputViewAudioFeedback>
+@interface FlutterView ()<UIInputViewAudioFeedback>
 
 @end
 
@@ -28,6 +28,7 @@
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
   }
+
   [super layoutSubviews];
 }
 

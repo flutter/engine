@@ -150,10 +150,6 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   return true;
 }
 
-bool GPUSurfaceGL::MakeCurrent() {
-  return delegate_->GLContextMakeCurrent();
-}
-
 std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
@@ -181,30 +177,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   return std::make_unique<SurfaceFrame>(surface, submit_callback);
 }
 
-bool GPUSurfaceGL::PointIsTransparent(SkPoint point) {
-  if (!saved_image_) return false;
-  SkColor pixel;
-  SkImageInfo dstInfo = SkImageInfo::MakeN32Premul(1, 1);
-  saved_image_->readPixels(dstInfo, &pixel, 4, point.x(), point.y());
-  FXL_DLOG(INFO) << SkColorGetA(pixel);
-  return SkColorGetA(pixel) == 0xFF;
-}
-
-
-bool GPUSurfaceGL::PresentSurface() {
-  if (delegate_ == nullptr || gr_context_ == nullptr) {
-    return false;
-  }
-
-  {
-    TRACE_EVENT0("flutter", "SkCanvas::Flush");
-  }
-
-  delegate_->GLContextPresent();
-
-  return true;
-}
-
 bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
   if (delegate_ == nullptr || canvas == nullptr || gr_context_ == nullptr) {
     return false;
@@ -214,9 +186,7 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     TRACE_EVENT0("flutter", "CopyTextureOnscreen");
     SkPaint paint;
     paint.setBlendMode(SkBlendMode::kSrc);
-    saved_image_ = offscreen_surface_->makeImageSnapshot();
-    onscreen_surface_->getCanvas()->drawImage(
-    saved_image_, 0, 0, &paint);
+    onscreen_surface_->getCanvas()->drawImage(offscreen_surface_->makeImageSnapshot(), 0, 0, &paint);
   }
   {
     TRACE_EVENT0("flutter", "SkCanvas::Flush");
