@@ -12,14 +12,15 @@
 + (instancetype)sharedInstance {
   static id _sharedInstance = nil;
   if (!_sharedInstance) {
-    _sharedInstance =
-        [FlutterStandardMessageCodec withReaderWriter:[FlutterStandardReaderWriter new]];
+    FlutterStandardReaderWriter* readerWriter =
+        [[[FlutterStandardReaderWriter alloc] init] autorelease];
+    _sharedInstance = [[FlutterStandardMessageCodec alloc] initWithReaderWriter:readerWriter];
   }
   return _sharedInstance;
 }
 
-+ (instancetype)withReaderWriter:(FlutterStandardReaderWriter*)readerWriter {
-  return [[[self alloc] initWithReaderWriter:readerWriter] autorelease];
++ (instancetype)codecWithReaderWriter:(FlutterStandardReaderWriter*)readerWriter {
+  return [[[FlutterStandardMessageCodec alloc] initWithReaderWriter:readerWriter] autorelease];
 }
 
 - (instancetype)initWithReaderWriter:(FlutterStandardReaderWriter*)readerWriter {
@@ -61,14 +62,15 @@
 + (instancetype)sharedInstance {
   static id _sharedInstance = nil;
   if (!_sharedInstance) {
-    _sharedInstance =
-        [FlutterStandardMethodCodec withReaderWriter:[FlutterStandardReaderWriter new]];
+    FlutterStandardReaderWriter* readerWriter =
+        [[[FlutterStandardReaderWriter alloc] init] autorelease];
+    _sharedInstance = [[FlutterStandardMethodCodec alloc] initWithReaderWriter:readerWriter];
   }
   return _sharedInstance;
 }
 
-+ (instancetype)withReaderWriter:(FlutterStandardReaderWriter*)readerWriter {
-  return [[[self alloc] initWithReaderWriter:readerWriter] autorelease];
++ (instancetype)codecWithReaderWriter:(FlutterStandardReaderWriter*)readerWriter {
+  return [[[FlutterStandardMethodCodec alloc] initWithReaderWriter:readerWriter] autorelease];
 }
 
 - (instancetype)initWithReaderWriter:(FlutterStandardReaderWriter*)readerWriter {

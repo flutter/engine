@@ -164,7 +164,7 @@ FLUTTER_EXPORT
  */
 FLUTTER_EXPORT
 @interface FlutterStandardMessageCodec : NSObject <FlutterMessageCodec>
-+ (instancetype)withReaderWriter:(FlutterStandardReaderWriter*)readerWriter;
++ (instancetype)codecWithReaderWriter:(FlutterStandardReaderWriter*)readerWriter;
 @end
 
 /**
@@ -425,7 +425,7 @@ FLUTTER_EXPORT
  */
 FLUTTER_EXPORT
 @interface FlutterStandardMethodCodec : NSObject <FlutterMethodCodec>
-+ (instancetype)withReaderWriter:(FlutterStandardReaderWriter*)readerWriter;
++ (instancetype)codecWithReaderWriter:(FlutterStandardReaderWriter*)readerWriter;
 @end
 
 NS_ASSUME_NONNULL_END
