@@ -247,11 +247,8 @@ void IOSSystemCompositorContext::FlowCompositingLayer::manifest(
                                                 blue:SkColorGetB(background_color_)
                                                alpha:alpha]
                                    .CGColor;
-  if (alpha == 0xff) {
-    view.layer.opaque = true;
-  } else {
-    view.layer.opaque = false;
-  }
+                                   
+  view.layer.opaque = (alpha == 0xff);
 
   // TODO(sigurdm): handle opacity.
   view.layer.opacity = 1;
