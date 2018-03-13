@@ -53,11 +53,7 @@ bool IOSSurfaceGL::GLContextClearCurrent() {
 
 bool IOSSurfaceGL::GLContextPresent() {
   TRACE_EVENT0("flutter", "IOSSurfaceGL::GLContextPresent");
-  if (IsValid()) {
-    return context_.PresentRenderBuffer();
-  } else {
-    return false;
-  }
+  return IsValid() ? context_.PresentRenderBuffer() : false;
 }
 
 }  // namespace shell
