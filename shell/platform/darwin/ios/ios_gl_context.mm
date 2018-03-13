@@ -189,7 +189,6 @@ bool IOSGLContext::UpdateStorageSizeIfNecessary() {
   FXL_DCHECK(glGetError() == GL_NO_ERROR);
 
   if (![context_.get() renderbufferStorage:GL_RENDERBUFFER fromDrawable:layer_.get()]) {
-    assert(false);
     return false;
   }
 
