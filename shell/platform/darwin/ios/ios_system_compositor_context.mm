@@ -247,7 +247,7 @@ void IOSSystemCompositorContext::FlowCompositingLayer::manifest(
                                                 blue:SkColorGetB(background_color_)
                                                alpha:alpha]
                                    .CGColor;
-                                   
+
   view.layer.opaque = (alpha == 0xff);
 
   // TODO(sigurdm): handle opacity.
@@ -389,10 +389,6 @@ void IOSSystemCompositorContext::PopLayer() {
 
 SkPoint IOSSystemCompositorContext::currentOffset() {
   return offsets_.back();
-}
-
-SkCanvas* IOSSystemCompositorContext::CurrentCanvas() {
-  return stack_.back()->canvas();
 }
 
 void IOSSystemCompositorContext::AddNativeWidget(flow::Texture* texture, SkRect bounds) {

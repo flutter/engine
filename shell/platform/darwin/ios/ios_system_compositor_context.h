@@ -28,7 +28,6 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   bool ResourceContextMakeCurrent() override;
   void PushLayer(SkRect bounds) override;
   void PopLayer() override;
-  SkCanvas* CurrentCanvas() override;
   void ClipFrame() override;
   void SetColor(SkColor color) override;
   void SetClipPath(SkPath path) override;

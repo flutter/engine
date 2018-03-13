@@ -19,7 +19,6 @@ class SystemCompositorContext {
   virtual void PopLayer() = 0;
   virtual void Clear() = 0;
   virtual void TearDown() = 0;
-  virtual SkCanvas* CurrentCanvas() = 0;
   virtual void ClipFrame() = 0;
   virtual void SetColor(SkColor color) = 0;
   virtual void SetClipPath(SkPath path) = 0;
