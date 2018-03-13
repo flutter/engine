@@ -35,14 +35,12 @@ void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
 
 std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrContext* grContext) {
   if (!IsValid()) {
-    FXL_DLOG(INFO) << "Not valid";
     return nullptr;
   }
 
   auto surface = std::make_unique<GPUSurfaceSoftware>(this);
 
   if (!surface->IsValid()) {
-        FXL_DLOG(INFO) << "surface Not valid";
     return nullptr;
   }
 
