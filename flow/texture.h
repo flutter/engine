@@ -13,6 +13,8 @@
 
 namespace flow {
 
+class SystemCompositorContext;
+
 class Texture {
  protected:
   Texture(int64_t id);

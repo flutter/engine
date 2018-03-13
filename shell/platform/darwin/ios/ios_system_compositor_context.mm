@@ -343,7 +343,7 @@ IOSSystemCompositorContext::Surface* IOSSystemCompositorContext::createDrawLayer
   return result;
 }
 
-void IOSSystemCompositorContext::Reset() {
+void IOSSystemCompositorContext::StartTransaction() {
   CALayerCache_index_ = 0;
   CAEAGLLayerCache_index_ = 0;
   [CATransaction begin];
@@ -351,7 +351,7 @@ void IOSSystemCompositorContext::Reset() {
   // paint_tasks_.push_back(root_layer_.get());
 }
 
-void IOSSystemCompositorContext::Finish() {
+void IOSSystemCompositorContext::CommitTransaction() {
   for (size_t i = CALayerCache_index_; i < CALayerCache_.size(); i++) {
     [CALayerCache_[i] removeFromSuperview];
   }
@@ -423,6 +423,7 @@ void IOSSystemCompositorContext::ClipFrame() {
 
 void IOSSystemCompositorContext::ExecutePaintTasks(flow::CompositorContext::ScopedFrame& frame) {
   FXL_DCHECK(glGetError() == GL_NO_ERROR);
+  StartTransaction();
 
   for (auto& task : paint_tasks_) {
     task->manifest(*this);
@@ -455,6 +456,7 @@ void IOSSystemCompositorContext::ExecutePaintTasks(flow::CompositorContext::Scop
   // Setting up parent-child relationship from the root to avoid creating transient cycles.
   stack_[0]->installChildren();
   paint_tasks_.clear();
+  CommitTransaction();
 }
 
 void IOSSystemCompositorContext::Transform(SkMatrix transform) {

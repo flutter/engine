@@ -14,8 +14,6 @@ namespace flow {
 class SystemCompositorContext {
  public:
   virtual ~SystemCompositorContext();
-  virtual void Reset() = 0;
-  virtual void Finish() = 0;
   virtual bool ResourceContextMakeCurrent() = 0;
   virtual void PushLayer(SkRect bounds) = 0;
   virtual void PopLayer() = 0;

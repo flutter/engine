@@ -24,8 +24,6 @@ class CompositorContext {
  public:
   class ScopedFrame {
    public:
-    SkCanvas* canvas() { return canvas_; }
-
     CompositorContext& context() const { return context_; }
 
     SystemCompositorContext* systemCompositorContext() const {
@@ -38,7 +36,6 @@ class CompositorContext {
 
    private:
     CompositorContext& context_;
-    SkCanvas* canvas_;
     SystemCompositorContext* system_compositor_context_;
     const bool instrumentation_enabled_;
 

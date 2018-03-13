@@ -112,6 +112,7 @@ void GPURasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
       compositor_context_.AcquireFrame(system_compositor_context_);
 
   layer_tree.Raster(compositor_frame);
+  system_compositor_context_->ExecutePaintTasks(compositor_frame);
 }
 
 void GPURasterizer::AddNextFrameCallback(fxl::Closure nextFrameCallback) {

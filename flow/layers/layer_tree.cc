@@ -33,10 +33,7 @@ void LayerTree::Raster(CompositorContext::ScopedFrame& frame,
           ignore_raster_cache);
   frame.systemCompositorContext()->texture_registry =
       &(frame.context().texture_registry());
-  frame.systemCompositorContext()->Reset();
   UpdateScene(*(frame.systemCompositorContext()));
-  frame.systemCompositorContext()->ExecutePaintTasks(frame);
-  frame.systemCompositorContext()->Finish();
 }
 
 void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
@@ -61,7 +58,6 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
     frame.systemCompositorContext()->GetGrContext(),
     color_space,
     SkRect::MakeEmpty(),
-    frame.context().texture_registry(),
   };
 
   root_layer_->Preroll(&context, SkMatrix::I());

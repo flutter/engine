@@ -52,7 +52,6 @@ class Layer {
     GrContext* gr_context;
     SkColorSpace* dst_color_space;
     SkRect child_paint_bounds;
-    TextureRegistry& texture_registry;
   };
 
   virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);

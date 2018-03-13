@@ -25,8 +25,6 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   GrContext *GetGrContext() override;
   void Clear() override;
   void TearDown() override;
-  void Reset() override;
-  void Finish() override;
   bool ResourceContextMakeCurrent() override;
   void PushLayer(SkRect bounds) override;
   void PopLayer() override;
@@ -42,6 +40,9 @@ class IOSSystemCompositorContext : public flow::SystemCompositorContext {
   void UpdateSurfaceSize();
   
  private:
+
+  void StartTransaction();
+  void CommitTransaction();
 
   // TODO(sigurdm): Consider replacing this with just an IOSSurface.
   struct Surface {
