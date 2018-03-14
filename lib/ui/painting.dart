@@ -1519,6 +1519,13 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addOval(double left, double top, double right, double bottom) native 'Path_addOval';
 
+  /// Adds a new subpath that consists of a curve that forms the
+  /// circle centered on centerX,centerY with specified radius
+  void addCircle(double centerX, double centerY, double radius) {
+    _addCircle(centerX, centerY, radius);
+  }
+  void _addCircle(double centerX, double centerY, double radius) native 'Path_addCircle';
+
   /// Adds a new subpath with one arc segment that consists of the arc
   /// that follows the edge of the oval bounded by the given
   /// rectangle, from startAngle radians around the oval up to

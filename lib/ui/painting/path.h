@@ -69,6 +69,7 @@ class CanvasPath : public fxl::RefCountedThreadSafe<CanvasPath>,
                           bool isClockwiseDirection);
   void addRect(float left, float top, float right, float bottom);
   void addOval(float left, float top, float right, float bottom);
+  void addCircle(float centerX, float centerY, float radius);
   void addArc(float left,
               float top,
               float right,
