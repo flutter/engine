@@ -49,7 +49,7 @@ constexpr char kAssetChannel[] = "flutter/assets";
 constexpr char kKeyEventChannel[] = "flutter/keyevent";
 constexpr char kTextInputChannel[] = "flutter/textinput";
 constexpr char kFlutterPlatformChannel[] = "flutter/platform";
-constexpr char kFuchsiaPackageResourceDirectory[] = "pkg/data";
+constexpr char kFuchsiaPackageResourceDirectory[] = "self/data";
 constexpr char kDartPkgContentsKey[] = "dart-pkg/contents";
 
 void SetThreadName(fxl::RefPtr<fxl::TaskRunner> runner, std::string name) {
@@ -242,9 +242,9 @@ void RuntimeHolder::CreateView(
   view_manager_->GetMozart(mozart.NewRequest());
 
   blink::Threads::Gpu()->PostTask(fxl::MakeCopyable([
-    rasterizer = rasterizer_.get(),            //
-    mozart = std::move(mozart),  //
-    import_token = std::move(import_token),    //
+    rasterizer = rasterizer_.get(),          //
+    mozart = std::move(mozart),              //
+    import_token = std::move(import_token),  //
     weak_runtime_holder = GetWeakPtr()
   ]() mutable {
     ASSERT_IS_GPU_THREAD;
@@ -297,10 +297,12 @@ void RuntimeHolder::CreateView(
       return;
     }
     std::string package_name(data.begin(), data.end());
-    std::string main_dart = "pkg/data/dart-pkg/" + package_name + "/lib/main.dart";
+    std::string main_dart =
+        "self/data/dart-pkg/" + package_name + "/lib/main.dart";
     FXL_LOG(INFO) << "Running from source with entrypoint: '" << main_dart
                   << "'";
-    runtime_->dart_controller()->RunFromSource(main_dart, "pkg/data/dart-pkg/.packages");
+    runtime_->dart_controller()->RunFromSource(main_dart,
+                                               "self/data/dart-pkg/.packages");
   } else {
     runtime_->dart_controller()->RunFromScriptSnapshot(snapshot.data(),
                                                        snapshot.size());
@@ -532,8 +534,7 @@ bool RuntimeHolder::HandleAssetPlatformMessage(
 
 bool RuntimeHolder::GetAssetAsBuffer(const std::string& name,
                                      std::vector<uint8_t>* data) {
-  return (asset_provider_ &&
-          asset_provider_->GetAsBuffer(name, data)) ||
+  return (asset_provider_ && asset_provider_->GetAsBuffer(name, data)) ||
          (asset_store_ && asset_store_->GetAsBuffer(name, data));
 }
 
