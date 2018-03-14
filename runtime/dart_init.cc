@@ -432,7 +432,7 @@ Dart_Handle GetVMServiceAssetsArchiveCallback() {
   return nullptr;
 #elif OS(FUCHSIA)
   std::vector<uint8_t> observatory_assets_archive;
-  if (!files::ReadFileToVector("pkg/data/observatory.tar",
+  if (!files::ReadFileToVector("self/data/observatory.tar",
                                &observatory_assets_archive)) {
     FXL_LOG(ERROR) << "Fail to load Observatory archive";
     return nullptr;
