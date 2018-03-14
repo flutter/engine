@@ -1613,6 +1613,19 @@ class Path extends NativeFieldWrapperClass2 {
     return _transform(matrix4);
   }
   Path _transform(Float64List matrix4) native 'Path_transform';
+
+  static Path parseSvgPathData(String svgPathData, {Path onError(String source)}) {
+    Path path = new Path();
+    if (path._setFromSvgPathData(svgPathData)) {
+      return path;
+    } else if (onError != null) {
+      return onError(svgPathData);
+    }
+
+    throw new FormatException("Unable to parse path data");
+   }
+  bool _setFromSvgPathData(String svgPathData) native 'Path_setFromSvgPathData';
+ 	
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
