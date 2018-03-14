@@ -308,4 +308,30 @@ public class FlutterMain {
         File appBundle = new File(dataDirectory, sFlutterAssetsDir);
         return appBundle.exists() ? appBundle.getPath() : null;
     }
+
+    /**
+     * Returns the file name for the given asset.
+     * The returned file name can be used to access the asset in the APK
+     * through the {@link AssetManager} API.
+     *
+     * @param asset the name of the asset. The name can be hierarchical
+     * @return      the file name to be used with {@link AssetManager}
+     */
+    public static String getLookupKeyForAsset(String asset) {
+        return sFlutterAssetsDir + File.separator + asset;
+    }
+
+    /**
+     * Returns the file name for the given asset which originates from the
+     * specified packageName. The returned file name can be used to access
+     * the asset in the APK through the {@link AssetManager} API.
+     *
+     * @param asset       the name of the asset. The name can be hierarchical
+     * @param packageName the name of the package from which the asset originates
+     * @return            the file name to be used with {@link AssetManager}
+     */
+    public static String getLookupKeyForAsset(String asset, String packageName) {
+        return sFlutterAssetsDir + File.separator + "packages" + File.separator +
+                packageName + File.separator + asset;
+    }
 }
