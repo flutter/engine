@@ -1614,6 +1614,9 @@ class Path extends NativeFieldWrapperClass2 {
   }
   Path _transform(Float64List matrix4) native 'Path_transform';
 
+  /// Creates a new [Path] with the commands specified in SVG path syntax
+  /// format.  If the string cannot be passed, will call onError if onError is
+  /// not null, or else throw a [FormatException]
   static Path parseSvgPathData(String svgPathData, [Path onError(String source)]) {
     final Path path = new Path();
     if (path._setFromSvgPathData(svgPathData)) {
@@ -1626,6 +1629,11 @@ class Path extends NativeFieldWrapperClass2 {
    }
   bool _setFromSvgPathData(String svgPathData) native 'Path_setFromSvgPathData';
  	
+  @override
+  String toString() {
+    return 'Path(${_toSvgString()})';
+  }
+  String _toSvgString() native 'Path_toSvgString';
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
