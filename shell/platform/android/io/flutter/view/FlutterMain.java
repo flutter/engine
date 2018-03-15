@@ -73,7 +73,7 @@ public class FlutterMain {
     private static final String MANIFEST = "flutter.yaml";
 
     private static String fromFlutterAssets(String filePath) {
-        return sFlutterAssetsDir + "/" + filePath;
+        return sFlutterAssetsDir + File.separator + filePath;
     }
 
     private static final Set<String> SKY_RESOURCES = ImmutableSetBuilder.<String>newInstance()
@@ -315,10 +315,10 @@ public class FlutterMain {
      * through the {@link AssetManager} API.
      *
      * @param asset the name of the asset. The name can be hierarchical
-     * @return      the file name to be used with {@link AssetManager}
+     * @return      the filename to be used with {@link AssetManager}
      */
     public static String getLookupKeyForAsset(String asset) {
-        return sFlutterAssetsDir + File.separator + asset;
+        return fromFlutterAssets(asset);
     }
 
     /**
@@ -331,7 +331,7 @@ public class FlutterMain {
      * @return            the file name to be used with {@link AssetManager}
      */
     public static String getLookupKeyForAsset(String asset, String packageName) {
-        return sFlutterAssetsDir + File.separator + "packages" + File.separator +
-                packageName + File.separator + asset;
+        return getLookupKeyForAsset(
+            "packages" + File.separator + packageName + File.separator + asset);
     }
 }
