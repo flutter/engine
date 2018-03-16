@@ -39,6 +39,13 @@ bool _offsetIsValid(Offset offset) {
   return true;
 }
 
+bool _matrix4IsValid(Float64List matrix4) {
+  assert(matrix4 != null, 'Matrix4 argument was null.');
+  if (matrix4.length != 16)
+    throw new ArgumentError('"matrix4" must have 16 entries.');
+  return true;
+}
+
 bool _radiusIsValid(Radius radius) {
   assert(radius != null, 'Radius argument was null.');
   assert(!radius.x.isNaN && !radius.y.isNaN, 'Radius argument contained a NaN value.');
@@ -1340,6 +1347,18 @@ enum PathFillType {
   evenOdd,
 }
 
+/// Path operation enums
+/// 
+/// For use with [Path.combine]
+/// Must be kept in sync with SkPathOp
+enum PathOperation {
+    difference,         //!< subtract the op path from the first path
+    intersect,          //!< intersect the two paths
+    union,              //!< union (inclusive-or) the two paths
+    xor,                //!< exclusive-or the two paths
+    reverseDifference,  //!< subtract the first path from the op path
+}
+
 /// A complex, one-dimensional subset of a plane.
 ///
 /// A path consists of a number of subpaths, and a _current point_.
@@ -1361,6 +1380,15 @@ class Path extends NativeFieldWrapperClass2 {
   /// Create a new empty [Path] object.
   Path() { _constructor(); }
   void _constructor() native 'Path_constructor';
+
+  /// Creates a new [Path] object from src path
+  /// 
+  /// This copy is fast and does not require additional memory unless the src or
+  /// new path are mutated.
+  factory Path.from(Path src) {
+    return src._clone();
+  }
+  Path _clone() native 'Path_clone';
 
   /// Determines how the interior of this path is calculated.
   ///
@@ -1558,21 +1586,40 @@ class Path extends NativeFieldWrapperClass2 {
 
   /// Adds a new subpath that consists of the given path offset by the given
   /// offset.
-  void addPath(Path path, Offset offset) {
+  /// 
+  /// If matrix4 is specified, the path will be transformed by this matrix
+  /// (after the matrix is translated by the given offset)
+  void addPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
-    _addPath(path, offset.dx, offset.dy);
+    
+    if (matrix4 != null) {
+      assert(_matrix4IsValid(matrix4));
+      _addPathWithMatrix(path, offset.dx, offset.dy, matrix4);
+    } else {
+      _addPath(path, offset.dx, offset.dy);
+    }
   }
   void _addPath(Path path, double dx, double dy) native 'Path_addPath';
-
+  void _addPathWithMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_addPathWithMatrix';
+  
   /// Adds the given path to this path by extending the current segment of this
   /// path with the the first segment of the given path.
-  void extendWithPath(Path path, Offset offset) {
+  /// 
+  /// If matrix4 is specified, the path will be transformed by this matrix
+  /// (after the matrix is translated by the given offset)
+  void extendWithPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
+
+    if (matrix4 != null) {
+      assert(_matrix4IsValid(matrix4));
+      _extendWithPathAndMatrix(path, offset.dx, offset.dy, matrix4);
+    }
     _extendWithPath(path, offset.dx, offset.dy);
   }
   void _extendWithPath(Path path, double dx, double dy) native 'Path_extendWithPath';
+  void _extendWithPathAndMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_extendWithPathAndMatrix';
 
   /// Closes the last subpath, as if a straight line had been drawn
   /// from the current point to the first point of the subpath.
@@ -1607,12 +1654,149 @@ class Path extends NativeFieldWrapperClass2 {
   /// Returns a copy of the path with all the segments of every
   /// subpath transformed by the given matrix.
   Path transform(Float64List matrix4) {
-    assert(matrix4 != null);
-    if (matrix4.length != 16)
-      throw new ArgumentError('"matrix4" must have 16 entries.');
+    assert(_matrix4IsValid(matrix4));
     return _transform(matrix4);
   }
   Path _transform(Float64List matrix4) native 'Path_transform';
+
+  /// Gets the bounding rectangle for this path
+  Rect getBounds() {
+    final Float32List rect = _getBounds();
+    return new Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
+  }
+  Float32List _getBounds() native 'Path_getBounds';
+
+  /// Sets this path to the result of operation [PathOperation]
+  /// 
+  /// If only one path is specified, this path will be used as the first 
+  /// operand, otherwise path1 will be the first operand and path2 the
+  /// second.
+  /// 
+  /// The resulting path will be constructed from non-overlapping contours. The
+  /// curve order is reduced where possible so that cubics may be turned into
+  /// quadratics, and quadratics maybe turned into lines.
+  static Path combine(PathOperation operation, Path path1, Path path2, {Path orElse()}) {
+    assert(path1 != null);
+    assert(path2 != null);
+
+    final Path path = new Path();
+    if (path._op(path1, path2, operation.index)) {
+      return path;
+    } else if (orElse != null) {
+      return orElse();
+    }
+    throw new InvalidPathOperationException();
+  }
+  bool _op(Path path1, Path path2, int operation) native 'Path_op';
+
+  /// Creates a [PathMetrics] object for this path.
+  PathMetrics computeMetrics({bool forceClosed = false}) {
+    return new PathMetrics._(new Path.from(this), forceClosed);
+  }
+}
+
+/// Exception thrown by [Path.combine] if a failure occurs.
+class InvalidPathOperationException implements Exception {
+  final String message;
+  InvalidPathOperationException([this.message]);
+}
+
+/// Convenience class to return the result of [PathMetric.getTangentForOffset].
+class Tangent {
+  /// Position of the tangent
+  final Offset position;
+  /// Angle of the tangent in radians
+  final double angle;
+
+  const Tangent(this.position, this.angle);
+}
+
+/// An iterable collection of [PathMetric] objects.
+/// 
+/// Each path metric corresponds to a segment of a path.
+/// 
+/// For example, if you call [Path.moveTo] once in the middle of drawing, you
+/// would get two PathMetric objects in this iterable.  Call 
+/// [Path.computeMetrics] to create the iterable.
+class PathMetrics extends collection.IterableBase<PathMetric> {
+  final Iterator<PathMetric> _iterator;
+
+  PathMetrics._(Path path, bool forceClosed) :
+    _iterator = new PathMetricIterator._(new PathMetric._(path, forceClosed));
+
+  @override
+  Iterator<PathMetric> get iterator => _iterator;
+}
+
+/// Tracks iteration from one segment of a path to the next for measurement.
+class PathMetricIterator implements Iterator<PathMetric> {
+  PathMetric _pathMetric;
+
+  PathMetricIterator._(this._pathMetric);
+
+  @override
+  PathMetric get current => _pathMetric;
+
+  @override
+  bool moveNext() {
+    if(_pathMetric?._moveNext() == true) {
+      return true;
+    } else {
+      _pathMetric = null;
+      return false;
+    }
+  }
+}
+
+/// Utilities for measuring a [Path] and extracting subpaths.
+///
+/// Call [Path.computeMetrics] to create these objects. Once created, measures
+/// will only be valid while the path remains unmodified.  If the path is 
+/// modified, the behavior of the PathMetric object is undefined.
+class PathMetric extends NativeFieldWrapperClass2 {
+  /// Create a new empty [Path] object.
+  PathMetric._(Path path, bool forceClosed) { _constructor(path, forceClosed); }
+  void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
+
+  /// Return the total length of the current contour
+  double get length native 'PathMeasure_getLength';
+
+  /// Pins distance to 0 <= distance <= getLength(), and then computes the 
+  /// corresponding position and tangent
+  /// 
+  /// The [Tangent] object returns contains the position and angle (in radians)
+  /// of the tangent at specified distance. 
+  /// Returns null no or zero-length [Path]
+  Tangent getTangentForOffset(double distance) {
+    final Float32List posTan = _getPosTan(distance);
+    // first entry == 0 indicates that Skia returned false
+    if (posTan[0] == 0.0) {
+      return null;
+    } else {
+      return new Tangent(
+        new Offset(posTan[1], posTan[2]), 
+        math.atan2(posTan[4], posTan[3])
+      );
+    }
+  }
+
+  Float32List _getPosTan(double distance) native 'PathMeasure_getPosTan';
+
+  /// Given a start and stop distance, return the intervening segment(s).
+  /// 
+  /// startD and stopD are pinned to legal values (0..[length])
+  /// Returns null if the segment is 0 length or startD > stopD.
+  /// Begin the segment with a moveTo if startWithMoveTo is true.
+  Path extractPath(double startD, double endD, bool startWithMoveTo) native 'PathMeasure_getSegment';
+
+  /// Returns true if the path is closed
+  bool get closed native 'PathMeasure_isClosed';
+
+  /// Move to the next contour in the path.
+  ///
+  /// A path can have a next contour if [Path.moveTo] was called after drawing began.
+  /// Return true if one exists, or false.
+  bool _moveNext() native 'PathMeasure_nextContour';
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
