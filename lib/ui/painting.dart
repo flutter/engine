@@ -1731,6 +1731,7 @@ class PathMetrics extends collection.IterableBase<PathMetric> {
 /// Tracks iteration from one segment of a path to the next for measurement.
 class PathMetricIterator implements Iterator<PathMetric> {
   PathMetric _pathMetric;
+  bool _firstTime = true;
 
   PathMetricIterator._(this._pathMetric);
 
@@ -1739,7 +1740,12 @@ class PathMetricIterator implements Iterator<PathMetric> {
 
   @override
   bool moveNext() {
-    if(_pathMetric?._moveNext() == true) {
+    // PathMetric isn't a normal iterable - it's already initialized to its
+    // first Path.  Should only call _moveNext when done with the first one. 
+    if (_firstTime == true) {
+      _firstTime = false;
+      return true;
+    } else if (_pathMetric?._moveNext() == true) {
       return true;
     } else {
       _pathMetric = null;
