@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': 'f802e757646f424b563fdc1f5b5ee3c677659e98',
+  'skia_revision': '91fba61f24943a6e12f69732d9308beb76f8a7c6',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,38 +31,38 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': 'b5b8080b2cfb1e4943a19787ee96548a4a604f7b',
+  'dart_revision': '7328726088065b53f40e02caae6fd73f94528e3e',
 
-  'dart_args_tag': '0.13.7',
+  'dart_args_tag': '1.4.1',
   'dart_async_tag': '2.0.6',
   'dart_barback_tag': '0.15.2+14',
   'dart_bazel_worker_tag': 'v0.1.9',
-  'dart_boolean_selector_tag': '1.0.2',
-  'dart_boringssl_gen_rev': '39762c7f9ee4d828ff212838fae79528b94d5443',
-  'dart_boringssl_rev': 'a62dbf88d8a3c04446db833a1eb80a620cb1514d',
+  'dart_boolean_selector_tag': '1.0.3',
+  'dart_boringssl_gen_rev': '344f455fd13d46f054726638e76026156ea73aa9',
+  'dart_boringssl_rev': '672f6fc2486745d0cabc3aaeb4e0a3cd13b37b12',
   'dart_charcode_tag': 'v1.1.1',
   'dart_cli_util_tag': '0.1.2+1',
-  'dart_collection_tag': '5943e1681204250f33a833eb5550f270357ad6c8',
+  'dart_collection_tag': '1.14.6',
   'dart_convert_tag': '2.0.1',
   'dart_crypto_tag': '2.0.2+1',
   'dart_csslib_tag': '0.14.1',
   'dart_dart2js_info_tag': '0.5.5+1',
   'dart_dart_style_tag': '1.0.10',
-  'dart_dartdoc_tag': 'v0.17.0',
+  'dart_dartdoc_tag': 'v0.17.1+1',
   'dart_fixnum_tag': '0.10.5',
   'dart_glob_tag': '1.1.5',
-  'dart_html_tag': '0.13.2+2',
+  'dart_html_tag': '0.13.3',
   'dart_http_multi_server_tag': '2.0.4',
   'dart_http_parser_tag': '3.1.1',
   'dart_http_retry_tag': '0.1.0',
-  'dart_http_tag': '0.11.3+14',
+  'dart_http_tag': '0.11.3+16',
   'dart_http_throttle_tag': '1.0.1',
   'dart_intl_tag': '0.15.2',
   'dart_isolate_tag': '1.1.0',
   'dart_json_rpc_2_tag': '2.0.6',
-  'dart_linter_tag': '0.1.43',
+  'dart_linter_tag': '0.1.44',
   'dart_logging_tag': '0.11.3+1',
-  'dart_markdown_tag': '1.0.0',
+  'dart_markdown_tag': '1.1.1',
   'dart_matcher_tag': '0.12.1+4',
   'dart_mime_tag': '0.9.6',
   'dart_mockito_tag': 'a92db054fba18bc2d605be7670aee74b7cadc00a',
@@ -74,21 +74,21 @@ vars = {
   'dart_path_tag': '1.5.1',
   'dart_plugin_tag': '0.2.0+2',
   'dart_pool_tag': '1.3.4',
-  'dart_protobuf_tag': '0.7.0',
-  'dart_pub_rev': '73ff0d3d9f80f60d41e3135ac44597d011abb4f3',
+  'dart_protobuf_tag': '0.7.1',
+  'dart_pub_rev': 'd2755745e88b63448d0adfbf2d04af9050f45ed3',
   'dart_pub_semver_tag': '1.3.2',
   'dart_quiver_tag': '5aaa3f58c48608af5b027444d561270b53f15dbf',
   'dart_resource_rev': 'af5a5bf65511943398146cf146e466e5f0b95cb9',
   'dart_root_certificates_rev': '16ef64be64c7dfdff2b9f4b910726e635ccc519e',
   'dart_shelf_packages_handler_tag': '1.0.3',
-  'dart_shelf_static_rev': '3558aa35a0d2f0f35868c3fd64b258e140db0122',
-  'dart_shelf_tag': '0.7.1',
+  'dart_shelf_static_rev': 'v0.2.7',
+  'dart_shelf_tag': '0.7.2',
   'dart_shelf_web_socket_tag': '0.2.2',
   'dart_source_map_stack_trace_tag': '1.1.4',
   'dart_source_maps_tag': '0.10.4',
   'dart_source_span_tag': '1.4.0',
-  'dart_stack_trace_tag': '1.9.0',
-  'dart_stream_channel_tag': '1.6.2',
+  'dart_stack_trace_tag': '1.9.2',
+  'dart_stream_channel_tag': '1.6.4',
   'dart_string_scanner_tag': '1.0.2',
   'dart_test_tag': '0.12.30+1',
   'dart_tuple_tag': 'v1.0.1',
@@ -115,7 +115,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '06e2d5a3e84459931ca9bedd3171c76f9953ebfa',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '35d44f8c4e20043de7615adf2f1203acb12ad236',
 
    # Fuchsia compatibility
    #
@@ -124,16 +124,13 @@ deps = {
    # and not have to specific specific hashes.
 
   'src/garnet':
-   Var('fuchsia_git') + '/garnet' + '@' + '2b62817917165fe00307b1d43b64ac2ad4fd2565',
+   Var('fuchsia_git') + '/garnet' + '@' + 'b7492b5f34e32248b164eb48ae8e67995aebda67',
 
   'src/topaz':
    Var('fuchsia_git') + '/topaz' + '@' + 'e331f910c1003d154a4de6e1b5356f8d785fd6ec',
 
   'src/third_party/benchmark':
    Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',
-
-  'src/third_party/gtest':
-   Var('fuchsia_git') + '/third_party/gtest' + '@' + 'c00f82917331efbbd27124b537e4ccc915a02b72',
 
   'src/third_party/googletest':
    Var('fuchsia_git') + '/third_party/googletest' + '@' + '2072b0053d3537fa5e8d222e34c759987aae1320',
