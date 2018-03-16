@@ -1691,7 +1691,7 @@ class Path extends NativeFieldWrapperClass2 {
 
   /// Creates a [PathMetrics] object for this path.
   PathMetrics computeMetrics({bool forceClosed = false}) {
-    return new PathMetrics._(new Path.from(this), forceClosed);
+    return new PathMetrics._(this, forceClosed);
   }
 }
 
