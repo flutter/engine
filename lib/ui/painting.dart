@@ -1588,7 +1588,7 @@ class Path extends NativeFieldWrapperClass2 {
   /// offset.
   /// 
   /// If matrix4 is specified, the path will be transformed by this matrix
-  /// (after the matrix is translated by the given offset)
+  /// (after the matrix is translated by the given offset).
   void addPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
@@ -1607,7 +1607,7 @@ class Path extends NativeFieldWrapperClass2 {
   /// path with the the first segment of the given path.
   /// 
   /// If matrix4 is specified, the path will be transformed by this matrix
-  /// (after the matrix is translated by the given offset)
+  /// (after the matrix is translated by the given offset).
   void extendWithPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
@@ -1659,7 +1659,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   Path _transform(Float64List matrix4) native 'Path_transform';
 
-  /// Gets the bounding rectangle for this path
+  /// Gets the bounding rectangle for this path.
   Rect getBounds() {
     final Float32List rect = _getBounds();
     return new Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
@@ -1764,15 +1764,15 @@ class PathMetric extends NativeFieldWrapperClass2 {
   PathMetric._(Path path, bool forceClosed) { _constructor(path, forceClosed); }
   void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
 
-  /// Return the total length of the current contour
+  /// Return the total length of the current contour.
   double get length native 'PathMeasure_getLength';
 
   /// Pins distance to 0 <= distance <= getLength(), and then computes the 
-  /// corresponding position and tangent
+  /// corresponding position and tangent.
   /// 
   /// The [Tangent] object returns contains the position and angle (in radians)
   /// of the tangent at specified distance. 
-  /// Returns null no or zero-length [Path]
+  /// Returns null for a null or zero-length [Path].
   Tangent getTangentForOffset(double distance) {
     final Float32List posTan = _getPosTan(distance);
     // first entry == 0 indicates that Skia returned false
@@ -1785,7 +1785,6 @@ class PathMetric extends NativeFieldWrapperClass2 {
       );
     }
   }
-
   Float32List _getPosTan(double distance) native 'PathMeasure_getPosTan';
 
   /// Given a start and stop distance, return the intervening segment(s).
@@ -1795,13 +1794,19 @@ class PathMetric extends NativeFieldWrapperClass2 {
   /// Begin the segment with a moveTo if startWithMoveTo is true.
   Path extractPath(double startD, double endD, bool startWithMoveTo) native 'PathMeasure_getSegment';
 
-  /// Returns true if the path is closed
+  /// Returns true if the path is closed.
   bool get closed native 'PathMeasure_isClosed';
 
   /// Move to the next contour in the path.
   ///
   /// A path can have a next contour if [Path.moveTo] was called after drawing began.
   /// Return true if one exists, or false.
+  /// 
+  /// This is not exactly congruent with a regular [Iterator.moveNext].
+  /// Typically, [Iterator.moveNext] should be called before accessing the
+  /// [Iterator.current]. In this case, the [PathMetric] is valid before 
+  /// calling `_moveNext` - `_moveNext` should be called after the first
+  /// iteration is done instead of before.
   bool _moveNext() native 'PathMeasure_nextContour';
 }
 
