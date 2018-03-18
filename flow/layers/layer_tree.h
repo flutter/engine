@@ -43,12 +43,8 @@ class LayerTree {
   void set_device_pixel_ratio(float device_pixel_ratio) {
     device_pixel_ratio_ = device_pixel_ratio;
   }
-
-  void UpdateScene(SceneUpdateContext& context,
-                   scenic_lib::ContainerNode& container);
 #endif
-
-  void Paint(CompositorContext::ScopedFrame& frame) const;
+  void UpdateScene(SystemCompositorContext& context);
 
   Layer* root_layer() const { return root_layer_.get(); }
 

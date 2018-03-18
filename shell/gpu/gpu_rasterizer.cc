@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "flutter/common/threads.h"
+#include "flutter/flow/system_compositor_context.h"
 #include "flutter/glue/trace_event.h"
 #include "flutter/shell/common/picture_serializer.h"
 #include "flutter/shell/common/platform_view.h"
@@ -25,10 +26,11 @@ fml::WeakPtr<Rasterizer> GPURasterizer::GetWeakRasterizerPtr() {
   return weak_factory_.GetWeakPtr();
 }
 
-void GPURasterizer::Setup(std::unique_ptr<Surface> surface,
-                          fxl::Closure continuation,
-                          fxl::AutoResetWaitableEvent* setup_completion_event) {
-  surface_ = std::move(surface);
+void GPURasterizer::Setup(
+    flow::SystemCompositorContext* systemCompositorContext,
+    fxl::Closure continuation,
+    fxl::AutoResetWaitableEvent* setup_completion_event) {
+  system_compositor_context_ = systemCompositorContext;
   compositor_context_.OnGrContextCreated();
 
   continuation();
@@ -37,33 +39,13 @@ void GPURasterizer::Setup(std::unique_ptr<Surface> surface,
 }
 
 void GPURasterizer::Clear(SkColor color, const SkISize& size) {
-  if (surface_ == nullptr) {
-    return;
-  }
-
-  auto frame = surface_->AcquireFrame(size);
-
-  if (frame == nullptr) {
-    return;
-  }
-
-  SkCanvas* canvas = frame->SkiaCanvas();
-
-  if (canvas == nullptr) {
-    return;
-  }
-
-  canvas->clear(color);
-
-  frame->Submit();
+  system_compositor_context_->Clear();
 }
 
 void GPURasterizer::Teardown(
     fxl::AutoResetWaitableEvent* teardown_completion_event) {
   compositor_context_.OnGrContextDestroyed();
-  if (surface_) {
-    surface_.reset();
-  }
+  system_compositor_context_->TearDown();
   last_layer_tree_.reset();
   teardown_completion_event->Signal();
 }
@@ -73,7 +55,7 @@ flow::LayerTree* GPURasterizer::GetLastLayerTree() {
 }
 
 void GPURasterizer::DrawLastLayerTree() {
-  if (!last_layer_tree_ || !surface_) {
+  if (!last_layer_tree_ || !system_compositor_context_) {
     return;
   }
   DrawToSurface(*last_layer_tree_);
@@ -108,7 +90,7 @@ void GPURasterizer::Draw(
 }
 
 void GPURasterizer::DoDraw(std::unique_ptr<flow::LayerTree> layer_tree) {
-  if (!layer_tree || !surface_) {
+  if (!layer_tree || !system_compositor_context_) {
     return;
   }
 
@@ -125,26 +107,12 @@ void GPURasterizer::DoDraw(std::unique_ptr<flow::LayerTree> layer_tree) {
 }
 
 void GPURasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
-  auto frame = surface_->AcquireFrame(layer_tree.frame_size());
-
-  if (frame == nullptr) {
-    return;
-  }
-
-  auto canvas = frame->SkiaCanvas();
-
-  if (canvas == nullptr) {
-    return;
-  }
 
   auto compositor_frame =
-      compositor_context_.AcquireFrame(surface_->GetContext(), canvas);
-
-  canvas->clear(SK_ColorBLACK);
+      compositor_context_.AcquireFrame(system_compositor_context_);
 
   layer_tree.Raster(compositor_frame);
-
-  frame->Submit();
+  system_compositor_context_->ExecutePaintTasks(compositor_frame);
 }
 
 void GPURasterizer::AddNextFrameCallback(fxl::Closure nextFrameCallback) {

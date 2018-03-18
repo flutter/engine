@@ -1,6 +1,7 @@
 // Copyright 2015 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+#include "flutter/flow/system_compositor_context.h"
 
 #include "flutter/flow/layers/layer_tree.h"
 
@@ -30,7 +31,9 @@ void LayerTree::Raster(CompositorContext::ScopedFrame& frame,
           metrics,
 #endif
           ignore_raster_cache);
-  Paint(frame);
+  frame.systemCompositorContext()->texture_registry =
+      &(frame.context().texture_registry());
+  UpdateScene(*(frame.systemCompositorContext()));
 }
 
 void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
@@ -42,16 +45,17 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   FXL_DCHECK(metrics);
 #endif
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
-  SkColorSpace* color_space =
-      frame.canvas() ? frame.canvas()->imageInfo().colorSpace() : nullptr;
+  // TODO(sigurdm): get color space from system compositor context.
+  SkColorSpace* color_space = nullptr;
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
+
   Layer::PrerollContext context = {
 #if defined(OS_FUCHSIA)
     metrics,
 #endif
     ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
-    frame.gr_context(),
+    frame.systemCompositorContext()->GetGrContext(),
     color_space,
     SkRect::MakeEmpty(),
   };
@@ -59,39 +63,19 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   root_layer_->Preroll(&context, SkMatrix::I());
 }
 
-#if defined(OS_FUCHSIA)
-void LayerTree::UpdateScene(SceneUpdateContext& context,
-                            scenic_lib::ContainerNode& container) {
+void LayerTree::UpdateScene(SystemCompositorContext& context) {
   TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
+  context.Transform(SkMatrix::MakeScale(1.f / 2, 1.f / 2));
 
-  SceneUpdateContext::Transform transform(context, 1.f / device_pixel_ratio_,
-                                          1.f / device_pixel_ratio_, 1.f);
-  SceneUpdateContext::Frame frame(
-      context,
-      SkRRect::MakeRect(
-          SkRect::MakeWH(frame_size_.width(), frame_size_.height())),
-      SK_ColorTRANSPARENT, 0.f);
   if (root_layer_->needs_system_composite()) {
     root_layer_->UpdateScene(context);
+  } else if (root_layer_->needs_painting()) {
+    context.PushLayer(
+        SkRect::MakeWH(frame_size_.width(), frame_size_.height()));
+    context.AddPaintedLayer(root_layer_.get());
+    context.PopLayer();
   }
-  if (root_layer_->needs_painting()) {
-    frame.AddPaintedLayer(root_layer_.get());
-  }
-  container.AddChild(transform.entity_node());
-}
-#endif
-
-void LayerTree::Paint(CompositorContext::ScopedFrame& frame) const {
-  Layer::PaintContext context = {*frame.canvas(),
-                                 frame.context().frame_time(),
-                                 frame.context().engine_time(),
-                                 frame.context().memory_usage(),
-                                 frame.context().texture_registry(),
-                                 checkerboard_offscreen_layers_};
-  TRACE_EVENT0("flutter", "LayerTree::Paint");
-
-  if (root_layer_->needs_painting())
-    root_layer_->Paint(context);
+  context.PopTransform();
 }
 
 }  // namespace flow

@@ -10,41 +10,21 @@
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
 namespace shell {
 
-// Default maximum number of budgeted resources in the cache.
-static const int kGrCacheMaxCount = 8192;
 
-// Default maximum number of bytes of GPU memory of budgeted resources in the
-// cache.
-static const size_t kGrCacheMaxByteSize = 512 * (1 << 20);
-
-GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
-    : delegate_(delegate), weak_factory_(this) {
+GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate,
+    GrContext *grContext)
+    : delegate_(delegate),
+      gr_context_(grContext),
+      weak_factory_(this) {
   if (!delegate_->GLContextMakeCurrent()) {
     FXL_LOG(ERROR)
         << "Could not make the context current to setup the gr context.";
     return;
   }
-
-  GrContextOptions options;
-  options.fAvoidStencilBuffers = true;
-
-  auto context = GrContext::MakeGL(GrGLMakeNativeInterface(), options);
-
-  if (context == nullptr) {
-    FXL_LOG(ERROR) << "Failed to setup Skia Gr context.";
-    return;
-  }
-
-  context_ = std::move(context);
-
-  context_->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
-
-  delegate_->GLContextClearCurrent();
 
   valid_ = true;
 }
@@ -61,8 +41,6 @@ GPUSurfaceGL::~GPUSurfaceGL() {
   }
 
   onscreen_surface_ = nullptr;
-  context_->releaseResourcesAndAbandonContext();
-  context_ = nullptr;
 
   delegate_->GLContextClearCurrent();
 }
@@ -116,7 +94,7 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
 static sk_sp<SkSurface> CreateOffscreenSurface(GrContext* context,
                                                const SkISize& size) {
   const SkImageInfo image_info =
-      SkImageInfo::MakeN32(size.fWidth, size.fHeight, kOpaque_SkAlphaType);
+      SkImageInfo::MakeN32Premul(size.fWidth, size.fHeight);
 
   const SkSurfaceProps surface_props(
       SkSurfaceProps::InitType::kLegacyFontHost_InitType);
@@ -149,7 +127,7 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   sk_sp<SkSurface> onscreen_surface, offscreen_surface;
 
   onscreen_surface =
-      WrapOnscreenSurface(context_.get(), size, delegate_->GLContextFBO());
+      WrapOnscreenSurface(gr_context_, size, delegate_->GLContextFBO());
 
   if (onscreen_surface == nullptr) {
     // If the onscreen surface could not be wrapped. There is absolutely no
@@ -159,7 +137,7 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
   }
 
   if (delegate_->UseOffscreenSurface()) {
-    offscreen_surface = CreateOffscreenSurface(context_.get(), size);
+    offscreen_surface = CreateOffscreenSurface(gr_context_, size);
     if (offscreen_surface == nullptr) {
       FXL_LOG(ERROR) << "Could not create offscreen surface.";
       return false;
@@ -200,17 +178,16 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
 }
 
 bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
-  if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
+  if (delegate_ == nullptr || canvas == nullptr || gr_context_ == nullptr) {
     return false;
   }
 
   if (offscreen_surface_ != nullptr) {
     TRACE_EVENT0("flutter", "CopyTextureOnscreen");
     SkPaint paint;
-    onscreen_surface_->getCanvas()->drawImage(
-        offscreen_surface_->makeImageSnapshot(), 0, 0, &paint);
+    paint.setBlendMode(SkBlendMode::kSrc);
+    onscreen_surface_->getCanvas()->drawImage(offscreen_surface_->makeImageSnapshot(), 0, 0, &paint);
   }
-
   {
     TRACE_EVENT0("flutter", "SkCanvas::Flush");
     onscreen_surface_->getCanvas()->flush();
@@ -230,7 +207,7 @@ sk_sp<SkSurface> GPUSurfaceGL::AcquireRenderSurface(const SkISize& size) {
 }
 
 GrContext* GPUSurfaceGL::GetContext() {
-  return context_.get();
+  return gr_context_;
 }
 
 }  // namespace shell

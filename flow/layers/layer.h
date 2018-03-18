@@ -10,7 +10,6 @@
 
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
-#include "flutter/flow/texture.h"
 #include "flutter/glue/trace_event.h"
 #include "lib/fxl/build_config.h"
 #include "lib/fxl/logging.h"
@@ -35,6 +34,8 @@
 namespace flow {
 
 class ContainerLayer;
+class TextureRegistry;
+class SystemCompositorContext;
 
 // Represents a single composited layer. Created on the UI thread but then
 // subquently used on the Rasterizer thread.
@@ -84,10 +85,8 @@ class Layer {
 
   virtual void Paint(PaintContext& context) const = 0;
 
-#if defined(OS_FUCHSIA)
   // Updates the system composited scene.
-  virtual void UpdateScene(SceneUpdateContext& context);
-#endif
+  virtual void UpdateScene(SystemCompositorContext& context);
 
   ContainerLayer* parent() const { return parent_; }
 

@@ -7,10 +7,13 @@
 
 #include <map>
 #include "flutter/common/threads.h"
+#include "flutter/flow/layers/layer.h"
 #include "lib/fxl/synchronization/waitable_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
 namespace flow {
+
+class SystemCompositorContext;
 
 class Texture {
  protected:
@@ -19,6 +22,9 @@ class Texture {
  public:
   // Called from GPU thread.
   virtual ~Texture();
+
+  virtual void UpdateScene(SystemCompositorContext* context,
+                           const SkRect& bounds) = 0;
 
   // Called from GPU thread.
   virtual void Paint(SkCanvas& canvas, const SkRect& bounds) = 0;

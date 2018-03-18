@@ -67,6 +67,11 @@ class DefaultLayerBuilder final : public LayerBuilder {
                    const SkSize& size,
                    int64_t texture_id) override;
 
+  // |flow::LayerBuilder|
+  void PushNativeWidget(const SkPoint& offset,
+                        const SkSize& size,
+                        int64_t texture_id) override;
+
 #if defined(OS_FUCHSIA)
   // |flow::LayerBuilder|
   void PushChildScene(const SkPoint& offset,

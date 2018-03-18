@@ -16,11 +16,11 @@ namespace shell {
     return;                           \
   };
 
-IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* layer)
+IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config,
+                           CAEAGLLayer* layer,
+                           EAGLContext* eaglContext)
     : layer_([layer retain]),
-      context_([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]),
-      resource_context_([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
-                                              sharegroup:context_.get().sharegroup]),
+      context_(eaglContext),
       framebuffer_(GL_NONE),
       colorbuffer_(GL_NONE),
       storage_size_width_(0),
@@ -28,7 +28,6 @@ IOSGLContext::IOSGLContext(PlatformView::SurfaceConfig config, CAEAGLLayer* laye
       valid_(false) {
   VERIFY(layer_ != nullptr);
   VERIFY(context_ != nullptr);
-  VERIFY(resource_context_ != nullptr);
 
   bool context_current = [EAGLContext setCurrentContext:context_];
 
@@ -100,6 +99,7 @@ bool IOSGLContext::IsValid() const {
 }
 
 bool IOSGLContext::PresentRenderBuffer() const {
+  [EAGLContext setCurrentContext:context_.get()];
   const GLenum discards[] = {
       GL_DEPTH_ATTACHMENT,
       GL_STENCIL_ATTACHMENT,
@@ -108,12 +108,17 @@ bool IOSGLContext::PresentRenderBuffer() const {
   glDiscardFramebufferEXT(GL_FRAMEBUFFER, sizeof(discards) / sizeof(GLenum), discards);
 
   glBindRenderbuffer(GL_RENDERBUFFER, colorbuffer_);
-  return [[EAGLContext currentContext] presentRenderbuffer:GL_RENDERBUFFER];
+  return [context_.get() presentRenderbuffer:GL_RENDERBUFFER];
 }
 
 bool IOSGLContext::UpdateStorageSizeIfNecessary() {
-  const CGSize layer_size = [layer_.get() bounds].size;
+  FXL_DCHECK(glGetError() == GL_NO_ERROR);
+
+  CGRect bounds = [layer_.get() bounds];
+  const CGSize layer_size = bounds.size;
+
   const CGFloat contents_scale = layer_.get().contentsScale;
+
   const GLint size_width = layer_size.width * contents_scale;
   const GLint size_height = layer_size.height * contents_scale;
 
@@ -122,7 +127,6 @@ bool IOSGLContext::UpdateStorageSizeIfNecessary() {
     return true;
   }
   TRACE_EVENT_INSTANT0("flutter", "IOSGLContext::UpdateStorageSizeIfNecessary");
-  FXL_DLOG(INFO) << "Updating render buffer storage size.";
 
   if (![EAGLContext setCurrentContext:context_]) {
     return false;
@@ -165,10 +169,6 @@ bool IOSGLContext::UpdateStorageSizeIfNecessary() {
 
 bool IOSGLContext::MakeCurrent() {
   return UpdateStorageSizeIfNecessary() && [EAGLContext setCurrentContext:context_.get()];
-}
-
-bool IOSGLContext::ResourceMakeCurrent() {
-  return [EAGLContext setCurrentContext:resource_context_.get()];
 }
 
 }  // namespace shell

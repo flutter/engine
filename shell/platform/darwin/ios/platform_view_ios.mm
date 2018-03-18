@@ -14,13 +14,15 @@
 #include "flutter/shell/platform/darwin/common/process_info_mac.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #include "flutter/shell/platform/darwin/ios/ios_external_texture_gl.h"
+#include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #include "lib/fxl/synchronization/waitable_event.h"
 
 namespace shell {
 
 PlatformViewIOS::PlatformViewIOS(CALayer* layer, NSObject<FlutterBinaryMessenger>* binaryMessenger)
     : PlatformView(std::make_unique<GPURasterizer>(std::make_unique<ProcessInfoMac>())),
-      ios_surface_(IOSSurface::Create(surface_config_, layer)),
+      system_compositor_context_(
+          std::make_unique<IOSSystemCompositorContext>(surface_config_, (UIView*)(layer.delegate))),
       weak_factory_(this),
       binary_messenger_(binaryMessenger) {}
 
@@ -45,7 +47,7 @@ void PlatformViewIOS::Attach(fxl::Closure firstFrameCallback) {
 }
 
 void PlatformViewIOS::NotifyCreated() {
-  PlatformView::NotifyCreated(ios_surface_->CreateGPUSurface());
+  PlatformView::NotifyCreated(system_compositor_context_.get());
 }
 
 void PlatformViewIOS::ToggleAccessibility(UIView* view, bool enabled) {
@@ -82,8 +84,8 @@ fml::WeakPtr<PlatformViewIOS> PlatformViewIOS::GetWeakPtr() {
 
 void PlatformViewIOS::UpdateSurfaceSize() {
   blink::Threads::Gpu()->PostTask([self = GetWeakPtr()]() {
-    if (self && self->ios_surface_ != nullptr) {
-      self->ios_surface_->UpdateStorageSizeIfNecessary();
+    if (self) {
+      self->system_compositor_context_->UpdateSurfaceSize();
     }
   });
 }
@@ -96,7 +98,7 @@ VsyncWaiter* PlatformViewIOS::GetVsyncWaiter() {
 }
 
 bool PlatformViewIOS::ResourceContextMakeCurrent() {
-  return ios_surface_ != nullptr ? ios_surface_->ResourceContextMakeCurrent() : false;
+  return system_compositor_context_->ResourceContextMakeCurrent();
 }
 
 void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update) {
@@ -111,6 +113,10 @@ void PlatformViewIOS::HandlePlatformMessage(fxl::RefPtr<blink::PlatformMessage> 
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
                                               NSObject<FlutterTexture>* texture) {
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
+}
+
+void PlatformViewIOS::RegisterNativeWidget(int64_t texture_id, UIView* view) {
+  RegisterTexture(std::make_shared<IOSNativeWidget>(texture_id, view));
 }
 
 void PlatformViewIOS::RunFromSource(const std::string& assets_directory,

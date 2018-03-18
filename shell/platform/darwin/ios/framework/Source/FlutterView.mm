@@ -79,7 +79,8 @@ void SnapshotRasterizer(fml::WeakPtr<shell::Rasterizer> rasterizer,
 
   {
     flow::CompositorContext compositor_context(nullptr);
-    auto frame = compositor_context.AcquireFrame(nullptr, &canvas, false /* instrumentation */);
+    auto frame = compositor_context.AcquireFrame(nullptr,  // XXX
+                                                 false /* instrumentation */);
     layer_tree->Raster(frame, false /* ignore raster cache. */);
   }
 

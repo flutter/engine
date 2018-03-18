@@ -16,17 +16,17 @@ namespace shell {
 
 class IOSSurfaceGL : public IOSSurface, public GPUSurfaceGLDelegate {
  public:
-  IOSSurfaceGL(PlatformView::SurfaceConfig surface_config, CAEAGLLayer* layer);
+  IOSSurfaceGL(PlatformView::SurfaceConfig surface_config,
+               CAEAGLLayer* layer,
+               EAGLContext* eaglContext);
 
   ~IOSSurfaceGL() override;
 
   bool IsValid() const override;
 
-  bool ResourceContextMakeCurrent() override;
+  std::unique_ptr<Surface> CreateGPUSurface(GrContext *grContext) override;
 
   void UpdateStorageSizeIfNecessary() override;
-
-  std::unique_ptr<Surface> CreateGPUSurface() override;
 
   bool GLContextMakeCurrent() override;
 

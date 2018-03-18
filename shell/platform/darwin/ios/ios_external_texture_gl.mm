@@ -25,6 +25,11 @@ IOSExternalTextureGL::IOSExternalTextureGL(int64_t textureId,
 
 IOSExternalTextureGL::~IOSExternalTextureGL() = default;
 
+void IOSExternalTextureGL::UpdateScene(flow::SystemCompositorContext* context,
+                                       const SkRect& bounds) {
+  ASSERT_IS_GPU_THREAD;
+}
+
 void IOSExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds) {
   ASSERT_IS_GPU_THREAD;
   if (!cache_ref_) {

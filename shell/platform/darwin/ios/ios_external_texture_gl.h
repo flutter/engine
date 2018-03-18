@@ -18,6 +18,8 @@ class IOSExternalTextureGL : public flow::Texture {
 
   ~IOSExternalTextureGL() override;
 
+  void UpdateScene(flow::SystemCompositorContext* context, const SkRect& bounds) override;
+
   // Called from GPU thread.
   virtual void Paint(SkCanvas& canvas, const SkRect& bounds) override;
 

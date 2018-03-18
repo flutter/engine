@@ -5,6 +5,7 @@
 #include "flutter/flow/layers/physical_shape_layer.h"
 
 #include "flutter/flow/paint_utils.h"
+#include "flutter/flow/system_compositor_context.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
 namespace flow {
@@ -54,37 +55,29 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     // doesn't provide a way to calculate it.  We fill this whole region
     // and clip children to it so we don't need to join the child paint bounds.
     SkRect bounds(path_.getBounds());
-    bounds.outset(20.0, 20.0);
+
     set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
   }
 }
 
-#if defined(OS_FUCHSIA)
-
-void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
+void PhysicalShapeLayer::UpdateScene(SystemCompositorContext& context) {
   FXL_DCHECK(needs_system_composite());
+  context.PushLayer(path_.getBounds());
+  context.ClipFrame();
+  context.SetColor(color_);
 
-  SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_);
-  for (auto& layer : layers()) {
-    if (layer->needs_painting()) {
-      frame.AddPaintedLayer(layer.get());
-    }
+  if (!isRect_) {
+    context.SetClipPath(path_);
   }
 
   UpdateSceneChildren(context);
+  context.PopLayer();
 }
-
-#endif  // defined(OS_FUCHSIA)
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FXL_DCHECK(needs_painting());
-
-  if (elevation_ != 0) {
-    DrawShadow(&context.canvas, path_, SK_ColorBLACK, elevation_,
-               SkColorGetA(color_) != 0xff, device_pixel_ratio_);
-  }
 
   SkPaint paint;
   paint.setColor(color_);

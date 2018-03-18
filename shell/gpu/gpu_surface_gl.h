@@ -28,7 +28,7 @@ class GPUSurfaceGLDelegate {
 
 class GPUSurfaceGL : public Surface {
  public:
-  GPUSurfaceGL(GPUSurfaceGLDelegate* delegate);
+  GPUSurfaceGL(GPUSurfaceGLDelegate* delegate, GrContext *grContext);
 
   ~GPUSurfaceGL() override;
 
@@ -40,7 +40,7 @@ class GPUSurfaceGL : public Surface {
 
  private:
   GPUSurfaceGLDelegate* delegate_;
-  sk_sp<GrContext> context_;
+  GrContext *gr_context_;
   sk_sp<SkSurface> onscreen_surface_;
   sk_sp<SkSurface> offscreen_surface_;
   bool valid_ = false;

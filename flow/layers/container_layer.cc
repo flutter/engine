@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/system_compositor_context.h"
 
 namespace flow {
 
@@ -42,6 +43,7 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
 
   // Intentionally not tracing here as there should be no self-time
   // and the trace event on this common function has a small overhead.
+
   for (auto& layer : layers_) {
     if (layer->needs_painting()) {
       layer->Paint(context);
@@ -49,24 +51,59 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
   }
 }
 
-#if defined(OS_FUCHSIA)
-
-void ContainerLayer::UpdateScene(SceneUpdateContext& context) {
+void ContainerLayer::UpdateScene(SystemCompositorContext& context) {
   UpdateSceneChildren(context);
 }
 
-void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
-  FXL_DCHECK(needs_system_composite());
-
-  // Paint all of the layers which need to be drawn into the container.
-  // These may be flattened down to a containing
-  for (auto& layer : layers_) {
-    if (layer->needs_system_composite()) {
-      layer->UpdateScene(context);
+static void flushAccumulator(SystemCompositorContext& context,
+                             int& pushCount,
+                             std::vector<Layer*> accumulator,
+                             SkRect& accumulatorBounds,
+                             SkRect& systemLayerBounds,
+                             const SkRect& paintBounds) {
+  if (!accumulator.empty() && accumulatorBounds.intersects(systemLayerBounds)) {
+    if (accumulatorBounds.intersect(paintBounds)) {
+      context.PushLayer(accumulatorBounds);
+      pushCount++;
     }
   }
+  for (Layer* child : accumulator) {
+    context.AddPaintedLayer(child);
+  }
+  accumulator.clear();
+  accumulatorBounds = SkRect::MakeEmpty();
 }
 
-#endif  // defined(OS_FUCHSIA)
+void ContainerLayer::UpdateSceneChildren(SystemCompositorContext& context) {
+  FXL_DCHECK(needs_system_composite());
+
+  int pushCount = 0;
+  std::vector<Layer*> accumulator;
+  // Bounding box join of all layers in `accumulator`.
+  SkRect accumulatorBounds = SkRect::MakeEmpty();
+  SkRect systemLayerBounds = SkRect::MakeEmpty();
+
+  for (auto& layer : layers_) {
+    if (layer->needs_system_composite()) {
+      flushAccumulator(context, pushCount, accumulator, accumulatorBounds,
+                       systemLayerBounds, paint_bounds());
+      systemLayerBounds.join(layer->paint_bounds());
+      layer->UpdateScene(context);
+    } else if (layer->needs_painting()) {
+      if (!accumulator.empty() ||
+          layer->paint_bounds().intersects(systemLayerBounds)) {
+        accumulator.push_back(layer.get());
+        accumulatorBounds.join(layer->paint_bounds());
+      } else {
+        context.AddPaintedLayer(layer.get());
+      }
+    }
+  }
+  flushAccumulator(context, pushCount, accumulator, accumulatorBounds,
+                   systemLayerBounds, paint_bounds());
+  for (int i = 0; i < pushCount; i++) {
+    context.PopLayer();
+  }
+}
 
 }  // namespace flow

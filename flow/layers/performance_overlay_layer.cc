@@ -92,7 +92,6 @@ PerformanceOverlayLayer::PerformanceOverlayLayer(uint64_t options)
 
 void PerformanceOverlayLayer::Paint(PaintContext& context) const {
   const int padding = 8;
-
   if (!options_)
     return;
 

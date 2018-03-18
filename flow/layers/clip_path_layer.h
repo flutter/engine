@@ -6,6 +6,7 @@
 #define FLUTTER_FLOW_LAYERS_CLIP_PATH_LAYER_H_
 
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/system_compositor_context.h"
 
 namespace flow {
 
@@ -20,9 +21,7 @@ class ClipPathLayer : public ContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-#if defined(OS_FUCHSIA)
-  void UpdateScene(SceneUpdateContext& context) override;
-#endif  // defined(OS_FUCHSIA)
+  void UpdateScene(SystemCompositorContext& context) override;
 
  private:
   SkPath clip_path_;

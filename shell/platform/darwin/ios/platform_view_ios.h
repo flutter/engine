@@ -13,7 +13,9 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.h"
+#include "flutter/shell/platform/darwin/ios/ios_native_widget.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "flutter/shell/platform/darwin/ios/ios_system_compositor_context.h"
 #include "lib/fxl/functional/closure.h"
 #include "lib/fxl/macros.h"
 
@@ -54,6 +56,8 @@ class PlatformViewIOS : public PlatformView {
 
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
+  void RegisterNativeWidget(int64_t id, UIView* view);
+
   void UpdateSemantics(blink::SemanticsNodeUpdates update) override;
 
   void RunFromSource(const std::string& assets_directory,
@@ -84,7 +88,7 @@ class PlatformViewIOS : public PlatformView {
   }
 
  private:
-  std::unique_ptr<IOSSurface> ios_surface_;
+  std::unique_ptr<IOSSystemCompositorContext> system_compositor_context_;
   PlatformMessageRouter platform_message_router_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
   fxl::Closure firstFrameCallback_;

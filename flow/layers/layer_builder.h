@@ -64,6 +64,10 @@ class LayerBuilder {
                            const SkSize& size,
                            int64_t texture_id) = 0;
 
+  virtual void PushNativeWidget(const SkPoint& offset,
+                                const SkSize& size,
+                                int64_t texture_id) = 0;
+
 #if defined(OS_FUCHSIA)
   virtual void PushChildScene(
       const SkPoint& offset,

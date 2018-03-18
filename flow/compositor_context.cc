@@ -4,6 +4,8 @@
 
 #include "flutter/flow/compositor_context.h"
 
+#include "flutter/flow/system_compositor_context.h"
+
 #include "third_party/skia/include/core/SkCanvas.h"
 
 namespace flow {
@@ -34,19 +36,18 @@ void CompositorContext::EndFrame(ScopedFrame& frame,
 }
 
 CompositorContext::ScopedFrame CompositorContext::AcquireFrame(
-    GrContext* gr_context,
-    SkCanvas* canvas,
+    SystemCompositorContext* systemCompositorContext,
     bool instrumentation_enabled) {
-  return ScopedFrame(*this, gr_context, canvas, instrumentation_enabled);
+  return ScopedFrame(*this, systemCompositorContext,
+                     instrumentation_enabled);
 }
 
-CompositorContext::ScopedFrame::ScopedFrame(CompositorContext& context,
-                                            GrContext* gr_context,
-                                            SkCanvas* canvas,
-                                            bool instrumentation_enabled)
+CompositorContext::ScopedFrame::ScopedFrame(
+    CompositorContext& context,
+    SystemCompositorContext* systemCompositorContext,
+    bool instrumentation_enabled)
     : context_(context),
-      gr_context_(gr_context),
-      canvas_(canvas),
+      system_compositor_context_(systemCompositorContext),
       instrumentation_enabled_(instrumentation_enabled) {
   context_.BeginFrame(*this, instrumentation_enabled_);
 }

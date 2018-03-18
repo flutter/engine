@@ -65,6 +65,12 @@ class SceneBuilder : public fxl::RefCountedThreadSafe<SceneBuilder>,
                   double height,
                   int64_t textureId);
 
+  void addNativeWidget(double dx,
+                       double dy,
+                       double width,
+                       double height,
+                       int64_t textureId);
+
   void addChildScene(double dx,
                      double dy,
                      double width,

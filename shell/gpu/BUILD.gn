@@ -6,6 +6,8 @@ import("$flutter_root/shell/config.gni")
 
 source_set("gpu") {
   sources = [
+    "gpu_gr_context.cc",
+    "gpu_gr_context.h",
     "gpu_rasterizer.cc",
     "gpu_rasterizer.h",
     "gpu_surface_gl.cc",

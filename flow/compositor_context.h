@@ -18,15 +18,17 @@
 
 namespace flow {
 
+class SystemCompositorContext;
+
 class CompositorContext {
  public:
   class ScopedFrame {
    public:
-    SkCanvas* canvas() { return canvas_; }
-
     CompositorContext& context() const { return context_; }
 
-    GrContext* gr_context() const { return gr_context_; }
+    SystemCompositorContext* systemCompositorContext() const {
+      return system_compositor_context_;
+    }
 
     ScopedFrame(ScopedFrame&& frame);
 
@@ -34,13 +36,11 @@ class CompositorContext {
 
    private:
     CompositorContext& context_;
-    GrContext* gr_context_;
-    SkCanvas* canvas_;
+    SystemCompositorContext* system_compositor_context_;
     const bool instrumentation_enabled_;
 
     ScopedFrame(CompositorContext& context,
-                GrContext* gr_context,
-                SkCanvas* canvas,
+                SystemCompositorContext* systemCompositorContext,
                 bool instrumentation_enabled);
 
     friend class CompositorContext;
@@ -52,8 +52,7 @@ class CompositorContext {
 
   ~CompositorContext();
 
-  ScopedFrame AcquireFrame(GrContext* gr_context,
-                           SkCanvas* canvas,
+  ScopedFrame AcquireFrame(SystemCompositorContext* systemCompositorContext,
                            bool instrumentation_enabled = true);
 
   void OnGrContextCreated();

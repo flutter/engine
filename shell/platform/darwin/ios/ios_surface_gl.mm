@@ -5,21 +5,20 @@
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
 #include "flutter/shell/gpu/gpu_surface_gl.h"
+#include "flutter/shell/platform/darwin/ios/ios_system_compositor_context.h"
 
 namespace shell {
 
-IOSSurfaceGL::IOSSurfaceGL(PlatformView::SurfaceConfig surface_config, CAEAGLLayer* layer)
+IOSSurfaceGL::IOSSurfaceGL(PlatformView::SurfaceConfig surface_config,
+                           CAEAGLLayer* layer,
+                           EAGLContext* eaglContext)
     : IOSSurface(surface_config, reinterpret_cast<CALayer*>(layer)),
-      context_(surface_config, layer) {}
+      context_(surface_config, layer, eaglContext) {}
 
 IOSSurfaceGL::~IOSSurfaceGL() = default;
 
 bool IOSSurfaceGL::IsValid() const {
   return context_.IsValid();
-}
-
-bool IOSSurfaceGL::ResourceContextMakeCurrent() {
-  return IsValid() ? context_.ResourceMakeCurrent() : false;
 }
 
 void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
@@ -28,8 +27,8 @@ void IOSSurfaceGL::UpdateStorageSizeIfNecessary() {
   }
 }
 
-std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface() {
-  return std::make_unique<GPUSurfaceGL>(this);
+std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface(GrContext* grContext) {
+  return std::make_unique<GPUSurfaceGL>(this, grContext);
 }
 
 intptr_t IOSSurfaceGL::GLContextFBO() const {

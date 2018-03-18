@@ -25,24 +25,16 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   }
 }
 
-#if defined(OS_FUCHSIA)
-
-void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
+void ClipPathLayer::UpdateScene(SystemCompositorContext& context) {
   FXL_DCHECK(needs_system_composite());
+  context.PushLayer(paint_bounds());
+  context.ClipFrame();
 
-  // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
-  //               Treating the shape as a rectangle for now.
-  auto bounds = clip_path_.getBounds();
-  scenic_lib::Rectangle shape(context.session(),  // session
-                              bounds.width(),     //  width
-                              bounds.height()     //  height
-  );
+  context.SetClipPath(clip_path_);
 
-  SceneUpdateContext::Clip clip(context, shape, bounds);
   UpdateSceneChildren(context);
+  context.PopLayer();
 }
-
-#endif  // defined(OS_FUCHSIA)
 
 void ClipPathLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipPathLayer::Paint");

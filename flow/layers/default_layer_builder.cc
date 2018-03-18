@@ -11,6 +11,7 @@
 #include "flutter/flow/layers/color_filter_layer.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/layers/native_widget_layer.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/layers/performance_overlay_layer.h"
@@ -159,6 +160,20 @@ void DefaultLayerBuilder::PushTexture(const SkPoint& offset,
     return;
   }
   auto layer = std::make_unique<flow::TextureLayer>();
+  layer->set_offset(offset);
+  layer->set_size(size);
+  layer->set_texture_id(texture_id);
+  current_layer_->Add(std::move(layer));
+}
+
+
+void DefaultLayerBuilder::PushNativeWidget(const SkPoint& offset,
+                                           const SkSize& size,
+                                           int64_t texture_id) {
+  if (!current_layer_) {
+    return;
+  }
+  auto layer = std::make_unique<flow::NativeWidgetLayer>();
   layer->set_offset(offset);
   layer->set_size(size);
   layer->set_texture_id(texture_id);
