@@ -227,6 +227,7 @@ class SemanticsFlag {
   static const int _kIsObscuredIndex = 1 << 10;
   static const int _kScopesRouteIndex= 1 << 11;
   static const int _kNamesRouteIndex = 1 << 12;
+  static const int _kIsHiddenIndex = 1 << 13;
 
   const SemanticsFlag._(this.index);
 
@@ -311,41 +312,43 @@ class SemanticsFlag {
 
   /// Whether the semantics node is the root of a subtree for which a route name
   /// should be announced.
-  /// 
-  /// When a node with this flag is removed from the semantics tree, the 
+  ///
+  /// When a node with this flag is removed from the semantics tree, the
   /// framework will select the last in depth-first, paint order node with this
   /// flag.  When a node with this flag is added to the semantics tree, it is
   /// selected automatically, unless there were multiple nodes with this flag
   /// added.  In this case, the last added node in depth-first, paint order
   /// will be selected.
-  /// 
+  ///
   /// From this selected node, the framework will search in depth-first, paint
-  /// order for the first node with a [namesRoute] flag and a non-null, 
-  /// non-empty label. The [namesRoute] and [scopesRoute] flags may be on the 
-  /// same node. The label of the found node will be announced as an edge 
+  /// order for the first node with a [namesRoute] flag and a non-null,
+  /// non-empty label. The [namesRoute] and [scopesRoute] flags may be on the
+  /// same node. The label of the found node will be announced as an edge
   /// transition. If no non-empty, non-null label is found then:
-  ///   
+  ///
   ///   * VoiceOver will make a chime announcement.
   ///   * TalkBack will make no announcement
   ///
   /// Semantic nodes annotated with this flag are generally not a11y focusable.
-  /// 
-  /// This is used in widgets such as Routes, Drawers, and Dialogs to 
+  ///
+  /// This is used in widgets such as Routes, Drawers, and Dialogs to
   /// communicate significant changes in the visible screen.
   static const SemanticsFlag scopesRoute = const SemanticsFlag._(_kScopesRouteIndex);
 
   /// Whether the semantics node label is the name of a visually distinct
   /// route.
-  /// 
+  ///
   /// This is used by certain widgets like Drawers and Dialogs, to indicate
   /// that the node's semantic label can be used to announce an edge triggered
   /// semantics update.
   ///
   /// Semantic nodes annotated with this flag will still recieve a11y focus.
-  /// 
-  /// Updating this label within the same active route subtree will not cause 
+  ///
+  /// Updating this label within the same active route subtree will not cause
   /// additional announcements.
   static const SemanticsFlag namesRoute = const SemanticsFlag._(_kNamesRouteIndex);
+
+  static const SemanticsFlag isHidden = const SemanticsFlag._(_kIsHiddenIndex);
 
   /// The possible semantics flags.
   ///
@@ -364,6 +367,7 @@ class SemanticsFlag {
     _kIsObscuredIndex: isObscured,
     _kScopesRouteIndex: scopesRoute,
     _kNamesRouteIndex: namesRoute,
+    _kIsHiddenIndex: isHidden,
   };
 
   @override
@@ -395,6 +399,8 @@ class SemanticsFlag {
         return 'SemanticsFlag.scopesRoute';
       case _kNamesRouteIndex:
         return 'SemanticsFlag.namesRoute';
+      case _kIsHiddenIndex:
+        return 'SemanticsFlag.isHidden';
     }
     return null;
   }
