@@ -130,7 +130,10 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Pushes a physical layer operation for an arbitrary shape onto the
   /// operation stack.
   ///
-  /// Rasterization will be clipped to the given shape.
+  /// Rasterization will be clipped to the given shape defined by [path]. If
+  /// [elevation] is greater than 0.0, then a shadow is drawn around the layer.
+  /// [shadowColor] defines the color of the shadow if present and [color] defines the 
+  /// color of the layer background.
   ///
   /// See [pop] for details about the operation stack.
   void pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor}) {
