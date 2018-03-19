@@ -133,10 +133,10 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Rasterization will be clipped to the given shape.
   ///
   /// See [pop] for details about the operation stack.
-  void pushPhysicalShape({ Path path, double elevation, Color color }) {
-    _pushPhysicalShape(path, elevation, color.value);
+  void pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor}) {
+    _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0);
   }
-  void _pushPhysicalShape(Path path, double elevation, int color) native 
+  void _pushPhysicalShape(Path path, double elevation, int color, int shadowColor) native 
     'SceneBuilder_pushPhysicalShape';
 
   /// Ends the effect of the most recently pushed operation.
