@@ -79,7 +79,7 @@ static SkColorType FirstSupportedColorType(GrContext* context, GLenum* format) {
   }
   RETURN_IF_RENDERABLE(kRGBA_8888_SkColorType, GL_RGBA8_OES);
   RETURN_IF_RENDERABLE(kRGBA_4444_SkColorType, GL_RGBA4_OES);
-  RETURN_IF_RENDERABLE(kRGB_565_GrPixelConfig, GL_RGB565_OES);
+  RETURN_IF_RENDERABLE(kRGB_565_SkColorType, GL_RGB565_OES);
   return kUnknown_SkColorType;
 }
 
