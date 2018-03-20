@@ -1,4 +1,4 @@
-Signature: a3593f9d3adf185eaa6a15b0f50df584
+Signature: 71de45ba331427f90422cbe73be5b42c
 
 UNUSED LICENSES:
 
@@ -4615,6 +4615,7 @@ FILE: ../../../third_party/dart/sdk/lib/core/null.dart
 FILE: ../../../third_party/dart/sdk/lib/core/stacktrace.dart
 FILE: ../../../third_party/dart/sdk/lib/core/string_sink.dart
 FILE: ../../../third_party/dart/sdk/lib/core/symbol.dart
+FILE: ../../../third_party/dart/sdk/lib/html/dart2js/html_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/list.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/print.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/symbol.dart
@@ -5308,7 +5309,6 @@ FILE: ../../../third_party/dart/sdk/lib/core/string.dart
 FILE: ../../../third_party/dart/sdk/lib/core/type.dart
 FILE: ../../../third_party/dart/sdk/lib/core/uri.dart
 FILE: ../../../third_party/dart/sdk/lib/html/dart2js/html_dart2js.dart
-FILE: ../../../third_party/dart/sdk/lib/html/dart2js/html_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/html/dartium/nativewrappers.dart
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions.dart
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/css_class_set.dart
@@ -5333,6 +5333,7 @@ FILE: ../../../third_party/dart/sdk/lib/svg/dart2js/svg_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/svg/dart2js/svg_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/svg/dart2js/svg_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/svg/dart2js/svg_dart2js.dart
+FILE: ../../../third_party/dart/sdk/lib/web_audio/dart2js/web_audio_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/web_audio/dart2js/web_audio_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/web_audio/dart2js/web_audio_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/web_audio/dart2js/web_audio_dart2js.dart
