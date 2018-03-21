@@ -5,7 +5,7 @@
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
 
 #include <GLES/glext.h>
-#include "flutter/common/threads.h"
+
 #include "flutter/shell/platform/android/platform_view_android_jni.h"
 #include "third_party/skia/include/gpu/GrTexture.h"
 
@@ -19,17 +19,14 @@ AndroidExternalTextureGL::AndroidExternalTextureGL(
 AndroidExternalTextureGL::~AndroidExternalTextureGL() = default;
 
 void AndroidExternalTextureGL::OnGrContextCreated() {
-  ASSERT_IS_GPU_THREAD;
   state_ = AttachmentState::uninitialized;
 }
 
 void AndroidExternalTextureGL::MarkNewFrameAvailable() {
-  ASSERT_IS_GPU_THREAD;
   new_frame_ready_ = true;
 }
 
 void AndroidExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds) {
-  ASSERT_IS_GPU_THREAD;
   if (state_ == AttachmentState::detached) {
     return;
   }
@@ -82,7 +79,6 @@ void AndroidExternalTextureGL::UpdateTransform() {
 }
 
 void AndroidExternalTextureGL::OnGrContextDestroyed() {
-  ASSERT_IS_GPU_THREAD;
   if (state_ == AttachmentState::attached) {
     Detach();
   }
