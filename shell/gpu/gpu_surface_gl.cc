@@ -4,6 +4,9 @@
 
 #include "gpu_surface_gl.h"
 
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+
 #include "flutter/glue/trace_event.h"
 #include "lib/fxl/arraysize.h"
 #include "lib/fxl/logging.h"
@@ -78,8 +81,8 @@ static SkColorType FirstSupportedColorType(GrContext* context, GLenum* format) {
     return (x);                                    \
   }
   RETURN_IF_RENDERABLE(kRGBA_8888_SkColorType, GL_RGBA8_OES);
-  RETURN_IF_RENDERABLE(kRGBA_4444_SkColorType, GL_RGBA4_OES);
-  RETURN_IF_RENDERABLE(kRGB_565_SkColorType, GL_RGB565_OES);
+  RETURN_IF_RENDERABLE(kARGB_4444_SkColorType, GL_RGBA4);
+  RETURN_IF_RENDERABLE(kRGB_565_SkColorType, GL_RGB565);
   return kUnknown_SkColorType;
 }
 
@@ -88,7 +91,7 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
                                             intptr_t fbo) {
 
   GLenum format;
-  const SkColorType color_type = FirstSupportedConfig(context, &format);
+  const SkColorType color_type = FirstSupportedColorType(context, &format);
 
   const GrGLFramebufferInfo framebuffer_info = {
       .fFBOID = static_cast<GrGLuint>(fbo),
