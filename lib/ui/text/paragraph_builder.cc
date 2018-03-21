@@ -5,7 +5,7 @@
 #include "flutter/lib/ui/text/paragraph_builder.h"
 
 #include "flutter/common/settings.h"
-#include "flutter/common/threads.h"
+#include "flutter/common/task_runners.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/sky/engine/core/rendering/RenderInline.h"
@@ -201,16 +201,19 @@ fxl::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
     double fontSize,
     double lineHeight,
     const std::u16string& ellipsis) {
-  return fxl::MakeRefCounted<ParagraphBuilder>(encoded, fontFamily, fontSize,
-                                               lineHeight, ellipsis);
+  return fxl::MakeRefCounted<ParagraphBuilder>(
+      encoded, fontFamily, fontSize, lineHeight, ellipsis,
+      UIDartState::Current()->use_blink());
 }
 
 ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
                                    const std::string& fontFamily,
                                    double fontSize,
                                    double lineHeight,
-                                   const std::u16string& ellipsis) {
-  if (!Settings::Get().using_blink) {
+                                   const std::u16string& ellipsis,
+                                   bool use_blink)
+    : m_useBlink(use_blink) {
+  if (!m_useBlink) {
     int32_t mask = encoded[0];
     txt::ParagraphStyle style;
     if (mask & psTextAlignMask)
@@ -265,7 +268,8 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
 ParagraphBuilder::~ParagraphBuilder() {
   if (m_renderView) {
     RenderView* renderView = m_renderView.leakPtr();
-    Threads::UI()->PostTask([renderView]() { renderView->destroy(); });
+    destruction_task_runner_->PostTask(
+        [renderView]() { renderView->destroy(); });
   }
 }
 
@@ -279,7 +283,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
   int32_t mask = encoded[0];
 
-  if (!Settings::Get().using_blink) {
+  if (!m_useBlink) {
     // Set to use the properties of the previous style if the property is not
     // explicitly given.
     txt::TextStyle style = m_paragraphBuilder->PeekStyle();
@@ -408,7 +412,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 }
 
 void ParagraphBuilder::pop() {
-  if (!Settings::Get().using_blink) {
+  if (!m_useBlink) {
     m_paragraphBuilder->Pop();
   } else {
     // Blink Version.
@@ -430,7 +434,7 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
   if (error_code != U_BUFFER_OVERFLOW_ERROR)
     return tonic::ToDart("string is not well-formed UTF-16");
 
-  if (!Settings::Get().using_blink) {
+  if (!m_useBlink) {
     m_paragraphBuilder->AddText(text);
   } else {
     // Blink Version.
@@ -449,7 +453,7 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
 
 fxl::RefPtr<Paragraph> ParagraphBuilder::build() {
   m_currentRenderObject = nullptr;
-  if (!Settings::Get().using_blink) {
+  if (!m_useBlink) {
     return Paragraph::Create(m_paragraphBuilder->Build());
   } else {
     return Paragraph::Create(m_renderView.release());
