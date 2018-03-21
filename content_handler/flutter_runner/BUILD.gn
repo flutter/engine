@@ -1,0 +1,56 @@
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("flutter_runner") {
+  sources = [
+    "accessibility_bridge.cc",
+    "accessibility_bridge.h",
+    "application.cc",
+    "application.h",
+    "application_runner.cc",
+    "application_runner.h",
+    "compositor_context.cc",
+    "compositor_context.h",
+    "engine.cc",
+    "engine.h",
+    "fuchsia_font_manager.cc",
+    "fuchsia_font_manager.h",
+    "isolate_configurator.cc",
+    "isolate_configurator.h",
+    "main.cc",
+    "platform_view.cc",
+    "platform_view.h",
+    "session_connection.cc",
+    "session_connection.h",
+    "surface.cc",
+    "surface.h",
+    "task_observers.cc",
+    "task_observers.h",
+    "unique_fdio_ns.h",
+    "vulkan_surface.cc",
+    "vulkan_surface.h",
+    "vulkan_surface_pool.cc",
+    "vulkan_surface_pool.h",
+    "vulkan_surface_producer.cc",
+    "vulkan_surface_producer.h",
+  ]
+
+  deps = [
+    "$flutter_root/fml",
+    "$flutter_root/shell/common",
+    "$flutter_root/shell/gpu",
+    "$flutter_root/third_party/txt",
+    "$flutter_root/vulkan",
+    "//garnet/public/lib/app/cpp",
+    "//garnet/public/lib/fsl",
+    "//garnet/public/lib/ui/input/fidl",
+    "//garnet/public/lib/ui/views/fidl",
+    "//peridot/public/lib/clipboard/fidl",
+    "//peridot/public/lib/context/fidl",
+    "//third_party/skia",
+    "//third_party/skia:gpu",
+    "//third_party/zlib:minizip",
+    "//zircon/public/lib/trace-provider",
+  ]
+}
