@@ -472,8 +472,7 @@ void Engine::DispatchPlatformMessage(
 bool Engine::HandleLifecyclePlatformMessage(blink::PlatformMessage* message) {
   const auto& data = message->data();
   std::string state(reinterpret_cast<const char*>(data.data()), data.size());
-  if (state == "AppLifecycleState.paused" ||
-      state == "AppLifecycleState.suspending") {
+  if (state == "AppLifecycleState.suspending") {
     activity_running_ = false;
     StopAnimator();
   } else if (state == "AppLifecycleState.resumed" ||
