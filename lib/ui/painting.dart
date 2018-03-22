@@ -1615,8 +1615,9 @@ class Path extends NativeFieldWrapperClass2 {
     if (matrix4 != null) {
       assert(_matrix4IsValid(matrix4));
       _extendWithPathAndMatrix(path, offset.dx, offset.dy, matrix4);
+    } else {
+      _extendWithPath(path, offset.dx, offset.dy);
     }
-    _extendWithPath(path, offset.dx, offset.dy);
   }
   void _extendWithPath(Path path, double dx, double dy) native 'Path_extendWithPath';
   void _extendWithPathAndMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_extendWithPathAndMatrix';
@@ -1736,7 +1737,7 @@ class PathMetricIterator implements Iterator<PathMetric> {
   PathMetricIterator._(this._pathMetric);
 
   @override
-  PathMetric get current => _pathMetric;
+  PathMetric get current => _firstTime ? null : _pathMetric;
 
   @override
   bool moveNext() {
@@ -1795,7 +1796,7 @@ class PathMetric extends NativeFieldWrapperClass2 {
   Path extractPath(double startD, double endD, bool startWithMoveTo) native 'PathMeasure_getSegment';
 
   /// Returns true if the path is closed.
-  bool get closed native 'PathMeasure_isClosed';
+  bool get isClosed native 'PathMeasure_isClosed';
 
   /// Move to the next contour in the path.
   ///
