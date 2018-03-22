@@ -80,7 +80,6 @@ class VulkanSurface : public flow::SceneUpdateContext::SurfaceProducerSurface {
 
   bool SetupSkiaSurface(sk_sp<GrContext> context,
                         const SkISize& size,
-                        SkColorType color_type,
                         const VkImageCreateInfo& image_create_info,
                         const VkMemoryRequirements& memory_reqs);
 
