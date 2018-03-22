@@ -99,6 +99,19 @@ public class FlutterFragmentActivity
     }
 
     @Override
+    protected void onRestart() {
+        eventDelegate.onRestart();
+        super.onRestart();
+    }
+
+    @Override
+    protected void onStop() {
+        eventDelegate.onStop();
+        super.onStop();
+    }
+
+
+    @Override
     protected void onPause() {
         super.onPause();
         eventDelegate.onPause();

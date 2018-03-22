@@ -101,6 +101,18 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     }
 
     @Override
+    protected void onRestart() {
+        eventDelegate.onRestart();
+        super.onRestart();
+    }
+
+    @Override
+    protected void onStop() {
+        eventDelegate.onStop();
+        super.onStop();
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         eventDelegate.onPause();

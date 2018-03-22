@@ -216,6 +216,17 @@ public final class FlutterActivityDelegate
     }
 
     @Override
+    public void onRestart() {
+        Log.i(TAG, "onRestart");
+    }
+
+    @Override
+    public void onStop() {
+        Log.i(TAG, "onStop");
+        flutterView.onStop();
+    }
+
+    @Override
     public void onPostResume() {
         if (flutterView != null) {
             flutterView.onPostResume();
