@@ -201,9 +201,6 @@ public final class FlutterActivityDelegate
                 flutterApp.setCurrentActivity(null);
             }
         }
-        if (flutterView != null) {
-            flutterView.onPause();
-        }
     }
 
     @Override
