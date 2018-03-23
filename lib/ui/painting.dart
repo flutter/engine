@@ -1676,17 +1676,15 @@ class Path extends NativeFieldWrapperClass2 {
   /// The resulting path will be constructed from non-overlapping contours. The
   /// curve order is reduced where possible so that cubics may be turned into
   /// quadratics, and quadratics maybe turned into lines.
-  static Path combine(PathOperation operation, Path path1, Path path2, {Path orElse()}) {
+  static Path combine(PathOperation operation, Path path1, Path path2) {
     assert(path1 != null);
     assert(path2 != null);
 
     final Path path = new Path();
     if (path._op(path1, path2, operation.index)) {
       return path;
-    } else if (orElse != null) {
-      return orElse();
-    }
-    throw new InvalidPathOperationException();
+    } 
+    throw new StateException('Path combine failed');
   }
   bool _op(Path path1, Path path2, int operation) native 'Path_op';
 
@@ -1694,12 +1692,6 @@ class Path extends NativeFieldWrapperClass2 {
   PathMetrics computeMetrics({bool forceClosed = false}) {
     return new PathMetrics._(this, forceClosed);
   }
-}
-
-/// Exception thrown by [Path.combine] if a failure occurs.
-class InvalidPathOperationException implements Exception {
-  final String message;
-  InvalidPathOperationException([this.message]);
 }
 
 /// Convenience class to return the result of [PathMetric.getTangentForOffset].
