@@ -156,14 +156,14 @@ Once the artifacts are built, you can start using them in your application by fo
 To run the tests, you should first clone [the main Flutter repository](https://github.com/flutter/flutter).
 See [the instructions for contributing](https://github.com/flutter/flutter/blob/master/CONTRIBUTING.md)
 to the main Flutter repository for detailed instructions. By default, Flutter will use the bundled version
-of the engine. Follow the next steps to run tests using the locally built engine:
+of the engine. Follow the next steps to run tests using the locally-built engine:
 
 * `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
 * `gclient sync` to update your dependencies.
 * `./flutter/tools/gn --unoptimized` to prepare your build files.
 * `ninja -C out/host_debug_unopt` to build a desktop unoptimized binary.
 * `--unoptimized` disables C++ compiler optimizations and does not strip debug symbols. You may skip the flag and invoke `ninja -C out/host_debug` if you would rather have the native components optimized.
-* `flutter test --local-engine=host_debug_unopt` will run tests using the locally built `flutter_tester`.
+* `flutter test --local-engine=host_debug_unopt` will run tests using the locally-built `flutter_tester`.
 
 ### Desktop (gen_snapshot for Windows)
 
