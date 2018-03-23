@@ -153,7 +153,7 @@ Once the artifacts are built, you can start using them in your application by fo
 
 ### Desktop (Mac and Linux), for tests
 
-To run the tests, you should firts clone [the main Flutter repository](https://github.com/flutter/flutter).
+To run the tests, you should first clone [the main Flutter repository](https://github.com/flutter/flutter).
 See [the instructions for contributing](https://github.com/flutter/flutter/blob/master/CONTRIBUTING.md)
 to the main Flutter repository for detailed instructions. By default, Flutter will use the bundled version
 of the engine. Follow the next steps to run tests using the locally built engine:
