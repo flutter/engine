@@ -55,11 +55,6 @@ public interface FlutterActivityEvents
     void onDestroy();
 
     /**
-     * @see android.app.Activity#onRestart()
-     */
-    void onRestart();
-
-    /**
      * @see android.app.Activity#onStop()
      */
     void onStop();
