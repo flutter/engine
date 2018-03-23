@@ -193,7 +193,7 @@ bool ServiceProtocol::HandleMessage(fxl::StringView method,
 
   WriteServerErrorResponse(
       response,
-      "Service protocol could not not handle or find a handler for the "
+      "Service protocol could not handle or find a handler for the "
       "requested method.");
   return false;
 }

@@ -42,6 +42,7 @@ RuntimeController::RuntimeController(
       window_data_(std::move(p_window_data)),
       root_isolate_(
           DartIsolate::CreateRootIsolate(vm_,
+                                         vm_->GetIsolateSnapshot(),
                                          task_runners_,
                                          std::make_unique<Window>(this),
                                          resource_context_,

@@ -9,38 +9,41 @@
 #include <string>
 
 #include "flutter/common/settings.h"
-#include "flutter/runtime/dart_snapshot_source.h"
+#include "flutter/runtime/dart_snapshot_buffer.h"
 #include "lib/fxl/macros.h"
+#include "lib/fxl/memory/ref_counted.h"
 
 namespace blink {
 
-class DartSnapshot {
+class DartSnapshot : public fxl::RefCountedThreadSafe<DartSnapshot> {
  public:
-  static std::unique_ptr<DartSnapshot> VMSnapshotFromSettings(
+  static fxl::RefPtr<DartSnapshot> VMSnapshotFromSettings(
       const Settings& settings);
 
-  static std::unique_ptr<DartSnapshot> IsolateSnapshotFromSettings(
+  static fxl::RefPtr<DartSnapshot> IsolateSnapshotFromSettings(
       const Settings& settings);
-
-  DartSnapshot(std::unique_ptr<DartSnapshotSource> data,
-               std::unique_ptr<DartSnapshotSource> instructions);
-
-  ~DartSnapshot();
 
   bool IsValid() const;
 
   bool IsValidForAOT() const;
 
-  const DartSnapshotSource* GetData() const;
+  const DartSnapshotBuffer* GetData() const;
 
-  const DartSnapshotSource* GetInstructions() const;
+  const DartSnapshotBuffer* GetInstructions() const;
 
   const uint8_t* GetInstructionsIfPresent() const;
 
  private:
-  std::unique_ptr<DartSnapshotSource> data_;
-  std::unique_ptr<DartSnapshotSource> instructions_;
+  std::unique_ptr<DartSnapshotBuffer> data_;
+  std::unique_ptr<DartSnapshotBuffer> instructions_;
 
+  DartSnapshot(std::unique_ptr<DartSnapshotBuffer> data,
+               std::unique_ptr<DartSnapshotBuffer> instructions);
+
+  ~DartSnapshot();
+
+  FRIEND_REF_COUNTED_THREAD_SAFE(DartSnapshot);
+  FRIEND_MAKE_REF_COUNTED(DartSnapshot);
   FXL_DISALLOW_COPY_AND_ASSIGN(DartSnapshot);
 };
 

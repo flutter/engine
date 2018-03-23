@@ -40,7 +40,7 @@ class DartVM : public fxl::RefCountedThreadSafe<DartVM> {
 
   const DartSnapshot& GetVMSnapshot() const;
 
-  const DartSnapshot& GetIsolateSnapshot() const;
+  fxl::RefPtr<DartSnapshot> GetIsolateSnapshot() const;
 
   fxl::WeakPtr<DartVM> GetWeakPtr();
 
@@ -48,8 +48,8 @@ class DartVM : public fxl::RefCountedThreadSafe<DartVM> {
 
  private:
   const Settings settings_;
-  const std::unique_ptr<DartSnapshot> vm_snapshot_;
-  const std::unique_ptr<DartSnapshot> isolate_snapshot_;
+  const fxl::RefPtr<DartSnapshot> vm_snapshot_;
+  const fxl::RefPtr<DartSnapshot> isolate_snapshot_;
   std::unique_ptr<fml::Mapping> platform_kernel_mapping_;
   PlatformKernel* platform_kernel_ = nullptr;
   ServiceProtocol service_protocol_;

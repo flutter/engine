@@ -29,6 +29,7 @@ namespace blink {
 
 fml::WeakPtr<DartIsolate> DartIsolate::CreateRootIsolate(
     const DartVM* vm,
+    fxl::RefPtr<DartSnapshot> isolate_snapshot,
     TaskRunners task_runners,
     std::unique_ptr<Window> window,
     fml::WeakPtr<GrContext> resource_context,
@@ -45,14 +46,15 @@ fml::WeakPtr<DartIsolate> DartIsolate::CreateRootIsolate(
   // Since this is the root isolate, we fake a parent embedder data object. We
   // cannot use unique_ptr here because the destructor is private (since the
   // isolate lifecycle is entirely managed by the VM).
-  DartIsolate* root_embedder_data =
-      new DartIsolate(vm,                           // VM
-                      task_runners,                 // task runners
-                      std::move(resource_context),  // resource context
-                      std::move(unref_queue),       // skia unref queue
-                      advisory_script_uri,          // advisory URI
-                      advisory_script_entrypoint    // advisory entrypoint
-      );
+  auto root_embedder_data = std::make_unique<DartIsolate>(
+      vm,                           // VM
+      std::move(isolate_snapshot),  // isolate snapshot
+      task_runners,                 // task runners
+      std::move(resource_context),  // resource context
+      std::move(unref_queue),       // skia unref queue
+      advisory_script_uri,          // advisory URI
+      advisory_script_entrypoint    // advisory entrypoint
+  );
 
   std::tie(vm_isolate, embedder_isolate) = CreateDartVMAndEmbedderObjectPair(
       advisory_script_uri.c_str(),         // advisory script URI
@@ -60,11 +62,9 @@ fml::WeakPtr<DartIsolate> DartIsolate::CreateRootIsolate(
       nullptr,                             // package root
       nullptr,                             // package config
       flags,                               // flags
-      root_embedder_data,                  // parent embedder data
+      root_embedder_data.get(),            // parent embedder data
       &error                               // error (out)
   );
-
-  delete root_embedder_data;
 
   if (error != nullptr) {
     free(error);
@@ -84,6 +84,7 @@ fml::WeakPtr<DartIsolate> DartIsolate::CreateRootIsolate(
 }
 
 DartIsolate::DartIsolate(const DartVM* vm,
+                         fxl::RefPtr<DartSnapshot> isolate_snapshot,
                          TaskRunners task_runners,
                          fml::WeakPtr<GrContext> resource_context,
                          fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue,
@@ -98,7 +99,9 @@ DartIsolate::DartIsolate(const DartVM* vm,
                   advisory_script_entrypoint,
                   vm->GetSettings().log_tag),
       vm_(vm),
+      isolate_snapshot_(std::move(isolate_snapshot)),
       weak_factory_(this) {
+  FXL_DCHECK(isolate_snapshot_) << "Must contain a valid isolate snapshot.";
   weak_prototype_ = weak_factory_.GetWeakPtr();
 
   if (vm_ == nullptr) {
@@ -166,6 +169,9 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
   return true;
 }
 
+// Updating thread names here does not change the underlying OS thread names.
+// Instead, this is just additional metadata for the Observatory to show the
+// thread name of the isolate.
 bool DartIsolate::UpdateThreadPoolNames() const {
   // TODO(chinmaygarde): This implementation does not account for multiple
   // shells sharing the same (or subset of) threads.
@@ -500,17 +506,19 @@ static Dart_Isolate DartCreateAndStartServiceIsolate(
     return nullptr;
   }
 
-  blink::TaskRunners null_task_runners("io.flutter.vm-service", nullptr,
-                                       nullptr, nullptr, nullptr);
+  blink::TaskRunners null_task_runners(
+      "io.flutter." DART_VM_SERVICE_ISOLATE_NAME, nullptr, nullptr, nullptr,
+      nullptr);
 
   flags->load_vmservice_library = true;
 
   auto service_isolate = DartIsolate::CreateRootIsolate(
-      vm.get(),           // vm
-      null_task_runners,  // task runners
-      nullptr,            // window
-      {},                 // resource context
-      {},                 // unref queue
+      vm.get(),                  // vm
+      vm->GetIsolateSnapshot(),  // isolate snapshot
+      null_task_runners,         // task runners
+      nullptr,                   // window
+      {},                        // resource context
+      {},                        // unref queue
       advisory_script_uri == nullptr ? "" : advisory_script_uri,  // script uri
       advisory_script_entrypoint == nullptr
           ? ""
@@ -560,12 +568,12 @@ Dart_Isolate DartIsolate::DartIsolateCreateCallback(
     DartIsolate* parent_embedder_isolate,
     char** error) {
   if (parent_embedder_isolate == nullptr &&
-      strcmp(advisory_script_uri, "vm-service") == 0) {
+      strcmp(advisory_script_uri, DART_VM_SERVICE_ISOLATE_NAME) == 0) {
     // The VM attempts to start the VM service for us on |Dart_Initialize|. In
     // such a case, the callback data will be null and the script URI will be
-    // "vm-service". In such cases, we just create the service isolate like
-    // normal but dont hold a reference to it at all. We also start this isolate
-    // since we will never again reference it from the engine.
+    // DART_VM_SERVICE_ISOLATE_NAME. In such cases, we just create the service
+    // isolate like normal but dont hold a reference to it at all. We also start
+    // this isolate since we will never again reference it from the engine.
     return DartCreateAndStartServiceIsolate(advisory_script_uri,         //
                                             advisory_script_entrypoint,  //
                                             package_root,                //
@@ -603,14 +611,15 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
 
   // Create the native object on the embedder side. This object is deleted in
   // the cleanup callback.
-  auto embedder_isolate =
-      new DartIsolate(vm,                                             //
-                      parent_embedder_isolate->GetTaskRunners(),      //
-                      parent_embedder_isolate->GetResourceContext(),  //
-                      parent_embedder_isolate->GetSkiaUnrefQueue(),   //
-                      advisory_script_uri,                            //
-                      advisory_script_entrypoint                      //
-      );
+  auto embedder_isolate = std::make_unique<DartIsolate>(
+      vm,                                             //
+      parent_embedder_isolate->GetIsolateSnapshot(),  //
+      parent_embedder_isolate->GetTaskRunners(),      //
+      parent_embedder_isolate->GetResourceContext(),  //
+      parent_embedder_isolate->GetSkiaUnrefQueue(),   //
+      advisory_script_uri,                            //
+      advisory_script_entrypoint                      //
+  );
 
   // Create the Dart VM isolate and give it the embedder object as the baton.
   Dart_Isolate isolate =
@@ -619,17 +628,19 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
                                          advisory_script_entrypoint,  //
                                          vm->GetPlatformKernel(),     //
                                          flags,                       //
-                                         embedder_isolate,            //
+                                         embedder_isolate.get(),      //
                                          error                        //
                                          )
-          : Dart_CreateIsolate(
-                advisory_script_uri,                                       //
-                advisory_script_entrypoint,                                //
-                vm->GetIsolateSnapshot().GetData()->GetSnapshotPointer(),  //
-                vm->GetIsolateSnapshot().GetInstructionsIfPresent(),       //
-                flags,                                                     //
-                embedder_isolate,                                          //
-                error                                                      //
+          : Dart_CreateIsolate(advisory_script_uri,         //
+                               advisory_script_entrypoint,  //
+                               embedder_isolate->GetIsolateSnapshot()
+                                   ->GetData()
+                                   ->GetSnapshotPointer(),  //
+                               embedder_isolate->GetIsolateSnapshot()
+                                   ->GetInstructionsIfPresent(),  //
+                               flags,                             //
+                               embedder_isolate.get(),            //
+                               error                              //
             );
 
   if (isolate == nullptr) {
@@ -652,7 +663,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
 
   // The ownership of the embedder object is controlled by the Dart VM. So the
   // only reference returned to the caller is weak.
-  return {isolate, embedder_isolate->GetWeakIsolatePtr()};
+  return {isolate, embedder_isolate.release()->GetWeakIsolatePtr()};
 }
 
 // |Dart_IsolateShutdownCallback|
@@ -671,6 +682,10 @@ void DartIsolate::DartIsolateShutdownCallback(DartIsolate* embedder_isolate) {
 // |Dart_IsolateCleanupCallback|
 void DartIsolate::DartIsolateCleanupCallback(DartIsolate* embedder_isolate) {
   delete embedder_isolate;
+}
+
+fxl::RefPtr<DartSnapshot> DartIsolate::GetIsolateSnapshot() const {
+  return isolate_snapshot_;
 }
 
 fml::WeakPtr<DartIsolate> DartIsolate::GetWeakIsolatePtr() const {

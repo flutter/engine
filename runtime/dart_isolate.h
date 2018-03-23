@@ -12,6 +12,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/window.h"
+#include "flutter/runtime/dart_snapshot.h"
 #include "lib/fxl/compiler_specific.h"
 #include "lib/fxl/macros.h"
 #include "lib/tonic/dart_state.h"
@@ -32,8 +33,12 @@ class DartIsolate : public UIDartState {
     Shutdown,
   };
 
+  // The root isolate of a Flutter application is special because it gets Window
+  // bindings. From the VM's perspective, this isolate is not special in any
+  // way.
   static fml::WeakPtr<DartIsolate> CreateRootIsolate(
       const DartVM* vm,
+      fxl::RefPtr<DartSnapshot> isolate_snapshot,
       TaskRunners task_runners,
       std::unique_ptr<Window> window,
       fml::WeakPtr<GrContext> resource_context,
@@ -41,6 +46,16 @@ class DartIsolate : public UIDartState {
       std::string advisory_script_uri = "main.dart",
       std::string advisory_script_entrypoint = "main",
       Dart_IsolateFlags* flags = nullptr);
+
+  DartIsolate(const DartVM* vm,
+              fxl::RefPtr<DartSnapshot> isolate_snapshot,
+              TaskRunners task_runners,
+              fml::WeakPtr<GrContext> resource_context,
+              fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+              std::string advisory_script_uri,
+              std::string advisory_script_entrypoint);
+
+  ~DartIsolate() override;
 
   Phase GetPhase() const;
 
@@ -64,6 +79,8 @@ class DartIsolate : public UIDartState {
 
   const DartVM* GetDartVM() const;
 
+  fxl::RefPtr<DartSnapshot> GetIsolateSnapshot() const;
+
   fml::WeakPtr<DartIsolate> GetWeakIsolatePtr() const;
 
  private:
@@ -84,18 +101,10 @@ class DartIsolate : public UIDartState {
 
   const DartVM* vm_ = nullptr;
   Phase phase_ = Phase::Unknown;
+  const fxl::RefPtr<DartSnapshot> isolate_snapshot_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
   fml::WeakPtr<DartIsolate> weak_prototype_;
   fml::WeakPtrFactory<DartIsolate> weak_factory_;
-
-  DartIsolate(const DartVM* vm,
-              TaskRunners task_runners,
-              fml::WeakPtr<GrContext> resource_context,
-              fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue,
-              std::string advisory_script_uri,
-              std::string advisory_script_entrypoint);
-
-  ~DartIsolate() override;
 
   FXL_WARN_UNUSED_RESULT
   bool Initialize(Dart_Isolate isolate);

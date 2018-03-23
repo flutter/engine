@@ -188,16 +188,11 @@ static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
   // the VM enables the same by default. In either case, we have some profiling
   // flags.
   if (enable_profiling) {
-    return {
-        // Dart assumes ARM devices are insufficiently powerful and sets the
-        // default profile period to 100Hz. This number is suitable for older
-        // Raspberry Pi devices but quite low for current smartphones.
-        "--profile_period=1000",
-        // This is the default. But just be explicit.
-        "--profiler",
-        // This instructs the profiler to walk C++ frames, and to include
-        // them in the profile.
-        "--profile-vm"};
+    return {// This is the default. But just be explicit.
+            "--profiler",
+            // This instructs the profiler to walk C++ frames, and to include
+            // them in the profile.
+            "--profile-vm"};
   } else {
     return {"--no-profiler"};
   }
@@ -418,8 +413,8 @@ const DartSnapshot& DartVM::GetVMSnapshot() const {
   return *vm_snapshot_.get();
 }
 
-const DartSnapshot& DartVM::GetIsolateSnapshot() const {
-  return *isolate_snapshot_.get();
+fxl::RefPtr<DartSnapshot> DartVM::GetIsolateSnapshot() const {
+  return isolate_snapshot_;
 }
 
 ServiceProtocol& DartVM::GetServiceProtocol() {

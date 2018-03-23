@@ -29,13 +29,14 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
                            GetCurrentTaskRunner(),  //
                            GetCurrentTaskRunner()   //
   );
-  auto root_isolate =
-      DartIsolate::CreateRootIsolate(vm.get(),                 // vm
-                                     std::move(task_runners),  // task runners
-                                     nullptr,                  // window
-                                     {},      // resource context
-                                     nullptr  // unref qeueue
-      );
+  auto root_isolate = DartIsolate::CreateRootIsolate(
+      vm.get(),                  // vm
+      vm->GetIsolateSnapshot(),  // isolate snapshot
+      std::move(task_runners),   // task runners
+      nullptr,                   // window
+      {},                        // resource context
+      nullptr                    // unref qeueue
+  );
   ASSERT_TRUE(root_isolate);
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::LibrariesSetup);
   ASSERT_TRUE(root_isolate->Shutdown());
@@ -53,13 +54,14 @@ TEST_F(DartIsolateTest, IsolateCanAssociateSnapshot) {
                            GetCurrentTaskRunner(),  //
                            GetCurrentTaskRunner()   //
   );
-  auto root_isolate =
-      DartIsolate::CreateRootIsolate(vm.get(),                 // vm
-                                     std::move(task_runners),  // task runners
-                                     nullptr,                  // window
-                                     {},      // resource context
-                                     nullptr  // unref qeueue
-      );
+  auto root_isolate = DartIsolate::CreateRootIsolate(
+      vm.get(),                  // vm
+      vm->GetIsolateSnapshot(),  // isolate snapshot
+      std::move(task_runners),   // task runners
+      nullptr,                   // window
+      {},                        // resource context
+      nullptr                    // unref qeueue
+  );
   ASSERT_TRUE(root_isolate);
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::LibrariesSetup);
   ASSERT_TRUE(root_isolate->PrepareForRunningFromSource(
@@ -80,13 +82,14 @@ TEST_F(DartIsolateTest, CanResolveAndInvokeMethod) {
                            GetCurrentTaskRunner(),  //
                            GetCurrentTaskRunner()   //
   );
-  auto root_isolate =
-      DartIsolate::CreateRootIsolate(vm.get(),                 // vm
-                                     std::move(task_runners),  // task runners
-                                     nullptr,                  // window
-                                     {},      // resource context
-                                     nullptr  // unref qeueue
-      );
+  auto root_isolate = DartIsolate::CreateRootIsolate(
+      vm.get(),                  // vm
+      vm->GetIsolateSnapshot(),  // isolate snapshot
+      std::move(task_runners),   // task runners
+      nullptr,                   // window
+      {},                        // resource context
+      nullptr                    // unref qeueue
+  );
   ASSERT_TRUE(root_isolate);
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::LibrariesSetup);
   ASSERT_TRUE(root_isolate->PrepareForRunningFromSource(
