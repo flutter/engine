@@ -80,7 +80,7 @@ public class TextInputPlugin implements MethodCallHandler {
     private static int inputTypeFromTextInputType(
         JSONObject type, boolean obscureText, boolean autocorrect) throws JSONException {
 
-        String inputType = type.getString("type");
+        String inputType = type.getString("name");
         if (inputType.equals("TextInputType.datetime"))
             return InputType.TYPE_CLASS_DATETIME;
         if (inputType.equals("TextInputType.number")) {
