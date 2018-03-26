@@ -1684,7 +1684,7 @@ class Path extends NativeFieldWrapperClass2 {
     if (path._op(path1, path2, operation.index)) {
       return path;
     } 
-    throw new StateException('Path combine failed');
+    throw new StateError('Path combine failed - likely due to invalid path');
   }
   bool _op(Path path1, Path path2, int operation) native 'Path_op';
 
