@@ -9,8 +9,6 @@ source_set("assets") {
     "asset_resolver.h",
     "directory_asset_bundle.cc",
     "directory_asset_bundle.h",
-    "file_asset_bundle.cc",
-    "file_asset_bundle.h",
     "zip_asset_store.cc",
     "zip_asset_store.h",
   ]
