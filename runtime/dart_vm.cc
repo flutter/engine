@@ -299,14 +299,19 @@ DartVM::DartVM(const Settings& settings)
               arraysize(kDartWriteProtectCodeArgs));
 #endif
 
-  const bool is_preview_dart2 =
-      platform_kernel_ != nullptr ||
+  const bool isolate_snapshot_is_dart_2 =
       Dart_IsDart2Snapshot(isolate_snapshot_->GetData()->GetSnapshotPointer());
+
+  const bool is_preview_dart2 =
+      platform_kernel_ != nullptr || isolate_snapshot_is_dart_2;
 
   if (is_preview_dart2) {
     FXL_DLOG(INFO) << "Dart 2 is enabled.";
   } else {
-    FXL_DLOG(INFO) << "Dart 2 is NOT enabled.";
+    FXL_DLOG(INFO) << "Dart 2 is NOT enabled. Platform kernel: "
+                   << static_cast<bool>(platform_kernel_)
+                   << " Isolate Snapshot is Dart 2: "
+                   << isolate_snapshot_is_dart_2;
   }
 
   if (is_preview_dart2) {

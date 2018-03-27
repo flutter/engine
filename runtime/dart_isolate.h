@@ -107,7 +107,7 @@ class DartIsolate : public UIDartState {
   fml::WeakPtrFactory<DartIsolate> weak_factory_;
 
   FXL_WARN_UNUSED_RESULT
-  bool Initialize(Dart_Isolate isolate);
+  bool Initialize(Dart_Isolate isolate, bool is_root_isolate);
 
   FXL_WARN_UNUSED_RESULT
   bool LoadLibraries();
@@ -135,6 +135,7 @@ class DartIsolate : public UIDartState {
                                     const char* package_config,
                                     Dart_IsolateFlags* flags,
                                     DartIsolate* parent_embedder_isolate,
+                                    bool is_root_isolate,
                                     char** error);
 
   // |Dart_IsolateShutdownCallback|

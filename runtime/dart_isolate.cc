@@ -63,6 +63,7 @@ fml::WeakPtr<DartIsolate> DartIsolate::CreateRootIsolate(
       nullptr,                             // package config
       flags,                               // flags
       root_embedder_data.get(),            // parent embedder data
+      true,                                // is root isolate
       &error                               // error (out)
   );
 
@@ -121,7 +122,7 @@ const DartVM* DartIsolate::GetDartVM() const {
   return vm_;
 }
 
-bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
+bool DartIsolate::Initialize(Dart_Isolate dart_isolate, bool is_root_isolate) {
   TRACE_EVENT0("flutter", "DartIsolate::Initialize");
   if (phase_ != Phase::Uninitialized) {
     return false;
@@ -150,10 +151,12 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
 
   tonic::DartIsolateScope scope(isolate());
 
-  if (auto task_runner = GetTaskRunners().GetUITaskRunner()) {
-    // Isolates may not have any particular thread affinity. Only initialize the
-    // message handler if a task runner is explicitly specified.
-    message_handler().Initialize(task_runner);
+  if (is_root_isolate) {
+    if (auto task_runner = GetTaskRunners().GetUITaskRunner()) {
+      // Isolates may not have any particular thread affinity. Only initialize
+      // the message handler if a task runner is explicitly specified.
+      message_handler().Initialize(task_runner);
+    }
   }
 
   if (tonic::LogIfError(
@@ -584,8 +587,15 @@ Dart_Isolate DartIsolate::DartIsolateCreateCallback(
   }
 
   return CreateDartVMAndEmbedderObjectPair(
-             advisory_script_uri, advisory_script_entrypoint, package_root,
-             package_config, flags, parent_embedder_isolate, error)
+             advisory_script_uri,         // URI
+             advisory_script_entrypoint,  // entrypoint
+             package_root,                // package root
+             package_config,              // package config
+             flags,                       // isolate flags
+             parent_embedder_isolate,     // embedder data
+             false,                       // is root isolate
+             error                        // error
+             )
       .first;
 }
 
@@ -597,6 +607,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
     const char* package_config,
     Dart_IsolateFlags* flags,
     DartIsolate* parent_embedder_isolate,
+    bool is_root_isolate,
     char** error) {
   TRACE_EVENT0("flutter", "DartIsolate::CreateDartVMAndEmbedderObjectPair");
   if (parent_embedder_isolate == nullptr ||
@@ -648,7 +659,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
     return {nullptr, {}};
   }
 
-  if (!embedder_isolate->Initialize(isolate)) {
+  if (!embedder_isolate->Initialize(isolate, is_root_isolate)) {
     *error = strdup("Embedder could not initialize the Dart isolate.");
     FXL_DLOG(ERROR) << *error;
     return {nullptr, {}};
