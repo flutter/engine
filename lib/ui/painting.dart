@@ -1731,7 +1731,7 @@ class Path extends NativeFieldWrapperClass2 {
   /// 
   /// If `forceClosed` is set to true, the contours of the path will be measured
   /// as if they had been closed, even if they were not explicitly closed.
-  PathMetrics computeMetrics({bool forceClosed = false}) {
+  PathMetrics computeMetrics({bool forceClosed: false}) {
     return new PathMetrics._(this, forceClosed);
   }
 }
@@ -1759,9 +1759,10 @@ class Tangent {
   /// curve at [position]).
   /// 
   /// This value is in radians, with 0.0 meaning pointing along the x axis in 
-  /// the positive x-axis direction, positive numbers pointing upward toward
-  /// the positive y-axis, and negative numbers pointing downward toward the
-  /// negative y-axis.
+  /// the positive x-axis direction, positive numbers pointing downward toward
+  /// the negative y-axis, i.e. in a clockwise direction, and negative numbers
+  /// pointing upward toward the positive y-axis, i.e. in a counter-clockwise 
+  /// direction.
   final double angle;
 }
 
@@ -1834,8 +1835,8 @@ class PathMetric extends NativeFieldWrapperClass2 {
   /// angle of the path at that point.
   /// 
   /// For example, calling this method with a distance of 1.41 for a line from 
-  /// 0.0,0.0 to 2.0,2.0 would give a point near 1.0,1.0 and the angle near 
-  /// 0.785 radians (near 45 degrees).
+  /// 0.0,0.0 to 2.0,2.0 would give a point 1.0,1.0 and the angle 45 degrees
+  /// (but in radians).
   /// 
   /// Returns null if the contour has zero [length].
   /// 
@@ -1848,7 +1849,8 @@ class PathMetric extends NativeFieldWrapperClass2 {
     } else {
       return new Tangent(
         new Offset(posTan[1], posTan[2]), 
-        math.atan2(posTan[4], posTan[3])
+        // flip the sign to be consistent with [Path.arcTo]'s `sweepAngle`
+        -math.atan2(posTan[4], posTan[3]) 
       );
     }
   }
@@ -1859,7 +1861,7 @@ class PathMetric extends NativeFieldWrapperClass2 {
   /// `start` and `end` are pinned to legal values (0..[length])
   /// Returns null if the segment is 0 length or `start` > `stop`.
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
-  Path extractPath(double start, double end, {bool startWithMoveTo = true}) native 'PathMeasure_getSegment';
+  Path extractPath(double start, double end, {bool startWithMoveTo: true}) native 'PathMeasure_getSegment';
 
   /// Whether the contour is closed.
   /// 
