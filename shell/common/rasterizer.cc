@@ -177,7 +177,7 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
   }
 
   if (data == nullptr) {
-    FXL_DLOG(INFO) << "Sceenshot data will null.";
+    FXL_DLOG(INFO) << "Sceenshot data was null.";
     return {nullptr, SkISize::MakeEmpty()};
   }
 

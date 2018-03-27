@@ -10,6 +10,7 @@
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/message_loop.h"
+#include "flutter/fml/paths.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell.h"
@@ -217,6 +218,9 @@ int main(int argc, char* argv[]) {
   }
 
   settings.icu_data_path = "icudtl.dat";
+
+  settings.kernel_snapshot_path =
+      fml::paths::JoinPaths({settings.assets_path, "platform.dill"});
 
   // The tools that read logs get confused if there is a log tag specified.
   settings.log_tag = "";

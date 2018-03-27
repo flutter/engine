@@ -60,6 +60,8 @@ GPUSurfaceGL::~GPUSurfaceGL() {
     return;
   }
 
+  GetCompositorContext().OnGrContextDestroyed();
+
   onscreen_surface_ = nullptr;
   context_->releaseResourcesAndAbandonContext();
   context_ = nullptr;

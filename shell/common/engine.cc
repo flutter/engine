@@ -57,9 +57,7 @@ Engine::Engine(Delegate& delegate,
   if (legacy_sky_platform_) {
     // TODO: Remove this legacy call along with the platform. This is what makes
     // the engine unable to run from multiple threads in the legacy
-    // configuration. The microtask handler are still in this initializer still.
-    // So care must be taken to remove them from the legacy platform
-    // initializer.
+    // configuration.
     blink::InitEngine(legacy_sky_platform_.get());
   }
 

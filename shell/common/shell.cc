@@ -522,6 +522,25 @@ void Shell::OnPlatformViewMarkTextureFrameAvailable(const PlatformView& view,
   FXL_DCHECK(&view == platform_view_.get());
   FXL_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  // Tell the rasterizer that one of its textures has a new frame available.
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr(), texture_id]() {
+        auto registry = rasterizer->GetTextureRegistry();
+
+        if (!registry) {
+          return;
+        }
+
+        auto texture = registry->GetTexture(texture_id);
+
+        if (!texture) {
+          return;
+        }
+
+        texture->MarkNewFrameAvailable();
+      });
+
+  // Schedule a new frame without having to rebuild the layer tree.
   task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr()]() {
     if (engine) {
       engine->ScheduleFrame(false);

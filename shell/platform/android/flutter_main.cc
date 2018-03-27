@@ -67,7 +67,7 @@ void FlutterMain::Init(JNIEnv* env,
     if (files::IsFile(platform_kernel_path) &&
         files::IsFile(application_kernel_path)) {
       settings.kernel_snapshot_path = platform_kernel_path;
-      settings.application_kernel_path = application_kernel_path;
+      settings.application_kernel_asset = application_kernel_path;
     }
   }
 

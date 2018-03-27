@@ -24,9 +24,6 @@ void VsyncWaiter::AsyncWaitForVsync(Callback callback) {
 
 void VsyncWaiter::FireCallback(fxl::TimePoint frame_start_time,
                                fxl::TimePoint frame_target_time) {
-  // Note: The tag name must be "VSYNC" (it is special) so that the "Highlight
-  // Vsync" checkbox in the timeline can be enabled.
-  TRACE_EVENT1("flutter", "VSYNC", "mode", "basic");
   Callback callback;
 
   {
@@ -34,10 +31,18 @@ void VsyncWaiter::FireCallback(fxl::TimePoint frame_start_time,
     callback = std::move(callback_);
   }
 
-  if (callback) {
-    task_runners_.GetUITaskRunner()->PostTask(
-        std::bind(std::move(callback), frame_start_time, frame_target_time));
+  if (!callback) {
+    return;
   }
+
+  task_runners_.GetUITaskRunner()->PostTask(
+      [callback, frame_start_time, frame_target_time]() {
+        // Note: The tag name must be "VSYNC" (it is special) so that the
+        // "Highlight
+        // Vsync" checkbox in the timeline can be enabled.
+        TRACE_EVENT0("flutter", "VSYNC");
+        callback(frame_start_time, frame_target_time);
+      });
 }
 
 }  // namespace shell

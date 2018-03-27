@@ -112,7 +112,7 @@ class PlatformView {
   void UnregisterTexture(int64_t texture_id);
 
   // Called once per texture update (e.g. video frame), on the platform thread.
-  virtual void MarkTextureFrameAvailable(int64_t texture_id);
+  void MarkTextureFrameAvailable(int64_t texture_id);
 
  protected:
   PlatformView::Delegate& delegate_;

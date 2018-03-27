@@ -39,7 +39,7 @@ RunConfiguration::RunConfiguration(
 RunConfiguration::RunConfiguration(
     std::unique_ptr<IsolateConfiguration> configuration,
     fxl::RefPtr<blink::AssetManager> asset_manager)
-    : run_configuration_(std::move(configuration)),
+    : isolate_configuration_(std::move(configuration)),
       asset_manager_(std::move(asset_manager)) {}
 
 RunConfiguration::RunConfiguration(RunConfiguration&&) = default;
@@ -47,7 +47,7 @@ RunConfiguration::RunConfiguration(RunConfiguration&&) = default;
 RunConfiguration::~RunConfiguration() = default;
 
 bool RunConfiguration::IsValid() const {
-  return asset_manager_ && run_configuration_;
+  return asset_manager_ && isolate_configuration_;
 }
 
 bool RunConfiguration::AddAssetResolver(
@@ -74,7 +74,7 @@ const std::string& RunConfiguration::GetEntrypoint() const {
 
 std::unique_ptr<IsolateConfiguration>
 RunConfiguration::TakeIsolateConfiguration() {
-  return std::move(run_configuration_);
+  return std::move(isolate_configuration_);
 }
 
 }  // namespace shell

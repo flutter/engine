@@ -44,7 +44,7 @@ class RunConfiguration {
   std::unique_ptr<IsolateConfiguration> TakeIsolateConfiguration();
 
  private:
-  std::unique_ptr<IsolateConfiguration> run_configuration_;
+  std::unique_ptr<IsolateConfiguration> isolate_configuration_;
   fxl::RefPtr<blink::AssetManager> asset_manager_;
   std::string entrypoint_ = "main";
 

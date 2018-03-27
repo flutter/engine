@@ -24,4 +24,8 @@ executable("testing") {
     "//third_party/skia",
     "//topaz/lib/tonic",
   ]
+
+  if (is_linux) {
+    ldflags = [ "-rdynamic" ]
+  }
 }

@@ -39,7 +39,8 @@ void AndroidExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds) {
     Update();
     new_frame_ready_ = false;
   }
-  GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES, texture_name_, GL_RGBA8_OES};
+  GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES, texture_name_,
+                                 GL_RGBA8_OES};
   GrBackendTexture backendTexture(1, 1, GrMipMapped::kNo, textureInfo);
   sk_sp<SkImage> image = SkImage::MakeFromTexture(
       canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,

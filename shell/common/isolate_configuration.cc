@@ -104,8 +104,8 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
   // Running from kernel snapshot.
   {
     std::vector<uint8_t> kernel;
-    if (asset_manager &&
-        asset_manager->GetAsBuffer(settings.application_kernel_path, &kernel)) {
+    if (asset_manager && asset_manager->GetAsBuffer(
+                             settings.application_kernel_asset, &kernel)) {
       return CreateForSnapshot(
           std::make_unique<fml::DataMapping>(std::move(kernel)));
     }

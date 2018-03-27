@@ -10,6 +10,7 @@
 #include <sys/time.h>
 
 #include <sstream>
+#include <string>
 #include <utility>
 
 #include "flutter/fml/message_loop.h"
@@ -19,17 +20,12 @@
 
 namespace shell {
 
-static std::string CreateAndroidShellLabel(intptr_t handle) {
-  std::stringstream stream;
-  stream << "io.flutter.0x" << std::hex << handle;
-  return stream.str();
-}
-
 AndroidShellHolder::AndroidShellHolder(
     blink::Settings settings,
     fml::jni::JavaObjectWeakGlobalRef java_object)
     : settings_(std::move(settings)), java_object_(java_object) {
-  auto thread_label = CreateAndroidShellLabel(reinterpret_cast<intptr_t>(this));
+  static size_t shell_count = 1;
+  auto thread_label = std::to_string(shell_count++);
 
   thread_host_ = {thread_label, ThreadHost::Type::UI | ThreadHost::Type::GPU |
                                     ThreadHost::Type::IO};

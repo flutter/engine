@@ -104,7 +104,7 @@ static blink::Settings DefaultSettingsForProcess() {
               [NSURL URLWithString:@(kApplicationKernelSnapshotFileName)
                      relativeToURL:[NSURL fileURLWithPath:assetsPath]];
           if ([[NSFileManager defaultManager] fileExistsAtPath:applicationKernelSnapshotURL.path]) {
-            settings.application_kernel_path = applicationKernelSnapshotURL.path.UTF8String;
+            settings.application_kernel_asset = applicationKernelSnapshotURL.path.UTF8String;
           }
         }
       }
@@ -202,6 +202,31 @@ static blink::Settings DefaultSettingsForProcess() {
 
 - (shell::RunConfiguration)runConfiguration {
   return shell::RunConfiguration::InferFromSettings(_settings);
+}
+
+#pragma mark - Assets-related utilities
+
++ (NSString*)flutterAssetsName:(NSBundle*)bundle {
+  NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
+  if (flutterAssetsName == nil) {
+    // Default to "flutter_assets"
+    flutterAssetsName = @"flutter_assets";
+  }
+  return flutterAssetsName;
+}
+
++ (NSString*)pathForFlutterAssetsFromBundle:(NSBundle*)bundle {
+  NSString* flutterAssetsName = [FlutterDartProject flutterAssetsName:bundle];
+  return [bundle pathForResource:flutterAssetsName ofType:nil];
+}
+
++ (NSString*)lookupKeyForAsset:(NSString*)asset {
+  NSString* flutterAssetsName = [FlutterDartProject flutterAssetsName:[NSBundle mainBundle]];
+  return [NSString stringWithFormat:@"%@/%@", flutterAssetsName, asset];
+}
+
++ (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
+  return [self lookupKeyForAsset:[NSString stringWithFormat:@"packages/%@/%@", package, asset]];
 }
 
 @end

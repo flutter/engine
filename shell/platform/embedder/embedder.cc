@@ -204,9 +204,7 @@ FlutterResult FlutterEngineRun(size_t version,
   }
 
   // Step 3: Run the engine.
-  shell::RunConfiguration run_configuration(
-      shell::IsolateConfiguration::CreateForSource(
-          settings.main_dart_file_path, settings.packages_file_path));
+  auto run_configuration = shell::RunConfiguration::InferFromSettings(settings);
 
   run_configuration.AddAssetResolver(
       std::make_unique<blink::DirectoryAssetBundle>(

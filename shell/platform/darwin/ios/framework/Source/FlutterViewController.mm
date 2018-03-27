@@ -109,7 +109,9 @@
 - (BOOL)setupShell {
   FXL_DCHECK(_shell == nullptr);
 
-  auto threadLabel = [NSString stringWithFormat:@"io.flutter.%p", self];
+  static size_t shell_count = 1;
+
+  auto threadLabel = [NSString stringWithFormat:@"io.flutter.%zu", shell_count++];
 
   _threadHost = {
       threadLabel.UTF8String,  // label
@@ -949,4 +951,13 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 - (void)textureFrameAvailable:(int64_t)textureId {
   _shell->GetPlatformView()->MarkTextureFrameAvailable(textureId);
 }
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset {
+  return [FlutterDartProject lookupKeyForAsset:asset];
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
+}
+
 @end
