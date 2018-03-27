@@ -27,7 +27,6 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
 #define FOR_EACH_BINDING(V)          \
   V(Path, addArc)                    \
   V(Path, addOval)                   \
-  V(Path, addCircle)                 \
   V(Path, addPath)                   \
   V(Path, addPolygon)                \
   V(Path, addRect)                   \
@@ -181,10 +180,6 @@ void CanvasPath::addRect(float left, float top, float right, float bottom) {
 
 void CanvasPath::addOval(float left, float top, float right, float bottom) {
   path_.addOval(SkRect::MakeLTRB(left, top, right, bottom));
-}
-
-void CanvasPath::addCircle(float centerX, float centerY, float radius) {
-  path_.addCircle(centerX, centerY, radius);
 }
 
 void CanvasPath::addArc(float left,
