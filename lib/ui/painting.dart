@@ -1784,10 +1784,10 @@ class PathMetrics extends collection.IterableBase<PathMetric> {
 
 /// Tracks iteration from one segment of a path to the next for measurement.
 class PathMetricIterator implements Iterator<PathMetric> {
+  PathMetricIterator._(this._pathMetric);
+
   PathMetric _pathMetric;
   bool _firstTime = true;
-
-  PathMetricIterator._(this._pathMetric);
 
   @override
   PathMetric get current => _firstTime ? null : _pathMetric;
