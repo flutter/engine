@@ -41,8 +41,7 @@ bool _offsetIsValid(Offset offset) {
 
 bool _matrix4IsValid(Float64List matrix4) {
   assert(matrix4 != null, 'Matrix4 argument was null.');
-  if (matrix4.length != 16)
-    throw new ArgumentError('"matrix4" must have 16 entries.');
+  assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
   return true;
 }
 
@@ -1347,16 +1346,60 @@ enum PathFillType {
   evenOdd,
 }
 
-/// Path operation enums
+/// Strategies for combining paths.
 /// 
-/// For use with [Path.combine]
-/// Must be kept in sync with SkPathOp
+/// See also:
+/// 
+/// * [Path.combine], which uses this enum to decide how to combine two paths.
+// Must be kept in sync with SkPathOp
 enum PathOperation {
-    difference,         //!< subtract the op path from the first path
-    intersect,          //!< intersect the two paths
-    union,              //!< union (inclusive-or) the two paths
-    xor,                //!< exclusive-or the two paths
-    reverseDifference,  //!< subtract the first path from the op path
+  /// Subtract the second path from the first path.
+  ///
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be a crescent portion of the 
+  /// first circle that was not overlapped by the second circle.
+  ///
+  /// See also:
+  ///
+  ///  * [reverseDifference], which is the same but subtracting the first path
+  ///    from the second.
+  difference,
+  /// Create a new path that is the intersection of the two paths, leaving the
+  /// overlapping pieces of the path.
+  /// 
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be only the overlapping portion
+  /// of the two circles.
+  /// 
+  /// See also:
+  ///  * [xor], which is the inverse of this operation
+  intersect,
+  /// Create a new path that is the union (inclusive-or) of the two paths.
+  /// 
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be a figure-eight like shape 
+  /// matching the outter boundaries of both circles.
+  union,
+  /// Create a new path that is the exclusive-or of the two paths, leaving 
+  /// everything but the overlapping pieces of the path.
+  /// 
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the figure-eight like shape less the overlapping parts
+  /// 
+  /// See also:
+  ///  * [intersect], which is the inverse of this operation
+  xor,
+  /// Subtract the first path from the second path.
+  ///
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be a crescent portion of the 
+  /// second circle that was not overlapped by the first circle.
+  ///
+  /// See also:
+  ///
+  ///  * [difference], which is the same but subtracting the second path
+  ///    from the frist.
+  reverseDifference,
 }
 
 /// A complex, one-dimensional subset of a plane.
@@ -1381,12 +1424,12 @@ class Path extends NativeFieldWrapperClass2 {
   Path() { _constructor(); }
   void _constructor() native 'Path_constructor';
 
-  /// Creates a new [Path] object from src path
+  /// Creats a copy of another [Path].
   /// 
-  /// This copy is fast and does not require additional memory unless the src or
-  /// new path are mutated.
-  factory Path.from(Path src) {
-    return src._clone();
+  /// This copy is fast and does not require additional memory unless either 
+  /// the `source` path or the path returned by this constructor are modified.
+  factory Path.from(Path source) {
+    return source._clone();
   }
   Path _clone() native 'Path_clone';
 
@@ -1584,15 +1627,15 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addRRect(Float32List rrect) native 'Path_addRRect';
 
-  /// Adds a new subpath that consists of the given path offset by the given
-  /// offset.
+  /// Adds a new subpath that consists of the given `path` offset by the given
+  /// `offset`.
   /// 
-  /// If matrix4 is specified, the path will be transformed by this matrix
-  /// (after the matrix is translated by the given offset).
+  /// If `matrix4` is specified, the path will be transformed by this matrix
+  /// after the matrix is translated by the given offset. The matrix is a 4x4
+  /// matrix stored in column major order.
   void addPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
-    
     if (matrix4 != null) {
       assert(_matrix4IsValid(matrix4));
       _addPathWithMatrix(path, offset.dx, offset.dy, matrix4);
@@ -1606,12 +1649,12 @@ class Path extends NativeFieldWrapperClass2 {
   /// Adds the given path to this path by extending the current segment of this
   /// path with the the first segment of the given path.
   /// 
-  /// If matrix4 is specified, the path will be transformed by this matrix
-  /// (after the matrix is translated by the given offset).
+  /// If `matrix4` is specified, the path will be transformed by this matrix
+  /// after the matrix is translated by the given `offset`.  The matrix is a 4x4
+  /// matrix stored in column major order.
   void extendWithPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
-
     if (matrix4 != null) {
       assert(_matrix4IsValid(matrix4));
       _extendWithPathAndMatrix(path, offset.dx, offset.dy, matrix4);
@@ -1660,18 +1703,15 @@ class Path extends NativeFieldWrapperClass2 {
   }
   Path _transform(Float64List matrix4) native 'Path_transform';
 
-  /// Gets the bounding rectangle for this path.
+  /// Computes the bounding rectangle for this path.
   Rect getBounds() {
     final Float32List rect = _getBounds();
     return new Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
   }
   Float32List _getBounds() native 'Path_getBounds';
 
-  /// Sets this path to the result of operation [PathOperation]
-  /// 
-  /// If only one path is specified, this path will be used as the first 
-  /// operand, otherwise path1 will be the first operand and path2 the
-  /// second.
+  /// Combines the two paths according to the manner specified by the given 
+  /// `operation`.
   /// 
   /// The resulting path will be constructed from non-overlapping contours. The
   /// curve order is reduced where possible so that cubics may be turned into
@@ -1679,29 +1719,50 @@ class Path extends NativeFieldWrapperClass2 {
   static Path combine(PathOperation operation, Path path1, Path path2) {
     assert(path1 != null);
     assert(path2 != null);
-
     final Path path = new Path();
     if (path._op(path1, path2, operation.index)) {
       return path;
     } 
-    throw new StateError('Path combine failed - likely due to invalid path');
+    throw new StateError('Path.combine() failed.  This may be due an invalid path; in particular, check for NaN values.');
   }
   bool _op(Path path1, Path path2, int operation) native 'Path_op';
 
   /// Creates a [PathMetrics] object for this path.
+  /// 
+  /// If `forceClosed` is set to true, the contours of the path will be measured
+  /// as if they had been closed, even if they were not explicitly closed.
   PathMetrics computeMetrics({bool forceClosed = false}) {
     return new PathMetrics._(this, forceClosed);
   }
 }
 
-/// Convenience class to return the result of [PathMetric.getTangentForOffset].
+/// The geometric description of a tangent: the angle at a point.
+/// 
+/// See also:
+///  * [PathMetric.getTangentForOffset], which returns the tangent of an offset along a path.
 class Tangent {
-  /// Position of the tangent
-  final Offset position;
-  /// Angle of the tangent in radians
-  final double angle;
+  /// Creates a [Tangent] with the given values.
+  /// 
+  /// The arguments must not be null.
+  const Tangent(this.position, this.angle) : assert(position != null), assert(angle != null);
 
-  const Tangent(this.position, this.angle);
+  /// Position of the tangent
+  /// 
+  /// When used with [PathMetric.getTangentForOffset], this represents the precise
+  /// position that the given offset along the path corresponds to.
+  final Offset position;
+
+  /// The direction of the curve at [position].
+  /// 
+  /// When used with [PathMetric.getTangentForOffset], this is the angle of the
+  /// curve that is the given offset along the path (i.e. the direction of the
+  /// curve at [position]).
+  /// 
+  /// This value is in radians, with 0.0 meaning pointing along the x axis in 
+  /// the positive x-axis direction, positive numbers pointing upward toward
+  /// the positive y-axis, and negative numbers pointing downward toward the
+  /// negative y-axis.
+  final double angle;
 }
 
 /// An iterable collection of [PathMetric] objects.
@@ -1712,10 +1773,10 @@ class Tangent {
 /// would get two PathMetric objects in this iterable.  Call 
 /// [Path.computeMetrics] to create the iterable.
 class PathMetrics extends collection.IterableBase<PathMetric> {
-  final Iterator<PathMetric> _iterator;
-
   PathMetrics._(Path path, bool forceClosed) :
     _iterator = new PathMetricIterator._(new PathMetric._(path, forceClosed));
+    
+  final Iterator<PathMetric> _iterator;
 
   @override
   Iterator<PathMetric> get iterator => _iterator;
@@ -1740,18 +1801,20 @@ class PathMetricIterator implements Iterator<PathMetric> {
       return true;
     } else if (_pathMetric?._moveNext() == true) {
       return true;
-    } else {
-      _pathMetric = null;
-      return false;
-    }
+    } 
+    _pathMetric = null;
+    return false;
   }
 }
 
 /// Utilities for measuring a [Path] and extracting subpaths.
+/// 
+/// Iterate over the object returned by [Path.computeMetrics] to obtain 
+/// [PathMetric] objects.
 ///
-/// Call [Path.computeMetrics] to create these objects. Once created, measures
-/// will only be valid while the path remains unmodified.  If the path is 
-/// modified, the behavior of the PathMetric object is undefined.
+/// Once created, metrics will only be valid while the iterator is at the given
+/// contour. When the next contour's [PathMetric] is obtained, this object 
+/// becomes invalid.
 class PathMetric extends NativeFieldWrapperClass2 {
   /// Create a new empty [Path] object.
   PathMetric._(Path path, bool forceClosed) { _constructor(path, forceClosed); }
@@ -1760,12 +1823,16 @@ class PathMetric extends NativeFieldWrapperClass2 {
   /// Return the total length of the current contour.
   double get length native 'PathMeasure_getLength';
 
-  /// Pins distance to 0 <= distance <= getLength(), and then computes the 
-  /// corresponding position and tangent.
+  /// Computes the position of hte current contour at the given offset, and the
+  /// angle of the path at that point.
   /// 
-  /// The [Tangent] object returns contains the position and angle (in radians)
-  /// of the tangent at specified distance. 
-  /// Returns null for a null or zero-length [Path].
+  /// For example, calling this method with a distance of 1.41 for a line from 
+  /// 0.0,0.0 to 2.0,2.0 would give a point near 1.0,1.0 and the angle near 
+  /// 0.785 radians (near 45 degrees).
+  /// 
+  /// Returns null if the contour has zero [length].
+  /// 
+  /// The distance is clamped to the [length] of the current contour.
   Tangent getTangentForOffset(double distance) {
     final Float32List posTan = _getPosTan(distance);
     // first entry == 0 indicates that Skia returned false
@@ -1782,24 +1849,29 @@ class PathMetric extends NativeFieldWrapperClass2 {
 
   /// Given a start and stop distance, return the intervening segment(s).
   /// 
-  /// startD and stopD are pinned to legal values (0..[length])
-  /// Returns null if the segment is 0 length or startD > stopD.
-  /// Begin the segment with a moveTo if startWithMoveTo is true.
-  Path extractPath(double startD, double endD, bool startWithMoveTo) native 'PathMeasure_getSegment';
+  /// `start` and `end` are pinned to legal values (0..[length])
+  /// Returns null if the segment is 0 length or `start` > `stop`.
+  /// Begin the segment with a moveTo if `startWithMoveTo` is true.
+  Path extractPath(double start, double end, {bool startWithMoveTo = true}) native 'PathMeasure_getSegment';
 
-  /// Returns true if the path is closed.
+  /// Whether the contour is closed.
+  /// 
+  /// Returns true if the contour ends with a call to [Path.close] (which may
+  /// have been implied when using [Path.addRect]) or if `forceClosed` was 
+  /// specified as true in the call to [Path.computeMetrics].  Returns false
+  /// otherwise.
   bool get isClosed native 'PathMeasure_isClosed';
 
-  /// Move to the next contour in the path.
-  ///
-  /// A path can have a next contour if [Path.moveTo] was called after drawing began.
-  /// Return true if one exists, or false.
-  /// 
-  /// This is not exactly congruent with a regular [Iterator.moveNext].
-  /// Typically, [Iterator.moveNext] should be called before accessing the
-  /// [Iterator.current]. In this case, the [PathMetric] is valid before 
-  /// calling `_moveNext` - `_moveNext` should be called after the first
-  /// iteration is done instead of before.
+  // Move to the next contour in the path.
+  //
+  // A path can have a next contour if [Path.moveTo] was called after drawing began.
+  // Return true if one exists, or false.
+  // 
+  // This is not exactly congruent with a regular [Iterator.moveNext].
+  // Typically, [Iterator.moveNext] should be called before accessing the
+  // [Iterator.current]. In this case, the [PathMetric] is valid before 
+  // calling `_moveNext` - `_moveNext` should be called after the first
+  // iteration is done instead of before.
   bool _moveNext() native 'PathMeasure_nextContour';
 }
 
