@@ -192,7 +192,7 @@ void main() {
         simpleMetricsVertical.iterator.current.getTangentForOffset(5.0);
     expect(posTanVertical.position, equals(const Offset(0.0, 5.0)));
     expect(posTanVertical.angle,
-        moreOrLessEquals(1.5708, epsilon: .0001)); // 90 degrees
+        moreOrLessEquals(-1.5708, epsilon: .0001)); // 90 degrees
 
     // test getTangentForOffset with diagonal line
     final Path simpleDiagonalLine = new Path()..lineTo(10.0, 10.0);
@@ -203,7 +203,7 @@ void main() {
         simpleMetricsDiagonal.iterator.current.getTangentForOffset(midPoint);
     expect(posTanDiagonal.position, equals(new Offset(5.0, 5.0)));
     expect(posTanDiagonal.angle,
-        moreOrLessEquals(0.7853981633974483, epsilon: .00001)); // ~45 degrees
+        moreOrLessEquals(-0.7853981633974483, epsilon: .00001)); // ~45 degrees
 
     // test a multi-contour path
     final Path multiContour = new Path()
