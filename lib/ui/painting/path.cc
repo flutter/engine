@@ -38,6 +38,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
   V(Path, contains)                  \
   V(Path, cubicTo)                   \
   V(Path, extendWithPath)            \
+  V(Path, extendWithPathAndMatrix)   \
   V(Path, getFillType)               \
   V(Path, lineTo)                    \
   V(Path, moveTo)                    \
@@ -216,11 +217,10 @@ void CanvasPath::addPathWithMatrix(CanvasPath* path, double dx, double dy, tonic
     Dart_ThrowException(ToDart("Path.addPathWithMatrix called with non-genuine Path."));
   
   SkMatrix matrix = ToSkMatrix(matrix4);
-  matrix.setScaleX(matrix.getScaleX() + dx);
-  matrix.setScaleY(matrix.getScaleY() + dy);
+  matrix.setTranslateX(matrix.getTranslateX() + dx);
+  matrix.setTranslateY(matrix.getTranslateY() + dy);
   path_.addPath(path->path(), matrix, SkPath::kAppend_AddPathMode);
   matrix4.Release();
-  
 }
 
 void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {
@@ -235,8 +235,8 @@ void CanvasPath::extendWithPathAndMatrix(CanvasPath* path, double dx, double dy,
     Dart_ThrowException(ToDart("Path.addPathWithMatrix called with non-genuine Path."));
   
   SkMatrix matrix = ToSkMatrix(matrix4);
-  matrix.setScaleX(matrix.getScaleX() + dx);
-  matrix.setScaleY(matrix.getScaleY() + dy);
+  matrix.setTranslateX(matrix.getTranslateX() + dx);
+  matrix.setTranslateY(matrix.getTranslateY() + dy);
   path_.addPath(path->path(), matrix, SkPath::kExtend_AddPathMode);
   matrix4.Release();
 }
