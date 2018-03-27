@@ -1765,13 +1765,20 @@ class Tangent {
   final double angle;
 }
 
-/// An iterable collection of [PathMetric] objects.
+/// An iterable collection of [PathMetric] objects describing a [Path].
 /// 
-/// Each path metric corresponds to a segment of a path.
+/// A [PathMetrics] object is created by using the [Path.computeMetrics] method,
+/// and represents the path as it stood at the time of the call. Subsequent 
+/// modifications of the path do not affect the [PathMetrics] object.
 /// 
-/// For example, if you call [Path.moveTo] once in the middle of drawing, you
-/// would get two PathMetric objects in this iterable.  Call 
-/// [Path.computeMetrics] to create the iterable.
+/// Each path metric corresponds to a segment, or contour, of a path.
+/// 
+/// For example, a path consisting of a [Path.lineTo], a [Path.moveTo], and 
+/// another [Path.lineTo] will contain two contours and thus be represented by 
+/// two [PathMetric] objects.
+///
+/// When iterating across a [PathMetrics]' contours, the [PathMetric] objects are only
+/// valid until the next one is obtained.
 class PathMetrics extends collection.IterableBase<PathMetric> {
   PathMetrics._(Path path, bool forceClosed) :
     _iterator = new PathMetricIterator._(new PathMetric._(path, forceClosed));
