@@ -1744,13 +1744,26 @@ class Tangent {
   /// Creates a [Tangent] with the given values.
   /// 
   /// The arguments must not be null.
-  const Tangent(this.position, this.angle) : assert(position != null), assert(angle != null);
+  const Tangent(this.position, this.vector) 
+    : assert(position != null), 
+      assert(vector != null);
+
+  factory Tangent.fromAngle(Offset position, double angle) {
+    return new Tangent(position, new Offset(math.cos(angle), math.sin(angle)));
+  }
 
   /// Position of the tangent
   /// 
   /// When used with [PathMetric.getTangentForOffset], this represents the precise
   /// position that the given offset along the path corresponds to.
   final Offset position;
+
+  /// The vector of the curve at [position].
+  /// 
+  /// When used with [PathMetric.getTangentForOffset], this is the vector of the
+  /// curve that is at the given offset along the path (i.e. the direction of the
+  /// curve at [position]).
+  final Offset vector;
 
   /// The direction of the curve at [position].
   /// 
@@ -1763,7 +1776,8 @@ class Tangent {
   /// the negative y-axis, i.e. in a clockwise direction, and negative numbers
   /// pointing upward toward the positive y-axis, i.e. in a counter-clockwise 
   /// direction.
-  final double angle;
+  // flip the sign to be consistent with [Path.arcTo]'s `sweepAngle`
+  double get angle => -math.atan2(vector.dy, vector.dx);
 }
 
 /// An iterable collection of [PathMetric] objects describing a [Path].
@@ -1849,8 +1863,7 @@ class PathMetric extends NativeFieldWrapperClass2 {
     } else {
       return new Tangent(
         new Offset(posTan[1], posTan[2]), 
-        // flip the sign to be consistent with [Path.arcTo]'s `sweepAngle`
-        -math.atan2(posTan[4], posTan[3]) 
+        new Offset(posTan[3], posTan[4]) 
       );
     }
   }
