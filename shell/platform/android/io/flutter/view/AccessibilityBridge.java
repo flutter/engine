@@ -484,7 +484,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         if (rootObject != null) {
           final float[] identity = new float[16];
           Matrix.setIdentityM(identity, 0);
-          rootObject.updateRecursively(identity, visitedObjects, false, routeNames);
+          rootObject.updateRecursively(identity, visitedObjects, false);
           newRoute = rootObject.getMostSpecificRoute();
         }
 
@@ -974,7 +974,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
             if (children != null) {
                 for (int i = 0; i < children.size(); ++i) {
-                    children.get(i).updateRecursively(globalTransform, visitedObjects, forceUpdate, routeNames);
+                    children.get(i).updateRecursively(globalTransform, visitedObjects, forceUpdate);
                 }
             }
         }
