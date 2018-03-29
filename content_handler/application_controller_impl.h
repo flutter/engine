@@ -9,15 +9,15 @@
 
 #include <fdio/namespace.h>
 
-#include "lib/app/fidl/application_controller.fidl.h"
-#include "lib/app/fidl/application_runner.fidl.h"
-#include "lib/app/fidl/service_provider.fidl.h"
-#include "lib/fidl/cpp/bindings/binding.h"
-#include "lib/fidl/cpp/bindings/binding_set.h"
+#include <fuchsia/cpp/component.h>
+#include <fuchsia/cpp/component.h>
+#include <fuchsia/cpp/component.h>
+#include "lib/fidl/cpp/binding.h"
+#include "lib/fidl/cpp/binding_set.h"
 #include "lib/fxl/macros.h"
 #include "lib/fxl/synchronization/waitable_event.h"
 #include "lib/svc/cpp/service_provider_bridge.h"
-#include "lib/ui/views/fidl/view_provider.fidl.h"
+#include <fuchsia/cpp/ui.h>
 #include "third_party/dart/runtime/include/dart_api.h"
 
 namespace flutter_runner {
@@ -31,7 +31,7 @@ class ApplicationControllerImpl : public component::ApplicationController,
       App* app,
       component::ApplicationPackagePtr application,
       component::ApplicationStartupInfoPtr startup_info,
-      f1dl::InterfaceRequest<component::ApplicationController> controller);
+      fidl::InterfaceRequest<component::ApplicationController> controller);
 
   ~ApplicationControllerImpl() override;
 
@@ -39,13 +39,13 @@ class ApplicationControllerImpl : public component::ApplicationController,
 
   void Kill() override;
   void Detach() override;
-  void Wait(const WaitCallback& callback) override;
+  void Wait(WaitCallback callback) override;
 
   // |mozart::ViewProvider| implementation
 
   void CreateView(
-      f1dl::InterfaceRequest<mozart::ViewOwner> view_owner_request,
-      f1dl::InterfaceRequest<component::ServiceProvider> services) override;
+      fidl::InterfaceRequest<mozart::ViewOwner> view_owner_request,
+      fidl::InterfaceRequest<component::ServiceProvider> services) override;
 
   Dart_Port GetUIIsolateMainPort();
   std::string GetUIIsolateName();
@@ -57,11 +57,11 @@ class ApplicationControllerImpl : public component::ApplicationController,
   fdio_ns_t* SetupNamespace(const component::FlatNamespacePtr& flat);
 
   App* app_;
-  f1dl::Binding<component::ApplicationController> binding_;
+  fidl::Binding<component::ApplicationController> binding_;
 
   component::ServiceProviderBridge service_provider_bridge_;
 
-  f1dl::BindingSet<mozart::ViewProvider> view_provider_bindings_;
+  fidl::BindingSet<mozart::ViewProvider> view_provider_bindings_;
 
   std::string url_;
   std::unique_ptr<RuntimeHolder> runtime_holder_;

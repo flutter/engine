@@ -11,7 +11,7 @@
 #include "flutter/content_handler/vulkan_surface_producer.h"
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/scene_update_context.h"
-#include "lib/fidl/cpp/bindings/interface_handle.h"
+#include "lib/fidl/cpp/interface_handle.h"
 #include "lib/fxl/functional/closure.h"
 #include "lib/fxl/macros.h"
 #include "lib/ui/scenic/client/resources.h"
@@ -57,7 +57,7 @@ class SessionConnection {
   fxl::Closure metrics_changed_callback_;
 
   void OnSessionError();
-  void OnSessionEvents(f1dl::Array<ui::EventPtr> events);
+  void OnSessionEvents(fidl::Array<ui::EventPtr> events);
 
   void EnqueueClearCommands();
 

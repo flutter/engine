@@ -14,7 +14,7 @@
 #include "lib/fxl/macros.h"
 #include "lib/fxl/time/time_delta.h"
 #if defined(OS_FUCHSIA)
-#include "lib/ui/scenic/fidl/events.fidl.h"
+#include <fuchsia/cpp/ui.h>
 #endif
 #include "third_party/skia/include/core/SkSize.h"
 
