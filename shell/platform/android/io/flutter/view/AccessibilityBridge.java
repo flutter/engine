@@ -966,8 +966,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
             if (children != null) {
                 for (int i = 0; i < children.size(); ++i) {
-                    final SemanticsObject child = children.get(i);
-                    child.updateRecursively(globalTransform, visitedObjects, forceUpdate, routeNames);
+                    children.get(i).updateRecursively(globalTransform, visitedObjects, forceUpdate, routeNames);
                 }
             }
         }
