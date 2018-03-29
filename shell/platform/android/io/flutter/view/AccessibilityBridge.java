@@ -479,20 +479,20 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         Set<SemanticsObject> visitedObjects = new HashSet<SemanticsObject>();
-        ArrayList<String> routeNames = new ArrayList<>();
         SemanticsObject rootObject = getRootObject();
+        String newRoute;
         if (rootObject != null) {
           final float[] identity = new float[16];
           Matrix.setIdentityM(identity, 0);
           rootObject.updateRecursively(identity, visitedObjects, false, routeNames);
+          newRoute = rootObject.getMostSpecificRoute();
         }
 
         // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route changed from the previous
         // route name.
-        if (routeNames.size() == 0) {
+        if (newRoute == null) {
             previousRoute = null;
         } else {
-            String newRoute = routeNames.get(routeNames.size() - 1);
             if (!newRoute.equals(previousRoute)) {
                 previousRoute = newRoute;
                 createWindowChangeEvent(newRoute);
@@ -908,7 +908,19 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 || (hint != null && !hint.isEmpty());
         }
 
-        void updateRecursively(float[] ancestorTransform, Set<SemanticsObject> visitedObjects, boolean forceUpdate, ArrayList<String> routeNames) {
+        String getMostSpecificRoute() {
+            String route = routeName;
+            if (children != null) {
+                for (int i = 0; i < children.size(); ++i) {
+                    String childRouteName = children.get(i).getMostSpecificRoute();
+                    if (childRouteName != null)
+                        routeName = childRouteName;
+                }
+            }
+            return route;
+        }
+
+        void updateRecursively(float[] ancestorTransform, Set<SemanticsObject> visitedObjects, boolean forceUpdate) {
             visitedObjects.add(this);
 
             if (globalGeometryDirty)
@@ -959,10 +971,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
             assert globalTransform != null;
             assert globalRect != null;
-
-            if (routeName != null) {
-                routeNames.add(routeName);
-            }
 
             if (children != null) {
                 for (int i = 0; i < children.size(); ++i) {

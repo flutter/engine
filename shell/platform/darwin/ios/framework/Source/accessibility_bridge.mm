@@ -169,15 +169,16 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
          ([self node].actions & ~blink::kScrollableSemanticsActions) != 0;
 }
 
-- (void)collectRoutes:(NSMutableArray*)routes {
-  NSString* result = [self accessibilityRouteName];
-  if (result)
-    [routes addObject:result];
+- (NSString*)mostSpecificRoute {
+  NSString* route = [self accessibilityRouteName];
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
-      [child collectRoutes:routes];
+      NSString* childRoute = [child mostSpecificRoute];
+      if (childRoute)
+        route = childRoute; 
     }
   }
+  return route;
 }
 
 - (NSString*)accessibilityLabel {
@@ -518,19 +519,16 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
     if (!view_.accessibilityElements) {
       view_.accessibilityElements = @[ [root accessibilityContainer] ];
     }
-    NSMutableArray<NSString*>* routes = [[NSMutableArray alloc] init];
-    [root collectRoutes:routes];
-    if ([routes count] == 0) {
+    NSString* latestRoute = [root mostSpecificRoute];
+    if (latestRoute == nil) {
       [previous_route_ release];
       previous_route_ = nil;
     } else  {
-      NSString* latestRoute = routes[[routes count] - 1];
       if (![latestRoute isEqualToString:previous_route_]) {
         previous_route_ = [latestRoute retain];
         routeChanged = true;
       }
     }
-    [routes release];
   } else {
     view_.accessibilityElements = nil;
   }
