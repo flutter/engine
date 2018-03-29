@@ -51,7 +51,9 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
   V(Path, reset)                     \
   V(Path, setFillType)               \
   V(Path, shift)                     \
-  V(Path, transform)
+  V(Path, transform)                 \
+  V(Path, setFromSvgPathData)        \
+  V(Path, toSvgString)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -239,4 +241,15 @@ fxl::RefPtr<CanvasPath> CanvasPath::transform(tonic::Float64List& matrix4) {
   return path;
 }
 
+bool CanvasPath::setFromSvgPathData(const std::string& svgPathData) {
+  path_.reset();
+  bool success = SkParsePath::FromSVGString(svgPathData.c_str(), &path_);
+  return success;
+}
+
+Dart_Handle CanvasPath::toSvgString() {
+  SkString str;
+  SkParsePath::ToSVGString(path_, &str);
+  return ToDart(str.c_str());
+}
 }  // namespace blink
