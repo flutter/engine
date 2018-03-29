@@ -474,7 +474,7 @@ bool PlatformViewAndroid::ResourceContextMakeCurrent() {
 
 void PlatformViewAndroid::UpdateSemantics(
     blink::SemanticsNodeUpdates update) {
-  constexpr size_t kBytesPerNode = 36 * sizeof(int32_t);
+  constexpr size_t kBytesPerNode = 37 * sizeof(int32_t);
   constexpr size_t kBytesPerChild = sizeof(int32_t);
 
   JNIEnv* env = fml::jni::AttachCurrentThread();
@@ -537,6 +537,12 @@ void PlatformViewAndroid::UpdateSemantics(
       } else {
         buffer_int32[position++] = strings.size();
         strings.push_back(node.hint);
+      }
+      if (node.routeName.empty()) {
+        buffer_int32[position++] = -1;
+      } else {
+        buffer_int32[position++] = strings.size();
+        strings.push_back(node.routeName);
       }
       buffer_int32[position++] = node.textDirection;
       buffer_int32[position++] = node.previousNodeId;

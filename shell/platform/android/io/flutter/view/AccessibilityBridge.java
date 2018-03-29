@@ -45,6 +45,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private SemanticsObject mA11yFocusedObject;
     private SemanticsObject mInputFocusedObject;
     private SemanticsObject mHoveredObject;
+    private ArrayList<String> previousRouteNames = new ArrayList<>();
+    private String previousRoute = null;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
@@ -478,12 +480,45 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         Set<SemanticsObject> visitedObjects = new HashSet<SemanticsObject>();
+        ArrayList<String> routeNames = new ArrayList<>();
         SemanticsObject rootObject = getRootObject();
         if (rootObject != null) {
           final float[] identity = new float[16];
           Matrix.setIdentityM(identity, 0);
-          rootObject.updateRecursively(identity, visitedObjects, false);
+          rootObject.updateRecursively(identity, visitedObjects, false, routeNames);
         }
+
+        // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the route changed from the previous
+        // route name.
+        if (previousRouteNames.size() == 0 && routeNames.size() > 0) {
+            String name = routeNames.get(0);
+            if (!name.equals(previousRoute)) {
+                previousRoute = name;
+                createWindowChangeEvent(name);
+            }
+        } else {
+            String dispatchedName = null;
+            int i = 0;
+            for (; i < routeNames.size() && i < previousRouteNames.size(); i++) {
+                String newName = routeNames.get(i);
+                String previousName = previousRouteNames.get(i);
+                if (!newName.equals(previousName)) {
+                    dispatchedName = newName;
+                    break;
+                }
+            }
+            if (dispatchedName == null && i < routeNames.size()) {
+                dispatchedName = routeNames.get(i);
+            }
+            if (dispatchedName == null && i < previousRouteNames.size()) {
+                dispatchedName = previousRouteNames.get(i);
+            }
+            if (dispatchedName != null && !dispatchedName.equals(previousRoute)) {
+                previousRoute = dispatchedName;
+                createWindowChangeEvent(dispatchedName);
+            }
+        }
+        previousRouteNames = routeNames;
 
         Iterator<Map.Entry<Integer, SemanticsObject>> it = mObjects.entrySet().iterator();
         while (it.hasNext()) {
@@ -648,6 +683,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
     }
 
+    private void createWindowChangeEvent(String name) {
+        AccessibilityEvent e = obtainAccessibilityEvent(0, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+        e.getText().add(name);
+        mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
+    }
+
     private void willRemoveSemanticsObject(SemanticsObject object) {
         assert mObjects.containsKey(object.id);
         assert mObjects.get(object.id) == object;
@@ -704,6 +745,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         String increasedValue;
         String decreasedValue;
         String hint;
+        String routeName;
         TextDirection textDirection;
         int previousNodeId;
 
@@ -803,6 +845,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             stringIndex = buffer.getInt();
             hint = stringIndex == -1 ? null : strings[stringIndex];
 
+            stringIndex = buffer.getInt();
+            routeName = stringIndex == -1 ? null : strings[stringIndex];
+
             textDirection = TextDirection.fromInt(buffer.getInt());
 
             previousNodeId = buffer.getInt();
@@ -884,7 +929,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 || (hint != null && !hint.isEmpty());
         }
 
-        void updateRecursively(float[] ancestorTransform, Set<SemanticsObject> visitedObjects, boolean forceUpdate) {
+        void updateRecursively(float[] ancestorTransform, Set<SemanticsObject> visitedObjects, boolean forceUpdate, ArrayList<String> routeNames) {
             visitedObjects.add(this);
 
             if (globalGeometryDirty)
@@ -936,9 +981,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             assert globalTransform != null;
             assert globalRect != null;
 
+            if (routeName != null) {
+                routeNames.add(routeName);
+            }
+
             if (children != null) {
                 for (int i = 0; i < children.size(); ++i) {
-                    children.get(i).updateRecursively(globalTransform, visitedObjects, forceUpdate);
+                    final SemanticsObject child = children.get(i);
+                    child.updateRecursively(globalTransform, visitedObjects, forceUpdate, routeNames);
                 }
             }
         }
