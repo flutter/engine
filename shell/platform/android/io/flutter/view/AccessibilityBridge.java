@@ -480,7 +480,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         Set<SemanticsObject> visitedObjects = new HashSet<SemanticsObject>();
         SemanticsObject rootObject = getRootObject();
-        String newRoute;
+        String newRoute = null;
         if (rootObject != null) {
           final float[] identity = new float[16];
           Matrix.setIdentityM(identity, 0);
