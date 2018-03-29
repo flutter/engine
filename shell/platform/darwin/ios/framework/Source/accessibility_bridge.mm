@@ -441,7 +441,8 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
     : view_(view),
       platform_view_(platform_view),
       objects_([[NSMutableDictionary alloc] init]),
-      weak_factory_(this) {
+      weak_factory_(this),
+      previous_route_(nil) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->binary_messenger()
@@ -454,6 +455,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
 AccessibilityBridge::~AccessibilityBridge() {
   view_.accessibilityElements = nil;
   [previous_route_ release];
+  previous_route_ = nil;
   [accessibility_channel_.get() setMessageHandler:nil];
 }
 
@@ -520,6 +522,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
     [root collectRoutes:routes];
     if ([routes count] == 0) {
       [previous_route_ release];
+      previous_route_ = nil;
     } else  {
       NSString* latestRoute = routes[[routes count] - 1];
       if (![latestRoute isEqualToString:previous_route_]) {
