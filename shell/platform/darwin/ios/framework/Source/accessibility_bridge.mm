@@ -174,7 +174,7 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
   if (result)
     [routes addObject:result];
   if ([self hasChildren]) {
-    for (SemanticsObject* child in _children) {
+    for (SemanticsObject* child in self.children) {
       [child latestRoutes:routes];
     }
   }
@@ -510,11 +510,13 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
 
   SemanticsObject* root = objects_.get()[@(kRootNodeId)];
 
+  bool routeChanged = false;
+
   if (root) {
     if (!view_.accessibilityElements) {
       view_.accessibilityElements = @[ [root accessibilityContainer] ];
     }
-    NSMutableArray* routes = [[[NSMutableArray alloc] init] autorelease];
+    NSMutableArray<NSString*>* routes = [[NSMutableArray alloc] init];
     [root latestRoutes:routes];
     if ([routes count] == 0) {
       _previous_route_ = nil;
@@ -522,9 +524,10 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
       NSString* latestRoute = routes[[routes count] - 1];
       if (![latestRoute isEqualToString:_previous_route_]) {
         _previous_route_ = latestRoute;
-        NSLog(@"%@", latestRoute);
+        routeChanged = true;
       }
     }
+    [routes release];
   } else {
     view_.accessibilityElements = nil;
   }
@@ -543,6 +546,9 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
   if (scrollOccured) {
     // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
     UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, @"");
+  }
+  if (routeChanged) {
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, _previous_route_);
   }
 }
 
