@@ -449,11 +449,11 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
   [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
   }];
-  _previous_route_ = nil;
 }
 
 AccessibilityBridge::~AccessibilityBridge() {
   view_.accessibilityElements = nil;
+  [previous_route_ release];
   [accessibility_channel_.get() setMessageHandler:nil];
 }
 
@@ -519,13 +519,11 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
     NSMutableArray<NSString*>* routes = [[NSMutableArray alloc] init];
     [root collectRoutes:routes];
     if ([routes count] == 0) {
-      NSString* oldRoute = _previous_route_;
-      [oldRoute release];
-      _previous_route_ = nil;
+      [previous_route_ release];
     } else  {
       NSString* latestRoute = routes[[routes count] - 1];
-      if (![latestRoute isEqualToString:_previous_route_]) {
-        _previous_route_ = [latestRoute retain];
+      if (![latestRoute isEqualToString:previous_route_]) {
+        previous_route_ = [latestRoute retain];
         routeChanged = true;
       }
     }
@@ -550,7 +548,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
     UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, @"");
   }
   if (routeChanged) {
-    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, _previous_route_);
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, previous_route_);
   }
 }
 

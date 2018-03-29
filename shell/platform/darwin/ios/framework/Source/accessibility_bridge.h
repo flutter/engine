@@ -122,7 +122,7 @@ class AccessibilityBridge final {
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
   fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;
-  NSString* _previous_route_;
+  NSString* previous_route_;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };
