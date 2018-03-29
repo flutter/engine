@@ -40,7 +40,6 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.VsyncWaiter;
-import android.view.accessibility.AccessibilityEvent;
 
 import org.json.JSONException;
 import org.json.JSONObject;
