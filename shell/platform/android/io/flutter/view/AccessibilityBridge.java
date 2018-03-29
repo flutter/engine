@@ -489,12 +489,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route changed from the previous
         // route name.
-        StringBuilder asd = new StringBuilder();
-        for (String name : routeNames) {
-            asd.append(name + ", ");
-        }
-        Log.i(TAG, asd.toString());
-
         if (routeNames.size() == 0) {
             previousRoute = null;
         } else {
