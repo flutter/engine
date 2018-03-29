@@ -169,15 +169,16 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
          ([self node].actions & ~blink::kScrollableSemanticsActions) != 0;
 }
 
-- (void)latestRoutes:(NSMutableArray*)routes {
-  NSString* result = [self accessibilityRouteName];
-  if (result)
-    [routes addObject:result];
+- (NSString*)mostSpecificRoute {
+  NSString* route = [self accessibilityRouteName];
   if ([self hasChildren]) {
-    for (SemanticsObject* child in _children) {
-      [child latestRoutes:routes];
+    for (SemanticsObject* child in self.children) {
+      NSString* childRoute = [child mostSpecificRoute];
+      if (childRoute)
+        route = childRoute; 
     }
   }
+  return route;
 }
 
 - (NSString*)accessibilityLabel {
@@ -441,7 +442,8 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
     : view_(view),
       platform_view_(platform_view),
       objects_([[NSMutableDictionary alloc] init]),
-      weak_factory_(this) {
+      weak_factory_(this),
+      previous_route_(nil) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->binary_messenger()
@@ -449,11 +451,12 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
   [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
   }];
-  _previous_route_ = nil;
 }
 
 AccessibilityBridge::~AccessibilityBridge() {
   view_.accessibilityElements = nil;
+  [previous_route_ release];
+  previous_route_ = nil;
   [accessibility_channel_.get() setMessageHandler:nil];
 }
 
@@ -510,19 +513,20 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
 
   SemanticsObject* root = objects_.get()[@(kRootNodeId)];
 
+  bool routeChanged = false;
+
   if (root) {
     if (!view_.accessibilityElements) {
       view_.accessibilityElements = @[ [root accessibilityContainer] ];
     }
-    NSMutableArray* routes = [[[NSMutableArray alloc] init] autorelease];
-    [root latestRoutes:routes];
-    if ([routes count] == 0) {
-      _previous_route_ = nil;
+    NSString* latestRoute = [root mostSpecificRoute];
+    if (latestRoute == nil) {
+      [previous_route_ release];
+      previous_route_ = nil;
     } else  {
-      NSString* latestRoute = routes[[routes count] - 1];
-      if (![latestRoute isEqualToString:_previous_route_]) {
-        _previous_route_ = latestRoute;
-        NSLog(@"%@", latestRoute);
+      if (![latestRoute isEqualToString:previous_route_]) {
+        previous_route_ = [latestRoute retain];
+        routeChanged = true;
       }
     }
   } else {
@@ -543,6 +547,9 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
   if (scrollOccured) {
     // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
     UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, @"");
+  }
+  if (routeChanged) {
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, previous_route_);
   }
 }
 
