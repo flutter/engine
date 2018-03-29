@@ -45,7 +45,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private SemanticsObject mA11yFocusedObject;
     private SemanticsObject mInputFocusedObject;
     private SemanticsObject mHoveredObject;
-    private ArrayList<String> previousRouteNames = new ArrayList<>();
     private String previousRoute = null;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
@@ -488,37 +487,23 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
           rootObject.updateRecursively(identity, visitedObjects, false, routeNames);
         }
 
-        // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the route changed from the previous
+        // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route changed from the previous
         // route name.
-        if (previousRouteNames.size() == 0 && routeNames.size() > 0) {
-            String name = routeNames.get(0);
-            if (!name.equals(previousRoute)) {
-                previousRoute = name;
-                createWindowChangeEvent(name);
-            }
+        StringBuilder asd = new StringBuilder();
+        for (String name : routeNames) {
+            asd.append(name + ", ");
+        }
+        Log.i(TAG, asd.toString());
+
+        if (routeNames.size() == 0) {
+            previousRoute = null;
         } else {
-            String dispatchedName = null;
-            int i = 0;
-            for (; i < routeNames.size() && i < previousRouteNames.size(); i++) {
-                String newName = routeNames.get(i);
-                String previousName = previousRouteNames.get(i);
-                if (!newName.equals(previousName)) {
-                    dispatchedName = newName;
-                    break;
-                }
-            }
-            if (dispatchedName == null && i < routeNames.size()) {
-                dispatchedName = routeNames.get(i);
-            }
-            if (dispatchedName == null && i < previousRouteNames.size()) {
-                dispatchedName = previousRouteNames.get(i);
-            }
-            if (dispatchedName != null && !dispatchedName.equals(previousRoute)) {
-                previousRoute = dispatchedName;
-                createWindowChangeEvent(dispatchedName);
+            String newRoute = routeNames.get(routeNames.size() - 1);
+            if (!newRoute.equals(previousRoute)) {
+                previousRoute = newRoute;
+                createWindowChangeEvent(newRoute);
             }
         }
-        previousRouteNames = routeNames;
 
         Iterator<Map.Entry<Integer, SemanticsObject>> it = mObjects.entrySet().iterator();
         while (it.hasNext()) {
