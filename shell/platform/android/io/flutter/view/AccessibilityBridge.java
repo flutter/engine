@@ -914,7 +914,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 for (int i = 0; i < children.size(); ++i) {
                     String childRouteName = children.get(i).getMostSpecificRoute();
                     if (childRouteName != null)
-                        routeName = childRouteName;
+                        route = childRouteName;
                 }
             }
             return route;
