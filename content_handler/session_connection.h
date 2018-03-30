@@ -27,7 +27,7 @@ class SessionConnection {
 
   bool has_metrics() const { return scene_update_context_.has_metrics(); }
 
-  const ui::gfx::MetricsPtr& metrics() const {
+  const gfx::MetricsPtr& metrics() const {
     return scene_update_context_.metrics();
   }
 
@@ -57,11 +57,11 @@ class SessionConnection {
   fxl::Closure metrics_changed_callback_;
 
   void OnSessionError();
-  void OnSessionEvents(fidl::Array<ui::EventPtr> events);
+  void OnSessionEvents(fidl::VectorPtr<ui::Event> events);
 
   void EnqueueClearCommands();
 
-  void OnPresent(ui::PresentationInfoPtr info);
+  void OnPresent(images::PresentationInfo info);
 
   FXL_DISALLOW_COPY_AND_ASSIGN(SessionConnection);
 };

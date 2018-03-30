@@ -15,6 +15,10 @@
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/assets/unzipper_provider.h"
 #include "flutter/assets/zip_asset_store.h"
+#ifdef FAR
+// This is defined in zconf.h and causes us problems.
+#undef FAR
+#endif
 #include "flutter/content_handler/accessibility_bridge.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -22,26 +26,23 @@
 #include "flutter/runtime/runtime_delegate.h"
 #include "lib/app/cpp/application_context.h"
 #include <fuchsia/cpp/component.h>
-#include <fuchsia/cpp/component.h>
 #include <fuchsia/cpp/modular.h>
 #include "lib/fidl/cpp/binding.h"
 #include "lib/fxl/functional/closure.h"
 #include "lib/fxl/macros.h"
 #include "lib/fxl/memory/weak_ptr.h"
 #include "lib/ui/flutter/sdk_ext/src/natives.h"
-#include <fuchsia/cpp/ui.h>
-#include <fuchsia/cpp/ui.h>
-#include <fuchsia/cpp/ui.h>
+#include <fuchsia/cpp/input.h>
 
 namespace flutter_runner {
 
 class Rasterizer;
 
 class RuntimeHolder : public blink::RuntimeDelegate,
-                      public mozart::NativesDelegate,
-                      public mozart::ViewListener,
-                      public mozart::InputListener,
-                      public mozart::InputMethodEditorClient {
+                      public views_v1::NativesDelegate,
+                      public views_v1::ViewListener,
+                      public input::InputListener,
+                      public input::InputMethodEditorClient {
  public:
   RuntimeHolder();
   ~RuntimeHolder();
@@ -51,7 +52,7 @@ class RuntimeHolder : public blink::RuntimeDelegate,
             fidl::InterfaceRequest<component::ServiceProvider> outgoing_services,
             std::vector<char> bundle);
   void CreateView(const std::string& script_uri,
-                  fidl::InterfaceRequest<mozart::ViewOwner> view_owner_request,
+                  fidl::InterfaceRequest<views_v1_token::ViewOwner> view_owner_request,
                   fidl::InterfaceRequest<component::ServiceProvider> services);
 
   Dart_Port GetUIIsolateMainPort();
@@ -72,22 +73,22 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   void DidCreateMainIsolate(Dart_Isolate isolate) override;
   void DidShutdownMainIsolate() override;
 
-  // |mozart::NativesDelegate| implementation:
-  mozart::View* GetMozartView() override;
+  // |views_v1::NativesDelegate| implementation:
+  views_v1::View* GetMozartView() override;
 
-  // |mozart::InputListener| implementation:
-  void OnEvent(mozart::InputEventPtr event,
+  // |input::InputListener| implementation:
+  void OnEvent(input::InputEvent event,
                OnEventCallback callback) override;
 
-  // |mozart::ViewListener| implementation:
+  // |views_v1::ViewListener| implementation:
   void OnPropertiesChanged(
-      mozart::ViewPropertiesPtr properties,
+      views_v1::ViewProperties properties,
       OnPropertiesChangedCallback callback) override;
 
-  // |mozart::InputMethodEditorClient| implementation:
-  void DidUpdateState(mozart::TextInputStatePtr state,
-                      mozart::InputEventPtr event) override;
-  void OnAction(mozart::InputMethodAction action) override;
+  // |input::InputMethodEditorClient| implementation:
+  void DidUpdateState(input::TextInputState state,
+                      input::InputEventPtr event) override;
+  void OnAction(input::InputMethodAction action) override;
 
   fxl::WeakPtr<RuntimeHolder> GetWeakPtr();
 
@@ -121,14 +122,14 @@ class RuntimeHolder : public blink::RuntimeDelegate,
   std::unique_ptr<Rasterizer> rasterizer_;
   std::unique_ptr<blink::RuntimeController> runtime_;
   blink::ViewportMetrics viewport_metrics_;
-  mozart::ViewManagerPtr view_manager_;
-  fidl::Binding<mozart::ViewListener> view_listener_binding_;
-  fidl::Binding<mozart::InputListener> input_listener_binding_;
-  mozart::InputConnectionPtr input_connection_;
-  mozart::ViewPtr view_;
+  views_v1::ViewManagerPtr view_manager_;
+  fidl::Binding<views_v1::ViewListener> view_listener_binding_;
+  fidl::Binding<input::InputListener> input_listener_binding_;
+  input::InputConnectionPtr input_connection_;
+  views_v1::ViewPtr view_;
   std::unordered_set<int> down_pointers_;
-  mozart::InputMethodEditorPtr input_method_editor_;
-  fidl::Binding<mozart::InputMethodEditorClient> text_input_binding_;
+  input::InputMethodEditorPtr input_method_editor_;
+  fidl::Binding<input::InputMethodEditorClient> text_input_binding_;
   int current_text_input_client_ = 0;
   fxl::TimePoint last_begin_frame_time_;
   bool frame_outstanding_ = false;

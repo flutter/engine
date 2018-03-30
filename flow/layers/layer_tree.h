@@ -29,13 +29,13 @@ class LayerTree {
   // Raster includes both Preroll and Paint.
   void Raster(CompositorContext::ScopedFrame& frame,
 #if defined(OS_FUCHSIA)
-              ui::gfx::Metrics* metrics,
+              gfx::Metrics* metrics,
 #endif
               bool ignore_raster_cache = false);
 
   void Preroll(CompositorContext::ScopedFrame& frame,
 #if defined(OS_FUCHSIA)
-               ui::gfx::Metrics* metrics,
+               gfx::Metrics* metrics,
 #endif
                bool ignore_raster_cache = false);
 

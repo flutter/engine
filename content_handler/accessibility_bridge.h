@@ -34,7 +34,7 @@ class AccessibilityBridge {
   void EraseUnvisitedNodes(const std::vector<int>& visited_nodes);
 
   std::map<int, blink::SemanticsNode> semantics_nodes_;
-  maxwell::ContextWriterPtr writer_;
+  modular::ContextWriterPtr writer_;
 };
 
 }  // namespace flutter_runner

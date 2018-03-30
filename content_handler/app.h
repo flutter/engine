@@ -27,8 +27,8 @@ class App : public component::ApplicationRunner {
   // |component::ApplicationRunner| implementation:
 
   void StartApplication(
-      component::ApplicationPackagePtr application,
-      component::ApplicationStartupInfoPtr startup_info,
+      component::ApplicationPackage application,
+      component::ApplicationStartupInfo startup_info,
       fidl::InterfaceRequest<component::ApplicationController> controller) override;
 
   void Destroy(ApplicationControllerImpl* controller);
