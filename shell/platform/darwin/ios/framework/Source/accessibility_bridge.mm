@@ -170,7 +170,7 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
 }
 
 - (NSString*)mostSpecificRoute {
-  NSString* route = [self accessibilityRouteName];
+  NSString* route = [self accessibilityRoute];
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
       NSString* childRoute = [child mostSpecificRoute];
@@ -193,10 +193,10 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
   return @([self node].hint.data());
 }
 
-- (NSString*)accessibilityRouteName {
-  if ([self node].routeName.empty())
+- (NSString*)accessibilityRoute {
+  if ([self node].route.empty())
     return nil;
-  return @([self node].routeName.data());
+  return @([self node].route.data());
 }
 
 - (NSString*)accessibilityValue {
@@ -549,7 +549,8 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
     UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, @"");
   }
   if (routeChanged) {
-    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, previous_route_);
+    // TODO(jonahwilliams): iOS will sometimes want to read the name of a route.
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, nil);
   }
 }
 

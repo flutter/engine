@@ -404,6 +404,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The `transform` is a matrix that maps this node's coordinate system into
   /// its parent's coordinate system.
+  /// 
+  /// The `route` is a name which describes the currently visibile screen.
   void updateNode({
     int id,
     int flags,
@@ -419,7 +421,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String value,
     String increasedValue,
     String decreasedValue,
-    String routeName,
+    String route,
     TextDirection textDirection,
     int nextNodeId,
     int previousNodeId,
@@ -445,7 +447,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
                 value,
                 increasedValue,
                 decreasedValue,
-                routeName,
+                route,
                 textDirection != null ? textDirection.index + 1 : 0,
                 nextNodeId ?? -1,
                 previousNodeId ?? -1,
@@ -470,7 +472,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String value,
     String increasedValue,
     String decreasedValue,
-    String routeName,
+    String route,
     int textDirection,
     int nextNodeId,
     int previousNodeId,

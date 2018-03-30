@@ -38,6 +38,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
     private static final float SCROLL_EXTENT_FOR_INFINITY = 100000.0f;
     private static final float SCROLL_POSITION_CAP_FOR_INFINITY = 70000.0f;
+    private static final int ROOT_NODE_ID = 0;
 
     private Map<Integer, SemanticsObject> mObjects;
     private final FlutterView mOwner;
@@ -45,7 +46,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private SemanticsObject mA11yFocusedObject;
     private SemanticsObject mInputFocusedObject;
     private SemanticsObject mHoveredObject;
-    private String previousRoute = null;
+    private String previousAccessibilityRoute = null;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
@@ -118,8 +119,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         if (virtualViewId == View.NO_ID) {
             AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner);
             mOwner.onInitializeAccessibilityNodeInfo(result);
-            if (mObjects.containsKey(0))
-                result.addChild(mOwner, 0);
+            if (mObjects.containsKey(ROOT_NODE_ID))
+                result.addChild(mOwner, ROOT_NODE_ID);
             return result;
         }
 
@@ -178,10 +179,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         if (object.parent != null) {
-            assert object.id > 0;
+            assert object.id > ROOT_NODE_ID;
             result.setParent(mOwner, object.parent.id);
         } else {
-            assert object.id == 0;
+            assert object.id == ROOT_NODE_ID;
             result.setParent(mOwner);
         }
 
@@ -491,12 +492,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route changed from the previous
         // route name.
         if (newRoute == null) {
-            previousRoute = null;
-        } else {
-            if (!newRoute.equals(previousRoute)) {
-                previousRoute = newRoute;
-                createWindowChangeEvent(newRoute);
-            }
+            previousAccessibilityRoute = null;
+        } else if (!newRoute.equals(previousAccessibilityRoute)) {
+            previousAccessibilityRoute = newRoute;
+            createWindowChangeEvent(newRoute);
         }
 
         Iterator<Map.Entry<Integer, SemanticsObject>> it = mObjects.entrySet().iterator();
@@ -620,7 +619,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     }
 
     private AccessibilityEvent obtainAccessibilityEvent(int virtualViewId, int eventType) {
-        assert virtualViewId != 0;
+        assert virtualViewId != ROOT_NODE_ID;
         AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
         event.setPackageName(mOwner.getContext().getPackageName());
         event.setSource(mOwner, virtualViewId);
@@ -631,7 +630,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         if (!mAccessibilityEnabled) {
             return;
         }
-        if (virtualViewId == 0) {
+        if (virtualViewId == ROOT_NODE_ID) {
             mOwner.sendAccessibilityEvent(eventType);
         } else {
             sendAccessibilityEvent(obtainAccessibilityEvent(virtualViewId, eventType));
@@ -663,7 +662,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     }
 
     private void createWindowChangeEvent(String name) {
-        AccessibilityEvent e = obtainAccessibilityEvent(0, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+        // TYPE_WINDOW_STATE_CHANGED events should always be sent from the root node.
+        AccessibilityEvent e = obtainAccessibilityEvent(ROOT_NODE_ID, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
         e.getText().add(name);
         mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
     }
@@ -724,7 +724,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         String increasedValue;
         String decreasedValue;
         String hint;
-        String routeName;
+        String accessibilityRoute;
         TextDirection textDirection;
         int previousNodeId;
 
@@ -825,7 +825,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             hint = stringIndex == -1 ? null : strings[stringIndex];
 
             stringIndex = buffer.getInt();
-            routeName = stringIndex == -1 ? null : strings[stringIndex];
+            accessibilityRoute = stringIndex == -1 ? null : strings[stringIndex];
 
             textDirection = TextDirection.fromInt(buffer.getInt());
 
@@ -909,12 +909,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         String getMostSpecificRoute() {
-            String route = routeName;
+            String route = accessibilityRoute;
             if (children != null) {
                 for (int i = 0; i < children.size(); ++i) {
-                    String childRouteName = children.get(i).getMostSpecificRoute();
-                    if (childRouteName != null)
-                        route = childRouteName;
+                    String childAccessibilityRoute = children.get(i).getMostSpecificRoute();
+                    if (childAccessibilityRoute != null)
+                        route = childAccessibilityRoute;
                 }
             }
             return route;

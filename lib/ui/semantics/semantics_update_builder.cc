@@ -51,7 +51,7 @@ void SemanticsUpdateBuilder::updateNode(int id,
                                         std::string value,
                                         std::string increasedValue,
                                         std::string decreasedValue,
-                                        std::string routeName,
+                                        std::string route,
                                         int textDirection,
                                         int nextNodeId,
                                         int previousNodeId,
@@ -72,7 +72,7 @@ void SemanticsUpdateBuilder::updateNode(int id,
   node.value = value;
   node.increasedValue = increasedValue;
   node.decreasedValue = decreasedValue;
-  node.routeName = routeName;
+  node.route = route;
   node.textDirection = textDirection;
   node.nextNodeId = nextNodeId;
   node.previousNodeId = previousNodeId;
