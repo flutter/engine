@@ -1229,7 +1229,9 @@ class Image extends NativeFieldWrapperClass2 {
   ///
   /// The [format] is encoding format to be used.
   ///
-  /// The [quality] is a value in the range 0 to 100 where 0 corresponds to the lowest quality.
+  /// The [quality] is a value in the range 0 to 100. [quality] is a format specific metric trading
+  /// off size and encoding error. When used, 100 encodes with highest quality (i.e., least error)
+  /// and 0 encodes with lowest quality (i.e., smallest size).
   ///
   /// Returns a future which complete with the binary image data (e.g a PNG or JPEG binary data) or
   /// an error if encoding fails.
