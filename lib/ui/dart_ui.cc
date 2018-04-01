@@ -12,7 +12,6 @@
 #include "flutter/lib/ui/painting/frame_info.h"
 #include "flutter/lib/ui/painting/gradient.h"
 #include "flutter/lib/ui/painting/image.h"
-#include "flutter/lib/ui/painting/image_encoding.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/image_shader.h"
 #include "flutter/lib/ui/painting/path.h"

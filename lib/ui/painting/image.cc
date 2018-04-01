@@ -40,8 +40,8 @@ CanvasImage::~CanvasImage() {
 
 Dart_Handle CanvasImage::toByteData(int format,
                                     int quality,
-                                    Dart_Handle callback_handle) {
-  return EncodeImage(this, format, quality, callback_handle);
+                                    Dart_Handle callback) {
+  return EncodeImage(this, format, quality, callback);
 }
 
 void CanvasImage::dispose() {
