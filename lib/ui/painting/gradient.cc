@@ -67,18 +67,16 @@ void CanvasGradient::initRadial(double center_x,
   static_assert(sizeof(SkColor) == sizeof(int32_t),
                 "SkColor doesn't use int32_t.");
 
-  if (matrix4.data() == nullptr) {
-    set_shader(SkGradientShader::MakeRadial(
-        SkPoint::Make(center_x, center_y), radius,
-        reinterpret_cast<const SkColor*>(colors.data()), color_stops.data(),
-        colors.num_elements(), tile_mode));
-  } else {
-    SkMatrix sk_matrix = ToSkMatrix(matrix4);
-    set_shader(SkGradientShader::MakeRadial(
-        SkPoint::Make(center_x, center_y), radius,
-        reinterpret_cast<const SkColor*>(colors.data()), color_stops.data(),
-        colors.num_elements(), tile_mode, 0, &sk_matrix));
+  SkMatrix sk_matrix;
+  bool has_matrix = matrix4.data() != nullptr;
+  if (has_matrix) {
+    sk_matrix = ToSkMatrix(matrix4);
   }
+
+  set_shader(SkGradientShader::MakeRadial(
+      SkPoint::Make(center_x, center_y), radius,
+      reinterpret_cast<const SkColor*>(colors.data()), color_stops.data(),
+      colors.num_elements(), tile_mode, 0, has_matrix ? &sk_matrix : nullptr));
 }
 
 CanvasGradient::CanvasGradient() : Shader(nullptr) {}

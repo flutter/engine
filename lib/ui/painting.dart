@@ -1921,6 +1921,10 @@ class Gradient extends Shader {
   /// If `center`, `radius`, `colors`, or `tileMode` are null, or if `colors` or
   /// `colorStops` contain null values, this constructor will throw a
   /// [NoSuchMethodError].
+  /// 
+  /// If `matrix4` is provided, the gradient fill will be transformed by the 
+  /// specified 4x4 matrix relative to the local coordinate system. `matrix4` must
+  /// be a column-major matrix packed into a list of 16 values.
   Gradient.radial(
     Offset center,
     double radius,
