@@ -1927,17 +1927,20 @@ class Gradient extends Shader {
     List<Color> colors, [
     List<double> colorStops,
     TileMode tileMode = TileMode.clamp,
+    Float64List matrix4
   ]) : assert(_offsetIsValid(center)),
        assert(colors != null),
        assert(tileMode != null),
        super._() {
+    if (matrix4 != null && matrix4.length != 16)
+      throw new ArgumentError('"matrix4" must have 16 entries.');
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : new Float32List.fromList(colorStops);
     _constructor();
-    _initRadial(center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index);
+    _initRadial(center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
   }
-  void _initRadial(double centerX, double centerY, double radius, Int32List colors, Float32List colorStops, int tileMode) native 'Gradient_initRadial';
+  void _initRadial(double centerX, double centerY, double radius, Int32List colors, Float32List colorStops, int tileMode, Float64List matrix4) native 'Gradient_initRadial';
 
   static void _validateColorStops(List<Color> colors, List<double> colorStops) {
     if (colorStops == null) {
