@@ -78,41 +78,24 @@ SkEncodedImageFormat ToSkEncodedImageFormat(int format) {
   }
 }
 
-void EncodeImage(Dart_NativeArguments args) {
-  Dart_Handle exception = nullptr;
+}  // namespace
 
-  CanvasImage* canvas_image =
-      tonic::DartConverter<CanvasImage*>::FromArguments(args, 0, exception);
-
-  if (exception) {
-    Dart_ThrowException(exception);
-    return;
-  }
+Dart_Handle EncodeImage(CanvasImage* canvas_image,
+                        int format,
+                        int quality,
+                        Dart_Handle callback_handle) {
   if (!canvas_image)
-    Dart_ThrowException(ToDart("encodeImage called with non-genuine Image."));
+    return ToDart("encode called with non-genuine Image.");
 
-  int format = tonic::DartConverter<int>::FromArguments(args, 1, exception);
-  if (exception) {
-    Dart_ThrowException(exception);
-    return;
-  }
+  if (!Dart_IsClosure(callback_handle))
+    return ToDart("Callback must be a function.");
+
   SkEncodedImageFormat image_format = ToSkEncodedImageFormat(format);
 
-  int quality = tonic::DartConverter<int>::FromArguments(args, 2, exception);
-  if (exception) {
-    Dart_ThrowException(exception);
-    return;
-  }
   if (quality > 100)
     quality = 100;
   if (quality < 0)
     quality = 0;
-
-  Dart_Handle callback_handle = Dart_GetNativeArgument(args, 3);
-  if (!Dart_IsClosure(callback_handle)) {
-    Dart_ThrowException(ToDart("Callback must be a function"));
-    return;
-  }
 
   auto callback = std::make_unique<DartPersistentValue>(
       tonic::DartState::Current(), callback_handle);
@@ -123,14 +106,8 @@ void EncodeImage(Dart_NativeArguments args) {
         EncodeImageAndInvokeDataCallback(std::move(callback), std::move(image),
                                          image_format, quality);
       }));
-}
 
-}  // namespace
-
-void ImageEncoding::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({
-      {"encodeImage", EncodeImage, 4, true},
-  });
+  return Dart_Null();
 }
 
 }  // namespace blink

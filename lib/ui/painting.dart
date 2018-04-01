@@ -1196,6 +1196,16 @@ class Paint {
   }
 }
 
+/// The encoding formats supported by the [Image.toByteData].
+// These enum values must be kept in sync with the logic in ToSkEncodedImageFormat.
+enum EncodeFormat {
+  // Be conservative with the formats we expose. It is easy to add new formats in future but
+  // difficult to remove.
+  JPEG,
+  PNG,
+  WEBP,
+}
+
 /// Opaque handle to raw decoded image data (pixels).
 ///
 /// To obtain an [Image] object, use [instantiateImageCodec].
@@ -1214,6 +1224,23 @@ class Image extends NativeFieldWrapperClass2 {
 
   /// The number of image pixels along the image's vertical axis.
   int get height native 'Image_height';
+
+  /// Converts the [Image] object into a byte array.
+  ///
+  /// The [format] is encoding format to be used.
+  ///
+  /// The [quality] is a value in the range 0 to 100 where 0 corresponds to the lowest quality.
+  ///
+  /// Returns a future which complete with the binary image data (e.g a PNG or JPEG binary data) or
+  /// an error if encoding fails.
+  Future<Uint8List> toByteData({EncodeFormat format: EncodeFormat.JPEG, int quality: 80}) {
+    return _futurize(
+          (_Callback<Uint8List> callback) => _toByteData(format.index, quality, callback)
+    );
+  }
+
+  /// Returns an error message on failure, null on success.
+  String _toByteData(int format, int quality, _Callback<Uint8List> callback) native 'Image_toByteData';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -1315,26 +1342,6 @@ Future<Null> _decodeImageFromListAsync(Uint8List list, ImageDecoderCallback call
   final FrameInfo frameInfo = await codec.getNextFrame();
   callback(frameInfo.image);
 }
-
-/// The encoding formats supported by the [encodeImage].
-enum EncodedImageFormat {
-  // Be conservative with the formats we expose. We can increase the list in future but reducing
-  // it is more difficult.
-  JPEG,
-  PNG,
-  WEBP,
-}
-
-/// Callback signature for [encodeImage].
-typedef void ImageEncoderCallback(Uint8List result);
-
-/// Convert an [Image] object into a byte array/
-///
-/// [format] is encoding format to be used.
-///
-/// [quality] is a value in [0, 100] where 0 corresponds to the lowest quality.
-void encodeImage(Image image, EncodedImageFormat format, int quality, ImageEncoderCallback callback)
-    native 'encodeImage';
 
 /// Determines the winding rule that decides how the interior of a [Path] is
 /// calculated.

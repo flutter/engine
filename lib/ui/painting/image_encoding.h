@@ -9,10 +9,12 @@
 
 namespace blink {
 
-class ImageEncoding {
- public:
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
-};
+class CanvasImage;
+
+Dart_Handle EncodeImage(CanvasImage* canvas_image,
+                        int format,
+                        int quality,
+                        Dart_Handle callback_handle);
 
 }  // namespace blink
 

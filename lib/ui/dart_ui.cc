@@ -57,7 +57,6 @@ void DartUI::InitForGlobal() {
     Codec::RegisterNatives(g_natives);
     DartRuntimeHooks::RegisterNatives(g_natives);
     FrameInfo::RegisterNatives(g_natives);
-    ImageEncoding::RegisterNatives(g_natives);
     ImageFilter::RegisterNatives(g_natives);
     ImageShader::RegisterNatives(g_natives);
     Paragraph::RegisterNatives(g_natives);
