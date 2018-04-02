@@ -310,8 +310,8 @@ class SemanticsFlag {
 
   /// Whether the semantics node subtree is part of a distinct route or window.
   ///
-  /// For example, a Drawer widget is a distinct route since it changes the
-  /// visible space on the window significantly.
+  /// For example, a Drawer is a distinct route since it changes the the window
+  /// significantly.
   static const SemanticsFlag isRoute = const SemanticsFlag._(_kIsRouteIndex);
 
   /// The possible semantics flags.
@@ -414,8 +414,6 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The `transform` is a matrix that maps this node's coordinate system into
   /// its parent's coordinate system.
-  /// 
-  /// The `route` is a name which describes the currently visibile screen.
   void updateNode({
     int id,
     int flags,
