@@ -169,11 +169,13 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
          ([self node].actions & ~blink::kScrollableSemanticsActions) != 0;
 }
 
-- (NSString*)mostSpecificRoute {
-  NSString* route = [self accessibilityRoute];
+- (SemanticsObject*)mostSpecificRoute {
+  SemanticsObject* route = nil;
+   if ([self node].HasFlag(blink::SemanticsFlags::kIsTextField))
+    route = self;
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
-      NSString* childRoute = [child mostSpecificRoute];
+      SemanticsObject* childRoute = [child mostSpecificRoute];
       if (childRoute)
         route = childRoute; 
     }
@@ -191,12 +193,6 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
   if ([self node].hint.empty())
     return nil;
   return @([self node].hint.data());
-}
-
-- (NSString*)accessibilityRoute {
-  if ([self node].route.empty())
-    return nil;
-  return @([self node].route.data());
 }
 
 - (NSString*)accessibilityValue {
@@ -443,7 +439,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
       platform_view_(platform_view),
       objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
-      previous_route_(nil) {
+      previous_route_(0) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->binary_messenger()
@@ -514,20 +510,19 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
   SemanticsObject* root = objects_.get()[@(kRootNodeId)];
 
   bool routeChanged = false;
+  NSString* routeName = nil;
 
   if (root) {
     if (!view_.accessibilityElements) {
       view_.accessibilityElements = @[ [root accessibilityContainer] ];
     }
-    NSString* latestRoute = [root mostSpecificRoute];
+    SemanticsObject* newRoute = [root mostSpecificRoute];
     if (latestRoute == nil) {
-      [previous_route_ release];
-      previous_route_ = nil;
-    } else  {
-      if (![latestRoute isEqualToString:previous_route_]) {
-        previous_route_ = [latestRoute retain];
-        routeChanged = true;
-      }
+      previous_route_ = 0;
+    } else if ([newRoute uid] != previous_route_) {
+      previous_route_ = [newRoute uid];
+      routeName = [newRoute accessibilityValue];
+      routeChanged = true;
     }
   } else {
     view_.accessibilityElements = nil;
@@ -549,8 +544,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
     UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, @"");
   }
   if (routeChanged) {
-    // TODO(jonahwilliams): iOS will sometimes want to read the name of a route.
-    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, nil);
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, routeName);
   }
 }
 

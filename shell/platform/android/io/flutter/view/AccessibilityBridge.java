@@ -46,7 +46,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private SemanticsObject mA11yFocusedObject;
     private SemanticsObject mInputFocusedObject;
     private SemanticsObject mHoveredObject;
-    private String previousAccessibilityRoute = null;
+    private int previousRouteId = ROOT_NODE_ID;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
@@ -87,7 +87,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         IS_ENABLED(1 << 7),
         IS_IN_MUTUALLY_EXCLUSIVE_GROUP(1 << 8),
         IS_HEADER(1 << 9),
-        IS_OBSCURED(1 << 10);
+        IS_OBSCURED(1 << 10),
+        IS_ROUTE(1 << 11);
 
         Flag(int value) {
             this.value = value;
@@ -481,7 +482,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         Set<SemanticsObject> visitedObjects = new HashSet<SemanticsObject>();
         SemanticsObject rootObject = getRootObject();
-        String newRoute = null;
+        SemanticsObject newRoute = null;
         if (rootObject != null) {
           final float[] identity = new float[16];
           Matrix.setIdentityM(identity, 0);
@@ -492,10 +493,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route changed from the previous
         // route name.
         if (newRoute == null) {
-            previousAccessibilityRoute = null;
-        } else if (!newRoute.equals(previousAccessibilityRoute)) {
-            previousAccessibilityRoute = newRoute;
-            createWindowChangeEvent(newRoute);
+            previousRouteId = ROOT_NODE_ID;
+        } else if (newRoute.id != previousRouteId) {
+            previousRouteId = newRoute.id;
+            createWindowChangeEvent(newRoute.value);
         }
 
         Iterator<Map.Entry<Integer, SemanticsObject>> it = mObjects.entrySet().iterator();
@@ -724,7 +725,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         String increasedValue;
         String decreasedValue;
         String hint;
-        String accessibilityRoute;
         TextDirection textDirection;
         int previousNodeId;
 
@@ -824,9 +824,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             stringIndex = buffer.getInt();
             hint = stringIndex == -1 ? null : strings[stringIndex];
 
-            stringIndex = buffer.getInt();
-            accessibilityRoute = stringIndex == -1 ? null : strings[stringIndex];
-
             textDirection = TextDirection.fromInt(buffer.getInt());
 
             previousNodeId = buffer.getInt();
@@ -908,11 +905,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 || (hint != null && !hint.isEmpty());
         }
 
-        String getMostSpecificRoute() {
-            String route = accessibilityRoute;
+        SemanticsObject getMostSpecificRoute() {
+            SemanticsObject route = null;
+            if (hasFlag(Flag.IS_ROUTE)) {
+                route = this;
+            }
             if (children != null) {
                 for (int i = 0; i < children.size(); ++i) {
-                    String childAccessibilityRoute = children.get(i).getMostSpecificRoute();
+                    SemanticsObject childAccessibilityRoute = children.get(i).getMostSpecificRoute();
                     if (childAccessibilityRoute != null)
                         route = childAccessibilityRoute;
                 }

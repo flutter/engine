@@ -225,6 +225,7 @@ class SemanticsFlag {
   static const int _kIsInMutuallyExclusiveGroupIndex = 1 << 8;
   static const int _kIsHeaderIndex = 1 << 9;
   static const int _kIsObscuredIndex = 1 << 10;
+  static const int _kIsRouteIndex = 1 << 11;
 
   const SemanticsFlag._(this.index);
 
@@ -307,6 +308,12 @@ class SemanticsFlag {
   /// is a password or contains other sensitive information.
   static const SemanticsFlag isObscured = const SemanticsFlag._(_kIsObscuredIndex);
 
+  /// Whether the semantics node subtree is part of a distinct route or window.
+  ///
+  /// For example, a Drawer widget is a distinct route since it changes the
+  /// visible space on the window significantly.
+  static const SemanticsFlag isRoute = const SemanticsFlag._(_kIsRouteIndex);
+
   /// The possible semantics flags.
   ///
   /// The map's key is the [index] of the flag and the value is the flag itself.
@@ -322,6 +329,7 @@ class SemanticsFlag {
     _kIsInMutuallyExclusiveGroupIndex: isInMutuallyExclusiveGroup,
     _kIsHeaderIndex: isHeader,
     _kIsObscuredIndex: isObscured,
+    _kIsRouteIndex: isRoute,
   };
 
   @override
@@ -349,6 +357,8 @@ class SemanticsFlag {
         return 'SemanticsFlag.isHeader';
       case _kIsObscuredIndex:
         return 'SemanticsFlag.isObscured';
+      case _kIsRouteIndex:
+        return 'SemanticsFlag.isRoute';
     }
     return null;
   }
@@ -421,7 +431,6 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String value,
     String increasedValue,
     String decreasedValue,
-    String route,
     TextDirection textDirection,
     int nextNodeId,
     int previousNodeId,
@@ -447,7 +456,6 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
                 value,
                 increasedValue,
                 decreasedValue,
-                route,
                 textDirection != null ? textDirection.index + 1 : 0,
                 nextNodeId ?? -1,
                 previousNodeId ?? -1,
@@ -472,7 +480,6 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String value,
     String increasedValue,
     String decreasedValue,
-    String route,
     int textDirection,
     int nextNodeId,
     int previousNodeId,
