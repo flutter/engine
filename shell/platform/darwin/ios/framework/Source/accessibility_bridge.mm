@@ -451,8 +451,6 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
 
 AccessibilityBridge::~AccessibilityBridge() {
   view_.accessibilityElements = nil;
-  [previous_route_ release];
-  previous_route_ = nil;
   [accessibility_channel_.get() setMessageHandler:nil];
 }
 
@@ -517,7 +515,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
       view_.accessibilityElements = @[ [root accessibilityContainer] ];
     }
     SemanticsObject* newRoute = [root mostSpecificRoute];
-    if (latestRoute == nil) {
+    if (newRoute == nil) {
       previous_route_ = 0;
     } else if ([newRoute uid] != previous_route_) {
       previous_route_ = [newRoute uid];
