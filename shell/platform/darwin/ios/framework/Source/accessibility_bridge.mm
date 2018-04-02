@@ -533,16 +533,15 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
 
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
 
-  if (layoutChanged) {
+  if (routeChanged) {
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, routeName);
+  } else if (layoutChanged) {
     // TODO(goderbauer): figure out which node to focus next.
     UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, nil);
   }
   if (scrollOccured) {
     // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
     UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, @"");
-  }
-  if (routeChanged) {
-    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, routeName);
   }
 }
 

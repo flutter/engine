@@ -310,7 +310,7 @@ class SemanticsFlag {
 
   /// Whether the semantics node subtree is part of a distinct route or window.
   ///
-  /// For example, a Drawer is a distinct route since it changes the the window
+  /// For example, a Drawer is a distinct route since it changes the window
   /// significantly.
   static const SemanticsFlag isRoute = const SemanticsFlag._(_kIsRouteIndex);
 

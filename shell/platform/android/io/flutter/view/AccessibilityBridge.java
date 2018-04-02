@@ -490,8 +490,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
           newRoute = rootObject.getMostSpecificRoute();
         }
 
-        // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route changed from the previous
-        // route name.
+        // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route id changed from the
+        // previous route id.
         if (newRoute == null) {
             previousRouteId = ROOT_NODE_ID;
         } else if (newRoute.id != previousRouteId) {
