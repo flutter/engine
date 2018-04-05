@@ -11,7 +11,6 @@ import 'package:test/test.dart';
 import 'package:path/path.dart' as path;
 
 void main() {
-
   final Image testImage = createSquareTestImage();
 
   test('Encode with default arguments', () async {
@@ -21,19 +20,22 @@ void main() {
   });
 
   test('Encode JPEG', () async {
-    Uint8List data = await testImage.toByteData(format: new EncodingFormat.jpeg(quality:80));
+    Uint8List data = await testImage.toByteData(
+        format: new EncodingFormat.jpeg(quality: 80));
     Uint8List expected = readFile('square-80.jpg');
     expect(data, expected);
   });
 
   test('Encode PNG', () async {
-    Uint8List data = await testImage.toByteData(format: new EncodingFormat.png());
+    Uint8List data =
+        await testImage.toByteData(format: new EncodingFormat.png());
     Uint8List expected = readFile('square.png');
     expect(data, expected);
   });
 
   test('Encode WEBP', () async {
-    Uint8List data = await testImage.toByteData(format: new EncodingFormat.webp(quality: 80));
+    Uint8List data = await testImage.toByteData(
+        format: new EncodingFormat.webp(quality: 80));
     Uint8List expected = readFile('square-80.webp');
     expect(data, expected);
   });
