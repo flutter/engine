@@ -1295,10 +1295,13 @@ class Image extends NativeFieldWrapperClass2 {
   ///
   /// Returns a future which complete with the binary image data (e.g a PNG or JPEG binary data) or
   /// an error if encoding fails.
-  Future<Uint8List> toByteData({EncodingFormat format: const EncodingFormat.jpeg()}) {
-    return _futurize(
-          (_Callback<Uint8List> callback) => _toByteData(format._format, format._quality, callback)
-    );
+  Future<ByteData> toByteData({EncodingFormat format: const EncodingFormat.jpeg()}) {
+    return _futurize((_Callback<ByteData> callback) {
+      _toByteData(format._format, format._quality, (Uint8List encoded) {
+        callback(new ByteData.view(encoded.buffer));
+      });
+    });
+
   }
 
   /// Returns an error message on failure, null on success.

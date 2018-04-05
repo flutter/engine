@@ -14,30 +14,30 @@ void main() {
   final Image testImage = createSquareTestImage();
 
   test('Encode with default arguments', () async {
-    Uint8List data = await testImage.toByteData();
-    Uint8List expected = readFile('square-80.jpg');
-    expect(data, expected);
+    ByteData data = await testImage.toByteData();
+    List<int> expected = readFile('square-80.jpg');
+    expect(new Uint8List.view(data.buffer), expected);
   });
 
   test('Encode JPEG', () async {
-    Uint8List data = await testImage.toByteData(
+    ByteData data = await testImage.toByteData(
         format: new EncodingFormat.jpeg(quality: 80));
-    Uint8List expected = readFile('square-80.jpg');
-    expect(data, expected);
+    List<int> expected = readFile('square-80.jpg');
+    expect(new Uint8List.view(data.buffer), expected);
   });
 
   test('Encode PNG', () async {
-    Uint8List data =
+    ByteData data =
         await testImage.toByteData(format: new EncodingFormat.png());
-    Uint8List expected = readFile('square.png');
-    expect(data, expected);
+    List<int> expected = readFile('square.png');
+    expect(new Uint8List.view(data.buffer), expected);
   });
 
   test('Encode WEBP', () async {
-    Uint8List data = await testImage.toByteData(
+    ByteData data = await testImage.toByteData(
         format: new EncodingFormat.webp(quality: 80));
-    Uint8List expected = readFile('square-80.webp');
-    expect(data, expected);
+    List<int> expected = readFile('square-80.webp');
+    expect(new Uint8List.view(data.buffer), expected);
   });
 }
 
@@ -57,7 +57,7 @@ Image createSquareTestImage() {
   return recorder.endRecording().toImage(10, 10);
 }
 
-Uint8List readFile(fileName) {
+List<int> readFile(fileName) {
   final file = new File(path.join('flutter', 'testing', 'resources', fileName));
   return file.readAsBytesSync();
 }
