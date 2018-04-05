@@ -188,7 +188,6 @@ void SetAssetBundlePath(JNIEnv* env,
                         jobject jcaller,
                         jlong platform_view,
                         jstring bundlePath) {
-  FXL_LOG(ERROR) << "platform_view_android_jni.cc::SetAssetBundlePath is calling SetAssetBundlePath that should be platform_view_android.cc";
   return PLATFORM_VIEW->SetAssetBundlePath(
       fml::jni::JavaStringToString(env, bundlePath));
 }
