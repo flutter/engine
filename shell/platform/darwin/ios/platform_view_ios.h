@@ -60,8 +60,6 @@ class PlatformViewIOS : public PlatformView {
                      const std::string& main,
                      const std::string& packages) override;
 
-  void SetAssetBundlePath(const std::string& assets_directory) override;
-
   /**
    * Exposes the `FlutterTextInputPlugin` singleton for the
    * `AccessibilityBridge` to be able to interact with the text entry system.
@@ -95,8 +93,6 @@ class PlatformViewIOS : public PlatformView {
   void SetupAndLoadFromSource(const std::string& assets_directory,
                               const std::string& main,
                               const std::string& packages);
-
-  void SetAssetBundlePathOnUI(const std::string& assets_directory);
 
   FXL_DISALLOW_COPY_AND_ASSIGN(PlatformViewIOS);
 };

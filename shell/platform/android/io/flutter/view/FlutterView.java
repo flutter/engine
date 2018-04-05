@@ -659,7 +659,7 @@ public class FlutterView extends SurfaceView
         Runnable runnable = new Runnable() {
             public void run() {
                 assertAttached();
-                mNativeView.setAssetBundlePathOnUI(assetsDirectory);
+                mNativeView.setAssetBundlePath(assetsDirectory);
                 synchronized (this) {
                     notify();
                 }

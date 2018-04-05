@@ -420,7 +420,6 @@ bool PlatformViewServiceProtocol::SetAssetBundlePath(const char* method,
       std::stoull((view_id + kViewIdPrefxLength), nullptr, 16);
 
   // Ask the Shell to update asset bundle path in the specified view.
-  // This will run a task on the UI thread before returning.
   Shell& shell = Shell::Shared();
   bool view_existed = false;
   Dart_Port main_port = ILLEGAL_PORT;

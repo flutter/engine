@@ -202,4 +202,14 @@ void PlatformView::SetupResourceContextOnIOThreadPerform(
   latch->Signal();
 }
 
+void PlatformView::SetAssetBundlePath(const std::string& assets_directory) {
+  // Don't wait for this task to complete as UI thread can be blocked with
+  // application suspended at a breakpoint.
+  blink::Threads::UI()->PostTask([engine = engine_->GetWeakPtr(),
+      assets_directory] {
+    if (engine)
+      engine->SetAssetBundlePath(assets_directory);
+  });
+}
+
 }  // namespace shell
