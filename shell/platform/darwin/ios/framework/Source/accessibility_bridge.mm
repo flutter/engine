@@ -164,7 +164,7 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
   // Note: hit detection will only apply to elements that report
   // -isAccessibilityElement of YES. The framework will continue scanning the
   // entire element tree looking for such a hit.
-  if ([self node].HasFlag(blink::SemanticsFlags::kIsRoute)
+  if ([self node].HasFlag(blink::SemanticsFlags::kIsRoute))
     return false;
   return [self node].flags != 0 || ![self node].label.empty() || ![self node].value.empty() ||
          ![self node].hint.empty() ||
