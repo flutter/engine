@@ -203,6 +203,9 @@ void PlatformView::SetupResourceContextOnIOThreadPerform(
 }
 
 void PlatformView::SetAssetBundlePath(const std::string& assets_directory) {
+  // Since this code is executed as vm root service handler, it doesn't run on
+  // UI thread. Assets are consumed on UI thread, so this has to be scheduled
+  // there.
   // Don't wait for this task to complete as UI thread can be blocked with
   // application suspended at a breakpoint.
   blink::Threads::UI()->PostTask([engine = engine_->GetWeakPtr(),
