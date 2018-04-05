@@ -164,6 +164,8 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
   // Note: hit detection will only apply to elements that report
   // -isAccessibilityElement of YES. The framework will continue scanning the
   // entire element tree looking for such a hit.
+  if ([self node].HasFlag(blink::SemanticsFlags::kIsRoute)
+    return false;
   return [self node].flags != 0 || ![self node].label.empty() || ![self node].value.empty() ||
          ![self node].hint.empty() ||
          ([self node].actions & ~blink::kScrollableSemanticsActions) != 0;
@@ -171,7 +173,7 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
 
 - (SemanticsObject*)mostSpecificRoute {
   SemanticsObject* route = nil;
-   if ([self node].HasFlag(blink::SemanticsFlags::kIsTextField))
+   if ([self node].HasFlag(blink::SemanticsFlags::kIsRoute))
     route = self;
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {

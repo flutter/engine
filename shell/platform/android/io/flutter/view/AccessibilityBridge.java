@@ -496,7 +496,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             previousRouteId = ROOT_NODE_ID;
         } else if (newRoute.id != previousRouteId) {
             previousRouteId = newRoute.id;
-            createWindowChangeEvent(newRoute.value);
+            createWindowChangeEvent(newRoute);
         }
 
         Iterator<Map.Entry<Integer, SemanticsObject>> it = mObjects.entrySet().iterator();
@@ -662,10 +662,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
     }
 
-    private void createWindowChangeEvent(String name) {
+    private void createWindowChangeEvent(SemanticsObject route) {
         // TYPE_WINDOW_STATE_CHANGED events should always be sent from the root node.
-        AccessibilityEvent e = obtainAccessibilityEvent(ROOT_NODE_ID, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
-        e.getText().add(name);
+        AccessibilityEvent e = obtainAccessibilityEvent(route.id, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+        if (route.value != null && !route.value.equals(""))
+            e.getText().add(route.value);
         mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
     }
 
@@ -898,6 +899,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         boolean isFocusable() {
             int scrollableActions = Action.SCROLL_RIGHT.value | Action.SCROLL_LEFT.value
                     | Action.SCROLL_UP.value | Action.SCROLL_DOWN.value;
+            if (hasFlag(Flag.IS_ROUTE)) {
+                return false;
+            }
             return (actions & ~scrollableActions) != 0
                 || flags != 0
                 || (label != null && !label.isEmpty())
