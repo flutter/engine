@@ -1424,7 +1424,7 @@ class Path extends NativeFieldWrapperClass2 {
   Path() { _constructor(); }
   void _constructor() native 'Path_constructor';
 
-  /// Creats a copy of another [Path].
+  /// Creates a copy of another [Path].
   /// 
   /// This copy is fast and does not require additional memory unless either 
   /// the `source` path or the path returned by this constructor are modified.
@@ -1748,11 +1748,15 @@ class Tangent {
     : assert(position != null), 
       assert(vector != null);
 
+  /// Creates a [Tangent] based on the angle rather than the vector.
+  /// 
+  /// The [vector] is computed to be the unit vector at the given angle, interpreted
+  /// as clockwise radians from the x axis.
   factory Tangent.fromAngle(Offset position, double angle) {
     return new Tangent(position, new Offset(math.cos(angle), math.sin(angle)));
   }
 
-  /// Position of the tangent
+  /// Position of the tangent.
   /// 
   /// When used with [PathMetric.getTangentForOffset], this represents the precise
   /// position that the given offset along the path corresponds to.
