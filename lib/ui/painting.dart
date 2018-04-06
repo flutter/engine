@@ -1198,16 +1198,6 @@ class Paint {
 
 /// An encoding format to use with the [Image.toByteData].
 class EncodingFormat {
-  final int _format;
-  final int _quality;
-
-  // Be conservative with the formats we expose. It is easy to add new formats
-  // in future but difficult to remove.
-  // These values must be kept in sync with the logic in ToSkEncodedImageFormat.
-  static const int _jpegFormat = 0;
-  static const int _pngFormat = 1;
-  static const int _webpFormat = 2;
-
   /// PNG format.
   ///
   /// A loss-less compression format for images. This format is well suited for
@@ -1268,6 +1258,16 @@ class EncodingFormat {
   const EncodingFormat.webp({int quality = 80})
       : _format = _webpFormat,
         _quality = quality;
+
+  final int _format;
+  final int _quality;
+
+  // Be conservative with the formats we expose. It is easy to add new formats
+  // in future but difficult to remove.
+  // These values must be kept in sync with the logic in ToSkEncodedImageFormat.
+  static const int _jpegFormat = 0;
+  static const int _pngFormat = 1;
+  static const int _webpFormat = 2;
 }
 
 /// Opaque handle to raw decoded image data (pixels).
@@ -1297,11 +1297,10 @@ class Image extends NativeFieldWrapperClass2 {
   /// an error if encoding fails.
   Future<ByteData> toByteData({EncodingFormat format: const EncodingFormat.jpeg()}) {
     return _futurize((_Callback<ByteData> callback) {
-      _toByteData(format._format, format._quality, (Uint8List encoded) {
-        callback(new ByteData.view(encoded.buffer));
+      return _toByteData(format._format, format._quality, (Uint8List encoded) {
+        callback(encoded.buffer.asByteData());
       });
     });
-
   }
 
   /// Returns an error message on failure, null on success.
