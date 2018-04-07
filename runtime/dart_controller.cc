@@ -33,6 +33,7 @@
 #include "lib/tonic/scopes/dart_api_scope.h"
 #include "lib/tonic/scopes/dart_isolate_scope.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
+#include "third_party/dart/runtime/include/dart_native_api.h"
 
 using tonic::LogIfError;
 using tonic::ToDart;
@@ -176,6 +177,8 @@ tonic::DartErrorHandleType DartController::RunFromScriptSnapshot(
     Dart_Handle result = Dart_LoadScriptFromSnapshot(buffer, size);
     LogIfError(result);
     error = tonic::GetErrorHandleType(result);
+    result = Dart_CompileAll();
+    LogIfError(result);
   }
   if (SendStartMessage(Dart_RootLibrary(), entrypoint)) {
     return tonic::kUnknownErrorType;

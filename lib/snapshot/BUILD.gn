@@ -46,11 +46,11 @@ action("generate_snapshot_bin") {
     # TODO(rmacnak): Fuchsia cross builds use the wrong Dart target
     # architecture, and have added steps that depend on this error for
     # reasonable build times (e.g., invoking the analyzer).
-    if (target_cpu == host_cpu) {
-      snapshot_kind = "core-jit"
-    } else {
+    # if (target_cpu == host_cpu) {
+    #   snapshot_kind = "core-jit"
+    # } else {
       snapshot_kind = "core"
-    }
+    # }
   } else {
     snapshot_dart = "snapshot.dart"
     snapshot_kind = "core"
