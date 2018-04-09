@@ -2072,6 +2072,7 @@ class Gradient extends Shader {
        assert(tileMode != null),
        assert(startAngle != null),
        assert(endAngle != null),
+       assert(startAngle < endAngle),
        super._() {
     if (matrix4 != null)
       assert(_matrix4IsValid(matrix4));
