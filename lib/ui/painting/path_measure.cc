@@ -46,8 +46,9 @@ fxl::RefPtr<CanvasPathMeasure> CanvasPathMeasure::Create(const CanvasPath* path,
       fxl::MakeRefCounted<CanvasPathMeasure>();
   if (path) {
     const SkPath skPath = path->path();
+    SkScalar resScale = 1;
     pathMeasure->path_measure_ =
-        std::make_unique<SkPathMeasure>(skPath, forceClosed, 1);
+        std::make_unique<SkPathMeasure>(skPath, forceClosed, resScale);
   } else {
     pathMeasure->path_measure_ = std::make_unique<SkPathMeasure>();
   }

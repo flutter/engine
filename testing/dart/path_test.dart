@@ -7,29 +7,6 @@ import 'dart:ui';
 
 import 'package:test/test.dart';
 
-Matcher moreOrLessEquals(double value, {double epsilon: 1e-10}) {
-  return new _MoreOrLessEquals(value, epsilon);
-}
-
-class _MoreOrLessEquals extends Matcher {
-  const _MoreOrLessEquals(this.value, this.epsilon);
-
-  final double value;
-  final double epsilon;
-
-  @override
-  bool matches(Object object, Map<dynamic, dynamic> matchState) {
-    if (object is! double) return false;
-    if (object == value) return true;
-    final double test = object;
-    return (test - value).abs() <= epsilon;
-  }
-
-  @override
-  Description describe(Description description) =>
-      description.add('$value (±$epsilon)');
-}
-
 void main() {
   test('path getBounds', () {
     final Rect r = new Rect.fromLTRB(1.0, 3.0, 5.0, 7.0);
@@ -83,12 +60,12 @@ void main() {
     final Path difference =
         Path.combine(PathOperation.difference, pathCircle1, pathCircle2);
 
-    expect(difference.getBounds().top, moreOrLessEquals(0.88, epsilon: 0.01));
+    expect(difference.getBounds().top, closeTo(0.88, 0.01));
 
     final Path reverseDifference =
         Path.combine(PathOperation.reverseDifference, pathCircle1, pathCircle2);
     expect(reverseDifference.getBounds().right,
-        moreOrLessEquals(14.11, epsilon: 0.01));
+        closeTo(14.11, 0.01));
 
     final Path union =
         Path.combine(PathOperation.union, pathCircle1, pathCircle2);
@@ -192,7 +169,7 @@ void main() {
         simpleMetricsVertical.iterator.current.getTangentForOffset(5.0);
     expect(posTanVertical.position, equals(const Offset(0.0, 5.0)));
     expect(posTanVertical.angle,
-        moreOrLessEquals(-1.5708, epsilon: .0001)); // 90 degrees
+        closeTo(-1.5708, .0001)); // 90 degrees
 
     // test getTangentForOffset with diagonal line
     final Path simpleDiagonalLine = new Path()..lineTo(10.0, 10.0);
@@ -203,7 +180,7 @@ void main() {
         simpleMetricsDiagonal.iterator.current.getTangentForOffset(midPoint);
     expect(posTanDiagonal.position, equals(new Offset(5.0, 5.0)));
     expect(posTanDiagonal.angle,
-        moreOrLessEquals(-0.7853981633974483, epsilon: .00001)); // ~45 degrees
+        closeTo(-0.7853981633974483, .00001)); // ~45 degrees
 
     // test a multi-contour path
     final Path multiContour = new Path()
