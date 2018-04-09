@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "lib/fxl/build_config.h"
 
@@ -39,11 +40,11 @@ std::unique_ptr<Mapping> GetResourceMapping(const std::string& resource_name);
 
 class FileMapping : public Mapping {
  public:
-  FileMapping(const std::string& path);
+  FileMapping(const std::string& path, bool executable = false);
 
 // fxl::UniqueFD isn't supported for Windows handles.
 #if !OS_WIN
-  FileMapping(const fxl::UniqueFD& fd);
+  FileMapping(const fxl::UniqueFD& fd, bool executable = false);
 #endif
 
   ~FileMapping() override;
@@ -61,6 +62,22 @@ class FileMapping : public Mapping {
 #endif
 
   FXL_DISALLOW_COPY_AND_ASSIGN(FileMapping);
+};
+
+class DataMapping : public Mapping {
+ public:
+  DataMapping(std::vector<uint8_t> data);
+
+  ~DataMapping() override;
+
+  size_t GetSize() const override;
+
+  const uint8_t* GetMapping() const override;
+
+ private:
+  std::vector<uint8_t> data_;
+
+  FXL_DISALLOW_COPY_AND_ASSIGN(DataMapping);
 };
 
 }  // namespace fml
