@@ -1951,8 +1951,8 @@ Float32List _encodeTwoPoints(Offset pointA, Offset pointB) {
 
 /// A shader (as used by [Paint.shader]) that renders a color gradient.
 ///
-/// There are three useful types of gradients, created by [new Gradient.linear]
-/// [new Gradient.radial], and [new Gradient.sweep].
+/// There are several types of gradients, represented by the various constructors
+/// on this class.
 class Gradient extends Shader {
 
   void _constructor() native 'Gradient_constructor';
@@ -2040,6 +2040,10 @@ class Gradient extends Shader {
   /// Creates a sweep gradient centered at `center` that starts at `startAngle`
   /// and ends at `endAngle`.
   ///
+  /// `startAngle` and `endAngle` should be provided in radians, with zero
+  /// radians being the horizontal line to the right of the `center` and with
+  /// positive angles going clockwise around the `center`.
+  ///
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
   /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
   /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
@@ -2065,7 +2069,7 @@ class Gradient extends Shader {
     List<double> colorStops,
     TileMode tileMode = TileMode.clamp,
     double startAngle = 0.0,
-    double endAngle = 360.0,
+    double endAngle = math.pi * 2,
     Float64List matrix4,
   ]) : assert(_offsetIsValid(center)),
        assert(colors != null),

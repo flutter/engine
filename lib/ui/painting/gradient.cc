@@ -102,8 +102,9 @@ void CanvasGradient::initSweep(double center_x,
 
   set_shader(SkGradientShader::MakeSweep(
       center_x, center_y, reinterpret_cast<const SkColor*>(colors.data()),
-      color_stops.data(), colors.num_elements(), tile_mode, start_angle,
-      end_angle, 0, has_matrix ? &sk_matrix : nullptr));
+      color_stops.data(), colors.num_elements(), tile_mode,
+      start_angle * 180.0 / M_PI, end_angle * 180.0 / M_PI, 0,
+      has_matrix ? &sk_matrix : nullptr));
 }
 
 CanvasGradient::CanvasGradient() : Shader(nullptr) {}
