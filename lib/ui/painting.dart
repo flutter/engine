@@ -2027,8 +2027,8 @@ class Gradient extends Shader {
        assert(colors != null),
        assert(tileMode != null),
        super._() {
-    if (matrix4 != null && matrix4.length != 16)
-      throw new ArgumentError('"matrix4" must have 16 entries.');
+    if (matrix4 != null)
+      assert(_matrix4IsValid(matrix4));
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : new Float32List.fromList(colorStops);
@@ -2073,8 +2073,8 @@ class Gradient extends Shader {
        assert(startAngle != null),
        assert(endAngle != null),
        super._() {
-    if (matrix4 != null && matrix4.length != 16)
-      throw new ArgumentError('"matrix4" must have 16 entries.');
+    if (matrix4 != null)
+      assert(_matrix4IsValid(matrix4));
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : new Float32List.fromList(colorStops);
