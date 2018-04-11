@@ -941,12 +941,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 for (int i = children.size() - 1; i >= 0; --i) {
                     String newName = children.get(i).routeName();
                     if (newName != null && !newName.isEmpty()) {
+                        Log.i(TAG, "Route Candidate - " + value);
                         name = newName;
                     }
                 }
             }
             if (hasFlag(Flag.IS_ROUTE)) {
                 if (value != null && !value.isEmpty()) {
+                    Log.i(TAG, "Route Candidate - " + value);
                     name = value;
                 }
             }
