@@ -225,7 +225,8 @@ class SemanticsFlag {
   static const int _kIsInMutuallyExclusiveGroupIndex = 1 << 8;
   static const int _kIsHeaderIndex = 1 << 9;
   static const int _kIsObscuredIndex = 1 << 10;
-  static const int _kIsRouteIndex = 1 << 11;
+  static const int _kIsEdgeIndex = 1 << 11;
+  static const int _kIsRouteIndex = 1 << 12;
 
   const SemanticsFlag._(this.index);
 
@@ -308,10 +309,15 @@ class SemanticsFlag {
   /// is a password or contains other sensitive information.
   static const SemanticsFlag isObscured = const SemanticsFlag._(_kIsObscuredIndex);
 
-  /// Whether the semantics node subtree is part of a distinct route or window.
-  ///
-  /// For example, a Drawer is a distinct route since it changes the window
-  /// significantly.
+  /// Whether the semantics node is the root of a subtree for which values
+  /// should be announced.
+  /// 
+  /// This is used by certain widgets like Drawers and Dialogs, as well as
+  /// routes to indicate that there is a child value containing an important
+  /// semantic value.
+  static const SemanticsFlag isEdge = const SemanticsFlag._(_kIsEdgeIndex);
+
+  /// Whether the semantics node value is the name of a visually distinct edge.
   static const SemanticsFlag isRoute = const SemanticsFlag._(_kIsRouteIndex);
 
   /// The possible semantics flags.
@@ -329,6 +335,7 @@ class SemanticsFlag {
     _kIsInMutuallyExclusiveGroupIndex: isInMutuallyExclusiveGroup,
     _kIsHeaderIndex: isHeader,
     _kIsObscuredIndex: isObscured,
+    _kIsEdgeIndex: isEdge,
     _kIsRouteIndex: isRoute,
   };
 
@@ -357,6 +364,8 @@ class SemanticsFlag {
         return 'SemanticsFlag.isHeader';
       case _kIsObscuredIndex:
         return 'SemanticsFlag.isObscured';
+      case _kIsEdgeIndex:
+        return 'SemanticsFlag.isEdge';
       case _kIsRouteIndex:
         return 'SemanticsFlag.isRoute';
     }

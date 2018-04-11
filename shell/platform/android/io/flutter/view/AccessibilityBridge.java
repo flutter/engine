@@ -47,6 +47,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private SemanticsObject mInputFocusedObject;
     private SemanticsObject mHoveredObject;
     private int previousRouteId = ROOT_NODE_ID;
+    private List<Integer> previousEdges;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
@@ -88,7 +89,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         IS_IN_MUTUALLY_EXCLUSIVE_GROUP(1 << 8),
         IS_HEADER(1 << 9),
         IS_OBSCURED(1 << 10),
-        IS_ROUTE(1 << 11);
+        IS_EDGE(1 << 11),
+        IS_ROUTE(1 << 12);
 
         Flag(int value) {
             this.value = value;
@@ -101,6 +103,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         assert owner != null;
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
+        previousEdges = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(owner, "flutter/accessibility",
             StandardMessageCodec.INSTANCE);
     }
@@ -482,22 +485,34 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         Set<SemanticsObject> visitedObjects = new HashSet<SemanticsObject>();
         SemanticsObject rootObject = getRootObject();
-        SemanticsObject newRoute = null;
+        List<SemanticsObject> newEdges = new ArrayList<>();
         if (rootObject != null) {
           final float[] identity = new float[16];
           Matrix.setIdentityM(identity, 0);
           rootObject.updateRecursively(identity, visitedObjects, false);
-          newRoute = rootObject.getMostSpecificRoute();
+          rootObject.walkEdges(newEdges);
         }
 
         // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route id changed from the
         // previous route id.
-        if (newRoute == null) {
-            previousRouteId = ROOT_NODE_ID;
-        } else if (newRoute.id != previousRouteId) {
-            previousRouteId = newRoute.id;
-            createWindowChangeEvent(newRoute);
+        SemanticsObject lastAdded = null;
+        for (SemanticsObject semanticsObject : newEdges) {
+            if (!previousEdges.contains(semanticsObject.id)) {
+                lastAdded = semanticsObject;
+            }
         }
+        if (lastAdded == null && newEdges.size() > 0) {
+            lastAdded = newEdges.get(newEdges.size() - 1);
+        }
+        if (lastAdded != null && lastAdded.id != previousRouteId) {
+            previousRouteId = lastAdded.id;
+            createWindowChangeEvent(lastAdded);
+        }
+        previousEdges.clear();
+        for (SemanticsObject semanticsObject : newEdges) {
+            previousEdges.add(semanticsObject.id);
+        }
+
 
         Iterator<Map.Entry<Integer, SemanticsObject>> it = mObjects.entrySet().iterator();
         while (it.hasNext()) {
@@ -665,8 +680,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private void createWindowChangeEvent(SemanticsObject route) {
         // TYPE_WINDOW_STATE_CHANGED events should always be sent from the root node.
         AccessibilityEvent e = obtainAccessibilityEvent(route.id, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
-        if (route.value != null && !route.value.equals(""))
-            e.getText().add(route.value);
+        String routeName = route.routeName();
+        e.getText().add(routeName);
         mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
     }
 
@@ -909,19 +924,33 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 || (hint != null && !hint.isEmpty());
         }
 
-        SemanticsObject getMostSpecificRoute() {
-            SemanticsObject route = null;
-            if (hasFlag(Flag.IS_ROUTE)) {
-                route = this;
+        void walkEdges(List<SemanticsObject> edges) {
+            if (hasFlag(Flag.IS_EDGE)) {
+                edges.add(this);
             }
             if (children != null) {
                 for (int i = 0; i < children.size(); ++i) {
-                    SemanticsObject childAccessibilityRoute = children.get(i).getMostSpecificRoute();
-                    if (childAccessibilityRoute != null)
-                        route = childAccessibilityRoute;
+                    children.get(i).walkEdges(edges);
                 }
             }
-            return route;
+        }
+
+        String routeName() {
+            String name = null;
+            if (children != null) {
+                for (int i = children.size() - 1; i >= 0; --i) {
+                    String newName = children.get(i).routeName();
+                    if (newName != null && !newName.isEmpty()) {
+                        name = newName;
+                    }
+                }
+            }
+            if (hasFlag(Flag.IS_ROUTE)) {
+                if (value != null && !value.isEmpty()) {
+                    name = value;
+                }
+            }
+            return name;
         }
 
         void updateRecursively(float[] ancestorTransform, Set<SemanticsObject> visitedObjects, boolean forceUpdate) {

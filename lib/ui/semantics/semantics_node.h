@@ -56,7 +56,8 @@ enum class SemanticsFlags : int32_t {
   kIsInMutuallyExclusiveGroup = 1 << 8,
   kIsHeader = 1 << 9,
   kIsObscured = 1 << 10,
-  kIsRoute = 1 << 11,
+  kIsEdge = 1 << 11,
+  kIsRoute = 1 << 12,
 };
 
 struct SemanticsNode {
