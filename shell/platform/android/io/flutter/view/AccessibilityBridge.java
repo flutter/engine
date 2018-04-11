@@ -490,7 +490,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
           final float[] identity = new float[16];
           Matrix.setIdentityM(identity, 0);
           rootObject.updateRecursively(identity, visitedObjects, false);
-          rootObject.walkEdges(newEdges);
+          rootObject.collectEdges(newEdges);
         }
 
         // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route id changed from the
@@ -512,7 +512,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         for (SemanticsObject semanticsObject : newEdges) {
             previousEdges.add(semanticsObject.id);
         }
-
 
         Iterator<Map.Entry<Integer, SemanticsObject>> it = mObjects.entrySet().iterator();
         while (it.hasNext()) {
@@ -680,7 +679,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private void createWindowChangeEvent(SemanticsObject route) {
         // TYPE_WINDOW_STATE_CHANGED events should always be sent from the root node.
         AccessibilityEvent e = obtainAccessibilityEvent(route.id, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
-        String routeName = route.routeName();
+        String routeName = route.getRouteName();
         e.getText().add(routeName);
         mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
     }
@@ -914,7 +913,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         boolean isFocusable() {
             int scrollableActions = Action.SCROLL_RIGHT.value | Action.SCROLL_LEFT.value
                     | Action.SCROLL_UP.value | Action.SCROLL_DOWN.value;
-            if (hasFlag(Flag.IS_ROUTE)) {
+            if (hasFlag(Flag.IS_EDGE) && value == null) {
                 return false;
             }
             return (actions & ~scrollableActions) != 0
@@ -924,31 +923,29 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 || (hint != null && !hint.isEmpty());
         }
 
-        void walkEdges(List<SemanticsObject> edges) {
+        void collectEdges(List<SemanticsObject> edges) {
             if (hasFlag(Flag.IS_EDGE)) {
                 edges.add(this);
             }
             if (children != null) {
                 for (int i = 0; i < children.size(); ++i) {
-                    children.get(i).walkEdges(edges);
+                    children.get(i).collectEdges(edges);
                 }
             }
         }
 
-        String routeName() {
+        String getRouteName() {
             String name = null;
             if (children != null) {
                 for (int i = children.size() - 1; i >= 0; --i) {
-                    String newName = children.get(i).routeName();
+                    String newName = children.get(i).getRouteName();
                     if (newName != null && !newName.isEmpty()) {
-                        Log.i(TAG, "Route Candidate - " + value);
                         name = newName;
                     }
                 }
             }
             if (hasFlag(Flag.IS_ROUTE)) {
                 if (value != null && !value.isEmpty()) {
-                    Log.i(TAG, "Route Candidate - " + value);
                     name = value;
                 }
             }

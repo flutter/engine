@@ -171,12 +171,12 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
          ([self node].actions & ~blink::kScrollableSemanticsActions) != 0;
 }
 
-- (void)walkEdges:(NSMutableArray<SemanticsObject*>*)edges {
+- (void)collectEdges:(NSMutableArray<SemanticsObject*>*)edges {
   if ([self node].HasFlag(blink::SemanticsFlags::kIsEdge))
     [edges addObject:self];
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
-      [child walkEdges:edges];
+      [child collectEdges:edges];
     }
   }
 }
@@ -534,8 +534,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
       view_.accessibilityElements = @[ [root accessibilityContainer] ];
     }
     NSMutableArray<SemanticsObject*>* newEdges = [[[NSMutableArray alloc] init] autorelease];
-    [root walkEdges:newEdges];
-    
+    [root collectEdges:newEdges];
     for (SemanticsObject* edge in newEdges) {
       if (std::find(previous_edges_.begin(), previous_edges_.end(), [edge uid]) != previous_edges_.end()) {
         lastAdded = edge;
