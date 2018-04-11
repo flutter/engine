@@ -171,18 +171,34 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
          ([self node].actions & ~blink::kScrollableSemanticsActions) != 0;
 }
 
-- (SemanticsObject*)mostSpecificRoute {
-  SemanticsObject* route = nil;
-   if ([self node].HasFlag(blink::SemanticsFlags::kIsRoute))
-    route = self;
+- (void*)walkEdges(NSMutableArray<SemanticsObject*>)edges {
+  if ([self node].HasFlag(blink::SemanticsFlags::kIsEdge))
+    [edges addObject:self]
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
-      SemanticsObject* childRoute = [child mostSpecificRoute];
-      if (childRoute)
-        route = childRoute; 
+      [child walkEdges:edges]
     }
   }
-  return route;
+}
+
+- (NSString*)routeName {
+  NSString* name = nil;
+  if ([self hasChildren]) {
+    for (int i = [self.children count] - 1; i >= 0; i--) {
+      SemanticsObject* child = [self.children get:i];
+      NSString* newName = [child routeName];
+      if (newName != nil && [newName length] > 0) {
+        name = newName;
+      }
+    }
+  }
+  if ([self node].hasFlag(blink::SemanticsFlag::kIsRoute)) {
+    NSString* newName = [self accessibilityValue];
+    if (newName != nil && [newName length] > 0) {
+      name = newName;
+    }
+  }
+  return name;
 }
 
 - (NSString*)accessibilityLabel {
@@ -441,7 +457,8 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
       platform_view_(platform_view),
       objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
-      previous_route_(0) {
+      previous_route_(0),
+      previous_edges_([[NSMutableArray alloc] init]) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->binary_messenger()
@@ -510,20 +527,35 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
   SemanticsObject* root = objects_.get()[@(kRootNodeId)];
 
   bool routeChanged = false;
-  NSString* routeName = nil;
 
   if (root) {
     if (!view_.accessibilityElements) {
       view_.accessibilityElements = @[ [root accessibilityContainer] ];
     }
-    SemanticsObject* newRoute = [root mostSpecificRoute];
-    if (newRoute == nil) {
-      previous_route_ = 0;
-    } else if ([newRoute uid] != previous_route_) {
-      previous_route_ = [newRoute uid];
-      routeName = [newRoute accessibilityValue];
-      routeChanged = true;
+    NSMutableArray<SemanticsObject*> newEdges = [[[NSMutableArray alloc] init] autorelease];
+    SemanticsObject* lastAdded = nil;
+    [root walkEdges:newEdges];
+    
+    for (SemanticsObject* edge in newEdges) {
+      int32_t id = [edge node].id;
+      if (![previous_edges_ :containsObject:id]) {
+        lastAdded = edge;
+      }
     }
+    if (lastAdded == nil && [newEdges count] > 0) {
+      int32_t index = [newEdges count] - 1;
+      lastAdded = [newEdges objectAtIndex:index];
+    }
+    if (lastAdded != nil && [lastAdded node].id != previous_route_) {
+        previous_route_ = lastAdded.id;
+        routeChanged = true;
+    }
+    [previous_edges_ removeAllObjects];
+    for (SemanticsObject* edge in newEdges) {
+      int32_t id = [edge node].id;
+      [previous_edges addObject:id];
+    }
+    
   } else {
     view_.accessibilityElements = nil;
   }
@@ -536,6 +568,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
 
   if (routeChanged) {
+    NSString* routeName = [lastAdded routeName];
     UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, routeName);
   } else if (layoutChanged) {
     // TODO(goderbauer): figure out which node to focus next.
