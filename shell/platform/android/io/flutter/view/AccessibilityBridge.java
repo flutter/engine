@@ -494,7 +494,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route id changed from the
-        // previous route id.
         SemanticsObject lastAdded = null;
         for (SemanticsObject semanticsObject : newRoutes) {
             if (!previousRoutes.contains(semanticsObject.id)) {
@@ -937,8 +936,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             // Returns the first non-null and non-empty semantic value of a child
             // with an isRouteName flag. Otherwise returns null.
             if (hasFlag(Flag.IS_ROUTE_NAME)) {
-                if (value != null && !value.isEmpty()) {
-                    return value;
+                String routeName = getValueLabelHint();
+                if (routeName != null && !routeName.isEmpty()) {
+                    return routeName;
                 }
             }
             if (children != null) {
