@@ -2,18 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "vulkan_surface_producer.h"
+#include "flutter/content_handler/vulkan_surface_producer.h"
 
 #include <memory>
 #include <string>
 #include <vector>
-
 #include "flutter/glue/trace_event.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
 
-namespace flutter {
+namespace flutter_runner {
 
 VulkanSurfaceProducer::VulkanSurfaceProducer(
     scenic_lib::Session* mozart_session) {
@@ -43,7 +42,7 @@ bool VulkanSurfaceProducer::Initialize(scenic_lib::Session* mozart_session) {
       VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
   };
   application_ = std::make_unique<vulkan::VulkanApplication>(
-      *vk_, "FlutterApplicationRunner", std::move(extensions));
+      *vk_, "FlutterContentHandler", std::move(extensions));
 
   if (!application_->IsValid() || !vk_->AreInstanceProcsSetup()) {
     // Make certain the application instance was created and it setup the
@@ -150,17 +149,22 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
     if (!command_buffer->Begin())
       return false;
 
-    GrVkImageInfo* imageInfo;
-    vk_surface->GetSkiaSurface()->getRenderTargetHandle(
-        reinterpret_cast<GrBackendObject*>(&imageInfo),
+    GrBackendRenderTarget backendRT = vk_surface->GetSkiaSurface()->getBackendRenderTarget(
         SkSurface::kFlushRead_BackendHandleAccess);
+    if (!backendRT.isValid()) {
+      return false;
+    }
+    GrVkImageInfo imageInfo;
+    if(!backendRT.getVkImageInfo(&imageInfo)) {
+      return false;
+    }
 
     VkImageMemoryBarrier image_barrier = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .pNext = nullptr,
         .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
         .dstAccessMask = 0,
-        .oldLayout = imageInfo->fImageLayout,
+        .oldLayout = imageInfo.fImageLayout,
         .newLayout = VK_IMAGE_LAYOUT_GENERAL,
         .srcQueueFamilyIndex = 0,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL_KHR,
@@ -176,7 +180,7 @@ bool VulkanSurfaceProducer::TransitionSurfacesToExternal(
             1, &image_barrier))
       return false;
 
-    imageInfo->updateImageLayout(image_barrier.newLayout);
+    backendRT.setVkImageLayout(image_barrier.newLayout);
 
     if (!command_buffer->End())
       return false;
@@ -201,4 +205,4 @@ void VulkanSurfaceProducer::SubmitSurface(
   surface_pool_->SubmitSurface(std::move(surface));
 }
 
-}  // namespace flutter
+}  // namespace flutter_runner
