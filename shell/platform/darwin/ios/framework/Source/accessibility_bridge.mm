@@ -184,7 +184,6 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
 - (NSString*)routeName {
   // Returns the first non-null and non-empty semantic value of a child
   // with an isRouteName flag. Otherwise returns nil.
-  NSString* name = nil;
   if ([self node].HasFlag(blink::SemanticsFlags::kIsRouteName)) {
     NSString* newName = [self accessibilityValue];
     if (newName != nil && [newName length] > 0) {
