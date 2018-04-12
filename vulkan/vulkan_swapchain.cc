@@ -461,7 +461,8 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
     return error;
   }
   
-  GrBackendRenderTarget backendRT = surface->getBackendRenderTarget();
+  GrBackendRenderTarget backendRT = surface->getBackendRenderTarget(
+      SkSurface::kFlushRead_BackendHandleAccess);
   if (!backendRT.isValid()) {
     FXL_DLOG(INFO) << "Could not get backend render target.";
     return error;
