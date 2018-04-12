@@ -9,6 +9,8 @@
 #include <OpenGLES/ES2/glext.h>
 #elif OS_MACOSX
 #include <OpenGL/gl3.h>
+#elif OS_LINUX
+#include <GL/gl.h>
 #else
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -70,6 +72,8 @@ GPUSurfaceGL::~GPUSurfaceGL() {
     return;
   }
 
+  GetCompositorContext().OnGrContextDestroyed();
+
   onscreen_surface_ = nullptr;
   context_->releaseResourcesAndAbandonContext();
   context_ = nullptr;
@@ -87,7 +91,7 @@ static SkColorType FirstSupportedColorType(GrContext* context, GLenum* format) {
     *format = (y);                                 \
     return (x);                                    \
   }
-#if OS_MACOSX && !OS_IOS
+#if (OS_MACOSX && !OS_IOS) || OS_LINUX
   RETURN_IF_RENDERABLE(kRGBA_8888_SkColorType, GL_RGBA8);
 #else
   RETURN_IF_RENDERABLE(kRGBA_8888_SkColorType, GL_RGBA8_OES);
@@ -208,12 +212,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
     return nullptr;
   }
 
-  auto weak_this = weak_factory_.GetWeakPtr();
-
-  SurfaceFrame::SubmitCallback submit_callback =
-      [weak_this](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
-        return weak_this ? weak_this->PresentSurface(canvas) : false;
-      };
+  SurfaceFrame::SubmitCallback submit_callback = [weak = weak_factory_
+                                                             .GetWeakPtr()](
+      const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+    return weak ? weak->PresentSurface(canvas) : false;
+  };
 
   return std::make_unique<SurfaceFrame>(surface, submit_callback);
 }

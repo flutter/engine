@@ -7,6 +7,7 @@ import("//third_party/dart/utils/compile_platform.gni")
 import("//third_party/dart/utils/generate_entry_points_json.gni")
 
 if (is_fuchsia) {
+  import("//build/dart/dart_library.gni")
   import("//build/dart/toolchain.gni")
   import("//topaz/public/dart-pkg/fuchsia/sdk_ext.gni")
   import("//topaz/public/dart-pkg/zircon/sdk_ext.gni")
@@ -24,45 +25,44 @@ copy("generate_dart_ui") {
 }
 
 if (is_fuchsia) {
-  action("generate_package_map") {
-    dart_deps = [
-      "//topaz/public/dart/fuchsia",
-      "//topaz/public/dart/zircon",
-    ]
+  dart_library("generate_package_map") {
+    # The sole purpose of this target is to generate a .packages file.
+    sources = []
 
     dot_packages_file = "$target_gen_dir/snapshot.packages"
     outputs = [
-      dot_packages_file
+      dot_packages_file,
     ]
     deps = []
     foreach(dep, dart_deps) {
       deps += [ "$dep($dart_toolchain)" ]
     }
 
-    depfile = "$dot_packages_file.d"
+    disable_analysis = true
 
     script = "//build/dart/gen_dot_packages.py"
     args = [
-      "--out",
-      rebase_path(dot_packages_file, root_build_dir),
-      "--source-dir",
-      rebase_path("."),
-      "--root-build-dir",
-      rebase_path(root_build_dir),
-      "--root-gen-dir",
-      rebase_path(dart_root_gen_dir),
-      "--package-name",
-      "snapshot_root",
-      "--depfile",
-      rebase_path(depfile),
-      "--deps",
-    ] + dart_deps
+             "--out",
+             rebase_path(dot_packages_file, root_build_dir),
+             "--source-dir",
+             rebase_path("."),
+             "--root-build-dir",
+             rebase_path(root_build_dir),
+             "--root-gen-dir",
+             rebase_path(dart_root_gen_dir),
+             "--package-name",
+             "snapshot_root",
+             "--depfile",
+             rebase_path(depfile),
+             "--deps",
+           ] + dart_deps
   }
 }
 
 action("generate_snapshot_bin") {
   if (is_fuchsia) {
     snapshot_dart = "snapshot_fuchsia.dart"
+
     # TODO(rmacnak): Fuchsia cross builds use the wrong Dart target
     # architecture, and have added steps that depend on this error for
     # reasonable build times (e.g., invoking the analyzer).
@@ -105,9 +105,9 @@ action("generate_snapshot_bin") {
 
   rebased_dart_ui_path = rebase_path(dart_ui_path)
 
-  gen_snapshot_dir =
-      get_label_info("//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
-                     "root_out_dir")
+  gen_snapshot_dir = get_label_info(
+          "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
+          "root_out_dir")
   script = "//third_party/dart/runtime/tools/create_snapshot_bin.py"
 
   args = [
@@ -148,7 +148,10 @@ action("generate_snapshot_bin") {
   }
 
   if (is_fuchsia) {
-    inputs += zircon_sdk_ext_files + mozart_dart_sdk_ext_files
+    package_gen_dir = get_label_info(":bogus($dart_toolchain)",
+          "target_gen_dir")
+    package_file = "$package_gen_dir/generate_package_map.packages"
+    inputs += zircon_sdk_ext_files + mozart_dart_sdk_ext_files + [package_file]
     zircon_path = rebase_path(zircon_sdk_ext_lib)
     fuchsia_path = rebase_path(fuchsia_sdk_ext_lib)
     mozart_internal_path = rebase_path(mozart_dart_sdk_ext_lib)
@@ -157,7 +160,7 @@ action("generate_snapshot_bin") {
       "--url_mapping=dart:fuchsia,$fuchsia_path",
       "--url_mapping=dart:mozart.internal,$mozart_internal_path",
       "--packages",
-      rebase_path("$target_gen_dir/snapshot.packages"),
+      rebase_path(package_file),
       "--load_compilation_trace",
       rebase_path("fuchsia_compilation_trace.txt"),
     ]
@@ -226,7 +229,7 @@ bin_to_assembly("isolate_snapshot_data_assembly") {
   ]
   input = "$target_gen_dir/isolate_snapshot.bin"
   output = "$target_gen_dir/isolate_snapshot_data.S"
-  symbol = "kDartIsolateCoreSnapshotData"
+  symbol = "kDartIsolateSnapshotData"
   executable = false
 }
 
@@ -236,7 +239,7 @@ bin_to_assembly("isolate_snapshot_instructions_assembly") {
   ]
   input = "$target_gen_dir/isolate_snapshot_instructions.bin"
   output = "$target_gen_dir/isolate_snapshot_instructions.S"
-  symbol = "kDartIsolateCoreSnapshotInstructions"
+  symbol = "kDartIsolateSnapshotInstructions"
   executable = true
 }
 
@@ -266,9 +269,9 @@ compile_platform("non_strong_platform") {
   ]
 
   args = [
-            "--target=flutter",
-            "dart:core",
-         ]
+    "--target=flutter",
+    "dart:core",
+  ]
 }
 
 compile_platform("strong_platform") {
@@ -282,10 +285,10 @@ compile_platform("strong_platform") {
   ]
 
   args = [
-            "--target=flutter",
-            "--strong",
-            "dart:core"
-         ]
+    "--target=flutter",
+    "--strong",
+    "dart:core",
+  ]
 }
 
 group("kernel_platform_files") {

@@ -5,7 +5,7 @@
 #include "flutter/lib/ui/text/paragraph_builder.h"
 
 #include "flutter/common/settings.h"
-#include "flutter/common/threads.h"
+#include "flutter/common/task_runners.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/sky/engine/core/rendering/RenderInline.h"
@@ -41,6 +41,7 @@ const int tsFontSizeIndex = 9;
 const int tsLetterSpacingIndex = 10;
 const int tsWordSpacingIndex = 11;
 const int tsHeightIndex = 12;
+const int tsLocaleIndex = 13;
 
 const int tsColorMask = 1 << tsColorIndex;
 const int tsTextDecorationMask = 1 << tsTextDecorationIndex;
@@ -54,6 +55,7 @@ const int tsFontSizeMask = 1 << tsFontSizeIndex;
 const int tsLetterSpacingMask = 1 << tsLetterSpacingIndex;
 const int tsWordSpacingMask = 1 << tsWordSpacingIndex;
 const int tsHeightMask = 1 << tsHeightIndex;
+const int tsLocaleMask = 1 << tsLocaleIndex;
 
 // ParagraphStyle
 
@@ -66,6 +68,7 @@ const int psFontFamilyIndex = 6;
 const int psFontSizeIndex = 7;
 const int psLineHeightIndex = 8;
 const int psEllipsisIndex = 9;
+const int psLocaleIndex = 10;
 
 const int psTextAlignMask = 1 << psTextAlignIndex;
 const int psTextDirectionMask = 1 << psTextDirectionIndex;
@@ -76,6 +79,7 @@ const int psFontFamilyMask = 1 << psFontFamilyIndex;
 const int psFontSizeMask = 1 << psFontSizeIndex;
 const int psLineHeightMask = 1 << psLineHeightIndex;
 const int psEllipsisMask = 1 << psEllipsisIndex;
+const int psLocaleMask = 1 << psLocaleIndex;
 
 float getComputedSizeFromSpecifiedSize(float specifiedSize) {
   if (specifiedSize < std::numeric_limits<float>::epsilon())
@@ -191,7 +195,7 @@ FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
 void ParagraphBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register(
-      {{"ParagraphBuilder_constructor", ParagraphBuilder_constructor, 6, true},
+      {{"ParagraphBuilder_constructor", ParagraphBuilder_constructor, 7, true},
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
@@ -200,17 +204,23 @@ fxl::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
     const std::string& fontFamily,
     double fontSize,
     double lineHeight,
-    const std::u16string& ellipsis) {
-  return fxl::MakeRefCounted<ParagraphBuilder>(encoded, fontFamily, fontSize,
-                                               lineHeight, ellipsis);
+    const std::u16string& ellipsis,
+    const std::string& locale,
+    bool use_blink) {
+  return fxl::MakeRefCounted<ParagraphBuilder>(
+      encoded, fontFamily, fontSize, lineHeight, ellipsis, locale,
+      UIDartState::Current()->use_blink());
 }
 
 ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
                                    const std::string& fontFamily,
                                    double fontSize,
                                    double lineHeight,
-                                   const std::u16string& ellipsis) {
-  if (!Settings::Get().using_blink) {
+                                   const std::u16string& ellipsis,
+                                   const std::string& locale,
+                                   bool use_blink)
+    : m_useBlink(use_blink) {
+  if (!m_useBlink) {
     int32_t mask = encoded[0];
     txt::ParagraphStyle style;
     if (mask & psTextAlignMask)
@@ -242,6 +252,10 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
       style.ellipsis = ellipsis;
     }
 
+    if (mask & psLocaleMask) {
+      style.locale = locale;
+    }
+
     m_paragraphBuilder = std::make_unique<txt::ParagraphBuilder>(
         style, blink::FontCollection::ForProcess().GetFontCollection());
   } else {
@@ -265,7 +279,8 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
 ParagraphBuilder::~ParagraphBuilder() {
   if (m_renderView) {
     RenderView* renderView = m_renderView.leakPtr();
-    Threads::UI()->PostTask([renderView]() { renderView->destroy(); });
+    destruction_task_runner_->PostTask(
+        [renderView]() { renderView->destroy(); });
   }
 }
 
@@ -274,12 +289,13 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  double fontSize,
                                  double letterSpacing,
                                  double wordSpacing,
-                                 double height) {
+                                 double height,
+                                 const std::string& locale) {
   FXL_DCHECK(encoded.num_elements() == 8);
 
   int32_t mask = encoded[0];
 
-  if (!Settings::Get().using_blink) {
+  if (!m_useBlink) {
     // Set to use the properties of the previous style if the property is not
     // explicitly given.
     txt::TextStyle style = m_paragraphBuilder->PeekStyle();
@@ -329,6 +345,10 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
     if (mask & tsHeightMask) {
       style.height = height;
+    }
+
+    if (mask & tsLocaleMask) {
+      style.locale = locale;
     }
 
     m_paragraphBuilder->PushStyle(style);
@@ -408,7 +428,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 }
 
 void ParagraphBuilder::pop() {
-  if (!Settings::Get().using_blink) {
+  if (!m_useBlink) {
     m_paragraphBuilder->Pop();
   } else {
     // Blink Version.
@@ -430,7 +450,7 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
   if (error_code != U_BUFFER_OVERFLOW_ERROR)
     return tonic::ToDart("string is not well-formed UTF-16");
 
-  if (!Settings::Get().using_blink) {
+  if (!m_useBlink) {
     m_paragraphBuilder->AddText(text);
   } else {
     // Blink Version.
@@ -449,7 +469,7 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
 
 fxl::RefPtr<Paragraph> ParagraphBuilder::build() {
   m_currentRenderObject = nullptr;
-  if (!Settings::Get().using_blink) {
+  if (!m_useBlink) {
     return Paragraph::Create(m_paragraphBuilder->Build());
   } else {
     return Paragraph::Create(m_renderView.release());

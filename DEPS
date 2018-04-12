@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': 'abf7b763e2c1ba069942dedec914494817fd27a8',
+  'skia_revision': '3462eb0346de0ad645bae96246d57c98521f1ffc',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '06949dc98556adb807e270c47cbb9407ec781064',
+  'dart_revision': '41264590256de42c68de406fc180e338efc9420d',
 
   'dart_args_tag': '1.4.1',
   'dart_async_tag': '2.0.6',
@@ -46,21 +46,21 @@ vars = {
   'dart_convert_tag': '2.0.1',
   'dart_crypto_tag': '2.0.2+1',
   'dart_csslib_tag': '0.14.1',
-  'dart_dart2js_info_tag': '0.5.5+1',
+  'dart_dart2js_info_tag': '0.5.6',
   'dart_dart_style_tag': '1.0.10',
-  'dart_dartdoc_tag': 'v0.17.1+1',
+  'dart_dartdoc_tag': 'v0.18.1',
   'dart_fixnum_tag': '0.10.5',
   'dart_glob_tag': '1.1.5',
   'dart_html_tag': '0.13.3',
   'dart_http_multi_server_tag': '2.0.4',
   'dart_http_parser_tag': '3.1.1',
-  'dart_http_retry_tag': '0.1.0',
+  'dart_http_retry_tag': '0.1.1',
   'dart_http_tag': '0.11.3+16',
   'dart_http_throttle_tag': '1.0.1',
   'dart_intl_tag': '0.15.2',
   'dart_isolate_tag': '1.1.0',
   'dart_json_rpc_2_tag': '2.0.6',
-  'dart_linter_tag': '0.1.44',
+  'dart_linter_tag': '0.1.47',
   'dart_logging_tag': '0.11.3+1',
   'dart_markdown_tag': '1.1.1',
   'dart_matcher_tag': '0.12.1+4',
@@ -68,15 +68,15 @@ vars = {
   'dart_mockito_tag': 'a92db054fba18bc2d605be7670aee74b7cadc00a',
   'dart_mustache4dart_tag': 'v2.1.0',
   'dart_oauth2_tag': '1.1.0',
-  'dart_observatory_pub_packages_rev': '4c282bb240b68f407c8c7779a65c68eeb0139dc6',
+  'dart_observatory_pub_packages_rev': 'd3a3aebefbd35aa30fe7bbc2889b772b398f7d7f',
   'dart_package_config_tag': '1.0.3',
   'dart_package_resolver_tag': '1.0.2+1',
   'dart_path_tag': '1.5.1',
   'dart_plugin_tag': '0.2.0+2',
   'dart_pool_tag': '1.3.4',
   'dart_protobuf_tag': '0.7.1',
-  'dart_pub_rev': 'dbe8be2bb8bca9b26ba7bd583272c62f9a0153fd',
-  'dart_pub_semver_tag': '1.3.2',
+  'dart_pub_rev': '4947e0b3cb3ec77e4e8fe0d3141ce4dc60f43256',
+  'dart_pub_semver_tag': '1.3.6',
   'dart_quiver_tag': '5aaa3f58c48608af5b027444d561270b53f15dbf',
   'dart_resource_rev': 'af5a5bf65511943398146cf146e466e5f0b95cb9',
   'dart_root_certificates_rev': '16ef64be64c7dfdff2b9f4b910726e635ccc519e',
@@ -115,7 +115,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '35d44f8c4e20043de7615adf2f1203acb12ad236',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '3cf97e01cdbd4bb920fa3d40282a56c4b2d62a58',
 
    # Fuchsia compatibility
    #

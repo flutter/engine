@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "flutter/content_handler/fuchsia_font_manager.h"
+#include "fuchsia_font_manager.h"
 
 #include <zx/vmar.h>
 
@@ -49,7 +49,7 @@ sk_sp<SkData> MakeSkDataFromVMO(const fsl::SizedVmoTransportPtr& vmo) {
 
 fonts::FontSlant ToFontSlant(SkFontStyle::Slant slant) {
   return (slant == SkFontStyle::kItalic_Slant) ? fonts::FontSlant::ITALIC
-      : fonts::FontSlant::UPRIGHT;
+                                               : fonts::FontSlant::UPRIGHT;
 }
 
 }  // anonymous namespace
@@ -64,7 +64,8 @@ int FuchsiaFontManager::onCountFamilies() const {
   return 0;
 }
 
-void FuchsiaFontManager::onGetFamilyName(int index, SkString* familyName) const {
+void FuchsiaFontManager::onGetFamilyName(int index,
+                                         SkString* familyName) const {
   FXL_DCHECK(false);
 }
 
@@ -87,7 +88,8 @@ SkFontStyleSet* FuchsiaFontManager::onMatchFamily(
 }
 
 SkTypeface* FuchsiaFontManager::onMatchFamilyStyle(
-    const char family_name[], const SkFontStyle& style) const {
+    const char family_name[],
+    const SkFontStyle& style) const {
   auto request = fonts::FontRequest::New();
   request->family = family_name;
   request->weight = style.weight();
@@ -100,12 +102,11 @@ SkTypeface* FuchsiaFontManager::onMatchFamilyStyle(
       [&response](fonts::FontResponsePtr r) { response = std::move(r); });
   font_provider_.WaitForResponse();
 
-  FXL_DCHECK(response)
-      << "Unable to contact the font provider. Did you run "
-         "Flutter in an environment that has a font manager?\n";
-
-  if (!response)
+  if (!response) {
+    FXL_DLOG(ERROR) << "Unable to contact the font provider. Did you run "
+                       "Flutter in an environment that has a font manager?";
     return nullptr;
+  }
 
   sk_sp<SkData> data = MakeSkDataFromVMO(response->data->vmo);
   if (!data)
@@ -127,13 +128,13 @@ SkTypeface* FuchsiaFontManager::onMatchFamilyStyleCharacter(
 }
 
 SkTypeface* FuchsiaFontManager::onMatchFaceStyle(const SkTypeface*,
-                                               const SkFontStyle&) const {
+                                                 const SkFontStyle&) const {
   FXL_DCHECK(false);
   return nullptr;
 }
 
 sk_sp<SkTypeface> FuchsiaFontManager::onMakeFromData(sk_sp<SkData>,
-                                                   int ttcIndex) const {
+                                                     int ttcIndex) const {
   FXL_DCHECK(false);
   return nullptr;
 }
@@ -153,7 +154,7 @@ sk_sp<SkTypeface> FuchsiaFontManager::onMakeFromStreamArgs(
 }
 
 sk_sp<SkTypeface> FuchsiaFontManager::onMakeFromFile(const char path[],
-                                                   int ttcIndex) const {
+                                                     int ttcIndex) const {
   FXL_DCHECK(false);
   return nullptr;
 }

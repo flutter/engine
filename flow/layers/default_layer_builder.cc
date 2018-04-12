@@ -26,8 +26,10 @@
 
 namespace flow {
 
+static const SkRect kGiantRect = SkRect::MakeLTRB( -1E9F, -1E9F, 1E9F, 1E9F );
+
 DefaultLayerBuilder::DefaultLayerBuilder() {
-  cull_rects_.push(SkRect::MakeLargest());
+  cull_rects_.push(kGiantRect);
 }
 
 DefaultLayerBuilder::~DefaultLayerBuilder() = default;
@@ -38,7 +40,7 @@ void DefaultLayerBuilder::PushTransform(const SkMatrix& sk_matrix) {
   if (sk_matrix.invert(&inverse_sk_matrix)) {
     inverse_sk_matrix.mapRect(&cullRect, cull_rects_.top());
   } else {
-    cullRect = SkRect::MakeLargest();
+    cullRect = kGiantRect;
   }
 
   auto layer = std::make_unique<flow::TransformLayer>();
@@ -135,20 +137,20 @@ void DefaultLayerBuilder::PushPerformanceOverlay(uint64_t enabled_options,
 }
 
 void DefaultLayerBuilder::PushPicture(const SkPoint& offset,
-                                      sk_sp<SkPicture> picture,
+                                      SkiaGPUObject<SkPicture> picture,
                                       bool picture_is_complex,
                                       bool picture_will_change) {
   if (!current_layer_) {
     return;
   }
-  SkRect pictureRect = picture->cullRect();
+  SkRect pictureRect = picture.get()->cullRect();
   pictureRect.offset(offset.x(), offset.y());
   if (!SkRect::Intersects(pictureRect, cull_rects_.top())) {
     return;
   }
   auto layer = std::make_unique<flow::PictureLayer>();
   layer->set_offset(offset);
-  layer->set_picture(picture);
+  layer->set_picture(std::move(picture));
   layer->set_is_complex(picture_is_complex);
   layer->set_will_change(picture_will_change);
   current_layer_->Add(std::move(layer));

@@ -8,7 +8,7 @@
 
 #include "flutter/vulkan/vulkan_proc_table.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
-#include "third_party/skia/src/gpu/vk/GrVkUtil.h"
+#include "vulkan/vulkan.h"
 
 namespace vulkan {
 
