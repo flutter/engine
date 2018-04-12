@@ -225,8 +225,8 @@ class SemanticsFlag {
   static const int _kIsInMutuallyExclusiveGroupIndex = 1 << 8;
   static const int _kIsHeaderIndex = 1 << 9;
   static const int _kIsObscuredIndex = 1 << 10;
-  static const int _kIsEdgeIndex = 1 << 11;
-  static const int _kIsRouteIndex = 1 << 12;
+  static const int _kIsRouteIndex = 1 << 11;
+  static const int _kIsRouteNameIndex = 1 << 12;
 
   const SemanticsFlag._(this.index);
 
@@ -312,20 +312,24 @@ class SemanticsFlag {
   /// Whether the semantics node is the root of a subtree for which values
   /// should be announced.
   /// 
-  /// When a semantics node with an edge flag is added to the tree, the
-  /// framework will search for a child with a route flag and non-empty
-  /// semantic value and announce it as an edge transition.
+  /// When a semantics node with a node flag is added to the tree, the
+  /// framework will search for the first child in inverse hit-test order with
+  /// a routeName flag and non-empty semantic value and announce it as an edge
+  /// transition.
   /// 
   /// This is used in widgets such as Routes, Drawers, and Dialogs to 
   /// communicate significant changes in the visible screen.
-  static const SemanticsFlag isEdge = const SemanticsFlag._(_kIsEdgeIndex);
+  static const SemanticsFlag isRoute = const SemanticsFlag._(_kIsRouteIndex);
 
-  /// Whether the semantics node value is the name of a visually distinct edge.
+  /// Whether the semantics node value is the name of a visually distinct route.
   /// 
   /// This is used by certain widgets like Drawers and Dialogs, to indicate
   /// that the node's semantic value can be used for an edge triggered
   /// semantic update.
-  static const SemanticsFlag isRoute = const SemanticsFlag._(_kIsRouteIndex);
+  /// 
+  /// Updating this value within the same active route subtree will not cause 
+  /// additional semantic value updates.
+  static const SemanticsFlag isRouteName = const SemanticsFlag._(_kIsRouteNameIndex);
 
   /// The possible semantics flags.
   ///
@@ -342,8 +346,8 @@ class SemanticsFlag {
     _kIsInMutuallyExclusiveGroupIndex: isInMutuallyExclusiveGroup,
     _kIsHeaderIndex: isHeader,
     _kIsObscuredIndex: isObscured,
-    _kIsEdgeIndex: isEdge,
     _kIsRouteIndex: isRoute,
+    _kIsRouteNameIndex: isRouteName,
   };
 
   @override
@@ -371,10 +375,10 @@ class SemanticsFlag {
         return 'SemanticsFlag.isHeader';
       case _kIsObscuredIndex:
         return 'SemanticsFlag.isObscured';
-      case _kIsEdgeIndex:
-        return 'SemanticsFlag.isEdge';
       case _kIsRouteIndex:
         return 'SemanticsFlag.isRoute';
+      case _kIsRouteNameIndex:
+        return 'SemanticsFlag.isRouteName';
     }
     return null;
   }

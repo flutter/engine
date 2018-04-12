@@ -164,7 +164,7 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
   // Note: hit detection will only apply to elements that report
   // -isAccessibilityElement of YES. The framework will continue scanning the
   // entire element tree looking for such a hit.
-  if ([self node].HasFlag(blink::SemanticsFlags::kIsEdge))
+  if ([self node].HasFlag(blink::SemanticsFlags::kIsRoute))
     return false;
   return [self node].flags != 0 || ![self node].label.empty() || ![self node].value.empty() ||
          ![self node].hint.empty() ||
@@ -172,7 +172,7 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
 }
 
 - (void)collectEdges:(NSMutableArray<SemanticsObject*>*)edges {
-  if ([self node].HasFlag(blink::SemanticsFlags::kIsEdge))
+  if ([self node].HasFlag(blink::SemanticsFlags::kIsRoute))
     [edges addObject:self];
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
@@ -182,23 +182,24 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
 }
 
 - (NSString*)routeName {
+  // Returns the first non-null and non-empty semantic value of a child
+  // with an isRouteName flag. Otherwise returns nil.
   NSString* name = nil;
+  if ([self node].HasFlag(blink::SemanticsFlags::kIsRouteName)) {
+    NSString* newName = [self accessibilityValue];
+    if (newName != nil && [newName length] > 0) {
+      return newName;
+    }
+  }
   if ([self hasChildren]) {
-    for (int i = [self.children count] - 1; i >= 0; i--) {
-      SemanticsObject* child = [self.children objectAtIndex:i];
+    for (SemanticsObject* child in self.children) {
       NSString* newName = [child routeName];
       if (newName != nil && [newName length] > 0) {
-        name = newName;
+        return newName;
       }
     }
   }
-  if ([self node].HasFlag(blink::SemanticsFlags::kIsRoute)) {
-    NSString* newName = [self accessibilityValue];
-    if (newName != nil && [newName length] > 0) {
-      name = newName;
-    }
-  }
-  return name;
+  return nil;
 }
 
 - (NSString*)accessibilityLabel {
