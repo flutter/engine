@@ -312,12 +312,19 @@ class SemanticsFlag {
   /// Whether the semantics node is the root of a subtree for which values
   /// should be announced.
   /// 
-  /// This is used by certain widgets like Drawers and Dialogs, as well as
-  /// routes to indicate that there is a child value containing an important
-  /// semantic value.
+  /// When a semantics node with an edge flag is added to the tree, the
+  /// framework will search for a child with a route flag and non-empty
+  /// semantic value and announce it as an edge transition.
+  /// 
+  /// This is used in widgets such as Routes, Drawers, and Dialogs to 
+  /// communicate significant changes in the visible screen.
   static const SemanticsFlag isEdge = const SemanticsFlag._(_kIsEdgeIndex);
 
   /// Whether the semantics node value is the name of a visually distinct edge.
+  /// 
+  /// This is used by certain widgets like Drawers and Dialogs, to indicate
+  /// that the node's semantic value can be used for an edge triggered
+  /// semantic update.
   static const SemanticsFlag isRoute = const SemanticsFlag._(_kIsRouteIndex);
 
   /// The possible semantics flags.
