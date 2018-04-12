@@ -10,7 +10,6 @@
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContext.h"
-#include "third_party/skia/src/gpu/vk/GrVkImage.h"
 
 namespace flutter_runner {
 
@@ -271,15 +270,15 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrContext> context,
   }
 
   const GrVkImageInfo image_info = {
-      .fImage = vk_image_,
-      .fAlloc = {vk_memory_, 0, memory_reqs.size, 0},
-      .fImageTiling = image_create_info.tiling,
-      .fImageLayout = image_create_info.initialLayout,
-      .fFormat = image_create_info.format,
-      .fLevelCount = image_create_info.mipLevels,
+      vk_image_,                            // image
+      {vk_memory_, 0, memory_reqs.size, 0}, // alloc
+      image_create_info.tiling,             // tiling
+      image_create_info.initialLayout,      // layout
+      image_create_info.format,             // format
+      image_create_info.mipLevels,          // level count
   };
 
-  GrBackendRenderTarget sk_render_target(size.width(), size.height(), 0, 0,
+  GrBackendRenderTarget sk_render_target(size.width(), size.height(), 0,
                                          image_info);
 
   SkSurfaceProps sk_surface_props(
@@ -309,15 +308,15 @@ bool VulkanSurface::PushSessionImageSetupOps(scenic_lib::Session* session,
   }
 
   scenic_lib::Memory memory(session, std::move(exported_vmo),
-                            ui::gfx::MemoryType::VK_DEVICE_MEMORY);
+                            images::MemoryType::VK_DEVICE_MEMORY);
 
-  auto image_info = ui::gfx::ImageInfo::New();
-  image_info->width = sk_surface_->width();
-  image_info->height = sk_surface_->height();
-  image_info->stride = 4 * sk_surface_->width();
-  image_info->pixel_format = ui::gfx::ImageInfo::PixelFormat::BGRA_8;
-  image_info->color_space = ui::gfx::ImageInfo::ColorSpace::SRGB;
-  image_info->tiling = ui::gfx::ImageInfo::Tiling::LINEAR;
+  images::ImageInfo image_info;
+  image_info.width = sk_surface_->width();
+  image_info.height = sk_surface_->height();
+  image_info.stride = 4 * sk_surface_->width();
+  image_info.pixel_format = images::PixelFormat::BGRA_8;
+  image_info.color_space = images::ColorSpace::SRGB;
+  image_info.tiling = images::Tiling::LINEAR;
 
   session_image_ = std::make_unique<scenic_lib::Image>(
       memory, 0 /* memory offset */, std::move(image_info));
