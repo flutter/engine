@@ -225,8 +225,8 @@ class SemanticsFlag {
   static const int _kIsInMutuallyExclusiveGroupIndex = 1 << 8;
   static const int _kIsHeaderIndex = 1 << 9;
   static const int _kIsObscuredIndex = 1 << 10;
-  static const int _kIsRouteIndex = 1 << 11;
-  static const int _kIsRouteNameIndex = 1 << 12;
+  static const int _kScopesRouteIndex= 1 << 11;
+  static const int _kNamesRouteIndex = 1 << 12;
 
   const SemanticsFlag._(this.index);
 
@@ -319,7 +319,7 @@ class SemanticsFlag {
   /// 
   /// This is used in widgets such as Routes, Drawers, and Dialogs to 
   /// communicate significant changes in the visible screen.
-  static const SemanticsFlag isRoute = const SemanticsFlag._(_kIsRouteIndex);
+  static const SemanticsFlag scopesRoute = const SemanticsFlag._(_kScopesRouteIndex);
 
   /// Whether the semantics node label is the name of a visually distinct
   /// route.
@@ -330,7 +330,7 @@ class SemanticsFlag {
   /// 
   /// Updating this label within the same active route subtree will not cause 
   /// additional semantic label updates.
-  static const SemanticsFlag isRouteName = const SemanticsFlag._(_kIsRouteNameIndex);
+  static const SemanticsFlag namesRoute = const SemanticsFlag._(_kNamesRouteIndex);
 
   /// The possible semantics flags.
   ///
@@ -347,8 +347,8 @@ class SemanticsFlag {
     _kIsInMutuallyExclusiveGroupIndex: isInMutuallyExclusiveGroup,
     _kIsHeaderIndex: isHeader,
     _kIsObscuredIndex: isObscured,
-    _kIsRouteIndex: isRoute,
-    _kIsRouteNameIndex: isRouteName,
+    _kScopesRouteIndex: scopesRoute,
+    _kNamesRouteIndex: namesRoute,
   };
 
   @override
@@ -376,10 +376,10 @@ class SemanticsFlag {
         return 'SemanticsFlag.isHeader';
       case _kIsObscuredIndex:
         return 'SemanticsFlag.isObscured';
-      case _kIsRouteIndex:
-        return 'SemanticsFlag.isRoute';
-      case _kIsRouteNameIndex:
-        return 'SemanticsFlag.isRouteName';
+      case _kScopesRouteIndex:
+        return 'SemanticsFlag.scopesRoute';
+      case _kNamesRouteIndex:
+        return 'SemanticsFlag.namesRoute';
     }
     return null;
   }

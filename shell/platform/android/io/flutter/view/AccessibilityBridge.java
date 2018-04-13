@@ -89,8 +89,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         IS_IN_MUTUALLY_EXCLUSIVE_GROUP(1 << 8),
         IS_HEADER(1 << 9),
         IS_OBSCURED(1 << 10),
-        IS_ROUTE(1 << 11),
-        IS_ROUTE_NAME(1 << 12);
+        SCOPES_ROUTE(1 << 11),
+        NAMES_ROUTE(1 << 12);
 
         Flag(int value) {
             this.value = value;
@@ -912,7 +912,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         boolean isFocusable() {
             int scrollableActions = Action.SCROLL_RIGHT.value | Action.SCROLL_LEFT.value
                     | Action.SCROLL_UP.value | Action.SCROLL_DOWN.value;
-            if (hasFlag(Flag.IS_ROUTE)) {
+            if (hasFlag(Flag.SCOPES_ROUTE)) {
                 return false;
             }
             return (actions & ~scrollableActions) != 0
@@ -923,7 +923,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         void collectRoutes(List<SemanticsObject> edges) {
-            if (hasFlag(Flag.IS_ROUTE)) {
+            if (hasFlag(Flag.SCOPES_ROUTE)) {
                 edges.add(this);
             }
             if (children != null) {
@@ -935,8 +935,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         String getRouteName() {
             // Returns the first non-null and non-empty semantic label of a child
-            // with an isRouteName flag. Otherwise returns null.
-            if (hasFlag(Flag.IS_ROUTE_NAME)) {
+            // with an NamesRoute flag. Otherwise returns null.
+            if (hasFlag(Flag.NAMES_ROUTE)) {
                 if (label != null && !label.isEmpty()) {
                     return label;
                 }
