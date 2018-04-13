@@ -494,6 +494,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route id changed from the
+        // previously cached route id.
         SemanticsObject lastAdded = null;
         for (SemanticsObject semanticsObject : newRoutes) {
             if (!previousRoutes.contains(semanticsObject.id)) {

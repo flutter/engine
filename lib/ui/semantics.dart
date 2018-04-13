@@ -314,8 +314,8 @@ class SemanticsFlag {
   /// 
   /// When a semantics node with a node flag is added to the tree, the
   /// framework will search for the first child in inverse hit-test order with
-  /// a routeName flag and non-empty semantic value and announce it as an edge
-  /// transition.
+  /// a [isRouteName] flag and non-empty semantic value and announce it as an
+  /// edge transition.
   /// 
   /// This is used in widgets such as Routes, Drawers, and Dialogs to 
   /// communicate significant changes in the visible screen.
@@ -324,8 +324,8 @@ class SemanticsFlag {
   /// Whether the semantics node value is the name of a visually distinct route.
   /// 
   /// This is used by certain widgets like Drawers and Dialogs, to indicate
-  /// that the node's semantic value can be used for an edge triggered
-  /// semantic update.
+  /// that the node's semantic value can be used to announce an edge triggered
+  /// semantics update.
   /// 
   /// Updating this value within the same active route subtree will not cause 
   /// additional semantic value updates.
