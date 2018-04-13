@@ -142,7 +142,7 @@ static const char* kDartEndlessTraceBufferArgs[]{
 
 static const char* kDartFuchsiaTraceArgs[] FXL_ALLOW_UNUSED_TYPE = {
     "--systrace_timeline",
-    "--timeline_streams=VM,Isolate,Compiler,Dart,GC",
+    "--timeline_streams=VM,Isolate,Compiler,Dart,GC,API",
 };
 
 constexpr char kFileUriPrefix[] = "file://";
@@ -580,7 +580,9 @@ void InitDartVM(const uint8_t* vm_snapshot_data,
   // There is a lot of diversity in a lot of combinations when it
   // comes to the arguments the VM supports. And, if the VM comes across a flag
   // it does not recognize, it exits immediately.
-  args.push_back("--ignore-unrecognized-flags");
+  // args.push_back("--ignore-unrecognized-flags");
+
+  args.push_back("--optimization-counter-threshold=-1");
 
   for (const auto& profiler_flag :
        ProfilingFlags(settings.enable_dart_profiling)) {

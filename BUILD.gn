@@ -31,7 +31,7 @@ group("flutter") {
 
   if (is_fuchsia) {
     public_deps += [
-      "$flutter_root/content_handler:aot",
+      #"$flutter_root/content_handler:aot",
       "$flutter_root/content_handler:jit",
       "$flutter_root/flow",
     ]
@@ -69,35 +69,33 @@ config("config") {
 if (is_fuchsia) {
   import("//build/package.gni")
 
-  package("flutter_aot_runner") {
-    deps = [
-      "$flutter_root/content_handler:aot",
-    ]
-    if (flutter_runtime_mode != "release") {
-      deps += [
-        "//third_party/dart/runtime/observatory:embedded_archive_observatory",
-      ]
-    }
+  # package("flutter_aot_runner") {
+  #   deps = [
+  #     "$flutter_root/content_handler:aot",
+  #   ]
+  #   if (flutter_runtime_mode != "release") {
+  #     deps += [
+  #       "//third_party/dart/runtime/observatory:embedded_archive_observatory",
+  #     ]
+  #   }
 
-    binary = "flutter_aot_runner"
+  #   if (flutter_runtime_mode != "release") {
+  #     resources = [
+  #       {
+  #         path = rebase_path(
+  #                 "$root_gen_dir/observatory/embedded_archive_observatory.tar")
+  #         dest = "observatory.tar"
+  #       },
+  #     ]
+  #   }
 
-    if (flutter_runtime_mode != "release") {
-      resources = [
-        {
-          path = rebase_path(
-                  "$root_gen_dir/observatory/embedded_archive_observatory.tar")
-          dest = "observatory.tar"
-        },
-      ]
-    }
-
-    meta = [
-      {
-        path = rebase_path("content_handler/meta/sandbox")
-        dest = "sandbox"
-      },
-    ]
-  }
+  #   meta = [
+  #     {
+  #       path = rebase_path("content_handler/meta/sandbox")
+  #       dest = "sandbox"
+  #     },
+  #   ]
+  # }
 
   package("flutter_jit_runner") {
     deps = [
