@@ -457,7 +457,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
       platform_view_(platform_view),
       objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
-      previous_route_(0),
+      previous_route_id_(0),
       previous_routes_({}) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
