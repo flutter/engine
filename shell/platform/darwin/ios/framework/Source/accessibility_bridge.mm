@@ -171,12 +171,12 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
          ([self node].actions & ~blink::kScrollableSemanticsActions) != 0;
 }
 
-- (void)collectEdges:(NSMutableArray<SemanticsObject*>*)edges {
+- (void)collectRoutes:(NSMutableArray<SemanticsObject*>*)edges {
   if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute))
     [edges addObject:self];
   if ([self hasChildren]) {
     for (SemanticsObject* child in self.children) {
-      [child collectEdges:edges];
+      [child collectRoutes:edges];
     }
   }
 }
@@ -458,7 +458,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
       objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_(0),
-      previous_edges_({}) {
+      previous_routes_({}) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->binary_messenger()
@@ -533,24 +533,24 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
     if (!view_.accessibilityElements) {
       view_.accessibilityElements = @[ [root accessibilityContainer] ];
     }
-    NSMutableArray<SemanticsObject*>* newEdges = [[[NSMutableArray alloc] init] autorelease];
-    [root collectEdges:newEdges];
-    for (SemanticsObject* edge in newEdges) {
-      if (std::find(previous_edges_.begin(), previous_edges_.end(), [edge uid]) != previous_edges_.end()) {
-        lastAdded = edge;
+    NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
+    [root collectRoutes:newRoutes];
+    for (SemanticsObject* route in newRoutes) {
+      if (std::find(previous_routes_.begin(), previous_routes_.end(), [route uid]) != previous_routes_.end()) {
+        lastAdded = route;
       }
     }
-    if (lastAdded == nil && [newEdges count] > 0) {
-      int index = [newEdges count] - 1;
-      lastAdded = [newEdges objectAtIndex:index];
+    if (lastAdded == nil && [newRoutes count] > 0) {
+      int index = [newRoutes count] - 1;
+      lastAdded = [newRoutes objectAtIndex:index];
     }
-    if (lastAdded != nil && [lastAdded uid] != previous_route_) {
-        previous_route_ = [lastAdded uid];
+    if (lastAdded != nil && [lastAdded uid] != previous_route_id_) {
+        previous_route_id_ = [lastAdded uid];
         routeChanged = true;
     }
-    previous_edges_.clear();
-    for (SemanticsObject* edge in newEdges) {
-      previous_edges_.push_back([edge uid]);
+    previous_routes_.clear();
+    for (SemanticsObject* route in newRoutes) {
+      previous_routes_.push_back([route uid]);
     }
   } else {
     view_.accessibilityElements = nil;

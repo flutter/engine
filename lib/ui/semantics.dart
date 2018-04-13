@@ -313,8 +313,8 @@ class SemanticsFlag {
   /// should be announced.
   /// 
   /// When a semantics node with a node flag is added to the tree, the
-  /// framework will search for the first child in inverse hit-test order with
-  /// a [isRouteName] flag and non-empty semantic label and announce it as an
+  /// framework will search for the first child in _ order with
+  /// a [namesRoute] flag and non-empty semantic label and announce it as an
   /// edge transition.
   /// 
   /// This is used in widgets such as Routes, Drawers, and Dialogs to 
