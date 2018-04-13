@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '41264590256de42c68de406fc180e338efc9420d',
+  'dart_revision': 'f76dad0adcf6766d73351354da653d6a793b5abc',
 
   'dart_args_tag': '1.4.1',
   'dart_async_tag': '2.0.6',
@@ -46,7 +46,7 @@ vars = {
   'dart_convert_tag': '2.0.1',
   'dart_crypto_tag': '2.0.2+1',
   'dart_csslib_tag': '0.14.1',
-  'dart_dart2js_info_tag': '0.5.6',
+  'dart_dart2js_info_tag': '0.5.6+2',
   'dart_dart_style_tag': '1.0.10',
   'dart_dartdoc_tag': 'v0.18.1',
   'dart_fixnum_tag': '0.10.5',
@@ -115,7 +115,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '8dddd90bf943a8174913564353b30a3b11ee0f7a',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '3cf97e01cdbd4bb920fa3d40282a56c4b2d62a58',
 
    # Fuchsia compatibility
    #

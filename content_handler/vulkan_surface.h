@@ -20,9 +20,10 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
 
-namespace flutter_runner {
+namespace flutter {
 
-class VulkanSurface : public flow::SceneUpdateContext::SurfaceProducerSurface {
+class VulkanSurface final
+    : public flow::SceneUpdateContext::SurfaceProducerSurface {
  public:
   VulkanSurface(vulkan::VulkanProvider& vulkan_provider,
                 sk_sp<GrContext> context,
@@ -32,12 +33,16 @@ class VulkanSurface : public flow::SceneUpdateContext::SurfaceProducerSurface {
 
   ~VulkanSurface() override;
 
+  // |flow::SceneUpdateContext::SurfaceProducerSurface|
   size_t AdvanceAndGetAge() override;
 
+  // |flow::SceneUpdateContext::SurfaceProducerSurface|
   bool FlushSessionAcquireAndReleaseEvents() override;
 
+  // |flow::SceneUpdateContext::SurfaceProducerSurface|
   bool IsValid() const override;
 
+  // |flow::SceneUpdateContext::SurfaceProducerSurface|
   SkISize GetSize() const override;
 
   // Note: It is safe for the caller to collect the surface in the
@@ -70,9 +75,10 @@ class VulkanSurface : public flow::SceneUpdateContext::SurfaceProducerSurface {
   }
 
  private:
-  async_wait_result_t OnHandleReady(async_t* async,
-                                    zx_status_t status,
-                                    const zx_packet_signal_t* signal);
+  void OnHandleReady(async_t* async,
+                     async::WaitBase* wait,
+                     zx_status_t status,
+                     const zx_packet_signal_t* signal);
 
   bool AllocateDeviceMemory(sk_sp<GrContext> context,
                             const SkISize& size,
@@ -106,7 +112,6 @@ class VulkanSurface : public flow::SceneUpdateContext::SurfaceProducerSurface {
   vulkan::VulkanHandle<VkSemaphore> acquire_semaphore_;
   std::unique_ptr<vulkan::VulkanCommandBuffer> command_buffer_;
   zx::event release_event_;
-  async_t* async_;
   async::WaitMethod<VulkanSurface, &VulkanSurface::OnHandleReady> wait_;
   std::function<void()> pending_on_writes_committed_;
   size_t age_ = 0;
@@ -115,4 +120,4 @@ class VulkanSurface : public flow::SceneUpdateContext::SurfaceProducerSurface {
   FXL_DISALLOW_COPY_AND_ASSIGN(VulkanSurface);
 };
 
-}  // namespace flutter_runner
+}  // namespace flutter
