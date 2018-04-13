@@ -82,7 +82,7 @@ class PlatformView : public std::enable_shared_from_this<PlatformView> {
                              const std::string& main,
                              const std::string& packages) = 0;
 
-  virtual void SetAssetBundlePath(const std::string& assets_directory) = 0;
+  virtual void SetAssetBundlePath(const std::string& assets_directory);
 
  protected:
   explicit PlatformView(std::unique_ptr<Rasterizer> rasterizer);

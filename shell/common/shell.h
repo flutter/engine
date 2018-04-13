@@ -88,14 +88,6 @@ class Shell {
                                  std::string* isolate_name,
                                  fxl::AutoResetWaitableEvent* latch);
 
-  void SetAssetBundlePathInPlatformViewUIThread(
-      uintptr_t view_id,
-      const std::string& main,
-      bool* view_existed,
-      int64_t* dart_isolate_id,
-      std::string* isolate_name,
-      fxl::AutoResetWaitableEvent* latch);
-
   FXL_DISALLOW_COPY_AND_ASSIGN(Shell);
 };
 

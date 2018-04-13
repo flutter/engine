@@ -184,11 +184,11 @@ void RunBundleAndSource(JNIEnv* env,
       fml::jni::JavaStringToString(env, packages));
 }
 
-void SetAssetBundlePathOnUI(JNIEnv* env,
-                            jobject jcaller,
-                            jlong platform_view,
-                            jstring bundlePath) {
-  return PLATFORM_VIEW->SetAssetBundlePathOnUI(
+void SetAssetBundlePath(JNIEnv* env,
+                        jobject jcaller,
+                        jlong platform_view,
+                        jstring bundlePath) {
+  return PLATFORM_VIEW->SetAssetBundlePath(
       fml::jni::JavaStringToString(env, bundlePath));
 }
 
@@ -364,9 +364,9 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&shell::RunBundleAndSource),
       },
       {
-          .name = "nativeSetAssetBundlePathOnUI",
+          .name = "nativeSetAssetBundlePath",
           .signature = "(JLjava/lang/String;)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::SetAssetBundlePathOnUI),
+          .fnPtr = reinterpret_cast<void*>(&shell::SetAssetBundlePath),
       },
       {
           .name = "nativeDetach",
