@@ -461,7 +461,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
       previous_routes_({}) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
-      binaryMessenger:platform_view->binary_messenger()
+      binaryMessenger:platform_view->GetOwnerViewController()
                 codec:[FlutterStandardMessageCodec sharedInstance]]);
   [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
@@ -474,7 +474,7 @@ AccessibilityBridge::~AccessibilityBridge() {
 }
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {
-  return [platform_view_->text_input_plugin() textInputView];
+  return [platform_view_->GetTextInputPlugin() textInputView];
 }
 
 void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
