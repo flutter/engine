@@ -934,12 +934,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         String getRouteName() {
-            // Returns the first non-null and non-empty semantic value of a child
+            // Returns the first non-null and non-empty semantic label of a child
             // with an isRouteName flag. Otherwise returns null.
             if (hasFlag(Flag.IS_ROUTE_NAME)) {
-                String routeName = getValueLabelHint();
-                if (routeName != null && !routeName.isEmpty()) {
-                    return routeName;
+                if (label != null && !label.isEmpty()) {
+                    return label;
                 }
             }
             if (children != null) {
