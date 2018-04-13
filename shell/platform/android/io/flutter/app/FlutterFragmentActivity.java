@@ -104,7 +104,6 @@ public class FlutterFragmentActivity
         super.onStop();
     }
 
-
     @Override
     protected void onPause() {
         super.onPause();
