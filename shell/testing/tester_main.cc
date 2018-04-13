@@ -11,6 +11,7 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/paths.h"
+#include "flutter/fml/task_runner.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell.h"
@@ -152,9 +153,13 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
 
   bool engine_did_run = false;
 
-  shell->GetTaskRunners().GetUITaskRunner()->PostTask(fxl::MakeCopyable(
-      [&completion_observer, engine = shell->GetEngine(),
-       config = std::move(run_configuration), &engine_did_run]() mutable {
+  fxl::AutoResetWaitableEvent sync_run_latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetUITaskRunner(),
+      fxl::MakeCopyable([&sync_run_latch, &completion_observer,
+                         engine = shell->GetEngine(),
+                         config = std::move(run_configuration),
+                         &engine_did_run]() mutable {
         fml::MessageLoop::GetCurrent().AddTaskObserver(
             reinterpret_cast<intptr_t>(&completion_observer),
             [&completion_observer]() { completion_observer.DidProcessTask(); });
@@ -170,7 +175,9 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
         } else {
           FXL_DLOG(ERROR) << "Could not launch the engine with configuration.";
         }
+        sync_run_latch.Signal();
       }));
+  sync_run_latch.Wait();
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();
