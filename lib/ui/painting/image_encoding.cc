@@ -41,64 +41,54 @@ void InvokeDataCallback(std::unique_ptr<DartPersistentValue> callback,
   }
 }
 
-sk_sp<SkData> EncodeImage(sk_sp<SkImage> image,
-                          SkEncodedImageFormat format,
-                          int quality) {
+sk_sp<SkData> GetImageBytesAsRGBA(sk_sp<SkImage> image) {
   if (image == nullptr) {
     return nullptr;
   }
-  return image->encodeToData(format, quality);
+
+  // Copy the GPU image snapshot into CPU memory.
+  auto cpu_snapshot = image->makeRasterImage();
+  if (!cpu_snapshot) {
+    FXL_LOG(ERROR) << "Pixel copy failed.";
+    return nullptr;
+  }
+
+  SkPixmap pixmap;
+  if (!cpu_snapshot->peekPixels(&pixmap)) {
+    FXL_LOG(ERROR) << "Pixel address is not available.";
+    return nullptr;
+  }
+
+  if (pixmap.colorType() != kRGBA_8888_SkColorType) {
+    // TODO(tvolkert): convert to kRGBA_8888_SkColorType
+    return nullptr;
+  }
+
+  const size_t pixmap_size = pixmap.computeByteSize();
+  return SkData::MakeWithCopy(pixmap.addr32(), pixmap_size);
 }
 
-void EncodeImageAndInvokeDataCallback(
+void GetImageBytesAndInvokeDataCallback(
     std::unique_ptr<DartPersistentValue> callback,
     sk_sp<SkImage> image,
-    SkEncodedImageFormat format,
-    int quality,
     fxl::RefPtr<fxl::TaskRunner> ui_task_runner) {
-  sk_sp<SkData> encoded = EncodeImage(std::move(image), format, quality);
+  sk_sp<SkData> buffer = GetImageBytesAsRGBA(std::move(image));
 
   ui_task_runner->PostTask(
-      fxl::MakeCopyable([callback = std::move(callback), encoded]() mutable {
-        InvokeDataCallback(std::move(callback), std::move(encoded));
+      fxl::MakeCopyable([callback = std::move(callback), buffer]() mutable {
+        InvokeDataCallback(std::move(callback), std::move(buffer));
       }));
-}
-
-SkEncodedImageFormat ToSkEncodedImageFormat(int format) {
-  // Map the formats exposed in flutter to formats supported in Skia.
-  // See:
-  // https://github.com/google/skia/blob/master/include/core/SkEncodedImageFormat.h
-  switch (format) {
-    case 0:
-      return SkEncodedImageFormat::kJPEG;
-    case 1:
-      return SkEncodedImageFormat::kPNG;
-    case 2:
-      return SkEncodedImageFormat::kWEBP;
-    default:
-      /* NOTREACHED */
-      return SkEncodedImageFormat::kWEBP;
-  }
 }
 
 }  // namespace
 
-Dart_Handle EncodeImage(CanvasImage* canvas_image,
-                        int format,
-                        int quality,
-                        Dart_Handle callback_handle) {
+Dart_Handle GetImageBytes(CanvasImage* canvas_image,
+                          Dart_Handle callback_handle) {
   if (!canvas_image)
     return ToDart("encode called with non-genuine Image.");
 
   if (!Dart_IsClosure(callback_handle))
     return ToDart("Callback must be a function.");
-
-  SkEncodedImageFormat image_format = ToSkEncodedImageFormat(format);
-
-  if (quality > 100)
-    quality = 100;
-  if (quality < 0)
-    quality = 0;
 
   auto callback = std::make_unique<DartPersistentValue>(
       tonic::DartState::Current(), callback_handle);
@@ -107,11 +97,11 @@ Dart_Handle EncodeImage(CanvasImage* canvas_image,
   const auto& task_runners = UIDartState::Current()->GetTaskRunners();
 
   task_runners.GetIOTaskRunner()->PostTask(fxl::MakeCopyable(
-      [callback = std::move(callback), image, image_format, quality,
+      [callback = std::move(callback), image,
        ui_task_runner = task_runners.GetUITaskRunner()]() mutable {
-        EncodeImageAndInvokeDataCallback(std::move(callback), std::move(image),
-                                         image_format, quality,
-                                         std::move(ui_task_runner));
+        GetImageBytesAndInvokeDataCallback(std::move(callback),
+                                           std::move(image),
+                                           std::move(ui_task_runner));
       }));
 
   return Dart_Null();
