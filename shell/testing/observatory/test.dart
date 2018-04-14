@@ -98,51 +98,53 @@ Future<Null> testHttpAssetRequest(Uri uri) async {
 Future<Null> testStartPaused(Uri uri) async {
   uri = uri.replace(scheme: 'ws', path: 'ws');
   final WebSocket webSocketClient = await WebSocket.connect(uri.toString());
-  final ServiceClient serviceClient = new ServiceClient(webSocketClient);
+  final Completer<dynamic> isolateStartedId = new Completer<dynamic>();
+  final Completer<dynamic> isolateRunnableId = new Completer<dynamic>();
+  final Completer<dynamic> isolateResumeId = new Completer<dynamic>();
+  final ServiceClient serviceClient = new ServiceClient(webSocketClient,
+      isolateStartedId: isolateStartedId,
+      isolateRunnableId: isolateRunnableId,
+      isolateResumeId: isolateResumeId);
+  await serviceClient.invokeRPC('streamListen', <String, String>{ 'streamId': 'Isolate'});
+  await serviceClient.invokeRPC('streamListen', <String, String>{ 'streamId': 'Debug'});
 
-  // Wait until we have the isolateId.
+  final Map<String, dynamic> response = await serviceClient.invokeRPC('getVM');
+  Expect.equals(response['type'], 'VM');
   String isolateId;
-  while (isolateId == null) {
-    final Map<String, dynamic> response = await serviceClient.invokeRPC('getVM');
-    Expect.equals(response['type'], 'VM');
-    if (response['isolates'].length > 0) {
-      isolateId = response['isolates'][0]['id'];
-    }
+  if (response['isolates'].length > 0) {
+    isolateId = response['isolates'][0]['id'];
+  } else {
+    // Wait until isolate starts.
+    isolateId = await isolateStartedId.future;
   }
 
   // Grab the isolate.
-  Map<String, dynamic> isolate;
-  while(true) {
+  Map<String, dynamic> isolate = await serviceClient.invokeRPC('getIsolate', <String, String>{
+      'isolateId': isolateId,
+  });
+  Expect.equals(isolate['type'], 'Isolate');
+  Expect.isNotNull(isolate['pauseEvent']);
+  // If it is not runnable, wait until it becomes runnable.
+  if (isolate['pauseEvent']['kind'] == 'None') {
+    await isolateRunnableId.future;
     isolate = await serviceClient.invokeRPC('getIsolate', <String, String>{
       'isolateId': isolateId,
     });
-    Expect.equals(isolate['type'], 'Isolate');
-    // Verify that it is paused at start.
-    Expect.isNotNull(isolate['pauseEvent']);
-    if (isolate['pauseEvent']['kind'] != 'None') {
-      break;
-    }
-  }
-
-  Expect.isNotNull(isolate);
+   }
+  // Verify that it is paused at start.
   Expect.equals(isolate['pauseEvent']['kind'], 'PauseStart');
 
   // Resume the isolate.
   await serviceClient.invokeRPC('resume', <String, String>{
     'isolateId': isolateId,
   });
-
   // Wait until the isolate has resumed.
-  while (true) {
-    final Map<String, dynamic> response = await serviceClient.invokeRPC('getIsolate', <String, String>{
-      'isolateId': isolateId,
-    });
-    Expect.equals(response['type'], 'Isolate');
-    Expect.isNotNull(response['pauseEvent']);
-    if (response['pauseEvent']['kind'] == 'Resume') {
-      break;
-    }
-  }
+  await isolateResumeId.future;
+  final Map<String, dynamic> resumedResponse = await serviceClient.invokeRPC(
+      'getIsolate', <String, String>{'isolateId': isolateId});
+  Expect.equals(resumedResponse['type'], 'Isolate');
+  Expect.isNotNull(resumedResponse['pauseEvent']);
+  Expect.equals(resumedResponse['pauseEvent']['kind'], 'Resume');
 }
 
 typedef Future<Null> TestFunction(Uri uri);
