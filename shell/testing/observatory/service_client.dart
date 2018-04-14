@@ -4,9 +4,10 @@
 
 library observatory_sky_shell_service_client;
 
-
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+
 
 class ServiceClient {
   ServiceClient(this.client) {
@@ -15,35 +16,35 @@ class ServiceClient {
                   cancelOnError: true);
   }
 
-  Future<Map> invokeRPC(String method, [Map params]) async {
-    var key = _createKey();
-    var request = JSON.encode({
+  Future<Map<String, dynamic>> invokeRPC(String method, [Map<String, dynamic> params]) async {
+    final String key = _createKey();
+    final String request = json.encode(<String, dynamic>{
       'jsonrpc': '2.0',
       'method': method,
-      'params': params == null ? {} : params,
+      'params': params == null ? <String, dynamic>{} : params,
       'id': key,
     });
     client.add(request);
-    var completer = new Completer();
-    _outstanding_requests[key] = completer;
+    final Completer<Map<String, dynamic>> completer = new Completer<Map<String, dynamic>>();
+    _outstandingRequests[key] = completer;
     print('-> $key ($method)');
     return completer.future;
   }
 
   String _createKey() {
-    var key = '$_id';
+    final String key = '$_id';
     _id++;
     return key;
   }
 
-  void _onData(String message) {
-    var response = JSON.decode(message);
-    var key = response['id'];
+  void _onData(dynamic message) {
+    final Map<String, dynamic> response = json.decode(message);
+    final dynamic key = response['id'];
     print('<- $key');
-    var completer = _outstanding_requests.remove(key);
+    final dynamic completer = _outstandingRequests.remove(key);
     assert(completer != null);
-    var result = response['result'];
-    var error = response['error'];
+    final dynamic result = response['result'];
+    final dynamic error = response['error'];
     if (error != null) {
       assert(result == null);
       completer.completeError(error);
@@ -53,11 +54,11 @@ class ServiceClient {
     }
   }
 
-  void _onError(error) {
+  void _onError(dynamic error) {
     print('WebSocket error: $error');
   }
 
   final WebSocket client;
-  final Map<String, Completer> _outstanding_requests = <String, Completer>{};
-  var _id = 1;
+  final Map<String, Completer<dynamic>> _outstandingRequests = <String, Completer<dynamic>>{};
+  int _id = 1;
 }
