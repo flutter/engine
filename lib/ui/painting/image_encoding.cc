@@ -17,6 +17,7 @@
 #include "lib/tonic/typed_data/uint8_list.h"
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkSurface.h"
 
 using tonic::DartInvoke;
 using tonic::DartPersistentValue;
@@ -60,12 +61,23 @@ sk_sp<SkData> GetImageBytesAsRGBA(sk_sp<SkImage> image) {
   }
 
   if (pixmap.colorType() != kRGBA_8888_SkColorType) {
-    // TODO(tvolkert): convert to kRGBA_8888_SkColorType
-    return nullptr;
-  }
+    // Convert the pixel data to N32 to adhere to our API contract.
+    const auto image_info = SkImageInfo::MakeN32Premul(image->width(),
+                                                       image->height());
+    auto surface = SkSurface::MakeRaster(image_info);
+    surface->writePixels(pixmap, 0, 0);
+    if (!surface->peekPixels(&pixmap)) {
+      FXL_LOG(ERROR) << "Pixel address is not available.";
+      return nullptr;
+    }
+    ASSERT(pixmap.colorType() == kRGBA_8888_SkColorType);
 
-  const size_t pixmap_size = pixmap.computeByteSize();
-  return SkData::MakeWithCopy(pixmap.addr32(), pixmap_size);
+    const size_t pixmap_size = pixmap.computeByteSize();
+    return SkData::MakeWithCopy(pixmap.addr32(), pixmap_size);
+  } else {
+    const size_t pixmap_size = pixmap.computeByteSize();
+    return SkData::MakeWithCopy(pixmap.addr32(), pixmap_size);
+  }
 }
 
 void GetImageBytesAndInvokeDataCallback(

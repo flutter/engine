@@ -17,11 +17,28 @@ const Color _kBlack = const Color.fromRGBO(0, 0, 0, 1.0);
 const Color _kGreen = const Color.fromRGBO(0, 255, 0, 1.0);
 
 void main() {
-  final Image testImage = createSquareTestImage();
+  group('Image.toByteData', () {
+    test('Encode with default arguments', () async {
+      Image testImage = createSquareTestImage();
+      ByteData data = await testImage.toByteData();
+      expect(new Uint8List.view(data.buffer), getExpectedBytes());
+    });
 
-  test('Encode with default arguments', () async {
-    ByteData data = await testImage.toByteData();
-    expect(new Uint8List.view(data.buffer), getExpectedBytes());
+    test('Handles greyscale images', () async {
+      Uint8List png = await new File('../resources/4x4.png').readAsBytes();
+      Completer<Image> completer = new Completer<Image>();
+      decodeImageFromList(png, (Image image) => completer.complete(image));
+      Image image = await completer.future;
+      ByteData data = await image.toByteData();
+      Uint8List bytes = data.buffer.asUint8List(); 
+      expect(bytes, hasLength(16));
+      expect(bytes, <int>[
+        255, 255, 255, 255,
+        127, 127, 127, 255,
+        127, 127, 127, 255,
+        0, 0, 0, 255,
+      ]);
+    });
   });
 }
 
