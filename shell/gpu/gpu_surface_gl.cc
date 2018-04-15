@@ -11,6 +11,11 @@
 #include <OpenGL/gl3.h>
 #elif OS_LINUX
 #include <GL/gl.h>
+#elif OS_WIN
+// APIENTRY and WINGDIAPI are explicitly defined because importing Windows.h clobbers FXL macros
+#define APIENTRY    __stdcall
+#define WINGDIAPI __declspec(dllimport)
+#include <GL/gl.h>
 #else
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -89,13 +94,16 @@ static SkColorType FirstSupportedColorType(GrContext* context, GLenum* format) {
     *format = (y);                                 \
     return (x);                                    \
   }
-#if (OS_MACOSX && !OS_IOS) || OS_LINUX
+#if (OS_MACOSX && !OS_IOS) || OS_LINUX || OS_WIN
   RETURN_IF_RENDERABLE(kRGBA_8888_SkColorType, GL_RGBA8);
 #else
   RETURN_IF_RENDERABLE(kRGBA_8888_SkColorType, GL_RGBA8_OES);
 #endif
   RETURN_IF_RENDERABLE(kARGB_4444_SkColorType, GL_RGBA4);
+  // Windows doesn't define GL_RGB565 in their GL header
+#if !OS_WIN
   RETURN_IF_RENDERABLE(kRGB_565_SkColorType, GL_RGB565);
+#endif
   return kUnknown_SkColorType;
 }
 
@@ -106,10 +114,9 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
   GLenum format;
   const SkColorType color_type = FirstSupportedColorType(context, &format);
 
-  const GrGLFramebufferInfo framebuffer_info = {
-      static_cast<GrGLuint>(fbo),
-      format,
-  };
+  GrGLFramebufferInfo framebuffer_info;
+  framebuffer_info.fFBOID = static_cast<GrGLuint>(fbo);
+  framebuffer_info.fFormat = format;
 
 
   GrBackendRenderTarget render_target(size.fWidth,      // width
