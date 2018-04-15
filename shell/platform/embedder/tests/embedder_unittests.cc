@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <string>
+#define FLUTTER_STATIC
 #include "embedder.h"
 #include "flutter/testing/testing.h"
 
