@@ -1,4 +1,4 @@
-Signature: 11eed2d794a665c2ed961ab41d6006b7
+Signature: b63933e9724102106a0d05c9f1812c41
 
 UNUSED LICENSES:
 
@@ -17404,6 +17404,8 @@ FILE: ../../../third_party/skia/bench/skpbench.json
 FILE: ../../../third_party/skia/docs/SkAutoCanvasRestore_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkBitmap_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkCanvas_Reference.bmh
+FILE: ../../../third_party/skia/docs/SkColor4f_Reference.bmh
+FILE: ../../../third_party/skia/docs/SkColor_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkIPoint_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkIRect_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkImageInfo_Reference.bmh
