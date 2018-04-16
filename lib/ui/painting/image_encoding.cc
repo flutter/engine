@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "flutter/common/task_runners.h"
+#include "flutter/glue/trace_event.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "lib/fxl/build_config.h"
@@ -43,6 +44,8 @@ void InvokeDataCallback(std::unique_ptr<DartPersistentValue> callback,
 }
 
 sk_sp<SkData> GetImageBytesAsRGBA(sk_sp<SkImage> image) {
+  TRACE_EVENT0("flutter", __FUNCTION__);
+
   if (image == nullptr) {
     return nullptr;
   }
@@ -61,6 +64,8 @@ sk_sp<SkData> GetImageBytesAsRGBA(sk_sp<SkImage> image) {
   }
 
   if (pixmap.colorType() != kRGBA_8888_SkColorType) {
+    TRACE_EVENT0("flutter", "ConvertToRGBA");
+
     // Convert the pixel data to N32 to adhere to our API contract.
     const auto image_info = SkImageInfo::MakeN32Premul(image->width(),
                                                        image->height());
