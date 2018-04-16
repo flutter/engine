@@ -277,14 +277,14 @@
                object:nil];
 
   [center addObserver:self
-           selector:@selector(onAccessibilityStatusChanged:)
-               name:UIAccessibilitySwitchControlStatusDidChangeNotification
-             object:nil];
+             selector:@selector(onAccessibilityStatusChanged:)
+                 name:UIAccessibilitySwitchControlStatusDidChangeNotification
+               object:nil];
 
   [center addObserver:self
-           selector:@selector(onAccessibilityStatusChanged:)
-               name:UIAccessibilitySpeakScreenStatusDidChangeNotification
-             object:nil];
+             selector:@selector(onAccessibilityStatusChanged:)
+                 name:UIAccessibilitySpeakScreenStatusDidChangeNotification
+               object:nil];
 
   [center addObserver:self
              selector:@selector(onMemoryWarning:)
@@ -756,7 +756,8 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   // accessibility bridge in the simulator.
   bool enabled = true;
 #else
-  bool enabled = UIAccessibilityIsVoiceOverRunning() || UIAccessibilityIsSwitchControlRunning() || UIAccessibilityIsSpeakScreenEnabled();
+  bool enabled = UIAccessibilityIsVoiceOverRunning() || UIAccessibilityIsSwitchControlRunning() ||
+                 UIAccessibilityIsSpeakScreenEnabled();
 #endif
   _shell->GetPlatformView()->SetSemanticsEnabled(enabled);
 }
