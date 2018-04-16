@@ -99,11 +99,11 @@ Future<Null> testStartPaused(Uri uri) async {
   uri = uri.replace(scheme: 'ws', path: 'ws');
   final WebSocket webSocketClient = await WebSocket.connect(uri.toString());
   final Completer<dynamic> isolateStartedId = new Completer<dynamic>();
-  final Completer<dynamic> isolateRunnableId = new Completer<dynamic>();
+  final Completer<dynamic> isolatePausedId = new Completer<dynamic>();
   final Completer<dynamic> isolateResumeId = new Completer<dynamic>();
   final ServiceClient serviceClient = new ServiceClient(webSocketClient,
       isolateStartedId: isolateStartedId,
-      isolateRunnableId: isolateRunnableId,
+      isolatePausedId: isolatePausedId,
       isolateResumeId: isolateResumeId);
   await serviceClient.invokeRPC('streamListen', <String, String>{ 'streamId': 'Isolate'});
   await serviceClient.invokeRPC('streamListen', <String, String>{ 'streamId': 'Debug'});
@@ -126,7 +126,7 @@ Future<Null> testStartPaused(Uri uri) async {
   Expect.isNotNull(isolate['pauseEvent']);
   // If it is not runnable, wait until it becomes runnable.
   if (isolate['pauseEvent']['kind'] == 'None') {
-    await isolateRunnableId.future;
+    await isolatePausedId.future;
     isolate = await serviceClient.invokeRPC('getIsolate', <String, String>{
       'isolateId': isolateId,
     });

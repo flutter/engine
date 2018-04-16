@@ -11,10 +11,10 @@ import 'dart:io';
 
 class ServiceClient {
   Completer<dynamic> isolateStartedId;
-  Completer<dynamic> isolateRunnableId;
+  Completer<dynamic> isolatePausedId;
   Completer<dynamic> isolateResumeId;
 
-  ServiceClient(this.client, {this.isolateStartedId, this.isolateRunnableId,
+  ServiceClient(this.client, {this.isolateStartedId, this.isolatePausedId,
       this.isolateResumeId}) {
     client.listen(_onData,
                   onError: _onError,
@@ -59,36 +59,37 @@ class ServiceClient {
         completer.complete(result);
       }
     } else {
-      final String method = response['method'];
-      if (method != 'streamNotify') {
-        return;
+      if (response['method'] == 'streamNotify') {
+        _onServiceEvent(response['params']);
       }
-      final Map<String, dynamic> params = response['params'];
-      if (params == null) {
-        return;
-      }
-      final Map<String, dynamic> event = params['event'];
-      if (event == null || event['type'] != 'Event') {
-        return;
-      }
-      final dynamic isolateId = event['isolate']['id'];
-      switch (params['streamId']) {
-        case 'Isolate':
-          switch (event['kind']) {
-            case 'IsolateStarted':
-              isolateStartedId?.complete(isolateId);
-              break;
-            case 'IsolateRunnable':
-              isolateRunnableId?.complete(isolateId);
-              break;
-            }
-            break;
-        case 'Debug':
-          if (event['kind'] == 'Resume') {
+    }
+  }
+
+  void _onServiceEvent(Map<String, dynamic> params) {
+    if (params == null) {
+      return;
+    }
+    final Map<String, dynamic> event = params['event'];
+    if (event == null || event['type'] != 'Event') {
+      return;
+    }
+    final dynamic isolateId = event['isolate']['id'];
+    switch (params['streamId']) {
+      case 'Isolate':
+        if (event['kind'] == 'IsolateStarted') {
+          isolateStartedId?.complete(isolateId);
+        }
+        break;
+      case 'Debug':
+        switch (event['kind']) {
+          case 'Resume':
             isolateResumeId?.complete(isolateId);
-          }
-          break;
-      }
+            break;
+          case 'PauseStart':
+            isolatePausedId?.complete(isolateId);
+            break;
+        }
+        break;
     }
   }
 
