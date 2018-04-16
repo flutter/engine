@@ -58,7 +58,6 @@ vars = {
   'dart_http_tag': '0.11.3+16',
   'dart_http_throttle_tag': '1.0.1',
   'dart_intl_tag': '0.15.2',
-  'dart_isolate_tag': '1.1.0',
   'dart_json_rpc_2_tag': '2.0.6',
   'dart_linter_tag': '0.1.47',
   'dart_logging_tag': '0.11.3+1',
@@ -208,9 +207,6 @@ deps = {
 
   'src/third_party/dart/third_party/pkg/dartdoc':
    Var('dart_git') + '/dartdoc.git' + '@' + Var('dart_dartdoc_tag'),
-
-  'src/third_party/dart/third_party/pkg/isolate':
-   Var('dart_git') + '/isolate.git' + '@' + Var('dart_isolate_tag'),
 
   'src/third_party/dart/third_party/pkg/json_rpc_2':
    Var('dart_git') + '/json_rpc_2.git' + '@' + Var('dart_json_rpc_2_tag'),
