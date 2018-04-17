@@ -312,10 +312,21 @@ class SemanticsFlag {
   /// Whether the semantics node is the root of a subtree for which values
   /// should be announced.
   /// 
-  /// When a semantics node with a node flag is added to the tree, the
-  /// framework will search for the first child in _ order with
-  /// a [namesRoute] flag and non-empty semantic label and announce it as an
-  /// edge transition.
+  /// When a node with this flag is removed from the semantics tree, the 
+  /// framework will select the last in depth-first, paint order node with this
+  /// flag.  When a node with this flag is added to the semantics tree, it is
+  /// selected automatically, unless there were multiple nodes with this flag
+  /// added.  In this case, the last added node in depth-first, paint order
+  /// will be selected.
+  /// 
+  /// From this selected node, the framework will search in depth-first, paint
+  /// order for the first node with a [namesRoute] flag and a non-null, 
+  /// non-empty label. The [namesRoute] and [scopesRoute] flags may be on the 
+  /// same node. The label of the found node will be announced as an edge 
+  /// transition. if no non-empty, non-null label is found then:
+  ///   
+  ///   * VoiceOver will make a chime announcement.
+  ///   * TalkBack will make no announcement
   /// 
   /// This is used in widgets such as Routes, Drawers, and Dialogs to 
   /// communicate significant changes in the visible screen.
