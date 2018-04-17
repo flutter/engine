@@ -910,11 +910,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         // TODO(goderbauer): This should be decided by the framework once we have more information
         //     about focusability there.
         boolean isFocusable() {
-            int scrollableActions = Action.SCROLL_RIGHT.value | Action.SCROLL_LEFT.value
-                    | Action.SCROLL_UP.value | Action.SCROLL_DOWN.value;
+            // We enforce in the framework that no other useful semantics are merged with these
+            // nodes.
             if (hasFlag(Flag.SCOPES_ROUTE)) {
                 return false;
             }
+            int scrollableActions = Action.SCROLL_RIGHT.value | Action.SCROLL_LEFT.value
+                    | Action.SCROLL_UP.value | Action.SCROLL_DOWN.value;
             return (actions & ~scrollableActions) != 0
                 || flags != 0
                 || (label != null && !label.isEmpty())
