@@ -123,6 +123,7 @@ void Scene::toImage(uint32_t width,
   if (!picture) {
     // Already in Dart scope.
     tonic::DartInvoke(raw_image_callback, {Dart_Null()});
+    return;
   }
 
   auto resource_context = dart_state->GetResourceContext();
