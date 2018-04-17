@@ -32,7 +32,9 @@ class Scene : public fxl::RefCountedThreadSafe<Scene>,
 
   std::unique_ptr<flow::LayerTree> takeLayerTree();
 
-  void toImage(uint32_t width, uint32_t height, Dart_Handle image_callback);
+  Dart_Handle toImage(uint32_t width,
+                      uint32_t height,
+                      Dart_Handle image_callback);
 
   void dispose();
 

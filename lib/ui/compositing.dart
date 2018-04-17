@@ -29,7 +29,7 @@ class Scene extends NativeFieldWrapperClass2 {
     );
   }
 
-  void _toImage(int width, int height, _Callback<Image> callback) native 'Scene_toImage';
+  String _toImage(int width, int height, _Callback<Image> callback) native 'Scene_toImage';
 
   /// Releases the resources used by this scene.
   ///

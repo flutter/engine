@@ -94,18 +94,20 @@ static sk_sp<SkImage> CreateSceneSnapshot(GrContext* context,
   return snapshot->makeRasterImage();
 }
 
-void Scene::toImage(uint32_t width,
-                    uint32_t height,
-                    Dart_Handle raw_image_callback) {
+Dart_Handle Scene::toImage(uint32_t width,
+                           uint32_t height,
+                           Dart_Handle raw_image_callback) {
   TRACE_EVENT0("flutter", "Scene::toImage");
   if (Dart_IsNull(raw_image_callback) || !Dart_IsClosure(raw_image_callback)) {
-    return;
+    return tonic::ToDart("Image callback was invalid");
   }
 
-  if (!m_layerTree || width == 0 || height == 0) {
-    // Already in a Dart scope.
-    tonic::DartInvoke(raw_image_callback, {Dart_Null()});
-    return;
+  if (!m_layerTree) {
+    return tonic::ToDart("Scene did not contain a layer tree.");
+  }
+
+  if (width == 0 || height == 0) {
+    return tonic::ToDart("Image dimensions for scene were invalid.");
   }
 
   auto dart_state = UIDartState::Current();
@@ -122,8 +124,7 @@ void Scene::toImage(uint32_t width,
   auto picture = m_layerTree->Flatten(SkRect::MakeSize(bounds_size));
   if (!picture) {
     // Already in Dart scope.
-    tonic::DartInvoke(raw_image_callback, {Dart_Null()});
-    return;
+    return tonic::ToDart("Could not flatten scene into a layer tree.");
   }
 
   auto resource_context = dart_state->GetResourceContext();
@@ -171,6 +172,8 @@ void Scene::toImage(uint32_t width,
               tonic::DartInvoke(image_callback->Get(), {raw_dart_image});
             }));
       }));
+
+  return Dart_Null();
 }
 
 std::unique_ptr<flow::LayerTree> Scene::takeLayerTree() {
