@@ -134,4 +134,11 @@ executable("shell_unittests") {
     "//third_party/skia",
     "//topaz/lib/tonic",
   ]
+
+  if (is_win) {
+    libs = [
+      "iphlpapi.lib",
+      "Rpcrt4.lib"
+    ]
+  }
 }

@@ -14,7 +14,15 @@ extern "C" {
 #endif
 
 #ifndef FLUTTER_EXPORT
+#if _WIN32
+#ifdef FLUTTER_STATIC
 #define FLUTTER_EXPORT
+#else
+#define FLUTTER_EXPORT __declspec(dllimport)
+#endif  // FLUTTER_STATIC
+#else
+#define FLUTTER_EXPORT
+#endif
 #endif  // FLUTTER_EXPORT
 
 #define FLUTTER_ENGINE_VERSION 1

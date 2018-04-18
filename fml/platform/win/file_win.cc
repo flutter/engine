@@ -6,6 +6,7 @@
 
 #include <Shlwapi.h>
 
+#include <algorithm>
 #include <sstream>
 
 #include "flutter/fml/platform/win/wstring_conversion.h"
@@ -36,13 +37,19 @@ fml::UniqueFD OpenFile(const std::wstring& path,
       break;
   }
 
+  DWORD flags = FILE_ATTRIBUTE_NORMAL;
+
+  if (is_directory) {
+    flags |= FILE_FLAG_BACKUP_SEMANTICS;
+  }
+
   return fml::UniqueFD{::CreateFile(
       path.c_str(),           // lpFileName
       desired_access,         // dwDesiredAccess
       FILE_SHARE_READ,        // dwShareMode
       0,                      // lpSecurityAttributes
       OPEN_EXISTING,          // dwCreationDisposition
-      FILE_ATTRIBUTE_NORMAL,  // dwFlagsAndAttributes
+      flags,                  // dwFlagsAndAttributes
       0                       // hTemplateFile
       )};
 }
@@ -83,7 +90,10 @@ fml::UniqueFD OpenFile(const fml::UniqueFD& base_directory,
 
   std::wstringstream stream;
   stream << GetFullHandlePath(base_directory) << "\\" << path;
-  return OpenFile(stream.str(), permission, is_directory);
+  std::wstring native_path = stream.str();
+  // native_path is a UNC path, so transform any forward slashes into back slashes
+  std::replace(native_path.begin(), native_path.end(), '/', '\\');
+  return OpenFile(native_path, permission, is_directory);
 }
 
 fml::UniqueFD Duplicate(fml::UniqueFD::element_type descriptor) {

@@ -13,6 +13,8 @@
 #include "flutter/runtime/dart_snapshot_buffer.h"
 #include "flutter/runtime/dart_vm.h"
 
+#include "flutter/lib/snapshot/snapshot.h"
+
 namespace blink {
 
 const char* DartSnapshot::kVMDataSymbol = "kDartVmSnapshotData";
@@ -31,9 +33,13 @@ std::unique_ptr<DartSnapshotBuffer> ResolveVMData(const Settings& settings) {
     }
   }
 
+#ifdef OS_WIN
+  return DartSnapshotBuffer::CreateWithRawStaticBuffer(kDartVmSnapshotData);
+#else
   auto loaded_process = fml::NativeLibrary::CreateForCurrentProcess();
   return DartSnapshotBuffer::CreateWithSymbolInLibrary(
       loaded_process, DartSnapshot::kVMDataSymbol);
+#endif
 }
 
 std::unique_ptr<DartSnapshotBuffer> ResolveVMInstructions(
@@ -56,9 +62,13 @@ std::unique_ptr<DartSnapshotBuffer> ResolveVMInstructions(
     }
   }
 
+#ifdef OS_WIN
+  return DartSnapshotBuffer::CreateWithRawStaticBuffer(kDartVmSnapshotInstructions);
+#else
   auto loaded_process = fml::NativeLibrary::CreateForCurrentProcess();
   return DartSnapshotBuffer::CreateWithSymbolInLibrary(
       loaded_process, DartSnapshot::kVMInstructionsSymbol);
+#endif
 }
 
 std::unique_ptr<DartSnapshotBuffer> ResolveIsolateData(
@@ -73,9 +83,13 @@ std::unique_ptr<DartSnapshotBuffer> ResolveIsolateData(
     }
   }
 
+#ifdef OS_WIN
+  return DartSnapshotBuffer::CreateWithRawStaticBuffer(kDartIsolateSnapshotData);
+#else
   auto loaded_process = fml::NativeLibrary::CreateForCurrentProcess();
   return DartSnapshotBuffer::CreateWithSymbolInLibrary(
       loaded_process, DartSnapshot::kIsolateDataSymbol);
+#endif
 }
 
 std::unique_ptr<DartSnapshotBuffer> ResolveIsolateInstructions(
@@ -99,9 +113,13 @@ std::unique_ptr<DartSnapshotBuffer> ResolveIsolateInstructions(
     }
   }
 
+#ifdef OS_WIN
+  return DartSnapshotBuffer::CreateWithRawStaticBuffer(kDartIsolateSnapshotInstructions);
+#else
   auto loaded_process = fml::NativeLibrary::CreateForCurrentProcess();
   return DartSnapshotBuffer::CreateWithSymbolInLibrary(
       loaded_process, DartSnapshot::kIsolateInstructionsSymbol);
+#endif
 }
 
 fxl::RefPtr<DartSnapshot> DartSnapshot::VMSnapshotFromSettings(

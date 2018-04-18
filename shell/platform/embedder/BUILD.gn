@@ -50,6 +50,13 @@ executable("embedder_unittests") {
     ":fixtures",
     "$flutter_root/testing",
   ]
+
+  if (is_win) {
+    libs = [
+      "iphlpapi.lib",
+      "Rpcrt4.lib"
+    ]
+  }
 }
 
 shared_library("flutter_engine") {
@@ -58,6 +65,13 @@ shared_library("flutter_engine") {
   ]
 
   public_configs = [ "$flutter_root:config" ]
+
+  if (is_win) {
+    libs = [
+      "iphlpapi.lib",
+      "Rpcrt4.lib"
+    ]
+  }
 }
 
 if (is_mac) {

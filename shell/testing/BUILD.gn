@@ -28,4 +28,11 @@ executable("testing") {
   if (is_linux) {
     ldflags = [ "-rdynamic" ]
   }
+
+  if (is_win) {
+    libs = [
+      "iphlpapi.lib",
+      "Rpcrt4.lib"
+    ]
+  }
 }

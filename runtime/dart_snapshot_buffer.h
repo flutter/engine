@@ -18,6 +18,9 @@ class DartSnapshotBuffer {
       fxl::RefPtr<fml::NativeLibrary> library,
       const char* symbol_name);
 
+  static std::unique_ptr<DartSnapshotBuffer> CreateWithRawStaticBuffer(
+      const uint8_t *ptr);
+
   static std::unique_ptr<DartSnapshotBuffer> CreateWithContentsOfFile(
       const char* file_path,
       bool executable);

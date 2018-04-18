@@ -31,6 +31,21 @@ class NativeLibrarySnapshotBuffer final : public DartSnapshotBuffer {
   FXL_DISALLOW_COPY_AND_ASSIGN(NativeLibrarySnapshotBuffer);
 };
 
+class StaticSnapshotBuffer final : public DartSnapshotBuffer {
+ public:
+  StaticSnapshotBuffer(const uint8_t* static_buffer)
+      : static_buffer_(static_buffer) {}
+
+  const uint8_t* GetSnapshotPointer() const override { return static_buffer_; }
+
+  size_t GetSnapshotSize() const override { return 0; }
+
+ private:
+  const uint8_t* static_buffer_ = nullptr;
+
+  FXL_DISALLOW_COPY_AND_ASSIGN(StaticSnapshotBuffer);
+};
+
 class FileSnapshotBuffer final : public DartSnapshotBuffer {
  public:
   FileSnapshotBuffer(const char* path, bool executable)
@@ -71,6 +86,12 @@ DartSnapshotBuffer::CreateWithSymbolInLibrary(
     const char* symbol_name) {
   auto source = std::make_unique<NativeLibrarySnapshotBuffer>(
       std::move(library), symbol_name);
+  return source->GetSnapshotPointer() == nullptr ? nullptr : std::move(source);
+}
+
+std::unique_ptr<DartSnapshotBuffer>
+DartSnapshotBuffer::CreateWithRawStaticBuffer(const uint8_t *ptr) {
+  auto source = std::make_unique<StaticSnapshotBuffer>(ptr);
   return source->GetSnapshotPointer() == nullptr ? nullptr : std::move(source);
 }
 
