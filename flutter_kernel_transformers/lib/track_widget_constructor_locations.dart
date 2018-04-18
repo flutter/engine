@@ -54,31 +54,36 @@ VariableDeclaration _getNamedParameter(
 // TODO(jacobr): find a solution that supports optional positional parameters.
 /// Add the creation location to the arguments list if possible.
 ///
-/// Returns whether the creation location argument could be added. We cannot
-/// currently add the named argument for functions with optional positional
-/// parameters as the current scheme requires adding the creation location as a
-/// named parameter. Fortunately that is not a significant issue in practice as
-/// no Widget classes in package:flutter have optional positional parameters.
-/// This code degrades gracefully for constructors with optional positional
-/// parameters by skipping adding the creation location argument rather than
-/// failing.
-void _maybeAddCreationLocationArgument(
+/// Returns the new arguments object to use which may include the location
+/// argument We cannot currently add the named argument for functions with
+/// optional positional parameters as the current scheme requires adding the
+/// creation location as a named parameter. Fortunately that is not a
+/// significant issue in practice as no Widget classes in package:flutter have
+/// optional positional parameters. This code degrades gracefully for
+/// constructors with optional positional parameters by skipping adding the
+/// creation location argument rather than failing.
+Arguments _maybeAddCreationLocationArgument(
   Arguments arguments,
   FunctionNode function,
   Expression creationLocation,
   Class locationClass,
 ) {
   if (_hasNamedArgument(arguments, _creationLocationParameterName)) {
-    return;
+    return arguments;
   }
   if (!_hasNamedParameter(function, _creationLocationParameterName)) {
-    return;
+    return arguments;
   }
 
   final NamedExpression namedArgument =
       new NamedExpression(_creationLocationParameterName, creationLocation);
-  namedArgument.parent = arguments;
-  arguments.named.add(namedArgument);
+  Arguments newArguments = new Arguments(
+    arguments.positional,
+    types: arguments.types,
+    named: new List<NamedExpression>.from(arguments.named)..add(namedArgument),
+  );
+  namedArgument.parent = newArguments;
+  return newArguments;
 }
 
 /// Adds a named parameter to a function if the function does not already have
@@ -98,7 +103,8 @@ bool _maybeAddNamedParameter(
     return false;
   }
   variable.parent = function;
-  function.namedParameters.add(variable);
+
+  function.namedParameters = new List<VariableDeclaration>.from(function.namedParameters)..add(variable);
   return true;
 }
 
@@ -208,7 +214,7 @@ class _WidgetCallSiteTransformer extends Transformer {
 
   void _addLocationArgument(InvocationExpression node, FunctionNode function,
       Class constructedClass) {
-    _maybeAddCreationLocationArgument(
+    node.arguments = _maybeAddCreationLocationArgument(
       node.arguments,
       function,
       _computeLocation(node, function, constructedClass),
@@ -249,6 +255,11 @@ class _WidgetCallSiteTransformer extends Transformer {
 
     final Arguments arguments = node.arguments;
     final Location location = node.location;
+    if (location == null) {
+      // Surprising I have to check this special case.
+      print("XXX Location is null for node: $node");
+      return new NullLiteral();
+    }
     final List<ConstructorInvocation> parameterLocations =
         <ConstructorInvocation>[];
     final List<VariableDeclaration> parameters = function.positionalParameters;
@@ -383,7 +394,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
             // parameter not yet existing on the constructor.
             handleConstructor(initializer.target);
           }
-          _maybeAddCreationLocationArgument(
+          initializer.arguments = _maybeAddCreationLocationArgument(
             initializer.arguments,
             initializer.target.function,
             new VariableGet(variable),
@@ -572,7 +583,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
             handleConstructor(initializer.target);
           }
 
-          _maybeAddCreationLocationArgument(
+          initializer.arguments = _maybeAddCreationLocationArgument(
             initializer.arguments,
             initializer.target.function,
             new VariableGet(variable),
@@ -580,7 +591,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
           );
         } else if (initializer is SuperInitializer &&
             _isSubclassOfWidget(initializer.target.enclosingClass)) {
-          _maybeAddCreationLocationArgument(
+          initializer.arguments = _maybeAddCreationLocationArgument(
             initializer.arguments,
             initializer.target.function,
             new VariableGet(variable),
