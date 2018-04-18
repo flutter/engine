@@ -21,9 +21,8 @@ class Scene extends NativeFieldWrapperClass2 {
   /// Creates a raster image representation of the current state of the scene.
   /// This is a slow operation that is performed on a background thread.
   Future<Image> toImage(int width, int height) {
-    if (width <= 0 || height <= 0) {
-      return null;
-    }
+    if (width <= 0 || height <= 0)
+      throw new Exception('Invalid image dimensions.');
     return _futurize(
       (_Callback<Image> callback) => _toImage(width, height, callback)
     );
