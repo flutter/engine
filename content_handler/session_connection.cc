@@ -40,7 +40,7 @@ void SessionConnection::OnSessionError() {
 }
 
 void SessionConnection::OnSessionEvents(fidl::VectorPtr<ui::Event> events) {
-  gfx::Metrics* new_metrics;
+  gfx::Metrics* new_metrics = nullptr;
   for (auto& event : *events) {
     if (event.is_gfx() && event.gfx().is_metrics() &&
         event.gfx().metrics().node_id == root_node_.id()) {
