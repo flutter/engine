@@ -516,23 +516,23 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
       newChildren[newChildCount - i - 1] = child;
     }
 
-   [childOrdersToUpdate addObject:object];
-   if (object.parent)
-     [childOrdersToUpdate addObject:object.parent];
+    [childOrdersToUpdate addObject:object];
+    if (object.parent)
+      [childOrdersToUpdate addObject:object.parent];
   }
 
   // Bring children into traversal order.
- for (SemanticsObject* object in childOrdersToUpdate) {
-   [object.children sortUsingComparator:^(SemanticsObject* a, SemanticsObject* b) {
-     // Should a go before b?
-     CGRect rectA = [a globalRect];
-     CGRect rectB = [b globalRect];
-     CGFloat top = rectA.origin.y - rectB.origin.y;
-     if (top == 0.0)
-       return IntToComparisonResult(rectA.origin.x - rectB.origin.x < 0.0);
-     return IntToComparisonResult(top);
-   }];
- }
+  for (SemanticsObject* object in childOrdersToUpdate) {
+    [object.children sortUsingComparator:^(SemanticsObject* a, SemanticsObject* b) {
+      // Should a go before b?
+      CGRect rectA = [a globalRect];
+      CGRect rectB = [b globalRect];
+      CGFloat top = rectA.origin.y - rectB.origin.y;
+      if (top == 0.0)
+        return IntToComparisonResult(rectA.origin.x - rectB.origin.x < 0.0);
+      return IntToComparisonResult(top);
+    }];
+  }
 
   [childOrdersToUpdate release];
 
