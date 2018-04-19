@@ -348,6 +348,22 @@ class SemanticsFlag {
   /// additional announcements.
   static const SemanticsFlag namesRoute = const SemanticsFlag._(_kNamesRouteIndex);
 
+  /// Whether the semantics node is considered hidden.
+  ///
+  /// Hidden elements are currently not visible on screen. They may be covered
+  /// by other elements or positioned outside of the visible area of a viewport.
+  ///
+  /// Hidden elements cannot gain accessibility focus though regular touch. The
+  /// only way they can be focused is by moving the focus to them via linear
+  /// navigation.
+  ///
+  /// Platforms are free to completely ignore hidden elements and new platforms
+  /// are encouraged to do so.
+  ///
+  /// Instead of marking an element as hidden it should usually be excluded from
+  /// the semantics tree altogether. Hidden elements are only included in the
+  /// semantics tree to work around platform limitations and they are mainly
+  /// used to implement accessibility scrolling on iOS.
   static const SemanticsFlag isHidden = const SemanticsFlag._(_kIsHiddenIndex);
 
   /// The possible semantics flags.

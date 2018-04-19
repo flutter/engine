@@ -40,14 +40,14 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   return blink::SemanticsAction::kScrollUp;
 }
 
-//NSComparisonResult IntToComparisonResult(int32_t value) {
-//  if (value > 0)
-//    return (NSComparisonResult)NSOrderedDescending;
-//  if (value < 0)
-//    return (NSComparisonResult)NSOrderedAscending;
-//
-//  return (NSComparisonResult)NSOrderedSame;
-//}
+NSComparisonResult IntToComparisonResult(int32_t value) {
+ if (value > 0)
+   return (NSComparisonResult)NSOrderedDescending;
+ if (value < 0)
+   return (NSComparisonResult)NSOrderedAscending;
+
+ return (NSComparisonResult)NSOrderedSame;
+}
 
 }  // namespace
 
@@ -249,7 +249,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   // convert.
   CGFloat scale = [[[self bridge] -> view() window] screen].scale;
   auto result =
-  CGRectMake(rect.x() / scale, rect.y() / scale, rect.width() / scale, rect.height() / scale);
+      CGRectMake(rect.x() / scale, rect.y() / scale, rect.width() / scale, rect.height() / scale);
   return UIAccessibilityConvertFrameToScreenCoordinates(result, [self bridge] -> view());
 }
 
@@ -305,7 +305,6 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 #pragma mark UIAccessibilityFocus overrides
 
 - (void)accessibilityElementDidBecomeFocused {
-  NSLog(@"Focused: %d, %@", [self uid], [self accessibilityLabel]);
   if ([self node].HasFlag(blink::SemanticsFlags::kIsHidden)) {
     [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kShowOnScreen);
   }
@@ -514,26 +513,26 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
       SemanticsObject* child = GetOrCreateObject(node.children[i], nodes);
       child.parent = object;
       // Reverting to get hit testing order (as tie breaker for sorting below).
-      newChildren[i] = child;
+      newChildren[newChildCount - i - 1] = child;
     }
 
-//    [childOrdersToUpdate addObject:object];
-//    if (object.parent)
-//      [childOrdersToUpdate addObject:object.parent];
+   [childOrdersToUpdate addObject:object];
+   if (object.parent)
+     [childOrdersToUpdate addObject:object.parent];
   }
 
   // Bring children into traversal order.
-//  for (SemanticsObject* object in childOrdersToUpdate) {
-//    [object.children sortUsingComparator:^(SemanticsObject* a, SemanticsObject* b) {
-//      // Should a go before b?
-//      CGRect rectA = [a globalRect];
-//      CGRect rectB = [b globalRect];
-//      CGFloat top = rectA.origin.y - rectB.origin.y;
-//      if (top == 0.0)
-//        return IntToComparisonResult(rectA.origin.x - rectB.origin.x < 0.0);
-//      return IntToComparisonResult(top);
-//    }];
-//  }
+ for (SemanticsObject* object in childOrdersToUpdate) {
+   [object.children sortUsingComparator:^(SemanticsObject* a, SemanticsObject* b) {
+     // Should a go before b?
+     CGRect rectA = [a globalRect];
+     CGRect rectB = [b globalRect];
+     CGFloat top = rectA.origin.y - rectB.origin.y;
+     if (top == 0.0)
+       return IntToComparisonResult(rectA.origin.x - rectB.origin.x < 0.0);
+     return IntToComparisonResult(top);
+   }];
+ }
 
   [childOrdersToUpdate release];
 
