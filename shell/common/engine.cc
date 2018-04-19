@@ -56,8 +56,6 @@ Engine::Engine(Delegate& delegate,
       activity_running_(false),
       have_surface_(false),
       weak_factory_(this) {
-  weak_prototype_ = weak_factory_.GetWeakPtr();
-
   if (legacy_sky_platform_) {
     // TODO: Remove this legacy call along with the platform. This is what makes
     // the engine unable to run from multiple threads in the legacy
@@ -84,7 +82,7 @@ Engine::~Engine() {
 }
 
 fml::WeakPtr<Engine> Engine::GetWeakPtr() const {
-  return weak_prototype_;
+  return weak_factory_.GetWeakPtr();
 }
 
 bool Engine::UpdateAssetManager(
@@ -259,7 +257,8 @@ void Engine::DispatchPlatformMessage(
     return;
   }
 
-  if (runtime_controller_->DispatchPlatformMessage(std::move(message))) {
+  if (runtime_controller_->IsRootIsolateRunning() &&
+      runtime_controller_->DispatchPlatformMessage(std::move(message))) {
     return;
   }
 

@@ -16,31 +16,27 @@
 namespace shell {
 
 Rasterizer::Rasterizer(blink::TaskRunners task_runners)
-    : task_runners_(std::move(task_runners)), weak_factory_(this) {
-  weak_prototype_ = weak_factory_.GetWeakPtr();
-}
+    : task_runners_(std::move(task_runners)), weak_factory_(this) {}
 
 Rasterizer::~Rasterizer() = default;
 
 fml::WeakPtr<Rasterizer> Rasterizer::GetWeakPtr() const {
-  return weak_prototype_;
+  return weak_factory_.GetWeakPtr();
 }
 
 void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
   surface_ = std::move(surface);
+  compositor_context_.OnGrContextCreated();
 }
 
 void Rasterizer::Teardown() {
+  compositor_context_.OnGrContextDestroyed();
   surface_.reset();
   last_layer_tree_.reset();
 }
 
 flow::TextureRegistry* Rasterizer::GetTextureRegistry() {
-  if (!surface_) {
-    return nullptr;
-  }
-
-  return &(surface_->GetCompositorContext().texture_registry());
+  return &compositor_context_.texture_registry();
 }
 
 flow::LayerTree* Rasterizer::GetLastLayerTree() {
@@ -97,15 +93,19 @@ bool Rasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
     return false;
   }
 
-  auto& compositor_context = surface_->GetCompositorContext();
-
   // There is no way for the compositor to know how long the layer tree
   // construction took. Fortunately, the layer tree does. Grab that time
   // for instrumentation.
-  compositor_context.engine_time().SetLapTime(layer_tree.construction_time());
+  compositor_context_.engine_time().SetLapTime(layer_tree.construction_time());
 
-  auto compositor_frame = compositor_context.AcquireFrame(
-      surface_->GetContext(), frame->SkiaCanvas(), true);
+  auto canvas = frame->SkiaCanvas();
+
+  auto compositor_frame =
+      compositor_context_.AcquireFrame(surface_->GetContext(), canvas, true);
+
+  if (canvas) {
+    canvas->clear(SK_ColorBLACK);
+  }
 
   if (compositor_frame && compositor_frame->Raster(layer_tree, false)) {
     frame->Submit();

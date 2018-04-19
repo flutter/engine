@@ -4,9 +4,7 @@
 
 import("$flutter_root/testing/testing.gni")
 
-static_library("embedder") {
-  complete_static_lib = true
-
+source_set("embedder") {
   sources = [
     "embedder.cc",
     "embedder.h",
@@ -52,6 +50,10 @@ executable("embedder_unittests") {
     ":fixtures",
     "$flutter_root/testing",
   ]
+
+  if (is_linux) {
+    ldflags = [ "-rdynamic" ]
+  }
 }
 
 shared_library("flutter_engine") {
