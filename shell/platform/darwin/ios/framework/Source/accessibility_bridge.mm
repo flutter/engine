@@ -41,12 +41,12 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 NSComparisonResult IntToComparisonResult(int32_t value) {
- if (value > 0)
-   return (NSComparisonResult)NSOrderedDescending;
- if (value < 0)
-   return (NSComparisonResult)NSOrderedAscending;
+  if (value > 0)
+    return (NSComparisonResult)NSOrderedDescending;
+  if (value < 0)
+    return (NSComparisonResult)NSOrderedAscending;
 
- return (NSComparisonResult)NSOrderedSame;
+  return (NSComparisonResult)NSOrderedSame;
 }
 
 }  // namespace
