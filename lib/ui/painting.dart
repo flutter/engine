@@ -1249,7 +1249,8 @@ class Image extends NativeFieldWrapperClass2 {
 
   /// Converts the [Image] object into a byte array.
   ///
-  /// [format] specifies the format in which the bytes will be returned.
+  /// The [format] argument specifies the format in which the bytes will be
+  /// returned.
   ///
   /// Returns a future that completes with the binary image data or an error
   /// if encoding fails.
