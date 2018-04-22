@@ -4,6 +4,7 @@
 
 source_set("fml") {
   sources = [
+    "compiler_specific.h",
     "file.h",
     "icu_util.cc",
     "icu_util.h",

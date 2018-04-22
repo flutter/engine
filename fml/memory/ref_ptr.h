@@ -14,7 +14,6 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_ptr_internal.h"
-#include "lib/fxl/compiler_specific.h"
 #include "lib/fxl/logging.h"
 
 namespace fml {

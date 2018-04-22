@@ -7,8 +7,8 @@
 
 #include <utility>
 
+#include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
-#include "lib/fxl/compiler_specific.h"
 #include "lib/fxl/logging.h"
 
 namespace fml {
@@ -78,7 +78,7 @@ class UniqueObject {
   // Release the object. The return value is the current object held by this
   // object. After this operation, this object will hold an invalid value, and
   // will not own the object any more.
-  T release() FXL_WARN_UNUSED_RESULT {
+  T release() FML_WARN_UNUSED_RESULT {
     T old_generic = data_.generic;
     data_.generic = Traits::InvalidValue();
     return old_generic;
