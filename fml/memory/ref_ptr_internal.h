@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "flutter/fml/macros.h"
-#include "lib/fxl/fxl_export.h"
 
 namespace fml {
 
@@ -16,7 +15,7 @@ template <typename T>
 class RefPtr;
 
 template <typename T>
-FXL_EXPORT RefPtr<T> AdoptRef(T* ptr);
+RefPtr<T> AdoptRef(T* ptr);
 
 namespace internal {
 
