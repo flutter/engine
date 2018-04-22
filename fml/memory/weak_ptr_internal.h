@@ -5,8 +5,8 @@
 #ifndef FLUTTER_FML_MEMORY_WEAK_PTR_INTERNAL_H_
 #define FLUTTER_FML_MEMORY_WEAK_PTR_INTERNAL_H_
 
+#include "flutter/fml/memory/ref_counted.h"
 #include "lib/fxl/macros.h"
-#include "lib/fxl/memory/ref_counted.h"
 
 namespace fml {
 namespace internal {
@@ -19,7 +19,7 @@ namespace internal {
 // This class in not thread-safe, though references may be released on any
 // thread (allowing weak pointers to be destroyed/reset/reassigned on any
 // thread).
-class FXL_EXPORT WeakPtrFlag : public fxl::RefCountedThreadSafe<WeakPtrFlag> {
+class FXL_EXPORT WeakPtrFlag : public fml::RefCountedThreadSafe<WeakPtrFlag> {
  public:
   WeakPtrFlag();
 
