@@ -10,8 +10,8 @@
 // singled out because it is most typically included from other header files.
 #import <Foundation/NSObject.h>
 
+#include "flutter/fml/macros.h"
 #include "lib/fxl/compiler_specific.h"
-#include "lib/fxl/macros.h"
 
 @class NSAutoreleasePool;
 
@@ -155,7 +155,7 @@ template <>
 class scoped_nsobject<NSAutoreleasePool> {
  private:
   explicit scoped_nsobject(NSAutoreleasePool* object = nil);
-  FXL_DISALLOW_COPY_AND_ASSIGN(scoped_nsobject);
+  FML_DISALLOW_COPY_AND_ASSIGN(scoped_nsobject);
 };
 
 }  // namespace fml

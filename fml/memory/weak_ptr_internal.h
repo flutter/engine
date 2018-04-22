@@ -5,8 +5,8 @@
 #ifndef FLUTTER_FML_MEMORY_WEAK_PTR_INTERNAL_H_
 #define FLUTTER_FML_MEMORY_WEAK_PTR_INTERNAL_H_
 
+#include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
-#include "lib/fxl/macros.h"
 
 namespace fml {
 namespace internal {
@@ -32,7 +32,7 @@ class FXL_EXPORT WeakPtrFlag : public fml::RefCountedThreadSafe<WeakPtrFlag> {
  private:
   bool is_valid_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(WeakPtrFlag);
+  FML_DISALLOW_COPY_AND_ASSIGN(WeakPtrFlag);
 };
 
 }  // namespace internal

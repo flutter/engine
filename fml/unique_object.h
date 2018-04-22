@@ -7,9 +7,9 @@
 
 #include <utility>
 
+#include "flutter/fml/macros.h"
 #include "lib/fxl/compiler_specific.h"
 #include "lib/fxl/logging.h"
-#include "lib/fxl/macros.h"
 
 namespace fml {
 
@@ -114,7 +114,7 @@ class UniqueObject {
 
   Data data_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(UniqueObject);
+  FML_DISALLOW_COPY_AND_ASSIGN(UniqueObject);
 };
 
 template <class T, class Traits>

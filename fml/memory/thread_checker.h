@@ -16,8 +16,8 @@
 #include <pthread.h>
 #endif
 
+#include "flutter/fml/macros.h"
 #include "lib/fxl/logging.h"
-#include "lib/fxl/macros.h"
 
 namespace fml {
 

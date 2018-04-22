@@ -8,8 +8,8 @@
 
 #include "flutter/fml/memory/ref_counted.h"
 
+#include "flutter/fml/macros.h"
 #include "gtest/gtest.h"
-#include "lib/fxl/macros.h"
 
 #if defined(__clang__)
 #define ALLOW_PESSIMIZING_MOVE(code_line)                                   \
@@ -50,7 +50,7 @@ class MyClass : public RefCountedThreadSafe<MyClass> {
 
   bool* was_destroyed_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(MyClass);
+  FML_DISALLOW_COPY_AND_ASSIGN(MyClass);
 };
 
 class MySubclass final : public MyClass {
@@ -65,7 +65,7 @@ class MySubclass final : public MyClass {
   }
   ~MySubclass() override {}
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(MySubclass);
+  FML_DISALLOW_COPY_AND_ASSIGN(MySubclass);
 };
 
 TEST(RefCountedTest, Constructors) {
@@ -548,7 +548,7 @@ class MyPublicClass : public RefCountedThreadSafe<MyPublicClass> {
   bool has_num_;
   int num_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(MyPublicClass);
+  FML_DISALLOW_COPY_AND_ASSIGN(MyPublicClass);
 };
 
 // You can also just keep constructors and destructors public. Make sure that

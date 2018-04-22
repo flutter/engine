@@ -9,8 +9,8 @@
 
 #include <atomic>
 
+#include "flutter/fml/macros.h"
 #include "lib/fxl/logging.h"
-#include "lib/fxl/macros.h"
 
 namespace fml {
 namespace internal {
@@ -80,7 +80,7 @@ class RefCountedThreadSafeBase {
   mutable bool destruction_started_;
 #endif
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(RefCountedThreadSafeBase);
+  FML_DISALLOW_COPY_AND_ASSIGN(RefCountedThreadSafeBase);
 };
 
 inline RefCountedThreadSafeBase::RefCountedThreadSafeBase()

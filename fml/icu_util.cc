@@ -87,7 +87,7 @@ class ICUContext {
   bool valid_;
   std::unique_ptr<Mapping> mapping_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(ICUContext);
+  FML_DISALLOW_COPY_AND_ASSIGN(ICUContext);
 };
 
 void InitializeICUOnce(const std::string& icu_data_path) {

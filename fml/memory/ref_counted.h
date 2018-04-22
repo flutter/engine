@@ -7,9 +7,9 @@
 #ifndef FLUTTER_FML_MEMORY_REF_COUNTED_H_
 #define FLUTTER_FML_MEMORY_REF_COUNTED_H_
 
+#include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted_internal.h"
 #include "flutter/fml/memory/ref_ptr.h"
-#include "lib/fxl/macros.h"
 
 namespace fml {
 
@@ -117,7 +117,7 @@ class RefCountedThreadSafe : public internal::RefCountedThreadSafeBase {
   void Adopt() { internal::RefCountedThreadSafeBase::Adopt(); }
 #endif
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(RefCountedThreadSafe);
+  FML_DISALLOW_COPY_AND_ASSIGN(RefCountedThreadSafe);
 };
 
 // If you subclass |RefCountedThreadSafe| and want to keep your destructor

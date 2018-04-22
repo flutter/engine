@@ -182,7 +182,7 @@ class WeakPtrFactory {
   fml::RefPtr<fml::internal::WeakPtrFlag> flag_;
   DebugThreadChecker checker_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(WeakPtrFactory);
+  FML_DISALLOW_COPY_AND_ASSIGN(WeakPtrFactory);
 };
 
 }  // namespace fml
