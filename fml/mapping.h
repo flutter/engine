@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "flutter/fml//unique_fd.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
-#include "lib/fxl/build_config.h"
 
 namespace fml {
 

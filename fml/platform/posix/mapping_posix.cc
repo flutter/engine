@@ -11,8 +11,8 @@
 
 #include <type_traits>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/unique_fd.h"
-#include "lib/fxl/build_config.h"
 #include "lib/fxl/files/eintr_wrapper.h"
 
 #if OS_MACOSX

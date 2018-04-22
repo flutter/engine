@@ -7,8 +7,8 @@
 
 #include <functional>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
-#include "lib/fxl/build_config.h"
 #include "lib/fxl/logging.h"
 
 #define FML_THREAD_LOCAL_PTHREADS OS_MACOSX || OS_LINUX || OS_ANDROID

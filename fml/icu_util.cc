@@ -7,9 +7,9 @@
 #include <memory>
 #include <mutex>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/paths.h"
-#include "lib/fxl/build_config.h"
 #include "lib/fxl/logging.h"
 #include "third_party/icu/source/common/unicode/udata.h"
 

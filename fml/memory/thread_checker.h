@@ -8,7 +8,7 @@
 #ifndef FLUTTER_FML_MEMORY_THREAD_CHECKER_H_
 #define FLUTTER_FML_MEMORY_THREAD_CHECKER_H_
 
-#include "lib/fxl/build_config.h"
+#include "flutter/fml/build_config.h"
 
 #if defined(OS_WIN)
 #include <windows.h>
