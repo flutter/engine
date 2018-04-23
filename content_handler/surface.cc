@@ -13,18 +13,8 @@
 
 namespace flutter {
 
-Surface::Surface(const ui::ScenicPtr& scenic,
-                 std::string debug_label,
-                 zx::eventpair import_token,
-                 OnMetricsUpdate session_metrics_did_change_callback,
-                 fxl::Closure session_error_callback)
-    : shell::Surface(std::make_unique<CompositorContext>(
-          scenic,
-          debug_label,
-          std::move(import_token),
-          std::move(session_metrics_did_change_callback),
-          std::move(session_error_callback))),
-      debug_label_(debug_label) {}
+Surface::Surface(std::string debug_label)
+    : debug_label_(std::move(debug_label)) {}
 
 Surface::~Surface() = default;
 
