@@ -90,7 +90,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         IS_HEADER(1 << 9),
         IS_OBSCURED(1 << 10),
         SCOPES_ROUTE(1 << 11),
-        NAMES_ROUTE(1 << 12);
+        NAMES_ROUTE(1 << 12),
         IS_HIDDEN(1 << 13);
 
         Flag(int value) {
@@ -213,6 +213,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             result.addAction(AccessibilityNodeInfo.ACTION_LONG_CLICK);
             result.setLongClickable(true);
         }
+        
         if (object.hasAction(Action.SCROLL_LEFT) || object.hasAction(Action.SCROLL_UP)
                 || object.hasAction(Action.SCROLL_RIGHT) || object.hasAction(Action.SCROLL_DOWN)) {
             result.setScrollable(true);
@@ -274,6 +275,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         return result;
     }
 
+    private void sendAccessibilityTap(int virtualViewId, SemanticsObject semanticsObject) {
+        AccessibilityEvent e = obtainAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_CLICKED);
+        mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
+    }
+
     @Override
     public boolean performAction(int virtualViewId, int action, Bundle arguments) {
         SemanticsObject object = mObjects.get(virtualViewId);
@@ -283,10 +289,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         switch (action) {
             case AccessibilityNodeInfo.ACTION_CLICK: {
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.TAP);
+                sendAccessibilityTap(virtualViewId, object);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_LONG_CLICK: {
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.LONG_PRESS);
+                Log.i(TAG, "LONG PRESS");
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_SCROLL_FORWARD: {
@@ -567,12 +575,16 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 }
                 sendAccessibilityEvent(event);
             }
-            if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
+            // TODO(jonahwilliams) lollipop does not send tap events for an accessibility tap.
+            // this is the previous workaround but only used on older versions.
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
                     && object.hadFlag(Flag.HAS_CHECKED_STATE)
                     && object.hasFlag(Flag.HAS_CHECKED_STATE)
                     && object.hadFlag(Flag.IS_CHECKED) != object.hasFlag(Flag.IS_CHECKED)) {
-                // Simulate a click so TalkBack announces the change in checked state.
-                sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_CLICKED);
+                     // Simulate a click so TalkBack announces the change in checked state.
+                    sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_CLICKED);
+                }
             }
             if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
                     && !object.hadFlag(Flag.IS_SELECTED) && object.hasFlag(Flag.IS_SELECTED)) {
