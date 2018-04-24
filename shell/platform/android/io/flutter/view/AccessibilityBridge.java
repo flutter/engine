@@ -271,11 +271,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         return result;
     }
 
-    private void sendAccessibilityTap(int virtualViewId, SemanticsObject semanticsObject) {
-        AccessibilityEvent e = obtainAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_CLICKED);
-        mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
-    }
-
     @Override
     public boolean performAction(int virtualViewId, int action, Bundle arguments) {
         SemanticsObject object = mObjects.get(virtualViewId);
@@ -285,12 +280,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         switch (action) {
             case AccessibilityNodeInfo.ACTION_CLICK: {
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.TAP);
-                sendAccessibilityTap(virtualViewId, object);
+                AccessibilityEvent e = obtainAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_CLICKED);
+                mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_LONG_CLICK: {
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.LONG_PRESS);
-                Log.i(TAG, "LONG PRESS");
+                AccessibilityEvent e = obtainAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_LONG_CLICKED);
+                mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_SCROLL_FORWARD: {
@@ -571,23 +568,21 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 }
                 sendAccessibilityEvent(event);
             }
-            // TODO(jonahwilliams) lollipop does not send tap events for an accessibility tap.
-            // this is the previous workaround but only used on older versions.
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1) {
-                if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
-                    && object.hadFlag(Flag.HAS_CHECKED_STATE)
-                    && object.hasFlag(Flag.HAS_CHECKED_STATE)
-                    && object.hadFlag(Flag.IS_CHECKED) != object.hasFlag(Flag.IS_CHECKED)) {
-                     // Simulate a click so TalkBack announces the change in checked state.
-                    sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_CLICKED);
-                }
-            }
             if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
                     && !object.hadFlag(Flag.IS_SELECTED) && object.hasFlag(Flag.IS_SELECTED)) {
                 AccessibilityEvent event =
                         obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_SELECTED);
                 event.getText().add(object.label);
                 sendAccessibilityEvent(event);
+            }
+
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP
+                && mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
+                && object.hadFlag(Flag.HAS_CHECKED_STATE)
+                && object.hasFlag(Flag.HAS_CHECKED_STATE)
+                && object.hadFlag(Flag.IS_CHECKED) != object.hasFlag(Flag.IS_CHECKED)) {
+                // Simulate a click so TalkBack announces the change in checked state.
+                sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_CLICKED);
             }
             if (mInputFocusedObject != null && mInputFocusedObject.id == object.id
                     && object.hadFlag(Flag.IS_TEXT_FIELD)
@@ -682,6 +677,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         switch (type) {
             case "announce":
                 mOwner.announceForAccessibility((String) data.get("message"));
+                break;
+            case "longPress":
+                if (mA11yFocusedObject == null) {
+                    return;
+                }
+                performAction(mA11yFocusedObject.id, AccessibilityNodeInfo.ACTION_LONG_CLICK, null);
                 break;
             default:
                 assert false;
