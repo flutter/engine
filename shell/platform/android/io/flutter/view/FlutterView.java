@@ -532,7 +532,7 @@ public class FlutterView extends SurfaceView
                 addPointerForIndex(event, p, packet);
             }
         }
-            
+
         assert packet.position() % (kPointerDataFieldCount * kBytePerField) == 0;
         nativeDispatchPointerDataPacket(mNativeView.get(), packet, packet.position());
         return true;
@@ -543,6 +543,7 @@ public class FlutterView extends SurfaceView
         if (!isAttached()) {
             return false;
         }
+
         boolean handled = handleAccessibilityHoverEvent(event);
         if (!handled) {
             // TODO(ianh): Expose hover events to the platform,

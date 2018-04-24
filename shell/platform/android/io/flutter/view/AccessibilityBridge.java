@@ -213,7 +213,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             result.addAction(AccessibilityNodeInfo.ACTION_LONG_CLICK);
             result.setLongClickable(true);
         }
-        
         if (object.hasAction(Action.SCROLL_LEFT) || object.hasAction(Action.SCROLL_UP)
                 || object.hasAction(Action.SCROLL_RIGHT) || object.hasAction(Action.SCROLL_DOWN)) {
             result.setScrollable(true);
@@ -568,14 +567,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 }
                 sendAccessibilityEvent(event);
             }
-            if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
-                    && !object.hadFlag(Flag.IS_SELECTED) && object.hasFlag(Flag.IS_SELECTED)) {
-                AccessibilityEvent event =
-                        obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_SELECTED);
-                event.getText().add(object.label);
-                sendAccessibilityEvent(event);
-            }
-
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP
                 && mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
                 && object.hadFlag(Flag.HAS_CHECKED_STATE)
@@ -583,6 +574,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 && object.hadFlag(Flag.IS_CHECKED) != object.hasFlag(Flag.IS_CHECKED)) {
                 // Simulate a click so TalkBack announces the change in checked state.
                 sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_CLICKED);
+            }
+            if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
+                    && !object.hadFlag(Flag.IS_SELECTED) && object.hasFlag(Flag.IS_SELECTED)) {
+                AccessibilityEvent event =
+                        obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_SELECTED);
+                event.getText().add(object.label);
+                sendAccessibilityEvent(event);
             }
             if (mInputFocusedObject != null && mInputFocusedObject.id == object.id
                     && object.hadFlag(Flag.IS_TEXT_FIELD)
