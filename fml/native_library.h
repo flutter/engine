@@ -5,7 +5,7 @@
 #ifndef FLUTTER_FML_NATIVE_LIBRARY_H_
 #define FLUTTER_FML_NATIVE_LIBRARY_H_
 
-#include "lib/fxl/macros.h"
+#include "flutter/fml/macros.h"
 #include "lib/fxl/memory/ref_counted.h"
 #include "lib/fxl/memory/ref_ptr.h"
 
@@ -26,6 +26,10 @@ class NativeLibrary : public fxl::RefCountedThreadSafe<NativeLibrary> {
 
   static fxl::RefPtr<NativeLibrary> Create(const char* path);
 
+  static fxl::RefPtr<NativeLibrary> CreateWithHandle(
+      Handle handle,
+      bool close_handle_when_done);
+
   static fxl::RefPtr<NativeLibrary> CreateForCurrentProcess();
 
   const uint8_t* ResolveSymbol(const char* symbol);
@@ -42,7 +46,7 @@ class NativeLibrary : public fxl::RefCountedThreadSafe<NativeLibrary> {
 
   Handle GetHandle() const;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(NativeLibrary);
+  FML_DISALLOW_COPY_AND_ASSIGN(NativeLibrary);
   FRIEND_REF_COUNTED_THREAD_SAFE(NativeLibrary);
   FRIEND_MAKE_REF_COUNTED(NativeLibrary);
 };
