@@ -15,6 +15,7 @@ import android.os.Build;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
+import android.util.Log;
 
 import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -226,6 +227,19 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
         // You can change the navigation bar color (including translucent colors)
         // in Android, but you can't change the color of the navigation buttons,
         // so LIGHT vs DARK effectively isn't supported in Android.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return;
+        }
+        Log.i("PlatformPlugin", style);
+        switch (style) {
+            case "SystemUiOverlayStyle.light":
+                mActivity.getWindow().setNavigationBarColor(0xff000000);
+                break;
+            case "SystemUiOverlayStyle.dark":
+                mActivity.getWindow().setNavigationBarColor(0xffffffff);
+                mActivity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+                break;
+        }
     }
 
     private void popSystemNavigator() {
