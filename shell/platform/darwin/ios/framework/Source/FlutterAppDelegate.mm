@@ -11,7 +11,7 @@
 @property(readonly, nonatomic) NSMutableDictionary* pluginPublications;
 @end
 
-@interface FlutterAppDelegateRegistrar : NSObject<FlutterPluginRegistrar>
+@interface FlutterAppDelegateRegistrar : NSObject <FlutterPluginRegistrar>
 - (instancetype)initWithPlugin:(NSString*)pluginKey appDelegate:(FlutterAppDelegate*)delegate;
 @end
 
@@ -211,13 +211,13 @@
 }
 
 - (void)application:(UIApplication*)application
-    handleEventsForBackgroundURLSession:(nonnull NSString *)identifier
-                completionHandler:(nonnull void (^)())completionHandler {
+    handleEventsForBackgroundURLSession:(nonnull NSString*)identifier
+                      completionHandler:(nonnull void (^)())completionHandler {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       if ([plugin application:application
               handleEventsForBackgroundURLSession:identifier
-                         completionHandler:completionHandler]) {
+                                completionHandler:completionHandler]) {
         return;
       }
     }
@@ -228,8 +228,7 @@
     performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
-      if ([plugin application:application
-              performFetchWithCompletionHandler:completionHandler]) {
+      if ([plugin application:application performFetchWithCompletionHandler:completionHandler]) {
         return;
       }
     }
@@ -312,11 +311,11 @@
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset {
-   return [FlutterDartProject lookupKeyForAsset:asset];
+  return [FlutterDartProject lookupKeyForAsset:asset];
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-   return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
 }
 
 @end
