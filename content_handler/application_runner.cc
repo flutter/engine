@@ -8,7 +8,7 @@
 
 #include "flutter/lib/ui/text/font_collection.h"
 #include "fuchsia_font_manager.h"
-#include "lib/fonts/fidl/font_provider.fidl.h"
+#include "third_party/skia/include/core/SkGraphics.h"
 #include "lib/icu_data/cpp/icu_data.h"
 
 namespace flutter {
@@ -16,6 +16,9 @@ namespace flutter {
 ApplicationRunner::ApplicationRunner(fxl::Closure on_termination_callback)
     : on_termination_callback_(std::move(on_termination_callback)),
       host_context_(component::ApplicationContext::CreateFromStartupInfo()) {
+
+  SkGraphics::Init();
+
   SetupICU();
 
   SetupGlobalFonts();
@@ -38,14 +41,14 @@ ApplicationRunner::~ApplicationRunner() {
 }
 
 void ApplicationRunner::RegisterApplication(
-    f1dl::InterfaceRequest<component::ApplicationRunner> request) {
+    fidl::InterfaceRequest<component::ApplicationRunner> request) {
   active_applications_bindings_.AddBinding(this, std::move(request));
 }
 
 void ApplicationRunner::StartApplication(
-    component::ApplicationPackagePtr package,
-    component::ApplicationStartupInfoPtr startup_info,
-    f1dl::InterfaceRequest<component::ApplicationController> controller) {
+    component::ApplicationPackage package,
+    component::ApplicationStartupInfo startup_info,
+    fidl::InterfaceRequest<component::ApplicationController> controller) {
   auto thread_application_pair =
       Application::Create(*this,                    // delegate
                           std::move(package),       // application pacakge
