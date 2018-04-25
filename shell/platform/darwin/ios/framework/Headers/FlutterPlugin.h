@@ -130,6 +130,22 @@ NS_ASSUME_NONNULL_BEGIN
                completionHandler:(void (^)(BOOL succeeded))completionHandler
     API_AVAILABLE(ios(9.0));
 
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+
+ - Returns: `YES` if this plugin handles the request.
+ */
+- (BOOL)application:(UIApplication *)application
+    handleEventsForBackgroundURLSession:(nonnull NSString *)identifier
+  completionHandler:(nonnull void (^)())completionHandler;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+
+ - Returns: `YES` if this plugin handles the request.
+ */
+- (BOOL)application:(UIApplication *)application
+    performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
 @end
 
 /**
