@@ -488,33 +488,39 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String increasedValue,
     String decreasedValue,
     TextDirection textDirection,
-    int hitTestPosition,
     Float64List transform,
-    Int32List children,
+    // TODO(yjbanov): remove after moving the framework to the new param names.
+    @deprecated Int32List children,
+    Int32List childrenInTraversalOrder,
+    Int32List childrenInHitTestOrder,
   }) {
+    childrenInTraversalOrder ??= children;
+    childrenInHitTestOrder ??= children;
     if (transform.length != 16)
       throw new ArgumentError('transform argument must have 16 entries.');
-    _updateNode(id,
-                flags,
-                actions,
-                textSelectionBase,
-                textSelectionExtent,
-                scrollPosition,
-                scrollExtentMax,
-                scrollExtentMin,
-                rect.left,
-                rect.top,
-                rect.right,
-                rect.bottom,
-                label,
-                hint,
-                value,
-                increasedValue,
-                decreasedValue,
-                textDirection != null ? textDirection.index + 1 : 0,
-                hitTestPosition,
-                transform,
-                children,);
+    _updateNode(
+      id,
+      flags,
+      actions,
+      textSelectionBase,
+      textSelectionExtent,
+      scrollPosition,
+      scrollExtentMax,
+      scrollExtentMin,
+      rect.left,
+      rect.top,
+      rect.right,
+      rect.bottom,
+      label,
+      hint,
+      value,
+      increasedValue,
+      decreasedValue,
+      textDirection != null ? textDirection.index + 1 : 0,
+      transform,
+      childrenInTraversalOrder,
+      childrenInHitTestOrder,
+    );
   }
   void _updateNode(
     int id,
@@ -535,9 +541,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String increasedValue,
     String decreasedValue,
     int textDirection,
-    int hitTestPosition,
     Float64List transform,
-    Int32List children,
+    Int32List childrenInTraversalOrder,
+    Int32List childrenInHitTestOrder,
   ) native 'SemanticsUpdateBuilder_updateNode';
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
