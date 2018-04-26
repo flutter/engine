@@ -277,6 +277,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             return false;
         }
         switch (action) {
+            case AccessibilityNodeInfo.ACTION_CLICK: {
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.TAP);
+                return true;
+            }
             case AccessibilityNodeInfo.ACTION_SCROLL_FORWARD: {
                 if (object.hasAction(Action.SCROLL_UP)) {
                     mOwner.dispatchSemanticsAction(virtualViewId, Action.SCROLL_UP);
