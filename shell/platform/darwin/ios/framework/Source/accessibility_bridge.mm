@@ -40,15 +40,6 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   return blink::SemanticsAction::kScrollUp;
 }
 
-NSComparisonResult IntToComparisonResult(int32_t value) {
-  if (value > 0)
-    return (NSComparisonResult)NSOrderedDescending;
-  if (value < 0)
-    return (NSComparisonResult)NSOrderedAscending;
-
-  return (NSComparisonResult)NSOrderedSame;
-}
-
 }  // namespace
 
 /**
@@ -164,9 +155,43 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
   // Note: hit detection will only apply to elements that report
   // -isAccessibilityElement of YES. The framework will continue scanning the
   // entire element tree looking for such a hit.
-  return [self node].flags != 0 || ![self node].label.empty() || ![self node].value.empty() ||
-         ![self node].hint.empty() ||
+
+  //  We enforce in the framework that no other useful semantics are merged with these nodes.
+  if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute))
+    return false;
+  return ([self node].flags != 0 && [self node].flags != static_cast<int32_t>(blink::SemanticsFlags::kIsHidden)) ||
+         ![self node].label.empty() || ![self node].value.empty() || ![self node].hint.empty() ||
          ([self node].actions & ~blink::kScrollableSemanticsActions) != 0;
+}
+
+- (void)collectRoutes:(NSMutableArray<SemanticsObject*>*)edges {
+  if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute))
+    [edges addObject:self];
+  if ([self hasChildren]) {
+    for (SemanticsObject* child in self.children) {
+      [child collectRoutes:edges];
+    }
+  }
+}
+
+- (NSString*)routeName {
+  // Returns the first non-null and non-empty semantic label of a child
+  // with an NamesRoute flag. Otherwise returns nil.
+  if ([self node].HasFlag(blink::SemanticsFlags::kNamesRoute)) {
+    NSString* newName = [self accessibilityLabel];
+    if (newName != nil && [newName length] > 0) {
+      return newName;
+    }
+  }
+  if ([self hasChildren]) {
+    for (SemanticsObject* child in self.children) {
+      NSString* newName = [child routeName];
+      if (newName != nil && [newName length] > 0) {
+        return newName;
+      }
+    }
+  }
+  return nil;
 }
 
 - (NSString*)accessibilityLabel {
@@ -188,6 +213,13 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
 }
 
 - (CGRect)accessibilityFrame {
+  if ([self node].HasFlag(blink::SemanticsFlags::kIsHidden)) {
+    return [super accessibilityFrame];
+  }
+  return [self globalRect];
+}
+
+- (CGRect) globalRect {
   SkMatrix44 globalTransform = [self node].transform;
   for (SemanticsObject* parent = [self parent]; parent; parent = parent.parent) {
     globalTransform = parent.node.transform * globalTransform;
@@ -264,6 +296,9 @@ NSComparisonResult IntToComparisonResult(int32_t value) {
 #pragma mark UIAccessibilityFocus overrides
 
 - (void)accessibilityElementDidBecomeFocused {
+  if ([self node].HasFlag(blink::SemanticsFlags::kIsHidden)) {
+    [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kShowOnScreen);
+  }
   if ([self node].HasAction(blink::SemanticsAction::kDidGainAccessibilityFocus)) {
     [self bridge] -> DispatchSemanticsAction([self uid],
                                              blink::SemanticsAction::kDidGainAccessibilityFocus);
@@ -424,10 +459,12 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
     : view_(view),
       platform_view_(platform_view),
       objects_([[NSMutableDictionary alloc] init]),
-      weak_factory_(this) {
+      weak_factory_(this),
+      previous_route_id_(0),
+      previous_routes_({}) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
-      binaryMessenger:platform_view->binary_messenger()
+      binaryMessenger:platform_view->GetOwnerViewController()
                 codec:[FlutterStandardMessageCodec sharedInstance]]);
   [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
@@ -440,13 +477,10 @@ AccessibilityBridge::~AccessibilityBridge() {
 }
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {
-  return [platform_view_->text_input_plugin() textInputView];
+  return [platform_view_->GetTextInputPlugin() textInputView];
 }
 
 void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
-  // Children are received in paint order (inverse hit testing order). We need to bring them into
-  // traversal order (top left to bottom right, with hit testing order as tie breaker).
-  NSMutableSet<SemanticsObject*>* childOrdersToUpdate = [[NSMutableSet alloc] init];
   BOOL layoutChanged = NO;
   BOOL scrollOccured = NO;
 
@@ -459,42 +493,41 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
     const NSUInteger newChildCount = node.children.size();
     NSMutableArray* newChildren =
         [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
-    for (NSUInteger i = 0; i < newChildCount; i++) {
-      [newChildren addObject:[NSNull null]];
-    }
-    object.children = newChildren;
     for (NSUInteger i = 0; i < newChildCount; ++i) {
       SemanticsObject* child = GetOrCreateObject(node.children[i], nodes);
       child.parent = object;
-      // Reverting to get hit testing order (as tie breaker for sorting below).
-      newChildren[newChildCount - i - 1] = child;
+      [newChildren addObject:child];
     }
-
-    [childOrdersToUpdate addObject:object];
-    if (object.parent)
-      [childOrdersToUpdate addObject:object.parent];
+    object.children = newChildren;
   }
-
-  // Bring children into traversal order.
-  for (SemanticsObject* object in childOrdersToUpdate) {
-    [object.children sortUsingComparator:^(SemanticsObject* a, SemanticsObject* b) {
-      // Should a go before b?
-      CGRect rectA = [a accessibilityFrame];
-      CGRect rectB = [b accessibilityFrame];
-      CGFloat top = rectA.origin.y - rectB.origin.y;
-      if (top == 0.0)
-        return IntToComparisonResult(rectA.origin.x - rectB.origin.x < 0.0);
-      return IntToComparisonResult(top);
-    }];
-  }
-
-  [childOrdersToUpdate release];
 
   SemanticsObject* root = objects_.get()[@(kRootNodeId)];
+
+  bool routeChanged = false;
+  SemanticsObject* lastAdded = nil;
 
   if (root) {
     if (!view_.accessibilityElements) {
       view_.accessibilityElements = @[ [root accessibilityContainer] ];
+    }
+    NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
+    [root collectRoutes:newRoutes];
+    for (SemanticsObject* route in newRoutes) {
+      if (std::find(previous_routes_.begin(), previous_routes_.end(), [route uid]) != previous_routes_.end()) {
+        lastAdded = route;
+      }
+    }
+    if (lastAdded == nil && [newRoutes count] > 0) {
+      int index = [newRoutes count] - 1;
+      lastAdded = [newRoutes objectAtIndex:index];
+    }
+    if (lastAdded != nil && [lastAdded uid] != previous_route_id_) {
+        previous_route_id_ = [lastAdded uid];
+        routeChanged = true;
+    }
+    previous_routes_.clear();
+    for (SemanticsObject* route in newRoutes) {
+      previous_routes_.push_back([route uid]);
     }
   } else {
     view_.accessibilityElements = nil;
@@ -507,7 +540,10 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
 
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
 
-  if (layoutChanged) {
+  if (routeChanged) {
+    NSString* routeName = [lastAdded routeName];
+    UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, routeName);
+  } else if (layoutChanged) {
     // TODO(goderbauer): figure out which node to focus next.
     UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, nil);
   }

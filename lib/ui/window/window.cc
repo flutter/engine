@@ -22,23 +22,6 @@ using tonic::ToDart;
 namespace blink {
 namespace {
 
-Dart_Handle ToByteData(const std::vector<uint8_t>& buffer) {
-  Dart_Handle data_handle =
-      Dart_NewTypedData(Dart_TypedData_kByteData, buffer.size());
-  if (Dart_IsError(data_handle))
-    return data_handle;
-
-  Dart_TypedData_Type type;
-  void* data = nullptr;
-  intptr_t num_bytes = 0;
-  FXL_CHECK(!Dart_IsError(
-      Dart_TypedDataAcquireData(data_handle, &type, &data, &num_bytes)));
-
-  memcpy(data, buffer.data(), num_bytes);
-  Dart_TypedDataReleaseData(data_handle);
-  return data_handle;
-}
-
 void DefaultRouteName(Dart_NativeArguments args) {
   std::string routeName =
       UIDartState::Current()->window()->client()->DefaultRouteName();
@@ -71,28 +54,37 @@ void UpdateSemantics(Dart_NativeArguments args) {
   UIDartState::Current()->window()->client()->UpdateSemantics(update);
 }
 
-void SendPlatformMessage(Dart_Handle window,
-                         const std::string& name,
-                         Dart_Handle callback,
-                         const tonic::DartByteData& data) {
+Dart_Handle SendPlatformMessage(Dart_Handle window,
+                                const std::string& name,
+                                Dart_Handle callback,
+                                const tonic::DartByteData& data) {
   UIDartState* dart_state = UIDartState::Current();
+
+  if (!dart_state->window()) {
+    // Must release the TypedData buffer before allocating other Dart objects.
+    data.Release();
+    return ToDart("Platform messages can only be sent from the main isolate");
+  }
 
   fxl::RefPtr<PlatformMessageResponse> response;
   if (!Dart_IsNull(callback)) {
     response = fxl::MakeRefCounted<PlatformMessageResponseDart>(
-        tonic::DartPersistentValue(dart_state, callback));
+        tonic::DartPersistentValue(dart_state, callback),
+        dart_state->GetTaskRunners().GetUITaskRunner());
   }
   if (Dart_IsNull(data.dart_handle())) {
-    UIDartState::Current()->window()->client()->HandlePlatformMessage(
+    dart_state->window()->client()->HandlePlatformMessage(
         fxl::MakeRefCounted<PlatformMessage>(name, response));
   } else {
     const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
 
-    UIDartState::Current()->window()->client()->HandlePlatformMessage(
+    dart_state->window()->client()->HandlePlatformMessage(
         fxl::MakeRefCounted<PlatformMessage>(
             name, std::vector<uint8_t>(buffer, buffer + data.length_in_bytes()),
             response));
   }
+
+  return Dart_Null();
 }
 
 void _SendPlatformMessage(Dart_NativeArguments args) {
@@ -118,6 +110,23 @@ void _RespondToPlatformMessage(Dart_NativeArguments args) {
 }
 
 }  // namespace
+
+Dart_Handle ToByteData(const std::vector<uint8_t>& buffer) {
+  Dart_Handle data_handle =
+      Dart_NewTypedData(Dart_TypedData_kByteData, buffer.size());
+  if (Dart_IsError(data_handle))
+    return data_handle;
+
+  Dart_TypedData_Type type;
+  void* data = nullptr;
+  intptr_t num_bytes = 0;
+  FXL_CHECK(!Dart_IsError(
+      Dart_TypedDataAcquireData(data_handle, &type, &data, &num_bytes)));
+
+  memcpy(data, buffer.data(), num_bytes);
+  Dart_TypedDataReleaseData(data_handle);
+  return data_handle;
+}
 
 WindowClient::~WindowClient() {}
 
@@ -254,7 +263,7 @@ void Window::BeginFrame(fxl::TimePoint frameTime) {
                       Dart_NewInteger(microseconds),
                   });
 
-  tonic::DartMicrotaskQueue::GetForCurrentThread()->RunMicrotasks();
+  UIDartState::Current()->FlushMicrotasksNow();
 
   DartInvokeField(library_.value(), "_drawFrame", {});
 }

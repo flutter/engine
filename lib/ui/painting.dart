@@ -39,6 +39,12 @@ bool _offsetIsValid(Offset offset) {
   return true;
 }
 
+bool _matrix4IsValid(Float64List matrix4) {
+  assert(matrix4 != null, 'Matrix4 argument was null.');
+  assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
+  return true;
+}
+
 bool _radiusIsValid(Radius radius) {
   assert(radius != null, 'Radius argument was null.');
   assert(!radius.x.isNaN && !radius.y.isNaN, 'Radius argument contained a NaN value.');
@@ -1196,8 +1202,20 @@ class Paint {
   }
 }
 
-/// An encoding format to use with the [Image.toByteData].
-class EncodingFormat {
+/// The format in which image bytes should be returned when using
+/// [Image.toByteData].
+enum ImageByteFormat {
+  /// Raw RGBA format.
+  ///
+  /// Unencoded bytes, in RGBA row-primary form, 8 bits per channel.
+  rawRgba,
+
+  /// Raw unmodified format.
+  ///
+  /// Unencoded bytes, in the image's existing format. For example, a grayscale
+  /// image may use a single 8-bit channel for each pixel.
+  rawUnmodified,
+
   /// PNG format.
   ///
   /// A loss-less compression format for images. This format is well suited for
@@ -1213,61 +1231,7 @@ class EncodingFormat {
   ///
   ///  * <https://en.wikipedia.org/wiki/Portable_Network_Graphics>, the Wikipedia page on PNG.
   ///  * <https://tools.ietf.org/rfc/rfc2083.txt>, the PNG standard.
-  const EncodingFormat.png()
-      : _format = _pngFormat,
-        _quality = 0;
-
-  /// JPEG format.
-  ///
-  /// This format, strictly speaking called JFIF, is a lossy compression
-  /// graphics format that can handle images up to 65,535 pixels in either
-  /// dimension. The [quality] metric is a value in the range 0 to 100 that
-  /// controls the compression ratio. Values in the range of about 50 to 90 are
-  /// somewhat reasonable; values above 95 increase the file size with little
-  /// noticeable improvement to the quality, values below 50 drop the quality
-  /// substantially.
-  ///
-  /// This format is well suited for photographs. It is very poorly suited for
-  /// images with hard edges or text. It does not support transparency.
-  ///
-  /// JPEG images normally use the `.jpeg` file extension and the `image/jpeg`
-  /// MIME type.
-  ///
-  /// See also:
-  ///
-  ///  * <https://en.wikipedia.org/wiki/JPEG>, the Wikipedia page on JPEG.
-  const EncodingFormat.jpeg({int quality = 80})
-      : _format = _jpegFormat,
-        _quality = quality;
-
-  /// WebP format.
-  ///
-  /// The WebP format supports both lossy and lossless compression; however, the
-  /// [Image.toByteData] method always uses lossy compression when [webp] is
-  /// specified. The [quality] metric is a value in the range 0 to 100 that
-  /// controls the compression ratio; higher values result in better quality but
-  /// larger file sizes, and vice versa. WebP images are limited to 16,383
-  /// pixels in each direction (width and height).
-  ///
-  /// WebP images normally use the `.webp` file extension and the `image/webp`
-  /// MIME type.
-  ///
-  /// See also:
-  ///
-  ///  * <https://en.wikipedia.org/wiki/WebP>, the Wikipedia page on WebP.
-  const EncodingFormat.webp({int quality = 80})
-      : _format = _webpFormat,
-        _quality = quality;
-
-  final int _format;
-  final int _quality;
-
-  // Be conservative with the formats we expose. It is easy to add new formats
-  // in future but difficult to remove.
-  // These values must be kept in sync with the logic in ToSkEncodedImageFormat.
-  static const int _jpegFormat = 0;
-  static const int _pngFormat = 1;
-  static const int _webpFormat = 2;
+  png,
 }
 
 /// Opaque handle to raw decoded image data (pixels).
@@ -1291,20 +1255,21 @@ class Image extends NativeFieldWrapperClass2 {
 
   /// Converts the [Image] object into a byte array.
   ///
-  /// The [format] is encoding format to be used.
+  /// The [format] argument specifies the format in which the bytes will be
+  /// returned.
   ///
-  /// Returns a future which complete with the binary image data (e.g a PNG or JPEG binary data) or
-  /// an error if encoding fails.
-  Future<ByteData> toByteData({EncodingFormat format: const EncodingFormat.jpeg()}) {
+  /// Returns a future that completes with the binary image data or an error
+  /// if encoding fails.
+  Future<ByteData> toByteData({ImageByteFormat format: ImageByteFormat.rawRgba}) {
     return _futurize((_Callback<ByteData> callback) {
-      return _toByteData(format._format, format._quality, (Uint8List encoded) {
-        callback(encoded.buffer.asByteData());
+      return _toByteData(format.index, (Uint8List encoded) {
+        callback(encoded?.buffer?.asByteData());
       });
     });
   }
 
   /// Returns an error message on failure, null on success.
-  String _toByteData(int format, int quality, _Callback<Uint8List> callback) native 'Image_toByteData';
+  String _toByteData(int format, _Callback<Uint8List> callback) native 'Image_toByteData';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -1431,6 +1396,62 @@ enum PathFillType {
   evenOdd,
 }
 
+/// Strategies for combining paths.
+/// 
+/// See also:
+/// 
+/// * [Path.combine], which uses this enum to decide how to combine two paths.
+// Must be kept in sync with SkPathOp
+enum PathOperation {
+  /// Subtract the second path from the first path.
+  ///
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be a crescent portion of the 
+  /// first circle that was not overlapped by the second circle.
+  ///
+  /// See also:
+  ///
+  ///  * [reverseDifference], which is the same but subtracting the first path
+  ///    from the second.
+  difference,
+  /// Create a new path that is the intersection of the two paths, leaving the
+  /// overlapping pieces of the path.
+  /// 
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be only the overlapping portion
+  /// of the two circles.
+  /// 
+  /// See also:
+  ///  * [xor], which is the inverse of this operation
+  intersect,
+  /// Create a new path that is the union (inclusive-or) of the two paths.
+  /// 
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be a figure-eight like shape 
+  /// matching the outter boundaries of both circles.
+  union,
+  /// Create a new path that is the exclusive-or of the two paths, leaving 
+  /// everything but the overlapping pieces of the path.
+  /// 
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the figure-eight like shape less the overlapping parts
+  /// 
+  /// See also:
+  ///  * [intersect], which is the inverse of this operation
+  xor,
+  /// Subtract the first path from the second path.
+  ///
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be a crescent portion of the 
+  /// second circle that was not overlapped by the first circle.
+  ///
+  /// See also:
+  ///
+  ///  * [difference], which is the same but subtracting the second path
+  ///    from the frist.
+  reverseDifference,
+}
+
 /// A complex, one-dimensional subset of a plane.
 ///
 /// A path consists of a number of subpaths, and a _current point_.
@@ -1452,6 +1473,15 @@ class Path extends NativeFieldWrapperClass2 {
   /// Create a new empty [Path] object.
   Path() { _constructor(); }
   void _constructor() native 'Path_constructor';
+
+  /// Creates a copy of another [Path].
+  /// 
+  /// This copy is fast and does not require additional memory unless either 
+  /// the `source` path or the path returned by this constructor are modified.
+  factory Path.from(Path source) {
+    return source._clone();
+  }
+  Path _clone() native 'Path_clone';
 
   /// Determines how the interior of this path is calculated.
   ///
@@ -1604,8 +1634,8 @@ class Path extends NativeFieldWrapperClass2 {
 
   /// Adds a new subpath that consists of a curve that forms the
   /// ellipse that fills the given rectangle.
-  /// 
-  /// To add a circle, pass an appropriate rectangle as `oval`. [Rect.fromCircle] 
+  ///
+  /// To add a circle, pass an appropriate rectangle as `oval`. [Rect.fromCircle]
   /// can be used to easily describe the circle's center [Offset] and radius.
   void addOval(Rect oval) {
     assert(_rectIsValid(oval));
@@ -1650,23 +1680,43 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addRRect(Float32List rrect) native 'Path_addRRect';
 
-  /// Adds a new subpath that consists of the given path offset by the given
-  /// offset.
-  void addPath(Path path, Offset offset) {
+  /// Adds a new subpath that consists of the given `path` offset by the given
+  /// `offset`.
+  /// 
+  /// If `matrix4` is specified, the path will be transformed by this matrix
+  /// after the matrix is translated by the given offset. The matrix is a 4x4
+  /// matrix stored in column major order.
+  void addPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
-    _addPath(path, offset.dx, offset.dy);
+    if (matrix4 != null) {
+      assert(_matrix4IsValid(matrix4));
+      _addPathWithMatrix(path, offset.dx, offset.dy, matrix4);
+    } else {
+      _addPath(path, offset.dx, offset.dy);
+    }
   }
   void _addPath(Path path, double dx, double dy) native 'Path_addPath';
-
+  void _addPathWithMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_addPathWithMatrix';
+  
   /// Adds the given path to this path by extending the current segment of this
   /// path with the the first segment of the given path.
-  void extendWithPath(Path path, Offset offset) {
+  /// 
+  /// If `matrix4` is specified, the path will be transformed by this matrix
+  /// after the matrix is translated by the given `offset`.  The matrix is a 4x4
+  /// matrix stored in column major order.
+  void extendWithPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
-    _extendWithPath(path, offset.dx, offset.dy);
+    if (matrix4 != null) {
+      assert(_matrix4IsValid(matrix4));
+      _extendWithPathAndMatrix(path, offset.dx, offset.dy, matrix4);
+    } else {
+      _extendWithPath(path, offset.dx, offset.dy);
+    }
   }
   void _extendWithPath(Path path, double dx, double dy) native 'Path_extendWithPath';
+  void _extendWithPathAndMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_extendWithPathAndMatrix';
 
   /// Closes the last subpath, as if a straight line had been drawn
   /// from the current point to the first point of the subpath.
@@ -1701,12 +1751,207 @@ class Path extends NativeFieldWrapperClass2 {
   /// Returns a copy of the path with all the segments of every
   /// subpath transformed by the given matrix.
   Path transform(Float64List matrix4) {
-    assert(matrix4 != null);
-    if (matrix4.length != 16)
-      throw new ArgumentError('"matrix4" must have 16 entries.');
+    assert(_matrix4IsValid(matrix4));
     return _transform(matrix4);
   }
   Path _transform(Float64List matrix4) native 'Path_transform';
+
+  /// Computes the bounding rectangle for this path.
+  Rect getBounds() {
+    final Float32List rect = _getBounds();
+    return new Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
+  }
+  Float32List _getBounds() native 'Path_getBounds';
+
+  /// Combines the two paths according to the manner specified by the given 
+  /// `operation`.
+  /// 
+  /// The resulting path will be constructed from non-overlapping contours. The
+  /// curve order is reduced where possible so that cubics may be turned into
+  /// quadratics, and quadratics maybe turned into lines.
+  static Path combine(PathOperation operation, Path path1, Path path2) {
+    assert(path1 != null);
+    assert(path2 != null);
+    final Path path = new Path();
+    if (path._op(path1, path2, operation.index)) {
+      return path;
+    } 
+    throw new StateError('Path.combine() failed.  This may be due an invalid path; in particular, check for NaN values.');
+  }
+  bool _op(Path path1, Path path2, int operation) native 'Path_op';
+
+  /// Creates a [PathMetrics] object for this path.
+  /// 
+  /// If `forceClosed` is set to true, the contours of the path will be measured
+  /// as if they had been closed, even if they were not explicitly closed.
+  PathMetrics computeMetrics({bool forceClosed: false}) {
+    return new PathMetrics._(this, forceClosed);
+  }
+}
+
+/// The geometric description of a tangent: the angle at a point.
+/// 
+/// See also:
+///  * [PathMetric.getTangentForOffset], which returns the tangent of an offset along a path.
+class Tangent {
+  /// Creates a [Tangent] with the given values.
+  /// 
+  /// The arguments must not be null.
+  const Tangent(this.position, this.vector) 
+    : assert(position != null), 
+      assert(vector != null);
+
+  /// Creates a [Tangent] based on the angle rather than the vector.
+  /// 
+  /// The [vector] is computed to be the unit vector at the given angle, interpreted
+  /// as clockwise radians from the x axis.
+  factory Tangent.fromAngle(Offset position, double angle) {
+    return new Tangent(position, new Offset(math.cos(angle), math.sin(angle)));
+  }
+
+  /// Position of the tangent.
+  /// 
+  /// When used with [PathMetric.getTangentForOffset], this represents the precise
+  /// position that the given offset along the path corresponds to.
+  final Offset position;
+
+  /// The vector of the curve at [position].
+  /// 
+  /// When used with [PathMetric.getTangentForOffset], this is the vector of the
+  /// curve that is at the given offset along the path (i.e. the direction of the
+  /// curve at [position]).
+  final Offset vector;
+
+  /// The direction of the curve at [position].
+  /// 
+  /// When used with [PathMetric.getTangentForOffset], this is the angle of the
+  /// curve that is the given offset along the path (i.e. the direction of the
+  /// curve at [position]).
+  /// 
+  /// This value is in radians, with 0.0 meaning pointing along the x axis in 
+  /// the positive x-axis direction, positive numbers pointing downward toward
+  /// the negative y-axis, i.e. in a clockwise direction, and negative numbers
+  /// pointing upward toward the positive y-axis, i.e. in a counter-clockwise 
+  /// direction.
+  // flip the sign to be consistent with [Path.arcTo]'s `sweepAngle`
+  double get angle => -math.atan2(vector.dy, vector.dx);
+}
+
+/// An iterable collection of [PathMetric] objects describing a [Path].
+/// 
+/// A [PathMetrics] object is created by using the [Path.computeMetrics] method,
+/// and represents the path as it stood at the time of the call. Subsequent 
+/// modifications of the path do not affect the [PathMetrics] object.
+/// 
+/// Each path metric corresponds to a segment, or contour, of a path.
+/// 
+/// For example, a path consisting of a [Path.lineTo], a [Path.moveTo], and 
+/// another [Path.lineTo] will contain two contours and thus be represented by 
+/// two [PathMetric] objects.
+///
+/// When iterating across a [PathMetrics]' contours, the [PathMetric] objects are only
+/// valid until the next one is obtained.
+class PathMetrics extends collection.IterableBase<PathMetric> {
+  PathMetrics._(Path path, bool forceClosed) :
+    _iterator = new PathMetricIterator._(new PathMetric._(path, forceClosed));
+    
+  final Iterator<PathMetric> _iterator;
+
+  @override
+  Iterator<PathMetric> get iterator => _iterator;
+}
+
+/// Tracks iteration from one segment of a path to the next for measurement.
+class PathMetricIterator implements Iterator<PathMetric> {
+  PathMetricIterator._(this._pathMetric);
+
+  PathMetric _pathMetric;
+  bool _firstTime = true;
+
+  @override
+  PathMetric get current => _firstTime ? null : _pathMetric;
+
+  @override
+  bool moveNext() {
+    // PathMetric isn't a normal iterable - it's already initialized to its
+    // first Path.  Should only call _moveNext when done with the first one. 
+    if (_firstTime == true) {
+      _firstTime = false;
+      return true;
+    } else if (_pathMetric?._moveNext() == true) {
+      return true;
+    } 
+    _pathMetric = null;
+    return false;
+  }
+}
+
+/// Utilities for measuring a [Path] and extracting subpaths.
+/// 
+/// Iterate over the object returned by [Path.computeMetrics] to obtain 
+/// [PathMetric] objects.
+///
+/// Once created, metrics will only be valid while the iterator is at the given
+/// contour. When the next contour's [PathMetric] is obtained, this object 
+/// becomes invalid.
+class PathMetric extends NativeFieldWrapperClass2 {
+  /// Create a new empty [Path] object.
+  PathMetric._(Path path, bool forceClosed) { _constructor(path, forceClosed); }
+  void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
+
+  /// Return the total length of the current contour.
+  double get length native 'PathMeasure_getLength';
+
+  /// Computes the position of hte current contour at the given offset, and the
+  /// angle of the path at that point.
+  /// 
+  /// For example, calling this method with a distance of 1.41 for a line from 
+  /// 0.0,0.0 to 2.0,2.0 would give a point 1.0,1.0 and the angle 45 degrees
+  /// (but in radians).
+  /// 
+  /// Returns null if the contour has zero [length].
+  /// 
+  /// The distance is clamped to the [length] of the current contour.
+  Tangent getTangentForOffset(double distance) {
+    final Float32List posTan = _getPosTan(distance);
+    // first entry == 0 indicates that Skia returned false
+    if (posTan[0] == 0.0) {
+      return null;
+    } else {
+      return new Tangent(
+        new Offset(posTan[1], posTan[2]), 
+        new Offset(posTan[3], posTan[4]) 
+      );
+    }
+  }
+  Float32List _getPosTan(double distance) native 'PathMeasure_getPosTan';
+
+  /// Given a start and stop distance, return the intervening segment(s).
+  /// 
+  /// `start` and `end` are pinned to legal values (0..[length])
+  /// Returns null if the segment is 0 length or `start` > `stop`.
+  /// Begin the segment with a moveTo if `startWithMoveTo` is true.
+  Path extractPath(double start, double end, {bool startWithMoveTo: true}) native 'PathMeasure_getSegment';
+
+  /// Whether the contour is closed.
+  /// 
+  /// Returns true if the contour ends with a call to [Path.close] (which may
+  /// have been implied when using [Path.addRect]) or if `forceClosed` was 
+  /// specified as true in the call to [Path.computeMetrics].  Returns false
+  /// otherwise.
+  bool get isClosed native 'PathMeasure_isClosed';
+
+  // Move to the next contour in the path.
+  //
+  // A path can have a next contour if [Path.moveTo] was called after drawing began.
+  // Return true if one exists, or false.
+  // 
+  // This is not exactly congruent with a regular [Iterator.moveNext].
+  // Typically, [Iterator.moveNext] should be called before accessing the
+  // [Iterator.current]. In this case, the [PathMetric] is valid before 
+  // calling `_moveNext` - `_moveNext` should be called after the first
+  // iteration is done instead of before.
+  bool _moveNext() native 'PathMeasure_nextContour';
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
@@ -2012,8 +2257,8 @@ class Gradient extends Shader {
   /// If `center`, `radius`, `colors`, or `tileMode` are null, or if `colors` or
   /// `colorStops` contain null values, this constructor will throw a
   /// [NoSuchMethodError].
-  /// 
-  /// If `matrix4` is provided, the gradient fill will be transformed by the 
+  ///
+  /// If `matrix4` is provided, the gradient fill will be transformed by the
   /// specified 4x4 matrix relative to the local coordinate system. `matrix4` must
   /// be a column-major matrix packed into a list of 16 values.
   Gradient.radial(
@@ -3042,11 +3287,11 @@ typedef String _Callbacker<T>(_Callback<T> callback);
 ///
 /// ```dart
 /// typedef void IntCallback(int result);
-/// 
+///
 /// String _doSomethingAndCallback(IntCallback callback) {
 ///   new Timer(new Duration(seconds: 1), () { callback(1); });
 /// }
-/// 
+///
 /// Future<int> doSomething() {
 ///   return _futurize(_doSomethingAndCallback);
 /// }

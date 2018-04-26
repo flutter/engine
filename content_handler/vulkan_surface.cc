@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "vulkan_surface.h"
+
 #include <lib/async/default.h>
 
-#include "flutter/content_handler/vulkan_surface.h"
-#include "flutter/common/threads.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
-namespace flutter_runner {
+namespace flutter {
 
 VulkanSurface::VulkanSurface(vulkan::VulkanProvider& vulkan_provider,
                              sk_sp<GrContext> context,
@@ -22,8 +22,6 @@ VulkanSurface::VulkanSurface(vulkan::VulkanProvider& vulkan_provider,
       backend_context_(std::move(backend_context)),
       session_(session),
       wait_(this) {
-  ASSERT_IS_GPU_THREAD;
-
   FXL_DCHECK(session_);
 
   zx::vmo exported_vmo;
@@ -44,23 +42,14 @@ VulkanSurface::VulkanSurface(vulkan::VulkanProvider& vulkan_provider,
 
   wait_.set_object(release_event_.get());
   wait_.set_trigger(ZX_EVENT_SIGNALED);
-  async_ = async_get_default();
-  wait_.Begin(async_);
-
-  // Probably not necessary as the events should be in the unsignalled state
-  // already.
   Reset();
 
   valid_ = true;
 }
 
 VulkanSurface::~VulkanSurface() {
-  ASSERT_IS_GPU_THREAD;
-  if (async_) {
-    wait_.Cancel(async_);
-    wait_.set_object(ZX_HANDLE_INVALID);
-    async_ = nullptr;
-  }
+  wait_.Cancel();
+  wait_.set_object(ZX_HANDLE_INVALID);
 }
 
 bool VulkanSurface::IsValid() const {
@@ -200,10 +189,12 @@ bool VulkanSurface::AllocateDeviceMemory(sk_sp<GrContext> context,
       break;
     }
   }
+
   VkExportMemoryAllocateInfoKHR export_allocate_info = {
       .sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHR,
       .pNext = nullptr,
       .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_FUCHSIA_VMO_BIT_KHR};
+
   const VkMemoryAllocateInfo alloc_info = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       .pNext = &export_allocate_info,
@@ -270,15 +261,15 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrContext> context,
   }
 
   const GrVkImageInfo image_info = {
-      .fImage = vk_image_,
-      .fAlloc = {vk_memory_, 0, memory_reqs.size, 0},
-      .fImageTiling = image_create_info.tiling,
-      .fImageLayout = image_create_info.initialLayout,
-      .fFormat = image_create_info.format,
-      .fLevelCount = image_create_info.mipLevels,
+      vk_image_,                             // image
+      {vk_memory_, 0, memory_reqs.size, 0},  // alloc
+      image_create_info.tiling,              // tiling
+      image_create_info.initialLayout,       // layout
+      image_create_info.format,              // format
+      image_create_info.mipLevels,           // level count
   };
 
-  GrBackendRenderTarget sk_render_target(size.width(), size.height(), 0, 0,
+  GrBackendRenderTarget sk_render_target(size.width(), size.height(), 0,
                                          image_info);
 
   SkSurfaceProps sk_surface_props(
@@ -325,7 +316,6 @@ bool VulkanSurface::PushSessionImageSetupOps(scenic_lib::Session* session,
 }
 
 scenic_lib::Image* VulkanSurface::GetImage() {
-  ASSERT_IS_GPU_THREAD;
   if (!valid_) {
     return 0;
   }
@@ -333,7 +323,6 @@ scenic_lib::Image* VulkanSurface::GetImage() {
 }
 
 sk_sp<SkSurface> VulkanSurface::GetSkiaSurface() const {
-  ASSERT_IS_GPU_THREAD;
   return valid_ ? sk_surface_ : nullptr;
 }
 
@@ -358,7 +347,6 @@ bool VulkanSurface::FlushSessionAcquireAndReleaseEvents() {
 
 void VulkanSurface::SignalWritesFinished(
     std::function<void(void)> on_writes_committed) {
-  ASSERT_IS_GPU_THREAD;
   FXL_DCHECK(on_writes_committed);
 
   if (!valid_) {
@@ -374,8 +362,6 @@ void VulkanSurface::SignalWritesFinished(
 }
 
 void VulkanSurface::Reset() {
-  ASSERT_IS_GPU_THREAD;
-
   if (acquire_event_.signal(ZX_EVENT_SIGNALED, 0u) != ZX_OK ||
       release_event_.signal(ZX_EVENT_SIGNALED, 0u) != ZX_OK) {
     valid_ = false;
@@ -402,6 +388,8 @@ void VulkanSurface::Reset() {
     FXL_DLOG(ERROR) << "failed to create acquire semaphore";
   }
 
+  wait_.Begin(async_get_default());
+
   // It is safe for the caller to collect the surface in the callback.
   auto callback = pending_on_writes_committed_;
   pending_on_writes_committed_ = nullptr;
@@ -410,15 +398,14 @@ void VulkanSurface::Reset() {
   }
 }
 
-async_wait_result_t VulkanSurface::OnHandleReady(async_t* async,
-                                                 zx_status_t status,
-                                                 const zx_packet_signal_t* signal) {
-  ASSERT_IS_GPU_THREAD;
+void VulkanSurface::OnHandleReady(async_t* async,
+                                  async::WaitBase* wait,
+                                  zx_status_t status,
+                                  const zx_packet_signal_t* signal) {
   if (status != ZX_OK)
-    return ASYNC_WAIT_FINISHED;
+    return;
   FXL_DCHECK(signal->observed & ZX_EVENT_SIGNALED);
   Reset();
-  return ASYNC_WAIT_AGAIN;
 }
 
-}  // namespace flutter_runner
+}  // namespace flutter

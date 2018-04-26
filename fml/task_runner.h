@@ -5,7 +5,7 @@
 #ifndef FLUTTER_FML_TASK_RUNNER_H_
 #define FLUTTER_FML_TASK_RUNNER_H_
 
-#include "lib/fxl/macros.h"
+#include "flutter/fml/macros.h"
 #include "lib/fxl/memory/ref_counted.h"
 #include "lib/fxl/tasks/task_runner.h"
 
@@ -13,7 +13,7 @@ namespace fml {
 
 class MessageLoopImpl;
 
-class TaskRunner : public fxl::TaskRunner {
+class TaskRunner final : public fxl::TaskRunner {
  public:
   void PostTask(fxl::Closure task) override;
 
@@ -23,16 +23,19 @@ class TaskRunner : public fxl::TaskRunner {
 
   bool RunsTasksOnCurrentThread() override;
 
+  static void RunNowOrPostTask(fxl::RefPtr<fxl::TaskRunner> runner,
+                               fxl::Closure task);
+
  private:
   fxl::RefPtr<MessageLoopImpl> loop_;
 
   TaskRunner(fxl::RefPtr<MessageLoopImpl> loop);
 
-  ~TaskRunner();
+  ~TaskRunner() override;
 
   FRIEND_MAKE_REF_COUNTED(TaskRunner);
   FRIEND_REF_COUNTED_THREAD_SAFE(TaskRunner);
-  FXL_DISALLOW_COPY_AND_ASSIGN(TaskRunner);
+  FML_DISALLOW_COPY_AND_ASSIGN(TaskRunner);
 };
 
 }  // namespace fml

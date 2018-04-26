@@ -1809,6 +1809,7 @@ class RepositorySkiaThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'giflib' // contains nothing that ends up in the binary executable
         && entry.name != 'freetype' // we use our own version
+        && entry.name != 'freetype2' // we use our own version
         && entry.name != 'icu' // we use our own version
         && entry.name != 'libjpeg-turbo' // we use our own version
         && entry.name != 'libpng' // we use our own version
@@ -2105,6 +2106,7 @@ class RepositoryFlutterDirectory extends RepositoryDirectory {
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != 'testing'
         && entry.name != 'tools'
+        && entry.name != 'docs'
         && entry.name != 'examples'
         && entry.name != 'build'
         && entry.name != 'travis'

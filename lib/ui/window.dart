@@ -47,10 +47,14 @@ enum AppLifecycleState {
   /// in the foreground inactive state. Apps transition to this state when in
   /// a phone call, responding to a TouchID request, when entering the app
   /// switcher or the control center, or when the UIViewController hosting the
-  /// Flutter app is transitioning. Apps in this state should assume that they
-  /// may be [paused] at any time.
+  /// Flutter app is transitioning.
   ///
-  /// On Android, this state is currently unused.
+  /// On Android, this corresponds to an app or the Flutter host view running
+  /// in the foreground inactive state.  Apps transition to this state when
+  /// another activity is focused, such as a split-screen app, a phone call,
+  /// a picture-in-picture app, a system dialog, or another window.
+  /// 
+  /// Apps in this state should assume that they may be [paused] at any time.
   inactive,
 
   /// The application is not currently visible to the user, not responding to
@@ -677,11 +681,14 @@ class Window {
   void sendPlatformMessage(String name,
                            ByteData data,
                            PlatformMessageResponseCallback callback) {
-    _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
+    final String error =
+        _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
+    if (error != null)
+      throw new Exception(error);
   }
-  void _sendPlatformMessage(String name,
-                            PlatformMessageResponseCallback callback,
-                            ByteData data) native 'Window_sendPlatformMessage';
+  String _sendPlatformMessage(String name,
+                              PlatformMessageResponseCallback callback,
+                              ByteData data) native 'Window_sendPlatformMessage';
 
   /// Called whenever this window receives a message from a platform-specific
   /// plugin.

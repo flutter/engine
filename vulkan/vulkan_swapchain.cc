@@ -223,16 +223,16 @@ sk_sp<SkSurface> VulkanSwapchain::CreateSkiaSurface(
   }
 
   const GrVkImageInfo image_info = {
-      .fImage = image,
-      .fAlloc = GrVkAlloc(),
-      .fImageTiling = VK_IMAGE_TILING_OPTIMAL,
-      .fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-      .fFormat = surface_format_.format,
-      .fLevelCount = 1,
+      image,                      // image
+      GrVkAlloc(),                // alloc
+      VK_IMAGE_TILING_OPTIMAL,    // tiling
+      VK_IMAGE_LAYOUT_UNDEFINED,  // layout
+      surface_format_.format,     // format
+      1,                          // level count
   };
 
   // TODO(chinmaygarde): Setup the stencil buffer and the sampleCnt.
-  GrBackendRenderTarget backend_render_target(size.fWidth, size.fHeight, 0, 0,
+  GrBackendRenderTarget backend_render_target(size.fWidth, size.fHeight, 0,
                                               image_info);
   SkSurfaceProps props(SkSurfaceProps::InitType::kLegacyFontHost_InitType);
 
@@ -461,15 +461,14 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
     return error;
   }
 
-  GrVkImageInfo* image_info = nullptr;
-  if (!surface->getRenderTargetHandle(
-          reinterpret_cast<GrBackendObject*>(&image_info),
-          SkSurface::kFlushRead_BackendHandleAccess)) {
-    FXL_DLOG(INFO) << "Could not get render target handle.";
+  GrBackendRenderTarget backendRT = surface->getBackendRenderTarget(
+      SkSurface::kFlushRead_BackendHandleAccess);
+  if (!backendRT.isValid()) {
+    FXL_DLOG(INFO) << "Could not get backend render target.";
     return error;
   }
+  backendRT.setVkImageLayout(destination_image_layout);
 
-  image_info->updateImageLayout(destination_image_layout);
   current_image_index_ = next_image_index;
 
   return {AcquireStatus::Success, surface};
@@ -487,15 +486,9 @@ bool VulkanSwapchain::Submit() {
 
   // ---------------------------------------------------------------------------
   // Step 0:
-  // Notify to Skia that we will read from its backend object.
+  // Make sure Skia has flushed all work for the surface to the gpu.
   // ---------------------------------------------------------------------------
-  GrVkImageInfo* image_info = nullptr;
-  if (!surface->getRenderTargetHandle(
-          reinterpret_cast<GrBackendObject*>(&image_info),
-          SkSurface::kFlushRead_BackendHandleAccess)) {
-    FXL_DLOG(INFO) << "Could not get render target handle.";
-    return false;
-  }
+  surface->flush();
 
   // ---------------------------------------------------------------------------
   // Step 1:

@@ -7,7 +7,7 @@
 
 #include <memory>
 
-#include "lib/fxl/compiler_specific.h"
+#include "flutter/flow/compositor_context.h"
 #include "lib/fxl/macros.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
@@ -53,14 +53,8 @@ class Surface {
 
   virtual GrContext* GetContext() = 0;
 
-  virtual bool SupportsScaling() const;
-
-  double GetScale() const;
-
-  void SetScale(double scale);
-
  private:
-  double scale_;
+  FXL_DISALLOW_COPY_AND_ASSIGN(Surface);
 };
 
 }  // namespace shell

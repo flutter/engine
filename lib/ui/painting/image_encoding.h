@@ -13,7 +13,6 @@ class CanvasImage;
 
 Dart_Handle EncodeImage(CanvasImage* canvas_image,
                         int format,
-                        int quality,
                         Dart_Handle callback_handle);
 
 }  // namespace blink

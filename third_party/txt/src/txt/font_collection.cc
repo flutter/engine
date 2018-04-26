@@ -100,7 +100,7 @@ FontCollection::GetMinikinFontCollectionForFamily(const std::string& family) {
   }
 
   for (sk_sp<SkFontMgr>& manager : GetFontManagerOrder()) {
-    auto font_style_set = manager->matchFamily(family.c_str());
+    sk_sp<SkFontStyleSet> font_style_set(manager->matchFamily(family.c_str()));
     if (font_style_set == nullptr || font_style_set->count() == 0) {
       continue;
     }
@@ -111,8 +111,8 @@ FontCollection::GetMinikinFontCollectionForFamily(const std::string& family) {
     for (int i = 0, style_count = font_style_set->count(); i < style_count;
          ++i) {
       // Create the skia typeface.
-      auto skia_typeface =
-          sk_ref_sp<SkTypeface>(font_style_set->createTypeface(i));
+      sk_sp<SkTypeface> skia_typeface(
+          sk_sp<SkTypeface>(font_style_set->createTypeface(i)));
       if (skia_typeface == nullptr) {
         continue;
       }
@@ -156,7 +156,10 @@ FontCollection::GetMinikinFontCollectionForFamily(const std::string& family) {
 
   const auto default_font_family = GetDefaultFontFamily();
   if (family != default_font_family) {
-    return GetMinikinFontCollectionForFamily(default_font_family);
+    std::shared_ptr<minikin::FontCollection> default_collection =
+        GetMinikinFontCollectionForFamily(default_font_family);
+    font_collections_cache_[family] = default_collection;
+    return default_collection;
   }
 
   // No match found in any of our font managers.
