@@ -243,16 +243,21 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
         switch (style) {
             case "SystemUiOverlayStyle.light":
                 window.setNavigationBarColor(0xffffffff);
-                flags |= 16;
-                if ((flags & 16) == 0) {
-                    flags |= 16; //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                // Not availible until Android P.
+                // window.setNavigationBarDividerColor(0xff000000);
+                flags |= 0x10;
+                if ((flags & 0x10) == 0) {
+                    flags |= 0x10; //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
                 }
                 view.setSystemUiVisibility(flags);
                 break;
             case "SystemUiOverlayStyle.dark":
                 window.setNavigationBarColor(0xff000000);
-                if ((flags & 16) == 16) {
-                    flags ^= 16; //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                // Not availible until Android P.
+                // window.setNavigationBarDividerColor(0xffffffff);
+                flags |= 0x10;
+                if ((flags & 0x10) == 0x10) {
+                    flags ^= 0x10; //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
                 }
                 view.setSystemUiVisibility(flags);
                 break;
