@@ -239,13 +239,12 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
         Window window = mActivity.getWindow();
         View view = window.getDecorView();
         int flags = view.getSystemUiVisibility();
-        int masked = flags | 0x10;
         switch (style) {
             case "SystemUiOverlayStyle.light":
                 window.setNavigationBarColor(0xffffffff);
                 // Not availible until Android P.
                 // window.setNavigationBarDividerColor(0xff000000);
-                if ((masked & 0x10) == 0) {
+                if ((flags & 0x10) == 0) {
                     flags |= 0x10; //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
                 }
                 view.setSystemUiVisibility(flags);
@@ -254,7 +253,7 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
                 window.setNavigationBarColor(0xff000000);
                 // Not availible until Android P.
                 // window.setNavigationBarDividerColor(0xffffffff);
-                if ((masked & 0x10) == 0x10) {
+                if ((flags & 0x10) == 0x10) {
                     flags ^= 0x10; //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
                 }
                 view.setSystemUiVisibility(flags);
