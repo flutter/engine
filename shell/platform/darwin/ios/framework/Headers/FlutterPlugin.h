@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
  Defines a set of optional callback methods and a method to set up the plugin
  and register it to be called by other application components.
  */
-@protocol FlutterPlugin<NSObject>
+@protocol FlutterPlugin <NSObject>
 @required
 /**
  Registers this plugin.
@@ -130,12 +130,28 @@ NS_ASSUME_NONNULL_BEGIN
                completionHandler:(void (^)(BOOL succeeded))completionHandler
     API_AVAILABLE(ios(9.0));
 
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+
+ - Returns: `YES` if this plugin handles the request.
+ */
+- (BOOL)application:(UIApplication*)application
+    handleEventsForBackgroundURLSession:(nonnull NSString*)identifier
+                      completionHandler:(nonnull void (^)())completionHandler;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+
+ - Returns: `YES` if this plugin handles the request.
+ */
+- (BOOL)application:(UIApplication*)application
+    performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
 @end
 
 /**
  Registration context for a single `FlutterPlugin`.
  */
-@protocol FlutterPluginRegistrar<NSObject>
+@protocol FlutterPluginRegistrar <NSObject>
 /**
  Returns a `FlutterBinaryMessenger` for creating Dart/iOS communication
  channels to be used by the plugin.
@@ -183,6 +199,26 @@ NS_ASSUME_NONNULL_BEGIN
  - Parameters delegate: The receiving object, such as the plugin's main class.
  */
 - (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate;
+
+/**
+ Returns the file name for the given asset.
+ The returned file name can be used to access the asset in the application's main bundle.
+
+ - Parameter asset: The name of the asset. The name can be hierarchical.
+ - Returns: the file name to be used for lookup in the main bundle.
+ */
+- (NSString*)lookupKeyForAsset:(NSString*)asset;
+
+/**
+ Returns the file name for the given asset which originates from the specified package.
+ The returned file name can be used to access the asset in the application's main bundle.
+
+ - Parameters:
+   - asset: The name of the asset. The name can be hierarchical.
+   - package: The name of the package from which the asset originates.
+ - Returns: the file name to be used for lookup in the main bundle.
+ */
+- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package;
 @end
 
 /**
@@ -191,7 +227,7 @@ NS_ASSUME_NONNULL_BEGIN
  Plugins are identified by unique string keys, typically the name of the
  plugin's main class.
  */
-@protocol FlutterPluginRegistry<NSObject>
+@protocol FlutterPluginRegistry <NSObject>
 /**
  Returns a registrar for registering a plugin.
 

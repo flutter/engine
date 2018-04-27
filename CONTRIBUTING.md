@@ -95,8 +95,10 @@ Run the following steps, from the `src` directory created in the steps above:
 
 * `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
 * `gclient sync` to update your dependencies.
-* `./flutter/tools/gn --android --unoptimized` to prepare your build files (or `--android --android-cpu [x86|x64] --unoptimized` for x86/x64 emulators) .
-* `ninja -C out/android_debug_unopt` to actually build the Android binary (or `out/android_debug_unopt_x64 for x86/x64 emulators).
+* `./flutter/tools/gn --android --unoptimized` to prepare your build files for device-side executables (or `--android --android-cpu [x86|x64] --unoptimized` for x86/x64 emulators) .
+* `./flutter/tools/gn --unoptimized` to prepare the build files for host-side executables.
+* `ninja -C out/android_debug_unopt && ninja -C out/host_debug_unopt` to build all executables (use `out/android_debug_unopt_x64` for x86/x64 emulators).
+    * For Googlers, consider also using the option `-j 1000` to parallelize the build using Goma.
 
 This builds a debug-enabled ("unoptimized") binary configured to run Dart in
 checked mode ("debug"). There are other versions, [discussed on the wiki](https://github.com/flutter/flutter/wiki/Flutter's-modes).
@@ -137,10 +139,12 @@ to test the engine.
 * Make sure you have Xcode 9.0+ installed.
 * `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
 * `gclient sync` to update dependencies.
-* `./flutter/tools/gn --ios --unoptimized` to prepare build files (or `--ios --simulator --unoptimized` for simulator).
+* `./flutter/tools/gn --ios --unoptimized` to prepare build files for device-side executables (or `--ios --simulator --unoptimized` for simulator).
   * For a discussion on the various flags and modes, [read this discussion](https://github.com/flutter/flutter/wiki/Flutter's-modes).
   * This also produces an Xcode project for working with the engine source code at `out/ios_debug_unopt`
-* `ninja -C out/ios_debug_unopt` to build iOS artifacts (or `out/ios_debug_sim_unopt` for simulator).
+* `./flutter/tools/gn --unoptimized` to prepare the build files for host-side executables.
+* `ninja -C out/ios_debug_unopt && ninja -C out/host_debug_unopt` to build all artifacts (use `out/ios_debug_sim_unopt` for Simulator).
+    * For Googlers, consider also using the option `-j 1000` to parallelize the build using Goma.
 
 Once the artifacts are built, you can start using them in your application by following these steps:
 * `cd /path/to/flutter/examples/hello_world`
@@ -151,15 +155,18 @@ Once the artifacts are built, you can start using them in your application by fo
 
 ### Desktop (Mac and Linux), for tests
 
+To run the tests, you should first clone [the main Flutter repository](https://github.com/flutter/flutter).
+See [the instructions for contributing](https://github.com/flutter/flutter/blob/master/CONTRIBUTING.md)
+to the main Flutter repository for detailed instructions. By default, Flutter will use the bundled version
+of the engine. Follow the next steps to run tests using the locally-built engine:
+
 * `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
 * `gclient sync` to update your dependencies.
 * `./flutter/tools/gn --unoptimized` to prepare your build files.
 * `ninja -C out/host_debug_unopt` to build a desktop unoptimized binary.
+    * For Googlers, consider also using the option `-j 1000` to parallelize the build using Goma.
 * `--unoptimized` disables C++ compiler optimizations and does not strip debug symbols. You may skip the flag and invoke `ninja -C out/host_debug` if you would rather have the native components optimized.
-
-To run the tests, you'll also need to clone [the main Flutter repository](https://github.com/flutter/flutter).
-See [the instructions for contributing](https://github.com/flutter/flutter/blob/master/CONTRIBUTING.md)
-to the main Flutter repository for detailed instructions.
+* `flutter test --local-engine=host_debug_unopt` will run tests using the locally-built `flutter_tester`.
 
 ### Desktop (gen_snapshot for Windows)
 
@@ -200,7 +207,8 @@ find . -mindepth 1 -maxdepth 1 -type d | xargs -n 1 sh -c 'ninja -C $0 || exit 2
 Contributing code
 -----------------
 
-We gladly accept contributions via GitHub pull requests.
+We gladly accept contributions via GitHub pull requests. See [the wiki](https://github.com/flutter/engine/wiki) for
+information about the engine's architecture.
 
 To start working on a patch:
 

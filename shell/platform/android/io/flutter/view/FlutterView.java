@@ -254,12 +254,20 @@ public class FlutterView extends SurfaceView
         return mNativeView.getPluginRegistry();
     }
 
+    public String getLookupKeyForAsset(String asset) {
+        return FlutterMain.getLookupKeyForAsset(asset);
+    }
+
+    public String getLookupKeyForAsset(String asset, String packageName) {
+        return FlutterMain.getLookupKeyForAsset(asset, packageName);
+    }
+
     public void addActivityLifecycleListener(ActivityLifecycleListener listener) {
         mActivityLifecycleListeners.add(listener);
     }
 
     public void onPause() {
-        mFlutterLifecycleChannel.send("AppLifecycleState.paused");
+        mFlutterLifecycleChannel.send("AppLifecycleState.inactive");
     }
 
     public void onPostResume() {
@@ -270,7 +278,7 @@ public class FlutterView extends SurfaceView
     }
 
     public void onStop() {
-        mFlutterLifecycleChannel.send("AppLifecycleState.suspending");
+        mFlutterLifecycleChannel.send("AppLifecycleState.paused");
     }
 
     public void onMemoryPressure() {
@@ -759,7 +767,9 @@ public class FlutterView extends SurfaceView
 
     // Called by native to notify first Flutter frame rendered.
     public void onFirstFrame() {
-        for (FirstFrameListener listener : mFirstFrameListeners) {
+        // Allow listeners to remove themselves when they are called.
+        List<FirstFrameListener> listeners = new ArrayList<>(mFirstFrameListeners);
+        for (FirstFrameListener listener : listeners) {
             listener.onFirstFrame();
         }
     }

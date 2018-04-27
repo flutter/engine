@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.Bundle;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -66,9 +67,15 @@ public class FlutterMain {
     private static final String DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR = "isolate_snapshot_instr";
     private static final String DEFAULT_FLX = "app.flx";
     private static final String DEFAULT_SNAPSHOT_BLOB = "snapshot_blob.bin";
+    private static final String DEFAULT_KERNEL_BLOB = "kernel_blob.bin";
+    private static final String DEFAULT_PLATFORM_DILL = "platform.dill";
     private static final String DEFAULT_FLUTTER_ASSETS_DIR = "flutter_assets";
 
     private static final String MANIFEST = "flutter.yaml";
+
+    private static String fromFlutterAssets(String filePath) {
+        return sFlutterAssetsDir + File.separator + filePath;
+    }
 
     private static final Set<String> SKY_RESOURCES = ImmutableSetBuilder.<String>newInstance()
         .add("icudtl.dat")
@@ -148,6 +155,14 @@ public class FlutterMain {
      * @param settings Configuration settings.
      */
     public static void startInitialization(Context applicationContext, Settings settings) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+          throw new IllegalStateException("startInitialization must be called on the main thread");
+        }
+        // Do not run startInitialization more than once.
+        if (sSettings != null) {
+          return;
+        }
+
         sSettings = settings;
 
         long initStartTimestampMillis = SystemClock.uptimeMillis();
@@ -171,6 +186,9 @@ public class FlutterMain {
      * @param args Flags sent to the Flutter runtime.
      */
     public static void ensureInitializationComplete(Context applicationContext, String[] args) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+          throw new IllegalStateException("ensureInitializationComplete must be called on the main thread");
+        }
         if (sInitialized) {
             return;
         }
@@ -244,8 +262,10 @@ public class FlutterMain {
         new ResourceCleaner(context).start();
         sResourceExtractor = new ResourceExtractor(context)
             .addResources(SKY_RESOURCES)
-            .addResource(sFlx)
-            .addResource(sFlutterAssetsDir);
+            .addResource(fromFlutterAssets(sFlx))
+            .addResource(fromFlutterAssets(sSnapshotBlob))
+            .addResource(fromFlutterAssets(DEFAULT_KERNEL_BLOB))
+            .addResource(fromFlutterAssets(DEFAULT_PLATFORM_DILL));
         if (sIsPrecompiledAsSharedLibrary) {
           sResourceExtractor
             .addResource(sAotSharedLibraryPath);
@@ -299,5 +319,31 @@ public class FlutterMain {
         String dataDirectory = PathUtils.getDataDirectory(applicationContext);
         File appBundle = new File(dataDirectory, sFlutterAssetsDir);
         return appBundle.exists() ? appBundle.getPath() : null;
+    }
+
+    /**
+     * Returns the file name for the given asset.
+     * The returned file name can be used to access the asset in the APK
+     * through the {@link AssetManager} API.
+     *
+     * @param asset the name of the asset. The name can be hierarchical
+     * @return      the filename to be used with {@link AssetManager}
+     */
+    public static String getLookupKeyForAsset(String asset) {
+        return fromFlutterAssets(asset);
+    }
+
+    /**
+     * Returns the file name for the given asset which originates from the
+     * specified packageName. The returned file name can be used to access
+     * the asset in the APK through the {@link AssetManager} API.
+     *
+     * @param asset       the name of the asset. The name can be hierarchical
+     * @param packageName the name of the package from which the asset originates
+     * @return            the file name to be used with {@link AssetManager}
+     */
+    public static String getLookupKeyForAsset(String asset, String packageName) {
+        return getLookupKeyForAsset(
+            "packages" + File.separator + packageName + File.separator + asset);
     }
 }

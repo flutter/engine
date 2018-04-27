@@ -4,8 +4,10 @@
 
 import("$flutter_root/lib/ui/dart_ui.gni")
 import("//third_party/dart/utils/compile_platform.gni")
+import("//third_party/dart/utils/generate_entry_points_json.gni")
 
 if (is_fuchsia) {
+  import("//build/dart/dart_library.gni")
   import("//build/dart/toolchain.gni")
   import("//topaz/public/dart-pkg/fuchsia/sdk_ext.gni")
   import("//topaz/public/dart-pkg/zircon/sdk_ext.gni")
@@ -22,47 +24,10 @@ copy("generate_dart_ui") {
   ]
 }
 
-if (is_fuchsia) {
-  action("generate_package_map") {
-    dart_deps = [
-      "//third_party/dart-pkg/git/flutter/packages/flutter:flutter",
-      "//topaz/public/lib/app/dart:dart",
-      "//topaz/public/lib/fidl/dart",
-    ]
-
-    dot_packages_file = "$target_gen_dir/snapshot.packages"
-    outputs = [
-      dot_packages_file
-    ]
-    deps = []
-    foreach(dep, dart_deps) {
-      deps += [ "$dep($dart_toolchain)" ]
-    }
-
-    depfile = "$dot_packages_file.d"
-
-    script = "//build/dart/gen_dot_packages.py"
-    args = [
-      "--out",
-      rebase_path(dot_packages_file, root_build_dir),
-      "--source-dir",
-      rebase_path("."),
-      "--root-build-dir",
-      rebase_path(root_build_dir),
-      "--root-gen-dir",
-      rebase_path(dart_root_gen_dir),
-      "--package-name",
-      "snapshot_root",
-      "--depfile",
-      rebase_path(depfile),
-      "--deps",
-    ] + dart_deps
-  }
-}
-
 action("generate_snapshot_bin") {
   if (is_fuchsia) {
     snapshot_dart = "snapshot_fuchsia.dart"
+
     # TODO(rmacnak): Fuchsia cross builds use the wrong Dart target
     # architecture, and have added steps that depend on this error for
     # reasonable build times (e.g., invoking the analyzer).
@@ -87,7 +52,6 @@ action("generate_snapshot_bin") {
              snapshot_dart,
            ] + dart_ui_files
   if (is_fuchsia) {
-    deps += [ ":generate_package_map" ]
     inputs += [ "fuchsia_compilation_trace.txt" ]
   }
 
@@ -105,9 +69,9 @@ action("generate_snapshot_bin") {
 
   rebased_dart_ui_path = rebase_path(dart_ui_path)
 
-  gen_snapshot_dir =
-      get_label_info("//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
-                     "root_out_dir")
+  gen_snapshot_dir = get_label_info(
+          "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
+          "root_out_dir")
   script = "//third_party/dart/runtime/tools/create_snapshot_bin.py"
 
   args = [
@@ -156,8 +120,6 @@ action("generate_snapshot_bin") {
       "--url_mapping=dart:zircon,$zircon_path",
       "--url_mapping=dart:fuchsia,$fuchsia_path",
       "--url_mapping=dart:mozart.internal,$mozart_internal_path",
-      "--packages",
-      rebase_path("$target_gen_dir/snapshot.packages"),
       "--load_compilation_trace",
       rebase_path("fuchsia_compilation_trace.txt"),
     ]
@@ -226,7 +188,7 @@ bin_to_assembly("isolate_snapshot_data_assembly") {
   ]
   input = "$target_gen_dir/isolate_snapshot.bin"
   output = "$target_gen_dir/isolate_snapshot_data.S"
-  symbol = "kDartIsolateCoreSnapshotData"
+  symbol = "kDartIsolateSnapshotData"
   executable = false
 }
 
@@ -236,7 +198,7 @@ bin_to_assembly("isolate_snapshot_instructions_assembly") {
   ]
   input = "$target_gen_dir/isolate_snapshot_instructions.bin"
   output = "$target_gen_dir/isolate_snapshot_instructions.S"
-  symbol = "kDartIsolateCoreSnapshotInstructions"
+  symbol = "kDartIsolateSnapshotInstructions"
   executable = true
 }
 
@@ -266,9 +228,9 @@ compile_platform("non_strong_platform") {
   ]
 
   args = [
-            "--target=flutter",
-            "dart:core",
-         ]
+    "--target=flutter",
+    "dart:core",
+  ]
 }
 
 compile_platform("strong_platform") {
@@ -282,15 +244,51 @@ compile_platform("strong_platform") {
   ]
 
   args = [
-            "--target=flutter",
-            "--strong",
-            "dart:core"
-         ]
+    "--target=flutter",
+    "--strong",
+    "dart:core",
+  ]
 }
 
 group("kernel_platform_files") {
   public_deps = [
     ":non_strong_platform",
     ":strong_platform",
+  ]
+}
+
+generate_entry_points_json_with_gen_snapshot("entry_points_json") {
+  input = "$flutter_root/lib/snapshot/snapshot.dart"
+  output = "$root_out_dir/dart_entry_points/entry_points.json"
+  dart_ui = "$flutter_root/lib/ui/ui.dart"
+  vmservice_io = "//third_party/dart/runtime/bin/vmservice/vmservice_io.dart"
+  dart_vm_entry_points_txt = "$flutter_root/runtime/dart_vm_entry_points.txt"
+  dart_io_entries_txt = "//third_party/dart/runtime/bin/dart_io_entries.txt"
+
+  extra_inputs = [
+    dart_ui,
+    vmservice_io,
+    dart_vm_entry_points_txt,
+    dart_io_entries_txt,
+  ]
+
+  extra_args = [
+    "--await_is_keyword",
+    "--url_mapping=dart:ui," + rebase_path(dart_ui),
+    "--url_mapping=dart:vmservice_io," + rebase_path(vmservice_io),
+    "--causal_async_stacks",
+    "--embedder_entry_points_manifest=" + rebase_path(dart_vm_entry_points_txt),
+    "--embedder_entry_points_manifest=" + rebase_path(dart_io_entries_txt),
+  ]
+}
+
+copy_entry_points_extra_json("entry_points_extra_json") {
+  output = "$root_out_dir/dart_entry_points/entry_points_extra.json"
+}
+
+group("entry_points_json_files") {
+  public_deps = [
+    ":entry_points_extra_json",
+    ":entry_points_json",
   ]
 }

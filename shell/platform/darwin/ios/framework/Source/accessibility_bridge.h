@@ -12,6 +12,7 @@
 
 #import <UIKit/UIKit.h>
 
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
@@ -39,13 +40,14 @@ class AccessibilityBridge;
  * The parent of this node in the node tree. Will be nil for the root node and
  * during transient state changes.
  */
-@property(nonatomic, strong) SemanticsObject* parent;
+@property(nonatomic, assign) SemanticsObject* parent;
 
 /**
  * The accessibility bridge that this semantics object is attached to. This
- * object may use the bridge to access contextual application information.
+ * object may use the bridge to access contextual application information. A weak pointer is used
+ * because the platform view owns the accessibility bridge.
  */
-@property(nonatomic, readonly) shell::AccessibilityBridge* bridge;
+@property(nonatomic, readonly) fml::WeakPtr<shell::AccessibilityBridge> bridge;
 
 /**
  * The semantics node used to produce this semantics object.
@@ -66,14 +68,14 @@ class AccessibilityBridge;
  * Direct children of this semantics object. Each child's `parent` property must
  * be equal to this object.
  */
-@property(nonatomic, readonly) std::vector<SemanticsObject*>* children;
+@property(nonatomic, strong) NSMutableArray<SemanticsObject*>* children;
 
 - (BOOL)nodeWillCauseLayoutChange:(const blink::SemanticsNode*)node;
 
 #pragma mark - Designated initializers
 
 - (instancetype)init __attribute__((unavailable("Use initWithBridge instead")));
-- (instancetype)initWithBridge:(shell::AccessibilityBridge*)bridge
+- (instancetype)initWithBridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge
                            uid:(int32_t)uid NS_DESIGNATED_INITIALIZER;
 
 @end
@@ -106,6 +108,8 @@ class AccessibilityBridge final {
 
   UIView* view() const { return view_; }
 
+  fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
+
  private:
   SemanticsObject* GetOrCreateObject(int32_t id, blink::SemanticsNodeUpdates& updates);
   void VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
@@ -117,6 +121,9 @@ class AccessibilityBridge final {
   PlatformViewIOS* platform_view_;
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
+  fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;
+  int32_t previous_route_id_;
+  std::vector<int32_t> previous_routes_;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };

@@ -24,7 +24,7 @@
 #include "lib/fxl/macros.h"
 #include "minikin/FontCollection.h"
 #include "minikin/FontFamily.h"
-#include "third_party/gtest/include/gtest/gtest_prod.h"
+#include "third_party/googletest/googletest/include/gtest/gtest_prod.h" // nogncheck
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/ports/SkFontMgr.h"
 #include "txt/asset_font_manager.h"
@@ -39,22 +39,31 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
 
   size_t GetFontManagersCount() const;
 
-  void PushFront(sk_sp<SkFontMgr> skia_font_manager);
-
-  void PushBack(sk_sp<SkFontMgr> skia_font_manager);
+  void SetDefaultFontManager(sk_sp<SkFontMgr> font_manager);
+  void SetAssetFontManager(sk_sp<SkFontMgr> font_manager);
+  void SetTestFontManager(sk_sp<SkFontMgr> font_manager);
 
   std::shared_ptr<minikin::FontCollection> GetMinikinFontCollectionForFamily(
       const std::string& family);
 
   const std::shared_ptr<minikin::FontFamily>& MatchFallbackFont(uint32_t ch);
 
+  // Do not provide alternative fonts that can match characters which are
+  // missing from the requested font family.
+  void DisableFontFallback();
+
  private:
-  std::deque<sk_sp<SkFontMgr>> skia_font_managers_;
+  sk_sp<SkFontMgr> default_font_manager_;
+  sk_sp<SkFontMgr> asset_font_manager_;
+  sk_sp<SkFontMgr> test_font_manager_;
   std::unordered_map<std::string, std::shared_ptr<minikin::FontCollection>>
       font_collections_cache_;
   std::unordered_map<SkFontID, std::shared_ptr<minikin::FontFamily>>
       fallback_fonts_;
   std::shared_ptr<minikin::FontFamily> null_family_;
+  bool enable_font_fallback_;
+
+  std::vector<sk_sp<SkFontMgr>> GetFontManagerOrder() const;
 
   const std::shared_ptr<minikin::FontFamily>& GetFontFamilyForTypeface(
       const sk_sp<SkTypeface>& typeface);

@@ -40,6 +40,7 @@ TEST_F(ParagraphTest, SimpleParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.color = SK_ColorBLACK;
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
@@ -72,6 +73,7 @@ TEST_F(ParagraphTest, SimpleRedParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.color = SK_ColorRED;
   builder.PushStyle(text_style);
 
@@ -137,7 +139,10 @@ TEST_F(ParagraphTest, RainbowParagraph) {
   text_style2.word_spacing = 30;
   text_style2.font_weight = txt::FontWeight::w600;
   text_style2.color = SK_ColorGREEN;
-  text_style2.decoration = txt::TextDecoration(0x1 | 0x2 | 0x4);
+  text_style2.font_family = "Roboto";
+  text_style2.decoration = TextDecoration::kUnderline |
+                           TextDecoration::kOverline |
+                           TextDecoration::kLineThrough;
   text_style2.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style2);
 
@@ -153,7 +158,9 @@ TEST_F(ParagraphTest, RainbowParagraph) {
   text_style4.font_size = 14;
   text_style4.color = SK_ColorBLUE;
   text_style4.font_family = "Roboto";
-  text_style4.decoration = txt::TextDecoration(0x1 | 0x2 | 0x4);
+  text_style4.decoration = TextDecoration::kUnderline |
+                           TextDecoration::kOverline |
+                           TextDecoration::kLineThrough;
   text_style4.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style4);
 
@@ -195,10 +202,8 @@ TEST_F(ParagraphTest, DefaultStyleParagraph) {
                           icu_text.getBuffer() + icu_text.length());
 
   txt::ParagraphStyle paragraph_style;
+  paragraph_style.font_family = "Roboto";
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
-
-  txt::TextStyle text_style;
-  text_style.color = SK_ColorRED;
 
   builder.AddText(u16_text);
 
@@ -284,12 +289,13 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.font_size = 26;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
   text_style.color = SK_ColorBLACK;
   text_style.height = 1;
-  text_style.decoration = txt::TextDecoration(0x1);
+  text_style.decoration = TextDecoration::kUnderline;
   text_style.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style);
 
@@ -380,12 +386,13 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(RightAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.font_size = 26;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
   text_style.color = SK_ColorBLACK;
   text_style.height = 1;
-  text_style.decoration = txt::TextDecoration(0x1);
+  text_style.decoration = TextDecoration::kUnderline;
   text_style.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style);
 
@@ -483,12 +490,13 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(CenterAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.font_size = 26;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
   text_style.color = SK_ColorBLACK;
   text_style.height = 1;
-  text_style.decoration = txt::TextDecoration(0x1);
+  text_style.decoration = TextDecoration::kUnderline;
   text_style.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style);
 
@@ -588,12 +596,13 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.font_size = 26;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 5;
   text_style.color = SK_ColorBLACK;
   text_style.height = 1;
-  text_style.decoration = txt::TextDecoration(0x1);
+  text_style.decoration = TextDecoration::kUnderline;
   text_style.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style);
 
@@ -654,12 +663,15 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.font_size = 26;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 5;
   text_style.color = SK_ColorBLACK;
   text_style.height = 2;
-  text_style.decoration = txt::TextDecoration(0x1 | 0x2 | 0x4);
+  text_style.decoration = TextDecoration::kUnderline |
+                          TextDecoration::kOverline |
+                          TextDecoration::kLineThrough;
   text_style.decoration_style = txt::TextDecorationStyle::kSolid;
   text_style.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style);
@@ -699,7 +711,8 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
 
   for (size_t i = 0; i < 6; ++i) {
     ASSERT_EQ(paragraph->records_[i].style().decoration,
-              txt::TextDecoration(0x1 | 0x2 | 0x4));
+              TextDecoration::kUnderline | TextDecoration::kOverline |
+                  TextDecoration::kLineThrough);
   }
 
   ASSERT_EQ(paragraph->records_[0].style().decoration_style,
@@ -728,6 +741,7 @@ TEST_F(ParagraphTest, ItalicsParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.color = SK_ColorRED;
   text_style.font_size = 10;
   builder.PushStyle(text_style);
@@ -775,7 +789,9 @@ TEST_F(ParagraphTest, ChineseParagraph) {
   text_style.font_size = 35;
   text_style.letter_spacing = 2;
   text_style.font_family = "Source Han Serif CN";
-  text_style.decoration = txt::TextDecoration(0x1 | 0x2 | 0x4);
+  text_style.decoration = TextDecoration::kUnderline |
+                          TextDecoration::kOverline |
+                          TextDecoration::kLineThrough;
   text_style.decoration_style = txt::TextDecorationStyle::kSolid;
   text_style.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style);
@@ -818,7 +834,9 @@ TEST_F(ParagraphTest, DISABLED_ArabicParagraph) {
   text_style.font_size = 35;
   text_style.letter_spacing = 2;
   text_style.font_family = "Katibeh";
-  text_style.decoration = txt::TextDecoration(0x1 | 0x2 | 0x4);
+  text_style.decoration = TextDecoration::kUnderline |
+                          TextDecoration::kOverline |
+                          TextDecoration::kLineThrough;
   text_style.decoration_style = txt::TextDecorationStyle::kSolid;
   text_style.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style);
@@ -862,6 +880,7 @@ TEST_F(ParagraphTest, GetGlyphPositionAtCoordinateParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.font_size = 50;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
@@ -929,6 +948,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -1054,6 +1074,7 @@ TEST_F(ParagraphTest, GetWordBoundaryParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.font_size = 52;
   text_style.letter_spacing = 1.19039;
   text_style.word_spacing = 5;
@@ -1159,6 +1180,7 @@ TEST_F(ParagraphTest, SpacingParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.font_size = 50;
   text_style.letter_spacing = 20;
   text_style.word_spacing = 0;
@@ -1320,6 +1342,7 @@ TEST_F(ParagraphTest, KernScaleParagraph) {
 
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(NewlineParagraph)) {
   txt::ParagraphStyle paragraph_style;
+  paragraph_style.font_family = "Roboto";
   paragraph_style.break_strategy = minikin::kBreakStrategy_HighQuality;
 
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
@@ -1520,6 +1543,7 @@ TEST_F(ParagraphTest, Ellipsize) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
   text_style.color = SK_ColorBLACK;
   builder.PushStyle(text_style);
   builder.AddText(u16_text);

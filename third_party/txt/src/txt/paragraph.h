@@ -28,7 +28,7 @@
 #include "paint_record.h"
 #include "paragraph_style.h"
 #include "styled_runs.h"
-#include "third_party/gtest/include/gtest/gtest_prod.h"
+#include "third_party/googletest/googletest/include/gtest/gtest_prod.h"  // nogncheck
 #include "third_party/skia/include/core/SkRect.h"
 #include "utils/WindowsUtils.h"
 
@@ -63,8 +63,8 @@ class Paragraph {
   };
 
   struct TextBox {
-    const SkRect rect;
-    const TextDirection direction;
+    SkRect rect;
+    TextDirection direction;
 
     TextBox(SkRect r, TextDirection d) : rect(r), direction(d) {}
   };
@@ -184,12 +184,13 @@ class Paragraph {
   std::shared_ptr<FontCollection> font_collection_;
 
   minikin::LineBreaker breaker_;
-  std::unique_ptr<icu::BreakIterator> grapheme_breaker_;
   mutable std::unique_ptr<icu::BreakIterator> word_breaker_;
 
   struct LineRange {
-    LineRange(size_t s, size_t e, bool h) : start(s), end(e), hard_break(h) {}
+    LineRange(size_t s, size_t e, size_t ewn, bool h)
+        : start(s), end(e), end_including_newline(ewn), hard_break(h) {}
     size_t start, end;
+    size_t end_including_newline;
     bool hard_break;
   };
   std::vector<LineRange> line_ranges_;
@@ -227,6 +228,8 @@ class Paragraph {
                   double x_advance,
                   size_t code_unit_index,
                   size_t code_unit_width);
+
+    void Shift(double delta);
   };
 
   struct GlyphLine {
@@ -297,13 +300,10 @@ class Paragraph {
 
   // Calculate the starting X offset of a line based on the line's width and
   // alignment.
-  double GetLineXOffset(size_t line);
+  double GetLineXOffset(size_t line_number, double line_total_advance);
 
   // Creates and draws the decorations onto the canvas.
-  void PaintDecorations(SkCanvas* canvas,
-                        double x,
-                        double y,
-                        size_t record_index);
+  void PaintDecorations(SkCanvas* canvas, const PaintRecord& record);
 
   FXL_DISALLOW_COPY_AND_ASSIGN(Paragraph);
 };

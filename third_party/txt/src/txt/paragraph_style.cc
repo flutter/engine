@@ -24,6 +24,8 @@ TextStyle ParagraphStyle::GetTextStyle() const {
   result.font_style = font_style;
   result.font_family = font_family;
   result.font_size = font_size;
+  result.locale = locale;
+  result.height = line_height;
   return result;
 }
 

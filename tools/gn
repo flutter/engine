@@ -131,6 +131,13 @@ def to_gn_args(args):
       if 'target_cpu' in gn_args:
         gn_args['target_cpu'] = cpu_for_target_arch(gn_args['target_cpu'])
 
+    if args.target_os is None:
+      if sys.platform.startswith(('cygwin', 'win')):
+        gn_args['dart_use_fallback_root_certificates'] = True
+
+
+    gn_args['dart_custom_version_for_pub'] = 'flutter'
+
     # Make sure host_cpu matches the bit width of target_cpu.
     target_is_32_bit = gn_args['target_cpu'] == 'arm' or gn_args['target_cpu'] == 'x86'
     if target_is_32_bit:
@@ -224,6 +231,10 @@ def main(argv):
   if sys.platform == 'darwin':
     # On the Mac, also generate Xcode projects for ease of editing.
     command.append('--ide=xcode')
+
+  if sys.platform.startswith('win'):
+    # On Windows, also generate Visual Studio project for ease of editing.
+    command.append('--ide=vs')
 
   gn_args = to_command_line(to_gn_args(args))
   out_dir = get_out_dir(args)
