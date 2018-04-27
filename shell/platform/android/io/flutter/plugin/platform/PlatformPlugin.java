@@ -15,6 +15,7 @@ import android.os.Build;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
+import android.view.Window;
 import android.util.Log;
 
 import io.flutter.plugin.common.ActivityLifecycleListener;
@@ -31,6 +32,7 @@ import org.json.JSONObject;
  */
 public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListener {
     private final Activity mActivity;
+    private String mCurrentTheme;
     public static final int DEFAULT_SYSTEM_UI = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
     private static final String kTextPlainFormat = "text/plain";
@@ -221,25 +223,41 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
 
     private void updateSystemUiOverlays() {
         mActivity.getWindow().getDecorView().setSystemUiVisibility(mEnabledOverlays);
+        if (mCurrentTheme != null) {
+            setSystemChromeSystemUIOverlayStyle(mCurrentTheme);
+        }
     }
 
     private void setSystemChromeSystemUIOverlayStyle(String style) {
         // You can change the navigation bar color (including translucent colors)
-        // in Android, but you can't change the color of the navigation buttons,
-        // so LIGHT vs DARK effectively isn't supported in Android.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+        // in Android, but you can't change the color of the navigation buttons until Android O.
+        // LIGHT vs DARK effectively isn't supported until Android O.
+
+        // Build.VERSION_CODES.O
+        if (Build.VERSION.SDK_INT < 26) {
             return;
         }
-        Log.i("PlatformPlugin", style);
+        Window window = mActivity.getWindow();
+        View view = window.getDecorView();
+        int flags = view.getSystemUiVisibility();
         switch (style) {
             case "SystemUiOverlayStyle.light":
-                mActivity.getWindow().setNavigationBarColor(0xff000000);
+                window.setNavigationBarColor(0xff000000);
+                if ((flags & 16) == 16) {
+                    flags ^= 16; //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                }
+                view.setSystemUiVisibility(flags);
                 break;
             case "SystemUiOverlayStyle.dark":
-                mActivity.getWindow().setNavigationBarColor(0xffffffff);
-                mActivity.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+                window.setNavigationBarColor(0xffffffff);
+                flags |= 16;
+                if ((flags & 16) == 0) {
+                    flags |= 16; //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                }
+                view.setSystemUiVisibility(flags);
                 break;
         }
+        mCurrentTheme = style;
     }
 
     private void popSystemNavigator() {
