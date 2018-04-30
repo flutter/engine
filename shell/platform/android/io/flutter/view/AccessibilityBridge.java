@@ -661,18 +661,20 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 mOwner.announceForAccessibility((String) data.get("message"));
                 break;
             case "longPress": {
-                if (mA11yFocusedObject == null) {
+                Integer nodeId = (Integer) annotatedEvent.get("nodeId");
+                if (nodeId == null) {
                     return;
                 }
-                AccessibilityEvent e = obtainAccessibilityEvent(mA11yFocusedObject.id, AccessibilityEvent.TYPE_VIEW_LONG_CLICKED);
+                AccessibilityEvent e = obtainAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_LONG_CLICKED);
                 mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
                 break;
             }
             case "tap": {
-                if (mA11yFocusedObject == null) {
+                Integer nodeId = (Integer) annotatedEvent.get("nodeId");
+                if (nodeId == null) {
                     return;
                 }
-                AccessibilityEvent e = obtainAccessibilityEvent(mA11yFocusedObject.id, AccessibilityEvent.TYPE_VIEW_CLICKED);
+                AccessibilityEvent e = obtainAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_CLICKED);
                 mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
                 break;
             }
