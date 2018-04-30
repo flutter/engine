@@ -2271,9 +2271,8 @@ class Gradient extends Shader {
   ]) : assert(_offsetIsValid(center)),
        assert(colors != null),
        assert(tileMode != null),
+       assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
-    if (matrix4 != null)
-      assert(_matrix4IsValid(matrix4));
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : new Float32List.fromList(colorStops);
@@ -2322,9 +2321,8 @@ class Gradient extends Shader {
        assert(startAngle != null),
        assert(endAngle != null),
        assert(startAngle < endAngle),
+       assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
-    if (matrix4 != null)
-      assert(_matrix4IsValid(matrix4));
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : new Float32List.fromList(colorStops);
