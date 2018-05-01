@@ -17,6 +17,23 @@
 
 namespace flutter {
 
+static void UpdateNativeThreadLabelNames(const std::string& label,
+                                         const blink::TaskRunners& runners) {
+  auto set_thread_name = [](fxl::RefPtr<fxl::TaskRunner> runner,
+                            std::string prefix, std::string suffix) {
+    if (!runner) {
+      return;
+    }
+    fml::TaskRunner::RunNowOrPostTask(runner, [name = prefix + suffix]() {
+      zx::thread::self().set_property(ZX_PROP_NAME, name.c_str(), name.size());
+    });
+  };
+  set_thread_name(runners.GetPlatformTaskRunner(), label, ".platform");
+  set_thread_name(runners.GetUITaskRunner(), label, ".ui");
+  set_thread_name(runners.GetGPUTaskRunner(), label, ".gpu");
+  set_thread_name(runners.GetIOTaskRunner(), label, ".io");
+}
+
 Engine::Engine(Delegate& delegate,
                std::string thread_label,
                component::ApplicationContext& application_context,
@@ -45,12 +62,13 @@ Engine::Engine(Delegate& delegate,
   }
 
   // Setup the session connection.
-  ui::ScenicPtr scenic;
+  fidl::InterfaceHandle<ui::Scenic> scenic;
   view_manager->GetScenic(scenic.NewRequest());
 
   // Grab the parent environent services. The platform view may want to access
   // some of these services.
-  component::ServiceProviderPtr parent_environment_service_provider;
+  fidl::InterfaceHandle<component::ServiceProvider>
+      parent_environment_service_provider;
   application_context.environment()->GetServices(
       parent_environment_service_provider.NewRequest());
 
@@ -62,7 +80,7 @@ Engine::Engine(Delegate& delegate,
 
   // Grab the accessibilty context writer that can understand the semtics tree
   // on the platform view.
-  modular::ContextWriterPtr accessibility_context_writer;
+  fidl::InterfaceHandle<modular::ContextWriter> accessibility_context_writer;
   application_context.ConnectToEnvironmentService(
       accessibility_context_writer.NewRequest());
 
@@ -70,7 +88,7 @@ Engine::Engine(Delegate& delegate,
   // rasterizer.
   std::unique_ptr<flow::CompositorContext> compositor_context =
       std::make_unique<flutter::CompositorContext>(
-          scenic,                              // scenic
+          std::move(scenic),                   // scenic
           thread_label_,                       // debug label
           std::move(import_token),             // import token
           on_session_metrics_change_callback,  // session metrics did change
@@ -82,9 +100,8 @@ Engine::Engine(Delegate& delegate,
       fxl::MakeCopyable([debug_label = thread_label_,  //
                          parent_environment_service_provider =
                              std::move(parent_environment_service_provider),  //
-                         view_manager = std::ref(view_manager),               //
+                         view_manager = view_manager.Unbind(),                //
                          view_owner = std::move(view_owner),                  //
-                         scenic = std::move(scenic),                          //
                          accessibility_context_writer =
                              std::move(accessibility_context_writer),  //
                          export_token = std::move(export_token)        //
@@ -95,9 +112,8 @@ Engine::Engine(Delegate& delegate,
             debug_label,                                     // debug label
             shell.GetTaskRunners(),                          // task runners
             std::move(parent_environment_service_provider),  // services
-            view_manager,                                    // view manager
+            std::move(view_manager),                         // view manager
             std::move(view_owner),                           // view owner
-            std::move(scenic),                               // scenic
             std::move(export_token),                         // export token
             std::move(
                 accessibility_context_writer)  // accessibility context writer
@@ -123,6 +139,10 @@ Engine::Engine(Delegate& delegate,
       host_threads_[1].TaskRunner(),                  // ui
       host_threads_[2].TaskRunner()                   // io
   );
+
+  UpdateNativeThreadLabelNames(thread_label_, task_runners);
+
+  settings_.verbose_logging = true;
 
   settings_.root_isolate_create_callback =
       std::bind(&Engine::OnMainIsolateStart, this);
@@ -156,13 +176,14 @@ Engine::Engine(Delegate& delegate,
     PlatformView* platform_view =
         static_cast<PlatformView*>(shell_->GetPlatformView().get());
     auto& view = platform_view->GetMozartView();
+    fidl::InterfaceHandle<views_v1::ViewContainer> view_container;
+    view->GetContainer(view_container.NewRequest());
     component::ApplicationEnvironmentPtr application_environment;
     application_context.ConnectToEnvironmentService(
         application_environment.NewRequest());
-
     isolate_configurator_ = std::make_unique<IsolateConfigurator>(
         fdio_ns,                              //
-        view,                                 //
+        std::move(view_container),            //
         std::move(application_environment),   //
         std::move(outgoing_services_request)  //
     );
@@ -184,8 +205,6 @@ Engine::Engine(Delegate& delegate,
           FXL_LOG(ERROR) << "Could not (re)launch the engine in configuration";
         }
       }));
-
-  UpdateNativeThreadLabelNames();
 }
 
 Engine::~Engine() {
@@ -193,20 +212,6 @@ Engine::~Engine() {
     thread.TaskRunner()->PostTask(
         []() { fsl::MessageLoop::GetCurrent()->PostQuitTask(); });
   }
-}
-
-void Engine::UpdateNativeThreadLabelNames() const {
-  auto set_thread_name = [](fxl::RefPtr<fxl::TaskRunner> runner,
-                            std::string prefix, std::string suffix) {
-    runner->PostTask([name = prefix + suffix]() {
-      zx::thread::self().set_property(ZX_PROP_NAME, name.c_str(), name.size());
-    });
-  };
-  auto runners = shell_->GetTaskRunners();
-  set_thread_name(runners.GetPlatformTaskRunner(), thread_label_, ".platform");
-  set_thread_name(runners.GetUITaskRunner(), thread_label_, ".ui");
-  set_thread_name(runners.GetGPUTaskRunner(), thread_label_, ".gpu");
-  set_thread_name(runners.GetIOTaskRunner(), thread_label_, ".io");
 }
 
 std::pair<bool, uint32_t> Engine::GetEngineReturnCode() const {
@@ -233,9 +238,13 @@ void Engine::OnMainIsolateStart() {
     FXL_LOG(ERROR) << "Could not configure some native embedder bindings for a "
                       "new root isolate.";
   }
+  FXL_DLOG(INFO) << "Main isolate for engine '" << thread_label_
+                 << "' was started.";
 }
 
 void Engine::OnMainIsolateShutdown() {
+  FXL_DLOG(INFO) << "Main isolate for engine '" << thread_label_
+                 << "' shutting down.";
   Terminate();
 }
 

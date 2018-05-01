@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '058f2e6ed2921399879d987e3276f96e8c0cd70b',
+  'skia_revision': '0ce19fa0b19ddef781d01c03a329a41fdb934a8e',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': 'fe606f890b0a311da802c78b0af414a3c2087a79',
+  'dart_revision': '0cc70c4a7c448078dd2aea8e45c56bc50fbbb31c',
 
   'dart_args_tag': '1.4.1',
   'dart_async_tag': '2.0.6',
@@ -47,7 +47,7 @@ vars = {
   'dart_crypto_tag': '2.0.2+1',
   'dart_csslib_tag': '0.14.1',
   'dart_dart2js_info_tag': '0.5.6+2',
-  'dart_dart_style_tag': '1.0.10',
+  'dart_dart_style_tag': '1.0.11',
   'dart_dartdoc_tag': 'v0.18.1',
   'dart_fixnum_tag': '0.10.5',
   'dart_glob_tag': '1.1.5',
@@ -59,7 +59,7 @@ vars = {
   'dart_http_throttle_tag': '1.0.1',
   'dart_intl_tag': '0.15.2',
   'dart_json_rpc_2_tag': '2.0.6',
-  'dart_linter_tag': '0.1.47',
+  'dart_linter_tag': '0.1.49',
   'dart_logging_tag': '0.11.3+1',
   'dart_markdown_tag': '1.1.1',
   'dart_matcher_tag': '0.12.1+4',

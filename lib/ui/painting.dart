@@ -39,6 +39,12 @@ bool _offsetIsValid(Offset offset) {
   return true;
 }
 
+bool _matrix4IsValid(Float64List matrix4) {
+  assert(matrix4 != null, 'Matrix4 argument was null.');
+  assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
+  return true;
+}
+
 bool _radiusIsValid(Radius radius) {
   assert(radius != null, 'Radius argument was null.');
   assert(!radius.x.isNaN && !radius.y.isNaN, 'Radius argument contained a NaN value.');
@@ -264,6 +270,41 @@ class Color {
     );
   }
 
+  /// Combine the foreground color as a transparent color over top
+  /// of a background color, and return the resulting combined color.
+  ///
+  /// This uses standard alpha blending ("SRC over DST") rules to produce a
+  /// blended color from two colors. This can be used as a performance
+  /// enhancement when trying to avoid needless alpha blending compositing
+  /// operations for two things that are solid colors with the same shape, but
+  /// overlay each other: instead, just paint one with the combined color.
+  static Color alphaBlend(Color foreground, Color background) {
+    final int alpha = foreground.alpha;
+    if (alpha == 0x00) { // Foreground completely transparent.
+      return background;
+    }
+    final int invAlpha = 0xff - alpha;
+    int backAlpha = background.alpha;
+    if (backAlpha == 0xff) { // Opaque background case
+      return new Color.fromARGB(
+        0xff,
+        (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
+        (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
+        (alpha * foreground.blue + invAlpha * background.blue) ~/ 0xff,
+      );
+    } else { // General case
+      backAlpha = (backAlpha * invAlpha) ~/ 0xff;
+      final int outAlpha = alpha + backAlpha;
+      assert(outAlpha != 0x00);
+      return new Color.fromARGB(
+        outAlpha,
+        (foreground.red * alpha + background.red * backAlpha) ~/ outAlpha,
+        (foreground.green * alpha + background.green * backAlpha) ~/ outAlpha,
+        (foreground.blue * alpha + background.blue * backAlpha) ~/ outAlpha,
+      );
+    }
+  }
+
   @override
   bool operator ==(dynamic other) {
     if (identical(this, other))
@@ -310,7 +351,7 @@ class Color {
 /// The horizontal and vertical bars in these images show the red, green, and
 /// blue channels with varying opacity levels, then all three color channels
 /// together with those same varying opacity levels, then all three color
-/// chanels set to zero with those varying opacity levels, then two bars showing
+/// channels set to zero with those varying opacity levels, then two bars showing
 /// a red/green/blue repeating gradient, the first with full opacity and the
 /// second with partial opacity, and finally a bar with the three color channels
 /// set to zero but the opacity varying in a repeating gradient.
@@ -507,7 +548,7 @@ enum BlendMode {
   ///
   /// See also:
   ///
-  ///  * [screen], which does a similar computation but inversed.
+  ///  * [screen], which does a similar computation but inverted.
   ///  * [overlay], which combines [modulate] and [screen] to favor the
   ///    destination image.
   ///  * [hardLight], which combines [modulate] and [screen] to favor the
@@ -519,13 +560,13 @@ enum BlendMode {
   /// Multiply the inverse of the components of the source and destination
   /// images, and inverse the result.
   ///
-  /// Inversing the components means that a fully saturated channel (opaque
+  /// Inverting the components means that a fully saturated channel (opaque
   /// white) is treated as the value 0.0, and values normally treated as 0.0
   /// (black, transparent) are treated as 1.0.
   ///
   /// This is essentially the same as [modulate] blend mode, but with the values
-  /// of the colors inversed before the multiplication and the result being
-  /// inversed back before rendering.
+  /// of the colors inverted before the multiplication and the result being
+  /// inverted back before rendering.
   ///
   /// This can only result in the same or lighter colors (multiplying by black,
   /// 1.0, results in no change; multiplying by white, 0.0, results in white).
@@ -538,7 +579,7 @@ enum BlendMode {
   ///
   /// See also:
   ///
-  ///  * [modulate], which does a similar computation but without inversing the
+  ///  * [modulate], which does a similar computation but without inverting the
   ///    values.
   ///  * [overlay], which combines [modulate] and [screen] to favor the
   ///    destination image.
@@ -552,9 +593,9 @@ enum BlendMode {
   /// Specifically, if the destination value is smaller, this multiplies it with
   /// the source value, whereas is the source value is smaller, it multiplies
   /// the inverse of the source value with the inverse of the destination value,
-  /// then inverses the result.
+  /// then inverts the result.
   ///
-  /// Inversing the components means that a fully saturated channel (opaque
+  /// Inverting the components means that a fully saturated channel (opaque
   /// white) is treated as the value 0.0, and values normally treated as 0.0
   /// (black, transparent) are treated as 1.0.
   ///
@@ -588,7 +629,7 @@ enum BlendMode {
 
   /// Divide the destination by the inverse of the source.
   ///
-  /// Inversing the components means that a fully saturated channel (opaque
+  /// Inverting the components means that a fully saturated channel (opaque
   /// white) is treated as the value 0.0, and values normally treated as 0.0
   /// (black, transparent) are treated as 1.0.
   ///
@@ -597,7 +638,7 @@ enum BlendMode {
 
   /// Divide the inverse of the destination by the the source, and inverse the result.
   ///
-  /// Inversing the components means that a fully saturated channel (opaque
+  /// Inverting the components means that a fully saturated channel (opaque
   /// white) is treated as the value 0.0, and values normally treated as 0.0
   /// (black, transparent) are treated as 1.0.
   ///
@@ -610,9 +651,9 @@ enum BlendMode {
   /// Specifically, if the source value is smaller, this multiplies it with the
   /// destination value, whereas is the destination value is smaller, it
   /// multiplies the inverse of the destination value with the inverse of the
-  /// source value, then inverses the result.
+  /// source value, then inverts the result.
   ///
-  /// Inversing the components means that a fully saturated channel (opaque
+  /// Inverting the components means that a fully saturated channel (opaque
   /// white) is treated as the value 0.0, and values normally treated as 0.0
   /// (black, transparent) are treated as 1.0.
   ///
@@ -629,7 +670,7 @@ enum BlendMode {
   /// Use [colorDodge] for source values below 0.5 and [colorBurn] for source
   /// values above 0.5.
   ///
-  /// This results in a similal but softer effect than [overlay].
+  /// This results in a similar but softer effect than [overlay].
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_softLight.png)
   ///
@@ -640,7 +681,7 @@ enum BlendMode {
 
   /// Subtract the smaller value from the bigger value for each channel.
   ///
-  /// Compositing black has no effect; compositing white inverses the colors of
+  /// Compositing black has no effect; compositing white inverts the colors of
   /// the other image.
   ///
   /// The opacity of the output image is computed in the same way as for
@@ -654,7 +695,7 @@ enum BlendMode {
   /// Subtract double the product of the two images from the sum of the two
   /// images.
   ///
-  /// Compositing black has no effect; compositing white inverses the colors of
+  /// Compositing black has no effect; compositing white inverts the colors of
   /// the other image.
   ///
   /// The opacity of the output image is computed in the same way as for
@@ -1390,6 +1431,62 @@ enum PathFillType {
   evenOdd,
 }
 
+/// Strategies for combining paths.
+/// 
+/// See also:
+/// 
+/// * [Path.combine], which uses this enum to decide how to combine two paths.
+// Must be kept in sync with SkPathOp
+enum PathOperation {
+  /// Subtract the second path from the first path.
+  ///
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be a crescent portion of the 
+  /// first circle that was not overlapped by the second circle.
+  ///
+  /// See also:
+  ///
+  ///  * [reverseDifference], which is the same but subtracting the first path
+  ///    from the second.
+  difference,
+  /// Create a new path that is the intersection of the two paths, leaving the
+  /// overlapping pieces of the path.
+  /// 
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be only the overlapping portion
+  /// of the two circles.
+  /// 
+  /// See also:
+  ///  * [xor], which is the inverse of this operation
+  intersect,
+  /// Create a new path that is the union (inclusive-or) of the two paths.
+  /// 
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be a figure-eight like shape 
+  /// matching the outer boundaries of both circles.
+  union,
+  /// Create a new path that is the exclusive-or of the two paths, leaving 
+  /// everything but the overlapping pieces of the path.
+  /// 
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the figure-eight like shape less the overlapping parts
+  /// 
+  /// See also:
+  ///  * [intersect], which is the inverse of this operation
+  xor,
+  /// Subtract the first path from the second path.
+  ///
+  /// For example, if the two paths are overlapping circles of equal diameter
+  /// but differing centers, the result would be a crescent portion of the 
+  /// second circle that was not overlapped by the first circle.
+  ///
+  /// See also:
+  ///
+  ///  * [difference], which is the same but subtracting the second path
+  ///    from the first.
+  reverseDifference,
+}
+
 /// A complex, one-dimensional subset of a plane.
 ///
 /// A path consists of a number of subpaths, and a _current point_.
@@ -1411,6 +1508,15 @@ class Path extends NativeFieldWrapperClass2 {
   /// Create a new empty [Path] object.
   Path() { _constructor(); }
   void _constructor() native 'Path_constructor';
+
+  /// Creates a copy of another [Path].
+  /// 
+  /// This copy is fast and does not require additional memory unless either 
+  /// the `source` path or the path returned by this constructor are modified.
+  factory Path.from(Path source) {
+    return source._clone();
+  }
+  Path _clone() native 'Path_clone';
 
   /// Determines how the interior of this path is calculated.
   ///
@@ -1451,7 +1557,7 @@ class Path extends NativeFieldWrapperClass2 {
   /// (x2,y2).
   void cubicTo(double x1, double y1, double x2, double y2, double x3, double y3) native 'Path_cubicTo';
 
-  /// Adds a cubcic bezier segment that curves from the current point
+  /// Adds a cubic bezier segment that curves from the current point
   /// to the point at the offset (x3,y3) from the current point, using
   /// the control points at the offsets (x1,y1) and (x2,y2) from the
   /// current point.
@@ -1609,23 +1715,43 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addRRect(Float32List rrect) native 'Path_addRRect';
 
-  /// Adds a new subpath that consists of the given path offset by the given
-  /// offset.
-  void addPath(Path path, Offset offset) {
+  /// Adds a new subpath that consists of the given `path` offset by the given
+  /// `offset`.
+  /// 
+  /// If `matrix4` is specified, the path will be transformed by this matrix
+  /// after the matrix is translated by the given offset. The matrix is a 4x4
+  /// matrix stored in column major order.
+  void addPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
-    _addPath(path, offset.dx, offset.dy);
+    if (matrix4 != null) {
+      assert(_matrix4IsValid(matrix4));
+      _addPathWithMatrix(path, offset.dx, offset.dy, matrix4);
+    } else {
+      _addPath(path, offset.dx, offset.dy);
+    }
   }
   void _addPath(Path path, double dx, double dy) native 'Path_addPath';
-
+  void _addPathWithMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_addPathWithMatrix';
+  
   /// Adds the given path to this path by extending the current segment of this
   /// path with the the first segment of the given path.
-  void extendWithPath(Path path, Offset offset) {
+  /// 
+  /// If `matrix4` is specified, the path will be transformed by this matrix
+  /// after the matrix is translated by the given `offset`.  The matrix is a 4x4
+  /// matrix stored in column major order.
+  void extendWithPath(Path path, Offset offset, {Float64List matrix4}) {
     assert(path != null); // path is checked on the engine side
     assert(_offsetIsValid(offset));
-    _extendWithPath(path, offset.dx, offset.dy);
+    if (matrix4 != null) {
+      assert(_matrix4IsValid(matrix4));
+      _extendWithPathAndMatrix(path, offset.dx, offset.dy, matrix4);
+    } else {
+      _extendWithPath(path, offset.dx, offset.dy);
+    }
   }
   void _extendWithPath(Path path, double dx, double dy) native 'Path_extendWithPath';
+  void _extendWithPathAndMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_extendWithPathAndMatrix';
 
   /// Closes the last subpath, as if a straight line had been drawn
   /// from the current point to the first point of the subpath.
@@ -1660,12 +1786,207 @@ class Path extends NativeFieldWrapperClass2 {
   /// Returns a copy of the path with all the segments of every
   /// subpath transformed by the given matrix.
   Path transform(Float64List matrix4) {
-    assert(matrix4 != null);
-    if (matrix4.length != 16)
-      throw new ArgumentError('"matrix4" must have 16 entries.');
+    assert(_matrix4IsValid(matrix4));
     return _transform(matrix4);
   }
   Path _transform(Float64List matrix4) native 'Path_transform';
+
+  /// Computes the bounding rectangle for this path.
+  Rect getBounds() {
+    final Float32List rect = _getBounds();
+    return new Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
+  }
+  Float32List _getBounds() native 'Path_getBounds';
+
+  /// Combines the two paths according to the manner specified by the given 
+  /// `operation`.
+  /// 
+  /// The resulting path will be constructed from non-overlapping contours. The
+  /// curve order is reduced where possible so that cubics may be turned into
+  /// quadratics, and quadratics maybe turned into lines.
+  static Path combine(PathOperation operation, Path path1, Path path2) {
+    assert(path1 != null);
+    assert(path2 != null);
+    final Path path = new Path();
+    if (path._op(path1, path2, operation.index)) {
+      return path;
+    } 
+    throw new StateError('Path.combine() failed.  This may be due an invalid path; in particular, check for NaN values.');
+  }
+  bool _op(Path path1, Path path2, int operation) native 'Path_op';
+
+  /// Creates a [PathMetrics] object for this path.
+  /// 
+  /// If `forceClosed` is set to true, the contours of the path will be measured
+  /// as if they had been closed, even if they were not explicitly closed.
+  PathMetrics computeMetrics({bool forceClosed: false}) {
+    return new PathMetrics._(this, forceClosed);
+  }
+}
+
+/// The geometric description of a tangent: the angle at a point.
+/// 
+/// See also:
+///  * [PathMetric.getTangentForOffset], which returns the tangent of an offset along a path.
+class Tangent {
+  /// Creates a [Tangent] with the given values.
+  /// 
+  /// The arguments must not be null.
+  const Tangent(this.position, this.vector) 
+    : assert(position != null), 
+      assert(vector != null);
+
+  /// Creates a [Tangent] based on the angle rather than the vector.
+  /// 
+  /// The [vector] is computed to be the unit vector at the given angle, interpreted
+  /// as clockwise radians from the x axis.
+  factory Tangent.fromAngle(Offset position, double angle) {
+    return new Tangent(position, new Offset(math.cos(angle), math.sin(angle)));
+  }
+
+  /// Position of the tangent.
+  /// 
+  /// When used with [PathMetric.getTangentForOffset], this represents the precise
+  /// position that the given offset along the path corresponds to.
+  final Offset position;
+
+  /// The vector of the curve at [position].
+  /// 
+  /// When used with [PathMetric.getTangentForOffset], this is the vector of the
+  /// curve that is at the given offset along the path (i.e. the direction of the
+  /// curve at [position]).
+  final Offset vector;
+
+  /// The direction of the curve at [position].
+  /// 
+  /// When used with [PathMetric.getTangentForOffset], this is the angle of the
+  /// curve that is the given offset along the path (i.e. the direction of the
+  /// curve at [position]).
+  /// 
+  /// This value is in radians, with 0.0 meaning pointing along the x axis in 
+  /// the positive x-axis direction, positive numbers pointing downward toward
+  /// the negative y-axis, i.e. in a clockwise direction, and negative numbers
+  /// pointing upward toward the positive y-axis, i.e. in a counter-clockwise 
+  /// direction.
+  // flip the sign to be consistent with [Path.arcTo]'s `sweepAngle`
+  double get angle => -math.atan2(vector.dy, vector.dx);
+}
+
+/// An iterable collection of [PathMetric] objects describing a [Path].
+/// 
+/// A [PathMetrics] object is created by using the [Path.computeMetrics] method,
+/// and represents the path as it stood at the time of the call. Subsequent 
+/// modifications of the path do not affect the [PathMetrics] object.
+/// 
+/// Each path metric corresponds to a segment, or contour, of a path.
+/// 
+/// For example, a path consisting of a [Path.lineTo], a [Path.moveTo], and 
+/// another [Path.lineTo] will contain two contours and thus be represented by 
+/// two [PathMetric] objects.
+///
+/// When iterating across a [PathMetrics]' contours, the [PathMetric] objects are only
+/// valid until the next one is obtained.
+class PathMetrics extends collection.IterableBase<PathMetric> {
+  PathMetrics._(Path path, bool forceClosed) :
+    _iterator = new PathMetricIterator._(new PathMetric._(path, forceClosed));
+    
+  final Iterator<PathMetric> _iterator;
+
+  @override
+  Iterator<PathMetric> get iterator => _iterator;
+}
+
+/// Tracks iteration from one segment of a path to the next for measurement.
+class PathMetricIterator implements Iterator<PathMetric> {
+  PathMetricIterator._(this._pathMetric);
+
+  PathMetric _pathMetric;
+  bool _firstTime = true;
+
+  @override
+  PathMetric get current => _firstTime ? null : _pathMetric;
+
+  @override
+  bool moveNext() {
+    // PathMetric isn't a normal iterable - it's already initialized to its
+    // first Path.  Should only call _moveNext when done with the first one. 
+    if (_firstTime == true) {
+      _firstTime = false;
+      return true;
+    } else if (_pathMetric?._moveNext() == true) {
+      return true;
+    } 
+    _pathMetric = null;
+    return false;
+  }
+}
+
+/// Utilities for measuring a [Path] and extracting subpaths.
+/// 
+/// Iterate over the object returned by [Path.computeMetrics] to obtain 
+/// [PathMetric] objects.
+///
+/// Once created, metrics will only be valid while the iterator is at the given
+/// contour. When the next contour's [PathMetric] is obtained, this object 
+/// becomes invalid.
+class PathMetric extends NativeFieldWrapperClass2 {
+  /// Create a new empty [Path] object.
+  PathMetric._(Path path, bool forceClosed) { _constructor(path, forceClosed); }
+  void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
+
+  /// Return the total length of the current contour.
+  double get length native 'PathMeasure_getLength';
+
+  /// Computes the position of hte current contour at the given offset, and the
+  /// angle of the path at that point.
+  /// 
+  /// For example, calling this method with a distance of 1.41 for a line from 
+  /// 0.0,0.0 to 2.0,2.0 would give a point 1.0,1.0 and the angle 45 degrees
+  /// (but in radians).
+  /// 
+  /// Returns null if the contour has zero [length].
+  /// 
+  /// The distance is clamped to the [length] of the current contour.
+  Tangent getTangentForOffset(double distance) {
+    final Float32List posTan = _getPosTan(distance);
+    // first entry == 0 indicates that Skia returned false
+    if (posTan[0] == 0.0) {
+      return null;
+    } else {
+      return new Tangent(
+        new Offset(posTan[1], posTan[2]), 
+        new Offset(posTan[3], posTan[4]) 
+      );
+    }
+  }
+  Float32List _getPosTan(double distance) native 'PathMeasure_getPosTan';
+
+  /// Given a start and stop distance, return the intervening segment(s).
+  /// 
+  /// `start` and `end` are pinned to legal values (0..[length])
+  /// Returns null if the segment is 0 length or `start` > `stop`.
+  /// Begin the segment with a moveTo if `startWithMoveTo` is true.
+  Path extractPath(double start, double end, {bool startWithMoveTo: true}) native 'PathMeasure_getSegment';
+
+  /// Whether the contour is closed.
+  /// 
+  /// Returns true if the contour ends with a call to [Path.close] (which may
+  /// have been implied when using [Path.addRect]) or if `forceClosed` was 
+  /// specified as true in the call to [Path.computeMetrics].  Returns false
+  /// otherwise.
+  bool get isClosed native 'PathMeasure_isClosed';
+
+  // Move to the next contour in the path.
+  //
+  // A path can have a next contour if [Path.moveTo] was called after drawing began.
+  // Return true if one exists, or false.
+  // 
+  // This is not exactly congruent with a regular [Iterator.moveNext].
+  // Typically, [Iterator.moveNext] should be called before accessing the
+  // [Iterator.current]. In this case, the [PathMetric] is valid before 
+  // calling `_moveNext` - `_moveNext` should be called after the first
+  // iteration is done instead of before.
+  bool _moveNext() native 'PathMeasure_nextContour';
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
@@ -1910,8 +2231,8 @@ Float32List _encodeTwoPoints(Offset pointA, Offset pointB) {
 
 /// A shader (as used by [Paint.shader]) that renders a color gradient.
 ///
-/// There are two useful types of gradients, created by [new Gradient.linear]
-/// and [new Gradient.radial].
+/// There are several types of gradients, represented by the various constructors
+/// on this class.
 class Gradient extends Shader {
 
   void _constructor() native 'Gradient_constructor';
@@ -1985,9 +2306,8 @@ class Gradient extends Shader {
   ]) : assert(_offsetIsValid(center)),
        assert(colors != null),
        assert(tileMode != null),
+       assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
-    if (matrix4 != null && matrix4.length != 16)
-      throw new ArgumentError('"matrix4" must have 16 entries.');
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : new Float32List.fromList(colorStops);
@@ -1995,6 +2315,56 @@ class Gradient extends Shader {
     _initRadial(center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
   }
   void _initRadial(double centerX, double centerY, double radius, Int32List colors, Float32List colorStops, int tileMode, Float64List matrix4) native 'Gradient_initRadial';
+
+  /// Creates a sweep gradient centered at `center` that starts at `startAngle`
+  /// and ends at `endAngle`.
+  ///
+  /// `startAngle` and `endAngle` should be provided in radians, with zero
+  /// radians being the horizontal line to the right of the `center` and with
+  /// positive angles going clockwise around the `center`.
+  ///
+  /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
+  /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
+  /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
+  /// `color` must therefore only have two entries).
+  ///
+  /// The behavior before `startAngle` and after `endAngle` is described by the
+  /// `tileMode` argument. For details, see the [TileMode] enum.
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_sweep.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_sweep.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_sweep.png)
+  ///
+  /// If `center`, `colors`, `tileMode`, `startAngle`, or `endAngle` are null,
+  /// or if `colors` or `colorStops` contain null values, this constructor will
+  /// throw a [NoSuchMethodError].
+  ///
+  /// If `matrix4` is provided, the gradient fill will be transformed by the 
+  /// specified 4x4 matrix relative to the local coordinate system. `matrix4` must
+  /// be a column-major matrix packed into a list of 16 values.
+  Gradient.sweep(
+    Offset center,
+    List<Color> colors, [
+    List<double> colorStops,
+    TileMode tileMode = TileMode.clamp,
+    double startAngle = 0.0,
+    double endAngle = math.pi * 2,
+    Float64List matrix4,
+  ]) : assert(_offsetIsValid(center)),
+       assert(colors != null),
+       assert(tileMode != null),
+       assert(startAngle != null),
+       assert(endAngle != null),
+       assert(startAngle < endAngle),
+       assert(matrix4 == null || _matrix4IsValid(matrix4)),
+       super._() {
+    _validateColorStops(colors, colorStops);
+    final Int32List colorsBuffer = _encodeColorList(colors);
+    final Float32List colorStopsBuffer = colorStops == null ? null : new Float32List.fromList(colorStops);
+    _constructor();
+    _initSweep(center.dx, center.dy, colorsBuffer, colorStopsBuffer, tileMode.index, startAngle, endAngle, matrix4);
+  }
+  void _initSweep(double centerX, double centerY, Int32List colors, Float32List colorStops, int tileMode, double startAngle, double endAngle, Float64List matrix) native 'Gradient_initSweep';
 
   static void _validateColorStops(List<Color> colors, List<double> colorStops) {
     if (colorStops == null) {
@@ -2217,7 +2587,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// ## Using saveLayer with clips
   ///
-  /// When a rectanglular clip operation (from [clipRect]) is not axis-aligned
+  /// When a rectangular clip operation (from [clipRect]) is not axis-aligned
   /// with the raster buffer, or when the clip operation is not rectalinear (e.g.
   /// because it is a rounded rectangle clip created by [clipRRect] or an
   /// arbitrarily complicated path clip created by [clipPath]), the edge of the
@@ -2941,8 +3311,8 @@ typedef String _Callbacker<T>(_Callback<T> callback);
 /// Converts a method that receives a value-returning callback to a method that
 /// returns a Future.
 ///
-/// Return a [String] to cause an [Exception] to be sychnorously thrown with that
-/// string as a message.
+/// Return a [String] to cause an [Exception] to be synchronously thrown with
+/// that string as a message.
 ///
 /// If the callback is called with null, the future completes with an error.
 ///
