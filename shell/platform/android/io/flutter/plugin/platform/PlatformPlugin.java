@@ -254,13 +254,13 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
             if (!message.isNull("navigationIconTheme")) {
                 String navigationIconTheme = message.getString("navigationIconTheme");
                 switch (navigationIconTheme) {
-                    case "SystemChromeTheme.light":
+                    case "SystemChromeTheme.dark":
                         //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
                         if ((flags & 0x10) == 0) {
                             flags |= 0x10;
                         }
                         break;
-                    case "SystemChromeTheme.dark":
+                    case "SystemChromeTheme.light":
                         //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
                         if ((flags & 0x10) == 0x10) {
                             flags ^= 0x10;
@@ -271,13 +271,13 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
             if (!message.isNull("statusBarTheme")) {
                 String statusBarTheme = message.getString("statusBarTheme");
                 switch (statusBarTheme) {
-                    case "SystemChromeTheme.light":
+                    case "SystemChromeTheme.dark":
                         // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
                         if ((flags & 0x2000) == 0) {
                             flags |= 0x2000;
                         }
                         break;
-                    case "SystemChromeTheme.dark":
+                    case "SystemChromeTheme.light":
                         // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
                         if ((flags & 0x2000) == 0x2000) {
                             flags ^= 0x2000;
