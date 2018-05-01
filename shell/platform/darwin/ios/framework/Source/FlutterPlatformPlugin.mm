@@ -138,7 +138,7 @@ using namespace shell;
 }
 
 - (void)setSystemChromeSystemUIOverlayStyle:(NSDictionary*)message {
-  style = message[@"statusBarTheme"]
+  NSString* style = message[@"statusBarTheme"]
   UIStatusBarStyle statusBarStyle 
   if ([style isEqualToString:@"SystemChromeTheme.light"])
     statusBarStyle = UIStatusBarStyleLightContent;
