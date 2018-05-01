@@ -16,6 +16,7 @@ import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
+import android.util.Log;
 
 import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -31,7 +32,7 @@ import org.json.JSONObject;
  */
 public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListener {
     private final Activity mActivity;
-    private String mCurrentTheme;
+    private JSONObject mCurrentTheme;
     public static final int DEFAULT_SYSTEM_UI = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
     private static final String kTextPlainFormat = "text/plain";
@@ -62,7 +63,7 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
                 setSystemChromeEnabledSystemUIOverlays((JSONArray) arguments);
                 result.success(null);
             } else if (method.equals("SystemChrome.setSystemUIOverlayStyle")) {
-                setSystemChromeSystemUIOverlayStyle((String) arguments);
+                setSystemChromeSystemUIOverlayStyle((JSONObject) arguments);
                 result.success(null);
             } else if (method.equals("SystemNavigator.pop")) {
                 popSystemNavigator();
@@ -220,17 +221,17 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
         updateSystemUiOverlays();
     }
 
-    private void updateSystemUiOverlays() {
+    private void updateSystemUiOverlays(){
         mActivity.getWindow().getDecorView().setSystemUiVisibility(mEnabledOverlays);
         if (mCurrentTheme != null) {
             setSystemChromeSystemUIOverlayStyle(mCurrentTheme);
         }
     }
 
-    private void setSystemChromeSystemUIOverlayStyle(String style) {
+    private void setSystemChromeSystemUIOverlayStyle(JSONObject message) {
         // You can change the navigation bar color (including translucent colors)
         // in Android, but you can't change the color of the navigation buttons until Android O.
-        // LIGHT vs DARK effectively isn't supported until Android O.
+        // LIGHT vs DARK effectively isn't supported until then.
 
         // Build.VERSION_CODES.O
         if (Build.VERSION.SDK_INT < 26) {
@@ -239,27 +240,55 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
         Window window = mActivity.getWindow();
         View view = window.getDecorView();
         int flags = view.getSystemUiVisibility();
-        switch (style) {
-            case "SystemUiOverlayStyle.light":
-                window.setNavigationBarColor(0xffffffff);
+        try {
+            if (!message.isNull("navigationBarColor")) {
+                window.setNavigationBarColor(message.getInt("navigationBarColor"));
+            }
+            if (!message.isNull("navigationDividerColor")) {
                 // Not availible until Android P.
-                // window.setNavigationBarDividerColor(0xff000000);
-                if ((flags & 0x10) == 0) {
-                    flags |= 0x10; //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                // window.setNavigationBarDividerColor(navigationDividerColor);
+            }
+            if (!message.isNull("statusBarColor")) {
+                window.setStatusBarColor(message.getInt("statusBarColor"));
+            }
+            if (!message.isNull("navigationIconTheme")) {
+                String navigationIconTheme = message.getString("navigationIconTheme");
+                switch (navigationIconTheme) {
+                    case "SystemChromeTheme.light":
+                        //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                        if ((flags & 0x10) == 0) {
+                            flags |= 0x10;
+                        }
+                        break;
+                    case "SystemChromeTheme.dark":
+                        //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                        if ((flags & 0x10) == 0x10) {
+                            flags ^= 0x10;
+                        }
+                        break;
                 }
-                view.setSystemUiVisibility(flags);
-                break;
-            case "SystemUiOverlayStyle.dark":
-                window.setNavigationBarColor(0xff000000);
-                // Not availible until Android P.
-                // window.setNavigationBarDividerColor(0xffffffff);
-                if ((flags & 0x10) == 0x10) {
-                    flags ^= 0x10; //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            if (!message.isNull("statusBarTheme")) {
+                String statusBarTheme = message.getString("statusBarTheme");
+                switch (statusBarTheme) {
+                    case "SystemChromeTheme.light":
+                        // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                        if ((flags & 0x2000) == 0) {
+                            flags |= 0x2000;
+                        }
+                        break;
+                    case "SystemChromeTheme.dark":
+                        // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                        if ((flags & 0x2000) == 0x2000) {
+                            flags ^= 0x2000;
+                        }
                 }
-                view.setSystemUiVisibility(flags);
-                break;
+            }
+            view.setSystemUiVisibility(flags);
+            mCurrentTheme = message;
+        } catch (JSONException err) {
+            Log.i("PlatformPlugin", err.toString());
         }
-        mCurrentTheme = style;
     }
 
     private void popSystemNavigator() {
