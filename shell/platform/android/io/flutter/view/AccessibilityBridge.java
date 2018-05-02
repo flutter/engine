@@ -665,8 +665,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 if (nodeId == null) {
                     return;
                 }
-                AccessibilityEvent e = obtainAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_LONG_CLICKED);
-                mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
+                sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_LONG_CLICKED);
                 break;
             }
             case "tap": {
@@ -674,8 +673,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 if (nodeId == null) {
                     return;
                 }
-                AccessibilityEvent e = obtainAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_CLICKED);
-                mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
+                sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_CLICKED);
                 break;
             }
             case "tooltip": {
