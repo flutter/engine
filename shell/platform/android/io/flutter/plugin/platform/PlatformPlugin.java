@@ -256,7 +256,9 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
                 switch (systemNavigationBarIconBrightness) {
                     case "Brightness.dark":
                         //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-                        flags |= 0x10;
+                        if ((flags & 0x10) == 0) {
+                            flags |= 0x10;
+                        }
                         break;
                     case "Brightness.light":
                         if ((flags & 0x10) == 0x10) {
@@ -270,7 +272,9 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
                 switch (statusBarIconBrightness) {
                     case "Brightness.dark":
                         // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                        flags |= 0x2000;
+                        if ((flags & 0x2000) == 0) {
+                            flags |= 0x2000;
+                        }
                         break;
                     case "Brightness.light":
                         if ((flags & 0x2000) == 0x2000) {
