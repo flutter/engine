@@ -241,47 +241,42 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
         View view = window.getDecorView();
         int flags = view.getSystemUiVisibility();
         try {
-            if (!message.isNull("navigationBarColor")) {
-                window.setNavigationBarColor(message.getInt("navigationBarColor"));
+            if (!message.isNull("systemNavigationBarColor")) {
+                window.setNavigationBarColor(message.getInt("systemNavigationBarColor"));
             }
-            if (!message.isNull("navigationDividerColor")) {
+            if (!message.isNull("systemNavigationBarDividerColor")) {
                 // Not availible until Android P.
-                // window.setNavigationBarDividerColor(navigationDividerColor);
+                // window.setNavigationBarDividerColor(systemNavigationBarDividerColor);
             }
             if (!message.isNull("statusBarColor")) {
                 window.setStatusBarColor(message.getInt("statusBarColor"));
             }
-            if (!message.isNull("navigationIconTheme")) {
-                String navigationIconTheme = message.getString("navigationIconTheme");
-                switch (navigationIconTheme) {
-                    case "SystemChromeTheme.dark":
-                        //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-                        if ((flags & 0x10) == 0) {
-                            flags |= 0x10;
-                        }
-                        break;
-                    case "SystemChromeTheme.light":
+            if (!message.isNull("navigationBarIconBrightness")) {
+                String navigationBarIconBrightness = message.getString("navigationBarIconBrightness");
+                switch (navigationBarIconBrightness) {
+                    case "Brightness.dark":
                         //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                        flags |= 0x10;
+                        break;
+                    case "Brightness.light":
                         if ((flags & 0x10) == 0x10) {
                             flags ^= 0x10;
                         }
                         break;
                 }
             }
-            if (!message.isNull("statusBarTheme")) {
-                String statusBarTheme = message.getString("statusBarTheme");
-                switch (statusBarTheme) {
-                    case "SystemChromeTheme.dark":
+            if (!message.isNull("statusBarIconBrightness")) {
+                String statusBarIconBrightness = message.getString("statusBarIconBrightness");
+                switch (statusBarIconBrightness) {
+                    case "Brightness.dark":
                         // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                        if ((flags & 0x2000) == 0) {
-                            flags |= 0x2000;
-                        }
+                        flags |= 0x2000;
                         break;
-                    case "SystemChromeTheme.light":
-                        // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                    case "Brightness.light":
                         if ((flags & 0x2000) == 0x2000) {
                             flags ^= 0x2000;
                         }
+                        break;
                 }
             }
             view.setSystemUiVisibility(flags);
