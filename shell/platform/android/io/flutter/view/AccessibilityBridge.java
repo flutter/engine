@@ -678,6 +678,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
                 break;
             }
+            case "tooltip": {
+                AccessibilityEvent e = obtainAccessibilityEvent(ROOT_NODE_ID, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+                e.getText().add((String) data.get("message"));
+                mOwner.getParent().requestSendAccessibilityEvent(mOwner, e);
+            }
             default:
                 assert false;
         }

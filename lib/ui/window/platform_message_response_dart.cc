@@ -31,11 +31,10 @@ Dart_Handle WrapByteData(std::vector<uint8_t> data) {
     return ToByteData(data);
   } else {
     std::vector<uint8_t>* heap_data = new std::vector<uint8_t>(std::move(data));
-    Dart_Handle data_handle = Dart_NewExternalTypedData(
-        Dart_TypedData_kByteData, heap_data->data(), heap_data->size());
+    Dart_Handle data_handle = Dart_NewExternalTypedDataWithFinalizer(
+        Dart_TypedData_kByteData, heap_data->data(), heap_data->size(),
+        heap_data, heap_data->size(), MessageDataFinalizer);
     DART_CHECK_VALID(data_handle);
-    Dart_NewWeakPersistentHandle(data_handle, heap_data, heap_data->size(),
-                                 MessageDataFinalizer);
     return data_handle;
   }
 }

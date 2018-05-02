@@ -6,6 +6,7 @@
 
 #include "flutter/shell/platform/android/android_shell_holder.h"
 
+#include <pthread.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 
@@ -27,8 +28,17 @@ AndroidShellHolder::AndroidShellHolder(
   static size_t shell_count = 1;
   auto thread_label = std::to_string(shell_count++);
 
+  FXL_CHECK(pthread_key_create(&thread_destruct_key_, ThreadDestructCallback) ==
+            0);
+
   thread_host_ = {thread_label, ThreadHost::Type::UI | ThreadHost::Type::GPU |
                                     ThreadHost::Type::IO};
+
+  // Detach from JNI when the UI thread exits.
+  thread_host_.ui_thread->GetTaskRunner()->PostTask(
+      [key = thread_destruct_key_]() {
+        FXL_CHECK(pthread_setspecific(key, reinterpret_cast<void*>(1)) == 0);
+      });
 
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
   Shell::CreateCallback<PlatformView> on_create_platform_view =
@@ -74,13 +84,36 @@ AndroidShellHolder::AndroidShellHolder(
 
   if (is_valid_) {
     task_runners.GetGPUTaskRunner()->PostTask(
-        []() { ::setpriority(PRIO_PROCESS, gettid(), -2); });
+        []() {
+          // Android describes -8 as "most important display threads, for
+          // compositing the screen and retrieving input events". Conservatively
+          // set the GPU thread to slightly lower priority than it.
+          if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
+            // Defensive fallback. Depending on the OEM, it may not be possible
+            // to set priority to -5.
+            if (::setpriority(PRIO_PROCESS, gettid(), -2) != 0) {
+              FXL_LOG(ERROR) << "Failed to set GPU task runner priority";
+            }
+          }
+        });
     task_runners.GetUITaskRunner()->PostTask(
-        []() { ::setpriority(PRIO_PROCESS, gettid(), -1); });
+        []() {
+          if (::setpriority(PRIO_PROCESS, gettid(), -1) != 0) {
+            FXL_LOG(ERROR) << "Failed to set UI task runner priority";
+          }
+        });
   }
 }
 
-AndroidShellHolder::~AndroidShellHolder() = default;
+AndroidShellHolder::~AndroidShellHolder() {
+  shell_.reset();
+  thread_host_.Reset();
+  FXL_CHECK(pthread_key_delete(thread_destruct_key_) == 0);
+}
+
+void AndroidShellHolder::ThreadDestructCallback(void* value) {
+  fml::jni::DetachFromVM();
+}
 
 bool AndroidShellHolder::IsValid() const {
   return is_valid_;

@@ -16,12 +16,13 @@ namespace flutter {
 
 IsolateConfigurator::IsolateConfigurator(
     const UniqueFDIONS& fdio_ns,
-    views_v1::ViewPtr& view,
-    component::ApplicationEnvironmentPtr application_environment,
+    fidl::InterfaceHandle<views_v1::ViewContainer> view_container,
+    fidl::InterfaceHandle<component::ApplicationEnvironment>
+        application_environment,
     fidl::InterfaceRequest<component::ServiceProvider>
         outgoing_services_request)
     : fdio_ns_(fdio_ns),
-      view_(view),
+      view_container_(std::move(view_container)),
       application_environment_(std::move(application_environment)),
       outgoing_services_request_(std::move(outgoing_services_request)) {}
 
@@ -42,12 +43,16 @@ bool IsolateConfigurator::ConfigureCurrentIsolate() {
 }
 
 // |mozart::NativesDelegate|
-views_v1::View* IsolateConfigurator::GetMozartView() {
-  return view_.get();
+void IsolateConfigurator::OfferServiceProvider(
+    fidl::InterfaceHandle<component::ServiceProvider>,
+    fidl::VectorPtr<fidl::StringPtr> services) {
+  // TODO(chinmaygarde): Get the mozart view and forward this call to it on the
+  // right thread. This is currently used for the soft keyboard.
+  FXL_LOG(ERROR) << "IsolateConfigurator::OfferServiceProvider unimplemented.";
 }
 
 void IsolateConfigurator::BindFuchsia() {
-  fuchsia::dart::Initialize(application_environment_.Unbind(),
+  fuchsia::dart::Initialize(std::move(application_environment_),
                             std::move(outgoing_services_request_));
 }
 
@@ -102,13 +107,11 @@ void IsolateConfigurator::BindScenic() {
       tonic::ToDart("_context"),  //
       tonic::DartConverter<uint64_t>::ToDart(reinterpret_cast<intptr_t>(
           static_cast<mozart::NativesDelegate*>(this)))));
-  views_v1::ViewContainerPtr view_container;
-  view_->GetContainer(view_container.NewRequest());
   DART_CHECK_VALID(
       Dart_SetField(mozart_internal,                  //
                     tonic::ToDart("_viewContainer"),  //
                     tonic::ToDart(zircon::dart::Handle::Create(
-                        view_container.Unbind().TakeChannel().release()))));
+                        view_container_.TakeChannel().release()))));
 }
 
 }  // namespace flutter

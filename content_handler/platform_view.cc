@@ -20,45 +20,63 @@ constexpr char kFlutterPlatformChannel[] = "flutter/platform";
 constexpr char kTextInputChannel[] = "flutter/textinput";
 constexpr char kKeyEventChannel[] = "flutter/keyevent";
 
+template <class T>
+void SetInterfaceErrorHandler(fidl::InterfacePtr<T>& interface,
+                              std::string name) {
+  interface.set_error_handler(
+      [name]() { FXL_DLOG(ERROR) << "Interface error on: " << name; });
+}
+
 PlatformView::PlatformView(
     PlatformView::Delegate& delegate,
     std::string debug_label,
     blink::TaskRunners task_runners,
-    component::ServiceProviderPtr parent_environment_service_provider,
-    views_v1::ViewManagerPtr& view_manager,
+    fidl::InterfaceHandle<component::ServiceProvider>
+        parent_environment_service_provider_handle,
+    fidl::InterfaceHandle<views_v1::ViewManager> view_manager_handle,
     fidl::InterfaceRequest<views_v1_token::ViewOwner> view_owner,
-    ui::ScenicPtr scenic,
     zx::eventpair export_token,
-    modular::ContextWriterPtr accessibility_context_writer)
+    fidl::InterfaceHandle<modular::ContextWriter> accessibility_context_writer)
     : shell::PlatformView(delegate, std::move(task_runners)),
       debug_label_(std::move(debug_label)),
+      view_manager_(view_manager_handle.Bind()),
       view_listener_(this),
       input_listener_(this),
       ime_client_(this),
-      scenic_(std::move(scenic)),
       accessibility_bridge_(std::move(accessibility_context_writer)),
       surface_(std::make_unique<Surface>(debug_label_)) {
+  // Register all error handlers.
+  SetInterfaceErrorHandler(view_manager_, "View Manager");
+  SetInterfaceErrorHandler(view_, "View");
+  SetInterfaceErrorHandler(input_connection_, "Input Connection");
+  SetInterfaceErrorHandler(ime_, "Input Method Editor");
+  SetInterfaceErrorHandler(clipboard_, "Clipboard");
+  SetInterfaceErrorHandler(service_provider_, "Service Provider");
+  SetInterfaceErrorHandler(parent_environment_service_provider_,
+                           "Parent Environment Service Provider");
+
   // Create the view.
-  view_manager->CreateView(view_.NewRequest(),           // view
-                           std::move(view_owner),        // view owner
-                           view_listener_.NewBinding(),  // view listener
-                           std::move(export_token),      // export token
-                           debug_label_                  // diagnostic label
+  view_manager_->CreateView(view_.NewRequest(),           // view
+                            std::move(view_owner),        // view owner
+                            view_listener_.NewBinding(),  // view listener
+                            std::move(export_token),      // export token
+                            debug_label_                  // diagnostic label
   );
 
   // Get the services from the created view.
-  component::ServiceProviderPtr service_provider;
-  view_->GetServiceProvider(service_provider.NewRequest());
+  view_->GetServiceProvider(service_provider_.NewRequest());
 
   // Get the input connection from the services of the view.
-  component::ConnectToService(service_provider.get(),
+  component::ConnectToService(service_provider_.get(),
                               input_connection_.NewRequest());
 
   // Set the input listener on the input connection.
   input_connection_->SetEventListener(input_listener_.NewBinding());
 
   // Access the clipboard.
-  component::ConnectToService(parent_environment_service_provider.get(),
+  parent_environment_service_provider_ =
+      parent_environment_service_provider_handle.Bind();
+  component::ConnectToService(parent_environment_service_provider_.get(),
                               clipboard_.NewRequest());
 
   // Finally! Register the native platform message handlers.
@@ -79,6 +97,7 @@ void PlatformView::RegisterPlatformMessageHandlers() {
 }
 
 views_v1::ViewPtr& PlatformView::GetMozartView() {
+  FXL_DCHECK(view_.is_bound());
   return view_;
 }
 

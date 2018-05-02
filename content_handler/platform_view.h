@@ -28,16 +28,16 @@ class PlatformView final : public shell::PlatformView,
                            public input::InputMethodEditorClient,
                            public input::InputListener {
  public:
-  PlatformView(
-      PlatformView::Delegate& delegate,
-      std::string debug_label,
-      blink::TaskRunners task_runners,
-      component::ServiceProviderPtr parent_environment_service_provider,
-      views_v1::ViewManagerPtr& view_manager,
-      fidl::InterfaceRequest<views_v1_token::ViewOwner> view_owner,
-      ui::ScenicPtr scenic,
-      zx::eventpair export_token,
-      modular::ContextWriterPtr accessibility_context_writer);
+  PlatformView(PlatformView::Delegate& delegate,
+               std::string debug_label,
+               blink::TaskRunners task_runners,
+               fidl::InterfaceHandle<component::ServiceProvider>
+                   parent_environment_service_provider,
+               fidl::InterfaceHandle<views_v1::ViewManager> view_manager,
+               fidl::InterfaceRequest<views_v1_token::ViewOwner> view_owner,
+               zx::eventpair export_token,
+               fidl::InterfaceHandle<modular::ContextWriter>
+                   accessibility_context_writer);
 
   ~PlatformView();
 
@@ -47,15 +47,17 @@ class PlatformView final : public shell::PlatformView,
 
  private:
   const std::string debug_label_;
+  views_v1::ViewManagerPtr view_manager_;
   views_v1::ViewPtr view_;
+  component::ServiceProviderPtr service_provider_;
   fidl::Binding<views_v1::ViewListener> view_listener_;
   input::InputConnectionPtr input_connection_;
   fidl::Binding<input::InputListener> input_listener_;
   int current_text_input_client_ = 0;
   fidl::Binding<input::InputMethodEditorClient> ime_client_;
   input::InputMethodEditorPtr ime_;
+  component::ServiceProviderPtr parent_environment_service_provider_;
   modular::ClipboardPtr clipboard_;
-  ui::ScenicPtr scenic_;
   AccessibilityBridge accessibility_bridge_;
   std::unique_ptr<Surface> surface_;
   blink::LogicalMetrics metrics_;
