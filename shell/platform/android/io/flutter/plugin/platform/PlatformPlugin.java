@@ -251,9 +251,9 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
             if (!message.isNull("statusBarColor")) {
                 window.setStatusBarColor(message.getInt("statusBarColor"));
             }
-            if (!message.isNull("navigationBarIconBrightness")) {
-                String navigationBarIconBrightness = message.getString("navigationBarIconBrightness");
-                switch (navigationBarIconBrightness) {
+            if (!message.isNull("systemNavigationBarIconBrightness")) {
+                String systemNavigationBarIconBrightness = message.getString("systemNavigationBarIconBrightness");
+                switch (systemNavigationBarIconBrightness) {
                     case "Brightness.dark":
                         //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
                         flags |= 0x10;
