@@ -1,4 +1,4 @@
-Signature: 0646f938b5c4b587224930f8d79b0dbb
+Signature: f8b0fa85dcfda661056db3508100fa23
 
 UNUSED LICENSES:
 
@@ -5663,7 +5663,6 @@ FILE: ../../../third_party/dart/runtime/bin/vmservice/server.dart
 FILE: ../../../third_party/dart/runtime/bin/vmservice/vmservice_io.dart
 FILE: ../../../third_party/dart/runtime/bin/vmservice_impl.cc
 FILE: ../../../third_party/dart/runtime/bin/vmservice_impl.h
-FILE: ../../../third_party/dart/runtime/include/dart_mirrors_api.h
 FILE: ../../../third_party/dart/runtime/include/dart_native_api.h
 FILE: ../../../third_party/dart/runtime/lib/collection_patch.dart
 FILE: ../../../third_party/dart/runtime/lib/core_patch.dart
@@ -5800,7 +5799,6 @@ FILE: ../../../third_party/dart/runtime/vm/isolate.cc
 FILE: ../../../third_party/dart/runtime/vm/isolate.h
 FILE: ../../../third_party/dart/runtime/vm/json_stream.cc
 FILE: ../../../third_party/dart/runtime/vm/json_stream.h
-FILE: ../../../third_party/dart/runtime/vm/mirrors_api_impl.cc
 FILE: ../../../third_party/dart/runtime/vm/native_api_impl.cc
 FILE: ../../../third_party/dart/runtime/vm/native_symbol.h
 FILE: ../../../third_party/dart/runtime/vm/native_symbol_android.cc
@@ -17183,6 +17181,8 @@ FILE: ../../../third_party/skia/experimental/sksg/geometry/SkSGGeometryTransform
 FILE: ../../../third_party/skia/experimental/sksg/geometry/SkSGGeometryTransform.h
 FILE: ../../../third_party/skia/experimental/sksg/geometry/SkSGPlane.cpp
 FILE: ../../../third_party/skia/experimental/sksg/geometry/SkSGPlane.h
+FILE: ../../../third_party/skia/experimental/sksg/geometry/SkSGRoundEffect.cpp
+FILE: ../../../third_party/skia/experimental/sksg/geometry/SkSGRoundEffect.h
 FILE: ../../../third_party/skia/experimental/sksg/geometry/SkSGText.cpp
 FILE: ../../../third_party/skia/experimental/sksg/geometry/SkSGText.h
 FILE: ../../../third_party/skia/experimental/sksg/paint/SkSGGradient.cpp
@@ -20069,7 +20069,6 @@ FILE: ../../../third_party/skia/src/core/SkAlphaRuns.cpp
 FILE: ../../../third_party/skia/src/core/SkAnalyticEdge.cpp
 FILE: ../../../third_party/skia/src/core/SkAnalyticEdge.h
 FILE: ../../../third_party/skia/src/core/SkAntiRun.h
-FILE: ../../../third_party/skia/src/core/SkAutoKern.h
 FILE: ../../../third_party/skia/src/core/SkBlitBWMaskTemplate.h
 FILE: ../../../third_party/skia/src/core/SkBlitter.cpp
 FILE: ../../../third_party/skia/src/core/SkBlitter.h
