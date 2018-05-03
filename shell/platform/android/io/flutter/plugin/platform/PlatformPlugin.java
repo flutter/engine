@@ -229,55 +229,56 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
     }
 
     private void setSystemChromeSystemUIOverlayStyle(JSONObject message) {
-        // You can change the navigation bar color (including translucent colors)
-        // in Android, but you can't change the color of the navigation buttons until Android O.
-        // LIGHT vs DARK effectively isn't supported until then.
-
-        // Build.VERSION_CODES.O
-        if (Build.VERSION.SDK_INT < 26) {
-            return;
-        }
         Window window = mActivity.getWindow();
         View view = window.getDecorView();
         int flags = view.getSystemUiVisibility();
         try {
-            if (!message.isNull("systemNavigationBarColor")) {
-                window.setNavigationBarColor(message.getInt("systemNavigationBarColor"));
+            // You can change the navigation bar color (including translucent colors)
+            // in Android, but you can't change the color of the navigation buttons until Android O.
+            // LIGHT vs DARK effectively isn't supported until then.
+            // Build.VERSION_CODES.O
+            if (Build.VERSION.SDK_INT >= 26) {
+                if (!message.isNull("systemNavigationBarIconBrightness")) {
+                    String systemNavigationBarIconBrightness = message.getString("systemNavigationBarIconBrightness");
+                    switch (systemNavigationBarIconBrightness) {
+                        case "Brightness.dark":
+                            //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+                            flags |= 0x10;
+                            break;
+                        case "Brightness.light":
+                            if ((flags & 0x10) == 0x10) {
+                                flags ^= 0x10;
+                            }
+                            break;
+                    }
+                }
+                if (!message.isNull("systemNavigationBarColor")) {
+                    window.setNavigationBarColor(message.getInt("systemNavigationBarColor"));
+                }
+            }
+            // Build.VERSION_CODES.M
+            if (Build.VERSION.SDK_INT >= 23) {
+                if (!message.isNull("statusBarIconBrightness")) {
+                    String statusBarIconBrightness = message.getString("statusBarIconBrightness");
+                    switch (statusBarIconBrightness) {
+                        case "Brightness.dark":
+                            // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                            flags |= 0x2000;
+                            break;
+                        case "Brightness.light":
+                            if ((flags & 0x2000) == 0x2000) {
+                                flags ^= 0x2000;
+                            }
+                            break;
+                    }
+                }
+                if (!message.isNull("statusBarColor")) {
+                    window.setStatusBarColor(message.getInt("statusBarColor"));
+                }
             }
             if (!message.isNull("systemNavigationBarDividerColor")) {
                 // Not availible until Android P.
                 // window.setNavigationBarDividerColor(systemNavigationBarDividerColor);
-            }
-            if (!message.isNull("statusBarColor")) {
-                window.setStatusBarColor(message.getInt("statusBarColor"));
-            }
-            if (!message.isNull("systemNavigationBarIconBrightness")) {
-                String systemNavigationBarIconBrightness = message.getString("systemNavigationBarIconBrightness");
-                switch (systemNavigationBarIconBrightness) {
-                    case "Brightness.dark":
-                        //View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-                        flags |= 0x10;
-                        break;
-                    case "Brightness.light":
-                        if ((flags & 0x10) == 0x10) {
-                            flags ^= 0x10;
-                        }
-                        break;
-                }
-            }
-            if (!message.isNull("statusBarIconBrightness")) {
-                String statusBarIconBrightness = message.getString("statusBarIconBrightness");
-                switch (statusBarIconBrightness) {
-                    case "Brightness.dark":
-                        // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                        flags |= 0x2000;
-                        break;
-                    case "Brightness.light":
-                        if ((flags & 0x2000) == 0x2000) {
-                            flags ^= 0x2000;
-                        }
-                        break;
-                }
             }
             view.setSystemUiVisibility(flags);
             mCurrentTheme = message;
