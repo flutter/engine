@@ -138,8 +138,8 @@ using namespace shell;
 }
 
 - (void)setSystemChromeSystemUIOverlayStyle:(NSDictionary*)message {
-  NSString* style = message[@"statusBarBrightness"]
-  UIStatusBarStyle statusBarStyle 
+  NSString* style = message[@"statusBarBrightness"];
+  UIStatusBarStyle statusBarStyle;
   if ([style isEqualToString:@"Brightness.light"])
     statusBarStyle = UIStatusBarStyleLightContent;
   else if ([style isEqualToString:@"Brightness.dark"])

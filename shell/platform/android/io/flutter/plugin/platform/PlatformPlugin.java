@@ -246,9 +246,7 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
                             flags |= 0x10;
                             break;
                         case "Brightness.light":
-                            if ((flags & 0x10) == 0x10) {
-                                flags ^= 0x10;
-                            }
+                            flags &= ~0x10;
                             break;
                     }
                 }
@@ -266,9 +264,7 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
                             flags |= 0x2000;
                             break;
                         case "Brightness.light":
-                            if ((flags & 0x2000) == 0x2000) {
-                                flags ^= 0x2000;
-                            }
+                            flags &= ~0x2000;
                             break;
                     }
                 }
