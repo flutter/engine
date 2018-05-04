@@ -25,8 +25,9 @@
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
 @end
 
-@interface FlutterViewControllerRegistrar : NSObject<FlutterPluginRegistrar>
-- (instancetype)initWithPlugin:(NSString*)pluginKey flutterViewController:(FlutterViewController*)flutterViewController;
+@interface FlutterViewControllerRegistrar : NSObject <FlutterPluginRegistrar>
+- (instancetype)initWithPlugin:(NSString*)pluginKey
+         flutterViewController:(FlutterViewController*)flutterViewController;
 @end
 
 @implementation FlutterViewController {
@@ -988,7 +989,8 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
   self.pluginPublications[pluginKey] = [NSNull null];
-  return [[FlutterViewControllerRegistrar alloc] initWithPlugin:pluginKey flutterViewController:self];
+  return
+      [[FlutterViewControllerRegistrar alloc] initWithPlugin:pluginKey flutterViewController:self];
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {
@@ -1006,7 +1008,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 }
 
 - (instancetype)initWithPlugin:(NSString*)pluginKey
-         flutterViewController:(FlutterViewController*)flutterViewController{
+         flutterViewController:(FlutterViewController*)flutterViewController {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   _pluginKey = [pluginKey retain];
@@ -1042,17 +1044,18 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 - (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
   id<UIApplicationDelegate> appDelegate = [[UIApplication sharedApplication] delegate];
   if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifeCycleProvider)]) {
-    id<FlutterAppLifeCycleProvider> lifeCycleProvider = (id<FlutterAppLifeCycleProvider>)appDelegate;
+    id<FlutterAppLifeCycleProvider> lifeCycleProvider =
+        (id<FlutterAppLifeCycleProvider>)appDelegate;
     [lifeCycleProvider addApplicationLifeCycleDelegate:delegate];
   }
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset {
-   return [_flutterViewController lookupKeyForAsset:asset];
+  return [_flutterViewController lookupKeyForAsset:asset];
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-   return [_flutterViewController lookupKeyForAsset:asset fromPackage:package];
+  return [_flutterViewController lookupKeyForAsset:asset fromPackage:package];
 }
 
 @end

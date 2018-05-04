@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
+#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #include "lib/fxl/logging.h"
 
 @implementation FlutterPluginAppLifeCycleDelegate {
@@ -30,7 +30,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 }
 
 - (void)addDelegate:(NSObject<FlutterPlugin>*)delegate {
-  [_pluginDelegates addPointer:(__bridge void *)delegate];
+  [_pluginDelegates addPointer:(__bridge void*)delegate];
   if (isPowerOfTwo([_pluginDelegates count])) {
     [_pluginDelegates compact];
   }
@@ -246,7 +246,6 @@ static BOOL isPowerOfTwo(NSUInteger x) {
 - (BOOL)application:(UIApplication*)application
     handleEventsForBackgroundURLSession:(nonnull NSString*)identifier
                       completionHandler:(nonnull void (^)())completionHandler {
-
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if (!plugin) {
       continue;
@@ -254,7 +253,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
     if ([plugin respondsToSelector:_cmd]) {
       if ([plugin application:application
               handleEventsForBackgroundURLSession:identifier
-                         completionHandler:completionHandler]) {
+                                completionHandler:completionHandler]) {
         return YES;
       }
     }

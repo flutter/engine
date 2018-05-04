@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
+#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 
 @implementation FlutterAppDelegate {
   FlutterPluginAppLifeCycleDelegate* _lifeCycleDelegate;
@@ -68,24 +68,22 @@
 
 - (void)application:(UIApplication*)application
     didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings {
-  [_lifeCycleDelegate
-                            application:application
-    didRegisterUserNotificationSettings:notificationSettings];
+  [_lifeCycleDelegate application:application
+      didRegisterUserNotificationSettings:notificationSettings];
 }
 
 - (void)application:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
-  [_lifeCycleDelegate
-                            application:application
-    didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+  [_lifeCycleDelegate application:application
+      didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
 }
 
 - (void)application:(UIApplication*)application
     didReceiveRemoteNotification:(NSDictionary*)userInfo
           fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
   [_lifeCycleDelegate application:application
-    didReceiveRemoteNotification:userInfo
-          fetchCompletionHandler:completionHandler];
+      didReceiveRemoteNotification:userInfo
+            fetchCompletionHandler:completionHandler];
 }
 
 - (BOOL)application:(UIApplication*)application
@@ -103,30 +101,30 @@
     sourceApplication:(NSString*)sourceApplication
            annotation:(id)annotation {
   return [_lifeCycleDelegate application:application
-     openURL:url
-     sourceApplication:sourceApplication annotation:annotation];
+                                 openURL:url
+                       sourceApplication:sourceApplication
+                              annotation:annotation];
 }
 
 - (void)application:(UIApplication*)application
     performActionForShortcutItem:(UIApplicationShortcutItem*)shortcutItem
                completionHandler:(void (^)(BOOL succeeded))completionHandler NS_AVAILABLE_IOS(9_0) {
   [_lifeCycleDelegate application:application
-    performActionForShortcutItem:shortcutItem
-               completionHandler:completionHandler];
+      performActionForShortcutItem:shortcutItem
+                 completionHandler:completionHandler];
 }
 
 - (void)application:(UIApplication*)application
     handleEventsForBackgroundURLSession:(nonnull NSString*)identifier
                       completionHandler:(nonnull void (^)())completionHandler {
   [_lifeCycleDelegate application:application
-    handleEventsForBackgroundURLSession:identifier
-               completionHandler:completionHandler];
+      handleEventsForBackgroundURLSession:identifier
+                        completionHandler:completionHandler];
 }
 
 - (void)application:(UIApplication*)application
     performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-  [_lifeCycleDelegate application:application
-    performFetchWithCompletionHandler:completionHandler];
+  [_lifeCycleDelegate application:application performFetchWithCompletionHandler:completionHandler];
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
@@ -134,7 +132,8 @@
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   UIViewController* rootViewController = _window.rootViewController;
   if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-    return [[(FlutterViewController*)rootViewController pluginRegistry] registrarForPlugin:pluginKey];
+    return
+        [[(FlutterViewController*)rootViewController pluginRegistry] registrarForPlugin:pluginKey];
   }
   return nil;
 }
@@ -150,7 +149,8 @@
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
   UIViewController* rootViewController = _window.rootViewController;
   if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
-    return [[(FlutterViewController*)rootViewController pluginRegistry] valuePublishedByPlugin:pluginKey];
+    return [[(FlutterViewController*)rootViewController pluginRegistry]
+        valuePublishedByPlugin:pluginKey];
   }
   return nil;
 }
