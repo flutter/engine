@@ -48,6 +48,7 @@ class ApplicationRunner final : public Application::Delegate,
     }
   };
 
+  zx::job debug_job_;
   fxl::Closure on_termination_callback_;
   std::unique_ptr<component::ApplicationContext> host_context_;
   fidl::BindingSet<component::ApplicationRunner> active_applications_bindings_;

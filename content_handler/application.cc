@@ -21,6 +21,7 @@ namespace flutter {
 std::pair<std::unique_ptr<fsl::Thread>, std::unique_ptr<Application>>
 Application::Create(
     Application::Delegate& delegate,
+    const zx::job& parent_job,
     component::ApplicationPackage package,
     component::ApplicationStartupInfo startup_info,
     fidl::InterfaceRequest<component::ApplicationController> controller) {
@@ -30,6 +31,7 @@ Application::Create(
   fxl::AutoResetWaitableEvent latch;
   thread->TaskRunner()->PostTask([&]() mutable {
     application.reset(new Application(delegate,                 //
+                                      parent_job,               //
                                       std::move(package),       //
                                       std::move(startup_info),  //
                                       std::move(controller)     //
@@ -50,14 +52,34 @@ static std::string DebugLabelForURL(const std::string& url) {
   }
 }
 
+zx::job Application::CreateDebugJobWithLabel(const std::string& debug_label,
+                                             const zx::job& parent_job) {
+  zx::job debug_job;
+
+  if (zx::job::create(parent_job.get(), 0u, &debug_job) != ZX_OK) {
+    FXL_LOG(ERROR) << "Could not create debug job: " << debug_label;
+    return {};
+  }
+
+  if (debug_job.set_property(ZX_PROP_NAME, debug_label.c_str(),
+                             debug_label.size()) != ZX_OK) {
+    FXL_LOG(ERROR) << "Could not assign name to debug job: " << debug_label;
+    return {};
+  }
+
+  return debug_job;
+}
+
 Application::Application(
     Application::Delegate& delegate,
+    const zx::job& parent_job,
     component::ApplicationPackage,
     component::ApplicationStartupInfo startup_info,
     fidl::InterfaceRequest<component::ApplicationController>
         application_controller_request)
     : delegate_(delegate),
       debug_label_(DebugLabelForURL(startup_info.launch_info.url)),
+      debug_job_(CreateDebugJobWithLabel(debug_label_, parent_job)),
       application_controller_(this) {
   application_controller_.set_error_handler([this]() { Kill(); });
 

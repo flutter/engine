@@ -11,6 +11,7 @@
 #include <fuchsia/cpp/component.h>
 #include <fuchsia/cpp/views_v1.h>
 #include <fuchsia/cpp/views_v1_token.h>
+#include <zx/job.h>
 
 #include "engine.h"
 #include "flutter/common/settings.h"
@@ -41,6 +42,7 @@ class Application final : public Engine::Delegate,
   // This is a synchronous operation.
   static std::pair<std::unique_ptr<fsl::Thread>, std::unique_ptr<Application>>
   Create(Application::Delegate& delegate,
+         const zx::job& parent_job,
          component::ApplicationPackage package,
          component::ApplicationStartupInfo startup_info,
          fidl::InterfaceRequest<component::ApplicationController> controller);
@@ -49,12 +51,17 @@ class Application final : public Engine::Delegate,
   // may be collected after.
   ~Application();
 
+  static zx::job CreateDebugJobWithLabel(
+      const std::string& debug_label,
+      const zx::job& parent_job = zx::job::default_job());
+
   const std::string& GetDebugLabel() const;
 
  private:
   blink::Settings settings_;
   Delegate& delegate_;
   const std::string debug_label_;
+  zx::job debug_job_;
   UniqueFDIONS fdio_ns_ = UniqueFDIONSCreate();
   fxl::UniqueFD application_directory_;
   fxl::UniqueFD application_assets_directory_;
@@ -69,6 +76,7 @@ class Application final : public Engine::Delegate,
 
   Application(
       Application::Delegate& delegate,
+      const zx::job& parent_job,
       component::ApplicationPackage package,
       component::ApplicationStartupInfo startup_info,
       fidl::InterfaceRequest<component::ApplicationController> controller);
