@@ -10,7 +10,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- An object propagating `UIAppDelegate` callbacks to registered plugins.
+ Propagates `UIAppDelegate` callbacks to registered plugins.
 */
 FLUTTER_EXPORT
 @interface FlutterPluginAppLifeCycleDelegate : NSObject
