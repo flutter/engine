@@ -17,9 +17,7 @@ group("flutter") {
     public_deps += [ "$flutter_root/shell/testing" ]
   }
 
-  if (flutter_runtime_mode != "debug") {
-    public_deps += [ "$flutter_root/lib/snapshot:entry_points_json_files" ]
-  }
+  public_deps += [ "$flutter_root/lib/snapshot:entry_points_json_files" ]
 
   if (!is_fuchsia && !is_fuchsia_host) {
     if (current_toolchain == host_toolchain) {
