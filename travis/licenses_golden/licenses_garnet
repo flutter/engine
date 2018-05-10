@@ -1,4 +1,4 @@
-Signature: e493a563f62df99aea315a223aa83d38
+Signature: 86cd80dadfeec9ca6dabd1a17f8c17ea
 
 UNUSED LICENSES:
 
@@ -8,70 +8,56 @@ USED LICENSES:
 
 ====================================================================================================
 LIBRARY: garnet
-ORIGIN: ../../../LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/macros.h
-----------------------------------------------------------------------------------------------------
-Copyright 2014 The Chromium Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: garnet
 ORIGIN: ../../../garnet/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../garnet/.cargo/config
 FILE: ../../../garnet/.dir-locals.el
 FILE: ../../../garnet/Cargo.lock
 FILE: ../../../garnet/Cargo.toml
+FILE: ../../../garnet/MAINTAINERS
 FILE: ../../../garnet/manifest/garnet
+FILE: ../../../garnet/manifest/garnet-unstable
 FILE: ../../../garnet/manifest/minimal
 FILE: ../../../garnet/manifest/third_party
+FILE: ../../../garnet/public/lib/amber/MAINTAINERS
 FILE: ../../../garnet/public/lib/amber/fidl/amber.fidl
+FILE: ../../../garnet/public/lib/audio_policy/fidl/audio_policy.fidl
+FILE: ../../../garnet/public/lib/auth/MAINTAINERS
 FILE: ../../../garnet/public/lib/auth/fidl/auth_provider.fidl
 FILE: ../../../garnet/public/lib/auth/fidl/auth_provider_factory.fidl
 FILE: ../../../garnet/public/lib/auth/fidl/token_manager.fidl
+FILE: ../../../garnet/public/lib/backoff/MAINTAINERS
+FILE: ../../../garnet/public/lib/bluetooth/MAINTAINERS
 FILE: ../../../garnet/public/lib/bluetooth/fidl/common.fidl
 FILE: ../../../garnet/public/lib/bluetooth/fidl/control.fidl
 FILE: ../../../garnet/public/lib/bluetooth/fidl/gatt.fidl
 FILE: ../../../garnet/public/lib/bluetooth/fidl/low_energy.fidl
+FILE: ../../../garnet/public/lib/callback/MAINTAINERS
+FILE: ../../../garnet/public/lib/callback/ensure_copyable.h
+FILE: ../../../garnet/public/lib/callback/ensure_copyable_unittest.cc
+FILE: ../../../garnet/public/lib/callback/managed_container.cc
+FILE: ../../../garnet/public/lib/callback/managed_container.h
+FILE: ../../../garnet/public/lib/callback/managed_container_unittest.cc
+FILE: ../../../garnet/public/lib/callback/operation_serializer.h
+FILE: ../../../garnet/public/lib/callback/operation_serializer_unittests.cc
+FILE: ../../../garnet/public/lib/callback/scoped_callback.h
+FILE: ../../../garnet/public/lib/callback/scoped_callback_unittest.cc
+FILE: ../../../garnet/public/lib/callback/scoped_task_runner.cc
+FILE: ../../../garnet/public/lib/callback/scoped_task_runner.h
+FILE: ../../../garnet/public/lib/callback/scoped_task_runner_unittest.cc
+FILE: ../../../garnet/public/lib/callback/to_function.h
+FILE: ../../../garnet/public/lib/callback/to_function_unittest.cc
+FILE: ../../../garnet/public/lib/cobalt/MAINTAINERS
 FILE: ../../../garnet/public/lib/cobalt/fidl/cobalt.fidl
 FILE: ../../../garnet/public/lib/cobalt/fidl/cobalt_controller.fidl
 FILE: ../../../garnet/public/lib/device_settings/fidl/device_settings.fidl
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings2/test_types.fidl2
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/compiler/generated/fidl_files/fidl_files.core.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/compiler/generated/fidl_types/fidl_types.core.go
+FILE: ../../../garnet/public/lib/fidl/MAINTAINERS
+FILE: ../../../garnet/public/lib/fidl/cpp/array.h
 FILE: ../../../garnet/public/lib/fidl/rust/fidl/Cargo.toml
-FILE: ../../../garnet/public/lib/fidl/rust/fidl/src/endpoints.rs
 FILE: ../../../garnet/public/lib/fidl/tools/sublime/FIDL.sublime-syntax
 FILE: ../../../garnet/public/lib/fidl/tools/vim/ftdetect/fidl.vim
 FILE: ../../../garnet/public/lib/fidl/tools/vim/syntax/fidl.vim
-FILE: ../../../garnet/public/lib/fsl/fidl/sized_vmo_transport.fidl
+FILE: ../../../garnet/public/lib/fsl/MAINTAINERS
 FILE: ../../../garnet/public/lib/fsl/io/fd.cc
 FILE: ../../../garnet/public/lib/fsl/io/fd.h
 FILE: ../../../garnet/public/lib/fsl/socket/blocking_drain_unittest.cc
@@ -85,6 +71,7 @@ FILE: ../../../garnet/public/lib/fsl/threading/thread_unittest.cc
 FILE: ../../../garnet/public/lib/fsl/vmo/file_unittest.cc
 FILE: ../../../garnet/public/lib/fsl/vmo/sized_vmo.cc
 FILE: ../../../garnet/public/lib/fsl/vmo/sized_vmo.h
+FILE: ../../../garnet/public/lib/fxl/MAINTAINERS
 FILE: ../../../garnet/public/lib/fxl/files/directory_unittest.cc
 FILE: ../../../garnet/public/lib/fxl/files/file_descriptor_unittest.cc
 FILE: ../../../garnet/public/lib/fxl/files/path_win.cc
@@ -98,6 +85,8 @@ FILE: ../../../garnet/public/lib/fxl/fxl_export.h
 FILE: ../../../garnet/public/lib/fxl/inttypes.h
 FILE: ../../../garnet/public/lib/fxl/log_settings_command_line.cc
 FILE: ../../../garnet/public/lib/fxl/log_settings_command_line.h
+FILE: ../../../garnet/public/lib/fxl/observer_list.h
+FILE: ../../../garnet/public/lib/fxl/observer_list_unittest.cc
 FILE: ../../../garnet/public/lib/fxl/portable_unistd.h
 FILE: ../../../garnet/public/lib/fxl/random/rand_unittest.cc
 FILE: ../../../garnet/public/lib/fxl/random/uuid_unittest.cc
@@ -109,23 +98,23 @@ FILE: ../../../garnet/public/lib/fxl/threading/thread_unittest.cc
 FILE: ../../../garnet/public/lib/fxl/time/stopwatch_unittest.cc
 FILE: ../../../garnet/public/lib/fxl/time/time_delta_unittest.cc
 FILE: ../../../garnet/public/lib/fxl/time/time_point_unittest.cc
-FILE: ../../../garnet/public/lib/images/fidl/image_info.fidl
-FILE: ../../../garnet/public/lib/images/fidl/image_pipe.fidl
-FILE: ../../../garnet/public/lib/images/fidl/memory_type.fidl
+FILE: ../../../garnet/public/lib/gtest/MAINTAINERS
+FILE: ../../../garnet/public/lib/gtest/test_with_message_loop.cc
+FILE: ../../../garnet/public/lib/gtest/test_with_message_loop.h
+FILE: ../../../garnet/public/lib/gtest/test_with_message_loop_unittest.cc
+FILE: ../../../garnet/public/lib/images/fidl/presentation_info.fidl
 FILE: ../../../garnet/public/lib/mdns/fidl/mdns.fidl
-FILE: ../../../garnet/public/lib/media/audio/lpcm_output_stream.cc
-FILE: ../../../garnet/public/lib/media/audio/lpcm_output_stream.h
 FILE: ../../../garnet/public/lib/media/audio/perceived_level.h
 FILE: ../../../garnet/public/lib/media/audio/types.cc
 FILE: ../../../garnet/public/lib/media/audio/types.h
 FILE: ../../../garnet/public/lib/media/c/audio.h
 FILE: ../../../garnet/public/lib/media/fidl/audio_capturer.fidl
-FILE: ../../../garnet/public/lib/media/fidl/audio_policy_service.fidl
-FILE: ../../../garnet/public/lib/media/fidl/net_media_player.fidl
 FILE: ../../../garnet/public/lib/media/fidl/net_media_service.fidl
+FILE: ../../../garnet/public/lib/mem/fidl/buffer.fidl
 FILE: ../../../garnet/public/lib/netconnector/cpp/net_stub_responder.h
 FILE: ../../../garnet/public/lib/netstack/c/netconfig.h
-FILE: ../../../garnet/public/lib/power/fidl/power_manager.fidl
+FILE: ../../../garnet/public/lib/network_wrapper/MAINTAINERS
+FILE: ../../../garnet/public/lib/power_manager/fidl/power_manager.fidl
 FILE: ../../../garnet/public/lib/svc/cpp/service_namespace.h
 FILE: ../../../garnet/public/lib/svc/cpp/service_provider_bridge.cc
 FILE: ../../../garnet/public/lib/svc/cpp/service_provider_bridge.h
@@ -141,11 +130,17 @@ FILE: ../../../garnet/public/lib/test_runner/cpp/reporting/reporter.h
 FILE: ../../../garnet/public/lib/test_runner/cpp/test_runner.h
 FILE: ../../../garnet/public/lib/test_runner/cpp/test_runner_store_impl.cc
 FILE: ../../../garnet/public/lib/test_runner/cpp/test_runner_store_impl.h
-FILE: ../../../garnet/public/lib/time_service/fidl/time_service.fidl
-FILE: ../../../garnet/public/lib/ui/fun/sketchy/fidl/canvas.fidl
-FILE: ../../../garnet/public/lib/ui/fun/sketchy/fidl/ops.fidl
-FILE: ../../../garnet/public/lib/ui/fun/sketchy/fidl/resources.fidl
-FILE: ../../../garnet/public/lib/ui/fun/sketchy/fidl/types.fidl
+FILE: ../../../garnet/public/lib/time_zone/fidl/time_zone.fidl
+FILE: ../../../garnet/public/lib/ui/MAINTAINERS
+FILE: ../../../garnet/public/lib/ui/gfx/fidl/commands.fidl
+FILE: ../../../garnet/public/lib/ui/gfx/fidl/display_info.fidl
+FILE: ../../../garnet/public/lib/ui/gfx/fidl/events.fidl
+FILE: ../../../garnet/public/lib/ui/gfx/fidl/hit.fidl
+FILE: ../../../garnet/public/lib/ui/gfx/fidl/nodes.fidl
+FILE: ../../../garnet/public/lib/ui/gfx/fidl/renderer.fidl
+FILE: ../../../garnet/public/lib/ui/gfx/fidl/resources.fidl
+FILE: ../../../garnet/public/lib/ui/gfx/fidl/shapes.fidl
+FILE: ../../../garnet/public/lib/ui/gfx/fidl/types.fidl
 FILE: ../../../garnet/public/lib/ui/input/device_state.cc
 FILE: ../../../garnet/public/lib/ui/input/device_state.h
 FILE: ../../../garnet/public/lib/ui/input/fidl/ime_service.fidl
@@ -156,7 +151,6 @@ FILE: ../../../garnet/public/lib/ui/input/fidl/text_input.fidl
 FILE: ../../../garnet/public/lib/ui/input/fidl/usages.fidl
 FILE: ../../../garnet/public/lib/ui/input/input_device_impl.cc
 FILE: ../../../garnet/public/lib/ui/input/input_device_impl.h
-FILE: ../../../garnet/public/lib/ui/mozart/fidl/presentation_info.fidl
 FILE: ../../../garnet/public/lib/ui/presentation/fidl/presentation.fidl
 FILE: ../../../garnet/public/lib/ui/scenic/client/host_image_cycler.cc
 FILE: ../../../garnet/public/lib/ui/scenic/client/host_image_cycler.h
@@ -166,28 +160,25 @@ FILE: ../../../garnet/public/lib/ui/scenic/client/resources.cc
 FILE: ../../../garnet/public/lib/ui/scenic/client/resources.h
 FILE: ../../../garnet/public/lib/ui/scenic/client/session.cc
 FILE: ../../../garnet/public/lib/ui/scenic/client/session.h
-FILE: ../../../garnet/public/lib/ui/scenic/fidl/display_info.fidl
-FILE: ../../../garnet/public/lib/ui/scenic/fidl/events.fidl
-FILE: ../../../garnet/public/lib/ui/scenic/fidl/hit.fidl
-FILE: ../../../garnet/public/lib/ui/scenic/fidl/nodes.fidl
-FILE: ../../../garnet/public/lib/ui/scenic/fidl/ops.fidl
-FILE: ../../../garnet/public/lib/ui/scenic/fidl/renderer.fidl
-FILE: ../../../garnet/public/lib/ui/scenic/fidl/resources.fidl
-FILE: ../../../garnet/public/lib/ui/scenic/fidl/shapes.fidl
-FILE: ../../../garnet/public/lib/ui/scenic/fidl/types.fidl
 FILE: ../../../garnet/public/lib/ui/scenic/fidl_helpers.cc
 FILE: ../../../garnet/public/lib/ui/scenic/fidl_helpers.h
 FILE: ../../../garnet/public/lib/ui/scenic/types.h
-FILE: ../../../garnet/public/lib/ui/sketchy/canvas.cc
-FILE: ../../../garnet/public/lib/ui/sketchy/canvas.h
-FILE: ../../../garnet/public/lib/ui/sketchy/glm_hack.h
-FILE: ../../../garnet/public/lib/ui/sketchy/resources.cc
-FILE: ../../../garnet/public/lib/ui/sketchy/resources.h
-FILE: ../../../garnet/public/lib/ui/sketchy/types.cc
-FILE: ../../../garnet/public/lib/ui/sketchy/types.h
+FILE: ../../../garnet/public/lib/ui/sketchy/client/canvas.cc
+FILE: ../../../garnet/public/lib/ui/sketchy/client/canvas.h
+FILE: ../../../garnet/public/lib/ui/sketchy/client/glm_hack.h
+FILE: ../../../garnet/public/lib/ui/sketchy/client/resources.cc
+FILE: ../../../garnet/public/lib/ui/sketchy/client/resources.h
+FILE: ../../../garnet/public/lib/ui/sketchy/client/types.cc
+FILE: ../../../garnet/public/lib/ui/sketchy/client/types.h
+FILE: ../../../garnet/public/lib/ui/sketchy/fidl/canvas.fidl
+FILE: ../../../garnet/public/lib/ui/sketchy/fidl/commands.fidl
+FILE: ../../../garnet/public/lib/ui/sketchy/fidl/resources.fidl
+FILE: ../../../garnet/public/lib/ui/sketchy/fidl/types.fidl
 FILE: ../../../garnet/public/lib/wlan/fidl/wlan_mlme.fidl
 FILE: ../../../garnet/public/lib/wlan/fidl/wlan_mlme_ext.fidl
 FILE: ../../../garnet/public/lib/wlan/fidl/wlan_service.fidl
+FILE: ../../../garnet/rust_fidl_crates.json
+FILE: ../../../garnet/rustfmt.toml
 FILE: ../../../garnet/tools/vboot_reference/futility_cmds.c
 FILE: ../../../garnet/tools/vboot_reference/uuid/uuid.cc
 FILE: ../../../garnet/tools/vboot_reference/uuid/uuid.h
@@ -223,193 +214,48 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: garnet
-ORIGIN: ../../../garnet/public/lib/fidl/cpp/bindings/internal/array_internal.cc + ../../../garnet/LICENSE
+ORIGIN: ../../../garnet/public/lib/backoff/backoff.h + ../../../garnet/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/array.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/array_internal.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/array_internal.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/bindings_internal.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/bindings_serialization.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/bindings_serialization.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/buffer.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/connector.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/connector.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/message.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/message_builder.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/message_builder.h
-----------------------------------------------------------------------------------------------------
-Copyright 2013 The Fuchsia Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: garnet
-ORIGIN: ../../../garnet/public/lib/fidl/cpp/bindings/internal/array_serialization.h + ../../../garnet/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/binding.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/binding_set.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/interface_ptr.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/interface_ptr_set.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/interface_request.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/array_serialization.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/bounds_checker.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/bounds_checker.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/fixed_buffer.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/fixed_buffer.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/interface_ptr_internal.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/map_data_internal.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/map_internal.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/map_serialization.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/message_header_validator.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/message_header_validator.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/message_internal.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/router.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/router.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/shared_data.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/string_serialization.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/string_serialization.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/template_util.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/validate_params.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/validation_errors.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/validation_errors.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/map.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/message.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/string.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/struct_ptr.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/type_converter.h
-FILE: ../../../garnet/public/lib/ui/input/fidl/input_event_constants.fidl
-FILE: ../../../garnet/public/lib/ui/input/fidl/input_events.fidl
-----------------------------------------------------------------------------------------------------
-Copyright 2014 The Fuchsia Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: garnet
-ORIGIN: ../../../garnet/public/lib/fidl/cpp/bindings/internal/iterator_util.h + ../../../garnet/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/interface_handle.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/iterator_util.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/map_serialization_forward.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/message_validation.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/message_validation.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/union_accessor.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/validation_util.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/validation_util.h
-FILE: ../../../garnet/public/lib/icu_data/cpp/constants.h
-FILE: ../../../garnet/public/lib/icu_data/cpp/icu_data.cc
-FILE: ../../../garnet/public/lib/icu_data/cpp/icu_data.h
-FILE: ../../../garnet/public/lib/ui/input/fidl/input_connection.fidl
-FILE: ../../../garnet/public/lib/ui/input/fidl/input_dispatcher.fidl
-FILE: ../../../garnet/public/lib/ui/view_framework/base_view.cc
-FILE: ../../../garnet/public/lib/ui/view_framework/base_view.h
-FILE: ../../../garnet/public/lib/ui/view_framework/view_provider_service.cc
-FILE: ../../../garnet/public/lib/ui/view_framework/view_provider_service.h
-FILE: ../../../garnet/public/lib/ui/views/cpp/formatting.cc
-FILE: ../../../garnet/public/lib/ui/views/cpp/formatting.h
-FILE: ../../../garnet/public/lib/ui/views/fidl/view_manager.fidl
-FILE: ../../../garnet/public/lib/ui/views/fidl/view_provider.fidl
-FILE: ../../../garnet/public/lib/ui/views/fidl/view_trees.fidl
-FILE: ../../../garnet/public/lib/ui/views/fidl/views.fidl
-----------------------------------------------------------------------------------------------------
-Copyright 2015 The Fuchsia Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: garnet
-ORIGIN: ../../../garnet/public/lib/fidl/cpp/bindings/internal/type_converters.cc + ../../../garnet/LICENSE
-TYPE: LicenseType.bsd
+FILE: ../../../garnet/public/lib/backoff/backoff.h
+FILE: ../../../garnet/public/lib/backoff/exponential_backoff.cc
+FILE: ../../../garnet/public/lib/backoff/exponential_backoff.h
+FILE: ../../../garnet/public/lib/backoff/exponential_backoff_unittest.cc
+FILE: ../../../garnet/public/lib/callback/auto_cleanable.h
+FILE: ../../../garnet/public/lib/callback/auto_cleanable_unittest.cc
+FILE: ../../../garnet/public/lib/callback/cancellable.cc
+FILE: ../../../garnet/public/lib/callback/cancellable.h
+FILE: ../../../garnet/public/lib/callback/cancellable_helper.cc
+FILE: ../../../garnet/public/lib/callback/cancellable_helper.h
+FILE: ../../../garnet/public/lib/callback/cancellable_helper_unittest.cc
+FILE: ../../../garnet/public/lib/callback/cancellable_unittest.cc
+FILE: ../../../garnet/public/lib/callback/capture.h
+FILE: ../../../garnet/public/lib/callback/capture_unittest.cc
+FILE: ../../../garnet/public/lib/callback/destruction_sentinel.cc
+FILE: ../../../garnet/public/lib/callback/destruction_sentinel.h
+FILE: ../../../garnet/public/lib/callback/destruction_sentinel_unittest.cc
+FILE: ../../../garnet/public/lib/callback/set_when_called.cc
+FILE: ../../../garnet/public/lib/callback/set_when_called.h
+FILE: ../../../garnet/public/lib/callback/set_when_called_unittest.cc
+FILE: ../../../garnet/public/lib/callback/trace_callback.h
+FILE: ../../../garnet/public/lib/callback/waiter.h
+FILE: ../../../garnet/public/lib/callback/waiter_unittest.cc
+FILE: ../../../garnet/public/lib/fidl/cpp/array_unittest.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/binding.h
 FILE: ../../../garnet/public/lib/fidl/cpp/binding_set.h
 FILE: ../../../garnet/public/lib/fidl/cpp/binding_set_unittest.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/binding_unittest.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/type_converters.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/type_converters.h
 FILE: ../../../garnet/public/lib/fidl/cpp/clone.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/clone.h
 FILE: ../../../garnet/public/lib/fidl/cpp/clone_unittest.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/coding_traits.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/coding_traits.h
+FILE: ../../../garnet/public/lib/fidl/cpp/comparison.h
 FILE: ../../../garnet/public/lib/fidl/cpp/decoder.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/decoder.h
 FILE: ../../../garnet/public/lib/fidl/cpp/encoder.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/encoder.h
+FILE: ../../../garnet/public/lib/fidl/cpp/fidl_test.cc
+FILE: ../../../garnet/public/lib/fidl/cpp/fidl_test.fidl
 FILE: ../../../garnet/public/lib/fidl/cpp/interface_handle.h
 FILE: ../../../garnet/public/lib/fidl/cpp/interface_handle_unittest.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/interface_ptr.h
@@ -420,6 +266,8 @@ FILE: ../../../garnet/public/lib/fidl/cpp/interface_request.h
 FILE: ../../../garnet/public/lib/fidl/cpp/interface_request_unittest.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/header.h
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/implementation.h
+FILE: ../../../garnet/public/lib/fidl/cpp/internal/logging.cc
+FILE: ../../../garnet/public/lib/fidl/cpp/internal/logging.h
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/message_handler.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/message_handler.h
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/message_reader.cc
@@ -427,6 +275,8 @@ FILE: ../../../garnet/public/lib/fidl/cpp/internal/message_reader.h
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/message_reader_unittest.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/pending_response.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/pending_response.h
+FILE: ../../../garnet/public/lib/fidl/cpp/internal/proxy.cc
+FILE: ../../../garnet/public/lib/fidl/cpp/internal/proxy.h
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/proxy_controller.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/proxy_controller.h
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/proxy_controller_unittest.cc
@@ -439,42 +289,76 @@ FILE: ../../../garnet/public/lib/fidl/cpp/internal/synchronous_proxy.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/synchronous_proxy.h
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/weak_stub_controller.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/internal/weak_stub_controller.h
+FILE: ../../../garnet/public/lib/fidl/cpp/optional.h
 FILE: ../../../garnet/public/lib/fidl/cpp/string.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/string.h
 FILE: ../../../garnet/public/lib/fidl/cpp/string_unittest.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/synchronous_interface_ptr.h
 FILE: ../../../garnet/public/lib/fidl/cpp/synchronous_interface_ptr_unittest.cc
+FILE: ../../../garnet/public/lib/fidl/cpp/thread_safe_binding_set.h
+FILE: ../../../garnet/public/lib/fidl/cpp/thread_safe_binding_set_unittest.cc
 FILE: ../../../garnet/public/lib/fidl/cpp/traits.h
 FILE: ../../../garnet/public/lib/fidl/cpp/vector.h
 FILE: ../../../garnet/public/lib/fidl/cpp/vector_unittest.cc
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings2/encoding.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings2/encoding_test.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings2/message.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings2/test_types.go
+FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/bindings.go
+FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/bindings_test/bindings_test.go
+FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/bindings_test/encoding_test.go
+FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/bindings_test/test.fidl
+FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/encoding.go
+FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/errors.go
+FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/interface.go
+FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/message.go
+FILE: ../../../garnet/public/lib/fidl/rust/fidl/src/client2.rs
 FILE: ../../../garnet/public/lib/fidl/rust/fidl/src/encoding2.rs
+FILE: ../../../garnet/public/lib/fidl/rust/fidl/src/endpoints2.rs
 FILE: ../../../garnet/public/lib/fsl/syslogger/init.cc
 FILE: ../../../garnet/public/lib/fsl/syslogger/init.h
 FILE: ../../../garnet/public/lib/fsl/syslogger/init_unittest.cc
+FILE: ../../../garnet/public/lib/fsl/types/type_converters.cc
+FILE: ../../../garnet/public/lib/fsl/types/type_converters.h
 FILE: ../../../garnet/public/lib/fxl/type_converter.h
 FILE: ../../../garnet/public/lib/gralloc/fidl/gralloc.fidl
+FILE: ../../../garnet/public/lib/gtest/test_with_loop.cc
+FILE: ../../../garnet/public/lib/gtest/test_with_loop.h
+FILE: ../../../garnet/public/lib/gtest/test_with_loop_unittest.cc
+FILE: ../../../garnet/public/lib/guest/fidl/guest_controller.fidl
+FILE: ../../../garnet/public/lib/guest/fidl/guest_environment.fidl
+FILE: ../../../garnet/public/lib/guest/fidl/guest_manager.fidl
+FILE: ../../../garnet/public/lib/guest/fidl/vsock.fidl
+FILE: ../../../garnet/public/lib/http/fidl/client.fidl
 FILE: ../../../garnet/public/lib/images/fidl/encoded_image.fidl
+FILE: ../../../garnet/public/lib/images/fidl/image_info.fidl
+FILE: ../../../garnet/public/lib/images/fidl/image_pipe.fidl
+FILE: ../../../garnet/public/lib/images/fidl/memory_type.fidl
 FILE: ../../../garnet/public/lib/logger/fidl/logger.fidl
 FILE: ../../../garnet/public/lib/mdns/cpp/service_subscriber.cc
 FILE: ../../../garnet/public/lib/mdns/cpp/service_subscriber.h
+FILE: ../../../garnet/public/lib/network_wrapper/fake_network_wrapper.cc
+FILE: ../../../garnet/public/lib/network_wrapper/fake_network_wrapper.h
+FILE: ../../../garnet/public/lib/network_wrapper/network_wrapper.h
+FILE: ../../../garnet/public/lib/network_wrapper/network_wrapper_impl.cc
+FILE: ../../../garnet/public/lib/network_wrapper/network_wrapper_impl.h
+FILE: ../../../garnet/public/lib/network_wrapper/network_wrapper_impl_unittest.cc
+FILE: ../../../garnet/public/lib/svc/dir.cc
+FILE: ../../../garnet/public/lib/svc/dir.h
+FILE: ../../../garnet/public/lib/svc/dir_unittest.cc
+FILE: ../../../garnet/public/lib/svc/go/src/svc/services/services.go
 FILE: ../../../garnet/public/lib/syslog/cpp/logger.cc
 FILE: ../../../garnet/public/lib/syslog/cpp/logger.h
 FILE: ../../../garnet/public/lib/syslog/cpp/logger_init.cc
 FILE: ../../../garnet/public/lib/syslog/cpp/logger_unittest.cc
-FILE: ../../../garnet/public/lib/ui/mozart/fidl/commands.fidl
-FILE: ../../../garnet/public/lib/ui/mozart/fidl/dummy_system/commands.fidl
-FILE: ../../../garnet/public/lib/ui/mozart/fidl/dummy_system/events.fidl
-FILE: ../../../garnet/public/lib/ui/mozart/fidl/events.fidl
-FILE: ../../../garnet/public/lib/ui/mozart/fidl/mozart.fidl
-FILE: ../../../garnet/public/lib/ui/mozart/fidl/session.fidl
+FILE: ../../../garnet/public/lib/syslog/go/src/syslog/logger/logger.go
 FILE: ../../../garnet/public/lib/ui/presentation/fidl/display_usage.fidl
+FILE: ../../../garnet/public/lib/ui/scenic/fidl/commands.fidl
+FILE: ../../../garnet/public/lib/ui/scenic/fidl/events.fidl
+FILE: ../../../garnet/public/lib/ui/scenic/fidl/scenic.fidl
+FILE: ../../../garnet/public/lib/ui/scenic/fidl/session.fidl
+FILE: ../../../garnet/public/lib/ui/spaces/fidl/space_provider.fidl
 FILE: ../../../garnet/public/lib/ui/views/fidl/commands.fidl
 FILE: ../../../garnet/public/lib/ui/views/fidl/events.fidl
+FILE: ../../../garnet/public/lib/wlan/fidl/wlan_stats.fidl
 FILE: ../../../garnet/public/lib/xi/fidl/xi.fidl
+FILE: ../../../garnet/tools/cipd.ensure
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Fuchsia Authors. All rights reserved.
 
@@ -507,12 +391,60 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: garnet
-ORIGIN: ../../../garnet/public/lib/media/audio/lpcm_payload.cc + ../../../garnet/LICENSE
+ORIGIN: ../../../garnet/public/lib/fsl/types/type_converters_unittest.cc + ../../../garnet/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../garnet/public/lib/media/audio/lpcm_payload.cc
-FILE: ../../../garnet/public/lib/media/audio/lpcm_payload.h
+FILE: ../../../garnet/public/lib/fsl/types/type_converters_unittest.cc
 ----------------------------------------------------------------------------------------------------
-Copyright 2017 The Fuchsia Authors.All rights reserved.
+Copyright 2013 The Fuchsia Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: garnet
+ORIGIN: ../../../garnet/public/lib/icu_data/cpp/constants.h + ../../../garnet/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../garnet/public/lib/icu_data/cpp/constants.h
+FILE: ../../../garnet/public/lib/icu_data/cpp/icu_data.cc
+FILE: ../../../garnet/public/lib/icu_data/cpp/icu_data.h
+FILE: ../../../garnet/public/lib/ui/input/fidl/input_connection.fidl
+FILE: ../../../garnet/public/lib/ui/input/fidl/input_dispatcher.fidl
+FILE: ../../../garnet/public/lib/ui/view_framework/base_view.cc
+FILE: ../../../garnet/public/lib/ui/view_framework/base_view.h
+FILE: ../../../garnet/public/lib/ui/view_framework/view_provider_service.cc
+FILE: ../../../garnet/public/lib/ui/view_framework/view_provider_service.h
+FILE: ../../../garnet/public/lib/ui/views/cpp/formatting.cc
+FILE: ../../../garnet/public/lib/ui/views/cpp/formatting.h
+FILE: ../../../garnet/public/lib/ui/views/fidl/view_manager.fidl
+FILE: ../../../garnet/public/lib/ui/views/fidl/view_provider.fidl
+FILE: ../../../garnet/public/lib/ui/views/fidl/view_trees.fidl
+FILE: ../../../garnet/public/lib/ui/views/fidl/views.fidl
+----------------------------------------------------------------------------------------------------
+Copyright 2015 The Fuchsia Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -613,17 +545,44 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: garnet
+ORIGIN: ../../../garnet/public/lib/ui/input/fidl/input_event_constants.fidl + ../../../garnet/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../garnet/public/lib/ui/input/fidl/input_event_constants.fidl
+FILE: ../../../garnet/public/lib/ui/input/fidl/input_events.fidl
+----------------------------------------------------------------------------------------------------
+Copyright 2014 The Fuchsia Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: garnet
 ORIGIN: ../../../third_party/icu/scripts/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/async_waiter.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/connector.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/decoder.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/encoder.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/interface.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/message.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/router.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/stub.go
-FILE: ../../../garnet/public/lib/fidl/go/src/fidl/bindings/util.go
 FILE: ../../../garnet/public/lib/netstack/fidl/net_address.fidl
 FILE: ../../../garnet/public/lib/network/fidl/http_header.fidl
 FILE: ../../../garnet/public/lib/network/fidl/network_error.fidl
@@ -665,17 +624,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: garnet
 ORIGIN: ../../../topaz/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/formatting.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/internal/message_validator.cc
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/message_validator.h
-FILE: ../../../garnet/public/lib/fidl/cpp/bindings/synchronous_interface_ptr.h
-FILE: ../../../garnet/public/lib/fidl/rust/fidl/src/client.rs
-FILE: ../../../garnet/public/lib/fidl/rust/fidl/src/encoding.rs
 FILE: ../../../garnet/public/lib/fidl/rust/fidl/src/error.rs
-FILE: ../../../garnet/public/lib/fidl/rust/fidl/src/interface.rs
 FILE: ../../../garnet/public/lib/fidl/rust/fidl/src/lib.rs
-FILE: ../../../garnet/public/lib/fidl/rust/fidl/src/message.rs
-FILE: ../../../garnet/public/lib/fidl/rust/fidl/src/server.rs
 FILE: ../../../garnet/public/lib/fonts/fidl/font_provider.fidl
 FILE: ../../../garnet/public/lib/fsl/handles/object_info.cc
 FILE: ../../../garnet/public/lib/fsl/handles/object_info.h
@@ -699,12 +649,7 @@ FILE: ../../../garnet/public/lib/fsl/tasks/incoming_task_queue.cc
 FILE: ../../../garnet/public/lib/fsl/tasks/incoming_task_queue.h
 FILE: ../../../garnet/public/lib/fsl/tasks/message_loop.cc
 FILE: ../../../garnet/public/lib/fsl/tasks/message_loop.h
-FILE: ../../../garnet/public/lib/fsl/tasks/message_loop_handler.cc
-FILE: ../../../garnet/public/lib/fsl/tasks/message_loop_handler.h
 FILE: ../../../garnet/public/lib/fsl/tasks/message_loop_unittest.cc
-FILE: ../../../garnet/public/lib/fsl/threading/create_thread.cc
-FILE: ../../../garnet/public/lib/fsl/threading/create_thread.h
-FILE: ../../../garnet/public/lib/fsl/threading/create_thread_unittest.cc
 FILE: ../../../garnet/public/lib/fsl/vmo/file.cc
 FILE: ../../../garnet/public/lib/fsl/vmo/file.h
 FILE: ../../../garnet/public/lib/fsl/vmo/shared_vmo.cc
@@ -791,8 +736,6 @@ FILE: ../../../garnet/public/lib/fxl/strings/trim.h
 FILE: ../../../garnet/public/lib/fxl/strings/trim_unittest.cc
 FILE: ../../../garnet/public/lib/fxl/strings/utf_codecs.cc
 FILE: ../../../garnet/public/lib/fxl/strings/utf_codecs.h
-FILE: ../../../garnet/public/lib/fxl/synchronization/sleep.cc
-FILE: ../../../garnet/public/lib/fxl/synchronization/sleep.h
 FILE: ../../../garnet/public/lib/fxl/synchronization/thread_annotations.h
 FILE: ../../../garnet/public/lib/fxl/synchronization/thread_annotations_unittest.cc
 FILE: ../../../garnet/public/lib/fxl/synchronization/thread_checker.h
@@ -821,17 +764,13 @@ FILE: ../../../garnet/public/lib/media/fidl/media_metadata.fidl
 FILE: ../../../garnet/public/lib/media/fidl/media_player.fidl
 FILE: ../../../garnet/public/lib/media/fidl/media_renderer.fidl
 FILE: ../../../garnet/public/lib/media/fidl/media_result.fidl
-FILE: ../../../garnet/public/lib/media/fidl/media_sink.fidl
 FILE: ../../../garnet/public/lib/media/fidl/media_source.fidl
 FILE: ../../../garnet/public/lib/media/fidl/media_transport.fidl
-FILE: ../../../garnet/public/lib/media/fidl/media_type_converter.fidl
 FILE: ../../../garnet/public/lib/media/fidl/media_types.fidl
 FILE: ../../../garnet/public/lib/media/fidl/problem.fidl
 FILE: ../../../garnet/public/lib/media/fidl/seeking_reader.fidl
 FILE: ../../../garnet/public/lib/media/fidl/timeline_controller.fidl
 FILE: ../../../garnet/public/lib/media/fidl/timelines.fidl
-FILE: ../../../garnet/public/lib/media/fidl/tts_service.fidl
-FILE: ../../../garnet/public/lib/media/fidl/video_renderer.fidl
 FILE: ../../../garnet/public/lib/media/timeline/timeline.h
 FILE: ../../../garnet/public/lib/media/timeline/timeline_function.cc
 FILE: ../../../garnet/public/lib/media/timeline/timeline_function.h
@@ -859,8 +798,7 @@ FILE: ../../../garnet/public/lib/test_runner/cpp/scope.h
 FILE: ../../../garnet/public/lib/test_runner/cpp/test_runner.cc
 FILE: ../../../garnet/public/lib/test_runner/fidl/test_runner.fidl
 FILE: ../../../garnet/public/lib/tracing/fidl/trace_controller.fidl
-FILE: ../../../garnet/public/lib/tracing/fidl/trace_provider.fidl
-FILE: ../../../garnet/public/lib/tracing/fidl/trace_registry.fidl
+FILE: ../../../garnet/public/lib/tts/fidl/tts.fidl
 FILE: ../../../garnet/public/lib/ui/geometry/cpp/formatting.cc
 FILE: ../../../garnet/public/lib/ui/geometry/cpp/formatting.h
 FILE: ../../../garnet/public/lib/ui/geometry/cpp/geometry_util.cc
@@ -957,4 +895,4 @@ shall not be used in advertising or otherwise to promote the sale, use
 or other dealings in this Software without prior written authorization
 of the copyright holder.
 ====================================================================================================
-Total license count: 12
+Total license count: 10

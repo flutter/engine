@@ -1,4 +1,4 @@
-Signature: ee1af487941cb16b5491caf536dd0d96
+Signature: 9f0860863d4e46144225228e5e369377
 
 UNUSED LICENSES:
 
@@ -16518,6 +16518,7 @@ LIBRARY: rapidjson
 ORIGIN: ../../../third_party/rapidjson/rapidjson/error/en.h
 TYPE: LicenseType.mit
 FILE: ../../../third_party/rapidjson/rapidjson/allocators.h
+FILE: ../../../third_party/rapidjson/rapidjson/cursorstreamwrapper.h
 FILE: ../../../third_party/rapidjson/rapidjson/document.h
 FILE: ../../../third_party/rapidjson/rapidjson/encodedstream.h
 FILE: ../../../third_party/rapidjson/rapidjson/encodings.h
