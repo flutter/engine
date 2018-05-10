@@ -101,7 +101,7 @@ vars = {
   # Build bot tooling for iOS
   'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
 
-  'buildtools_revision': 'ae85410691b10aa2469695c2421b1fe751843e64',
+  'buildtools_revision': '22c033bc9b24ad8a1c9f4a094d67f112e7f340ac',
 }
 
 # Only these hosts are allowed for dependencies in this DEPS file.
@@ -114,7 +114,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'cc6ecd00297daff80f94638cb137bce1f044fdb3',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '92c86d0e042d3a51c408486f81f29693ecca3611',
 
    # Fuchsia compatibility
    #
@@ -123,22 +123,22 @@ deps = {
    # and not have to specific specific hashes.
 
   'src/garnet':
-   Var('fuchsia_git') + '/garnet' + '@' + 'b7492b5f34e32248b164eb48ae8e67995aebda67',
+   Var('fuchsia_git') + '/garnet' + '@' + '4d04ff6b7578969432d2c74388a4a209e930de1a',
 
   'src/topaz':
-   Var('fuchsia_git') + '/topaz' + '@' + 'e331f910c1003d154a4de6e1b5356f8d785fd6ec',
+   Var('fuchsia_git') + '/topaz' + '@' + '0739e0a799db0fe96dc3f0d1bacee68ae30fac5c',
 
   'src/third_party/benchmark':
-   Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',
+   Var('fuchsia_git') + '/third_party/benchmark' + '@' + '5a905a7146ce3a04731bd5c0fab94eb9df8386f6',
 
   'src/third_party/googletest':
-   Var('fuchsia_git') + '/third_party/googletest' + '@' + '2072b0053d3537fa5e8d222e34c759987aae1320',
+   Var('fuchsia_git') + '/third_party/googletest' + '@' + 'c3e9f5f4ddf52184732de4af949ea2421129bc23',
 
   'src/third_party/rapidjson':
-   Var('fuchsia_git') + '/third_party/rapidjson' + '@' + '9defbb0209a534ffeb3a2b79d5ee440a77407292',
+   Var('fuchsia_git') + '/third_party/rapidjson' + '@' + '815fc9c85e9501b245b0a0f3c18fa7d809bc21ac',
 
   'src/third_party/harfbuzz':
-   Var('fuchsia_git') + '/third_party/harfbuzz' + '@' + '39b423660aacf916f1cb01f24913f78eaacb3baf',
+   Var('fuchsia_git') + '/third_party/harfbuzz' + '@' + '2eed78c0bb5f2b12ace17d03cfa68b9f1535c85d',
 
    # Chromium-style
    #
