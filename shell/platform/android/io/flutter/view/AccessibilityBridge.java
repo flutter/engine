@@ -864,6 +864,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             final int childCount = buffer.getInt();
             if (childCount == 0) {
                 childrenInTraversalOrder = null;
+                childrenInHitTestOrder = null;
             } else {
                 if (childrenInTraversalOrder == null)
                     childrenInTraversalOrder = new ArrayList<SemanticsObject>(childCount);
@@ -875,11 +876,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                     child.parent = this;
                     childrenInTraversalOrder.add(child);
                 }
-            }
 
-            if (childCount == 0) {
-                childrenInHitTestOrder = null;
-            } else {
                 if (childrenInHitTestOrder == null)
                     childrenInHitTestOrder = new ArrayList<SemanticsObject>(childCount);
                 else

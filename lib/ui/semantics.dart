@@ -434,11 +434,17 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Update the information associated with the node with the given `id`.
   ///
   /// The semantics nodes form a tree, with the root of the tree always having
-  /// an id of zero. The `children` are the ids of the nodes that are immediate
-  /// children of this node. The system retains the nodes that are currently
-  /// reachable from the root. A given update need not contain information for
-  /// nodes that do not change in the update. If a node is not reachable from
-  /// the root after an update, the node will be discarded from the tree.
+  /// an id of zero. The `childrenInTraversalOrder` and `childrenInHitTestOrder`
+  /// are the ids of the nodes that are immediate children of this node. The
+  /// former enumerates children in traversal order, and the latter enumerates
+  /// the same children in the hit test order. The two lists must have the same
+  /// length and contain the same ids. They may only differ in the order the
+  /// ids are listed in.
+  /// 
+  /// The system retains the nodes that are currently reachable from the root.
+  /// A given update need not contain information for nodes that do not change
+  /// in the update. If a node is not reachable from the root after an update,
+  /// the node will be discarded from the tree.
   ///
   /// The `flags` are a bit field of [SemanticsFlag]s that apply to this node.
   ///
@@ -490,7 +496,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     TextDirection textDirection,
     Float64List transform,
     // TODO(yjbanov): remove after moving the framework to the new param names.
-    @deprecated Int32List children,
+    Int32List children,
     Int32List childrenInTraversalOrder,
     Int32List childrenInHitTestOrder,
   }) {
