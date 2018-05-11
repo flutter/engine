@@ -1,9 +1,9 @@
-Signature: a21b2333b39745cc2457c3e4eb0801e3
+Signature: f59cb1bfa5d91c5f8d634a2628f29b32
 
 UNUSED LICENSES:
 
 ====================================================================================================
-ORIGIN: ../../../flutter/sky/engine/wtf/dtoa/LICENSE
+ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
 TYPE: LicenseType.bsd
 ----------------------------------------------------------------------------------------------------
 Copyright 2006-2011, the V8 project authors. All rights reserved.
