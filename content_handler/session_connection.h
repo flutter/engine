@@ -60,7 +60,9 @@ class SessionConnection final {
 
   void EnqueueClearOps();
 
-  static void OnSessionPresent(zx_handle_t handle);
+  void PresentSession();
+
+  static void ToggleSignal(zx_handle_t handle, bool raise);
 
   FXL_DISALLOW_COPY_AND_ASSIGN(SessionConnection);
 };

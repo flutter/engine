@@ -8,10 +8,14 @@
 
 namespace flutter {
 
-VsyncWaiter::VsyncWaiter(zx_handle_t session_present_handle,
+VsyncWaiter::VsyncWaiter(std::string debug_label,
+                         zx_handle_t session_present_handle,
                          blink::TaskRunners task_runners)
     : shell::VsyncWaiter(task_runners),
-      session_wait_(session_present_handle, SessionPresentSignal) {
+      debug_label_(std::move(debug_label)),
+      session_wait_(session_present_handle, SessionPresentSignal),
+      phase_(fxl::TimePoint::Now()),
+      weak_factory_(this) {
   auto wait_handler = [&](async_t* async,                   //
                           async::Wait* wait,                //
                           zx_status_t status,               //
@@ -24,16 +28,6 @@ VsyncWaiter::VsyncWaiter(zx_handle_t session_present_handle,
 
     wait->Cancel();
 
-    status = zx_object_signal(wait->object(),        // object
-                              SessionPresentSignal,  // clear mask
-                              0                      // set mask
-    );
-
-    if (status != ZX_OK) {
-      FXL_LOG(ERROR) << "Could not clear the vsync signal.";
-      return;
-    }
-
     FireCallbackNow();
   };
 
@@ -44,7 +38,32 @@ VsyncWaiter::~VsyncWaiter() {
   session_wait_.Cancel();
 }
 
+static constexpr fxl::TimeDelta kFrameInterval =
+    fxl::TimeDelta::FromSecondsF(1.0 / 60.0);
+
+static fxl::TimePoint SnapToNextPhase(fxl::TimePoint value,
+                                      fxl::TimePoint phase,
+                                      fxl::TimeDelta interval) {
+  fxl::TimeDelta offset = (phase - value) % interval;
+  if (offset != fxl::TimeDelta::Zero()) {
+    offset = offset + interval;
+  }
+  return value + offset;
+}
+
 void VsyncWaiter::AwaitVSync() {
+  fxl::TimePoint now = fxl::TimePoint::Now();
+  fxl::TimePoint next = SnapToNextPhase(now, phase_, kFrameInterval);
+  task_runners_.GetUITaskRunner()->PostDelayedTask(
+      [self = weak_factory_.GetWeakPtr()] {
+        if (self) {
+          self->FireCallbackWhenSessionAvailable();
+        }
+      },
+      next - now);
+}
+
+void VsyncWaiter::FireCallbackWhenSessionAvailable() {
   FXL_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   if (session_wait_.Begin(fsl::MessageLoop::GetCurrent()->async()) != ZX_OK) {
     FXL_LOG(ERROR) << "Could not begin wait for Vsync.";
@@ -53,12 +72,14 @@ void VsyncWaiter::AwaitVSync() {
 
 void VsyncWaiter::FireCallbackNow() {
   FXL_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
-  // We don't know the display refresh rate on this platform. Since the target
-  // time is advisory, assume 60Hz.
-  constexpr fxl::TimeDelta interval = fxl::TimeDelta::FromSecondsF(1.0 / 60.0);
 
   auto now = fxl::TimePoint::Now();
-  auto next = now + interval;
+
+  // We don't know the display refresh rate on this platform. Since the target
+  // time is advisory, assume kFrameInterval.
+  auto next = now + kFrameInterval;
+
+  phase_ = now;
 
   FireCallback(now, next);
 }

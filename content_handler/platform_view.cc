@@ -400,8 +400,8 @@ bool PlatformView::OnHandleFocusEvent(const input::FocusEvent& focus) {
 
 // |shell::PlatformView|
 std::unique_ptr<shell::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
-  return std::make_unique<flutter::VsyncWaiter>(vsync_event_handle_,
-                                                task_runners_);
+  return std::make_unique<flutter::VsyncWaiter>(
+      debug_label_, vsync_event_handle_, task_runners_);
 }
 
 // |shell::PlatformView|

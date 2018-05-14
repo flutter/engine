@@ -16,16 +16,22 @@ class VsyncWaiter final : public shell::VsyncWaiter {
  public:
   static constexpr zx_signals_t SessionPresentSignal = ZX_EVENT_SIGNALED;
 
-  VsyncWaiter(zx_handle_t session_present_handle,
+  VsyncWaiter(std::string debug_label,
+              zx_handle_t session_present_handle,
               blink::TaskRunners task_runners);
 
   ~VsyncWaiter() override;
 
  private:
+  const std::string debug_label_;
   async::Wait session_wait_;
+  fxl::TimePoint phase_;
+  fxl::WeakPtrFactory<VsyncWaiter> weak_factory_;
 
   // |shell::VsyncWaiter|
   void AwaitVSync() override;
+
+  void FireCallbackWhenSessionAvailable();
 
   void FireCallbackNow();
 

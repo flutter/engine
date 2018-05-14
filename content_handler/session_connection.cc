@@ -31,8 +31,11 @@ SessionConnection::SessionConnection(
 
   root_node_.Bind(std::move(import_token));
   root_node_.SetEventMask(gfx::kMetricsEventMask);
-  session_.Present(
-      0, [handle = vsync_event_handle_](auto) { OnSessionPresent(handle); });
+
+  // Signal is initially high inidicating availability of the session.
+  ToggleSignal(vsync_event_handle_, true);
+
+  PresentSession();
 }
 
 SessionConnection::~SessionConnection() = default;
@@ -69,11 +72,7 @@ void SessionConnection::Present(flow::CompositorContext::ScopedFrame& frame) {
   // Flush all session ops. Paint tasks have not yet executed but those are
   // fenced. The compositor can start processing ops while we finalize paint
   // tasks.
-  session_.Present(0,  // presentation_time. (placeholder).
-                   [handle = vsync_event_handle_](auto) {
-                     OnSessionPresent(handle);
-                   }  // callback
-  );
+  PresentSession();
 
   // Execute paint tasks and signal fences.
   auto surfaces_to_submit = scene_update_context_.ExecutePaintTasks(frame);
@@ -93,14 +92,23 @@ void SessionConnection::EnqueueClearOps() {
   session_.Enqueue(scenic_lib::NewDetachChildrenCommand(root_node_.id()));
 }
 
-void SessionConnection::OnSessionPresent(zx_handle_t handle) {
-  auto status =
-      zx_object_signal(handle,                                     // handle
-                       0,                                          // clear mask
-                       flutter::VsyncWaiter::SessionPresentSignal  // set mask
-      );
+void SessionConnection::PresentSession() {
+  ToggleSignal(vsync_event_handle_, false);
+  session_.Present(0,  // presentation_time. (placeholder).
+                   [handle = vsync_event_handle_](auto) {
+                     ToggleSignal(handle, true);
+                   }  // callback
+  );
+}
+
+void SessionConnection::ToggleSignal(zx_handle_t handle, bool set) {
+  const auto signal = flutter::VsyncWaiter::SessionPresentSignal;
+  auto status = zx_object_signal(handle,            // handle
+                                 set ? 0 : signal,  // clear mask
+                                 set ? signal : 0   // set mask
+  );
   if (status != ZX_OK) {
-    FXL_LOG(ERROR) << "Could not signal vsync.";
+    FXL_LOG(ERROR) << "Could not toggle vsync signal: " << set;
   }
 }
 
