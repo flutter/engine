@@ -23,7 +23,7 @@ class ScopedFrame final : public flow::CompositorContext::ScopedFrame {
  private:
   SessionConnection& session_connection_;
 
-  bool Raster(flow::LayerTree& layer_tree, bool ignore_raster_cache) override {
+  bool Raster(flow::LayerTree& layer_tree) override {
     if (!session_connection_.has_metrics()) {
       return true;
     }

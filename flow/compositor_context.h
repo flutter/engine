@@ -36,7 +36,7 @@ class CompositorContext {
 
     GrContext* gr_context() const { return gr_context_; }
 
-    virtual bool Raster(LayerTree& layer_tree, bool ignore_raster_cache);
+    virtual bool Raster(LayerTree& layer_tree);
 
    private:
     CompositorContext& context_;

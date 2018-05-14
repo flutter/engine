@@ -117,7 +117,7 @@ bool Rasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
     canvas->clear(SK_ColorBLACK);
   }
 
-  if (compositor_frame && compositor_frame->Raster(layer_tree, false)) {
+  if (compositor_frame && compositor_frame->Raster(layer_tree)) {
     frame->Submit();
     FireNextFrameCallbackIfPresent();
     return true;
@@ -137,7 +137,7 @@ static sk_sp<SkPicture> ScreenshotLayerTreeAsPicture(
   auto frame = compositor_context.AcquireFrame(
       nullptr, recorder.getRecordingCanvas(), false);
 
-  frame->Raster(*tree, true);
+  frame->Raster(*tree);
 
   return recorder.finishRecordingAsPicture();
 }
@@ -176,7 +176,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsImage(
   auto canvas = snapshot_surface->getCanvas();
   auto frame = compositor_context.AcquireFrame(surface_context, canvas, false);
   canvas->clear(SK_ColorBLACK);
-  frame->Raster(*tree, true);
+  frame->Raster(*tree);
   canvas->flush();
 
   // Prepare an image from the surface, this image may potentially be on th GPU.

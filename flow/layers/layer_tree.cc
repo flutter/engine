@@ -18,15 +18,14 @@ LayerTree::LayerTree()
 
 LayerTree::~LayerTree() = default;
 
-void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
-                        bool ignore_raster_cache) {
+void LayerTree::Preroll(CompositorContext::ScopedFrame& frame) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
   SkColorSpace* color_space =
       frame.canvas() ? frame.canvas()->imageInfo().colorSpace() : nullptr;
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
   Layer::PrerollContext context = {
-      ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
+      &frame.context().raster_cache(),
       frame.gr_context(),
       color_space,
       SkRect::MakeEmpty(),
