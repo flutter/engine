@@ -1792,6 +1792,15 @@ class Path extends NativeFieldWrapperClass2 {
   Path _transform(Float64List matrix4) native 'Path_transform';
 
   /// Computes the bounding rectangle for this path.
+  /// 
+  /// The returned bounds width and height may be larger or smaller than area
+  /// affected when Path is drawn.  For example, a path containing a straight
+  /// line on the horizontal axis may result in a [Rect] with a height of 0 and
+  /// a width the approximate length of the path (if drawn with a stroke width
+  /// of 1.0).  Because of this, you should not rely on `Rect.isEmpty` to test
+  /// whether the bounds of this path contains any points, but instead test that 
+  /// `Rect.width + Rect.height > 0.0` (.
+  // see https://skia.org/user/api/SkPath_Reference#SkPath_getBounds
   Rect getBounds() {
     final Float32List rect = _getBounds();
     return new Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
