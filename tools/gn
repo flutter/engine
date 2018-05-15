@@ -216,9 +216,9 @@ def main(argv):
   if sys.platform.startswith(('cygwin', 'win')):
     subdir = 'win'
   elif sys.platform == 'darwin':
-    subdir = 'mac'
+    subdir = 'mac-x64'
   elif sys.platform.startswith('linux'):
-     subdir = 'linux64'
+     subdir = 'linux-x64'
   else:
     raise Error('Unknown platform: ' + sys.platform)
 

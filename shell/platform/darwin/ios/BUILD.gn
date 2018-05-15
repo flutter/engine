@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-assert(is_ios)
-
 import("$flutter_root/common/config.gni")
 import("//build/config/ios/ios_sdk.gni")
 
@@ -180,13 +178,15 @@ copy("copy_framework_module_map") {
 
 action("copy_framework_headers") {
   script = "$flutter_root/sky/tools/install_framework_headers.py"
-  visibility = [ ":*" ]
+
   sources = _flutter_framework_headers
   outputs = []
+
   foreach(header, _flutter_framework_headers) {
     header_basename = rebase_path(header, "framework/headers")
     outputs += [ "$_flutter_framework_headers_copy_dir/$header_basename" ]
   }
+
   args = [
            "--location",
            rebase_path("$_flutter_framework_headers_copy_dir"),
