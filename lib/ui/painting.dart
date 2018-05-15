@@ -1793,14 +1793,18 @@ class Path extends NativeFieldWrapperClass2 {
 
   /// Computes the bounding rectangle for this path.
   /// 
-  /// The returned bounds width and height may be larger or smaller than area
-  /// affected when Path is drawn.  For example, a path containing a straight
-  /// line on the horizontal axis may result in a [Rect] with a height of 0 and
-  /// a width the approximate length of the path (if drawn with a stroke width
-  /// of 1.0).  Because of this, you should not rely on `Rect.isEmpty` to test
-  /// whether the bounds of this path contains any points, but instead test that 
-  /// `Rect.width + Rect.height > 0.0` or use the `computeMetrics` API to check
-  /// the path length.
+  /// A path containing only axis-aligned points on the same straight line will
+  /// have no area, and therefore `Rect.isEmpty` will return true for such a
+  /// path. Consider checking `rect.width + rect.height > 0.0` instead, or
+  /// using the [computeMetrics] API to check the path length.
+  /// 
+  /// For many more elaborate paths, the bounds may be inaccurate.  For example,
+  /// when a path contains a circle, the points used to compute the bounds are
+  /// the circle's implied control points, which form a square around the circle;
+  /// if the circle has a transformation applied using [transform] then that 
+  /// square is rotated, and the (axis-aligned, non-rotated) bounding box
+  /// therefore ends up grossly overestimating the actual area covered by the
+  /// circle.
   // see https://skia.org/user/api/SkPath_Reference#SkPath_getBounds
   Rect getBounds() {
     final Float32List rect = _getBounds();
