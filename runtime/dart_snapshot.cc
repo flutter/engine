@@ -21,10 +21,34 @@ const char* DartSnapshot::kIsolateDataSymbol = "kDartIsolateSnapshotData";
 const char* DartSnapshot::kIsolateInstructionsSymbol =
     "kDartIsolateSnapshotInstructions";
 
+#if defined(OS_ANDROID)
+// When assembling the .S file of the application the Android toolchain's gcc
+// will, due to ABI reasons, put a leading underscore in front of the symbols
+// (this is different on MacOS).
+static const char* kVMDataSymbolSo = "_kDartVmSnapshotData";
+static const char* kVMInstructionsSymbolSo = "_kDartVmSnapshotInstructions";
+static const char* kIsolateDataSymbolSo = "_kDartIsolateSnapshotData";
+static const char* kIsolateInstructionsSymbolSo =
+    "_kDartIsolateSnapshotInstructions";
+#else
+static const char* kVMDataSymbolSo = DartSnapshot::kVMDataSymbol;
+static const char* kVMInstructionsSymbolSo = DartSnapshot::kVMInstructionsSymbol;
+static const char* kIsolateDataSymbolSo = DartSnapshot::kIsolateDataSymbol;
+static const char* kIsolateInstructionsSymbolSo = DartSnapshot::kIsolateInstructionsSymbol;
+#endif
+
 std::unique_ptr<DartSnapshotBuffer> ResolveVMData(const Settings& settings) {
   if (settings.vm_snapshot_data_path.size() > 0) {
     if (auto source = DartSnapshotBuffer::CreateWithContentsOfFile(
             settings.vm_snapshot_data_path.c_str(), false /* executable */)) {
+      return source;
+    }
+  }
+
+  if (settings.application_library_path.size() > 0) {
+    auto shared_library = fml::NativeLibrary::Create(settings.application_library_path.c_str());
+    if (auto source = DartSnapshotBuffer::CreateWithSymbolInLibrary(
+        shared_library, kVMDataSymbolSo)) {
       return source;
     }
   }
@@ -47,7 +71,7 @@ std::unique_ptr<DartSnapshotBuffer> ResolveVMInstructions(
     auto library =
         fml::NativeLibrary::Create(settings.application_library_path.c_str());
     if (auto source = DartSnapshotBuffer::CreateWithSymbolInLibrary(
-            library, DartSnapshot::kVMInstructionsSymbol)) {
+            library, kVMInstructionsSymbolSo)) {
       return source;
     }
   }
@@ -63,6 +87,15 @@ std::unique_ptr<DartSnapshotBuffer> ResolveIsolateData(
     if (auto source = DartSnapshotBuffer::CreateWithContentsOfFile(
             settings.isolate_snapshot_data_path.c_str(),
             false /* executable */)) {
+      return source;
+    }
+  }
+
+  if (settings.application_library_path.size() > 0) {
+    auto library =
+        fml::NativeLibrary::Create(settings.application_library_path.c_str());
+    if (auto source = DartSnapshotBuffer::CreateWithSymbolInLibrary(
+            library, kIsolateDataSymbolSo)) {
       return source;
     }
   }
@@ -86,7 +119,7 @@ std::unique_ptr<DartSnapshotBuffer> ResolveIsolateInstructions(
     auto library =
         fml::NativeLibrary::Create(settings.application_library_path.c_str());
     if (auto source = DartSnapshotBuffer::CreateWithSymbolInLibrary(
-            library, DartSnapshot::kIsolateInstructionsSymbol)) {
+            library, kIsolateInstructionsSymbolSo)) {
       return source;
     }
   }
