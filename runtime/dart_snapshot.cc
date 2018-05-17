@@ -22,9 +22,11 @@ const char* DartSnapshot::kIsolateInstructionsSymbol =
     "kDartIsolateSnapshotInstructions";
 
 #if defined(OS_ANDROID)
-// When assembling the .S file of the application the Android toolchain's gcc
-// will, due to ABI reasons, put a leading underscore in front of the symbols
-// (this is different on MacOS).
+// When assembling the .S file of the application, dart_bootstrap will prefix
+// symbols via an `_` to ensure Mac's `dlsym()` can find it (Mac ABI prefixes C
+// symbols with underscores).
+// But Linux ABI does not prefix C symbols with underscores, so we have to
+// explicitly look up the prefixed version.
 #define SYMBOL_PREFIX "_"
 #else
 #define SYMBOL_PREFIX ""
