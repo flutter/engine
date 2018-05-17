@@ -52,9 +52,8 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
   context_.EndFrame(*this, instrumentation_enabled_);
 }
 
-bool CompositorContext::ScopedFrame::Raster(flow::LayerTree& layer_tree,
-                                            bool ignore_raster_cache) {
-  layer_tree.Preroll(*this, ignore_raster_cache);
+bool CompositorContext::ScopedFrame::Raster(flow::LayerTree& layer_tree) {
+  layer_tree.Preroll(*this);
   layer_tree.Paint(*this);
   return true;
 }
