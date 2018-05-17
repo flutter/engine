@@ -25,17 +25,15 @@ const char* DartSnapshot::kIsolateInstructionsSymbol =
 // When assembling the .S file of the application the Android toolchain's gcc
 // will, due to ABI reasons, put a leading underscore in front of the symbols
 // (this is different on MacOS).
-static const char* kVMDataSymbolSo = "_kDartVmSnapshotData";
-static const char* kVMInstructionsSymbolSo = "_kDartVmSnapshotInstructions";
-static const char* kIsolateDataSymbolSo = "_kDartIsolateSnapshotData";
-static const char* kIsolateInstructionsSymbolSo =
-    "_kDartIsolateSnapshotInstructions";
+#define SYMBOL_PREFIX "_"
 #else
-static const char* kVMDataSymbolSo = DartSnapshot::kVMDataSymbol;
-static const char* kVMInstructionsSymbolSo = DartSnapshot::kVMInstructionsSymbol;
-static const char* kIsolateDataSymbolSo = DartSnapshot::kIsolateDataSymbol;
-static const char* kIsolateInstructionsSymbolSo = DartSnapshot::kIsolateInstructionsSymbol;
+#define SYMBOL_PREFIX ""
 #endif
+
+static const char* kVMDataSymbolSo = SYMBOL_PREFIX "kDartVmSnapshotData";
+static const char* kVMInstructionsSymbolSo = SYMBOL_PREFIX "kDartVmSnapshotInstructions";
+static const char* kIsolateDataSymbolSo = SYMBOL_PREFIX "kDartIsolateSnapshotData";
+static const char* kIsolateInstructionsSymbolSo = SYMBOL_PREFIX "kDartIsolateSnapshotInstructions";
 
 std::unique_ptr<DartSnapshotBuffer> ResolveVMData(const Settings& settings) {
   if (settings.vm_snapshot_data_path.size() > 0) {
