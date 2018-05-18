@@ -143,7 +143,7 @@
   if ([rootViewController isKindOfClass:[FlutterViewController class]]) {
     return [[(FlutterViewController*)rootViewController pluginRegistry] hasPlugin:pluginKey];
   }
-  return nil;
+  return false;
 }
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
