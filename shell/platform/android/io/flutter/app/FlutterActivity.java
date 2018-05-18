@@ -61,6 +61,11 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     }
 
     @Override
+    public boolean retainFlutterNativeView() {
+        return false;
+    }
+
+    @Override
     public final boolean hasPlugin(String key) {
         return pluginRegistry.hasPlugin(key);
     }
@@ -79,6 +84,12 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         eventDelegate.onCreate(savedInstanceState);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        eventDelegate.onStart();
     }
 
     @Override

@@ -25,6 +25,13 @@ executable("testing") {
     "//topaz/lib/tonic",
   ]
 
+  if (is_fuchsia) {
+    deps += [
+      "//garnet/public/lib/ui/scenic:client",
+      "//zircon/public/lib/trace-provider",
+    ]
+  }
+
   if (is_linux) {
     ldflags = [ "-rdynamic" ]
   }
