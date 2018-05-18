@@ -37,7 +37,9 @@ void PictureLayer::Paint(PaintContext& context) const {
 
   if (raster_cache_result_.is_valid()) {
     SkPaint paint;
-    paint.setFilterQuality(kLow_SkFilterQuality);
+    // nearest neighbor(kNone_SkFilterQuality) is enough as the cache resolution
+    // should approximately match the final device resolution.
+    paint.setFilterQuality(kNone_SkFilterQuality);
     context.canvas.drawImageRect(
         raster_cache_result_.image(),             // image
         raster_cache_result_.source_rect(),       // source
