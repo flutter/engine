@@ -19,29 +19,29 @@ namespace flow {
 
 class RasterCacheResult {
  public:
-  RasterCacheResult()
-      : source_rect_(SkRect::MakeEmpty()),
-        destination_rect_(SkRect::MakeEmpty()) {}
+  RasterCacheResult() {}
 
-  RasterCacheResult(sk_sp<SkImage> image, SkRect source, SkRect destination)
-      : image_(std::move(image)),
-        source_rect_(source),
-        destination_rect_(destination) {}
+  RasterCacheResult(sk_sp<SkImage> image,
+                    SkScalar tx, SkScalar ty, SkScalar sx, SkScalar sy)
+      : image_(std::move(image)), tx_(tx), ty_(ty), sx_(sx), sy_(sy) {}
 
   operator bool() const { return static_cast<bool>(image_); }
 
   bool is_valid() const { return static_cast<bool>(image_); };
 
-  sk_sp<SkImage> image() const { return image_; }
-
-  const SkRect& source_rect() const { return source_rect_; }
-
-  const SkRect& destination_rect() const { return destination_rect_; }
+  void draw(SkCanvas& canvas) const {
+    canvas.save();
+    canvas.translate(tx_, ty_);
+    canvas.scale(sx_, sy_);
+    canvas.drawImage(image_, 0, 0);
+    canvas.restore();
+  }
 
  private:
   sk_sp<SkImage> image_;
-  SkRect source_rect_;
-  SkRect destination_rect_;
+
+  // translation and scale to be applied before drawImage
+  SkScalar tx_, ty_, sx_, sy_;
 };
 
 class RasterCache {

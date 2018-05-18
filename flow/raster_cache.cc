@@ -77,6 +77,11 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
 
   const SkVector3& scale = matrix.scale();
 
+  if (scale.x() == 0 || scale.y() == 0) {
+    // the whole canvas is empty and we can't inverse scale.x or scale.y
+    return {};
+  }
+
   const SkRect logical_rect = picture->cullRect();
 
   const SkRect physical_rect =
@@ -118,8 +123,10 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
 
   return {
       surface->makeImageSnapshot(),  // image
-      physical_rect,                 // source rect
-      logical_rect                   // destination rect
+      // compensate canvas->translate(-logical_rect.left(), -logical_rect.top())
+      logical_rect.left(), logical_rect.top(),
+      // compensate scale(std::abs(scale.x()), std::abs(scale.y()))
+      1 / std::abs(scale.x()), 1 / std::abs(scale.y())
   };
 }
 
