@@ -36,17 +36,17 @@ void PictureLayer::Paint(PaintContext& context) const {
   context.canvas.translate(offset_.x(), offset_.y());
 
   if (raster_cache_result_.is_valid()) {
-    SkPaint paint;
-    // nearest neighbor(kNone_SkFilterQuality) is enough as the cache resolution
-    // should approximately match the final device resolution.
-    paint.setFilterQuality(kNone_SkFilterQuality);
-    context.canvas.drawImageRect(
-        raster_cache_result_.image(),             // image
-        raster_cache_result_.source_rect(),       // source
-        raster_cache_result_.destination_rect(),  // destination
-        &paint,                                   // paint
-        SkCanvas::kStrict_SrcRectConstraint       // source constraint
-    );
+    context.canvas.save();
+
+    context.canvas.translate(raster_cache_result_.destination_rect().fLeft,
+                             raster_cache_result_.destination_rect().fTop);
+    context.canvas.scale(
+        raster_cache_result_.destination_rect().width() / raster_cache_result_.source_rect().width(),
+        raster_cache_result_.destination_rect().height() / raster_cache_result_.source_rect().height());
+
+    context.canvas.drawImage(raster_cache_result_.image(), 0, 0);
+
+    context.canvas.restore();
   } else {
     context.canvas.drawPicture(picture());
   }
