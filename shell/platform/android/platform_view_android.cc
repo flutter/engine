@@ -178,7 +178,7 @@ void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env,
 
 // |shell::PlatformView|
 void PlatformViewAndroid::UpdateSemantics(blink::SemanticsNodeUpdates update) {
-  constexpr size_t kBytesPerNode = 36 * sizeof(int32_t);
+  constexpr size_t kBytesPerNode = 35 * sizeof(int32_t);
   constexpr size_t kBytesPerChild = sizeof(int32_t);
 
   JNIEnv* env = fml::jni::AttachCurrentThread();
