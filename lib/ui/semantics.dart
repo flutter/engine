@@ -439,7 +439,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// former enumerates children in traversal order, and the latter enumerates
   /// the same children in the hit test order. The two lists must have the same
   /// length and contain the same ids. They may only differ in the order the
-  /// ids are listed in.
+  /// ids are listed in. For more information about different child orders, see
+  /// [DebugSemanticsDumpOrder].
   /// 
   /// The system retains the nodes that are currently reachable from the root.
   /// A given update need not contain information for nodes that do not change
