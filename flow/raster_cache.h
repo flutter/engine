@@ -34,8 +34,8 @@ class RasterCacheResult {
 
   void draw(SkCanvas& canvas) const {
     canvas.save();
-    canvas.translate(tx_, ty_);
     canvas.scale(sx_, sy_);
+    canvas.translate(tx_, ty_);
     canvas.drawImage(image_, 0, 0);
     canvas.restore();
   }

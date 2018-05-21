@@ -81,14 +81,13 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
   // Otherwise the decomposition would have failed already.
   FXL_DCHECK(scale.x() != 0 && scale.y() != 0);
 
+  // Compute cache rect which is after scale and have integral corners
+  SkMatrix scale_matrix = SkMatrix::MakeScale(scale.x(), scale.y());
   const SkRect logical_rect = picture->cullRect();
-
-  const SkRect physical_rect =
-      SkRect::MakeWH(std::fabs(logical_rect.width() * scale.x()),
-                     std::fabs(logical_rect.height() * scale.y()));
-
+  SkRect scaled_rect;
+  scale_matrix.mapRect(&scaled_rect, logical_rect);
   SkIRect cache_rect;
-  physical_rect.roundOut(&cache_rect);
+  scaled_rect.roundOut(&cache_rect);
 
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
       cache_rect.width(),
@@ -115,8 +114,8 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
   }
 
   canvas->clear(SK_ColorTRANSPARENT);
-  canvas->scale(std::abs(scale.x()), std::abs(scale.y()));
   canvas->translate(-cache_rect.left(), -cache_rect.top());
+  canvas->scale(scale.x(), scale.y());
   canvas->drawPicture(picture);
 
   if (checkerboard) {
@@ -127,8 +126,8 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
       surface->makeImageSnapshot(),  // image
       // compensate canvas->translate(-cache_rect.left(), -cache_rect.top())
       cache_rect.left(), cache_rect.top(),
-      // compensate scale(std::abs(scale.x()), std::abs(scale.y()))
-      1 / std::abs(scale.x()), 1 / std::abs(scale.y())};
+      // compensate scale(scale.x(), scale.y())
+      1 / scale.x(), 1 / scale.y()};
 }
 
 static inline size_t ClampSize(size_t value, size_t min, size_t max) {
