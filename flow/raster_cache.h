@@ -22,8 +22,8 @@ class RasterCacheResult {
   RasterCacheResult() {}
 
   RasterCacheResult(sk_sp<SkImage> image,
-                    SkScalar tx,
-                    SkScalar ty,
+                    int32_t tx,
+                    int32_t ty,
                     SkScalar sx,
                     SkScalar sy)
       : image_(std::move(image)), tx_(tx), ty_(ty), sx_(sx), sy_(sy) {}
@@ -44,7 +44,8 @@ class RasterCacheResult {
   sk_sp<SkImage> image_;
 
   // translation and scale to be applied before drawImage
-  SkScalar tx_, ty_, sx_, sy_;
+  int32_t  tx_, ty_;
+  SkScalar sx_, sy_;
 };
 
 class RasterCache {

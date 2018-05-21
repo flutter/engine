@@ -87,9 +87,12 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
       SkRect::MakeWH(std::fabs(logical_rect.width() * scale.x()),
                      std::fabs(logical_rect.height() * scale.y()));
 
+  SkIRect cache_rect;
+  physical_rect.roundOut(&cache_rect);
+
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      std::ceil(physical_rect.width()),  // physical width
-      std::ceil(physical_rect.height())  // physical height
+      cache_rect.width(),
+      cache_rect.height()
   );
 
   sk_sp<SkSurface> surface =
@@ -113,7 +116,7 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
 
   canvas->clear(SK_ColorTRANSPARENT);
   canvas->scale(std::abs(scale.x()), std::abs(scale.y()));
-  canvas->translate(-logical_rect.left(), -logical_rect.top());
+  canvas->translate(-cache_rect.left(), -cache_rect.top());
   canvas->drawPicture(picture);
 
   if (checkerboard) {
@@ -122,8 +125,8 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
 
   return {
       surface->makeImageSnapshot(),  // image
-      // compensate canvas->translate(-logical_rect.left(), -logical_rect.top())
-      logical_rect.left(), logical_rect.top(),
+      // compensate canvas->translate(-cache_rect.left(), -cache_rect.top())
+      cache_rect.left(), cache_rect.top(),
       // compensate scale(std::abs(scale.x()), std::abs(scale.y()))
       1 / std::abs(scale.x()), 1 / std::abs(scale.y())};
 }
