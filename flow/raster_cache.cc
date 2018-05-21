@@ -77,10 +77,9 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
 
   const SkVector3& scale = matrix.scale();
 
-  if (scale.x() == 0 || scale.y() == 0) {
-    // the whole canvas is empty and we can't inverse scale.x or scale.y
-    return {};
-  }
+  // Scale must be nonzero so we can invert them.
+  // Otherwise the decomposition would have failed already.
+  FXL_DCHECK(scale.x() != 0 && scale.y() != 0);
 
   const SkRect logical_rect = picture->cullRect();
 
@@ -126,8 +125,7 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
       // compensate canvas->translate(-logical_rect.left(), -logical_rect.top())
       logical_rect.left(), logical_rect.top(),
       // compensate scale(std::abs(scale.x()), std::abs(scale.y()))
-      1 / std::abs(scale.x()), 1 / std::abs(scale.y())
-  };
+      1 / std::abs(scale.x()), 1 / std::abs(scale.y())};
 }
 
 static inline size_t ClampSize(size_t value, size_t min, size_t max) {

@@ -22,7 +22,10 @@ class RasterCacheResult {
   RasterCacheResult() {}
 
   RasterCacheResult(sk_sp<SkImage> image,
-                    SkScalar tx, SkScalar ty, SkScalar sx, SkScalar sy)
+                    SkScalar tx,
+                    SkScalar ty,
+                    SkScalar sx,
+                    SkScalar sy)
       : image_(std::move(image)), tx_(tx), ty_(ty), sx_(sx), sy_(sy) {}
 
   operator bool() const { return static_cast<bool>(image_); }
