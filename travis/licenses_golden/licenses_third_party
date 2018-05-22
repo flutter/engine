@@ -1,4 +1,4 @@
-Signature: 01ce57e5c543b4beabf9ef6c17f1453a
+Signature: 9cfee0a931c0133bf64d6da1cad98524
 
 UNUSED LICENSES:
 
@@ -17202,6 +17202,7 @@ FILE: ../../../third_party/skia/gm/makeRasterImage.cpp
 FILE: ../../../third_party/skia/gm/mandoline.cpp
 FILE: ../../../third_party/skia/gm/orientation.cpp
 FILE: ../../../third_party/skia/gm/pathmeasure.cpp
+FILE: ../../../third_party/skia/gm/perspimages.cpp
 FILE: ../../../third_party/skia/gm/polygonoffset.cpp
 FILE: ../../../third_party/skia/gm/scaledemoji.cpp
 FILE: ../../../third_party/skia/gm/shadermaskfilter.cpp
