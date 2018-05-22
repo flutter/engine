@@ -24,7 +24,8 @@ class Picture : public fxl::RefCountedThreadSafe<Picture>,
 
  public:
   ~Picture() override;
-  static fxl::RefPtr<Picture> Create(flow::SkiaGPUObject<SkPicture> picture);
+  static fxl::RefPtr<Picture> Create(flow::SkiaGPUObject<SkPicture> picture,
+                                     bool scaled_to_device = false);
 
   sk_sp<SkPicture> picture() const { return picture_.get(); }
 
@@ -37,9 +38,10 @@ class Picture : public fxl::RefCountedThreadSafe<Picture>,
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  explicit Picture(flow::SkiaGPUObject<SkPicture> picture);
+  explicit Picture(flow::SkiaGPUObject<SkPicture> picture, bool scaled_to_device = false);
 
   flow::SkiaGPUObject<SkPicture> picture_;
+  bool scaled_to_device_;
 };
 
 }  // namespace blink

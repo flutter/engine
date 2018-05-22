@@ -6,13 +6,13 @@ import 'dart:ui';
 
 import 'package:test/test.dart';
 
-class FakeEverything implements Canvas, PictureRecorder, Color {
+class FakeEverything implements PictureRecorder, Color {
   dynamic noSuchMethod(Invocation invocation) {
     return new FakeEverything();
   }
 }
 
-class NegativeSpace implements Canvas, PictureRecorder, Color {
+class NegativeSpace implements PictureRecorder, Color {
   dynamic noSuchMethod(Invocation invocation) {
     return false;
   }
@@ -33,6 +33,7 @@ void main() {
     List<dynamic> list = <dynamic>[fake, fake];
     Offset offset = new Offset(double.NAN, double.NAN);
     Path path = new Path();
+    Color color = new Color(0x0);
 
     try { new Canvas(null, null); } catch (error) { }
     try { new Canvas(null, rect); } catch (error) { }
