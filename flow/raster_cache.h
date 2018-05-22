@@ -49,6 +49,13 @@ class RasterCache {
     return bounds;
   }
 
+  static SkMatrix GetIntegralTransCTM(const SkMatrix& ctm) {
+    SkMatrix result = ctm;
+    result[SkMatrix::kMTransX] = SkScalarRoundToScalar(ctm.getTranslateX());
+    result[SkMatrix::kMTransY] = SkScalarRoundToScalar(ctm.getTranslateY());
+    return result;
+  }
+
   RasterCacheResult GetPrerolledImage(GrContext* context,
                                       SkPicture* picture,
                                       const SkMatrix& transformation_matrix,

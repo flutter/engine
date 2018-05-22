@@ -18,6 +18,9 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   if (auto cache = context->raster_cache) {
     SkMatrix ctm = matrix;
     ctm.postTranslate(offset_.x(), offset_.y());
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    ctm = RasterCache::GetIntegralTransCTM(ctm);
+#endif
     raster_cache_result_ = cache->GetPrerolledImage(
         context->gr_context, sk_picture, ctm, context->dst_color_space,
         is_complex_, will_change_);
@@ -36,6 +39,10 @@ void PictureLayer::Paint(PaintContext& context) const {
 
   SkAutoCanvasRestore save(&context.canvas, true);
   context.canvas.translate(offset_.x(), offset_.y());
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context.canvas.setMatrix(
+      RasterCache::GetIntegralTransCTM(context.canvas.getTotalMatrix()));
+#endif
 
   if (raster_cache_result_.is_valid()) {
     raster_cache_result_.draw(context.canvas);
