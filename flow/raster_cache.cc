@@ -156,7 +156,7 @@ RasterCacheResult RasterCache::GetPrerolledImage(
     return {};
   }
 
-  RasterCacheKey cache_key(*picture, matrix);
+  RasterCacheKey cache_key(*picture, transformation_matrix);
 
   Entry& entry = cache_[cache_key];
   entry.access_count = ClampSize(entry.access_count + 1, 0, threshold_);

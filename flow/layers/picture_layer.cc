@@ -16,8 +16,10 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkPicture* sk_picture = picture();
 
   if (auto cache = context->raster_cache) {
+    SkMatrix ctm = matrix;
+    ctm.postTranslate(offset_.x(), offset_.y());
     raster_cache_result_ = cache->GetPrerolledImage(
-        context->gr_context, sk_picture, matrix, context->dst_color_space,
+        context->gr_context, sk_picture, ctm, context->dst_color_space,
         is_complex_, will_change_);
   } else {
     raster_cache_result_ = RasterCacheResult();
