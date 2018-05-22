@@ -2582,17 +2582,25 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///
   /// To end the recording, call [PictureRecorder.endRecording] on the
   /// given recorder.
-  Canvas(PictureRecorder recorder, [ Rect cullRect ]) : assert(recorder != null) {
+  Canvas(PictureRecorder recorder, [ Rect cullRect ]) : 
+    wasScaledToDevicePixelRatio = recorder?.scaledToDevicePixelRatio, 
+    assert(recorder != null) {
     if (recorder.isRecording)
       throw new ArgumentError('"recorder" must not already be associated with another Canvas.');
     cullRect ??= Rect.largest;
     _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
+    
+    if (recorder.scaledToDevicePixelRatio == true) {
+      scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
   }
   void _constructor(PictureRecorder recorder,
                     double left,
                     double top,
                     double right,
                     double bottom) native 'Canvas_constructor';
+
+  final bool wasScaledToDevicePixelRatio;
 
   /// Saves a copy of the current transform and clip on the save stack.
   ///
@@ -3316,8 +3324,23 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   /// Creates a new idle PictureRecorder. To associate it with a
   /// [Canvas] and begin recording, pass this [PictureRecorder] to the
   /// [Canvas] constructor.
-  PictureRecorder() { _constructor(); }
-  void _constructor() native 'PictureRecorder_constructor';
+  /// 
+  /// Setting `scaledToDevicePixelRatio` will cause any [Canvas], [Picture],
+  /// or [Image] created from this recording to be scaled by the
+  /// [Window.devicePixelRatio].  This flag is helpful if you intend to create
+  /// and [Image] from this recording, especially if the recording is done at
+  /// lower resolutions and will be displayed on the device.  Note that it will
+  /// result in a larger [Image].
+  PictureRecorder({this.scaledToDevicePixelRatio = false}) { _constructor(scaledToDevicePixelRatio); }
+  void _constructor(bool scaledToDevicePixelRatio) native 'PictureRecorder_constructor';
+
+  /// Whether this recorder should scale its drawings and images to the
+  /// [Window.devicePixelRatio].
+  /// 
+  /// This is desirable if the recorder is intended to produce a [Picture]
+  /// that will be made into an [Image] (via [Picture.toImage]). Note that
+  /// this will result in a larger image.
+  final bool scaledToDevicePixelRatio;
 
   /// Whether this object is currently recording commands.
   ///

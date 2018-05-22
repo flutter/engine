@@ -22,7 +22,7 @@ class PictureRecorder : public fxl::RefCountedThreadSafe<PictureRecorder>,
   FRIEND_MAKE_REF_COUNTED(PictureRecorder);
 
  public:
-  static fxl::RefPtr<PictureRecorder> Create();
+  static fxl::RefPtr<PictureRecorder> Create(bool scaled_to_device = false);
 
   ~PictureRecorder();
 
@@ -35,11 +35,12 @@ class PictureRecorder : public fxl::RefCountedThreadSafe<PictureRecorder>,
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  PictureRecorder();
+  PictureRecorder(bool scaled_to_device = false);
 
   SkRTreeFactory rtree_factory_;
   SkPictureRecorder picture_recorder_;
   fxl::RefPtr<Canvas> canvas_;
+  bool scaled_to_device_;
 };
 
 }  // namespace blink

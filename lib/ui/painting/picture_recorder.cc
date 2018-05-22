@@ -27,15 +27,16 @@ FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
 void PictureRecorder::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register(
-      {{"PictureRecorder_constructor", PictureRecorder_constructor, 1, true},
+      {{"PictureRecorder_constructor", PictureRecorder_constructor, 2, true},
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-fxl::RefPtr<PictureRecorder> PictureRecorder::Create() {
-  return fxl::MakeRefCounted<PictureRecorder>();
+fxl::RefPtr<PictureRecorder> PictureRecorder::Create(bool scaled_to_device) {
+  return fxl::MakeRefCounted<PictureRecorder>(scaled_to_device);
 }
 
-PictureRecorder::PictureRecorder() {}
+PictureRecorder::PictureRecorder(bool scaled_to_device)
+    : scaled_to_device_(scaled_to_device) {}
 
 PictureRecorder::~PictureRecorder() {}
 
@@ -51,8 +52,10 @@ fxl::RefPtr<Picture> PictureRecorder::endRecording() {
   if (!isRecording())
     return nullptr;
 
-  fxl::RefPtr<Picture> picture = Picture::Create(UIDartState::CreateGPUObject(
-      picture_recorder_.finishRecordingAsPicture()));
+  fxl::RefPtr<Picture> picture =
+      Picture::Create(UIDartState::CreateGPUObject(
+                          picture_recorder_.finishRecordingAsPicture()),
+                      scaled_to_device_);
   canvas_->Clear();
   canvas_->ClearDartWrapper();
   canvas_ = nullptr;
