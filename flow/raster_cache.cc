@@ -19,8 +19,8 @@ namespace flow {
 
 void RasterCacheResult::draw(SkCanvas& canvas) const {
   SkAutoCanvasRestore auto_restore(&canvas, false);
-  SkIRect bounds = RasterCache::GetDeviceBounds(logical_rect_,
-                                                canvas.getTotalMatrix());
+  SkIRect bounds =
+      RasterCache::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
   FXL_DCHECK(bounds.size() == image_->dimensions());
   canvas.resetMatrix();
   canvas.drawImage(image_, bounds.fLeft, bounds.fTop);
@@ -87,10 +87,8 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
   const SkRect logical_rect = picture->cullRect();
   SkIRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
 
-  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      cache_rect.width(),
-      cache_rect.height()
-  );
+  const SkImageInfo image_info =
+      SkImageInfo::MakeN32Premul(cache_rect.width(), cache_rect.height());
 
   sk_sp<SkSurface> surface =
       context
@@ -120,7 +118,7 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
     DrawCheckerboard(canvas, logical_rect);
   }
 
-  return { surface->makeImageSnapshot(), logical_rect };
+  return {surface->makeImageSnapshot(), logical_rect};
 }
 
 static inline size_t ClampSize(size_t value, size_t min, size_t max) {

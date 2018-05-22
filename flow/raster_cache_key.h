@@ -7,6 +7,7 @@
 
 #include <unordered_map>
 #include "flutter/flow/matrix_decomposition.h"
+#include "lib/fxl/logging.h"
 #include "lib/fxl/macros.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -19,6 +20,9 @@ class RasterCacheKey {
       : picture_id_(picture.uniqueID()), matrix_(ctm) {
     matrix_[SkMatrix::kMTransX] = SkScalarFraction(ctm.getTranslateX());
     matrix_[SkMatrix::kMTransY] = SkScalarFraction(ctm.getTranslateY());
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    FXL_DCHECK(matrix_.getTranslateX() == 0 && matrix_.getTranslateY() == 0);
+#endif
   }
 
   uint32_t picture_id() const { return picture_id_; }
