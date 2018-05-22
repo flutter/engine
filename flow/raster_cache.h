@@ -21,31 +21,18 @@ class RasterCacheResult {
  public:
   RasterCacheResult() {}
 
-  RasterCacheResult(sk_sp<SkImage> image,
-                    int32_t tx,
-                    int32_t ty,
-                    SkScalar sx,
-                    SkScalar sy)
-      : image_(std::move(image)), tx_(tx), ty_(ty), sx_(sx), sy_(sy) {}
+  RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect)
+      : image_(std::move(image)), logical_rect_(logical_rect) {}
 
   operator bool() const { return static_cast<bool>(image_); }
 
   bool is_valid() const { return static_cast<bool>(image_); };
 
-  void draw(SkCanvas& canvas) const {
-    canvas.save();
-    canvas.scale(sx_, sy_);
-    canvas.translate(tx_, ty_);
-    canvas.drawImage(image_, 0, 0);
-    canvas.restore();
-  }
+  void draw(SkCanvas& canvas) const;
 
  private:
   sk_sp<SkImage> image_;
-
-  // translation and scale to be applied before drawImage
-  int32_t  tx_, ty_;
-  SkScalar sx_, sy_;
+  SkRect logical_rect_;
 };
 
 class RasterCache {
@@ -53,6 +40,14 @@ class RasterCache {
   explicit RasterCache(size_t threshold = 3);
 
   ~RasterCache();
+
+  static SkIRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
+    SkRect device_rect;
+    ctm.mapRect(&device_rect, rect);
+    SkIRect bounds;
+    device_rect.roundOut(&bounds);
+    return bounds;
+  }
 
   RasterCacheResult GetPrerolledImage(GrContext* context,
                                       SkPicture* picture,
