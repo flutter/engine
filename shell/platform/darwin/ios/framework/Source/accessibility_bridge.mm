@@ -614,6 +614,12 @@ void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEven
   if ([type isEqualToString:@"announce"]) {
     NSString* message = annotatedEvent[@"data"][@"message"];
     UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, message);
+  } else if ([type isEqualToString:@"tap"]) {
+    // This event is handled automatically by VoiceOver.
+  } else if ([type isEqualToString:@"longPress"]) {
+    // This event is handled automatically by VoiceOver.
+  } else if ([type isEqualToString:@"tooltip"]) {
+    // This event is handled automatically by VoiceOver.
   } else {
     NSCAssert(NO, @"Invalid event type %@", type);
   }
