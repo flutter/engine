@@ -9,11 +9,12 @@
 import os
 import shutil
 
+DOT_PACKAGES = '.packages'
 FRONTEND_SERVER_DIR = os.getcwd()
 SRC_DIR = os.path.dirname(os.path.dirname(FRONTEND_SERVER_DIR))
-DART_PACKAGES_FILE = os.path.join(SRC_DIR, 'third_party', 'dart', '.packages')
+DART_PACKAGES_FILE = os.path.join(SRC_DIR, 'third_party', 'dart', DOT_PACKAGES)
 
-with open('.package', 'w') as packages:
+with open(DOT_PACKAGES, 'w') as packages:
   with open(DART_PACKAGES_FILE, 'r') as dart_packages:
     for line in dart_packages:
       if line.startswith('#'):
