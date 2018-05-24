@@ -10,7 +10,10 @@
 import os
 import shutil
 
-ALL_PACKAGES = ['frontend_server', 'flutter_kernel_transformers']
+ALL_PACKAGES = {
+  'frontend_server': ['flutter_kernel_transformers'],
+  'flutter_kernel_transformers': [],
+}
 
 SRC_DIR = os.getcwd()
 
@@ -18,7 +21,7 @@ DOT_PACKAGES = '.packages'
 DART_PACKAGES_FILE = os.path.join(SRC_DIR, 'third_party', 'dart', DOT_PACKAGES)
 
 # Generate .packages file in the given package.
-def GeneratePackages(package):
+def GeneratePackages(package, local_deps):
   with open(os.path.join('flutter', package, DOT_PACKAGES), 'w') as packages:
     with open(DART_PACKAGES_FILE, 'r') as dart_packages:
       for line in dart_packages:
@@ -28,9 +31,8 @@ def GeneratePackages(package):
           [name, path] = line.split(':', 1)
           packages.write('%s:../../third_party/dart/%s' % (name, path))
     packages.write('%s:./lib\n' % (package))
-    for other_package in ALL_PACKAGES:
-      if other_package != package:
-        packages.write('%s:../%s/lib\n' % (other_package, other_package))
+    for other_package in local_deps:
+      packages.write('%s:../%s/lib\n' % (other_package, other_package))
 
-for package in ALL_PACKAGES:
-  GeneratePackages(package)
+for package, local_deps in ALL_PACKAGES.iteritems():
+  GeneratePackages(package, local_deps)
