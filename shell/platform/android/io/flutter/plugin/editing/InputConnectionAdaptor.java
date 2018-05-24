@@ -35,7 +35,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
         mFlutterChannel = flutterChannel;
         mEditable = editable;
         mBatchCount = 0;
-        mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
     }
 
     // Send the current state of the editable to Flutter.
