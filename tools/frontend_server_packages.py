@@ -22,4 +22,5 @@ with open(DOT_PACKAGES, 'w') as packages:
       else:
         [package, path] = line.split(':', 1)
         packages.write('%s:../../third_party/dart/%s' % (package, path))
-  packages.write('flutter_kernel_transformers:../flutter_kernel_transformers')
+  packages.write('frontend_server:./lib\n')
+  packages.write('flutter_kernel_transformers:../flutter_kernel_transformers/lib\n')
