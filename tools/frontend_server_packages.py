@@ -1,7 +1,10 @@
 #!/usr/bin/env python
-# Copyright 2015 The Chromium Authors. All rights reserved.
+# Copyright 2018 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
+# This script generates .packages file for frontend server from
+# Dart SDKs .packages file located in third_party/dart/.packages
 
 import os
 import shutil
