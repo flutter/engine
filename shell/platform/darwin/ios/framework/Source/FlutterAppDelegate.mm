@@ -241,7 +241,7 @@
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       if ([plugin application:application
-              continueUserActivity:userActivty
+              continueUserActivity:userActivity
                 restorationHandler:restorationHandler]) {
         return YES;
       }
