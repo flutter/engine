@@ -236,7 +236,7 @@
 }
 
 - (void)application:(UIApplication*)application
-    continueUserActivity:(NSUserActivity *)userActivity
+    continueUserActivity:(NSUserActivity*)userActivity
       restorationHandler:(void (^)(NSArray*))restorationHandler {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
