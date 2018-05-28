@@ -328,7 +328,7 @@ Int32List _encodeTextStyle(
 class TextStyle {
   /// Creates a new TextStyle object.
   ///
-  /// * `color`: The color to use when painting the text. If this is specified, `foreground` should be null.
+  /// * `color`: The color to use when painting the text. If this is specified, `foreground` must be null.
   /// * `decoration`: The decorations to paint near the text (e.g., an underline).
   /// * `decorationColor`: The color in which to paint the text decorations.
   /// * `decorationStyle`: The style in which to paint the text decorations (e.g., dashed).
@@ -342,7 +342,7 @@ class TextStyle {
   /// * `height`: The height of this text span, as a multiple of the font size.
   /// * `locale`: The locale used to select region-specific glyphs.
   /// * `background`: The paint drawn as a background for the text.
-  /// * `foreground`: The paint used to draw the text. If this is specified, `color` should be null.
+  /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
   TextStyle({
     Color color,
     TextDecoration decoration,
