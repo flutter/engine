@@ -20,7 +20,7 @@ namespace blink {
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
-    const DartVM* p_vm,
+    DartVM* p_vm,
     fxl::RefPtr<DartSnapshot> p_isolate_snapshot,
     fxl::RefPtr<DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
@@ -37,7 +37,7 @@ RuntimeController::RuntimeController(
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
-    const DartVM* p_vm,
+    DartVM* p_vm,
     fxl::RefPtr<DartSnapshot> p_isolate_snapshot,
     fxl::RefPtr<DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
