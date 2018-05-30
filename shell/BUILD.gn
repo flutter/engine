@@ -9,6 +9,8 @@ group("shell") {
 }
 
 group("flutter_tester") {
+  testonly = true
+
   if (is_linux) {
     deps = [
       "platform/linux:flutter_tester",
