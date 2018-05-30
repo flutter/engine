@@ -1067,7 +1067,7 @@ class Paint {
   }
 
   // Must be kept in sync with the default in paint.cc.
-  static final double _kStrokeMiterLimitDefault = 4.0;
+  static const double _kStrokeMiterLimitDefault = 4.0;
 
   /// The limit for miters to be drawn on segments when the join is set to
   /// [StrokeJoin.miter] and the [style] is set to [PaintingStyle.stroke]. If
