@@ -12,6 +12,7 @@ group("platform") {
       "android",
     ]
   } else if (is_linux) {
+    # TODO(tvolkert): Move "embedder/" to "linux/"
     deps = [
       "embedder",
     ]

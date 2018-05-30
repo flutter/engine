@@ -20,6 +20,14 @@ group("darwin") {
   }
 }
 
+group("flutter_tester") {
+  testonly = true
+
+  deps = [
+    "$flutter_root/shell/testing",
+  ]
+}
+
 source_set("flutter_channels") {
   set_sources_assignment_filter([])
   sources = [
