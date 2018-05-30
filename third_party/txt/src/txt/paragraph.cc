@@ -864,6 +864,7 @@ void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
     if (record.style().has_foreground) {
       paint = record.style().foreground;
     } else {
+      paint.reset();
       paint.setColor(record.style().color);
     }
     SkPoint offset = record.offset();
