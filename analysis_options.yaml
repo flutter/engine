@@ -1,7 +1,7 @@
 # Specify analysis options.
 #
 # This file is a copy of analysis_options_repo.yaml from flutter repo
-# as of 2018-01-07, but with:
+# as of 2018-05-30, but with:
 #  - "always_require_non_null_named_parameters" disabled (because we
 #    can't import the meta package from the SDK), and
 #  - "sort_constructors_first" disabled (because we have private fake
@@ -109,6 +109,7 @@ linter:
     - prefer_final_locals
     - prefer_foreach
     # - prefer_function_declarations_over_variables # not yet tested
+    - prefer_generic_function_type_aliases
     - prefer_initializing_formals
     # - prefer_interpolation_to_compose_strings # not yet tested
     - prefer_is_empty
