@@ -7,3 +7,17 @@ group("shell") {
     "platform",
   ]
 }
+
+group("flutter_tester") {
+  if (is_linux) {
+    deps = [
+      "platform/linux:flutter_tester",
+    ]
+  } else if (is_mac) {
+    deps = [
+      "platform/darwin:flutter_tester",
+    ]
+  } else {
+    assert(false, "Unsupported platform.")
+  }
+}
