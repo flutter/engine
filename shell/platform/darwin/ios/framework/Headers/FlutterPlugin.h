@@ -24,11 +24,16 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol FlutterPlugin <NSObject>
 @required
 /**
- Registers this plugin.
+ Registers this plugin with a plugin registry.
+
+ The plugin registry itself is represented during registration by the provided
+ registrar, decoupling the registry API (managing a collection of registered
+ plugins) from the registration API (helping a particular plugin register itself
+ by attaching listeners and callbacks, and accessing contextual information).
 
  - Parameters:
    - registrar: A helper providing application context and methods for
-     registering callbacks
+     registering callbacks.
  */
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar;
 @optional
@@ -159,6 +164,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Registration context for a single `FlutterPlugin`.
+
+ When called upon to register itself with a plugin registry, the plugin
+ is given a `FlutterPluginRegistrar` which provides the context for that
+ registration. The registrar protocol decouples the plugin from the registry
+ itself, narrowing the API depended upon by plugins.
  */
 @protocol FlutterPluginRegistrar <NSObject>
 /**
@@ -235,6 +245,11 @@ NS_ASSUME_NONNULL_BEGIN
 
  Plugins are identified by unique string keys, typically the name of the
  plugin's main class.
+
+ Plugins do not register themselves directly with the registry, but are instead
+ given a "registrar" to serve as context for the registration of an individual
+ plugin. This allows the API of the plugin registry to evolve independently of
+ the API needed for the act of plugin registration.
  */
 @protocol FlutterPluginRegistry <NSObject>
 /**
