@@ -91,7 +91,8 @@ static const char* kDartStrongModeArgs[] = {
     "--strong",
     "--reify_generic_functions",
     "--limit_ints_to_64_bits",
-    "--sync_async",
+    // TODO(bkonyi): uncomment when sync-async is enabled in flutter/flutter.
+    // "--sync_async",
     // clang-format on
 };
 
@@ -228,7 +229,7 @@ static void EmbedderInformationCallback(Dart_EmbedderInformation* info) {
 }
 
 fxl::RefPtr<DartVM> DartVM::ForProcess(Settings settings) {
-  return ForProcess(settings, nullptr, nullptr);
+  return ForProcess(settings, nullptr, nullptr, nullptr);
 }
 
 static std::once_flag gVMInitialization;
@@ -237,10 +238,12 @@ static fxl::RefPtr<DartVM> gVM;
 fxl::RefPtr<DartVM> DartVM::ForProcess(
     Settings settings,
     fxl::RefPtr<DartSnapshot> vm_snapshot,
-    fxl::RefPtr<DartSnapshot> isolate_snapshot) {
+    fxl::RefPtr<DartSnapshot> isolate_snapshot,
+    fxl::RefPtr<DartSnapshot> shared_snapshot) {
   std::call_once(gVMInitialization, [settings,         //
                                      vm_snapshot,      //
-                                     isolate_snapshot  //
+                                     isolate_snapshot, //
+                                     shared_snapshot   //
   ]() mutable {
     if (!vm_snapshot) {
       vm_snapshot = DartSnapshot::VMSnapshotFromSettings(settings);
@@ -248,9 +251,13 @@ fxl::RefPtr<DartVM> DartVM::ForProcess(
     if (!isolate_snapshot) {
       isolate_snapshot = DartSnapshot::IsolateSnapshotFromSettings(settings);
     }
+    if (!shared_snapshot) {
+      shared_snapshot = DartSnapshot::Empty();
+    }
     gVM = fxl::MakeRefCounted<DartVM>(settings,                    //
                                       std::move(vm_snapshot),      //
-                                      std::move(isolate_snapshot)  //
+                                      std::move(isolate_snapshot), //
+                                      std::move(shared_snapshot)  //
     );
   });
   return gVM;
@@ -262,10 +269,12 @@ fxl::RefPtr<DartVM> DartVM::ForProcessIfInitialized() {
 
 DartVM::DartVM(const Settings& settings,
                fxl::RefPtr<DartSnapshot> vm_snapshot,
-               fxl::RefPtr<DartSnapshot> isolate_snapshot)
+               fxl::RefPtr<DartSnapshot> isolate_snapshot,
+               fxl::RefPtr<DartSnapshot> shared_snapshot)
     : settings_(settings),
       vm_snapshot_(std::move(vm_snapshot)),
       isolate_snapshot_(std::move(isolate_snapshot)),
+      shared_snapshot_(std::move(shared_snapshot)),
       platform_kernel_mapping_(
           std::make_unique<fml::FileMapping>(settings.platform_kernel_path)),
       weak_factory_(this) {
@@ -452,6 +461,10 @@ const DartSnapshot& DartVM::GetVMSnapshot() const {
 
 fxl::RefPtr<DartSnapshot> DartVM::GetIsolateSnapshot() const {
   return isolate_snapshot_;
+}
+
+fxl::RefPtr<DartSnapshot> DartVM::GetSharedSnapshot() const {
+  return shared_snapshot_;
 }
 
 ServiceProtocol& DartVM::GetServiceProtocol() {

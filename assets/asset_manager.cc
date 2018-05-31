@@ -5,9 +5,7 @@
 #include "flutter/assets/asset_manager.h"
 
 #include "flutter/assets/directory_asset_bundle.h"
-#include "flutter/assets/zip_asset_store.h"
 #include "flutter/glue/trace_event.h"
-#include "lib/fxl/files/path.h"
 
 #ifdef ERROR
 #undef ERROR
@@ -47,7 +45,7 @@ bool AssetManager::GetAsBuffer(const std::string& asset_name,
       return true;
     }
   }
-  FXL_DLOG(WARNING) << "Could not find asset: " << asset_name;
+  FML_DLOG(WARNING) << "Could not find asset: " << asset_name;
   return false;
 }
 

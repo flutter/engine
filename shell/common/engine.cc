@@ -38,6 +38,7 @@ static constexpr char kSettingsChannel[] = "flutter/settings";
 Engine::Engine(Delegate& delegate,
                const blink::DartVM& vm,
                fxl::RefPtr<blink::DartSnapshot> isolate_snapshot,
+               fxl::RefPtr<blink::DartSnapshot> shared_snapshot,
                blink::TaskRunners task_runners,
                blink::Settings settings,
                std::unique_ptr<Animator> animator,
@@ -54,12 +55,15 @@ Engine::Engine(Delegate& delegate,
   // object as its delegate. The delegate may be called in the constructor and
   // we want to be fully initilazed by that point.
   runtime_controller_ = std::make_unique<blink::RuntimeController>(
-      *this,                        // runtime delegate
-      &vm,                          // VM
-      std::move(isolate_snapshot),  // isolate snapshot
-      std::move(task_runners),      // task runners
-      std::move(resource_context),  // resource context
-      std::move(unref_queue)        // skia unref queue
+      *this,                                // runtime delegate
+      &vm,                                  // VM
+      std::move(isolate_snapshot),          // isolate snapshot
+      std::move(shared_snapshot),           // shared snapshot
+      std::move(task_runners),              // task runners
+      std::move(resource_context),          // resource context
+      std::move(unref_queue),               // skia unref queue
+      settings_.advisory_script_uri,        // advisory script uri
+      settings_.advisory_script_entrypoint  // advisory script entrypoint
   );
 }
 
@@ -70,7 +74,7 @@ fml::WeakPtr<Engine> Engine::GetWeakPtr() const {
 }
 
 bool Engine::UpdateAssetManager(
-    fxl::RefPtr<blink::AssetManager> new_asset_manager) {
+    fml::RefPtr<blink::AssetManager> new_asset_manager) {
   if (asset_manager_ == new_asset_manager) {
     return false;
   }

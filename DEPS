@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '50edafacc8ea56bdc13fd2234618fe06094eec0e',
+  'skia_revision': '588f879677d4f36e16a42dd96876534f104c2e2f',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,24 +31,23 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '43635d3372253262cbf51e55b2ccfceae4f94682',
+  'dart_revision': '3b6caa3517bcc7150030f240deedb010f5e3bc60',
 
   'dart_args_tag': '1.4.1',
-  'dart_async_tag': '2.0.6',
-  'dart_barback_tag': '0.15.2+14',
+  'dart_async_tag': '2.0.7',
   'dart_bazel_worker_tag': 'v0.1.9',
   'dart_boolean_selector_tag': '1.0.3',
-  'dart_boringssl_gen_rev': '344f455fd13d46f054726638e76026156ea73aa9',
-  'dart_boringssl_rev': '672f6fc2486745d0cabc3aaeb4e0a3cd13b37b12',
+  'dart_boringssl_gen_rev': 'fc47eaa1a245d858bae462cd64d4155605b850ea',
+  'dart_boringssl_rev': '189270cd190267f5bd60cfe8f8ce7a61d07ba6f4',
   'dart_charcode_tag': 'v1.1.1',
   'dart_cli_util_tag': '0.1.2+1',
-  'dart_collection_tag': '1.14.6',
+  'dart_collection_tag': '1.14.9',
   'dart_convert_tag': '2.0.1',
   'dart_crypto_tag': '2.0.2+1',
   'dart_csslib_tag': '0.14.1',
   'dart_dart2js_info_tag': '0.5.6+2',
-  'dart_dart_style_tag': '1.0.12',
-  'dart_dartdoc_tag': 'v0.19.0',
+  'dart_dart_style_tag': '1.0.14',
+  'dart_dartdoc_tag': 'v0.19.1',
   'dart_fixnum_tag': '0.10.5',
   'dart_glob_tag': '1.1.5',
   'dart_html_tag': '0.13.3',
@@ -56,16 +55,16 @@ vars = {
   'dart_http_parser_tag': '3.1.1',
   'dart_http_retry_tag': '0.1.1',
   'dart_http_tag': '0.11.3+16',
-  'dart_http_throttle_tag': '1.0.1',
+  'dart_http_throttle_tag': '1.0.2',
   'dart_intl_tag': '0.15.2',
   'dart_json_rpc_2_tag': '2.0.6',
-  'dart_linter_tag': '0.1.50',
+  'dart_linter_tag': '0.1.51',
   'dart_logging_tag': '0.11.3+1',
-  'dart_markdown_tag': '1.1.1',
+  'dart_markdown_tag': '2.0.0',
   'dart_matcher_tag': '0.12.1+4',
   'dart_mime_tag': '0.9.6',
   'dart_mockito_tag': 'a92db054fba18bc2d605be7670aee74b7cadc00a',
-  'dart_mustache4dart_tag': 'v2.1.1',
+  'dart_mustache4dart_tag': 'v2.1.2',
   'dart_oauth2_tag': '1.1.0',
   'dart_observatory_pub_packages_rev': 'd3a3aebefbd35aa30fe7bbc2889b772b398f7d7f',
   'dart_package_config_tag': '1.0.3',
@@ -74,7 +73,7 @@ vars = {
   'dart_plugin_tag': '0.2.0+2',
   'dart_pool_tag': '1.3.4',
   'dart_protobuf_tag': '0.7.1',
-  'dart_pub_rev': '0c172864be2d2043a9d630e07f6b4eae7472653f',
+  'dart_pub_rev': '7bdcf4e4de85a7a8c7a322511b8198f1b6cb0a73',
   'dart_pub_semver_tag': '1.4.1',
   'dart_quiver_tag': '5aaa3f58c48608af5b027444d561270b53f15dbf',
   'dart_resource_rev': 'af5a5bf65511943398146cf146e466e5f0b95cb9',
@@ -89,12 +88,13 @@ vars = {
   'dart_stack_trace_tag': '1.9.2',
   'dart_stream_channel_tag': '1.6.4',
   'dart_string_scanner_tag': '1.0.2',
-  'dart_test_tag': '0.12.30+1',
+  'dart_term_glyph_tag': '1.0.0',
+  'dart_test_tag': '0.12.38',
   'dart_tuple_tag': 'v1.0.1',
   'dart_typed_data_tag': '1.1.3',
   'dart_usage_tag': '3.3.0',
   'dart_utf_tag': '0.9.0+4',
-  'dart_watcher_tag': '0.9.7+7',
+  'dart_watcher_tag': '0.9.7+8',
   'dart_web_socket_channel_tag': '1.0.7',
   'dart_yaml_tag': '2.1.13',
 
@@ -114,7 +114,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '78cf6d88d1a8b6f8293649508f2c1db6ad385fb0',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '02eee3f72574fd5d30454487b5083e704b32cca4',
 
    # Fuchsia compatibility
    #
@@ -174,9 +174,6 @@ deps = {
 
   'src/third_party/dart/third_party/pkg/async':
    Var('dart_git') + '/async.git' + '@' +   Var('dart_async_tag'),
-
-  'src/third_party/dart/third_party/pkg/barback':
-   Var('dart_git') + '/barback.git' + '@' +   Var('dart_barback_tag'),
 
   'src/third_party/dart/third_party/pkg/bazel_worker':
    Var('dart_git') + '/bazel_worker.git' + '@' +   Var('dart_bazel_worker_tag'),
@@ -325,6 +322,9 @@ deps = {
   'src/third_party/dart/third_party/pkg/typed_data':
    Var('dart_git') + '/typed_data.git' + '@' + Var('dart_typed_data_tag'),
 
+  'src/third_party/dart/third_party/pkg/term_glyph':
+   Var('dart_git') + '/term_glyph.git' + '@' + Var('dart_term_glyph_tag'),
+
   'src/third_party/dart/third_party/pkg/test':
    Var('dart_git') + '/test.git' + '@' + Var('dart_test_tag'),
 
@@ -420,31 +420,10 @@ hooks = [
     'action': ['python', 'src/tools/dart/update.py'],
   },
   {
-    'name': 'frontend_server_packages',
+    'name': 'generate_package_files',
     'pattern': '.',
-    'condition': 'host_os == "linux"',
-    'cwd': 'src/flutter/frontend_server/',
-    'action': [
-      '../../../src/third_party/dart/tools/sdks/linux/dart-sdk/bin/pub', 'get',
-    ],
-  },
-  {
-    'name': 'frontend_server_packages',
-    'pattern': '.',
-    'condition': 'host_os == "mac"',
-    'cwd': 'src/flutter/frontend_server/',
-    'action': [
-      '../../../src/third_party/dart/tools/sdks/mac/dart-sdk/bin/pub', 'get',
-    ],
-  },
-  {
-    'name': 'frontend_server_packages',
-    'pattern': '.',
-    'condition': 'host_os == "win"',
-    'cwd': 'src/flutter/frontend_server/',
-    'action': [
-      '..\\..\\..\\src\\third_party\\dart\\tools\\sdks\\win\\dart-sdk\\bin\\pub.bat', 'get',
-    ],
+    'cwd': 'src/',
+    'action': ['python', 'flutter/tools/generate_package_files.py'],
   },
   {
     # Ensure that we don't accidentally reference any .pyc files whose

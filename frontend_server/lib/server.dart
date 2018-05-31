@@ -22,7 +22,7 @@ class _FlutterFrontendCompiler implements frontend.CompilerInterface{
 
   _FlutterFrontendCompiler(StringSink output, {bool trackWidgetCreation: false}):
       _compiler = new frontend.FrontendCompiler(output,
-          transformer: (trackWidgetCreation ? new WidgetCreatorTracker() : null));
+          transformer: trackWidgetCreation ? new WidgetCreatorTracker() : null);
 
   @override
   Future<Null> compile(String filename, ArgResults options, {IncrementalCompiler generator}) async {
@@ -42,6 +42,23 @@ class _FlutterFrontendCompiler implements frontend.CompilerInterface{
   @override
   void invalidate(Uri uri) {
     _compiler.invalidate(uri);
+  }
+
+  @override
+  Future<Null> compileExpression(
+      String expression,
+      List<String> definitions,
+      List<String> typeDefinitions,
+      String libraryUri,
+      String klass,
+      bool isStatic) {
+    return _compiler.compileExpression(expression, definitions, typeDefinitions,
+        libraryUri, klass, isStatic);
+  }
+
+  @override
+  void reportError(String msg) {
+    _compiler.reportError(msg);
   }
 
   @override
