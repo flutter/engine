@@ -137,7 +137,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)application:(UIApplication*)application
     handleEventsForBackgroundURLSession:(nonnull NSString*)identifier
-                      completionHandler:(nonnull void (^)())completionHandler;
+                      completionHandler:(nonnull void (^)(void))completionHandler;
 
 /**
  Called if this plugin has been registered for `UIApplicationDelegate` callbacks.

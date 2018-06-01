@@ -118,7 +118,7 @@ FLUTTER_EXPORT
 */
 - (BOOL)application:(UIApplication*)application
     handleEventsForBackgroundURLSession:(nonnull NSString*)identifier
-                      completionHandler:(nonnull void (^)())completionHandler;
+                      completionHandler:(nonnull void (^)(void))completionHandler;
 
 /**
  Calls all plugins registered for `UIApplicationDelegate` callbacks in order of registration until some plugin handles
