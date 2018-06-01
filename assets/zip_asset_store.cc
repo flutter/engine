@@ -75,6 +75,7 @@ bool ZipAssetStore::GetAsBuffer(const std::string& asset_name,
     total_read += bytes_read;
   }
 
+  FXL_DLOG(INFO) << "Read asset from zip " << file_path_ << ": " << asset_name;
   return true;
 }
 
