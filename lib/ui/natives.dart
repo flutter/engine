@@ -35,6 +35,8 @@ void _setupHooks() {
   }());
 }
 
+void saveCompilationTrace(String filePath) native 'SaveCompilationTrace';
+
 void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
 
 // Required for gen_snapshot to work correctly.

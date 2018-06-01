@@ -12,6 +12,8 @@
 #include <sstream>
 
 #include "flutter/common/settings.h"
+#include "flutter/fml/eintr_wrapper.h"
+#include "flutter/fml/file.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "lib/fxl/build_config.h"
 #include "lib/fxl/logging.h"
@@ -47,6 +49,7 @@ namespace blink {
 
 #define BUILTIN_NATIVE_LIST(V) \
   V(Logger_PrintString, 1)     \
+  V(SaveCompilationTrace, 1)   \
   V(ScheduleMicrotask, 1)
 
 BUILTIN_NATIVE_LIST(DECLARE_FUNCTION);
@@ -197,6 +200,42 @@ void Logger_PrintString(Dart_NativeArguments args) {
                               reinterpret_cast<const uint8_t*>(chars), length);
     Dart_ServiceSendDataEvent("Stdout", "WriteEvent", newline, sizeof(newline));
   }
+}
+
+void SaveCompilationTrace(Dart_NativeArguments args) {
+  const char* filePath = NULL;
+  {
+    Dart_Handle result = Dart_StringToCString(
+        Dart_GetNativeArgument(args, 0), &filePath);
+    if (Dart_IsError(result)) {
+      Dart_PropagateError(result);
+      return;
+    }
+  }
+
+  uint8_t* buffer = nullptr;
+  intptr_t size = 0;
+  Dart_Handle result = Dart_SaveCompilationTrace(&buffer, &size);
+  if (Dart_IsError(result)) {
+    FXL_LOG(ERROR) << "Failed to save trace: " << Dart_GetError(result);
+    return;
+  }
+
+  auto fd = fml::UniqueFD{
+      FML_HANDLE_EINTR(::open(filePath, O_CREAT|O_WRONLY|O_TRUNC, 0660))};
+  if (!fd.is_valid()) {
+    FXL_LOG(ERROR) << "Failed to create file: " << filePath << ", " << errno;
+    return;
+  }
+  if (write(fd.get(), buffer, (size_t) size) != (ssize_t) size) {
+    FXL_LOG(ERROR) << "Failed to write file: " << filePath;
+    return;
+  }
+  if (close(fd.get()) != 0) {
+    FXL_LOG(ERROR) << "Failed to close file: " << filePath;
+    return;
+  }
+  FXL_LOG(INFO) << "Saved compilation trace " << filePath;
 }
 
 void ScheduleMicrotask(Dart_NativeArguments args) {
