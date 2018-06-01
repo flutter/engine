@@ -38,6 +38,7 @@ bool APKAssetProvider::GetAsBuffer(const std::string& asset_name,
     return false;
   }
 
+  FXL_DLOG(INFO) << "Read asset from apk " << directory_ << ": " << asset_name;
   data->resize(AAsset_getLength(asset));
   std::copy(buffer, buffer + data->size(), data->begin());
 
