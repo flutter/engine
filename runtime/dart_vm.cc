@@ -58,8 +58,12 @@ namespace blink {
 
 // Arguments passed to the Dart VM in all configurations.
 static const char* kDartLanguageArgs[] = {
-    "--enable_mirrors=false", "--background_compilation", "--await_is_keyword",
-    "--causal_async_stacks",  "--limit-ints-to-64-bits",
+    // clang-format off
+    "--enable_mirrors=false",
+    "--background_compilation",
+    "--await_is_keyword",
+    "--causal_async_stacks",
+    // clang-format on
 };
 
 static const char* kDartPrecompilationArgs[] = {
@@ -89,7 +93,6 @@ static const char* kDartStrongModeArgs[] = {
     // clang-format off
     "--strong",
     "--reify_generic_functions",
-    "--limit_ints_to_64_bits",
     // TODO(bkonyi): uncomment when sync-async is enabled in flutter/flutter.
     // "--sync_async",
     // clang-format on
@@ -239,24 +242,32 @@ fxl::RefPtr<DartVM> DartVM::ForProcess(
     fxl::RefPtr<DartSnapshot> vm_snapshot,
     fxl::RefPtr<DartSnapshot> isolate_snapshot,
     fxl::RefPtr<DartSnapshot> shared_snapshot) {
-  std::call_once(gVMInitialization, [settings,         //
-                                     vm_snapshot,      //
-                                     isolate_snapshot, //
-                                     shared_snapshot   //
+  std::call_once(gVMInitialization, [settings,          //
+                                     vm_snapshot,       //
+                                     isolate_snapshot,  //
+                                     shared_snapshot    //
   ]() mutable {
     if (!vm_snapshot) {
       vm_snapshot = DartSnapshot::VMSnapshotFromSettings(settings);
     }
+    if (!(vm_snapshot && vm_snapshot->IsValid())) {
+      FXL_LOG(ERROR) << "VM snapshot must be valid.";
+      return;
+    }
     if (!isolate_snapshot) {
       isolate_snapshot = DartSnapshot::IsolateSnapshotFromSettings(settings);
+    }
+    if (!(isolate_snapshot && isolate_snapshot->IsValid())) {
+      FXL_LOG(ERROR) << "Isolate snapshot must be valid.";
+      return;
     }
     if (!shared_snapshot) {
       shared_snapshot = DartSnapshot::Empty();
     }
-    gVM = fxl::MakeRefCounted<DartVM>(settings,                    //
-                                      std::move(vm_snapshot),      //
-                                      std::move(isolate_snapshot), //
-                                      std::move(shared_snapshot)  //
+    gVM = fxl::MakeRefCounted<DartVM>(settings,                     //
+                                      std::move(vm_snapshot),       //
+                                      std::move(isolate_snapshot),  //
+                                      std::move(shared_snapshot)    //
     );
   });
   return gVM;
@@ -280,12 +291,6 @@ DartVM::DartVM(const Settings& settings,
   TRACE_EVENT0("flutter", "DartVMInitializer");
   FXL_DLOG(INFO) << "Attempting Dart VM launch for mode: "
                  << (IsRunningPrecompiledCode() ? "AOT" : "Interpreter");
-
-  FXL_DCHECK(vm_snapshot_ && vm_snapshot_->IsValid())
-      << "VM snapshot must be valid.";
-
-  FXL_DCHECK(isolate_snapshot_ && isolate_snapshot_->IsValid())
-      << "Isolate snapshot must be valid.";
 
   {
     TRACE_EVENT0("flutter", "dart::bin::BootstrapDartIo");
