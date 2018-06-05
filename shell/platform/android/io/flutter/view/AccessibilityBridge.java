@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.lang.reflect.*;
 
 class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMessageChannel.MessageHandler<Object> {
     private static final String TAG = "FlutterView";
@@ -50,6 +51,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private List<Integer> previousRoutes;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
+    private final HintTextProxy hintTextProxy;
 
     enum Action {
         TAP(1 << 0),
@@ -105,6 +107,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
         previousRoutes = new ArrayList<>();
+        hintTextProxy = new HintTextProxy();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(owner, "flutter/accessibility",
             StandardMessageCodec.INSTANCE);
     }
@@ -250,7 +253,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
-        result.setText(object.getValueLabelHint());
+        hintTextProxy.setText(result, object);
 
         // Accessibility Focus
         if (mA11yFocusedObject != null && mA11yFocusedObject.id == virtualViewId) {
@@ -741,6 +744,52 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
     }
 
+    private class HintTextProxy {
+        private Method setHintText;
+
+        HintTextProxy() {
+            if (Build.VERSION.SDK_INT >= 26) {
+                Class nodeClass = AccessibilityNodeInfo.class;
+                try {
+                    setHintText = nodeClass.getDeclaredMethod("setHintText", CharSequence.class);
+                } catch (NoSuchMethodException exception) {
+                    Log.i(TAG, "could not set hintText " + exception);
+                    setHintText = null;
+                } catch (SecurityException exception) {
+                    Log.i(TAG, "could not set hintText " + exception);
+                    setHintText = null;
+                }
+            } else {
+                setHintText = null;
+            }
+
+        }
+
+        private void setText(AccessibilityNodeInfo node, SemanticsObject object) {
+            if (setHintText == null) {
+                Log.i(TAG, "could not set hintText");
+                node.setText(object.getValueLabelHint());
+            } else {
+                String textValue = null;
+                try {
+                    setHintText.invoke(node, object.getHint());
+                    textValue = object.getValueLabel();
+                    Log.i(TAG, "set hint text!  " + object.getHint());
+                } catch (IllegalArgumentException exception) {
+                    textValue = object.getValueLabelHint();
+                    Log.i(TAG, "could not set hintText " + exception);
+                } catch (IllegalAccessException exception) {
+                    textValue = object.getValueLabelHint();
+                    Log.i(TAG, "could not set hintText " + exception);
+                } catch (InvocationTargetException exception) {
+                    textValue = object.getValueLabelHint();
+                    Log.i(TAG, "could not set hintText " + exception);
+                }
+                node.setText(textValue);
+            }
+        }
+    }
+
     private class SemanticsObject {
         SemanticsObject() { }
 
@@ -1059,6 +1108,23 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         private float max(float a, float b, float c, float d) {
             return Math.max(a, Math.max(b, Math.max(c, d)));
+        }
+
+        private String getHint() {
+            return hint;
+        }
+
+        private String getValueLabel() {
+            StringBuilder sb = new StringBuilder();
+            String[] array = { value, label };
+            for (String word: array) {
+                if (word != null && word.length() > 0) {
+                    if (sb.length() > 0)
+                        sb.append(", ");
+                    sb.append(word);
+                }
+            }
+            return sb.length() > 0 ? sb.toString() : null;
         }
 
         private String getValueLabelHint() {
