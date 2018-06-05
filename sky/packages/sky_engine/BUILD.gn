@@ -16,7 +16,6 @@ import("//third_party/dart/sdk/lib/typed_data/typed_data_sources.gni")
 
 import("$flutter_root/build/dart/rules.gni")
 import("$flutter_root/lib/ui/dart_ui.gni")
-import("$flutter_root/sky/engine/core/core.gni")
 
 if (!is_fuchsia) {
   copy("copy_sky_engine_authors") {
@@ -153,12 +152,14 @@ dart_pkg("sky_engine") {
 }
 
 if (is_fuchsia) {
-  import("//build/dart/dart_package.gni")
+  import("//build/dart/dart_library.gni")
 
-  dart_package("sky_engine_dart") {
+  dart_library("sky_engine_dart") {
     package_name = "sky_engine"
 
-    source_dir = rebase_path("$root_gen_dir/dart-pkg/sky_engine/lib")
+    package_root = "$root_gen_dir/dart-pkg/sky_engine"
+
+    sources = []
 
     disable_analysis = true
 

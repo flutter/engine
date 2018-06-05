@@ -53,6 +53,8 @@ class ParagraphStyle {
   size_t max_lines = std::numeric_limits<size_t>::max();
   double line_height = 1.0;
   std::u16string ellipsis;
+  std::string locale;
+
   // Default strategy is kBreakStrategy_Greedy. Sometimes,
   // kBreakStrategy_HighQuality will produce more desireable layouts (eg, very
   // long words are more likely to be reasonably placed).
@@ -64,6 +66,9 @@ class ParagraphStyle {
 
   bool unlimited_lines() const;
   bool ellipsized() const;
+
+  // Return a text alignment value that is not dependent on the text direction.
+  TextAlign effective_align() const;
 };
 
 }  // namespace txt

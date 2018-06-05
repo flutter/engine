@@ -10,10 +10,31 @@
 #include "flutter/vulkan/vulkan_proc_table.h"
 #include "flutter/vulkan/vulkan_surface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/GrContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
-#include "third_party/skia/src/gpu/vk/GrVkUtil.h"
 
 namespace vulkan {
+
+namespace {
+struct FormatInfo {
+  VkFormat format_;
+  SkColorType color_type_;
+  sk_sp<SkColorSpace> color_space_;
+};
+}  // namespace
+
+static std::vector<FormatInfo> DesiredFormatInfos() {
+  return {{VK_FORMAT_R8G8B8A8_SRGB, kRGBA_8888_SkColorType,
+           SkColorSpace::MakeSRGB()},
+          {VK_FORMAT_B8G8R8A8_SRGB, kRGBA_8888_SkColorType,
+           SkColorSpace::MakeSRGB()},
+          {VK_FORMAT_R16G16B16A16_SFLOAT, kRGBA_F16_SkColorType,
+           SkColorSpace::MakeSRGBLinear()},
+          {VK_FORMAT_R8G8B8A8_UNORM, kRGBA_8888_SkColorType,
+           SkColorSpace::MakeSRGB()},
+          {VK_FORMAT_B8G8R8A8_UNORM, kRGBA_8888_SkColorType,
+           SkColorSpace::MakeSRGB()}};
+}
 
 VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
                                  const VulkanDevice& device,
@@ -39,7 +60,20 @@ VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
     return;
   }
 
-  if (!device_.ChooseSurfaceFormat(surface, &surface_format_)) {
+  const auto format_infos = DesiredFormatInfos();
+  std::vector<VkFormat> desired_formats(format_infos.size());
+  for (size_t i = 0; i < format_infos.size(); ++i) {
+    if (skia_context->colorTypeSupportedAsSurface(
+            format_infos[i].color_type_)) {
+      desired_formats[i] = format_infos[i].format_;
+    } else {
+      desired_formats[i] = VK_FORMAT_UNDEFINED;
+    }
+  }
+
+  int format_index =
+      device_.ChooseSurfaceFormat(surface, desired_formats, &surface_format_);
+  if (format_index < 0) {
     FXL_DLOG(INFO) << "Could not choose surface format.";
     return;
   }
@@ -115,7 +149,9 @@ VulkanSwapchain::VulkanSwapchain(const VulkanProcTable& p_vk,
                                          nullptr);
                 }};
 
-  if (!CreateSwapchainImages(skia_context)) {
+  if (!CreateSwapchainImages(skia_context,
+                             format_infos[format_index].color_type_,
+                             format_infos[format_index].color_space_)) {
     FXL_DLOG(INFO) << "Could not create swapchain images.";
     return;
   }
@@ -171,56 +207,48 @@ SkISize VulkanSwapchain::GetSize() const {
   return SkISize::Make(extents.width, extents.height);
 }
 
-static sk_sp<SkColorSpace> SkColorSpaceFromVkFormat(VkFormat format) {
-  if (GrVkFormatIsSRGB(format, nullptr /* dont care */)) {
-    return SkColorSpace::MakeSRGB();
-  }
-
-  if (format == VK_FORMAT_R16G16B16A16_SFLOAT) {
-    return SkColorSpace::MakeSRGBLinear();
-  }
-
-  return nullptr;
-}
-
-sk_sp<SkSurface> VulkanSwapchain::CreateSkiaSurface(GrContext* gr_context,
-                                                    VkImage image,
-                                                    const SkISize& size) const {
+sk_sp<SkSurface> VulkanSwapchain::CreateSkiaSurface(
+    GrContext* gr_context,
+    VkImage image,
+    const SkISize& size,
+    SkColorType color_type,
+    sk_sp<SkColorSpace> color_space) const {
   if (gr_context == nullptr) {
     return nullptr;
   }
 
-  GrPixelConfig pixel_config = GrVkFormatToPixelConfig(surface_format_.format);
-
-  if (pixel_config == kUnknown_GrPixelConfig) {
-    // Vulkan format unsupported by Skia.
+  if (color_type == kUnknown_SkColorType) {
+    // Unexpected Vulkan format.
     return nullptr;
   }
 
   const GrVkImageInfo image_info = {
-      .fImage = image,
-      .fAlloc = {VK_NULL_HANDLE, 0, 0, 0},
-      .fImageTiling = VK_IMAGE_TILING_OPTIMAL,
-      .fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-      .fFormat = surface_format_.format,
-      .fLevelCount = 1,
+      image,                      // image
+      GrVkAlloc(),                // alloc
+      VK_IMAGE_TILING_OPTIMAL,    // tiling
+      VK_IMAGE_LAYOUT_UNDEFINED,  // layout
+      surface_format_.format,     // format
+      1,                          // level count
   };
 
   // TODO(chinmaygarde): Setup the stencil buffer and the sampleCnt.
-  GrBackendRenderTarget backend_render_target(size.fWidth, size.fHeight, 0, 0,
+  GrBackendRenderTarget backend_render_target(size.fWidth, size.fHeight, 0,
                                               image_info);
   SkSurfaceProps props(SkSurfaceProps::InitType::kLegacyFontHost_InitType);
 
   return SkSurface::MakeFromBackendRenderTarget(
-      gr_context,             // context
-      backend_render_target,  // backend render target
-      kTopLeft_GrSurfaceOrigin,
-      SkColorSpaceFromVkFormat(surface_format_.format),  // colorspace
-      &props                                             // surface properties
+      gr_context,                // context
+      backend_render_target,     // backend render target
+      kTopLeft_GrSurfaceOrigin,  // origin
+      color_type,                // color type
+      std::move(color_space),    // color space
+      &props                     // surface properties
   );
 }
 
-bool VulkanSwapchain::CreateSwapchainImages(GrContext* skia_context) {
+bool VulkanSwapchain::CreateSwapchainImages(GrContext* skia_context,
+                                            SkColorType color_type,
+                                            sk_sp<SkColorSpace> color_space) {
   std::vector<VkImage> images = GetImages();
 
   if (images.size() == 0) {
@@ -250,7 +278,8 @@ bool VulkanSwapchain::CreateSwapchainImages(GrContext* skia_context) {
     images_.emplace_back(std::move(vulkan_image));
 
     // Populate the surface.
-    auto surface = CreateSkiaSurface(skia_context, image, surface_size);
+    auto surface = CreateSkiaSurface(skia_context, image, surface_size,
+                                     color_type, color_space);
 
     if (surface == nullptr) {
       return false;
@@ -432,15 +461,14 @@ VulkanSwapchain::AcquireResult VulkanSwapchain::AcquireSurface() {
     return error;
   }
 
-  GrVkImageInfo* image_info = nullptr;
-  if (!surface->getRenderTargetHandle(
-          reinterpret_cast<GrBackendObject*>(&image_info),
-          SkSurface::kFlushRead_BackendHandleAccess)) {
-    FXL_DLOG(INFO) << "Could not get render target handle.";
+  GrBackendRenderTarget backendRT = surface->getBackendRenderTarget(
+      SkSurface::kFlushRead_BackendHandleAccess);
+  if (!backendRT.isValid()) {
+    FXL_DLOG(INFO) << "Could not get backend render target.";
     return error;
   }
+  backendRT.setVkImageLayout(destination_image_layout);
 
-  image_info->updateImageLayout(destination_image_layout);
   current_image_index_ = next_image_index;
 
   return {AcquireStatus::Success, surface};
@@ -458,15 +486,9 @@ bool VulkanSwapchain::Submit() {
 
   // ---------------------------------------------------------------------------
   // Step 0:
-  // Notify to Skia that we will read from its backend object.
+  // Make sure Skia has flushed all work for the surface to the gpu.
   // ---------------------------------------------------------------------------
-  GrVkImageInfo* image_info = nullptr;
-  if (!surface->getRenderTargetHandle(
-          reinterpret_cast<GrBackendObject*>(&image_info),
-          SkSurface::kFlushRead_BackendHandleAccess)) {
-    FXL_DLOG(INFO) << "Could not get render target handle.";
-    return false;
-  }
+  surface->flush();
 
   // ---------------------------------------------------------------------------
   // Step 1:

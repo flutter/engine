@@ -256,6 +256,8 @@ Int32List _encodeTextStyle(
   double letterSpacing,
   double wordSpacing,
   double height,
+  Locale locale,
+  Paint background,
 ) {
   final Int32List result = new Int32List(8);
   if (color != null) {
@@ -306,6 +308,14 @@ Int32List _encodeTextStyle(
     result[0] |= 1 << 12;
     // Passed separately to native.
   }
+  if (locale != null) {
+    result[0] |= 1 << 13;
+    // Passed separately to native.
+  }
+  if (background != null) {
+    result[0] |= 1 << 14;
+    // Passed separately to native.
+  }
   return result;
 }
 
@@ -325,6 +335,8 @@ class TextStyle {
   /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
   /// * `textBaseline`: The common baseline that should be aligned between this text span and its parent text span, or, for the root text spans, with the line box.
   /// * `height`: The height of this text span, as a multiple of the font size.
+  /// * `locale`: The locale used to select region-specific glyphs.
+  /// * `background`: The paint drawn as a background for the text.
   TextStyle({
     Color color,
     TextDecoration decoration,
@@ -338,6 +350,8 @@ class TextStyle {
     double letterSpacing,
     double wordSpacing,
     double height,
+    Locale locale,
+    Paint background,
   }) : _encoded = _encodeTextStyle(
          color,
          decoration,
@@ -351,12 +365,16 @@ class TextStyle {
          letterSpacing,
          wordSpacing,
          height,
+         locale,
+         background,
        ),
        _fontFamily = fontFamily ?? '',
        _fontSize = fontSize,
        _letterSpacing = letterSpacing,
        _wordSpacing = wordSpacing,
-       _height = height;
+       _height = height,
+       _locale = locale,
+       _background = background;
 
   final Int32List _encoded;
   final String _fontFamily;
@@ -364,6 +382,8 @@ class TextStyle {
   final double _letterSpacing;
   final double _wordSpacing;
   final double _height;
+  final Locale _locale;
+  final Paint _background;
 
   @override
   bool operator ==(dynamic other) {
@@ -376,7 +396,9 @@ class TextStyle {
         _fontSize != typedOther._fontSize ||
         _letterSpacing != typedOther._letterSpacing ||
         _wordSpacing != typedOther._wordSpacing ||
-        _height != typedOther._height)
+        _height != typedOther._height ||
+        _locale != typedOther._locale ||
+        _background != typedOther._background)
      return false;
     for (int index = 0; index < _encoded.length; index += 1) {
       if (_encoded[index] != typedOther._encoded[index])
@@ -386,7 +408,7 @@ class TextStyle {
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _letterSpacing, _wordSpacing, _height);
+  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background);
 
   @override
   String toString() {
@@ -402,7 +424,9 @@ class TextStyle {
              'fontSize: ${       _encoded[0] & 0x0200 == 0x0200 ? _fontSize                               : "unspecified"}, '
              'letterSpacing: ${  _encoded[0] & 0x0400 == 0x0400 ? "${_letterSpacing}x"                    : "unspecified"}, '
              'wordSpacing: ${    _encoded[0] & 0x0800 == 0x0800 ? "${_wordSpacing}x"                      : "unspecified"}, '
-             'height: ${         _encoded[0] & 0x1000 == 0x1000 ? "${_height}x"                           : "unspecified"}'
+             'height: ${         _encoded[0] & 0x1000 == 0x1000 ? "${_height}x"                           : "unspecified"}, '
+             'locale: ${         _encoded[0] & 0x2000 == 0x2000 ? _locale                                 : "unspecified"}, '
+             'background: ${     _encoded[0] & 0x4000 == 0x4000 ? _background                             : "unspecified"}'
            ')';
   }
 }
@@ -434,6 +458,7 @@ Int32List _encodeParagraphStyle(
   double fontSize,
   double lineHeight,
   String ellipsis,
+  Locale locale,
 ) {
   final Int32List result = new Int32List(6); // also update paragraph_builder.cc
   if (textAlign != null) {
@@ -470,6 +495,10 @@ Int32List _encodeParagraphStyle(
   }
   if (ellipsis != null) {
     result[0] |= 1 << 9;
+    // Passed separately to native.
+  }
+  if (locale != null) {
+    result[0] |= 1 << 10;
     // Passed separately to native.
   }
   return result;
@@ -521,6 +550,8 @@ class ParagraphStyle {
   ///   constraints are those set in the [ParagraphConstraints] object passed to
   ///   the [Paragraph.layout] method. The empty string and the null value are
   ///   considered equivalent and turn off this behavior.
+  ///
+  /// * `locale`: The locale used to select region-specific glyphs.
   ParagraphStyle({
     TextAlign textAlign,
     TextDirection textDirection,
@@ -531,6 +562,7 @@ class ParagraphStyle {
     double fontSize,
     double lineHeight,
     String ellipsis,
+    Locale locale,
   }) : _encoded = _encodeParagraphStyle(
          textAlign,
          textDirection,
@@ -541,17 +573,20 @@ class ParagraphStyle {
          fontSize,
          lineHeight,
          ellipsis,
+         locale,
        ),
        _fontFamily = fontFamily,
        _fontSize = fontSize,
        _lineHeight = lineHeight,
-       _ellipsis = ellipsis;
+       _ellipsis = ellipsis,
+       _locale = locale;
 
   final Int32List _encoded;
   final String _fontFamily;
   final double _fontSize;
   final double _lineHeight;
   final String _ellipsis;
+  final Locale _locale;
 
   @override
   bool operator ==(dynamic other) {
@@ -563,7 +598,8 @@ class ParagraphStyle {
     if (_fontFamily != typedOther._fontFamily ||
         _fontSize != typedOther._fontSize ||
         _lineHeight != typedOther._lineHeight ||
-        _ellipsis != typedOther._ellipsis)
+        _ellipsis != typedOther._ellipsis ||
+        _locale != typedOther._locale)
      return false;
     for (int index = 0; index < _encoded.length; index += 1) {
       if (_encoded[index] != typedOther._encoded[index])
@@ -573,7 +609,7 @@ class ParagraphStyle {
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _lineHeight, _ellipsis);
+  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _lineHeight, _ellipsis, _locale);
 
   @override
   String toString() {
@@ -586,7 +622,8 @@ class ParagraphStyle {
              'fontFamily: ${    _encoded[0] & 0x040 == 0x040 ? _fontFamily                       : "unspecified"}, '
              'fontSize: ${      _encoded[0] & 0x080 == 0x080 ? _fontSize                         : "unspecified"}, '
              'lineHeight: ${    _encoded[0] & 0x100 == 0x100 ? "${_lineHeight}x"                 : "unspecified"}, '
-             'ellipsis: ${      _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""                  : "unspecified"}'
+             'ellipsis: ${      _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""                  : "unspecified"}, '
+             'locale: ${        _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}'
            ')';
   }
 }
@@ -890,12 +927,12 @@ class ParagraphConstraints {
 ///
 /// Paragraphs can be displayed on a [Canvas] using the [Canvas.drawParagraph]
 /// method.
-abstract class Paragraph extends NativeFieldWrapperClass2 {
-  /// Creates an uninitialized Paragraph object.
+class Paragraph extends NativeFieldWrapperClass2 {
+  /// This class is created by the engine, and should not be instantiated
+  /// or extended directly.
   ///
-  /// Calling the [Paragraph] constructor directly will not create a useable
-  /// object. To create a [Paragraph] object, use a [ParagraphBuilder].
-  Paragraph(); // (this constructor is here just so we can document it)
+  /// To create a [Paragraph] object, use a [ParagraphBuilder].
+  Paragraph._();
 
   /// The amount of horizontal space this paragraph occupies.
   ///
@@ -982,14 +1019,16 @@ abstract class Paragraph extends NativeFieldWrapperClass2 {
 class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Creates a [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
-  ParagraphBuilder(ParagraphStyle style) { _constructor(style._encoded, style._fontFamily, style._fontSize, style._lineHeight, style._ellipsis); }
-  void _constructor(Int32List encoded, String fontFamily, double fontSize, double lineHeight, String ellipsis) native 'ParagraphBuilder_constructor';
+  ParagraphBuilder(ParagraphStyle style) { _constructor(style._encoded, style._fontFamily, style._fontSize, style._lineHeight, style._ellipsis, _encodeLocale(style._locale)); }
+  void _constructor(Int32List encoded, String fontFamily, double fontSize, double lineHeight, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
 
   /// Applies the given style to the added text until [pop] is called.
   ///
   /// See [pop] for details.
-  void pushStyle(TextStyle style) => _pushStyle(style._encoded, style._fontFamily, style._fontSize, style._letterSpacing, style._wordSpacing, style._height);
-  void _pushStyle(Int32List encoded, String fontFamily, double fontSize, double letterSpacing, double wordSpacing, double height) native 'ParagraphBuilder_pushStyle';
+  void pushStyle(TextStyle style) => _pushStyle(style._encoded, style._fontFamily, style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data);
+  void _pushStyle(Int32List encoded, String fontFamily, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData) native 'ParagraphBuilder_pushStyle';
+
+  static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
 
   /// Ends the effect of the most recent call to [pushStyle].
   ///

@@ -61,6 +61,11 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     }
 
     @Override
+    public boolean retainFlutterNativeView() {
+        return false;
+    }
+
+    @Override
     public final boolean hasPlugin(String key) {
         return pluginRegistry.hasPlugin(key);
     }
@@ -82,6 +87,12 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        eventDelegate.onStart();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         eventDelegate.onResume();
@@ -98,6 +109,12 @@ public class FlutterActivity extends Activity implements FlutterView.Provider, P
         if (!eventDelegate.onBackPressed()) {
             super.onBackPressed();
         }
+    }
+    
+    @Override
+    protected void onStop() {
+        eventDelegate.onStop();
+        super.onStop();
     }
 
     @Override

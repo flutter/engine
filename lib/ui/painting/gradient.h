@@ -5,9 +5,11 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_GRADIENT_H_
 #define FLUTTER_LIB_UI_PAINTING_GRADIENT_H_
 
+#include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/painting/shader.h"
 #include "lib/tonic/dart_wrappable.h"
 #include "lib/tonic/typed_data/float32_list.h"
+#include "lib/tonic/typed_data/float64_list.h"
 #include "lib/tonic/typed_data/int32_list.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 
@@ -17,7 +19,8 @@ class DartLibraryNatives;
 
 namespace blink {
 
-static_assert(SkShader::kTileModeCount == 3, "Need to update tile mode enum");
+// TODO: update this if/when Skia adds Decal mode skbug.com/7638
+static_assert(SkShader::kTileModeCount >= 3, "Need to update tile mode enum");
 
 class CanvasGradient : public Shader {
   DEFINE_WRAPPERTYPEINFO();
@@ -37,7 +40,28 @@ class CanvasGradient : public Shader {
                   double radius,
                   const tonic::Int32List& colors,
                   const tonic::Float32List& color_stops,
-                  SkShader::TileMode tile_mode);
+                  SkShader::TileMode tile_mode,
+                  const tonic::Float64List& matrix4);
+
+  void initSweep(double center_x,
+                 double center_y,
+                 const tonic::Int32List& colors,
+                 const tonic::Float32List& color_stops,
+                 SkShader::TileMode tile_mode,
+                 double start_angle,
+                 double end_angle,
+                 const tonic::Float64List& matrix4);
+
+  void initTwoPointConical(double start_x,
+                           double start_y,
+                           double start_radius,
+                           double end_x,
+                           double end_y,
+                           double end_radius,
+                           const tonic::Int32List& colors,
+                           const tonic::Float32List& color_stops,
+                           SkShader::TileMode tile_mode,
+                           const tonic::Float64List& matrix4);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

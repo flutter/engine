@@ -20,7 +20,7 @@ FML_THREAD_LOCAL ThreadLocal tls_message_loop([](intptr_t value) {
 
 MessageLoop& MessageLoop::GetCurrent() {
   auto loop = reinterpret_cast<MessageLoop*>(tls_message_loop.Get());
-  FXL_CHECK(loop != nullptr)
+  FML_CHECK(loop != nullptr)
       << "MessageLoop::EnsureInitializedForCurrentThread was not called on "
          "this thread prior to message loop use.";
   return *loop;
@@ -41,8 +41,8 @@ bool MessageLoop::IsInitializedForCurrentThread() {
 MessageLoop::MessageLoop()
     : loop_(MessageLoopImpl::Create()),
       task_runner_(fxl::MakeRefCounted<fml::TaskRunner>(loop_)) {
-  FXL_CHECK(loop_);
-  FXL_CHECK(task_runner_);
+  FML_CHECK(loop_);
+  FML_CHECK(task_runner_);
 }
 
 MessageLoop::~MessageLoop() = default;
@@ -55,7 +55,7 @@ void MessageLoop::Terminate() {
   loop_->DoTerminate();
 }
 
-fxl::RefPtr<fxl::TaskRunner> MessageLoop::GetTaskRunner() const {
+fxl::RefPtr<fml::TaskRunner> MessageLoop::GetTaskRunner() const {
   return task_runner_;
 }
 
@@ -63,12 +63,12 @@ fxl::RefPtr<MessageLoopImpl> MessageLoop::GetLoopImpl() const {
   return loop_;
 }
 
-void MessageLoop::AddTaskObserver(TaskObserver* observer) {
-  loop_->AddTaskObserver(observer);
+void MessageLoop::AddTaskObserver(intptr_t key, fxl::Closure callback) {
+  loop_->AddTaskObserver(key, callback);
 }
 
-void MessageLoop::RemoveTaskObserver(TaskObserver* observer) {
-  loop_->RemoveTaskObserver(observer);
+void MessageLoop::RemoveTaskObserver(intptr_t key) {
+  loop_->RemoveTaskObserver(key);
 }
 
 void MessageLoop::RunExpiredTasksNow() {

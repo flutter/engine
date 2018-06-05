@@ -12,6 +12,7 @@
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
+#include "third_party/skia/src/gpu/gl/GrGLDefines.h"
 
 namespace shell {
 
@@ -30,14 +31,14 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
     return;
   }
 
-  auto backend_context =
-      reinterpret_cast<GrBackendContext>(GrGLCreateNativeInterface());
-
   GrContextOptions options;
   options.fAvoidStencilBuffers = true;
 
-  auto context = sk_sp<GrContext>(
-      GrContext::Create(kOpenGL_GrBackend, backend_context, options));
+  // To get video playback on the widest range of devices, we limit Skia to
+  // ES2 shading language when the ES3 external image extension is missing.
+  options.fPreferExternalImagesOverES3 = true;
+
+  auto context = GrContext::MakeGL(GrGLMakeNativeInterface(), options);
 
   if (context == nullptr) {
     FXL_LOG(ERROR) << "Failed to setup Skia Gr context.";
@@ -75,32 +76,33 @@ bool GPUSurfaceGL::IsValid() {
   return valid_;
 }
 
-static GrPixelConfig FirstSupportedConfig(GrContext* context) {
-#define RETURN_IF_RENDERABLE(x)                          \
-  if (context->caps()->isConfigRenderable((x), false)) { \
-    return (x);                                          \
+static SkColorType FirstSupportedColorType(GrContext* context,
+                                           GrGLenum* format) {
+#define RETURN_IF_RENDERABLE(x, y)                 \
+  if (context->colorTypeSupportedAsSurface((x))) { \
+    *format = (y);                                 \
+    return (x);                                    \
   }
-
-  RETURN_IF_RENDERABLE(kRGBA_8888_GrPixelConfig);
-  RETURN_IF_RENDERABLE(kRGBA_4444_GrPixelConfig);
-  RETURN_IF_RENDERABLE(kRGB_565_GrPixelConfig);
-  return kUnknown_GrPixelConfig;
+  RETURN_IF_RENDERABLE(kRGBA_8888_SkColorType, GR_GL_RGBA8);
+  RETURN_IF_RENDERABLE(kARGB_4444_SkColorType, GR_GL_RGBA4);
+  RETURN_IF_RENDERABLE(kRGB_565_SkColorType, GR_GL_RGB565);
+  return kUnknown_SkColorType;
 }
 
 static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
                                             const SkISize& size,
                                             intptr_t fbo) {
-  const GrGLFramebufferInfo framebuffer_info = {
-      .fFBOID = static_cast<GrGLuint>(fbo),
-  };
+  GrGLenum format;
+  const SkColorType color_type = FirstSupportedColorType(context, &format);
 
-  const GrPixelConfig pixel_config = FirstSupportedConfig(context);
+  GrGLFramebufferInfo framebuffer_info = {};
+  framebuffer_info.fFBOID = static_cast<GrGLuint>(fbo);
+  framebuffer_info.fFormat = format;
 
   GrBackendRenderTarget render_target(size.fWidth,      // width
                                       size.fHeight,     // height
                                       0,                // sample count
                                       0,                // stencil bits (TODO)
-                                      pixel_config,     // pixel config
                                       framebuffer_info  // framebuffer info
   );
 
@@ -113,9 +115,23 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
       context,                                       // gr context
       render_target,                                 // render target
       GrSurfaceOrigin::kBottomLeft_GrSurfaceOrigin,  // origin
+      color_type,                                    // color type
       colorspace,                                    // colorspace
       &surface_props                                 // surface properties
   );
+}
+
+static sk_sp<SkSurface> CreateOffscreenSurface(GrContext* context,
+                                               const SkISize& size) {
+  const SkImageInfo image_info =
+      SkImageInfo::MakeN32(size.fWidth, size.fHeight, kOpaque_SkAlphaType);
+
+  const SkSurfaceProps surface_props(
+      SkSurfaceProps::InitType::kLegacyFontHost_InitType);
+
+  return SkSurface::MakeRenderTarget(context, SkBudgeted::kNo, image_info, 0,
+                                     kBottomLeft_GrSurfaceOrigin,
+                                     &surface_props);
 }
 
 bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
@@ -131,13 +147,14 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
 
   // Either way, we need to get rid of previous surface.
   onscreen_surface_ = nullptr;
+  offscreen_surface_ = nullptr;
 
   if (size.isEmpty()) {
     FXL_LOG(ERROR) << "Cannot create surfaces of empty size.";
     return false;
   }
 
-  sk_sp<SkSurface> onscreen_surface;
+  sk_sp<SkSurface> onscreen_surface, offscreen_surface;
 
   onscreen_surface =
       WrapOnscreenSurface(context_.get(), size, delegate_->GLContextFBO());
@@ -149,7 +166,16 @@ bool GPUSurfaceGL::CreateOrUpdateSurfaces(const SkISize& size) {
     return false;
   }
 
+  if (delegate_->UseOffscreenSurface()) {
+    offscreen_surface = CreateOffscreenSurface(context_.get(), size);
+    if (offscreen_surface == nullptr) {
+      FXL_LOG(ERROR) << "Could not create offscreen surface.";
+      return false;
+    }
+  }
+
   onscreen_surface_ = std::move(onscreen_surface);
+  offscreen_surface_ = std::move(offscreen_surface);
 
   return true;
 }
@@ -171,11 +197,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
     return nullptr;
   }
 
-  auto weak_this = weak_factory_.GetWeakPtr();
-
   SurfaceFrame::SubmitCallback submit_callback =
-      [weak_this](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
-        return weak_this ? weak_this->PresentSurface(canvas) : false;
+      [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
+                                          SkCanvas* canvas) {
+        return weak ? weak->PresentSurface(canvas) : false;
       };
 
   return std::make_unique<SurfaceFrame>(surface, submit_callback);
@@ -184,6 +209,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
 bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
   if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
     return false;
+  }
+
+  if (offscreen_surface_ != nullptr) {
+    TRACE_EVENT0("flutter", "CopyTextureOnscreen");
+    SkPaint paint;
+    onscreen_surface_->getCanvas()->drawImage(
+        offscreen_surface_->makeImageSnapshot(), 0, 0, &paint);
   }
 
   {
@@ -201,7 +233,7 @@ sk_sp<SkSurface> GPUSurfaceGL::AcquireRenderSurface(const SkISize& size) {
     return nullptr;
   }
 
-  return onscreen_surface_;
+  return offscreen_surface_ != nullptr ? offscreen_surface_ : onscreen_surface_;
 }
 
 GrContext* GPUSurfaceGL::GetContext() {

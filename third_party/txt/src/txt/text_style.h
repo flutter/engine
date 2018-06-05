@@ -24,13 +24,14 @@
 #include "text_baseline.h"
 #include "text_decoration.h"
 #include "third_party/skia/include/core/SkColor.h"
+#include "third_party/skia/include/core/SkPaint.h"
 
 namespace txt {
 
 class TextStyle {
  public:
   SkColor color = SK_ColorWHITE;
-  TextDecoration decoration = TextDecoration::kNone;
+  int decoration = TextDecoration::kNone;
   // Does not make sense to draw a transparent object, so we use it as a default
   // value to indicate no decoration color was set.
   SkColor decoration_color = SK_ColorTRANSPARENT;
@@ -45,6 +46,9 @@ class TextStyle {
   double letter_spacing = 0.0;
   double word_spacing = 0.0;
   double height = 1.0;
+  std::string locale;
+  bool has_background = false;
+  SkPaint background;
 
   TextStyle();
 

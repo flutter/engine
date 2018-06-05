@@ -13,6 +13,8 @@ namespace paths {
 
 std::pair<bool, std::string> GetExecutableDirectoryPath();
 
+std::string JoinPaths(std::initializer_list<std::string> components);
+
 }  // namespace paths
 }  // namespace fml
 

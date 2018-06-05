@@ -30,24 +30,16 @@
 
 namespace txt {
 
-namespace {
+bool FontCollection::FamilyKey::operator==(
+    const FontCollection::FamilyKey& other) const {
+  return font_family == other.font_family && locale == other.locale;
+}
 
-// Example characters representing character classes that may require a
-// fallback font.
-const std::vector<SkUnichar> fallback_characters{
-    0x1f600,  // emoji
-    0x4e00,   // CJK
-    0x5d0,    // Hebrew
-    0x627,    // Arabic
-};
-
-// Font families that will be used as a last resort if no font manager provides
-// a font matching a particular character.
-const std::vector<std::string> last_resort_fonts{
-    "Arial",
-};
-
-}  // anonymous namespace
+size_t FontCollection::FamilyKey::Hasher::operator()(
+    const FontCollection::FamilyKey& key) const {
+  return std::hash<std::string>()(key.font_family) ^
+         std::hash<std::string>()(key.locale);
+}
 
 class TxtFallbackFontProvider
     : public minikin::FontCollection::FallbackFontProvider {
@@ -56,48 +48,65 @@ class TxtFallbackFontProvider
       : font_collection_(font_collection) {}
 
   virtual const std::shared_ptr<minikin::FontFamily>& matchFallbackFont(
-      uint32_t ch) {
-    return font_collection_->MatchFallbackFont(ch);
+      uint32_t ch,
+      std::string locale) {
+    return font_collection_->MatchFallbackFont(ch, locale);
   }
 
  private:
   std::shared_ptr<FontCollection> font_collection_;
 };
 
-FontCollection::FontCollection() = default;
+FontCollection::FontCollection() : enable_font_fallback_(true) {}
 
 FontCollection::~FontCollection() = default;
 
 size_t FontCollection::GetFontManagersCount() const {
-  return skia_font_managers_.size();
+  return GetFontManagerOrder().size();
 }
 
-void FontCollection::PushFront(sk_sp<SkFontMgr> skia_font_manager) {
-  if (!skia_font_manager) {
-    return;
-  }
-  UpdateFallbackFonts(skia_font_manager);
-  skia_font_managers_.push_front(std::move(skia_font_manager));
+void FontCollection::SetDefaultFontManager(sk_sp<SkFontMgr> font_manager) {
+  default_font_manager_ = font_manager;
 }
 
-void FontCollection::PushBack(sk_sp<SkFontMgr> skia_font_manager) {
-  if (!skia_font_manager) {
-    return;
-  }
-  UpdateFallbackFonts(skia_font_manager);
-  skia_font_managers_.push_back(std::move(skia_font_manager));
+void FontCollection::SetAssetFontManager(sk_sp<SkFontMgr> font_manager) {
+  asset_font_manager_ = font_manager;
+}
+
+void FontCollection::SetTestFontManager(sk_sp<SkFontMgr> font_manager) {
+  test_font_manager_ = font_manager;
+}
+
+// Return the available font managers in the order they should be queried.
+std::vector<sk_sp<SkFontMgr>> FontCollection::GetFontManagerOrder() const {
+  std::vector<sk_sp<SkFontMgr>> order;
+  if (test_font_manager_)
+    order.push_back(test_font_manager_);
+  if (asset_font_manager_)
+    order.push_back(asset_font_manager_);
+  if (default_font_manager_)
+    order.push_back(default_font_manager_);
+  return order;
+}
+
+void FontCollection::DisableFontFallback() {
+  enable_font_fallback_ = false;
 }
 
 std::shared_ptr<minikin::FontCollection>
-FontCollection::GetMinikinFontCollectionForFamily(const std::string& family) {
+FontCollection::GetMinikinFontCollectionForFamily(
+    const std::string& font_family,
+    const std::string& locale) {
   // Look inside the font collections cache first.
-  auto cached = font_collections_cache_.find(family);
+  FamilyKey family_key(font_family, locale);
+  auto cached = font_collections_cache_.find(family_key);
   if (cached != font_collections_cache_.end()) {
     return cached->second;
   }
 
-  for (sk_sp<SkFontMgr> manager : skia_font_managers_) {
-    auto font_style_set = manager->matchFamily(family.c_str());
+  for (sk_sp<SkFontMgr>& manager : GetFontManagerOrder()) {
+    sk_sp<SkFontStyleSet> font_style_set(
+        manager->matchFamily(font_family.c_str()));
     if (font_style_set == nullptr || font_style_set->count() == 0) {
       continue;
     }
@@ -108,8 +117,8 @@ FontCollection::GetMinikinFontCollectionForFamily(const std::string& family) {
     for (int i = 0, style_count = font_style_set->count(); i < style_count;
          ++i) {
       // Create the skia typeface.
-      auto skia_typeface =
-          sk_ref_sp<SkTypeface>(font_style_set->createTypeface(i));
+      sk_sp<SkTypeface> skia_typeface(
+          sk_sp<SkTypeface>(font_style_set->createTypeface(i)));
       if (skia_typeface == nullptr) {
         continue;
       }
@@ -132,24 +141,31 @@ FontCollection::GetMinikinFontCollectionForFamily(const std::string& family) {
     std::vector<std::shared_ptr<minikin::FontFamily>> minikin_families = {
         minikin_family,
     };
-    for (const auto& fallback : fallback_fonts_)
-      minikin_families.push_back(fallback.second);
+    if (enable_font_fallback_) {
+      for (SkFontID font_id : fallback_fonts_for_locale_[locale])
+        minikin_families.push_back(fallback_fonts_[font_id]);
+    }
 
     // Create the minikin font collection.
     auto font_collection =
         std::make_shared<minikin::FontCollection>(std::move(minikin_families));
-    font_collection->set_fallback_font_provider(
-        std::make_unique<TxtFallbackFontProvider>(shared_from_this()));
+    if (enable_font_fallback_) {
+      font_collection->set_fallback_font_provider(
+          std::make_unique<TxtFallbackFontProvider>(shared_from_this()));
+    }
 
     // Cache the font collection for future queries.
-    font_collections_cache_[family] = font_collection;
+    font_collections_cache_[family_key] = font_collection;
 
     return font_collection;
   }
 
   const auto default_font_family = GetDefaultFontFamily();
-  if (family != default_font_family) {
-    return GetMinikinFontCollectionForFamily(default_font_family);
+  if (font_family != default_font_family) {
+    std::shared_ptr<minikin::FontCollection> default_collection =
+        GetMinikinFontCollectionForFamily(default_font_family, "");
+    font_collections_cache_[family_key] = default_collection;
+    return default_collection;
   }
 
   // No match found in any of our font managers.
@@ -157,21 +173,27 @@ FontCollection::GetMinikinFontCollectionForFamily(const std::string& family) {
 }
 
 const std::shared_ptr<minikin::FontFamily>& FontCollection::MatchFallbackFont(
-    uint32_t ch) {
-  for (const auto& manager : skia_font_managers_) {
-    sk_sp<SkTypeface> typeface(
-        manager->matchFamilyStyleCharacter(0, SkFontStyle(), nullptr, 0, ch));
+    uint32_t ch,
+    std::string locale) {
+  for (const sk_sp<SkFontMgr>& manager : GetFontManagerOrder()) {
+    std::vector<const char*> bcp47;
+    if (!locale.empty())
+      bcp47.push_back(locale.c_str());
+    sk_sp<SkTypeface> typeface(manager->matchFamilyStyleCharacter(
+        0, SkFontStyle(), bcp47.data(), bcp47.size(), ch));
     if (!typeface)
       continue;
 
-    return GetFontFamilyForTypeface(typeface);
+    fallback_fonts_for_locale_[locale].insert(typeface->uniqueID());
+
+    return GetFallbackFont(typeface);
   }
 
   return null_family_;
 }
 
 const std::shared_ptr<minikin::FontFamily>&
-FontCollection::GetFontFamilyForTypeface(const sk_sp<SkTypeface>& typeface) {
+FontCollection::GetFallbackFont(const sk_sp<SkTypeface>& typeface) {
   SkFontID typeface_id = typeface->uniqueID();
   auto fallback_it = fallback_fonts_.find(typeface_id);
   if (fallback_it != fallback_fonts_.end()) {
@@ -190,29 +212,6 @@ FontCollection::GetFontFamilyForTypeface(const sk_sp<SkTypeface>& typeface) {
   font_collections_cache_.clear();
 
   return insert_it.first->second;
-}
-
-void FontCollection::UpdateFallbackFonts(sk_sp<SkFontMgr> manager) {
-  // Prepopulate the fallback font cache with fonts matching some widely
-  // used character classes.
-  for (SkUnichar fallback_char : fallback_characters) {
-    sk_sp<SkTypeface> typeface(manager->matchFamilyStyleCharacter(
-        0, SkFontStyle(), nullptr, 0, fallback_char));
-    if (typeface) {
-      // Create a Minikin font family for this typeface if one does not already
-      // exist.
-      GetFontFamilyForTypeface(typeface);
-    }
-  }
-
-  // Add additional font families to be used if nothing else matches.
-  for (const std::string& family : last_resort_fonts) {
-    sk_sp<SkTypeface> typeface(
-        manager->matchFamilyStyle(family.c_str(), SkFontStyle()));
-    if (typeface) {
-      GetFontFamilyForTypeface(typeface);
-    }
-  }
 }
 
 }  // namespace txt

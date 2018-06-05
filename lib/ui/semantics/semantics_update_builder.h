@@ -30,6 +30,9 @@ class SemanticsUpdateBuilder
                   int actions,
                   int textSelectionBase,
                   int textSelectionExtent,
+                  double scrollPosition,
+                  double scrollExtentMax,
+                  double scrollExtentMin,
                   double left,
                   double top,
                   double right,
@@ -40,9 +43,9 @@ class SemanticsUpdateBuilder
                   std::string increasedValue,
                   std::string decreasedValue,
                   int textDirection,
-                  int nextNodeId,
                   const tonic::Float64List& transform,
-                  const tonic::Int32List& children);
+                  const tonic::Int32List& childrenInTraversalOrder,
+                  const tonic::Int32List& childrenInHitTestOrder);
 
   fxl::RefPtr<SemanticsUpdate> build();
 
@@ -51,7 +54,7 @@ class SemanticsUpdateBuilder
  private:
   explicit SemanticsUpdateBuilder();
 
-  std::vector<SemanticsNode> nodes_;
+  SemanticsNodeUpdates nodes_;
 };
 
 }  // namespace blink

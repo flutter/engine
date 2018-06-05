@@ -85,6 +85,13 @@ public final class FlutterActivityDelegate
     public interface ViewFactory {
         FlutterView createFlutterView(Context context);
         FlutterNativeView createFlutterNativeView();
+
+        /**
+         * Hook for subclasses to indicate that the {@code FlutterNativeView}
+         * returned by {@link #createFlutterNativeView()} should not be destroyed
+         * when this activity is destroyed.
+         */
+        boolean retainFlutterNativeView();
     }
 
     private final Activity activity;
@@ -125,12 +132,14 @@ public final class FlutterActivityDelegate
         return flutterView.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    @Override
-    @Deprecated
-    public boolean onRequestPermissionResult(
-            int requestCode, String[] permissions, int[] grantResults) {
-        return onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
+    /*
+     * Method onRequestPermissionResult(int, String[], int[]) was made
+     * unavailable on 2018-02-28, following deprecation. This comment is left as
+     * a temporary tombstone for reference, to be removed on 2018-03-28 (or at
+     * least four weeks after release of unavailability).
+     *
+     * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
+     */
 
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -170,9 +179,11 @@ public final class FlutterActivityDelegate
         if (loadIntent(activity.getIntent(), reuseIsolate)) {
             return;
         }
-        String appBundlePath = FlutterMain.findAppBundlePath(activity.getApplicationContext());
-        if (appBundlePath != null) {
+        if (!flutterView.getFlutterNativeView().isApplicationRunning()) {
+          String appBundlePath = FlutterMain.findAppBundlePath(activity.getApplicationContext());
+          if (appBundlePath != null) {
             flutterView.runFromBundle(appBundlePath, null, "main", reuseIsolate);
+          }
         }
     }
 
@@ -194,13 +205,20 @@ public final class FlutterActivityDelegate
         Application app = (Application) activity.getApplicationContext();
         if (app instanceof FlutterApplication) {
             FlutterApplication flutterApp = (FlutterApplication) app;
-            if (this.equals(flutterApp.getCurrentActivity())) {
+            if (activity.equals(flutterApp.getCurrentActivity())) {
                 Log.i(TAG, "onPause setting current activity to null");
                 flutterApp.setCurrentActivity(null);
             }
         }
         if (flutterView != null) {
             flutterView.onPause();
+        }
+    }
+
+    @Override
+    public void onStart() {
+        if (flutterView != null) {
+            flutterView.onStart();
         }
     }
 
@@ -217,6 +235,11 @@ public final class FlutterActivityDelegate
     }
 
     @Override
+    public void onStop() {
+        flutterView.onStop();
+    }
+
+    @Override
     public void onPostResume() {
         if (flutterView != null) {
             flutterView.onPostResume();
@@ -228,7 +251,7 @@ public final class FlutterActivityDelegate
         Application app = (Application) activity.getApplicationContext();
         if (app instanceof FlutterApplication) {
             FlutterApplication flutterApp = (FlutterApplication) app;
-            if (this.equals(flutterApp.getCurrentActivity())) {
+            if (activity.equals(flutterApp.getCurrentActivity())) {
                 Log.i(TAG, "onDestroy setting current activity to null");
                 flutterApp.setCurrentActivity(null);
             }
@@ -236,7 +259,7 @@ public final class FlutterActivityDelegate
         if (flutterView != null) {
             final boolean detach =
                 flutterView.getPluginRegistry().onViewDestroy(flutterView.getFlutterNativeView());
-            if (detach) {
+            if (detach || viewFactory.retainFlutterNativeView()) {
                 // Detach, but do not destroy the FlutterView if a plugin
                 // expressed interest in its FlutterNativeView.
                 flutterView.detach();
@@ -298,11 +321,14 @@ public final class FlutterActivityDelegate
         if (intent.getBooleanExtra("enable-software-rendering", false)) {
             args.add("--enable-software-rendering");
         }
+        if (intent.getBooleanExtra("skia-deterministic-rendering", false)) {
+            args.add("--skia-deterministic-rendering");
+        }
         if (intent.getBooleanExtra("trace-skia", false)) {
             args.add("--trace-skia");
         }
-        if (intent.getBooleanExtra("strong", false)) {
-            args.add("--strong");
+        if (intent.getBooleanExtra("verbose-logging", false)) {
+            args.add("--verbose-logging");
         }
         if (!args.isEmpty()) {
             String[] argsArray = new String[args.size()];
@@ -329,7 +355,9 @@ public final class FlutterActivityDelegate
             if (route != null) {
                 flutterView.setInitialRoute(route);
             }
-            flutterView.runFromBundle(appBundlePath, intent.getStringExtra("snapshot"), "main", reuseIsolate);
+            if (!flutterView.getFlutterNativeView().isApplicationRunning()) {
+                flutterView.runFromBundle(appBundlePath, intent.getStringExtra("snapshot"), "main", reuseIsolate);
+            }
             return true;
         }
 

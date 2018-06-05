@@ -40,7 +40,7 @@ using namespace shell;
     [self playSystemSound:args];
     result(nil);
   } else if ([method isEqualToString:@"HapticFeedback.vibrate"]) {
-    [self vibrateHapticFeedback];
+    [self vibrateHapticFeedback:args];
     result(nil);
   } else if ([method isEqualToString:@"SystemChrome.setPreferredOrientations"]) {
     [self setSystemChromePreferredOrientations:args];
@@ -76,8 +76,23 @@ using namespace shell;
   }
 }
 
-- (void)vibrateHapticFeedback {
-  AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+- (void)vibrateHapticFeedback:(NSString*)feedbackType {
+  if (!feedbackType) {
+    AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+    return;
+  }
+
+  if (@available(iOS 10, *)) {
+    if ([@"HapticFeedbackType.lightImpact" isEqualToString: feedbackType]) {
+      [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
+    } else if ([@"HapticFeedbackType.mediumImpact" isEqualToString: feedbackType]) {
+      [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium] impactOccurred];
+    } else if ([@"HapticFeedbackType.heavyImpact" isEqualToString: feedbackType]) {
+      [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleHeavy] impactOccurred];
+    } else if ([@"HapticFeedbackType.selectionClick" isEqualToString: feedbackType]) {
+      [[[UISelectionFeedbackGenerator alloc] init] selectionChanged];
+    }
+  }
 }
 
 - (void)setSystemChromePreferredOrientations:(NSArray*)orientations {
@@ -122,11 +137,12 @@ using namespace shell;
       ![overlays containsObject:@"SystemUiOverlay.top"];
 }
 
-- (void)setSystemChromeSystemUIOverlayStyle:(NSString*)style {
+- (void)setSystemChromeSystemUIOverlayStyle:(NSDictionary*)message {
+  NSString* style = message[@"statusBarBrightness"];
   UIStatusBarStyle statusBarStyle;
-  if ([style isEqualToString:@"SystemUiOverlayStyle.light"])
+  if ([style isEqualToString:@"Brightness.dark"])
     statusBarStyle = UIStatusBarStyleLightContent;
-  else if ([style isEqualToString:@"SystemUiOverlayStyle.dark"])
+  else if ([style isEqualToString:@"Brightness.light"])
     statusBarStyle = UIStatusBarStyleDefault;
   else
     return;

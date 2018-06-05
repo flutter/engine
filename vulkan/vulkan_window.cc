@@ -103,9 +103,7 @@ bool VulkanWindow::CreateSkiaGrContext() {
     return false;
   }
 
-  sk_sp<GrContext> context(GrContext::Create(
-      kVulkan_GrBackend,
-      reinterpret_cast<GrBackendContext>(backend_context.get())));
+  sk_sp<GrContext> context = GrContext::MakeVulkan(backend_context);
 
   if (context == nullptr) {
     return false;
@@ -131,11 +129,6 @@ sk_sp<GrVkBackendContext> VulkanWindow::CreateSkiaBackendContext() {
     return nullptr;
   }
 
-  // The Skia backend context takes ownership of the device and the instance.
-  // Make sure we release our ownership now.
-  logical_device_->ReleaseDeviceOwnership();
-  application_->ReleaseInstanceOwnership();
-
   auto context = sk_make_sp<GrVkBackendContext>();
   context->fInstance = application_->GetInstance();
   context->fPhysicalDevice = logical_device_->GetPhysicalDeviceHandle();
@@ -148,6 +141,7 @@ sk_sp<GrVkBackendContext> VulkanWindow::CreateSkiaBackendContext() {
                          surface_->GetNativeSurface().GetSkiaExtensionName();
   context->fFeatures = skia_features;
   context->fInterface.reset(interface.release());
+  context->fOwnsInstanceAndDevice = false;
   return context;
 }
 

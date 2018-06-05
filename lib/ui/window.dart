@@ -5,25 +5,25 @@
 part of dart.ui;
 
 /// Signature of callbacks that have no arguments and return no data.
-typedef void VoidCallback();
+typedef VoidCallback = void Function();
 
 /// Signature for [Window.onBeginFrame].
-typedef void FrameCallback(Duration duration);
+typedef FrameCallback = void Function(Duration duration);
 
 /// Signature for [Window.onPointerDataPacket].
-typedef void PointerDataPacketCallback(PointerDataPacket packet);
+typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 
 /// Signature for [Window.onSemanticsAction].
-typedef void SemanticsActionCallback(int id, SemanticsAction action, ByteData args);
+typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData args);
 
 /// Signature for responses to platform messages.
 ///
 /// Used as a parameter to [Window.sendPlatformMessage] and
 /// [Window.onPlatformMessage].
-typedef void PlatformMessageResponseCallback(ByteData data);
+typedef PlatformMessageResponseCallback = void Function(ByteData data);
 
 /// Signature for [Window.onPlatformMessage].
-typedef void PlatformMessageCallback(String name, ByteData data, PlatformMessageResponseCallback callback);
+typedef PlatformMessageCallback = void Function(String name, ByteData data, PlatformMessageResponseCallback callback);
 
 /// States that an application can be in.
 ///
@@ -47,10 +47,14 @@ enum AppLifecycleState {
   /// in the foreground inactive state. Apps transition to this state when in
   /// a phone call, responding to a TouchID request, when entering the app
   /// switcher or the control center, or when the UIViewController hosting the
-  /// Flutter app is transitioning. Apps in this state should assume that they
-  /// may be [paused] at any time.
+  /// Flutter app is transitioning.
   ///
-  /// On Android, this state is currently unused.
+  /// On Android, this corresponds to an app or the Flutter host view running
+  /// in the foreground inactive state.  Apps transition to this state when
+  /// another activity is focused, such as a split-screen app, a phone call,
+  /// a picture-in-picture app, a system dialog, or another window.
+  ///
+  /// Apps in this state should assume that they may be [paused] at any time.
   inactive,
 
   /// The application is not currently visible to the user, not responding to
@@ -75,7 +79,7 @@ enum AppLifecycleState {
 /// A representation of distances for each of the four edges of a rectangle,
 /// used to encode the view insets and padding that applications should place
 /// around their user interface, as exposed by [Window.viewInsets] and
-/// [Window.padding]. View insets and padding are preferrably read via
+/// [Window.padding]. View insets and padding are preferably read via
 /// [MediaQuery.of].
 ///
 /// For a generic class that represents distances around a rectangle, see the
@@ -105,6 +109,11 @@ class WindowPadding {
 
   /// A window padding that has zeros for each edge.
   static const WindowPadding zero = const WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
+
+  @override
+  String toString() {
+    return '$runtimeType(left: $left, top: $top, right: $right, bottom: $bottom)';
+  }
 }
 
 /// An identifier used to select a user's language and formatting preferences,
@@ -552,8 +561,36 @@ class Window {
     _onPointerDataPacketZone = Zone.current;
   }
 
-  /// The route or path that the operating system requested when the application
-  /// was launched.
+  /// The route or path that the embedder requested when the application was
+  /// launched.
+  ///
+  /// This will be the string "`/`" if no particular route was requested.
+  ///
+  /// ## Android
+  ///
+  /// On Android, calling
+  /// [`FlutterView.setInitialRoute`](/javadoc/io/flutter/view/FlutterView.html#setInitialRoute-java.lang.String-)
+  /// will set this value. The value must be set sufficiently early, i.e. before
+  /// the [runApp] call is executed in Dart, for this to have any effect on the
+  /// framework. The `createFlutterView` method in your `FlutterActivity`
+  /// subclass is a suitable time to set the value. The application's
+  /// `AndroidManifest.xml` file must also be updated to have a suitable
+  /// [`<intent-filter>`](https://developer.android.com/guide/topics/manifest/intent-filter-element.html).
+  ///
+  /// ## iOS
+  ///
+  /// On iOS, calling
+  /// [`FlutterViewController.setInitialRoute`](/objcdoc/Classes/FlutterViewController.html#/c:objc%28cs%29FlutterViewController%28im%29setInitialRoute:)
+  /// will set this value. The value must be set sufficiently early, i.e. before
+  /// the [runApp] call is executed in Dart, for this to have any effect on the
+  /// framework. The `application:didFinishLaunchingWithOptions:` method is a
+  /// suitable time to set this value.
+  ///
+  /// See also:
+  ///
+  ///  * [Navigator], a widget that handles routing.
+  ///  * [SystemChannels.navigation], which handles subsequent navigation
+  ///    requests from the embedder.
   String get defaultRouteName => _defaultRouteName();
   String _defaultRouteName() native 'Window_defaultRouteName';
 
@@ -649,11 +686,14 @@ class Window {
   void sendPlatformMessage(String name,
                            ByteData data,
                            PlatformMessageResponseCallback callback) {
-    _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
+    final String error =
+        _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
+    if (error != null)
+      throw new Exception(error);
   }
-  void _sendPlatformMessage(String name,
-                            PlatformMessageResponseCallback callback,
-                            ByteData data) native 'Window_sendPlatformMessage';
+  String _sendPlatformMessage(String name,
+                              PlatformMessageResponseCallback callback,
+                              ByteData data) native 'Window_sendPlatformMessage';
 
   /// Called whenever this window receives a message from a platform-specific
   /// plugin.

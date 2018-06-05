@@ -34,7 +34,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     // Constants from higher API levels.
     // TODO(goderbauer): Get these from Android Support Library when
     // https://github.com/flutter/flutter/issues/11099 is resolved.
-    public static final int ACTION_SHOW_ON_SCREEN = 16908342; // API level 23
+    private static final int ACTION_SHOW_ON_SCREEN = 16908342; // API level 23
+
+    private static final float SCROLL_EXTENT_FOR_INFINITY = 100000.0f;
+    private static final float SCROLL_POSITION_CAP_FOR_INFINITY = 70000.0f;
+    private static final int ROOT_NODE_ID = 0;
 
     private Map<Integer, SemanticsObject> mObjects;
     private final FlutterView mOwner;
@@ -42,6 +46,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private SemanticsObject mA11yFocusedObject;
     private SemanticsObject mInputFocusedObject;
     private SemanticsObject mHoveredObject;
+    private int previousRouteId = ROOT_NODE_ID;
+    private List<Integer> previousRoutes;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
@@ -60,7 +66,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         SET_SELECTION(1 << 11),
         COPY(1 << 12),
         CUT(1 << 13),
-        PASTE(1 << 14);
+        PASTE(1 << 14),
+        DID_GAIN_ACCESSIBILITY_FOCUS(1 << 15),
+        DID_LOSE_ACCESSIBILITY_FOCUS(1 << 16);
 
         Action(int value) {
             this.value = value;
@@ -78,7 +86,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         IS_FOCUSED(1 << 5),
         HAS_ENABLED_STATE(1 << 6),
         IS_ENABLED(1 << 7),
-        IS_IN_MUTUALLY_EXCLUSIVE_GROUP(1 << 8);
+        IS_IN_MUTUALLY_EXCLUSIVE_GROUP(1 << 8),
+        IS_HEADER(1 << 9),
+        IS_OBSCURED(1 << 10),
+        SCOPES_ROUTE(1 << 11),
+        NAMES_ROUTE(1 << 12),
+        IS_HIDDEN(1 << 13);
 
         Flag(int value) {
             this.value = value;
@@ -91,6 +104,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         assert owner != null;
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
+        previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(owner, "flutter/accessibility",
             StandardMessageCodec.INSTANCE);
     }
@@ -110,8 +124,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         if (virtualViewId == View.NO_ID) {
             AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner);
             mOwner.onInitializeAccessibilityNodeInfo(result);
-            if (mObjects.containsKey(0))
-                result.addChild(mOwner, 0);
+            if (mObjects.containsKey(ROOT_NODE_ID))
+                result.addChild(mOwner, ROOT_NODE_ID);
             return result;
         }
 
@@ -121,7 +135,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner, virtualViewId);
         result.setPackageName(mOwner.getContext().getPackageName());
-        result.setClassName("Flutter"); // TODO(goderbauer): Set proper class names
+        result.setClassName("android.view.View");
         result.setSource(mOwner, virtualViewId);
         result.setFocusable(object.isFocusable());
         if (mInputFocusedObject != null)
@@ -131,6 +145,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             result.setAccessibilityFocused(mA11yFocusedObject.id == virtualViewId);
 
         if (object.hasFlag(Flag.IS_TEXT_FIELD)) {
+            result.setPassword(object.hasFlag(Flag.IS_OBSCURED));
             result.setClassName("android.widget.EditText");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 result.setEditable(true);
@@ -169,10 +184,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         if (object.parent != null) {
-            assert object.id > 0;
+            assert object.id > ROOT_NODE_ID;
             result.setParent(mOwner, object.parent.id);
         } else {
-            assert object.id == 0;
+            assert object.id == ROOT_NODE_ID;
             result.setParent(mOwner);
         }
 
@@ -236,8 +251,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
         result.setText(object.getValueLabelHint());
-        result.setTraversalBefore(mOwner,
-            object.nextNodeId == -1 ? View.NO_ID : object.nextNodeId);
 
         // Accessibility Focus
         if (mA11yFocusedObject != null && mA11yFocusedObject.id == virtualViewId) {
@@ -246,9 +259,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             result.addAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
         }
 
-        if (object.children != null) {
-            for (SemanticsObject child : object.children) {
-                result.addChild(mOwner, child.id);
+        if (object.childrenInTraversalOrder != null) {
+            for (SemanticsObject child : object.childrenInTraversalOrder) {
+                if (!child.hasFlag(Flag.IS_HIDDEN)) {
+                    result.addChild(mOwner, child.id);
+                }
             }
         }
 
@@ -263,10 +278,16 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
         switch (action) {
             case AccessibilityNodeInfo.ACTION_CLICK: {
+                // Note: TalkBack prior to Oreo doesn't use this handler and instead simulates a
+                //     click event at the center of the SemanticsNode. Other a11y services might go
+                //     through this handler though.
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.TAP);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_LONG_CLICK: {
+                // Note: TalkBack doesn't use this handler and instead simulates a long click event
+                //     at the center of the SemanticsNode. Other a11y services might go through this
+                //     handler though.
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.LONG_PRESS);
                 return true;
             }
@@ -309,11 +330,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 return performCursorMoveAction(object, virtualViewId, arguments, true);
             }
             case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS: {
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.DID_LOSE_ACCESSIBILITY_FOCUS);
                 sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
                 mA11yFocusedObject = null;
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS: {
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
                 sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
 
                 if (mA11yFocusedObject == null) {
@@ -401,6 +424,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 if (mInputFocusedObject != null)
                     return createAccessibilityNodeInfo(mInputFocusedObject.id);
             }
+            // Fall through to check FOCUS_ACCESSIBILITY
             case AccessibilityNodeInfo.FOCUS_ACCESSIBILITY: {
                 if (mA11yFocusedObject != null)
                     return createAccessibilityNodeInfo(mA11yFocusedObject.id);
@@ -454,21 +478,46 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
             SemanticsObject object = getOrCreateObject(id);
-            boolean hadCheckedState = object.hasFlag(Flag.HAS_CHECKED_STATE);
-            boolean wasChecked = object.hasFlag(Flag.IS_CHECKED);
             object.updateWith(buffer, strings);
+            if (object.hasFlag(Flag.IS_HIDDEN)) {
+                continue;
+            }
             if (object.hasFlag(Flag.IS_FOCUSED)) {
                 mInputFocusedObject = object;
             }
-            updated.add(object);
+            if (object.hadPreviousConfig) {
+                updated.add(object);
+            }
         }
 
         Set<SemanticsObject> visitedObjects = new HashSet<SemanticsObject>();
         SemanticsObject rootObject = getRootObject();
+        List<SemanticsObject> newRoutes = new ArrayList<>();
         if (rootObject != null) {
           final float[] identity = new float[16];
           Matrix.setIdentityM(identity, 0);
           rootObject.updateRecursively(identity, visitedObjects, false);
+          rootObject.collectRoutes(newRoutes);
+        }
+
+        // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route id changed from the
+        // previously cached route id.
+        SemanticsObject lastAdded = null;
+        for (SemanticsObject semanticsObject : newRoutes) {
+            if (!previousRoutes.contains(semanticsObject.id)) {
+                lastAdded = semanticsObject;
+            }
+        }
+        if (lastAdded == null && newRoutes.size() > 0) {
+            lastAdded = newRoutes.get(newRoutes.size() - 1);
+        }
+        if (lastAdded != null && lastAdded.id != previousRouteId) {
+            previousRouteId = lastAdded.id;
+            createWindowChangeEvent(lastAdded);
+        }
+        previousRoutes.clear();
+        for (SemanticsObject semanticsObject : newRoutes) {
+            previousRoutes.add(semanticsObject.id);
         }
 
         Iterator<Map.Entry<Integer, SemanticsObject>> it = mObjects.entrySet().iterator();
@@ -481,19 +530,52 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             }
         }
 
-        // Send accessibility events for updated nodes
-        for (SemanticsObject object : updated) {
-            sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-            if (!object.hadPreviousConfig) {
-                continue;
-            }
+        // TODO(goderbauer): Send this event only once (!) for changed subtrees,
+        //     see https://github.com/flutter/flutter/issues/14534
+        sendAccessibilityEvent(0, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
 
+        for (SemanticsObject object : updated) {
+            if (object.didScroll()) {
+                AccessibilityEvent event =
+                        obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_SCROLLED);
+
+                // Android doesn't support unbound scrolling. So we pretend there is a large
+                // bound (SCROLL_EXTENT_FOR_INFINITY), which you can never reach.
+                float position = object.scrollPosition;
+                float max = object.scrollExtentMax;
+                if (Float.isInfinite(object.scrollExtentMax)) {
+                    max = SCROLL_EXTENT_FOR_INFINITY;
+                    if (position > SCROLL_POSITION_CAP_FOR_INFINITY) {
+                        position = SCROLL_POSITION_CAP_FOR_INFINITY;
+                    }
+                }
+                if (Float.isInfinite(object.scrollExtentMin)) {
+                    max += SCROLL_EXTENT_FOR_INFINITY;
+                    if (position < -SCROLL_POSITION_CAP_FOR_INFINITY) {
+                        position = -SCROLL_POSITION_CAP_FOR_INFINITY;
+                    }
+                    position += SCROLL_EXTENT_FOR_INFINITY;
+                } else {
+                    max -= object.scrollExtentMin;
+                    position -= object.scrollExtentMin;
+                }
+
+                if (object.hadAction(Action.SCROLL_UP) || object.hadAction(Action.SCROLL_DOWN)) {
+                    event.setScrollY((int) position);
+                    event.setMaxScrollY((int) max);
+                } else if (object.hadAction(Action.SCROLL_LEFT)
+                        || object.hadAction(Action.SCROLL_RIGHT)) {
+                    event.setScrollX((int) position);
+                    event.setMaxScrollX((int) max);
+                }
+                sendAccessibilityEvent(event);
+            }
             if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
-                    && object.hadFlag(Flag.HAS_CHECKED_STATE)
-                    && object.hasFlag(Flag.HAS_CHECKED_STATE)
-                    && object.hadFlag(Flag.IS_CHECKED) != object.hasFlag(Flag.IS_CHECKED)) {
-                // Simulate a click so TalkBack announces the change in checked state.
-                sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_CLICKED);
+                    && !object.hadFlag(Flag.IS_SELECTED) && object.hasFlag(Flag.IS_SELECTED)) {
+                AccessibilityEvent event =
+                        obtainAccessibilityEvent(object.id, AccessibilityEvent.TYPE_VIEW_SELECTED);
+                event.getText().add(object.label);
+                sendAccessibilityEvent(event);
             }
             if (mInputFocusedObject != null && mInputFocusedObject.id == object.id
                     && object.hadFlag(Flag.IS_TEXT_FIELD)
@@ -552,7 +634,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     }
 
     private AccessibilityEvent obtainAccessibilityEvent(int virtualViewId, int eventType) {
-        assert virtualViewId != 0;
+        assert virtualViewId != ROOT_NODE_ID;
         AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
         event.setPackageName(mOwner.getContext().getPackageName());
         event.setSource(mOwner, virtualViewId);
@@ -563,7 +645,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         if (!mAccessibilityEnabled) {
             return;
         }
-        if (virtualViewId == 0) {
+        if (virtualViewId == ROOT_NODE_ID) {
             mOwner.sendAccessibilityEvent(eventType);
         } else {
             sendAccessibilityEvent(obtainAccessibilityEvent(virtualViewId, eventType));
@@ -586,30 +668,38 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         final HashMap<String, Object> data = (HashMap<String, Object>)annotatedEvent.get("data");
 
         switch (type) {
-            case "scroll":
-                final int nodeId = (int)annotatedEvent.get("nodeId");
-                AccessibilityEvent event =
-                    obtainAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_SCROLLED);
-                char axis = ((String)data.get("axis")).charAt(0);
-                double minPosition = (double)data.get("minScrollExtent");
-                double maxPosition = (double)data.get("maxScrollExtent") - minPosition;
-                double position = (double)data.get("pixels") - minPosition;
-                if (axis == 'v') {
-                    event.setScrollY((int)position);
-                    event.setMaxScrollY((int)maxPosition);
-                } else {
-                    assert axis == 'h';
-                    event.setScrollX((int)position);
-                    event.setMaxScrollX((int)maxPosition);
-                }
-                sendAccessibilityEvent(event);
-                break;
             case "announce":
                 mOwner.announceForAccessibility((String) data.get("message"));
                 break;
-            default:
-                assert false;
+            case "longPress": {
+                Integer nodeId = (Integer) annotatedEvent.get("nodeId");
+                if (nodeId == null) {
+                    return;
+                }
+                sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_LONG_CLICKED);
+                break;
+            }
+            case "tap": {
+                Integer nodeId = (Integer) annotatedEvent.get("nodeId");
+                if (nodeId == null) {
+                    return;
+                }
+                sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_CLICKED);
+                break;
+            }
+            case "tooltip": {
+                AccessibilityEvent e = obtainAccessibilityEvent(ROOT_NODE_ID, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+                e.getText().add((String) data.get("message"));
+                sendAccessibilityEvent(e);
+            }
         }
+    }
+
+    private void createWindowChangeEvent(SemanticsObject route) {
+        AccessibilityEvent e = obtainAccessibilityEvent(route.id, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+        String routeName = route.getRouteName();
+        e.getText().add(routeName);
+        sendAccessibilityEvent(e);
     }
 
     private void willRemoveSemanticsObject(SemanticsObject object) {
@@ -660,18 +750,24 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         int actions;
         int textSelectionBase;
         int textSelectionExtent;
+        float scrollPosition;
+        float scrollExtentMax;
+        float scrollExtentMin;
         String label;
         String value;
         String increasedValue;
         String decreasedValue;
         String hint;
         TextDirection textDirection;
-        int nextNodeId;
 
         boolean hadPreviousConfig = false;
         int previousFlags;
+        int previousActions;
         int previousTextSelectionBase;
         int previousTextSelectionExtent;
+        float previousScrollPosition;
+        float previousScrollExtentMax;
+        float previousScrollExtentMin;
         String previousValue;
 
         private float left;
@@ -681,7 +777,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         private float[] transform;
 
         SemanticsObject parent;
-        List<SemanticsObject> children;  // In inverse hit test order (i.e. paint order).
+        List<SemanticsObject> childrenInTraversalOrder;
+        List<SemanticsObject> childrenInHitTestOrder;
 
         private boolean inverseTransformDirty = true;
         private float[] inverseTransform;
@@ -694,6 +791,10 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             return (actions & action.value) != 0;
         }
 
+        boolean hadAction(Action action) {
+            return (previousActions & action.value) != 0;
+        }
+
         boolean hasFlag(Flag flag) {
             return (flags & flag.value) != 0;
         }
@@ -703,15 +804,19 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             return (previousFlags & flag.value) != 0;
         }
 
+        boolean didScroll() {
+            return !Float.isNaN(scrollPosition) && !Float.isNaN(previousScrollPosition)
+                    && previousScrollPosition != scrollPosition;
+        }
+
         void log(String indent, boolean recursive) {
           Log.i(TAG, indent + "SemanticsObject id=" + id + " label=" + label + " actions=" +  actions + " flags=" + flags + "\n" +
                      indent + "  +-- textDirection=" + textDirection  + "\n"+
-                     indent + "  +-- nextNodeId=" + nextNodeId  + "\n"+
                      indent + "  +-- rect.ltrb=(" + left + ", " + top + ", " + right + ", " + bottom + ")\n" +
                      indent + "  +-- transform=" + Arrays.toString(transform) + "\n");
-          if (children != null && recursive) {
+          if (childrenInTraversalOrder != null && recursive) {
               String childIndent = indent + "  ";
-              for (SemanticsObject child : children) {
+              for (SemanticsObject child : childrenInTraversalOrder) {
                   child.log(childIndent, recursive);
               }
           }
@@ -721,13 +826,20 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             hadPreviousConfig = true;
             previousValue = value;
             previousFlags = flags;
+            previousActions = actions;
             previousTextSelectionBase = textSelectionBase;
             previousTextSelectionExtent = textSelectionExtent;
+            previousScrollPosition = scrollPosition;
+            previousScrollExtentMax = scrollExtentMax;
+            previousScrollExtentMin = scrollExtentMin;
 
             flags = buffer.getInt();
             actions = buffer.getInt();
             textSelectionBase = buffer.getInt();
             textSelectionExtent = buffer.getInt();
+            scrollPosition = buffer.getFloat();
+            scrollExtentMax = buffer.getFloat();
+            scrollExtentMin = buffer.getFloat();
 
             int stringIndex = buffer.getInt();
             label = stringIndex == -1 ? null : strings[stringIndex];
@@ -746,8 +858,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
             textDirection = TextDirection.fromInt(buffer.getInt());
 
-            nextNodeId = buffer.getInt();
-
             left = buffer.getFloat();
             top = buffer.getFloat();
             right = buffer.getFloat();
@@ -762,17 +872,29 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
             final int childCount = buffer.getInt();
             if (childCount == 0) {
-                children = null;
+                childrenInTraversalOrder = null;
+                childrenInHitTestOrder = null;
             } else {
-                if (children == null)
-                    children = new ArrayList<SemanticsObject>(childCount);
+                if (childrenInTraversalOrder == null)
+                    childrenInTraversalOrder = new ArrayList<SemanticsObject>(childCount);
                 else
-                    children.clear();
+                    childrenInTraversalOrder.clear();
 
                 for (int i = 0; i < childCount; ++i) {
                     SemanticsObject child = getOrCreateObject(buffer.getInt());
                     child.parent = this;
-                    children.add(child);
+                    childrenInTraversalOrder.add(child);
+                }
+
+                if (childrenInHitTestOrder == null)
+                    childrenInHitTestOrder = new ArrayList<SemanticsObject>(childCount);
+                else
+                    childrenInHitTestOrder.clear();
+
+                for (int i = 0; i < childCount; ++i) {
+                    SemanticsObject child = getOrCreateObject(buffer.getInt());
+                    child.parent = this;
+                    childrenInHitTestOrder.add(child);
                 }
             }
         }
@@ -798,10 +920,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             final float y = point[1] / w;
             if (x < left || x >= right || y < top || y >= bottom)
                 return null;
-            if (children != null) {
+            if (childrenInHitTestOrder != null) {
                 final float[] transformedPoint = new float[4];
-                for (int i = children.size() - 1; i >= 0; i -= 1) {
-                    final SemanticsObject child = children.get(i);
+                for (int i = 0; i < childrenInHitTestOrder.size(); i += 1) {
+                    final SemanticsObject child = childrenInHitTestOrder.get(i);
+                    if (child.hasFlag(Flag.IS_HIDDEN)) {
+                        continue;
+                    }
                     child.ensureInverseTransform();
                     Matrix.multiplyMV(transformedPoint, 0, child.inverseTransform, 0, point, 0);
                     final SemanticsObject result = child.hitTest(transformedPoint);
@@ -816,6 +941,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         // TODO(goderbauer): This should be decided by the framework once we have more information
         //     about focusability there.
         boolean isFocusable() {
+            // We enforce in the framework that no other useful semantics are merged with these
+            // nodes.
+            if (hasFlag(Flag.SCOPES_ROUTE)) {
+                return false;
+            }
             int scrollableActions = Action.SCROLL_RIGHT.value | Action.SCROLL_LEFT.value
                     | Action.SCROLL_UP.value | Action.SCROLL_DOWN.value;
             return (actions & ~scrollableActions) != 0
@@ -823,6 +953,36 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 || (label != null && !label.isEmpty())
                 || (value != null && !value.isEmpty())
                 || (hint != null && !hint.isEmpty());
+        }
+
+        void collectRoutes(List<SemanticsObject> edges) {
+            if (hasFlag(Flag.SCOPES_ROUTE)) {
+                edges.add(this);
+            }
+            if (childrenInTraversalOrder != null) {
+                for (int i = 0; i < childrenInTraversalOrder.size(); ++i) {
+                    childrenInTraversalOrder.get(i).collectRoutes(edges);
+                }
+            }
+        }
+
+        String getRouteName() {
+            // Returns the first non-null and non-empty semantic label of a child
+            // with an NamesRoute flag. Otherwise returns null.
+            if (hasFlag(Flag.NAMES_ROUTE)) {
+                if (label != null && !label.isEmpty()) {
+                    return label;
+                }
+            }
+            if (childrenInTraversalOrder != null) {
+                for (int i = 0; i < childrenInTraversalOrder.size(); ++i) {
+                    String newName = childrenInTraversalOrder.get(i).getRouteName();
+                    if (newName != null && !newName.isEmpty()) {
+                        return newName;
+                    }
+                }
+            }
+            return null;
         }
 
         void updateRecursively(float[] ancestorTransform, Set<SemanticsObject> visitedObjects, boolean forceUpdate) {
@@ -877,9 +1037,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             assert globalTransform != null;
             assert globalRect != null;
 
-            if (children != null) {
-                for (int i = 0; i < children.size(); ++i) {
-                    children.get(i).updateRecursively(globalTransform, visitedObjects, forceUpdate);
+            if (childrenInTraversalOrder != null) {
+                for (int i = 0; i < childrenInTraversalOrder.size(); ++i) {
+                    childrenInTraversalOrder.get(i).updateRecursively(globalTransform, visitedObjects, forceUpdate);
                 }
             }
         }

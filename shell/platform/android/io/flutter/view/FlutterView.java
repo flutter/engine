@@ -22,6 +22,7 @@ import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -33,6 +34,7 @@ import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodManager;
 import io.flutter.app.FlutterActivity;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.plugin.common.*;
@@ -98,6 +100,7 @@ public class FlutterView extends SurfaceView
         int physicalViewInsetLeft = 0;
     }
 
+    private final InputMethodManager mImm;
     private final TextInputPlugin mTextInputPlugin;
     private final SurfaceHolder.Callback mSurfaceCallback;
     private final ViewportMetrics mMetrics;
@@ -114,6 +117,7 @@ public class FlutterView extends SurfaceView
     private final AtomicLong nextTextureId = new AtomicLong(0L);
     private FlutterNativeView mNativeView;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
+    private InputConnection mLastInputConnection;
 
     public FlutterView(Context context) {
         this(context, null);
@@ -197,6 +201,7 @@ public class FlutterView extends SurfaceView
             "flutter/platform", JSONMethodCodec.INSTANCE);
         flutterPlatformChannel.setMethodCallHandler(platformPlugin);
         addActivityLifecycleListener(platformPlugin);
+        mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         mTextInputPlugin = new TextInputPlugin(this);
 
         setLocale(getResources().getConfiguration().locale);
@@ -238,6 +243,12 @@ public class FlutterView extends SurfaceView
             return super.onKeyDown(keyCode, event);
         }
 
+        if (event.getDeviceId() != KeyCharacterMap.VIRTUAL_KEYBOARD) {
+            if (mLastInputConnection != null && mImm.isAcceptingText()) {
+                mLastInputConnection.sendKeyEvent(event);
+            }
+        }
+
         Map<String, Object> message = new HashMap<>();
         message.put("type", "keydown");
         message.put("keymap", "android");
@@ -254,12 +265,24 @@ public class FlutterView extends SurfaceView
         return mNativeView.getPluginRegistry();
     }
 
+    public String getLookupKeyForAsset(String asset) {
+        return FlutterMain.getLookupKeyForAsset(asset);
+    }
+
+    public String getLookupKeyForAsset(String asset, String packageName) {
+        return FlutterMain.getLookupKeyForAsset(asset, packageName);
+    }
+
     public void addActivityLifecycleListener(ActivityLifecycleListener listener) {
         mActivityLifecycleListeners.add(listener);
     }
 
+    public void onStart() {
+        mFlutterLifecycleChannel.send("AppLifecycleState.inactive");
+    }
+
     public void onPause() {
-        mFlutterLifecycleChannel.send("AppLifecycleState.paused");
+        mFlutterLifecycleChannel.send("AppLifecycleState.inactive");
     }
 
     public void onPostResume() {
@@ -270,7 +293,7 @@ public class FlutterView extends SurfaceView
     }
 
     public void onStop() {
-        mFlutterLifecycleChannel.send("AppLifecycleState.suspending");
+        mFlutterLifecycleChannel.send("AppLifecycleState.paused");
     }
 
     public void onMemoryPressure() {
@@ -360,7 +383,8 @@ public class FlutterView extends SurfaceView
     @Override
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
         try {
-            return mTextInputPlugin.createInputConnection(this, outAttrs);
+            mLastInputConnection = mTextInputPlugin.createInputConnection(this, outAttrs);
+            return mLastInputConnection;
         } catch (JSONException e) {
             Log.e(TAG, "Failed to create input connection", e);
             return null;
@@ -759,7 +783,9 @@ public class FlutterView extends SurfaceView
 
     // Called by native to notify first Flutter frame rendered.
     public void onFirstFrame() {
-        for (FirstFrameListener listener : mFirstFrameListeners) {
+        // Allow listeners to remove themselves when they are called.
+        List<FirstFrameListener> listeners = new ArrayList<>(mFirstFrameListeners);
+        for (FirstFrameListener listener : listeners) {
             listener.onFirstFrame();
         }
     }

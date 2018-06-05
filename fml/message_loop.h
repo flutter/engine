@@ -5,8 +5,7 @@
 #ifndef FLUTTER_FML_MESSAGE_LOOP_H_
 #define FLUTTER_FML_MESSAGE_LOOP_H_
 
-#include "flutter/fml/task_observer.h"
-#include "lib/fxl/macros.h"
+#include "flutter/fml/macros.h"
 #include "lib/fxl/tasks/task_runner.h"
 
 namespace fml {
@@ -16,6 +15,7 @@ class MessageLoopImpl;
 
 class MessageLoop {
  public:
+  FML_EMBEDDER_ONLY
   static MessageLoop& GetCurrent();
 
   bool IsValid() const;
@@ -24,11 +24,11 @@ class MessageLoop {
 
   void Terminate();
 
-  void AddTaskObserver(TaskObserver* observer);
+  void AddTaskObserver(intptr_t key, fxl::Closure callback);
 
-  void RemoveTaskObserver(TaskObserver* observer);
+  void RemoveTaskObserver(intptr_t key);
 
-  fxl::RefPtr<fxl::TaskRunner> GetTaskRunner() const;
+  fxl::RefPtr<fml::TaskRunner> GetTaskRunner() const;
 
   // Exposed for the embedder shell which allows clients to poll for events
   // instead of dedicating a thread to the message loop.
@@ -51,7 +51,7 @@ class MessageLoop {
 
   fxl::RefPtr<MessageLoopImpl> GetLoopImpl() const;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(MessageLoop);
+  FML_DISALLOW_COPY_AND_ASSIGN(MessageLoop);
 };
 
 }  // namespace fml

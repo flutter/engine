@@ -105,6 +105,29 @@ public interface PluginRegistry {
          */
         FlutterView view();
 
+
+        /**
+         * Returns the file name for the given asset.
+         * The returned file name can be used to access the asset in the APK
+         * through the {@link AssetManager} API.
+         *
+         * @param asset the name of the asset. The name can be hierarchical
+         * @return      the filename to be used with {@link AssetManager}
+         */
+        String lookupKeyForAsset(String asset);
+
+        /**
+         * Returns the file name for the given asset which originates from the
+         * specified packageName. The returned file name can be used to access
+         * the asset in the APK through the {@link AssetManager} API.
+         *
+         * @param asset       the name of the asset. The name can be hierarchical
+         * @param packageName the name of the package from which the asset originates
+         * @return            the file name to be used with {@link AssetManager}
+         */
+        String lookupKeyForAsset(String asset, String packageName);
+
+
         /**
          * Publishes a value associated with the plugin being registered.
          *
@@ -132,7 +155,14 @@ public interface PluginRegistry {
          */
         Registrar addRequestPermissionsResultListener(RequestPermissionsResultListener listener);
 
-        /**
+        /*
+         * Method addRequestPermissionResultListener(RequestPermissionResultListener listener)
+         * was made unavailable on 2018-02-28, leaving this comment as a temporary
+         * tombstone for reference. This comment will be removed on 2018-03-28
+         * (or at least four weeks after the unavailability is released).
+         *
+         * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
+         *
          * Adds a callback allowing the plugin to take part in handling incoming
          * calls to {@code Activity#onRequestPermissionsResult(int, String[], int[])}
          * or {@code android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback#onRequestPermissionsResult(int, String[], int[])}.
@@ -144,8 +174,6 @@ public interface PluginRegistry {
          * on 2018-02-06 (or at least four weeks after the deprecation is released). Use
          * {@link #addRequestPermissionsResultListener(RequestPermissionsResultListener)} instead.
          */
-        @Deprecated
-        Registrar addRequestPermissionResultListener(RequestPermissionResultListener listener);
 
         /**
          * Adds a callback allowing the plugin to take part in handling incoming
@@ -195,7 +223,14 @@ public interface PluginRegistry {
         boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults);
     }
 
-    /**
+    /*
+     * interface RequestPermissionResultListener was made unavailable on
+     * 2018-02-28, leaving this comment as a temporary tombstone for reference.
+     * This comment will be removed on 2018-03-28 (or at least four weeks after
+     * the unavailability is released).
+     *
+     * https://github.com/flutter/flutter/wiki/Changelog#typo-fixed-in-flutter-engine-android-api
+     *
      * Delegate interface for handling result of permissions requests on
      * behalf of the main {@link Activity}.
      *
@@ -203,16 +238,6 @@ public interface PluginRegistry {
      * unavailable on 2018-02-06 (or at least four weeks after the deprecation is released).
      * Use {@link RequestPermissionsResultListener} instead.
      */
-    interface RequestPermissionResultListener {
-        /**
-         * @return true if the result has been handled.
-         * @deprecated on 2018-01-02 because of misspelling. This method will be made
-         * unavailable on 2018-02-06 (or at least four weeks after the deprecation is released).
-         * Use {@link RequestPermissionsResultListener} instead.
-         */
-        @Deprecated
-        boolean onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults);
-    }
 
     /**
      * Delegate interface for handling activity results on behalf of the main

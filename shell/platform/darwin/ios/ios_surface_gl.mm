@@ -4,13 +4,12 @@
 
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 
+#include "flutter/fml/trace_event.h"
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 
 namespace shell {
 
-IOSSurfaceGL::IOSSurfaceGL(PlatformView::SurfaceConfig surface_config, CAEAGLLayer* layer)
-    : IOSSurface(surface_config, reinterpret_cast<CALayer*>(layer)),
-      context_(surface_config, layer) {}
+IOSSurfaceGL::IOSSurfaceGL(fml::scoped_nsobject<CAEAGLLayer> layer) : context_(std::move(layer)) {}
 
 IOSSurfaceGL::~IOSSurfaceGL() = default;
 
@@ -34,6 +33,13 @@ std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface() {
 
 intptr_t IOSSurfaceGL::GLContextFBO() const {
   return IsValid() ? context_.framebuffer() : GL_NONE;
+}
+
+bool IOSSurfaceGL::UseOffscreenSurface() const {
+  // The onscreen surface wraps a GL renderbuffer, which is extremely slow to read.
+  // Certain filter effects require making a copy of the current destination, so we
+  // always render to an offscreen surface, which will be much quicker to read/copy.
+  return true;
 }
 
 bool IOSSurfaceGL::GLContextMakeCurrent() {

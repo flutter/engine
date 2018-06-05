@@ -6,6 +6,7 @@
 
 #include "flutter/flow/layers/layer.h"
 #include "flutter/glue/trace_event.h"
+#include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace flow {
 
@@ -17,43 +18,18 @@ LayerTree::LayerTree()
 
 LayerTree::~LayerTree() = default;
 
-void LayerTree::Raster(CompositorContext::ScopedFrame& frame,
-#if defined(OS_FUCHSIA)
-                       scenic::Metrics* metrics,
-#endif
-                       bool ignore_raster_cache) {
-#if defined(OS_FUCHSIA)
-  FXL_DCHECK(metrics);
-#endif
-  Preroll(frame,
-#if defined(OS_FUCHSIA)
-          metrics,
-#endif
-          ignore_raster_cache);
-  Paint(frame);
-}
-
 void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
-#if defined(OS_FUCHSIA)
-                        scenic::Metrics* metrics,
-#endif
                         bool ignore_raster_cache) {
-#if defined(OS_FUCHSIA)
-  FXL_DCHECK(metrics);
-#endif
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
   SkColorSpace* color_space =
       frame.canvas() ? frame.canvas()->imageInfo().colorSpace() : nullptr;
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
   Layer::PrerollContext context = {
-#if defined(OS_FUCHSIA)
-    metrics,
-#endif
-    ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
-    frame.gr_context(),
-    color_space,
-    SkRect::MakeEmpty(),
+      ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
+      frame.gr_context(),
+      color_space,
+      SkRect::MakeEmpty(),
   };
 
   root_layer_->Preroll(&context, SkMatrix::I());
@@ -63,9 +39,12 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
 void LayerTree::UpdateScene(SceneUpdateContext& context,
                             scenic_lib::ContainerNode& container) {
   TRACE_EVENT0("flutter", "LayerTree::UpdateScene");
-
-  SceneUpdateContext::Transform transform(context, 1.f / device_pixel_ratio_,
-                                          1.f / device_pixel_ratio_, 1.f);
+  const auto& metrics = context.metrics();
+  SceneUpdateContext::Transform transform(context,                  // context
+                                          1.0f / metrics->scale_x,  // X
+                                          1.0f / metrics->scale_y,  // Y
+                                          1.0f / metrics->scale_z   // Z
+  );
   SceneUpdateContext::Frame frame(
       context,
       SkRRect::MakeRect(
@@ -82,16 +61,58 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
 #endif
 
 void LayerTree::Paint(CompositorContext::ScopedFrame& frame) const {
-  Layer::PaintContext context = {*frame.canvas(),
-                                 frame.context().frame_time(),
-                                 frame.context().engine_time(),
-                                 frame.context().memory_usage(),
-                                 frame.context().texture_registry(),
-                                 checkerboard_offscreen_layers_};
   TRACE_EVENT0("flutter", "LayerTree::Paint");
+  Layer::PaintContext context = {
+      *frame.canvas(),                     //
+      frame.context().frame_time(),        //
+      frame.context().engine_time(),       //
+      frame.context().texture_registry(),  //
+      checkerboard_offscreen_layers_       //
+  };
 
   if (root_layer_->needs_painting())
     root_layer_->Paint(context);
+}
+
+sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
+  TRACE_EVENT0("flutter", "LayerTree::Flatten");
+
+  SkPictureRecorder recorder;
+  auto canvas = recorder.beginRecording(bounds);
+
+  if (!canvas) {
+    return nullptr;
+  }
+
+  Layer::PrerollContext preroll_context{
+      nullptr,              // raster_cache (don't consult the cache)
+      nullptr,              // gr_context  (used for the raster cache)
+      nullptr,              // SkColorSpace* dst_color_space
+      SkRect::MakeEmpty(),  // SkRect child_paint_bounds
+  };
+
+  const Stopwatch unused_stopwatch;
+  TextureRegistry unused_texture_registry;
+
+  Layer::PaintContext paint_context = {
+      *canvas,                  // canvas
+      unused_stopwatch,         // frame time (dont care)
+      unused_stopwatch,         // engine time (dont care)
+      unused_texture_registry,  // texture registry (not supported)
+      false                     // checkerboard offscreen layers
+  };
+
+  // Even if we don't have a root layer, we still need to create an empty
+  // picture.
+  if (root_layer_) {
+    root_layer_->Preroll(&preroll_context, SkMatrix::I());
+    // The needs painting flag may be set after the preroll. So check it after.
+    if (root_layer_->needs_painting()) {
+      root_layer_->Paint(paint_context);
+    }
+  }
+
+  return recorder.finishRecordingAsPicture();
 }
 
 }  // namespace flow

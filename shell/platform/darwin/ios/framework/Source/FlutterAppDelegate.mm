@@ -11,7 +11,7 @@
 @property(readonly, nonatomic) NSMutableDictionary* pluginPublications;
 @end
 
-@interface FlutterAppDelegateRegistrar : NSObject<FlutterPluginRegistrar>
+@interface FlutterAppDelegateRegistrar : NSObject <FlutterPluginRegistrar>
 - (instancetype)initWithPlugin:(NSString*)pluginKey appDelegate:(FlutterAppDelegate*)delegate;
 @end
 
@@ -198,7 +198,7 @@
 
 - (void)application:(UIApplication*)application
     performActionForShortcutItem:(UIApplicationShortcutItem*)shortcutItem
-               completionHandler:(void (^)(BOOL succeeded))completionHandler {
+               completionHandler:(void (^)(BOOL succeeded))completionHandler NS_AVAILABLE_IOS(9_0) {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
     if ([plugin respondsToSelector:_cmd]) {
       if ([plugin application:application
@@ -208,6 +208,46 @@
       }
     }
   }
+}
+
+- (void)application:(UIApplication*)application
+    handleEventsForBackgroundURLSession:(nonnull NSString*)identifier
+                      completionHandler:(nonnull void (^)())completionHandler {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      if ([plugin application:application
+              handleEventsForBackgroundURLSession:identifier
+                                completionHandler:completionHandler]) {
+        return;
+      }
+    }
+  }
+}
+
+- (void)application:(UIApplication*)application
+    performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      if ([plugin application:application performFetchWithCompletionHandler:completionHandler]) {
+        return;
+      }
+    }
+  }
+}
+
+- (BOOL)application:(UIApplication*)application
+    continueUserActivity:(NSUserActivity*)userActivity
+      restorationHandler:(void (^)(NSArray*))restorationHandler {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if ([plugin respondsToSelector:_cmd]) {
+      if ([plugin application:application
+              continueUserActivity:userActivity
+                restorationHandler:restorationHandler]) {
+        return YES;
+      }
+    }
+  }
+  return NO;
 }
 
 // TODO(xster): move when doing https://github.com/flutter/flutter/issues/3671.
@@ -284,4 +324,13 @@
 - (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
   [_appDelegate.pluginDelegates addObject:delegate];
 }
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset {
+  return [FlutterDartProject lookupKeyForAsset:asset];
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
+}
+
 @end
