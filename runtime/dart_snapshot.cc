@@ -41,9 +41,6 @@ std::unique_ptr<DartSnapshotBuffer> ResolveVMData(const Settings& settings) {
   if (settings.vm_snapshot_data_path.size() > 0) {
     if (auto source = DartSnapshotBuffer::CreateWithContentsOfFile(
             settings.vm_snapshot_data_path.c_str(), false /* executable */)) {
-      // These are only read once per VM lifetime, so LOG(INFO) is fine.
-      FXL_LOG(INFO) << "Read VM snapshot " << settings.vm_snapshot_data_path
-                    << " (" << source->GetSnapshotSize() << ")";
       return source;
     }
   }
@@ -66,9 +63,6 @@ std::unique_ptr<DartSnapshotBuffer> ResolveVMInstructions(
   if (settings.vm_snapshot_instr_path.size() > 0) {
     if (auto source = DartSnapshotBuffer::CreateWithContentsOfFile(
             settings.vm_snapshot_instr_path.c_str(), true /* executable */)) {
-      // These are only read once per VM lifetime, so LOG(INFO) is fine.
-      FXL_LOG(INFO) << "Read VM snapshot " << settings.vm_snapshot_instr_path
-                    << " (" << source->GetSnapshotSize() << ")";
       return source;
     }
   }
@@ -93,9 +87,6 @@ std::unique_ptr<DartSnapshotBuffer> ResolveIsolateData(
     if (auto source = DartSnapshotBuffer::CreateWithContentsOfFile(
             settings.isolate_snapshot_data_path.c_str(),
             false /* executable */)) {
-      // These are only read once per VM lifetime, so LOG(INFO) is fine.
-      FXL_LOG(INFO) << "Read VM snapshot " << settings.isolate_snapshot_data_path
-                    << " (" << source->GetSnapshotSize() << ")";
       return source;
     }
   }
@@ -120,9 +111,6 @@ std::unique_ptr<DartSnapshotBuffer> ResolveIsolateInstructions(
     if (auto source = DartSnapshotBuffer::CreateWithContentsOfFile(
             settings.isolate_snapshot_instr_path.c_str(),
             true /* executable */)) {
-      // These are only read once per VM lifetime, so LOG(INFO) is fine.
-      FXL_LOG(INFO) << "Read VM snapshot " << settings.isolate_snapshot_instr_path
-                    << " (" << source->GetSnapshotSize() << ")";
       return source;
     }
   }

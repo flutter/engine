@@ -14,14 +14,12 @@ namespace blink {
 
 class DirectoryAssetBundle : public AssetResolver {
  public:
-  explicit DirectoryAssetBundle(fml::UniqueFD descriptor,
-                                std::string path = "");
+  explicit DirectoryAssetBundle(fml::UniqueFD descriptor);
 
   ~DirectoryAssetBundle() override;
 
  private:
   const fml::UniqueFD descriptor_;
-  const std::string path_;
   bool is_valid_ = false;
 
   // |blink::AssetResolver|
