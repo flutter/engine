@@ -746,44 +746,46 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
     private class HintTextProxy {
         private Method setHintText;
+        private Method setShowingHintText;
 
         HintTextProxy() {
             if (Build.VERSION.SDK_INT >= 26) {
-                Class nodeClass = AccessibilityNodeInfo.class;
+                Class<AccessibilityNodeInfo> nodeClass = AccessibilityNodeInfo.class;
                 try {
                     setHintText = nodeClass.getDeclaredMethod("setHintText", CharSequence.class);
+                    setShowingHintText = nodeClass.getDeclaredMethod("setShowingHintText", boolean.class);
                 } catch (NoSuchMethodException exception) {
-                    Log.i(TAG, "could not set hintText " + exception);
                     setHintText = null;
+                    setShowingHintText = null;
                 } catch (SecurityException exception) {
-                    Log.i(TAG, "could not set hintText " + exception);
                     setHintText = null;
+                    setShowingHintText = null;
                 }
             } else {
                 setHintText = null;
+                setShowingHintText = null;
             }
 
         }
 
         private void setText(AccessibilityNodeInfo node, SemanticsObject object) {
             if (setHintText == null) {
-                Log.i(TAG, "could not set hintText");
                 node.setText(object.getValueLabelHint());
             } else {
                 String textValue = null;
                 try {
-                    setHintText.invoke(node, object.getHint());
+                    String hintText = object.getHint();
+                    if (hintText != null && hintText.length() > 0) {
+                        setHintText.invoke(node, hintText);
+                        setShowingHintText.invoke(node, true);
+                    }
                     textValue = object.getValueLabel();
-                    Log.i(TAG, "set hint text!  " + object.getHint());
                 } catch (IllegalArgumentException exception) {
                     textValue = object.getValueLabelHint();
-                    Log.i(TAG, "could not set hintText " + exception);
                 } catch (IllegalAccessException exception) {
                     textValue = object.getValueLabelHint();
-                    Log.i(TAG, "could not set hintText " + exception);
                 } catch (InvocationTargetException exception) {
                     textValue = object.getValueLabelHint();
-                    Log.i(TAG, "could not set hintText " + exception);
                 }
                 node.setText(textValue);
             }
