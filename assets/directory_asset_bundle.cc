@@ -12,9 +12,8 @@
 
 namespace blink {
 
-DirectoryAssetBundle::DirectoryAssetBundle(fml::UniqueFD descriptor,
-                                           std::string path)
-    : descriptor_(std::move(descriptor)), path_(std::move(path)) {
+DirectoryAssetBundle::DirectoryAssetBundle(fml::UniqueFD descriptor)
+    : descriptor_(std::move(descriptor)) {
   if (!fml::IsDirectory(descriptor_)) {
     return;
   }
@@ -51,7 +50,6 @@ bool DirectoryAssetBundle::GetAsBuffer(const std::string& asset_name,
 
   data->resize(mapping.GetSize());
   memmove(data->data(), mapping.GetMapping(), mapping.GetSize());
-  FML_DLOG(INFO) << "Read asset from dir " << path_ << ": " << asset_name;
   return true;
 }
 
