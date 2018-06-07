@@ -253,7 +253,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
-        hintTextProxy.setText(result, object);
+        if (object.hasFlag(Flag.IS_TEXT_FIELD) && hintTextProxy.canSetHintText()) {
+            result.setText(object.getValueHint());
+            hintTextProxy.setHintText(result, object.getLabel());
+        } else {
+            result.setText(object.getValueLabelHint());
+        }
 
         // Accessibility Focus
         if (mA11yFocusedObject != null && mA11yFocusedObject.id == virtualViewId) {
@@ -744,51 +749,36 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
     }
 
+    // TODO(jonahwilliams): remove once https://github.com/flutter/flutter/issues/17780 is resolved.
     private class HintTextProxy {
-        private Method setHintText;
-        private Method setShowingHintText;
+        private Method setHintTextMethod;
 
         HintTextProxy() {
             if (Build.VERSION.SDK_INT >= 26) {
                 Class<AccessibilityNodeInfo> nodeClass = AccessibilityNodeInfo.class;
                 try {
-                    setHintText = nodeClass.getDeclaredMethod("setHintText", CharSequence.class);
-                    setShowingHintText = nodeClass.getDeclaredMethod("setShowingHintText", boolean.class);
+                    setHintTextMethod = nodeClass.getDeclaredMethod("setHintText", CharSequence.class);
                 } catch (NoSuchMethodException exception) {
-                    setHintText = null;
-                    setShowingHintText = null;
+                    setHintTextMethod = null;
                 } catch (SecurityException exception) {
-                    setHintText = null;
-                    setShowingHintText = null;
+                    setHintTextMethod = null;
                 }
             } else {
-                setHintText = null;
-                setShowingHintText = null;
+                setHintTextMethod = null;
             }
 
         }
 
-        private void setText(AccessibilityNodeInfo node, SemanticsObject object) {
-            if (setHintText == null) {
-                node.setText(object.getValueLabelHint());
-            } else {
-                String textValue = null;
-                try {
-                    String hintText = object.getHint();
-                    if (hintText != null && hintText.length() > 0) {
-                        setHintText.invoke(node, hintText);
-                        setShowingHintText.invoke(node, true);
-                    }
-                    textValue = object.getValueLabel();
-                } catch (IllegalArgumentException exception) {
-                    textValue = object.getValueLabelHint();
-                } catch (IllegalAccessException exception) {
-                    textValue = object.getValueLabelHint();
-                } catch (InvocationTargetException exception) {
-                    textValue = object.getValueLabelHint();
-                }
-                node.setText(textValue);
-            }
+        private void setHintText(AccessibilityNodeInfo node, String hintText) {
+            try {
+                setHintTextMethod.invoke(node, hintText);
+            } catch (IllegalArgumentException exception) {}
+              catch (IllegalAccessException exception) {}
+              catch (InvocationTargetException exception) {}
+        }
+
+        private boolean canSetHintText() {
+            return setHintTextMethod != null;
         }
     }
 
@@ -1112,13 +1102,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             return Math.max(a, Math.max(b, Math.max(c, d)));
         }
 
-        private String getHint() {
-            return hint;
+        private String getLabel() {
+            return label;
         }
 
-        private String getValueLabel() {
+        private String getValueHint() {
             StringBuilder sb = new StringBuilder();
-            String[] array = { value, label };
+            String[] array = { value, hint };
             for (String word: array) {
                 if (word != null && word.length() > 0) {
                     if (sb.length() > 0)
