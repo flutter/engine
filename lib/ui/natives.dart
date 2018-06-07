@@ -35,7 +35,13 @@ void _setupHooks() {
   }());
 }
 
-void saveCompilationTrace(String filePath) native 'SaveCompilationTrace';
+void saveCompilationTrace(String filePath) {
+  final String error = _saveCompilationTrace(filePath);
+  if (error != null)
+    throw new ArgumentError(error);
+}
+
+String _saveCompilationTrace(String filePath) native 'SaveCompilationTrace';
 
 void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
 

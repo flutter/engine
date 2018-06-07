@@ -204,38 +204,38 @@ void Logger_PrintString(Dart_NativeArguments args) {
 
 void SaveCompilationTrace(Dart_NativeArguments args) {
   const char* filePath = NULL;
-  {
-    Dart_Handle result = Dart_StringToCString(
-        Dart_GetNativeArgument(args, 0), &filePath);
-    if (Dart_IsError(result)) {
-      Dart_PropagateError(result);
-      return;
-    }
+  Dart_Handle result = Dart_StringToCString(
+      Dart_GetNativeArgument(args, 0), &filePath);
+  if (Dart_IsError(result)) {
+    Dart_SetReturnValue(args, Dart_NewStringFromCString(Dart_GetError(result)));
+    return;
   }
 
   uint8_t* buffer = nullptr;
   intptr_t size = 0;
-  Dart_Handle result = Dart_SaveCompilationTrace(&buffer, &size);
+  result = Dart_SaveCompilationTrace(&buffer, &size);
   if (Dart_IsError(result)) {
-    FXL_LOG(ERROR) << "Failed to save trace: " << Dart_GetError(result);
+    Dart_SetReturnValue(args, Dart_NewStringFromCString(Dart_GetError(result)));
     return;
   }
 
   auto fd = fml::UniqueFD{
       FML_HANDLE_EINTR(::open(filePath, O_CREAT|O_WRONLY|O_TRUNC, 0660))};
   if (!fd.is_valid()) {
-    FXL_LOG(ERROR) << "Failed to create file: " << filePath << ", " << errno;
+    Dart_SetReturnValue(args, Dart_NewStringFromCString(strerror(errno)));
     return;
   }
   if (write(fd.get(), buffer, (size_t) size) != (ssize_t) size) {
-    FXL_LOG(ERROR) << "Failed to write file: " << filePath;
+    Dart_SetReturnValue(args, Dart_NewStringFromCString(strerror(errno)));
     return;
   }
   if (close(fd.get()) != 0) {
-    FXL_LOG(ERROR) << "Failed to close file: " << filePath;
+    Dart_SetReturnValue(args, Dart_NewStringFromCString(strerror(errno)));
     return;
   }
+
   FXL_LOG(INFO) << "Saved compilation trace " << filePath;
+  Dart_SetReturnValue(args, Dart_Null());
 }
 
 void ScheduleMicrotask(Dart_NativeArguments args) {
