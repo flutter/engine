@@ -253,15 +253,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
-        if (object.hasFlag(Flag.IS_TEXT_FIELD)) {
-            if (hintTextProxy.canSetHintText()) {
-                result.setText(object.getValue());
-                hintTextProxy.setHintText(result, object.getLabel());
-            } else if (object.hasFlag(Flag.IS_FOCUSED)) {
-                result.setText(object.getValue());
-            } else {
-                result.setText(object.getLabel());
-            }
+        if (object.hasFlag(Flag.IS_TEXT_FIELD) && hintTextProxy.canSetHintText()) {
+            result.setText(object.getValue());
+            hintTextProxy.setHintText(result, object.getLabel());
         } else {
             result.setText(object.getValueLabelHint());
         }
@@ -1118,19 +1112,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         private String getHint() {
             return hint;
-        }
-
-        private String getValueHint() {
-            StringBuilder sb = new StringBuilder();
-            String[] array = { value, hint };
-            for (String word: array) {
-                if (word != null && word.length() > 0) {
-                    if (sb.length() > 0)
-                        sb.append(", ");
-                    sb.append(word);
-                }
-            }
-            return sb.length() > 0 ? sb.toString() : null;
         }
 
         private String getValueLabelHint() {
