@@ -42,8 +42,6 @@ void saveCompilationTrace(String filePath) {
 
   final file = new File(filePath);
   file.writeAsBytesSync(result);
-
-  print('Saved compilation trace ${filePath}');
 }
 
 dynamic _saveCompilationTrace() native 'SaveCompilationTrace';

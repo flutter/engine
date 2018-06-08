@@ -12,8 +12,6 @@
 #include <sstream>
 
 #include "flutter/common/settings.h"
-#include "flutter/fml/eintr_wrapper.h"
-#include "flutter/fml/file.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "lib/fxl/build_config.h"
 #include "lib/fxl/logging.h"
