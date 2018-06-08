@@ -49,7 +49,7 @@ namespace blink {
 
 #define BUILTIN_NATIVE_LIST(V) \
   V(Logger_PrintString, 1)     \
-  V(SaveCompilationTrace, 1)   \
+  V(SaveCompilationTrace, 0)   \
   V(ScheduleMicrotask, 1)
 
 BUILTIN_NATIVE_LIST(DECLARE_FUNCTION);
@@ -203,39 +203,21 @@ void Logger_PrintString(Dart_NativeArguments args) {
 }
 
 void SaveCompilationTrace(Dart_NativeArguments args) {
-  const char* filePath = NULL;
-  Dart_Handle result = Dart_StringToCString(
-      Dart_GetNativeArgument(args, 0), &filePath);
-  if (Dart_IsError(result)) {
-    Dart_SetReturnValue(args, Dart_NewStringFromCString(Dart_GetError(result)));
-    return;
-  }
-
   uint8_t* buffer = nullptr;
-  intptr_t size = 0;
-  result = Dart_SaveCompilationTrace(&buffer, &size);
+  intptr_t length = 0;
+  Dart_Handle result = Dart_SaveCompilationTrace(&buffer, &length);
   if (Dart_IsError(result)) {
-    Dart_SetReturnValue(args, Dart_NewStringFromCString(Dart_GetError(result)));
+    Dart_SetReturnValue(args, result);
     return;
   }
 
-  auto fd = fml::UniqueFD{
-      FML_HANDLE_EINTR(::open(filePath, O_CREAT|O_WRONLY|O_TRUNC, 0660))};
-  if (!fd.is_valid()) {
-    Dart_SetReturnValue(args, Dart_NewStringFromCString(strerror(errno)));
-    return;
-  }
-  if (write(fd.get(), buffer, (size_t) size) != (ssize_t) size) {
-    Dart_SetReturnValue(args, Dart_NewStringFromCString(strerror(errno)));
-    return;
-  }
-  if (close(fd.get()) != 0) {
-    Dart_SetReturnValue(args, Dart_NewStringFromCString(strerror(errno)));
+  result = Dart_NewExternalTypedData(Dart_TypedData_kUint8, buffer, length);
+  if (Dart_IsError(result)) {
+    Dart_SetReturnValue(args, result);
     return;
   }
 
-  FXL_LOG(INFO) << "Saved compilation trace " << filePath;
-  Dart_SetReturnValue(args, Dart_Null());
+  Dart_SetReturnValue(args, result);
 }
 
 void ScheduleMicrotask(Dart_NativeArguments args) {

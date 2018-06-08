@@ -36,12 +36,17 @@ void _setupHooks() {
 }
 
 void saveCompilationTrace(String filePath) {
-  final String error = _saveCompilationTrace(filePath);
-  if (error != null)
-    throw new ArgumentError(error);
+  final result = _saveCompilationTrace();
+  if (result is Error)
+    throw result;
+
+  final file = new File(filePath);
+  file.writeAsBytesSync(result);
+
+  print('Saved compilation trace ${filePath}');
 }
 
-String _saveCompilationTrace(String filePath) native 'SaveCompilationTrace';
+dynamic _saveCompilationTrace() native 'SaveCompilationTrace';
 
 void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
 
