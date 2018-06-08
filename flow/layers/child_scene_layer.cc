@@ -10,7 +10,9 @@ ChildSceneLayer::ChildSceneLayer() = default;
 
 ChildSceneLayer::~ChildSceneLayer() = default;
 
-void ChildSceneLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void ChildSceneLayer::Preroll(PrerollContext* context,
+                              const SkMatrix& matrix,
+                              const SkIRect& device_clip) {
   set_needs_system_composite(true);
 }
 

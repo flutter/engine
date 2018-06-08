@@ -16,7 +16,9 @@ class ClipRRectLayer : public ContainerLayer {
 
   void set_clip_rrect(const SkRRect& clip_rrect) { clip_rrect_ = clip_rrect; }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context,
+               const SkMatrix& matrix,
+               const SkIRect& device_clip) override;
 
   void Paint(PaintContext& context) const override;
 

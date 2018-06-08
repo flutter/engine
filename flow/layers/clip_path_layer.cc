@@ -16,12 +16,24 @@ ClipPathLayer::ClipPathLayer() = default;
 
 ClipPathLayer::~ClipPathLayer() = default;
 
-void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+void ClipPathLayer::Preroll(PrerollContext* context,
+                            const SkMatrix& matrix,
+                            const SkIRect& device_clip) {
+  SkIRect new_device_clip = ComputeDeviceIRect(matrix, clip_path_.getBounds());
+  if (!new_device_clip.intersect(device_clip)) {
+    new_device_clip.setEmpty();
+  }
+
   SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_paint_bounds);
+  PrerollChildren(context, matrix, &child_paint_bounds, new_device_clip);
 
   if (child_paint_bounds.intersect(clip_path_.getBounds())) {
     set_paint_bounds(child_paint_bounds);
+  }
+
+  device_paint_bounds_ = ComputeDeviceIRect(matrix, paint_bounds());
+  if (!device_paint_bounds_.intersect(device_clip)) {
+    device_paint_bounds_.setEmpty();
   }
 }
 

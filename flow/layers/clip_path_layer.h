@@ -16,7 +16,9 @@ class ClipPathLayer : public ContainerLayer {
 
   void set_clip_path(const SkPath& clip_path) { clip_path_ = clip_path; }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context,
+               const SkMatrix& matrix,
+               const SkIRect& device_clip) override;
 
   void Paint(PaintContext& context) const override;
 

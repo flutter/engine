@@ -16,7 +16,9 @@ Layer::Layer()
 
 Layer::~Layer() = default;
 
-void Layer::Preroll(PrerollContext* context, const SkMatrix& matrix) {}
+void Layer::Preroll(PrerollContext* context,
+                    const SkMatrix& matrix,
+                    const SkIRect& device_clip) {}
 
 #if defined(OS_FUCHSIA)
 void Layer::UpdateScene(SceneUpdateContext& context) {}
@@ -40,6 +42,14 @@ Layer::AutoSaveLayer::~AutoSaveLayer() {
     DrawCheckerboard(&paint_context_.canvas, bounds_);
   }
   paint_context_.canvas.restore();
+}
+
+SkIRect Layer::ComputeDeviceIRect(const SkMatrix& ctm, const SkRect& rect) {
+  SkRect device_rect;
+  ctm.mapRect(&device_rect, rect);
+  SkIRect device_irect;
+  device_rect.roundOut(&device_irect);
+  return device_irect;
 }
 
 }  // namespace flow

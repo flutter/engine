@@ -28,7 +28,9 @@ class PictureLayer : public Layer {
 
   SkPicture* picture() const { return picture_.get().get(); }
 
-  void Preroll(PrerollContext* frame, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* frame,
+               const SkMatrix& matrix,
+               const SkIRect& device_clip) override;
 
   void Paint(PaintContext& context) const override;
 

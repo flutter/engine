@@ -38,9 +38,15 @@ void PhysicalShapeLayer::set_path(const SkPath& path) {
 }
 
 void PhysicalShapeLayer::Preroll(PrerollContext* context,
-                                 const SkMatrix& matrix) {
+                                 const SkMatrix& matrix,
+                                 const SkIRect& device_clip) {
+  SkIRect new_device_clip = ComputeDeviceIRect(matrix, path_.getBounds());
+  if (!new_device_clip.intersect(device_clip)) {
+    new_device_clip.setEmpty();
+  }
+
   SkRect child_paint_bounds;
-  PrerollChildren(context, matrix, &child_paint_bounds);
+  PrerollChildren(context, matrix, &child_paint_bounds, new_device_clip);
 
   if (elevation_ == 0) {
     set_paint_bounds(path_.getBounds());
@@ -48,6 +54,7 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 #if defined(OS_FUCHSIA)
     // Let the system compositor draw all shadows for us.
     set_needs_system_composite(true);
+    set_paint_bounds(path_.getBounds());
 #else
     // Add some margin to the paint bounds to leave space for the shadow.
     // The margin is hardcoded to an arbitrary maximum for now because Skia
@@ -55,8 +62,12 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     // and clip children to it so we don't need to join the child paint bounds.
     SkRect bounds(path_.getBounds());
     bounds.outset(20.0, 20.0);
-    set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
+  }
+
+  device_paint_bounds_ = ComputeDeviceIRect(matrix, paint_bounds());
+  if (!device_paint_bounds_.intersect(device_clip)) {
+    device_paint_bounds_.setEmpty();
   }
 }
 
@@ -64,6 +75,10 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 
 void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
   FXL_DCHECK(needs_system_composite());
+
+  if (device_paint_bounds_.isEmpty()) {
+    return;
+  }
 
   SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_);
   for (auto& layer : layers()) {
@@ -80,6 +95,10 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FXL_DCHECK(needs_painting());
+
+  if (device_paint_bounds_.isEmpty()) {
+    return;
+  }
 
   if (elevation_ != 0) {
     DrawShadow(&context.canvas, path_, shadow_color_, elevation_,

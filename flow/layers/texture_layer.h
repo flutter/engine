@@ -23,7 +23,9 @@ class TextureLayer : public Layer {
   void set_size(const SkSize& size) { size_ = size; }
   void set_texture_id(int64_t texture_id) { texture_id_ = texture_id; }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context,
+               const SkMatrix& matrix,
+               const SkIRect& device_clip) override;
   void Paint(PaintContext& context) const override;
 
  private:
