@@ -46,7 +46,6 @@ struct Settings {
   bool trace_startup = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
-  bool enable_dart_asserts = true;
   // Used as the script URI in debug messages. Does not affect how the Dart code
   // is executed.
   std::string advisory_script_uri = "main.dart";

@@ -318,7 +318,7 @@ DartVM::DartVM(const Settings& settings,
 
   // Enable asserts if we are not running precompiled code. We run non-
   // precompiled code only in the debug product mode.
-  bool enable_asserts = settings.enable_dart_asserts;
+  bool enable_asserts = true;
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_PROFILE || \
     FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
@@ -365,6 +365,7 @@ DartVM::DartVM(const Settings& settings,
   PushBackAll(&args, kDartFuchsiaTraceArgs, arraysize(kDartFuchsiaTraceArgs));
 #endif
 
+  // Add VM dart_flags last to allow user overrides.
   for (size_t i = 0; i < settings.dart_flags.size(); i++)
     args.push_back(settings.dart_flags[i].c_str());
 

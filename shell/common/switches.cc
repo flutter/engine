@@ -129,10 +129,6 @@ blink::Settings SettingsFromCommandLine(const fxl::CommandLine& command_line) {
     }
   }
 
-  // Override default assertions mode.
-  settings.enable_dart_asserts =
-      !command_line.HasOption(FlagForSwitch(Switch::DisableDartAsserts));
-
   settings.ipv6 = command_line.HasOption(FlagForSwitch(Switch::IPv6));
 
   settings.start_paused =
