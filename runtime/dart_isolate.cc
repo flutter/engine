@@ -566,20 +566,12 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
   // thread.
   service_isolate->ResetWeakPtrFactory();
 
-  const bool isolate_snapshot_is_dart_2 = Dart_IsDart2Snapshot(
-      vm->GetIsolateSnapshot()->GetData()->GetSnapshotPointer());
-  const bool is_preview_dart2 =
-      (vm->GetPlatformKernel().GetSize() > 0) || isolate_snapshot_is_dart_2;
-  const bool running_from_sources =
-      !DartVM::IsRunningPrecompiledCode() && !is_preview_dart2;
-
   tonic::DartState::Scope scope(service_isolate);
   if (!DartServiceIsolate::Startup(
           settings.ipv6 ? "::1" : "127.0.0.1",  // server IP address
           settings.observatory_port,            // server observatory port
           tonic::DartState::HandleLibraryTag,   // embedder library tag handler
-          running_from_sources,                 // running from source code
-          false,  //  disable websocket origin check
+          false,  // disable websocket origin check
           error   // error (out)
           )) {
     // Error is populated by call to startup.

@@ -129,9 +129,9 @@ blink::Settings SettingsFromCommandLine(const fxl::CommandLine& command_line) {
     }
   }
 
-  // Checked mode overrides.
-  settings.dart_non_checked_mode =
-      command_line.HasOption(FlagForSwitch(Switch::DartNonCheckedMode));
+  // Override default assertions mode.
+  settings.enable_dart_asserts =
+      !command_line.HasOption(FlagForSwitch(Switch::DisableDartAsserts));
 
   settings.ipv6 = command_line.HasOption(FlagForSwitch(Switch::IPv6));
 
