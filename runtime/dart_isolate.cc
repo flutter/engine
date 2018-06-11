@@ -277,18 +277,9 @@ bool DartIsolate::PrepareForRunningFromPrecompiledCode() {
   return true;
 }
 
-static bool LoadScriptSnapshot(std::shared_ptr<const fml::Mapping> mapping,
-                               bool last_piece) {
-  FXL_CHECK(last_piece) << "Script snapshots cannot be divided";
-  if (tonic::LogIfError(Dart_LoadScriptFromSnapshot(mapping->GetMapping(),
-                                                    mapping->GetSize()))) {
-    return false;
-  }
-  return true;
-}
-
 static bool LoadKernelSnapshot(std::shared_ptr<const fml::Mapping> mapping,
                                bool last_piece) {
+  FXL_DCHECK(Dart_IsKernel(mapping->GetMapping(), mapping->GetSize())) << "Only kernel snapshots are supported";
   Dart_Handle library =
       Dart_LoadLibraryFromKernel(mapping->GetMapping(), mapping->GetSize());
   if (tonic::LogIfError(library)) {
@@ -305,16 +296,6 @@ static bool LoadKernelSnapshot(std::shared_ptr<const fml::Mapping> mapping,
     return false;
   }
   return true;
-}
-
-static bool LoadSnapshot(std::shared_ptr<const fml::Mapping> mapping,
-                         bool last_piece) {
-  if (Dart_IsKernel(mapping->GetMapping(), mapping->GetSize())) {
-    return LoadKernelSnapshot(std::move(mapping), last_piece);
-  } else {
-    return LoadScriptSnapshot(std::move(mapping), last_piece);
-  }
-  return false;
 }
 
 FXL_WARN_UNUSED_RESULT
@@ -340,7 +321,7 @@ bool DartIsolate::PrepareForRunningFromSnapshot(
     return false;
   }
 
-  if (!LoadSnapshot(mapping, last_piece)) {
+  if (!LoadKernelSnapshot(mapping, last_piece)) {
     return false;
   }
 
