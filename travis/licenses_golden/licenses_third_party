@@ -1,4 +1,4 @@
-Signature: 204ca81d3ac31d08c9ca6943047dd457
+Signature: 245264e071bbc5718149880a56087206
 
 UNUSED LICENSES:
 
@@ -234,7 +234,6 @@ FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-LabelRew
 FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-LabelRewrite/out.s
 FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-Sections/in.s
 FILE: ../../../third_party/boringssl/src/util/fipstools/testdata/x86_64-Sections/out.s
-FILE: ../../../third_party/dart/runtime/lib/bigint.dart
 FILE: ../../../third_party/dart/runtime/lib/bigint_patch.dart
 ----------------------------------------------------------------------------------------------------
 OpenSSL License
@@ -4474,9 +4473,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: dart
 LIBRARY: observatory_pub_packages
-ORIGIN: ../../../third_party/dart/runtime/lib/bigint.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/runtime/lib/class_id.cc + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/runtime/lib/bigint.dart
 FILE: ../../../third_party/dart/runtime/lib/class_id.cc
 FILE: ../../../third_party/dart/runtime/lib/class_id.dart
 FILE: ../../../third_party/dart/runtime/lib/convert_patch.dart
@@ -4511,7 +4509,6 @@ FILE: ../../../third_party/dart/runtime/platform/safe_stack.h
 FILE: ../../../third_party/dart/runtime/tools/verbose_gc_to_bmu.dart
 FILE: ../../../third_party/dart/runtime/vm/ast_transformer.cc
 FILE: ../../../third_party/dart/runtime/vm/ast_transformer.h
-FILE: ../../../third_party/dart/runtime/vm/bigint_test.cc
 FILE: ../../../third_party/dart/runtime/vm/bit_set_test.cc
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_arm64_test.cc
@@ -5774,6 +5771,9 @@ ORIGIN: ../../../third_party/dart/runtime/bin/typed_data_utils.cc + ../../../thi
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/bin/typed_data_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/typed_data_utils.h
+FILE: ../../../third_party/dart/runtime/vm/base64.cc
+FILE: ../../../third_party/dart/runtime/vm/base64.h
+FILE: ../../../third_party/dart/runtime/vm/base64_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.cc
@@ -6277,9 +6277,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: dart
-ORIGIN: ../../../third_party/dart/runtime/lib/bigint.dart
+ORIGIN: ../../../third_party/dart/runtime/lib/bigint_patch.dart
 TYPE: LicenseType.mit
-FILE: ../../../third_party/dart/runtime/lib/bigint.dart
 FILE: ../../../third_party/dart/runtime/lib/bigint_patch.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2003-2005  Tom Wu
@@ -6315,9 +6314,8 @@ and disclaimer.
 
 ====================================================================================================
 LIBRARY: dart
-ORIGIN: ../../../third_party/dart/runtime/lib/bigint.dart + ../../../third_party/boringssl/src/LICENSE
+ORIGIN: ../../../third_party/dart/runtime/lib/bigint_patch.dart + ../../../third_party/boringssl/src/LICENSE
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/dart/runtime/lib/bigint.dart
 FILE: ../../../third_party/dart/runtime/lib/bigint_patch.dart
 ----------------------------------------------------------------------------------------------------
 Copyright 2009 The Go Authors. All rights reserved.
@@ -14239,7 +14237,6 @@ FILE: ../../../third_party/skia/bench/SkRasterPipelineBench.cpp
 FILE: ../../../third_party/skia/bench/StreamBench.cpp
 FILE: ../../../third_party/skia/bench/SwizzleBench.cpp
 FILE: ../../../third_party/skia/bench/TileImageFilterBench.cpp
-FILE: ../../../third_party/skia/bench/pack_int_uint16_t_Bench.cpp
 FILE: ../../../third_party/skia/experimental/svg/model/SkPEG.h
 FILE: ../../../third_party/skia/experimental/svg/model/SkSVGAttribute.cpp
 FILE: ../../../third_party/skia/experimental/svg/model/SkSVGAttribute.h
@@ -17183,12 +17180,19 @@ FILE: ../../../third_party/skia/include/private/GrCCClipPath.h
 FILE: ../../../third_party/skia/include/private/GrCCPerOpListPaths.h
 FILE: ../../../third_party/skia/include/private/GrSurfaceProxyRef.h
 FILE: ../../../third_party/skia/include/private/GrVkTypesPriv.h
+FILE: ../../../third_party/skia/include/private/SkMacros.h
 FILE: ../../../third_party/skia/include/private/SkSafe32.h
+FILE: ../../../third_party/skia/include/private/SkTo.h
 FILE: ../../../third_party/skia/infra/cts/run_testlab.go
+FILE: ../../../third_party/skia/modules/skjson/include/SkJSON.h
+FILE: ../../../third_party/skia/modules/skjson/src/SkJSON.cpp
+FILE: ../../../third_party/skia/modules/skjson/src/SkJSONBench.cpp
+FILE: ../../../third_party/skia/modules/skjson/src/SkJSONTest.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieAdapter.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieAdapter.h
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieJson.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieJson.h
+FILE: ../../../third_party/skia/modules/skottie/src/SkottieTool.cpp
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGClipEffect.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGGeometryTransform.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGGradient.h
@@ -17226,6 +17230,7 @@ FILE: ../../../third_party/skia/src/core/SkGlyph.cpp
 FILE: ../../../third_party/skia/src/core/SkIPoint16.h
 FILE: ../../../third_party/skia/src/core/SkMaskFilterBase.h
 FILE: ../../../third_party/skia/src/core/SkPath_serial.cpp
+FILE: ../../../third_party/skia/src/core/SkPicturePriv.h
 FILE: ../../../third_party/skia/src/core/SkRRectPriv.h
 FILE: ../../../third_party/skia/src/core/SkRectPriv.h
 FILE: ../../../third_party/skia/src/core/SkRemoteGlyphCache.cpp
@@ -17304,6 +17309,8 @@ FILE: ../../../third_party/skia/src/gpu/effects/GrUnpremulInputFragmentProcessor
 FILE: ../../../third_party/skia/src/gpu/effects/GrYUVtoRGBEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrYUVtoRGBEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrYUVtoRGBEffect.h
+FILE: ../../../third_party/skia/src/gpu/ops/GrClearStencilClipOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/GrDebugMarkerOp.cpp
 FILE: ../../../third_party/skia/src/gpu/text/GrAtlasManager.cpp
 FILE: ../../../third_party/skia/src/gpu/text/GrAtlasManager.h
 FILE: ../../../third_party/skia/src/gpu/text/GrSDFMaskFilter.cpp
@@ -17428,6 +17435,8 @@ FILE: ../../../third_party/skia/animations/text#1.xml
 FILE: ../../../third_party/skia/bench/microbench.json
 FILE: ../../../third_party/skia/bench/skpbench.json
 FILE: ../../../third_party/skia/docker/skia-release/Dockerfile
+FILE: ../../../third_party/skia/docker/skia-with-swift-shader-base/Dockerfile
+FILE: ../../../third_party/skia/docker/skia-with-swift-shader-base/build-with-swift-shader-and-run
 FILE: ../../../third_party/skia/docs/SkAutoCanvasRestore_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkBitmap_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkCanvas_Reference.bmh
@@ -17518,6 +17527,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-Fast.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-Mini.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-NoDEPS.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-Static.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-SwiftShader.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-EMCC-wasm-Release.json
@@ -17536,7 +17546,6 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86-Debug-Exceptions.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Win-Clang-x86_64-Release-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Housekeeper-PerCommit-CheckGeneratedFiles.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Test-Ubuntu14-Clang-GCE-CPU-AVX2-x86_64-Debug-All-CT_DM_10k_SKPs.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/builder_name_schema/builder_name_schema.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/builder_name_schema/examples/full.expected/test.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/checkout/examples/full.expected/Build-Debian9-Clang-x86_64-Release-NoDEPS.json
@@ -17681,7 +17690,7 @@ FILE: ../../../third_party/skia/infra/bots/recipes/skpbench.expected/trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/skqp_test.expected/Test-Debian9-Clang-GCE-CPU-AVX2-universal-devrel-All-Android_SKQP.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-AndroidOne-GPU-Mali400MP2-arm-Release-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-GalaxyS6-GPU-MaliT760-arm64-Debug-All-Android.json
-FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-GalaxyS7_G930A-GPU-Adreno530-arm64-Debug-All-Android.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-GalaxyS7_G930FD-GPU-MaliT880-arm64-Release-All-Android_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-NVIDIA_Shield-GPU-TegraX1-arm64-Debug-All-Android_CCPR.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Nexus5-GPU-Adreno330-arm-Release-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Nexus5x-GPU-Adreno418-arm-Debug-All-Android_ASAN.json
@@ -17718,6 +17727,7 @@ FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clan
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-NUC6i5SYK-GPU-IntelIris540-x86_64-Debug-All-ANGLE.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-NUC6i5SYK-GPU-IntelIris540-x86_64-Debug-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-NUCD34010WYKH-GPU-IntelHD4400-x86_64-Release-All-ANGLE.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-ShuttleA-GPU-GTX660-x86_64-Release-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-ShuttleC-GPU-GTX960-x86_64-Debug-All-ANGLE.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win10-Clang-ZBOX-GPU-GTX1070-x86_64-Debug-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Win2016-Clang-GCE-CPU-AVX2-x86_64-Debug-All-FAAA.json
@@ -17748,7 +17758,6 @@ FILE: ../../../third_party/skia/infra/bots/recipes/upload_nano_results.expected/
 FILE: ../../../third_party/skia/infra/bots/recipes/upload_skiaserve.expected/normal_bot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/upload_skiaserve.expected/trybot.json
 FILE: ../../../third_party/skia/infra/bots/resources.isolate
-FILE: ../../../third_party/skia/infra/bots/skia_repo.isolate
 FILE: ../../../third_party/skia/infra/bots/skpbench_skia_bundled.isolate
 FILE: ../../../third_party/skia/infra/bots/swarm_recipe.isolate
 FILE: ../../../third_party/skia/infra/bots/tasks.json
@@ -19874,6 +19883,7 @@ FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzPathMeasure.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzRasterN32Canvas.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzTextBlobDeserialize.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzWEBPEncoder.cpp
+FILE: ../../../third_party/skia/modules/skjson/src/FuzzSkJSON.cpp
 FILE: ../../../third_party/skia/modules/skottie/fuzz/FuzzSkottieJSON.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 Google, LLC
@@ -20744,6 +20754,8 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/src/core/SkFlattenablePriv.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/src/core/SkFlattenablePriv.h
+FILE: ../../../third_party/skia/src/core/SkGlyphRun.cpp
+FILE: ../../../third_party/skia/src/core/SkGlyphRun.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Android Open Source Project
 

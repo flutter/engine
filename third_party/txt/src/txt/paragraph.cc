@@ -160,16 +160,6 @@ void GetFontAndMinikinPaint(const TextStyle& style,
   paint->paintFlags |= minikin::LinearTextFlag;
 }
 
-sk_sp<SkTypeface> GetDefaultSkiaTypeface(
-    const std::shared_ptr<txt::FontCollection>& font_collection,
-    const TextStyle& style) {
-  std::shared_ptr<minikin::FontCollection> collection =
-      font_collection->GetMinikinFontCollectionForFamily(style.font_family);
-  minikin::FakedFont faked_font =
-      collection->baseFontFaked(GetMinikinFontStyle(style));
-  return static_cast<FontSkia*>(faked_font.font)->GetSkTypeface();
-}
-
 void FindWords(const std::vector<uint16_t>& text,
                size_t start,
                size_t end,
@@ -286,8 +276,7 @@ bool Paragraph::ComputeLineBreaks() {
       minikin::MinikinPaint paint;
       GetFontAndMinikinPaint(run.style, &font, &paint);
       std::shared_ptr<minikin::FontCollection> collection =
-          font_collection_->GetMinikinFontCollectionForFamily(
-              run.style.font_family);
+          GetMinikinFontCollectionForStyle(run.style);
       if (collection == nullptr) {
         FXL_LOG(INFO) << "Could not find font collection for family \""
                       << run.style.font_family << "\".";
@@ -314,7 +303,7 @@ bool Paragraph::ComputeLineBreaks() {
           (hard_break && line_end < text_.size()) ? line_end + 1 : line_end;
       size_t line_end_excluding_whitespace = line_end;
       while (
-          line_end_excluding_whitespace > 0 &&
+          line_end_excluding_whitespace > line_start &&
           minikin::isLineEndSpace(text_[line_end_excluding_whitespace - 1])) {
         line_end_excluding_whitespace--;
       }
@@ -495,15 +484,16 @@ void Paragraph::Layout(double width, bool force) {
     double justify_x_offset = 0;
     std::vector<PaintRecord> paint_records;
 
-    for (const BidiRun& run : line_runs) {
+    for (auto line_run_it = line_runs.begin(); line_run_it != line_runs.end();
+         ++line_run_it) {
+      const BidiRun& run = *line_run_it;
       minikin::FontStyle font;
       minikin::MinikinPaint minikin_paint;
       GetFontAndMinikinPaint(run.style(), &font, &minikin_paint);
       paint.setTextSize(run.style().font_size);
 
       std::shared_ptr<minikin::FontCollection> minikin_font_collection =
-          font_collection_->GetMinikinFontCollectionForFamily(
-              run.style().font_family);
+          GetMinikinFontCollectionForStyle(run.style());
 
       // Lay out this run.
       uint16_t* text_ptr = text_.data();
@@ -515,6 +505,7 @@ void Paragraph::Layout(double width, bool force) {
       const std::u16string& ellipsis = paragraph_style_.ellipsis;
       std::vector<uint16_t> ellipsized_text;
       if (ellipsis.length() && !isinf(width_) && !line_range.hard_break &&
+          line_run_it == line_runs.end() - 1 &&
           (line_number == line_limit - 1 ||
            paragraph_style_.unlimited_lines())) {
         float ellipsis_width = layout.measureText(
@@ -530,7 +521,7 @@ void Paragraph::Layout(double width, bool force) {
         // Truncate characters from the text until the ellipsis fits.
         size_t truncate_count = 0;
         while (truncate_count < text_count &&
-               text_width + ellipsis_width > width_) {
+               run_x_offset + text_width + ellipsis_width > width_) {
           text_width -= text_advances[text_count - truncate_count - 1];
           truncate_count++;
         }
@@ -753,7 +744,7 @@ void Paragraph::Layout(double width, bool force) {
     if (paint_records.empty()) {
       SkPaint::FontMetrics metrics;
       TextStyle style(paragraph_style_.GetTextStyle());
-      paint.setTypeface(GetDefaultSkiaTypeface(font_collection_, style));
+      paint.setTypeface(GetDefaultSkiaTypeface(style));
       paint.setTextSize(style.font_size);
       paint.getFontMetrics(&metrics);
       update_line_metrics(metrics, style);
@@ -855,13 +846,43 @@ void Paragraph::SetFontCollection(
   font_collection_ = std::move(font_collection);
 }
 
+std::shared_ptr<minikin::FontCollection>
+Paragraph::GetMinikinFontCollectionForStyle(const TextStyle& style) {
+  std::string locale;
+  if (!style.locale.empty()) {
+    uint32_t language_list_id =
+        minikin::FontStyle::registerLanguageList(style.locale);
+    const minikin::FontLanguages& langs =
+        minikin::FontLanguageListCache::getById(language_list_id);
+    if (langs.size()) {
+      locale = langs[0].getString();
+    }
+  }
+
+  return font_collection_->GetMinikinFontCollectionForFamily(style.font_family,
+                                                             locale);
+}
+
+sk_sp<SkTypeface> Paragraph::GetDefaultSkiaTypeface(const TextStyle& style) {
+  std::shared_ptr<minikin::FontCollection> collection =
+      GetMinikinFontCollectionForStyle(style);
+  minikin::FakedFont faked_font =
+      collection->baseFontFaked(GetMinikinFontStyle(style));
+  return static_cast<FontSkia*>(faked_font.font)->GetSkTypeface();
+}
+
 // The x,y coordinates will be the very top left corner of the rendered
 // paragraph.
 void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
   canvas->translate(x, y);
   SkPaint paint;
   for (const PaintRecord& record : records_) {
-    paint.setColor(record.style().color);
+    if (record.style().has_foreground) {
+      paint = record.style().foreground;
+    } else {
+      paint.reset();
+      paint.setColor(record.style().color);
+    }
     SkPoint offset = record.offset();
     PaintBackground(canvas, record);
     canvas->drawTextBlob(record.text(), offset.x(), offset.y(), paint);
@@ -1033,8 +1054,8 @@ void Paragraph::PaintBackground(SkCanvas* canvas, const PaintRecord& record) {
     return;
 
   const SkPaint::FontMetrics& metrics = record.metrics();
-  SkRect rect(SkRect::MakeLTRB(0, metrics.fAscent,
-                               record.GetRunWidth(), metrics.fDescent));
+  SkRect rect(SkRect::MakeLTRB(0, metrics.fAscent, record.GetRunWidth(),
+                               metrics.fDescent));
   rect.offset(record.offset());
   canvas->drawRect(rect, record.style().background);
 }
@@ -1074,15 +1095,16 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(size_t start,
   }
 
   // Add empty rectangles representing any newline characters within the range.
-  for (size_t line_number = 0; line_number < line_ranges_.size(); ++line_number) {
+  for (size_t line_number = 0; line_number < line_ranges_.size();
+       ++line_number) {
     const LineRange& line = line_ranges_[line_number];
     if (line.start >= end)
       break;
     if (line.end_including_newline <= start)
       continue;
     if (line_boxes.find(line_number) == line_boxes.end()) {
-      if (line.end != line.end_including_newline &&
-          line.end >= start && line.end_including_newline <= end) {
+      if (line.end != line.end_including_newline && line.end >= start &&
+          line.end_including_newline <= end) {
         SkScalar x = line_widths_[line_number];
         SkScalar top = (line_number > 0) ? line_heights_[line_number - 1] : 0;
         SkScalar bottom = line_heights_[line_number];

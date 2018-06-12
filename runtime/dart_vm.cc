@@ -39,7 +39,8 @@
 namespace dart {
 namespace observatory {
 
-#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE)
+#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE) && \
+    (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE)
 
 // These two symbols are defined in |observatory_archive.cc| which is generated
 // by the |//third_party/dart/runtime/observatory:archive_observatory| rule.
@@ -49,7 +50,8 @@ extern unsigned int observatory_assets_archive_len;
 extern const uint8_t* observatory_assets_archive;
 
 #endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE !=
-        // FLUTTER_RUNTIME_MODE_RELEASE)
+        // FLUTTER_RUNTIME_MODE_RELEASE) && (FLUTTER_RUNTIME_MODE !=
+        // FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE)
 
 }  // namespace observatory
 }  // namespace dart
@@ -63,7 +65,6 @@ static const char* kDartLanguageArgs[] = {
     "--background_compilation",
     "--await_is_keyword",
     "--causal_async_stacks",
-    "--enable_kernel_expression_compilation=false", // TODO(dartbug.com/33087)
     // clang-format on
 };
 
@@ -151,7 +152,8 @@ bool DartFileModifiedCallback(const char* source_url, int64_t since_ms) {
 void ThreadExitCallback() {}
 
 Dart_Handle GetVMServiceAssetsArchiveCallback() {
-#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE)
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE) || \
+    (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE)
   return nullptr;
 #elif OS_FUCHSIA
   std::vector<uint8_t> observatory_assets_archive;
@@ -326,6 +328,11 @@ DartVM::DartVM(const Settings& settings,
   // precompiled code only in the debug product mode.
   bool use_checked_mode = !settings.dart_non_checked_mode;
 
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_PROFILE || \
+    FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
+  use_checked_mode = false;
+#endif
+
 #if !OS_FUCHSIA
   if (IsRunningPrecompiledCode()) {
     use_checked_mode = false;
@@ -462,6 +469,10 @@ const fml::Mapping& DartVM::GetPlatformKernel() const {
 
 const DartSnapshot& DartVM::GetVMSnapshot() const {
   return *vm_snapshot_.get();
+}
+
+IsolateNameServer* DartVM::GetIsolateNameServer() {
+  return &isolate_name_server_;
 }
 
 fxl::RefPtr<DartSnapshot> DartVM::GetIsolateSnapshot() const {
