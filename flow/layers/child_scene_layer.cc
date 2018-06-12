@@ -6,15 +6,11 @@
 
 namespace flow {
 
-ChildSceneLayer::ChildSceneLayer() = default;
-
-ChildSceneLayer::~ChildSceneLayer() = default;
-
-void ChildSceneLayer::Preroll(PrerollContext* context,
-                              const SkMatrix& matrix,
-                              const SkIRect& device_clip) {
+ChildSceneLayer::ChildSceneLayer() {
   set_needs_system_composite(true);
 }
+
+ChildSceneLayer::~ChildSceneLayer() = default;
 
 void ChildSceneLayer::Paint(PaintContext& context) const {
   FXL_NOTREACHED() << "This layer never needs painting.";

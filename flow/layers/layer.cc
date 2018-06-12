@@ -11,14 +11,17 @@ namespace flow {
 
 Layer::Layer()
     : parent_(nullptr),
-      needs_system_composite_(false),
       paint_bounds_(SkRect::MakeEmpty()) {}
 
 Layer::~Layer() = default;
 
 void Layer::Preroll(PrerollContext* context,
                     const SkMatrix& matrix,
-                    const SkIRect& device_clip) {}
+                    const SkIRect& device_clip) {
+  SkIRect new_device_clip = OnPreroll(context, matrix, device_clip);
+  device_paint_bounds_ = ComputeDeviceIRect(matrix, paint_bounds());
+  IntersectOrSetEmpty(device_paint_bounds_, new_device_clip);
+}
 
 #if defined(OS_FUCHSIA)
 void Layer::UpdateScene(SceneUpdateContext& context) {}
@@ -50,6 +53,12 @@ SkIRect Layer::ComputeDeviceIRect(const SkMatrix& ctm, const SkRect& rect) {
   SkIRect device_irect;
   device_rect.roundOut(&device_irect);
   return device_irect;
+}
+
+void Layer::IntersectOrSetEmpty(SkIRect& rect, const SkIRect& clip) {
+  if (!rect.intersect(clip)) {
+    rect.setEmpty();
+  }
 }
 
 }  // namespace flow

@@ -6,29 +6,25 @@
 
 namespace flow {
 
-ClipRectLayer::ClipRectLayer() = default;
+ClipRectLayer::ClipRectLayer() {
+  set_needs_system_composite(true);
+}
 
 ClipRectLayer::~ClipRectLayer() = default;
 
-void ClipRectLayer::Preroll(PrerollContext* context,
-                            const SkMatrix& matrix,
-                            const SkIRect& device_clip) {
+SkIRect ClipRectLayer::OnPreroll(PrerollContext* context,
+                                 const SkMatrix& matrix,
+                                 const SkIRect& device_clip) {
   SkIRect new_device_clip = ComputeDeviceIRect(matrix, clip_rect_);
-  if (!new_device_clip.intersect(device_clip)) {
-    new_device_clip.setEmpty();
-  }
+  IntersectOrSetEmpty(new_device_clip, device_clip);
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds, new_device_clip);
-
   if (child_paint_bounds.intersect(clip_rect_)) {
     set_paint_bounds(child_paint_bounds);
   }
 
-  device_paint_bounds_ = ComputeDeviceIRect(matrix, paint_bounds());
-  if (!device_paint_bounds_.intersect(device_clip)) {
-    device_paint_bounds_.setEmpty();
-  }
+  return new_device_clip;
 }
 
 #if defined(OS_FUCHSIA)

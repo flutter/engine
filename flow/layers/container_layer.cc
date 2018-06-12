@@ -6,8 +6,7 @@
 
 namespace flow {
 
-ContainerLayer::ContainerLayer() {}
-
+ContainerLayer::ContainerLayer() = default;
 ContainerLayer::~ContainerLayer() = default;
 
 void ContainerLayer::Add(std::unique_ptr<Layer> layer) {
@@ -15,14 +14,16 @@ void ContainerLayer::Add(std::unique_ptr<Layer> layer) {
   layers_.push_back(std::move(layer));
 }
 
-void ContainerLayer::Preroll(PrerollContext* context,
+SkIRect ContainerLayer::OnPreroll(PrerollContext* context,
                              const SkMatrix& matrix,
                              const SkIRect& device_clip) {
-  TRACE_EVENT0("flutter", "ContainerLayer::Preroll");
+  TRACE_EVENT0("flutter", "ContainerLayer::OnPreroll");
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds, device_clip);
   set_paint_bounds(child_paint_bounds);
+
+  return device_clip;
 }
 
 void ContainerLayer::PrerollChildren(PrerollContext* context,
@@ -31,11 +32,10 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
                                      const SkIRect& device_clip) {
   for (auto& layer : layers_) {
     PrerollContext child_context = *context;
-    layer->Preroll(&child_context, child_matrix, device_clip);
-
     if (layer->needs_system_composite()) {
       set_needs_system_composite(true);
     }
+    layer->Preroll(&child_context, child_matrix, device_clip);
     child_paint_bounds->join(layer->paint_bounds());
   }
 

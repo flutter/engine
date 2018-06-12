@@ -28,10 +28,6 @@ class PhysicalShapeLayer : public ContainerLayer {
                          bool transparentOccluder,
                          SkScalar dpr);
 
-  void Preroll(PrerollContext* context,
-               const SkMatrix& matrix,
-               const SkIRect& device_clip) override;
-
   void Paint(PaintContext& context) const override;
 
 #if defined(OS_FUCHSIA)
@@ -46,6 +42,10 @@ class PhysicalShapeLayer : public ContainerLayer {
   SkPath path_;
   bool isRect_;
   SkRRect frameRRect_;
+
+  SkIRect OnPreroll(PrerollContext* context,
+                    const SkMatrix& matrix,
+                    const SkIRect& device_clip) override;
 };
 
 }  // namespace flow

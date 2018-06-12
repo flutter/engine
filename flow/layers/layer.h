@@ -50,9 +50,9 @@ class Layer {
     SkRect child_paint_bounds;
   };
 
-  virtual void Preroll(PrerollContext* context,
-                       const SkMatrix& matrix,
-                       const SkIRect& device_clip);
+  void Preroll(PrerollContext* context,
+               const SkMatrix& matrix,
+               const SkIRect& device_clip);
 
   struct PaintContext {
     SkCanvas& canvas;
@@ -110,7 +110,15 @@ class Layer {
   SkIRect device_paint_bounds_;  // any pixel outside of this rect (in device
                                  // coordinate) will never be drawn
 
+  // Returns the new device_clip that takes this layer into consideration
+  virtual SkIRect OnPreroll(PrerollContext* context,
+                            const SkMatrix& matrix,
+                            const SkIRect& device_clip) { return device_clip; }
+
   static SkIRect ComputeDeviceIRect(const SkMatrix& ctm, const SkRect& rect);
+
+  // Intersect rect with clip; if there's no intersection, set rect to empty.
+  static void IntersectOrSetEmpty(SkIRect& rect, const SkIRect& clip);
 
  private:
   ContainerLayer* parent_;

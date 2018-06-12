@@ -17,10 +17,6 @@ class ContainerLayer : public Layer {
 
   void Add(std::unique_ptr<Layer> layer);
 
-  void Preroll(PrerollContext* context,
-               const SkMatrix& matrix,
-               const SkIRect& device_clip) override;
-
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context) override;
 #endif  // defined(OS_FUCHSIA)
@@ -37,6 +33,11 @@ class ContainerLayer : public Layer {
 #if defined(OS_FUCHSIA)
   void UpdateSceneChildren(SceneUpdateContext& context);
 #endif  // defined(OS_FUCHSIA)
+
+ protected:
+  SkIRect OnPreroll(PrerollContext* context,
+                    const SkMatrix& matrix,
+                    const SkIRect& device_clip) override;
 
  private:
   std::vector<std::unique_ptr<Layer>> layers_;
