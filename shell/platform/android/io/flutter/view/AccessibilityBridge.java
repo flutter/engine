@@ -1110,10 +1110,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             return value;
         }
 
-        private String getHint() {
-            return hint;
-        }
-
         private String getValueLabelHint() {
             StringBuilder sb = new StringBuilder();
             String[] array = { value, label, hint };
