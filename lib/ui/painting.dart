@@ -824,37 +824,101 @@ enum FilterQuality {
 
 /// Styles to use for line endings.
 ///
-/// See [Paint.strokeCap].
+/// See also:
+///
+///  * [Paint.strokeCap] for how this value is used.
+///  * [StrokeJoin] for the different kinds of line segment joins.
 // These enum values must be kept in sync with SkPaint::Cap.
 enum StrokeCap {
   /// Begin and end contours with a flat edge and no extension.
+  ///
+  /// ![A butt cap ends line segments with a square end that stops at the end of
+  /// the line segment.](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/butt_cap.png)
+  ///
+  /// Compare to the [square] cap, which has the same shape, but extends past
+  /// the end of the line by half a stroke width.
   butt,
 
   /// Begin and end contours with a semi-circle extension.
+  ///
+  /// ![A round cap adds a rounded end to the line segment that protrudes
+  /// by one half of the thickness of the line (which is the radius of the cap)
+  /// past the end of the segment.](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/round_cap.png)
+  ///
+  /// The cap is colored in the diagram above to highlight it: in normal use it
+  /// is the same color as the line.
   round,
 
   /// Begin and end contours with a half square extension. This is
   /// similar to extending each contour by half the stroke width (as
   /// given by [Paint.strokeWidth]).
+  ///
+  /// ![A square cap has a square end that effectively extends the line length
+  /// by half of the stroke width.](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/square_cap.png)
+  ///
+  /// The cap is colored in the diagram above to highlight it: in normal use it
+  /// is the same color as the line.
+  ///
+  /// Compare to the [butt] cap, which has the same shape, but doesn't extend
+  /// past the end of the line.
   square,
 }
 
-/// Styles to use for line joins.
+/// Styles to use for line segment joins.
 ///
 /// This only affects line joins for polygons drawn by [Canvas.drawPath] and
 /// rectangles, not points drawn as lines with [Canvas.drawPoints].
 ///
-/// See [Paint.strokeJoin].
+/// See also:
+///
+/// * [Paint.strokeJoin] and [Paint.strokeMiterLimit] for how this value is
+///   used.
+/// * [StrokeCap] for the different kinds of line endings.
 // These enum values must be kept in sync with SkPaint::Join.
 enum StrokeJoin {
   /// Joins between line segments form sharp corners.
+  ///
+  /// {@animation joinMiterEnum 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
+  ///
+  /// The center of the line segment is colored in the diagram above to
+  /// highlight the join, but in normal usage the join is the same color as the
+  /// line.
+  ///
+  /// See also:
+  ///
+  ///   * [Paint.strokeJoin], used to set the line segment join style to this
+  ///     value.
+  ///   * [Paint.strokeMiterLimit], used to define when a miter is drawn instead
+  ///     of a bevel when the join is set to this value.
   miter,
 
   /// Joins between line segments are semi-circular.
+  ///
+  /// {@animation joinRoundEnum 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/round_join.mp4}
+  ///
+  /// The center of the line segment is colored in the diagram above to
+  /// highlight the join, but in normal usage the join is the same color as the
+  /// line.
+  ///
+  /// See also:
+  ///
+  ///   * [Paint.strokeJoin], used to set the line segment join style to this
+  ///     value.
   round,
 
   /// Joins between line segments connect the corners of the butt ends of the
   /// line segments to give a beveled appearance.
+  ///
+  /// {@animation joinBevelEnum 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/bevel_join.mp4}
+  ///
+  /// The center of the line segment is colored in the diagram above to
+  /// highlight the join, but in normal usage the join is the same color as the
+  /// line.
+  ///
+  /// See also:
+  ///
+  ///   * [Paint.strokeJoin], used to set the line segment join style to this
+  ///     value.
   bevel,
 }
 
@@ -1055,8 +1119,26 @@ class Paint {
   /// This applies to paths drawn when [style] is set to [PaintingStyle.stroke],
   /// It does not apply to points drawn as lines with [Canvas.drawPoints].
   ///
-  /// Defaults to [StrokeJoin.miter], i.e. sharp corners. See also
-  /// [strokeMiterLimit] to control when miters are replaced by bevels.
+  /// Defaults to [StrokeJoin.miter], i.e. sharp corners.
+  ///
+  /// Some examples of joins:
+  ///
+  /// {@animation joinMiterStrokeJoin 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
+  ///
+  /// {@animation joinRoundStrokeJoin 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/round_join.mp4}
+  ///
+  /// {@animation joinBevelStrokeJoin 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/bevel_join.mp4}
+  ///
+  /// The centers of the line segments are colored in the diagrams above to
+  /// highlight the joins, but in normal usage the join is the same color as the
+  /// line.
+  ///
+  /// See also:
+  ///
+  ///  * [strokeMiterLimit] to control when miters are replaced by bevels when
+  ///    this is set to [StrokeJoin.miter].
+  ///  * [strokeCap] to control what is drawn at the ends of the stroke.
+  ///  * [StrokeJoin] for the definitive list of stroke joins.
   StrokeJoin get strokeJoin {
     return StrokeJoin.values[_data.getInt32(_kStrokeJoinOffset, _kFakeHostEndian)];
   }
@@ -1067,18 +1149,34 @@ class Paint {
   }
 
   // Must be kept in sync with the default in paint.cc.
-  static final double _kStrokeMiterLimitDefault = 4.0;
+  static const double _kStrokeMiterLimitDefault = 4.0;
 
   /// The limit for miters to be drawn on segments when the join is set to
   /// [StrokeJoin.miter] and the [style] is set to [PaintingStyle.stroke]. If
   /// this limit is exceeded, then a [StrokeJoin.bevel] join will be drawn
   /// instead. This may cause some 'popping' of the corners of a path if the
-  /// angle between line segments is animated.
+  /// angle between line segments is animated, as seen in the diagrams below.
   ///
   /// This limit is expressed as a limit on the length of the miter.
   ///
   /// Defaults to 4.0.  Using zero as a limit will cause a [StrokeJoin.bevel]
   /// join to be used all the time.
+  ///
+  /// {@animation joinMiter0Limit 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_0_join.mp4}
+  ///
+  /// {@animation joinMiter4Limit 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
+  ///
+  /// {@animation joinMiter6Limit 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_6_join.mp4}
+  ///
+  /// The centers of the line segments are colored in the diagrams above to
+  /// highlight the joins, but in normal usage the join is the same color as the
+  /// line.
+  ///
+  /// See also:
+  ///
+  ///  * [strokeJoin] to control the kind of finish to place on the joins
+  ///    between segments.
+  ///  * [strokeCap] to control what is drawn at the ends of the stroke.
   double get strokeMiterLimit {
     return _data.getFloat32(_kStrokeMiterLimitOffset, _kFakeHostEndian);
   }
@@ -1315,7 +1413,7 @@ class Image extends NativeFieldWrapperClass2 {
 }
 
 /// Callback signature for [decodeImageFromList].
-typedef void ImageDecoderCallback(Image result);
+typedef ImageDecoderCallback = void Function(Image result);
 
 /// Information for a single frame of an animation.
 ///
@@ -3306,6 +3404,12 @@ class Picture extends NativeFieldWrapperClass2 {
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose() native 'Picture_dispose';
+
+  /// Returns the approximate number of bytes allocated for this object.
+  /// 
+  /// The actual size of this picture may be larger, particularly if it contains
+  /// references to image or other large objects.
+  int get approximateBytesUsed native 'Picture_GetAllocationSize';
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.
@@ -3339,13 +3443,13 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
 }
 
 /// Generic callback signature, used by [_futurize].
-typedef void _Callback<T>(T result);
+typedef _Callback<T> = void Function(T result);
 
 /// Signature for a method that receives a [_Callback].
 ///
 /// Return value should be null on success, and a string error message on
 /// failure.
-typedef String _Callbacker<T>(_Callback<T> callback);
+typedef _Callbacker<T> = String Function(_Callback<T> callback);
 
 /// Converts a method that receives a value-returning callback to a method that
 /// returns a Future.
@@ -3358,7 +3462,7 @@ typedef String _Callbacker<T>(_Callback<T> callback);
 /// Example usage:
 ///
 /// ```dart
-/// typedef void IntCallback(int result);
+/// typedef IntCallback = void Function(int result);
 ///
 /// String _doSomethingAndCallback(IntCallback callback) {
 ///   new Timer(new Duration(seconds: 1), () { callback(1); });

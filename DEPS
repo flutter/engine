@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '36be574e7bd5eb8bb41e2a0a15085e27b340cf4d',
+  'skia_revision': 'bb9ee9b4aa7d80e8a85832a462a3123060d4bd64',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': 'f981f097602ca434ce0a36b1f704723cad105fb6',
+  'dart_revision': 'c95617b19c1bfd67bce35c8737429f4e26975ac2',
 
   'dart_args_tag': '1.4.1',
   'dart_async_tag': '2.0.7',
@@ -45,9 +45,9 @@ vars = {
   'dart_convert_tag': '2.0.1',
   'dart_crypto_tag': '2.0.2+1',
   'dart_csslib_tag': '0.14.1',
-  'dart_dart2js_info_tag': '0.5.6+2',
+  'dart_dart2js_info_tag': '0.5.6+4',
   'dart_dart_style_tag': '1.0.14',
-  'dart_dartdoc_tag': 'v0.19.1',
+  'dart_dartdoc_tag': 'v0.20.0',
   'dart_fixnum_tag': '0.10.5',
   'dart_glob_tag': '1.1.5',
   'dart_html_tag': '0.13.3',
@@ -63,7 +63,7 @@ vars = {
   'dart_markdown_tag': '2.0.0',
   'dart_matcher_tag': '0.12.1+4',
   'dart_mime_tag': '0.9.6',
-  'dart_mockito_tag': 'a92db054fba18bc2d605be7670aee74b7cadc00a',
+  'dart_mockito_tag': 'd39ac507483b9891165e422ec98d9fb480037c8b',
   'dart_mustache4dart_tag': 'v2.1.2',
   'dart_oauth2_tag': '1.1.0',
   'dart_observatory_pub_packages_rev': 'd3a3aebefbd35aa30fe7bbc2889b772b398f7d7f',
@@ -114,7 +114,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '02eee3f72574fd5d30454487b5083e704b32cca4',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '71c24e682181d0b6a7e3974e5a678678650f4da3',
 
    # Fuchsia compatibility
    #

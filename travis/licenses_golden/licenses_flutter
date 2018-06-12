@@ -322,6 +322,8 @@ ORIGIN: ../../../flutter/assets/directory_asset_bundle.cc + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/assets/directory_asset_bundle.cc
 FILE: ../../../flutter/assets/directory_asset_bundle.h
+FILE: ../../../flutter/assets/zip_asset_store.cc
+FILE: ../../../flutter/assets/zip_asset_store.h
 FILE: ../../../flutter/common/settings.cc
 FILE: ../../../flutter/common/settings.h
 FILE: ../../../flutter/flow/export_node.cc
@@ -492,6 +494,8 @@ FILE: ../../../flutter/lib/ui/isolate_name_server.dart
 FILE: ../../../flutter/lib/ui/painting/image_encoding.cc
 FILE: ../../../flutter/lib/ui/painting/image_encoding.h
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.mm
 ----------------------------------------------------------------------------------------------------
