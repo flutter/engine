@@ -93,10 +93,6 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
   FXL_DCHECK(needs_painting());
 
-  if (device_paint_bounds_.isEmpty()) {
-    return;
-  }
-
   if (elevation_ != 0) {
     DrawShadow(&context.canvas, path_, shadow_color_, elevation_,
                SkColorGetA(color_) != 0xff, device_pixel_ratio_);

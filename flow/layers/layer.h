@@ -104,7 +104,7 @@ class Layer {
     paint_bounds_ = paint_bounds;
   }
 
-  bool needs_painting() const { return !paint_bounds_.isEmpty(); }
+  bool needs_painting() const { return !device_paint_bounds_.isEmpty(); }
 
  protected:
   SkIRect device_paint_bounds_;  // any pixel outside of this rect (in device
