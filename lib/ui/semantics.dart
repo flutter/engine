@@ -228,6 +228,7 @@ class SemanticsFlag {
   static const int _kScopesRouteIndex= 1 << 11;
   static const int _kNamesRouteIndex = 1 << 12;
   static const int _kIsHiddenIndex = 1 << 13;
+  static const int _kIsLiveRegionIndex = 1 << 14;
 
   const SemanticsFlag._(this.index);
 
@@ -366,6 +367,18 @@ class SemanticsFlag {
   /// used to implement accessibility scrolling on iOS.
   static const SemanticsFlag isHidden = const SemanticsFlag._(_kIsHiddenIndex);
 
+  /// Whether the semantics node represents a region with important screen updates
+  ///
+  /// A [SnackBar] is an example of usecase for a live region. Since they are usually
+  /// triggered by a separate widget, they do not have accessibility focus when first
+  /// created.  However, we would like to make users aware of it without interrupting
+  /// their workflow. On Android, the live region triggers an interruptable announcement
+  /// of the snackbar's text contents.
+  ///
+  /// Only widgets with important semantic information should be annotated with a live
+  /// region flag.
+  static const SemanticsFlag isLiveRegion = const SemanticsFlag._(_kIsLiveRegionIndex);
+
   /// The possible semantics flags.
   ///
   /// The map's key is the [index] of the flag and the value is the flag itself.
@@ -384,6 +397,7 @@ class SemanticsFlag {
     _kScopesRouteIndex: scopesRoute,
     _kNamesRouteIndex: namesRoute,
     _kIsHiddenIndex: isHidden,
+    _kIsLiveRegionIndex: isLiveRegion,
   };
 
   @override
@@ -417,6 +431,8 @@ class SemanticsFlag {
         return 'SemanticsFlag.namesRoute';
       case _kIsHiddenIndex:
         return 'SemanticsFlag.isHidden';
+      case _kIsLiveRegionIndex:
+        return 'SemanticsFlag.isLiveRegion';
     }
     return null;
   }
