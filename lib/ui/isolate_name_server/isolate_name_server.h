@@ -25,7 +25,6 @@ class IsolateNameServer {
   // if the name does not exist.
   Dart_Port LookupIsolatePortByName(const std::string& name)
       LOCK_UNLOCK(mutex_);
-  ;
 
   // Registers a Dart_Port with a given name. Returns true if registration is
   // successful, false if the name entry already exists.
