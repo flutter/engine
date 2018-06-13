@@ -28,7 +28,7 @@ void isolateSpawnEntrypoint(SendPort port) {
   // ack that the SendPort lookup was successful.
   sendHelper(kStartCode);
 
-  //shared.send(kPortName);
+  shared.send(kPortName);
   sendHelper(kCloseCode);
 
   // We'll fail if the ReceivePort's callback is called more than once. Try to
@@ -75,6 +75,10 @@ void main() {
     expect(
         IsolateNameServer.registerPortWithName(sendPort2, kPortName), isTrue);
     expect(IsolateNameServer.lookupPortByName(kPortName), sendPort2);
+
+    // Close so the test runner doesn't hang.
+    receivePort.close();
+    receivePort2.close();
   });
 
   test('isolate name server null args', () {
@@ -88,6 +92,7 @@ void main() {
         throwsArgumentError);
     expect(() => IsolateNameServer.removePortNameMapping(null),
         throwsArgumentError);
+    receivePort.close();
   });
 
   test('isolate name server multi-isolate', () async {
@@ -109,6 +114,8 @@ void main() {
           break;
         case kDeletedCode:
           expect(IsolateNameServer.lookupPortByName(kPortName), isNull);
+          // Test is done, close the last ReceivePort.
+          testReceivePort.close();
           break;
         case kErrorCode:
           throw message;
