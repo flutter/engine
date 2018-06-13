@@ -367,9 +367,9 @@ class SemanticsFlag {
   /// used to implement accessibility scrolling on iOS.
   static const SemanticsFlag isHidden = const SemanticsFlag._(_kIsHiddenIndex);
 
-  /// Whether the semantics node represents a region with important screen updates
+  /// Whether the semantics node represents a region with important screen updates.
   ///
-  /// A [SnackBar] is an example of usecase for a live region. Since they are usually
+  /// A [SnackBar] is an example usecase for a live region. Since they are usually
   /// triggered by a separate widget, they do not have accessibility focus when first
   /// created.  However, we would like to make users aware of it without interrupting
   /// their workflow. On Android, the live region triggers an interruptable announcement
