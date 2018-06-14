@@ -922,7 +922,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 return null;
             if (childrenInHitTestOrder != null) {
                 final float[] transformedPoint = new float[4];
-                for (int i = 0; i < childrenInHitTestOrder.size(); i += 1) {
+                int size = childrenInHitTestOrder.size();
+                for (int i = size - 1; i >= 0; i -= 1) {
                     final SemanticsObject child = childrenInHitTestOrder.get(i);
                     if (child.hasFlag(Flag.IS_HIDDEN)) {
                         continue;
