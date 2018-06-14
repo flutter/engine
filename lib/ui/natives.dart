@@ -48,6 +48,10 @@ dynamic _saveCompilationTrace() native 'SaveCompilationTrace';
 
 void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
 
+dynamic _lookupClosure(String name, String libraryPath) native 'LookupClosure';
+dynamic _lookupClosureLibrary(Function closure) native 'LookupClosureLibrary';
+String _getFunctionName(Function func) native 'GetFunctionName';
+
 // Required for gen_snapshot to work correctly.
 int _isolateId;
 

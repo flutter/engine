@@ -43,6 +43,7 @@ shared_library("create_flutter_framework_dylib") {
 
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
+    "framework/Source/FlutterAppDelegate_Internal.h",
     "framework/Source/FlutterChannels.mm",
     "framework/Source/FlutterCodecs.mm",
     "framework/Source/FlutterDartProject.mm",
@@ -73,6 +74,8 @@ shared_library("create_flutter_framework_dylib") {
     "framework/Source/platform_message_router.mm",
     "framework/Source/vsync_waiter_ios.h",
     "framework/Source/vsync_waiter_ios.mm",
+    "headless_platform_view_ios.h",
+    "headless_platform_view_ios.mm",
     "ios_external_texture_gl.h",
     "ios_external_texture_gl.mm",
     "ios_gl_context.h",

@@ -48,7 +48,10 @@ namespace blink {
 #define BUILTIN_NATIVE_LIST(V) \
   V(Logger_PrintString, 1)     \
   V(SaveCompilationTrace, 0)   \
-  V(ScheduleMicrotask, 1)
+  V(ScheduleMicrotask, 1)      \
+  V(LookupClosure, 2)          \
+  V(LookupClosureLibrary, 1)   \
+  V(GetFunctionName, 1)
 
 BUILTIN_NATIVE_LIST(DECLARE_FUNCTION);
 
@@ -221,6 +224,53 @@ void SaveCompilationTrace(Dart_NativeArguments args) {
 void ScheduleMicrotask(Dart_NativeArguments args) {
   Dart_Handle closure = Dart_GetNativeArgument(args, 0);
   UIDartState::Current()->ScheduleMicrotask(closure);
+}
+
+void LookupClosure(Dart_NativeArguments args) {
+  Dart_Handle closure_name = Dart_GetNativeArgument(args, 0);
+  Dart_Handle library_name = Dart_GetNativeArgument(args, 1);
+  Dart_Handle library;
+  if (library_name == Dart_Null()) {
+    library = Dart_RootLibrary();
+  } else {
+    library = Dart_LookupLibrary(library_name);
+    DART_CHECK_VALID(library);
+  }
+  Dart_Handle closure = Dart_GetClosure(Dart_RootLibrary(), closure_name);
+  Dart_SetReturnValue(args, closure);
+}
+
+void LookupClosureLibrary(Dart_NativeArguments args) {
+  Dart_Handle closure = Dart_GetNativeArgument(args, 0);
+  if (Dart_IsClosure(closure)) {
+    closure = Dart_ClosureFunction(closure);
+    DART_CHECK_VALID(closure);
+  }
+  Dart_Handle owner = closure;
+  Dart_Handle url = Dart_Null();
+  // TOOD(bkonyi): do we need to do this loop?
+  do {
+    owner = Dart_FunctionOwner(owner);
+    if (Dart_IsLibrary(owner)) {
+      url = Dart_LibraryUrl(owner);
+      break;
+    }
+  } while (!Dart_IsLibrary(owner));
+  Dart_SetReturnValue(args, url);
+}
+
+void GetFunctionName(Dart_NativeArguments args) {
+  Dart_Handle func = Dart_GetNativeArgument(args, 0);
+  if (Dart_IsClosure(func)) {
+    func = Dart_ClosureFunction(func);
+    DART_CHECK_VALID(func);
+  }
+  Dart_Handle result = Dart_FunctionName(func);
+  if (Dart_IsError(result)) {
+    Dart_PropagateError(result);
+    return;
+  }
+  Dart_SetReturnValue(args, result);
 }
 
 }  // namespace blink
