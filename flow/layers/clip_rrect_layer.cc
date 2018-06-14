@@ -6,10 +6,7 @@
 
 namespace flow {
 
-ClipRRectLayer::ClipRRectLayer() {
-  set_needs_system_composite(true);
-}
-
+ClipRRectLayer::ClipRRectLayer() = default;
 ClipRRectLayer::~ClipRRectLayer() = default;
 
 SkIRect ClipRRectLayer::OnPreroll(PrerollContext* context,

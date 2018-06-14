@@ -9,9 +9,7 @@
 
 namespace flow {
 
-PhysicalShapeLayer::PhysicalShapeLayer() : isRect_(false) {
-  set_needs_system_composite(true);
-}
+PhysicalShapeLayer::PhysicalShapeLayer() : isRect_(false) {}
 
 PhysicalShapeLayer::~PhysicalShapeLayer() = default;
 
@@ -53,6 +51,7 @@ SkIRect PhysicalShapeLayer::OnPreroll(PrerollContext* context,
   } else {
 #if defined(OS_FUCHSIA)
     // Let the system compositor draw all shadows for us.
+    set_needs_system_composite(true);
     set_paint_bounds(path_.getBounds());
 #else
     // Add some margin to the paint bounds to leave space for the shadow.

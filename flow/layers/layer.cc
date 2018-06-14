@@ -11,6 +11,7 @@ namespace flow {
 
 Layer::Layer()
     : parent_(nullptr),
+      needs_system_composite_(false),
       paint_bounds_(SkRect::MakeEmpty()) {}
 
 Layer::~Layer() = default;

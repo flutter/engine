@@ -6,7 +6,8 @@
 
 namespace flow {
 
-ContainerLayer::ContainerLayer() = default;
+ContainerLayer::ContainerLayer() {};
+
 ContainerLayer::~ContainerLayer() = default;
 
 void ContainerLayer::Add(std::unique_ptr<Layer> layer) {
