@@ -9,11 +9,21 @@
 #include <mutex>
 #include <string>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/synchronization/thread_annotations.h"
 #include "lib/fxl/macros.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
+// The Android NDK's headers don't have the clang annotations.
+#if !defined(OS_ANDROID)
 #define LOCK_UNLOCK(m) FML_ACQUIRE(m) FML_RELEASE(m)
+#define LOCKS_REQUIRED(m) FML_EXCLUSIVE_LOCKS_REQUIRED(m)
+#define GUARDED_BY(m) FML_GUARDED_BY(m)
+#else
+#define LOCK_UNLOCK(m)
+#define LOCKS_REQUIRED(m)
+#define GUARDED_BY(m)
+#endif  // !defined(OS_ANDROID)
 
 namespace blink {
 
@@ -37,10 +47,10 @@ class IsolateNameServer {
 
  private:
   Dart_Port LookupIsolatePortByNameUnprotected(const std::string& name)
-      FML_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+      LOCKS_REQUIRED(mutex_);
 
   mutable std::mutex mutex_;
-  std::map<std::string, Dart_Port> port_mapping_ FML_GUARDED_BY(mutex_);
+  std::map<std::string, Dart_Port> port_mapping_ GUARDED_BY(mutex_);
 
   FXL_DISALLOW_COPY_AND_ASSIGN(IsolateNameServer);
 };
