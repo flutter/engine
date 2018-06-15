@@ -58,7 +58,7 @@ class VulkanWindow {
 
   bool CreateSkiaGrContext();
 
-  sk_sp<GrVkBackendContext> CreateSkiaBackendContext();
+  bool CreateSkiaBackendContext(GrVkBackendContext* context);
 
   FXL_WARN_UNUSED_RESULT
   bool RecreateSwapchain();
