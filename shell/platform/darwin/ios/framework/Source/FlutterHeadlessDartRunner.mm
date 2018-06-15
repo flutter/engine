@@ -45,7 +45,6 @@ static std::string CreateShellLabel() {
 @implementation FlutterHeadlessDartRunner {
   shell::ThreadHost _threadHost;
   std::unique_ptr<shell::Shell> _shell;
-  shell::PlatformMessageRouter _message_router;
 }
 
 - (instancetype)init {
