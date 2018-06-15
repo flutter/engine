@@ -100,23 +100,26 @@ sk_sp<SkData> CopyImageByteData(sk_sp<SkImage> raster_image,
     return nullptr;
   }
 
+  // The color types already match. No need to swizzle. Return early.
+  if (pixmap.colorType() == color_type) {
+    return SkData::MakeWithCopy(pixmap.addr(), pixmap.computeByteSize());
+  }
+
   // Perform swizzle if the type doesnt match the specification.
-  if (pixmap.colorType() != color_type) {
-    auto surface = SkSurface::MakeRaster(
-        SkImageInfo::Make(raster_image->width(), raster_image->height(),
-                          color_type, kPremul_SkAlphaType, nullptr));
+  auto surface = SkSurface::MakeRaster(
+      SkImageInfo::Make(raster_image->width(), raster_image->height(),
+                        color_type, kPremul_SkAlphaType, nullptr));
 
-    if (!surface) {
-      FXL_LOG(ERROR) << "Could not setup the surface for swizzle.";
-      return nullptr;
-    }
+  if (!surface) {
+    FXL_LOG(ERROR) << "Could not setup the surface for swizzle.";
+    return nullptr;
+  }
 
-    surface->writePixels(pixmap, 0, 0);
+  surface->writePixels(pixmap, 0, 0);
 
-    if (!surface->peekPixels(&pixmap)) {
-      FXL_LOG(ERROR) << "Pixel address is not available.";
-      return nullptr;
-    }
+  if (!surface->peekPixels(&pixmap)) {
+    FXL_LOG(ERROR) << "Pixel address is not available.";
+    return nullptr;
   }
 
   return SkData::MakeWithCopy(pixmap.addr(), pixmap.computeByteSize());
