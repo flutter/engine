@@ -8,6 +8,7 @@
 #include <math.h>
 
 #include "flutter/flow/layers/physical_shape_layer.h"
+#include "flutter/lib/ui/flutter_dart_api.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/ui_dart_state.h"

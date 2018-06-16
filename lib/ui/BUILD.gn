@@ -14,6 +14,8 @@ source_set("ui") {
     "dart_runtime_hooks.h",
     "dart_ui.cc",
     "dart_ui.h",
+    "flutter_dart_api.cc",
+    "flutter_dart_api.h",
     "isolate_name_server/isolate_name_server.cc",
     "isolate_name_server/isolate_name_server.h",
     "isolate_name_server/isolate_name_server_natives.cc",
@@ -109,5 +111,7 @@ source_set("ui") {
     deps += [ "//topaz/public/dart-pkg/zircon" ]
   }
 
-  public_deps = ["$flutter_root/third_party/txt"]
+  public_deps = [
+    "$flutter_root/third_party/txt",
+  ]
 }
