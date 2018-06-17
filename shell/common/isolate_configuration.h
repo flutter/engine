@@ -22,7 +22,7 @@ class IsolateConfiguration {
  public:
   static std::unique_ptr<IsolateConfiguration> InferFromSettings(
       const blink::Settings& settings,
-      fxl::RefPtr<blink::AssetManager> asset_manager);
+      fml::RefPtr<blink::AssetManager> asset_manager);
 
   static std::unique_ptr<IsolateConfiguration> CreateForPrecompiledCode();
 
@@ -32,6 +32,9 @@ class IsolateConfiguration {
   static std::unique_ptr<IsolateConfiguration> CreateForSource(
       std::string main_path,
       std::string packages_path);
+
+  static std::unique_ptr<IsolateConfiguration> CreateForKernelList(
+      std::vector<std::unique_ptr<fml::Mapping>> kernel_pieces);
 
   IsolateConfiguration();
 

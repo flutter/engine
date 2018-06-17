@@ -109,8 +109,8 @@ class Color {
   /// * `a` is the alpha value, with 0 being transparent and 255 being fully
   ///   opaque.
   /// * `r` is [red], from 0 to 255.
-  /// * `g` is [red], from 0 to 255.
-  /// * `b` is [red], from 0 to 255.
+  /// * `g` is [green], from 0 to 255.
+  /// * `b` is [blue], from 0 to 255.
   ///
   /// Out of range values are brought into range using modulo 255.
   ///
@@ -125,8 +125,8 @@ class Color {
   /// Create a color from red, green, blue, and opacity, similar to `rgba()` in CSS.
   ///
   /// * `r` is [red], from 0 to 255.
-  /// * `g` is [red], from 0 to 255.
-  /// * `b` is [red], from 0 to 255.
+  /// * `g` is [green], from 0 to 255.
+  /// * `b` is [blue], from 0 to 255.
   /// * `opacity` is alpha channel of this color as a double, with 0.0 being
   ///   transparent and 1.0 being fully opaque.
   ///
@@ -380,7 +380,7 @@ enum BlendMode {
   ///
   /// This corresponds to the "clear" Porter-Duff operator.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_clear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_clear.png)
   clear,
 
   /// Drop the destination image, only paint the source image.
@@ -390,7 +390,7 @@ enum BlendMode {
   ///
   /// This corresponds to the "Copy" Porter-Duff operator.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_src.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_src.png)
   src,
 
   /// Drop the source image, only paint the destination image.
@@ -400,7 +400,7 @@ enum BlendMode {
   ///
   /// This corresponds to the "Destination" Porter-Duff operator.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_dst.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_dst.png)
   dst,
 
   /// Composite the source image over the destination image.
@@ -412,7 +412,7 @@ enum BlendMode {
   /// This corresponds to the "Source over Destination" Porter-Duff operator,
   /// also known as the Painter's Algorithm.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_srcOver.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_srcOver.png)
   srcOver,
 
   /// Composite the source image under the destination image.
@@ -421,7 +421,7 @@ enum BlendMode {
   ///
   /// This corresponds to the "Destination over Source" Porter-Duff operator.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_dstOver.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_dstOver.png)
   ///
   /// This is useful when the source image should have been painted before the
   /// destination image, but could not be.
@@ -440,7 +440,7 @@ enum BlendMode {
   ///
   /// This corresponds to the "Source in Destination" Porter-Duff operator.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_srcIn.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_srcIn.png)
   srcIn,
 
   /// Show the destination image, but only where the two images overlap. The
@@ -454,7 +454,7 @@ enum BlendMode {
   ///
   /// This corresponds to the "Destination in Source" Porter-Duff operator.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_dstIn.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_dstIn.png)
   dstIn,
 
   /// Show the source image, but only where the two images do not overlap. The
@@ -468,7 +468,7 @@ enum BlendMode {
   ///
   /// This corresponds to the "Source out Destination" Porter-Duff operator.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_srcOut.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_srcOut.png)
   srcOut,
 
   /// Show the destination image, but only where the two images do not overlap. The
@@ -482,7 +482,7 @@ enum BlendMode {
   ///
   /// This corresponds to the "Destination out Source" Porter-Duff operator.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_dstOut.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_dstOut.png)
   dstOut,
 
   /// Composite the source image over the destination image, but only where it
@@ -497,7 +497,7 @@ enum BlendMode {
   /// For a variant with the destination on top instead of the source, see
   /// [dstATop].
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_srcATop.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_srcATop.png)
   srcATop,
 
   /// Composite the destination image over the source image, but only where it
@@ -512,7 +512,7 @@ enum BlendMode {
   /// For a variant with the source on top instead of the destination, see
   /// [srcATop].
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_dstATop.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_dstATop.png)
   dstATop,
 
   /// Apply a bitwise `xor` operator to the source and destination images. This
@@ -520,7 +520,7 @@ enum BlendMode {
   ///
   /// This corresponds to the "Source xor Destination" Porter-Duff operator.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_xor.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_xor.png)
   xor,
 
   /// Sum the components of the source and destination images.
@@ -531,7 +531,7 @@ enum BlendMode {
   ///
   /// This corresponds to the "Source plus Destination" Porter-Duff operator.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_plus.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_plus.png)
   plus,
 
   /// Multiply the color components of the source and destination images.
@@ -544,7 +544,7 @@ enum BlendMode {
   ///
   /// For a variant that also multiplies the alpha channel, consider [multiply].
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_modulate.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_modulate.png)
   ///
   /// See also:
   ///
@@ -575,7 +575,7 @@ enum BlendMode {
   /// This has similar effect to two projectors displaying their images on the
   /// same screen simultaneously.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_screen.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_screen.png)
   ///
   /// See also:
   ///
@@ -599,7 +599,7 @@ enum BlendMode {
   /// white) is treated as the value 0.0, and values normally treated as 0.0
   /// (black, transparent) are treated as 1.0.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_overlay.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_overlay.png)
   ///
   /// See also:
   ///
@@ -615,7 +615,7 @@ enum BlendMode {
   /// The opacity of the output image is computed in the same way as for
   /// [srcOver].
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_darken.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_darken.png)
   darken,
 
   /// Composite the source and destination image by choosing the highest value
@@ -624,7 +624,7 @@ enum BlendMode {
   /// The opacity of the output image is computed in the same way as for
   /// [srcOver].
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_lighten.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_lighten.png)
   lighten,
 
   /// Divide the destination by the inverse of the source.
@@ -633,7 +633,7 @@ enum BlendMode {
   /// white) is treated as the value 0.0, and values normally treated as 0.0
   /// (black, transparent) are treated as 1.0.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_colorDodge.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_colorDodge.png)
   colorDodge,
 
   /// Divide the inverse of the destination by the the source, and inverse the result.
@@ -642,7 +642,7 @@ enum BlendMode {
   /// white) is treated as the value 0.0, and values normally treated as 0.0
   /// (black, transparent) are treated as 1.0.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_colorBurn.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_colorBurn.png)
   colorBurn,
 
   /// Multiply the components of the source and destination images after
@@ -657,7 +657,7 @@ enum BlendMode {
   /// white) is treated as the value 0.0, and values normally treated as 0.0
   /// (black, transparent) are treated as 1.0.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_hardLight.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_hardLight.png)
   ///
   /// See also:
   ///
@@ -672,7 +672,7 @@ enum BlendMode {
   ///
   /// This results in a similar but softer effect than [overlay].
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_softLight.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_softLight.png)
   ///
   /// See also:
   ///
@@ -689,7 +689,7 @@ enum BlendMode {
   ///
   /// The effect is similar to [exclusion] but harsher.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_difference.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_difference.png)
   difference,
 
   /// Subtract double the product of the two images from the sum of the two
@@ -703,7 +703,7 @@ enum BlendMode {
   ///
   /// The effect is similar to [difference] but softer.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_exclusion.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_exclusion.png)
   exclusion,
 
   /// Multiply the components of the source and destination images, including
@@ -719,7 +719,7 @@ enum BlendMode {
   /// For a variant that multiplies the colors but does not multiply the alpha
   /// channel, consider [modulate].
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_multiply.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_multiply.png)
   multiply,  // The last separable mode.
 
   /// Take the hue of the source image, and the saturation and luminosity of the
@@ -731,7 +731,7 @@ enum BlendMode {
   /// [srcOver]. Regions that are entirely transparent in the source image take
   /// their hue from the destination.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_hue.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_hue.png)
   ///
   /// See also:
   ///
@@ -748,7 +748,7 @@ enum BlendMode {
   /// [srcOver]. Regions that are entirely transparent in the source image take
   /// their saturation from the destination.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_hue.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_hue.png)
   ///
   /// See also:
   ///
@@ -766,7 +766,7 @@ enum BlendMode {
   /// [srcOver]. Regions that are entirely transparent in the source image take
   /// their hue and saturation from the destination.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_color.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_color.png)
   ///
   /// See also:
   ///
@@ -782,7 +782,7 @@ enum BlendMode {
   /// [srcOver]. Regions that are entirely transparent in the source image take
   /// their luminosity from the destination.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/blend_mode_luminosity.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_luminosity.png)
   ///
   /// See also:
   ///
@@ -824,37 +824,101 @@ enum FilterQuality {
 
 /// Styles to use for line endings.
 ///
-/// See [Paint.strokeCap].
+/// See also:
+///
+///  * [Paint.strokeCap] for how this value is used.
+///  * [StrokeJoin] for the different kinds of line segment joins.
 // These enum values must be kept in sync with SkPaint::Cap.
 enum StrokeCap {
   /// Begin and end contours with a flat edge and no extension.
+  ///
+  /// ![A butt cap ends line segments with a square end that stops at the end of
+  /// the line segment.](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/butt_cap.png)
+  ///
+  /// Compare to the [square] cap, which has the same shape, but extends past
+  /// the end of the line by half a stroke width.
   butt,
 
   /// Begin and end contours with a semi-circle extension.
+  ///
+  /// ![A round cap adds a rounded end to the line segment that protrudes
+  /// by one half of the thickness of the line (which is the radius of the cap)
+  /// past the end of the segment.](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/round_cap.png)
+  ///
+  /// The cap is colored in the diagram above to highlight it: in normal use it
+  /// is the same color as the line.
   round,
 
   /// Begin and end contours with a half square extension. This is
   /// similar to extending each contour by half the stroke width (as
   /// given by [Paint.strokeWidth]).
+  ///
+  /// ![A square cap has a square end that effectively extends the line length
+  /// by half of the stroke width.](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/square_cap.png)
+  ///
+  /// The cap is colored in the diagram above to highlight it: in normal use it
+  /// is the same color as the line.
+  ///
+  /// Compare to the [butt] cap, which has the same shape, but doesn't extend
+  /// past the end of the line.
   square,
 }
 
-/// Styles to use for line joins.
+/// Styles to use for line segment joins.
 ///
 /// This only affects line joins for polygons drawn by [Canvas.drawPath] and
 /// rectangles, not points drawn as lines with [Canvas.drawPoints].
 ///
-/// See [Paint.strokeJoin].
+/// See also:
+///
+/// * [Paint.strokeJoin] and [Paint.strokeMiterLimit] for how this value is
+///   used.
+/// * [StrokeCap] for the different kinds of line endings.
 // These enum values must be kept in sync with SkPaint::Join.
 enum StrokeJoin {
   /// Joins between line segments form sharp corners.
+  ///
+  /// {@animation joinMiterEnum 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
+  ///
+  /// The center of the line segment is colored in the diagram above to
+  /// highlight the join, but in normal usage the join is the same color as the
+  /// line.
+  ///
+  /// See also:
+  ///
+  ///   * [Paint.strokeJoin], used to set the line segment join style to this
+  ///     value.
+  ///   * [Paint.strokeMiterLimit], used to define when a miter is drawn instead
+  ///     of a bevel when the join is set to this value.
   miter,
 
   /// Joins between line segments are semi-circular.
+  ///
+  /// {@animation joinRoundEnum 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/round_join.mp4}
+  ///
+  /// The center of the line segment is colored in the diagram above to
+  /// highlight the join, but in normal usage the join is the same color as the
+  /// line.
+  ///
+  /// See also:
+  ///
+  ///   * [Paint.strokeJoin], used to set the line segment join style to this
+  ///     value.
   round,
 
   /// Joins between line segments connect the corners of the butt ends of the
   /// line segments to give a beveled appearance.
+  ///
+  /// {@animation joinBevelEnum 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/bevel_join.mp4}
+  ///
+  /// The center of the line segment is colored in the diagram above to
+  /// highlight the join, but in normal usage the join is the same color as the
+  /// line.
+  ///
+  /// See also:
+  ///
+  ///   * [Paint.strokeJoin], used to set the line segment join style to this
+  ///     value.
   bevel,
 }
 
@@ -1055,8 +1119,26 @@ class Paint {
   /// This applies to paths drawn when [style] is set to [PaintingStyle.stroke],
   /// It does not apply to points drawn as lines with [Canvas.drawPoints].
   ///
-  /// Defaults to [StrokeJoin.miter], i.e. sharp corners. See also
-  /// [strokeMiterLimit] to control when miters are replaced by bevels.
+  /// Defaults to [StrokeJoin.miter], i.e. sharp corners.
+  ///
+  /// Some examples of joins:
+  ///
+  /// {@animation joinMiterStrokeJoin 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
+  ///
+  /// {@animation joinRoundStrokeJoin 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/round_join.mp4}
+  ///
+  /// {@animation joinBevelStrokeJoin 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/bevel_join.mp4}
+  ///
+  /// The centers of the line segments are colored in the diagrams above to
+  /// highlight the joins, but in normal usage the join is the same color as the
+  /// line.
+  ///
+  /// See also:
+  ///
+  ///  * [strokeMiterLimit] to control when miters are replaced by bevels when
+  ///    this is set to [StrokeJoin.miter].
+  ///  * [strokeCap] to control what is drawn at the ends of the stroke.
+  ///  * [StrokeJoin] for the definitive list of stroke joins.
   StrokeJoin get strokeJoin {
     return StrokeJoin.values[_data.getInt32(_kStrokeJoinOffset, _kFakeHostEndian)];
   }
@@ -1067,18 +1149,34 @@ class Paint {
   }
 
   // Must be kept in sync with the default in paint.cc.
-  static final double _kStrokeMiterLimitDefault = 4.0;
+  static const double _kStrokeMiterLimitDefault = 4.0;
 
   /// The limit for miters to be drawn on segments when the join is set to
   /// [StrokeJoin.miter] and the [style] is set to [PaintingStyle.stroke]. If
   /// this limit is exceeded, then a [StrokeJoin.bevel] join will be drawn
   /// instead. This may cause some 'popping' of the corners of a path if the
-  /// angle between line segments is animated.
+  /// angle between line segments is animated, as seen in the diagrams below.
   ///
   /// This limit is expressed as a limit on the length of the miter.
   ///
   /// Defaults to 4.0.  Using zero as a limit will cause a [StrokeJoin.bevel]
   /// join to be used all the time.
+  ///
+  /// {@animation joinMiter0Limit 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_0_join.mp4}
+  ///
+  /// {@animation joinMiter4Limit 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
+  ///
+  /// {@animation joinMiter6Limit 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_6_join.mp4}
+  ///
+  /// The centers of the line segments are colored in the diagrams above to
+  /// highlight the joins, but in normal usage the join is the same color as the
+  /// line.
+  ///
+  /// See also:
+  ///
+  ///  * [strokeJoin] to control the kind of finish to place on the joins
+  ///    between segments.
+  ///  * [strokeCap] to control what is drawn at the ends of the stroke.
   double get strokeMiterLimit {
     return _data.getFloat32(_kStrokeMiterLimitOffset, _kFakeHostEndian);
   }
@@ -1315,7 +1413,7 @@ class Image extends NativeFieldWrapperClass2 {
 }
 
 /// Callback signature for [decodeImageFromList].
-typedef void ImageDecoderCallback(Image result);
+typedef ImageDecoderCallback = void Function(Image result);
 
 /// Information for a single frame of an animation.
 ///
@@ -1792,6 +1890,20 @@ class Path extends NativeFieldWrapperClass2 {
   Path _transform(Float64List matrix4) native 'Path_transform';
 
   /// Computes the bounding rectangle for this path.
+  /// 
+  /// A path containing only axis-aligned points on the same straight line will
+  /// have no area, and therefore `Rect.isEmpty` will return true for such a
+  /// path. Consider checking `rect.width + rect.height > 0.0` instead, or
+  /// using the [computeMetrics] API to check the path length.
+  /// 
+  /// For many more elaborate paths, the bounds may be inaccurate.  For example,
+  /// when a path contains a circle, the points used to compute the bounds are
+  /// the circle's implied control points, which form a square around the circle;
+  /// if the circle has a transformation applied using [transform] then that 
+  /// square is rotated, and the (axis-aligned, non-rotated) bounding box
+  /// therefore ends up grossly overestimating the actual area covered by the
+  /// circle.
+  // see https://skia.org/user/api/SkPath_Reference#SkPath_getBounds
   Rect getBounds() {
     final Float32List rect = _getBounds();
     return new Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
@@ -2170,7 +2282,7 @@ enum TileMode {
   /// The gradient will paint the all the regions outside the inner area with
   /// the color of the point closest to that region.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_clamp_radial.png)
   clamp,
 
   /// Edge is repeated from first color to last.
@@ -2179,8 +2291,8 @@ enum TileMode {
   /// to 2.0, 2.0 to 3.0, and so forth (and for linear gradients, similarly from
   /// -1.0 to 0.0, -2.0 to -1.0, etc).
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_linear.png)
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_repeated_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_repeated_radial.png)
   repeated,
 
   /// Edge is mirrored from last color to first.
@@ -2190,8 +2302,8 @@ enum TileMode {
   /// 4.0 to 3.0, and so forth (and for linear gradients, similarly from in the
   /// negative direction).
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_linear.png)
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_mirror_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_mirror_radial.png)
   mirror,
 }
 
@@ -2247,9 +2359,9 @@ class Gradient extends Shader {
   /// The behavior before `from` and after `to` is described by the `tileMode`
   /// argument. For details, see the [TileMode] enum.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_linear.png)
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_linear.png)
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_clamp_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_mirror_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_repeated_linear.png)
   ///
   /// If `from`, `to`, `colors`, or `tileMode` are null, or if `colors` or
   /// `colorStops` contain null values, this constructor will throw a
@@ -2285,9 +2397,9 @@ class Gradient extends Shader {
   /// The behavior before and after the radius is described by the `tileMode`
   /// argument. For details, see the [TileMode] enum.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_radial.png)
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_radial.png)
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_clamp_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_mirror_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_repeated_radial.png)
   ///
   /// If `center`, `radius`, `colors`, or `tileMode` are null, or if `colors` or
   /// `colorStops` contain null values, this constructor will throw a
@@ -2296,25 +2408,45 @@ class Gradient extends Shader {
   /// If `matrix4` is provided, the gradient fill will be transformed by the
   /// specified 4x4 matrix relative to the local coordinate system. `matrix4` must
   /// be a column-major matrix packed into a list of 16 values.
+  /// 
+  /// If `focal` is provided and not equal to `center` and `focalRadius` is 
+  /// provided and not equal to 0.0, the generated shader will be a two point
+  /// conical radial gradient, with `focal` being the center of the focal 
+  /// circle and `focalRadius` being the radius of that circle. If `focal` is
+  /// provided and not equal to `center`, at least one of the two offsets must
+  /// not be equal to [Offset.zero].
   Gradient.radial(
     Offset center,
     double radius,
     List<Color> colors, [
     List<double> colorStops,
     TileMode tileMode = TileMode.clamp,
-    Float64List matrix4
+    Float64List matrix4,
+    Offset focal,
+    double focalRadius = 0.0
   ]) : assert(_offsetIsValid(center)),
        assert(colors != null),
        assert(tileMode != null),
        assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
+    focalRadius ??= 0.0;
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List colorStopsBuffer = colorStops == null ? null : new Float32List.fromList(colorStops);
-    _constructor();
-    _initRadial(center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
+
+    // If focal is null or focal radius is null, this should be treated as a regular radial gradient
+    // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
+    if (focal == null || (focal == center && focalRadius == 0.0)) {
+      _constructor();
+      _initRadial(center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
+    } else {
+      assert(center != Offset.zero || focal != Offset.zero); // will result in exception(s) in Skia side
+      _constructor();
+      _initConical(focal.dx, focal.dy, focalRadius, center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
+    }
   }
   void _initRadial(double centerX, double centerY, double radius, Int32List colors, Float32List colorStops, int tileMode, Float64List matrix4) native 'Gradient_initRadial';
+  void _initConical(double startX, double startY, double startRadius, double endX, double endY, double endRadius, Int32List colors, Float32List colorStops, int tileMode, Float64List matrix4) native 'Gradient_initTwoPointConical';
 
   /// Creates a sweep gradient centered at `center` that starts at `startAngle`
   /// and ends at `endAngle`.
@@ -2331,9 +2463,9 @@ class Gradient extends Shader {
   /// The behavior before `startAngle` and after `endAngle` is described by the
   /// `tileMode` argument. For details, see the [TileMode] enum.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_clamp_sweep.png)
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_mirror_sweep.png)
-  /// ![](https://flutter.github.io/assets-for-api-docs/dart-ui/tile_mode_repeated_sweep.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_clamp_sweep.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_mirror_sweep.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_repeated_sweep.png)
   ///
   /// If `center`, `colors`, `tileMode`, `startAngle`, or `endAngle` are null,
   /// or if `colors` or `colorStops` contain null values, this constructor will
@@ -2680,11 +2812,11 @@ class Canvas extends NativeFieldWrapperClass2 {
   ///  * [BlendMode], which discusses the use of [Paint.blendMode] with
   ///    [saveLayer].
   void saveLayer(Rect bounds, Paint paint) {
-    assert(_rectIsValid(bounds));
     assert(paint != null);
     if (bounds == null) {
       _saveLayerWithoutBounds(paint._objects, paint._data);
     } else {
+      assert(_rectIsValid(bounds));
       _saveLayer(bounds.left, bounds.top, bounds.right, bounds.bottom,
                  paint._objects, paint._data);
     }
@@ -2722,7 +2854,12 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// Add an axis-aligned scale to the current transform, scaling by the first
   /// argument in the horizontal direction and the second in the vertical
   /// direction.
-  void scale(double sx, double sy) native 'Canvas_scale';
+  ///
+  /// If [sy] is unspecified, [sx] will be used for the scale in both
+  /// directions.
+  void scale(double sx, [double sy]) => _scale(sx, sy ?? sx);
+
+  void _scale(double sx, double sy) native 'Canvas_scale';
 
   /// Add a rotation to the current transform. The argument is in radians clockwise.
   void rotate(double radians) native 'Canvas_rotate';
@@ -3267,6 +3404,12 @@ class Picture extends NativeFieldWrapperClass2 {
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose() native 'Picture_dispose';
+
+  /// Returns the approximate number of bytes allocated for this object.
+  /// 
+  /// The actual size of this picture may be larger, particularly if it contains
+  /// references to image or other large objects.
+  int get approximateBytesUsed native 'Picture_GetAllocationSize';
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.
@@ -3300,13 +3443,13 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
 }
 
 /// Generic callback signature, used by [_futurize].
-typedef void _Callback<T>(T result);
+typedef _Callback<T> = void Function(T result);
 
 /// Signature for a method that receives a [_Callback].
 ///
 /// Return value should be null on success, and a string error message on
 /// failure.
-typedef String _Callbacker<T>(_Callback<T> callback);
+typedef _Callbacker<T> = String Function(_Callback<T> callback);
 
 /// Converts a method that receives a value-returning callback to a method that
 /// returns a Future.
@@ -3319,7 +3462,7 @@ typedef String _Callbacker<T>(_Callback<T> callback);
 /// Example usage:
 ///
 /// ```dart
-/// typedef void IntCallback(int result);
+/// typedef IntCallback = void Function(int result);
 ///
 /// String _doSomethingAndCallback(IntCallback callback) {
 ///   new Timer(new Duration(seconds: 1), () { callback(1); });

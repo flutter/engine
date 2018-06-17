@@ -11,14 +11,9 @@
 #include "flutter/glue/trace_event.h"
 #include "flutter/lib/snapshot/snapshot.h"
 #include "flutter/lib/ui/text/font_collection.h"
-#include "flutter/runtime/asset_font_selector.h"
-#include "flutter/runtime/platform_impl.h"
-#include "flutter/runtime/test_font_selector.h"
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
-#include "flutter/sky/engine/platform/fonts/FontFallbackList.h"
-#include "flutter/sky/engine/public/web/Sky.h"
 #include "lib/fxl/files/eintr_wrapper.h"
 #include "lib/fxl/files/file.h"
 #include "lib/fxl/files/path.h"
@@ -41,7 +36,9 @@ static constexpr char kLocalizationChannel[] = "flutter/localization";
 static constexpr char kSettingsChannel[] = "flutter/settings";
 
 Engine::Engine(Delegate& delegate,
-               const blink::DartVM& vm,
+               blink::DartVM& vm,
+               fxl::RefPtr<blink::DartSnapshot> isolate_snapshot,
+               fxl::RefPtr<blink::DartSnapshot> shared_snapshot,
                blink::TaskRunners task_runners,
                blink::Settings settings,
                std::unique_ptr<Animator> animator,
@@ -50,43 +47,34 @@ Engine::Engine(Delegate& delegate,
     : delegate_(delegate),
       settings_(std::move(settings)),
       animator_(std::move(animator)),
-      legacy_sky_platform_(settings_.using_blink ? new blink::PlatformImpl()
-                                                 : nullptr),
       load_script_error_(tonic::kNoError),
       activity_running_(false),
       have_surface_(false),
       weak_factory_(this) {
-  if (legacy_sky_platform_) {
-    // TODO: Remove this legacy call along with the platform. This is what makes
-    // the engine unable to run from multiple threads in the legacy
-    // configuration.
-    blink::InitEngine(legacy_sky_platform_.get());
-  }
-
   // Runtime controller is initialized here because it takes a reference to this
   // object as its delegate. The delegate may be called in the constructor and
   // we want to be fully initilazed by that point.
   runtime_controller_ = std::make_unique<blink::RuntimeController>(
-      *this,                        // runtime delegate
-      &vm,                          // VM
-      std::move(task_runners),      // task runners
-      std::move(resource_context),  // resource context
-      std::move(unref_queue)        // skia unref queue
+      *this,                                // runtime delegate
+      &vm,                                  // VM
+      std::move(isolate_snapshot),          // isolate snapshot
+      std::move(shared_snapshot),           // shared snapshot
+      std::move(task_runners),              // task runners
+      std::move(resource_context),          // resource context
+      std::move(unref_queue),               // skia unref queue
+      settings_.advisory_script_uri,        // advisory script uri
+      settings_.advisory_script_entrypoint  // advisory script entrypoint
   );
 }
 
-Engine::~Engine() {
-  if (legacy_sky_platform_) {
-    blink::ShutdownEngine(/* legacy_sky_platform_ */);
-  }
-}
+Engine::~Engine() = default;
 
 fml::WeakPtr<Engine> Engine::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }
 
 bool Engine::UpdateAssetManager(
-    fxl::RefPtr<blink::AssetManager> new_asset_manager) {
+    fml::RefPtr<blink::AssetManager> new_asset_manager) {
   if (asset_manager_ == new_asset_manager) {
     return false;
   }
@@ -97,16 +85,11 @@ bool Engine::UpdateAssetManager(
     return false;
   }
 
-  if (settings_.using_blink) {
-    // Using blink as the text engine.
-    blink::FontFallbackList::SetUseTestFonts(settings_.use_test_fonts);
+  // Using libTXT as the text engine.
+  if (settings_.use_test_fonts) {
+    font_collection_.RegisterTestFonts();
   } else {
-    // Using libTXT as the text engine.
-    if (settings_.use_test_fonts) {
-      blink::FontCollection::ForProcess().RegisterTestFonts();
-    } else {
-      blink::FontCollection::ForProcess().RegisterFonts(*asset_manager_.get());
-    }
+    font_collection_.RegisterFonts(asset_manager_);
   }
 
   return true;
@@ -130,6 +113,7 @@ bool Engine::Run(RunConfiguration configuration) {
   }
 
   if (!PrepareAndLaunchIsolate(std::move(configuration))) {
+    FXL_LOG(ERROR) << "Engine not prepare and launch isolate.";
     return false;
   }
 
@@ -149,15 +133,6 @@ bool Engine::Run(RunConfiguration configuration) {
       isolate->AddIsolateShutdownCallback(
           settings_.root_isolate_shutdown_callback);
     }
-
-    // Blink uses a per isolate font selector.
-    if (settings_.using_blink) {
-      if (settings_.use_test_fonts) {
-        blink::TestFontSelector::Install();
-      } else {
-        blink::AssetFontSelector::Install(asset_manager_);
-      }
-    }
   }
 
   return isolate_running;
@@ -173,12 +148,12 @@ bool Engine::PrepareAndLaunchIsolate(RunConfiguration configuration) {
   auto isolate = runtime_controller_->GetRootIsolate();
 
   if (!isolate_configuration->PrepareIsolate(isolate)) {
-    FXL_DLOG(ERROR) << "Could not prepare to run the isolate.";
+    FXL_LOG(ERROR) << "Could not prepare to run the isolate.";
     return false;
   }
 
   if (!isolate->Run(configuration.GetEntrypoint())) {
-    FXL_DLOG(ERROR) << "Could not run the isolate.";
+    FXL_LOG(ERROR) << "Could not run the isolate.";
     return false;
   }
 
@@ -400,6 +375,10 @@ void Engine::HandlePlatformMessage(
   } else {
     delegate_.OnEngineHandlePlatformMessage(*this, std::move(message));
   }
+}
+
+blink::FontCollection& Engine::GetFontCollection() {
+  return font_collection_;
 }
 
 void Engine::HandleAssetPlatformMessage(

@@ -25,7 +25,9 @@ std::ostream& operator<<(std::ostream& os, const flow::MatrixDecomposition& m) {
 
 std::ostream& operator<<(std::ostream& os, const SkMatrix& m) {
   SkString string;
-  m.toString(&string);
+  string.printf(
+      "[%8.4f %8.4f %8.4f][%8.4f %8.4f %8.4f][%8.4f %8.4f %8.4f]",
+      m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]);
   os << string.c_str();
   return os;
 }
@@ -71,13 +73,7 @@ std::ostream& operator<<(std::ostream& os, const SkPoint& r) {
 }
 
 std::ostream& operator<<(std::ostream& os, const flow::RasterCacheKey& k) {
-  os << "Picture: " << k.picture_id() << " Scale: " << k.scale_key().width()
-     << ", " << k.scale_key().height()
-#if defined(OS_FUCHSIA)
-     << " Metrics scale: (" << k.metrics_scale_x() << ", "
-     << k.metrics_scale_y() << ")"
-#endif
-      ;
+  os << "Picture: " << k.picture_id() << " matrix: " << k.matrix();
   return os;
 }
 

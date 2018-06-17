@@ -83,13 +83,14 @@ using namespace shell;
   }
 
   if (@available(iOS 10, *)) {
-    if ([@"HapticFeedbackType.lightImpact" isEqualToString: feedbackType]) {
+    if ([@"HapticFeedbackType.lightImpact" isEqualToString:feedbackType]) {
       [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight] impactOccurred];
-    } else if ([@"HapticFeedbackType.mediumImpact" isEqualToString: feedbackType]) {
-      [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium] impactOccurred];
-    } else if ([@"HapticFeedbackType.heavyImpact" isEqualToString: feedbackType]) {
+    } else if ([@"HapticFeedbackType.mediumImpact" isEqualToString:feedbackType]) {
+      [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleMedium]
+          impactOccurred];
+    } else if ([@"HapticFeedbackType.heavyImpact" isEqualToString:feedbackType]) {
       [[[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleHeavy] impactOccurred];
-    } else if ([@"HapticFeedbackType.selectionClick" isEqualToString: feedbackType]) {
+    } else if ([@"HapticFeedbackType.selectionClick" isEqualToString:feedbackType]) {
       [[[UISelectionFeedbackGenerator alloc] init] selectionChanged];
     }
   }
@@ -137,11 +138,12 @@ using namespace shell;
       ![overlays containsObject:@"SystemUiOverlay.top"];
 }
 
-- (void)setSystemChromeSystemUIOverlayStyle:(NSString*)style {
+- (void)setSystemChromeSystemUIOverlayStyle:(NSDictionary*)message {
+  NSString* style = message[@"statusBarBrightness"];
   UIStatusBarStyle statusBarStyle;
-  if ([style isEqualToString:@"SystemUiOverlayStyle.light"])
+  if ([style isEqualToString:@"Brightness.dark"])
     statusBarStyle = UIStatusBarStyleLightContent;
-  else if ([style isEqualToString:@"SystemUiOverlayStyle.dark"])
+  else if ([style isEqualToString:@"Brightness.light"])
     statusBarStyle = UIStatusBarStyleDefault;
   else
     return;

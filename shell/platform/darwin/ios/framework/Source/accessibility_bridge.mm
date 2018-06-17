@@ -159,7 +159,8 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   //  We enforce in the framework that no other useful semantics are merged with these nodes.
   if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute))
     return false;
-  return ([self node].flags != 0 && [self node].flags != static_cast<int32_t>(blink::SemanticsFlags::kIsHidden)) ||
+  return ([self node].flags != 0 &&
+          [self node].flags != static_cast<int32_t>(blink::SemanticsFlags::kIsHidden)) ||
          ![self node].label.empty() || ![self node].value.empty() || ![self node].hint.empty() ||
          ([self node].actions & ~blink::kScrollableSemanticsActions) != 0;
 }
@@ -219,7 +220,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   return [self globalRect];
 }
 
-- (CGRect) globalRect {
+- (CGRect)globalRect {
   SkMatrix44 globalTransform = [self node].transform;
   for (SemanticsObject* parent = [self parent]; parent; parent = parent.parent) {
     globalTransform = parent.node.transform * globalTransform;
@@ -490,11 +491,11 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
     layoutChanged = layoutChanged || [object nodeWillCauseLayoutChange:&node];
     scrollOccured = scrollOccured || [object nodeWillCauseScroll:&node];
     [object setSemanticsNode:&node];
-    const NSUInteger newChildCount = node.children.size();
+    const NSUInteger newChildCount = node.childrenInTraversalOrder.size();
     NSMutableArray* newChildren =
         [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
     for (NSUInteger i = 0; i < newChildCount; ++i) {
-      SemanticsObject* child = GetOrCreateObject(node.children[i], nodes);
+      SemanticsObject* child = GetOrCreateObject(node.childrenInTraversalOrder[i], nodes);
       child.parent = object;
       [newChildren addObject:child];
     }
@@ -513,7 +514,8 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
     NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
     [root collectRoutes:newRoutes];
     for (SemanticsObject* route in newRoutes) {
-      if (std::find(previous_routes_.begin(), previous_routes_.end(), [route uid]) != previous_routes_.end()) {
+      if (std::find(previous_routes_.begin(), previous_routes_.end(), [route uid]) !=
+          previous_routes_.end()) {
         lastAdded = route;
       }
     }
@@ -522,8 +524,8 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
       lastAdded = [newRoutes objectAtIndex:index];
     }
     if (lastAdded != nil && [lastAdded uid] != previous_route_id_) {
-        previous_route_id_ = [lastAdded uid];
-        routeChanged = true;
+      previous_route_id_ = [lastAdded uid];
+      routeChanged = true;
     }
     previous_routes_.clear();
     for (SemanticsObject* route in newRoutes) {
@@ -614,8 +616,6 @@ void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEven
   if ([type isEqualToString:@"announce"]) {
     NSString* message = annotatedEvent[@"data"][@"message"];
     UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, message);
-  } else {
-    NSCAssert(NO, @"Invalid event type %@", type);
   }
 }
 

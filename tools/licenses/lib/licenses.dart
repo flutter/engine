@@ -7,9 +7,7 @@ import 'dart:io' as system;
 
 import 'cache.dart';
 import 'patterns.dart';
-
-// TODO(ianh): vastly increase this before checkin
-const int kMaxSize = 5 * 1024; // only look for copyrights and licenses at the top of the file
+import 'limits.dart';
 
 class FetchedContentsOf extends Key { FetchedContentsOf(dynamic value) : super(value); }
 
@@ -19,13 +17,17 @@ LicenseType convertLicenseNameToType(String name) {
   switch (name) {
     case 'Apache':
     case 'apache-license-2.0':
+    case 'LICENSE-APACHE-2.0.txt':
       return LicenseType.apache;
     case 'BSD':
     case 'BSD.txt':
       return LicenseType.bsd;
     case 'LICENSE-LGPL-2':
     case 'LICENSE-LGPL-2.1':
+    case 'COPYING-LGPL-2.1':
       return LicenseType.lgpl;
+    case 'COPYING-GPL-3':
+      return LicenseType.gpl;
     case 'FTL.TXT':
       return LicenseType.freetype;
     case 'zlib.h':
@@ -38,6 +40,9 @@ LicenseType convertLicenseNameToType(String name) {
       return LicenseType.apsl;
     case 'OpenSSL':
       return LicenseType.openssl;
+    case 'LICENSE.MPLv2':
+    case 'COPYING-MPL-1.1':
+      return LicenseType.mpl;
     // common file names that don't say what the type is
     case 'COPYING':
     case 'COPYING.txt':
@@ -48,10 +53,12 @@ LicenseType convertLicenseNameToType(String name) {
     case 'license.html':
     case 'LICENSE.txt':
     case 'LICENSE.TXT':
+    case 'LICENSE.cssmin':
     case 'NOTICE':
     case 'NOTICE.txt':
     case 'Copyright':
     case 'copyright':
+    case 'license.txt':
       return LicenseType.unknown;
     // particularly weird file names
     case 'LICENSE-APPLE':
@@ -61,6 +68,8 @@ LicenseType convertLicenseNameToType(String name) {
     case 'javolution.license.txt':
     case 'libyaml-license.txt':
     case 'license.patch':
+    case 'license.rst':
+    case 'LICENSE.rst':
     case 'mh-bsd-gcc':
     case 'pivotal.labs.license.txt':
       return LicenseType.unknown;

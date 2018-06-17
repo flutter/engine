@@ -13,6 +13,8 @@
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/icu_util.h"
+#include "flutter/fml/log_settings.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/glue/trace_event.h"
 #include "flutter/runtime/dart_vm.h"
@@ -38,6 +40,8 @@ namespace shell {
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     blink::TaskRunners task_runners,
     blink::Settings settings,
+    fxl::RefPtr<blink::DartSnapshot> isolate_snapshot,
+    fxl::RefPtr<blink::DartSnapshot> shared_snapshot,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
   if (!task_runners.IsValid()) {
@@ -108,6 +112,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
       fxl::MakeCopyable([&ui_latch,                                       //
                          &engine,                                         //
                          shell = shell.get(),                             //
+                         isolate_snapshot = std::move(isolate_snapshot),  //
+                         shared_snapshot = std::move(shared_snapshot),    //
                          vsync_waiter = std::move(vsync_waiter),          //
                          resource_context = std::move(resource_context),  //
                          unref_queue = std::move(unref_queue)             //
@@ -121,6 +127,8 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
 
         engine = std::make_unique<Engine>(*shell,                       //
                                           shell->GetDartVM(),           //
+                                          std::move(isolate_snapshot),  //
+                                          std::move(shared_snapshot),   //
                                           task_runners,                 //
                                           shell->GetSettings(),         //
                                           std::move(animator),          //
@@ -152,17 +160,78 @@ static void RecordStartupTimestamp() {
   }
 }
 
-std::unique_ptr<Shell> Shell::Create(
+// Though there can be multiple shells, some settings apply to all components in
+// the process. These have to be setup before the shell or any of its
+// sub-components can be initialized. In a perfect world, this would be empty.
+// TODO(chinmaygarde): The unfortunate side effect of this call is that settings
+// that cause shell initialization failures will still lead to some of their
+// settings being applied.
+static void PerformInitializationTasks(const blink::Settings& settings) {
+  static std::once_flag gShellSettingsInitialization = {};
+  std::call_once(gShellSettingsInitialization, [&settings] {
+    RecordStartupTimestamp();
+
+    //  TODO(chinmaygarde): There are currently two loggers till the transition
+    //  away from FXL is ongoing. Remove FXL when done.
+    {
+      fxl::LogSettings log_settings;
+      log_settings.min_log_level =
+          settings.verbose_logging ? fxl::LOG_INFO : fxl::LOG_ERROR;
+      fxl::SetLogSettings(log_settings);
+    }
+
+    {
+      fml::LogSettings log_settings;
+      log_settings.min_log_level =
+          settings.verbose_logging ? fml::LOG_INFO : fml::LOG_ERROR;
+      fml::SetLogSettings(log_settings);
+    }
+
+    if (settings.trace_skia) {
+      InitSkiaEventTracer(settings.trace_skia);
+    }
+
+    if (!settings.skia_deterministic_rendering_on_cpu) {
+      SkGraphics::Init();
+    } else {
+      FXL_DLOG(INFO) << "Skia deterministic rendering is enabled.";
+    }
+
+    if (settings.icu_data_path.size() != 0) {
+      fml::icu::InitializeICU(settings.icu_data_path);
+    } else {
+      FXL_DLOG(WARNING) << "Skipping ICU initialization in the shell.";
+    }
+  });
+}
+
+
+  std::unique_ptr<Shell> Shell::Create(
     blink::TaskRunners task_runners,
     blink::Settings settings,
     Shell::CreateCallback<PlatformView> on_create_platform_view,
     Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
-  RecordStartupTimestamp();
+  PerformInitializationTasks(settings);
 
-  fxl::LogSettings log_settings;
-  log_settings.min_log_level =
-      settings.verbose_logging ? fxl::LOG_INFO : fxl::LOG_ERROR;
-  fxl::SetLogSettings(log_settings);
+  auto vm = blink::DartVM::ForProcess(settings);
+  FXL_CHECK(vm) << "Must be able to initialize the VM.";
+  return Shell::Create(std::move(task_runners),             //
+                       std::move(settings),                 //
+                       vm->GetIsolateSnapshot(),            //
+                       blink::DartSnapshot::Empty(),        //
+                       std::move(on_create_platform_view),  //
+                       std::move(on_create_rasterizer)      //
+  );
+}
+
+std::unique_ptr<Shell> Shell::Create(
+    blink::TaskRunners task_runners,
+    blink::Settings settings,
+    fxl::RefPtr<blink::DartSnapshot> isolate_snapshot,
+    fxl::RefPtr<blink::DartSnapshot> shared_snapshot,
+    Shell::CreateCallback<PlatformView> on_create_platform_view,
+    Shell::CreateCallback<Rasterizer> on_create_rasterizer) {
+  PerformInitializationTasks(settings);
 
   if (!task_runners.IsValid() || !on_create_platform_view ||
       !on_create_rasterizer) {
@@ -173,11 +242,22 @@ std::unique_ptr<Shell> Shell::Create(
   std::unique_ptr<Shell> shell;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners.GetPlatformTaskRunner(),
-      [&latch, &shell, task_runners = std::move(task_runners), settings,
-       on_create_platform_view, on_create_rasterizer]() {
-        shell = CreateShellOnPlatformThread(std::move(task_runners), settings,
-                                            on_create_platform_view,
-                                            on_create_rasterizer);
+      [&latch,                                          //
+       &shell,                                          //
+       task_runners = std::move(task_runners),          //
+       settings,                                        //
+       isolate_snapshot = std::move(isolate_snapshot),  //
+       shared_snapshot = std::move(shared_snapshot),    //
+       on_create_platform_view,                         //
+       on_create_rasterizer                             //
+  ]() {
+        shell = CreateShellOnPlatformThread(std::move(task_runners),      //
+                                            settings,                     //
+                                            std::move(isolate_snapshot),  //
+                                            std::move(shared_snapshot),   //
+                                            on_create_platform_view,      //
+                                            on_create_rasterizer          //
+        );
         latch.Signal();
       });
   latch.Wait();
@@ -190,22 +270,6 @@ Shell::Shell(blink::TaskRunners task_runners, blink::Settings settings)
       vm_(blink::DartVM::ForProcess(settings_)) {
   FXL_DCHECK(task_runners_.IsValid());
   FXL_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-
-  if (settings_.icu_data_path.size() != 0) {
-    fml::icu::InitializeICU(settings_.icu_data_path);
-  } else {
-    FXL_DLOG(WARNING) << "Skipping ICU initialization in the shell.";
-  }
-
-  if (settings_.trace_skia) {
-    InitSkiaEventTracer(settings_.trace_skia);
-  }
-
-  if (!settings_.skia_deterministic_rendering_on_cpu) {
-    SkGraphics::Init();
-  } else {
-    FXL_DLOG(INFO) << "Skia deterministic rendering is enabled.";
-  }
 
   // Install service protocol handlers.
 
@@ -336,7 +400,7 @@ fml::WeakPtr<PlatformView> Shell::GetPlatformView() {
   return platform_view_->GetWeakPtr();
 }
 
-const blink::DartVM& Shell::GetDartVM() const {
+blink::DartVM& Shell::GetDartVM() const {
   return *vm_;
 }
 
@@ -395,13 +459,23 @@ void Shell::OnPlatformViewDestroyed(const PlatformView& view) {
 
   fxl::AutoResetWaitableEvent latch;
 
-  auto gpu_task = [rasterizer = rasterizer_->GetWeakPtr(), &latch]() {
+  auto io_task = [io_manager = io_manager_.get(), &latch]() {
+    // Execute any pending Skia object deletions while GPU access is still
+    // allowed.
+    io_manager->GetSkiaUnrefQueue()->Drain();
+    // Step 3: All done. Signal the latch that the platform thread is waiting
+    // on.
+    latch.Signal();
+  };
+
+  auto gpu_task = [rasterizer = rasterizer_->GetWeakPtr(),
+                   io_task_runner = task_runners_.GetIOTaskRunner(),
+                   io_task]() {
     if (rasterizer) {
       rasterizer->Teardown();
     }
-    // Step 2: All done. Signal the latch that the platform thread is waiting
-    // on.
-    latch.Signal();
+    // Step 2: Next, tell the IO thread to complete its remaining work.
+    fml::TaskRunner::RunNowOrPostTask(io_task_runner, io_task);
   };
 
   auto ui_task = [engine = engine_->GetWeakPtr(),
@@ -856,7 +930,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
   auto& allocator = response.GetAllocator();
   response.SetObject();
 
-  auto asset_manager = fxl::MakeRefCounted<blink::AssetManager>();
+  auto asset_manager = fml::MakeRefCounted<blink::AssetManager>();
 
   asset_manager->PushFront(std::make_unique<blink::DirectoryAssetBundle>(
       fml::OpenFile(params.at("assetDirectory").ToString().c_str(),

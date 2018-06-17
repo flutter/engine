@@ -13,7 +13,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/sky/engine/wtf/RefPtr.h"
+#include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
 #include "lib/fxl/build_config.h"
 #include "lib/tonic/dart_microtask_queue.h"
 #include "lib/tonic/dart_persistent_value.h"
@@ -37,12 +37,6 @@ class UIDartState : public tonic::DartState {
 
   Window* window() const { return window_.get(); }
 
-  void set_font_selector(PassRefPtr<FontSelector> selector);
-
-  PassRefPtr<FontSelector> font_selector();
-
-  bool use_blink() const { return use_blink_; }
-
   const TaskRunners& GetTaskRunners() const;
 
   void ScheduleMicrotask(Dart_Handle handle);
@@ -52,6 +46,8 @@ class UIDartState : public tonic::DartState {
   fxl::RefPtr<flow::SkiaUnrefQueue> GetSkiaUnrefQueue() const;
 
   fml::WeakPtr<GrContext> GetResourceContext() const;
+
+  IsolateNameServer* GetIsolateNameServer();
 
   template <class T>
   static flow::SkiaGPUObject<T> CreateGPUObject(sk_sp<T> object) {
@@ -72,13 +68,12 @@ class UIDartState : public tonic::DartState {
               fxl::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue,
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
-              std::string logger_prefix);
+              std::string logger_prefix,
+              IsolateNameServer* isolate_name_server);
 
   ~UIDartState() override;
 
   void SetWindow(std::unique_ptr<Window> window);
-
-  void set_use_blink(bool use_blink) { use_blink_ = use_blink; }
 
   const std::string& GetAdvisoryScriptURI() const;
 
@@ -97,13 +92,11 @@ class UIDartState : public tonic::DartState {
   Dart_Port main_port_ = ILLEGAL_PORT;
   std::string debug_name_;
   std::unique_ptr<Window> window_;
-  RefPtr<FontSelector> font_selector_;
   fxl::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue_;
   tonic::DartMicrotaskQueue microtask_queue_;
+  IsolateNameServer* isolate_name_server_;
 
   void AddOrRemoveTaskObserver(bool add);
-
-  bool use_blink_ = false;
 };
 
 }  // namespace blink

@@ -8,11 +8,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "flutter/sky/engine/core/rendering/RenderInline.h"
-#include "flutter/sky/engine/core/rendering/RenderParagraph.h"
-#include "flutter/sky/engine/core/rendering/RenderText.h"
-#include "flutter/sky/engine/core/rendering/style/RenderStyle.h"
-#include "flutter/sky/engine/platform/text/LocaleToScriptMapping.h"
+#include "flutter/lib/ui/window/window.h"
 #include "flutter/third_party/txt/src/txt/font_style.h"
 #include "flutter/third_party/txt/src/txt/font_weight.h"
 #include "flutter/third_party/txt/src/txt/paragraph_style.h"
@@ -23,6 +19,7 @@
 #include "lib/tonic/dart_args.h"
 #include "lib/tonic/dart_binding_macros.h"
 #include "lib/tonic/dart_library_natives.h"
+#include "third_party/icu/source/common/unicode/ustring.h"
 
 namespace blink {
 namespace {
@@ -42,6 +39,8 @@ const int tsLetterSpacingIndex = 10;
 const int tsWordSpacingIndex = 11;
 const int tsHeightIndex = 12;
 const int tsLocaleIndex = 13;
+const int tsBackgroundIndex = 14;
+const int tsForegroundIndex = 15;
 
 const int tsColorMask = 1 << tsColorIndex;
 const int tsTextDecorationMask = 1 << tsTextDecorationIndex;
@@ -56,6 +55,8 @@ const int tsLetterSpacingMask = 1 << tsLetterSpacingIndex;
 const int tsWordSpacingMask = 1 << tsWordSpacingIndex;
 const int tsHeightMask = 1 << tsHeightIndex;
 const int tsLocaleMask = 1 << tsLocaleIndex;
+const int tsBackgroundMask = 1 << tsBackgroundIndex;
+const int tsForegroundMask = 1 << tsForegroundIndex;
 
 // ParagraphStyle
 
@@ -80,102 +81,6 @@ const int psFontSizeMask = 1 << psFontSizeIndex;
 const int psLineHeightMask = 1 << psLineHeightIndex;
 const int psEllipsisMask = 1 << psEllipsisIndex;
 const int psLocaleMask = 1 << psLocaleIndex;
-
-float getComputedSizeFromSpecifiedSize(float specifiedSize) {
-  if (specifiedSize < std::numeric_limits<float>::epsilon())
-    return 0.0f;
-  return specifiedSize;
-}
-
-void createFontForDocument(RenderStyle* style) {
-  FontDescription fontDescription = FontDescription();
-  fontDescription.setScript(
-      localeToScriptCodeForFontSelection(style->locale()));
-
-  // Using 14px default to match Material Design English Body1:
-  // http://www.google.com/design/spec/style/typography.html#typography-typeface
-  const float defaultFontSize = 14.0;
-
-  fontDescription.setSpecifiedSize(defaultFontSize);
-  fontDescription.setComputedSize(defaultFontSize);
-
-  FontOrientation fontOrientation = Horizontal;
-  NonCJKGlyphOrientation glyphOrientation = NonCJKGlyphOrientationVerticalRight;
-
-  fontDescription.setOrientation(fontOrientation);
-  fontDescription.setNonCJKGlyphOrientation(glyphOrientation);
-  style->setFontDescription(fontDescription);
-  style->font().update(UIDartState::Current()->font_selector());
-}
-
-PassRefPtr<RenderStyle> decodeParagraphStyle(RenderStyle* parentStyle,
-                                             tonic::Int32List& encoded,
-                                             const std::string& fontFamily,
-                                             double fontSize,
-                                             double lineHeight,
-                                             const std::u16string& ellipsis) {
-  FXL_DCHECK(encoded.num_elements() == 6);  // also update text.dart
-
-  RefPtr<RenderStyle> style = RenderStyle::create();
-  style->inheritFrom(parentStyle);
-  style->setDisplay(PARAGRAPH);
-
-  int32_t mask = encoded[0];
-
-  if (mask & psTextAlignMask)
-    style->setTextAlign(static_cast<ETextAlign>(encoded[psTextAlignIndex]));
-
-  if (mask & psTextDirectionMask)
-    style->setDirection(
-        static_cast<TextDirection>(encoded[psTextDirectionIndex]));
-
-  if (mask & (psFontWeightMask | psFontStyleMask | psFontFamilyMask |
-              psFontSizeMask)) {
-    FontDescription fontDescription = style->fontDescription();
-
-    if (mask & psFontWeightMask)
-      fontDescription.setWeight(
-          static_cast<FontWeight>(encoded[psFontWeightIndex]));
-
-    if (mask & psFontStyleMask)
-      fontDescription.setStyle(
-          static_cast<FontStyle>(encoded[psFontStyleIndex]));
-
-    if (mask & psFontFamilyMask) {
-      FontFamily family;
-      family.setFamily(String::fromUTF8(fontFamily));
-      fontDescription.setFamily(family);
-    }
-
-    if (mask & psFontSizeMask) {
-      fontDescription.setSpecifiedSize(fontSize);
-      fontDescription.setIsAbsoluteSize(true);
-      fontDescription.setComputedSize(
-          getComputedSizeFromSpecifiedSize(fontSize));
-    }
-
-    style->setFontDescription(fontDescription);
-    style->font().update(UIDartState::Current()->font_selector());
-  }
-
-  if (mask & psLineHeightMask)
-    style->setLineHeight(Length(lineHeight * 100.0, Percent));
-
-  if (mask & psMaxLinesMask)
-    style->setMaxLines(encoded[psMaxLinesIndex]);
-
-  if (mask & psEllipsisMask) {
-    style->setEllipsis(
-        AtomicString(reinterpret_cast<const UChar*>(ellipsis.c_str())));
-  }
-
-  return style.release();
-}
-
-Color getColorFromARGB(int argb) {
-  return Color((argb & 0x00FF0000) >> 16, (argb & 0x0000FF00) >> 8,
-               (argb & 0x000000FF) >> 0, (argb & 0xFF000000) >> 24);
-}
 
 }  // namespace
 
@@ -205,11 +110,9 @@ fxl::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
     double fontSize,
     double lineHeight,
     const std::u16string& ellipsis,
-    const std::string& locale,
-    bool use_blink) {
-  return fxl::MakeRefCounted<ParagraphBuilder>(
-      encoded, fontFamily, fontSize, lineHeight, ellipsis, locale,
-      UIDartState::Current()->use_blink());
+    const std::string& locale) {
+  return fxl::MakeRefCounted<ParagraphBuilder>(encoded, fontFamily, fontSize,
+                                               lineHeight, ellipsis, locale);
 }
 
 ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
@@ -217,72 +120,49 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
                                    double fontSize,
                                    double lineHeight,
                                    const std::u16string& ellipsis,
-                                   const std::string& locale,
-                                   bool use_blink)
-    : m_useBlink(use_blink) {
-  if (!m_useBlink) {
-    int32_t mask = encoded[0];
-    txt::ParagraphStyle style;
-    if (mask & psTextAlignMask)
-      style.text_align = txt::TextAlign(encoded[psTextAlignIndex]);
+                                   const std::string& locale) {
+  int32_t mask = encoded[0];
+  txt::ParagraphStyle style;
+  if (mask & psTextAlignMask)
+    style.text_align = txt::TextAlign(encoded[psTextAlignIndex]);
 
-    if (mask & psTextDirectionMask)
-      style.text_direction = txt::TextDirection(encoded[psTextDirectionIndex]);
+  if (mask & psTextDirectionMask)
+    style.text_direction = txt::TextDirection(encoded[psTextDirectionIndex]);
 
-    if (mask & psFontWeightMask)
-      style.font_weight =
-          static_cast<txt::FontWeight>(encoded[psFontWeightIndex]);
+  if (mask & psFontWeightMask)
+    style.font_weight =
+        static_cast<txt::FontWeight>(encoded[psFontWeightIndex]);
 
-    if (mask & psFontStyleMask)
-      style.font_style = static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
+  if (mask & psFontStyleMask)
+    style.font_style = static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
 
-    if (mask & psFontFamilyMask)
-      style.font_family = fontFamily;
+  if (mask & psFontFamilyMask)
+    style.font_family = fontFamily;
 
-    if (mask & psFontSizeMask)
-      style.font_size = fontSize;
+  if (mask & psFontSizeMask)
+    style.font_size = fontSize;
 
-    if (mask & psLineHeightMask)
-      style.line_height = lineHeight;
+  if (mask & psLineHeightMask)
+    style.line_height = lineHeight;
 
-    if (mask & psMaxLinesMask)
-      style.max_lines = encoded[psMaxLinesIndex];
+  if (mask & psMaxLinesMask)
+    style.max_lines = encoded[psMaxLinesIndex];
 
-    if (mask & psEllipsisMask) {
-      style.ellipsis = ellipsis;
-    }
-
-    if (mask & psLocaleMask) {
-      style.locale = locale;
-    }
-
-    m_paragraphBuilder = std::make_unique<txt::ParagraphBuilder>(
-        style, blink::FontCollection::ForProcess().GetFontCollection());
-  } else {
-    // Blink version.
-    createRenderView();
-
-    RefPtr<RenderStyle> paragraphStyle =
-        decodeParagraphStyle(m_renderView->style(), encoded, fontFamily,
-                             fontSize, lineHeight, ellipsis);
-    encoded.Release();
-
-    m_renderParagraph = new RenderParagraph();
-    m_renderParagraph->setStyle(paragraphStyle.release());
-
-    m_currentRenderObject = m_renderParagraph;
-    m_renderView->addChild(m_currentRenderObject);
+  if (mask & psEllipsisMask) {
+    style.ellipsis = ellipsis;
   }
 
+  if (mask & psLocaleMask) {
+    style.locale = locale;
+  }
+
+  FontCollection& font_collection =
+      UIDartState::Current()->window()->client()->GetFontCollection();
+  m_paragraphBuilder = std::make_unique<txt::ParagraphBuilder>(
+      style, font_collection.GetFontCollection());
 }  // namespace blink
 
-ParagraphBuilder::~ParagraphBuilder() {
-  if (m_renderView) {
-    RenderView* renderView = m_renderView.leakPtr();
-    destruction_task_runner_->PostTask(
-        [renderView]() { renderView->destroy(); });
-  }
-}
+ParagraphBuilder::~ParagraphBuilder() = default;
 
 void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  const std::string& fontFamily,
@@ -290,151 +170,90 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  double letterSpacing,
                                  double wordSpacing,
                                  double height,
-                                 const std::string& locale) {
+                                 const std::string& locale,
+                                 Dart_Handle background_objects,
+                                 Dart_Handle background_data,
+                                 Dart_Handle foreground_objects,
+                                 Dart_Handle foreground_data) {
   FXL_DCHECK(encoded.num_elements() == 8);
 
   int32_t mask = encoded[0];
 
-  if (!m_useBlink) {
-    // Set to use the properties of the previous style if the property is not
-    // explicitly given.
-    txt::TextStyle style = m_paragraphBuilder->PeekStyle();
+  // Set to use the properties of the previous style if the property is not
+  // explicitly given.
+  txt::TextStyle style = m_paragraphBuilder->PeekStyle();
 
-    if (mask & tsColorMask)
-      style.color = encoded[tsColorIndex];
+  if (mask & tsColorMask)
+    style.color = encoded[tsColorIndex];
 
-    if (mask & tsTextDecorationMask) {
-      style.decoration =
-          static_cast<txt::TextDecoration>(encoded[tsTextDecorationIndex]);
-    }
-
-    if (mask & tsTextDecorationColorMask)
-      style.decoration_color = encoded[tsTextDecorationColorIndex];
-
-    if (mask & tsTextDecorationStyleMask)
-      style.decoration_style = static_cast<txt::TextDecorationStyle>(
-          encoded[tsTextDecorationStyleIndex]);
-
-    if (mask & tsTextBaselineMask) {
-      // TODO(abarth): Implement TextBaseline. The CSS version of this
-      // property wasn't wired up either.
-    }
-
-    if (mask & (tsFontWeightMask | tsFontStyleMask | tsFontFamilyMask |
-                tsFontSizeMask | tsLetterSpacingMask | tsWordSpacingMask)) {
-      if (mask & tsFontWeightMask)
-        style.font_weight =
-            static_cast<txt::FontWeight>(encoded[tsFontWeightIndex]);
-
-      if (mask & tsFontStyleMask)
-        style.font_style =
-            static_cast<txt::FontStyle>(encoded[tsFontStyleIndex]);
-
-      if (mask & tsFontFamilyMask)
-        style.font_family = fontFamily;
-
-      if (mask & tsFontSizeMask)
-        style.font_size = fontSize;
-
-      if (mask & tsLetterSpacingMask)
-        style.letter_spacing = letterSpacing;
-
-      if (mask & tsWordSpacingMask)
-        style.word_spacing = wordSpacing;
-    }
-
-    if (mask & tsHeightMask) {
-      style.height = height;
-    }
-
-    if (mask & tsLocaleMask) {
-      style.locale = locale;
-    }
-
-    m_paragraphBuilder->PushStyle(style);
-  } else {
-    // Blink Version.
-    RefPtr<RenderStyle> style = RenderStyle::create();
-    style->inheritFrom(m_currentRenderObject->style());
-
-    if (mask & tsColorMask)
-      style->setColor(getColorFromARGB(encoded[tsColorIndex]));
-
-    if (mask & tsTextDecorationMask) {
-      style->setTextDecoration(
-          static_cast<TextDecoration>(encoded[tsTextDecorationIndex]));
-      style->applyTextDecorations();
-    }
-
-    if (mask & tsTextDecorationColorMask)
-      style->setTextDecorationColor(
-          StyleColor(getColorFromARGB(encoded[tsTextDecorationColorIndex])));
-
-    if (mask & tsTextDecorationStyleMask)
-      style->setTextDecorationStyle(static_cast<TextDecorationStyle>(
-          encoded[tsTextDecorationStyleIndex]));
-
-    if (mask & tsTextBaselineMask) {
-      // TODO(abarth): Implement TextBaseline. The CSS version of this
-      // property wasn't wired up either.
-    }
-
-    if (mask & (tsFontWeightMask | tsFontStyleMask | tsFontFamilyMask |
-                tsFontSizeMask | tsLetterSpacingMask | tsWordSpacingMask)) {
-      FontDescription fontDescription = style->fontDescription();
-
-      if (mask & tsFontWeightMask)
-        fontDescription.setWeight(
-            static_cast<FontWeight>(encoded[tsFontWeightIndex]));
-
-      if (mask & tsFontStyleMask)
-        fontDescription.setStyle(
-            static_cast<FontStyle>(encoded[tsFontStyleIndex]));
-
-      if (mask & tsFontFamilyMask) {
-        FontFamily family;
-        family.setFamily(String::fromUTF8(fontFamily));
-        fontDescription.setFamily(family);
-      }
-
-      if (mask & tsFontSizeMask) {
-        fontDescription.setSpecifiedSize(fontSize);
-        fontDescription.setIsAbsoluteSize(true);
-        fontDescription.setComputedSize(
-            getComputedSizeFromSpecifiedSize(fontSize));
-      }
-
-      if (mask & tsLetterSpacingMask)
-        fontDescription.setLetterSpacing(letterSpacing);
-
-      if (mask & tsWordSpacingMask)
-        fontDescription.setWordSpacing(wordSpacing);
-
-      style->setFontDescription(fontDescription);
-      style->font().update(UIDartState::Current()->font_selector());
-    }
-
-    if (mask & tsHeightMask) {
-      style->setLineHeight(Length(height * 100.0, Percent));
-    }
-
-    encoded.Release();
-
-    RenderObject* span = new RenderInline();
-    span->setStyle(style.release());
-    m_currentRenderObject->addChild(span);
-    m_currentRenderObject = span;
+  if (mask & tsTextDecorationMask) {
+    style.decoration =
+        static_cast<txt::TextDecoration>(encoded[tsTextDecorationIndex]);
   }
+
+  if (mask & tsTextDecorationColorMask)
+    style.decoration_color = encoded[tsTextDecorationColorIndex];
+
+  if (mask & tsTextDecorationStyleMask)
+    style.decoration_style = static_cast<txt::TextDecorationStyle>(
+        encoded[tsTextDecorationStyleIndex]);
+
+  if (mask & tsTextBaselineMask) {
+    // TODO(abarth): Implement TextBaseline. The CSS version of this
+    // property wasn't wired up either.
+  }
+
+  if (mask & (tsFontWeightMask | tsFontStyleMask | tsFontFamilyMask |
+              tsFontSizeMask | tsLetterSpacingMask | tsWordSpacingMask)) {
+    if (mask & tsFontWeightMask)
+      style.font_weight =
+          static_cast<txt::FontWeight>(encoded[tsFontWeightIndex]);
+
+    if (mask & tsFontStyleMask)
+      style.font_style = static_cast<txt::FontStyle>(encoded[tsFontStyleIndex]);
+
+    if (mask & tsFontFamilyMask)
+      style.font_family = fontFamily;
+
+    if (mask & tsFontSizeMask)
+      style.font_size = fontSize;
+
+    if (mask & tsLetterSpacingMask)
+      style.letter_spacing = letterSpacing;
+
+    if (mask & tsWordSpacingMask)
+      style.word_spacing = wordSpacing;
+  }
+
+  if (mask & tsHeightMask) {
+    style.height = height;
+  }
+
+  if (mask & tsLocaleMask) {
+    style.locale = locale;
+  }
+
+  if (mask & tsBackgroundMask) {
+    Paint background(background_objects, background_data);
+    if (background.paint()) {
+      style.has_background = true;
+      style.background = *background.paint();
+    }
+  }
+
+  if (mask & tsForegroundMask) {
+    Paint foreground(foreground_objects, foreground_data);
+    if (foreground.paint()) {
+      style.has_foreground = true;
+      style.foreground = *foreground.paint();
+    }
+  }
+
+  m_paragraphBuilder->PushStyle(style);
 }
 
 void ParagraphBuilder::pop() {
-  if (!m_useBlink) {
-    m_paragraphBuilder->Pop();
-  } else {
-    // Blink Version.
-    if (m_currentRenderObject)
-      m_currentRenderObject = m_currentRenderObject->parent();
-  }
+  m_paragraphBuilder->Pop();
 }
 
 Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
@@ -450,41 +269,13 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
   if (error_code != U_BUFFER_OVERFLOW_ERROR)
     return tonic::ToDart("string is not well-formed UTF-16");
 
-  if (!m_useBlink) {
-    m_paragraphBuilder->AddText(text);
-  } else {
-    // Blink Version.
-    if (!m_currentRenderObject)
-      return tonic::ToDart("paragraph has already been built");
-    RenderText* renderText =
-        new RenderText(String(text_ptr, text.size()).impl());
-    RefPtr<RenderStyle> style = RenderStyle::create();
-    style->inheritFrom(m_currentRenderObject->style());
-    renderText->setStyle(style.release());
-    m_currentRenderObject->addChild(renderText);
-  }
+  m_paragraphBuilder->AddText(text);
 
   return Dart_Null();
 }
 
 fxl::RefPtr<Paragraph> ParagraphBuilder::build() {
-  m_currentRenderObject = nullptr;
-  if (!m_useBlink) {
-    return Paragraph::Create(m_paragraphBuilder->Build());
-  } else {
-    return Paragraph::Create(m_renderView.release());
-  }
-}
-
-void ParagraphBuilder::createRenderView() {
-  RefPtr<RenderStyle> style = RenderStyle::create();
-  style->setRTLOrdering(LogicalOrder);
-  style->setZIndex(0);
-  style->setUserModify(READ_ONLY);
-  createFontForDocument(style.get());
-
-  m_renderView = adoptPtr(new RenderView());
-  m_renderView->setStyle(style.release());
+  return Paragraph::Create(m_paragraphBuilder->Build());
 }
 
 }  // namespace blink

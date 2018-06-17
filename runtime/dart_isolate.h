@@ -39,18 +39,20 @@ class DartIsolate : public UIDartState {
   // bindings. From the VM's perspective, this isolate is not special in any
   // way.
   static fml::WeakPtr<DartIsolate> CreateRootIsolate(
-      const DartVM* vm,
+      DartVM* vm,
       fxl::RefPtr<DartSnapshot> isolate_snapshot,
+      fxl::RefPtr<DartSnapshot> shared_snapshot,
       TaskRunners task_runners,
       std::unique_ptr<Window> window,
       fml::WeakPtr<GrContext> resource_context,
       fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue,
-      std::string advisory_script_uri = "main.dart",
-      std::string advisory_script_entrypoint = "main",
+      std::string advisory_script_uri,
+      std::string advisory_script_entrypoint,
       Dart_IsolateFlags* flags = nullptr);
 
-  DartIsolate(const DartVM* vm,
+  DartIsolate(DartVM* vm,
               fxl::RefPtr<DartSnapshot> isolate_snapshot,
+              fxl::RefPtr<DartSnapshot> shared_snapshot,
               TaskRunners task_runners,
               fml::WeakPtr<GrContext> resource_context,
               fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue,
@@ -67,7 +69,8 @@ class DartIsolate : public UIDartState {
 
   FXL_WARN_UNUSED_RESULT
   bool PrepareForRunningFromSnapshot(
-      std::shared_ptr<const fml::Mapping> snapshot);
+      std::shared_ptr<const fml::Mapping> snapshot,
+      bool last_piece = true);
 
   FXL_WARN_UNUSED_RESULT
   bool PrepareForRunningFromSource(const std::string& main_source_file,
@@ -81,9 +84,10 @@ class DartIsolate : public UIDartState {
 
   void AddIsolateShutdownCallback(fxl::Closure closure);
 
-  const DartVM* GetDartVM() const;
+  DartVM* GetDartVM() const;
 
   fxl::RefPtr<DartSnapshot> GetIsolateSnapshot() const;
+  fxl::RefPtr<DartSnapshot> GetSharedSnapshot() const;
 
   fml::WeakPtr<DartIsolate> GetWeakIsolatePtr() const;
 
@@ -103,9 +107,10 @@ class DartIsolate : public UIDartState {
   };
   friend class DartVM;
 
-  const DartVM* vm_ = nullptr;
+  DartVM* const vm_ = nullptr;
   Phase phase_ = Phase::Unknown;
   const fxl::RefPtr<DartSnapshot> isolate_snapshot_;
+  const fxl::RefPtr<DartSnapshot> shared_snapshot_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
   ChildIsolatePreparer child_isolate_preparer_;
   std::unique_ptr<fml::WeakPtrFactory<DartIsolate>> weak_factory_;

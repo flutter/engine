@@ -144,9 +144,6 @@ blink::Settings SettingsFromCommandLine(const fxl::CommandLine& command_line) {
   settings.enable_software_rendering =
       command_line.HasOption(FlagForSwitch(Switch::EnableSoftwareRendering));
 
-  settings.using_blink =
-      command_line.HasOption(FlagForSwitch(Switch::EnableBlink));
-
   settings.endless_trace_buffer =
       command_line.HasOption(FlagForSwitch(Switch::EndlessTraceBuffer));
 
@@ -173,6 +170,10 @@ blink::Settings SettingsFromCommandLine(const fxl::CommandLine& command_line) {
   command_line.GetOptionValue(FlagForSwitch(Switch::Packages),
                               &settings.packages_file_path);
 
+  std::string aot_shared_library_path;
+  command_line.GetOptionValue(FlagForSwitch(Switch::AotSharedLibraryPath),
+                              &aot_shared_library_path);
+
   std::string aot_snapshot_path;
   command_line.GetOptionValue(FlagForSwitch(Switch::AotSnapshotPath),
                               &aot_snapshot_path);
@@ -194,7 +195,9 @@ blink::Settings SettingsFromCommandLine(const fxl::CommandLine& command_line) {
       FlagForSwitch(Switch::AotIsolateSnapshotInstructions),
       &aot_isolate_snapshot_instr_filename);
 
-  if (aot_snapshot_path.size() > 0) {
+  if (aot_shared_library_path.size() > 0) {
+    settings.application_library_path = aot_shared_library_path;
+  } else if (aot_snapshot_path.size() > 0) {
     settings.vm_snapshot_data_path = fml::paths::JoinPaths(
         {aot_snapshot_path, aot_vm_snapshot_data_filename});
     settings.vm_snapshot_instr_path = fml::paths::JoinPaths(
@@ -224,7 +227,8 @@ blink::Settings SettingsFromCommandLine(const fxl::CommandLine& command_line) {
       settings.dart_flags.push_back(*it);
   }
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && \
+    FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
   settings.trace_skia =
       command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
 #endif

@@ -32,10 +32,13 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
   auto root_isolate = DartIsolate::CreateRootIsolate(
       vm.get(),                  // vm
       vm->GetIsolateSnapshot(),  // isolate snapshot
+      vm->GetSharedSnapshot(),   // shared snapshot
       std::move(task_runners),   // task runners
       nullptr,                   // window
       {},                        // resource context
-      nullptr                    // unref qeueue
+      nullptr,                   // unref qeueue
+      "main.dart",               // advisory uri
+      "main"                     // advisory entrypoint
   );
   ASSERT_TRUE(root_isolate);
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::LibrariesSetup);
@@ -57,10 +60,13 @@ TEST_F(DartIsolateTest, IsolateCanAssociateSnapshot) {
   auto root_isolate = DartIsolate::CreateRootIsolate(
       vm.get(),                  // vm
       vm->GetIsolateSnapshot(),  // isolate snapshot
+      vm->GetSharedSnapshot(),   // shared snapshot
       std::move(task_runners),   // task runners
       nullptr,                   // window
       {},                        // resource context
-      nullptr                    // unref qeueue
+      nullptr,                   // unref qeueue
+      "main.dart",               // advisory uri
+      "main"                     // advisory entrypoint
   );
   ASSERT_TRUE(root_isolate);
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::LibrariesSetup);
@@ -85,10 +91,13 @@ TEST_F(DartIsolateTest, CanResolveAndInvokeMethod) {
   auto root_isolate = DartIsolate::CreateRootIsolate(
       vm.get(),                  // vm
       vm->GetIsolateSnapshot(),  // isolate snapshot
+      vm->GetSharedSnapshot(),   // shared snapshot
       std::move(task_runners),   // task runners
       nullptr,                   // window
       {},                        // resource context
-      nullptr                    // unref qeueue
+      nullptr,                   // unref qeueue
+      "main.dart",               // advisory uri
+      "main"                     // advisory entrypoint
   );
   ASSERT_TRUE(root_isolate);
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::LibrariesSetup);

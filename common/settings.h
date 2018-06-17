@@ -33,6 +33,7 @@ struct Settings {
 
   std::string application_library_path;
   std::string application_kernel_asset;
+  std::string application_kernel_list_asset;
 
   std::string main_dart_file_path;
   std::string packages_file_path;
@@ -47,6 +48,12 @@ struct Settings {
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool dart_non_checked_mode = false;
+  // Used as the script URI in debug messages. Does not affect how the Dart code
+  // is executed.
+  std::string advisory_script_uri = "main.dart";
+  // Used as the script entrypoint in debug messages. Does not affect how the
+  // Dart code is executed.
+  std::string advisory_script_entrypoint = "main";
 
   // Observatory settings
   bool enable_observatory = false;
@@ -68,7 +75,6 @@ struct Settings {
   // call is made.
   fxl::Closure root_isolate_shutdown_callback;
   bool enable_software_rendering = false;
-  bool using_blink = false;
   bool skia_deterministic_rendering_on_cpu = false;
   bool verbose_logging = false;
   std::string log_tag = "flutter";

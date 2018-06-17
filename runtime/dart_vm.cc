@@ -39,7 +39,8 @@
 namespace dart {
 namespace observatory {
 
-#if !OS(FUCHSIA) && (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE)
+#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE) && \
+    (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE)
 
 // These two symbols are defined in |observatory_archive.cc| which is generated
 // by the |//third_party/dart/runtime/observatory:archive_observatory| rule.
@@ -48,8 +49,9 @@ namespace observatory {
 extern unsigned int observatory_assets_archive_len;
 extern const uint8_t* observatory_assets_archive;
 
-#endif  // !OS(FUCHSIA) && (FLUTTER_RUNTIME_MODE !=
-        // FLUTTER_RUNTIME_MODE_RELEASE)
+#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE !=
+        // FLUTTER_RUNTIME_MODE_RELEASE) && (FLUTTER_RUNTIME_MODE !=
+        // FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE)
 
 }  // namespace observatory
 }  // namespace dart
@@ -58,8 +60,12 @@ namespace blink {
 
 // Arguments passed to the Dart VM in all configurations.
 static const char* kDartLanguageArgs[] = {
-    "--enable_mirrors=false", "--background_compilation", "--await_is_keyword",
-    "--causal_async_stacks",  "--limit-ints-to-64-bits",
+    // clang-format off
+    "--enable_mirrors=false",
+    "--background_compilation",
+    "--await_is_keyword",
+    "--causal_async_stacks",
+    // clang-format on
 };
 
 static const char* kDartPrecompilationArgs[] = {
@@ -89,8 +95,8 @@ static const char* kDartStrongModeArgs[] = {
     // clang-format off
     "--strong",
     "--reify_generic_functions",
-    "--limit_ints_to_64_bits",
-    "--sync_async",
+    // TODO(bkonyi): uncomment when sync-async is enabled in flutter/flutter.
+    // "--sync_async",
     // clang-format on
 };
 
@@ -146,9 +152,10 @@ bool DartFileModifiedCallback(const char* source_url, int64_t since_ms) {
 void ThreadExitCallback() {}
 
 Dart_Handle GetVMServiceAssetsArchiveCallback() {
-#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE)
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE) || \
+    (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE)
   return nullptr;
-#elif OS(FUCHSIA)
+#elif OS_FUCHSIA
   std::vector<uint8_t> observatory_assets_archive;
   if (!files::ReadFileToVector("pkg/data/observatory.tar",
                                &observatory_assets_archive)) {
@@ -227,7 +234,7 @@ static void EmbedderInformationCallback(Dart_EmbedderInformation* info) {
 }
 
 fxl::RefPtr<DartVM> DartVM::ForProcess(Settings settings) {
-  return ForProcess(settings, nullptr, nullptr);
+  return ForProcess(settings, nullptr, nullptr, nullptr);
 }
 
 static std::once_flag gVMInitialization;
@@ -236,20 +243,34 @@ static fxl::RefPtr<DartVM> gVM;
 fxl::RefPtr<DartVM> DartVM::ForProcess(
     Settings settings,
     fxl::RefPtr<DartSnapshot> vm_snapshot,
-    fxl::RefPtr<DartSnapshot> isolate_snapshot) {
-  std::call_once(gVMInitialization, [settings,         //
-                                     vm_snapshot,      //
-                                     isolate_snapshot  //
+    fxl::RefPtr<DartSnapshot> isolate_snapshot,
+    fxl::RefPtr<DartSnapshot> shared_snapshot) {
+  std::call_once(gVMInitialization, [settings,          //
+                                     vm_snapshot,       //
+                                     isolate_snapshot,  //
+                                     shared_snapshot    //
   ]() mutable {
     if (!vm_snapshot) {
       vm_snapshot = DartSnapshot::VMSnapshotFromSettings(settings);
     }
+    if (!(vm_snapshot && vm_snapshot->IsValid())) {
+      FXL_LOG(ERROR) << "VM snapshot must be valid.";
+      return;
+    }
     if (!isolate_snapshot) {
       isolate_snapshot = DartSnapshot::IsolateSnapshotFromSettings(settings);
     }
-    gVM = fxl::MakeRefCounted<DartVM>(settings,                    //
-                                      std::move(vm_snapshot),      //
-                                      std::move(isolate_snapshot)  //
+    if (!(isolate_snapshot && isolate_snapshot->IsValid())) {
+      FXL_LOG(ERROR) << "Isolate snapshot must be valid.";
+      return;
+    }
+    if (!shared_snapshot) {
+      shared_snapshot = DartSnapshot::Empty();
+    }
+    gVM = fxl::MakeRefCounted<DartVM>(settings,                     //
+                                      std::move(vm_snapshot),       //
+                                      std::move(isolate_snapshot),  //
+                                      std::move(shared_snapshot)    //
     );
   });
   return gVM;
@@ -261,34 +282,18 @@ fxl::RefPtr<DartVM> DartVM::ForProcessIfInitialized() {
 
 DartVM::DartVM(const Settings& settings,
                fxl::RefPtr<DartSnapshot> vm_snapshot,
-               fxl::RefPtr<DartSnapshot> isolate_snapshot)
+               fxl::RefPtr<DartSnapshot> isolate_snapshot,
+               fxl::RefPtr<DartSnapshot> shared_snapshot)
     : settings_(settings),
       vm_snapshot_(std::move(vm_snapshot)),
       isolate_snapshot_(std::move(isolate_snapshot)),
+      shared_snapshot_(std::move(shared_snapshot)),
       platform_kernel_mapping_(
           std::make_unique<fml::FileMapping>(settings.platform_kernel_path)),
       weak_factory_(this) {
   TRACE_EVENT0("flutter", "DartVMInitializer");
   FXL_DLOG(INFO) << "Attempting Dart VM launch for mode: "
                  << (IsRunningPrecompiledCode() ? "AOT" : "Interpreter");
-
-  FXL_DCHECK(vm_snapshot_ && vm_snapshot_->IsValid())
-      << "VM snapshot must be valid.";
-
-  FXL_DCHECK(isolate_snapshot_ && isolate_snapshot_->IsValid())
-      << "Isolate snapshot must be valid.";
-
-  if (platform_kernel_mapping_->GetSize() > 0) {
-    // The platform kernel mapping lifetime is managed by this instance of the
-    // DartVM and hence will exceed that of the PlatformKernel. So provide an
-    // empty release callback.
-    Dart_ReleaseBufferCallback empty = [](auto arg) {};
-    platform_kernel_ = reinterpret_cast<PlatformKernel*>(Dart_ReadKernelBinary(
-        platform_kernel_mapping_->GetMapping(),  // buffer
-        platform_kernel_mapping_->GetSize(),     // buffer size
-        empty                                    // buffer deleter
-        ));
-  }
 
   {
     TRACE_EVENT0("flutter", "dart::bin::BootstrapDartIo");
@@ -323,11 +328,16 @@ DartVM::DartVM(const Settings& settings,
   // precompiled code only in the debug product mode.
   bool use_checked_mode = !settings.dart_non_checked_mode;
 
-#if !OS(FUCHSIA)
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_PROFILE || \
+    FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
+  use_checked_mode = false;
+#endif
+
+#if !OS_FUCHSIA
   if (IsRunningPrecompiledCode()) {
     use_checked_mode = false;
   }
-#endif  // !OS(FUCHSIA)
+#endif  // !OS_FUCHSIA
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // Debug mode uses the JIT, disable code page write protection to avoid
@@ -340,11 +350,11 @@ DartVM::DartVM(const Settings& settings,
       Dart_IsDart2Snapshot(isolate_snapshot_->GetData()->GetSnapshotPointer());
 
   const bool is_preview_dart2 =
-      platform_kernel_ != nullptr || isolate_snapshot_is_dart_2;
+      (platform_kernel_mapping_->GetSize() > 0) || isolate_snapshot_is_dart_2;
 
   FXL_DLOG(INFO) << "Dart 2 " << (is_preview_dart2 ? "is" : "is NOT")
                  << " enabled. Platform kernel: "
-                 << static_cast<bool>(platform_kernel_)
+                 << static_cast<bool>(platform_kernel_mapping_->GetSize() > 0)
                  << " Isolate Snapshot is Dart 2: "
                  << isolate_snapshot_is_dart_2;
 
@@ -453,16 +463,24 @@ const Settings& DartVM::GetSettings() const {
   return settings_;
 }
 
-DartVM::PlatformKernel* DartVM::GetPlatformKernel() const {
-  return platform_kernel_;
+const fml::Mapping& DartVM::GetPlatformKernel() const {
+  return *platform_kernel_mapping_.get();
 }
 
 const DartSnapshot& DartVM::GetVMSnapshot() const {
   return *vm_snapshot_.get();
 }
 
+IsolateNameServer* DartVM::GetIsolateNameServer() {
+  return &isolate_name_server_;
+}
+
 fxl::RefPtr<DartSnapshot> DartVM::GetIsolateSnapshot() const {
   return isolate_snapshot_;
+}
+
+fxl::RefPtr<DartSnapshot> DartVM::GetSharedSnapshot() const {
+  return shared_snapshot_;
 }
 
 ServiceProtocol& DartVM::GetServiceProtocol() {

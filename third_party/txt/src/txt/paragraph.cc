@@ -48,11 +48,13 @@ namespace {
 class GlyphTypeface {
  public:
   GlyphTypeface(sk_sp<SkTypeface> typeface, minikin::FontFakery fakery)
-      : typeface_(std::move(typeface)), fake_bold_(fakery.isFakeBold()) {}
+      : typeface_(std::move(typeface)),
+        fake_bold_(fakery.isFakeBold()),
+        fake_italic_(fakery.isFakeItalic()) {}
 
   bool operator==(GlyphTypeface& other) {
     return other.typeface_.get() == typeface_.get() &&
-           other.fake_bold_ == fake_bold_;
+           other.fake_bold_ == fake_bold_ && other.fake_italic_ == fake_italic_;
   }
 
   bool operator!=(GlyphTypeface& other) { return !(*this == other); }
@@ -60,11 +62,13 @@ class GlyphTypeface {
   void apply(SkPaint& paint) {
     paint.setTypeface(typeface_);
     paint.setFakeBoldText(fake_bold_);
+    paint.setTextSkewX(fake_italic_ ? -SK_Scalar1 / 4 : 0);
   }
 
  private:
   sk_sp<SkTypeface> typeface_;
   bool fake_bold_;
+  bool fake_italic_;
 };
 
 GlyphTypeface GetGlyphTypeface(const minikin::Layout& layout, size_t index) {
@@ -156,16 +160,6 @@ void GetFontAndMinikinPaint(const TextStyle& style,
   paint->paintFlags |= minikin::LinearTextFlag;
 }
 
-sk_sp<SkTypeface> GetDefaultSkiaTypeface(
-    const std::shared_ptr<txt::FontCollection>& font_collection,
-    const TextStyle& style) {
-  std::shared_ptr<minikin::FontCollection> collection =
-      font_collection->GetMinikinFontCollectionForFamily(style.font_family);
-  minikin::FakedFont faked_font =
-      collection->baseFontFaked(GetMinikinFontStyle(style));
-  return static_cast<FontSkia*>(faked_font.font)->GetSkTypeface();
-}
-
 void FindWords(const std::vector<uint16_t>& text,
                size_t start,
                size_t end,
@@ -198,8 +192,7 @@ Paragraph::GlyphPosition::GlyphPosition(double x_start,
       x_pos(x_start, x_start + x_advance) {}
 
 void Paragraph::GlyphPosition::Shift(double delta) {
-  x_pos.start += delta;
-  x_pos.end += delta;
+  x_pos.Shift(delta);
 }
 
 Paragraph::GlyphLine::GlyphLine(std::vector<GlyphPosition>&& p, size_t tcu)
@@ -217,6 +210,12 @@ Paragraph::CodeUnitRun::CodeUnitRun(std::vector<GlyphPosition>&& p,
       line_number(line),
       font_metrics(metrics),
       direction(dir) {}
+
+void Paragraph::CodeUnitRun::Shift(double delta) {
+  x_pos.Shift(delta);
+  for (GlyphPosition& position : positions)
+    position.Shift(delta);
+}
 
 Paragraph::Paragraph() {
   breaker_.setLocale(icu::Locale(), nullptr);
@@ -254,7 +253,8 @@ bool Paragraph::ComputeLineBreaks() {
     size_t block_size = block_end - block_start;
 
     if (block_size == 0) {
-      line_ranges_.emplace_back(block_start, block_end, block_end + 1, true);
+      line_ranges_.emplace_back(block_start, block_end, block_end,
+                                block_end + 1, true);
       line_widths_.push_back(0);
       continue;
     }
@@ -281,8 +281,7 @@ bool Paragraph::ComputeLineBreaks() {
       minikin::MinikinPaint paint;
       GetFontAndMinikinPaint(run.style, &font, &paint);
       std::shared_ptr<minikin::FontCollection> collection =
-          font_collection_->GetMinikinFontCollectionForFamily(
-              run.style.font_family);
+          GetMinikinFontCollectionForStyle(run.style);
       if (collection == nullptr) {
         FXL_LOG(INFO) << "Could not find font collection for family \""
                       << run.style.font_family << "\".";
@@ -307,7 +306,14 @@ bool Paragraph::ComputeLineBreaks() {
       bool hard_break = i == breaks_count - 1;
       size_t line_end_including_newline =
           (hard_break && line_end < text_.size()) ? line_end + 1 : line_end;
+      size_t line_end_excluding_whitespace = line_end;
+      while (
+          line_end_excluding_whitespace > line_start &&
+          minikin::isLineEndSpace(text_[line_end_excluding_whitespace - 1])) {
+        line_end_excluding_whitespace--;
+      }
       line_ranges_.emplace_back(line_start, line_end,
+                                line_end_excluding_whitespace,
                                 line_end_including_newline, hard_break);
       line_widths_.push_back(breaker_.getWidths()[i]);
     }
@@ -458,13 +464,21 @@ void Paragraph::Layout(double width, bool force) {
       }
     }
 
+    // Exclude trailing whitespace from right-justified lines so the last
+    // visible character in the line will be flush with the right margin.
+    size_t line_end_index =
+        (paragraph_style_.effective_align() == TextAlign::right ||
+         paragraph_style_.effective_align() == TextAlign::center)
+            ? line_range.end_excluding_whitespace
+            : line_range.end;
+
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
     for (const BidiRun& bidi_run : bidi_runs) {
-      if (bidi_run.start() < line_range.end &&
+      if (bidi_run.start() < line_end_index &&
           bidi_run.end() > line_range.start) {
         line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
-                               std::min(bidi_run.end(), line_range.end),
+                               std::min(bidi_run.end(), line_end_index),
                                bidi_run.direction(), bidi_run.style());
       }
     }
@@ -475,15 +489,16 @@ void Paragraph::Layout(double width, bool force) {
     double justify_x_offset = 0;
     std::vector<PaintRecord> paint_records;
 
-    for (const BidiRun& run : line_runs) {
+    for (auto line_run_it = line_runs.begin(); line_run_it != line_runs.end();
+         ++line_run_it) {
+      const BidiRun& run = *line_run_it;
       minikin::FontStyle font;
       minikin::MinikinPaint minikin_paint;
       GetFontAndMinikinPaint(run.style(), &font, &minikin_paint);
       paint.setTextSize(run.style().font_size);
 
       std::shared_ptr<minikin::FontCollection> minikin_font_collection =
-          font_collection_->GetMinikinFontCollectionForFamily(
-              run.style().font_family);
+          GetMinikinFontCollectionForStyle(run.style());
 
       // Lay out this run.
       uint16_t* text_ptr = text_.data();
@@ -495,6 +510,7 @@ void Paragraph::Layout(double width, bool force) {
       const std::u16string& ellipsis = paragraph_style_.ellipsis;
       std::vector<uint16_t> ellipsized_text;
       if (ellipsis.length() && !isinf(width_) && !line_range.hard_break &&
+          line_run_it == line_runs.end() - 1 &&
           (line_number == line_limit - 1 ||
            paragraph_style_.unlimited_lines())) {
         float ellipsis_width = layout.measureText(
@@ -510,7 +526,7 @@ void Paragraph::Layout(double width, bool force) {
         // Truncate characters from the text until the ellipsis fits.
         size_t truncate_count = 0;
         while (truncate_count < text_count &&
-               text_width + ellipsis_width > width_) {
+               run_x_offset + text_width + ellipsis_width > width_) {
           text_width -= text_advances[text_count - truncate_count - 1];
           truncate_count++;
         }
@@ -683,12 +699,10 @@ void Paragraph::Layout(double width, bool force) {
     }
 
     // Adjust the glyph positions based on the alignment of the line.
-    double line_x_offset = GetLineXOffset(line_number, run_x_offset);
+    double line_x_offset = GetLineXOffset(run_x_offset);
     if (line_x_offset) {
       for (CodeUnitRun& code_unit_run : line_code_unit_runs) {
-        for (GlyphPosition& position : code_unit_run.positions) {
-          position.Shift(line_x_offset);
-        }
+        code_unit_run.Shift(line_x_offset);
       }
       for (GlyphPosition& position : line_glyph_positions) {
         position.Shift(line_x_offset);
@@ -733,7 +747,7 @@ void Paragraph::Layout(double width, bool force) {
     if (paint_records.empty()) {
       SkPaint::FontMetrics metrics;
       TextStyle style(paragraph_style_.GetTextStyle());
-      paint.setTypeface(GetDefaultSkiaTypeface(font_collection_, style));
+      paint.setTypeface(GetDefaultSkiaTypeface(style));
       paint.setTextSize(style.font_size);
       paint.getFontMetrics(&metrics);
       update_line_metrics(metrics, style);
@@ -776,25 +790,16 @@ void Paragraph::Layout(double width, bool force) {
             });
 }
 
-double Paragraph::GetLineXOffset(size_t line_number,
-                                 double line_total_advance) {
-  if (line_number >= line_widths_.size() || isinf(width_))
+double Paragraph::GetLineXOffset(double line_total_advance) {
+  if (isinf(width_))
     return 0;
 
-  TextAlign align = paragraph_style_.text_align;
-  TextDirection direction = paragraph_style_.text_direction;
+  TextAlign align = paragraph_style_.effective_align();
 
-  if (align == TextAlign::right ||
-      (align == TextAlign::start && direction == TextDirection::rtl) ||
-      (align == TextAlign::end && direction == TextDirection::ltr)) {
-    // If this line has a soft break, then use the line width calculated by the
-    // line breaker because that width excludes the soft break's whitespace.
-    double text_width = line_ranges_[line_number].hard_break
-                            ? line_total_advance
-                            : line_widths_[line_number];
-    return width_ - text_width;
-  } else if (paragraph_style_.text_align == TextAlign::center) {
-    return (width_ - line_widths_[line_number]) / 2;
+  if (align == TextAlign::right) {
+    return width_ - line_total_advance;
+  } else if (align == TextAlign::center) {
+    return (width_ - line_total_advance) / 2;
   } else {
     return 0;
   }
@@ -844,14 +849,45 @@ void Paragraph::SetFontCollection(
   font_collection_ = std::move(font_collection);
 }
 
+std::shared_ptr<minikin::FontCollection>
+Paragraph::GetMinikinFontCollectionForStyle(const TextStyle& style) {
+  std::string locale;
+  if (!style.locale.empty()) {
+    uint32_t language_list_id =
+        minikin::FontStyle::registerLanguageList(style.locale);
+    const minikin::FontLanguages& langs =
+        minikin::FontLanguageListCache::getById(language_list_id);
+    if (langs.size()) {
+      locale = langs[0].getString();
+    }
+  }
+
+  return font_collection_->GetMinikinFontCollectionForFamily(style.font_family,
+                                                             locale);
+}
+
+sk_sp<SkTypeface> Paragraph::GetDefaultSkiaTypeface(const TextStyle& style) {
+  std::shared_ptr<minikin::FontCollection> collection =
+      GetMinikinFontCollectionForStyle(style);
+  minikin::FakedFont faked_font =
+      collection->baseFontFaked(GetMinikinFontStyle(style));
+  return static_cast<FontSkia*>(faked_font.font)->GetSkTypeface();
+}
+
 // The x,y coordinates will be the very top left corner of the rendered
 // paragraph.
 void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
   canvas->translate(x, y);
   SkPaint paint;
   for (const PaintRecord& record : records_) {
-    paint.setColor(record.style().color);
+    if (record.style().has_foreground) {
+      paint = record.style().foreground;
+    } else {
+      paint.reset();
+      paint.setColor(record.style().color);
+    }
     SkPoint offset = record.offset();
+    PaintBackground(canvas, record);
     canvas->drawTextBlob(record.text(), offset.x(), offset.y(), paint);
     PaintDecorations(canvas, record);
   }
@@ -1016,6 +1052,17 @@ void Paragraph::PaintDecorations(SkCanvas* canvas, const PaintRecord& record) {
   }
 }
 
+void Paragraph::PaintBackground(SkCanvas* canvas, const PaintRecord& record) {
+  if (!record.style().has_background)
+    return;
+
+  const SkPaint::FontMetrics& metrics = record.metrics();
+  SkRect rect(SkRect::MakeLTRB(0, metrics.fAscent, record.GetRunWidth(),
+                               metrics.fDescent));
+  rect.offset(record.offset());
+  canvas->drawRect(rect, record.style().background);
+}
+
 std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(size_t start,
                                                             size_t end) const {
   std::map<size_t, std::vector<Paragraph::TextBox>> line_boxes;
@@ -1050,23 +1097,23 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(size_t start,
         SkRect::MakeLTRB(left, top, right, bottom), run.direction);
   }
 
-  // Add empty rectangles representing any line within the range that did not
-  // render any glyphs.
-  for (size_t line_number = 0; line_number < line_ranges_.size(); ++line_number) {
+  // Add empty rectangles representing any newline characters within the range.
+  for (size_t line_number = 0; line_number < line_ranges_.size();
+       ++line_number) {
     const LineRange& line = line_ranges_[line_number];
     if (line.start >= end)
       break;
     if (line.end_including_newline <= start)
       continue;
     if (line_boxes.find(line_number) == line_boxes.end()) {
-      // If the range starts after the beginning of this line, then place the
-      // rectangle at the end of the line's width.  This is intended to
-      // handle ranges encompassing the newline character at the end of a line.
-      SkScalar x = (start > line.start) ? line_widths_[line_number] : 0;
-      SkScalar top = (line_number > 0) ? line_heights_[line_number - 1] : 0;
-      SkScalar bottom = line_heights_[line_number];
-      line_boxes[line_number].emplace_back(
-          SkRect::MakeLTRB(x, top, x, bottom), TextDirection::ltr);
+      if (line.end != line.end_including_newline && line.end >= start &&
+          line.end_including_newline <= end) {
+        SkScalar x = line_widths_[line_number];
+        SkScalar top = (line_number > 0) ? line_heights_[line_number - 1] : 0;
+        SkScalar bottom = line_heights_[line_number];
+        line_boxes[line_number].emplace_back(
+            SkRect::MakeLTRB(x, top, x, bottom), TextDirection::ltr);
+      }
     }
   }
 

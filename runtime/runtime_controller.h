@@ -10,6 +10,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_vm.h"
@@ -24,10 +25,14 @@ class Window;
 class RuntimeController final : public WindowClient {
  public:
   RuntimeController(RuntimeDelegate& client,
-                    const DartVM* vm,
+                    DartVM* vm,
+                    fxl::RefPtr<DartSnapshot> isolate_snapshot,
+                    fxl::RefPtr<DartSnapshot> shared_snapshot,
                     TaskRunners task_runners,
                     fml::WeakPtr<GrContext> resource_context,
-                    fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue);
+                    fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+                    std::string advisory_script_uri,
+                    std::string advisory_script_entrypoint);
 
   ~RuntimeController();
 
@@ -78,19 +83,27 @@ class RuntimeController final : public WindowClient {
   };
 
   RuntimeDelegate& client_;
-  const DartVM* vm_;
+  DartVM* const vm_;
+  fxl::RefPtr<DartSnapshot> isolate_snapshot_;
+  fxl::RefPtr<DartSnapshot> shared_snapshot_;
   TaskRunners task_runners_;
   fml::WeakPtr<GrContext> resource_context_;
   fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue_;
+  std::string advisory_script_uri_;
+  std::string advisory_script_entrypoint_;
   WindowData window_data_;
   fml::WeakPtr<DartIsolate> root_isolate_;
   std::pair<bool, uint32_t> root_isolate_return_code_ = {false, 0};
 
   RuntimeController(RuntimeDelegate& client,
-                    const DartVM* vm,
+                    DartVM* vm,
+                    fxl::RefPtr<DartSnapshot> isolate_snapshot,
+                    fxl::RefPtr<DartSnapshot> shared_snapshot,
                     TaskRunners task_runners,
                     fml::WeakPtr<GrContext> resource_context,
                     fxl::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+                    std::string advisory_script_uri,
+                    std::string advisory_script_entrypoint,
                     WindowData data);
 
   Window* GetWindowIfAvailable();
@@ -111,6 +124,9 @@ class RuntimeController final : public WindowClient {
 
   // |blink::WindowClient|
   void HandlePlatformMessage(fxl::RefPtr<PlatformMessage> message) override;
+
+  // |blink::WindowClient|
+  FontCollection& GetFontCollection() override;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
 };

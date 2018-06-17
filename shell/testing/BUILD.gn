@@ -17,6 +17,7 @@ executable("testing") {
     "$flutter_root/assets",
     "$flutter_root/common",
     "$flutter_root/fml",
+    "$flutter_root/lib/snapshot",
     "$flutter_root/shell/common",
     "//garnet/public/lib/fxl",
     "//third_party/dart/runtime:libdart_jit",
@@ -24,6 +25,13 @@ executable("testing") {
     "//third_party/skia",
     "//topaz/lib/tonic",
   ]
+
+  if (is_fuchsia) {
+    deps += [
+      "//garnet/public/lib/ui/scenic:client",
+      "//zircon/public/lib/trace-provider",
+    ]
+  }
 
   if (is_linux) {
     ldflags = [ "-rdynamic" ]
