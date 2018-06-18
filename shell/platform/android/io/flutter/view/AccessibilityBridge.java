@@ -930,7 +930,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                     child.ensureInverseTransform();
                     Matrix.multiplyMV(transformedPoint, 0, child.inverseTransform, 0, point, 0);
                     final SemanticsObject result = child.hitTest(transformedPoint);
-                    if (result != null) {
+                    if (result != null && result.isFocusable()) {
                         return result;
                     }
                 }
