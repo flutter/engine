@@ -12,6 +12,7 @@
 #include <sstream>
 
 #include "flutter/common/settings.h"
+#include "flutter/lib/ui/flutter_dart_api.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "lib/fxl/build_config.h"
 #include "lib/fxl/logging.h"
@@ -203,17 +204,14 @@ void Logger_PrintString(Dart_NativeArguments args) {
 void SaveCompilationTrace(Dart_NativeArguments args) {
   uint8_t* buffer = nullptr;
   intptr_t length = 0;
+
   Dart_Handle result = Dart_SaveCompilationTrace(&buffer, &length);
-  if (Dart_IsError(result)) {
-    Dart_SetReturnValue(args, result);
-    return;
-  }
+  CHECK_AND_RETURN_DART_ENGINE_ERROR(args, result,
+                                     "Could not save compilation trace.");
 
   result = Dart_NewExternalTypedData(Dart_TypedData_kUint8, buffer, length);
-  if (Dart_IsError(result)) {
-    Dart_SetReturnValue(args, result);
-    return;
-  }
+  CHECK_AND_RETURN_DART_ENGINE_ERROR(
+      args, result, "Could not create typed data buffer for trace");
 
   Dart_SetReturnValue(args, result);
 }

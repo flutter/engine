@@ -37,9 +37,6 @@ void _setupHooks() {
 
 void saveCompilationTrace(String filePath) {
   final dynamic result = _saveCompilationTrace();
-  if (result is Error)
-    throw result;
-
   final File file = new File(filePath);
   file.writeAsBytesSync(result);
 }
