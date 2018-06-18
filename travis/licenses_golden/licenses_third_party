@@ -1,4 +1,4 @@
-Signature: 47a461af4fab5fa551b1848f20a5fb38
+Signature: 18227308b2ed8f05600749ae29d363e6
 
 UNUSED LICENSES:
 
@@ -17471,7 +17471,6 @@ FILE: ../../../third_party/skia/experimental/docs/jsonbaseddoc.htm
 FILE: ../../../third_party/skia/experimental/docs/svgBackend.js
 FILE: ../../../third_party/skia/experimental/docs/svgbaseddoc.htm
 FILE: ../../../third_party/skia/experimental/docs/utilities.js
-FILE: ../../../third_party/skia/gm/image.h
 FILE: ../../../third_party/skia/infra/bots/android_bin.isolate
 FILE: ../../../third_party/skia/infra/bots/assets.isolate
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_darwin/VERSION
