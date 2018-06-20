@@ -9,10 +9,16 @@ abstract class PluginUtilities {
   /// Get a closure instance for a specific static or top-level function given
   /// a name.
   ///
+  /// **Warning:** if the function corresponding with `name` is not referenced
+  /// explicitly (e.g., invoked, passed as a closure, etc.) it may be optimized
+  /// out of the compiled application. To prevent this, avoid hard coding names
+  /// as [String]s and  prefer to use `PluginUtilities.getNameOfFunction` to
+  /// retrieve the function's name.
+  ///
   /// `name` is the name of the function we want a closure for. This is a
   /// required parameter.
   ///
-  /// `libraryPat h` is the path which points to the library which contains the
+  /// `libraryPath` is the path which points to the library which contains the
   /// function of interest. This path can be retrieved using
   /// [PluginUtilities.getPathForFunctionLibrary]. If not specified, the root
   /// library will be used for the function lookup.
