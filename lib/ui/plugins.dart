@@ -5,24 +5,31 @@
 part of dart.ui;
 
 abstract class PluginUtilities {
-  static Function getClosureByName({String name, Uri libraryUri}) {
+  static Function getClosureByName({String name, Uri libraryUri, String className}) {
     if (name == null) {
-      throw new ArgumentError("'name' must be provided.");
+      throw new ArgumentError.notNull('name');
     }
-    return _lookupClosure(name, libraryUri?.toString());
+    return _lookupClosure(name, libraryUri?.toString(), className);
   }
 
   static String getPathForFunctionLibrary(Function closure) {
     if (closure == null) {
-      throw new ArgumentError("'closure' cannot be null.");
+      throw new ArgumentError.notNull('closure');
     }
-    return _lookupClosureLibrary(closure);
+    return _getFunctionLibraryUrl(closure);
   }
 
   static String getNameOfFunction(Function closure) {
-  	if (closure == null) {
-  		throw new ArgumentError("'closure' cannot be null.");
-  	}
-  	return _getFunctionName(closure);
+    if (closure == null) {
+      throw new ArgumentError.notNull('closure');
+    }
+    return _getFunctionName(closure);
+  }
+
+  static String getNameOfFunctionClass(Function closure) {
+    if(closure == null) {
+      throw new ArgumentError.notNull('closure');
+    }
+    return _getNameOfFunctionClass(closure);
   }
 }

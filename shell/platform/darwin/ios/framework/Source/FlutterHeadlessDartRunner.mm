@@ -47,15 +47,6 @@ static std::string CreateShellLabel() {
   std::unique_ptr<shell::Shell> _shell;
 }
 
-- (instancetype)init {
-  self = [super init];
-  return self;
-}
-
-- (void)dealloc {
-  [super dealloc];
-}
-
 - (void)runWithEntrypointAndCallback:(NSString*)entrypoint
                           libraryUri:(NSString*)uri
                           completion:(FlutterHeadlessDartRunnerCallback)callback {

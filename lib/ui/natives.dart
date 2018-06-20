@@ -48,8 +48,9 @@ dynamic _saveCompilationTrace() native 'SaveCompilationTrace';
 
 void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
 
-dynamic _lookupClosure(String name, String libraryPath) native 'LookupClosure';
-dynamic _lookupClosureLibrary(Function closure) native 'LookupClosureLibrary';
+Function _lookupClosure(String name, String libraryPath, String className) native 'LookupClosure';
+String _getNameOfFunctionClass(Function closure) native 'GetFunctionClassName';
+String _getFunctionLibraryUrl(Function closure) native 'GetFunctionLibraryUrl';
 String _getFunctionName(Function func) native 'GetFunctionName';
 
 // Required for gen_snapshot to work correctly.

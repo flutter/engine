@@ -49,8 +49,9 @@ namespace blink {
   V(Logger_PrintString, 1)     \
   V(SaveCompilationTrace, 0)   \
   V(ScheduleMicrotask, 1)      \
-  V(LookupClosure, 2)          \
-  V(LookupClosureLibrary, 1)   \
+  V(LookupClosure, 3)          \
+  V(GetFunctionClassName, 1)   \
+  V(GetFunctionLibraryUrl, 1)  \
   V(GetFunctionName, 1)
 
 BUILTIN_NATIVE_LIST(DECLARE_FUNCTION);
@@ -59,7 +60,7 @@ void DartRuntimeHooks::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({BUILTIN_NATIVE_LIST(REGISTER_FUNCTION)});
 }
 
-static Dart_Handle GetClosure(Dart_Handle builtin_library, const char* name) {
+static Dart_Handle GetFunction(Dart_Handle builtin_library, const char* name) {
   Dart_Handle getter_name = ToDart(name);
   Dart_Handle closure = Dart_Invoke(builtin_library, getter_name, 0, nullptr);
   DART_CHECK_VALID(closure);
@@ -67,7 +68,7 @@ static Dart_Handle GetClosure(Dart_Handle builtin_library, const char* name) {
 }
 
 static void InitDartInternal(Dart_Handle builtin_library, bool is_ui_isolate) {
-  Dart_Handle print = GetClosure(builtin_library, "_getPrintClosure");
+  Dart_Handle print = GetFunction(builtin_library, "_getPrintClosure");
 
   Dart_Handle internal_library = Dart_LookupLibrary(ToDart("dart:_internal"));
 
@@ -104,7 +105,7 @@ static void InitDartAsync(Dart_Handle builtin_library, bool is_ui_isolate) {
   Dart_Handle schedule_microtask;
   if (is_ui_isolate) {
     schedule_microtask =
-        GetClosure(builtin_library, "_getScheduleMicrotaskClosure");
+        GetFunction(builtin_library, "_getScheduleMicrotaskClosure");
   } else {
     Dart_Handle isolate_lib = Dart_LookupLibrary(ToDart("dart:isolate"));
     Dart_Handle method_name =
@@ -128,7 +129,8 @@ static void InitDartIO(Dart_Handle builtin_library,
     DART_CHECK_VALID(Dart_SetField(platform_type, ToDart("_nativeScript"),
                                    ToDart(script_uri)));
   }
-  Dart_Handle locale_closure = GetClosure(builtin_library, "_getLocaleClosure");
+  Dart_Handle locale_closure =
+      GetFunction(builtin_library, "_getLocaleClosure");
   DART_CHECK_VALID(
       Dart_SetField(platform_type, ToDart("_localeClosure"), locale_closure));
 }
@@ -229,42 +231,109 @@ void ScheduleMicrotask(Dart_NativeArguments args) {
 void LookupClosure(Dart_NativeArguments args) {
   Dart_Handle closure_name = Dart_GetNativeArgument(args, 0);
   Dart_Handle library_name = Dart_GetNativeArgument(args, 1);
+  Dart_Handle class_name = Dart_GetNativeArgument(args, 2);
+  DART_CHECK_VALID(closure_name);
+  DART_CHECK_VALID(library_name);
+  DART_CHECK_VALID(class_name);
+
   Dart_Handle library;
   if (library_name == Dart_Null()) {
     library = Dart_RootLibrary();
   } else {
     library = Dart_LookupLibrary(library_name);
-    DART_CHECK_VALID(library);
   }
-  Dart_Handle closure = Dart_GetClosure(Dart_RootLibrary(), closure_name);
+  DART_CHECK_VALID(library);
+
+  Dart_Handle closure;
+  if (Dart_IsNull(class_name)) {
+    closure = Dart_GetClosure(library, closure_name);
+  } else {
+    Dart_Handle cls = Dart_GetClass(library, class_name);
+    DART_CHECK_VALID(cls);
+    if (Dart_IsNull(cls)) {
+      closure = Dart_Null();
+    } else {
+      closure = Dart_GetStaticMethodClosure(library, cls, closure_name);
+    }
+  }
+  DART_CHECK_VALID(closure);
+
   Dart_SetReturnValue(args, closure);
 }
 
-void LookupClosureLibrary(Dart_NativeArguments args) {
+void GetFunctionLibraryUrl(Dart_NativeArguments args) {
   Dart_Handle closure = Dart_GetNativeArgument(args, 0);
   if (Dart_IsClosure(closure)) {
     closure = Dart_ClosureFunction(closure);
     DART_CHECK_VALID(closure);
   }
-  Dart_Handle owner = closure;
+
+  if (!Dart_IsFunction(closure)) {
+    Dart_SetReturnValue(args, Dart_Null());
+    return;
+  }
+
   Dart_Handle url = Dart_Null();
-  // TOOD(bkonyi): do we need to do this loop?
-  do {
-    owner = Dart_FunctionOwner(owner);
-    if (Dart_IsLibrary(owner)) {
-      url = Dart_LibraryUrl(owner);
-      break;
-    }
-  } while (!Dart_IsLibrary(owner));
+  Dart_Handle owner = Dart_FunctionOwner(closure);
+  if (Dart_IsInstance(owner)) {
+    owner = Dart_ClassLibrary(owner);
+  }
+  if (Dart_IsLibrary(owner)) {
+    url = Dart_LibraryUrl(owner);
+    DART_CHECK_VALID(url);
+  }
   Dart_SetReturnValue(args, url);
+}
+
+void GetFunctionClassName(Dart_NativeArguments args) {
+  Dart_Handle closure = Dart_GetNativeArgument(args, 0);
+  Dart_Handle result;
+
+  if (Dart_IsClosure(closure)) {
+    closure = Dart_ClosureFunction(closure);
+    DART_CHECK_VALID(closure);
+  }
+
+  if (!Dart_IsFunction(closure)) {
+    Dart_SetReturnValue(args, Dart_Null());
+    return;
+  }
+
+  bool is_static = false;
+  result = Dart_FunctionIsStatic(closure, &is_static);
+  DART_CHECK_VALID(result);
+  if (!is_static) {
+    Dart_SetReturnValue(args, Dart_Null());
+    return;
+  }
+
+  result = Dart_FunctionOwner(closure);
+  DART_CHECK_VALID(result);
+
+  if (Dart_IsLibrary(result) || !Dart_IsInstance(result)) {
+    Dart_SetReturnValue(args, Dart_Null());
+    return;
+  }
+
+  result = Dart_ClassName(result);
+  DART_CHECK_VALID(result);
+  Dart_SetReturnValue(args, result);
 }
 
 void GetFunctionName(Dart_NativeArguments args) {
   Dart_Handle func = Dart_GetNativeArgument(args, 0);
+  DART_CHECK_VALID(func);
+
   if (Dart_IsClosure(func)) {
     func = Dart_ClosureFunction(func);
     DART_CHECK_VALID(func);
   }
+
+  if (!Dart_IsFunction(func)) {
+    Dart_SetReturnValue(args, Dart_Null());
+    return;
+  }
+
   Dart_Handle result = Dart_FunctionName(func);
   if (Dart_IsError(result)) {
     Dart_PropagateError(result);
