@@ -78,6 +78,9 @@ class PlatformViewAndroid final : public PlatformView {
   void UpdateSemantics(blink::SemanticsNodeUpdates update) override;
 
   // |shell::PlatformView|
+  void UpdateLocalContextActions(blink::LocalContextActionUpdates update) override;
+
+  // |shell::PlatformView|
   void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message) override;
 

@@ -80,6 +80,15 @@ void FlutterViewUpdateSemantics(JNIEnv* env,
   FXL_CHECK(CheckException(env));
 }
 
+static jmethodID g_update_local_context_actions_method = nullptr;
+void FlutterViewUpdateLocalContextActions(JNIEnv* env,
+                                          jobject obj,
+                                          jobject buffer,
+                                          jobjectArray strings) {
+  env->CallVoidMethod(obj, g_update_local_context_actions_method, buffer, strings);
+  FXL_CHECK(CheckException(env));
+}
+
 static jmethodID g_on_first_frame_method = nullptr;
 void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
   env->CallVoidMethod(obj, g_on_first_frame_method);
@@ -719,6 +728,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
                        "(Ljava/nio/ByteBuffer;[Ljava/lang/String;)V");
 
   if (g_update_semantics_method == nullptr) {
+    return false;
+  }
+
+  g_update_local_context_actions_method =
+      env->GetMethodID(g_flutter_native_view_class->obj(), "updateLocalContextActions",
+                        "(Ljava/nio/ByteBuffer;[Ljava/lang/String;)V");
+
+  if (g_update_local_context_actions_method == nullptr) {
     return false;
   }
 

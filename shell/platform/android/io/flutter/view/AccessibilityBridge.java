@@ -41,6 +41,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private static final int ROOT_NODE_ID = 0;
 
     private Map<Integer, SemanticsObject> mObjects;
+    private Map<Integer, LocalContextAction> mLocalContextActions;
     private final FlutterView mOwner;
     private boolean mAccessibilityEnabled = false;
     private SemanticsObject mA11yFocusedObject;
@@ -68,7 +69,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         CUT(1 << 13),
         PASTE(1 << 14),
         DID_GAIN_ACCESSIBILITY_FOCUS(1 << 15),
-        DID_LOSE_ACCESSIBILITY_FOCUS(1 << 16);
+        DID_LOSE_ACCESSIBILITY_FOCUS(1 << 16),
+        LOCAL_CONTEXT_ACTION(1 << 17);
 
         Action(int value) {
             this.value = value;
@@ -104,6 +106,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         assert owner != null;
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
+        mLocalContextActions = new HashMap<Integer, LocalContextAction>();
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(owner, "flutter/accessibility",
             StandardMessageCodec.INSTANCE);
@@ -259,6 +262,15 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             result.addAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS);
         }
 
+        // Actions on the local context menu
+        if (Build.VERSION.SDK_INT >= 21) {
+            if (object.localContextActions != null) {
+                for (LocalContextAction action : object.localContextActions) {
+                    result.addAction(new AccessibilityNodeInfo.AccessibilityAction(action.resourceId, action.label));
+                }
+            }
+        }
+
         if (object.childrenInTraversalOrder != null) {
             for (SemanticsObject child : object.childrenInTraversalOrder) {
                 if (!child.hasFlag(Flag.IS_HIDDEN)) {
@@ -390,6 +402,15 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.PASTE);
                 return true;
             }
+            default:
+                // might be a local context action.
+                for (LocalContextAction value : mLocalContextActions.values()) {
+                    if (value.resourceId == action) {
+                        mOwner.dispatchSemanticsAction(virtualViewId, Action.LOCAL_CONTEXT_ACTION, value.id);
+                        return true;
+                    }
+                }
+                return false;
         }
         return false;
     }
@@ -449,6 +470,16 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
       return object;
     }
 
+    private LocalContextAction getOrCreateAction(int id) {
+        LocalContextAction action = mLocalContextActions.get(id);
+        if (action == null) {
+            action = new LocalContextAction();
+            action.id = id;
+            mLocalContextActions.put(id, action);
+        }
+        return action;
+    }
+
     void handleTouchExplorationExit() {
         if (mHoveredObject != null) {
             sendAccessibilityEvent(mHoveredObject.id, AccessibilityEvent.TYPE_VIEW_HOVER_EXIT);
@@ -470,6 +501,15 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 sendAccessibilityEvent(mHoveredObject.id, AccessibilityEvent.TYPE_VIEW_HOVER_EXIT);
             }
             mHoveredObject = newObject;
+        }
+    }
+
+    void updateLocalContextActions(ByteBuffer buffer, String[] strings) {
+        ArrayList<LocalContextAction> updatedActions = new ArrayList<LocalContextAction>();
+        while (buffer.hasRemaining()) {
+            int id = buffer.getInt();
+            LocalContextAction action = getOrCreateAction(id);
+            action.updateWith(buffer, strings);
         }
     }
 
@@ -741,6 +781,24 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
     }
 
+    private class LocalContextAction {
+        LocalContextAction() {
+            resourceId = ++nextContextId;
+        }
+        final int resourceId;
+        int id = -1;
+        String label;
+        TextDirection textDirection;
+
+        void updateWith(ByteBuffer buffer, String[] strings) {
+            textDirection = TextDirection.fromInt(buffer.getInt());
+            int stringIndex = buffer.getInt();
+            label = stringIndex == -1 ? null : strings[stringIndex];
+        }
+
+    }
+    static int nextContextId = 1232132123;
+
     private class SemanticsObject {
         SemanticsObject() { }
 
@@ -779,6 +837,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         SemanticsObject parent;
         List<SemanticsObject> childrenInTraversalOrder;
         List<SemanticsObject> childrenInHitTestOrder;
+        List<LocalContextAction> localContextActions;
 
         private boolean inverseTransformDirty = true;
         private float[] inverseTransform;
@@ -895,6 +954,20 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                     SemanticsObject child = getOrCreateObject(buffer.getInt());
                     child.parent = this;
                     childrenInHitTestOrder.add(child);
+                }
+            }
+            final int actionCount = buffer.getInt();
+            if (actionCount == 0) {
+                localContextActions = null;
+            } else {
+                if (localContextActions == null)
+                    localContextActions = new ArrayList<LocalContextAction>(actionCount);
+                else
+                    localContextActions.clear();
+
+                for (int i = 0; i < actionCount; i++) {
+                    LocalContextAction action = getOrCreateAction(buffer.getInt());
+                    localContextActions.add(action);
                 }
             }
         }

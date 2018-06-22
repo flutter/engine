@@ -244,6 +244,12 @@ void RuntimeController::UpdateSemantics(SemanticsUpdate* update) {
   }
 }
 
+void RuntimeController::UpdateLocalContextActions(LocalContextActionUpdate* update) {
+  if (window_data_.semantics_enabled) {
+    client_.UpdateLocalContextActions(update->takeActions());
+  }
+}
+
 void RuntimeController::HandlePlatformMessage(
     fxl::RefPtr<PlatformMessage> message) {
   client_.HandlePlatformMessage(std::move(message));

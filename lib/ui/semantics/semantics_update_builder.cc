@@ -54,7 +54,8 @@ void SemanticsUpdateBuilder::updateNode(int id,
                                         int textDirection,
                                         const tonic::Float64List& transform,
                                         const tonic::Int32List& childrenInTraversalOrder,
-                                        const tonic::Int32List& childrenInHitTestOrder) {
+                                        const tonic::Int32List& childrenInHitTestOrder,
+                                        const tonic::Int32List& localContextActions) {
   SemanticsNode node;
   node.id = id;
   node.flags = flags;
@@ -76,6 +77,8 @@ void SemanticsUpdateBuilder::updateNode(int id,
       childrenInTraversalOrder.data(), childrenInTraversalOrder.data() + childrenInTraversalOrder.num_elements());
   node.childrenInHitTestOrder = std::vector<int32_t>(
       childrenInHitTestOrder.data(), childrenInHitTestOrder.data() + childrenInHitTestOrder.num_elements());
+  node.localContextActions = std::vector<int32_t>(
+      localContextActions.data(), localContextActions.data() + localContextActions.num_elements());
   nodes_[id] = node;
 }
 

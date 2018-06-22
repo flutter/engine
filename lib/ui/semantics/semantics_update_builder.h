@@ -45,7 +45,8 @@ class SemanticsUpdateBuilder
                   int textDirection,
                   const tonic::Float64List& transform,
                   const tonic::Int32List& childrenInTraversalOrder,
-                  const tonic::Int32List& childrenInHitTestOrder);
+                  const tonic::Int32List& childrenInHitTestOrder,
+                  const tonic::Int32List& localContextActions);
 
   fxl::RefPtr<SemanticsUpdate> build();
 

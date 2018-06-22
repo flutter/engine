@@ -122,6 +122,9 @@ class RuntimeController final : public WindowClient {
   // |blink::WindowClient|
   void UpdateSemantics(SemanticsUpdate* update) override;
 
+   // |blink::WindowClient|
+  void UpdateLocalContextActions(LocalContextActionUpdate* update) override;
+
   // |blink::WindowClient|
   void HandlePlatformMessage(fxl::RefPtr<PlatformMessage> message) override;
 

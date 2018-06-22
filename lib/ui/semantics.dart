@@ -26,6 +26,7 @@ class SemanticsAction {
   static const int _kPasteIndex = 1 << 14;
   static const int _kDidGainAccessibilityFocusIndex = 1 << 15;
   static const int _kDidLoseAccessibilityFocusIndex = 1 << 16;
+  static const int _kLocalContextActionIndex = 1 << 17;
 
   /// The numerical value for this action.
   ///
@@ -146,6 +147,8 @@ class SemanticsAction {
   /// Accessibility focus and input focus can be held by two different nodes!
   static const SemanticsAction didLoseAccessibilityFocus = const SemanticsAction._(_kDidLoseAccessibilityFocusIndex);
 
+  static const SemanticsAction localContextAction = const SemanticsAction._(_kLocalContextActionIndex);
+
   /// The possible semantics actions.
   ///
   /// The map's key is the [index] of the action and the value is the action
@@ -168,6 +171,7 @@ class SemanticsAction {
     _kPasteIndex: paste,
     _kDidGainAccessibilityFocusIndex: didGainAccessibilityFocus,
     _kDidLoseAccessibilityFocusIndex: didLoseAccessibilityFocus,
+    _kLocalContextActionIndex: localContextAction,
   };
 
   @override
@@ -207,6 +211,8 @@ class SemanticsAction {
         return 'SemanticsAction.didGainAccessibilityFocus';
       case _kDidLoseAccessibilityFocusIndex:
         return 'SemanticsAction.didLoseAccessibilityFocus';
+      case _kLocalContextActionIndex:
+        return 'SemanticsAction.localContextAction';
     }
     return null;
   }
@@ -498,6 +504,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     Float64List transform,
     Int32List childrenInTraversalOrder,
     Int32List childrenInHitTestOrder,
+    Int32List localContextActions,
   }) {
     if (transform.length != 16)
       throw new ArgumentError('transform argument must have 16 entries.');
@@ -523,6 +530,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       transform,
       childrenInTraversalOrder,
       childrenInHitTestOrder,
+      localContextActions,
     );
   }
   void _updateNode(
@@ -547,6 +555,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     Float64List transform,
     Int32List childrenInTraversalOrder,
     Int32List childrenInHitTestOrder,
+    Int32List localContextActions,
   ) native 'SemanticsUpdateBuilder_updateNode';
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
@@ -575,4 +584,28 @@ class SemanticsUpdate extends NativeFieldWrapperClass2 {
   /// After calling this function, the semantics update is cannot be used
   /// further.
   void dispose() native 'SemanticsUpdate_dispose';
+}
+
+
+class LocalContextActionUpdate extends NativeFieldWrapperClass2 {
+  LocalContextActionUpdate._();
+
+  void dispose() native 'LocalContextActionUpdate_dispose';
+}
+
+class LocalContextActionUpdateBuilder extends NativeFieldWrapperClass2 {
+  LocalContextActionUpdateBuilder() { _constructor(); }
+  void _constructor() native 'LocalContextActionUpdateBuilder_constructor';
+
+  void updateAction({int id, TextDirection textDirection, String label}) {
+    _updateAction(
+      id,
+      textDirection != null ? textDirection.index + 1 : 0,
+      label,
+    );
+  }
+
+  void _updateAction(int id, int textDirection, String label) native 'LocalContextActionUpdateBuilder_updateAction';
+
+  LocalContextActionUpdate build() native 'LocalContextActionUpdateBuilder_build';
 }

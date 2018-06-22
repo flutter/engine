@@ -198,6 +198,13 @@ public class FlutterNativeView implements BinaryMessenger {
         mFlutterView.updateSemantics(buffer, strings);
     }
 
+    // Called by native to update the semantics/accessibility tree.
+    private void updateLocalContextActions(ByteBuffer buffer, String[] strings) {
+        if (mFlutterView == null)
+            return;
+        mFlutterView.updateLocalContextActions(buffer, strings);
+    }
+
     // Called by native to notify first Flutter frame rendered.
     private void onFirstFrame() {
         if (mFlutterView == null)

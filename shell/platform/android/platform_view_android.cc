@@ -179,7 +179,7 @@ void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env,
 
 // |shell::PlatformView|
 void PlatformViewAndroid::UpdateSemantics(blink::SemanticsNodeUpdates update) {
-  constexpr size_t kBytesPerNode = 35 * sizeof(int32_t);
+  constexpr size_t kBytesPerNode = 36 * sizeof(int32_t);
   constexpr size_t kBytesPerChild = sizeof(int32_t);
 
   JNIEnv* env = fml::jni::AttachCurrentThread();
@@ -194,6 +194,7 @@ void PlatformViewAndroid::UpdateSemantics(blink::SemanticsNodeUpdates update) {
       num_bytes +=
           value.second.childrenInTraversalOrder.size() * kBytesPerChild;
       num_bytes += value.second.childrenInHitTestOrder.size() * kBytesPerChild;
+      num_bytes += value.second.localContextActions.size() * kBytesPerChild;
     }
 
     std::vector<uint8_t> buffer(num_bytes);
@@ -259,6 +260,10 @@ void PlatformViewAndroid::UpdateSemantics(blink::SemanticsNodeUpdates update) {
 
       for (int32_t child : node.childrenInHitTestOrder)
         buffer_int32[position++] = child;
+
+      buffer_int32[position++] = node.localContextActions.size();
+      for (int32_t child : node.localContextActions)
+        buffer_int32[position++] = child;
     }
 
     fml::jni::ScopedJavaLocalRef<jobject> direct_buffer(
@@ -268,6 +273,46 @@ void PlatformViewAndroid::UpdateSemantics(blink::SemanticsNodeUpdates update) {
         env, view.obj(), direct_buffer.obj(),
         fml::jni::VectorToStringArray(env, strings).obj());
   }
+}
+
+// |shell::PlatformView|
+void PlatformViewAndroid::UpdateLocalContextActions(blink::LocalContextActionUpdates update) {
+  constexpr size_t kBytesPerNode = 3 * sizeof(int32_t);
+
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  {
+      fml::jni::ScopedJavaLocalRef<jobject> view = java_object_.get(env);
+      if (view.is_null())
+        return;
+
+      size_t num_bytes = update.size() * kBytesPerNode;
+      std::vector<uint8_t> buffer(num_bytes);
+      int32_t* buffer_int32 = reinterpret_cast<int32_t*>(&buffer[0]);
+
+      std::vector<std::string> strings;
+      size_t position = 0;
+      for (const auto& value : update) {
+        // If you edit this code, make sure you update kBytesPerNode
+        // to match the number of values you are
+        // sending.
+        const blink::LocalContextAction& action = value.second;
+        buffer_int32[position++] = action.id;
+        buffer_int32[position++] = action.textDirection;
+        if (action.label.empty()) {
+          buffer_int32[position++] = -1;
+        } else {
+          buffer_int32[position++] = strings.size();
+          strings.push_back(action.label);
+        }
+      }
+
+      fml::jni::ScopedJavaLocalRef<jobject> direct_buffer(
+          env, env->NewDirectByteBuffer(buffer.data(), buffer.size()));
+
+      FlutterViewUpdateLocalContextActions(
+          env, view.obj(), direct_buffer.obj(),
+          fml::jni::VectorToStringArray(env, strings).obj());
+    }
 }
 
 void PlatformViewAndroid::RegisterExternalTexture(

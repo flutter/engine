@@ -720,6 +720,20 @@ void Shell::OnEngineUpdateSemantics(const Engine& engine,
 }
 
 // |shell::Engine::Delegate|
+void Shell::OnEngineUpdateLocalContextActions(const Engine& engine,
+                                              blink::LocalContextActionUpdates update) {
+  FXL_DCHECK(is_setup_);
+  FXL_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
+  task_runners_.GetPlatformTaskRunner()->PostTask(
+      [view = platform_view_->GetWeakPtr(), update = std::move(update)] {
+        if (view) {
+          view->UpdateLocalContextActions(std::move(update));
+        }
+      });
+}
+
+// |shell::Engine::Delegate|
 void Shell::OnEngineHandlePlatformMessage(
     const Engine& engine,
     fxl::RefPtr<blink::PlatformMessage> message) {

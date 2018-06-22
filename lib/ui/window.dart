@@ -674,6 +674,9 @@ class Window {
   /// semantics update cannot be used further.
   void updateSemantics(SemanticsUpdate update) native 'Window_updateSemantics';
 
+
+  void updateLocalContextActions(LocalContextActionUpdate update) native 'Window_updateLocalContextActions';
+
   /// Sends a message to a platform-specific plugin.
   ///
   /// The `name` parameter determines which plugin receives the message. The

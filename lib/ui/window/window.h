@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include "flutter/lib/ui/semantics/semantics_update.h"
+#include "flutter/lib/ui/semantics/local_context_action_update.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -31,6 +32,7 @@ class WindowClient {
   virtual void ScheduleFrame() = 0;
   virtual void Render(Scene* scene) = 0;
   virtual void UpdateSemantics(SemanticsUpdate* update) = 0;
+  virtual void UpdateLocalContextActions(LocalContextActionUpdate* update) = 0;
   virtual void HandlePlatformMessage(fxl::RefPtr<PlatformMessage> message) = 0;
   virtual FontCollection& GetFontCollection() = 0;
 

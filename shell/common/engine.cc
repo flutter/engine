@@ -368,6 +368,10 @@ void Engine::UpdateSemantics(blink::SemanticsNodeUpdates update) {
   delegate_.OnEngineUpdateSemantics(*this, std::move(update));
 }
 
+void Engine::UpdateLocalContextActions(blink::LocalContextActionUpdates update) {
+  delegate_.OnEngineUpdateLocalContextActions(*this, std::move(update));
+}
+
 void Engine::HandlePlatformMessage(
     fxl::RefPtr<blink::PlatformMessage> message) {
   if (message->channel() == kAssetChannel) {

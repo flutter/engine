@@ -11,6 +11,7 @@
 #include "flutter/assets/asset_manager.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#include "flutter/lib/ui/semantics/local_context_action.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -33,6 +34,10 @@ class Engine final : public blink::RuntimeDelegate {
     virtual void OnEngineUpdateSemantics(
         const Engine& engine,
         blink::SemanticsNodeUpdates update) = 0;
+
+    virtual void OnEngineUpdateLocalContextActions(
+        const Engine& engine,
+        blink::LocalContextActionUpdates update) = 0;
 
     virtual void OnEngineHandlePlatformMessage(
         const Engine& engine,
@@ -124,6 +129,9 @@ class Engine final : public blink::RuntimeDelegate {
 
   // |blink::RuntimeDelegate|
   void UpdateSemantics(blink::SemanticsNodeUpdates update) override;
+
+  // |blink::RuntimeDelegate|
+  void UpdateLocalContextActions(blink::LocalContextActionUpdates update) override;
 
   // |blink::RuntimeDelegate|
   void HandlePlatformMessage(

@@ -22,6 +22,8 @@
 #include "flutter/lib/ui/painting/vertices.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
+#include "flutter/lib/ui/semantics/local_context_action_update.h"
+#include "flutter/lib/ui/semantics/local_context_action_update_builder.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/lib/ui/text/paragraph_builder.h"
 #include "flutter/lib/ui/window/window.h"
@@ -71,6 +73,7 @@ void DartUI::InitForGlobal() {
     SceneHost::RegisterNatives(g_natives);
     SemanticsUpdate::RegisterNatives(g_natives);
     SemanticsUpdateBuilder::RegisterNatives(g_natives);
+    LocalContextActionUpdateBuilder::RegisterNatives(g_natives);
     Vertices::RegisterNatives(g_natives);
     Window::RegisterNatives(g_natives);
   }

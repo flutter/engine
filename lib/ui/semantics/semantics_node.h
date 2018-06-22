@@ -87,6 +87,7 @@ struct SemanticsNode {
   SkMatrix44 transform = SkMatrix44(SkMatrix44::kIdentity_Constructor);
   std::vector<int32_t> childrenInTraversalOrder;
   std::vector<int32_t> childrenInHitTestOrder;
+  std::vector<int32_t> localContextActions;
 };
 
 // Contains semantic nodes that need to be updated.
