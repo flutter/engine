@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.lang.reflect.*;
 
 class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMessageChannel.MessageHandler<Object> {
     private static final String TAG = "FlutterView";
@@ -50,6 +51,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private List<Integer> previousRoutes;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
+    private final HintTextProxy hintTextProxy;
 
     enum Action {
         TAP(1 << 0),
@@ -105,6 +107,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
         previousRoutes = new ArrayList<>();
+        hintTextProxy = new HintTextProxy();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(owner, "flutter/accessibility",
             StandardMessageCodec.INSTANCE);
     }
@@ -250,7 +253,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
-        result.setText(object.getValueLabelHint());
+        if (object.hasFlag(Flag.IS_TEXT_FIELD) && hintTextProxy.canSetHintText()) {
+            result.setText(object.getValue());
+            hintTextProxy.setHintText(result, object.getLabel());
+        } else {
+            result.setText(object.getValueLabelHint());
+        }
 
         // Accessibility Focus
         if (mA11yFocusedObject != null && mA11yFocusedObject.id == virtualViewId) {
@@ -741,6 +749,39 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
     }
 
+    // TODO(jonahwilliams): remove once https://github.com/flutter/flutter/issues/17780 is resolved.
+    private class HintTextProxy {
+        private Method setHintTextMethod;
+
+        HintTextProxy() {
+            if (Build.VERSION.SDK_INT >= 26) {
+                Class<AccessibilityNodeInfo> nodeClass = AccessibilityNodeInfo.class;
+                try {
+                    setHintTextMethod = nodeClass.getDeclaredMethod("setHintText", CharSequence.class);
+                } catch (NoSuchMethodException exception) {
+                    setHintTextMethod = null;
+                } catch (SecurityException exception) {
+                    setHintTextMethod = null;
+                }
+            } else {
+                setHintTextMethod = null;
+            }
+
+        }
+
+        private void setHintText(AccessibilityNodeInfo node, String hintText) {
+            try {
+                setHintTextMethod.invoke(node, hintText);
+            } catch (IllegalArgumentException exception) {}
+              catch (IllegalAccessException exception) {}
+              catch (InvocationTargetException exception) {}
+        }
+
+        private boolean canSetHintText() {
+            return setHintTextMethod != null;
+        }
+    }
+
     private class SemanticsObject {
         SemanticsObject() { }
 
@@ -1059,6 +1100,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         private float max(float a, float b, float c, float d) {
             return Math.max(a, Math.max(b, Math.max(c, d)));
+        }
+
+        private String getLabel() {
+            return label;
+        }
+
+        private String getValue() {
+            return value;
         }
 
         private String getValueLabelHint() {
