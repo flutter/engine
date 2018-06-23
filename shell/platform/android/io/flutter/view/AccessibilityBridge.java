@@ -91,7 +91,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         IS_OBSCURED(1 << 10),
         SCOPES_ROUTE(1 << 11),
         NAMES_ROUTE(1 << 12),
-        IS_HIDDEN(1 << 13);
+        IS_HIDDEN(1 << 13),
+        IS_IMAGE(1 << 14);
 
         Flag(int value) {
             this.value = value;
@@ -181,6 +182,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         if (object.hasFlag(Flag.IS_BUTTON)) {
           result.setClassName("android.widget.Button");
+        }
+        if (object.hasFlag(Flag.IS_IMAGE)) {
+            result.setClassName("android.widget.ImageView");
         }
 
         if (object.parent != null) {
