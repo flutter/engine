@@ -16,7 +16,7 @@ abstract class PluginUtilities {
   /// retrieve the function's name.
   ///
   /// `name` is the name of the function we want a closure for. This must not
-  /// be `null`.
+  /// be null.
   ///
   /// `libraryPath` is the path which points to the library which contains the
   /// function of interest. This path can be retrieved using
@@ -28,7 +28,7 @@ abstract class PluginUtilities {
   /// not provided, `name` is assumed to be referring to a top-level function.
   ///
   /// Returns a closure for `name` as a [Function] if the lookup was successful.
-  /// Otherwise, `null` is returned on error.
+  /// Otherwise, null is returned on error.
   static Function getClosureByName({String name, String libraryPath, String className}) {
     assert(name != null, "'name' must not be null.");
     return _lookupClosure(name, libraryPath, className);
@@ -37,10 +37,10 @@ abstract class PluginUtilities {
   /// Get the path for the library which contains a given method.
   ///
   /// `closure` is the closure of the function that we want to find the library
-  /// path for. This must not be `null`.
+  /// path for. This must not be null.
   ///
   /// Returns a [String] representing the path to the library which contains
-  /// `closure`. Returns `null` if an error occurs or `closure` is not found.
+  /// `closure`. Returns null if an error occurs or `closure` is not found.
   static String getPathForFunctionLibrary(Function closure) {
     assert(closure != null, "'closure' must not be null.");
     return _getFunctionLibraryUrl(closure);
@@ -48,10 +48,10 @@ abstract class PluginUtilities {
 
   /// Get the name of a [Function] as a [String].
   /// 
-  /// `closure` must not be `null`.
+  /// `closure` must not be null.
   ///
   /// Returns a [String] representing the name of the function if the function
-  /// exists, otherwise `null` is returned.
+  /// exists, otherwise null is returned.
   static String getNameOfFunction(Function closure) {
     assert(closure != null, "'closure' must not be null.");
     return _getFunctionName(closure);
@@ -59,10 +59,10 @@ abstract class PluginUtilities {
 
   /// Get the name of a class containing [Function] as a [String].
   /// 
-  /// `closure` must not be `null.
+  /// `closure` must not be null.
   ///
   /// Returns a [String] representing the name of the function if the function
-  /// exists and is a member of a class, otherwise `null` is returned.
+  /// exists and is a member of a class, otherwise null is returned.
   static String getNameOfFunctionClass(Function closure) {
     assert(closure != null, "'closure' must not be null.");
     return _getNameOfFunctionClass(closure);

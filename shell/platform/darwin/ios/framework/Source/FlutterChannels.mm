@@ -166,11 +166,6 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
       autorelease];
 }
 
-- (void)setBinaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
-  [_messenger release];
-  _messenger = [messenger retain];
-}
-
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                        codec:(NSObject<FlutterMethodCodec>*)codec {
