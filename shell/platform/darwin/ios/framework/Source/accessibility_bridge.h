@@ -15,6 +15,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#include "flutter/lib/ui/semantics/local_context_action.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
@@ -103,7 +104,10 @@ class AccessibilityBridge final {
   ~AccessibilityBridge();
 
   void UpdateSemantics(blink::SemanticsNodeUpdates nodes);
+  void UpdateLocalContextActions(blink::LocalContextActionUpdates actions);
   void DispatchSemanticsAction(int32_t id, blink::SemanticsAction action);
+  blink::LocalContextAction getAction(int32_t id);
+
   UIView<UITextInput>* textInputView();
 
   UIView* view() const { return view_; }
@@ -123,6 +127,7 @@ class AccessibilityBridge final {
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
   fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;
   int32_t previous_route_id_;
+  std::unordered_map<int32_t, blink::LocalContextAction> actions_;
   std::vector<int32_t> previous_routes_;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);

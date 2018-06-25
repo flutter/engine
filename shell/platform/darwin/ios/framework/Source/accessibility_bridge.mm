@@ -175,6 +175,10 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   }
 }
 
+- (void)onCustomAction:(UIAccessibilityCustomAction*)action {
+  NSLog(@"%@", @"hello");
+}
+
 - (NSString*)routeName {
   // Returns the first non-null and non-empty semantic label of a child
   // with an NamesRoute flag. Otherwise returns nil.
@@ -292,6 +296,16 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     return NO;
   [self bridge] -> DispatchSemanticsAction([self uid], action);
   return YES;
+}
+
+- (NSArray<UIAccessibilityCustomAction *>*) accessibilityCustomActions {
+  int32_t length = [self node].localContextActions.size();
+  NSMutableArray<UIAccessibilityCustomAction*>* actions =  [[[NSMutableArray alloc] initWithCapacity:length] autorelease];
+  for (int32_t action_id : [self node].localContextActions) {
+    auto action = [self bridge]->getAction(action_id);
+    //[actions :add [UIAccessibilityCustomAction initWithName:action.label target:[self uid] selector: @selector(onCustomAction:)]]]
+  }
+  return actions;
 }
 
 #pragma mark UIAccessibilityFocus overrides
@@ -479,6 +493,14 @@ AccessibilityBridge::~AccessibilityBridge() {
 
 UIView<UITextInput>* AccessibilityBridge::textInputView() {
   return [platform_view_->GetTextInputPlugin() textInputView];
+}
+
+void AccessibilityBridge::UpdateLocalContextActions(blink::LocalContextActionUpdates actions) {
+  actions_  = actions;
+}
+
+blink::LocalContextAction AccessibilityBridge::getAction(int32_t id) {
+  return actions_[id];
 }
 
 void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
