@@ -29,6 +29,7 @@
 #include "font_skia.h"
 #include "lib/fxl/logging.h"
 #include "minikin/FontLanguageListCache.h"
+#include "minikin/GraphemeBreak.h"
 #include "minikin/HbFontCache.h"
 #include "minikin/LayoutUtils.h"
 #include "minikin/LineBreaker.h"
@@ -47,11 +48,13 @@ namespace {
 class GlyphTypeface {
  public:
   GlyphTypeface(sk_sp<SkTypeface> typeface, minikin::FontFakery fakery)
-      : typeface_(std::move(typeface)), fake_bold_(fakery.isFakeBold()) {}
+      : typeface_(std::move(typeface)),
+        fake_bold_(fakery.isFakeBold()),
+        fake_italic_(fakery.isFakeItalic()) {}
 
   bool operator==(GlyphTypeface& other) {
     return other.typeface_.get() == typeface_.get() &&
-           other.fake_bold_ == fake_bold_;
+           other.fake_bold_ == fake_bold_ && other.fake_italic_ == fake_italic_;
   }
 
   bool operator!=(GlyphTypeface& other) { return !(*this == other); }
@@ -59,11 +62,13 @@ class GlyphTypeface {
   void apply(SkPaint& paint) {
     paint.setTypeface(typeface_);
     paint.setFakeBoldText(fake_bold_);
+    paint.setTextSkewX(fake_italic_ ? -SK_Scalar1 / 4 : 0);
   }
 
  private:
   sk_sp<SkTypeface> typeface_;
   bool fake_bold_;
+  bool fake_italic_;
 };
 
 GlyphTypeface GetGlyphTypeface(const minikin::Layout& layout, size_t index) {
@@ -155,16 +160,6 @@ void GetFontAndMinikinPaint(const TextStyle& style,
   paint->paintFlags |= minikin::LinearTextFlag;
 }
 
-sk_sp<SkTypeface> GetDefaultSkiaTypeface(
-    const std::shared_ptr<txt::FontCollection>& font_collection,
-    const TextStyle& style) {
-  std::shared_ptr<minikin::FontCollection> collection =
-      font_collection->GetMinikinFontCollectionForFamily(style.font_family);
-  minikin::FakedFont faked_font =
-      collection->baseFontFaked(GetMinikinFontStyle(style));
-  return static_cast<FontSkia*>(faked_font.font)->GetSkTypeface();
-}
-
 void FindWords(const std::vector<uint16_t>& text,
                size_t start,
                size_t end,
@@ -196,6 +191,10 @@ Paragraph::GlyphPosition::GlyphPosition(double x_start,
     : code_units(code_unit_index, code_unit_index + code_unit_width),
       x_pos(x_start, x_start + x_advance) {}
 
+void Paragraph::GlyphPosition::Shift(double delta) {
+  x_pos.Shift(delta);
+}
+
 Paragraph::GlyphLine::GlyphLine(std::vector<GlyphPosition>&& p, size_t tcu)
     : positions(std::move(p)), total_code_units(tcu) {}
 
@@ -211,6 +210,12 @@ Paragraph::CodeUnitRun::CodeUnitRun(std::vector<GlyphPosition>&& p,
       line_number(line),
       font_metrics(metrics),
       direction(dir) {}
+
+void Paragraph::CodeUnitRun::Shift(double delta) {
+  x_pos.Shift(delta);
+  for (GlyphPosition& position : positions)
+    position.Shift(delta);
+}
 
 Paragraph::Paragraph() {
   breaker_.setLocale(icu::Locale(), nullptr);
@@ -248,7 +253,8 @@ bool Paragraph::ComputeLineBreaks() {
     size_t block_size = block_end - block_start;
 
     if (block_size == 0) {
-      line_ranges_.emplace_back(block_start, block_start, true);
+      line_ranges_.emplace_back(block_start, block_end, block_end,
+                                block_end + 1, true);
       line_widths_.push_back(0);
       continue;
     }
@@ -275,8 +281,7 @@ bool Paragraph::ComputeLineBreaks() {
       minikin::MinikinPaint paint;
       GetFontAndMinikinPaint(run.style, &font, &paint);
       std::shared_ptr<minikin::FontCollection> collection =
-          font_collection_->GetMinikinFontCollectionForFamily(
-              run.style.font_family);
+          GetMinikinFontCollectionForStyle(run.style);
       if (collection == nullptr) {
         FXL_LOG(INFO) << "Could not find font collection for family \""
                       << run.style.font_family << "\".";
@@ -296,8 +301,20 @@ bool Paragraph::ComputeLineBreaks() {
     const int* breaks = breaker_.getBreaks();
     for (size_t i = 0; i < breaks_count; ++i) {
       size_t break_start = (i > 0) ? breaks[i - 1] : 0;
-      line_ranges_.emplace_back(break_start + block_start,
-                                breaks[i] + block_start, i == breaks_count - 1);
+      size_t line_start = break_start + block_start;
+      size_t line_end = breaks[i] + block_start;
+      bool hard_break = i == breaks_count - 1;
+      size_t line_end_including_newline =
+          (hard_break && line_end < text_.size()) ? line_end + 1 : line_end;
+      size_t line_end_excluding_whitespace = line_end;
+      while (
+          line_end_excluding_whitespace > line_start &&
+          minikin::isLineEndSpace(text_[line_end_excluding_whitespace - 1])) {
+        line_end_excluding_whitespace--;
+      }
+      line_ranges_.emplace_back(line_start, line_end,
+                                line_end_excluding_whitespace,
+                                line_end_including_newline, hard_break);
       line_widths_.push_back(breaker_.getWidths()[i]);
     }
 
@@ -409,14 +426,6 @@ void Paragraph::Layout(double width, bool force) {
   if (!ComputeBidiRuns(&bidi_runs))
     return;
 
-  if (!grapheme_breaker_) {
-    UErrorCode icu_status = U_ZERO_ERROR;
-    grapheme_breaker_.reset(
-        icu::BreakIterator::createCharacterInstance(icu::Locale(), icu_status));
-    if (!U_SUCCESS(icu_status))
-      return;
-  }
-
   SkPaint paint;
   paint.setAntiAlias(true);
   paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
@@ -444,9 +453,9 @@ void Paragraph::Layout(double width, bool force) {
     std::vector<Range<size_t>> words;
     double word_gap_width = 0;
     size_t word_index = 0;
-    bool justify_line = (paragraph_style_.text_align == TextAlign::justify &&
-                         line_number != line_limit - 1 &&
-                         !line_ranges_[line_number].hard_break);
+    bool justify_line =
+        (paragraph_style_.text_align == TextAlign::justify &&
+         line_number != line_limit - 1 && !line_range.hard_break);
     FindWords(text_, line_range.start, line_range.end, &words);
     if (justify_line) {
       if (words.size() > 1) {
@@ -455,31 +464,41 @@ void Paragraph::Layout(double width, bool force) {
       }
     }
 
+    // Exclude trailing whitespace from right-justified lines so the last
+    // visible character in the line will be flush with the right margin.
+    size_t line_end_index =
+        (paragraph_style_.effective_align() == TextAlign::right ||
+         paragraph_style_.effective_align() == TextAlign::center)
+            ? line_range.end_excluding_whitespace
+            : line_range.end;
+
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
     for (const BidiRun& bidi_run : bidi_runs) {
-      if (bidi_run.start() < line_range.end &&
+      if (bidi_run.start() < line_end_index &&
           bidi_run.end() > line_range.start) {
         line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
-                               std::min(bidi_run.end(), line_range.end),
+                               std::min(bidi_run.end(), line_end_index),
                                bidi_run.direction(), bidi_run.style());
       }
     }
 
     std::vector<GlyphPosition> line_glyph_positions;
-    double run_x_offset = GetLineXOffset(line_number);
+    std::vector<CodeUnitRun> line_code_unit_runs;
+    double run_x_offset = 0;
     double justify_x_offset = 0;
     std::vector<PaintRecord> paint_records;
 
-    for (const BidiRun& run : line_runs) {
+    for (auto line_run_it = line_runs.begin(); line_run_it != line_runs.end();
+         ++line_run_it) {
+      const BidiRun& run = *line_run_it;
       minikin::FontStyle font;
       minikin::MinikinPaint minikin_paint;
       GetFontAndMinikinPaint(run.style(), &font, &minikin_paint);
       paint.setTextSize(run.style().font_size);
 
       std::shared_ptr<minikin::FontCollection> minikin_font_collection =
-          font_collection_->GetMinikinFontCollectionForFamily(
-              run.style().font_family);
+          GetMinikinFontCollectionForStyle(run.style());
 
       // Lay out this run.
       uint16_t* text_ptr = text_.data();
@@ -491,6 +510,7 @@ void Paragraph::Layout(double width, bool force) {
       const std::u16string& ellipsis = paragraph_style_.ellipsis;
       std::vector<uint16_t> ellipsized_text;
       if (ellipsis.length() && !isinf(width_) && !line_range.hard_break &&
+          line_run_it == line_runs.end() - 1 &&
           (line_number == line_limit - 1 ||
            paragraph_style_.unlimited_lines())) {
         float ellipsis_width = layout.measureText(
@@ -506,7 +526,7 @@ void Paragraph::Layout(double width, bool force) {
         // Truncate characters from the text until the ellipsis fits.
         size_t truncate_count = 0;
         while (truncate_count < text_count &&
-               text_width + ellipsis_width > width_) {
+               run_x_offset + text_width + ellipsis_width > width_) {
           text_width -= text_advances[text_count - truncate_count - 1];
           truncate_count++;
         }
@@ -537,13 +557,11 @@ void Paragraph::Layout(double width, bool force) {
       if (layout.nGlyphs() == 0)
         continue;
 
+      std::vector<float> layout_advances(text_count);
+      layout.getAdvances(layout_advances.data());
+
       // Break the layout into blobs that share the same SkPaint parameters.
       std::vector<Range<size_t>> glyph_blobs = GetLayoutTypefaceRuns(layout);
-
-      grapheme_breaker_->setText(
-          icu::UnicodeString(false, text_ptr + text_start, text_count));
-      if (run.is_rtl())
-        grapheme_breaker_->last();
 
       double word_start_position = std::numeric_limits<double>::quiet_NaN();
 
@@ -556,58 +574,78 @@ void Paragraph::Layout(double width, bool force) {
             builder.allocRunPos(paint, glyph_blob.end - glyph_blob.start);
 
         for (size_t glyph_index = glyph_blob.start;
-             glyph_index < glyph_blob.end; ++glyph_index) {
-          size_t blob_index = glyph_index - glyph_blob.start;
-          blob_buffer.glyphs[blob_index] = layout.getGlyphId(glyph_index);
+             glyph_index < glyph_blob.end;) {
+          size_t cluster_start_glyph_index = glyph_index;
+          uint32_t cluster = layout.getGlyphCluster(cluster_start_glyph_index);
+          double glyph_x_offset;
 
-          size_t pos_index = blob_index * 2;
-          double glyph_x_offset = layout.getX(glyph_index) + justify_x_offset;
-          blob_buffer.pos[pos_index] = glyph_x_offset;
-          blob_buffer.pos[pos_index + 1] = layout.getY(glyph_index);
+          // Add all the glyphs in this cluster to the text blob.
+          do {
+            size_t blob_index = glyph_index - glyph_blob.start;
+            blob_buffer.glyphs[blob_index] = layout.getGlyphId(glyph_index);
 
-          // The glyph may be a ligature.  Determine how many input characters
-          // are joined into this glyph.  Note that each character may be
-          // encoded as multiple UTF-16 code units.
-          Range<int32_t> glyph_code_units;
-          std::vector<size_t> subglyph_code_unit_counts;
+            size_t pos_index = blob_index * 2;
+            blob_buffer.pos[pos_index] =
+                layout.getX(glyph_index) + justify_x_offset;
+            blob_buffer.pos[pos_index + 1] = layout.getY(glyph_index);
+
+            if (glyph_index == cluster_start_glyph_index)
+              glyph_x_offset = blob_buffer.pos[pos_index];
+
+            glyph_index++;
+          } while (glyph_index < glyph_blob.end &&
+                   layout.getGlyphCluster(glyph_index) == cluster);
+
+          Range<int32_t> glyph_code_units(cluster, 0);
+          std::vector<size_t> grapheme_code_unit_counts;
           if (run.is_rtl()) {
-            glyph_code_units.end = grapheme_breaker_->current();
-            glyph_code_units.start = grapheme_breaker_->previous();
-            if (glyph_code_units.start == icu::BreakIterator::DONE)
-              break;
-            subglyph_code_unit_counts.push_back(glyph_code_units.width());
-          } else {
-            glyph_code_units.start = grapheme_breaker_->current();
-            glyph_code_units.end = grapheme_breaker_->next();
-            if (glyph_code_units.end == icu::BreakIterator::DONE)
-              break;
-            subglyph_code_unit_counts.push_back(glyph_code_units.width());
-            while (glyph_code_units.end < static_cast<int32_t>(text_count)) {
-              if (layout.getCharAdvance(glyph_code_units.end) != 0)
-                break;
-              if (grapheme_breaker_->next() == icu::BreakIterator::DONE)
-                break;
-              subglyph_code_unit_counts.push_back(grapheme_breaker_->current() -
-                                                  glyph_code_units.end);
-              glyph_code_units.end = grapheme_breaker_->current();
+            if (cluster_start_glyph_index > 0) {
+              glyph_code_units.end =
+                  layout.getGlyphCluster(cluster_start_glyph_index - 1);
+            } else {
+              glyph_code_units.end = text_count;
             }
+            grapheme_code_unit_counts.push_back(glyph_code_units.width());
+          } else {
+            if (glyph_index < layout.nGlyphs()) {
+              glyph_code_units.end = layout.getGlyphCluster(glyph_index);
+            } else {
+              glyph_code_units.end = text_count;
+            }
+
+            // The glyph may be a ligature.  Determine how many graphemes are
+            // joined into this glyph and how many input code units map to
+            // each grapheme.
+            size_t code_unit_count = 1;
+            for (int32_t offset = glyph_code_units.start + 1;
+                 offset < glyph_code_units.end; ++offset) {
+              if (minikin::GraphemeBreak::isGraphemeBreak(
+                      layout_advances.data(), text_ptr, text_start, text_count,
+                      offset)) {
+                grapheme_code_unit_counts.push_back(code_unit_count);
+                code_unit_count = 1;
+              } else {
+                code_unit_count++;
+              }
+            }
+            grapheme_code_unit_counts.push_back(code_unit_count);
           }
           float glyph_advance = layout.getCharAdvance(glyph_code_units.start);
-          float subglyph_advance =
-              glyph_advance / subglyph_code_unit_counts.size();
+          float grapheme_advance =
+              glyph_advance / grapheme_code_unit_counts.size();
 
           glyph_positions.emplace_back(run_x_offset + glyph_x_offset,
-                                       subglyph_advance,
+                                       grapheme_advance,
                                        run.start() + glyph_code_units.start,
-                                       subglyph_code_unit_counts[0]);
+                                       grapheme_code_unit_counts[0]);
 
-          // Compute positions for the additional characters in the ligature.
-          for (size_t i = 1; i < subglyph_code_unit_counts.size(); ++i) {
+          // Compute positions for the additional graphemes in the ligature.
+          for (size_t i = 1; i < grapheme_code_unit_counts.size(); ++i) {
             glyph_positions.emplace_back(
-                glyph_positions.back().x_pos.end, subglyph_advance,
+                glyph_positions.back().x_pos.end, grapheme_advance,
                 glyph_positions.back().code_units.start +
-                    subglyph_code_unit_counts[i - 1],
-                subglyph_code_unit_counts[i]);
+                    grapheme_code_unit_counts[i - 1],
+                grapheme_code_unit_counts[i]);
           }
 
           if (word_index < words.size() &&
@@ -649,7 +687,7 @@ void Paragraph::Layout(double width, bool force) {
                   [](const GlyphPosition& a, const GlyphPosition& b) {
                     return a.code_units.start < b.code_units.start;
                   });
-        code_unit_runs_.emplace_back(
+        line_code_unit_runs.emplace_back(
             std::move(code_unit_positions),
             Range<size_t>(run.start(), run.end()),
             Range<double>(glyph_positions.front().x_pos.start,
@@ -659,6 +697,25 @@ void Paragraph::Layout(double width, bool force) {
 
       run_x_offset += layout.getAdvance();
     }
+
+    // Adjust the glyph positions based on the alignment of the line.
+    double line_x_offset = GetLineXOffset(run_x_offset);
+    if (line_x_offset) {
+      for (CodeUnitRun& code_unit_run : line_code_unit_runs) {
+        code_unit_run.Shift(line_x_offset);
+      }
+      for (GlyphPosition& position : line_glyph_positions) {
+        position.Shift(line_x_offset);
+      }
+    }
+
+    size_t next_line_start = (line_number < line_ranges_.size() - 1)
+                                 ? line_ranges_[line_number + 1].start
+                                 : text_.size();
+    glyph_lines_.emplace_back(std::move(line_glyph_positions),
+                              next_line_start - line_range.start);
+    code_unit_runs_.insert(code_unit_runs_.end(), line_code_unit_runs.begin(),
+                           line_code_unit_runs.end());
 
     double max_line_spacing = 0;
     double max_descent = 0;
@@ -690,7 +747,7 @@ void Paragraph::Layout(double width, bool force) {
     if (paint_records.empty()) {
       SkPaint::FontMetrics metrics;
       TextStyle style(paragraph_style_.GetTextStyle());
-      paint.setTypeface(GetDefaultSkiaTypeface(font_collection_, style));
+      paint.setTypeface(GetDefaultSkiaTypeface(style));
       paint.setTextSize(style.font_size);
       paint.getFontMetrics(&metrics);
       update_line_metrics(metrics, style);
@@ -704,15 +761,9 @@ void Paragraph::Layout(double width, bool force) {
 
     for (PaintRecord& paint_record : paint_records) {
       paint_record.SetOffset(
-          SkPoint::Make(paint_record.offset().x(), y_offset));
+          SkPoint::Make(paint_record.offset().x() + line_x_offset, y_offset));
       records_.emplace_back(std::move(paint_record));
     }
-
-    size_t next_line_start = (line_number < line_ranges_.size() - 1)
-                                 ? line_ranges_[line_number + 1].start
-                                 : text_.size();
-    glyph_lines_.emplace_back(std::move(line_glyph_positions),
-                              next_line_start - line_range.start);
   }
 
   max_intrinsic_width_ = 0;
@@ -739,19 +790,16 @@ void Paragraph::Layout(double width, bool force) {
             });
 }
 
-double Paragraph::GetLineXOffset(size_t line) {
-  if (line >= line_widths_.size() || isinf(width_))
+double Paragraph::GetLineXOffset(double line_total_advance) {
+  if (isinf(width_))
     return 0;
 
-  TextAlign align = paragraph_style_.text_align;
-  TextDirection direction = paragraph_style_.text_direction;
+  TextAlign align = paragraph_style_.effective_align();
 
-  if (align == TextAlign::right ||
-      (align == TextAlign::start && direction == TextDirection::rtl) ||
-      (align == TextAlign::end && direction == TextDirection::ltr)) {
-    return width_ - line_widths_[line];
-  } else if (paragraph_style_.text_align == TextAlign::center) {
-    return (width_ - line_widths_[line]) / 2;
+  if (align == TextAlign::right) {
+    return width_ - line_total_advance;
+  } else if (align == TextAlign::center) {
+    return (width_ - line_total_advance) / 2;
   } else {
     return 0;
   }
@@ -801,14 +849,45 @@ void Paragraph::SetFontCollection(
   font_collection_ = std::move(font_collection);
 }
 
+std::shared_ptr<minikin::FontCollection>
+Paragraph::GetMinikinFontCollectionForStyle(const TextStyle& style) {
+  std::string locale;
+  if (!style.locale.empty()) {
+    uint32_t language_list_id =
+        minikin::FontStyle::registerLanguageList(style.locale);
+    const minikin::FontLanguages& langs =
+        minikin::FontLanguageListCache::getById(language_list_id);
+    if (langs.size()) {
+      locale = langs[0].getString();
+    }
+  }
+
+  return font_collection_->GetMinikinFontCollectionForFamily(style.font_family,
+                                                             locale);
+}
+
+sk_sp<SkTypeface> Paragraph::GetDefaultSkiaTypeface(const TextStyle& style) {
+  std::shared_ptr<minikin::FontCollection> collection =
+      GetMinikinFontCollectionForStyle(style);
+  minikin::FakedFont faked_font =
+      collection->baseFontFaked(GetMinikinFontStyle(style));
+  return static_cast<FontSkia*>(faked_font.font)->GetSkTypeface();
+}
+
 // The x,y coordinates will be the very top left corner of the rendered
 // paragraph.
 void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
   canvas->translate(x, y);
   SkPaint paint;
   for (const PaintRecord& record : records_) {
-    paint.setColor(record.style().color);
+    if (record.style().has_foreground) {
+      paint = record.style().foreground;
+    } else {
+      paint.reset();
+      paint.setColor(record.style().color);
+    }
     SkPoint offset = record.offset();
+    PaintBackground(canvas, record);
     canvas->drawTextBlob(record.text(), offset.x(), offset.y(), paint);
     PaintDecorations(canvas, record);
   }
@@ -973,9 +1052,20 @@ void Paragraph::PaintDecorations(SkCanvas* canvas, const PaintRecord& record) {
   }
 }
 
+void Paragraph::PaintBackground(SkCanvas* canvas, const PaintRecord& record) {
+  if (!record.style().has_background)
+    return;
+
+  const SkPaint::FontMetrics& metrics = record.metrics();
+  SkRect rect(SkRect::MakeLTRB(0, metrics.fAscent, record.GetRunWidth(),
+                               metrics.fDescent));
+  rect.offset(record.offset());
+  canvas->drawRect(rect, record.style().background);
+}
+
 std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(size_t start,
                                                             size_t end) const {
-  std::vector<TextBox> boxes;
+  std::map<size_t, std::vector<Paragraph::TextBox>> line_boxes;
 
   for (const CodeUnitRun& run : code_unit_runs_) {
     if (run.code_units.start >= end)
@@ -1003,10 +1093,34 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(size_t start,
       if (left == SK_ScalarMax || right == SK_ScalarMin)
         continue;
     }
-    boxes.emplace_back(SkRect::MakeLTRB(left, top, right, bottom),
-                       run.direction);
+    line_boxes[run.line_number].emplace_back(
+        SkRect::MakeLTRB(left, top, right, bottom), run.direction);
   }
 
+  // Add empty rectangles representing any newline characters within the range.
+  for (size_t line_number = 0; line_number < line_ranges_.size();
+       ++line_number) {
+    const LineRange& line = line_ranges_[line_number];
+    if (line.start >= end)
+      break;
+    if (line.end_including_newline <= start)
+      continue;
+    if (line_boxes.find(line_number) == line_boxes.end()) {
+      if (line.end != line.end_including_newline && line.end >= start &&
+          line.end_including_newline <= end) {
+        SkScalar x = line_widths_[line_number];
+        SkScalar top = (line_number > 0) ? line_heights_[line_number - 1] : 0;
+        SkScalar bottom = line_heights_[line_number];
+        line_boxes[line_number].emplace_back(
+            SkRect::MakeLTRB(x, top, x, bottom), TextDirection::ltr);
+      }
+    }
+  }
+
+  std::vector<Paragraph::TextBox> boxes;
+  for (const auto& kv : line_boxes) {
+    boxes.insert(boxes.end(), kv.second.begin(), kv.second.end());
+  }
   return boxes;
 }
 

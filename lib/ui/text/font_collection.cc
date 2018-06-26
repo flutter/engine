@@ -6,54 +6,47 @@
 
 #include <mutex>
 
+#include "flutter/lib/ui/text/asset_manager_font_provider.h"
 #include "flutter/runtime/test_font_data.h"
 #include "third_party/rapidjson/rapidjson/document.h"
 #include "third_party/rapidjson/rapidjson/rapidjson.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
+#include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/skia/include/core/SkStream.h"
-#include "third_party/skia/include/ports/SkFontMgr.h"
+#include "third_party/skia/include/core/SkTypeface.h"
 #include "txt/asset_font_manager.h"
 #include "txt/test_font_manager.h"
+#include "txt/typeface_font_asset_provider.h"
 
 namespace blink {
-
-FontCollection& FontCollection::ForProcess() {
-  static std::once_flag once = {};
-  static FontCollection* gCollection = nullptr;
-  std::call_once(once, []() { gCollection = new FontCollection(); });
-  return *gCollection;
-}
 
 FontCollection::FontCollection()
     : collection_(std::make_shared<txt::FontCollection>()) {
   collection_->SetDefaultFontManager(SkFontMgr::RefDefault());
 }
 
-FontCollection::~FontCollection() = default;
+FontCollection::~FontCollection() {
+  collection_.reset();
+  SkGraphics::PurgeFontCache();
+}
 
 std::shared_ptr<txt::FontCollection> FontCollection::GetFontCollection() const {
   return collection_;
 }
 
-void FontCollection::RegisterFontsFromAssetProvider(
-    fxl::RefPtr<blink::AssetProvider> asset_provider) {
-
-  if (!asset_provider){
-    return;
-  }
-
-  std::vector<uint8_t> manifest_data;
-  if (!asset_provider->GetAsBuffer("FontManifest.json", &manifest_data)) {
+void FontCollection::RegisterFonts(fml::RefPtr<AssetManager> asset_manager) {
+  std::unique_ptr<fml::Mapping> manifest_mapping =
+      asset_manager->GetAsMapping("FontManifest.json");
+  if (manifest_mapping == nullptr) {
     FXL_DLOG(WARNING) << "Could not find the font manifest in the asset store.";
     return;
   }
 
   rapidjson::Document document;
-  static_assert(sizeof(decltype(manifest_data)::value_type) ==
-                    sizeof(decltype(document)::Ch),
-                "");
-  document.Parse(
-      reinterpret_cast<decltype(document)::Ch*>(manifest_data.data()),
-      manifest_data.size());
+  static_assert(sizeof(decltype(document)::Ch) == sizeof(uint8_t), "");
+  document.Parse(reinterpret_cast<const decltype(document)::Ch*>(
+                     manifest_mapping->GetMapping()),
+                 manifest_mapping->GetSize());
 
   if (document.HasParseError()) {
     FXL_DLOG(WARNING) << "Error parsing the font manifest in the asset store.";
@@ -66,7 +59,8 @@ void FontCollection::RegisterFontsFromAssetProvider(
     return;
   }
 
-  auto font_asset_data_provider = std::make_unique<txt::AssetDataProvider>();
+  auto font_provider =
+      std::make_unique<AssetManagerFontProvider>(asset_manager);
 
   for (const auto& family : document.GetArray()) {
     auto family_name = family.FindMember("family");
@@ -91,37 +85,27 @@ void FontCollection::RegisterFontsFromAssetProvider(
       }
 
       // TODO: Handle weights and styles.
-      std::vector<uint8_t> font_data;
-      if (asset_provider->GetAsBuffer(font_asset->value.GetString(),
-                                      &font_data)) {
-        // The data must be copied because it needs to be moved into the
-        // typeface as a stream.
-        auto data =
-            SkMemoryStream::MakeCopy(font_data.data(), font_data.size());
-        // Ownership of the stream is transferred.
-        auto typeface = SkTypeface::MakeFromStream(data.release());
-        font_asset_data_provider->RegisterTypeface(
-            std::move(typeface), family_name->value.GetString());
-      }
+      font_provider->RegisterAsset(family_name->value.GetString(),
+                                   font_asset->value.GetString());
     }
   }
 
   collection_->SetAssetFontManager(
-      sk_make_sp<txt::AssetFontManager>(std::move(font_asset_data_provider)));
+      sk_make_sp<txt::AssetFontManager>(std::move(font_provider)));
 }
 
 void FontCollection::RegisterTestFonts() {
   sk_sp<SkTypeface> test_typeface =
       SkTypeface::MakeFromStream(GetTestFontData().release());
 
-  std::unique_ptr<txt::AssetDataProvider> asset_data_provider =
-      std::make_unique<txt::AssetDataProvider>();
+  std::unique_ptr<txt::TypefaceFontAssetProvider> font_provider =
+      std::make_unique<txt::TypefaceFontAssetProvider>();
 
-  asset_data_provider->RegisterTypeface(std::move(test_typeface),
-                                        GetTestFontFamilyName());
+  font_provider->RegisterTypeface(std::move(test_typeface),
+                                  GetTestFontFamilyName());
 
   collection_->SetTestFontManager(sk_make_sp<txt::TestFontManager>(
-      std::move(asset_data_provider), GetTestFontFamilyName()));
+      std::move(font_provider), GetTestFontFamilyName()));
 
   collection_->DisableFontFallback();
 }

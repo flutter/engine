@@ -55,6 +55,10 @@ enum class SemanticsFlags : int32_t {
   kIsEnabled = 1 << 7,
   kIsInMutuallyExclusiveGroup = 1 << 8,
   kIsHeader = 1 << 9,
+  kIsObscured = 1 << 10,
+  kScopesRoute = 1 << 11,
+  kNamesRoute = 1 << 12,
+  kIsHidden = 1 << 13,
 };
 
 struct SemanticsNode {
@@ -78,12 +82,11 @@ struct SemanticsNode {
   std::string increasedValue;
   std::string decreasedValue;
   int32_t textDirection = 0;  // 0=unknown, 1=rtl, 2=ltr
-  int32_t nextNodeId = -1;
-  int32_t previousNodeId = -1;
 
   SkRect rect = SkRect::MakeEmpty();
   SkMatrix44 transform = SkMatrix44(SkMatrix44::kIdentity_Constructor);
-  std::vector<int32_t> children;
+  std::vector<int32_t> childrenInTraversalOrder;
+  std::vector<int32_t> childrenInHitTestOrder;
 };
 
 // Contains semantic nodes that need to be updated.

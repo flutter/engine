@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("$flutter_root/lib/ui/dart_ui.gni")
+import("//build/compiled_action.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 import("//third_party/dart/utils/generate_entry_points_json.gni")
 
@@ -24,25 +25,10 @@ copy("generate_dart_ui") {
   ]
 }
 
-if (is_fuchsia) {
-  dart_library("generate_package_map") {
-    # The sole purpose of this target is to generate a .packages file.
-    sources = []
-
-    infer_package_name = true
-
-    disable_analysis = true
-
-    deps = [
-      "//topaz/public/dart/fuchsia",
-      "//topaz/public/dart/zircon",
-    ]
-  }
-}
-
 action("generate_snapshot_bin") {
   if (is_fuchsia) {
     snapshot_dart = "snapshot_fuchsia.dart"
+
     # TODO(rmacnak): Fuchsia cross builds use the wrong Dart target
     # architecture, and have added steps that depend on this error for
     # reasonable build times (e.g., invoking the analyzer).
@@ -67,7 +53,6 @@ action("generate_snapshot_bin") {
              snapshot_dart,
            ] + dart_ui_files
   if (is_fuchsia) {
-    deps += [ ":generate_package_map" ]
     inputs += [ "fuchsia_compilation_trace.txt" ]
   }
 
@@ -85,9 +70,9 @@ action("generate_snapshot_bin") {
 
   rebased_dart_ui_path = rebase_path(dart_ui_path)
 
-  gen_snapshot_dir =
-      get_label_info("//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
-                     "root_out_dir")
+  gen_snapshot_dir = get_label_info(
+          "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
+          "root_out_dir")
   script = "//third_party/dart/runtime/tools/create_snapshot_bin.py"
 
   args = [
@@ -128,10 +113,7 @@ action("generate_snapshot_bin") {
   }
 
   if (is_fuchsia) {
-    package_gen_dir = get_label_info(":bogus($dart_toolchain)",
-          "target_gen_dir")
-    package_file = "$package_gen_dir/generate_package_map.packages"
-    inputs += zircon_sdk_ext_files + mozart_dart_sdk_ext_files + [package_file]
+    inputs += zircon_sdk_ext_files + mozart_dart_sdk_ext_files
     zircon_path = rebase_path(zircon_sdk_ext_lib)
     fuchsia_path = rebase_path(fuchsia_sdk_ext_lib)
     mozart_internal_path = rebase_path(mozart_dart_sdk_ext_lib)
@@ -139,8 +121,6 @@ action("generate_snapshot_bin") {
       "--url_mapping=dart:zircon,$zircon_path",
       "--url_mapping=dart:fuchsia,$fuchsia_path",
       "--url_mapping=dart:mozart.internal,$mozart_internal_path",
-      "--packages",
-      rebase_path(package_file),
       "--load_compilation_trace",
       rebase_path("fuchsia_compilation_trace.txt"),
     ]
@@ -209,7 +189,7 @@ bin_to_assembly("isolate_snapshot_data_assembly") {
   ]
   input = "$target_gen_dir/isolate_snapshot.bin"
   output = "$target_gen_dir/isolate_snapshot_data.S"
-  symbol = "kDartIsolateCoreSnapshotData"
+  symbol = "kDartIsolateSnapshotData"
   executable = false
 }
 
@@ -219,7 +199,7 @@ bin_to_assembly("isolate_snapshot_instructions_assembly") {
   ]
   input = "$target_gen_dir/isolate_snapshot_instructions.bin"
   output = "$target_gen_dir/isolate_snapshot_instructions.S"
-  symbol = "kDartIsolateCoreSnapshotInstructions"
+  symbol = "kDartIsolateSnapshotInstructions"
   executable = true
 }
 
@@ -239,9 +219,7 @@ source_set("snapshot") {
 }
 
 compile_platform("non_strong_platform") {
-  sources = [
-    "libraries.json",
-  ]
+  libraries_specification_uri = "libraries.json"
 
   outputs = [
     "$root_out_dir/flutter_patched_sdk/platform.dill",
@@ -249,15 +227,13 @@ compile_platform("non_strong_platform") {
   ]
 
   args = [
-            "--target=flutter",
-            "dart:core",
-         ]
+    "--target=flutter",
+    "dart:core",
+  ]
 }
 
 compile_platform("strong_platform") {
-  sources = [
-    "libraries.json",
-  ]
+  libraries_specification_uri = "libraries.json"
 
   outputs = [
     "$root_out_dir/flutter_patched_sdk/platform_strong.dill",
@@ -265,10 +241,10 @@ compile_platform("strong_platform") {
   ]
 
   args = [
-            "--target=flutter",
-            "--strong",
-            "dart:core"
-         ]
+    "--target=flutter",
+    "--strong",
+    "dart:core",
+  ]
 }
 
 group("kernel_platform_files") {
@@ -276,6 +252,53 @@ group("kernel_platform_files") {
     ":non_strong_platform",
     ":strong_platform",
   ]
+}
+
+# Template to generate entry points JSON file using gen_snapshot tool.
+# List of entry points is generated as a by-product while doing precompilation.
+#
+# This template expects the following arguments:
+#  - input: Name of the input dart script for precompilation.
+#  - output: Name of the output entry points JSON file.
+#  - extra_args: Extra arguments to pass to dart_bootstrap (optional).
+#  - extra_inputs: Extra input dependencies (optional).
+#
+template("generate_entry_points_json_with_gen_snapshot") {
+  assert(defined(invoker.input), "Must define input dart script")
+  assert(defined(invoker.output), "Must define output json file")
+  extra_args = []
+  if (defined(invoker.extra_args)) {
+    extra_args += invoker.extra_args
+  }
+  extra_inputs = []
+  if (defined(invoker.extra_inputs)) {
+    extra_inputs += invoker.extra_inputs
+  }
+  compiled_action(target_name) {
+    # Printing precompiler entry points is folded into precompilation, so gen_snapshot is invoked
+    # with correct arguments to generate app-aot snapshot.
+
+    input = invoker.input
+    output = invoker.output
+
+    tool = "//third_party/dart/runtime/bin:gen_snapshot"
+    inputs = [
+      input,
+    ] + extra_inputs
+    outputs = [
+      output,
+    ]
+    args = [
+      "--print-precompiler-entry-points=" + rebase_path(output),
+      "--snapshot-kind=app-aot-blobs",
+      "--vm_snapshot_data=" + rebase_path("$target_gen_dir/dummy.vm_data.snapshot"),
+      "--vm_snapshot_instructions=" + rebase_path("$target_gen_dir/dummy.vm_instr.snapshot"),
+      "--isolate_snapshot_data=" + rebase_path("$target_gen_dir/dummy.isolate_data.snapshot"),
+      "--isolate_snapshot_instructions=" + rebase_path("$target_gen_dir/dummy.isolate_instr.snapshot"),
+    ] + extra_args + [
+      rebase_path(input),
+    ]
+  }
 }
 
 generate_entry_points_json_with_gen_snapshot("entry_points_json") {
@@ -309,7 +332,7 @@ copy_entry_points_extra_json("entry_points_extra_json") {
 
 group("entry_points_json_files") {
   public_deps = [
-    ":entry_points_json",
     ":entry_points_extra_json",
+    ":entry_points_json",
   ]
 }

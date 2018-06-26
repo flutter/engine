@@ -65,6 +65,11 @@ public class FlutterFragmentActivity
     }
 
     @Override
+    public boolean retainFlutterNativeView() {
+        return false;
+    }
+
+    @Override
     public final boolean hasPlugin(String key) {
         return pluginRegistry.hasPlugin(key);
     }
@@ -96,6 +101,12 @@ public class FlutterFragmentActivity
         if (!eventDelegate.onBackPressed()) {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    protected void onStop() {
+        eventDelegate.onStop();
+        super.onStop();
     }
 
     @Override

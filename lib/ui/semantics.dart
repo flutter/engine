@@ -150,7 +150,7 @@ class SemanticsAction {
   ///
   /// The map's key is the [index] of the action and the value is the action
   /// itself.
-  static final Map<int, SemanticsAction> values = const <int, SemanticsAction>{
+  static const Map<int, SemanticsAction> values = const <int, SemanticsAction>{
     _kTapIndex: tap,
     _kLongPressIndex: longPress,
     _kScrollLeftIndex: scrollLeft,
@@ -225,6 +225,9 @@ class SemanticsFlag {
   static const int _kIsInMutuallyExclusiveGroupIndex = 1 << 8;
   static const int _kIsHeaderIndex = 1 << 9;
   static const int _kIsObscuredIndex = 1 << 10;
+  static const int _kScopesRouteIndex= 1 << 11;
+  static const int _kNamesRouteIndex = 1 << 12;
+  static const int _kIsHiddenIndex = 1 << 13;
 
   const SemanticsFlag._(this.index);
 
@@ -307,10 +310,66 @@ class SemanticsFlag {
   /// is a password or contains other sensitive information.
   static const SemanticsFlag isObscured = const SemanticsFlag._(_kIsObscuredIndex);
 
+  /// Whether the semantics node is the root of a subtree for which a route name
+  /// should be announced.
+  ///
+  /// When a node with this flag is removed from the semantics tree, the
+  /// framework will select the last in depth-first, paint order node with this
+  /// flag.  When a node with this flag is added to the semantics tree, it is
+  /// selected automatically, unless there were multiple nodes with this flag
+  /// added.  In this case, the last added node in depth-first, paint order
+  /// will be selected.
+  ///
+  /// From this selected node, the framework will search in depth-first, paint
+  /// order for the first node with a [namesRoute] flag and a non-null,
+  /// non-empty label. The [namesRoute] and [scopesRoute] flags may be on the
+  /// same node. The label of the found node will be announced as an edge
+  /// transition. If no non-empty, non-null label is found then:
+  ///
+  ///   * VoiceOver will make a chime announcement.
+  ///   * TalkBack will make no announcement
+  ///
+  /// Semantic nodes annotated with this flag are generally not a11y focusable.
+  ///
+  /// This is used in widgets such as Routes, Drawers, and Dialogs to
+  /// communicate significant changes in the visible screen.
+  static const SemanticsFlag scopesRoute = const SemanticsFlag._(_kScopesRouteIndex);
+
+  /// Whether the semantics node label is the name of a visually distinct
+  /// route.
+  ///
+  /// This is used by certain widgets like Drawers and Dialogs, to indicate
+  /// that the node's semantic label can be used to announce an edge triggered
+  /// semantics update.
+  ///
+  /// Semantic nodes annotated with this flag will still recieve a11y focus.
+  ///
+  /// Updating this label within the same active route subtree will not cause
+  /// additional announcements.
+  static const SemanticsFlag namesRoute = const SemanticsFlag._(_kNamesRouteIndex);
+
+  /// Whether the semantics node is considered hidden.
+  ///
+  /// Hidden elements are currently not visible on screen. They may be covered
+  /// by other elements or positioned outside of the visible area of a viewport.
+  ///
+  /// Hidden elements cannot gain accessibility focus though regular touch. The
+  /// only way they can be focused is by moving the focus to them via linear
+  /// navigation.
+  ///
+  /// Platforms are free to completely ignore hidden elements and new platforms
+  /// are encouraged to do so.
+  ///
+  /// Instead of marking an element as hidden it should usually be excluded from
+  /// the semantics tree altogether. Hidden elements are only included in the
+  /// semantics tree to work around platform limitations and they are mainly
+  /// used to implement accessibility scrolling on iOS.
+  static const SemanticsFlag isHidden = const SemanticsFlag._(_kIsHiddenIndex);
+
   /// The possible semantics flags.
   ///
   /// The map's key is the [index] of the flag and the value is the flag itself.
-  static final Map<int, SemanticsFlag> values = const <int, SemanticsFlag>{
+  static const Map<int, SemanticsFlag> values = const <int, SemanticsFlag>{
     _kHasCheckedStateIndex: hasCheckedState,
     _kIsCheckedIndex: isChecked,
     _kIsSelectedIndex: isSelected,
@@ -322,6 +381,9 @@ class SemanticsFlag {
     _kIsInMutuallyExclusiveGroupIndex: isInMutuallyExclusiveGroup,
     _kIsHeaderIndex: isHeader,
     _kIsObscuredIndex: isObscured,
+    _kScopesRouteIndex: scopesRoute,
+    _kNamesRouteIndex: namesRoute,
+    _kIsHiddenIndex: isHidden,
   };
 
   @override
@@ -349,6 +411,12 @@ class SemanticsFlag {
         return 'SemanticsFlag.isHeader';
       case _kIsObscuredIndex:
         return 'SemanticsFlag.isObscured';
+      case _kScopesRouteIndex:
+        return 'SemanticsFlag.scopesRoute';
+      case _kNamesRouteIndex:
+        return 'SemanticsFlag.namesRoute';
+      case _kIsHiddenIndex:
+        return 'SemanticsFlag.isHidden';
     }
     return null;
   }
@@ -366,11 +434,18 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Update the information associated with the node with the given `id`.
   ///
   /// The semantics nodes form a tree, with the root of the tree always having
-  /// an id of zero. The `children` are the ids of the nodes that are immediate
-  /// children of this node. The system retains the nodes that are currently
-  /// reachable from the root. A given update need not contain information for
-  /// nodes that do not change in the update. If a node is not reachable from
-  /// the root after an update, the node will be discarded from the tree.
+  /// an id of zero. The `childrenInTraversalOrder` and `childrenInHitTestOrder`
+  /// are the ids of the nodes that are immediate children of this node. The
+  /// former enumerates children in traversal order, and the latter enumerates
+  /// the same children in the hit test order. The two lists must have the same
+  /// length and contain the same ids. They may only differ in the order the
+  /// ids are listed in. For more information about different child orders, see
+  /// [DebugSemanticsDumpOrder].
+  /// 
+  /// The system retains the nodes that are currently reachable from the root.
+  /// A given update need not contain information for nodes that do not change
+  /// in the update. If a node is not reachable from the root after an update,
+  /// the node will be discarded from the tree.
   ///
   /// The `flags` are a bit field of [SemanticsFlag]s that apply to this node.
   ///
@@ -420,35 +495,35 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String increasedValue,
     String decreasedValue,
     TextDirection textDirection,
-    int nextNodeId,
-    int previousNodeId,
     Float64List transform,
-    Int32List children,
+    Int32List childrenInTraversalOrder,
+    Int32List childrenInHitTestOrder,
   }) {
     if (transform.length != 16)
       throw new ArgumentError('transform argument must have 16 entries.');
-    _updateNode(id,
-                flags,
-                actions,
-                textSelectionBase,
-                textSelectionExtent,
-                scrollPosition,
-                scrollExtentMax,
-                scrollExtentMin,
-                rect.left,
-                rect.top,
-                rect.right,
-                rect.bottom,
-                label,
-                hint,
-                value,
-                increasedValue,
-                decreasedValue,
-                textDirection != null ? textDirection.index + 1 : 0,
-                nextNodeId ?? -1,
-                previousNodeId ?? -1,
-                transform,
-                children,);
+    _updateNode(
+      id,
+      flags,
+      actions,
+      textSelectionBase,
+      textSelectionExtent,
+      scrollPosition,
+      scrollExtentMax,
+      scrollExtentMin,
+      rect.left,
+      rect.top,
+      rect.right,
+      rect.bottom,
+      label,
+      hint,
+      value,
+      increasedValue,
+      decreasedValue,
+      textDirection != null ? textDirection.index + 1 : 0,
+      transform,
+      childrenInTraversalOrder,
+      childrenInHitTestOrder,
+    );
   }
   void _updateNode(
     int id,
@@ -469,10 +544,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     String increasedValue,
     String decreasedValue,
     int textDirection,
-    int nextNodeId,
-    int previousNodeId,
     Float64List transform,
-    Int32List children,
+    Int32List childrenInTraversalOrder,
+    Int32List childrenInHitTestOrder,
   ) native 'SemanticsUpdateBuilder_updateNode';
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded

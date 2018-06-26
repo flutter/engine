@@ -54,28 +54,37 @@ void UpdateSemantics(Dart_NativeArguments args) {
   UIDartState::Current()->window()->client()->UpdateSemantics(update);
 }
 
-void SendPlatformMessage(Dart_Handle window,
-                         const std::string& name,
-                         Dart_Handle callback,
-                         const tonic::DartByteData& data) {
+Dart_Handle SendPlatformMessage(Dart_Handle window,
+                                const std::string& name,
+                                Dart_Handle callback,
+                                const tonic::DartByteData& data) {
   UIDartState* dart_state = UIDartState::Current();
+
+  if (!dart_state->window()) {
+    // Must release the TypedData buffer before allocating other Dart objects.
+    data.Release();
+    return ToDart("Platform messages can only be sent from the main isolate");
+  }
 
   fxl::RefPtr<PlatformMessageResponse> response;
   if (!Dart_IsNull(callback)) {
     response = fxl::MakeRefCounted<PlatformMessageResponseDart>(
-        tonic::DartPersistentValue(dart_state, callback));
+        tonic::DartPersistentValue(dart_state, callback),
+        dart_state->GetTaskRunners().GetUITaskRunner());
   }
   if (Dart_IsNull(data.dart_handle())) {
-    UIDartState::Current()->window()->client()->HandlePlatformMessage(
+    dart_state->window()->client()->HandlePlatformMessage(
         fxl::MakeRefCounted<PlatformMessage>(name, response));
   } else {
     const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
 
-    UIDartState::Current()->window()->client()->HandlePlatformMessage(
+    dart_state->window()->client()->HandlePlatformMessage(
         fxl::MakeRefCounted<PlatformMessage>(
             name, std::vector<uint8_t>(buffer, buffer + data.length_in_bytes()),
             response));
   }
+
+  return Dart_Null();
 }
 
 void _SendPlatformMessage(Dart_NativeArguments args) {
@@ -89,6 +98,7 @@ void RespondToPlatformMessage(Dart_Handle window,
     UIDartState::Current()->window()->CompletePlatformMessageEmptyResponse(
         response_id);
   } else {
+    // TODO(engine): Avoid this copy.
     const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
     UIDartState::Current()->window()->CompletePlatformMessageResponse(
         response_id,
@@ -140,16 +150,16 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
       library_.value(), "_updateWindowMetrics",
       {
           ToDart(metrics.device_pixel_ratio),
-          ToDart(static_cast<double>(metrics.physical_width)),
-          ToDart(static_cast<double>(metrics.physical_height)),
-          ToDart(static_cast<double>(metrics.physical_padding_top)),
-          ToDart(static_cast<double>(metrics.physical_padding_right)),
-          ToDart(static_cast<double>(metrics.physical_padding_bottom)),
-          ToDart(static_cast<double>(metrics.physical_padding_left)),
-          ToDart(static_cast<double>(metrics.physical_view_inset_top)),
-          ToDart(static_cast<double>(metrics.physical_view_inset_right)),
-          ToDart(static_cast<double>(metrics.physical_view_inset_bottom)),
-          ToDart(static_cast<double>(metrics.physical_view_inset_left)),
+          ToDart(metrics.physical_width),
+          ToDart(metrics.physical_height),
+          ToDart(metrics.physical_padding_top),
+          ToDart(metrics.physical_padding_right),
+          ToDart(metrics.physical_padding_bottom),
+          ToDart(metrics.physical_padding_left),
+          ToDart(metrics.physical_view_inset_top),
+          ToDart(metrics.physical_view_inset_right),
+          ToDart(metrics.physical_view_inset_bottom),
+          ToDart(metrics.physical_view_inset_left),
       });
 }
 
@@ -254,7 +264,7 @@ void Window::BeginFrame(fxl::TimePoint frameTime) {
                       Dart_NewInteger(microseconds),
                   });
 
-  tonic::DartMicrotaskQueue::GetForCurrentThread()->RunMicrotasks();
+  UIDartState::Current()->FlushMicrotasksNow();
 
   DartInvokeField(library_.value(), "_drawFrame", {});
 }
@@ -279,7 +289,7 @@ void Window::CompletePlatformMessageResponse(int response_id,
     return;
   auto response = std::move(it->second);
   pending_responses_.erase(it);
-  response->Complete(std::move(data));
+  response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
 void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {

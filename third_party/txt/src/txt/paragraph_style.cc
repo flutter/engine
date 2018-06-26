@@ -25,6 +25,7 @@ TextStyle ParagraphStyle::GetTextStyle() const {
   result.font_family = font_family;
   result.font_size = font_size;
   result.locale = locale;
+  result.height = line_height;
   return result;
 }
 
@@ -34,6 +35,18 @@ bool ParagraphStyle::unlimited_lines() const {
 
 bool ParagraphStyle::ellipsized() const {
   return !ellipsis.empty();
+}
+
+TextAlign ParagraphStyle::effective_align() const {
+  if (text_align == TextAlign::start) {
+    return (text_direction == TextDirection::ltr) ? TextAlign::left
+                                                  : TextAlign::right;
+  } else if (text_align == TextAlign::end) {
+    return (text_direction == TextDirection::ltr) ? TextAlign::right
+                                                  : TextAlign::left;
+  } else {
+    return text_align;
+  }
 }
 
 }  // namespace txt

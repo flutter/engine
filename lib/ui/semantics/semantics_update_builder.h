@@ -43,10 +43,9 @@ class SemanticsUpdateBuilder
                   std::string increasedValue,
                   std::string decreasedValue,
                   int textDirection,
-                  int nextNodeId,
-                  int previousNodeId,
                   const tonic::Float64List& transform,
-                  const tonic::Int32List& children);
+                  const tonic::Int32List& childrenInTraversalOrder,
+                  const tonic::Int32List& childrenInHitTestOrder);
 
   fxl::RefPtr<SemanticsUpdate> build();
 

@@ -40,6 +40,11 @@ public interface FlutterActivityEvents
     void onPause();
 
     /**
+     * @see android.app.Activity#onStart()
+     */
+    void onStart();
+
+    /**
      * @see android.app.Activity#onResume()
      */
     void onResume();
@@ -54,6 +59,11 @@ public interface FlutterActivityEvents
      */
     void onDestroy();
 
+    /**
+     * @see android.app.Activity#onStop()
+     */
+    void onStop();
+    
     /**
      * Invoked when the activity has detected the user's press of the back key.
      *

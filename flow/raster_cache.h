@@ -12,9 +12,6 @@
 #include "flutter/flow/raster_cache_key.h"
 #include "lib/fxl/macros.h"
 #include "lib/fxl/memory/weak_ptr.h"
-#if defined(OS_FUCHSIA)
-#include <fuchsia/cpp/ui.h>
-#endif
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
 
@@ -22,29 +19,20 @@ namespace flow {
 
 class RasterCacheResult {
  public:
-  RasterCacheResult()
-      : source_rect_(SkRect::MakeEmpty()),
-        destination_rect_(SkRect::MakeEmpty()) {}
+  RasterCacheResult() {}
 
-  RasterCacheResult(sk_sp<SkImage> image, SkRect source, SkRect destination)
-      : image_(std::move(image)),
-        source_rect_(source),
-        destination_rect_(destination) {}
+  RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect)
+      : image_(std::move(image)), logical_rect_(logical_rect) {}
 
   operator bool() const { return static_cast<bool>(image_); }
 
   bool is_valid() const { return static_cast<bool>(image_); };
 
-  sk_sp<SkImage> image() const { return image_; }
-
-  const SkRect& source_rect() const { return source_rect_; }
-
-  const SkRect& destination_rect() const { return destination_rect_; }
+  void draw(SkCanvas& canvas) const;
 
  private:
   sk_sp<SkImage> image_;
-  SkRect source_rect_;
-  SkRect destination_rect_;
+  SkRect logical_rect_;
 };
 
 class RasterCache {
@@ -53,13 +41,25 @@ class RasterCache {
 
   ~RasterCache();
 
+  static SkIRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
+    SkRect device_rect;
+    ctm.mapRect(&device_rect, rect);
+    SkIRect bounds;
+    device_rect.roundOut(&bounds);
+    return bounds;
+  }
+
+  static SkMatrix GetIntegralTransCTM(const SkMatrix& ctm) {
+    SkMatrix result = ctm;
+    result[SkMatrix::kMTransX] = SkScalarRoundToScalar(ctm.getTranslateX());
+    result[SkMatrix::kMTransY] = SkScalarRoundToScalar(ctm.getTranslateY());
+    return result;
+  }
+
   RasterCacheResult GetPrerolledImage(GrContext* context,
                                       SkPicture* picture,
                                       const SkMatrix& transformation_matrix,
                                       SkColorSpace* dst_color_space,
-#if defined(OS_FUCHSIA)
-                                      gfx::Metrics* metrics,
-#endif
                                       bool is_complex,
                                       bool will_change);
 

@@ -5,6 +5,7 @@
 #ifndef FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_RESPONSE_DART_H_
 #define FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_RESPONSE_DART_H_
 
+#include "flutter/fml/message_loop.h"
 #include "flutter/lib/ui/window/platform_message_response.h"
 #include "lib/tonic/dart_persistent_value.h"
 
@@ -15,14 +16,17 @@ class PlatformMessageResponseDart : public PlatformMessageResponse {
 
  public:
   // Callable on any thread.
-  void Complete(std::vector<uint8_t> data) override;
+  void Complete(std::unique_ptr<fml::Mapping> data) override;
   void CompleteEmpty() override;
 
  protected:
-  explicit PlatformMessageResponseDart(tonic::DartPersistentValue callback);
+  explicit PlatformMessageResponseDart(
+      tonic::DartPersistentValue callback,
+      fxl::RefPtr<fxl::TaskRunner> ui_task_runner);
   ~PlatformMessageResponseDart() override;
 
   tonic::DartPersistentValue callback_;
+  fxl::RefPtr<fxl::TaskRunner> ui_task_runner_;
 };
 
 }  // namespace blink

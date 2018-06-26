@@ -13,12 +13,14 @@
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "lib/fxl/time/time_point.h"
 #include "lib/tonic/dart_persistent_value.h"
+#include "third_party/skia/include/gpu/GrContext.h"
 
 namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
 
 namespace blink {
+class FontCollection;
 class Scene;
 
 Dart_Handle ToByteData(const std::vector<uint8_t>& buffer);
@@ -30,17 +32,20 @@ class WindowClient {
   virtual void Render(Scene* scene) = 0;
   virtual void UpdateSemantics(SemanticsUpdate* update) = 0;
   virtual void HandlePlatformMessage(fxl::RefPtr<PlatformMessage> message) = 0;
+  virtual FontCollection& GetFontCollection() = 0;
 
  protected:
   virtual ~WindowClient();
 };
 
-class Window {
+class Window final {
  public:
   explicit Window(WindowClient* client);
+
   ~Window();
 
   WindowClient* client() const { return client_; }
+
   const ViewportMetrics& viewport_metrics() { return viewport_metrics_; }
 
   void DidCreateIsolate();

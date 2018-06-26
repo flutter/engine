@@ -4,18 +4,6 @@
 
 #include "gpu_surface_gl.h"
 
-#if OS_IOS
-#include <OpenGLES/ES2/gl.h>
-#include <OpenGLES/ES2/glext.h>
-#elif OS_MACOSX
-#include <OpenGL/gl3.h>
-#elif OS_LINUX
-#include <GL/gl.h>
-#else
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
-#endif
-
 #include "flutter/glue/trace_event.h"
 #include "lib/fxl/arraysize.h"
 #include "lib/fxl/logging.h"
@@ -24,6 +12,14 @@
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
+
+// These are common defines present on all OpenGL headers. However, we don't
+// want to perform GL header reasolution on each platform we support. So just
+// define these upfront. It is unlikely we will need more. But, if we do, we can
+// add the same here.
+#define GPU_GL_RGBA8 0x8058
+#define GPU_GL_RGBA4 0x8056
+#define GPU_GL_RGB565 0x8D62
 
 namespace shell {
 
@@ -44,6 +40,10 @@ GPUSurfaceGL::GPUSurfaceGL(GPUSurfaceGLDelegate* delegate)
 
   GrContextOptions options;
   options.fAvoidStencilBuffers = true;
+
+  // To get video playback on the widest range of devices, we limit Skia to
+  // ES2 shading language when the ES3 external image extension is missing.
+  options.fPreferExternalImagesOverES3 = true;
 
   auto context = GrContext::MakeGL(GrGLMakeNativeInterface(), options);
 
@@ -83,34 +83,28 @@ bool GPUSurfaceGL::IsValid() {
   return valid_;
 }
 
-static SkColorType FirstSupportedColorType(GrContext* context, GLenum* format) {
+static SkColorType FirstSupportedColorType(GrContext* context,
+                                           GrGLenum* format) {
 #define RETURN_IF_RENDERABLE(x, y)                 \
   if (context->colorTypeSupportedAsSurface((x))) { \
     *format = (y);                                 \
     return (x);                                    \
   }
-#if (OS_MACOSX && !OS_IOS) || OS_LINUX
-  RETURN_IF_RENDERABLE(kRGBA_8888_SkColorType, GL_RGBA8);
-#else
-  RETURN_IF_RENDERABLE(kRGBA_8888_SkColorType, GL_RGBA8_OES);
-#endif
-  RETURN_IF_RENDERABLE(kARGB_4444_SkColorType, GL_RGBA4);
-  RETURN_IF_RENDERABLE(kRGB_565_SkColorType, GL_RGB565);
+  RETURN_IF_RENDERABLE(kRGBA_8888_SkColorType, GPU_GL_RGBA8);
+  RETURN_IF_RENDERABLE(kARGB_4444_SkColorType, GPU_GL_RGBA4);
+  RETURN_IF_RENDERABLE(kRGB_565_SkColorType, GPU_GL_RGB565);
   return kUnknown_SkColorType;
 }
 
 static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
                                             const SkISize& size,
                                             intptr_t fbo) {
-
-  GLenum format;
+  GrGLenum format;
   const SkColorType color_type = FirstSupportedColorType(context, &format);
 
-  const GrGLFramebufferInfo framebuffer_info = {
-      .fFBOID = static_cast<GrGLuint>(fbo),
-      .fFormat = format,
-  };
-
+  GrGLFramebufferInfo framebuffer_info = {};
+  framebuffer_info.fFBOID = static_cast<GrGLuint>(fbo);
+  framebuffer_info.fFormat = format;
 
   GrBackendRenderTarget render_target(size.fWidth,      // width
                                       size.fHeight,     // height
@@ -210,11 +204,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
     return nullptr;
   }
 
-  auto weak_this = weak_factory_.GetWeakPtr();
-
   SurfaceFrame::SubmitCallback submit_callback =
-      [weak_this](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
-        return weak_this ? weak_this->PresentSurface(canvas) : false;
+      [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
+                                          SkCanvas* canvas) {
+        return weak ? weak->PresentSurface(canvas) : false;
       };
 
   return std::make_unique<SurfaceFrame>(surface, submit_callback);

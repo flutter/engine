@@ -19,7 +19,7 @@
 #include "lib/fxl/command_line.h"
 #include "lib/fxl/logging.h"
 #include "third_party/skia/include/core/SkGraphics.h"
-#include "utils.h"
+#include "txt_test_utils.h"
 
 #include <cassert>
 
@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
   }
   FXL_DCHECK(txt::GetFontDir().length() > 0);
 
-  fml::icu::InitializeICU();
+  fml::icu::InitializeICU("icudtl.dat");
   SkGraphics::Init();
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

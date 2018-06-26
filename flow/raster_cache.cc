@@ -6,7 +6,6 @@
 
 #include <vector>
 
-#include "flutter/common/threads.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/glue/trace_event.h"
 #include "lib/fxl/logging.h"
@@ -17,6 +16,15 @@
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flow {
+
+void RasterCacheResult::draw(SkCanvas& canvas) const {
+  SkAutoCanvasRestore auto_restore(&canvas, true);
+  SkIRect bounds =
+      RasterCache::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
+  FXL_DCHECK(bounds.size() == image_->dimensions());
+  canvas.resetMatrix();
+  canvas.drawImage(image_, bounds.fLeft, bounds.fTop);
+}
 
 RasterCache::RasterCache(size_t threshold)
     : threshold_(threshold), checkerboard_images_(false), weak_factory_(this) {}
@@ -71,34 +79,16 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
 
 RasterCacheResult RasterizePicture(SkPicture* picture,
                                    GrContext* context,
-                                   const MatrixDecomposition& matrix,
+                                   const SkMatrix& ctm,
                                    SkColorSpace* dst_color_space,
-#if defined(OS_FUCHSIA)
-                                   gfx::Metrics* metrics,
-#endif
                                    bool checkerboard) {
   TRACE_EVENT0("flutter", "RasterCachePopulate");
 
-  const SkVector3& scale = matrix.scale();
-
   const SkRect logical_rect = picture->cullRect();
+  SkIRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
 
-#if defined(OS_FUCHSIA)
-  float metrics_scale_x = metrics->scale_x;
-  float metrics_scale_y = metrics->scale_y;
-#else
-  float metrics_scale_x = 1.f;
-  float metrics_scale_y = 1.f;
-#endif
-
-  const SkRect physical_rect = SkRect::MakeWH(
-      std::fabs(logical_rect.width() * metrics_scale_x * scale.x()),
-      std::fabs(logical_rect.height() * metrics_scale_y * scale.y()));
-
-  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
-      std::ceil(physical_rect.width()),  // physical width
-      std::ceil(physical_rect.height())  // physical height
-  );
+  const SkImageInfo image_info =
+      SkImageInfo::MakeN32Premul(cache_rect.width(), cache_rect.height());
 
   sk_sp<SkSurface> surface =
       context
@@ -120,20 +110,15 @@ RasterCacheResult RasterizePicture(SkPicture* picture,
   }
 
   canvas->clear(SK_ColorTRANSPARENT);
-  canvas->scale(std::abs(scale.x() * metrics_scale_x),
-                std::abs(scale.y() * metrics_scale_y));
-  canvas->translate(-logical_rect.left(), -logical_rect.top());
+  canvas->translate(-cache_rect.left(), -cache_rect.top());
+  canvas->concat(ctm);
   canvas->drawPicture(picture);
 
   if (checkerboard) {
     DrawCheckerboard(canvas, logical_rect);
   }
 
-  return {
-      surface->makeImageSnapshot(),  // image
-      physical_rect,                 // source rect
-      logical_rect                   // destination rect
-  };
+  return {surface->makeImageSnapshot(), logical_rect};
 }
 
 static inline size_t ClampSize(size_t value, size_t min, size_t max) {
@@ -153,9 +138,6 @@ RasterCacheResult RasterCache::GetPrerolledImage(
     SkPicture* picture,
     const SkMatrix& transformation_matrix,
     SkColorSpace* dst_color_space,
-#if defined(OS_FUCHSIA)
-    gfx::Metrics* metrics,
-#endif
     bool is_complex,
     bool will_change) {
   if (!IsPictureWorthRasterizing(picture, will_change, is_complex)) {
@@ -172,11 +154,7 @@ RasterCacheResult RasterCache::GetPrerolledImage(
     return {};
   }
 
-  RasterCacheKey cache_key(*picture,
-#if defined(OS_FUCHSIA)
-                           metrics->scale_x, metrics->scale_y,
-#endif
-                           matrix);
+  RasterCacheKey cache_key(*picture, transformation_matrix);
 
   Entry& entry = cache_[cache_key];
   entry.access_count = ClampSize(entry.access_count + 1, 0, threshold_);
@@ -188,11 +166,8 @@ RasterCacheResult RasterCache::GetPrerolledImage(
   }
 
   if (!entry.image.is_valid()) {
-    entry.image = RasterizePicture(picture, context, matrix, dst_color_space,
-#if defined(OS_FUCHSIA)
-                                   metrics,
-#endif
-                                   checkerboard_images_);
+    entry.image = RasterizePicture(picture, context, transformation_matrix,
+                                   dst_color_space, checkerboard_images_);
   }
 
   return entry.image;

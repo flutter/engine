@@ -35,17 +35,24 @@ void _setupHooks() {
   }());
 }
 
-void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
+void saveCompilationTrace(String filePath) {
+  final dynamic result = _saveCompilationTrace();
+  if (result is Error)
+    throw result;
 
-String _baseURL;
-Uri _getBaseURL() => Uri.parse(_baseURL);
+  final File file = new File(filePath);
+  file.writeAsBytesSync(result);
+}
+
+dynamic _saveCompilationTrace() native 'SaveCompilationTrace';
+
+void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
 
 // Required for gen_snapshot to work correctly.
 int _isolateId;
 
 Function _getPrintClosure() => _print;
 Function _getScheduleMicrotaskClosure() => _scheduleMicrotask;
-Function _getGetBaseURLClosure() => _getBaseURL;
 
 // Though the "main" symbol is not included in any of the libraries imported
 // above, the builtin library will be included manually during VM setup. This

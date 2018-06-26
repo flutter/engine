@@ -3,8 +3,18 @@ Contributing to the Flutter engine
 
 [![Build Status](https://travis-ci.org/flutter/engine.svg)](https://travis-ci.org/flutter/engine)
 
+_See also: [Flutter's code of conduct](https://flutter.io/design-principles/#code-of-conduct)_
+
+Welcome
+-------
+
+This guide introduces you to building and contributing to the Flutter engine.
+For an introduction to contributing to the Flutter framework, see [the equivalent
+document in the framework's repository](https://github.com/flutter/flutter/blob/master/CONTRIBUTING.md).
+
+
 I built it before. Remind me, how do I do it again?
---------------------
+---------------------------------------------------
 
 If you have previously built the engine (i.e. your environment is already setup) and just want a refresher, then feel free to skip to one of the following sections:
 
@@ -93,11 +103,21 @@ Depending on the platform you choose below, you will need to replace `host_debug
 
 Run the following steps, from the `src` directory created in the steps above:
 
-* `git pull upstream master` in `src/flutter` to update the Flutter Engine repo.
-* `gclient sync` to update your dependencies.
-* `./flutter/tools/gn --android --unoptimized` to prepare your build files for device-side executables (or `--android --android-cpu [x86|x64] --unoptimized` for x86/x64 emulators) .
-* `./flutter/tools/gn --unoptimized` to prepare the build files for host-side executables.
-* `ninja -C out/android_debug_unopt -C out/host_debug_unopt` to build all executables (use `out/android_debug_unopt_x64` for x86/x64 emulators).
+* Update the Flutter Engine repo.
+    * `git pull upstream master` in `src/flutter`
+* Update your dependencies
+    * `gclient sync`
+* Prepare your build files
+    * `./flutter/tools/gn --android --unoptimized` for device-side executables
+    * `./flutter/tools/gn --android --android-cpu x86 --unoptimized` for x86 emulators
+    * `./flutter/tools/gn --android --android-cpu x64 --unoptimized` for x64 emulators
+    * `./flutter/tools/gn --unoptimized` for host-side executables
+* Build your executables
+    * `ninja -C out/android_debug_unopt` for device-side executables
+    * `ninja -C out/android_debug_unopt_x86` for x86 emulators
+    * `ninja -C out/android_debug_unopt_x64` for x64 emulators
+    * `ninja -C out/host_debug_unopt` for host-side executables
+    * These commands can be combined. Ex: `ninja -C out/android_debug_unopt && ninja -C out/host_debug_unopt`
     * For Googlers, consider also using the option `-j 1000` to parallelize the build using Goma.
 
 This builds a debug-enabled ("unoptimized") binary configured to run Dart in
@@ -143,7 +163,7 @@ to test the engine.
   * For a discussion on the various flags and modes, [read this discussion](https://github.com/flutter/flutter/wiki/Flutter's-modes).
   * This also produces an Xcode project for working with the engine source code at `out/ios_debug_unopt`
 * `./flutter/tools/gn --unoptimized` to prepare the build files for host-side executables.
-* `ninja -C out/ios_debug_unopt -C out/host_debug_unopt` to build all artifacts (use `out/ios_debug_sim_unopt` for Simulator).
+* `ninja -C out/ios_debug_unopt && ninja -C out/host_debug_unopt` to build all artifacts (use `out/ios_debug_sim_unopt` for Simulator).
     * For Googlers, consider also using the option `-j 1000` to parallelize the build using Goma.
 
 Once the artifacts are built, you can start using them in your application by following these steps:
@@ -207,7 +227,8 @@ find . -mindepth 1 -maxdepth 1 -type d | xargs -n 1 sh -c 'ninja -C $0 || exit 2
 Contributing code
 -----------------
 
-We gladly accept contributions via GitHub pull requests.
+We gladly accept contributions via GitHub pull requests. See [the wiki](https://github.com/flutter/engine/wiki) for
+information about the engine's architecture.
 
 To start working on a patch:
 

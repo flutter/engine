@@ -6,9 +6,8 @@
 #define FLUTTER_LIB_UI_TEXT_PARAGRAPH_BUILDER_H_
 
 #include <memory>
+#include "flutter/lib/ui/painting/paint.h"
 #include "flutter/lib/ui/text/paragraph.h"
-#include "flutter/sky/engine/core/rendering/RenderObject.h"
-#include "flutter/sky/engine/wtf/OwnPtr.h"
 #include "flutter/third_party/txt/src/txt/paragraph_builder.h"
 #include "lib/tonic/dart_wrappable.h"
 #include "lib/tonic/typed_data/int32_list.h"
@@ -42,7 +41,11 @@ class ParagraphBuilder : public fxl::RefCountedThreadSafe<ParagraphBuilder>,
                  double letterSpacing,
                  double wordSpacing,
                  double height,
-                 const std::string& locale);
+                 const std::string& locale,
+                 Dart_Handle background_objects,
+                 Dart_Handle background_data,
+                 Dart_Handle foreground_objects,
+                 Dart_Handle foreground_data);
 
   void pop();
 
@@ -60,11 +63,6 @@ class ParagraphBuilder : public fxl::RefCountedThreadSafe<ParagraphBuilder>,
                             const std::u16string& ellipsis,
                             const std::string& locale);
 
-  void createRenderView();
-
-  OwnPtr<RenderView> m_renderView;
-  RenderObject* m_renderParagraph;
-  RenderObject* m_currentRenderObject;
   std::unique_ptr<txt::ParagraphBuilder> m_paragraphBuilder;
 };
 

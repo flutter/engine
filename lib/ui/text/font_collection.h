@@ -7,29 +7,28 @@
 
 #include <memory>
 #include <vector>
-#include "flutter/assets/asset_provider.h"
+
+#include "flutter/assets/asset_manager.h"
 #include "lib/fxl/macros.h"
 #include "lib/fxl/memory/ref_ptr.h"
-#include "txt/asset_data_provider.h"
 #include "txt/font_collection.h"
 
 namespace blink {
 
 class FontCollection {
  public:
-  static FontCollection& ForProcess();
+  FontCollection();
+
+  ~FontCollection();
 
   std::shared_ptr<txt::FontCollection> GetFontCollection() const;
 
-  void RegisterFontsFromAssetProvider(fxl::RefPtr<blink::AssetProvider> asset_provider);
+  void RegisterFonts(fml::RefPtr<AssetManager> asset_manager);
+
   void RegisterTestFonts();
 
  private:
   std::shared_ptr<txt::FontCollection> collection_;
-
-  FontCollection();
-
-  ~FontCollection();
 
   FXL_DISALLOW_COPY_AND_ASSIGN(FontCollection);
 };

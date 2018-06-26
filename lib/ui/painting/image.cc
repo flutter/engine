@@ -4,9 +4,7 @@
 
 #include "flutter/lib/ui/painting/image.h"
 
-#include "flutter/common/threads.h"
 #include "flutter/lib/ui/painting/image_encoding.h"
-#include "flutter/lib/ui/painting/utils.h"
 #include "lib/tonic/converter/dart_converter.h"
 #include "lib/tonic/dart_args.h"
 #include "lib/tonic/dart_binding_macros.h"
@@ -30,18 +28,12 @@ void CanvasImage::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-CanvasImage::CanvasImage() {}
+CanvasImage::CanvasImage() = default;
 
-CanvasImage::~CanvasImage() {
-  // Skia objects must be deleted on the IO thread so that any associated GL
-  // objects will be cleaned up through the IO thread's GL context.
-  SkiaUnrefOnIOThread(&image_);
-}
+CanvasImage::~CanvasImage() = default;
 
-Dart_Handle CanvasImage::toByteData(int format,
-                                    int quality,
-                                    Dart_Handle callback) {
-  return EncodeImage(this, format, quality, callback);
+Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
+  return EncodeImage(this, format, callback);
 }
 
 void CanvasImage::dispose() {
@@ -49,8 +41,8 @@ void CanvasImage::dispose() {
 }
 
 size_t CanvasImage::GetAllocationSize() {
-  if (image_) {
-    return image_->width() * image_->height() * 4;
+  if (auto image = image_.get()) {
+    return image->width() * image->height() * 4;
   } else {
     return sizeof(CanvasImage);
   }

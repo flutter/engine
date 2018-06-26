@@ -7,26 +7,26 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
+#include "flutter/fml/eintr_wrapper.h"
 #include "flutter/fml/platform/linux/timerfd.h"
-#include "lib/fxl/files/eintr_wrapper.h"
 
 namespace fml {
 
 static constexpr int kClockType = CLOCK_MONOTONIC;
 
 MessageLoopLinux::MessageLoopLinux()
-    : epoll_fd_(HANDLE_EINTR(::epoll_create(1 /* unused */))),
+    : epoll_fd_(FML_HANDLE_EINTR(::epoll_create(1 /* unused */))),
       timer_fd_(::timerfd_create(kClockType, TFD_NONBLOCK | TFD_CLOEXEC)),
       running_(false) {
-  FXL_CHECK(epoll_fd_.is_valid());
-  FXL_CHECK(timer_fd_.is_valid());
+  FML_CHECK(epoll_fd_.is_valid());
+  FML_CHECK(timer_fd_.is_valid());
   bool added_source = AddOrRemoveTimerSource(true);
-  FXL_CHECK(added_source);
+  FML_CHECK(added_source);
 }
 
 MessageLoopLinux::~MessageLoopLinux() {
   bool removed_source = AddOrRemoveTimerSource(false);
-  FXL_CHECK(removed_source);
+  FML_CHECK(removed_source);
 }
 
 bool MessageLoopLinux::AddOrRemoveTimerSource(bool add) {
@@ -49,7 +49,7 @@ void MessageLoopLinux::Run() {
   while (running_) {
     struct epoll_event event = {};
 
-    int epoll_result = HANDLE_EINTR(
+    int epoll_result = FML_HANDLE_EINTR(
         ::epoll_wait(epoll_fd_.get(), &event, 1, -1 /* timeout */));
 
     // Errors are fatal.
@@ -78,7 +78,7 @@ void MessageLoopLinux::Terminate() {
 
 void MessageLoopLinux::WakeUp(fxl::TimePoint time_point) {
   bool result = TimerRearm(timer_fd_.get(), time_point);
-  FXL_DCHECK(result);
+  FML_DCHECK(result);
 }
 
 void MessageLoopLinux::OnEventFired() {
