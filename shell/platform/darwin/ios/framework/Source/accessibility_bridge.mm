@@ -510,8 +510,10 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
                                           blink::LocalContextActionUpdates actions) {
   BOOL layoutChanged = NO;
   BOOL scrollOccured = NO;
-  actions_  = actions;
-
+  for (const auto& entry: actions) {
+    const blink::LocalContextAction& action = entry.second;
+    actions_[action.id] = action;
+  }
   for (const auto& entry : nodes) {
     const blink::SemanticsNode& node = entry.second;
     SemanticsObject* object = GetOrCreateObject(node.id, nodes);
