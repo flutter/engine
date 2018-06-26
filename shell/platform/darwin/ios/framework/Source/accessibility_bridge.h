@@ -106,6 +106,7 @@ class AccessibilityBridge final {
   void UpdateSemantics(blink::SemanticsNodeUpdates nodes);
   void UpdateLocalContextActions(blink::LocalContextActionUpdates actions);
   void DispatchSemanticsAction(int32_t id, blink::SemanticsAction action);
+  void DispatchLocalContextAction(int32_t id);
   blink::LocalContextAction getAction(int32_t id);
 
   UIView<UITextInput>* textInputView();

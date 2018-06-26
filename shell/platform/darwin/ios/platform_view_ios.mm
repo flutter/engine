@@ -79,6 +79,14 @@ void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update) {
 }
 
 // |shell::PlatformView|
+void PlatformViewIOS::UpdateLocalContextActions(blink::LocalContextActionUpdates update) {
+    if (accessibility_bridge_) {
+    accessibility_bridge_->UpdateLocalContextActions(std::move(update));
+  }
+}
+
+
+// |shell::PlatformView|
 void PlatformViewIOS::HandlePlatformMessage(fxl::RefPtr<blink::PlatformMessage> message) {
   platform_message_router_.HandlePlatformMessage(std::move(message));
 }

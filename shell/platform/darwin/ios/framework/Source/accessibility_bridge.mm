@@ -175,8 +175,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   }
 }
 
-- (void)onCustomAction:(UIAccessibilityCustomAction*)action {
-  NSLog(@"%@", @"hello");
+- (BOOL)onCustomAction:(UIAccessibilityCustomAction*)action {
+  NSLog(@"%@", @"action!");
+  return YES;
 }
 
 - (NSString*)routeName {
@@ -298,12 +299,13 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   return YES;
 }
 
-- (NSArray<UIAccessibilityCustomAction *>*) accessibilityCustomActions {
-  int32_t length = [self node].localContextActions.size();
-  NSMutableArray<UIAccessibilityCustomAction*>* actions =  [[[NSMutableArray alloc] initWithCapacity:length] autorelease];
+- (NSArray<UIAccessibilityCustomAction*> *) accessibilityCustomActions {
+  NSMutableArray<UIAccessibilityCustomAction*>* actions =  [[NSMutableArray alloc] init];
   for (int32_t action_id : [self node].localContextActions) {
-    auto action = [self bridge]->getAction(action_id);
-    //[actions :add [UIAccessibilityCustomAction initWithName:action.label target:[self uid] selector: @selector(onCustomAction:)]]]
+    blink::LocalContextAction action = [self bridge]->getAction(action_id);
+    NSString* label = @(action.label.data());
+    UIAccessibilityCustomAction* customAction = [[UIAccessibilityCustomAction alloc] initWithName:label target:self selector:@selector(onCustomAction:)];
+    [actions addObject:customAction];
   }
   return actions;
 }

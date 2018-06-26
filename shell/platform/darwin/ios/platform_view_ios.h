@@ -67,6 +67,9 @@ class PlatformViewIOS final : public PlatformView {
   void UpdateSemantics(blink::SemanticsNodeUpdates update) override;
 
   // |shell::PlatformView|
+  void UpdateLocalContextActions(blink::LocalContextActionUpdates update) override;
+
+  // |shell::PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(PlatformViewIOS);
