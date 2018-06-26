@@ -10,9 +10,10 @@
 #include "flutter/runtime/test_font_data.h"
 #include "third_party/rapidjson/rapidjson/document.h"
 #include "third_party/rapidjson/rapidjson/rapidjson.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
+#include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "third_party/skia/include/core/SkTypeface.h"
-#include "third_party/skia/include/ports/SkFontMgr.h"
 #include "txt/asset_font_manager.h"
 #include "txt/test_font_manager.h"
 #include "txt/typeface_font_asset_provider.h"
@@ -24,7 +25,10 @@ FontCollection::FontCollection()
   collection_->SetDefaultFontManager(SkFontMgr::RefDefault());
 }
 
-FontCollection::~FontCollection() = default;
+FontCollection::~FontCollection() {
+  collection_.reset();
+  SkGraphics::PurgeFontCache();
+}
 
 std::shared_ptr<txt::FontCollection> FontCollection::GetFontCollection() const {
   return collection_;
