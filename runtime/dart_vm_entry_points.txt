@@ -37,8 +37,6 @@ dart:ui,Scene,Scene._
 dart:ui,SceneBuilder,SceneBuilder.
 dart:ui,SemanticsUpdate,SemanticsUpdate._
 dart:ui,SemanticsUpdateBuilder,SemanticsUpdateBuilder.
-dart:ui,LocalContextActionUpdate,LocalContextActionUpdate._
-dart:ui,LocalContextActionUpdateBuilder,LocalContextActionUpdateBuilder.
 dart:ui,Shader,Shader._
 dart:ui,TextBox,TextBox._
 dart:vmservice_io,::,main

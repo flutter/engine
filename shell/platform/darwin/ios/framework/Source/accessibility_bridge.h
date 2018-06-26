@@ -82,6 +82,19 @@ class AccessibilityBridge;
 @end
 
 /**
+ * An implementation of UIAccessibilityCustomAction which also contains the
+ * Flutter uid.
+ */
+@interface FlutterLocalContextAction : UIAccessibilityCustomAction
+
+/**
+ * The uid of the action defined by the flutter application.
+ */
+@property(nonatomic) int32_t uid;
+
+@end
+
+/**
  * The default implementation of `SemanticsObject` for most accessibility elements
  * in the iOS accessibility tree.
  *
@@ -103,10 +116,9 @@ class AccessibilityBridge final {
   AccessibilityBridge(UIView* view, PlatformViewIOS* platform_view);
   ~AccessibilityBridge();
 
-  void UpdateSemantics(blink::SemanticsNodeUpdates nodes);
-  void UpdateLocalContextActions(blink::LocalContextActionUpdates actions);
+  void UpdateSemantics(blink::SemanticsNodeUpdates nodes, blink::LocalContextActionUpdates actions);
   void DispatchSemanticsAction(int32_t id, blink::SemanticsAction action);
-  void DispatchLocalContextAction(int32_t id);
+  void DispatchLocalContextAction(int32_t uid, int32_t action_id);
   blink::LocalContextAction getAction(int32_t id);
 
   UIView<UITextInput>* textInputView();

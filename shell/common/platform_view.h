@@ -96,9 +96,8 @@ class PlatformView {
 
   fml::WeakPtr<PlatformView> GetWeakPtr() const;
 
-  virtual void UpdateSemantics(blink::SemanticsNodeUpdates update);
-
-  virtual void UpdateLocalContextActions(blink::LocalContextActionUpdates update);
+  virtual void UpdateSemantics(blink::SemanticsNodeUpdates updates,
+                               blink::LocalContextActionUpdates actions);
 
   virtual void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message);

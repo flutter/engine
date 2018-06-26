@@ -17,8 +17,9 @@ static void SemanticsUpdateBuilder_constructor(Dart_NativeArguments args) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, SemanticsUpdateBuilder);
 
-#define FOR_EACH_BINDING(V)             \
-  V(SemanticsUpdateBuilder, updateNode) \
+#define FOR_EACH_BINDING(V)               \
+  V(SemanticsUpdateBuilder, updateNode)   \
+  V(SemanticsUpdateBuilder, updateAction) \
   V(SemanticsUpdateBuilder, build)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
@@ -82,8 +83,16 @@ void SemanticsUpdateBuilder::updateNode(int id,
   nodes_[id] = node;
 }
 
+void SemanticsUpdateBuilder::updateAction(int id,
+                                          std::string label) {
+  LocalContextAction action;
+  action.id = id;
+  action.label = label;
+  actions_[id] = action;
+}
+
 fxl::RefPtr<SemanticsUpdate> SemanticsUpdateBuilder::build() {
-  return SemanticsUpdate::create(std::move(nodes_));
+  return SemanticsUpdate::create(std::move(nodes_), std::move(actions_));
 }
 
 }  // namespace blink

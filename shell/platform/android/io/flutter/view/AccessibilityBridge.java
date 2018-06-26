@@ -410,7 +410,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                         return true;
                     }
                 }
-                return false;
         }
         return false;
     }
@@ -509,7 +508,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
             LocalContextAction action = getOrCreateAction(id);
-            action.updateWith(buffer, strings);
+            int stringIndex = buffer.getInt();
+            action.label = stringIndex == -1 ? null : strings[stringIndex];
         }
     }
 
@@ -788,14 +788,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         final int resourceId;
         int id = -1;
         String label;
-        TextDirection textDirection;
-
-        void updateWith(ByteBuffer buffer, String[] strings) {
-            textDirection = TextDirection.fromInt(buffer.getInt());
-            int stringIndex = buffer.getInt();
-            label = stringIndex == -1 ? null : strings[stringIndex];
-        }
-
     }
     static int nextContextId = 1232132123;
 

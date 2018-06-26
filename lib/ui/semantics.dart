@@ -558,6 +558,12 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     Int32List localContextActions,
   ) native 'SemanticsUpdateBuilder_updateNode';
 
+  /// Update the local context action associated with the given `id`.
+  void updateAction({int id, String label}) {
+    _updateAction(id, label);
+  }
+  void _updateAction(int id, String label) native 'SemanticsUpdateBuilder_updateAction';
+
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
   ///
@@ -584,28 +590,4 @@ class SemanticsUpdate extends NativeFieldWrapperClass2 {
   /// After calling this function, the semantics update is cannot be used
   /// further.
   void dispose() native 'SemanticsUpdate_dispose';
-}
-
-
-class LocalContextActionUpdate extends NativeFieldWrapperClass2 {
-  LocalContextActionUpdate._();
-
-  void dispose() native 'LocalContextActionUpdate_dispose';
-}
-
-class LocalContextActionUpdateBuilder extends NativeFieldWrapperClass2 {
-  LocalContextActionUpdateBuilder() { _constructor(); }
-  void _constructor() native 'LocalContextActionUpdateBuilder_constructor';
-
-  void updateAction({int id, TextDirection textDirection, String label}) {
-    _updateAction(
-      id,
-      textDirection != null ? textDirection.index + 1 : 0,
-      label,
-    );
-  }
-
-  void _updateAction(int id, int textDirection, String label) native 'LocalContextActionUpdateBuilder_updateAction';
-
-  LocalContextActionUpdate build() native 'LocalContextActionUpdateBuilder_build';
 }

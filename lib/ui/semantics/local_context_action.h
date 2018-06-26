@@ -17,7 +17,6 @@ struct LocalContextAction {
   ~LocalContextAction();
 
   int32_t id = 0;
-  int32_t textDirection = 0;  // 0=unknown, 1=rtl, 2=ltr
   std::string label;
 };
 

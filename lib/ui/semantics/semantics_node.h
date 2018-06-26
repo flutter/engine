@@ -35,6 +35,7 @@ enum class SemanticsAction : int32_t {
   kPaste = 1 << 14,
   kDidGainAccessibilityFocus = 1 << 15,
   kDidLoseAccessibilityFocus = 1 << 16,
+  kLocalContextAction = 1 << 17,
 };
 
 const int kScrollableSemanticsActions =

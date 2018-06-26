@@ -72,19 +72,11 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
 }
 
 // |shell::PlatformView|
-void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update) {
+void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update, blink::LocalContextActionUpdates actions) {
   if (accessibility_bridge_) {
-    accessibility_bridge_->UpdateSemantics(std::move(update));
+    accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
   }
 }
-
-// |shell::PlatformView|
-void PlatformViewIOS::UpdateLocalContextActions(blink::LocalContextActionUpdates update) {
-    if (accessibility_bridge_) {
-    accessibility_bridge_->UpdateLocalContextActions(std::move(update));
-  }
-}
-
 
 // |shell::PlatformView|
 void PlatformViewIOS::HandlePlatformMessage(fxl::RefPtr<blink::PlatformMessage> message) {

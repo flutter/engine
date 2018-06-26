@@ -48,6 +48,9 @@ class SemanticsUpdateBuilder
                   const tonic::Int32List& childrenInHitTestOrder,
                   const tonic::Int32List& localContextActions);
 
+  void updateAction(int id, 
+                    std::string label);
+
   fxl::RefPtr<SemanticsUpdate> build();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
@@ -56,6 +59,7 @@ class SemanticsUpdateBuilder
   explicit SemanticsUpdateBuilder();
 
   SemanticsNodeUpdates nodes_;
+  LocalContextActionUpdates actions_;
 };
 
 }  // namespace blink

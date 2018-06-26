@@ -240,13 +240,7 @@ void RuntimeController::Render(Scene* scene) {
 
 void RuntimeController::UpdateSemantics(SemanticsUpdate* update) {
   if (window_data_.semantics_enabled) {
-    client_.UpdateSemantics(update->takeNodes());
-  }
-}
-
-void RuntimeController::UpdateLocalContextActions(LocalContextActionUpdate* update) {
-  if (window_data_.semantics_enabled) {
-    client_.UpdateLocalContextActions(update->takeActions());
+    client_.UpdateSemantics(update->takeNodes(), update->takeActions());
   }
 }
 

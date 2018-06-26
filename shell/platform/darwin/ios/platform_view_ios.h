@@ -64,10 +64,8 @@ class PlatformViewIOS final : public PlatformView {
       fxl::RefPtr<blink::PlatformMessage> message) override;
 
   // |shell::PlatformView|
-  void UpdateSemantics(blink::SemanticsNodeUpdates update) override;
-
-  // |shell::PlatformView|
-  void UpdateLocalContextActions(blink::LocalContextActionUpdates update) override;
+  void UpdateSemantics(blink::SemanticsNodeUpdates update,
+                       blink::LocalContextActionUpdates actions) override;
 
   // |shell::PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;

@@ -184,11 +184,8 @@ class Shell final : public PlatformView::Delegate,
 
   // |shell::Engine::Delegate|
   void OnEngineUpdateSemantics(const Engine& engine,
-                               blink::SemanticsNodeUpdates update) override;
-
-   // |shell::Engine::Delegate|
-  void OnEngineUpdateLocalContextActions(const Engine& engine,
-                                         blink::LocalContextActionUpdates update) override;
+                               blink::SemanticsNodeUpdates update,
+                               blink::LocalContextActionUpdates actions) override;
 
   // |shell::Engine::Delegate|
   void OnEngineHandlePlatformMessage(

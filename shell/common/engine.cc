@@ -364,12 +364,9 @@ void Engine::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
   animator_->Render(std::move(layer_tree));
 }
 
-void Engine::UpdateSemantics(blink::SemanticsNodeUpdates update) {
-  delegate_.OnEngineUpdateSemantics(*this, std::move(update));
-}
-
-void Engine::UpdateLocalContextActions(blink::LocalContextActionUpdates update) {
-  delegate_.OnEngineUpdateLocalContextActions(*this, std::move(update));
+void Engine::UpdateSemantics(blink::SemanticsNodeUpdates update,
+                             blink::LocalContextActionUpdates actions) {
+  delegate_.OnEngineUpdateSemantics(*this, std::move(update), std::move(actions));
 }
 
 void Engine::HandlePlatformMessage(

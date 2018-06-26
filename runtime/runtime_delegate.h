@@ -25,9 +25,8 @@ class RuntimeDelegate {
 
   virtual void Render(std::unique_ptr<flow::LayerTree> layer_tree) = 0;
 
-  virtual void UpdateSemantics(blink::SemanticsNodeUpdates update) = 0;
-
-  virtual void UpdateLocalContextActions(blink::LocalContextActionUpdates update) = 0;
+  virtual void UpdateSemantics(blink::SemanticsNodeUpdates update,
+                               blink::LocalContextActionUpdates actions) = 0;
 
   virtual void HandlePlatformMessage(fxl::RefPtr<PlatformMessage> message) = 0;
 

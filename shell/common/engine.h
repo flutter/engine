@@ -33,11 +33,8 @@ class Engine final : public blink::RuntimeDelegate {
    public:
     virtual void OnEngineUpdateSemantics(
         const Engine& engine,
-        blink::SemanticsNodeUpdates update) = 0;
-
-    virtual void OnEngineUpdateLocalContextActions(
-        const Engine& engine,
-        blink::LocalContextActionUpdates update) = 0;
+        blink::SemanticsNodeUpdates update,
+        blink::LocalContextActionUpdates actions) = 0;
 
     virtual void OnEngineHandlePlatformMessage(
         const Engine& engine,
@@ -128,10 +125,8 @@ class Engine final : public blink::RuntimeDelegate {
   void Render(std::unique_ptr<flow::LayerTree> layer_tree) override;
 
   // |blink::RuntimeDelegate|
-  void UpdateSemantics(blink::SemanticsNodeUpdates update) override;
-
-  // |blink::RuntimeDelegate|
-  void UpdateLocalContextActions(blink::LocalContextActionUpdates update) override;
+  void UpdateSemantics(blink::SemanticsNodeUpdates update, 
+                       blink::LocalContextActionUpdates actions) override;
 
   // |blink::RuntimeDelegate|
   void HandlePlatformMessage(
