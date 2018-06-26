@@ -147,6 +147,10 @@ class SemanticsAction {
   /// Accessibility focus and input focus can be held by two different nodes!
   static const SemanticsAction didLoseAccessibilityFocus = const SemanticsAction._(_kDidLoseAccessibilityFocusIndex);
 
+  /// Indicates that the user has invoked a local context action on the node.
+  /// 
+  /// This handler is added automatically whenever a local context action is
+  /// added to a semantics node and should not be added manually.
   static const SemanticsAction localContextAction = const SemanticsAction._(_kLocalContextActionIndex);
 
   /// The possible semantics actions.
@@ -559,6 +563,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   ) native 'SemanticsUpdateBuilder_updateNode';
 
   /// Update the local context action associated with the given `id`.
+  /// 
+  /// The name of the action exposed to the user is the `label`. The text 
+  /// direction of this label is the same as the global window.
   void updateAction({int id, String label}) {
     _updateAction(id, label);
   }
