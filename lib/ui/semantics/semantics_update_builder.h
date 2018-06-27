@@ -46,7 +46,7 @@ class SemanticsUpdateBuilder
                   const tonic::Float64List& transform,
                   const tonic::Int32List& childrenInTraversalOrder,
                   const tonic::Int32List& childrenInHitTestOrder,
-                  const tonic::Int32List& localContextActions);
+                  const tonic::Int32List& customAccessibilityActions);
 
   void updateAction(int id, 
                     std::string label);
@@ -59,7 +59,7 @@ class SemanticsUpdateBuilder
   explicit SemanticsUpdateBuilder();
 
   SemanticsNodeUpdates nodes_;
-  LocalContextActionUpdates actions_;
+  CustomAccessibilityActionUpdates actions_;
 };
 
 }  // namespace blink

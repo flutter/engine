@@ -42,7 +42,8 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
 }  // namespace
 
-@implementation FlutterLocalContextAction {
+@implementation FlutterCustomAccessibilityAction
+ {
 }
 @end
 
@@ -179,8 +180,17 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   }
 }
 
-- (BOOL)onLocalContextAction:(FlutterLocalContextAction*)action {
-  [self bridge] -> DispatchLocalContextAction([self uid], action.uid);
+- (BOOL)onCustomAccessibilityAction:(FlutterCustomAccessibilityAction*)action {
+  if (![self node].HasAction(blink::SemanticsAction::kCustomAction))
+    return NO;
+  int32_t action_id = action.uid;
+  std::vector<uint8_t> args;
+  args.push_back(3); // type=int32.
+  args.push_back(action_id);
+  args.push_back(action_id >> 8);
+  args.push_back(action_id >> 16);
+  args.push_back(action_id >> 24);
+  [self bridge] ->DispatchSemanticsAction([self uid], blink::SemanticsAction::kCustomAction, args);
   return YES;
 }
 
@@ -301,18 +311,6 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     return NO;
   [self bridge] -> DispatchSemanticsAction([self uid], action);
   return YES;
-}
-
-- (NSArray<FlutterLocalContextAction*> *) accessibilityCustomActions {
-  NSMutableArray<FlutterLocalContextAction*>* actions =  [[NSMutableArray alloc] init];
-  for (int32_t action_id : [self node].localContextActions) {
-    blink::LocalContextAction action = [self bridge]->getAction(action_id);
-    NSString* label = @(action.label.data());
-    FlutterLocalContextAction* customAction = [[FlutterLocalContextAction alloc] initWithName:label target:self selector:@selector(onLocalContextAction:)];
-    customAction.uid = action_id;
-    [actions addObject:customAction];
-  }
-  return actions;
 }
 
 #pragma mark UIAccessibilityFocus overrides
@@ -502,16 +500,12 @@ UIView<UITextInput>* AccessibilityBridge::textInputView() {
   return [platform_view_->GetTextInputPlugin() textInputView];
 }
 
-blink::LocalContextAction AccessibilityBridge::getAction(int32_t id) {
-  return actions_[id];
-}
-
 void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
-                                          blink::LocalContextActionUpdates actions) {
+                                          blink::CustomAccessibilityActionUpdates actions) {
   BOOL layoutChanged = NO;
   BOOL scrollOccured = NO;
   for (const auto& entry: actions) {
-    const blink::LocalContextAction& action = entry.second;
+    const blink::CustomAccessibilityAction& action = entry.second;
     actions_[action.id] = action;
   }
   for (const auto& entry : nodes) {
@@ -529,6 +523,20 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
       [newChildren addObject:child];
     }
     object.children = newChildren;
+    if (node.customAccessibilityActions.size() > 0) {
+      NSMutableArray<FlutterCustomAccessibilityAction*>* accessibilityCustomActions = 
+          [[[NSMutableArray alloc] init] autorelease];
+      for (int32_t action_id : node.customAccessibilityActions) {
+        blink::CustomAccessibilityAction& action = actions_[action_id];
+        NSString* label = @(action.label.data());
+        SEL selector = @selector(onCustomAccessibilityAction:);
+        FlutterCustomAccessibilityAction* customAction = 
+          [[FlutterCustomAccessibilityAction alloc] initWithName:label target:object selector:selector];
+        customAction.uid = action_id;
+        [accessibilityCustomActions addObject:customAction];
+      }
+      object.accessibilityCustomActions = accessibilityCustomActions;
+    }
   }
 
   SemanticsObject* root = objects_.get()[@(kRootNodeId)];
@@ -589,14 +597,10 @@ void AccessibilityBridge::DispatchSemanticsAction(int32_t uid, blink::SemanticsA
   platform_view_->DispatchSemanticsAction(uid, action, args);
 }
 
-void AccessibilityBridge::DispatchLocalContextAction(int32_t uid, int32_t action_id) {
-  std::vector<uint8_t> args;
-  args.push_back(3); // type=int32.
-  args.push_back(action_id);
-  args.push_back(action_id >> 8);
-  args.push_back(action_id >> 16);
-  args.push_back(action_id >> 24);
-  platform_view_->DispatchSemanticsAction(uid, blink::SemanticsAction::kLocalContextAction, args);
+void AccessibilityBridge::DispatchSemanticsAction(int32_t uid, 
+                                                   blink::SemanticsAction action,
+                                                  std::vector<uint8_t> args) {
+  platform_view_->DispatchSemanticsAction(uid, action, args);                                              
 }
 
 SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,

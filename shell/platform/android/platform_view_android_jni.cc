@@ -80,12 +80,12 @@ void FlutterViewUpdateSemantics(JNIEnv* env,
   FXL_CHECK(CheckException(env));
 }
 
-static jmethodID g_update_local_context_actions_method = nullptr;
-void FlutterViewUpdateLocalContextActions(JNIEnv* env,
-                                          jobject obj,
-                                          jobject buffer,
-                                          jobjectArray strings) {
-  env->CallVoidMethod(obj, g_update_local_context_actions_method, buffer, strings);
+static jmethodID g_update_custom_accessibility_actions_method = nullptr;
+void FlutterViewUpdateCustomAccessibilityActions(JNIEnv* env,
+                                                 jobject obj,
+                                                 jobject buffer,
+                                                 jobjectArray strings) {
+  env->CallVoidMethod(obj, g_update_custom_accessibility_actions_method, buffer, strings);
   FXL_CHECK(CheckException(env));
 }
 
@@ -731,11 +731,11 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_update_local_context_actions_method =
-      env->GetMethodID(g_flutter_native_view_class->obj(), "updateLocalContextActions",
+  g_update_custom_accessibility_actions_method =
+      env->GetMethodID(g_flutter_native_view_class->obj(), "updateCustomAccessibilityActions",
                         "(Ljava/nio/ByteBuffer;[Ljava/lang/String;)V");
 
-  if (g_update_local_context_actions_method == nullptr) {
+  if (g_update_custom_accessibility_actions_method == nullptr) {
     return false;
   }
 

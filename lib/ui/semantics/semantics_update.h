@@ -6,7 +6,7 @@
 #define FLUTTER_LIB_UI_SEMANTICS_SEMANTICS_UPDATE_H_
 
 #include "flutter/lib/ui/semantics/semantics_node.h"
-#include "flutter/lib/ui/semantics/local_context_action.h"
+#include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "lib/tonic/dart_wrappable.h"
 
 namespace tonic {
@@ -22,21 +22,23 @@ class SemanticsUpdate : public fxl::RefCountedThreadSafe<SemanticsUpdate>,
 
  public:
   ~SemanticsUpdate() override;
-  static fxl::RefPtr<SemanticsUpdate> create(SemanticsNodeUpdates nodes, LocalContextActionUpdates actions);
+  static fxl::RefPtr<SemanticsUpdate> create(SemanticsNodeUpdates nodes,
+                                             CustomAccessibilityActionUpdates actions);
 
   SemanticsNodeUpdates takeNodes();
 
-  LocalContextActionUpdates takeActions();
+  CustomAccessibilityActionUpdates takeActions();
 
   void dispose();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  explicit SemanticsUpdate(SemanticsNodeUpdates nodes, LocalContextActionUpdates updates);
+  explicit SemanticsUpdate(SemanticsNodeUpdates nodes,
+                           CustomAccessibilityActionUpdates updates);
 
   SemanticsNodeUpdates nodes_;
-  LocalContextActionUpdates actions_;
+  CustomAccessibilityActionUpdates actions_;
 };
 
 }  // namespace blink

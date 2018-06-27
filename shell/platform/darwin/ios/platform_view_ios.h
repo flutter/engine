@@ -65,7 +65,7 @@ class PlatformViewIOS final : public PlatformView {
 
   // |shell::PlatformView|
   void UpdateSemantics(blink::SemanticsNodeUpdates update,
-                       blink::LocalContextActionUpdates actions) override;
+                       blink::CustomAccessibilityActionUpdates actions) override;
 
   // |shell::PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;

@@ -41,7 +41,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private static final int ROOT_NODE_ID = 0;
 
     private Map<Integer, SemanticsObject> mObjects;
-    private Map<Integer, LocalContextAction> mLocalContextActions;
+    private Map<Integer, CustomAccessibilityAction> mCustomAccessibilityActions;
     private final FlutterView mOwner;
     private boolean mAccessibilityEnabled = false;
     private SemanticsObject mA11yFocusedObject;
@@ -70,7 +70,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         PASTE(1 << 14),
         DID_GAIN_ACCESSIBILITY_FOCUS(1 << 15),
         DID_LOSE_ACCESSIBILITY_FOCUS(1 << 16),
-        LOCAL_CONTEXT_ACTION(1 << 17);
+        CUSTOM_ACTION(1 << 17);
 
         Action(int value) {
             this.value = value;
@@ -106,7 +106,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         assert owner != null;
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
-        mLocalContextActions = new HashMap<Integer, LocalContextAction>();
+        mCustomAccessibilityActions = new HashMap<Integer, CustomAccessibilityAction>();
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(owner, "flutter/accessibility",
             StandardMessageCodec.INSTANCE);
@@ -264,8 +264,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         // Actions on the local context menu
         if (Build.VERSION.SDK_INT >= 21) {
-            if (object.localContextActions != null) {
-                for (LocalContextAction action : object.localContextActions) {
+            if (object.customAccessibilityAction != null) {
+                for (CustomAccessibilityAction action : object.customAccessibilityAction) {
                     result.addAction(new AccessibilityNodeInfo.AccessibilityAction(action.resourceId, action.label));
                 }
             }
@@ -403,11 +403,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 return true;
             }
             default:
-                // might be a local context action.
+                // might be a custom accessibility action.
                 final int flutterId = action - firstContextId;
-                LocalContextAction contextAction = mLocalContextActions.get(flutterId);
+                CustomAccessibilityAction contextAction = mCustomAccessibilityActions.get(flutterId);
                 if (contextAction != null) {
-                    mOwner.dispatchSemanticsAction(virtualViewId, Action.LOCAL_CONTEXT_ACTION, contextAction.id);
+                    mOwner.dispatchSemanticsAction(virtualViewId, Action.CUSTOM_ACTION, contextAction.id);
                     return true;
                 }
         }
@@ -469,13 +469,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
       return object;
     }
 
-    private LocalContextAction getOrCreateAction(int id) {
-        LocalContextAction action = mLocalContextActions.get(id);
+    private CustomAccessibilityAction getOrCreateAction(int id) {
+        CustomAccessibilityAction action = mCustomAccessibilityActions.get(id);
         if (action == null) {
-            action = new LocalContextAction();
+            action = new CustomAccessibilityAction();
             action.id = id;
             action.resourceId = id + firstContextId;
-            mLocalContextActions.put(id, action);
+            mCustomAccessibilityActions.put(id, action);
         }
         return action;
     }
@@ -504,11 +504,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
     }
 
-    void updateLocalContextActions(ByteBuffer buffer, String[] strings) {
-        ArrayList<LocalContextAction> updatedActions = new ArrayList<LocalContextAction>();
+    void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
+        ArrayList<CustomAccessibilityAction> updatedActions = new ArrayList<CustomAccessibilityAction>();
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
-            LocalContextAction action = getOrCreateAction(id);
+            CustomAccessibilityAction action = getOrCreateAction(id);
             int stringIndex = buffer.getInt();
             action.label = stringIndex == -1 ? null : strings[stringIndex];
         }
@@ -782,8 +782,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
     }
 
-    private class LocalContextAction {
-        LocalContextAction() {}
+    private class CustomAccessibilityAction {
+        CustomAccessibilityAction() {}
 
         int resourceId = -1;
         int id = -1;
@@ -830,7 +830,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         SemanticsObject parent;
         List<SemanticsObject> childrenInTraversalOrder;
         List<SemanticsObject> childrenInHitTestOrder;
-        List<LocalContextAction> localContextActions;
+        List<CustomAccessibilityAction> customAccessibilityAction;
 
         private boolean inverseTransformDirty = true;
         private float[] inverseTransform;
@@ -951,16 +951,16 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             }
             final int actionCount = buffer.getInt();
             if (actionCount == 0) {
-                localContextActions = null;
+                customAccessibilityAction = null;
             } else {
-                if (localContextActions == null)
-                    localContextActions = new ArrayList<LocalContextAction>(actionCount);
+                if (customAccessibilityAction == null)
+                    customAccessibilityAction = new ArrayList<CustomAccessibilityAction>(actionCount);
                 else
-                    localContextActions.clear();
+                    customAccessibilityAction.clear();
 
                 for (int i = 0; i < actionCount; i++) {
-                    LocalContextAction action = getOrCreateAction(buffer.getInt());
-                    localContextActions.add(action);
+                    CustomAccessibilityAction action = getOrCreateAction(buffer.getInt());
+                    customAccessibilityAction.add(action);
                 }
             }
         }

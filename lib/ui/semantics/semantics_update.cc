@@ -22,11 +22,12 @@ DART_BIND_ALL(SemanticsUpdate, FOR_EACH_BINDING)
 
 fxl::RefPtr<SemanticsUpdate> SemanticsUpdate::create(
     SemanticsNodeUpdates nodes,
-    LocalContextActionUpdates actions) {
+    CustomAccessibilityActionUpdates actions) {
   return fxl::MakeRefCounted<SemanticsUpdate>(std::move(nodes), std::move(actions));
 }
 
-SemanticsUpdate::SemanticsUpdate(SemanticsNodeUpdates nodes, LocalContextActionUpdates actions)
+SemanticsUpdate::SemanticsUpdate(SemanticsNodeUpdates nodes,
+                                 CustomAccessibilityActionUpdates actions)
     : nodes_(std::move(nodes)), actions_(std::move(actions)) {}
 
 SemanticsUpdate::~SemanticsUpdate() = default;
@@ -35,7 +36,7 @@ SemanticsNodeUpdates SemanticsUpdate::takeNodes() {
   return std::move(nodes_);
 }
 
-LocalContextActionUpdates SemanticsUpdate::takeActions() {
+CustomAccessibilityActionUpdates SemanticsUpdate::takeActions() {
   return std::move(actions_);
 }
 

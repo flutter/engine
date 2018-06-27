@@ -708,7 +708,7 @@ void Shell::OnAnimatorDrawLastLayerTree(const Animator& animator) {
 // |shell::Engine::Delegate|
 void Shell::OnEngineUpdateSemantics(const Engine& engine,
                                     blink::SemanticsNodeUpdates update,
-                                    blink::LocalContextActionUpdates actions) {
+                                    blink::CustomAccessibilityActionUpdates actions) {
   FXL_DCHECK(is_setup_);
   FXL_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 

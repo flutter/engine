@@ -365,7 +365,7 @@ void Engine::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
 }
 
 void Engine::UpdateSemantics(blink::SemanticsNodeUpdates update,
-                             blink::LocalContextActionUpdates actions) {
+                             blink::CustomAccessibilityActionUpdates actions) {
   delegate_.OnEngineUpdateSemantics(*this, std::move(update), std::move(actions));
 }
 

@@ -1,9 +1,9 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_LIB_UI_SEMANTICS_LOCAL_CONTEXT_ACTION_H_
-#define FLUTTER_LIB_UI_SEMANTICS_LOCAL_CONTEXT_ACTION_H_
+#ifndef FLUTTER_LIB_UI_SEMANTICS_CUSTOM_ACCESSIBILITY_ACTION_H_
+#define FLUTTER_LIB_UI_SEMANTICS_CUSTOM_ACCESSIBILITY_ACTION_H_
 
 #include "lib/tonic/dart_wrappable.h"
 #include "lib/tonic/typed_data/float64_list.h"
@@ -12,9 +12,9 @@
 
 namespace blink {
 
-struct LocalContextAction {
-  LocalContextAction();
-  ~LocalContextAction();
+struct CustomAccessibilityAction {
+  CustomAccessibilityAction();
+  ~CustomAccessibilityAction();
 
   int32_t id = 0;
   std::string label;
@@ -25,7 +25,7 @@ struct LocalContextAction {
 //
 // The keys in the map are stable action IDs, and the values contain
 // semantic information for the action corresponding to that id.
-using LocalContextActionUpdates = std::unordered_map<int32_t, LocalContextAction>;
+using CustomAccessibilityActionUpdates = std::unordered_map<int32_t, CustomAccessibilityAction>;
 
 }  // namespace blink
 

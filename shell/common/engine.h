@@ -11,7 +11,7 @@
 #include "flutter/assets/asset_manager.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
-#include "flutter/lib/ui/semantics/local_context_action.h"
+#include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -34,7 +34,7 @@ class Engine final : public blink::RuntimeDelegate {
     virtual void OnEngineUpdateSemantics(
         const Engine& engine,
         blink::SemanticsNodeUpdates update,
-        blink::LocalContextActionUpdates actions) = 0;
+        blink::CustomAccessibilityActionUpdates actions) = 0;
 
     virtual void OnEngineHandlePlatformMessage(
         const Engine& engine,
@@ -126,7 +126,7 @@ class Engine final : public blink::RuntimeDelegate {
 
   // |blink::RuntimeDelegate|
   void UpdateSemantics(blink::SemanticsNodeUpdates update, 
-                       blink::LocalContextActionUpdates actions) override;
+                       blink::CustomAccessibilityActionUpdates actions) override;
 
   // |blink::RuntimeDelegate|
   void HandlePlatformMessage(

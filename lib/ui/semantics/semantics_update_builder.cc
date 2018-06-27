@@ -78,14 +78,14 @@ void SemanticsUpdateBuilder::updateNode(int id,
       childrenInTraversalOrder.data(), childrenInTraversalOrder.data() + childrenInTraversalOrder.num_elements());
   node.childrenInHitTestOrder = std::vector<int32_t>(
       childrenInHitTestOrder.data(), childrenInHitTestOrder.data() + childrenInHitTestOrder.num_elements());
-  node.localContextActions = std::vector<int32_t>(
+  node.customAccessibilityActions = std::vector<int32_t>(
       localContextActions.data(), localContextActions.data() + localContextActions.num_elements());
   nodes_[id] = node;
 }
 
 void SemanticsUpdateBuilder::updateAction(int id,
                                           std::string label) {
-  LocalContextAction action;
+  CustomAccessibilityAction action;
   action.id = id;
   action.label = label;
   actions_[id] = action;

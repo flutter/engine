@@ -72,7 +72,8 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
 }
 
 // |shell::PlatformView|
-void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update, blink::LocalContextActionUpdates actions) {
+void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update,
+                                      blink::CustomAccessibilityActionUpdates actions) {
   if (accessibility_bridge_) {
     accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
   }

@@ -781,11 +781,11 @@ public class FlutterView extends SurfaceView
         }
     }
 
-    public void updateLocalContextActions(ByteBuffer buffer, String[] strings) {
+    public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
         try {
             if (mAccessibilityNodeProvider != null) {
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
-                mAccessibilityNodeProvider.updateLocalContextActions(buffer, strings);
+                mAccessibilityNodeProvider.updateCustomAccessibilityActions(buffer, strings);
             }
         } catch (Exception ex) {
             Log.e(TAG, "Uncaught exception while updating local context actions", ex);
