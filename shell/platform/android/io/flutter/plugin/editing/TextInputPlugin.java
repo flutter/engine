@@ -135,7 +135,8 @@ public class TextInputPlugin implements MethodCallHandler {
             case "TextInputAction.previous":
                 return EditorInfo.IME_ACTION_PREVIOUS;
             default:
-                return EditorInfo.IME_ACTION_DONE;
+                // Present default key if bad input type is given.
+                return EditorInfo.IME_ACTION_UNSPECIFIED;
         }
     }
 
