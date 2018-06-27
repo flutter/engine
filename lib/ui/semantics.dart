@@ -367,16 +367,19 @@ class SemanticsFlag {
   /// used to implement accessibility scrolling on iOS.
   static const SemanticsFlag isHidden = const SemanticsFlag._(_kIsHiddenIndex);
 
-  /// Whether the semantics node represents a region with important screen updates
-  ///
-  /// A [SnackBar] is an example of usecase for a live region. Since they are usually
-  /// triggered by a separate widget, they do not have accessibility focus when first
-  /// created.  However, we would like to make users aware of it without interrupting
-  /// their workflow. On Android, the live region triggers an interruptable announcement
-  /// of the snackbar's text contents.
-  ///
-  /// Only widgets with important semantic information should be annotated with a live
-  /// region flag.
+  /// Whether the semantics node is a live region.
+  /// 
+  /// A live region indicates that this semantics node will update its 
+  /// semantics label. Platforms are free to use this information to
+  /// make polite updates to the user to inform them of this.
+  /// 
+  /// On Android, TalkBack will make a polite announcement of the first and
+  /// subsequent updates to the label of this node. This flag is not currently
+  /// supported on iOS.
+  /// 
+  /// An example of a live region is a [SnackBar] widget. When it appears
+  /// on the screen it may be difficult to focus to read the value. A live
+  /// region causes a polite announcement to be generated automatically.
   static const SemanticsFlag isLiveRegion = const SemanticsFlag._(_kIsLiveRegionIndex);
 
   /// The possible semantics flags.
