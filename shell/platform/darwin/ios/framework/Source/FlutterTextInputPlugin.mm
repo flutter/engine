@@ -54,7 +54,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     return UIReturnKeyNext;
 
   if (@available(iOS 9.0, *))
-    if ([inputType isEqualToString:@"TextInputAction.continue_action"])
+    if ([inputType isEqualToString:@"TextInputAction.continueAction"])
       return UIReturnKeyContinue;
 
   if ([inputType isEqualToString:@"TextInputAction.join"])
