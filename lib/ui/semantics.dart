@@ -26,7 +26,7 @@ class SemanticsAction {
   static const int _kPasteIndex = 1 << 14;
   static const int _kDidGainAccessibilityFocusIndex = 1 << 15;
   static const int _kDidLoseAccessibilityFocusIndex = 1 << 16;
-  static const int _kLocalContextActionIndex = 1 << 17;
+  static const int _kCustomAction = 1 << 17;
 
   /// The numerical value for this action.
   ///
@@ -147,11 +147,11 @@ class SemanticsAction {
   /// Accessibility focus and input focus can be held by two different nodes!
   static const SemanticsAction didLoseAccessibilityFocus = const SemanticsAction._(_kDidLoseAccessibilityFocusIndex);
 
-  /// Indicates that the user has invoked a local context action on the node.
+  /// Indicates that the user has invoked a custom accessibility action.
   /// 
-  /// This handler is added automatically whenever a local context action is
-  /// added to a semantics node and should not be added manually.
-  static const SemanticsAction localContextAction = const SemanticsAction._(_kLocalContextActionIndex);
+  /// This handler is added automatically whenever a custom accessibility
+  /// action is added to a semantics node.
+  static const SemanticsAction customAction = const SemanticsAction._(_kCustomAction);
 
   /// The possible semantics actions.
   ///
@@ -175,7 +175,7 @@ class SemanticsAction {
     _kPasteIndex: paste,
     _kDidGainAccessibilityFocusIndex: didGainAccessibilityFocus,
     _kDidLoseAccessibilityFocusIndex: didLoseAccessibilityFocus,
-    _kLocalContextActionIndex: localContextAction,
+    _kCustomAction: customAction,
   };
 
   @override
@@ -215,8 +215,8 @@ class SemanticsAction {
         return 'SemanticsAction.didGainAccessibilityFocus';
       case _kDidLoseAccessibilityFocusIndex:
         return 'SemanticsAction.didLoseAccessibilityFocus';
-      case _kLocalContextActionIndex:
-        return 'SemanticsAction.localContextAction';
+      case _kCustomAction:
+        return 'SemanticsAction.customAction';
     }
     return null;
   }
@@ -508,7 +508,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     Float64List transform,
     Int32List childrenInTraversalOrder,
     Int32List childrenInHitTestOrder,
-    Int32List localContextActions,
+    Int32List customAcccessibilityActions,
   }) {
     if (transform.length != 16)
       throw new ArgumentError('transform argument must have 16 entries.');
@@ -534,7 +534,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       transform,
       childrenInTraversalOrder,
       childrenInHitTestOrder,
-      localContextActions,
+      customAcccessibilityActions,
     );
   }
   void _updateNode(
@@ -559,10 +559,10 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     Float64List transform,
     Int32List childrenInTraversalOrder,
     Int32List childrenInHitTestOrder,
-    Int32List localContextActions,
+    Int32List customAcccessibilityActions,
   ) native 'SemanticsUpdateBuilder_updateNode';
 
-  /// Update the local context action associated with the given `id`.
+  /// Update the custom accessibility action associated with the given `id`.
   /// 
   /// The name of the action exposed to the user is the `label`. The text 
   /// direction of this label is the same as the global window.
