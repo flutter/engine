@@ -146,10 +146,6 @@ FILE: ../../../flutter/shell/platform/embedder/embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_include.c
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.h
-FILE: ../../../flutter/third_party/txt/src/txt/asset_font_style_set.cc
-FILE: ../../../flutter/third_party/txt/src/txt/asset_font_style_set.h
-FILE: ../../../flutter/third_party/txt/src/txt/directory_asset_data_provider.cc
-FILE: ../../../flutter/third_party/txt/src/txt/directory_asset_data_provider.h
 FILE: ../../../flutter/third_party/txt/src/txt/platform.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform.h
 FILE: ../../../flutter/third_party/txt/src/txt/platform_android.cc
@@ -490,8 +486,11 @@ LIBRARY: engine
 ORIGIN: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_locations.dart + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_locations.dart
+FILE: ../../../flutter/lib/ui/isolate_name_server.dart
 FILE: ../../../flutter/lib/ui/painting/image_encoding.cc
 FILE: ../../../flutter/lib/ui/painting/image_encoding.h
+FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
+FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.h
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate.mm
@@ -580,6 +579,10 @@ FILE: ../../../flutter/fml/platform/win/wstring_conversion.h
 FILE: ../../../flutter/fml/unique_fd.cc
 FILE: ../../../flutter/fml/unique_fd.h
 FILE: ../../../flutter/fml/unique_object.h
+FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server.cc
+FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server.h
+FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server_natives.cc
+FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server_natives.h
 FILE: ../../../flutter/shell/common/isolate_configuration.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.h
 FILE: ../../../flutter/shell/platform/android/android_shell_holder.cc
@@ -925,8 +928,6 @@ FILE: ../../../flutter/third_party/txt/benchmarks/paragraph_benchmarks.cc
 FILE: ../../../flutter/third_party/txt/benchmarks/paragraph_builder_benchmarks.cc
 FILE: ../../../flutter/third_party/txt/benchmarks/styled_runs_benchmarks.cc
 FILE: ../../../flutter/third_party/txt/benchmarks/txt_run_all_benchmarks.cc
-FILE: ../../../flutter/third_party/txt/benchmarks/utils.cc
-FILE: ../../../flutter/third_party/txt/benchmarks/utils.h
 FILE: ../../../flutter/third_party/txt/src/log/log.cc
 FILE: ../../../flutter/third_party/txt/src/log/log.h
 FILE: ../../../flutter/third_party/txt/src/minikin/CmapCoverage.cpp
@@ -965,10 +966,9 @@ FILE: ../../../flutter/third_party/txt/src/minikin/SparseBitSet.cpp
 FILE: ../../../flutter/third_party/txt/src/minikin/SparseBitSet.h
 FILE: ../../../flutter/third_party/txt/src/minikin/WordBreaker.cpp
 FILE: ../../../flutter/third_party/txt/src/minikin/WordBreaker.h
-FILE: ../../../flutter/third_party/txt/src/txt/asset_data_provider.cc
-FILE: ../../../flutter/third_party/txt/src/txt/asset_data_provider.h
 FILE: ../../../flutter/third_party/txt/src/txt/asset_font_manager.cc
 FILE: ../../../flutter/third_party/txt/src/txt/asset_font_manager.h
+FILE: ../../../flutter/third_party/txt/src/txt/font_asset_provider.h
 FILE: ../../../flutter/third_party/txt/src/txt/font_collection.cc
 FILE: ../../../flutter/third_party/txt/src/txt/font_collection.h
 FILE: ../../../flutter/third_party/txt/src/txt/font_skia.cc
@@ -992,6 +992,8 @@ FILE: ../../../flutter/third_party/txt/src/txt/text_decoration.cc
 FILE: ../../../flutter/third_party/txt/src/txt/text_decoration.h
 FILE: ../../../flutter/third_party/txt/src/txt/text_style.cc
 FILE: ../../../flutter/third_party/txt/src/txt/text_style.h
+FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.cc
+FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.h
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.cpp
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.h
 FILE: ../../../flutter/third_party/txt/src/utils/LruCache.h

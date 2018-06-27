@@ -20,7 +20,7 @@ namespace blink {
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
-    const DartVM* p_vm,
+    DartVM* p_vm,
     fxl::RefPtr<DartSnapshot> p_isolate_snapshot,
     fxl::RefPtr<DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
@@ -41,7 +41,7 @@ RuntimeController::RuntimeController(
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
-    const DartVM* p_vm,
+    DartVM* p_vm,
     fxl::RefPtr<DartSnapshot> p_isolate_snapshot,
     fxl::RefPtr<DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
@@ -247,6 +247,10 @@ void RuntimeController::UpdateSemantics(SemanticsUpdate* update) {
 void RuntimeController::HandlePlatformMessage(
     fxl::RefPtr<PlatformMessage> message) {
   client_.HandlePlatformMessage(std::move(message));
+}
+
+FontCollection& RuntimeController::GetFontCollection() {
+  return client_.GetFontCollection();
 }
 
 Dart_Port RuntimeController::GetMainPort() {

@@ -114,7 +114,7 @@ class Color {
   ///
   /// Out of range values are brought into range using modulo 255.
   ///
-  /// See also [fromARGB], which takes the alpha value as a floating point
+  /// See also [fromRGBO], which takes the alpha value as a floating point
   /// value.
   const Color.fromARGB(int a, int r, int g, int b) :
     value = (((a & 0xff) << 24) |
@@ -1367,6 +1367,29 @@ enum ImageByteFormat {
   png,
 }
 
+/// The format of pixel data given to [decodeImageFromPixels].
+enum PixelFormat {
+  /// Each pixel is 32 bits, with the highest 8 bits encoding red, the next 8
+  /// bits encoding green, the next 8 bits encoding blue, and the lowest 8 bits
+  /// encoding alpha.
+  rgba8888,
+
+  /// Each pixel is 32 bits, with the highest 8 bits encoding blue, the next 8
+  /// bits encoding green, the next 8 bits encoding red, and the lowest 8 bits
+  /// encoding alpha.
+  bgra8888,
+}
+
+class _ImageInfo {
+  _ImageInfo(this.width, this.height, this.format, this.rowBytes) {
+    rowBytes ??= width * 4;
+  }
+  int width;
+  int height;
+  int format;
+  int rowBytes;
+}
+
 /// Opaque handle to raw decoded image data (pixels).
 ///
 /// To obtain an [Image] object, use [instantiateImageCodec].
@@ -1481,14 +1504,14 @@ class Codec extends NativeFieldWrapperClass2 {
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list) {
   return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback)
+    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null)
   );
 }
 
 /// Instantiates a [Codec] object for an image binary data.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback)
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1499,10 +1522,34 @@ void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);
 }
 
-Future<Null> _decodeImageFromListAsync(Uint8List list, ImageDecoderCallback callback) async {
+Future<Null> _decodeImageFromListAsync(Uint8List list,
+                                       ImageDecoderCallback callback) async {
   final Codec codec = await instantiateImageCodec(list);
   final FrameInfo frameInfo = await codec.getNextFrame();
   callback(frameInfo.image);
+}
+
+/// Convert an array of pixel values into an [Image] object.
+///
+/// [pixels] is the pixel data in the encoding described by [format].
+///
+/// [rowBytes] is the number of bytes consumed by each row of pixels in the
+/// data buffer.  If unspecified, it defaults to [width] multipled by the
+/// number of bytes per pixel in the provided [format].
+void decodeImageFromPixels(
+  Uint8List pixels,
+  int width,
+  int height,
+  PixelFormat format,
+  ImageDecoderCallback callback,
+  {int rowBytes}
+) {
+  final _ImageInfo imageInfo = new _ImageInfo(width, height, format.index, rowBytes);
+  final Future<Codec> codecFuture = _futurize(
+    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo)
+  );
+  codecFuture.then((Codec codec) => codec.getNextFrame())
+      .then((FrameInfo frameInfo) => callback(frameInfo.image));
 }
 
 /// Determines the winding rule that decides how the interior of a [Path] is
@@ -3404,6 +3451,12 @@ class Picture extends NativeFieldWrapperClass2 {
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose() native 'Picture_dispose';
+
+  /// Returns the approximate number of bytes allocated for this object.
+  /// 
+  /// The actual size of this picture may be larger, particularly if it contains
+  /// references to image or other large objects.
+  int get approximateBytesUsed native 'Picture_GetAllocationSize';
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.

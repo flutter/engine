@@ -17,6 +17,7 @@
 #include "third_party/benchmark/include/benchmark/benchmark_api.h"
 
 #include <minikin/Layout.h>
+#include "flutter/third_party/txt/tests/txt_test_utils.h"
 #include "lib/fxl/command_line.h"
 #include "lib/fxl/logging.h"
 #include "minikin/LayoutUtils.h"
@@ -30,7 +31,6 @@
 #include "txt/font_weight.h"
 #include "txt/paragraph.h"
 #include "txt/paragraph_builder.h"
-#include "utils.h"
 
 namespace txt {
 
@@ -373,7 +373,7 @@ static void BM_ParagraphMinikinDoLayout(benchmark::State& state) {
   paint.wordSpacing = text_style.word_spacing;
 
   auto collection = GetTestFontCollection()->GetMinikinFontCollectionForFamily(
-      text_style.font_family);
+      text_style.font_family, "en-US");
 
   while (state.KeepRunning()) {
     minikin::Layout layout;
@@ -413,7 +413,8 @@ static void BM_ParagraphMinikinAddStyleRun(benchmark::State& state) {
   while (state.KeepRunning()) {
     for (int i = 0; i < 20; ++i) {
       breaker.addStyleRun(
-          &paint, font_collection->GetMinikinFontCollectionForFamily("Roboto"),
+          &paint,
+          font_collection->GetMinikinFontCollectionForFamily("Roboto", "en-US"),
           font, state.range(0) / 20 * i, state.range(0) / 20 * (i + 1), false);
     }
   }
