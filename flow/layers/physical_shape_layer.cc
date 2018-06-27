@@ -37,10 +37,14 @@ void PhysicalShapeLayer::set_path(const SkPath& path) {
   }
 }
 
-void PhysicalShapeLayer::Preroll(PrerollContext* context,
-                                 const SkMatrix& matrix) {
+SkIRect PhysicalShapeLayer::OnPreroll(PrerollContext* context,
+                                      const SkMatrix& matrix,
+                                      const SkIRect& device_clip) {
+  SkIRect new_device_clip = ComputeDeviceIRect(matrix, path_.getBounds());
+  IntersectOrSetEmpty(new_device_clip, device_clip);
+
   SkRect child_paint_bounds;
-  PrerollChildren(context, matrix, &child_paint_bounds);
+  PrerollChildren(context, matrix, &child_paint_bounds, new_device_clip);
 
   if (elevation_ == 0) {
     set_paint_bounds(path_.getBounds());
@@ -48,6 +52,7 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 #if defined(OS_FUCHSIA)
     // Let the system compositor draw all shadows for us.
     set_needs_system_composite(true);
+    set_paint_bounds(path_.getBounds());
 #else
     // Add some margin to the paint bounds to leave space for the shadow.
     // The margin is hardcoded to an arbitrary maximum for now because Skia
@@ -58,12 +63,18 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
   }
+
+  return new_device_clip;
 }
 
 #if defined(OS_FUCHSIA)
 
 void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
   FXL_DCHECK(needs_system_composite());
+
+  if (device_paint_bounds_.isEmpty()) {
+    return;
+  }
 
   SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_);
   for (auto& layer : layers()) {

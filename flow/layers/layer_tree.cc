@@ -32,7 +32,7 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       SkRect::MakeEmpty(),
   };
 
-  root_layer_->Preroll(&context, SkMatrix::I());
+  root_layer_->Preroll(&context, SkMatrix::I(), SkIRect::MakeSize(frame_size_));
 }
 
 #if defined(OS_FUCHSIA)
@@ -105,7 +105,8 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   // Even if we don't have a root layer, we still need to create an empty
   // picture.
   if (root_layer_) {
-    root_layer_->Preroll(&preroll_context, SkMatrix::I());
+    root_layer_->Preroll(&preroll_context, SkMatrix::I(),
+                         SkIRect::MakeSize(frame_size_));
     // The needs painting flag may be set after the preroll. So check it after.
     if (root_layer_->needs_painting()) {
       root_layer_->Paint(paint_context);

@@ -16,8 +16,6 @@ class ClipPathLayer : public ContainerLayer {
 
   void set_clip_path(const SkPath& clip_path) { clip_path_ = clip_path; }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
 
 #if defined(OS_FUCHSIA)
@@ -26,6 +24,10 @@ class ClipPathLayer : public ContainerLayer {
 
  private:
   SkPath clip_path_;
+
+  SkIRect OnPreroll(PrerollContext* context,
+                    const SkMatrix& matrix,
+                    const SkIRect& device_clip) override;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(ClipPathLayer);
 };

@@ -10,15 +10,19 @@ TransformLayer::TransformLayer() = default;
 
 TransformLayer::~TransformLayer() = default;
 
-void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+SkIRect TransformLayer::OnPreroll(PrerollContext* context,
+                                  const SkMatrix& matrix,
+                                  const SkIRect& device_clip) {
   SkMatrix child_matrix;
   child_matrix.setConcat(matrix, transform_);
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, child_matrix, &child_paint_bounds);
+  PrerollChildren(context, child_matrix, &child_paint_bounds, device_clip);
 
   transform_.mapRect(&child_paint_bounds);
   set_paint_bounds(child_paint_bounds);
+
+  return device_clip;
 }
 
 #if defined(OS_FUCHSIA)

@@ -27,8 +27,6 @@ class ChildSceneLayer : public Layer {
 
   void set_hit_testable(bool hit_testable) { hit_testable_ = hit_testable; }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
 
   void UpdateScene(SceneUpdateContext& context) override;

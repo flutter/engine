@@ -28,8 +28,6 @@ class PictureLayer : public Layer {
 
   SkPicture* picture() const { return picture_.get().get(); }
 
-  void Preroll(PrerollContext* frame, const SkMatrix& matrix) override;
-
   void Paint(PaintContext& context) const override;
 
  private:
@@ -40,6 +38,10 @@ class PictureLayer : public Layer {
   bool is_complex_ = false;
   bool will_change_ = false;
   RasterCacheResult raster_cache_result_;
+
+  SkIRect OnPreroll(PrerollContext* frame,
+                    const SkMatrix& matrix,
+                    const SkIRect& device_clip) override;
 
   FXL_DISALLOW_COPY_AND_ASSIGN(PictureLayer);
 };

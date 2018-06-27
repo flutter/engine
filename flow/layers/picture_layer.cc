@@ -12,7 +12,9 @@ PictureLayer::PictureLayer() = default;
 
 PictureLayer::~PictureLayer() = default;
 
-void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
+SkIRect PictureLayer::OnPreroll(PrerollContext* context,
+                                const SkMatrix& matrix,
+                                const SkIRect& device_clip) {
   SkPicture* sk_picture = picture();
 
   if (auto cache = context->raster_cache) {
@@ -30,6 +32,8 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);
+
+  return device_clip;
 }
 
 void PictureLayer::Paint(PaintContext& context) const {

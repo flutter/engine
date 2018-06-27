@@ -7,16 +7,21 @@
 namespace flow {
 
 ClipRectLayer::ClipRectLayer() = default;
-
 ClipRectLayer::~ClipRectLayer() = default;
 
-void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_paint_bounds);
+SkIRect ClipRectLayer::OnPreroll(PrerollContext* context,
+                                 const SkMatrix& matrix,
+                                 const SkIRect& device_clip) {
+  SkIRect new_device_clip = ComputeDeviceIRect(matrix, clip_rect_);
+  IntersectOrSetEmpty(new_device_clip, device_clip);
 
+  SkRect child_paint_bounds = SkRect::MakeEmpty();
+  PrerollChildren(context, matrix, &child_paint_bounds, new_device_clip);
   if (child_paint_bounds.intersect(clip_rect_)) {
     set_paint_bounds(child_paint_bounds);
   }
+
+  return new_device_clip;
 }
 
 #if defined(OS_FUCHSIA)
