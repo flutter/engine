@@ -404,11 +404,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             }
             default:
                 // might be a local context action.
-                for (LocalContextAction value : mLocalContextActions.values()) {
-                    if (value.resourceId == action) {
-                        mOwner.dispatchSemanticsAction(virtualViewId, Action.LOCAL_CONTEXT_ACTION, value.id);
-                        return true;
-                    }
+                final int flutterId = action - firstContextId;
+                LocalContextAction contextAction = mLocalContextActions.get(flutterId);
+                if (contextAction != null) {
+                    mOwner.dispatchSemanticsAction(virtualViewId, Action.LOCAL_CONTEXT_ACTION, contextAction.id);
+                    return true;
                 }
         }
         return false;
@@ -474,6 +474,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         if (action == null) {
             action = new LocalContextAction();
             action.id = id;
+            action.resourceId = id + firstContextId;
             mLocalContextActions.put(id, action);
         }
         return action;
@@ -782,14 +783,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     }
 
     private class LocalContextAction {
-        LocalContextAction() {
-            resourceId = ++nextContextId;
-        }
-        final int resourceId;
+        LocalContextAction() {}
+
+        int resourceId = -1;
         int id = -1;
         String label;
     }
-    static int nextContextId = 1232132123;
+    /// Value is derived from ACTION_TYPE_MASK in AccessibilityNodeInfo.java
+    static int firstContextId = 267386881;
 
     private class SemanticsObject {
         SemanticsObject() { }
