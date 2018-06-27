@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '27dddae3130c8a6cfaa845195b2fb95cc691dd26',
+  'skia_revision': '551dc3e911438afb7c0ab28b1060a9480a4debd3',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': 'a5e41681e55d1e74684bfff530218db556d77ee8',
+  'dart_revision': '4c9689c1d2da97d0aa25cf16cc90c2e463ad157f',
 
   'dart_args_tag': '1.4.1',
   'dart_async_tag': '2.0.7',
@@ -41,7 +41,7 @@ vars = {
   'dart_boringssl_rev': '189270cd190267f5bd60cfe8f8ce7a61d07ba6f4',
   'dart_charcode_tag': 'v1.1.1',
   'dart_cli_util_tag': '0.1.2+1',
-  'dart_collection_tag': '1.14.9',
+  'dart_collection_tag': '1.14.10',
   'dart_convert_tag': '2.0.1',
   'dart_crypto_tag': '2.0.2+1',
   'dart_csslib_tag': '0.14.1',
@@ -58,7 +58,7 @@ vars = {
   'dart_http_throttle_tag': '1.0.2',
   'dart_intl_tag': '0.15.2',
   'dart_json_rpc_2_tag': '2.0.6',
-  'dart_linter_tag': '0.1.51',
+  'dart_linter_tag': '0.1.53',
   'dart_logging_tag': '0.11.3+1',
   'dart_markdown_tag': '2.0.0',
   'dart_matcher_tag': '0.12.1+4',
@@ -73,7 +73,7 @@ vars = {
   'dart_plugin_tag': '0.2.0+2',
   'dart_pool_tag': '1.3.4',
   'dart_protobuf_tag': '0.7.1',
-  'dart_pub_rev': '7bdcf4e4de85a7a8c7a322511b8198f1b6cb0a73',
+  'dart_pub_rev': '8b9526c915bf21627a20cd0104cb6c2be25a879f',
   'dart_pub_semver_tag': '1.4.1',
   'dart_quiver_tag': '5aaa3f58c48608af5b027444d561270b53f15dbf',
   'dart_resource_rev': 'af5a5bf65511943398146cf146e466e5f0b95cb9',
@@ -114,7 +114,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '71c24e682181d0b6a7e3974e5a678678650f4da3',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '457c1f45560b35072fb13c1bbf2bbe96fd077474',
 
    # Fuchsia compatibility
    #

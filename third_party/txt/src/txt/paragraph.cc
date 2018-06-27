@@ -192,8 +192,7 @@ Paragraph::GlyphPosition::GlyphPosition(double x_start,
       x_pos(x_start, x_start + x_advance) {}
 
 void Paragraph::GlyphPosition::Shift(double delta) {
-  x_pos.start += delta;
-  x_pos.end += delta;
+  x_pos.Shift(delta);
 }
 
 Paragraph::GlyphLine::GlyphLine(std::vector<GlyphPosition>&& p, size_t tcu)
@@ -211,6 +210,12 @@ Paragraph::CodeUnitRun::CodeUnitRun(std::vector<GlyphPosition>&& p,
       line_number(line),
       font_metrics(metrics),
       direction(dir) {}
+
+void Paragraph::CodeUnitRun::Shift(double delta) {
+  x_pos.Shift(delta);
+  for (GlyphPosition& position : positions)
+    position.Shift(delta);
+}
 
 Paragraph::Paragraph() {
   breaker_.setLocale(icu::Locale(), nullptr);
@@ -697,9 +702,7 @@ void Paragraph::Layout(double width, bool force) {
     double line_x_offset = GetLineXOffset(run_x_offset);
     if (line_x_offset) {
       for (CodeUnitRun& code_unit_run : line_code_unit_runs) {
-        for (GlyphPosition& position : code_unit_run.positions) {
-          position.Shift(line_x_offset);
-        }
+        code_unit_run.Shift(line_x_offset);
       }
       for (GlyphPosition& position : line_glyph_positions) {
         position.Shift(line_x_offset);
@@ -877,7 +880,12 @@ void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
   canvas->translate(x, y);
   SkPaint paint;
   for (const PaintRecord& record : records_) {
-    paint.setColor(record.style().color);
+    if (record.style().has_foreground) {
+      paint = record.style().foreground;
+    } else {
+      paint.reset();
+      paint.setColor(record.style().color);
+    }
     SkPoint offset = record.offset();
     PaintBackground(canvas, record);
     canvas->drawTextBlob(record.text(), offset.x(), offset.y(), paint);
@@ -1049,8 +1057,8 @@ void Paragraph::PaintBackground(SkCanvas* canvas, const PaintRecord& record) {
     return;
 
   const SkPaint::FontMetrics& metrics = record.metrics();
-  SkRect rect(SkRect::MakeLTRB(0, metrics.fAscent,
-                               record.GetRunWidth(), metrics.fDescent));
+  SkRect rect(SkRect::MakeLTRB(0, metrics.fAscent, record.GetRunWidth(),
+                               metrics.fDescent));
   rect.offset(record.offset());
   canvas->drawRect(rect, record.style().background);
 }
@@ -1090,15 +1098,16 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(size_t start,
   }
 
   // Add empty rectangles representing any newline characters within the range.
-  for (size_t line_number = 0; line_number < line_ranges_.size(); ++line_number) {
+  for (size_t line_number = 0; line_number < line_ranges_.size();
+       ++line_number) {
     const LineRange& line = line_ranges_[line_number];
     if (line.start >= end)
       break;
     if (line.end_including_newline <= start)
       continue;
     if (line_boxes.find(line_number) == line_boxes.end()) {
-      if (line.end != line.end_including_newline &&
-          line.end >= start && line.end_including_newline <= end) {
+      if (line.end != line.end_including_newline && line.end >= start &&
+          line.end_including_newline <= end) {
         SkScalar x = line_widths_[line_number];
         SkScalar top = (line_number > 0) ? line_heights_[line_number - 1] : 0;
         SkScalar bottom = line_heights_[line_number];

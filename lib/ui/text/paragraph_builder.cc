@@ -8,6 +8,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/window.h"
 #include "flutter/third_party/txt/src/txt/font_style.h"
 #include "flutter/third_party/txt/src/txt/font_weight.h"
 #include "flutter/third_party/txt/src/txt/paragraph_style.h"
@@ -39,6 +40,7 @@ const int tsWordSpacingIndex = 11;
 const int tsHeightIndex = 12;
 const int tsLocaleIndex = 13;
 const int tsBackgroundIndex = 14;
+const int tsForegroundIndex = 15;
 
 const int tsColorMask = 1 << tsColorIndex;
 const int tsTextDecorationMask = 1 << tsTextDecorationIndex;
@@ -54,6 +56,7 @@ const int tsWordSpacingMask = 1 << tsWordSpacingIndex;
 const int tsHeightMask = 1 << tsHeightIndex;
 const int tsLocaleMask = 1 << tsLocaleIndex;
 const int tsBackgroundMask = 1 << tsBackgroundIndex;
+const int tsForegroundMask = 1 << tsForegroundIndex;
 
 // ParagraphStyle
 
@@ -108,8 +111,8 @@ fxl::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
     double lineHeight,
     const std::u16string& ellipsis,
     const std::string& locale) {
-  return fxl::MakeRefCounted<ParagraphBuilder>(
-      encoded, fontFamily, fontSize, lineHeight, ellipsis, locale);
+  return fxl::MakeRefCounted<ParagraphBuilder>(encoded, fontFamily, fontSize,
+                                               lineHeight, ellipsis, locale);
 }
 
 ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
@@ -153,8 +156,10 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
     style.locale = locale;
   }
 
+  FontCollection& font_collection =
+      UIDartState::Current()->window()->client()->GetFontCollection();
   m_paragraphBuilder = std::make_unique<txt::ParagraphBuilder>(
-      style, blink::FontCollection::ForProcess().GetFontCollection());
+      style, font_collection.GetFontCollection());
 }  // namespace blink
 
 ParagraphBuilder::~ParagraphBuilder() = default;
@@ -167,7 +172,9 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  double height,
                                  const std::string& locale,
                                  Dart_Handle background_objects,
-                                 Dart_Handle background_data) {
+                                 Dart_Handle background_data,
+                                 Dart_Handle foreground_objects,
+                                 Dart_Handle foreground_data) {
   FXL_DCHECK(encoded.num_elements() == 8);
 
   int32_t mask = encoded[0];
@@ -203,8 +210,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
           static_cast<txt::FontWeight>(encoded[tsFontWeightIndex]);
 
     if (mask & tsFontStyleMask)
-      style.font_style =
-          static_cast<txt::FontStyle>(encoded[tsFontStyleIndex]);
+      style.font_style = static_cast<txt::FontStyle>(encoded[tsFontStyleIndex]);
 
     if (mask & tsFontFamilyMask)
       style.font_family = fontFamily;
@@ -232,6 +238,14 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
     if (background.paint()) {
       style.has_background = true;
       style.background = *background.paint();
+    }
+  }
+
+  if (mask & tsForegroundMask) {
+    Paint foreground(foreground_objects, foreground_data);
+    if (foreground.paint()) {
+      style.has_foreground = true;
+      style.foreground = *foreground.paint();
     }
   }
 

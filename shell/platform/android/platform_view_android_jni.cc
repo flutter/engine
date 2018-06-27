@@ -174,10 +174,10 @@ std::unique_ptr<IsolateConfiguration> CreateIsolateConfiguration(
   const auto configuration_from_blob =
       [&asset_manager](const std::string& snapshot_name)
       -> std::unique_ptr<IsolateConfiguration> {
-    std::vector<uint8_t> blob;
-    if (asset_manager.GetAsBuffer(snapshot_name, &blob)) {
-      return IsolateConfiguration::CreateForSnapshot(
-          std::make_unique<fml::DataMapping>(std::move(blob)));
+    std::unique_ptr<fml::Mapping> blob =
+        asset_manager.GetAsMapping(snapshot_name);
+    if (blob) {
+      return IsolateConfiguration::CreateForSnapshot(std::move(blob));
     }
     return nullptr;
   };
@@ -211,8 +211,8 @@ static void RunBundleAndSnapshot(
     // bundle or a zip asset bundle.
     const auto file_ext_index = bundlepath.rfind(".");
     if (bundlepath.substr(file_ext_index) == ".zip") {
-      asset_manager->PushBack(std::make_unique<blink::ZipAssetStore>(
-          bundlepath));
+      asset_manager->PushBack(
+          std::make_unique<blink::ZipAssetStore>(bundlepath));
     } else {
       asset_manager->PushBack(std::make_unique<blink::DirectoryAssetBundle>(
           fml::OpenFile(bundlepath.c_str(), fml::OpenPermission::kRead, true)));
@@ -254,69 +254,6 @@ static void RunBundleAndSnapshot(
   ANDROID_SHELL_HOLDER->Launch(std::move(config));
 }
 
-static void RunBundleAndSource(JNIEnv* env,
-                               jobject jcaller,
-                               jlong shell_holder,
-                               jstring jBundlePath,
-                               jstring main,
-                               jstring packages) {
-  auto asset_manager = fml::MakeRefCounted<blink::AssetManager>();
-
-  const auto bundlepath = fml::jni::JavaStringToString(env, jBundlePath);
-
-  if (bundlepath.size() > 0) {
-    auto directory =
-        fml::OpenFile(bundlepath.c_str(), fml::OpenPermission::kRead, true);
-    asset_manager->PushBack(
-        std::make_unique<blink::DirectoryAssetBundle>(std::move(directory)));
-  }
-
-  auto main_file_path = fml::jni::JavaStringToString(env, main);
-  auto packages_file_path = fml::jni::JavaStringToString(env, packages);
-
-  auto config =
-      IsolateConfiguration::CreateForSource(main_file_path, packages_file_path);
-
-  if (!config) {
-    return;
-  }
-
-  RunConfiguration run_configuration(std::move(config),
-                                     std::move(asset_manager));
-
-  ANDROID_SHELL_HOLDER->Launch(std::move(run_configuration));
-}
-
-void SetAssetBundlePathOnUI(JNIEnv* env,
-                            jobject jcaller,
-                            jlong shell_holder,
-                            jstring jBundlePath) {
-  const auto bundlepath = fml::jni::JavaStringToString(env, jBundlePath);
-
-  if (bundlepath.size() == 0) {
-    return;
-  }
-
-  auto directory =
-      fml::OpenFile(bundlepath.c_str(), fml::OpenPermission::kRead, true);
-
-  if (!directory.is_valid()) {
-    return;
-  }
-
-  std::unique_ptr<blink::AssetResolver> directory_asset_bundle =
-      std::make_unique<blink::DirectoryAssetBundle>(std::move(directory));
-
-  if (!directory_asset_bundle->IsValid()) {
-    return;
-  }
-
-  auto asset_manager = fml::MakeRefCounted<blink::AssetManager>();
-  asset_manager->PushBack(std::move(directory_asset_bundle));
-
-  ANDROID_SHELL_HOLDER->UpdateAssetManager(std::move(asset_manager));
-}
-
 static void SetViewportMetrics(JNIEnv* env,
                                jobject jcaller,
                                jlong shell_holder,
@@ -332,17 +269,18 @@ static void SetViewportMetrics(JNIEnv* env,
                                jint physicalViewInsetBottom,
                                jint physicalViewInsetLeft) {
   const blink::ViewportMetrics metrics = {
-      .device_pixel_ratio = devicePixelRatio,
-      .physical_width = physicalWidth,
-      .physical_height = physicalHeight,
-      .physical_padding_top = physicalPaddingTop,
-      .physical_padding_right = physicalPaddingRight,
-      .physical_padding_bottom = physicalPaddingBottom,
-      .physical_padding_left = physicalPaddingLeft,
-      .physical_view_inset_top = physicalViewInsetTop,
-      .physical_view_inset_right = physicalViewInsetRight,
-      .physical_view_inset_bottom = physicalViewInsetBottom,
-      .physical_view_inset_left = physicalViewInsetLeft,
+      .device_pixel_ratio = static_cast<double>(devicePixelRatio),
+      .physical_width = static_cast<double>(physicalWidth),
+      .physical_height = static_cast<double>(physicalHeight),
+      .physical_padding_top = static_cast<double>(physicalPaddingTop),
+      .physical_padding_right = static_cast<double>(physicalPaddingRight),
+      .physical_padding_bottom = static_cast<double>(physicalPaddingBottom),
+      .physical_padding_left = static_cast<double>(physicalPaddingLeft),
+      .physical_view_inset_top = static_cast<double>(physicalViewInsetTop),
+      .physical_view_inset_right = static_cast<double>(physicalViewInsetRight),
+      .physical_view_inset_bottom =
+          static_cast<double>(physicalViewInsetBottom),
+      .physical_view_inset_left = static_cast<double>(physicalViewInsetLeft),
   };
 
   ANDROID_SHELL_HOLDER->SetViewportMetrics(metrics);
@@ -576,17 +514,6 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .signature = "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/"
                        "String;ZLandroid/content/res/AssetManager;)V",
           .fnPtr = reinterpret_cast<void*>(&shell::RunBundleAndSnapshot),
-      },
-      {
-          .name = "nativeRunBundleAndSource",
-          .signature =
-              "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::RunBundleAndSource),
-      },
-      {
-          .name = "nativeSetAssetBundlePathOnUI",
-          .signature = "(JLjava/lang/String;)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::SetAssetBundlePathOnUI),
       },
       {
           .name = "nativeDetach",

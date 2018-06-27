@@ -33,7 +33,7 @@
 namespace blink {
 
 fml::WeakPtr<DartIsolate> DartIsolate::CreateRootIsolate(
-    const DartVM* vm,
+    DartVM* vm,
     fxl::RefPtr<DartSnapshot> isolate_snapshot,
     fxl::RefPtr<DartSnapshot> shared_snapshot,
     TaskRunners task_runners,
@@ -94,7 +94,7 @@ fml::WeakPtr<DartIsolate> DartIsolate::CreateRootIsolate(
   return embedder_isolate;
 }
 
-DartIsolate::DartIsolate(const DartVM* vm,
+DartIsolate::DartIsolate(DartVM* vm,
                          fxl::RefPtr<DartSnapshot> isolate_snapshot,
                          fxl::RefPtr<DartSnapshot> shared_snapshot,
                          TaskRunners task_runners,
@@ -110,7 +110,8 @@ DartIsolate::DartIsolate(const DartVM* vm,
                   std::move(unref_queue),
                   advisory_script_uri,
                   advisory_script_entrypoint,
-                  vm->GetSettings().log_tag),
+                  vm->GetSettings().log_tag,
+                  vm->GetIsolateNameServer()),
       vm_(vm),
       isolate_snapshot_(std::move(isolate_snapshot)),
       shared_snapshot_(std::move(shared_snapshot)),
@@ -131,7 +132,7 @@ DartIsolate::Phase DartIsolate::GetPhase() const {
   return phase_;
 }
 
-const DartVM* DartIsolate::GetDartVM() const {
+DartVM* DartIsolate::GetDartVM() const {
   return vm_;
 }
 
@@ -277,8 +278,9 @@ bool DartIsolate::PrepareForRunningFromPrecompiledCode() {
   return true;
 }
 
-static bool LoadScriptSnapshot(std::shared_ptr<const fml::Mapping> mapping,
-                               bool last_piece) {
+bool DartIsolate::LoadScriptSnapshot(
+    std::shared_ptr<const fml::Mapping> mapping,
+    bool last_piece) {
   FXL_CHECK(last_piece) << "Script snapshots cannot be divided";
   if (tonic::LogIfError(Dart_LoadScriptFromSnapshot(mapping->GetMapping(),
                                                     mapping->GetSize()))) {
@@ -287,8 +289,12 @@ static bool LoadScriptSnapshot(std::shared_ptr<const fml::Mapping> mapping,
   return true;
 }
 
-static bool LoadKernelSnapshot(std::shared_ptr<const fml::Mapping> mapping,
-                               bool last_piece) {
+bool DartIsolate::LoadKernelSnapshot(
+    std::shared_ptr<const fml::Mapping> mapping,
+    bool last_piece) {
+  // Mapping must be retained until isolate shutdown.
+  kernel_buffers_.push_back(mapping);
+
   Dart_Handle library =
       Dart_LoadLibraryFromKernel(mapping->GetMapping(), mapping->GetSize());
   if (tonic::LogIfError(library)) {
@@ -307,8 +313,8 @@ static bool LoadKernelSnapshot(std::shared_ptr<const fml::Mapping> mapping,
   return true;
 }
 
-static bool LoadSnapshot(std::shared_ptr<const fml::Mapping> mapping,
-                         bool last_piece) {
+bool DartIsolate::LoadSnapshot(std::shared_ptr<const fml::Mapping> mapping,
+                               bool last_piece) {
   if (Dart_IsKernel(mapping->GetMapping(), mapping->GetSize())) {
     return LoadKernelSnapshot(std::move(mapping), last_piece);
   } else {
@@ -651,7 +657,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
     return {nullptr, {}};
   }
 
-  const DartVM* vm = embedder_isolate->GetDartVM();
+  DartVM* const vm = embedder_isolate->GetDartVM();
 
   if (!is_root_isolate) {
     auto raw_embedder_isolate = embedder_isolate.release();
