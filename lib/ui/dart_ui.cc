@@ -16,6 +16,7 @@
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/image_shader.h"
 #include "flutter/lib/ui/painting/path.h"
+#include "flutter/lib/ui/painting/path_iterator.h"
 #include "flutter/lib/ui/painting/path_measure.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/painting/picture_recorder.h"
@@ -55,6 +56,7 @@ void DartUI::InitForGlobal() {
     CanvasGradient::RegisterNatives(g_natives);
     CanvasImage::RegisterNatives(g_natives);
     CanvasPath::RegisterNatives(g_natives);
+    CanvasPathIterator::RegisterNatives(g_natives);
     CanvasPathMeasure::RegisterNatives(g_natives);
     Codec::RegisterNatives(g_natives);
     DartRuntimeHooks::RegisterNatives(g_natives);
