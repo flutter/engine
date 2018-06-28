@@ -1981,6 +1981,19 @@ class Path extends NativeFieldWrapperClass2 {
   PathMetrics computeMetrics({bool forceClosed: false}) {
     return new PathMetrics._(this, forceClosed);
   }
+
+  /// Creates a [PathSegments] object for this path.
+  /// 
+  /// If `forceClosed` is true, will add a [Path.close] call to the path.
+  /// 
+  /// The `consumeDegenerates` parameter must not be null, and controls whether small path segments
+  /// are included in the iteration.
+  /// 
+  /// The `exact` parameter must not be null; if true, only path segments with exactly a 0.0 length
+  /// will be considered degenerate, otherwise those close to 0.0 will be considered degenerate.
+  PathSegments getSegments({bool forceClosed: false, bool consumeDegenerates: true, bool exact: false}) {
+    return new PathSegments(this, forceClosed, consumeDegenerates: consumeDegenerates, exact: exact);
+  }
 }
 
 /// The geometric description of a tangent: the angle at a point.
@@ -2029,6 +2042,140 @@ class Tangent {
   /// direction.
   // flip the sign to be consistent with [Path.arcTo]'s `sweepAngle`
   double get angle => -math.atan2(vector.dy, vector.dx);
+}
+
+/// PathVerb determines how a set of points are interpreted when drawing a [Path].
+// Must be kept in sync with Skia's SkPath::Verb
+enum PathVerb {
+  /// Starts a new contour at the next point. See [Path.moveTo].
+  move,
+  /// Adds a line from the current point to the next point. See [Path.lineTo].
+  line,
+  /// Adds a quadratic Bezier curve with specified control and end points.  See [Path.quadraticBezierTo].
+  quadratic,
+  /// Adds a curved Bezier with specified weight, control and end points.  See [Path.conicTo].
+  conic,
+  /// Adds a cubic Bezier curve with specified control and end points.  See [Path.cubicTo].
+  cubic,
+  /// Adds a line back to the origin of the path.  See [Path.close].
+  close,
+  /// Signifies the termination of a [Path].
+  done
+}
+
+/// The description of a part of a path described by one [PathVerb].
+class PathSegment {
+  /// Creates a new [PathSegment] with the given values.
+  /// 
+  /// The `conicWeight` parameter must be null if the `verb` is not `PathVerb.conic`.
+  const PathSegment(this.verb, this.points, {this.conicWeight}) 
+    : assert(conicWeight == null || verb == PathVerb.conic);
+
+  /// The [PathVerb] describing this segment.
+  final PathVerb verb;
+  /// The set of points describing this segment.
+  /// 
+  /// For verbs that involve drawing, this will include implicit origin points from the last
+  /// command applied to the [Path], e.g. the `lineTo` command in `Path path = new Path()..moveTo(10.0, 10.0)..lineTo(20.0, 10.0);`
+  /// would result in the following `points`: [10.0, 10.0, 20.0, 10.0].
+  final Float32List points;
+  /// The conic weight of a [PathVerb.conic] segment.
+  final double conicWeight;
+
+  /// Adds the `verb`, `points`, and `conicWeight` of this [PathSegment] to the specified `path`.
+  void applyToPath(Path path) {
+    switch (verb) {
+      case PathVerb.move:
+        path.moveTo(points[0], points[1]);
+        break;
+      case PathVerb.line:
+        path.lineTo(points[2], points[3]);
+        break;
+      case PathVerb.cubic:
+        path.cubicTo(points[2], points[3], points[4], points[5], points[6], points[7]);
+        break;
+      case PathVerb.quadratic:
+        path.quadraticBezierTo(points[2], points[3], points[4], points[5]);
+        break;
+      case PathVerb.conic:
+        path.conicTo(points[2], points[3], points[4], points[5], conicWeight);
+        break;
+      case PathVerb.close:
+        path.close();
+        break;
+      case PathVerb.done:
+        break;
+    }
+  }
+
+  @override
+  String toString() => 'PathSegment{$verb: $points${conicWeight != null ? ', w: $conicWeight' : '' }}';
+}
+
+/// An iterable collection of [PathSegment] objects from a [Path].
+class PathSegments extends collection.IterableBase<PathSegment> {
+  /// Creates a new [PathSegments] iterable for the specified `path`.
+  /// 
+  /// If `forceClosed` is true, will add a [Path.close] call to the path.
+  /// 
+  /// The `consumeDegenerates` parameter must not be null, and controls whether small path segments
+  /// are included in the iteration.
+  /// 
+  /// The `exact` parameter must not be null; if true, only path segments with exactly a 0.0 length
+  /// will be considered degenerate, otherwise those close to 0.0 will be considered degenerate.
+  PathSegments(Path path, bool forceClosed, {bool consumeDegenerates: true, bool exact: false}) :
+    _iterator = new PathIterator(path, forceClosed, consumeDegenerates: consumeDegenerates, exact: exact);
+    
+  final Iterator<PathSegment> _iterator;
+
+  @override
+  Iterator<PathSegment> get iterator => _iterator;
+}
+
+/// [PathIterator] provides methods for iterating the [PathSegment]s of a [Path].
+class PathIterator extends NativeFieldWrapperClass2 implements Iterator<PathSegment> {
+  /// Creates a new [PathIterator] object for the specified `path`.
+  /// 
+  /// If `forceClosed` is true, will add a [Path.close] call to the path.
+  /// 
+  /// The `consumeDegenerates` parameter must not be null, and controls whether small path segments
+  /// are included in the iteration.
+  /// 
+  /// The `exact` parameter must not be null; if true, only path segments with exactly a 0.0 length
+  /// will be considered degenerate, otherwise those close to 0.0 will be considered degenerate.
+  PathIterator(Path path, bool forceClosed, {this.consumeDegenerates: true, this.exact: false}) {
+    assert(consumeDegenerates != null);
+    assert(exact != null);
+    _constructor(path, forceClosed); 
+  }
+  void _constructor(Path path, bool forceClosed) native 'PathIterator_constructor';
+
+  PathSegment _pathSegment;
+  /// Specifies whether to skip over very small (degenerate) [PathSegment]s.
+  final bool consumeDegenerates;
+  /// Controls the behavior of [consumeDegenerates].  If true, only [PathSegment]s
+  /// with a length of exactly 0.0 will be considered degenerate.
+  final bool exact;
+
+  @override
+  PathSegment get current => _pathSegment;
+
+  @override
+  bool moveNext() {
+    if (_next(consumeDegenerates, exact)) {
+      final int verb = _verb();
+      _pathSegment = new PathSegment(PathVerb.values[verb], _points(), conicWeight: verb == PathVerb.conic.index ? _conicWeight() : null);
+      return true;
+    }
+
+    _pathSegment = null;
+    return false;
+  }
+
+  int _verb() native 'PathIterator_verb';
+  Float32List _points() native 'PathIterator_points';
+  double _conicWeight() native 'PathIterator_conicWeight';
+  bool _next(bool consumeDegenerate, bool exact) native 'PathIterator_next';
 }
 
 /// An iterable collection of [PathMetric] objects describing a [Path].
@@ -2089,7 +2236,6 @@ class PathMetricIterator implements Iterator<PathMetric> {
 /// contour. When the next contour's [PathMetric] is obtained, this object 
 /// becomes invalid.
 class PathMetric extends NativeFieldWrapperClass2 {
-  /// Create a new empty [Path] object.
   PathMetric._(Path path, bool forceClosed) { _constructor(path, forceClosed); }
   void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
 
