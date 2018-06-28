@@ -8,6 +8,30 @@ import 'dart:ui';
 import 'package:test/test.dart';
 
 void main() {
+  test('path iterator', () {
+    final Path p = new Path()
+      ..moveTo(20.0, 20.0)
+      ..lineTo(100.0, 20.0)
+      ..cubicTo(120.0, 20.0, 130.0, 100.0, 50.0, 25.0)
+      ..conicTo(120.0, 20.0, 130.0, 100.0, 1.24)
+      ..close();
+
+    final List<PathSegment> segments = p.getSegments().toList();
+    expect(segments.length, equals(6));
+    expect(segments[0].toString(),
+        equals('PathSegment{PathVerb.move: [20.0, 20.0]}'));
+    expect(segments[1].toString(),
+        equals('PathSegment{PathVerb.line: [20.0, 20.0, 100.0, 20.0]}'));
+    expect(segments[2].toString(),
+        equals('PathSegment{PathVerb.cubic: [100.0, 20.0, 120.0, 20.0, 130.0, 100.0, 50.0, 25.0]}',));
+    expect(segments[3].toString(),
+        equals('PathSegment{PathVerb.conic: [50.0, 25.0, 120.0, 20.0, 130.0, 100.0], w: 1.2400000095367432}'));
+    expect(segments[4].toString(),
+        equals('PathSegment{PathVerb.line: [130.0, 100.0, 20.0, 20.0]}'));
+    expect(segments[5].toString(), 
+        equals('PathSegment{PathVerb.close: []}'));
+  });
+
   test('path getBounds', () {
     final Rect r = new Rect.fromLTRB(1.0, 3.0, 5.0, 7.0);
     final Path p = new Path()..addRect(r);
@@ -64,8 +88,7 @@ void main() {
 
     final Path reverseDifference =
         Path.combine(PathOperation.reverseDifference, pathCircle1, pathCircle2);
-    expect(reverseDifference.getBounds().right,
-        closeTo(14.11, 0.01));
+    expect(reverseDifference.getBounds().right, closeTo(14.11, 0.01));
 
     final Path union =
         Path.combine(PathOperation.union, pathCircle1, pathCircle2);
@@ -168,8 +191,7 @@ void main() {
     final Tangent posTanVertical =
         simpleMetricsVertical.iterator.current.getTangentForOffset(5.0);
     expect(posTanVertical.position, equals(const Offset(0.0, 5.0)));
-    expect(posTanVertical.angle,
-        closeTo(-1.5708, .0001)); // 90 degrees
+    expect(posTanVertical.angle, closeTo(-1.5708, .0001)); // 90 degrees
 
     // test getTangentForOffset with diagonal line
     final Path simpleDiagonalLine = new Path()..lineTo(10.0, 10.0);
