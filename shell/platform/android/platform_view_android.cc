@@ -30,21 +30,36 @@ PlatformViewAndroid::PlatformViewAndroid(
          "rendering.";
 }
 
+PlatformViewAndroid::PlatformViewAndroid(
+    PlatformView::Delegate& delegate,
+    blink::TaskRunners task_runners,
+    fml::jni::JavaObjectWeakGlobalRef java_object)
+    : PlatformView(delegate, std::move(task_runners)),
+      java_object_(java_object),
+      android_surface_(nullptr) {}
+
 PlatformViewAndroid::~PlatformViewAndroid() = default;
 
 void PlatformViewAndroid::NotifyCreated(
     fxl::RefPtr<AndroidNativeWindow> native_window) {
-  InstallFirstFrameCallback();
-  android_surface_->SetNativeWindow(native_window);
+  if (android_surface_) {
+    InstallFirstFrameCallback();
+    android_surface_->SetNativeWindow(native_window);
+  }
   PlatformView::NotifyCreated();
 }
 
 void PlatformViewAndroid::NotifyDestroyed() {
   PlatformView::NotifyDestroyed();
-  android_surface_->TeardownOnScreenContext();
+  if (android_surface_) {
+    android_surface_->TeardownOnScreenContext();
+  }
 }
 
 void PlatformViewAndroid::NotifyChanged(const SkISize& size) {
+  if (!android_surface_) {
+    return;
+  }
   fxl::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetGPUTaskRunner(),  //
@@ -121,6 +136,16 @@ void PlatformViewAndroid::InvokePlatformMessageEmptyResponseCallback(
   auto message_response = std::move(it->second);
   pending_responses_.erase(it);
   message_response->CompleteEmpty();
+}
+
+void PlatformViewAndroid::InvokeOnStartedCallback(bool success) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  fml::jni::ScopedJavaLocalRef<jobject> view = java_object_.get(env);
+  if (view.is_null()) {
+    // The Java object died.
+    return;
+  }
+  FlutterViewOnStarted(fml::jni::AttachCurrentThread(), view.obj(), success);
 }
 
 // |shell::PlatformView|
@@ -318,11 +343,17 @@ std::unique_ptr<VsyncWaiter> PlatformViewAndroid::CreateVSyncWaiter() {
 
 // |shell::PlatformView|
 std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
+  if (!android_surface_) {
+    return nullptr;
+  }
   return android_surface_->CreateGPUSurface();
 }
 
 // |shell::PlatformView|
 sk_sp<GrContext> PlatformViewAndroid::CreateResourceContext() const {
+  if (!android_surface_) {
+    return nullptr;
+  }
   sk_sp<GrContext> resource_context;
   if (android_surface_->ResourceContextMakeCurrent()) {
     // TODO(chinmaygarde): Currently, this code depends on the fact that only

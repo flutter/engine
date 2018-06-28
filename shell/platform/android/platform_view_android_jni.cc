@@ -95,6 +95,12 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
   FXL_CHECK(CheckException(env));
 }
 
+static jmethodID g_on_started_method = nullptr;
+void FlutterViewOnStarted(JNIEnv* env, jobject obj, jboolean success) {
+  env->CallVoidMethod(obj, g_on_started_method, success);
+  FXL_CHECK(CheckException(env));
+}
+
 static jmethodID g_attach_to_gl_context_method = nullptr;
 void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId) {
   env->CallVoidMethod(obj, g_attach_to_gl_context_method, textureId);
@@ -123,10 +129,13 @@ void SurfaceTextureDetachFromGLContext(JNIEnv* env, jobject obj) {
 
 // Called By Java
 
-static jlong Attach(JNIEnv* env, jclass clazz, jobject flutterView) {
+static jlong Attach(JNIEnv* env,
+                    jclass clazz,
+                    jobject flutterView,
+                    jboolean is_background_view) {
   fml::jni::JavaObjectWeakGlobalRef java_object(env, flutterView);
   auto shell_holder = std::make_unique<AndroidShellHolder>(
-      FlutterMain::Get().GetSettings(), java_object);
+      FlutterMain::Get().GetSettings(), java_object, is_background_view);
   if (shell_holder->IsValid()) {
     return reinterpret_cast<jlong>(shell_holder.release());
   } else {
@@ -202,13 +211,14 @@ std::unique_ptr<IsolateConfiguration> CreateIsolateConfiguration(
   return nullptr;
 }
 
-static void RunBundleAndSnapshot(
+static void RunBundleAndSnapshotFromLibrary(
     JNIEnv* env,
     jobject jcaller,
     jlong shell_holder,
     jstring jbundlepath,
     jstring /* snapshot override (unused) */,
     jstring jEntrypoint,
+    jstring jLibraryUrl,
     jboolean /* reuse runtime controller (unused) */,
     jobject jAssetManager) {
   auto asset_manager = fml::MakeRefCounted<blink::AssetManager>();
@@ -255,7 +265,12 @@ static void RunBundleAndSnapshot(
 
   {
     auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
-    if (entrypoint.size() > 0) {
+    auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
+
+    if ((entrypoint.size() > 0) && (libraryUrl.size() > 0)) {
+      config.SetEntrypointAndLibrary(std::move(entrypoint),
+                                     std::move(libraryUrl));
+    } else if (entrypoint.size() > 0) {
       config.SetEntrypoint(std::move(entrypoint));
     }
   }
@@ -510,7 +525,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   static const JNINativeMethod native_view_methods[] = {
       {
           .name = "nativeAttach",
-          .signature = "(Lio/flutter/view/FlutterNativeView;)J",
+          .signature = "(Lio/flutter/view/FlutterNativeView;Z)J",
           .fnPtr = reinterpret_cast<void*>(&shell::Attach),
       },
       {
@@ -519,10 +534,12 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&shell::Destroy),
       },
       {
-          .name = "nativeRunBundleAndSnapshot",
-          .signature = "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/"
-                       "String;ZLandroid/content/res/AssetManager;)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::RunBundleAndSnapshot),
+          .name = "nativeRunBundleAndSnapshotFromLibrary",
+          .signature = "(JLjava/lang/String;Ljava/lang/String;"
+                       "Ljava/lang/String;Ljava/lang/String;"
+                       "ZLandroid/content/res/AssetManager;)V",
+          .fnPtr =
+              reinterpret_cast<void*>(&shell::RunBundleAndSnapshotFromLibrary),
       },
       {
           .name = "nativeDetach",
@@ -669,6 +686,13 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
                                              "onFirstFrame", "()V");
 
   if (g_on_first_frame_method == nullptr) {
+    return false;
+  }
+
+  g_on_started_method =
+      env->GetMethodID(g_flutter_native_view_class->obj(), "onStarted", "(Z)V");
+
+  if (g_on_started_method == nullptr) {
     return false;
   }
 
