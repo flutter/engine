@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data' show Float64List;
+import 'dart:typed_data' show Float64List, Float32List;
 import 'dart:ui';
 
 import 'package:test/test.dart';
@@ -30,6 +30,11 @@ void main() {
         equals('PathSegment{PathVerb.line: [130.0, 100.0, 20.0, 20.0]}'));
     expect(segments[5].toString(), 
         equals('PathSegment{PathVerb.close: []}'));
+  });
+
+  test('path segment', () {
+    expect(() => new PathSegment(PathVerb.conic, new Float32List(6), conicWeight: 1.2), returnsNormally);
+    expect(() => new PathSegment(PathVerb.line, new Float32List(4), conicWeight: 1.2), throwsA(const isInstanceOf<AssertionError>()));
   });
 
   test('path getBounds', () {

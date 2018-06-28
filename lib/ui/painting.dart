@@ -2069,7 +2069,9 @@ class PathSegment {
   /// 
   /// The `conicWeight` parameter must be null if the `verb` is not `PathVerb.conic`.
   const PathSegment(this.verb, this.points, {this.conicWeight}) 
-    : assert(conicWeight == null || verb == PathVerb.conic);
+    // TODO(dnfield): Fix this when Dart catches up on how to handle this for consts
+    // see https://github.com/dart-lang/sdk/issues/26980
+    : assert(identical(conicWeight, null) || identical(verb, PathVerb.conic));
 
   /// The [PathVerb] describing this segment.
   final PathVerb verb;
@@ -2143,9 +2145,13 @@ class PathIterator extends NativeFieldWrapperClass2 implements Iterator<PathSegm
   /// 
   /// The `exact` parameter must not be null; if true, only path segments with exactly a 0.0 length
   /// will be considered degenerate, otherwise those close to 0.0 will be considered degenerate.
-  PathIterator(Path path, bool forceClosed, {this.consumeDegenerates: true, this.exact: false}) {
-    assert(consumeDegenerates != null);
-    assert(exact != null);
+  PathIterator(
+    Path path,
+    bool forceClosed, {
+    this.consumeDegenerates: true, 
+    this.exact: false,
+  }) : assert(consumeDegenerates != null),
+       assert(exact != null) {
     _constructor(path, forceClosed); 
   }
   void _constructor(Path path, bool forceClosed) native 'PathIterator_constructor';
