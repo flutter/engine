@@ -12,7 +12,7 @@
 
 namespace flow {
 
-ClipPathLayer::ClipPathLayer() = default;
+ClipPathLayer::ClipPathLayer(ClipMode clip_mode) : clip_mode_(clip_mode) {}
 
 ClipPathLayer::~ClipPathLayer() = default;
 
@@ -38,6 +38,7 @@ void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
                               bounds.height()     //  height
   );
 
+  // TODO(liyuqian): respect clip_mode_
   SceneUpdateContext::Clip clip(context, shape, bounds);
   UpdateSceneChildren(context);
 }
@@ -47,10 +48,17 @@ void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
 void ClipPathLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipPathLayer::Paint");
   FXL_DCHECK(needs_painting());
+  FXL_DCHECK(clip_mode_ != ClipMode::none);
 
   SkAutoCanvasRestore save(&context.canvas, true);
-  context.canvas.clipPath(clip_path_, true);
+  context.canvas.clipPath(clip_path_, clip_mode_ != ClipMode::hardEdge);
+  if (clip_mode_ == ClipMode::antiAliasWithSaveLayer) {
+    context.canvas.saveLayer(paint_bounds(), nullptr);
+  }
   PaintChildren(context);
+  if (clip_mode_ == ClipMode::antiAliasWithSaveLayer) {
+    context.canvas.restore();
+  }
 }
 
 }  // namespace flow

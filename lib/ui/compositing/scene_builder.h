@@ -37,7 +37,7 @@ class SceneBuilder : public fxl::RefCountedThreadSafe<SceneBuilder>,
   void pushTransform(const tonic::Float64List& matrix4);
   void pushClipRect(double left, double right, double top, double bottom);
   void pushClipRRect(const RRect& rrect);
-  void pushClipPath(const CanvasPath* path);
+  void pushClipPath(const CanvasPath* path, int clipMode);
   void pushOpacity(int alpha);
   void pushColorFilter(int color, int blendMode);
   void pushBackdropFilter(ImageFilter* filter);

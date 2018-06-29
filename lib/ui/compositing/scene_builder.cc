@@ -70,8 +70,8 @@ void SceneBuilder::pushClipRRect(const RRect& rrect) {
   layer_builder_->PushClipRoundedRect(rrect.sk_rrect);
 }
 
-void SceneBuilder::pushClipPath(const CanvasPath* path) {
-  layer_builder_->PushClipPath(path->path());
+void SceneBuilder::pushClipPath(const CanvasPath* path, int clipMode) {
+  layer_builder_->PushClipPath(path->path(), static_cast<flow::ClipMode>(clipMode));
 }
 
 void SceneBuilder::pushOpacity(int alpha) {

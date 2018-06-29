@@ -88,7 +88,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Rasterization outside the given path is discarded.
   ///
   /// See [pop] for details about the operation stack.
-  void pushClipPath(Path path) native 'SceneBuilder_pushClipPath';
+  void pushClipPath(Path path, int clipMode) native 'SceneBuilder_pushClipPath';
 
   /// Pushes an opacity operation onto the operation stack.
   ///

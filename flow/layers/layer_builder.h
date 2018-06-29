@@ -36,7 +36,7 @@ class LayerBuilder {
 
   virtual void PushClipRoundedRect(const SkRRect& rect) = 0;
 
-  virtual void PushClipPath(const SkPath& path) = 0;
+  virtual void PushClipPath(const SkPath& path, ClipMode clip_mode = ClipMode::antiAlias) = 0;
 
   virtual void PushOpacity(int alpha) = 0;
 
