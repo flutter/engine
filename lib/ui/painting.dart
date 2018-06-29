@@ -2965,7 +2965,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// multiple draw commands intersect with the clip boundary, this can result
   /// in incorrect blending at the clip boundary. See [saveLayer] for a
   /// discussion of how to address that and some examples of using [clipRRect].
-  void clipRRect(RRect rrect, [doAntiAlias = true]) {
+  void clipRRect(RRect rrect, [bool doAntiAlias = true]) {
     assert(_rrectIsValid(rrect));
     _clipRRect(rrect._value, doAntiAlias);
   }
