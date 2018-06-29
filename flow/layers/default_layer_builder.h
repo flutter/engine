@@ -27,7 +27,7 @@ class DefaultLayerBuilder final : public LayerBuilder {
   void PushClipRect(const SkRect& rect) override;
 
   // |flow::LayerBuilder|
-  void PushClipRoundedRect(const SkRRect& rect) override;
+  void PushClipRoundedRect(const SkRRect& rect, ClipMode clip_mode = ClipMode::antiAlias) override;
 
   // |flow::LayerBuilder|
   void PushClipPath(const SkPath& path, ClipMode clip_mode = ClipMode::antiAlias) override;

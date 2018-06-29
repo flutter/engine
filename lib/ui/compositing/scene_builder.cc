@@ -66,8 +66,8 @@ void SceneBuilder::pushClipRect(double left,
   layer_builder_->PushClipRect(SkRect::MakeLTRB(left, top, right, bottom));
 }
 
-void SceneBuilder::pushClipRRect(const RRect& rrect) {
-  layer_builder_->PushClipRoundedRect(rrect.sk_rrect);
+void SceneBuilder::pushClipRRect(const RRect& rrect, int clipMode) {
+  layer_builder_->PushClipRoundedRect(rrect.sk_rrect, static_cast<flow::ClipMode>(clipMode));
 }
 
 void SceneBuilder::pushClipPath(const CanvasPath* path, int clipMode) {

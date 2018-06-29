@@ -6,7 +6,7 @@
 
 namespace flow {
 
-ClipRRectLayer::ClipRRectLayer() = default;
+ClipRRectLayer::ClipRRectLayer(ClipMode clip_mode) : clip_mode_(clip_mode) {}
 
 ClipRRectLayer::~ClipRRectLayer() = default;
 
@@ -45,10 +45,17 @@ void ClipRRectLayer::UpdateScene(SceneUpdateContext& context) {
 void ClipRRectLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipRRectLayer::Paint");
   FXL_DCHECK(needs_painting());
+  FXL_DCHECK(clip_mode_ != ClipMode::none);
 
   SkAutoCanvasRestore save(&context.canvas, true);
-  context.canvas.clipRRect(clip_rrect_, true);
+  context.canvas.clipRRect(clip_rrect_, clip_mode_ != ClipMode::hardEdge);
+  if (clip_mode_ == ClipMode::antiAliasWithSaveLayer) {
+    context.canvas.saveLayer(paint_bounds(), nullptr);
+  }
   PaintChildren(context);
+  if (clip_mode_ == ClipMode::antiAliasWithSaveLayer) {
+    context.canvas.restore();
+  }
 }
 
 }  // namespace flow

@@ -59,12 +59,12 @@ void DefaultLayerBuilder::PushClipRect(const SkRect& clipRect) {
   PushLayer(std::move(layer), cullRect);
 }
 
-void DefaultLayerBuilder::PushClipRoundedRect(const SkRRect& rrect) {
+void DefaultLayerBuilder::PushClipRoundedRect(const SkRRect& rrect, ClipMode clip_mode) {
   SkRect cullRect;
   if (!cullRect.intersect(rrect.rect(), cull_rects_.top())) {
     cullRect = SkRect::MakeEmpty();
   }
-  auto layer = std::make_unique<flow::ClipRRectLayer>();
+  auto layer = std::make_unique<flow::ClipRRectLayer>(clip_mode);
   layer->set_clip_rrect(rrect);
   PushLayer(std::move(layer), cullRect);
 }
