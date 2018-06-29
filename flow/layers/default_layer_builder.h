@@ -51,7 +51,8 @@ class DefaultLayerBuilder final : public LayerBuilder {
                          double elevation,
                          SkColor color,
                          SkColor shadow_color,
-                         SkScalar device_pixel_ratio) override;
+                         SkScalar device_pixel_ratio,
+                         ClipMode clip_mode) override;
 
   // |flow::LayerBuilder|
   void PushPerformanceOverlay(uint64_t enabled_options,

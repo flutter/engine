@@ -47,7 +47,7 @@ class SceneBuilder : public fxl::RefCountedThreadSafe<SceneBuilder>,
                       double maskRectTop,
                       double maskRectBottom,
                       int blendMode);
-  void pushPhysicalShape(const CanvasPath* path, double elevation, int color, int shadowColor);
+  void pushPhysicalShape(const CanvasPath* path, double elevation, int color, int shadowColor, int clipMode);
 
   void pop();
 

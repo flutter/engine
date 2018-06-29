@@ -52,7 +52,8 @@ class LayerBuilder {
                                  double elevation,
                                  SkColor color,
                                  SkColor shadow_color,
-                                 SkScalar device_pixel_ratio) = 0;
+                                 SkScalar device_pixel_ratio,
+                                 ClipMode clip_mode) = 0;
 
   virtual void PushPerformanceOverlay(uint64_t enabled_options,
                                       const SkRect& rect) = 0;

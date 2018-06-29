@@ -149,10 +149,10 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// color of the layer background.
   ///
   /// See [pop] for details about the operation stack.
-  void pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor}) {
-    _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000);
+  void pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, int clipMode}) {
+    _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipMode);
   }
-  void _pushPhysicalShape(Path path, double elevation, int color, int shadowColor) native
+  void _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipMode) native
     'SceneBuilder_pushPhysicalShape';
 
   /// Ends the effect of the most recently pushed operation.

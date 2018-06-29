@@ -114,12 +114,13 @@ void DefaultLayerBuilder::PushPhysicalShape(const SkPath& sk_path,
                                             double elevation,
                                             SkColor color,
                                             SkColor shadow_color,
-                                            SkScalar device_pixel_ratio) {
+                                            SkScalar device_pixel_ratio,
+                                            ClipMode clip_mode) {
   SkRect cullRect;
   if (!cullRect.intersect(sk_path.getBounds(), cull_rects_.top())) {
     cullRect = SkRect::MakeEmpty();
   }
-  auto layer = std::make_unique<flow::PhysicalShapeLayer>();
+  auto layer = std::make_unique<flow::PhysicalShapeLayer>(clip_mode);
   layer->set_path(sk_path);
   layer->set_elevation(elevation);
   layer->set_color(color);

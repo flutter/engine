@@ -9,7 +9,7 @@
 
 namespace flow {
 
-PhysicalShapeLayer::PhysicalShapeLayer() : isRect_(false) {}
+PhysicalShapeLayer::PhysicalShapeLayer(ClipMode clip_mode) : isRect_(false), clip_mode_(clip_mode) {}
 
 PhysicalShapeLayer::~PhysicalShapeLayer() = default;
 
@@ -92,10 +92,16 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
 
   SkAutoCanvasRestore save(&context.canvas, false);
   context.canvas.save();
-  context.canvas.clipPath(path_, true);
+  context.canvas.clipPath(path_, clip_mode_ != ClipMode::hardEdge);
+  if (clip_mode_ == ClipMode::antiAliasWithSaveLayer) {
+    context.canvas.saveLayer(paint_bounds(), nullptr);
+  }
   PaintChildren(context);
   if (context.checkerboard_offscreen_layers && !isRect_)
     DrawCheckerboard(&context.canvas, path_.getBounds());
+  if (clip_mode_ == ClipMode::antiAliasWithSaveLayer) {
+    context.canvas.restore();
+  }
 }
 
 void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
