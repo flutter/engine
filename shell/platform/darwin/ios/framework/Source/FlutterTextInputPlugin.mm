@@ -66,7 +66,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   if ([inputType isEqualToString:@"TextInputAction.emergencyCall"])
     return UIReturnKeyEmergencyCall;
 
-  if ([inputType isEqualToString:@"TextInputAction.multiline"])
+  if ([inputType isEqualToString:@"TextInputAction.newline"])
     return UIReturnKeyDefault;
 
   // Present default key if bad input type is given.
