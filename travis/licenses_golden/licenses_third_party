@@ -1,4 +1,4 @@
-Signature: 42128e050e1334a31db3dad1b535798d
+Signature: dc7df4b8d437f71f171511e5780307e1
 
 UNUSED LICENSES:
 
@@ -14354,6 +14354,8 @@ FILE: ../../../third_party/skia/include/gpu/vk/GrVkBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/vk/GrVkDefines.h
 FILE: ../../../third_party/skia/include/gpu/vk/GrVkTypes.h
 FILE: ../../../third_party/skia/include/ports/SkFontMgr_FontConfigInterface.h
+FILE: ../../../third_party/skia/include/ports/SkImageGeneratorCG.h
+FILE: ../../../third_party/skia/include/ports/SkImageGeneratorWIC.h
 FILE: ../../../third_party/skia/include/private/GrAuditTrail.h
 FILE: ../../../third_party/skia/include/private/GrOpList.h
 FILE: ../../../third_party/skia/include/private/GrRenderTargetProxy.h
@@ -14608,9 +14610,7 @@ FILE: ../../../third_party/skia/src/pipe/SkRefSet.h
 FILE: ../../../third_party/skia/src/ports/SkFontConfigInterface.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_custom_empty_factory.cpp
 FILE: ../../../third_party/skia/src/ports/SkImageGeneratorCG.cpp
-FILE: ../../../third_party/skia/src/ports/SkImageGeneratorCG.h
 FILE: ../../../third_party/skia/src/ports/SkImageGeneratorWIC.cpp
-FILE: ../../../third_party/skia/src/ports/SkImageGeneratorWIC.h
 FILE: ../../../third_party/skia/src/shaders/SkColorFilterShader.h
 FILE: ../../../third_party/skia/src/shaders/SkColorShader.cpp
 FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fGradientBase.cpp
@@ -17264,10 +17264,10 @@ FILE: ../../../third_party/skia/src/compute/hs/gen/transpose.c
 FILE: ../../../third_party/skia/src/compute/hs/gen/transpose.h
 FILE: ../../../third_party/skia/src/compute/skc/allocator_host.c
 FILE: ../../../third_party/skia/src/compute/skc/allocator_host.h
+FILE: ../../../third_party/skia/src/compute/skc/interop.h
 FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/allocator_device_cl.c
 FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/allocator_device_cl.h
-FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/gl/interop.c
-FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/gl/interop.h
+FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/interop/interop_glfw.c
 FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/kernels/segment_ttck.cl
 FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/kernels/segment_ttrk.cl
 FILE: ../../../third_party/skia/src/compute/skc/runtime.h
@@ -17504,6 +17504,7 @@ FILE: ../../../third_party/skia/docker/skia-with-swift-shader-base/Dockerfile
 FILE: ../../../third_party/skia/docker/skia-with-swift-shader-base/build-with-swift-shader-and-run
 FILE: ../../../third_party/skia/docs/SkAutoCanvasRestore_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkBitmap_Reference.bmh
+FILE: ../../../third_party/skia/docs/SkBlendMode_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkCanvas_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkColor4f_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkColor_Reference.bmh
@@ -17514,8 +17515,10 @@ FILE: ../../../third_party/skia/docs/SkImage_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkMatrix_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkPaint_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkPath_Reference.bmh
+FILE: ../../../third_party/skia/docs/SkPicture_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkPixmap_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkPoint_Reference.bmh
+FILE: ../../../third_party/skia/docs/SkRRect_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkRect_Reference.bmh
 FILE: ../../../third_party/skia/docs/SkSurface_Reference.bmh
 FILE: ../../../third_party/skia/docs/illustrations.bmh
@@ -17627,7 +17630,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/env/examples/full.expe
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Android-Clang-GalaxyS7_G930FD-GPU-MaliT880-arm64-Debug-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Android-Clang-Nexus5x-GPU-Adreno418-arm64-Debug-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-ChromeOS-Clang-SamsungChromebookPlus-GPU-MaliT860-arm-Release-All.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Chromecast-GCC-Chorizo-CPU-Cortex_A7-arm-Release-All.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Chromecast-Clang-Chorizo-CPU-Cortex_A7-arm-Release-All.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Debian9-Clang-GCE-CPU-AVX2-x86_64-Debug-All-MSAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Debian9-Clang-GCE-CPU-AVX2-x86_64-Release-All-ASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Test-Android-Clang-AndroidOne-GPU-Mali400MP2-arm-Release-All-Android.json
@@ -17727,8 +17730,8 @@ FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Android-Cl
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Android-Clang-Nexus5x-GPU-Adreno418-arm64-Release-All-Android_NoGPUThreads.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Android-Clang-NexusPlayer-GPU-PowerVR-x86-Release-All-Android_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-ChromeOS-Clang-ASUSChromebookFlipC100-GPU-MaliT764-arm-Release-All.json
-FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Chromecast-GCC-Chorizo-CPU-Cortex_A7-arm-Debug-All.json
-FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Chromecast-GCC-Chorizo-GPU-Cortex_A7-arm-Release-All.json
+FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Chromecast-Clang-Chorizo-CPU-Cortex_A7-arm-Debug-All.json
+FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Chromecast-Clang-Chorizo-GPU-Cortex_A7-arm-Release-All.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Debian9-Clang-GCE-CPU-AVX2-x86_64-Debug-All-ASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Debian9-Clang-NUC5PPYH-GPU-IntelHD405-x86_64-Debug-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Debian9-Clang-NUC7i5BNK-GPU-IntelIris640-x86_64-Release-All.json
@@ -17761,8 +17764,8 @@ FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Cl
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-NexusPlayer-GPU-PowerVR-x86-Release-All-Android_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Android-Clang-Pixel-GPU-Adreno530-arm64-Debug-All-Android_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-ChromeOS-Clang-AcerChromebookR13Convertible-GPU-PowerVRGX6250-arm-Debug-All.json
-FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Chromecast-GCC-Chorizo-CPU-Cortex_A7-arm-Release-All.json
-FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Chromecast-GCC-Chorizo-GPU-Cortex_A7-arm-Release-All.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Chromecast-Clang-Chorizo-CPU-Cortex_A7-arm-Release-All.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Chromecast-Clang-Chorizo-GPU-Cortex_A7-arm-Release-All.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Debian9-Clang-GCE-CPU-AVX2-x86_64-Debug-All-ASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Debian9-Clang-GCE-CPU-AVX2-x86_64-Debug-All-MSAN.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/Test-Debian9-Clang-GCE-CPU-AVX2-x86_64-Debug-All-SK_USE_DISCARDABLE_SCALEDIMAGECACHE.json
@@ -19625,17 +19628,17 @@ FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/raster_builder_c
 FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/raster_builder_cl_12.h
 FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/runtime_cl_12.c
 FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/runtime_cl_12.h
+FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/skc_cl.h
 FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/styling_cl_12.c
 FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/styling_cl_12.h
+FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/surface_cl_12.c
 FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/surface_cl_12.h
-FILE: ../../../third_party/skia/src/compute/skc/platforms/cl_12/surface_cl_12_buffer.c
 FILE: ../../../third_party/skia/src/compute/skc/raster.h
 FILE: ../../../third_party/skia/src/compute/skc/raster_builder.c
 FILE: ../../../third_party/skia/src/compute/skc/raster_builder.h
 FILE: ../../../third_party/skia/src/compute/skc/scheduler.cpp
 FILE: ../../../third_party/skia/src/compute/skc/scheduler.h
 FILE: ../../../third_party/skia/src/compute/skc/skc.h
-FILE: ../../../third_party/skia/src/compute/skc/skc_create_cl.h
 FILE: ../../../third_party/skia/src/compute/skc/skc_styling.h
 FILE: ../../../third_party/skia/src/compute/skc/subblock.h
 FILE: ../../../third_party/skia/src/compute/skc/surface.c
@@ -20281,10 +20284,10 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/include/core/SkDrawFilter.h
 FILE: ../../../third_party/skia/include/core/SkDrawLooper.h
 FILE: ../../../third_party/skia/include/effects/SkBlurImageFilter.h
-FILE: ../../../third_party/skia/src/core/SkBlurImageFilter.cpp
 FILE: ../../../third_party/skia/src/core/SkScan.h
 FILE: ../../../third_party/skia/src/core/SkScan_Antihair.cpp
 FILE: ../../../third_party/skia/src/core/SkTypeface.cpp
+FILE: ../../../third_party/skia/src/effects/imagefilters/SkBlurImageFilter.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_android_parser.cpp
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_android_parser.h
 ----------------------------------------------------------------------------------------------------

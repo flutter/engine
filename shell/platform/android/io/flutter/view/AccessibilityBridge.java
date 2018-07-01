@@ -41,6 +41,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private static final int ROOT_NODE_ID = 0;
 
     private Map<Integer, SemanticsObject> mObjects;
+    private Map<Integer, String> mLiveRegions;
     private final FlutterView mOwner;
     private boolean mAccessibilityEnabled = false;
     private SemanticsObject mA11yFocusedObject;
@@ -93,7 +94,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         SCOPES_ROUTE(1 << 11),
         NAMES_ROUTE(1 << 12),
         IS_HIDDEN(1 << 13),
-        IS_IMAGE(1 << 14);
+        IS_IMAGE(1 << 14),
+        IS_LIVE_REGION(1 << 115);
 
         Flag(int value) {
             this.value = value;
@@ -106,6 +108,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         assert owner != null;
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
+        mLiveRegions = new HashMap<Integer, String>();
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(owner, "flutter/accessibility",
             StandardMessageCodec.INSTANCE);
@@ -247,7 +250,20 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
             }
         }
-
+        if (object.hasFlag(Flag.IS_LIVE_REGION)) {
+            result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+            String priorLabelHint = mLiveRegions.get(object.id);
+            String labelHint = object.getLabelHint();
+            // It is very important that this is added to mLiveRegions before sending the accessibility event
+            // below.
+            mLiveRegions.put(object.id, labelHint);
+            if (priorLabelHint == null || !priorLabelHint.equals(labelHint)) {
+                sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+            }
+        } else if (object.hadFlag(Flag.IS_LIVE_REGION)) {
+            mLiveRegions.remove(object.id);
+        }
+        
         boolean hasCheckedState = object.hasFlag(Flag.HAS_CHECKED_STATE);
         result.setCheckable(hasCheckedState);
         if (hasCheckedState) {
@@ -511,7 +527,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
           rootObject.updateRecursively(identity, visitedObjects, false);
           rootObject.collectRoutes(newRoutes);
         }
-
+        
         // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route id changed from the
         // previously cached route id.
         SemanticsObject lastAdded = null;
@@ -717,6 +733,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private void willRemoveSemanticsObject(SemanticsObject object) {
         assert mObjects.containsKey(object.id);
         assert mObjects.get(object.id) == object;
+        mLiveRegions.remove(object.id);
         object.parent = null;
         if (mA11yFocusedObject == object) {
             sendAccessibilityEvent(mA11yFocusedObject.id, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
@@ -1071,6 +1088,20 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         private float max(float a, float b, float c, float d) {
             return Math.max(a, Math.max(b, Math.max(c, d)));
+        }
+
+        private String getLabelHint() {
+            StringBuilder sb = new StringBuilder();
+            if (label != null) {
+                sb.append(label);
+            }
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
+            if (hint != null) {
+                sb.append(hint);
+            }
+            return sb.length() > 0 ? sb.toString() : null;
         }
 
         private String getValueLabelHint() {
