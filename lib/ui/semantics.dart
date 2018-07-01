@@ -26,6 +26,7 @@ class SemanticsAction {
   static const int _kPasteIndex = 1 << 14;
   static const int _kDidGainAccessibilityFocusIndex = 1 << 15;
   static const int _kDidLoseAccessibilityFocusIndex = 1 << 16;
+  static const int _kDismissIndex = 1 << 17;
 
   /// The numerical value for this action.
   ///
@@ -146,6 +147,14 @@ class SemanticsAction {
   /// Accessibility focus and input focus can be held by two different nodes!
   static const SemanticsAction didLoseAccessibilityFocus = const SemanticsAction._(_kDidLoseAccessibilityFocusIndex);
 
+  /// A request that the node should be dismissed.
+  ///
+  /// A Snackbar, for example, may have a dismiss action to indicate to the user
+  /// that it can removed after it is no longer relevant.  on Android, TalkBack
+  /// announces this after reading the label. On iOS, VoiceOver users can
+  /// perform a standard gesture to dismiss it.
+  static const SemanticsAction dismiss = const SemanticsAction._(_kDismissIndex);
+
   /// The possible semantics actions.
   ///
   /// The map's key is the [index] of the action and the value is the action
@@ -168,6 +177,7 @@ class SemanticsAction {
     _kPasteIndex: paste,
     _kDidGainAccessibilityFocusIndex: didGainAccessibilityFocus,
     _kDidLoseAccessibilityFocusIndex: didLoseAccessibilityFocus,
+    _kDismissIndex: dismiss,
   };
 
   @override
@@ -207,6 +217,8 @@ class SemanticsAction {
         return 'SemanticsAction.didGainAccessibilityFocus';
       case _kDidLoseAccessibilityFocusIndex:
         return 'SemanticsAction.didLoseAccessibilityFocus';
+      case _kDismissIndex:
+        return 'SemanticsAction.dismiss';
     }
     return null;
   }
@@ -368,6 +380,10 @@ class SemanticsFlag {
   static const SemanticsFlag isHidden = const SemanticsFlag._(_kIsHiddenIndex);
 
   /// Whether the semantics node represents an image.
+  ///
+  /// Platforms have special behavior for images.  TalkBack will inform the user
+  /// the labeled node is an image. iOS may use the image flag to avoid
+  /// inverting their color when using smart invert.
   static const SemanticsFlag isImage = const SemanticsFlag._(_kIsImageIndex);
 
   /// The possible semantics flags.

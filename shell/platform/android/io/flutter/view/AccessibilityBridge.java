@@ -68,7 +68,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         CUT(1 << 13),
         PASTE(1 << 14),
         DID_GAIN_ACCESSIBILITY_FOCUS(1 << 15),
-        DID_LOSE_ACCESSIBILITY_FOCUS(1 << 16);
+        DID_LOSE_ACCESSIBILITY_FOCUS(1 << 16),
+        DISMISS(1 << 17);
 
         Action(int value) {
             this.value = value;
@@ -184,7 +185,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
           result.setClassName("android.widget.Button");
         }
         if (object.hasFlag(Flag.IS_IMAGE)) {
-            result.setClassName("android.widget.ImageView");
+          result.setClassName("android.widget.ImageView");
+        }
+        if (object.hasAction(Action.DISMISS)) {
+          result.setDismissable(true);
+          result.addAction(AccessibilityNodeInfo.ACTION_DISMISS);
         }
 
         if (object.parent != null) {
@@ -393,6 +398,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             case AccessibilityNodeInfo.ACTION_PASTE: {
                 mOwner.dispatchSemanticsAction(virtualViewId, Action.PASTE);
                 return true;
+            }
+            case AccessibilityNodeInfo.ACTION_DISMISS: {
+                mOwner.dispatchSemanticsAction(virtualViewId, Action.DISMISS);
             }
         }
         return false;

@@ -294,6 +294,13 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   return YES;
 }
 
+- (BOOL)accessibilityPerformEscape {
+  if (![self node].HasAction(blink::SemanticsAction::kDismiss))
+    return NO;
+  [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kDismiss);
+  return YES;
+}
+
 #pragma mark UIAccessibilityFocus overrides
 
 - (void)accessibilityElementDidBecomeFocused {
