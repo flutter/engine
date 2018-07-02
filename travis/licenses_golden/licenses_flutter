@@ -189,13 +189,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: engine
 ORIGIN: ../../../LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../flutter/.idea/flutter.iml
-FILE: ../../../flutter/.idea/libraries/Dart_Packages.xml
-FILE: ../../../flutter/.idea/libraries/Dart_SDK.xml
-FILE: ../../../flutter/.idea/modules.xml
-FILE: ../../../flutter/.idea/vcs.xml
-FILE: ../../../flutter/.idea/workspace.xml
-FILE: ../../../flutter/.vscode/settings.json
 FILE: ../../../flutter/DEPS
 FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
