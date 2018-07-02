@@ -755,7 +755,7 @@ class RepositoryMultiLicenseNoticesForFilesFile extends RepositoryLicenseFile {
         body.add(contents[index]);
         index += 1;
       } while (index < contents.length &&
-          ASCII.decode(contents[index], allowInvalid: true) != '============================================================\n');
+               ASCII.decode(contents[index], allowInvalid: true) != '============================================================\n');
       index += 1;
       final List<int> bodyBytes = body.expand((List<int> line) => line).toList();
       String bodyText;
@@ -956,7 +956,7 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
     }
   }
 
-  int get count => _files.length + _subdirectories.fold(0, (num count, RepositoryDirectory child) => count.toInt() + child.count);
+  int get count => _files.length + _subdirectories.fold(0, (int count, RepositoryDirectory child) => count.toInt() + child.count);
 
   @override
   List<License> nearestLicensesFor(String name) {
