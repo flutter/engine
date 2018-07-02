@@ -7,14 +7,14 @@ packages:
       name: archive
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.0"
+    version: "1.0.33"
   args:
     dependency: "direct main"
     description:
       name: args
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.4.3"
+    version: "0.13.7"
   charcode:
     dependency: transitive
     description:
@@ -28,7 +28,7 @@ packages:
       name: collection
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.14.10"
+    version: "1.14.5"
   convert:
     dependency: transitive
     description:
@@ -42,14 +42,14 @@ packages:
       name: crypto
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.5"
+    version: "2.0.2+1"
   path:
     dependency: "direct main"
     description:
       name: path
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.6.1"
+    version: "1.5.1"
   typed_data:
     dependency: transitive
     description:
@@ -58,4 +58,4 @@ packages:
     source: hosted
     version: "1.1.5"
 sdks:
-  dart: ">=2.0.0-dev.62.0 <=2.0.0-dev.66.0"
+  dart: ">=1.21.0 <=2.0.0-edge.2b36f923d95a41b2f1c5cbb5edd9872f68c18112"
