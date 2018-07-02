@@ -66,7 +66,6 @@ static const char* kDartLanguageArgs[] = {
     "--await_is_keyword",
     "--causal_async_stacks",
     // clang-format on
-    "--trace-service",
 };
 
 static const char* kDartPrecompilationArgs[] = {
