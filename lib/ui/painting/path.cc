@@ -57,7 +57,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
   V(Path, getBounds)                 \
   V(Path, addPathWithMatrix)         \
   V(Path, op)                        \
-  V(Path, clone)
+  V(Path, clone)                     \
+  V(Path, setIsVolatile)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -252,6 +253,10 @@ void CanvasPath::reset() {
 
 bool CanvasPath::contains(double x, double y) {
   return path_.contains(x, y);
+}
+
+void CanvasPath::setIsVolatile(bool isVolatile) {
+  path_.setIsVolatile(isVolatile);
 }
 
 fxl::RefPtr<CanvasPath> CanvasPath::shift(double dx, double dy) {
