@@ -189,6 +189,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: engine
 ORIGIN: ../../../LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../flutter/.idea/flutter.iml
+FILE: ../../../flutter/.idea/libraries/Dart_Packages.xml
+FILE: ../../../flutter/.idea/libraries/Dart_SDK.xml
+FILE: ../../../flutter/.idea/modules.xml
+FILE: ../../../flutter/.idea/vcs.xml
+FILE: ../../../flutter/.idea/workspace.xml
+FILE: ../../../flutter/.vscode/settings.json
 FILE: ../../../flutter/DEPS
 FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
@@ -489,6 +496,8 @@ FILE: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_
 FILE: ../../../flutter/lib/ui/isolate_name_server.dart
 FILE: ../../../flutter/lib/ui/painting/image_encoding.cc
 FILE: ../../../flutter/lib/ui/painting/image_encoding.h
+FILE: ../../../flutter/lib/ui/semantics/custom_accessibility_action.cc
+FILE: ../../../flutter/lib/ui/semantics/custom_accessibility_action.h
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.h
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
