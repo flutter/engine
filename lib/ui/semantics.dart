@@ -228,6 +228,7 @@ class SemanticsFlag {
   static const int _kScopesRouteIndex= 1 << 11;
   static const int _kNamesRouteIndex = 1 << 12;
   static const int _kIsHiddenIndex = 1 << 13;
+  static const int _kIsLiveRegionIndex = 1 << 14;
 
   const SemanticsFlag._(this.index);
 
@@ -366,6 +367,21 @@ class SemanticsFlag {
   /// used to implement accessibility scrolling on iOS.
   static const SemanticsFlag isHidden = const SemanticsFlag._(_kIsHiddenIndex);
 
+  /// Whether the semantics node is a live region.
+  /// 
+  /// A live region indicates that this semantics node will update its 
+  /// semantics label. Platforms are free to use this information to
+  /// make polite updates to the user to inform them of this.
+  /// 
+  /// On Android, TalkBack will make a polite announcement of the first and
+  /// subsequent updates to the label of this node. This flag is not currently
+  /// supported on iOS.
+  /// 
+  /// An example of a live region is a [SnackBar] widget. When it appears
+  /// on the screen it may be difficult to focus to read the value. A live
+  /// region causes a polite announcement to be generated automatically.
+  static const SemanticsFlag isLiveRegion = const SemanticsFlag._(_kIsLiveRegionIndex);
+
   /// The possible semantics flags.
   ///
   /// The map's key is the [index] of the flag and the value is the flag itself.
@@ -384,6 +400,7 @@ class SemanticsFlag {
     _kScopesRouteIndex: scopesRoute,
     _kNamesRouteIndex: namesRoute,
     _kIsHiddenIndex: isHidden,
+    _kIsLiveRegionIndex: isLiveRegion,
   };
 
   @override
@@ -417,6 +434,8 @@ class SemanticsFlag {
         return 'SemanticsFlag.namesRoute';
       case _kIsHiddenIndex:
         return 'SemanticsFlag.isHidden';
+      case _kIsLiveRegionIndex:
+        return 'SemanticsFlag.isLiveRegion';
     }
     return null;
   }
