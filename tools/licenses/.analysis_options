@@ -22,9 +22,9 @@ linter:
     - invariant_booleans
     - iterable_contains_unrelated_type
     - list_remove_unrelated_type
+    - literal_only_boolean_expressions
     - test_types_in_equals
     - throw_in_finally
-    - literal_only_boolean_expressions
     - unrelated_type_equality_checks
     - valid_regexps
     - always_declare_return_types
