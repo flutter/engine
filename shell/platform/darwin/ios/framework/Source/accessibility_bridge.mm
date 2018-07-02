@@ -366,6 +366,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   if ([self node].HasFlag(blink::SemanticsFlags::kIsImage)) {
     traits |= UIAccessibilityTraitImage;
   }
+  if ([self node].HasFlag(blink::SemanticsFlags::kIsLiveRegion)) {
+    traits |= UIAccessibilityTraitUpdatesFrequently;
+  }
   return traits;
 }
 
@@ -470,6 +473,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
     : view_(view),
       platform_view_(platform_view),
       objects_([[NSMutableDictionary alloc] init]),
+      live_regions_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_id_(0),
       previous_routes_({}) {
@@ -549,6 +553,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
   if (root)
     VisitObjectsRecursivelyAndRemove(root, doomed_uids);
   [objects_ removeObjectsForKeys:doomed_uids];
+  [live_regions_ removeObjectsForKeys:doomed_uids];
 
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
 

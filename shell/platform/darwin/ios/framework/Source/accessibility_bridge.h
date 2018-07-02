@@ -120,6 +120,7 @@ class AccessibilityBridge final {
   UIView* view_;
   PlatformViewIOS* platform_view_;
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
+  fml::scoped_nsobject<NSMutableDictionary<NSNumber*, NSString*>> live_regions_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
   fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;
   int32_t previous_route_id_;

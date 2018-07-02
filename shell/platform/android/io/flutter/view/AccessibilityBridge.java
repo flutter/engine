@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.opengl.Matrix;
 import android.os.Build;
 import android.os.Bundle;
+import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
@@ -49,6 +50,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private SemanticsObject mHoveredObject;
     private int previousRouteId = ROOT_NODE_ID;
     private List<Integer> previousRoutes;
+    private String mPackageName;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
@@ -95,7 +97,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         NAMES_ROUTE(1 << 12),
         IS_HIDDEN(1 << 13),
         IS_IMAGE(1 << 14),
-        IS_LIVE_REGION(1 << 115);
+        IS_LIVE_REGION(1 << 15);
 
         Flag(int value) {
             this.value = value;
@@ -112,6 +114,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(owner, "flutter/accessibility",
             StandardMessageCodec.INSTANCE);
+        mPackageName = owner.getContext().getPackageName();
     }
 
     void setAccessibilityEnabled(boolean accessibilityEnabled) {
@@ -189,6 +192,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
         if (object.hasFlag(Flag.IS_IMAGE)) {
           result.setClassName("android.widget.ImageView");
+          // conform to the expected id from TalkBack's CustomLabelManager.
+          // talkback/src/main/java/labeling/CustomLabelManager.java#L525
+          result.setViewIdResourceName(mPackageName + ":id/" + Integer.toString(virtualViewId));
         }
         if (object.hasAction(Action.DISMISS)) {
           result.setDismissable(true);
@@ -242,6 +248,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             }
         }
         if (object.hasAction(Action.INCREASE) || object.hasAction(Action.DECREASE)) {
+            // TODO(jonahwilliams): support AccessibilityAction.ACTION_SET_PROGRESS once SDK is updated.
             result.setClassName("android.widget.SeekBar");
             if (object.hasAction(Action.INCREASE)) {
                 result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
@@ -252,14 +259,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
         if (object.hasFlag(Flag.IS_LIVE_REGION)) {
             result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-            String priorLabelHint = mLiveRegions.get(object.id);
-            String labelHint = object.getLabelHint();
-            // It is very important that this is added to mLiveRegions before sending the accessibility event
-            // below.
-            mLiveRegions.put(object.id, labelHint);
-            if (priorLabelHint == null || !priorLabelHint.equals(labelHint)) {
-                sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-            }
         } else if (object.hadFlag(Flag.IS_LIVE_REGION)) {
             mLiveRegions.remove(object.id);
         }
@@ -527,7 +526,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
           rootObject.updateRecursively(identity, visitedObjects, false);
           rootObject.collectRoutes(newRoutes);
         }
-        
+
         // Dispatch a TYPE_WINDOW_STATE_CHANGED event if the most recent route id changed from the
         // previously cached route id.
         SemanticsObject lastAdded = null;
@@ -624,6 +623,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                     selectionEvent.setToIndex(object.textSelectionExtent);
                     selectionEvent.setItemCount(newValue.length());
                     sendAccessibilityEvent(selectionEvent);
+                }
+            }
+            if (object.hasFlag(Flag.IS_LIVE_REGION)) {
+                String priorLabelHint = mLiveRegions.get(object.id);
+                String labelHint = object.getLabelHint();
+                mLiveRegions.put(object.id, labelHint);
+                if (priorLabelHint == null || !priorLabelHint.equals(labelHint)) {
+                    sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
                 }
             }
         }
