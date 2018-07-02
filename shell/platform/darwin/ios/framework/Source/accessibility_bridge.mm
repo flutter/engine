@@ -473,7 +473,6 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
     : view_(view),
       platform_view_(platform_view),
       objects_([[NSMutableDictionary alloc] init]),
-      live_regions_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_id_(0),
       previous_routes_({}) {
