@@ -80,6 +80,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Rasterization outside the given rounded rectangle is discarded.
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
+  /// By default, the clip will be anti-aliased (clipMode = 1 = Clip::antiAlias).
   void pushClipRRect(RRect rrect, [int clipMode = 1]) => _pushClipRRect(rrect._value, clipMode);
   void _pushClipRRect(Float32List rrect, int clipMode) native 'SceneBuilder_pushClipRRect';
 
@@ -88,6 +89,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Rasterization outside the given path is discarded.
   ///
   /// See [pop] for details about the operation stack. See [Clip] for different clip modes.
+  /// By default, the clip will be anti-aliased (clipMode = 1 = Clip::antiAlias).
   void pushClipPath(Path path, [int clipMode = 1]) native 'SceneBuilder_pushClipPath';
 
   /// Pushes an opacity operation onto the operation stack.
@@ -143,7 +145,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Pushes a physical layer operation for an arbitrary shape onto the
   /// operation stack.
   ///
-  /// By default, Rasterization will not be clipped (clipMode = 0 = [Clip.none]).
+  /// By default, the layer's content will not be clipped (clipMode = 0 = [Clip.none]).
   /// If clipMode is nonzero (Clip.hardEdge, Clip.antiAlias, or Clip.antiAliasWithSaveLayer),
   /// then the content is clipped to the given shape defined by [path].
   ///
