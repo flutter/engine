@@ -552,7 +552,6 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes) {
   if (root)
     VisitObjectsRecursivelyAndRemove(root, doomed_uids);
   [objects_ removeObjectsForKeys:doomed_uids];
-  [live_regions_ removeObjectsForKeys:doomed_uids];
 
   layoutChanged = layoutChanged || [doomed_uids count] > 0;
 
