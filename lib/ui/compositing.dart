@@ -79,16 +79,16 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// Rasterization outside the given rounded rectangle is discarded.
   ///
-  /// See [pop] for details about the operation stack.
-  void pushClipRRect(RRect rrect, int clipMode) => _pushClipRRect(rrect._value, clipMode);
+  /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
+  void pushClipRRect(RRect rrect, [int clipMode = 1]) => _pushClipRRect(rrect._value, clipMode);
   void _pushClipRRect(Float32List rrect, int clipMode) native 'SceneBuilder_pushClipRRect';
 
   /// Pushes a path clip operation onto the operation stack.
   ///
   /// Rasterization outside the given path is discarded.
   ///
-  /// See [pop] for details about the operation stack.
-  void pushClipPath(Path path, int clipMode) native 'SceneBuilder_pushClipPath';
+  /// See [pop] for details about the operation stack. See [Clip] for different clip modes.
+  void pushClipPath(Path path, [int clipMode = 1]) native 'SceneBuilder_pushClipPath';
 
   /// Pushes an opacity operation onto the operation stack.
   ///
@@ -143,13 +143,16 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Pushes a physical layer operation for an arbitrary shape onto the
   /// operation stack.
   ///
-  /// Rasterization will be clipped to the given shape defined by [path]. If
-  /// [elevation] is greater than 0.0, then a shadow is drawn around the layer.
+  /// By default, Rasterization will not be clipped (clipMode = 0 = [Clip.none]).
+  /// If clipMode is nonzero (Clip.hardEdge, Clip.antiAlias, or Clip.antiAliasWithSaveLayer),
+  /// then the content is clipped to the given shape defined by [path].
+  ///
+  /// If [elevation] is greater than 0.0, then a shadow is drawn around the layer.
   /// [shadowColor] defines the color of the shadow if present and [color] defines the
   /// color of the layer background.
   ///
-  /// See [pop] for details about the operation stack.
-  void pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, int clipMode}) {
+  /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
+  void pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, int clipMode = 0}) {
     _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipMode);
   }
   void _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipMode) native
