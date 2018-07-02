@@ -80,8 +80,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Rasterization outside the given rounded rectangle is discarded.
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
-  /// By default, the clip will be anti-aliased (clipMode = 1 = Clip::antiAlias).
-  void pushClipRRect(RRect rrect, [int clipMode = 1]) => _pushClipRRect(rrect._value, clipMode);
+  /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
+  void pushClipRRect(RRect rrect, {Clip clip = Clip.antiAlias}) => _pushClipRRect(rrect._value, clip.index);
   void _pushClipRRect(Float32List rrect, int clipMode) native 'SceneBuilder_pushClipRRect';
 
   /// Pushes a path clip operation onto the operation stack.
@@ -89,8 +89,9 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Rasterization outside the given path is discarded.
   ///
   /// See [pop] for details about the operation stack. See [Clip] for different clip modes.
-  /// By default, the clip will be anti-aliased (clipMode = 1 = Clip::antiAlias).
-  void pushClipPath(Path path, [int clipMode = 1]) native 'SceneBuilder_pushClipPath';
+  /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
+  void pushClipPath(Path path, {Clip clip = Clip.antiAlias}) => _pushClipPath(path, clip.index);
+  void _pushClipPath(Path path, int clipMode) native 'SceneBuilder_pushClipPath';
 
   /// Pushes an opacity operation onto the operation stack.
   ///
@@ -145,7 +146,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Pushes a physical layer operation for an arbitrary shape onto the
   /// operation stack.
   ///
-  /// By default, the layer's content will not be clipped (clipMode = 0 = [Clip.none]).
+  /// By default, the layer's content will not be clipped (clip = [Clip.none]).
   /// If clipMode is nonzero (Clip.hardEdge, Clip.antiAlias, or Clip.antiAliasWithSaveLayer),
   /// then the content is clipped to the given shape defined by [path].
   ///
@@ -154,8 +155,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// color of the layer background.
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
-  void pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, int clipMode = 0}) {
-    _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipMode);
+  void pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clip = defaultClipBehavior}) {
+    _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clip.index);
   }
   void _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipMode) native
     'SceneBuilder_pushPhysicalShape';

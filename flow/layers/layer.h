@@ -34,10 +34,9 @@
 
 namespace flow {
 
-// This should be an exact copy of the Clip enum in
-// flutter/package/flutter/lib/src/paining/basic_types.dart
+// This should be an exact copy of the Clip enum in painting.dart.
 //
-// We call it Clip in public dart API to provide our developers the shortest
+// We call it Clip in public Dart API to provide our developers the shortest
 // name and the best experience. We call it ClipMode in C++ because we want to
 // avoid name conflicts and refactoring C++ names without a nice IDE function
 // is tedious.
