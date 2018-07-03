@@ -13,8 +13,10 @@ dynamic _decodeJSON(String message) {
 }
 
 void _updateWindowMetrics(double devicePixelRatio,
-                          double width,
-                          double height,
+                          double minWidth,
+                          double maxWidth,
+                          double minHeight,
+                          double maxHeight,
                           double paddingTop,
                           double paddingRight,
                           double paddingBottom,
@@ -25,17 +27,24 @@ void _updateWindowMetrics(double devicePixelRatio,
                           double viewInsetLeft) {
   window
     .._devicePixelRatio = devicePixelRatio
-    .._physicalSize = new Size(width, height)
-    .._padding = new WindowPadding._(
-        top: paddingTop,
-        right: paddingRight,
-        bottom: paddingBottom,
-        left: paddingLeft)
-    .._viewInsets = new WindowPadding._(
-        top: viewInsetTop,
-        right: viewInsetRight,
-        bottom: viewInsetBottom,
-        left: viewInsetLeft);
+    .._physicalConstraints = new WindowConstraints._(
+      minWidth,
+      maxWidth,
+      minHeight,
+      maxHeight,
+    )
+    .._padding = new WindowPadding._fromTRBL(
+      paddingTop,
+      paddingRight,
+      paddingBottom,
+      paddingLeft,
+    )
+    .._viewInsets = new WindowPadding._fromTRBL(
+      viewInsetTop,
+      viewInsetRight,
+      viewInsetBottom,
+      viewInsetLeft,
+    );
   _invoke(window.onMetricsChanged, window._onMetricsChangedZone);
 }
 

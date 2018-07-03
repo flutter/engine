@@ -93,7 +93,7 @@ enum AppLifecycleState {
 ///  * [Scaffold], which automatically applies the padding in material design
 ///    applications.
 class WindowPadding {
-  const WindowPadding._({ this.left, this.top, this.right, this.bottom });
+  const WindowPadding._fromTRBL(this.left, this.top, this.right, this.bottom);
 
   /// The distance from the left edge to the first unpadded pixel, in physical pixels.
   final double left;
@@ -108,7 +108,7 @@ class WindowPadding {
   final double bottom;
 
   /// A window padding that has zeros for each edge.
-  static const WindowPadding zero = const WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
+  static const WindowPadding zero = const WindowPadding._fromTRBL(0.0, 0.0, 0.0, 0.0);
 
   @override
   String toString() {
@@ -313,6 +313,83 @@ class Locale {
   }
 }
 
+/// Layout constraints for [Window] objects.
+///
+/// Instances of this class are used by the `dart:ui` to populate
+/// [Window.constraints].
+///
+/// The framework has a very similar class, [BoxConstraints], which is used by
+/// the [RenderBox] layout model.
+class WindowConstraints {
+  /// Creates constraints for laying out the application.
+  ///
+  /// The arguments must be positive; the maximums may be infinite.
+  const WindowConstraints._(
+    this.minWidth,
+    this.maxWidth,
+    this.minHeight,
+    this.maxHeight,
+  ) : assert(minWidth != null),
+      assert(maxWidth != null),
+      assert(minHeight != null),
+      assert(maxHeight != null),
+      assert(minWidth >= 0.0),
+      assert(minHeight >= 0.0),
+      assert(minWidth < double.infinity),
+      assert(minHeight < double.infinity),
+      assert(minWidth <= maxWidth),
+      assert(minHeight <= maxHeight);
+
+  /// Creates constraints that force the size to zero by zero.
+  const WindowConstraints._zero() : minWidth = 0.0, maxWidth = 0.0, minHeight = 0.0, maxHeight = 0.0;
+
+  /// The minimum width of the content.
+  ///
+  /// Must be greater than or equal to zero, and finite.
+  final double minWidth;
+
+  /// The maximum width of the content.
+  ///
+  /// Must be greater than or equal to [minWidth].
+  final double maxWidth;
+
+  /// The minimum height of the content.
+  ///
+  /// Must be greater than or equal to zero, and finite.
+  final double minHeight;
+
+  /// The maximum height of the content.
+  ///
+  /// Must be greater than or equal to [minHeight].
+  final double maxHeight;
+
+  /// This object, represented as a [Size].
+  ///
+  /// If the [minWidth] and [maxWidth] are equal, and if the [minHeight] and
+  /// [maxHeight] are equal, then this returns a [Size] with the given widths
+  /// and heights.
+  ///
+  /// Otherwise, this returns null.
+  Size asSize() => minWidth == maxWidth && minHeight == maxHeight ? new Size(minWidth, minHeight) : null;
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    final WindowConstraints typedOther = other;
+    return typedOther.minWidth == minWidth
+        && typedOther.maxWidth == maxWidth
+        && typedOther.minHeight == minHeight
+        && typedOther.maxHeight == maxHeight;
+  }
+
+  @override
+  int get hashCode => hashValues(minWidth, maxWidth, minHeight, maxHeight);
+
+  @override
+  String toString() => '$runtimeType(width: ${minWidth.toStringAsFixed(1)}\u2264${maxWidth.toStringAsFixed(1)}, height: ${minHeight.toStringAsFixed(1)}\u2264${maxHeight.toStringAsFixed(1)})';
+}
+
 /// The most basic interface to the host operating system's user interface.
 ///
 /// There is a single Window instance in the system, which you can
@@ -359,12 +436,44 @@ class Window {
   /// system UI. The [padding] and [viewInsets] properties provide a view into
   /// how much of each side of the application may be obscured by system UI.
   ///
+  /// In scenarios where an OEM Flutter view is embedded in a larger
+  /// application, it is possible for the [physicalSize] to be left to the
+  /// framework to decide, based on some constraints. In such cases,
+  /// [physicalSize] is null, and [physicalConstraints] provides the actual
+  /// constraints.
+  ///
   /// See also:
   ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this value changes.
-  Size get physicalSize => _physicalSize;
-  Size _physicalSize = Size.zero;
+  ///  * [MediaQuery.of], for a mechanism at the widgets layer to observe when
+  ///    this value changes.
+  ///  * [WidgetsBindingObserver], which is used by [MediaQuery].
+  Size get physicalSize => _physicalConstraints.asSize();
+
+  /// The range of allowed dimensions of the rectangle into which the
+  /// application can be drawn, in physical pixels.
+  ///
+  /// When this changes, [onMetricsChanged] is called.
+  ///
+  /// At startup, the size of the application window may not be known before Dart
+  /// code runs. If this value is observed early in the application lifecycle,
+  /// it may report a maximum width and height of zero.
+  ///
+  /// Typicially, the Flutter view's width and height are set by the operating
+  /// system or embedder to fixed values, and thus the minimum and maximum
+  /// widths will be equal, and the minimum and maximum heights will be equal.
+  /// In such a scenario, [physicalSize] returns a [Size] with those dimensions.
+  ///
+  /// The size passed to [SceneBuilder] to create the [Scene] passed to the
+  /// [render] method must match the current constraints.
+  ///
+  /// See also:
+  ///
+  ///  * [MediaQuery.of], for a mechanism at the widgets layer to observe when
+  ///    this value changes.
+  ///  * [WidgetsBindingObserver], which is used by [MediaQuery].
+  WindowConstraints get physicalConstraints => _physicalConstraints;
+
+  WindowConstraints _physicalConstraints = const WindowConstraints._zero();
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the application can render, but over which the operating system
