@@ -567,6 +567,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// The name of the action exposed to the user is the `label`. The text 
   /// direction of this label is the same as the global window.
   void updateAction({int id, String label}) {
+    assert(id != null);
+    assert(label != null);
     _updateAction(id, label);
   }
   void _updateAction(int id, String label) native 'SemanticsUpdateBuilder_updateAction';
