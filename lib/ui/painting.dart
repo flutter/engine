@@ -2886,15 +2886,6 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// cause the new layer to be composited into the previous layer.
   void restore() native 'Canvas_restore';
 
-  /// Restore the current save stack to the state where [saveCount] is gotten.
-  ///
-  /// Use [save] and [saveLayer] to push state onto the stack, and use
-  /// [getSaveCount] to get the [saveCount].
-  ///
-  /// If a state was pushed with with [saveLayer], then this call will also
-  /// cause the new layer to be composited into the previous layer.
-  void restoreToCount(int saveCount) native 'Canvas_restoreToCount';
-
   /// Returns the number of items on the save stack, including the
   /// initial state. This means it returns 1 for a clean canvas, and
   /// that each call to [save] and [saveLayer] increments it, and that

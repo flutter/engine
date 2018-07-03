@@ -48,7 +48,6 @@ class Canvas : public fxl::RefCountedThreadSafe<Canvas>,
                  const Paint& paint,
                  const PaintData& paint_data);
   void restore();
-  void restoreToCount(int saveCount);
   int getSaveCount();
 
   void translate(double dx, double dy);

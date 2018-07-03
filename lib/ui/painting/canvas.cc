@@ -35,7 +35,6 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Canvas);
   V(Canvas, saveLayerWithoutBounds) \
   V(Canvas, saveLayer)              \
   V(Canvas, restore)                \
-  V(Canvas, restoreToCount)         \
   V(Canvas, getSaveCount)           \
   V(Canvas, translate)              \
   V(Canvas, scale)                  \
@@ -119,12 +118,6 @@ void Canvas::restore() {
   if (!canvas_)
     return;
   canvas_->restore();
-}
-
-void Canvas::restoreToCount(int saveCount) {
-  if (!canvas_)
-    return;
-  canvas_->restoreToCount(saveCount);
 }
 
 int Canvas::getSaveCount() {
