@@ -893,7 +893,7 @@ class TextPosition {
 /// The only constraint that can be specified is the [width]. See the discussion
 /// at [width] for more details.
 class ParagraphConstraints {
-  /// Creates constraints for laying out a pargraph.
+  /// Creates constraints for laying out a paragraph.
   ///
   /// The [width] argument must not be null.
   ParagraphConstraints({

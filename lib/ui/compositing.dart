@@ -45,8 +45,35 @@ class Scene extends NativeFieldWrapperClass2 {
 /// it to the scene using [addPicture].
 class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Creates an empty [SceneBuilder] object.
-  SceneBuilder() { _constructor(); }
-  void _constructor() native 'SceneBuilder_constructor';
+  ///
+  /// The argument sets the size for the OEM Flutter view. It must honor the
+  /// [window.physicalConstraints]. It may be omitted if the constraints
+  /// only allow one size to be chosen (in which case [window.physicalSize]
+  /// is that size).
+  SceneBuilder({ Size physicalSize }) {
+    physicalSize ??= window.physicalSize;
+    assert(
+      physicalSize != null,
+      'When window.physicalConstraints do not force a size, '
+      'the "physicalSize" argument to SceneBuilder() must '
+      'explicitly specify the chosen size into which to render.'
+    );
+    assert(
+      physicalSize.isFinite,
+      'The argument to SceneBuilder() must not be infinite.'
+    );
+    assert(
+      physicalSize.width >= window.physicalConstraints.minWidth &&
+      physicalSize.width <= window.physicalConstraints.maxWidth &&
+      physicalSize.height >= window.physicalConstraints.minHeight &&
+      physicalSize.height <= window.physicalConstraints.maxHeight,
+      'The argument to SceneBuilder() must honor the constraints '
+      'specified by window.physicalConstraints.'
+    );
+    _constructor(physicalSize.width, physicalSize.height);
+  }
+  void _constructor(double width,
+                    double height) native 'SceneBuilder_constructor';
 
   /// Pushes a transform operation onto the operation stack.
   ///
