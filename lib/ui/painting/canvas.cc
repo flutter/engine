@@ -167,10 +167,11 @@ void Canvas::clipRect(double left,
                       double top,
                       double right,
                       double bottom,
-                      SkClipOp clipOp) {
+                      SkClipOp clipOp,
+                      bool doAntiAlias) {
   if (!canvas_)
     return;
-  canvas_->clipRect(SkRect::MakeLTRB(left, top, right, bottom), clipOp, true);
+  canvas_->clipRect(SkRect::MakeLTRB(left, top, right, bottom), clipOp, doAntiAlias);
 }
 
 void Canvas::clipRRect(const RRect& rrect, bool doAntiAlias) {
