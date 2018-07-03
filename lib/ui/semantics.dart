@@ -568,7 +568,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// direction of this label is the same as the global window.
   void updateAction({int id, String label}) {
     assert(id != null);
-    assert(label != null);
+    assert(label != null && label != '');
     _updateAction(id, label);
   }
   void _updateAction(int id, String label) native 'SemanticsUpdateBuilder_updateAction';
