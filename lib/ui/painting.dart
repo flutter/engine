@@ -1014,13 +1014,14 @@ enum Clip {
   /// See also:
   ///
   ///  * [antiAlias], which is much faster, and has similar clipping results.
-  antiAliasWithSaveLayer
+  antiAliasWithSaveLayer,
 }
 
 /// The global default value of whether and how to clip a widget.
 ///
-/// TODO(liyuqian): Set it to Clip.none. (https://github.com/flutter/flutter/issues/18057)
-/// We currently have Clip.antiAlias to preserve our old behaviors.
+// TODO(liyuqian): Set it to Clip.none. (https://github.com/flutter/flutter/issues/18057)
+// We currently have Clip.antiAlias to preserve our old behaviors.
+@deprecated // we'll eventually remove this and just use Clip.none.
 const Clip defaultClipBehavior = Clip.none;
 
 // If we actually run on big endian machines, we'll need to do something smarter

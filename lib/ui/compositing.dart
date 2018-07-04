@@ -147,7 +147,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// operation stack.
   ///
   /// By default, the layer's content will not be clipped (clip = [Clip.none]).
-  /// If clipMode is nonzero (Clip.hardEdge, Clip.antiAlias, or Clip.antiAliasWithSaveLayer),
+  /// If clip equals [Clip.hardEdge], [Clip.antiAlias], or [Clip.antiAliasWithSaveLayer],
   /// then the content is clipped to the given shape defined by [path].
   ///
   /// If [elevation] is greater than 0.0, then a shadow is drawn around the layer.
