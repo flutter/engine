@@ -149,8 +149,8 @@ class SemanticsAction {
 
   /// A request that the node should be dismissed.
   ///
-  /// A Snackbar, for example, may have a dismiss action to indicate to the user
-  /// that it can removed after it is no longer relevant.  on Android, TalkBack
+  /// A [Snackbar], for example, may have a dismiss action to indicate to the
+  /// user that it can removed after it is no longer relevant.  On Android, TalkBack
   /// announces this after reading the label. On iOS, VoiceOver users can
   /// perform a standard gesture to dismiss it.
   static const SemanticsAction dismiss = const SemanticsAction._(_kDismissIndex);
@@ -389,9 +389,9 @@ class SemanticsFlag {
 
   /// Whether the semantics node is a live region.
   /// 
-  /// A live region indicates that updates to semantics node are important. Platforms 
-  /// are free to use this information to make polite updates to the user to inform 
-  /// them of this.
+  /// A live region indicates that updates to semantics node are important.
+  /// Platforms may use this information to make polite updates to the user to
+  /// inform them of this.
   /// 
   /// On Android, TalkBack will make a polite announcement of the first and
   /// subsequent updates to the label of this node. This flag is not currently
