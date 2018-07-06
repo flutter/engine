@@ -7,7 +7,6 @@ package io.flutter.view;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.os.AsyncTask;
 import android.util.Log;
 import io.flutter.util.PathUtils;
@@ -17,6 +16,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * A class to intialize the native code.
@@ -38,40 +39,47 @@ class ResourceExtractor {
                 deleteFiles();
             }
 
-            final AssetManager manager = mContext.getResources().getAssets();
+            try (ZipFile apk = new ZipFile(mContext.getPackageCodePath())) {
+                byte[] buffer = null;
+                for (String asset : mResources) {
+                    try {
+                        final File output = new File(dataDir, asset);
 
-            byte[] buffer = null;
-            for (String asset : mResources) {
-                try {
-                    final File output = new File(dataDir, asset);
-
-                    if (output.exists()) {
-                        continue;
-                    }
-                    if (output.getParentFile() != null) {
-                        output.getParentFile().mkdirs();
-                    }
-
-                    try (InputStream is = manager.open(asset)) {
-                        try (OutputStream os = new FileOutputStream(output)) {
-                            if (buffer == null) {
-                                buffer = new byte[BUFFER_SIZE];
-                            }
-
-                            int count = 0;
-                            while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
-                                os.write(buffer, 0, count);
-                            }
-                            os.flush();
+                        if (output.exists()) {
+                            continue;
                         }
+                        if (output.getParentFile() != null) {
+                            output.getParentFile().mkdirs();
+                        }
+
+                        ZipEntry entry = apk.getEntry("assets/" + asset);
+                        if (entry == null) {
+                            continue;
+                        }
+                        try (InputStream is = apk.getInputStream(entry)) {
+                            try (OutputStream os = new FileOutputStream(output)) {
+                                if (buffer == null) {
+                                    buffer = new byte[BUFFER_SIZE];
+                                }
+
+                                int count = 0;
+                                while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
+                                    os.write(buffer, 0, count);
+                                }
+                                os.flush();
+                            }
+                        }
+                    } catch (FileNotFoundException fnfe) {
+                        continue;
+                    } catch (IOException ioe) {
+                        Log.w(TAG, "Exception unpacking resources: " + ioe.getMessage());
+                        deleteFiles();
+                        return;
                     }
-                } catch (FileNotFoundException fnfe) {
-                    continue;
-                } catch (IOException ioe) {
-                    Log.w(TAG, "Exception unpacking resources: " + ioe.getMessage());
-                    deleteFiles();
-                    return;
                 }
+            } catch (IOException e) {
+                Log.e(TAG, "Failed to open APK file", e);
+                return;
             }
 
             if (timestamp != null) {
