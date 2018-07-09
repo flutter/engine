@@ -39,7 +39,7 @@ void DefaultLayerBuilder::PushTransform(const SkMatrix& sk_matrix) {
   SkRect cullRect;
   // Perspective projections don't produce rectangles that are useful for
   // culling for some reason.
-  if (sk_matrix.invert(&inverse_sk_matrix) && !inverse_sk_matrix.hasPerspective()) {
+  if (!sk_matrix.hasPerspective() && sk_matrix.invert(&inverse_sk_matrix)) {
     inverse_sk_matrix.mapRect(&cullRect, cull_rects_.top());
   } else {
     cullRect = kGiantRect;
