@@ -22,6 +22,7 @@ _flutter_framework_headers = [
   "framework/Headers/Flutter.h",
   "framework/Headers/FlutterAppDelegate.h",
   "framework/Headers/FlutterBinaryMessenger.h",
+  "framework/Headers/FlutterCallbackCache.h",
   "framework/Headers/FlutterChannels.h",
   "framework/Headers/FlutterCodecs.h",
   "framework/Headers/FlutterDartProject.h",
@@ -44,6 +45,7 @@ shared_library("create_flutter_framework_dylib") {
   sources = [
     "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterAppDelegate_Internal.h",
+    "framework/Source/FlutterCallbackCache.mm",
     "framework/Source/FlutterChannels.mm",
     "framework/Source/FlutterCodecs.mm",
     "framework/Source/FlutterDartProject.mm",
