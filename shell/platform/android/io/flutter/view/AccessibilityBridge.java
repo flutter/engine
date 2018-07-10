@@ -88,7 +88,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         NAMES_ROUTE(1 << 12),
         IS_HIDDEN(1 << 13),
         IS_IMAGE(1 << 14),
-        IS_LIVE_REGION(1 << 15);
+        IS_LIVE_REGION(1 << 15),
+        HAS_TOGGLED_STATE(1 << 16),
+        IS_TOGGLED(1 << 17);
 
         Flag(int value) {
             this.value = value;
@@ -263,6 +265,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             else
                 result.setClassName("android.widget.CheckBox");
         }
+
+        // boolean hasToggledState = object.hasFlag(Flag.HAS_TOGGLED_STATE);
+        // result.setCheckable(hasToggledState);
+        // if (hasToggledState) {
+        //     result.setChecked(object.hasFlag(Flag.IS_TOGGLED));
+        //     result.setClassName("android.widget.Switch");
+        // }
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
         result.setText(object.getValueLabelHint());

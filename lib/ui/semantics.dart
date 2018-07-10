@@ -242,6 +242,8 @@ class SemanticsFlag {
   static const int _kIsHiddenIndex = 1 << 13;
   static const int _kIsImageIndex = 1 << 14;
   static const int _kIsLiveRegionIndex = 1 << 15;
+  static const int _kHasToggledStateIndex = 1 << 16;
+  static const int _kIsToggled = 1 << 17;
 
   const SemanticsFlag._(this.index);
 
@@ -402,6 +404,17 @@ class SemanticsFlag {
   /// region causes a polite announcement to be generated automatically.
   static const SemanticsFlag isLiveRegion = const SemanticsFlag._(_kIsLiveRegionIndex);
 
+  /// The semantics node has the quality of either being "on" or "off".
+  ///
+  /// For example, a switch has toggled state.
+  static const SemanticsFlag hasToggledState = const SemanticsFlag._(_kHasToggledStateIndex);
+
+  /// If true, the semantics node is "on". If false, the semantics node is
+  /// "off".
+  ///
+  /// For example, if a switch is in the on position, [isToggled] is true.
+  static const SemanticsFlag isToggled = const SemanticsFlag._(_kIsToggled);
+
   /// The possible semantics flags.
   ///
   /// The map's key is the [index] of the flag and the value is the flag itself.
@@ -422,6 +435,8 @@ class SemanticsFlag {
     _kIsHiddenIndex: isHidden,
     _kIsImageIndex: isImage,
     _kIsLiveRegionIndex: isLiveRegion,
+    _kHasToggledStateIndex: isToggled,
+    _kIsToggled: isToggled,
   };
 
   @override
@@ -459,6 +474,10 @@ class SemanticsFlag {
         return 'SemanticsFlag.isImage';
       case _kIsLiveRegionIndex:
         return 'SemanticsFlag.isLiveRegion';
+      case _kHasToggledStateIndex:
+        return 'SemanticsFlag.hasToggledState';
+      case _kIsToggled:
+        return 'SemanticsFlag.isToggled';
     }
     return null;
   }
