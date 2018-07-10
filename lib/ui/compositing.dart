@@ -66,8 +66,11 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// Rasterization outside the given rectangle is discarded.
   ///
-  /// See [pop] for details about the operation stack.
-  void pushClipRect(Rect rect) {
+  /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
+  /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
+  void pushClipRect(Rect rect, {Clip clip = Clip.antiAlias}) {
+    assert(clip != null);
+    assert(clip != Clip.none);
     _pushClipRect(rect.left, rect.right, rect.top, rect.bottom);
   }
   void _pushClipRect(double left,
@@ -81,7 +84,11 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  void pushClipRRect(RRect rrect, {Clip clip = Clip.antiAlias}) => _pushClipRRect(rrect._value, clip.index);
+  void pushClipRRect(RRect rrect, {Clip clip = Clip.antiAlias}) {
+    assert(clip != null);
+    assert(clip != Clip.none);
+    _pushClipRRect(rrect._value, clip.index);
+  }
   void _pushClipRRect(Float32List rrect, int clipMode) native 'SceneBuilder_pushClipRRect';
 
   /// Pushes a path clip operation onto the operation stack.
@@ -90,7 +97,11 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack. See [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  void pushClipPath(Path path, {Clip clip = Clip.antiAlias}) => _pushClipPath(path, clip.index);
+  void pushClipPath(Path path, {Clip clip = Clip.antiAlias}) {
+    assert(clip != null);
+    assert(clip != Clip.none);
+    _pushClipPath(path, clip.index);
+  }
   void _pushClipPath(Path path, int clipMode) native 'SceneBuilder_pushClipPath';
 
   /// Pushes an opacity operation onto the operation stack.
