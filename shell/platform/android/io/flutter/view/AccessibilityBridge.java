@@ -257,21 +257,19 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
         
         boolean hasCheckedState = object.hasFlag(Flag.HAS_CHECKED_STATE);
-        result.setCheckable(hasCheckedState);
+        boolean hasToggledState = object.hasFlag(Flag.HAS_TOGGLED_STATE);
+        assert !(hasCheckedState && hasToggledState);
+        result.setCheckable(hasCheckedState || hasToggledState);
         if (hasCheckedState) {
             result.setChecked(object.hasFlag(Flag.IS_CHECKED));
             if (object.hasFlag(Flag.IS_IN_MUTUALLY_EXCLUSIVE_GROUP))
                 result.setClassName("android.widget.RadioButton");
             else
                 result.setClassName("android.widget.CheckBox");
+        } else if (hasToggledState) {
+            result.setChecked(object.hasFlag(Flag.IS_TOGGLED));
+            result.setClassName("android.widget.Switch");
         }
-
-        // boolean hasToggledState = object.hasFlag(Flag.HAS_TOGGLED_STATE);
-        // result.setCheckable(hasToggledState);
-        // if (hasToggledState) {
-        //     result.setChecked(object.hasFlag(Flag.IS_TOGGLED));
-        //     result.setClassName("android.widget.Switch");
-        // }
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
         result.setText(object.getValueLabelHint());

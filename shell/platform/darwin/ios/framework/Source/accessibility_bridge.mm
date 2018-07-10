@@ -350,6 +350,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     traits |= UIAccessibilityTraitAdjustable;
   }
   if ([self node].HasFlag(blink::SemanticsFlags::kIsSelected) ||
+      [self node].HasFlag(blink::SemanticsFlags::kIsToggled) ||
       [self node].HasFlag(blink::SemanticsFlags::kIsChecked)) {
     traits |= UIAccessibilityTraitSelected;
   }
