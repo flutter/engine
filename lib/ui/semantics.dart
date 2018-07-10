@@ -243,7 +243,7 @@ class SemanticsFlag {
   static const int _kIsImageIndex = 1 << 14;
   static const int _kIsLiveRegionIndex = 1 << 15;
   static const int _kHasToggledStateIndex = 1 << 16;
-  static const int _kIsToggled = 1 << 17;
+  static const int _kIsToggledIndex = 1 << 17;
 
   const SemanticsFlag._(this.index);
 
@@ -413,7 +413,7 @@ class SemanticsFlag {
   /// "off".
   ///
   /// For example, if a switch is in the on position, [isToggled] is true.
-  static const SemanticsFlag isToggled = const SemanticsFlag._(_kIsToggled);
+  static const SemanticsFlag isToggled = const SemanticsFlag._(_kIsToggledIndex);
 
   /// The possible semantics flags.
   ///
@@ -435,8 +435,8 @@ class SemanticsFlag {
     _kIsHiddenIndex: isHidden,
     _kIsImageIndex: isImage,
     _kIsLiveRegionIndex: isLiveRegion,
-    _kHasToggledStateIndex: isToggled,
-    _kIsToggled: isToggled,
+    _kHasToggledStateIndex: hasToggledState,
+    _kIsToggledIndex: isToggled,
   };
 
   @override
@@ -476,7 +476,7 @@ class SemanticsFlag {
         return 'SemanticsFlag.isLiveRegion';
       case _kHasToggledStateIndex:
         return 'SemanticsFlag.hasToggledState';
-      case _kIsToggled:
+      case _kIsToggledIndex:
         return 'SemanticsFlag.isToggled';
     }
     return null;
