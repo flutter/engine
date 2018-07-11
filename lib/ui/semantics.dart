@@ -401,12 +401,8 @@ class SemanticsFlag {
   /// Whether the semantics node is a live region.
   /// 
   /// A live region indicates that updates to semantics node are important.
-  /// Platforms may use this information to make polite updates to the user to
-  /// inform them of this.
-  /// 
-  /// On Android, TalkBack will make a polite announcement of the first and
-  /// subsequent updates to the label of this node. This flag is not currently
-  /// supported on iOS.
+  /// Platforms may use this information to make polite announcements to the 
+  /// user to inform them of updates to this node.
   /// 
   /// An example of a live region is a [SnackBar] widget. When it appears
   /// on the screen it may be difficult to focus to read the value. A live
