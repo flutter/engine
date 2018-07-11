@@ -12,6 +12,9 @@
 
 namespace blink {
 
+/// A custom accessibility action is used to indicate additional semantics 
+/// actions that a user can perform on a semantics node beyond the
+/// preconfigured options.
 struct CustomAccessibilityAction {
   CustomAccessibilityAction();
   ~CustomAccessibilityAction();
@@ -21,7 +24,7 @@ struct CustomAccessibilityAction {
 };
 
 
-// Contains local context actions that need to be updated.
+// Contains custom accessibility actions that need to be updated.
 //
 // The keys in the map are stable action IDs, and the values contain
 // semantic information for the action corresponding to that id.

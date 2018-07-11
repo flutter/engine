@@ -395,7 +395,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
             }
             default:
                 // might be a custom accessibility action.
-                final int flutterId = action - firstContextId;
+                final int flutterId = action - firstResourceId;
                 CustomAccessibilityAction contextAction = mCustomAccessibilityActions.get(flutterId);
                 if (contextAction != null) {
                     mOwner.dispatchSemanticsAction(virtualViewId, Action.CUSTOM_ACTION, contextAction.id);
@@ -465,7 +465,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         if (action == null) {
             action = new CustomAccessibilityAction();
             action.id = id;
-            action.resourceId = id + firstContextId;
+            action.resourceId = id + firstResourceId;
             mCustomAccessibilityActions.put(id, action);
         }
         return action;
@@ -775,13 +775,17 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
     private class CustomAccessibilityAction {
         CustomAccessibilityAction() {}
-
+        
+        /// Resource id is the id of the custom action plus a minimum value so that the identifier
+        /// does not collide with existing Android accessibility actions.
         int resourceId = -1;
         int id = -1;
+
+        /// The label is the user presented value which is displayed in the local context menu.
         String label;
     }
     /// Value is derived from ACTION_TYPE_MASK in AccessibilityNodeInfo.java
-    static int firstContextId = 267386881;
+    static int firstResourceId = 267386881;
 
     private class SemanticsObject {
         SemanticsObject() { }

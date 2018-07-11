@@ -19,7 +19,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SemanticsUpdateBuilder);
 
 #define FOR_EACH_BINDING(V)               \
   V(SemanticsUpdateBuilder, updateNode)   \
-  V(SemanticsUpdateBuilder, updateAction) \
+  V(SemanticsUpdateBuilder, updateCustomAction) \
   V(SemanticsUpdateBuilder, build)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
@@ -83,8 +83,8 @@ void SemanticsUpdateBuilder::updateNode(int id,
   nodes_[id] = node;
 }
 
-void SemanticsUpdateBuilder::updateAction(int id,
-                                          std::string label) {
+void SemanticsUpdateBuilder::updateCustomAction(int id,
+                                                std::string label) {
   CustomAccessibilityAction action;
   action.id = id;
   action.label = label;
