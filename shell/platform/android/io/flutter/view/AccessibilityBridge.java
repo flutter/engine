@@ -627,11 +627,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 String priorLabelHint = mLiveRegions.get(object.id);
                 String labelHint = object.getLabelHint();
                 mLiveRegions.put(object.id, labelHint);
-                // Always send initial content changed event, but only notify about subsequent events
-                // if the node is not focused. This allows to release any framework side throttling on
-                // semantic node updates so that the user can always read the most up to date value
-                // without being overwhelmed.
-                if (priorLabelHint == null || (mA11yFocusedObject != object && !priorLabelHint.equals(labelHint))) {
+                if (priorLabelHint == null) {
                     sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED); 
                 }
             }
@@ -728,6 +724,16 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 AccessibilityEvent e = obtainAccessibilityEvent(ROOT_NODE_ID, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
                 e.getText().add((String) data.get("message"));
                 sendAccessibilityEvent(e);
+            }
+            case "liveRegionUpdate": {
+                Integer nodeId = (Integer) annotatedEvent.get("nodeId");
+                if (nodeId == null) {
+                    return;
+                }
+                if (!mLiveRegions.containsKey(nodeId)) {
+                    return;
+                }
+                sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED); 
             }
         }
     }
