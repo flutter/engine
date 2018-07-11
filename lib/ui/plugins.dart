@@ -38,6 +38,9 @@ abstract class PluginUtilities {
   /// [PluginUtilities.getCallbackFromHandle] to retrieve a tear-off of the
   /// original callback. If `callback` is not a top-level or static function,
   /// null is returned.
+  ///
+  /// The result of this method should be cached in order to avoid repeated
+  /// and potentially expensive lookups.
   static CallbackHandle getCallbackHandle(Function callback) {
     assert(callback != null, "'callback' must not be null.");
     return new CallbackHandle.fromRawHandle(_getCallbackHandle(callback));
@@ -51,6 +54,9 @@ abstract class PluginUtilities {
   /// If `handle` is not a valid handle returned by
   /// [PluginUtilities.getCallbackHandle], null is returned. Otherwise, a
   /// tear-off of the callback associated with `handle` is returned.
+  ///
+  /// The result of this method should be cached in order to avoid repeated
+  /// and potentially expensive lookups.
   static Function getCallbackFromHandle(CallbackHandle handle) {
     assert(handle != null, "'handle' must not be null.");
     return _getCallbackFromHandle(handle.toRawHandle());
