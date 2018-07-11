@@ -29,6 +29,11 @@ class CallbackHandle {
 
 /// Functionality for Flutter plugin authors.
 abstract class PluginUtilities {
+  static Map<Function, CallbackHandle> _forwardCache =
+      new Map<Function, CallbackHandle>();
+  static Map<CallbackHandle, Function> _backwardCache =
+      new Map<CallbackHandle, Function>();
+
   /// Get a handle to a named top-level or static callback function which can
   /// be easily passed between isolates.
   ///
@@ -38,12 +43,10 @@ abstract class PluginUtilities {
   /// [PluginUtilities.getCallbackFromHandle] to retrieve a tear-off of the
   /// original callback. If `callback` is not a top-level or static function,
   /// null is returned.
-  ///
-  /// The result of this method should be cached in order to avoid repeated
-  /// and potentially expensive lookups.
   static CallbackHandle getCallbackHandle(Function callback) {
     assert(callback != null, "'callback' must not be null.");
-    return new CallbackHandle.fromRawHandle(_getCallbackHandle(callback));
+    return _forwardCache.putIfAbsent(callback,
+        () => new CallbackHandle.fromRawHandle(_getCallbackHandle(callback)));
   }
 
   /// Get a tear-off of a named top-level or static callback represented by a
@@ -54,11 +57,9 @@ abstract class PluginUtilities {
   /// If `handle` is not a valid handle returned by
   /// [PluginUtilities.getCallbackHandle], null is returned. Otherwise, a
   /// tear-off of the callback associated with `handle` is returned.
-  ///
-  /// The result of this method should be cached in order to avoid repeated
-  /// and potentially expensive lookups.
   static Function getCallbackFromHandle(CallbackHandle handle) {
     assert(handle != null, "'handle' must not be null.");
-    return _getCallbackFromHandle(handle.toRawHandle());
+    return _backwardCache.putIfAbsent(
+        handle, () => _getCallbackFromHandle(handle.toRawHandle()));
   }
 }
