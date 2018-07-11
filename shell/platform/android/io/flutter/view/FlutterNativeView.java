@@ -43,6 +43,7 @@ public class FlutterNativeView implements BinaryMessenger {
     }
 
     public void destroy() {
+        mPluginRegistry.destroy();
         mFlutterView = null;
         nativeDestroy(mNativePlatformView);
         mNativePlatformView = 0;
@@ -81,23 +82,8 @@ public class FlutterNativeView implements BinaryMessenger {
         applicationIsRunning = true;
     }
 
-    public void runFromSource(final String assetsDirectory, final String main, final String packages) {
-        assertAttached();
-        if (applicationIsRunning)
-            throw new AssertionError("This Flutter engine instance is already running an application");
-
-        nativeRunBundleAndSource(mNativePlatformView, assetsDirectory, main, packages);
-
-        applicationIsRunning = true;
-    }
-
     public boolean isApplicationRunning() {
       return applicationIsRunning;
-    }
-
-    public void setAssetBundlePathOnUI(final String assetsDirectory) {
-        assertAttached();
-        nativeSetAssetBundlePathOnUI(mNativePlatformView, assetsDirectory);
     }
 
     public static String getObservatoryUri() {
@@ -198,6 +184,13 @@ public class FlutterNativeView implements BinaryMessenger {
         mFlutterView.updateSemantics(buffer, strings);
     }
 
+    // Called by native to update the custom accessibility actions.
+    private void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
+        if (mFlutterView == null)
+            return;
+        mFlutterView.updateCustomAccessibilityActions(buffer, strings);
+    }
+
     // Called by native to notify first Flutter frame rendered.
     private void onFirstFrame() {
         if (mFlutterView == null)
@@ -215,14 +208,6 @@ public class FlutterNativeView implements BinaryMessenger {
         String entrypoint,
         boolean reuseRuntimeController,
         AssetManager manager);
-
-    private static native void nativeRunBundleAndSource(long nativePlatformViewAndroid,
-        String bundlePath,
-        String main,
-        String packages);
-
-    private static native void nativeSetAssetBundlePathOnUI(long nativePlatformViewAndroid,
-        String bundlePath);
 
     private static native String nativeGetObservatoryUri();
 

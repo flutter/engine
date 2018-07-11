@@ -13,49 +13,29 @@ import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.KeyCharacterMap;
-import android.view.KeyEvent;
-import android.view.MotionEvent;
-import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.WindowInsets;
-import android.view.WindowManager;
+import android.view.*;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-import io.flutter.app.FlutterActivity;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.plugin.common.*;
-import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.view.VsyncWaiter;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -646,55 +626,6 @@ public class FlutterView extends SurfaceView
         postRun();
     }
 
-    private void runFromSource(final String assetsDirectory, final String main, final String packages) {
-        Runnable runnable = new Runnable() {
-            public void run() {
-                assertAttached();
-                preRun();
-                mNativeView.runFromSource(assetsDirectory, main, packages);
-                postRun();
-                synchronized (this) {
-                    notify();
-                }
-            }
-        };
-
-        try {
-            synchronized (runnable) {
-                // Post to the Android UI thread and wait for the response.
-                post(runnable);
-                runnable.wait();
-            }
-        } catch (InterruptedException e) {
-            Log.e(TAG, "Thread got interrupted waiting for " +
-                "RunFromSourceRunnable to finish", e);
-        }
-    }
-
-    private void setAssetBundlePath(final String assetsDirectory) {
-        Runnable runnable = new Runnable() {
-            public void run() {
-                assertAttached();
-                mNativeView.setAssetBundlePathOnUI(assetsDirectory);
-                synchronized (this) {
-                    notify();
-                }
-            }
-        };
-
-        try {
-            synchronized (runnable) {
-                // Post to the Android UI thread and wait for the response.
-                post(runnable);
-                runnable.wait();
-            }
-        } catch (InterruptedException e) {
-            Log.e(TAG, "Thread got interrupted waiting for " +
-                "setAssetBundlePath to finish", e);
-        }
-    }
-
-
     /**
      * Return the most recent frame as a bitmap.
      *
@@ -781,6 +712,17 @@ public class FlutterView extends SurfaceView
         }
     }
 
+    public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
+        try {
+            if (mAccessibilityNodeProvider != null) {
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                mAccessibilityNodeProvider.updateCustomAccessibilityActions(buffer, strings);
+            }
+        } catch (Exception ex) {
+            Log.e(TAG, "Uncaught exception while updating local context actions", ex);
+        }
+    }
+
     // Called by native to notify first Flutter frame rendered.
     public void onFirstFrame() {
         // Allow listeners to remove themselves when they are called.
@@ -857,6 +799,7 @@ public class FlutterView extends SurfaceView
             if (mAccessibilityNodeProvider != null) {
                 mAccessibilityNodeProvider.setAccessibilityEnabled(false);
             }
+            nativeSetSemanticsEnabled(mNativeView.get(), false);
         }
         resetWillNotDraw();
     }
@@ -895,8 +838,8 @@ public class FlutterView extends SurfaceView
         mAccessibilityEnabled = true;
         if (mAccessibilityNodeProvider == null) {
             mAccessibilityNodeProvider = new AccessibilityBridge(this);
-            nativeSetSemanticsEnabled(mNativeView.get(), true);
         }
+        nativeSetSemanticsEnabled(mNativeView.get(), true);
         mAccessibilityNodeProvider.setAccessibilityEnabled(true);
     }
 

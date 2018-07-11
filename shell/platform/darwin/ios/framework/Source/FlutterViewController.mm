@@ -167,18 +167,6 @@
     return false;
   }
 
-  // Launch the Dart application with the inferred run configuration.
-  _shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fxl::MakeCopyable([engine = _shell->GetEngine(),                   //
-                         config = [_dartProject.get() runConfiguration]  //
-  ]() mutable {
-        if (engine) {
-          auto result = engine->Run(std::move(config));
-          if (!result) {
-            FXL_LOG(ERROR) << "Could not launch engine with configuration.";
-          }
-        }
-      }));
   return true;
 }
 
@@ -398,6 +386,20 @@
 
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
+
+  // Launch the Dart application with the inferred run configuration.
+  _shell->GetTaskRunners().GetUITaskRunner()->PostTask(
+      fxl::MakeCopyable([engine = _shell->GetEngine(),                   //
+                         config = [_dartProject.get() runConfiguration]  //
+  ]() mutable {
+        if (engine) {
+          auto result = engine->Run(std::move(config));
+          if (!result) {
+            FXL_LOG(ERROR) << "Could not launch engine with configuration.";
+          }
+        }
+      }));
+
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
   if (_viewportMetrics.physical_width)
@@ -715,8 +717,39 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 - (void)performAction:(FlutterTextInputAction)action withClient:(int)client {
   NSString* actionString;
   switch (action) {
+    case FlutterTextInputActionUnspecified:
+      // Where did the term "unspecified" come from? iOS has a "default" and Android
+      // has "unspecified." These 2 terms seem to mean the same thing but we need
+      // to pick just one. "unspecified" was chosen because "default" is often a
+      // reserved word in languages with switch statements (dart, java, etc).
+      actionString = @"TextInputAction.unspecified";
+      break;
     case FlutterTextInputActionDone:
       actionString = @"TextInputAction.done";
+      break;
+    case FlutterTextInputActionGo:
+      actionString = @"TextInputAction.go";
+      break;
+    case FlutterTextInputActionSend:
+      actionString = @"TextInputAction.send";
+      break;
+    case FlutterTextInputActionSearch:
+      actionString = @"TextInputAction.search";
+      break;
+    case FlutterTextInputActionNext:
+      actionString = @"TextInputAction.next";
+      break;
+    case FlutterTextInputActionContinue:
+      actionString = @"TextInputAction.continue";
+      break;
+    case FlutterTextInputActionJoin:
+      actionString = @"TextInputAction.join";
+      break;
+    case FlutterTextInputActionRoute:
+      actionString = @"TextInputAction.route";
+      break;
+    case FlutterTextInputActionEmergencyCall:
+      actionString = @"TextInputAction.emergencyCall";
       break;
     case FlutterTextInputActionNewline:
       actionString = @"TextInputAction.newline";

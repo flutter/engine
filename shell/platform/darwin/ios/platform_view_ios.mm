@@ -61,16 +61,17 @@ sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
 void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
   if (enabled && !accessibility_bridge_) {
     accessibility_bridge_ = std::make_unique<AccessibilityBridge>(owner_view_, this);
-  } else {
+  } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
   }
   PlatformView::SetSemanticsEnabled(enabled);
 }
 
 // |shell::PlatformView|
-void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update) {
+void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update,
+                                      blink::CustomAccessibilityActionUpdates actions) {
   if (accessibility_bridge_) {
-    accessibility_bridge_->UpdateSemantics(std::move(update));
+    accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
   }
 }
 
