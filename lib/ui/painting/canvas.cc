@@ -35,7 +35,6 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Canvas);
   V(Canvas, saveLayerWithoutBounds) \
   V(Canvas, saveLayer)              \
   V(Canvas, restore)                \
-  V(Canvas, restoreToCount)         \
   V(Canvas, getSaveCount)           \
   V(Canvas, translate)              \
   V(Canvas, scale)                  \
@@ -121,12 +120,6 @@ void Canvas::restore() {
   canvas_->restore();
 }
 
-void Canvas::restoreToCount(int saveCount) {
-  if (!canvas_)
-    return;
-  canvas_->restoreToCount(saveCount);
-}
-
 int Canvas::getSaveCount() {
   if (!canvas_)
     return 0;
@@ -167,10 +160,11 @@ void Canvas::clipRect(double left,
                       double top,
                       double right,
                       double bottom,
-                      SkClipOp clipOp) {
+                      SkClipOp clipOp,
+                      bool doAntiAlias) {
   if (!canvas_)
     return;
-  canvas_->clipRect(SkRect::MakeLTRB(left, top, right, bottom), clipOp, true);
+  canvas_->clipRect(SkRect::MakeLTRB(left, top, right, bottom), clipOp, doAntiAlias);
 }
 
 void Canvas::clipRRect(const RRect& rrect, bool doAntiAlias) {
