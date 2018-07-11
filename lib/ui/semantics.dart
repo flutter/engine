@@ -394,10 +394,8 @@ class SemanticsFlag {
 
   /// Whether the semantics node represents an image.
   ///
-  /// Platforms have special behavior for images. Both TalkBack and VoiceOver
-  /// will inform the user the the semantics node represents an image. Talkback
-  /// also allows users to provide their own labels to images that have not
-  /// been labeled.
+  /// Both TalkBack and VoiceOver will inform the user the the semantics node
+  /// represents an image.
   static const SemanticsFlag isImage = const SemanticsFlag._(_kIsImageIndex);
 
   /// Whether the semantics node is a live region.

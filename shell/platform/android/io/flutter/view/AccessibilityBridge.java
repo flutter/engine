@@ -188,9 +188,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
         if (object.hasFlag(Flag.IS_IMAGE)) {
           result.setClassName("android.widget.ImageView");
-          // conform to the expected id from TalkBack's CustomLabelManager.
+          // TODO(jonahwilliams): Figure out a way conform to the expected id from TalkBack's CustomLabelManager.
           // talkback/src/main/java/labeling/CustomLabelManager.java#L525
-          result.setViewIdResourceName(mPackageName + ":id/" + Integer.toString(virtualViewId));
         }
         if (object.hasAction(Action.DISMISS)) {
           result.setDismissable(true);
