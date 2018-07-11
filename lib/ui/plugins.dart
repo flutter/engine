@@ -4,6 +4,32 @@
 
 part of dart.ui;
 
+/// An wrapper for a raw callback handle.
+///
+/// This class should only be instantiated
+class CallbackHandle {
+  final int _handle;
+
+  /// Create an instance using a raw callback handle.
+  ///
+  /// Only values produced by a call to [CallbackHandle.toRawHandle] should be
+  /// used, otherwise this object will be an invalid handle.
+  CallbackHandle.fromRawHandle(this._handle) {
+    assert(_handle != null, "'_handle' must not be null.");
+  }
+
+  /// Get the raw callback handle to pass over a [MethodChannel] or isolate
+  /// port.
+  int toRawHandle() => _handle;
+
+  @override
+  int get hashCode => _handle;
+
+  @override
+  bool operator ==(other) =>
+      ((other is CallbackHandle) && (_handle == other._handle));
+}
+
 /// Functionality for Flutter plugin authors.
 abstract class PluginUtilities {
   /// Get a handle to a named top-level or static callback function which can
@@ -11,13 +37,13 @@ abstract class PluginUtilities {
   ///
   /// `callback` must not be null.
   ///
-  /// Returns an integer that can be provided to
+  /// Returns a [CallbackHandle] that can be provided to
   /// [PluginUtilities.getCallbackFromHandle] to retrieve a tear-off of the
   /// original callback. If `callback` is not a top-level or static function,
   /// null is returned.
-  static int getCallbackHandle(Function callback) {
+  static CallbackHandle getCallbackHandle(Function callback) {
     assert(callback != null, "'callback' must not be null.");
-    return _getCallbackHandle(callback);
+    return new CallbackHandle.fromRawHandle(_getCallbackHandle(callback));
   }
 
   /// Get a tear-off of a named top-level or static callback represented by a
@@ -28,8 +54,8 @@ abstract class PluginUtilities {
   /// If `handle` is not a valid handle returned by
   /// [PluginUtilities.getCallbackHandle], null is returned. Otherwise, a
   /// tear-off of the callback associated with `handle` is returned.
-  static Function getCallbackFromHandle(int handle) {
+  static Function getCallbackFromHandle(CallbackHandle handle) {
     assert(handle != null, "'handle' must not be null.");
-    return _getCallbackFromHandle(handle);
+    return _getCallbackFromHandle(handle.toRawHandle());
   }
 }
