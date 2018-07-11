@@ -695,6 +695,8 @@ static UITextAutocapitalizationType ToUITextAutocapitalizationType(NSString* inp
     _view.keyboardAppearance = UIKeyboardAppearanceDark;
   } else if ([keyboardAppearance isEqualToString:@"Brightness.light"]) { 
     _view.keyboardAppearance = UIKeyboardAppearanceLight;
+  } else {
+    _view.keyboardAppearance = UIKeyboardAppearanceDefault;
   }
   _view.secureTextEntry = [configuration[@"obscureText"] boolValue];
   NSString* autocorrect = configuration[@"autocorrect"];
