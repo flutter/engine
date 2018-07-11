@@ -34,6 +34,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
     private Map<Integer, SemanticsObject> mObjects;
     private Map<Integer, CustomAccessibilityAction> mCustomAccessibilityActions;
+
+    private Set<Integer> mLiveRegions;
     private final FlutterView mOwner;
     private boolean mAccessibilityEnabled = false;
     private SemanticsObject mA11yFocusedObject;
@@ -104,6 +106,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         assert owner != null;
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
+        mLiveRegions = new HashSet<>();
         mCustomAccessibilityActions = new HashMap<Integer, CustomAccessibilityAction>();
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(owner, "flutter/accessibility",
@@ -661,6 +664,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 }
             }
             if (object.hasFlag(Flag.IS_LIVE_REGION)) {
+                mLiveRegions.add(object.id);
                 sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED); 
             }
         }
@@ -757,9 +761,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 e.getText().add((String) data.get("message"));
                 sendAccessibilityEvent(e);
             }
-            case "liveRegionUpdate": {
+            case "updateLiveRegion": {
                 Integer nodeId = (Integer) annotatedEvent.get("nodeId");
                 if (nodeId == null) {
+                    return;
+                }
+                if (!mLiveRegions.contains(nodeId)) {
                     return;
                 }
                 sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
@@ -777,6 +784,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private void willRemoveSemanticsObject(SemanticsObject object) {
         assert mObjects.containsKey(object.id);
         assert mObjects.get(object.id) == object;
+        mLiveRegions.remove(object.id);
         object.parent = null;
         if (mA11yFocusedObject == object) {
             sendAccessibilityEvent(mA11yFocusedObject.id, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
