@@ -150,9 +150,9 @@ class SemanticsAction {
   /// A request that the node should be dismissed.
   ///
   /// A [Snackbar], for example, may have a dismiss action to indicate to the
-  /// user that it can removed after it is no longer relevant.  On Android, TalkBack
-  /// announces this after reading the label. On iOS, VoiceOver users can
-  /// perform a standard gesture to dismiss it.
+  /// user that it can be removed after it is no longer relevant.  On Android, 
+  /// TalkBack announces this after reading the label. On iOS, VoiceOver users
+  /// can perform a standard gesture to dismiss it.
   static const SemanticsAction dismiss = const SemanticsAction._(_kDismissIndex);
 
   /// The possible semantics actions.
@@ -384,9 +384,10 @@ class SemanticsFlag {
 
   /// Whether the semantics node represents an image.
   ///
-  /// Platforms have special behavior for images.  TalkBack will inform the user
-  /// the labeled node is an image. iOS may use the image flag to avoid
-  /// inverting their color when using smart invert.
+  /// Platforms have special behavior for images. Both TalkBack and VoiceOver
+  /// will inform the user the the semantics node represents an image. Talkback
+  /// also allows users to provide their own labels to images that have not
+  /// been labeled.
   static const SemanticsFlag isImage = const SemanticsFlag._(_kIsImageIndex);
 
   /// Whether the semantics node is a live region.
