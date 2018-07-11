@@ -5,8 +5,6 @@
 part of dart.ui;
 
 /// An wrapper for a raw callback handle.
-///
-/// This class should only be instantiated
 class CallbackHandle {
   final int _handle;
 
@@ -14,9 +12,8 @@ class CallbackHandle {
   ///
   /// Only values produced by a call to [CallbackHandle.toRawHandle] should be
   /// used, otherwise this object will be an invalid handle.
-  CallbackHandle.fromRawHandle(this._handle) {
-    assert(_handle != null, "'_handle' must not be null.");
-  }
+  CallbackHandle.fromRawHandle(this._handle)
+      : assert(_handle != null, "'_handle' must not be null.");
 
   /// Get the raw callback handle to pass over a [MethodChannel] or isolate
   /// port.
@@ -26,8 +23,8 @@ class CallbackHandle {
   int get hashCode => _handle;
 
   @override
-  bool operator ==(other) =>
-      ((other is CallbackHandle) && (_handle == other._handle));
+  bool operator ==(dynamic other) =>
+      (other is CallbackHandle) && (_handle == other._handle);
 }
 
 /// Functionality for Flutter plugin authors.
