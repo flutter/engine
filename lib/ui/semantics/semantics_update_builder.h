@@ -48,7 +48,7 @@ class SemanticsUpdateBuilder
                   const tonic::Int32List& childrenInHitTestOrder,
                   const tonic::Int32List& customAccessibilityActions);
 
-  void updateCustomAction(int id, 
+  void updateCustomAction(int id,
                           std::string label);
 
   fxl::RefPtr<SemanticsUpdate> build();
