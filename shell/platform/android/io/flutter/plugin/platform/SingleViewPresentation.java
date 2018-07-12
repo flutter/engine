@@ -18,7 +18,7 @@ class SingleViewPresentation extends Presentation {
     private final PlatformViewFactory mViewFactory;
 
     private View mView;
-    private String mViewId;
+    private int mViewId;
 
     // As the root view of a display cannot be detached, we use this mContainer
     // as the root, and attach mView to it. This allows us to detach mView.
@@ -28,7 +28,7 @@ class SingleViewPresentation extends Presentation {
      * Creates a presentation that will use the view factory to create a new
      * platform view in the presentation's onCreate, and attach it.
      */
-    public SingleViewPresentation(Context outerContext, Display display, PlatformViewFactory viewFactory, String viewId) {
+    public SingleViewPresentation(Context outerContext, Display display, PlatformViewFactory viewFactory, int viewId) {
         super(outerContext, display);
         mViewFactory = viewFactory;
         mViewId = viewId;

@@ -140,7 +140,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
                 textureEntry.surfaceTexture(),
                 toPhysicalPixels(logicalWidth),
                 toPhysicalPixels(logicalHeight),
-                Integer.toString(id)
+                id
         );
 
         if (vdController == null) {

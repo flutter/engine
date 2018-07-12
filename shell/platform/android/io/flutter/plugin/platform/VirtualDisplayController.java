@@ -22,7 +22,7 @@ class VirtualDisplayController {
             SurfaceTexture surfaceTexture,
             int width,
             int height,
-            String viewId
+            int viewId
     ) {
         surfaceTexture.setDefaultBufferSize(width, height);
         Surface surface = new Surface(surfaceTexture);
@@ -59,7 +59,7 @@ class VirtualDisplayController {
             PlatformViewFactory viewFactory,
             Surface surface,
             SurfaceTexture surfaceTexture,
-            String viewId
+            int viewId
     ) {
         mSurfaceTexture = surfaceTexture;
         mSurface = surface;

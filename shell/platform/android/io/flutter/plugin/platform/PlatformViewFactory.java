@@ -13,5 +13,5 @@ public interface PlatformViewFactory {
      * @param context the context to be used when creating the view, this is different than FlutterView's context.
      * @param viewId unique identifier for the created instance, this value is known on the Dart side.
      */
-    PlatformView create(Context context, String viewId);
+    PlatformView create(Context context, int viewId);
 }
