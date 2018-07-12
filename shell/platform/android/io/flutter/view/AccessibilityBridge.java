@@ -34,8 +34,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
     private Map<Integer, SemanticsObject> mObjects;
     private Map<Integer, CustomAccessibilityAction> mCustomAccessibilityActions;
-    /// Creating a live region through the async semantics bridge requires some compromises in the design.
-    /// For starters, Talkback will not know about the 
+    // Track whether the corresponding accessibility node has been created yet, and
+    // if an announcement needs to be made. TalkBack will not read the contents of
+    // the node until after the first TYPE_WINDOW_STATE_CHANGED event is dispatched.
     private Map<Integer, LiveRegionState> mLiveRegions;
     private final FlutterView mOwner;
     private boolean mAccessibilityEnabled = false;
@@ -273,6 +274,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         if (object.hasFlag(Flag.IS_LIVE_REGION)) {
             result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
             LiveRegionState state = mLiveRegions.get(object.id);
+            // If the live region is newly created, mark the node as dirty
+            // for future updates. Sending an event here won't do anything
+            // since Talkback doesn't know it is a live region yet.
             if (state == LiveRegionState.CREATED) {
                 mLiveRegions.put(object.id, LiveRegionState.DIRTY);
             }
@@ -663,14 +667,16 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 LiveRegionState state = mLiveRegions.get(object.id);
                 switch (state) {
                     case CREATED:
+                        // Send an initial event to force TalkBack to create the accessibility node info
+                        // which informs it that the node is a live region.
                         sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
                         break;
                     case CLEAN:
                         break;
                     case DIRTY:
+                        // Send an update to read out the contents of the semantics object.
                         sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-                        if (object.getValueLabelHint() != null)
-                            mLiveRegions.put(object.id, LiveRegionState.CLEAN);
+                        mLiveRegions.put(object.id, LiveRegionState.CLEAN);
                         break;
                 }
             } else if (object.hadFlag(Flag.IS_LIVE_REGION)) {
