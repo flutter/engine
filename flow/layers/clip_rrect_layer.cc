@@ -36,6 +36,7 @@ void ClipRRectLayer::UpdateScene(SceneUpdateContext& context) {
       clip_rrect_.radii(SkRRect::kLowerLeft_Corner).x()  //  bottom_left_radius
   );
 
+  // TODO(liyuqian): respect clip_mode_
   SceneUpdateContext::Clip clip(context, shape, clip_rrect_.getBounds());
   UpdateSceneChildren(context);
 }
@@ -45,7 +46,6 @@ void ClipRRectLayer::UpdateScene(SceneUpdateContext& context) {
 void ClipRRectLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipRRectLayer::Paint");
   FXL_DCHECK(needs_painting());
-  FXL_DCHECK(clip_mode_ != ClipMode::none);
 
   SkAutoCanvasRestore save(&context.canvas, true);
   context.canvas.clipRRect(clip_rrect_, clip_mode_ != ClipMode::hardEdge);

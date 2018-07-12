@@ -62,8 +62,9 @@ void SceneBuilder::pushTransform(const tonic::Float64List& matrix4) {
 void SceneBuilder::pushClipRect(double left,
                                 double right,
                                 double top,
-                                double bottom) {
-  layer_builder_->PushClipRect(SkRect::MakeLTRB(left, top, right, bottom));
+                                double bottom,
+                                int clipMode) {
+  layer_builder_->PushClipRect(SkRect::MakeLTRB(left, top, right, bottom), static_cast<flow::ClipMode>(clipMode));
 }
 
 void SceneBuilder::pushClipRRect(const RRect& rrect, int clipMode) {

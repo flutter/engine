@@ -48,7 +48,6 @@ void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
 void ClipPathLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipPathLayer::Paint");
   FXL_DCHECK(needs_painting());
-  FXL_DCHECK(clip_mode_ != ClipMode::none);
 
   SkAutoCanvasRestore save(&context.canvas, true);
   context.canvas.clipPath(clip_path_, clip_mode_ != ClipMode::hardEdge);

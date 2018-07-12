@@ -71,12 +71,13 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   void pushClipRect(Rect rect, {Clip clip = Clip.antiAlias}) {
     assert(clip != null);
     assert(clip != Clip.none);
-    _pushClipRect(rect.left, rect.right, rect.top, rect.bottom);
+    _pushClipRect(rect.left, rect.right, rect.top, rect.bottom, clip.index);
   }
   void _pushClipRect(double left,
                      double right,
                      double top,
-                     double bottom) native 'SceneBuilder_pushClipRect';
+                     double bottom,
+                     int clipMode) native 'SceneBuilder_pushClipRect';
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
   ///

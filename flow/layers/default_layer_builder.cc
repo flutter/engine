@@ -49,12 +49,12 @@ void DefaultLayerBuilder::PushTransform(const SkMatrix& sk_matrix) {
   PushLayer(std::move(layer), cullRect);
 }
 
-void DefaultLayerBuilder::PushClipRect(const SkRect& clipRect) {
+void DefaultLayerBuilder::PushClipRect(const SkRect& clipRect, ClipMode clip_mode) {
   SkRect cullRect;
   if (!cullRect.intersect(clipRect, cull_rects_.top())) {
     cullRect = SkRect::MakeEmpty();
   }
-  auto layer = std::make_unique<flow::ClipRectLayer>();
+  auto layer = std::make_unique<flow::ClipRectLayer>(clip_mode);
   layer->set_clip_rect(clipRect);
   PushLayer(std::move(layer), cullRect);
 }

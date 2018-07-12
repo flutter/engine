@@ -32,7 +32,7 @@ class LayerBuilder {
 
   virtual void PushTransform(const SkMatrix& matrix) = 0;
 
-  virtual void PushClipRect(const SkRect& rect) = 0;
+  virtual void PushClipRect(const SkRect& rect, ClipMode clip_mode = ClipMode::antiAlias) = 0;
 
   virtual void PushClipRoundedRect(const SkRRect& rect, ClipMode clip_mode = ClipMode::antiAlias) = 0;
 
