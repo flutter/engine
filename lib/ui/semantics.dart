@@ -263,8 +263,14 @@ class SemanticsFlag {
   final int index;
 
   /// The semantics node has the quality of either being "checked" or "unchecked".
+  /// 
+  /// This flag is mutually exclusive with [hasToggledState].
   ///
   /// For example, a checkbox or a radio button widget has checked state.
+  /// 
+  /// See also:
+  /// 
+  ///   * [SemanticsFlag.isChecked], which controls whether the node is "checked" or "unchecked".
   static const SemanticsFlag hasCheckedState = const SemanticsFlag._(_kHasCheckedStateIndex);
 
   /// Whether a semantics node that [hasCheckedState] is checked.
@@ -273,6 +279,10 @@ class SemanticsFlag {
   /// "unchecked".
   ///
   /// For example, if a checkbox has a visible checkmark, [isChecked] is true.
+  /// 
+  /// See also:
+  /// 
+  ///   * [SemanticsFlag.hasCheckedState], which enables a checked state.
   static const SemanticsFlag isChecked = const SemanticsFlag._(_kIsCheckedIndex);
 
 
@@ -404,20 +414,30 @@ class SemanticsFlag {
   /// Platforms may use this information to make polite announcements to the 
   /// user to inform them of updates to this node.
   /// 
-  /// An example of a live region is a [SnackBar] widget. When it appears
-  /// on the screen it may be difficult to focus to read the value. A live
-  /// region causes a polite announcement to be generated automatically.
+  /// An example of a live region is a [SnackBar] widget. On Android, A live 
+  /// region causes a polite announcement to be generated automatically, even
+  /// if the user does not have focus of the widget.
   static const SemanticsFlag isLiveRegion = const SemanticsFlag._(_kIsLiveRegionIndex);
 
   /// The semantics node has the quality of either being "on" or "off".
+  /// 
+  /// This flag is mutually exclusive with [hasCheckedState].
   ///
   /// For example, a switch has toggled state.
+  /// 
+  /// See also:
+  /// 
+  ///    * [SemanticsFlag.isToggled], which controls whether the node is "on" or "off". 
   static const SemanticsFlag hasToggledState = const SemanticsFlag._(_kHasToggledStateIndex);
 
   /// If true, the semantics node is "on". If false, the semantics node is
   /// "off".
   ///
   /// For example, if a switch is in the on position, [isToggled] is true.
+  /// 
+  /// See also:
+  /// 
+  ///   * [SemanticsFlag.hasToggledState], which enables a toggled state.
   static const SemanticsFlag isToggled = const SemanticsFlag._(_kIsToggledIndex);
 
   /// The possible semantics flags.
