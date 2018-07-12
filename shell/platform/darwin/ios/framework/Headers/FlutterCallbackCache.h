@@ -27,7 +27,8 @@ FLUTTER_EXPORT
    Dart method `PluginUtilities.getCallbackHandle`.
  - Returns: A FlutterCallbackInformation object which contains the name of the
    callback, the name of the class in which the callback is defined, and the
-   path of the library which contains the callback.
+   path of the library which contains the callback. If the provided handle is
+   invalid, nil is returned.
  */
 + (FlutterCallbackInformation*)lookupCallbackInformation:(int64_t)handle;
 

@@ -38,14 +38,14 @@ int64_t DartCallbackCache::GetCallbackHandle(const std::string& name,
   return hash;
 }
 
-DartCallbackRepresentation DartCallbackCache::GetCallbackInformation(
-    int64_t handle) {
+std::unique_ptr<DartCallbackRepresentation>
+DartCallbackCache::GetCallbackInformation(int64_t handle) {
   std::unique_lock<std::mutex> lock(mutex_);
   auto iterator = cache_.find(handle);
   if (iterator != cache_.end()) {
-    return iterator->second;
+    return std::make_unique<DartCallbackRepresentation>(iterator->second);
   }
-  return {"", "", ""};
+  return nullptr;
 }
 
 Dart_Handle DartCallbackCache::LookupDartClosure(

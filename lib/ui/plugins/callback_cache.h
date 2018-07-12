@@ -6,6 +6,7 @@
 #define FLUTTER_LIB_UI_CALLBACK_CACHE_H_
 
 #include <map>
+#include <memory>
 #include <mutex>
 #include <string>
 
@@ -33,8 +34,8 @@ class DartCallbackCache {
 
   static Dart_Handle GetCallback(int64_t handle) LOCK_UNLOCK(mutex_);
 
-  static DartCallbackRepresentation GetCallbackInformation(int64_t handle)
-      LOCK_UNLOCK(mutex_);
+  static std::unique_ptr<DartCallbackRepresentation> GetCallbackInformation(
+      int64_t handle) LOCK_UNLOCK(mutex_);
 
  private:
   static Dart_Handle LookupDartClosure(const std::string& name,

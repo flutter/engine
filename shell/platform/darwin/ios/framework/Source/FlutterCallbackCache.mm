@@ -12,11 +12,14 @@
 @implementation FlutterCallbackCache
 
 + (FlutterCallbackInformation*)lookupCallbackInformation:(int64_t)handle {
-  blink::DartCallbackRepresentation info = blink::DartCallbackCache::GetCallbackInformation(handle);
+  auto info = blink::DartCallbackCache::GetCallbackInformation(handle);
+  if (info == nullptr) {
+    return nil;
+  }
   FlutterCallbackInformation* new_info = [[FlutterCallbackInformation alloc] init];
-  new_info.callbackName = [NSString stringWithUTF8String:info.name.c_str()];
-  new_info.callbackClassName = [NSString stringWithUTF8String:info.class_name.c_str()];
-  new_info.callbackLibraryPath = [NSString stringWithUTF8String:info.library_path.c_str()];
+  new_info.callbackName = [NSString stringWithUTF8String:info->name.c_str()];
+  new_info.callbackClassName = [NSString stringWithUTF8String:info->class_name.c_str()];
+  new_info.callbackLibraryPath = [NSString stringWithUTF8String:info->library_path.c_str()];
   return new_info;
 }
 
