@@ -157,9 +157,10 @@ class SemanticsAction {
   /// A request that the node should be dismissed.
   ///
   /// A [Snackbar], for example, may have a dismiss action to indicate to the
-  /// user that it can be removed after it is no longer relevant.  On Android, 
-  /// TalkBack announces this after reading the label. On iOS, VoiceOver users
-  /// can perform a standard gesture to dismiss it.
+  /// user that it can be removed after it is no longer relevant. On Android, 
+  /// (with TalkBack) special hint text is spoken when focusing the node and
+  /// a custom action is availible in the local context menu. On iOS,
+  /// (with VoiceOver) users can perform a standard gesture to dismiss it.
   static const SemanticsAction dismiss = const SemanticsAction._(_kDismissIndex);
 
   /// The possible semantics actions.
