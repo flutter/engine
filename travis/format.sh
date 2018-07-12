@@ -50,3 +50,24 @@ if [[ $FAILED_CHECKS -ne 0 ]]; then
   echo "ERROR: Some files are formatted incorrectly. To fix, apply diffs above via patch -p0."
   exit 1
 fi
+
+FILETYPES="*.c *.cc *.cpp *.h *.m *.mm *.dart"
+FILES_TO_CHECK="$(git diff $DIFF_OPTS -- master $FILETYPES)"
+
+for f in $FILES_TO_CHECK; do
+  set +e
+  TRAILING_SPACES="$(grep -P " +$" $f)"
+  set -e
+  if [[ ! -z "$TRAILING_SPACES" ]]; then
+    echo "$f has trailing spaces:"
+    echo "$TRAILING_SPACES"
+    echo ""
+    FAILED_CHECKS=$(($FAILED_CHECKS+1))
+  fi
+done
+
+if [[ $FAILED_CHECKS -ne 0 ]]; then
+  echo ""
+  echo "ERROR: Some files have trailing spaces. To fix, try something like \`find . -name "*.dart" -print0 | xargs -0 perl -pi -e 's/ +$//'\`."
+  exit 1
+fi
