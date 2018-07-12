@@ -71,7 +71,7 @@ class VirtualDisplayController {
     }
 
     public void resize(int width, int height) {
-        View view = mPresentation.detachView();
+        PlatformView view = mPresentation.detachView();
         mPresentation.hide();
         // We detach the surface to prevent it being destroyed when releasing the vd.
         //
@@ -96,6 +96,7 @@ class VirtualDisplayController {
     }
 
     public void dispose() {
+        mPresentation.detachView().dispose();
         mVirtualDisplay.release();
     }
 }
