@@ -30,9 +30,9 @@ class CallbackHandle {
 /// Functionality for Flutter plugin authors.
 abstract class PluginUtilities {
   static Map<Function, CallbackHandle> _forwardCache =
-      new Map<Function, CallbackHandle>();
+      <Function, CallbackHandle>{};
   static Map<CallbackHandle, Function> _backwardCache =
-      new Map<CallbackHandle, Function>();
+      <CallbackHandle, Function>{};
 
   /// Get a handle to a named top-level or static callback function which can
   /// be easily passed between isolates.
