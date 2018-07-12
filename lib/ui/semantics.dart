@@ -147,7 +147,7 @@ class SemanticsAction {
   /// is usually held by the element that currently responds to keyboard inputs.
   /// Accessibility focus and input focus can be held by two different nodes!
   static const SemanticsAction didLoseAccessibilityFocus = const SemanticsAction._(_kDidLoseAccessibilityFocusIndex);
-  
+
   /// Indicates that the user has invoked a custom accessibility action.
   /// 
   /// This handler is added automatically whenever a custom accessibility
