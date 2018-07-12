@@ -56,7 +56,7 @@ FILES_TO_CHECK="$(git diff $DIFF_OPTS -- master $FILETYPES)"
 
 for f in $FILES_TO_CHECK; do
   set +e
-  TRAILING_SPACES="$(grep -P " +$" $f)"
+  TRAILING_SPACES="$(grep '\s\+$' $f)"
   set -e
   if [[ ! -z "$TRAILING_SPACES" ]]; then
     echo "$f has trailing spaces:"
@@ -68,6 +68,6 @@ done
 
 if [[ $FAILED_CHECKS -ne 0 ]]; then
   echo ""
-  echo "ERROR: Some files have trailing spaces. To fix, try something like \`find . -name "*.dart" -print0 | xargs -0 perl -pi -e 's/ +$//'\`."
+  echo "ERROR: Some files have trailing spaces. To fix, try something like \`find . -name "*.dart" -exec sed -i -e 's/\s\+$//' {} \;\`."
   exit 1
 fi
