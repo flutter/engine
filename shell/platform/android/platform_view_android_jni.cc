@@ -15,6 +15,7 @@
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
+#include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
@@ -43,12 +44,27 @@ bool CheckException(JNIEnv* env) {
 
 }  // anonymous namespace
 
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_callback_info_class =
+    nullptr;
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_view_class = nullptr;
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_native_view_class =
     nullptr;
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_surface_texture_class = nullptr;
 
 // Called By Native
+
+static jmethodID g_flutter_callback_info_constructor = nullptr;
+jobject CreateFlutterCallbackInformation(
+    JNIEnv* env,
+    const std::string& callbackName,
+    const std::string& callbackClassName,
+    const std::string& callbackLibraryPath) {
+  return env->NewObject(g_flutter_callback_info_class->obj(),
+                        g_flutter_callback_info_constructor,
+                        env->NewStringUTF(callbackName.c_str()),
+                        env->NewStringUTF(callbackClassName.c_str()),
+                        env->NewStringUTF(callbackLibraryPath.c_str()));
+}
 
 static jmethodID g_handle_platform_message_method = nullptr;
 void FlutterViewHandlePlatformMessage(JNIEnv* env,
@@ -278,6 +294,15 @@ static void RunBundleAndSnapshotFromLibrary(
   ANDROID_SHELL_HOLDER->Launch(std::move(config));
 }
 
+static jobject LookupCallbackInformation(JNIEnv* env, jlong handle) {
+  auto cbInfo = blink::DartCallbackCache::GetCallbackInformation(handle);
+  if (cbInfo == nullptr) {
+    return nullptr;
+  }
+  return CreateFlutterCallbackInformation(env, cbInfo->name, cbInfo->class_name,
+                                          cbInfo->library_path);
+}
+
 static void SetViewportMetrics(JNIEnv* env,
                                jobject jcaller,
                                jlong shell_holder,
@@ -504,6 +529,19 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_flutter_callback_info_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("io/flutter/view/FlutterCallbackInformation"));
+  if (g_flutter_callback_info_class->is_null()) {
+    return false;
+  }
+
+  g_flutter_callback_info_constructor = env->GetMethodID(
+      g_flutter_callback_info_class->obj(), "<init>",
+      "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
+  if (g_flutter_callback_info_constructor == nullptr) {
+    return false;
+  }
+
   g_flutter_view_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("io/flutter/view/FlutterView"));
   if (g_flutter_view_class->is_null()) {
@@ -639,6 +677,14 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       },
   };
 
+  static const JNINativeMethod callback_info_methods[] = {
+      {
+          .name = "nativeLookupCallbackInformation",
+          .signature = "(J)Lio/flutter/view/FlutterCallbackInformation;",
+          .fnPtr = reinterpret_cast<void*>(&shell::LookupCallbackInformation),
+      },
+  };
+
   if (env->RegisterNatives(g_flutter_native_view_class->obj(),
                            native_view_methods,
                            arraysize(native_view_methods)) != 0) {
@@ -647,6 +693,12 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   if (env->RegisterNatives(g_flutter_view_class->obj(), view_methods,
                            arraysize(view_methods)) != 0) {
+    return false;
+  }
+
+  if (env->RegisterNatives(g_flutter_callback_info_class->obj(),
+                           callback_info_methods,
+                           arraysize(callback_info_methods)) != 0) {
     return false;
   }
 
