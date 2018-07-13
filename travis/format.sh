@@ -52,19 +52,10 @@ if [[ $FAILED_CHECKS -ne 0 ]]; then
 fi
 
 FILETYPES="*.c *.cc *.cpp *.h *.m *.mm *.dart"
-FILES_TO_CHECK="$(git diff $DIFF_OPTS -- master $FILETYPES)"
+TRAILING_SPACES=$(git diff $DIFF_OPTS master -- $FILETYPES | xargs grep --line-number --with-filename '\s\+$')
 
-for f in $FILES_TO_CHECK; do
-  set +e
-  TRAILING_SPACES="$(grep --line-number --with-filename '\s\+$' $f)"
-  set -e
-  if [[ ! -z "$TRAILING_SPACES" ]]; then
-    echo "$TRAILING_SPACES"
-    FAILED_CHECKS=$(($FAILED_CHECKS+1))
-  fi
-done
-
-if [[ $FAILED_CHECKS -ne 0 ]]; then
+if [[ ! -z "$TRAILING_SPACES" ]]; then
+  echo "$TRAILING_SPACES"
   echo ""
   echo "ERROR: Some files have trailing spaces. To fix, try something like \`find . -name "*.dart" -exec sed -i -e 's/\s\+$//' {} \;\`."
   exit 1
