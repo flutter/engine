@@ -77,8 +77,8 @@ void PlatformViewIOS::SetAssistiveTechnologyEnabled(bool enabled) {
     accessibility_bridge_ = std::make_unique<AccessibilityBridge>(owner_view_, this);
   }
   // Note: since the accessibility bridge is needed for both semantics and
-  // assistive technologies, but you cannot have the former without the
-  // later, we only destroy the bridge in SetSemanticsEnabled and not here.
+  // assistive technologies, but you cannot have the latter without the
+  // former, we only destroy the bridge in SetSemanticsEnabled and not here.
   PlatformView::SetAssistiveTechnologyEnabled(enabled);
 }
 
