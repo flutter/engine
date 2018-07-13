@@ -34,8 +34,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
     private Map<Integer, SemanticsObject> mObjects;
     private Map<Integer, CustomAccessibilityAction> mCustomAccessibilityActions;
-
-    private Set<Integer> mLiveRegions;
+    // Track whether the corresponding accessibility node has been created yet, and
+    // if an announcement needs to be made.
+    private Map<Integer, Boolean> mLiveRegions;
     private final FlutterView mOwner;
     private boolean mAccessibilityEnabled = false;
     private SemanticsObject mA11yFocusedObject;
@@ -106,7 +107,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         assert owner != null;
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
-        mLiveRegions = new HashSet<>();
+        mLiveRegions = new HashMap<>();
         mCustomAccessibilityActions = new HashMap<Integer, CustomAccessibilityAction>();
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(owner, "flutter/accessibility",
@@ -635,6 +636,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 }
                 sendAccessibilityEvent(event);
             }
+            if (object.hasFlag(Flag.IS_LIVE_REGION)) {
+                if (!mLiveRegions.containsKey(object.id) || mLiveRegions.get(object.id)) {
+                    sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+                    mLiveRegions.put(object.id, false);
+                }
+            } else if (object.hadFlag(Flag.IS_LIVE_REGION)) {
+                mLiveRegions.remove(object.id);
+            }
             if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
                     && !object.hadFlag(Flag.IS_SELECTED) && object.hasFlag(Flag.IS_SELECTED)) {
                 AccessibilityEvent event =
@@ -662,10 +671,6 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                     selectionEvent.setItemCount(newValue.length());
                     sendAccessibilityEvent(selectionEvent);
                 }
-            }
-            if (object.hasFlag(Flag.IS_LIVE_REGION)) {
-                mLiveRegions.add(object.id);
-                sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED); 
             }
         }
     }
@@ -766,10 +771,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                 if (nodeId == null) {
                     return;
                 }
-                if (!mLiveRegions.contains(nodeId)) {
+                if (!mLiveRegions.containsKey(nodeId)) {
                     return;
+                } else {
+                    mLiveRegions.put(nodeId, true);
                 }
-                sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
             }
         }
     }
@@ -784,8 +790,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
     private void willRemoveSemanticsObject(SemanticsObject object) {
         assert mObjects.containsKey(object.id);
         assert mObjects.get(object.id) == object;
-        mLiveRegions.remove(object.id);
         object.parent = null;
+        mLiveRegions.remove(object.id);
         if (mA11yFocusedObject == object) {
             sendAccessibilityEvent(mA11yFocusedObject.id, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
             mA11yFocusedObject = null;
