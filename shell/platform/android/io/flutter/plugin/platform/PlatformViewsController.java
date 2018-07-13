@@ -174,6 +174,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
 
         vdController.dispose();
         vdControllers.remove(id);
+        result.success(null);
     }
 
     private void resizePlatformView(MethodCall call, MethodChannel.Result result) {
