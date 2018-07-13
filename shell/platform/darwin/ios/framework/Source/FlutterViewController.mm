@@ -800,9 +800,8 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   platformView->SetSemanticsEnabled(true);
   platformView->SetAssistiveTechnologyEnabled(false);
 #else
-  bool enabled = UIAccessibilityIsVoiceOverRunning() || UIAccessibilityIsSwitchControlRunning() ||
-                UIAccessibilityIsSpeakScreenEnabled();
-  platformView->SetSemanticsEnabled(enabled);
+  bool enabled = UIAccessibilityIsVoiceOverRunning() || UIAccessibilityIsSwitchControlRunning();
+  platformView->SetSemanticsEnabled(enabled || UIAccessibilityIsSpeakScreenEnabled());
   platformView->SetAssistiveTechnologyEnabled(enabled);
 #endif
 }

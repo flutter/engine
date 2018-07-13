@@ -643,7 +643,7 @@ class Window {
   /// This includes screen readers such as TalkBack on Android and VoiceOVer
   /// on iOS, as well as hardware switches, and more.
   /// 
-  /// THe [onAssistiveTechnologyEnabled] callback is called whenever this value
+  /// The [onAssistiveTechnologyEnabled] callback is called whenever this value
   /// changes.
   bool get assistiveTechnologyEnabled => _assistiveTechnologyEnabled;
   bool _assistiveTechnologyEnabled = false;
