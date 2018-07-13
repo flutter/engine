@@ -63,8 +63,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
     }
 
     public void onFlutterViewDestroyed() {
-        for (int id : vdControllers.keySet()) {
-            VirtualDisplayController controller = vdControllers.get(id);
+        for (VirtualDisplayController controller : vdControllers.values()) {
             controller.dispose();
         }
         vdControllers.clear();
@@ -79,28 +78,13 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         }
         switch (call.method) {
             case "create":
-                mFlutterView.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        createPlatformView(call, result);
-                    }
-                });
+                createPlatformView(call, result);
                 return;
             case "dispose":
-                mFlutterView.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        disposePlatformView(call, result);
-                    }
-                });
+                disposePlatformView(call, result);
                 return;
             case "resize":
-                mFlutterView.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        resizePlatformView(call, result);
-                    }
-                });
+                resizePlatformView(call, result);
                 return;
         }
         result.notImplemented();
