@@ -60,6 +60,9 @@ class PlatformViewIOS final : public PlatformView {
   void SetSemanticsEnabled(bool enabled) override;
 
   // |shell::PlatformView|
+  void SetAssistiveTechnologyEnabled(bool enabled) override;
+
+  // |shell::PlatformView|
   void HandlePlatformMessage(
       fxl::RefPtr<blink::PlatformMessage> message) override;
 
