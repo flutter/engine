@@ -32,7 +32,7 @@ $CLANG_FORMAT --version
 # Compute the diffs.
 FILETYPES="*.c *.cc *.cpp *.h *.m *.mm"
 DIFF_OPTS="-U0 --no-color --name-only"
-FILES_TO_CHECK="$(git diff $DIFF_OPTS -- master $FILETYPES)"
+FILES_TO_CHECK="$(git diff $DIFF_OPTS master -- $FILETYPES)"
 
 FAILED_CHECKS=0
 for f in $FILES_TO_CHECK; do
