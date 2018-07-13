@@ -608,7 +608,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&shell::SetSemanticsEnabled),
       },
       {
-          .name = "nativeSetAssisitveTechnologyEnabled",
+          .name = "nativeSetAssistiveTechnologyEnabled",
           .signature = "(JZ)V",
           .fnPtr = reinterpret_cast<void*>(&shell::SetAssistiveTechnologyEnabled),
       },
