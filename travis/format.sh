@@ -52,7 +52,10 @@ if [[ $FAILED_CHECKS -ne 0 ]]; then
 fi
 
 FILETYPES="*.c *.cc *.cpp *.h *.m *.mm *.dart"
+
+set +e
 TRAILING_SPACES=$(git diff $DIFF_OPTS master -- $FILETYPES | xargs grep --line-number --with-filename '\s\+$')
+set -e
 
 if [[ ! -z "$TRAILING_SPACES" ]]; then
   echo "$TRAILING_SPACES"
