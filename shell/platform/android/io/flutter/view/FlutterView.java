@@ -821,7 +821,6 @@ public class FlutterView extends SurfaceView
                 if (mAccessibilityNodeProvider != null) {
                     mAccessibilityNodeProvider.handleTouchExplorationExit();
                 }
-                nativeSetSemanticsEnabled(mNativeView.get(), false);
                 nativeSetAssistiveTechnologyEnabled(mNativeView.get(), false);
             }
             resetWillNotDraw();
