@@ -56,7 +56,7 @@ FILES_TO_CHECK="$(git diff $DIFF_OPTS -- master $FILETYPES)"
 
 for f in $FILES_TO_CHECK; do
   set +e
-  TRAILING_SPACES="$(grep '\s\+$' $f)"
+  TRAILING_SPACES="$(grep --line-number '\s\+$' $f)"
   set -e
   if [[ ! -z "$TRAILING_SPACES" ]]; then
     echo "$f has trailing spaces:"
