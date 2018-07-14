@@ -648,13 +648,13 @@ class Window {
     _onSemanticsEnabledChanged = callback;
     _onSemanticsEnabledChangedZone = Zone.current;
   }
-  
+
   /// Whether the user is using assitive technologies to interact with the
   /// application.
-  /// 
+  ///
   /// This includes screen readers such as TalkBack on Android and VoiceOVer
   /// on iOS, as well as hardware switches, and more.
-  /// 
+  ///
   /// The [onAssistiveTechnologyEnabled] callback is called whenever this value
   /// changes.
   bool get assistiveTechnologyEnabled => _assistiveTechnologyEnabled;
@@ -662,7 +662,7 @@ class Window {
 
   /// A callback that is invoked when the value of [assistiveTechnologyEnabled]
   /// changes.
-  /// 
+  ///
   /// The framework invokes this callback in the same zone in which the callback
   /// was set.
   VoidCallback get onAssistiveTechnologyEnabled => _onAssistiveTechnologyEnabled;

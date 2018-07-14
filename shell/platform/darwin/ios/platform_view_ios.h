@@ -61,10 +61,6 @@ class PlatformViewIOS final : public HeadlessPlatformViewIOS {
   void SetAssistiveTechnologyEnabled(bool enabled) override;
 
   // |shell::PlatformView|
-  void HandlePlatformMessage(
-      fxl::RefPtr<blink::PlatformMessage> message) override;
-
-  // |shell::PlatformView|
   void UpdateSemantics(
       blink::SemanticsNodeUpdates update,
       blink::CustomAccessibilityActionUpdates actions) override;
