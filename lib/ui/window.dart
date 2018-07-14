@@ -637,6 +637,18 @@ class Window {
   bool get semanticsEnabled => _semanticsEnabled;
   bool _semanticsEnabled = false;
 
+  /// A callback that is invoked when the value of [semanticsEnabled] changes.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  VoidCallback get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
+  VoidCallback _onSemanticsEnabledChanged;
+  Zone _onSemanticsEnabledChangedZone;
+  set onSemanticsEnabledChanged(VoidCallback callback) {
+    _onSemanticsEnabledChanged = callback;
+    _onSemanticsEnabledChangedZone = Zone.current;
+  }
+  
   /// Whether the user is using assitive technologies to interact with the
   /// application.
   /// 
@@ -661,17 +673,6 @@ class Window {
     _onAssistiveTechnologyEnabledZone = Zone.current;
   }
 
-  /// A callback that is invoked when the value of [semanticsEnabled] changes.
-  ///
-  /// The framework invokes this callback in the same zone in which the
-  /// callback was set.
-  VoidCallback get onSemanticsEnabledChanged => _onSemanticsEnabledChanged;
-  VoidCallback _onSemanticsEnabledChanged;
-  Zone _onSemanticsEnabledChangedZone;
-  set onSemanticsEnabledChanged(VoidCallback callback) {
-    _onSemanticsEnabledChanged = callback;
-    _onSemanticsEnabledChangedZone = Zone.current;
-  }
 
   /// A callback that is invoked whenever the user requests an action to be
   /// performed.

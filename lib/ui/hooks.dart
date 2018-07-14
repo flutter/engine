@@ -5,8 +5,7 @@
 part of dart.ui;
 
 String _decodeUTF8(ByteData message) {
-  return message != null ? utf8.decoder.convert(message.buffer.asUint8List())
-                         : null;
+  return message != null ? utf8.decoder.convert(message.buffer.asUint8List()) : null;
 }
 
 dynamic _decodeJSON(String message) {
@@ -24,27 +23,27 @@ void _updateWindowMetrics(double devicePixelRatio,
                           double viewInsetRight,
                           double viewInsetBottom,
                           double viewInsetLeft) {
-  window.._devicePixelRatio = devicePixelRatio.._physicalSize =
-      new Size(width, height).._padding = new WindowPadding
-                                              ._(top
-                                                 : paddingTop, right
-                                                 : paddingRight, bottom
-                                                 : paddingBottom, left
-                                                 : paddingLeft)
-                                              .._viewInsets =
-          new WindowPadding._(top
-                              : viewInsetTop, right
-                              : viewInsetRight, bottom
-                              : viewInsetBottom, left
-                              : viewInsetLeft);
+  window
+    .._devicePixelRatio = devicePixelRatio
+    .._physicalSize = new Size(width, height)
+    .._padding = new WindowPadding._(
+        top: paddingTop,
+        right: paddingRight,
+        bottom: paddingBottom,
+        left: paddingLeft)
+    .._viewInsets = new WindowPadding._(
+        top: viewInsetTop,
+        right: viewInsetRight,
+        bottom: viewInsetBottom,
+        left: viewInsetLeft);
   _invoke(window.onMetricsChanged, window._onMetricsChangedZone);
 }
 
 typedef _LocaleClosure = String Function();
 
-String _localeClosure() = > window._locale.toString();
+String _localeClosure() => window._locale.toString();
 
-_LocaleClosure _getLocaleClosure() = > _localeClosure;
+_LocaleClosure _getLocaleClosure() => _localeClosure;
 
 void _updateLocale(String languageCode, String countryCode) {
   window._locale = new Locale(languageCode, countryCode);
@@ -59,8 +58,7 @@ void _updateUserSettingsData(String jsonData) {
 
 void _updateTextScaleFactor(double textScaleFactor) {
   window._textScaleFactor = textScaleFactor;
-  _invoke(window.onTextScaleFactorChanged,
-          window._onTextScaleFactorChangedZone);
+  _invoke(window.onTextScaleFactorChanged, window._onTextScaleFactorChangedZone);
 }
 
 void _updateAlwaysUse24HourFormat(bool alwaysUse24HourFormat) {
@@ -69,23 +67,25 @@ void _updateAlwaysUse24HourFormat(bool alwaysUse24HourFormat) {
 
 void _updateSemanticsEnabled(bool enabled) {
   window._semanticsEnabled = enabled;
-  _invoke(window.onSemanticsEnabledChanged,
-          window._onSemanticsEnabledChangedZone);
+  _invoke(window.onSemanticsEnabledChanged, window._onSemanticsEnabledChangedZone);
 }
 
 void _updateAssistiveTechnologyEnabled(bool enabled) {
   window._assistiveTechnologyEnabled = enabled;
-  _invoke(window._onAssistiveTechnologyEnabled,
-          window._onAssistiveTechnologyEnabledZone);
+  _invoke(window.onAssistiveTechnologyEnabled, window._onAssistiveTechnologyEnabledZone);
 }
 
 void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
   if (window.onPlatformMessage != null) {
     _invoke3<String, ByteData, PlatformMessageResponseCallback>(
-        window.onPlatformMessage, window._onPlatformMessageZone, name, data,
-        (ByteData responseData) {
-          window._respondToPlatformMessage(responseId, responseData);
-        }, );
+      window.onPlatformMessage,
+      window._onPlatformMessageZone,
+      name,
+      data,
+      (ByteData responseData) {
+        window._respondToPlatformMessage(responseId, responseData);
+      },
+    );
   } else {
     window._respondToPlatformMessage(responseId, null);
   }
@@ -93,21 +93,21 @@ void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
 
 void _dispatchPointerDataPacket(ByteData packet) {
   if (window.onPointerDataPacket != null)
-    _invoke1<PointerDataPacket>(window.onPointerDataPacket,
-                                window._onPointerDataPacketZone,
-                                _unpackPointerDataPacket(packet));
+    _invoke1<PointerDataPacket>(window.onPointerDataPacket, window._onPointerDataPacketZone, _unpackPointerDataPacket(packet));
 }
 
 void _dispatchSemanticsAction(int id, int action, ByteData args) {
   _invoke3<int, SemanticsAction, ByteData>(
-      window.onSemanticsAction, window._onSemanticsActionZone, id,
-      SemanticsAction.values[action], args, );
+    window.onSemanticsAction,
+    window._onSemanticsActionZone,
+    id,
+    SemanticsAction.values[action],
+    args,
+  );
 }
 
 void _beginFrame(int microseconds) {
-  _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone,
-                     new Duration(microseconds
-                                  : microseconds));
+  _invoke1<Duration>(window.onBeginFrame, window._onBeginFrameZone, new Duration(microseconds: microseconds));
 }
 
 void _drawFrame() {
@@ -143,10 +143,7 @@ void _invoke1<A>(void callback(A a), Zone zone, A arg) {
 }
 
 /// Invokes [callback] inside the given [zone] passing it [arg1] and [arg2].
-void _invoke2<A1, A2>(void callback(A1 a1, A2 a2),
-                      Zone zone,
-                      A1 arg1,
-                      A2 arg2) {
+void _invoke2<A1, A2>(void callback(A1 a1, A2 a2), Zone zone, A1 arg1, A2 arg2) {
   if (callback == null)
     return;
 
@@ -159,13 +156,8 @@ void _invoke2<A1, A2>(void callback(A1 a1, A2 a2),
   }
 }
 
-/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2] and
-/// [arg3].
-void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3),
-                          Zone zone,
-                          A1 arg1,
-                          A2 arg2,
-                          A3 arg3) {
+/// Invokes [callback] inside the given [zone] passing it [arg1], [arg2] and [arg3].
+void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1, A2 arg2, A3 arg3) {
   if (callback == null)
     return;
 
@@ -174,7 +166,9 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3),
   if (identical(zone, Zone.current)) {
     callback(arg1, arg2, arg3);
   } else {
-    zone.runGuarded(() { callback(arg1, arg2, arg3); });
+    zone.runGuarded(() {
+      callback(arg1, arg2, arg3);
+    });
   }
 }
 
@@ -187,39 +181,33 @@ const int _kPointerDataFieldCount = 19;
 PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
   const int kBytesPerPointerData = _kPointerDataFieldCount * kStride;
-  final int length = packet.lengthInBytes ~ / kBytesPerPointerData;
+  final int length = packet.lengthInBytes ~/ kBytesPerPointerData;
   assert(length * kBytesPerPointerData == packet.lengthInBytes);
   final List<PointerData> data = new List<PointerData>(length);
   for (int i = 0; i < length; ++i) {
     int offset = i * _kPointerDataFieldCount;
     data[i] = new PointerData(
-        timeStamp
-        : new Duration(microseconds
-                       : packet.getInt64(kStride * offset++, _kFakeHostEndian)),
-          change
-        : PointerChange
-              .values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-          kind
-        : PointerDeviceKind
-              .values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
-          device
-        : packet.getInt64(kStride * offset++, _kFakeHostEndian), physicalX
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), physicalY
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), buttons
-        : packet.getInt64(kStride * offset++, _kFakeHostEndian), obscured
-        : packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0, pressure
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), pressureMin
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), pressureMax
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), distance
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), distanceMax
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), radiusMajor
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), radiusMinor
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), radiusMin
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), radiusMax
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), orientation
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian), tilt
-        : packet.getFloat64(kStride * offset++, _kFakeHostEndian));
+      timeStamp: new Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
+      change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      buttons: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      obscured: packet.getInt64(kStride * offset++, _kFakeHostEndian) != 0,
+      pressure: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      pressureMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      pressureMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      distance: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      distanceMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      radiusMajor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      radiusMinor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      radiusMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      radiusMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian)
+    );
     assert(offset == (i + 1) * _kPointerDataFieldCount);
   }
-  return new PointerDataPacket(data : data);
+  return new PointerDataPacket(data: data);
 }
