@@ -10,8 +10,8 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/texture.h"
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
+#include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -119,7 +119,6 @@ class PlatformView {
  protected:
   PlatformView::Delegate& delegate_;
   const blink::TaskRunners task_runners_;
-  std::unique_ptr<VsyncWaiter> vsync_waiter_;
 
   SkISize size_;
   fml::WeakPtrFactory<PlatformView> weak_factory_;
