@@ -149,7 +149,7 @@ class SemanticsAction {
   static const SemanticsAction didLoseAccessibilityFocus = const SemanticsAction._(_kDidLoseAccessibilityFocusIndex);
 
   /// Indicates that the user has invoked a custom accessibility action.
-  /// 
+  ///
   /// This handler is added automatically whenever a custom accessibility
   /// action is added to a semantics node.
   static const SemanticsAction customAction = const SemanticsAction._(_kCustomAction);
@@ -157,7 +157,7 @@ class SemanticsAction {
   /// A request that the node should be dismissed.
   ///
   /// A [Snackbar], for example, may have a dismiss action to indicate to the
-  /// user that it can be removed after it is no longer relevant. On Android, 
+  /// user that it can be removed after it is no longer relevant. On Android,
   /// (with TalkBack) special hint text is spoken when focusing the node and
   /// a custom action is availible in the local context menu. On iOS,
   /// (with VoiceOver) users can perform a standard gesture to dismiss it.
@@ -264,13 +264,13 @@ class SemanticsFlag {
   final int index;
 
   /// The semantics node has the quality of either being "checked" or "unchecked".
-  /// 
+  ///
   /// This flag is mutually exclusive with [hasToggledState].
   ///
   /// For example, a checkbox or a radio button widget has checked state.
-  /// 
+  ///
   /// See also:
-  /// 
+  ///
   ///   * [SemanticsFlag.isChecked], which controls whether the node is "checked" or "unchecked".
   static const SemanticsFlag hasCheckedState = const SemanticsFlag._(_kHasCheckedStateIndex);
 
@@ -280,9 +280,9 @@ class SemanticsFlag {
   /// "unchecked".
   ///
   /// For example, if a checkbox has a visible checkmark, [isChecked] is true.
-  /// 
+  ///
   /// See also:
-  /// 
+  ///
   ///   * [SemanticsFlag.hasCheckedState], which enables a checked state.
   static const SemanticsFlag isChecked = const SemanticsFlag._(_kIsCheckedIndex);
 
@@ -421,23 +421,23 @@ class SemanticsFlag {
   static const SemanticsFlag isLiveRegion = const SemanticsFlag._(_kIsLiveRegionIndex);
 
   /// The semantics node has the quality of either being "on" or "off".
-  /// 
+  ///
   /// This flag is mutually exclusive with [hasCheckedState].
   ///
   /// For example, a switch has toggled state.
-  /// 
+  ///
   /// See also:
-  /// 
-  ///    * [SemanticsFlag.isToggled], which controls whether the node is "on" or "off". 
+  ///
+  ///    * [SemanticsFlag.isToggled], which controls whether the node is "on" or "off".
   static const SemanticsFlag hasToggledState = const SemanticsFlag._(_kHasToggledStateIndex);
 
   /// If true, the semantics node is "on". If false, the semantics node is
   /// "off".
   ///
   /// For example, if a switch is in the on position, [isToggled] is true.
-  /// 
+  ///
   /// See also:
-  /// 
+  ///
   ///   * [SemanticsFlag.hasToggledState], which enables a toggled state.
   static const SemanticsFlag isToggled = const SemanticsFlag._(_kIsToggledIndex);
 
@@ -640,8 +640,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   ) native 'SemanticsUpdateBuilder_updateNode';
 
   /// Update the custom accessibility action associated with the given `id`.
-  /// 
-  /// The name of the action exposed to the user is the `label`. The text 
+  ///
+  /// The name of the action exposed to the user is the `label`. The text
   /// direction of this label is the same as the global window.
   void updateCustomAction({int id, String label}) {
     assert(id != null);
