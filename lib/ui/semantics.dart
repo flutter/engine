@@ -410,12 +410,12 @@ class SemanticsFlag {
   static const SemanticsFlag isImage = const SemanticsFlag._(_kIsImageIndex);
 
   /// Whether the semantics node is a live region.
-  /// 
+  ///
   /// A live region indicates that updates to semantics node are important.
-  /// Platforms may use this information to make polite announcements to the 
+  /// Platforms may use this information to make polite announcements to the
   /// user to inform them of updates to this node.
-  /// 
-  /// An example of a live region is a [SnackBar] widget. On Android, A live 
+  ///
+  /// An example of a live region is a [SnackBar] widget. On Android, A live
   /// region causes a polite announcement to be generated automatically, even
   /// if the user does not have focus of the widget.
   static const SemanticsFlag isLiveRegion = const SemanticsFlag._(_kIsLiveRegionIndex);
