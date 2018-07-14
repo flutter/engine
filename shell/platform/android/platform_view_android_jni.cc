@@ -85,7 +85,8 @@ void FlutterViewUpdateCustomAccessibilityActions(JNIEnv* env,
                                                  jobject obj,
                                                  jobject buffer,
                                                  jobjectArray strings) {
-  env->CallVoidMethod(obj, g_update_custom_accessibility_actions_method, buffer, strings);
+  env->CallVoidMethod(obj, g_update_custom_accessibility_actions_method, buffer,
+                      strings);
   FXL_CHECK(CheckException(env));
 }
 
@@ -433,7 +434,8 @@ static void SetAssistiveTechnologyEnabled(JNIEnv* env,
                                           jobject jcaller,
                                           jlong shell_holder,
                                           jboolean enabled) {
-  ANDROID_SHELL_HOLDER->GetPlatformView()->SetAssistiveTechnologyEnabled(enabled);
+  ANDROID_SHELL_HOLDER->GetPlatformView()->SetAssistiveTechnologyEnabled(
+      enabled);
 }
 
 static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {
@@ -610,7 +612,8 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       {
           .name = "nativeSetAssistiveTechnologyEnabled",
           .signature = "(JZ)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::SetAssistiveTechnologyEnabled),
+          .fnPtr =
+              reinterpret_cast<void*>(&shell::SetAssistiveTechnologyEnabled),
       },
       {
           .name = "nativeGetIsSoftwareRenderingEnabled",
@@ -669,9 +672,9 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
-  g_update_custom_accessibility_actions_method =
-      env->GetMethodID(g_flutter_native_view_class->obj(), "updateCustomAccessibilityActions",
-                        "(Ljava/nio/ByteBuffer;[Ljava/lang/String;)V");
+  g_update_custom_accessibility_actions_method = env->GetMethodID(
+      g_flutter_native_view_class->obj(), "updateCustomAccessibilityActions",
+      "(Ljava/nio/ByteBuffer;[Ljava/lang/String;)V");
 
   if (g_update_custom_accessibility_actions_method == nullptr) {
     return false;

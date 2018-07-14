@@ -146,21 +146,20 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
   if (!dart_state)
     return;
   tonic::DartState::Scope scope(dart_state);
-  DartInvokeField(
-      library_.value(), "_updateWindowMetrics",
-      {
-          ToDart(metrics.device_pixel_ratio),
-          ToDart(metrics.physical_width),
-          ToDart(metrics.physical_height),
-          ToDart(metrics.physical_padding_top),
-          ToDart(metrics.physical_padding_right),
-          ToDart(metrics.physical_padding_bottom),
-          ToDart(metrics.physical_padding_left),
-          ToDart(metrics.physical_view_inset_top),
-          ToDart(metrics.physical_view_inset_right),
-          ToDart(metrics.physical_view_inset_bottom),
-          ToDart(metrics.physical_view_inset_left),
-      });
+  DartInvokeField(library_.value(), "_updateWindowMetrics",
+                  {
+                      ToDart(metrics.device_pixel_ratio),
+                      ToDart(metrics.physical_width),
+                      ToDart(metrics.physical_height),
+                      ToDart(metrics.physical_padding_top),
+                      ToDart(metrics.physical_padding_right),
+                      ToDart(metrics.physical_padding_bottom),
+                      ToDart(metrics.physical_padding_left),
+                      ToDart(metrics.physical_view_inset_top),
+                      ToDart(metrics.physical_view_inset_right),
+                      ToDart(metrics.physical_view_inset_bottom),
+                      ToDart(metrics.physical_view_inset_left),
+                  });
 }
 
 void Window::UpdateLocale(const std::string& language_code,
@@ -206,7 +205,7 @@ void Window::UpdateAssistiveTechnologyEnabled(bool enabled) {
   tonic::DartState::Scope scope(dart_state);
 
   DartInvokeField(library_.value(), "_updateAssistiveTechnologyEnabled",
-                   {ToDart(enabled)});
+                  {ToDart(enabled)});
 }
 
 void Window::DispatchPlatformMessage(fxl::RefPtr<PlatformMessage> message) {

@@ -792,7 +792,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 #pragma mark - Accessibility
 
 - (void)onAccessibilityStatusChanged:(NSNotification*)notification {
-  auto platformView =  _shell->GetPlatformView();
+  auto platformView = _shell->GetPlatformView();
 #if TARGET_OS_SIMULATOR
   // There doesn't appear to be any way to determine whether the accessibility
   // inspector is enabled on the simulator. We conservatively always turn on the

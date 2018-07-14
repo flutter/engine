@@ -78,8 +78,9 @@ fml::WeakPtr<PlatformView> PlatformView::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }
 
-void PlatformView::UpdateSemantics(blink::SemanticsNodeUpdates update,
-                                   blink::CustomAccessibilityActionUpdates actions) {}
+void PlatformView::UpdateSemantics(
+    blink::SemanticsNodeUpdates update,
+    blink::CustomAccessibilityActionUpdates actions) {}
 
 void PlatformView::HandlePlatformMessage(
     fxl::RefPtr<blink::PlatformMessage> message) {
