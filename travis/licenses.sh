@@ -3,7 +3,7 @@ set -e
 shopt -s nullglob
 
 echo "Verifying license script is still happy..."
-(cd flutter/tools/licenses; pub get; dart --checked lib/main.dart --src ../../.. --out ../../../out/license_script_output --golden ../../travis/licenses_golden)
+(cd flutter/tools/licenses; pub get; dart --no-preview-dart-2 --checked lib/main.dart --src ../../.. --out ../../../out/license_script_output --golden ../../travis/licenses_golden)
 
 for f in out/license_script_output/licenses_*; do
     if ! cmp -s flutter/travis/licenses_golden/$(basename $f) $f
