@@ -232,10 +232,8 @@ static void RunBundleAndSnapshotFromLibrary(
     jobject jcaller,
     jlong shell_holder,
     jstring jbundlepath,
-    jstring /* snapshot override (unused) */,
     jstring jEntrypoint,
     jstring jLibraryUrl,
-    jboolean /* reuse runtime controller (unused) */,
     jobject jAssetManager) {
   auto asset_manager = fml::MakeRefCounted<blink::AssetManager>();
 
@@ -574,8 +572,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       {
           .name = "nativeRunBundleAndSnapshotFromLibrary",
           .signature = "(JLjava/lang/String;Ljava/lang/String;"
-                       "Ljava/lang/String;Ljava/lang/String;"
-                       "ZLandroid/content/res/AssetManager;)V",
+                       "Ljava/lang/String;Landroid/content/res/AssetManager;)V",
           .fnPtr =
               reinterpret_cast<void*>(&shell::RunBundleAndSnapshotFromLibrary),
       },

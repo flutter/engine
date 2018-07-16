@@ -76,21 +76,35 @@ public class FlutterNativeView implements BinaryMessenger {
         if (!isAttached()) throw new AssertionError("Platform view is not attached");
     }
 
-    public void runFromBundle(String bundlePath, String snapshotOverride, String entrypoint,
-            boolean reuseRuntimeController) {
-        runFromBundle(bundlePath, snapshotOverride, entrypoint, null, reuseRuntimeController, null);
+    public void runFromBundle(FlutterRunArguments args) {
+        if (args.bundlePath == null) {
+          throw new AssertionError("A bundlePath must be specified");
+        } else if (args.entrypoint == null) {
+          throw new AssertionError("An entrypoint must be specified");
+        }
+      runFromBundleInternal(args.bundlePath, args.entrypoint,
+          args.libraryPath, args.onStartedEvent);
     }
 
+    /**
+     * @deprecated
+     * Please use runFromBundle with `FlutterRunArguments`. Parameters
+     * `snapshotOverride` and `reuseRuntimeController` have no effect.
+     */
     public void runFromBundle(String bundlePath, String snapshotOverride, String entrypoint,
-            String libraryUrl, boolean reuseRuntimeController, FlutterIsolateStartedEvent event) {
+            boolean reuseRuntimeController) {
+        runFromBundleInternal(bundlePath, entrypoint, null, null);
+    }
+
+    private void runFromBundleInternal(String bundlePath, String entrypoint,
+        String libraryPath, FlutterIsolateStartedEvent event) {
         assertAttached();
         if (applicationIsRunning)
             throw new AssertionError(
                     "This Flutter engine instance is already running an application");
         startedEvent = event;
-        nativeRunBundleAndSnapshotFromLibrary(mNativePlatformView, bundlePath, snapshotOverride,
-                entrypoint, libraryUrl, reuseRuntimeController,
-                mContext.getResources().getAssets());
+        nativeRunBundleAndSnapshotFromLibrary(mNativePlatformView, bundlePath,
+            entrypoint, libraryPath, mContext.getResources().getAssets());
 
         applicationIsRunning = true;
     }
@@ -219,9 +233,9 @@ public class FlutterNativeView implements BinaryMessenger {
     private static native void nativeDestroy(long nativePlatformViewAndroid);
     private static native void nativeDetach(long nativePlatformViewAndroid);
 
-    private static native void nativeRunBundleAndSnapshotFromLibrary(long nativePlatformViewAndroid,
-            String bundlePath, String snapshotOverride, String entrypoint, String libraryUrl,
-            boolean reuseRuntimeController, AssetManager manager);
+    private static native void nativeRunBundleAndSnapshotFromLibrary(
+            long nativePlatformViewAndroid, String bundlePath,
+            String entrypoint, String libraryUrl, AssetManager manager);
 
     private static native String nativeGetObservatoryUri();
 
