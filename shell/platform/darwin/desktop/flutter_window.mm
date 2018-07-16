@@ -54,7 +54,7 @@ static inline blink::PointerData::Change PointerChangeFromNSEventPhase(NSEventPh
 - (instancetype)init {
   self =
       [super initWithContentRect:NSMakeRect(10.0, 10.0, 800.0, 600.0)
-                       styleMask:NSTitledWindowMask | NSClosableWindowMask | NSResizableWindowMask
+                       styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable
                          backing:NSBackingStoreBuffered
                            defer:YES];
   if (self) {
