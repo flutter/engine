@@ -289,20 +289,23 @@ void PlatformViewAndroid::UpdateSemantics(blink::SemanticsNodeUpdates update,
       }
     }
 
-    // TODO(jonahwilliams): determine cause of JNI failure in API level 22
-    // fml::jni::ScopedJavaLocalRef<jobject> direct_actions_buffer(
-    //   env, env->NewDirectByteBuffer(actions_buffer.data(), actions_buffer.size()));
+    // Calling NewDirectByteBuffer in API level 22 and below with a size of zero
+    // will cause a JNI crash.
+    if (actions_buffer.size() > 0) {
+      fml::jni::ScopedJavaLocalRef<jobject> direct_actions_buffer(
+        env, env->NewDirectByteBuffer(actions_buffer.data(), actions_buffer.size()));
+      FlutterViewUpdateCustomAccessibilityActions(
+        env, view.obj(), direct_actions_buffer.obj(),
+        fml::jni::VectorToStringArray(env, action_strings).obj());
+    }
 
-    fml::jni::ScopedJavaLocalRef<jobject> direct_buffer(
-        env, env->NewDirectByteBuffer(buffer.data(), buffer.size()));
-
-    // TODO(jonahwilliams): determine cause of JNI failure in API level 22
-    // FlutterViewUpdateCustomAccessibilityActions(
-    //   env, view.obj(), direct_actions_buffer.obj(),
-    //   fml::jni::VectorToStringArray(env, action_strings).obj());
-    FlutterViewUpdateSemantics(
-      env, view.obj(), direct_buffer.obj(),
-      fml::jni::VectorToStringArray(env, strings).obj());
+    if (buffer.size() > 0) {
+      fml::jni::ScopedJavaLocalRef<jobject> direct_buffer(
+          env, env->NewDirectByteBuffer(buffer.data(), buffer.size()));
+      FlutterViewUpdateSemantics(
+        env, view.obj(), direct_buffer.obj(),
+        fml::jni::VectorToStringArray(env, strings).obj());
+    }
   }
 }
 
