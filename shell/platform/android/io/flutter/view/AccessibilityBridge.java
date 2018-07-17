@@ -38,6 +38,9 @@ class AccessibilityBridge
     // Track whether the corresponding accessibility node has been created yet, and
     // if an announcement needs to be made.
     private Map<Integer, Boolean> mLiveRegions;
+    // Track the labels of all text fields so that we can correctly send content changed
+    // events to trigger live region updates.
+    private Map<Integer, String> mTextFields;
     private final FlutterView mOwner;
     private boolean mAccessibilityEnabled = false;
     private SemanticsObject mA11yFocusedObject;
@@ -109,6 +112,7 @@ class AccessibilityBridge
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
         mLiveRegions = new HashMap<>();
+        mTextFields = new HashMap<>();
         mCustomAccessibilityActions = new HashMap<Integer, CustomAccessibilityAction>();
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(
@@ -156,6 +160,7 @@ class AccessibilityBridge
                 if (object.textSelectionBase != -1 && object.textSelectionExtent != -1) {
                     result.setTextSelection(object.textSelectionBase, object.textSelectionExtent);
                 }
+                result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
             }
 
             // Cursor movements
@@ -653,6 +658,19 @@ class AccessibilityBridge
                 }
             } else if (object.hadFlag(Flag.IS_LIVE_REGION)) {
                 mLiveRegions.remove(object.id);
+            } else if (object.hasFlag(Flag.IS_TEXT_FIELD)) {
+                if (!mTextFields.containsKey(object.id)) {
+                    mTextFields.put(object.id, object.label);
+                }
+                if (mInputFocusedObject != null && mInputFocusedObject.id == object.id) {
+                    if (!object.label.equals(mTextFields.get(object.id))) {
+                        sendAccessibilityEvent(
+                                object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+                        mTextFields.put(object.id, object.label);
+                    }
+                }
+            } else if (object.hadFlag(Flag.IS_TEXT_FIELD)) {
+                mTextFields.remove(object.id);
             }
             if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
                     && !object.hadFlag(Flag.IS_SELECTED) && object.hasFlag(Flag.IS_SELECTED)) {
@@ -804,6 +822,7 @@ class AccessibilityBridge
         assert mObjects.get(object.id) == object;
         object.parent = null;
         mLiveRegions.remove(object.id);
+        mTextFields.remove(object.id);
         if (mA11yFocusedObject == object) {
             sendAccessibilityEvent(mA11yFocusedObject.id,
                     AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
