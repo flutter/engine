@@ -289,15 +289,17 @@ void PlatformViewAndroid::UpdateSemantics(blink::SemanticsNodeUpdates update,
       }
     }
 
-    fml::jni::ScopedJavaLocalRef<jobject> direct_actions_buffer(
-      env, env->NewDirectByteBuffer(actions_buffer.data(), actions_buffer.size()));
+    // TODO(jonahwilliams): determine cause of JNI failure in API level 22
+    // fml::jni::ScopedJavaLocalRef<jobject> direct_actions_buffer(
+    //   env, env->NewDirectByteBuffer(actions_buffer.data(), actions_buffer.size()));
 
     fml::jni::ScopedJavaLocalRef<jobject> direct_buffer(
         env, env->NewDirectByteBuffer(buffer.data(), buffer.size()));
 
-    FlutterViewUpdateCustomAccessibilityActions(
-      env, view.obj(), direct_actions_buffer.obj(),
-      fml::jni::VectorToStringArray(env, action_strings).obj());
+    // TODO(jonahwilliams): determine cause of JNI failure in API level 22
+    // FlutterViewUpdateCustomAccessibilityActions(
+    //   env, view.obj(), direct_actions_buffer.obj(),
+    //   fml::jni::VectorToStringArray(env, action_strings).obj());
     FlutterViewUpdateSemantics(
       env, view.obj(), direct_buffer.obj(),
       fml::jni::VectorToStringArray(env, strings).obj());
