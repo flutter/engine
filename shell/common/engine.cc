@@ -152,9 +152,17 @@ bool Engine::PrepareAndLaunchIsolate(RunConfiguration configuration) {
     return false;
   }
 
-  if (!isolate->Run(configuration.GetEntrypoint())) {
-    FXL_LOG(ERROR) << "Could not run the isolate.";
-    return false;
+  if (configuration.GetEntrypointLibrary().empty()) {
+    if (!isolate->Run(configuration.GetEntrypoint())) {
+      FXL_LOG(ERROR) << "Could not run the isolate.";
+      return false;
+    }
+  } else {
+    if (!isolate->RunFromLibrary(configuration.GetEntrypointLibrary(),
+                                 configuration.GetEntrypoint())) {
+      FXL_LOG(ERROR) << "Could not run the isolate.";
+      return false;
+    }
   }
 
   return true;
@@ -331,6 +339,10 @@ void Engine::SetSemanticsEnabled(bool enabled) {
   runtime_controller_->SetSemanticsEnabled(enabled);
 }
 
+void Engine::SetAssistiveTechnologyEnabled(bool enabled) {
+  runtime_controller_->SetAssistiveTechnologyEnabled(enabled);
+}
+
 void Engine::StopAnimator() {
   animator_->Stop();
 }
@@ -366,7 +378,8 @@ void Engine::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
 
 void Engine::UpdateSemantics(blink::SemanticsNodeUpdates update,
                              blink::CustomAccessibilityActionUpdates actions) {
-  delegate_.OnEngineUpdateSemantics(*this, std::move(update), std::move(actions));
+  delegate_.OnEngineUpdateSemantics(*this, std::move(update),
+                                    std::move(actions));
 }
 
 void Engine::HandlePlatformMessage(

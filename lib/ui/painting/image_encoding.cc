@@ -57,10 +57,21 @@ void InvokeDataCallback(std::unique_ptr<DartPersistentValue> callback,
 
 sk_sp<SkImage> ConvertToRasterImageIfNecessary(sk_sp<SkImage> image,
                                                GrContext* context) {
-  if (context == nullptr) {
-    // The context was null (software rendering contexts) so the image is likely
-    // already a raster image. Nothing more to do.
+  SkPixmap pixmap;
+  if (image->peekPixels(&pixmap)) {
+    // This is already a raster image.
     return image;
+  }
+
+  if (sk_sp<SkImage> raster_image = image->makeRasterImage()) {
+    // The image can be converted to a raster image.
+    return raster_image;
+  }
+
+  // Cross-context images do not support makeRasterImage.  Convert these images
+  // by drawing them into a surface.
+  if (context == nullptr) {
+    return nullptr;
   }
 
   TRACE_EVENT0("flutter", __FUNCTION__);
@@ -165,7 +176,7 @@ sk_sp<SkData> EncodeImage(sk_sp<SkImage> p_image,
       return CopyImageByteData(raster_image, kRGBA_8888_SkColorType);
     } break;
     case kRawUnmodified: {
-      return CopyImageByteData(raster_image, kN32_SkColorType);
+      return CopyImageByteData(raster_image, raster_image->colorType());
     } break;
   }
 
