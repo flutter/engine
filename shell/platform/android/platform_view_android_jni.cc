@@ -190,7 +190,8 @@ std::unique_ptr<IsolateConfiguration> CreateIsolateConfiguration(
     return script;
   }
 
-  return nullptr;
+  // This happens when starting isolate directly from CoreJIT snapshot.
+  return IsolateConfiguration::CreateForPrecompiledCode();
 }
 
 static void RunBundleAndSnapshot(

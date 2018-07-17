@@ -37,9 +37,6 @@ class PrecompiledIsolateConfiguration final : public IsolateConfiguration {
 
   // |shell::IsolateConfiguration|
   bool DoPrepareIsolate(blink::DartIsolate& isolate) override {
-    if (!blink::DartVM::IsRunningPrecompiledCode()) {
-      return false;
-    }
     return isolate.PrepareForRunningFromPrecompiledCode();
   }
 
