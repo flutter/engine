@@ -25,6 +25,15 @@ class Scene;
 
 Dart_Handle ToByteData(const std::vector<uint8_t>& buffer);
 
+// Must match the AccessibilityFeatureFlag enum in window.dart.
+enum class AccessibilityFeatureFlag : int32_t {
+  kSmartInvert = 1 << 0,
+  kBoldText = 1 << 1,
+  kButtonShapes = 1 << 2,
+  kReducedMotion = 1 << 3,
+  kLabeledSwitch = 1 << 4,
+};
+
 class WindowClient {
  public:
   virtual std::string DefaultRouteName() = 0;
@@ -71,6 +80,7 @@ class Window final {
   WindowClient* client_;
   tonic::DartPersistentValue library_;
   ViewportMetrics viewport_metrics_;
+  int32_t accessibility_feature_flags_ = 0;
 
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;

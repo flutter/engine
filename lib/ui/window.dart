@@ -665,6 +665,27 @@ class Window {
     _onSemanticsActionZone = Zone.current;
   }
 
+  /// A bitmap of the currently enabled set of [AccessibilityFlag]s.
+  int get accessibilityFeatureFlags => _accessibilityFeatureFlags;
+  int _accessibilityFeatureFlags;
+
+  /// Whether `flag` is currently enabled in the set of [accessibilityFlags].
+  bool hasAccessibilityFeatureFlag(AccessibilityFeatureFlag flag) {
+    return _accessibilityFeatureFlags & flag.index != 0;
+  }
+
+  /// A callback that is invoked when the value of [accessibilityFlags] changes.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  VoidCallback get onAccessibilityFeatureFlagsChanged => _onAccessibilityFeatureFlagsChanged;
+  VoidCallback _onAccessibilityFeatureFlagsChanged;
+  Zone _onAccessibilityFlagsChangedZone;
+  set onAccessibilityFeatureFlagsChanged(VoidCallback callback) {
+    _onAccessibilityFeatureFlagsChanged = callback;
+    _onAccessibilityFlagsChangedZone = Zone.current;
+  }
+
   /// Change the retained semantics data about this window.
   ///
   /// If [semanticsEnabled] is true, the user has requested that this funciton
@@ -732,6 +753,67 @@ class Window {
     return (ByteData data) {
       registrationZone.runUnaryGuarded(callback, data);
     };
+  }
+}
+
+/// Additional accessibility features that may be supported by a platform.
+class AccessibilityFeatureFlag {
+  const AccessibilityFeatureFlag._(this.index);
+
+  static const int _kSmartInvertIndex = 1 << 0;
+  static const int _kBoldTextIndex = 1 << 1; 
+  static const int _kButtonShapesIndex = 1 << 2;
+  static const int _kReduceMotionIndex = 1 << 3;
+  static const int _kLabeledSwitchIndex = 1 << 4;
+
+  /// The numerical value for this feature.
+  ///
+  /// Each feature has one bit set in this bit field.
+  final int index;
+
+  /// The platform is inverting the colors of the application.
+  static const AccessibilityFeatureFlag smartInvert = const AccessibilityFeatureFlag._(_kSmartInvertIndex);
+
+  /// The platform is requesting that all text be drawn with a heaver font weight.
+  static const AccessibilityFeatureFlag boldText = const AccessibilityFeatureFlag._(_kBoldTextIndex);
+
+  /// The platform is requesting that buttons and other tappable targets make
+  /// themselves more obvious.
+  static const AccessibilityFeatureFlag buttonShapes = const AccessibilityFeatureFlag._(_kButtonShapesIndex);
+
+  /// The platform is requesting that expensive animations be disabled or simplified.
+  static const AccessibilityFeatureFlag reduceMotion = const AccessibilityFeatureFlag._(_kReduceMotionIndex);
+
+  /// The platform is requesting switches to recieve explicit "on" and "off" labels.
+  static const AccessibilityFeatureFlag labeledSwitch = const AccessibilityFeatureFlag._(_kLabeledSwitchIndex);
+
+  /// The possible accessibility flags.
+  ///
+  /// The map's key is the [index] of the flag and the value is the flag
+  /// itself.
+  static const Map<int, AccessibilityFeatureFlag> values = const <int, AccessibilityFeatureFlag>{
+    _kSmartInvertIndex: smartInvert,
+    _kBoldTextIndex: boldText,
+    _kButtonShapesIndex: buttonShapes,
+    _kReduceMotionIndex: reduceMotion,
+    _kLabeledSwitchIndex: labeledSwitch,
+  };
+
+  @override
+  String toString() {
+    switch (index) {
+      case _kSmartInvertIndex:
+        return 'AccessibilityFlag.smartInvert';
+      case _kBoldTextIndex:
+        return 'AccessibilityFlag.boldText';
+      case _kButtonShapesIndex:
+        return 'AccessibilityFlag.buttonShapes';
+      case _kReduceMotionIndex:
+        return 'AccessibilityFlag.reduceMotion';
+      case _kLabeledSwitchIndex:
+        return 'AccessibilityFlag.labeledSwitch';
+    }
+    return null;
   }
 }
 
