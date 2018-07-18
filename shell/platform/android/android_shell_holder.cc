@@ -82,15 +82,15 @@ AndroidShellHolder::AndroidShellHolder(
   fxl::RefPtr<fml::TaskRunner> gpu_runner;
   fxl::RefPtr<fml::TaskRunner> ui_runner;
   fxl::RefPtr<fml::TaskRunner> io_runner;
-  if (!is_background_view) {
-    gpu_runner = thread_host_.gpu_thread->GetTaskRunner();
-    ui_runner = thread_host_.ui_thread->GetTaskRunner();
-    io_runner = thread_host_.io_thread->GetTaskRunner();
-  } else {
+  if (is_background_view) {
     auto single_task_runner = thread_host_.ui_thread->GetTaskRunner();
     gpu_runner = single_task_runner;
     ui_runner = single_task_runner;
     io_runner = single_task_runner;
+  } else {
+    gpu_runner = thread_host_.gpu_thread->GetTaskRunner();
+    ui_runner = thread_host_.ui_thread->GetTaskRunner();
+    io_runner = thread_host_.io_thread->GetTaskRunner();
   }
   blink::TaskRunners task_runners(
       thread_label,                                    // label
