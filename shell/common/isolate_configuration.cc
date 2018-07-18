@@ -31,9 +31,9 @@ bool IsolateConfiguration::PrepareIsolate(
   return DoPrepareIsolate(*isolate);
 }
 
-class PrecompiledIsolateConfiguration final : public IsolateConfiguration {
+class AppSnapshotIsolateConfiguration final : public IsolateConfiguration {
  public:
-  PrecompiledIsolateConfiguration() = default;
+  AppSnapshotIsolateConfiguration() = default;
 
   // |shell::IsolateConfiguration|
   bool DoPrepareIsolate(blink::DartIsolate& isolate) override {
@@ -41,7 +41,7 @@ class PrecompiledIsolateConfiguration final : public IsolateConfiguration {
   }
 
  private:
-  FXL_DISALLOW_COPY_AND_ASSIGN(PrecompiledIsolateConfiguration);
+  FXL_DISALLOW_COPY_AND_ASSIGN(AppSnapshotIsolateConfiguration);
 };
 
 class SnapshotIsolateConfiguration : public IsolateConfiguration {
@@ -119,7 +119,7 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
     fml::RefPtr<blink::AssetManager> asset_manager) {
   // Running in AOT mode.
   if (blink::DartVM::IsRunningPrecompiledCode()) {
-    return CreateForPrecompiledCode();
+    return CreateForAppSnapshot();
   }
 
   // Run from sources.
@@ -190,8 +190,8 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
 }
 
 std::unique_ptr<IsolateConfiguration>
-IsolateConfiguration::CreateForPrecompiledCode() {
-  return std::make_unique<PrecompiledIsolateConfiguration>();
+IsolateConfiguration::CreateForAppSnapshot() {
+  return std::make_unique<AppSnapshotIsolateConfiguration>();
 }
 
 std::unique_ptr<IsolateConfiguration> IsolateConfiguration::CreateForSnapshot(
