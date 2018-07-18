@@ -573,6 +573,7 @@ void Shell::OnPlatformViewSetSemanticsEnabled(const PlatformView& view,
       });
 }
 
+// |shell::PlatformView::Delegate|
 void Shell::OnPlatformViewSetAssistiveTechnologyEnabled(
     const PlatformView& view,
     bool enabled) {
@@ -586,6 +587,22 @@ void Shell::OnPlatformViewSetAssistiveTechnologyEnabled(
           engine->SetAssistiveTechnologyEnabled(enabled);
         }
       });
+}
+
+// |shell::PlatformView::Delegate|
+void Shell:OnPlatformViewSetAccessibilityFeatureFlags(
+    const PlatformView& view,
+    int32_t flags) {
+  FXL_DCHECK(is_setup_);
+  FXL_DCHECK(&view == platform_view_.get());
+  FXL_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  task_runners_.GetUITaskRunner()->PostTask(
+    [engine = engine_->GetWeakPtr(), flags] {
+      if (engine) {
+        engine->SetAccessibilityFeatureFlags(flags);
+      }
+    });
 }
 
 // |shell::PlatformView::Delegate|

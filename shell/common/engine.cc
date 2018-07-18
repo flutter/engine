@@ -343,6 +343,10 @@ void Engine::SetAssistiveTechnologyEnabled(bool enabled) {
   runtime_controller_->SetAssistiveTechnologyEnabled(enabled);
 }
 
+void Engine::SetAccessibilityFeatureFlags(int32_t flags) {
+  runtime_controller_->SetAccessibilityFeatureFlags(flags);
+}
+
 void Engine::StopAnimator() {
   animator_->Stop();
 }

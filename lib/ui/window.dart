@@ -787,9 +787,7 @@ class AccessibilityFeatureFlag {
 
   static const int _kSmartInvertIndex = 1 << 0;
   static const int _kBoldTextIndex = 1 << 1; 
-  static const int _kButtonShapesIndex = 1 << 2;
-  static const int _kReduceMotionIndex = 1 << 3;
-  static const int _kLabeledSwitchIndex = 1 << 4;
+  static const int _kReduceMotionIndex = 1 << 2;
 
   /// The numerical value for this feature.
   ///
@@ -802,15 +800,8 @@ class AccessibilityFeatureFlag {
   /// The platform is requesting that all text be drawn with a heaver font weight.
   static const AccessibilityFeatureFlag boldText = const AccessibilityFeatureFlag._(_kBoldTextIndex);
 
-  /// The platform is requesting that buttons and other tappable targets make
-  /// themselves more obvious.
-  static const AccessibilityFeatureFlag buttonShapes = const AccessibilityFeatureFlag._(_kButtonShapesIndex);
-
   /// The platform is requesting that expensive animations be disabled or simplified.
   static const AccessibilityFeatureFlag reduceMotion = const AccessibilityFeatureFlag._(_kReduceMotionIndex);
-
-  /// The platform is requesting switches to recieve explicit "on" and "off" labels.
-  static const AccessibilityFeatureFlag labeledSwitch = const AccessibilityFeatureFlag._(_kLabeledSwitchIndex);
 
   /// The possible accessibility flags.
   ///
@@ -819,9 +810,7 @@ class AccessibilityFeatureFlag {
   static const Map<int, AccessibilityFeatureFlag> values = const <int, AccessibilityFeatureFlag>{
     _kSmartInvertIndex: smartInvert,
     _kBoldTextIndex: boldText,
-    _kButtonShapesIndex: buttonShapes,
     _kReduceMotionIndex: reduceMotion,
-    _kLabeledSwitchIndex: labeledSwitch,
   };
 
   @override
@@ -831,12 +820,8 @@ class AccessibilityFeatureFlag {
         return 'AccessibilityFlag.smartInvert';
       case _kBoldTextIndex:
         return 'AccessibilityFlag.boldText';
-      case _kButtonShapesIndex:
-        return 'AccessibilityFlag.buttonShapes';
       case _kReduceMotionIndex:
         return 'AccessibilityFlag.reduceMotion';
-      case _kLabeledSwitchIndex:
-        return 'AccessibilityFlag.labeledSwitch';
     }
     return null;
   }

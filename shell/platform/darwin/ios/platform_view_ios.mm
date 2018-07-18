@@ -78,6 +78,11 @@ void PlatformViewIOS::SetAssistiveTechnologyEnabled(bool enabled) {
   PlatformView::SetAssistiveTechnologyEnabled(enabled);
 }
 
+// |shell:PlatformView|
+void PlatformViewIOS::SetAccessibilityFeatureFlags(int32_t flags) {
+  PlatformView::SetAccessibilityFeatureFlags(flags);
+}
+
 // |shell::PlatformView|
 void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update,
                                       blink::CustomAccessibilityActionUpdates actions) {

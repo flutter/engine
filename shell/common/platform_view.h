@@ -57,6 +57,9 @@ class PlatformView {
 
     virtual void OnPlatformViewSetSemanticsEnabled(const PlatformView& view,
                                                    bool enabled) = 0;
+                                            
+    virtual void OnPlatformViewSetAccessibilityFeatureFlags(const PlatformView& view,
+                                                            int32_t flags) = 0;
 
     virtual void OnPlatformViewSetAssistiveTechnologyEnabled(
         const PlatformView& view,
@@ -87,6 +90,8 @@ class PlatformView {
                                std::vector<uint8_t> args);
 
   virtual void SetSemanticsEnabled(bool enabled);
+
+  virtual void SetAccessibilityFeatureFlags(int32_t flags);
 
   virtual void SetAssistiveTechnologyEnabled(bool enabled);
 

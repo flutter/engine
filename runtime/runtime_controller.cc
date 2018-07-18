@@ -183,6 +183,17 @@ bool RuntimeController::SetAssistiveTechnologyEnabled(bool enabled) {
   return false;
 }
 
+bool RuntimeController::SetAccessibilityFeatureFlags(bool enabled) {
+  window_data_.accessibility_feature_flags_ = 0;
+  if (auto window = GetWindowIfAvailable()) {
+    window->UpdateAccessibilityFeatureFlags(
+        window_data_.accessibility_feature_flags_);
+    return true;
+  }
+
+  return false;
+}
+
 bool RuntimeController::BeginFrame(fxl::TimePoint frame_time) {
   if (auto window = GetWindowIfAvailable()) {
     window->BeginFrame(frame_time);
