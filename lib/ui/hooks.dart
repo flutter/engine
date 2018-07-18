@@ -75,6 +75,11 @@ void _updateAccessibilityFeatureFlags(int values) {
   _invoke(window.onAccessibilityFeatureFlagsChanged, window._onAccessibilityFlagsChangedZone);
 }
 
+void _updateAssistiveTechnologyEnabled(bool enabled) {
+  window._assistiveTechnologyEnabled = enabled;
+  _invoke(window.onAssistiveTechnologyEnabled, window._onAssistiveTechnologyEnabledZone);
+}
+
 void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
   if (window.onPlatformMessage != null) {
     _invoke3<String, ByteData, PlatformMessageResponseCallback>(
