@@ -742,9 +742,8 @@ public class FlutterView
         super.onAttachedToWindow();
         mAccessibilityEnabled = mAccessibilityManager.isEnabled();
         mTouchExplorationEnabled = mAccessibilityManager.isTouchExplorationEnabled();
-        if (mAccessibilityEnabled || mTouchExplorationEnabled) {
-            ensureAccessibilityEnabled();
-        }
+        if (mAccessibilityEnabled || mTouchExplorationEnabled) ensureAccessibilityEnabled();
+        if (mTouchExplorationEnabled) nativeSetAssistiveTechnologyEnabled(mNativeView.get(), true);
         resetWillNotDraw();
         mAccessibilityManager.addAccessibilityStateChangeListener(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
