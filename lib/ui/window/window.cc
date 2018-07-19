@@ -205,7 +205,7 @@ void Window::UpdateAssistiveTechnologyEnabled(bool enabled) {
   tonic::DartState::Scope scope(dart_state);
 
   DartInvokeField(library_.value(), "_updateAssistiveTechnologyEnabled",
-                  {ToDart(values)});
+                  {ToDart(enabled)});
 }
 
 void Window::UpdateAccessibilityFeatureFlags(int32_t values) {
@@ -215,7 +215,7 @@ void Window::UpdateAccessibilityFeatureFlags(int32_t values) {
   tonic::DartState::Scope scope(dart_state);
 
   DartInvokeField(library_.value(), "_updateAccessibilityFeatureFlags",
-                  {ToDart(enabled)});
+                  {ToDart(values)});
 }
 
 void Window::DispatchPlatformMessage(fxl::RefPtr<PlatformMessage> message) {

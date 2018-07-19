@@ -62,6 +62,7 @@ class Window final {
   void UpdateUserSettingsData(const std::string& data);
   void UpdateSemanticsEnabled(bool enabled);
   void UpdateAssistiveTechnologyEnabled(bool enabled);
+  void UpdateAccessibilityFeatureFlags(int32_t flags);
   void DispatchPlatformMessage(fxl::RefPtr<PlatformMessage> message);
   void DispatchPointerDataPacket(const PointerDataPacket& packet);
   void DispatchSemanticsAction(int32_t id,
@@ -79,7 +80,6 @@ class Window final {
   WindowClient* client_;
   tonic::DartPersistentValue library_;
   ViewportMetrics viewport_metrics_;
-  int32_t accessibility_feature_flags_ = 0;
 
   // We use id 0 to mean that no response is expected.
   int next_response_id_ = 1;

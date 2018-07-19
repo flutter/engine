@@ -590,7 +590,7 @@ void Shell::OnPlatformViewSetAssistiveTechnologyEnabled(
 }
 
 // |shell::PlatformView::Delegate|
-void Shell:OnPlatformViewSetAccessibilityFeatureFlags(
+void Shell::OnPlatformViewSetAccessibilityFeatureFlags(
     const PlatformView& view,
     int32_t flags) {
   FXL_DCHECK(is_setup_);

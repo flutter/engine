@@ -53,7 +53,7 @@ void PlatformView::SetSemanticsEnabled(bool enabled) {
 }
 
 void PlatformView::SetAccessibilityFeatureFlags(int32_t flags) {
-  delegate_.OnPlatfromViewSetAccessibilityFeatureFlags(*this, flags);
+  delegate_.OnPlatformViewSetAccessibilityFeatureFlags(*this, flags);
 }
 
 void PlatformView::SetAssistiveTechnologyEnabled(bool enabled) {
