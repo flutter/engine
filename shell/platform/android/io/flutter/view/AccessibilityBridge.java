@@ -8,7 +8,6 @@ import android.graphics.Rect;
 import android.opengl.Matrix;
 import android.os.Build;
 import android.os.Bundle;
-import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
