@@ -508,7 +508,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     Float64List transform,
     Int32List childrenInTraversalOrder,
     Int32List childrenInHitTestOrder,
+    @Deprecated('use additionalActions instead')
     Int32List customAcccessibilityActions,
+    Int32List additionalActions,
   }) {
     if (transform.length != 16)
       throw new ArgumentError('transform argument must have 16 entries.');
@@ -534,7 +536,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       transform,
       childrenInTraversalOrder,
       childrenInHitTestOrder,
-      customAcccessibilityActions,
+      additionalActions ?? customAcccessibilityActions,
     );
   }
   void _updateNode(
@@ -559,19 +561,18 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     Float64List transform,
     Int32List childrenInTraversalOrder,
     Int32List childrenInHitTestOrder,
-    Int32List customAcccessibilityActions,
+    Int32List additionalActions,
   ) native 'SemanticsUpdateBuilder_updateNode';
 
-  /// Update the custom accessibility action associated with the given `id`.
+  /// Update the custom semantics action associated with the given `id`.
   /// 
   /// The name of the action exposed to the user is the `label`. The text 
   /// direction of this label is the same as the global window.
-  void updateCustomAction({int id, String label}) {
+  void updateCustomAction({int id, String label, String hint, int overrideId = -1}) {
     assert(id != null);
-    assert(label != null && label != '');
-    _updateCustomAction(id, label);
+    _updateCustomAction(id, label, hint, overrideId);
   }
-  void _updateCustomAction(int id, String label) native 'SemanticsUpdateBuilder_updateCustomAction';
+  void _updateCustomAction(int id, String label, String hint, int overrideId) native 'SemanticsUpdateBuilder_updateCustomAction';
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.

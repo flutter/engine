@@ -257,7 +257,14 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         if (Build.VERSION.SDK_INT >= 21) {
             if (object.customAccessibilityAction != null) {
                 for (CustomAccessibilityAction action : object.customAccessibilityAction) {
-                    result.addAction(new AccessibilityNodeInfo.AccessibilityAction(action.resourceId, action.label));
+                    if (action.isStandardAction()) {
+                        int standardId = action.getStandardId();
+                        if (standardId == -1)
+                            continue;
+                        result.addAction(new AccessibilityNodeInfo.AccessibilityAction(standardId, action.hint));
+                    } else {
+                        result.addAction(new AccessibilityNodeInfo.AccessibilityAction(action.resourceId, action.label));
+                    }
                 }
             }
         }
@@ -500,8 +507,11 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
             CustomAccessibilityAction action = getOrCreateAction(id);
+            action.overrideId = buffer.getInt();
             int stringIndex = buffer.getInt();
             action.label = stringIndex == -1 ? null : strings[stringIndex];
+            stringIndex = buffer.getInt();
+            action.hint = stringIndex == -1 ? null : strings[stringIndex];
         }
     }
 
@@ -780,9 +790,28 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         /// does not collide with existing Android accessibility actions.
         int resourceId = -1;
         int id = -1;
+        int overrideId = -1;
 
         /// The label is the user presented value which is displayed in the local context menu.
         String label;
+
+        /// The hint is the text used in overriden standard actions.
+        String hint;
+
+        boolean isStandardAction() {
+            return overrideId != -1;
+        }
+
+        int getStandardId() {
+            switch (overrideId) {
+                case 1 << 0:
+                    return AccessibilityNodeInfo.ACTION_CLICK;
+                case 1 << 1:
+                    return AccessibilityNodeInfo.ACTION_LONG_CLICK;
+                default:
+                    return -1;
+            }
+        }
     }
     /// Value is derived from ACTION_TYPE_MASK in AccessibilityNodeInfo.java
     static int firstResourceId = 267386881;

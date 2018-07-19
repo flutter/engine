@@ -84,10 +84,14 @@ void SemanticsUpdateBuilder::updateNode(int id,
 }
 
 void SemanticsUpdateBuilder::updateCustomAction(int id,
-                                                std::string label) {
+                                                std::string label,
+                                                std::string hint,
+                                                int overrideId) {
   CustomAccessibilityAction action;
   action.id = id;
+  action.overrideId = overrideId;
   action.label = label;
+  action.hint = hint;
   actions_[id] = action;
 }
 
