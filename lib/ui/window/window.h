@@ -27,9 +27,9 @@ Dart_Handle ToByteData(const std::vector<uint8_t>& buffer);
 
 // Must match the AccessibilityFeatureFlag enum in window.dart.
 enum class AccessibilityFeatureFlag : int32_t {
-  kSmartInvert = 1 << 0,
+  kInvertColors = 1 << 0,
   kBoldText = 1 << 1,
-  kReducedMotion = 1 << 3,
+  kReduceMotion = 1 << 3,
 };
 
 class WindowClient {

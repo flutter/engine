@@ -795,7 +795,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   auto platformView = _shell->GetPlatformView();
   int32_t flags = 0;
   if (UIAccessibilityIsInvertColorsEnabled())
-    flags &= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kSmartInvert);
+    flags &= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kInvertColors);
   if (UIAccessibilityIsBoldTextEnabled())
     flags &= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kBoldText);
   if (UIAccessibilityIsReduceMotionEnabled())

@@ -782,10 +782,14 @@ class Window {
 }
 
 /// Additional accessibility features that may be supported by a platform.
+/// 
+/// It is not possible to enable these flags from Flutter, instead they are
+/// used by the platform to indicate that additional accessibility features are
+/// enabled.
 class AccessibilityFeatureFlag {
   const AccessibilityFeatureFlag._(this.index);
 
-  static const int _kSmartInvertIndex = 1 << 0;
+  static const int _kInvertColorsIndex = 1 << 0;
   static const int _kBoldTextIndex = 1 << 1; 
   static const int _kReduceMotionIndex = 1 << 2;
 
@@ -795,12 +799,18 @@ class AccessibilityFeatureFlag {
   final int index;
 
   /// The platform is inverting the colors of the application.
-  static const AccessibilityFeatureFlag smartInvert = const AccessibilityFeatureFlag._(_kSmartInvertIndex);
+  /// 
+  /// This flag is only supported on iOS.
+  static const AccessibilityFeatureFlag invertColors = const AccessibilityFeatureFlag._(_kInvertColorsIndex);
 
   /// The platform is requesting that all text be drawn with a heaver font weight.
+  /// 
+  /// This flag is only supported on iOS.
   static const AccessibilityFeatureFlag boldText = const AccessibilityFeatureFlag._(_kBoldTextIndex);
 
   /// The platform is requesting that expensive animations be disabled or simplified.
+  /// 
+  /// This flag is only supported on iOS.
   static const AccessibilityFeatureFlag reduceMotion = const AccessibilityFeatureFlag._(_kReduceMotionIndex);
 
   /// The possible accessibility flags.
@@ -808,7 +818,7 @@ class AccessibilityFeatureFlag {
   /// The map's key is the [index] of the flag and the value is the flag
   /// itself.
   static const Map<int, AccessibilityFeatureFlag> values = const <int, AccessibilityFeatureFlag>{
-    _kSmartInvertIndex: smartInvert,
+    _kInvertColorsIndex: invertColors,
     _kBoldTextIndex: boldText,
     _kReduceMotionIndex: reduceMotion,
   };
@@ -816,7 +826,7 @@ class AccessibilityFeatureFlag {
   @override
   String toString() {
     switch (index) {
-      case _kSmartInvertIndex:
+      case _kInvertColorsIndex:
         return 'AccessibilityFlag.smartInvert';
       case _kBoldTextIndex:
         return 'AccessibilityFlag.boldText';
