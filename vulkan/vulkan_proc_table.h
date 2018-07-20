@@ -12,7 +12,6 @@
 #include "lib/fxl/memory/ref_ptr.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
-#include "third_party/skia/include/gpu/vk/GrVkInterface.h"
 
 namespace vulkan {
 
