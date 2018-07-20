@@ -31,7 +31,10 @@ class ParagraphImpl {
 
   virtual void layout(double width) = 0;
 
-  virtual void paint(Canvas* canvas, double x, double y, Shader* shader = nullptr) = 0;
+  virtual void paint(Canvas* canvas,
+                     double x,
+                     double y,
+                     Shader* shader = nullptr) = 0;
 
   virtual std::vector<TextBox> getRectsForRange(unsigned start,
                                                 unsigned end) = 0;

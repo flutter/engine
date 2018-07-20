@@ -54,7 +54,10 @@ void ParagraphImplTxt::layout(double width) {
   m_paragraph->Layout(width);
 }
 
-void ParagraphImplTxt::paint(Canvas* canvas, double x, double y, Shader* shader) {
+void ParagraphImplTxt::paint(Canvas* canvas,
+                             double x,
+                             double y,
+                             Shader* shader) {
   SkCanvas* sk_canvas = canvas->canvas();
   sk_sp<SkShader> sk_shader = shader == nullptr ? nullptr : shader->shader();
   if (!sk_canvas)
