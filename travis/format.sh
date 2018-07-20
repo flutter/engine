@@ -32,12 +32,15 @@ $CLANG_FORMAT --version
 # Compute the diffs.
 FILETYPES="*.c *.cc *.cpp *.h *.m *.mm"
 DIFF_OPTS="-U0 --no-color --name-only"
+
 if git remote get-url upstream >/dev/null 2>&1; then
-  UPSTREAM=upstream/master
+  UPSTREAM=upstream
 else
-  UPSTREAM=master
+  UPSTREAM=origin
 fi;
-FILES_TO_CHECK="$(git diff $DIFF_OPTS $UPSTREAM -- $FILETYPES)"
+
+TEST_COMMIT_RANGE="$(git fetch $UPSTREAM master > /dev/null 2>&1 && git merge-base --fork-point FETCH_HEAD HEAD)..HEAD"
+FILES_TO_CHECK="$(git diff $DIFF_OPTS $TEST_COMMIT_RANGE -- $FILETYPES)"
 
 FAILED_CHECKS=0
 for f in $FILES_TO_CHECK; do
