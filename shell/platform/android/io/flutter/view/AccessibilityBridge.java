@@ -651,7 +651,7 @@ class AccessibilityBridge
             }
             if (object.hasFlag(Flag.IS_LIVE_REGION) && !object.hadFlag(Flag.IS_LIVE_REGION)) {
                 sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-            } else if (object.hasFlag(Flag.IS_TEXT_FIELD) && object.label != object.previousLabel
+            } else if (object.hasFlag(Flag.IS_TEXT_FIELD) && object.didChangeLabel()
                     && mInputFocusedObject != null && mInputFocusedObject.id == object.id) {
                 sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
             }
@@ -778,6 +778,8 @@ class AccessibilityBridge
                 e.getText().add((String) data.get("message"));
                 sendAccessibilityEvent(e);
             }
+            // Requires that the node id provided corresponds to a live region, or TalkBack will
+            // ignore the event.
             case "updateLiveRegion": {
                 Integer nodeId = (Integer) annotatedEvent.get("nodeId");
                 if (nodeId == null) {
@@ -921,6 +923,13 @@ class AccessibilityBridge
         boolean didScroll() {
             return !Float.isNaN(scrollPosition) && !Float.isNaN(previousScrollPosition)
                     && previousScrollPosition != scrollPosition;
+        }
+
+        boolean didChangeLabel() {
+            if (label == null && previousLabel == null) {
+                return false;
+            }
+            return label == null || previousLabel == null || !label.equals(previousLabel);
         }
 
         void log(String indent, boolean recursive) {
