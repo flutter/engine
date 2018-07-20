@@ -653,6 +653,8 @@ class AccessibilityBridge
                 sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
             } else if (object.hasFlag(Flag.IS_TEXT_FIELD) && object.didChangeLabel()
                     && mInputFocusedObject != null && mInputFocusedObject.id == object.id) {
+                // Text fields should announce when their label changes while focused. We use a live
+                // region tag to do so, and this event triggers that update.
                 sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
             }
             if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id
@@ -779,7 +781,8 @@ class AccessibilityBridge
                 sendAccessibilityEvent(e);
             }
             // Requires that the node id provided corresponds to a live region, or TalkBack will
-            // ignore the event.
+            // ignore the event. The event will cause talkback to read out the new label even
+            // if node is not focused.
             case "updateLiveRegion": {
                 Integer nodeId = (Integer) annotatedEvent.get("nodeId");
                 if (nodeId == null) {

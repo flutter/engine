@@ -367,6 +367,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
       [self node].HasAction(blink::SemanticsAction::kDecrease)) {
     traits |= UIAccessibilityTraitAdjustable;
   }
+  // TODO(jonahwilliams): switches should have a value of "on" or "off"
   if ([self node].HasFlag(blink::SemanticsFlags::kIsSelected) ||
       [self node].HasFlag(blink::SemanticsFlags::kIsToggled) ||
       [self node].HasFlag(blink::SemanticsFlags::kIsChecked)) {
