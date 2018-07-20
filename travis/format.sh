@@ -64,7 +64,7 @@ fi
 FILETYPES="*.c *.cc *.cpp *.h *.m *.mm *.dart"
 
 set +e
-TRAILING_SPACES=$(git diff $DIFF_OPTS master -- $FILETYPES | xargs grep --line-number --with-filename '\s\+$')
+TRAILING_SPACES=$(git diff $DIFF_OPTS $BASE_SHA..HEAD -- $FILETYPES | xargs grep --line-number --with-filename '\s\+$')
 set -e
 
 if [[ ! -z "$TRAILING_SPACES" ]]; then
