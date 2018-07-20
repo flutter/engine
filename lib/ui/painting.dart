@@ -3316,7 +3316,7 @@ class Canvas extends NativeFieldWrapperClass2 {
   void _drawPicture(Picture picture) native 'Canvas_drawPicture';
 
   /// Draws the text in the given [Paragraph] into this canvas at the given
-  /// [Offset].
+  /// [Offset] with an optional [Shader] applied to the text.
   ///
   /// The [Paragraph] object must have had [Paragraph.layout] called on it
   /// first.
@@ -3335,10 +3335,10 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// If the text is centered, the centering axis will be at the position
   /// described by adding half of the [ParagraphConstraints.width] given to
   /// [Paragraph.layout], to the `offset` argument's [Offset.dx] coordinate.
-  void drawParagraph(Paragraph paragraph, Offset offset) {
+  void drawParagraph(Paragraph paragraph, Offset offset, {Shader shader = null}) {
     assert(paragraph != null);
     assert(_offsetIsValid(offset));
-    paragraph._paint(this, offset.dx, offset.dy);
+    paragraph._paint(this, offset.dx, offset.dy, shader);
   }
 
   /// Draws a sequence of points according to the given [PointMode].
