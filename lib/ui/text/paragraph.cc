@@ -80,8 +80,8 @@ void Paragraph::layout(double width) {
   m_paragraphImpl->layout(width);
 }
 
-void Paragraph::paint(Canvas* canvas, double x, double y) {
-  m_paragraphImpl->paint(canvas, x, y);
+void Paragraph::paint(Canvas* canvas, double x, double y, Shader* shader) {
+  m_paragraphImpl->paint(canvas, x, y, shader);
 }
 
 std::vector<TextBox> Paragraph::getRectsForRange(unsigned start, unsigned end) {

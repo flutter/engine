@@ -100,7 +100,7 @@ class Paragraph {
 
   // Paints the Laid out text onto the supplied SkCanvas at (x, y) offset from
   // the origin. Only valid after Layout() is called.
-  void Paint(SkCanvas* canvas, double x, double y);
+  void Paint(SkCanvas* canvas, double x, double y, sk_sp<SkShader> shader = nullptr);
 
   // Getter for paragraph_style_.
   const ParagraphStyle& GetParagraphStyle() const;

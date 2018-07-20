@@ -6,6 +6,7 @@
 #define FLUTTER_LIB_UI_TEXT_PARAGRAPH_IMPL_H_
 
 #include "flutter/lib/ui/painting/canvas.h"
+#include "flutter/lib/ui/painting/shader.h"
 #include "flutter/lib/ui/text/text_box.h"
 
 namespace blink {
@@ -30,7 +31,7 @@ class ParagraphImpl {
 
   virtual void layout(double width) = 0;
 
-  virtual void paint(Canvas* canvas, double x, double y) = 0;
+  virtual void paint(Canvas* canvas, double x, double y, Shader* shader = nullptr) = 0;
 
   virtual std::vector<TextBox> getRectsForRange(unsigned start,
                                                 unsigned end) = 0;

@@ -27,7 +27,7 @@ class ParagraphImplTxt : public ParagraphImpl {
   bool didExceedMaxLines() override;
 
   void layout(double width) override;
-  void paint(Canvas* canvas, double x, double y) override;
+  void paint(Canvas* canvas, double x, double y, Shader* shader = nullptr) override;
 
   std::vector<TextBox> getRectsForRange(unsigned start, unsigned end) override;
   Dart_Handle getPositionForOffset(double dx, double dy) override;
