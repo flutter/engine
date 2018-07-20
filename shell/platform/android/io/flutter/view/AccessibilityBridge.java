@@ -8,7 +8,6 @@ import android.graphics.Rect;
 import android.opengl.Matrix;
 import android.os.Build;
 import android.os.Bundle;
-import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
@@ -42,7 +41,6 @@ class AccessibilityBridge
     private SemanticsObject mHoveredObject;
     private int previousRouteId = ROOT_NODE_ID;
     private List<Integer> previousRoutes;
-    private String mPackageName;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
@@ -109,7 +107,6 @@ class AccessibilityBridge
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(
                 owner, "flutter/accessibility", StandardMessageCodec.INSTANCE);
-        mPackageName = owner.getContext().getPackageName();
     }
 
     void setAccessibilityEnabled(boolean accessibilityEnabled) {
@@ -127,22 +124,29 @@ class AccessibilityBridge
         if (virtualViewId == View.NO_ID) {
             AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner);
             mOwner.onInitializeAccessibilityNodeInfo(result);
-            if (mObjects.containsKey(ROOT_NODE_ID)) result.addChild(mOwner, ROOT_NODE_ID);
+            if (mObjects.containsKey(ROOT_NODE_ID)) {
+                result.addChild(mOwner, ROOT_NODE_ID);
+            }
             return result;
         }
 
         SemanticsObject object = mObjects.get(virtualViewId);
-        if (object == null) return null;
+        if (object == null) {
+            return null;
+        }
 
         AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner, virtualViewId);
         result.setPackageName(mOwner.getContext().getPackageName());
         result.setClassName("android.view.View");
         result.setSource(mOwner, virtualViewId);
         result.setFocusable(object.isFocusable());
-        if (mInputFocusedObject != null) result.setFocused(mInputFocusedObject.id == virtualViewId);
+        if (mInputFocusedObject != null) {
+            result.setFocused(mInputFocusedObject.id == virtualViewId);
+        }
 
-        if (mA11yFocusedObject != null)
+        if (mA11yFocusedObject != null) {
             result.setAccessibilityFocused(mA11yFocusedObject.id == virtualViewId);
+        }
 
         if (object.hasFlag(Flag.IS_TEXT_FIELD)) {
             result.setPassword(object.hasFlag(Flag.IS_OBSCURED));
@@ -152,6 +156,9 @@ class AccessibilityBridge
                 if (object.textSelectionBase != -1 && object.textSelectionExtent != -1) {
                     result.setTextSelection(object.textSelectionBase, object.textSelectionExtent);
                 }
+                // Text fields will always be created as a live region, so that updates to
+                // the label trigger polite announcements. This makes it easy to follow a11y
+                // guidelines for text fields on Android.
                 result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
             }
 
@@ -973,8 +980,12 @@ class AccessibilityBridge
             right = buffer.getFloat();
             bottom = buffer.getFloat();
 
-            if (transform == null) transform = new float[16];
-            for (int i = 0; i < 16; ++i) transform[i] = buffer.getFloat();
+            if (transform == null) {
+                transform = new float[16];
+            }
+            for (int i = 0; i < 16; ++i) {
+                transform[i] = buffer.getFloat();
+            }
             inverseTransformDirty = true;
             globalGeometryDirty = true;
 
@@ -1023,11 +1034,16 @@ class AccessibilityBridge
         }
 
         private void ensureInverseTransform() {
-            if (!inverseTransformDirty) return;
+            if (!inverseTransformDirty) {
+                return;
+            }
             inverseTransformDirty = false;
-            if (inverseTransform == null) inverseTransform = new float[16];
-            if (!Matrix.invertM(inverseTransform, 0, transform, 0))
+            if (inverseTransform == null) {
+                inverseTransform = new float[16];
+            }
+            if (!Matrix.invertM(inverseTransform, 0, transform, 0)) {
                 Arrays.fill(inverseTransform, 0);
+            }
         }
 
         Rect getGlobalRect() {
@@ -1107,10 +1123,14 @@ class AccessibilityBridge
                 boolean forceUpdate) {
             visitedObjects.add(this);
 
-            if (globalGeometryDirty) forceUpdate = true;
+            if (globalGeometryDirty) {
+                forceUpdate = true;
+            }
 
             if (forceUpdate) {
-                if (globalTransform == null) globalTransform = new float[16];
+                if (globalTransform == null) {
+                    globalTransform = new float[16];
+                }
                 Matrix.multiplyMM(globalTransform, 0, ancestorTransform, 0, transform, 0);
 
                 final float[] sample = new float[4];
