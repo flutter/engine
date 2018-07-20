@@ -60,8 +60,6 @@ class VulkanProcTable : public fxl::RefCountedThreadSafe<VulkanProcTable> {
 
   bool SetupDeviceProcAddresses(const VulkanHandle<VkDevice>& device);
 
-  // CreateSkiaInterface is deprecated.
-  sk_sp<GrVkInterface> CreateSkiaInterface() const;
   GrVkGetProc CreateSkiaGetProc() const;
 
 #define DEFINE_PROC(name) Proc<PFN_vk##name> name;
