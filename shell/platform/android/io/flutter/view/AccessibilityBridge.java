@@ -223,7 +223,7 @@ class AccessibilityBridge
                 !object.hasFlag(Flag.HAS_ENABLED_STATE) || object.hasFlag(Flag.IS_ENABLED));
 
         if (object.hasAction(Action.TAP)) {
-            result.addAction(new AccessibilityNodeInfo.AccessibilityAction(0x00000040, "TO GET DOWN!"));
+            result.addAction(new AccessibilityNodeInfo.AccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, "TO GET DOWN!"));
             //result.addAction(AccessibilityNodeInfo.ACTION_CLICK);
             result.setClickable(true);
         }
