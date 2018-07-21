@@ -200,7 +200,8 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                           object.hasFlag(Flag.IS_ENABLED));
 
         if (object.hasAction(Action.TAP)) {
-            result.addAction(AccessibilityNodeInfo.ACTION_CLICK);
+            result.addAction(new AccessibilityNodeInfo.AccessibilityAction(0x00000040, "TO GET DOWN!"));
+            //result.addAction(AccessibilityNodeInfo.ACTION_CLICK);
             result.setClickable(true);
         }
         if (object.hasAction(Action.LONG_PRESS)) {
@@ -255,13 +256,12 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         // Actions on the local context menu
         if (Build.VERSION.SDK_INT >= 21) {
+            result.addAction(new AccessibilityNodeInfo.AccessibilityAction(0x00000040, "TO GET DOWN!"));
             if (object.customAccessibilityAction != null) {
                 for (CustomAccessibilityAction action : object.customAccessibilityAction) {
                     if (action.isStandardAction()) {
                         int standardId = action.getStandardId();
-                        if (standardId == -1)
-                            continue;
-                        result.addAction(new AccessibilityNodeInfo.AccessibilityAction(standardId, action.hint));
+                        // result.addAction(new AccessibilityNodeInfo.AccessibilityAction(0x00000040, "TO GET DOWN!"));
                     } else {
                         result.addAction(new AccessibilityNodeInfo.AccessibilityAction(action.resourceId, action.label));
                     }
