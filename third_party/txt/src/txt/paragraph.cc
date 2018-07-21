@@ -552,9 +552,8 @@ void Paragraph::Layout(double width, bool force) {
         }
       }
 
-      layout.doLayout(text_ptr, text_start, text_count, text_size,
-                      run.is_rtl(), font, minikin_paint,
-                      minikin_font_collection);
+      layout.doLayout(text_ptr, text_start, text_count, text_size, run.is_rtl(),
+                      font, minikin_paint, minikin_font_collection);
 
       if (layout.nGlyphs() == 0)
         continue;
