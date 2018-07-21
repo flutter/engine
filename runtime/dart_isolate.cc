@@ -257,10 +257,6 @@ bool DartIsolate::PrepareForRunningFromPrecompiledCode() {
     return false;
   }
 
-  if (!DartVM::IsRunningPrecompiledCode()) {
-    return false;
-  }
-
   tonic::DartState::Scope scope(this);
 
   if (Dart_IsNull(Dart_RootLibrary())) {
@@ -342,9 +338,8 @@ bool DartIsolate::PrepareForRunningFromSnapshot(
 
   tonic::DartState::Scope scope(this);
 
-  if (!Dart_IsNull(Dart_RootLibrary())) {
-    return false;
-  }
+  // Use root library provided by kernel in favor of one provided by snapshot.
+  Dart_SetRootLibrary(Dart_Null());
 
   if (!LoadSnapshot(mapping, last_piece)) {
     return false;
@@ -719,16 +714,6 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
         raw_embedder_isolate->child_isolate_preparer_  // child isolate preparer
     );
   }
-
-  // TODO(rmacnak): This flag setting business preserves a side effect of using
-  // Dart_CreateIsolateFromKernel. It should be removed when some of the
-  // internal logic in reload no longer uses this flag.
-  Dart_IsolateFlags nonnull_flags;
-  if (flags == nullptr) {
-    Dart_IsolateFlagsInitialize(&nonnull_flags);
-    flags = &nonnull_flags;
-  }
-  flags->use_dart_frontend = true;
 
   // Create the Dart VM isolate and give it the embedder object as the baton.
   Dart_Isolate isolate =
