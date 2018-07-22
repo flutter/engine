@@ -262,7 +262,7 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
         }
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
-        result.setText(object.getValueLabelHint());
+        result.setText(object.hasHintOverride() ? object.getValueLabel() : object.getValueLabelHint());
 
         // Accessibility Focus
         if (mA11yFocusedObject != null && mA11yFocusedObject.id == virtualViewId) {
@@ -1026,6 +1026,9 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                     } else if (action.overrideId == Action.LONG_PRESS.value) {
                         object.onLongPressOverride = action;
                     } else {
+                        // If we recieve a different overrideId it means that we were passed
+                        // a standard action to override that we don't yet support.
+                        assert action.overrideId == -1;
                         customAccessibilityActions.add(action);
                     }
                 }
@@ -1088,6 +1091,13 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
                     | Action.SCROLL_DOWN.value;
             return (actions & ~scrollableActions) != 0 || flags != 0 || (label != null && !label.isEmpty())
                     || (value != null && !value.isEmpty()) || (hint != null && !hint.isEmpty());
+        }
+
+        // We exclude the hint from the node's label if there is a supported hint text
+        // override provided on one of the supported standard actions.
+        boolean hasHintOverride() {
+            return Build.VERSION.SDK_INT >= 21 && ((onTapOverride != null && hasAction(Action.TAP))
+                    || (onLongPressOverride != null && hasAction(Action.LONG_PRESS)));
         }
 
         void collectRoutes(List<SemanticsObject> edges) {
@@ -1194,6 +1204,19 @@ class AccessibilityBridge extends AccessibilityNodeProvider implements BasicMess
 
         private float max(float a, float b, float c, float d) {
             return Math.max(a, Math.max(b, Math.max(c, d)));
+        }
+
+        private String getValueLabel() {
+            StringBuilder sb = new StringBuilder();
+            if (value != null) {
+                sb.append(value);
+            }
+            if (label != null) {
+                if (sb.length() > 0)
+                    sb.append(", ");
+                sb.append(label);
+            }
+            return sb.length() > 0 ? sb.toString() : null;
         }
 
         private String getValueLabelHint() {
