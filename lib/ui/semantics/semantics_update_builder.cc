@@ -17,8 +17,8 @@ static void SemanticsUpdateBuilder_constructor(Dart_NativeArguments args) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, SemanticsUpdateBuilder);
 
-#define FOR_EACH_BINDING(V)               \
-  V(SemanticsUpdateBuilder, updateNode)   \
+#define FOR_EACH_BINDING(V)                     \
+  V(SemanticsUpdateBuilder, updateNode)         \
   V(SemanticsUpdateBuilder, updateCustomAction) \
   V(SemanticsUpdateBuilder, build)
 
@@ -35,28 +35,29 @@ SemanticsUpdateBuilder::SemanticsUpdateBuilder() = default;
 
 SemanticsUpdateBuilder::~SemanticsUpdateBuilder() = default;
 
-void SemanticsUpdateBuilder::updateNode(int id,
-                                        int flags,
-                                        int actions,
-                                        int textSelectionBase,
-                                        int textSelectionExtent,
-                                        double scrollPosition,
-                                        double scrollExtentMax,
-                                        double scrollExtentMin,
-                                        double left,
-                                        double top,
-                                        double right,
-                                        double bottom,
-                                        std::string label,
-                                        std::string hint,
-                                        std::string value,
-                                        std::string increasedValue,
-                                        std::string decreasedValue,
-                                        int textDirection,
-                                        const tonic::Float64List& transform,
-                                        const tonic::Int32List& childrenInTraversalOrder,
-                                        const tonic::Int32List& childrenInHitTestOrder,
-                                        const tonic::Int32List& localContextActions) {
+void SemanticsUpdateBuilder::updateNode(
+    int id,
+    int flags,
+    int actions,
+    int textSelectionBase,
+    int textSelectionExtent,
+    double scrollPosition,
+    double scrollExtentMax,
+    double scrollExtentMin,
+    double left,
+    double top,
+    double right,
+    double bottom,
+    std::string label,
+    std::string hint,
+    std::string value,
+    std::string increasedValue,
+    std::string decreasedValue,
+    int textDirection,
+    const tonic::Float64List& transform,
+    const tonic::Int32List& childrenInTraversalOrder,
+    const tonic::Int32List& childrenInHitTestOrder,
+    const tonic::Int32List& localContextActions) {
   SemanticsNode node;
   node.id = id;
   node.flags = flags;
@@ -74,12 +75,16 @@ void SemanticsUpdateBuilder::updateNode(int id,
   node.decreasedValue = decreasedValue;
   node.textDirection = textDirection;
   node.transform.setColMajord(transform.data());
-  node.childrenInTraversalOrder = std::vector<int32_t>(
-      childrenInTraversalOrder.data(), childrenInTraversalOrder.data() + childrenInTraversalOrder.num_elements());
+  node.childrenInTraversalOrder =
+      std::vector<int32_t>(childrenInTraversalOrder.data(),
+                           childrenInTraversalOrder.data() +
+                               childrenInTraversalOrder.num_elements());
   node.childrenInHitTestOrder = std::vector<int32_t>(
-      childrenInHitTestOrder.data(), childrenInHitTestOrder.data() + childrenInHitTestOrder.num_elements());
+      childrenInHitTestOrder.data(),
+      childrenInHitTestOrder.data() + childrenInHitTestOrder.num_elements());
   node.customAccessibilityActions = std::vector<int32_t>(
-      localContextActions.data(), localContextActions.data() + localContextActions.num_elements());
+      localContextActions.data(),
+      localContextActions.data() + localContextActions.num_elements());
   nodes_[id] = node;
 }
 
