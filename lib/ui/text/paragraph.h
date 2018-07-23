@@ -40,7 +40,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
   bool didExceedMaxLines();
 
   void layout(double width);
-  void paint(Canvas* canvas, double x, double y);
+  void paint(Canvas* canvas, double x, double y, Shader* shader = nullptr);
 
   std::vector<TextBox> getRectsForRange(unsigned start, unsigned end);
   Dart_Handle getPositionForOffset(double dx, double dy);

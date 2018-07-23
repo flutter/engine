@@ -37,6 +37,7 @@
 #include "third_party/icu/source/common/unicode/ubidi.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPaint.h"
+#include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/core/SkTypeface.h"
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
@@ -877,7 +878,10 @@ sk_sp<SkTypeface> Paragraph::GetDefaultSkiaTypeface(const TextStyle& style) {
 
 // The x,y coordinates will be the very top left corner of the rendered
 // paragraph.
-void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
+void Paragraph::Paint(SkCanvas* canvas,
+                      double x,
+                      double y,
+                      sk_sp<SkShader> shader) {
   SkPoint base_offset = SkPoint::Make(x, y);
   SkPaint paint;
   for (const PaintRecord& record : records_) {
@@ -886,6 +890,9 @@ void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
     } else {
       paint.reset();
       paint.setColor(record.style().color);
+    }
+    if (shader) {
+      paint.setShader(shader);
     }
     SkPoint offset = base_offset + record.offset();
     PaintBackground(canvas, record, base_offset);

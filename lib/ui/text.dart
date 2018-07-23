@@ -1015,7 +1015,7 @@ class Paragraph extends NativeFieldWrapperClass2 {
   // Redirecting the paint function in this way solves some dependency problems
   // in the C++ code. If we straighten out the C++ dependencies, we can remove
   // this indirection.
-  void _paint(Canvas canvas, double x, double y) native 'Paragraph_paint';
+  void _paint(Canvas canvas, double x, double y, Shader shader) native 'Paragraph_paint';
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.
