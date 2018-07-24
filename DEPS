@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': 'df795638b9bd23d03bea7aafb4ecae221172631a',
+  'skia_revision': 'b8eeb808d84f7892fad9ce8ff6ce62c7fcacb217',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -125,8 +125,8 @@ deps = {
   'src/garnet':
    Var('fuchsia_git') + '/garnet' + '@' + 'b7492b5f34e32248b164eb48ae8e67995aebda67',
 
-  'src/topaz':
-   Var('fuchsia_git') + '/topaz' + '@' + '5fa651cf9cc5f338379e34964ff5dd70052f6237',
+  'src/third_party/tonic':
+   Var('fuchsia_git') + '/tonic' + '@' + '57d508b12462db686573edcbc97891d90cf92f90',
 
   'src/third_party/benchmark':
    Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',
