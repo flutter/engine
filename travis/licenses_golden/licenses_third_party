@@ -1,4 +1,4 @@
-Signature: 283abf2ccdd240a0a917afb4e1429f48
+Signature: 9e98fa7d4ca54737c5659d24aacad054
 
 UNUSED LICENSES:
 
@@ -510,6 +510,12 @@ FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/qu
 FILE: ../../../third_party/skia/src/images/SkWebpEncoder.cpp
 FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vk_platform.h
 FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_android.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_core.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_ios.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_macos.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_win32.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_xcb.h
 FILE: ../../../third_party/vulkan/src/vulkan/vk_platform.h
 FILE: ../../../third_party/vulkan/src/vulkan/vulkan.h
 ----------------------------------------------------------------------------------------------------
