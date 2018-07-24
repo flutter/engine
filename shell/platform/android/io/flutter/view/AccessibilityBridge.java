@@ -289,7 +289,7 @@ class AccessibilityBridge
         }
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
-        result.setText(object.hasHintOverride() ? object.getValueLabel() : object.getValueLabelHint());
+        result.setText(object.getValueLabelHint());
 
         // Accessibility Focus
         if (mA11yFocusedObject != null && mA11yFocusedObject.id == virtualViewId) {
@@ -1135,13 +1135,6 @@ class AccessibilityBridge
                     || (label != null && !label.isEmpty()) || (value != null && !value.isEmpty())
                     || (hint != null && !hint.isEmpty());
         }
-
-        // We exclude the hint from the node's label if there is a supported hint text
-        // override provided on one of the supported standard actions.
-        boolean hasHintOverride() {
-            return Build.VERSION.SDK_INT >= 21 && ((onTapOverride != null && hasAction(Action.TAP))
-                || (onLongPressOverride != null && hasAction(Action.LONG_PRESS)));
-         }
 
         void collectRoutes(List<SemanticsObject> edges) {
             if (hasFlag(Flag.SCOPES_ROUTE)) {

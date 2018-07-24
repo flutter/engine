@@ -643,10 +643,16 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
 
   /// Update the custom semantics action associated with the given `id`.
   ///
-  /// The name of the action exposed to the user is the `label`. The text
+  /// The name of the action exposed to the user is the `label`, and the `hint`
+  /// is a semantic description of what performing the action does.The text
   /// direction of this label is the same as the global window.
+  ///
+  /// For overriden standard actions, `overrideId` corresponds with a
+  /// [SemanticsAction.index] value. For custom actions this argument should not be
+  /// provided.
   void updateCustomAction({int id, String label, String hint, int overrideId = -1}) {
     assert(id != null);
+    assert(overrideId != null);
     _updateCustomAction(id, label, hint, overrideId);
   }
   void _updateCustomAction(int id, String label, String hint, int overrideId) native 'SemanticsUpdateBuilder_updateCustomAction';
