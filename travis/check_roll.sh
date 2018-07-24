@@ -8,7 +8,7 @@ fi;
 
 FLUTTER_VERSION="$(curl -s https://raw.githubusercontent.com/flutter/flutter/master/bin/internal/engine.version)"
 BEHIND="$(git rev-list $FLUTTER_VERSION..$UPSTREAM --oneline | wc -l)"
-MAX_BEHIND=16 # no more than 4 bisections to identify the issue
+MAX_BEHIND=64 # no more than 4 bisections to identify the issue
 
 if [[ $BEHIND -le $MAX_BEHIND ]]; then
   echo "OK, the flutter/engine to flutter/flutter roll is only $BEHIND commits behind."
