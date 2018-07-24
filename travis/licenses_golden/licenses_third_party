@@ -1,4 +1,4 @@
-Signature: 283abf2ccdd240a0a917afb4e1429f48
+Signature: 3af26b883355ca20f172eadf22bc8544
 
 UNUSED LICENSES:
 
@@ -17677,7 +17677,6 @@ FILE: ../../../third_party/skia/site/user/sample/gradient_correct.png
 FILE: ../../../third_party/skia/site/user/sample/gradient_wrong.png
 FILE: ../../../third_party/skia/site/user/sample/transfer_fn.png
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
-FILE: ../../../third_party/skia/src/sksl/lex/layout.lex
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
 FILE: ../../../third_party/skia/src/sksl/sksl.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_cpu.inc
@@ -19573,8 +19572,6 @@ FILE: ../../../third_party/skia/src/sksl/SkSLCPP.h
 FILE: ../../../third_party/skia/src/sksl/SkSLCPPCodeGenerator.h
 FILE: ../../../third_party/skia/src/sksl/SkSLFileOutputStream.h
 FILE: ../../../third_party/skia/src/sksl/SkSLHCodeGenerator.h
-FILE: ../../../third_party/skia/src/sksl/SkSLLayoutLexer.cpp
-FILE: ../../../third_party/skia/src/sksl/SkSLLayoutLexer.h
 FILE: ../../../third_party/skia/src/sksl/SkSLLexer.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLLexer.h
 FILE: ../../../third_party/skia/src/sksl/SkSLOutputStream.h
