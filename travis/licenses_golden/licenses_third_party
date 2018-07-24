@@ -1,4 +1,4 @@
-Signature: 283abf2ccdd240a0a917afb4e1429f48
+Signature: f2306e1c8365e4e27a26f96ea59fd753
 
 UNUSED LICENSES:
 
@@ -510,6 +510,12 @@ FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/qu
 FILE: ../../../third_party/skia/src/images/SkWebpEncoder.cpp
 FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vk_platform.h
 FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_android.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_core.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_ios.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_macos.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_win32.h
+FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan_xcb.h
 FILE: ../../../third_party/vulkan/src/vulkan/vk_platform.h
 FILE: ../../../third_party/vulkan/src/vulkan/vulkan.h
 ----------------------------------------------------------------------------------------------------
@@ -17677,7 +17683,6 @@ FILE: ../../../third_party/skia/site/user/sample/gradient_correct.png
 FILE: ../../../third_party/skia/site/user/sample/gradient_wrong.png
 FILE: ../../../third_party/skia/site/user/sample/transfer_fn.png
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
-FILE: ../../../third_party/skia/src/sksl/lex/layout.lex
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
 FILE: ../../../third_party/skia/src/sksl/sksl.inc
 FILE: ../../../third_party/skia/src/sksl/sksl_cpu.inc
@@ -19573,8 +19578,6 @@ FILE: ../../../third_party/skia/src/sksl/SkSLCPP.h
 FILE: ../../../third_party/skia/src/sksl/SkSLCPPCodeGenerator.h
 FILE: ../../../third_party/skia/src/sksl/SkSLFileOutputStream.h
 FILE: ../../../third_party/skia/src/sksl/SkSLHCodeGenerator.h
-FILE: ../../../third_party/skia/src/sksl/SkSLLayoutLexer.cpp
-FILE: ../../../third_party/skia/src/sksl/SkSLLayoutLexer.h
 FILE: ../../../third_party/skia/src/sksl/SkSLLexer.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLLexer.h
 FILE: ../../../third_party/skia/src/sksl/SkSLOutputStream.h
