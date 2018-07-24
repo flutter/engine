@@ -643,9 +643,15 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
 
   /// Update the custom semantics action associated with the given `id`.
   ///
-  /// The name of the action exposed to the user is the `label`, and the `hint`
-  /// is a semantic description of what performing the action does.The text
-  /// direction of this label is the same as the global window.
+  /// The name of the action exposed to the user is the `label`. For overriden
+  /// standard actions this value is ignored.
+  ///
+  /// The `hint` should describe what happens when an action occurs, not the
+  /// manner in which a tap is accomplished. For example, use "delete" instead
+  /// of "double tap to delete".
+  ///
+  /// The text direction of the `hint` and `label` is the same as the global
+  /// window.
   ///
   /// For overriden standard actions, `overrideId` corresponds with a
   /// [SemanticsAction.index] value. For custom actions this argument should not be

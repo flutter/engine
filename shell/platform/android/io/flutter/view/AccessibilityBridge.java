@@ -1243,18 +1243,6 @@ class AccessibilityBridge
             return Math.max(a, Math.max(b, Math.max(c, d)));
         }
 
-        private String getValueLabel() {
-            StringBuilder sb = new StringBuilder();
-            String[] array = {value, label};
-            for (String word : array) {
-                if (word != null && word.length() > 0) {
-                    if (sb.length() > 0) sb.append(", ");
-                    sb.append(word);
-                }
-            }
-            return sb.length() > 0 ? sb.toString() : null;
-        }
-
         private String getValueLabelHint() {
             StringBuilder sb = new StringBuilder();
             String[] array = {value, label, hint};
