@@ -6,7 +6,8 @@
 
 namespace flow {
 
-ClipRectLayer::ClipRectLayer(Clip clip_behavior) : clip_behavior_(clip_behavior) {}
+ClipRectLayer::ClipRectLayer(Clip clip_behavior)
+    : clip_behavior_(clip_behavior) {}
 
 ClipRectLayer::~ClipRectLayer() = default;
 
@@ -25,8 +26,8 @@ void ClipRectLayer::UpdateScene(SceneUpdateContext& context) {
   FXL_DCHECK(needs_system_composite());
 
   scenic::Rectangle shape(context.session(),   // session
-                              clip_rect_.width(),  //  width
-                              clip_rect_.height()  //  height
+                          clip_rect_.width(),  //  width
+                          clip_rect_.height()  //  height
   );
 
   // TODO(liyuqian): respect clip_behavior_

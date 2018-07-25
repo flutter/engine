@@ -26,7 +26,7 @@
 
 namespace flow {
 
-static const SkRect kGiantRect = SkRect::MakeLTRB( -1E9F, -1E9F, 1E9F, 1E9F );
+static const SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
 DefaultLayerBuilder::DefaultLayerBuilder() {
   cull_rects_.push(kGiantRect);
@@ -49,7 +49,8 @@ void DefaultLayerBuilder::PushTransform(const SkMatrix& sk_matrix) {
   PushLayer(std::move(layer), cullRect);
 }
 
-void DefaultLayerBuilder::PushClipRect(const SkRect& clipRect, Clip clip_behavior) {
+void DefaultLayerBuilder::PushClipRect(const SkRect& clipRect,
+                                       Clip clip_behavior) {
   SkRect cullRect;
   if (!cullRect.intersect(clipRect, cull_rects_.top())) {
     cullRect = SkRect::MakeEmpty();
@@ -59,7 +60,8 @@ void DefaultLayerBuilder::PushClipRect(const SkRect& clipRect, Clip clip_behavio
   PushLayer(std::move(layer), cullRect);
 }
 
-void DefaultLayerBuilder::PushClipRoundedRect(const SkRRect& rrect, Clip clip_behavior) {
+void DefaultLayerBuilder::PushClipRoundedRect(const SkRRect& rrect,
+                                              Clip clip_behavior) {
   SkRect cullRect;
   if (!cullRect.intersect(rrect.rect(), cull_rects_.top())) {
     cullRect = SkRect::MakeEmpty();

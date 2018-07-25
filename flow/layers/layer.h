@@ -27,20 +27,15 @@
 #if defined(OS_FUCHSIA)
 
 #include "flutter/flow/scene_update_context.h"  //nogncheck
-#include "lib/ui/scenic/cpp/resources.h"     //nogncheck
-#include "lib/ui/scenic/cpp/session.h"       //nogncheck
+#include "lib/ui/scenic/cpp/resources.h"        //nogncheck
+#include "lib/ui/scenic/cpp/session.h"          //nogncheck
 
 #endif  // defined(OS_FUCHSIA)
 
 namespace flow {
 
 // This should be an exact copy of the Clip enum in painting.dart.
-enum Clip {
-  none,
-  hardEdge,
-  antiAlias,
-  antiAliasWithSaveLayer
-};
+enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
 
 class ContainerLayer;
 

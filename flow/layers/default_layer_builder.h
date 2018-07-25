@@ -24,13 +24,16 @@ class DefaultLayerBuilder final : public LayerBuilder {
   void PushTransform(const SkMatrix& matrix) override;
 
   // |flow::LayerBuilder|
-  void PushClipRect(const SkRect& rect, Clip clip_behavior = Clip::antiAlias) override;
+  void PushClipRect(const SkRect& rect,
+                    Clip clip_behavior = Clip::antiAlias) override;
 
   // |flow::LayerBuilder|
-  void PushClipRoundedRect(const SkRRect& rect, Clip clip_behavior = Clip::antiAlias) override;
+  void PushClipRoundedRect(const SkRRect& rect,
+                           Clip clip_behavior = Clip::antiAlias) override;
 
   // |flow::LayerBuilder|
-  void PushClipPath(const SkPath& path, Clip clip_behavior = Clip::antiAlias) override;
+  void PushClipPath(const SkPath& path,
+                    Clip clip_behavior = Clip::antiAlias) override;
 
   // |flow::LayerBuilder|
   void PushOpacity(int alpha) override;

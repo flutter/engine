@@ -9,7 +9,8 @@
 
 namespace flow {
 
-PhysicalShapeLayer::PhysicalShapeLayer(Clip clip_behavior) : isRect_(false), clip_behavior_(clip_behavior) {}
+PhysicalShapeLayer::PhysicalShapeLayer(Clip clip_behavior)
+    : isRect_(false), clip_behavior_(clip_behavior) {}
 
 PhysicalShapeLayer::~PhysicalShapeLayer() = default;
 
@@ -91,7 +92,7 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   context.canvas.drawPath(path_, paint);
 
   int saveCount = context.canvas.save();
-  switch(clip_behavior_) {
+  switch (clip_behavior_) {
     case Clip::hardEdge:
       context.canvas.clipPath(path_, false);
       break;
@@ -131,11 +132,12 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
   SkColor inAmbient = SkColorSetA(color, kAmbientAlpha * SkColorGetA(color));
   SkColor inSpot = SkColorSetA(color, kSpotAlpha * SkColorGetA(color));
   SkColor ambientColor, spotColor;
-  SkShadowUtils::ComputeTonalColors(inAmbient, inSpot,
-                                    &ambientColor, &spotColor);
-  SkShadowUtils::DrawShadow(canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
-                            SkPoint3::Make(shadow_x, shadow_y, dpr * kLightHeight),
-                            dpr * kLightRadius, ambientColor, spotColor, flags);
+  SkShadowUtils::ComputeTonalColors(inAmbient, inSpot, &ambientColor,
+                                    &spotColor);
+  SkShadowUtils::DrawShadow(
+      canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
+      SkPoint3::Make(shadow_x, shadow_y, dpr * kLightHeight),
+      dpr * kLightRadius, ambientColor, spotColor, flags);
 }
 
 }  // namespace flow

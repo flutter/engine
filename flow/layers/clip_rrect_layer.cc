@@ -6,7 +6,8 @@
 
 namespace flow {
 
-ClipRRectLayer::ClipRRectLayer(Clip clip_behavior) : clip_behavior_(clip_behavior) {}
+ClipRRectLayer::ClipRRectLayer(Clip clip_behavior)
+    : clip_behavior_(clip_behavior) {}
 
 ClipRRectLayer::~ClipRRectLayer() = default;
 

@@ -12,7 +12,8 @@
 
 namespace flow {
 
-ClipPathLayer::ClipPathLayer(Clip clip_behavior) : clip_behavior_(clip_behavior) {}
+ClipPathLayer::ClipPathLayer(Clip clip_behavior)
+    : clip_behavior_(clip_behavior) {}
 
 ClipPathLayer::~ClipPathLayer() = default;
 
@@ -34,8 +35,8 @@ void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
   //               Treating the shape as a rectangle for now.
   auto bounds = clip_path_.getBounds();
   scenic::Rectangle shape(context.session(),  // session
-                              bounds.width(),     //  width
-                              bounds.height()     //  height
+                          bounds.width(),     //  width
+                          bounds.height()     //  height
   );
 
   // TODO(liyuqian): respect clip_behavior_
