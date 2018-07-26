@@ -8,8 +8,8 @@
 /**
  BREAKING CHANGES:
 
- July 23, 2018: Marked -[FlutterDartProject initFromDefaultSourceForConfiguration]
- deprecated.
+ July 26, 2018: Marked -[FlutterDartProject
+ initFromDefaultSourceForConfiguration] deprecated.
 
  February 28, 2018: Removed "initWithFLXArchive" and
  "initWithFLXArchiveWithScriptSnapshot".
