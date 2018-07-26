@@ -1,0 +1,42 @@
+container:
+  image: cirrusci/flutter:base
+
+build_task:
+  env:
+    CIRRUS_WORKING_DIR: "/tmp/engine"
+
+  depot_tools_script: |
+    echo "Download depot_tools"
+    cd /tmp
+    git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+    export PATH=$PATH:$(pwd)/depot_tools
+
+    echo "Fetching engine and dependencies with gclient sync"
+    mkdir engine && cd engine
+    cat <<EOF > .gclient
+    solutions = [
+      {
+        "managed": False,
+        "name": "src/flutter",
+        "url": "https://github.com/flutter/engine.git",
+        "custom_deps": {},
+        "deps_file": "DEPS",
+        "safesync_url": "",
+      },
+    ]
+    EOF
+    gclient sync
+    ls # test
+
+    echo "Replace the origin/master engine with the pull request's engine"
+    cd src
+    ls # test
+    rm -r engine
+    mv /tmp/engine ./
+    cd ..
+    gclient sync
+
+    echo "Compile host"
+    ./flutter/tools/gn --unoptimized
+    ninja -C out/android_debug_unopt
+
