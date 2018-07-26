@@ -29,12 +29,11 @@ source_set("embedder") {
     "$flutter_root/fml",
     "$flutter_root/lib/snapshot",
     "$flutter_root/shell/common",
-    "//garnet/public/lib/fxl",
     "//third_party/dart/runtime:libdart_jit",
     "//third_party/dart/runtime/bin:embedded_dart_io",
     "//third_party/skia",
     "//third_party/skia:gpu",
-    "//topaz/lib/tonic",
+    "//third_party/tonic",
   ]
 
   public_configs = [ "$flutter_root:config" ]

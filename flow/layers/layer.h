@@ -11,10 +11,10 @@
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/texture.h"
-#include "flutter/glue/trace_event.h"
-#include "lib/fxl/build_config.h"
-#include "lib/fxl/logging.h"
-#include "lib/fxl/macros.h"
+#include "flutter/fml/build_config.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/macros.h"
+#include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -27,25 +27,15 @@
 #if defined(OS_FUCHSIA)
 
 #include "flutter/flow/scene_update_context.h"  //nogncheck
-#include "lib/ui/scenic/cpp/resources.h"     //nogncheck
-#include "lib/ui/scenic/cpp/session.h"       //nogncheck
+#include "lib/ui/scenic/cpp/resources.h"        //nogncheck
+#include "lib/ui/scenic/cpp/session.h"          //nogncheck
 
 #endif  // defined(OS_FUCHSIA)
 
 namespace flow {
 
 // This should be an exact copy of the Clip enum in painting.dart.
-//
-// We call it Clip in public Dart API to provide our developers the shortest
-// name and the best experience. We call it ClipMode in C++ because we want to
-// avoid name conflicts and refactoring C++ names without a nice IDE function
-// is tedious.
-enum ClipMode {
-  none,
-  hardEdge,
-  antiAlias,
-  antiAliasWithSaveLayer
-};
+enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
 
 class ContainerLayer;
 
@@ -122,7 +112,7 @@ class Layer {
   bool needs_system_composite_;
   SkRect paint_bounds_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(Layer);
+  FML_DISALLOW_COPY_AND_ASSIGN(Layer);
 };
 
 }  // namespace flow

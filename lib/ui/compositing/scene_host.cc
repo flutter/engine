@@ -5,10 +5,9 @@
 #include "flutter/lib/ui/compositing/scene_host.h"
 
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "lib/tonic/dart_args.h"
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/dart_library_natives.h"
-#include "lib/tonic/dart_wrappable.h"
+#include "third_party/tonic/dart_args.h"
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
 
 #ifdef OS_FUCHSIA
 #include "dart-pkg/zircon/sdk_ext/handle.h"
@@ -32,19 +31,19 @@ void SceneHost::RegisterNatives(tonic::DartLibraryNatives* natives) {
 }
 
 #if defined(OS_FUCHSIA)
-fxl::RefPtr<SceneHost> SceneHost::create(
-    fxl::RefPtr<zircon::dart::Handle> export_token_handle) {
-  return fxl::MakeRefCounted<SceneHost>(export_token_handle);
+fml::RefPtr<SceneHost> SceneHost::create(
+    fml::RefPtr<zircon::dart::Handle> export_token_handle) {
+  return fml::MakeRefCounted<SceneHost>(export_token_handle);
 }
 
-SceneHost::SceneHost(fxl::RefPtr<zircon::dart::Handle> export_token_handle) {
-  export_node_holder_ = fxl::MakeRefCounted<flow::ExportNodeHolder>(
+SceneHost::SceneHost(fml::RefPtr<zircon::dart::Handle> export_token_handle) {
+  export_node_holder_ = fml::MakeRefCounted<flow::ExportNodeHolder>(
       blink::UIDartState::Current()->GetTaskRunners().GetGPUTaskRunner(),
       export_token_handle);
 }
 #else
-fxl::RefPtr<SceneHost> SceneHost::create(Dart_Handle export_token_handle) {
-  return fxl::MakeRefCounted<SceneHost>(export_token_handle);
+fml::RefPtr<SceneHost> SceneHost::create(Dart_Handle export_token_handle) {
+  return fml::MakeRefCounted<SceneHost>(export_token_handle);
 }
 
 SceneHost::SceneHost(Dart_Handle export_token_handle) {}

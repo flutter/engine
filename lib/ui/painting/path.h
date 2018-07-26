@@ -5,12 +5,12 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_PATH_H_
 #define FLUTTER_LIB_UI_PAINTING_PATH_H_
 
+#include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/rrect.h"
-#include "lib/tonic/dart_wrappable.h"
-#include "lib/tonic/typed_data/float32_list.h"
-#include "lib/tonic/typed_data/float64_list.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/pathops/SkPathOps.h"
+#include "third_party/tonic/typed_data/float32_list.h"
+#include "third_party/tonic/typed_data/float64_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -18,19 +18,18 @@ class DartLibraryNatives;
 
 namespace blink {
 
-class CanvasPath : public fxl::RefCountedThreadSafe<CanvasPath>,
-                   public tonic::DartWrappable {
+class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(CanvasPath);
+  FML_FRIEND_MAKE_REF_COUNTED(CanvasPath);
 
  public:
   ~CanvasPath() override;
-  static fxl::RefPtr<CanvasPath> Create() {
-    return fxl::MakeRefCounted<CanvasPath>();
+  static fml::RefPtr<CanvasPath> Create() {
+    return fml::MakeRefCounted<CanvasPath>();
   }
 
-  static fxl::RefPtr<CanvasPath> CreateFrom(const SkPath& src) {
-    fxl::RefPtr<CanvasPath> path = CanvasPath::Create();
+  static fml::RefPtr<CanvasPath> CreateFrom(const SkPath& src) {
+    fml::RefPtr<CanvasPath> path = CanvasPath::Create();
     path->path_ = src;
     return path;
   }
@@ -97,11 +96,11 @@ class CanvasPath : public fxl::RefCountedThreadSafe<CanvasPath>,
   void close();
   void reset();
   bool contains(double x, double y);
-  fxl::RefPtr<CanvasPath> shift(double dx, double dy);
-  fxl::RefPtr<CanvasPath> transform(tonic::Float64List& matrix4);
+  fml::RefPtr<CanvasPath> shift(double dx, double dy);
+  fml::RefPtr<CanvasPath> transform(tonic::Float64List& matrix4);
   tonic::Float32List getBounds();
   bool op(CanvasPath* path1, CanvasPath* path2, int operation);
-  fxl::RefPtr<CanvasPath> clone();
+  fml::RefPtr<CanvasPath> clone();
 
   const SkPath& path() const { return path_; }
 

@@ -5,12 +5,12 @@
 #include "flutter/lib/ui/text/paragraph_impl_txt.h"
 
 #include "flutter/common/task_runners.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/lib/ui/text/paragraph_impl.h"
-#include "lib/fxl/logging.h"
-#include "lib/fxl/tasks/task_runner.h"
-#include "lib/tonic/converter/dart_converter.h"
 #include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/tonic/converter/dart_converter.h"
 
 using tonic::ToDart;
 

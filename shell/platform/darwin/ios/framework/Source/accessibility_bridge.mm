@@ -10,8 +10,8 @@
 
 #import <UIKit/UIKit.h>
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
-#include "lib/fxl/logging.h"
 
 namespace {
 
@@ -36,7 +36,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     case UIAccessibilityScrollDirectionDown:
       return blink::SemanticsAction::kScrollUp;
   }
-  FXL_DCHECK(false);  // Unreachable
+  FML_DCHECK(false);  // Unreachable
   return blink::SemanticsAction::kScrollUp;
 }
 
@@ -103,8 +103,8 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 #pragma mark - Designated initializers
 
 - (instancetype)initWithBridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge uid:(int32_t)uid {
-  FXL_DCHECK(bridge) << "bridge must be set";
-  FXL_DCHECK(uid >= kRootNodeId);
+  FML_DCHECK(bridge) << "bridge must be set";
+  FML_DCHECK(uid >= kRootNodeId);
   self = [super init];
 
   if (self) {
@@ -410,7 +410,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge {
-  FXL_DCHECK(semanticsObject != nil) << "semanticsObject must be set";
+  FML_DCHECK(semanticsObject != nil) << "semanticsObject must be set";
   self = [super init];
 
   if (self) {
@@ -542,6 +542,11 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
           [[[NSMutableArray alloc] init] autorelease];
       for (int32_t action_id : node.customAccessibilityActions) {
         blink::CustomAccessibilityAction& action = actions_[action_id];
+        if (action.overrideId != -1) {
+          // iOS does not support overriding standard actions, so we ignore any
+          // custom actions that have an override id provided.
+          continue;
+        }
         NSString* label = @(action.label.data());
         SEL selector = @selector(onCustomAccessibilityAction:);
         FlutterCustomAccessibilityAction* customAction =

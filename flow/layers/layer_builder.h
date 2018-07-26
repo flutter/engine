@@ -9,7 +9,7 @@
 
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/skia_gpu_object.h"
-#include "garnet/public/lib/fxl/macros.h"
+#include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkBlendMode.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
@@ -32,11 +32,14 @@ class LayerBuilder {
 
   virtual void PushTransform(const SkMatrix& matrix) = 0;
 
-  virtual void PushClipRect(const SkRect& rect, ClipMode clip_mode = ClipMode::antiAlias) = 0;
+  virtual void PushClipRect(const SkRect& rect,
+                            Clip clip_behavior = Clip::antiAlias) = 0;
 
-  virtual void PushClipRoundedRect(const SkRRect& rect, ClipMode clip_mode = ClipMode::antiAlias) = 0;
+  virtual void PushClipRoundedRect(const SkRRect& rect,
+                                   Clip clip_behavior = Clip::antiAlias) = 0;
 
-  virtual void PushClipPath(const SkPath& path, ClipMode clip_mode = ClipMode::antiAlias) = 0;
+  virtual void PushClipPath(const SkPath& path,
+                            Clip clip_behavior = Clip::antiAlias) = 0;
 
   virtual void PushOpacity(int alpha) = 0;
 
@@ -53,7 +56,7 @@ class LayerBuilder {
                                  SkColor color,
                                  SkColor shadow_color,
                                  SkScalar device_pixel_ratio,
-                                 ClipMode clip_mode) = 0;
+                                 Clip clip_behavior) = 0;
 
   virtual void PushPerformanceOverlay(uint64_t enabled_options,
                                       const SkRect& rect) = 0;
@@ -71,7 +74,7 @@ class LayerBuilder {
   virtual void PushChildScene(
       const SkPoint& offset,
       const SkSize& size,
-      fxl::RefPtr<flow::ExportNodeHolder> export_token_holder,
+      fml::RefPtr<flow::ExportNodeHolder> export_token_holder,
       bool hit_testable) = 0;
 #endif  // defined(OS_FUCHSIA)
 
@@ -96,7 +99,7 @@ class LayerBuilder {
   bool checkerboard_raster_cache_images_ = false;
   bool checkerboard_offscreen_layers_ = false;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(LayerBuilder);
+  FML_DISALLOW_COPY_AND_ASSIGN(LayerBuilder);
 };
 
 }  // namespace flow

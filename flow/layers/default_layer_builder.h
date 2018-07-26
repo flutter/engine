@@ -9,7 +9,7 @@
 
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/layer_builder.h"
-#include "garnet/public/lib/fxl/macros.h"
+#include "flutter/fml/macros.h"
 
 namespace flow {
 
@@ -24,13 +24,16 @@ class DefaultLayerBuilder final : public LayerBuilder {
   void PushTransform(const SkMatrix& matrix) override;
 
   // |flow::LayerBuilder|
-  void PushClipRect(const SkRect& rect, ClipMode clip_mode = ClipMode::antiAlias) override;
+  void PushClipRect(const SkRect& rect,
+                    Clip clip_behavior = Clip::antiAlias) override;
 
   // |flow::LayerBuilder|
-  void PushClipRoundedRect(const SkRRect& rect, ClipMode clip_mode = ClipMode::antiAlias) override;
+  void PushClipRoundedRect(const SkRRect& rect,
+                           Clip clip_behavior = Clip::antiAlias) override;
 
   // |flow::LayerBuilder|
-  void PushClipPath(const SkPath& path, ClipMode clip_mode = ClipMode::antiAlias) override;
+  void PushClipPath(const SkPath& path,
+                    Clip clip_behavior = Clip::antiAlias) override;
 
   // |flow::LayerBuilder|
   void PushOpacity(int alpha) override;
@@ -52,7 +55,7 @@ class DefaultLayerBuilder final : public LayerBuilder {
                          SkColor color,
                          SkColor shadow_color,
                          SkScalar device_pixel_ratio,
-                         ClipMode clip_mode) override;
+                         Clip clip_behavior) override;
 
   // |flow::LayerBuilder|
   void PushPerformanceOverlay(uint64_t enabled_options,
@@ -73,7 +76,7 @@ class DefaultLayerBuilder final : public LayerBuilder {
   // |flow::LayerBuilder|
   void PushChildScene(const SkPoint& offset,
                       const SkSize& size,
-                      fxl::RefPtr<flow::ExportNodeHolder> export_token_holder,
+                      fml::RefPtr<flow::ExportNodeHolder> export_token_holder,
                       bool hit_testable) override;
 #endif  // defined(OS_FUCHSIA)
 
@@ -92,7 +95,7 @@ class DefaultLayerBuilder final : public LayerBuilder {
   void PushLayer(std::unique_ptr<flow::ContainerLayer> layer,
                  const SkRect& cullRect);
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(DefaultLayerBuilder);
+  FML_DISALLOW_COPY_AND_ASSIGN(DefaultLayerBuilder);
 };
 
 }  // namespace flow

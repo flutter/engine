@@ -4,13 +4,13 @@
 
 #include "flutter/lib/ui/painting/paint.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/lib/ui/painting/shader.h"
-#include "lib/fxl/logging.h"
-#include "lib/tonic/typed_data/dart_byte_data.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/core/SkString.h"
+#include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace blink {
 
@@ -56,11 +56,11 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
     return;
 
   if (!Dart_IsNull(paint_objects)) {
-    FXL_DCHECK(Dart_IsList(paint_objects));
+    FML_DCHECK(Dart_IsList(paint_objects));
     intptr_t length = 0;
     Dart_ListLength(paint_objects, &length);
 
-    FXL_CHECK(length == kObjectCount);
+    FML_CHECK(length == kObjectCount);
     Dart_Handle values[kObjectCount];
     if (Dart_IsError(Dart_ListGetRange(paint_objects, 0, kObjectCount, values)))
       return;
@@ -73,7 +73,7 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   }
 
   tonic::DartByteData byte_data(paint_data);
-  FXL_CHECK(byte_data.length_in_bytes() == kDataByteCount);
+  FML_CHECK(byte_data.length_in_bytes() == kDataByteCount);
 
   const uint32_t* uint_data = static_cast<const uint32_t*>(byte_data.data());
   const float* float_data = static_cast<const float*>(byte_data.data());
@@ -140,18 +140,22 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
 namespace tonic {
 
 blink::Paint DartConverter<blink::Paint>::FromArguments(
-    Dart_NativeArguments args, int index, Dart_Handle& exception) {
+    Dart_NativeArguments args,
+    int index,
+    Dart_Handle& exception) {
   Dart_Handle paint_objects = Dart_GetNativeArgument(args, index);
-  FXL_DCHECK(!LogIfError(paint_objects));
+  FML_DCHECK(!LogIfError(paint_objects));
 
   Dart_Handle paint_data = Dart_GetNativeArgument(args, index + 1);
-  FXL_DCHECK(!LogIfError(paint_data));
+  FML_DCHECK(!LogIfError(paint_data));
 
   return blink::Paint(paint_objects, paint_data);
 }
 
 blink::PaintData DartConverter<blink::PaintData>::FromArguments(
-    Dart_NativeArguments args, int index, Dart_Handle& exception) {
+    Dart_NativeArguments args,
+    int index,
+    Dart_Handle& exception) {
   return blink::PaintData();
 }
 

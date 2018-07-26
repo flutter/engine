@@ -8,10 +8,10 @@
 #include <math.h>
 
 #include "flutter/lib/ui/painting/matrix.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_args.h"
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/dart_library_natives.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_args.h"
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
 
 using tonic::ToDart;
 
@@ -41,10 +41,10 @@ void CanvasPathMeasure::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-fxl::RefPtr<CanvasPathMeasure> CanvasPathMeasure::Create(const CanvasPath* path,
+fml::RefPtr<CanvasPathMeasure> CanvasPathMeasure::Create(const CanvasPath* path,
                                                          bool forceClosed) {
-  fxl::RefPtr<CanvasPathMeasure> pathMeasure =
-      fxl::MakeRefCounted<CanvasPathMeasure>();
+  fml::RefPtr<CanvasPathMeasure> pathMeasure =
+      fml::MakeRefCounted<CanvasPathMeasure>();
   if (path) {
     const SkPath skPath = path->path();
     SkScalar resScale = 1;
@@ -88,7 +88,7 @@ tonic::Float32List CanvasPathMeasure::getPosTan(float distance) {
   return posTan;
 }
 
-fxl::RefPtr<CanvasPath> CanvasPathMeasure::getSegment(float startD,
+fml::RefPtr<CanvasPath> CanvasPathMeasure::getSegment(float startD,
                                                       float stopD,
                                                       bool startWithMoveTo) {
   SkPath dst;

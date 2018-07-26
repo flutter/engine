@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#include "lib/tonic/dart_wrappable.h"
+#include "flutter/lib/ui/dart_wrapper.h"
 
 #if defined(OS_FUCHSIA)
 #include "flutter/flow/export_node.h"
@@ -19,23 +19,22 @@ class DartLibraryNatives;
 
 namespace blink {
 
-class SceneHost : public fxl::RefCountedThreadSafe<SceneHost>,
-                  public tonic::DartWrappable {
+class SceneHost : public RefCountedDartWrappable<SceneHost> {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(SceneHost);
+  FML_FRIEND_MAKE_REF_COUNTED(SceneHost);
 
  public:
 #if defined(OS_FUCHSIA)
-  static fxl::RefPtr<SceneHost> create(
-      fxl::RefPtr<zircon::dart::Handle> export_token_handle);
+  static fml::RefPtr<SceneHost> create(
+      fml::RefPtr<zircon::dart::Handle> export_token_handle);
 #else
-  static fxl::RefPtr<SceneHost> create(Dart_Handle export_token_handle);
+  static fml::RefPtr<SceneHost> create(Dart_Handle export_token_handle);
 #endif
 
   ~SceneHost() override;
 
 #if defined(OS_FUCHSIA)
-  const fxl::RefPtr<flow::ExportNodeHolder>& export_node_holder() const {
+  const fml::RefPtr<flow::ExportNodeHolder>& export_node_holder() const {
     return export_node_holder_;
   }
 #endif
@@ -46,11 +45,11 @@ class SceneHost : public fxl::RefCountedThreadSafe<SceneHost>,
 
  private:
 #if defined(OS_FUCHSIA)
-  fxl::RefPtr<flow::ExportNodeHolder> export_node_holder_;
+  fml::RefPtr<flow::ExportNodeHolder> export_node_holder_;
 #endif
 
 #if defined(OS_FUCHSIA)
-  explicit SceneHost(fxl::RefPtr<zircon::dart::Handle> export_token_handle);
+  explicit SceneHost(fml::RefPtr<zircon::dart::Handle> export_token_handle);
 #else
   explicit SceneHost(Dart_Handle export_token_handle);
 #endif

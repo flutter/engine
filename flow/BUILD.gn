@@ -58,16 +58,11 @@ source_set("flow") {
     "texture.h",
   ]
 
-  public_deps = [
-    "//garnet/public/lib/fxl",
-  ]
-
   public_configs = [ "$flutter_root:config" ]
 
   deps = [
     "$flutter_root/common",
     "$flutter_root/fml",
-    "$flutter_root/glue",
     "$flutter_root/synchronization",
     "//third_party/skia",
     "//third_party/skia:gpu",

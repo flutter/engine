@@ -4,10 +4,10 @@
 
 #include "flutter/lib/ui/text/text_box.h"
 
-#include "lib/fxl/logging.h"
-#include "lib/tonic/dart_class_library.h"
-#include "lib/tonic/dart_state.h"
-#include "lib/tonic/logging/dart_error.h"
+#include "flutter/fml/logging.h"
+#include "third_party/tonic/dart_class_library.h"
+#include "third_party/tonic/dart_state.h"
+#include "third_party/tonic/logging/dart_error.h"
 
 using namespace blink;
 
@@ -19,7 +19,7 @@ Dart_Handle GetTextBoxType() {
   DartClassLibrary& class_library = DartState::Current()->class_library();
   Dart_Handle type =
       Dart_HandleFromPersistent(class_library.GetClass("ui", "TextBox"));
-  FXL_DCHECK(!LogIfError(type));
+  FML_DCHECK(!LogIfError(type));
   return type;
 }
 

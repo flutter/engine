@@ -4,16 +4,16 @@
 
 #include "flutter/lib/ui/compositing/scene_builder.h"
 
+#include "flutter/fml/build_config.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/painting/shader.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/window.h"
-#include "lib/fxl/build_config.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_args.h"
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/dart_library_natives.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_args.h"
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
 
 namespace blink {
 
@@ -63,16 +63,19 @@ void SceneBuilder::pushClipRect(double left,
                                 double right,
                                 double top,
                                 double bottom,
-                                int clipMode) {
-  layer_builder_->PushClipRect(SkRect::MakeLTRB(left, top, right, bottom), static_cast<flow::ClipMode>(clipMode));
+                                int clipBehavior) {
+  layer_builder_->PushClipRect(SkRect::MakeLTRB(left, top, right, bottom),
+                               static_cast<flow::Clip>(clipBehavior));
 }
 
-void SceneBuilder::pushClipRRect(const RRect& rrect, int clipMode) {
-  layer_builder_->PushClipRoundedRect(rrect.sk_rrect, static_cast<flow::ClipMode>(clipMode));
+void SceneBuilder::pushClipRRect(const RRect& rrect, int clipBehavior) {
+  layer_builder_->PushClipRoundedRect(rrect.sk_rrect,
+                                      static_cast<flow::Clip>(clipBehavior));
 }
 
-void SceneBuilder::pushClipPath(const CanvasPath* path, int clipMode) {
-  layer_builder_->PushClipPath(path->path(), static_cast<flow::ClipMode>(clipMode));
+void SceneBuilder::pushClipPath(const CanvasPath* path, int clipBehavior) {
+  layer_builder_->PushClipPath(path->path(),
+                               static_cast<flow::Clip>(clipBehavior));
 }
 
 void SceneBuilder::pushOpacity(int alpha) {
@@ -105,14 +108,14 @@ void SceneBuilder::pushPhysicalShape(const CanvasPath* path,
                                      double elevation,
                                      int color,
                                      int shadow_color,
-                                     int clip_mode) {
+                                     int clip_behavior) {
   layer_builder_->PushPhysicalShape(
       path->path(),                 //
       elevation,                    //
       static_cast<SkColor>(color),  //
       static_cast<SkColor>(shadow_color),
       UIDartState::Current()->window()->viewport_metrics().device_pixel_ratio,
-      static_cast<flow::ClipMode>(clip_mode));
+      static_cast<flow::Clip>(clip_behavior));
 }
 
 void SceneBuilder::pop() {
@@ -175,8 +178,8 @@ void SceneBuilder::setCheckerboardOffscreenLayers(bool checkerboard) {
   layer_builder_->SetCheckerboardOffscreenLayers(checkerboard);
 }
 
-fxl::RefPtr<Scene> SceneBuilder::build() {
-  fxl::RefPtr<Scene> scene =
+fml::RefPtr<Scene> SceneBuilder::build() {
+  fml::RefPtr<Scene> scene =
       Scene::create(layer_builder_->TakeLayer(),
                     layer_builder_->GetRasterizerTracingThreshold(),
                     layer_builder_->GetCheckerboardRasterCacheImages(),

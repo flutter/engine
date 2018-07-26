@@ -96,11 +96,9 @@ source_set("common") {
     "$flutter_root/common",
     "$flutter_root/flow",
     "$flutter_root/fml",
-    "$flutter_root/glue",
     "$flutter_root/lib/ui",
     "$flutter_root/runtime",
     "$flutter_root/synchronization",
-    "//garnet/public/lib/fxl",
     "//third_party/dart/runtime:dart_api",
     "//third_party/rapidjson",
     "//third_party/skia",
@@ -109,7 +107,7 @@ source_set("common") {
 
   public_deps = [
     "$flutter_root/third_party/txt",
-    "//topaz/lib/tonic",
+    "//third_party/tonic",
   ]
 
   public_configs = [ "$flutter_root:config" ]
@@ -126,10 +124,9 @@ executable("shell_unittests") {
     "$flutter_root/fml",
     "$flutter_root/lib/snapshot",
     "$flutter_root/testing",
-    "//garnet/public/lib/fxl",
     "//third_party/dart/runtime:libdart_jit",
     "//third_party/skia",
-    "//topaz/lib/tonic",
+    "//third_party/tonic",
   ]
   if (is_linux) {
     ldflags = [ "-rdynamic" ]
