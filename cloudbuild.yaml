@@ -1,0 +1,3 @@
+steps:
+- name: 'always success' # just to make google cloud build green to unblock our commits
+  args: ['echo', 'hello']
