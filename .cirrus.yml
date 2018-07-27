@@ -9,7 +9,6 @@ build_task:
   download_depot_tools_script: |
     cd /tmp
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-    export PATH=$PATH:$(pwd)/depot_tools
 
   gclient_sync_engine_script: |
     cd /tmp
