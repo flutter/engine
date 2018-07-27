@@ -34,6 +34,7 @@ build_task:
     gclient sync
 
   compile_host_script: |
+    cd /tmp/src
     ./flutter/tools/gn --unoptimized
     ninja -C out/android_debug_unopt
 
