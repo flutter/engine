@@ -25,8 +25,13 @@ build_task:
     cp $CIRRUS_WORKING_DIR -r ./flutter
     gclient sync
 
-  # compile_host_script: |
-  #   cd /tmp/src
-  #   ./flutter/tools/gn --unoptimized
-  #   ninja -C out/android_debug_unopt
+  install_script: |
+    cd $ENGINE_PATH/src
+    sudo ./build/install-build-deps-android.sh
+    sudo ./build/install-build-deps.sh
+
+  compile_host_script: |
+    cd $ENGINE_PATH/src
+    ./flutter/tools/gn --unoptimized
+    ninja -C out/android_debug_unopt
 
