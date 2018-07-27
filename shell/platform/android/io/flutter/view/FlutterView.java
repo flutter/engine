@@ -438,7 +438,7 @@ public class FlutterView
 
         packet.putLong(timeStamp); // time_stamp
         packet.putLong(pointerChange); // change
-        packet.putLong(pointerKind); // kind
+        packet.putLong(toolTypeToKind(pointerKind)); // kind
         packet.putLong(event.getPointerId(pointerIndex)); // device
         packet.putDouble(event.getX(pointerIndex)); // physical_x
         packet.putDouble(event.getY(pointerIndex)); // physical_y
@@ -482,6 +482,21 @@ public class FlutterView
         } else {
             packet.putDouble(0.0); // tilt
         }
+    }
+
+    // Converts a MotionEvent.getToolType value to Flutter's PointerEvent.kind.
+    private int toolTypeToKind(int toolType) {
+        switch(toolType) {
+            case MotionEvent.TOOL_TYPE_FINGER:
+                return 0;
+            case MotionEvent.TOOL_TYPE_MOUSE:
+                return 1;
+            case MotionEvent.TOOL_TYPE_STYLUS:
+                return 2;
+            case MotionEvent.TOOL_TYPE_ERASER:
+                return 3;
+        }
+        return 0;
     }
 
     @Override
