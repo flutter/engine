@@ -3,38 +3,30 @@ container:
 
 build_task:
   env:
-    CIRRUS_WORKING_DIR: "/tmp/engine"
+    CIRRUS_WORKING_DIR: "/tmp/github_repo"
+    ENGINE_PATH: "/tmp/engine"
     PATH: $PATH:/tmp/depot_tools
 
   download_depot_tools_script: |
     cd /tmp
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
 
-  gclient_sync_engine_script: |
-    cd /tmp
-    cat <<EOF > .gclient
-    solutions = [
-      {
-        "managed": False,
-        "name": "src/flutter",
-        "url": "https://github.com/flutter/engine.git",
-        "custom_deps": {},
-        "deps_file": "DEPS",
-        "safesync_url": "",
-      },
-    ]
-    EOF
-    gclient sync
+  engine_cache:
+    folder: $ENGINE_PATH
+    fingerprint_script: cd $CIRRUS_WORKING_DIR && git fetch origin master && git rev-parse FETCH_HEAD
+    populate_script: |
+      mkdir --parents $ENGINE_PATH && cd $ENGINE_PATH
+      cp $CIRRUS_WORKING_DIR/travis/gclient .gclient
+      gclient sync
 
   replace_engine_script: |
-    cd /tmp/src
+    cd $ENGINE_PATH/src
     rm -r flutter
-    mv /tmp/engine ./flutter
-    cd ..
+    cp $CIRRUS_WORKING_DIR -r ./flutter
     gclient sync
 
-  compile_host_script: |
-    cd /tmp/src
-    ./flutter/tools/gn --unoptimized
-    ninja -C out/android_debug_unopt
+  # compile_host_script: |
+  #   cd /tmp/src
+  #   ./flutter/tools/gn --unoptimized
+  #   ninja -C out/android_debug_unopt
 
