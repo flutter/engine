@@ -4,15 +4,15 @@ container:
 build_task:
   env:
     CIRRUS_WORKING_DIR: "/tmp/engine"
+    PATH: $PATH:/tmp/depot_tools
 
-  depot_tools_script: |
-    echo "Download depot_tools"
+  download_depot_tools_script: |
     cd /tmp
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
     export PATH=$PATH:$(pwd)/depot_tools
 
-    echo "Fetching engine and dependencies with gclient sync"
-    mkdir engine && cd engine
+  gclient_sync_engine_script: |
+    cd /tmp
     cat <<EOF > .gclient
     solutions = [
       {
@@ -26,17 +26,15 @@ build_task:
     ]
     EOF
     gclient sync
-    ls # test
 
-    echo "Replace the origin/master engine with the pull request's engine"
-    cd src
-    ls # test
-    rm -r engine
-    mv /tmp/engine ./
+  replace_engine_script: |
+    cd /tmp/src
+    rm -r flutter
+    mv /tmp/engine ./flutter
     cd ..
     gclient sync
 
-    echo "Compile host"
+  compile_host_script: |
     ./flutter/tools/gn --unoptimized
     ninja -C out/android_debug_unopt
 
