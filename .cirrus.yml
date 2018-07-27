@@ -1,23 +1,18 @@
-container:
-  image: cirrusci/flutter:base
+gcp_credentials: ENCRYPTED[987a78af29b91ce8489594c9ab3fec21845bbe5ba68294b8f6def3cf0d380830f06687a89ea69c87344c5ade369700fe]
+
+gce_instance:
+  image_project: flutter-cirrus
+  image_name: flutter-engine-ubuntu1604
+  zone: us-central1-a
+  cpu: 24
+  memory: 32Gb
+  disk: 60
 
 build_task:
   env:
     CIRRUS_WORKING_DIR: "/tmp/github_repo"
-    ENGINE_PATH: "/tmp/engine"
-    PATH: $PATH:/tmp/depot_tools
-
-  download_depot_tools_script: |
-    cd /tmp
-    git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
-
-  engine_cache:
-    folder: $ENGINE_PATH
-    fingerprint_script: cd $CIRRUS_WORKING_DIR && git fetch origin master && git rev-parse FETCH_HEAD
-    populate_script: |
-      mkdir --parents $ENGINE_PATH && cd $ENGINE_PATH
-      cp $CIRRUS_WORKING_DIR/travis/gclient .gclient
-      gclient sync
+    ENGINE_PATH: "/var/tmp/flutter/engine"
+    PATH: $PATH:/var/tmp/depot_tools
 
   replace_engine_script: |
     cd $ENGINE_PATH/src
@@ -25,13 +20,8 @@ build_task:
     cp $CIRRUS_WORKING_DIR -r ./flutter
     gclient sync
 
-  install_script: |
+  compile_android_script: |
     cd $ENGINE_PATH/src
-    sudo ./build/install-build-deps-android.sh
-    sudo ./build/install-build-deps.sh
-
-  compile_host_script: |
-    cd $ENGINE_PATH/src
-    ./flutter/tools/gn --unoptimized
+    ./flutter/tools/gn --android --unoptimized
     ninja -C out/android_debug_unopt
 
