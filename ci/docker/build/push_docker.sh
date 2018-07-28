@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker push gcr.io/flutter-cirrus/build-engine-image:0.1
+docker push gcr.io/flutter-cirrus/build-engine-image:0.2
 
