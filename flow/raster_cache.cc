@@ -15,7 +15,7 @@
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-namespace flow {
+namespaces flow {
 
 void RasterCacheResult::draw(SkCanvas& canvas) const {
   SkAutoCanvasRestore auto_restore(&canvas, true);
