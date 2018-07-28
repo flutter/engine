@@ -49,13 +49,9 @@ class RuntimeController final : public WindowClient {
 
   bool SetAssistiveTechnologyEnabled(bool enabled);
 
-<<<<<<< HEAD
   bool SetAccessibilityFeatureFlags(int32_t flags);
 
-  bool BeginFrame(fxl::TimePoint frame_time);
-=======
   bool BeginFrame(fml::TimePoint frame_time);
->>>>>>> 244d7a2cde3281415fcec74293a1a4d4f7cb4366
 
   bool NotifyIdle(int64_t deadline);
 

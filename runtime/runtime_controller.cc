@@ -186,7 +186,6 @@ bool RuntimeController::SetAssistiveTechnologyEnabled(bool enabled) {
   return false;
 }
 
-<<<<<<< HEAD
 bool RuntimeController::SetAccessibilityFeatureFlags(int32_t flags) {
   window_data_.accessibility_feature_flags_ = flags;
   if (auto window = GetWindowIfAvailable()) {
@@ -198,10 +197,7 @@ bool RuntimeController::SetAccessibilityFeatureFlags(int32_t flags) {
   return false;
 }
 
-bool RuntimeController::BeginFrame(fxl::TimePoint frame_time) {
-=======
 bool RuntimeController::BeginFrame(fml::TimePoint frame_time) {
->>>>>>> 244d7a2cde3281415fcec74293a1a4d4f7cb4366
   if (auto window = GetWindowIfAvailable()) {
     window->BeginFrame(frame_time);
     return true;

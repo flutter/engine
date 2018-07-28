@@ -208,9 +208,8 @@ void Window::UpdateAssistiveTechnologyEnabled(bool enabled) {
                   {ToDart(enabled)});
 }
 
-<<<<<<< HEAD
 void Window::UpdateAccessibilityFeatureFlags(int32_t values) {
-  tonic::DartState* dart_state = library_.dart_state().get();
+  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
   if (!dart_state)
     return;
   tonic::DartState::Scope scope(dart_state);
@@ -219,12 +218,8 @@ void Window::UpdateAccessibilityFeatureFlags(int32_t values) {
                   {ToDart(values)});
 }
 
-void Window::DispatchPlatformMessage(fxl::RefPtr<PlatformMessage> message) {
-  tonic::DartState* dart_state = library_.dart_state().get();
-=======
 void Window::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
->>>>>>> 244d7a2cde3281415fcec74293a1a4d4f7cb4366
   if (!dart_state)
     return;
   tonic::DartState::Scope scope(dart_state);

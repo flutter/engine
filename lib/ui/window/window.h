@@ -62,12 +62,8 @@ class Window final {
   void UpdateUserSettingsData(const std::string& data);
   void UpdateSemanticsEnabled(bool enabled);
   void UpdateAssistiveTechnologyEnabled(bool enabled);
-<<<<<<< HEAD
   void UpdateAccessibilityFeatureFlags(int32_t flags);
-  void DispatchPlatformMessage(fxl::RefPtr<PlatformMessage> message);
-=======
   void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
->>>>>>> 244d7a2cde3281415fcec74293a1a4d4f7cb4366
   void DispatchPointerDataPacket(const PointerDataPacket& packet);
   void DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
