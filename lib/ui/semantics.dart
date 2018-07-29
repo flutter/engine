@@ -559,7 +559,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// describe the maximum and minimum in-rage values that `scrollPosition` can
   /// be. Both or either may be infinity to indicate unbound scrolling. The
   /// value for `scrollPosition` can (temporarily) be outside this range, for
-  /// example during an overscroll.
+  /// example during an overscroll. The `scrollIndex` defines the index of the
+  /// first visible item in the scroll viewport, while the `scrollChildren`
+  /// defines the total number of children the scrollable contains, if bounded.
   ///
   /// The `rect` is the region occupied by this node in its own coordinate
   /// system.
@@ -572,6 +574,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int actions,
     int textSelectionBase,
     int textSelectionExtent,
+    int scrollIndex,
+    int scrollChildren,
     double scrollPosition,
     double scrollExtentMax,
     double scrollExtentMin,
@@ -585,8 +589,6 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     Float64List transform,
     Int32List childrenInTraversalOrder,
     Int32List childrenInHitTestOrder,
-    @Deprecated('use additionalActions instead')
-    Int32List customAcccessibilityActions,
     Int32List additionalActions,
   }) {
     if (transform.length != 16)
@@ -597,6 +599,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       actions,
       textSelectionBase,
       textSelectionExtent,
+      scrollIndex,
+      scrollChildren,
       scrollPosition,
       scrollExtentMax,
       scrollExtentMin,
@@ -613,7 +617,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       transform,
       childrenInTraversalOrder,
       childrenInHitTestOrder,
-      additionalActions ?? customAcccessibilityActions,
+      additionalActions,
     );
   }
   void _updateNode(
@@ -622,6 +626,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int actions,
     int textSelectionBase,
     int textSelectionExtent,
+    int scrollIndex,
+    int scrollChildren,
     double scrollPosition,
     double scrollExtentMax,
     double scrollExtentMin,

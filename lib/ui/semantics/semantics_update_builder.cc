@@ -41,6 +41,8 @@ void SemanticsUpdateBuilder::updateNode(
     int actions,
     int textSelectionBase,
     int textSelectionExtent,
+    int scrollIndex,
+    int scrollChildren,
     double scrollPosition,
     double scrollExtentMax,
     double scrollExtentMin,
@@ -64,6 +66,8 @@ void SemanticsUpdateBuilder::updateNode(
   node.actions = actions;
   node.textSelectionBase = textSelectionBase;
   node.textSelectionExtent = textSelectionExtent;
+  node.scrollIndex = scrollIndex;
+  node.scrollChildren = scrollChildren;
   node.scrollPosition = scrollPosition;
   node.scrollExtentMax = scrollExtentMax;
   node.scrollExtentMin = scrollExtentMin;
