@@ -63,7 +63,15 @@ class AccessibilityBridge
         DID_GAIN_ACCESSIBILITY_FOCUS(1 << 15),
         DID_LOSE_ACCESSIBILITY_FOCUS(1 << 16),
         CUSTOM_ACTION(1 << 17),
-        DISMISS(1 << 18);
+        DISMISS(1 << 18),
+        MOVE_CURSOR_FORWARD_BY_WORD(1 << 19),
+        MOVE_CURSOR_BACKWARD_BY_WORD(1 << 20),
+        MOVE_CURSOR_FORWARD_BY_LINE(1 << 21),
+        MOVE_CURSOR_BACKWARD_BY_LINE(1 << 22),
+        MOVE_CURSOR_FORWARD_BY_PARAGRAPH(1 << 23),
+        MOVE_CURSOR_BACKWARD_BY_PARAGRAPH(1 << 24),
+        MOVE_CURSOR_FORWARD_BY_PAGE(1 << 25),
+        MOVE_CURSOR_BACKWARD_BY_PAGE(1 << 26);
 
         Action(int value) {
             this.value = value;
@@ -171,6 +179,38 @@ class AccessibilityBridge
             if (object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_CHARACTER)) {
                 result.addAction(AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY);
                 granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER;
+            }
+            if (object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_WORD)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY);
+                granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD;
+            }
+            if (object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_WORD)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY);
+                granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD;
+            }
+            if (object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_LINE)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY);
+                granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE;
+            }
+            if (object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_LINE)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY);
+                granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE;
+            }
+            if (object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_PARAGRAPH)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY);
+                granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PARAGRAPH;
+            }
+            if (object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_PARAGRAPH)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY);
+                granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PARAGRAPH;
+            }
+            if (object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_PAGE)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY);
+                granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PAGE;
+            }
+            if (object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_PAGE)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY);
+                granularities |= AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PAGE;
             }
             result.setMovementGranularities(granularities);
         }
@@ -480,7 +520,50 @@ class AccessibilityBridge
                     return true;
                 }
             }
-                // TODO(goderbauer): support other granularities.
+            case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD:
+                if (forward && object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_WORD)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId,
+                            Action.MOVE_CURSOR_FORWARD_BY_WORD, extendSelection);
+                    return true;
+                }
+                if (!forward && object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_WORD)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId,
+                            Action.MOVE_CURSOR_BACKWARD_BY_WORD, extendSelection);
+                    return true;
+                }
+            case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_LINE:
+                if (forward && object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_LINE)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId,
+                            Action.MOVE_CURSOR_FORWARD_BY_LINE, extendSelection);
+                    return true;
+                }
+                if (!forward && object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_LINE)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId,
+                            Action.MOVE_CURSOR_BACKWARD_BY_LINE, extendSelection);
+                    return true;
+                }
+            case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PARAGRAPH:
+                if (forward && object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_PARAGRAPH)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId,
+                            Action.MOVE_CURSOR_FORWARD_BY_PARAGRAPH, extendSelection);
+                    return true;
+                }
+                if (!forward && object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_PARAGRAPH)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId,
+                            Action.MOVE_CURSOR_BACKWARD_BY_PARAGRAPH, extendSelection);
+                    return true;
+                }
+            case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_PAGE:
+                if (forward && object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_PAGE)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId,
+                            Action.MOVE_CURSOR_FORWARD_BY_PAGE, extendSelection);
+                    return true;
+                }
+                if (!forward && object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_PAGE)) {
+                    mOwner.dispatchSemanticsAction(virtualViewId,
+                            Action.MOVE_CURSOR_BACKWARD_BY_PAGE, extendSelection);
+                    return true;
+                }
         }
         return false;
     }
