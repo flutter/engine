@@ -25,7 +25,7 @@ build_android_task:
     ./flutter/tools/gn --android --unoptimized
     ninja -C out/android_debug_unopt
 
-old_travis_task:
+format_and_dart_test_task:
   container:
     image: gcr.io/flutter-cirrus/build-engine-image:0.2
 
