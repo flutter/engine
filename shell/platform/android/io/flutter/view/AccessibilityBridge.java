@@ -489,6 +489,7 @@ class AccessibilityBridge
                             Action.MOVE_CURSOR_BACKWARD_BY_CHARACTER, extendSelection);
                     return true;
                 }
+                break;
             }
             case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD:
                 if (forward && object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_WORD)) {
@@ -501,6 +502,7 @@ class AccessibilityBridge
                             Action.MOVE_CURSOR_BACKWARD_BY_WORD, extendSelection);
                     return true;
                 }
+                break;
         }
         return false;
     }
