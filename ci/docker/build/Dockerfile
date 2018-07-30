@@ -15,7 +15,6 @@ ADD engine_gclient .gclient
 RUN gclient sync
 
 WORKDIR $ENGINE_PATH/src
-RUN gclient sync
 RUN ./build/install-build-deps.sh --no-prompt
 RUN ./build/install-build-deps-android.sh --no-prompt
 
