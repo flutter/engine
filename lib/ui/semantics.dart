@@ -30,12 +30,6 @@ class SemanticsAction {
   static const int _kDismissIndex = 1 << 18;
   static const int _kMoveCursorForwardByWordIndex = 1 << 19;
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
-  static const int _kMoveCursorForwardByLineIndex = 1 << 21;
-  static const int _kMoveCursorBackwardByLineIndex = 1 << 22;
-  static const int _kMoveCursorForwardByParagraphIndex = 1 << 23;
-  static const int _kMoveCursorBackwardByParagraphIndex = 1 << 24;
-  static const int _kMoveCursorForwardByPageIndex = 1 << 25;
-  static const int _kMoveCursorBackwardByPageIndex = 1 << 26;
 
   /// The numerical value for this action.
   ///
@@ -187,54 +181,6 @@ class SemanticsAction {
   /// movement should extend (or start) a selection.
   static const SemanticsAction moveCursorBackwardByWord = const SemanticsAction._(_kMoveCursorBackwardByWordIndex);
 
-  /// Move the cursor forward by one line.
-  ///
-  /// This is for example used by the cursor control in text fields.
-  ///
-  /// The action includes a boolean argument, which indicates whether the cursor
-  /// movement should extend (or start) a selection.
-  static const SemanticsAction moveCursorForwardByLine = const SemanticsAction._(_kMoveCursorForwardByLineIndex);
-
-  /// Move the cursor backward by one line.
-  ///
-  /// This is for example used by the cursor control in text fields.
-  ///
-  /// The action includes a boolean argument, which indicates whether the cursor
-  /// movement should extend (or start) a selection.
-  static const SemanticsAction moveCursorBackwardByLine = const SemanticsAction._(_kMoveCursorBackwardByLineIndex);
-
-  /// Move the cursor foward by one paragraph.
-  ///
-  /// This is for example used by the cursor control in text fields.
-  ///
-  /// The action includes a boolean argument, which indicates whether the cursor
-  /// movement should extend (or start) a selection.
-  static const SemanticsAction moveCursorForwardByParagraph = const SemanticsAction._(_kMoveCursorForwardByParagraphIndex);
-
-  /// Move the cursor backward by one paragraph.
-  ///
-  /// This is for example used by the cursor control in text fields.
-  ///
-  /// The action includes a boolean argument, which indicates whether the cursor
-  /// movement should extend (or start) a selection.
-  static const SemanticsAction moveCursorBackwardByParagraph = const SemanticsAction._(_kMoveCursorBackwardByParagraphIndex);
-
-  /// Move the cursor forward by one page.
-  ///
-  /// This is for example used by the cursor control in text fields.
-  ///
-  /// The action includes a boolean argument, which indicates whether the cursor
-  /// movement should extend (or start) a selection.
-  static const SemanticsAction moveCursorForwardByPage = const SemanticsAction._(_kMoveCursorForwardByPageIndex);
-
-  /// Move the cursor backward by one page.
-  ///
-  /// This is for example used by the cursor control in text fields.
-  ///
-  /// The action includes a boolean argument, which indicates whether the cursor
-  /// movement should extend (or start) a selection.
-  static const SemanticsAction moveCursorBackwardByPage = const SemanticsAction._(_kMoveCursorBackwardByPageIndex);
-
   /// The possible semantics actions.
   ///
   /// The map's key is the [index] of the action and the value is the action
@@ -261,12 +207,6 @@ class SemanticsAction {
     _kDismissIndex: dismiss,
     _kMoveCursorForwardByWordIndex: moveCursorForwardByWord,
     _kMoveCursorBackwardByWordIndex: moveCursorBackwardByWord,
-    _kMoveCursorForwardByLineIndex: moveCursorForwardByLine,
-    _kMoveCursorBackwardByLineIndex: moveCursorBackwardByLine,
-    _kMoveCursorForwardByParagraphIndex: moveCursorForwardByParagraph,
-    _kMoveCursorBackwardByParagraphIndex: moveCursorBackwardByParagraph,
-    _kMoveCursorForwardByPageIndex: moveCursorForwardByPage,
-    _kMoveCursorBackwardByPageIndex: moveCursorBackwardByPage,
   };
 
   @override
@@ -314,18 +254,6 @@ class SemanticsAction {
         return 'SemanticsAction.moveCursorForwardByWord';
       case _kMoveCursorBackwardByWordIndex:
         return 'SemanticsAction.moveCursorBackwardByWord';
-      case _kMoveCursorForwardByLineIndex:
-        return 'SemanticsAction.moveCursorForwardByLine';
-      case _kMoveCursorBackwardByLineIndex:
-        return 'SemanticsAction.moveCursorBackwardByLine';
-      case _kMoveCursorForwardByParagraphIndex:
-        return 'SemanticsAction.moveCursorForwardByParagraph';
-      case _kMoveCursorBackwardByParagraphIndex:
-        return 'SemanticsAction.moveCursorBackwardByParagraph';
-      case _kMoveCursorForwardByPageIndex:
-        return 'SemanticsAction.moveCursorForwardByPage';
-      case _kMoveCursorBackwardByPageIndex:
-        return 'SemanticsAction.moveCursorBackwardByPage';
     }
     return null;
   }
