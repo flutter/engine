@@ -1,4 +1,4 @@
-Signature: 9cd1d74aaca5c608ad80b155fa7369ab
+Signature: 6e79e19c58b6006b6ff5d8015a97ee9a
 
 UNUSED LICENSES:
 
@@ -1283,6 +1283,7 @@ FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzPathDeserialize.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzRegionDeserialize.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzRegionSetPath.cpp
 FILE: ../../../third_party/skia/gm/3dgm.cpp
+FILE: ../../../third_party/skia/gm/clockwise.cpp
 FILE: ../../../third_party/skia/gm/hugepath.cpp
 FILE: ../../../third_party/skia/gm/localmatrixshader.cpp
 FILE: ../../../third_party/skia/gm/makeRasterImage.cpp
@@ -3317,7 +3318,6 @@ FILE: ../../../third_party/skia/src/core/SkSharedMutex.h
 FILE: ../../../third_party/skia/src/core/SkSpinlock.cpp
 FILE: ../../../third_party/skia/src/core/SkTDPQueue.h
 FILE: ../../../third_party/skia/src/core/SkTTopoSort.h
-FILE: ../../../third_party/skia/src/core/SkTextBlobRunIterator.h
 FILE: ../../../third_party/skia/src/core/SkThreadID.cpp
 FILE: ../../../third_party/skia/src/core/SkTime.cpp
 FILE: ../../../third_party/skia/src/core/SkXfermodeInterpretation.cpp

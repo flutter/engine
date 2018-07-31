@@ -427,7 +427,7 @@ public class FlutterView extends SurfaceView
             return;
         }
 
-        int pointerKind = event.getToolType(pointerIndex);
+        int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
         if (pointerKind == -1) {
             return;
         }
