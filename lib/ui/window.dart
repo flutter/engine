@@ -665,7 +665,7 @@ class Window {
     _onSemanticsActionZone = Zone.current;
   }
 
-  /// A bitmap of the currently enabled set of [AccessibilityFlag]s.
+  /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
   AccessibilityFeatures _accessibilityFeatures;
 
@@ -751,7 +751,7 @@ class Window {
   }
 }
 
-/// Additional accessibility features that may be supported by a platform.
+/// Additional accessibility features that may be enabled by the platform.
 ///
 /// It is not possible to enable these settings from Flutter, instead they are
 /// used by the platform to indicate that additional accessibility features are
@@ -763,16 +763,13 @@ class AccessibilityFeatures {
   static const int _kInvertColorsIndex = 1 << 1;
   static const int _kDisableAnimationsIndex = 1 << 2;
 
-  /// The numerical value for this feature.
-  ///
-  /// Each feature has one bit set in this bit field.
+  // A bitfield which represents each enabled feature.
   final int _index;
 
   /// Whether there is a running accessibility service which is changing the
   /// interaction model of the device.
   ///
-  /// For example, TalkBack on Android and VoiceOver on iOS both change the
-  /// interaction model.
+  /// For example, TalkBack on Android and VoiceOver on iOS enable this flag.
   bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
 
   /// The platform is inverting the colors of the application.

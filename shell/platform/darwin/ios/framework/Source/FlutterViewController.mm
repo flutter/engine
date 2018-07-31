@@ -64,7 +64,6 @@
                         nibName:(NSString*)nibNameOrNil
                          bundle:(NSBundle*)nibBundleOrNil {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-
   if (self) {
     if (project == nil)
       _dartProject.reset([[FlutterDartProject alloc] initFromDefaultSourceForConfiguration]);
@@ -280,6 +279,16 @@
   [center addObserver:self
              selector:@selector(onAccessibilityStatusChanged:)
                  name:UIAccessibilitySpeakScreenStatusDidChangeNotification
+               object:nil];
+
+  [center addObserver:self
+             selector:@selector(onAccessibilityStatusChanged:)
+                 name:UIAccessibilityInvertColorsStatusDidChangeNotification
+               object:nil];
+
+  [center addObserver:self
+             selector:@selector(onAccessibilityStatusChanged:)
+                 name:UIAccessibilityReduceMotionStatusDidChangeNotification
                object:nil];
 
   [center addObserver:self
@@ -795,18 +804,19 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   auto platformView = _shell->GetPlatformView();
   int32_t flags = 0;
   if (UIAccessibilityIsInvertColorsEnabled())
-    flags &= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kInvertColors);
+    flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kInvertColors);
   if (UIAccessibilityIsReduceMotionEnabled())
-    flags &= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kReduceMotion);
+    flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kDisableAnimations);
 #if TARGET_OS_SIMULATOR
   // There doesn't appear to be any way to determine whether the accessibility
   // inspector is enabled on the simulator. We conservatively always turn on the
   // accessibility bridge in the simulator, but never assistive technology.
   platformView->SetSemanticsEnabled(true);
+  platformView->SetAccessibilityFeatures(flags);
 #else
   bool enabled = UIAccessibilityIsVoiceOverRunning() || UIAccessibilityIsSwitchControlRunning();
-  if (enabled)
-    flags &= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kAccessibleNavigation);
+  if (UIAccessibilityIsVoiceOverRunning() || UIAccessibilityIsSwitchControlRunning())
+    flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kAccessibleNavigation);
   platformView->SetSemanticsEnabled(enabled || UIAccessibilityIsSpeakScreenEnabled());
   platformView->SetAccessibilityFeatures(flags);
 #endif
