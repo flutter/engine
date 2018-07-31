@@ -58,8 +58,9 @@ class PlatformView {
     virtual void OnPlatformViewSetSemanticsEnabled(const PlatformView& view,
                                                    bool enabled) = 0;
 
-    virtual void OnPlatformViewSetAccessibilityFeatures(const PlatformView& view,
-                                                            int32_t flags) = 0;
+    virtual void OnPlatformViewSetAccessibilityFeatures(
+        const PlatformView& view,
+        int32_t flags) = 0;
 
     virtual void OnPlatformViewRegisterTexture(
         const PlatformView& view,

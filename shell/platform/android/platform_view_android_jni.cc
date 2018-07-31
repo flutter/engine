@@ -447,8 +447,7 @@ static void SetAccessibilityFeatures(JNIEnv* env,
                                      jobject jcaller,
                                      jlong shell_holder,
                                      jint flags) {
-  ANDROID_SHELL_HOLDER->GetPlatformView()->SetAccessibilityFeatures(
-      flags);
+  ANDROID_SHELL_HOLDER->GetPlatformView()->SetAccessibilityFeatures(flags);
 }
 
 static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {

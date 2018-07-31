@@ -564,7 +564,7 @@ void Shell::OnPlatformViewSetSemanticsEnabled(const PlatformView& view,
 
 // |shell::PlatformView::Delegate|
 void Shell::OnPlatformViewSetAccessibilityFeatures(const PlatformView& view,
-                                                       int32_t flags) {
+                                                   int32_t flags) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());

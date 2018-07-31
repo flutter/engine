@@ -149,7 +149,7 @@ class Shell final : public PlatformView::Delegate,
 
   // |shell:PlatformView::Delegate|
   void OnPlatformViewSetAccessibilityFeatures(const PlatformView& view,
-                                                  int32_t flags) override;
+                                              int32_t flags) override;
 
   // |shell::PlatformView::Delegate|
   void OnPlatformViewRegisterTexture(
