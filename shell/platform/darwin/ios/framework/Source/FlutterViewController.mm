@@ -796,8 +796,6 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   int32_t flags = 0;
   if (UIAccessibilityIsInvertColorsEnabled())
     flags &= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kInvertColors);
-  if (UIAccessibilityIsBoldTextEnabled())
-    flags &= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kBoldText);
   if (UIAccessibilityIsReduceMotionEnabled())
     flags &= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kReduceMotion);
 #if TARGET_OS_SIMULATOR
@@ -805,11 +803,12 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   // inspector is enabled on the simulator. We conservatively always turn on the
   // accessibility bridge in the simulator, but never assistive technology.
   platformView->SetSemanticsEnabled(true);
-  platformView->SetAssistiveTechnologyEnabled(false);
 #else
   bool enabled = UIAccessibilityIsVoiceOverRunning() || UIAccessibilityIsSwitchControlRunning();
+  if (enabled)
+    flags &= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kAccessibleNavigation);
   platformView->SetSemanticsEnabled(enabled || UIAccessibilityIsSpeakScreenEnabled());
-  platformView->SetAssistiveTechnologyEnabled(enabled);
+  platformView->SetAccessibilityFeatures(flags);
 #endif
 }
 

@@ -345,12 +345,8 @@ void Engine::SetSemanticsEnabled(bool enabled) {
   runtime_controller_->SetSemanticsEnabled(enabled);
 }
 
-void Engine::SetAssistiveTechnologyEnabled(bool enabled) {
-  runtime_controller_->SetAssistiveTechnologyEnabled(enabled);
-}
-
-void Engine::SetAccessibilityFeatureFlags(int32_t flags) {
-  runtime_controller_->SetAccessibilityFeatureFlags(flags);
+void Engine::SetAccessibilityFeatures(int32_t flags) {
+  runtime_controller_->SetAccessibilityFeatures(flags);
 }
 
 void Engine::StopAnimator() {

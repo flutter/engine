@@ -99,9 +99,7 @@ class Engine final : public blink::RuntimeDelegate {
 
   void SetSemanticsEnabled(bool enabled);
 
-  void SetAssistiveTechnologyEnabled(bool enabled);
-
-  void SetAccessibilityFeatureFlags(int32_t flags);
+  void SetAccessibilityFeatures(int32_t flags);
 
   void ScheduleFrame(bool regenerate_layer_tree = true) override;
 

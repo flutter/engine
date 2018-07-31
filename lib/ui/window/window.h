@@ -27,9 +27,9 @@ Dart_Handle ToByteData(const std::vector<uint8_t>& buffer);
 
 // Must match the AccessibilityFeatureFlag enum in window.dart.
 enum class AccessibilityFeatureFlag : int32_t {
-  kInvertColors = 1 << 0,
-  kBoldText = 1 << 1,
-  kReduceMotion = 1 << 3,
+  kAccessibleNavigation = 1 << 0,
+  kInvertColorsIndex = 1 << 1,
+  kDisableAnimationsIndex = 1 << 2,
 };
 
 class WindowClient {
@@ -61,8 +61,7 @@ class Window final {
                     const std::string& country_code);
   void UpdateUserSettingsData(const std::string& data);
   void UpdateSemanticsEnabled(bool enabled);
-  void UpdateAssistiveTechnologyEnabled(bool enabled);
-  void UpdateAccessibilityFeatureFlags(int32_t flags);
+  void UpdateAccessibilityFeatures(int32_t flags);
   void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
   void DispatchPointerDataPacket(const PointerDataPacket& packet);
   void DispatchSemanticsAction(int32_t id,

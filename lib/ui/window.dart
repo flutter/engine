@@ -649,31 +649,6 @@ class Window {
     _onSemanticsEnabledChangedZone = Zone.current;
   }
 
-  /// Whether the user is using assitive technologies to interact with the
-  /// application.
-  ///
-  /// This includes screen readers such as TalkBack on Android and VoiceOVer
-  /// on iOS, as well as hardware switches, and more.
-  ///
-  /// The [onAssistiveTechnologyEnabled] callback is called whenever this value
-  /// changes.
-  bool get assistiveTechnologyEnabled => _assistiveTechnologyEnabled;
-  bool _assistiveTechnologyEnabled = false;
-
-  /// A callback that is invoked when the value of [assistiveTechnologyEnabled]
-  /// changes.
-  ///
-  /// The framework invokes this callback in the same zone in which the callback
-  /// was set.
-  VoidCallback get onAssistiveTechnologyEnabled => _onAssistiveTechnologyEnabled;
-  VoidCallback _onAssistiveTechnologyEnabled;
-  Zone _onAssistiveTechnologyEnabledZone;
-  set onAssistiveTechnologyEnabled(VoidCallback callback) {
-     _onAssistiveTechnologyEnabled = callback;
-    _onAssistiveTechnologyEnabledZone = Zone.current;
-  }
-
-
   /// A callback that is invoked whenever the user requests an action to be
   /// performed.
   ///
@@ -691,23 +666,18 @@ class Window {
   }
 
   /// A bitmap of the currently enabled set of [AccessibilityFlag]s.
-  int get accessibilityFeatureFlags => _accessibilityFeatureFlags;
-  int _accessibilityFeatureFlags;
-
-  /// Whether `flag` is currently enabled in the set of [accessibilityFlags].
-  bool hasAccessibilityFeatureFlag(AccessibilityFeatureFlag flag) {
-    return _accessibilityFeatureFlags & flag.index != 0;
-  }
+  AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
+  AccessibilityFeatures _accessibilityFeatures;
 
   /// A callback that is invoked when the value of [accessibilityFlags] changes.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  VoidCallback get onAccessibilityFeatureFlagsChanged => _onAccessibilityFeatureFlagsChanged;
-  VoidCallback _onAccessibilityFeatureFlagsChanged;
+  VoidCallback get onAccessibilityFeaturesChanged => _onAccessibilityFeaturesChanged;
+  VoidCallback _onAccessibilityFeaturesChanged;
   Zone _onAccessibilityFlagsChangedZone;
-  set onAccessibilityFeatureFlagsChanged(VoidCallback callback) {
-    _onAccessibilityFeatureFlagsChanged = callback;
+  set onAccessibilityFeaturesChanged(VoidCallback callback) {
+    _onAccessibilityFeaturesChanged = callback;
     _onAccessibilityFlagsChangedZone = Zone.current;
   }
 
@@ -783,58 +753,56 @@ class Window {
 
 /// Additional accessibility features that may be supported by a platform.
 ///
-/// It is not possible to enable these flags from Flutter, instead they are
+/// It is not possible to enable these settings from Flutter, instead they are
 /// used by the platform to indicate that additional accessibility features are
 /// enabled.
-class AccessibilityFeatureFlag {
-  const AccessibilityFeatureFlag._(this.index);
+class AccessibilityFeatures {
+  const AccessibilityFeatures._(this._index);
 
-  static const int _kInvertColorsIndex = 1 << 0;
-  static const int _kBoldTextIndex = 1 << 1;
-  static const int _kReduceMotionIndex = 1 << 2;
+  static const int _kAccessibleNavigation = 1 << 0;
+  static const int _kInvertColorsIndex = 1 << 1;
+  static const int _kDisableAnimationsIndex = 1 << 2;
 
   /// The numerical value for this feature.
   ///
   /// Each feature has one bit set in this bit field.
-  final int index;
+  final int _index;
+
+  /// Whether there is a running accessibility service which is changing the
+  /// interaction model of the device.
+  ///
+  /// For example, TalkBack on Android and VoiceOver on iOS both change the
+  /// interaction model.
+  bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
 
   /// The platform is inverting the colors of the application.
-  ///
-  /// This flag is only supported on iOS.
-  static const AccessibilityFeatureFlag invertColors = const AccessibilityFeatureFlag._(_kInvertColorsIndex);
+  bool get invertColors => _kInvertColorsIndex & _index != 0;
 
-  /// The platform is requesting that all text be drawn with a heaver font weight.
-  ///
-  /// This flag is only supported on iOS.
-  static const AccessibilityFeatureFlag boldText = const AccessibilityFeatureFlag._(_kBoldTextIndex);
-
-  /// The platform is requesting that expensive animations be disabled or simplified.
-  ///
-  /// This flag is only supported on iOS.
-  static const AccessibilityFeatureFlag reduceMotion = const AccessibilityFeatureFlag._(_kReduceMotionIndex);
-
-  /// The possible accessibility flags.
-  ///
-  /// The map's key is the [index] of the flag and the value is the flag
-  /// itself.
-  static const Map<int, AccessibilityFeatureFlag> values = const <int, AccessibilityFeatureFlag>{
-    _kInvertColorsIndex: invertColors,
-    _kBoldTextIndex: boldText,
-    _kReduceMotionIndex: reduceMotion,
-  };
+  /// The platform is requesting that animations be disabled or simplified.
+  bool get disableAnimations => _kDisableAnimationsIndex & _index != 0;
 
   @override
   String toString() {
-    switch (index) {
-      case _kInvertColorsIndex:
-        return 'AccessibilityFlag.smartInvert';
-      case _kBoldTextIndex:
-        return 'AccessibilityFlag.boldText';
-      case _kReduceMotionIndex:
-        return 'AccessibilityFlag.reduceMotion';
-    }
-    return null;
+    final List<String> features = <String>[];
+    if (accessibleNavigation)
+      features.add('accessibleNavigation');
+    if (invertColors)
+      features.add('invertColors');
+    if (disableAnimations)
+      features.add('disableAnimations');
+    return 'AccessibilityFeatures$features';
   }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    final AccessibilityFeatures typedOther = other;
+    return _index == typedOther._index;
+  }
+
+  @override
+  int get hashCode => _index.hashCode;
 }
 
 /// The [Window] singleton. This object exposes the size of the display, the

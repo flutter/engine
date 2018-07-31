@@ -563,23 +563,7 @@ void Shell::OnPlatformViewSetSemanticsEnabled(const PlatformView& view,
 }
 
 // |shell::PlatformView::Delegate|
-void Shell::OnPlatformViewSetAssistiveTechnologyEnabled(
-    const PlatformView& view,
-    bool enabled) {
-  FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
-  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-
-  task_runners_.GetUITaskRunner()->PostTask(
-      [engine = engine_->GetWeakPtr(), enabled] {
-        if (engine) {
-          engine->SetAssistiveTechnologyEnabled(enabled);
-        }
-      });
-}
-
-// |shell::PlatformView::Delegate|
-void Shell::OnPlatformViewSetAccessibilityFeatureFlags(const PlatformView& view,
+void Shell::OnPlatformViewSetAccessibilityFeatures(const PlatformView& view,
                                                        int32_t flags) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(&view == platform_view_.get());
@@ -588,7 +572,7 @@ void Shell::OnPlatformViewSetAccessibilityFeatureFlags(const PlatformView& view,
   task_runners_.GetUITaskRunner()->PostTask(
       [engine = engine_->GetWeakPtr(), flags] {
         if (engine) {
-          engine->SetAccessibilityFeatureFlags(flags);
+          engine->SetAccessibilityFeatures(flags);
         }
       });
 }

@@ -117,7 +117,7 @@ public class FlutterView extends SurfaceView
         super(context, attrs);
 
         mIsSoftwareRenderingEnabled = nativeGetIsSoftwareRenderingEnabled();
-        mAnimationScaleObserver = new AnimationScaleObserver();
+        mAnimationScaleObserver = new AnimationScaleObserver(new Handler());
         mMetrics = new ViewportMetrics();
         mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
         setFocusable(true);
@@ -263,6 +263,7 @@ public class FlutterView extends SurfaceView
     }
 
     public void onPostResume() {
+        updateAccessibilityFeatures();
         for (ActivityLifecycleListener listener : mActivityLifecycleListeners) {
             listener.onPostResume();
         }
@@ -649,7 +650,7 @@ public class FlutterView extends SurfaceView
 
     private static native void nativeSetSemanticsEnabled(long nativePlatformViewAndroid, boolean enabled);
 
-    private static native void nativeSetAssistiveTechnologyEnabled(long nativePlatformViewAndroid, boolean enabled);
+    private static native void nativeSetAccessibilityFeatures(long nativePlatformViewAndroid, int flags);
 
     private static native boolean nativeGetIsSoftwareRenderingEnabled();
 
@@ -733,15 +734,19 @@ public class FlutterView extends SurfaceView
         super.onAttachedToWindow();
         mAccessibilityEnabled = mAccessibilityManager.isEnabled();
         mTouchExplorationEnabled = mAccessibilityManager.isTouchExplorationEnabled();
-        Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
-        getContext().getContentResolver().registerContentObserver(transitionUri, false, mAnimationScaleObserver);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
+            getContext().getContentResolver().registerContentObserver(transitionUri, false, mAnimationScaleObserver);
+        }
 
         if (mAccessibilityEnabled || mTouchExplorationEnabled) {
             ensureAccessibilityEnabled();
         }
         if (mTouchExplorationEnabled) {
-            nativeSetAssistiveTechnologyEnabled(mNativeView.get(), true);
+            mAccessibilityFeatureFlags ^= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
         }
+        // Apply additional accessibility settings
+        updateAccessibilityFeatures();
         resetWillNotDraw();
         mAccessibilityManager.addAccessibilityStateChangeListener(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -750,6 +755,19 @@ public class FlutterView extends SurfaceView
             }
             mAccessibilityManager.addTouchExplorationStateChangeListener(mTouchExplorationListener);
         }
+    }
+
+    private void updateAccessibilityFeatures() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            String transitionAnimationScale = Settings.Global.getString(getContext().getContentResolver(),
+                Settings.Global.TRANSITION_ANIMATION_SCALE);
+            if (transitionAnimationScale != null && transitionAnimationScale.equals("0")) {
+                mAccessibilityFeatureFlags ^= AccessibilityFeature.DISABLE_ANIMATIONS.value;
+            } else {
+                mAccessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
+            }
+        }
+        nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
     }
 
     @Override
@@ -785,12 +803,12 @@ public class FlutterView extends SurfaceView
     }
 
     /// Must match the enum defined in window.dart.
-    private enum AccessibilityFeatureFlag {
-        INVERT_COLORS(1 << 0), // NOT SUPPORTED
-        BOLD_TEXT(1 << 1), // NOT SUPPORTED
+    private enum AccessibilityFeature {
+        ACCESSIBLE_NAVIGATION(1 << 0),
+        INVERT_COLORS(1 << 1), // NOT SUPPORTED
         DISABLE_ANIMATIONS(1 << 2);
 
-        AccessibilityFeatureFlag(int value) {
+        AccessibilityFeature(int value) {
             this.value = value;
         }
 
@@ -800,8 +818,8 @@ public class FlutterView extends SurfaceView
     // Listens to the global TRANSITION_ANIMATION_SCALE property and notifies us so
     // that we can disable animations in Flutter.
     private class AnimationScaleObserver extends ContentObserver {
-        public AnimationScaleObserver() {
-            super(null);
+        public AnimationScaleObserver(Handler handler) {
+            super(handler);
         }
 
         @Override
@@ -814,10 +832,11 @@ public class FlutterView extends SurfaceView
             String value = Settings.Global.getString(getContext().getContentResolver(),
                     Settings.Global.TRANSITION_ANIMATION_SCALE);
             if (value == "0") {
-                mAccessibilityFeatureFlags ^= AccessibilityFeatureFlag.DISABLE_ANIMATIONS.value;
+                mAccessibilityFeatureFlags ^= AccessibilityFeature.DISABLE_ANIMATIONS.value;
             } else {
-                mAccessibilityFeatureFlags &= ~AccessibilityFeatureFlag.DISABLE_ANIMATIONS.value;
+                mAccessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
             }
+            nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
         }
     }
 
@@ -827,13 +846,15 @@ public class FlutterView extends SurfaceView
             if (enabled) {
                 mTouchExplorationEnabled = true;
                 ensureAccessibilityEnabled();
-                nativeSetAssistiveTechnologyEnabled(mNativeView.get(), true);
+                mAccessibilityFeatureFlags ^= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+                nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
             } else {
                 mTouchExplorationEnabled = false;
                 if (mAccessibilityNodeProvider != null) {
                     mAccessibilityNodeProvider.handleTouchExplorationExit();
                 }
-                nativeSetAssistiveTechnologyEnabled(mNativeView.get(), false);
+                mAccessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+                nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
             }
             resetWillNotDraw();
         }
