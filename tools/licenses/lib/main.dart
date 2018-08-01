@@ -16,7 +16,6 @@ import 'package:path/path.dart' as path;
 
 import 'filesystem.dart' as fs;
 import 'licenses.dart';
-import 'patterns.dart';
 
 
 // REPOSITORY OBJECTS
@@ -1721,6 +1720,16 @@ class RepositoryIcuDirectory extends RepositoryDirectory {
   }
 }
 
+class RepositoryHarfbuzzDirectory extends RepositoryDirectory {
+  RepositoryHarfbuzzDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'util' // utils are command line tools that do not shipped in the binary
+        && super.shouldRecurse(entry);
+  }
+}
+
 class RepositoryJSR305Directory extends RepositoryDirectory {
   RepositoryJSR305Directory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
@@ -1947,6 +1956,8 @@ class RepositoryRootThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
       throw '//third_party/freetype-android is no longer part of this client: remove it';
     if (entry.name == 'freetype2')
       return new RepositoryFreetypeDirectory(this, entry);
+    if (entry.name == 'harfbuzz')
+      return new RepositoryHarfbuzzDirectory(this, entry);
     if (entry.name == 'icu')
       return new RepositoryIcuDirectory(this, entry);
     if (entry.name == 'jsr-305')

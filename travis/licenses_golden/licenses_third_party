@@ -1,4 +1,4 @@
-Signature: c4a904d4d8041a971f59c5b29e609b27
+Signature: 542be6ee1bab90645d70fda3a0f28f6c
 
 UNUSED LICENSES:
 
@@ -5461,6 +5461,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/base_flow_graph_builder.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/base_flow_graph_builder.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_reader.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_reader.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/constant_evaluator.cc
@@ -7697,7 +7699,6 @@ FILE: ../../../third_party/harfbuzz/src/harfbuzz.pc.in
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-table.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-table.cc
-FILE: ../../../third_party/harfbuzz/util/Makefile.sources
 ----------------------------------------------------------------------------------------------------
 HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
 For parts of HarfBuzz that are licensed under different licenses see individual
@@ -8409,11 +8410,6 @@ FILE: ../../../third_party/harfbuzz/src/hb-gobject.h
 FILE: ../../../third_party/harfbuzz/src/hb-uniscribe.h
 FILE: ../../../third_party/harfbuzz/src/hb-version.h
 FILE: ../../../third_party/harfbuzz/src/hb-version.h.in
-FILE: ../../../third_party/harfbuzz/util/helper-cairo.cc
-FILE: ../../../third_party/harfbuzz/util/helper-cairo.hh
-FILE: ../../../third_party/harfbuzz/util/options.hh
-FILE: ../../../third_party/harfbuzz/util/view-cairo.cc
-FILE: ../../../third_party/harfbuzz/util/view-cairo.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2011  Google, Inc.
 
@@ -8688,8 +8684,6 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-cmap-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-font.h
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-win1256.hh
-FILE: ../../../third_party/harfbuzz/util/hb-fc.cc
-FILE: ../../../third_party/harfbuzz/util/hb-fc.h
 ----------------------------------------------------------------------------------------------------
 Copyright © 2014  Google, Inc.
 
@@ -8882,9 +8876,6 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar-machine.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar-machine.rl
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-fallback.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-normalize.cc
-FILE: ../../../third_party/harfbuzz/util/main-font-text.hh
-FILE: ../../../third_party/harfbuzz/util/options.cc
-FILE: ../../../third_party/harfbuzz/util/shape-consumer.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2011,2012  Google, Inc.
 
@@ -9262,11 +9253,6 @@ FILE: ../../../third_party/harfbuzz/src/hb-shaper-list.hh
 FILE: ../../../third_party/harfbuzz/src/hb-shaper-private.hh
 FILE: ../../../third_party/harfbuzz/src/hb-shaper.cc
 FILE: ../../../third_party/harfbuzz/src/hb-warning.cc
-FILE: ../../../third_party/harfbuzz/util/ansi-print.cc
-FILE: ../../../third_party/harfbuzz/util/ansi-print.hh
-FILE: ../../../third_party/harfbuzz/util/hb-ot-shape-closure.cc
-FILE: ../../../third_party/harfbuzz/util/helper-cairo-ansi.cc
-FILE: ../../../third_party/harfbuzz/util/helper-cairo-ansi.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2012  Google, Inc.
 
@@ -9709,38 +9695,6 @@ FILE: ../../../third_party/harfbuzz/src/test-would-substitute.cc
 FILE: ../../../third_party/harfbuzz/src/test.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2010,2011  Google, Inc.
-
- This is part of HarfBuzz, a text shaping library.
-
-Permission is hereby granted, without written agreement and without
-license or royalty fees, to use, copy, modify, and distribute this
-software and its documentation for any purpose, provided that the
-above copyright notice and the following two paragraphs appear in
-all copies of this software.
-
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
-IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
-PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/util/hb-shape.cc
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/util/hb-shape.cc
-FILE: ../../../third_party/harfbuzz/util/hb-subset.cc
-FILE: ../../../third_party/harfbuzz/util/hb-view.cc
-----------------------------------------------------------------------------------------------------
-Copyright © 2010  Behdad Esfahbod
-Copyright © 2011,2012  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -17630,4 +17584,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 299
+Total license count: 298
