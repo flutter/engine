@@ -338,7 +338,7 @@ abstract class Latin1TextFile extends TextFile {
       }
       if (isUTF8)
         throw '$fullName contains valid UTF-8 and is probably not actually encoded as Win1252';
-      return ascii.decode(bytes);
+      return latin1.decode(bytes);
     });
   }
 }
