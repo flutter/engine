@@ -27,7 +27,7 @@ PlatformView::~PlatformView() = default;
 std::unique_ptr<VsyncWaiter> PlatformView::CreateVSyncWaiter() {
   FML_DLOG(WARNING)
       << "This platform does not provide a Vsync waiter implementation. A "
-         "simple timer based fallback is being usesd.";
+         "simple timer based fallback is being used.";
   return std::make_unique<VsyncWaiterFallback>(task_runners_);
 }
 
