@@ -55,7 +55,7 @@ RESULTS=`dartanalyzer                                                          \
   flutter/tools/licenses                                                       \
   2>&1                                                                         \
   | grep -Ev "No issues found!"                                                \
-  | grep -Ev "Analyzing.+tools/licenses/"`
+  | grep -Ev "Analyzing.+tools/licenses"`
 echo "$RESULTS"
 if [ -n "$RESULTS" ]; then
   echo "Failed."
