@@ -12,6 +12,7 @@ import 'dart:math' as math;
 
 import 'package:args/args.dart';
 import 'package:crypto/crypto.dart' as crypto;
+import 'package:licenses/patterns.dart';
 import 'package:path/path.dart' as path;
 
 import 'filesystem.dart' as fs;
@@ -641,11 +642,11 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
     r'( # +Copyright(?:.|\n)+?)\n' // 9
     r'\n'
     r' *5\. Time Zone Database\n'
-    r'(?:.|\n)+\n'
+    r'((?:.|\n)+)\n' // 10
     r'\n'
     r' *6\. Google double-conversion\n'
     r'\n'
-    r'(Copyright(?:.|\n)+)\n$', // 10
+    r'(Copyright(?:.|\n)+)\n$', // 11
     multiLine: true,
     caseSensitive: false
   );
@@ -667,8 +668,8 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
     final Match match = _pattern.firstMatch(io.readString());
     if (match == null)
       throw 'could not parse ICU license file';
-    assert(match.groupCount == 10);
-    if (match.group(10).contains('7.'))
+    assert(match.groupCount == 11);
+    if (match.group(10).contains(copyrightMentionPattern) || match.group(11).contains('7.'))
       throw 'unexpected copyright in ICU license file';
     final List<License> result = <License>[
       new License.fromBodyAndType(_dewrap(match.group(1)), LicenseType.unknown, origin: io.fullName),
@@ -680,7 +681,7 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
       new License.fromBodyAndType(_dewrap(match.group(7)), LicenseType.unknown, origin: io.fullName),
       new License.fromBodyAndType(_dewrap(match.group(8)), LicenseType.bsd, origin: io.fullName),
       new License.fromBodyAndType(_dewrap(match.group(9)), LicenseType.bsd, origin: io.fullName),
-      new License.fromBodyAndType(_dewrap(match.group(10)), LicenseType.bsd, origin: io.fullName),
+      new License.fromBodyAndType(_dewrap(match.group(11)), LicenseType.bsd, origin: io.fullName),
     ];
     return result;
   }
