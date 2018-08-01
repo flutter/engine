@@ -63,8 +63,6 @@ class PlatformViewAndroid final : public PlatformView {
   void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
                                                   jint response_id);
 
-  void InvokeOnStartedCallback(bool success);
-
   void DispatchSemanticsAction(JNIEnv* env,
                                jint id,
                                jint action,

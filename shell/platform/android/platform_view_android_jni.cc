@@ -111,12 +111,6 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
   FXL_CHECK(CheckException(env));
 }
 
-static jmethodID g_on_started_method = nullptr;
-void FlutterViewOnStarted(JNIEnv* env, jobject obj, jboolean success) {
-  env->CallVoidMethod(obj, g_on_started_method, success);
-  FXL_CHECK(CheckException(env));
-}
-
 static jmethodID g_attach_to_gl_context_method = nullptr;
 void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId) {
   env->CallVoidMethod(obj, g_attach_to_gl_context_method, textureId);
@@ -292,7 +286,7 @@ static void RunBundleAndSnapshotFromLibrary(
   ANDROID_SHELL_HOLDER->Launch(std::move(config));
 }
 
-static jobject LookupCallbackInformation(JNIEnv* env, jlong handle) {
+static jobject LookupCallbackInformation(JNIEnv* env, /* unused */ jobject, jlong handle) {
   auto cbInfo = blink::DartCallbackCache::GetCallbackInformation(handle);
   if (cbInfo == nullptr) {
     return nullptr;
@@ -735,13 +729,6 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
                                              "onFirstFrame", "()V");
 
   if (g_on_first_frame_method == nullptr) {
-    return false;
-  }
-
-  g_on_started_method =
-      env->GetMethodID(g_flutter_native_view_class->obj(), "onStarted", "(Z)V");
-
-  if (g_on_started_method == nullptr) {
     return false;
   }
 

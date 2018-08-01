@@ -27,7 +27,6 @@ public class FlutterNativeView implements BinaryMessenger {
     private FlutterView mFlutterView;
     private final Context mContext;
     private boolean applicationIsRunning;
-    private FlutterIsolateStartedEvent startedEvent;
 
     public FlutterNativeView(Context context) {
         this(context, false);
@@ -83,7 +82,7 @@ public class FlutterNativeView implements BinaryMessenger {
           throw new AssertionError("An entrypoint must be specified");
         }
       runFromBundleInternal(args.bundlePath, args.entrypoint,
-          args.libraryPath, args.onStartedEvent);
+          args.libraryPath, null);
     }
 
     /**
@@ -97,12 +96,11 @@ public class FlutterNativeView implements BinaryMessenger {
     }
 
     private void runFromBundleInternal(String bundlePath, String entrypoint,
-        String libraryPath, FlutterIsolateStartedEvent event) {
+        String libraryPath, String snapshotOverride) {
         assertAttached();
         if (applicationIsRunning)
             throw new AssertionError(
                     "This Flutter engine instance is already running an application");
-        startedEvent = event;
         nativeRunBundleAndSnapshotFromLibrary(mNativePlatformView, bundlePath,
             entrypoint, libraryPath, mContext.getResources().getAssets());
 
@@ -222,11 +220,6 @@ public class FlutterNativeView implements BinaryMessenger {
     private void onFirstFrame() {
         if (mFlutterView == null) return;
         mFlutterView.onFirstFrame();
-    }
-
-    private void onStarted(boolean success) {
-        if (startedEvent == null) return;
-        startedEvent.onStarted(success);
     }
 
     private static native long nativeAttach(FlutterNativeView view, boolean isBackgroundView);

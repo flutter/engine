@@ -82,6 +82,8 @@ AndroidShellHolder::AndroidShellHolder(
   fxl::RefPtr<fml::TaskRunner> gpu_runner;
   fxl::RefPtr<fml::TaskRunner> ui_runner;
   fxl::RefPtr<fml::TaskRunner> io_runner;
+  fxl::RefPtr<fml::TaskRunner> platform_runner =
+      fml::MessageLoop::GetCurrent().GetTaskRunner();
   if (is_background_view) {
     auto single_task_runner = thread_host_.ui_thread->GetTaskRunner();
     gpu_runner = single_task_runner;
@@ -94,7 +96,7 @@ AndroidShellHolder::AndroidShellHolder(
   }
   blink::TaskRunners task_runners(
       thread_label,                                    // label
-      fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
+      platform_runner,                                 // platform
       gpu_runner,                                      // gpu
       ui_runner,                                       // ui
       io_runner                                        // io
@@ -158,19 +160,15 @@ void AndroidShellHolder::Launch(RunConfiguration config) {
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
       fxl::MakeCopyable([engine = shell_->GetEngine(),  //
-                         config = std::move(config),    //
-                         view = platform_view_.get()    //
+                         config = std::move(config)     //
   ]() mutable {
-        bool success = false;
-        FXL_LOG(INFO) << "Attempting to launch engine configuration...";
+        FML_LOG(INFO) << "Attempting to launch engine configuration...";
         if (!engine || !engine->Run(std::move(config))) {
-          FXL_LOG(ERROR) << "Could not launch engine in configuration.";
+          FML_LOG(ERROR) << "Could not launch engine in configuration.";
         } else {
-          FXL_LOG(INFO) << "Isolate for engine configuration successfully "
+          FML_LOG(INFO) << "Isolate for engine configuration successfully "
                            "started and run.";
-          success = true;
         }
-        view->InvokeOnStartedCallback(success);
       }));
 }
 

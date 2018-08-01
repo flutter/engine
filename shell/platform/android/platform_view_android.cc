@@ -138,16 +138,6 @@ void PlatformViewAndroid::InvokePlatformMessageEmptyResponseCallback(
   message_response->CompleteEmpty();
 }
 
-void PlatformViewAndroid::InvokeOnStartedCallback(bool success) {
-  JNIEnv* env = fml::jni::AttachCurrentThread();
-  fml::jni::ScopedJavaLocalRef<jobject> view = java_object_.get(env);
-  if (view.is_null()) {
-    // The Java object died.
-    return;
-  }
-  FlutterViewOnStarted(fml::jni::AttachCurrentThread(), view.obj(), success);
-}
-
 // |shell::PlatformView|
 void PlatformViewAndroid::HandlePlatformMessage(
     fxl::RefPtr<blink::PlatformMessage> message) {
