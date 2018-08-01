@@ -51,7 +51,7 @@ echo "Analyzing tools/licenses..."
 RESULTS=`dartanalyzer                                                          \
   --packages=flutter/tools/licenses/.packages                                  \
   --options flutter/tools/licenses/analysis_options.yaml                       \
-  flutter/tools/licenses.                                                      \
+  flutter/tools/licenses                                                       \
   2>&1                                                                         \
   | grep -Ev "No issues found!"                                                \
   | grep -Ev "Analyzing.+tools/licenses/"`
