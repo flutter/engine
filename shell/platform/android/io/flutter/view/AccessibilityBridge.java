@@ -687,7 +687,13 @@ class AccessibilityBridge
                 event.setFromIndex(object.scrollIndex);
                 event.setItemCount(object.scrollChildren);
                 if (object.childrenInTraversalOrder != null) {
-                    event.setToIndex(object.scrollIndex + object.childrenInTraversalOrder.size());
+                    int visibleChildren = 0;
+                    // There may be invisible children at the beginning and end of the list.
+                    for (SemanticsObject child : object.childrenInTraversalOrder) {
+                        if (!child.hasFlag(Flag.IS_HIDDEN))
+                            visibleChildren += 1;
+                    }
+                    event.setToIndex(object.scrollIndex + visibleChildren);
                 }
                 sendAccessibilityEvent(event);
             }
