@@ -47,6 +47,7 @@ if [ -n "$RESULTS" ]; then
   exit 1;
 fi
 
+pwd
 echo "Analyzing tools/licenses..."
 RESULTS=`dartanalyzer                                                          \
   --packages=flutter/tools/licenses/.packages                                  \
