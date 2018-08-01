@@ -1725,7 +1725,7 @@ class RepositoryHarfbuzzDirectory extends RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'util' // utils are command line tools that do not shipped in the binary
+    return entry.name != 'util' // utils are command line tools that do not end up in the binary
         && super.shouldRecurse(entry);
   }
 }
