@@ -502,7 +502,6 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/Platfor
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewRegistryImpl.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterCallbackInformation.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterIsolateStartedEvent.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterRunArguments.java
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterCallbackCache.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h
