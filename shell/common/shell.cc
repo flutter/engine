@@ -742,9 +742,13 @@ void Shell::OnEngineHandlePlatformMessage(
 
 // |shell::Engine::Delegate|
 void Shell::OnEngineRestart() {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
   fml::AutoResetWaitableEvent latch;
-  task_runners_.GetPlatformTaskRunner()->PostTask(
-      [view = platform_view_->GetWeakPtr(), &latch] {
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetPlatformTaskRunner(),
+      [view = platform_view_->GetWeakPtr(), &latch]() {
         if (view) {
           view->OnEngineRestart();
         }
