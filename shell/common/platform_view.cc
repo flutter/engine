@@ -88,7 +88,7 @@ void PlatformView::HandlePlatformMessage(
     response->CompleteEmpty();
 }
 
-void PlatformView::OnEngineRestart() const {}
+void PlatformView::OnPreEngineRestart() const {}
 
 void PlatformView::RegisterTexture(std::shared_ptr<flow::Texture> texture) {
   delegate_.OnPlatformViewRegisterTexture(*this, std::move(texture));

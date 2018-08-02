@@ -108,7 +108,7 @@ class PlatformView {
   virtual void HandlePlatformMessage(
       fml::RefPtr<blink::PlatformMessage> message);
 
-  virtual void OnEngineRestart() const;
+  virtual void OnPreEngineRestart() const;
 
   void SetNextFrameCallback(fml::closure closure);
 

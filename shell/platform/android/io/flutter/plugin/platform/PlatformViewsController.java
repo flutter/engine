@@ -72,7 +72,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         flushAllViews();
     }
 
-    public void onEngineRestart() {
+    public void onPreEngineRestart() {
         flushAllViews();
     }
 

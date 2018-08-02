@@ -97,7 +97,7 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
 }
 
 static jmethodID g_on_engine_restart_method = nullptr;
-void FlutterViewOnEngineRestart(JNIEnv* env, jobject obj) {
+void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj) {
   env->CallVoidMethod(obj, g_on_engine_restart_method);
   FML_CHECK(CheckException(env));
 }
@@ -705,7 +705,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   }
 
   g_on_engine_restart_method = env->GetMethodID(
-      g_flutter_native_view_class->obj(), "onEngineRestart", "()V");
+      g_flutter_native_view_class->obj(), "onPreEngineRestart", "()V");
 
   if (g_on_engine_restart_method == nullptr) {
     return false;

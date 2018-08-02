@@ -34,7 +34,7 @@ void FlutterViewUpdateCustomAccessibilityActions(JNIEnv* env,
 
 void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj);
 
-void FlutterViewOnEngineRestart(JNIEnv* env, jobject obj);
+void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj);
 
 void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId);
 

@@ -82,8 +82,8 @@ public class FlutterPluginRegistry
         mActivity = null;
     }
 
-    public void onEngineRestart() {
-        mPlatformViewsController.onEngineRestart();
+    public void onPreEngineRestart() {
+        mPlatformViewsController.onPreEngineRestart();
     }
 
     private class FlutterRegistrar implements Registrar {

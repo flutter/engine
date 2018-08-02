@@ -741,7 +741,7 @@ void Shell::OnEngineHandlePlatformMessage(
 }
 
 // |shell::Engine::Delegate|
-void Shell::OnEngineRestart() {
+void Shell::OnPreEngineRestart() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
@@ -750,7 +750,7 @@ void Shell::OnEngineRestart() {
       task_runners_.GetPlatformTaskRunner(),
       [view = platform_view_->GetWeakPtr(), &latch]() {
         if (view) {
-          view->OnEngineRestart();
+          view->OnPreEngineRestart();
         }
         latch.Signal();
       });
