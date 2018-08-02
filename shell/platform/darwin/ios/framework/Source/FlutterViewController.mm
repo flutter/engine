@@ -85,7 +85,7 @@
 }
 
 - (instancetype)init {
-  return [self initWithProject:nil nibName:nil bundle: nil];
+  return [self initWithProject:nil nibName:nil bundle:nil];
 }
 
 #pragma mark - Common view controller initialization tasks
