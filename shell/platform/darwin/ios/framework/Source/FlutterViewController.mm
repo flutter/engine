@@ -84,7 +84,7 @@
   return [self initWithProject:nil nibName:nil bundle:nil];
 }
 
-- (instancetype) init {
+- (instancetype)init {
   return [self initWithProject:nil nibName:nil bundle: nil];
 }
 
