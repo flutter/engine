@@ -740,6 +740,21 @@ void Shell::OnEngineHandlePlatformMessage(
       });
 }
 
+// |shell::Engine::Delegate|
+void Shell::OnEngineRestart() {
+  fml::AutoResetWaitableEvent latch;
+  task_runners_.GetPlatformTaskRunner()->PostTask(
+      [view = platform_view_->GetWeakPtr(), &latch] {
+        if (view) {
+          view->OnEngineRestart();
+        }
+        latch.Signal();
+      });
+  // This is blocking as any embedded platform views has to be flushed before
+  // we re-run the Dart code.
+  latch.Wait();
+}
+
 // |blink::ServiceProtocol::Handler|
 fml::RefPtr<fml::TaskRunner> Shell::GetServiceProtocolHandlerTaskRunner(
     fml::StringView method) const {

@@ -82,6 +82,10 @@ public class FlutterPluginRegistry
         mActivity = null;
     }
 
+    public void onEngineRestart() {
+        mPlatformViewsController.onEngineRestart();
+    }
+
     private class FlutterRegistrar implements Registrar {
         private final String pluginKey;
 

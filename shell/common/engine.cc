@@ -103,6 +103,7 @@ bool Engine::Restart(RunConfiguration configuration) {
   }
   runtime_controller_ = runtime_controller_->Clone();
   UpdateAssetManager(nullptr);
+  delegate_.OnEngineRestart();
   return Run(std::move(configuration));
 }
 
