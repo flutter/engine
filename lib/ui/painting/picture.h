@@ -6,8 +6,8 @@
 #define FLUTTER_LIB_UI_PAINTING_PICTURE_H_
 
 #include "flutter/flow/skia_gpu_object.h"
+#include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/image.h"
-#include "lib/tonic/dart_wrappable.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
 namespace tonic {
@@ -17,18 +17,17 @@ class DartLibraryNatives;
 namespace blink {
 class Canvas;
 
-class Picture : public fxl::RefCountedThreadSafe<Picture>,
-                public tonic::DartWrappable {
+class Picture : public RefCountedDartWrappable<Picture> {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(Picture);
+  FML_FRIEND_MAKE_REF_COUNTED(Picture);
 
  public:
   ~Picture() override;
-  static fxl::RefPtr<Picture> Create(flow::SkiaGPUObject<SkPicture> picture);
+  static fml::RefPtr<Picture> Create(flow::SkiaGPUObject<SkPicture> picture);
 
   sk_sp<SkPicture> picture() const { return picture_.get(); }
 
-  fxl::RefPtr<CanvasImage> toImage(int width, int height);
+  fml::RefPtr<CanvasImage> toImage(int width, int height);
 
   void dispose();
 

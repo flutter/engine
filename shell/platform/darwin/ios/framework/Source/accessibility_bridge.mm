@@ -10,8 +10,8 @@
 
 #import <UIKit/UIKit.h>
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
-#include "lib/fxl/logging.h"
 
 namespace {
 
@@ -36,14 +36,13 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     case UIAccessibilityScrollDirectionDown:
       return blink::SemanticsAction::kScrollUp;
   }
-  FXL_DCHECK(false);  // Unreachable
+  FML_DCHECK(false);  // Unreachable
   return blink::SemanticsAction::kScrollUp;
 }
 
 }  // namespace
 
-@implementation FlutterCustomAccessibilityAction
- {
+@implementation FlutterCustomAccessibilityAction {
 }
 @end
 
@@ -104,8 +103,8 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 #pragma mark - Designated initializers
 
 - (instancetype)initWithBridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge uid:(int32_t)uid {
-  FXL_DCHECK(bridge) << "bridge must be set";
-  FXL_DCHECK(uid >= kRootNodeId);
+  FML_DCHECK(bridge) << "bridge must be set";
+  FML_DCHECK(uid >= kRootNodeId);
   self = [super init];
 
   if (self) {
@@ -185,12 +184,12 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     return NO;
   int32_t action_id = action.uid;
   std::vector<uint8_t> args;
-  args.push_back(3); // type=int32.
+  args.push_back(3);  // type=int32.
   args.push_back(action_id);
   args.push_back(action_id >> 8);
   args.push_back(action_id >> 16);
   args.push_back(action_id >> 24);
-  [self bridge] ->DispatchSemanticsAction([self uid], blink::SemanticsAction::kCustomAction, args);
+  [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kCustomAction, args);
   return YES;
 }
 
@@ -313,6 +312,13 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   return YES;
 }
 
+- (BOOL)accessibilityPerformEscape {
+  if (![self node].HasAction(blink::SemanticsAction::kDismiss))
+    return NO;
+  [self bridge] -> DispatchSemanticsAction([self uid], blink::SemanticsAction::kDismiss);
+  return YES;
+}
+
 #pragma mark UIAccessibilityFocus overrides
 
 - (void)accessibilityElementDidBecomeFocused {
@@ -361,7 +367,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
       [self node].HasAction(blink::SemanticsAction::kDecrease)) {
     traits |= UIAccessibilityTraitAdjustable;
   }
+  // TODO(jonahwilliams): switches should have a value of "on" or "off"
   if ([self node].HasFlag(blink::SemanticsFlags::kIsSelected) ||
+      [self node].HasFlag(blink::SemanticsFlags::kIsToggled) ||
       [self node].HasFlag(blink::SemanticsFlags::kIsChecked)) {
     traits |= UIAccessibilityTraitSelected;
   }
@@ -374,6 +382,12 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   }
   if ([self node].HasFlag(blink::SemanticsFlags::kIsHeader)) {
     traits |= UIAccessibilityTraitHeader;
+  }
+  if ([self node].HasFlag(blink::SemanticsFlags::kIsImage)) {
+    traits |= UIAccessibilityTraitImage;
+  }
+  if ([self node].HasFlag(blink::SemanticsFlags::kIsLiveRegion)) {
+    traits |= UIAccessibilityTraitUpdatesFrequently;
   }
   return traits;
 }
@@ -396,7 +410,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge {
-  FXL_DCHECK(semanticsObject != nil) << "semanticsObject must be set";
+  FML_DCHECK(semanticsObject != nil) << "semanticsObject must be set";
   self = [super init];
 
   if (self) {
@@ -504,7 +518,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
                                           blink::CustomAccessibilityActionUpdates actions) {
   BOOL layoutChanged = NO;
   BOOL scrollOccured = NO;
-  for (const auto& entry: actions) {
+  for (const auto& entry : actions) {
     const blink::CustomAccessibilityAction& action = entry.second;
     actions_[action.id] = action;
   }
@@ -524,14 +538,21 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
     }
     object.children = newChildren;
     if (node.customAccessibilityActions.size() > 0) {
-      NSMutableArray<FlutterCustomAccessibilityAction*>* accessibilityCustomActions = 
+      NSMutableArray<FlutterCustomAccessibilityAction*>* accessibilityCustomActions =
           [[[NSMutableArray alloc] init] autorelease];
       for (int32_t action_id : node.customAccessibilityActions) {
         blink::CustomAccessibilityAction& action = actions_[action_id];
+        if (action.overrideId != -1) {
+          // iOS does not support overriding standard actions, so we ignore any
+          // custom actions that have an override id provided.
+          continue;
+        }
         NSString* label = @(action.label.data());
         SEL selector = @selector(onCustomAccessibilityAction:);
-        FlutterCustomAccessibilityAction* customAction = 
-          [[FlutterCustomAccessibilityAction alloc] initWithName:label target:object selector:selector];
+        FlutterCustomAccessibilityAction* customAction =
+            [[FlutterCustomAccessibilityAction alloc] initWithName:label
+                                                            target:object
+                                                          selector:selector];
         customAction.uid = action_id;
         [accessibilityCustomActions addObject:customAction];
       }
@@ -597,10 +618,10 @@ void AccessibilityBridge::DispatchSemanticsAction(int32_t uid, blink::SemanticsA
   platform_view_->DispatchSemanticsAction(uid, action, args);
 }
 
-void AccessibilityBridge::DispatchSemanticsAction(int32_t uid, 
-                                                   blink::SemanticsAction action,
+void AccessibilityBridge::DispatchSemanticsAction(int32_t uid,
+                                                  blink::SemanticsAction action,
                                                   std::vector<uint8_t> args) {
-  platform_view_->DispatchSemanticsAction(uid, action, args);                                              
+  platform_view_->DispatchSemanticsAction(uid, action, args);
 }
 
 SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,

@@ -70,6 +70,14 @@ void _updateSemanticsEnabled(bool enabled) {
   _invoke(window.onSemanticsEnabledChanged, window._onSemanticsEnabledChangedZone);
 }
 
+void _updateAccessibilityFeatures(int values) {
+  final AccessibilityFeatures newFeatures = new AccessibilityFeatures._(values);
+  if (newFeatures == window._accessibilityFeatures)
+    return;
+  window._accessibilityFeatures = newFeatures;
+  _invoke(window.onAccessibilityFeaturesChanged, window._onAccessibilityFlagsChangedZone);
+}
+
 void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
   if (window.onPlatformMessage != null) {
     _invoke3<String, ByteData, PlatformMessageResponseCallback>(

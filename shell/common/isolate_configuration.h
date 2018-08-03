@@ -11,10 +11,10 @@
 #include "flutter/assets/asset_manager.h"
 #include "flutter/assets/asset_resolver.h"
 #include "flutter/common/settings.h"
+#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/runtime/dart_isolate.h"
-#include "lib/fxl/macros.h"
 
 namespace shell {
 
@@ -24,7 +24,7 @@ class IsolateConfiguration {
       const blink::Settings& settings,
       fml::RefPtr<blink::AssetManager> asset_manager);
 
-  static std::unique_ptr<IsolateConfiguration> CreateForPrecompiledCode();
+  static std::unique_ptr<IsolateConfiguration> CreateForAppSnapshot();
 
   static std::unique_ptr<IsolateConfiguration> CreateForSnapshot(
       std::unique_ptr<fml::Mapping> snapshot);
@@ -40,13 +40,13 @@ class IsolateConfiguration {
 
   virtual ~IsolateConfiguration();
 
-  bool PrepareIsolate(fml::WeakPtr<blink::DartIsolate> isolate);
+  bool PrepareIsolate(blink::DartIsolate& isolate);
 
  protected:
   virtual bool DoPrepareIsolate(blink::DartIsolate& isolate) = 0;
 
  private:
-  FXL_DISALLOW_COPY_AND_ASSIGN(IsolateConfiguration);
+  FML_DISALLOW_COPY_AND_ASSIGN(IsolateConfiguration);
 };
 
 }  // namespace shell

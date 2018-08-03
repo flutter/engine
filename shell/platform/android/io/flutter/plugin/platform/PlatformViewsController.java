@@ -4,14 +4,24 @@
 
 package io.flutter.plugin.platform;
 
+import android.annotation.TargetApi;
+import android.os.Build;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
 import io.flutter.view.FlutterView;
+import io.flutter.view.TextureRegistry;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static android.view.MotionEvent.PointerCoords;
+import static android.view.MotionEvent.PointerProperties;
 
 /**
  * Manages platform views.
@@ -20,14 +30,22 @@ import java.util.Map;
  * A platform views controller can be attached to at most one Flutter view.
  */
 public class PlatformViewsController implements MethodChannel.MethodCallHandler {
+    private static final String TAG = "PlatformViewsController";
+
     private static final String CHANNEL_NAME = "flutter/platform_views";
+
+    // API level 20 is required for VirtualDisplay#setSurface which we use when resizing a platform view.
+    private static final int MINIMAL_SDK = Build.VERSION_CODES.KITKAT_WATCH;
 
     private final PlatformViewRegistryImpl mRegistry;
 
     private FlutterView mFlutterView;
 
+    private final HashMap<Integer, VirtualDisplayController> vdControllers;
+
     public PlatformViewsController() {
         mRegistry = new PlatformViewRegistryImpl();
+        vdControllers = new HashMap<>();
     }
 
     public void attachFlutterView(FlutterView view) {
@@ -51,48 +69,232 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
     }
 
     public void onFlutterViewDestroyed() {
-        // TODO(amirh): tear down all vd resources.
+        for (VirtualDisplayController controller : vdControllers.values()) {
+            controller.dispose();
+        }
+        vdControllers.clear();
     }
 
     @Override
-    public void onMethodCall(MethodCall call, MethodChannel.Result result) {
+    public void onMethodCall(final MethodCall call, final MethodChannel.Result result) {
+        if (Build.VERSION.SDK_INT < MINIMAL_SDK) {
+            Log.e(TAG, "Trying to use platform views with API " + Build.VERSION.SDK_INT
+                    + ", required API level is: " + MINIMAL_SDK);
+            return;
+        }
         switch (call.method) {
             case "create":
-                createPlatformView(call);
-                break;
+                createPlatformView(call, result);
+                return;
             case "dispose":
-                disposePlatformView(call);
-                break;
+                disposePlatformView(call, result);
+                return;
             case "resize":
-                resizePlatformView(call);
-                break;
+                resizePlatformView(call, result);
+                return;
+            case "touch":
+                onTouch(call, result);
+                return;
         }
-        result.success(null);
+        result.notImplemented();
     }
 
-    private void createPlatformView(MethodCall call) {
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
+    private void createPlatformView(MethodCall call, MethodChannel.Result result) {
         Map<String, Object> args = call.arguments();
         int id = (int) args.get("id");
         String viewType = (String) args.get("viewType");
-        double width = (double) args.get("width");
-        double height = (double) args.get("height");
+        double logicalWidth = (double) args.get("width");
+        double logicalHeight = (double) args.get("height");
 
-        // TODO(amirh): implement this.
+        if (vdControllers.containsKey(id)) {
+            result.error(
+                    "error",
+                    "Trying to create an already created platform view, view id: " + id,
+                    null
+            );
+            return;
+        }
+
+        PlatformViewFactory viewFactory = mRegistry.getFactory(viewType);
+        if (viewFactory == null) {
+            result.error(
+                    "error",
+                    "Trying to create a platform view of unregistered type: " + viewType,
+                    null
+            );
+            return;
+        }
+
+        TextureRegistry.SurfaceTextureEntry textureEntry = mFlutterView.createSurfaceTexture();
+        VirtualDisplayController vdController = VirtualDisplayController.create(
+                mFlutterView.getContext(),
+                viewFactory,
+                textureEntry.surfaceTexture(),
+                toPhysicalPixels(logicalWidth),
+                toPhysicalPixels(logicalHeight),
+                id
+        );
+
+        if (vdController == null) {
+            result.error(
+                    "error",
+                    "Failed creating virtual display for a " + viewType + " with id: " + id,
+                    null
+            );
+            return;
+        }
+
+        vdControllers.put(id, vdController);
+
+        // TODO(amirh): copy accessibility nodes to the FlutterView's accessibility tree.
+
+        result.success(textureEntry.id());
     }
 
-    private void disposePlatformView(MethodCall call) {
-        int id = (int) call.arguments();
+    private void disposePlatformView(MethodCall call, MethodChannel.Result result) {
+        int id = call.arguments();
 
-        // TODO(amirh): implement this.
+        VirtualDisplayController vdController = vdControllers.get(id);
+        if (vdController == null) {
+            result.error(
+                    "error",
+                    "Trying to dispose a platform view with unknown id: " + id,
+                    null
+            );
+            return;
+        }
+
+        vdController.dispose();
+        vdControllers.remove(id);
+        result.success(null);
     }
 
-    private void resizePlatformView(MethodCall call) {
+    private void resizePlatformView(MethodCall call, MethodChannel.Result result) {
         Map<String, Object> args = call.arguments();
         int id = (int) args.get("id");
         double width = (double) args.get("width");
         double height = (double) args.get("height");
 
-        // TODO(amirh): implement this.
+        VirtualDisplayController vdController = vdControllers.get(id);
+        if (vdController == null) {
+            result.error(
+                    "error",
+                    "Trying to resize a platform view with unknown id: " + id,
+                    null
+            );
+            return;
+        }
+        vdController.resize(
+                toPhysicalPixels(width),
+                toPhysicalPixels(height)
+        );
+        result.success(null);
+    }
+
+    private void onTouch(MethodCall call, MethodChannel.Result result) {
+        List<Object> args = call.arguments();
+
+        float density = mFlutterView.getContext().getResources().getDisplayMetrics().density;
+
+        int id = (int) args.get(0);
+        int downTime = (int) args.get(1);
+        int eventTime = (int) args.get(2);
+        int action = (int) args.get(3);
+        int pointerCount = (int) args.get(4);
+        PointerProperties[] pointerProperties =
+                parsePointerPropertiesList(args.get(5)).toArray(new PointerProperties[pointerCount]);
+        PointerCoords[] pointerCoords =
+                parsePointerCoordsList(args.get(6), density).toArray(new PointerCoords[pointerCount]);
+
+        int metaState = (int) args.get(7);
+        int buttonState = (int) args.get(8);
+        float xPrecision = (float) (double) args.get(9);
+        float yPrecision = (float) (double) args.get(10);
+        int deviceId = (int) args.get(11);
+        int edgeFlags = (int) args.get(12);
+        int source = (int) args.get(13);
+        int flags = (int) args.get(14);
+
+        View view = vdControllers.get(id).getView();
+        if (view == null) {
+            result.error(
+                    "error",
+                    "Sending touch to an unknown view with id: " + id,
+                    null
+            );
+            return;
+        }
+
+        MotionEvent event = MotionEvent.obtain(
+                downTime,
+                eventTime,
+                action,
+                pointerCount,
+                pointerProperties,
+                pointerCoords,
+                metaState,
+                buttonState,
+                xPrecision,
+                yPrecision,
+                deviceId,
+                edgeFlags,
+                source,
+                flags
+        );
+
+        view.dispatchTouchEvent(event);
+        result.success(null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<PointerProperties> parsePointerPropertiesList(Object rawPropertiesList) {
+        List<Object> rawProperties = (List<Object>) rawPropertiesList;
+        List<PointerProperties> pointerProperties = new ArrayList<>();
+        for (Object o : rawProperties) {
+            pointerProperties.add(parsePointerProperties(o));
+        }
+        return pointerProperties;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static PointerProperties parsePointerProperties(Object rawProperties) {
+        List<Object> propertiesList = (List<Object>) rawProperties;
+        PointerProperties properties = new MotionEvent.PointerProperties();
+        properties.id = (int) propertiesList.get(0);
+        properties.toolType = (int) propertiesList.get(1);
+        return properties;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<PointerCoords> parsePointerCoordsList(Object rawCoordsList, float density) {
+        List<Object> rawCoords = (List<Object>) rawCoordsList;
+        List<PointerCoords> pointerCoords = new ArrayList<>();
+        for (Object o : rawCoords) {
+            pointerCoords.add(parsePointerCoords(o, density));
+        }
+        return pointerCoords;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static PointerCoords parsePointerCoords(Object rawCoords, float density) {
+        List<Object> coordsList = (List<Object>) rawCoords;
+        PointerCoords coords = new MotionEvent.PointerCoords();
+        coords.orientation = (float) (double) coordsList.get(0);
+        coords.pressure = (float) (double) coordsList.get(1);
+        coords.size = (float) (double) coordsList.get(2);
+        coords.toolMajor = (float) (double) coordsList.get(3) * density;
+        coords.toolMinor = (float) (double) coordsList.get(4) * density;
+        coords.touchMajor = (float) (double) coordsList.get(5) * density;
+        coords.touchMinor = (float) (double) coordsList.get(6) * density;
+        coords.x = (float) (double) coordsList.get(7) * density;
+        coords.y = (float) (double) coordsList.get(8) * density;
+        return coords;
+    }
+
+    private int toPhysicalPixels(double logicalPixels) {
+        float density = mFlutterView.getContext().getResources().getDisplayMetrics().density;
+        return (int) Math.round(logicalPixels * density);
     }
 
 }

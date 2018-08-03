@@ -12,21 +12,21 @@
 #include <sstream>
 
 #include "flutter/common/settings.h"
+#include "flutter/fml/build_config.h"
+#include "flutter/fml/logging.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "lib/fxl/build_config.h"
-#include "lib/fxl/logging.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_library_natives.h"
-#include "lib/tonic/dart_microtask_queue.h"
-#include "lib/tonic/dart_state.h"
-#include "lib/tonic/logging/dart_error.h"
-#include "lib/tonic/logging/dart_invoke.h"
-#include "lib/tonic/scopes/dart_api_scope.h"
-#include "lib/tonic/scopes/dart_isolate_scope.h"
 #include "third_party/dart/runtime/bin/embedded_dart_io.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_library_natives.h"
+#include "third_party/tonic/dart_microtask_queue.h"
+#include "third_party/tonic/dart_state.h"
+#include "third_party/tonic/logging/dart_error.h"
+#include "third_party/tonic/logging/dart_invoke.h"
+#include "third_party/tonic/scopes/dart_api_scope.h"
+#include "third_party/tonic/scopes/dart_isolate_scope.h"
 
 #if defined(OS_ANDROID)
 #include <android/log.h>
@@ -214,12 +214,23 @@ void SaveCompilationTrace(Dart_NativeArguments args) {
     return;
   }
 
-  result = Dart_NewExternalTypedData(Dart_TypedData_kUint8, buffer, length);
+  result = Dart_NewTypedData(Dart_TypedData_kUint8, length);
   if (Dart_IsError(result)) {
     Dart_SetReturnValue(args, result);
     return;
   }
 
+  Dart_TypedData_Type type;
+  void* data = nullptr;
+  intptr_t size = 0;
+  Dart_Handle status = Dart_TypedDataAcquireData(result, &type, &data, &size);
+  if (Dart_IsError(status)) {
+    Dart_SetReturnValue(args, status);
+    return;
+  }
+
+  memcpy(data, buffer, length);
+  Dart_TypedDataReleaseData(result);
   Dart_SetReturnValue(args, result);
 }
 

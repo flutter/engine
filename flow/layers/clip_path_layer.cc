@@ -12,7 +12,8 @@
 
 namespace flow {
 
-ClipPathLayer::ClipPathLayer() = default;
+ClipPathLayer::ClipPathLayer(Clip clip_behavior)
+    : clip_behavior_(clip_behavior) {}
 
 ClipPathLayer::~ClipPathLayer() = default;
 
@@ -28,16 +29,17 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 #if defined(OS_FUCHSIA)
 
 void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
-  FXL_DCHECK(needs_system_composite());
+  FML_DCHECK(needs_system_composite());
 
   // TODO(MZ-140): Must be able to specify paths as shapes to nodes.
   //               Treating the shape as a rectangle for now.
   auto bounds = clip_path_.getBounds();
   scenic::Rectangle shape(context.session(),  // session
-                              bounds.width(),     //  width
-                              bounds.height()     //  height
+                          bounds.width(),     //  width
+                          bounds.height()     //  height
   );
 
+  // TODO(liyuqian): respect clip_behavior_
   SceneUpdateContext::Clip clip(context, shape, bounds);
   UpdateSceneChildren(context);
 }
@@ -46,11 +48,17 @@ void ClipPathLayer::UpdateScene(SceneUpdateContext& context) {
 
 void ClipPathLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ClipPathLayer::Paint");
-  FXL_DCHECK(needs_painting());
+  FML_DCHECK(needs_painting());
 
   SkAutoCanvasRestore save(&context.canvas, true);
-  context.canvas.clipPath(clip_path_, true);
+  context.canvas.clipPath(clip_path_, clip_behavior_ != Clip::hardEdge);
+  if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
+    context.canvas.saveLayer(paint_bounds(), nullptr);
+  }
   PaintChildren(context);
+  if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
+    context.canvas.restore();
+  }
 }
 
 }  // namespace flow

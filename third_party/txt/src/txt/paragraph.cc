@@ -25,9 +25,9 @@
 #include <vector>
 
 #include <minikin/Layout.h>
+#include "flutter/fml/logging.h"
 #include "font_collection.h"
 #include "font_skia.h"
-#include "lib/fxl/logging.h"
 #include "minikin/FontLanguageListCache.h"
 #include "minikin/GraphemeBreak.h"
 #include "minikin/HbFontCache.h"
@@ -283,7 +283,7 @@ bool Paragraph::ComputeLineBreaks() {
       std::shared_ptr<minikin::FontCollection> collection =
           GetMinikinFontCollectionForStyle(run.style);
       if (collection == nullptr) {
-        FXL_LOG(INFO) << "Could not find font collection for family \""
+        FML_LOG(INFO) << "Could not find font collection for family \""
                       << run.style.font_family << "\".";
         return false;
       }
@@ -504,6 +504,7 @@ void Paragraph::Layout(double width, bool force) {
       uint16_t* text_ptr = text_.data();
       size_t text_start = run.start();
       size_t text_count = run.end() - run.start();
+      size_t text_size = text_.size();
 
       // Apply ellipsizing if the run was not completely laid out and this
       // is the last line (or lines are unlimited).
@@ -541,6 +542,7 @@ void Paragraph::Layout(double width, bool force) {
         text_ptr = ellipsized_text.data();
         text_start = 0;
         text_count = ellipsized_text.size();
+        text_size = text_count;
 
         // If there is no line limit, then skip all lines after the ellipsized
         // line.
@@ -550,9 +552,8 @@ void Paragraph::Layout(double width, bool force) {
         }
       }
 
-      layout.doLayout(text_ptr, text_start, text_count, text_.size(),
-                      run.is_rtl(), font, minikin_paint,
-                      minikin_font_collection);
+      layout.doLayout(text_ptr, text_start, text_count, text_size, run.is_rtl(),
+                      font, minikin_paint, minikin_font_collection);
 
       if (layout.nGlyphs() == 0)
         continue;

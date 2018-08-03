@@ -6,11 +6,11 @@
 #define FLUTTER_LIB_UI_TEXT_PARAGRAPH_BUILDER_H_
 
 #include <memory>
+#include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/paint.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/third_party/txt/src/txt/paragraph_builder.h"
-#include "lib/tonic/dart_wrappable.h"
-#include "lib/tonic/typed_data/int32_list.h"
+#include "third_party/tonic/typed_data/int32_list.h"
 
 namespace tonic {
 class DartLibraryNatives;
@@ -20,13 +20,12 @@ namespace blink {
 
 class Paragraph;
 
-class ParagraphBuilder : public fxl::RefCountedThreadSafe<ParagraphBuilder>,
-                         public tonic::DartWrappable {
+class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
   DEFINE_WRAPPERTYPEINFO();
-  FRIEND_MAKE_REF_COUNTED(ParagraphBuilder);
+  FML_FRIEND_MAKE_REF_COUNTED(ParagraphBuilder);
 
  public:
-  static fxl::RefPtr<ParagraphBuilder> create(tonic::Int32List& encoded,
+  static fml::RefPtr<ParagraphBuilder> create(tonic::Int32List& encoded,
                                               const std::string& fontFamily,
                                               double fontSize,
                                               double lineHeight,
@@ -51,7 +50,7 @@ class ParagraphBuilder : public fxl::RefCountedThreadSafe<ParagraphBuilder>,
 
   Dart_Handle addText(const std::u16string& text);
 
-  fxl::RefPtr<Paragraph> build();
+  fml::RefPtr<Paragraph> build();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

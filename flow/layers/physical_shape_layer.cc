@@ -9,7 +9,8 @@
 
 namespace flow {
 
-PhysicalShapeLayer::PhysicalShapeLayer() : isRect_(false) {}
+PhysicalShapeLayer::PhysicalShapeLayer(Clip clip_behavior)
+    : isRect_(false), clip_behavior_(clip_behavior) {}
 
 PhysicalShapeLayer::~PhysicalShapeLayer() = default;
 
@@ -63,7 +64,7 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
 #if defined(OS_FUCHSIA)
 
 void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
-  FXL_DCHECK(needs_system_composite());
+  FML_DCHECK(needs_system_composite());
 
   SceneUpdateContext::Frame frame(context, frameRRect_, color_, elevation_);
   for (auto& layer : layers()) {
@@ -79,7 +80,7 @@ void PhysicalShapeLayer::UpdateScene(SceneUpdateContext& context) {
 
 void PhysicalShapeLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "PhysicalShapeLayer::Paint");
-  FXL_DCHECK(needs_painting());
+  FML_DCHECK(needs_painting());
 
   if (elevation_ != 0) {
     DrawShadow(&context.canvas, path_, shadow_color_, elevation_,
@@ -90,12 +91,25 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   paint.setColor(color_);
   context.canvas.drawPath(path_, paint);
 
-  SkAutoCanvasRestore save(&context.canvas, false);
-  context.canvas.save();
-  context.canvas.clipPath(path_, true);
+  int saveCount = context.canvas.save();
+  switch (clip_behavior_) {
+    case Clip::hardEdge:
+      context.canvas.clipPath(path_, false);
+      break;
+    case Clip::antiAlias:
+      context.canvas.clipPath(path_, true);
+      break;
+    case Clip::antiAliasWithSaveLayer:
+      context.canvas.clipPath(path_, true);
+      context.canvas.saveLayer(paint_bounds(), nullptr);
+      break;
+    case Clip::none:
+      break;
+  }
+
   PaintChildren(context);
-  if (context.checkerboard_offscreen_layers && !isRect_)
-    DrawCheckerboard(&context.canvas, path_.getBounds());
+
+  context.canvas.restoreToCount(saveCount);
 }
 
 void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
@@ -118,11 +132,12 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
   SkColor inAmbient = SkColorSetA(color, kAmbientAlpha * SkColorGetA(color));
   SkColor inSpot = SkColorSetA(color, kSpotAlpha * SkColorGetA(color));
   SkColor ambientColor, spotColor;
-  SkShadowUtils::ComputeTonalColors(inAmbient, inSpot,
-                                    &ambientColor, &spotColor);
-  SkShadowUtils::DrawShadow(canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
-                            SkPoint3::Make(shadow_x, shadow_y, dpr * kLightHeight),
-                            dpr * kLightRadius, ambientColor, spotColor, flags);
+  SkShadowUtils::ComputeTonalColors(inAmbient, inSpot, &ambientColor,
+                                    &spotColor);
+  SkShadowUtils::DrawShadow(
+      canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
+      SkPoint3::Make(shadow_x, shadow_y, dpr * kLightHeight),
+      dpr * kLightRadius, ambientColor, spotColor, flags);
 }
 
 }  // namespace flow

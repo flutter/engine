@@ -12,11 +12,11 @@ import 'dart:math' as math;
 
 import 'package:args/args.dart';
 import 'package:crypto/crypto.dart' as crypto;
+import 'package:licenses/patterns.dart';
 import 'package:path/path.dart' as path;
 
 import 'filesystem.dart' as fs;
 import 'licenses.dart';
-import 'patterns.dart';
 
 
 // REPOSITORY OBJECTS
@@ -615,7 +615,7 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
     r' #  ---------COPYING\.libtabe ---- BEGIN--------------------\n'
     r' #\n'
     r' # +/\*\n'
-    r'( # +\* Copyrighy (?:.|\n)+?)\n' // yeah, that's a typo in the license. // 4
+    r'( # +\* Copyright (?:.|\n)+?)\n' // 4
     r' # +\*/\n'
     r' #\n'
     r' # +/\*\n'
@@ -642,7 +642,11 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
     r'( # +Copyright(?:.|\n)+?)\n' // 9
     r'\n'
     r' *5\. Time Zone Database\n'
-    r'((?:.|\n)+)$',
+    r'((?:.|\n)+)\n' // 10
+    r'\n'
+    r' *6\. Google double-conversion\n'
+    r'\n'
+    r'(Copyright(?:.|\n)+)\n$', // 11
     multiLine: true,
     caseSensitive: false
   );
@@ -664,8 +668,8 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
     final Match match = _pattern.firstMatch(io.readString());
     if (match == null)
       throw 'could not parse ICU license file';
-    assert(match.groupCount == 10);
-    if (match.group(10).contains(copyrightMentionPattern))
+    assert(match.groupCount == 11);
+    if (match.group(10).contains(copyrightMentionPattern) || match.group(11).contains('7.'))
       throw 'unexpected copyright in ICU license file';
     final List<License> result = <License>[
       new License.fromBodyAndType(_dewrap(match.group(1)), LicenseType.unknown, origin: io.fullName),
@@ -677,6 +681,7 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
       new License.fromBodyAndType(_dewrap(match.group(7)), LicenseType.unknown, origin: io.fullName),
       new License.fromBodyAndType(_dewrap(match.group(8)), LicenseType.bsd, origin: io.fullName),
       new License.fromBodyAndType(_dewrap(match.group(9)), LicenseType.bsd, origin: io.fullName),
+      new License.fromBodyAndType(_dewrap(match.group(11)), LicenseType.bsd, origin: io.fullName),
     ];
     return result;
   }
@@ -736,33 +741,33 @@ class RepositoryMultiLicenseNoticesForFilesFile extends RepositoryLicenseFile {
     // "Notices for files contained in the"
     // ...then have a second line which is 60 "=" characters
     final List<List<int>> contents = splitIntList(io.readBytes(), 0x0A).toList();
-    if (!ASCII.decode(contents[0]).startsWith('Notices for files contained in') ||
-        ASCII.decode(contents[1]) != '============================================================\n')
+    if (!ascii.decode(contents[0]).startsWith('Notices for files contained in') ||
+        ascii.decode(contents[1]) != '============================================================\n')
       throw 'unrecognised syntax: ${io.fullName}';
     int index = 2;
     while (index < contents.length) {
-      if (ASCII.decode(contents[index]) != 'Notices for file(s):\n')
+      if (ascii.decode(contents[index]) != 'Notices for file(s):\n')
         throw 'unrecognised syntax on line ${index + 1}: ${io.fullName}';
       index += 1;
       final List<String> names = <String>[];
       do {
-        names.add(ASCII.decode(contents[index]));
+        names.add(ascii.decode(contents[index]));
         index += 1;
-      } while (ASCII.decode(contents[index]) != '------------------------------------------------------------\n');
+      } while (ascii.decode(contents[index]) != '------------------------------------------------------------\n');
       index += 1;
       final List<List<int>> body = <List<int>>[];
       do {
         body.add(contents[index]);
         index += 1;
       } while (index < contents.length &&
-               ASCII.decode(contents[index], allowInvalid: true) != '============================================================\n');
+          ascii.decode(contents[index], allowInvalid: true) != '============================================================\n');
       index += 1;
       final List<int> bodyBytes = body.expand((List<int> line) => line).toList();
       String bodyText;
       try {
-        bodyText = UTF8.decode(bodyBytes);
+        bodyText = utf8.decode(bodyBytes);
       } on FormatException {
-        bodyText = LATIN1.decode(bodyBytes);
+        bodyText = latin1.decode(bodyBytes);
       }
       License license = new License.unique(bodyText, LicenseType.unknown, origin: io.fullName);
       for (String name in names) {
@@ -910,7 +915,16 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
         }
       }
     }
+
+    for (RepositoryDirectory child in virtualSubdirectories) {
+      _subdirectories.add(child);
+      _childrenByName[child.name] = child;
+    }
   }
+
+  // Override this to add additional child directories that do not represent a
+  // direct child of this directory's filesystem node.
+  List<RepositoryDirectory> get virtualSubdirectories => <RepositoryDirectory>[];
 
   bool shouldRecurse(fs.IoNode entry) {
     return entry.name != '.cipd' &&
@@ -956,7 +970,7 @@ class RepositoryDirectory extends RepositoryEntry implements LicenseSource {
     }
   }
 
-  int get count => _files.length + _subdirectories.fold(0, (int count, RepositoryDirectory child) => count + child.count);
+  int get count => _files.length + _subdirectories.fold<int>(0, (int count, RepositoryDirectory child) => count + child.count);
 
   @override
   List<License> nearestLicensesFor(String name) {
@@ -1707,6 +1721,16 @@ class RepositoryIcuDirectory extends RepositoryDirectory {
   }
 }
 
+class RepositoryHarfbuzzDirectory extends RepositoryDirectory {
+  RepositoryHarfbuzzDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'util' // utils are command line tools that do not end up in the binary
+        && super.shouldRecurse(entry);
+  }
+}
+
 class RepositoryJSR305Directory extends RepositoryDirectory {
   RepositoryJSR305Directory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
@@ -1913,6 +1937,7 @@ class RepositoryRootThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
         && entry.name != 'instrumented_libraries' // unused according to chinmay
         && entry.name != 'android_tools' // excluded on advice
         && entry.name != 'googletest' // only used by tests
+        && entry.name != 'skia' // treated as a separate component
         && super.shouldRecurse(entry);
   }
 
@@ -1932,6 +1957,8 @@ class RepositoryRootThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
       throw '//third_party/freetype-android is no longer part of this client: remove it';
     if (entry.name == 'freetype2')
       return new RepositoryFreetypeDirectory(this, entry);
+    if (entry.name == 'harfbuzz')
+      return new RepositoryHarfbuzzDirectory(this, entry);
     if (entry.name == 'icu')
       return new RepositoryIcuDirectory(this, entry);
     if (entry.name == 'jsr-305')
@@ -1946,8 +1973,6 @@ class RepositoryRootThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
       return new RepositoryLibWebpDirectory(this, entry);
     if (entry.name == 'pkg')
       return new RepositoryPkgDirectory(this, entry);
-    if (entry.name == 'skia')
-      return new RepositorySkiaDirectory(this, entry);
     if (entry.name == 'vulkan')
       return new RepositoryVulkanDirectory(this, entry);
     return super.createSubdirectory(entry);
@@ -2392,6 +2417,15 @@ class RepositoryRoot extends RepositoryDirectory {
       return new RepositoryTopazDirectory(this, entry);
     return super.createSubdirectory(entry);
   }
+
+  @override
+  List<RepositoryDirectory> get virtualSubdirectories {
+    // Skia is updated more frequently than other third party libraries and
+    // is therefore represented as a separate top-level component.
+    fs.Directory thirdPartyNode = io.walk.firstWhere((fs.IoNode node) => node.name == 'third_party');
+    fs.IoNode skiaNode = thirdPartyNode.walk.firstWhere((fs.IoNode node) => node.name == 'skia');
+    return <RepositoryDirectory>[new RepositorySkiaDirectory(this, skiaNode)];
+  }
 }
 
 
@@ -2528,7 +2562,7 @@ Future<Null> main(List<String> arguments) async {
           system.File goldenFile = new system.File(
               path.join(argResults['golden'], 'licenses_${component.io.name}'));
           String goldenSignature = await goldenFile.openRead()
-              .transform(UTF8.decoder).transform(new LineSplitter()).first;
+              .transform(utf8.decoder).transform(new LineSplitter()).first;
           Match goldenMatch = signaturePattern.matchAsPrefix(goldenSignature);
           if (goldenMatch != null && goldenMatch.group(1) == signature) {
             system.stderr.writeln('    Skipping this component - no change in signature');

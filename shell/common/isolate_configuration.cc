@@ -16,35 +16,27 @@ IsolateConfiguration::IsolateConfiguration() = default;
 
 IsolateConfiguration::~IsolateConfiguration() = default;
 
-bool IsolateConfiguration::PrepareIsolate(
-    fml::WeakPtr<blink::DartIsolate> isolate) {
-  if (!isolate) {
-    return false;
-  }
-
-  if (isolate->GetPhase() != blink::DartIsolate::Phase::LibrariesSetup) {
-    FXL_DLOG(ERROR)
+bool IsolateConfiguration::PrepareIsolate(blink::DartIsolate& isolate) {
+  if (isolate.GetPhase() != blink::DartIsolate::Phase::LibrariesSetup) {
+    FML_DLOG(ERROR)
         << "Isolate was in incorrect phase to be prepared for running.";
     return false;
   }
 
-  return DoPrepareIsolate(*isolate);
+  return DoPrepareIsolate(isolate);
 }
 
-class PrecompiledIsolateConfiguration final : public IsolateConfiguration {
+class AppSnapshotIsolateConfiguration final : public IsolateConfiguration {
  public:
-  PrecompiledIsolateConfiguration() = default;
+  AppSnapshotIsolateConfiguration() = default;
 
   // |shell::IsolateConfiguration|
   bool DoPrepareIsolate(blink::DartIsolate& isolate) override {
-    if (!blink::DartVM::IsRunningPrecompiledCode()) {
-      return false;
-    }
     return isolate.PrepareForRunningFromPrecompiledCode();
   }
 
  private:
-  FXL_DISALLOW_COPY_AND_ASSIGN(PrecompiledIsolateConfiguration);
+  FML_DISALLOW_COPY_AND_ASSIGN(AppSnapshotIsolateConfiguration);
 };
 
 class SnapshotIsolateConfiguration : public IsolateConfiguration {
@@ -63,7 +55,7 @@ class SnapshotIsolateConfiguration : public IsolateConfiguration {
  private:
   std::unique_ptr<fml::Mapping> snapshot_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(SnapshotIsolateConfiguration);
+  FML_DISALLOW_COPY_AND_ASSIGN(SnapshotIsolateConfiguration);
 };
 
 class SourceIsolateConfiguration final : public IsolateConfiguration {
@@ -85,7 +77,7 @@ class SourceIsolateConfiguration final : public IsolateConfiguration {
   std::string main_path_;
   std::string packages_path_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(SourceIsolateConfiguration);
+  FML_DISALLOW_COPY_AND_ASSIGN(SourceIsolateConfiguration);
 };
 
 class KernelListIsolateConfiguration final : public IsolateConfiguration {
@@ -114,7 +106,7 @@ class KernelListIsolateConfiguration final : public IsolateConfiguration {
  private:
   std::vector<std::unique_ptr<fml::Mapping>> kernel_pieces_;
 
-  FXL_DISALLOW_COPY_AND_ASSIGN(KernelListIsolateConfiguration);
+  FML_DISALLOW_COPY_AND_ASSIGN(KernelListIsolateConfiguration);
 };
 
 std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
@@ -122,7 +114,7 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
     fml::RefPtr<blink::AssetManager> asset_manager) {
   // Running in AOT mode.
   if (blink::DartVM::IsRunningPrecompiledCode()) {
-    return CreateForPrecompiledCode();
+    return CreateForAppSnapshot();
   }
 
   // Run from sources.
@@ -177,7 +169,7 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
         std::unique_ptr<fml::Mapping> piece =
             asset_manager->GetAsMapping(piece_path);
         if (piece == nullptr) {
-          FXL_LOG(ERROR) << "Failed to load: " << piece_path;
+          FML_LOG(ERROR) << "Failed to load: " << piece_path;
           return nullptr;
         }
 
@@ -193,8 +185,8 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
 }
 
 std::unique_ptr<IsolateConfiguration>
-IsolateConfiguration::CreateForPrecompiledCode() {
-  return std::make_unique<PrecompiledIsolateConfiguration>();
+IsolateConfiguration::CreateForAppSnapshot() {
+  return std::make_unique<AppSnapshotIsolateConfiguration>();
 }
 
 std::unique_ptr<IsolateConfiguration> IsolateConfiguration::CreateForSnapshot(

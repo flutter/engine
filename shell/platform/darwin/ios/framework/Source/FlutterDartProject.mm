@@ -25,7 +25,7 @@ static blink::Settings DefaultSettingsForProcess() {
   // Settings passed in explicitly via command line arguments take priority.
   auto settings = shell::SettingsFromCommandLine(command_line);
 
-  settings.task_observer_add = [](intptr_t key, fxl::Closure callback) {
+  settings.task_observer_add = [](intptr_t key, fml::closure callback) {
     fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));
   };
 
@@ -158,11 +158,12 @@ static blink::Settings DefaultSettingsForProcess() {
   if (self) {
     _settings = DefaultSettingsForProcess();
 
-    if ([[NSFileManager defaultManager] fileExistsAtPath:dartMainURL.path]) {
+    if (dartMainURL != nil && [[NSFileManager defaultManager] fileExistsAtPath:dartMainURL.path]) {
       _settings.main_dart_file_path = dartMainURL.path.UTF8String;
     }
 
-    if ([[NSFileManager defaultManager] fileExistsAtPath:dartPackages.path]) {
+    if (dartPackages.path != nil &&
+        [[NSFileManager defaultManager] fileExistsAtPath:dartPackages.path]) {
       _settings.packages_file_path = dartPackages.path.UTF8String;
     }
   }
@@ -176,7 +177,8 @@ static blink::Settings DefaultSettingsForProcess() {
   if (self) {
     _settings = DefaultSettingsForProcess();
 
-    if ([[NSFileManager defaultManager] fileExistsAtPath:flutterAssetsURL.path]) {
+    if (flutterAssetsURL != nil &&
+        [[NSFileManager defaultManager] fileExistsAtPath:flutterAssetsURL.path]) {
       _settings.assets_path = flutterAssetsURL.path.UTF8String;
 
       NSURL* scriptSnapshotPath =
@@ -192,12 +194,9 @@ static blink::Settings DefaultSettingsForProcess() {
 
 #pragma mark - Convenience initializers
 
+// Exists for backward-compatibility.  Expect this to be removed.
 - (instancetype)initFromDefaultSourceForConfiguration {
-  if (blink::DartVM::IsRunningPrecompiledCode()) {
-    return [self initWithPrecompiledDartBundle:nil];
-  } else {
-    return [self initWithFlutterAssets:nil dartMain:nil packages:nil];
-  }
+  return [self init];
 }
 
 - (const blink::Settings&)settings {

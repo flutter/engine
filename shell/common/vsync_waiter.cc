@@ -22,8 +22,8 @@ void VsyncWaiter::AsyncWaitForVsync(Callback callback) {
   AwaitVSync();
 }
 
-void VsyncWaiter::FireCallback(fxl::TimePoint frame_start_time,
-                               fxl::TimePoint frame_target_time) {
+void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
+                               fml::TimePoint frame_target_time) {
   Callback callback;
 
   {
@@ -37,10 +37,17 @@ void VsyncWaiter::FireCallback(fxl::TimePoint frame_start_time,
 
   task_runners_.GetUITaskRunner()->PostTask(
       [callback, frame_start_time, frame_target_time]() {
+#if defined(OS_FUCHSIA)
+        // In general, traces on Fuchsia are recorded across the whole system.
+        // Because of this, emitting a "VSYNC" event per flutter process is
+        // undesirable, as the events will collide with each other.  We
+        // instead let another area of the system emit them.
+        TRACE_EVENT0("flutter", "vsync callback");
+#else
         // Note: The tag name must be "VSYNC" (it is special) so that the
-        // "Highlight
-        // Vsync" checkbox in the timeline can be enabled.
+        // "Highlight Vsync" checkbox in the timeline can be enabled.
         TRACE_EVENT0("flutter", "VSYNC");
+#endif
         callback(frame_start_time, frame_target_time);
       });
 }

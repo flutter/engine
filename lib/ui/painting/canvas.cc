@@ -12,13 +12,13 @@
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/window.h"
-#include "lib/tonic/converter/dart_converter.h"
-#include "lib/tonic/dart_args.h"
-#include "lib/tonic/dart_binding_macros.h"
-#include "lib/tonic/dart_library_natives.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkRSXform.h"
+#include "third_party/tonic/converter/dart_converter.h"
+#include "third_party/tonic/dart_args.h"
+#include "third_party/tonic/dart_binding_macros.h"
+#include "third_party/tonic/dart_library_natives.h"
 
 using tonic::ToDart;
 
@@ -70,7 +70,7 @@ void Canvas::RegisterNatives(tonic::DartLibraryNatives* natives) {
                      FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-fxl::RefPtr<Canvas> Canvas::Create(PictureRecorder* recorder,
+fml::RefPtr<Canvas> Canvas::Create(PictureRecorder* recorder,
                                    double left,
                                    double top,
                                    double right,
@@ -78,8 +78,8 @@ fxl::RefPtr<Canvas> Canvas::Create(PictureRecorder* recorder,
   if (!recorder)
     Dart_ThrowException(
         ToDart("Canvas constructor called with non-genuine PictureRecorder."));
-  FXL_DCHECK(!recorder->isRecording());  // verified by Dart code
-  fxl::RefPtr<Canvas> canvas = fxl::MakeRefCounted<Canvas>(
+  FML_DCHECK(!recorder->isRecording());  // verified by Dart code
+  fml::RefPtr<Canvas> canvas = fml::MakeRefCounted<Canvas>(
       recorder->BeginRecording(SkRect::MakeLTRB(left, top, right, bottom)));
   recorder->set_canvas(canvas);
   return canvas;
@@ -164,7 +164,8 @@ void Canvas::clipRect(double left,
                       bool doAntiAlias) {
   if (!canvas_)
     return;
-  canvas_->clipRect(SkRect::MakeLTRB(left, top, right, bottom), clipOp, doAntiAlias);
+  canvas_->clipRect(SkRect::MakeLTRB(left, top, right, bottom), clipOp,
+                    doAntiAlias);
 }
 
 void Canvas::clipRRect(const RRect& rrect, bool doAntiAlias) {
