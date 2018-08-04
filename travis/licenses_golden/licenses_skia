@@ -1,4 +1,4 @@
-Signature: bbca9e49c82c045ef509f23f32361943
+Signature: 92f0ccfba5adbc2142e4f4594dfd9029
 
 UNUSED LICENSES:
 
@@ -1284,6 +1284,7 @@ FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzPathDeserialize.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzRegionDeserialize.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzRegionSetPath.cpp
 FILE: ../../../third_party/skia/gm/3dgm.cpp
+FILE: ../../../third_party/skia/gm/androidblendmodes.cpp
 FILE: ../../../third_party/skia/gm/clockwise.cpp
 FILE: ../../../third_party/skia/gm/hugepath.cpp
 FILE: ../../../third_party/skia/gm/localmatrixshader.cpp
@@ -1439,6 +1440,8 @@ FILE: ../../../third_party/skia/src/gpu/effects/GrConfigConversionEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrConstColorProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrConstColorProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrConstColorProcessor.h
+FILE: ../../../third_party/skia/src/gpu/effects/GrDDLTextureStripAtlas.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/GrDDLTextureStripAtlas.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrDynamicTextureStripAtlas.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrDynamicTextureStripAtlas.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrLumaColorFilterEffect.cpp
@@ -1467,6 +1470,8 @@ FILE: ../../../third_party/skia/src/gpu/effects/GrUnpremulInputFragmentProcessor
 FILE: ../../../third_party/skia/src/gpu/effects/GrYUVtoRGBEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrYUVtoRGBEffect.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrYUVtoRGBEffect.h
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlBuffer.h
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlBuffer.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCopyManager.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCopyManager.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCopyPipelineState.h
@@ -1580,6 +1585,8 @@ LIBRARY: skia
 LIBRARY: vulkan
 ORIGIN: ../../../flutter/third_party/txt/LICENSE
 TYPE: LicenseType.apache
+FILE: ../../../third_party/skia/experimental/pathkit/npm-wasm/example.html
+FILE: ../../../third_party/skia/experimental/pathkit/npm-wasm/package.json
 FILE: ../../../third_party/skia/src/images/SkWebpEncoder.cpp
 FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vk_platform.h
 FILE: ../../../third_party/skia/third_party/vulkan/vulkan/vulkan.h
@@ -1884,7 +1891,7 @@ FILE: ../../../third_party/skia/experimental/docs/jsonbaseddoc.htm
 FILE: ../../../third_party/skia/experimental/docs/svgBackend.js
 FILE: ../../../third_party/skia/experimental/docs/svgbaseddoc.htm
 FILE: ../../../third_party/skia/experimental/docs/utilities.js
-FILE: ../../../third_party/skia/experimental/wasm/shell.html
+FILE: ../../../third_party/skia/experimental/pathkit/docker/emsdk-base/Dockerfile
 FILE: ../../../third_party/skia/infra/bots/android_bin.isolate
 FILE: ../../../third_party/skia/infra/bots/assets.isolate
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_darwin/VERSION
@@ -1898,9 +1905,9 @@ FILE: ../../../third_party/skia/infra/bots/assets/chromebook_x86_64_gles/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/clang_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/clang_win/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/cmake_linux/VERSION
-FILE: ../../../third_party/skia/infra/bots/assets/emscripten_sdk/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/gcloud_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/go/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/go_deps/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/linux_vulkan_intel_driver_debug/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/linux_vulkan_intel_driver_release/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/linux_vulkan_sdk/VERSION
@@ -1951,7 +1958,8 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-Static.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-SwiftShader.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-Vulkan.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-EMCC-wasm-Release.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-EMCC-wasm-Debug-PathKit.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-EMCC-wasm-Release-PathKit.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-GCC-arm-Release-Chromecast.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-GCC-loongson3a-Release.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-GCC-x86_64-Release-ANGLE.json
@@ -1960,6 +1968,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-GCC-x86_64-Release-Shared.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Android_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-iOS.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-ASAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-CommandBuffer.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-Metal.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Release-MoltenVK_Vulkan.json
@@ -2015,8 +2024,6 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/git/examples/full.expe
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_all_uploads.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/failed_one_upload.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/gsutil/examples/full.expected/gsutil_tests.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/infra/examples/full.expected/failed_all_updates.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/infra/examples/full.expected/failed_one_update.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/infra/examples/full.expected/infra_tests.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/isolate/examples/full.expected/always-use-exparchive.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/isolate/examples/full.expected/basic.json
@@ -2080,8 +2087,6 @@ FILE: ../../../third_party/skia/infra/bots/recipes/ct_skps.expected/CT_IMG_DECOD
 FILE: ../../../third_party/skia/infra/bots/recipes/ct_skps.expected/CT_IMG_DECODE_10k_SKPs_Trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/housekeeper.expected/Housekeeper-PerCommit-Trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/housekeeper.expected/Housekeeper-PerCommit.json
-FILE: ../../../third_party/skia/infra/bots/recipes/infra.expected/failed_all_updates.json
-FILE: ../../../third_party/skia/infra/bots/recipes/infra.expected/failed_one_update.json
 FILE: ../../../third_party/skia/infra/bots/recipes/infra.expected/infra_tests.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Android-Clang-Nexus5-GPU-Adreno330-arm-Debug-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Android-Clang-Nexus5x-GPU-Adreno418-arm64-Release-All-Android_NoGPUThreads.json
@@ -4281,9 +4286,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/experimental/wasm/wasm_main.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/experimental/pathkit/pathkit_wasm_bindings.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/experimental/wasm/wasm_main.cpp
+FILE: ../../../third_party/skia/experimental/pathkit/pathkit_wasm_bindings.cpp
 FILE: ../../../third_party/skia/fuzz/FuzzEncoders.cpp
 FILE: ../../../third_party/skia/fuzz/FuzzPolyUtils.cpp
 FILE: ../../../third_party/skia/include/private/GrSkSLFPFactoryCache.h

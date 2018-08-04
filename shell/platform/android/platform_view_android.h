@@ -91,6 +91,9 @@ class PlatformViewAndroid final : public PlatformView {
       fml::RefPtr<blink::PlatformMessage> message) override;
 
   // |shell::PlatformView|
+  void OnPreEngineRestart() const override;
+
+  // |shell::PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
   // |shell::PlatformView|

@@ -112,6 +112,12 @@ void FlutterViewOnFirstFrame(JNIEnv* env, jobject obj) {
   FML_CHECK(CheckException(env));
 }
 
+static jmethodID g_on_engine_restart_method = nullptr;
+void FlutterViewOnPreEngineRestart(JNIEnv* env, jobject obj) {
+  env->CallVoidMethod(obj, g_on_engine_restart_method);
+  FML_CHECK(CheckException(env));
+}
+
 static jmethodID g_attach_to_gl_context_method = nullptr;
 void SurfaceTextureAttachToGLContext(JNIEnv* env, jobject obj, jint textureId) {
   env->CallVoidMethod(obj, g_attach_to_gl_context_method, textureId);
@@ -756,6 +762,13 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
                                              "onFirstFrame", "()V");
 
   if (g_on_first_frame_method == nullptr) {
+    return false;
+  }
+
+  g_on_engine_restart_method = env->GetMethodID(
+      g_flutter_native_view_class->obj(), "onPreEngineRestart", "()V");
+
+  if (g_on_engine_restart_method == nullptr) {
     return false;
   }
 
