@@ -41,7 +41,7 @@ PlatformViewAndroid::PlatformViewAndroid(
 PlatformViewAndroid::~PlatformViewAndroid() = default;
 
 void PlatformViewAndroid::NotifyCreated(
-    fxl::RefPtr<AndroidNativeWindow> native_window) {
+    fml::RefPtr<AndroidNativeWindow> native_window) {
   if (android_surface_) {
     InstallFirstFrameCallback();
     android_surface_->SetNativeWindow(native_window);
@@ -60,7 +60,7 @@ void PlatformViewAndroid::NotifyChanged(const SkISize& size) {
   if (!android_surface_) {
     return;
   }
-  fxl::AutoResetWaitableEvent latch;
+  fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetGPUTaskRunner(),  //
       [&latch, surface = android_surface_.get(), size]() {

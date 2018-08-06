@@ -237,15 +237,14 @@ std::unique_ptr<IsolateConfiguration> CreateIsolateConfiguration(
   return IsolateConfiguration::CreateForAppSnapshot();
 }
 
-static void RunBundleAndSnapshotFromLibrary(
-    JNIEnv* env,
-    jobject jcaller,
-    jlong shell_holder,
-    jstring jbundlepath,
-    jstring jsnapshotOverride,
-    jstring jEntrypoint,
-    jstring jLibraryUrl,
-    jobject jAssetManager) {
+static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
+                                            jobject jcaller,
+                                            jlong shell_holder,
+                                            jstring jbundlepath,
+                                            jstring jsnapshotOverride,
+                                            jstring jEntrypoint,
+                                            jstring jLibraryUrl,
+                                            jobject jAssetManager) {
   auto asset_manager = fml::MakeRefCounted<blink::AssetManager>();
 
   const auto bundlepath = fml::jni::JavaStringToString(env, jbundlepath);
@@ -272,7 +271,7 @@ static void RunBundleAndSnapshotFromLibrary(
           env,                       // jni environment
           jAssetManager,             // asset manager
           std::move(apk_asset_dir))  // apk asset dir
-      );
+                              );
     }
   }
 
@@ -307,7 +306,9 @@ static void RunBundleAndSnapshotFromLibrary(
   ANDROID_SHELL_HOLDER->Launch(std::move(config));
 }
 
-static jobject LookupCallbackInformation(JNIEnv* env, /* unused */ jobject, jlong handle) {
+static jobject LookupCallbackInformation(JNIEnv* env,
+                                         /* unused */ jobject,
+                                         jlong handle) {
   auto cbInfo = blink::DartCallbackCache::GetCallbackInformation(handle);
   if (cbInfo == nullptr) {
     return nullptr;
@@ -434,7 +435,7 @@ static void DispatchPlatformMessage(JNIEnv* env,
       message,                                     //
       position,                                    //
       responseId                                   //
-  );
+      );
 }
 
 static void DispatchEmptyPlatformMessage(JNIEnv* env,
@@ -446,7 +447,7 @@ static void DispatchEmptyPlatformMessage(JNIEnv* env,
       env,                                         //
       fml::jni::JavaStringToString(env, channel),  //
       responseId                                   //
-  );
+      );
 }
 
 static void DispatchPointerDataPacket(JNIEnv* env,
@@ -472,7 +473,7 @@ static void DispatchSemanticsAction(JNIEnv* env,
       action,        //
       args,          //
       args_position  //
-  );
+      );
 }
 
 static void SetSemanticsEnabled(JNIEnv* env,
@@ -501,7 +502,7 @@ static void RegisterTexture(JNIEnv* env,
   ANDROID_SHELL_HOLDER->GetPlatformView()->RegisterExternalTexture(
       static_cast<int64_t>(texture_id),                        //
       fml::jni::JavaObjectWeakGlobalRef(env, surface_texture)  //
-  );
+      );
 }
 
 static void MarkTextureFrameAvailable(JNIEnv* env,
@@ -531,7 +532,7 @@ static void InvokePlatformMessageResponseCallback(JNIEnv* env,
                                               responseId,  //
                                               message,     //
                                               position     //
-      );
+                                              );
 }
 
 static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
@@ -541,7 +542,7 @@ static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
   ANDROID_SHELL_HOLDER->GetPlatformView()
       ->InvokePlatformMessageEmptyResponseCallback(env,        //
                                                    responseId  //
-      );
+                                                   );
 }
 
 bool PlatformViewAndroid::Register(JNIEnv* env) {
