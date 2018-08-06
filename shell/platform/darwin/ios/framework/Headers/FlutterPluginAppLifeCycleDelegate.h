@@ -31,6 +31,14 @@ FLUTTER_EXPORT
 
 /**
  Calls all plugins registered for `UIApplicationDelegate` callbacks.
+
+ - Returns: `NO` if any plugin vetoes application launch.
+ */
+- (BOOL)application:(UIApplication*)application
+    willFinishLaunchingWithOptions:(NSDictionary*)launchOptions;
+
+/**
+ Calls all plugins registered for `UIApplicationDelegate` callbacks.
  */
 - (void)applicationDidBecomeActive:(UIApplication*)application;
 

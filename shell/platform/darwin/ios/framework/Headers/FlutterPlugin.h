@@ -59,6 +59,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions;
+
+/**
+ Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
+
+ - Returns: `NO` if this plugin vetoes application launch.
+ */
+- (BOOL)application:(UIApplication*)application
+    willFinishLaunchingWithOptions:(NSDictionary*)launchOptions;
+
 /**
  Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
  */

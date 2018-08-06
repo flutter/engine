@@ -2,9 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/paths.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+
+static const char* kCallbackCacheSubDir = "Library/Caches/";
 
 @implementation FlutterPluginAppLifeCycleDelegate {
   UIBackgroundTaskIdentifier _debugBackgroundTask;
@@ -15,6 +19,8 @@
 
 - (instancetype)init {
   if (self = [super init]) {
+    std::string cachePath = fml::paths::JoinPaths({getenv("HOME"), kCallbackCacheSubDir});
+    blink::DartCallbackCache::SetCachePath(cachePath);
     _pluginDelegates = [[NSPointerArray weakObjectsPointerArray] retain];
   }
   return self;
@@ -44,6 +50,22 @@ static BOOL isPowerOfTwo(NSUInteger x) {
     }
     if ([plugin respondsToSelector:_cmd]) {
       if (![plugin application:application didFinishLaunchingWithOptions:launchOptions]) {
+        return NO;
+      }
+    }
+  }
+  return YES;
+}
+
+- (BOOL)application:(UIApplication*)application
+    willFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
+  blink::DartCallbackCache::LoadCacheFromDisk();
+  for (id<FlutterPlugin> plugin in [_pluginDelegates allObjects]) {
+    if (!plugin) {
+      continue;
+    }
+    if ([plugin respondsToSelector:_cmd]) {
+      if (![plugin application:application willFinishLaunchingWithOptions:launchOptions]) {
         return NO;
       }
     }
