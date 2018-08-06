@@ -57,7 +57,7 @@ AndroidShellHolder::AndroidShellHolder(
               shell,                   // delegate
               shell.GetTaskRunners(),  // task runners
               java_object              // java object handle for JNI interop
-              );
+          );
 
         } else {
           platform_view_android = std::make_unique<PlatformViewAndroid>(
@@ -66,7 +66,7 @@ AndroidShellHolder::AndroidShellHolder(
               java_object,             // java object handle for JNI interop
               shell.GetSettings()
                   .enable_software_rendering  // use software rendering
-              );
+          );
         }
         weak_platform_view = platform_view_android->GetWeakPtr();
         return platform_view_android;
@@ -99,14 +99,14 @@ AndroidShellHolder::AndroidShellHolder(
                                   gpu_runner,       // gpu
                                   ui_runner,        // ui
                                   io_runner         // io
-                                  );
+  );
 
   shell_ =
       Shell::Create(task_runners,             // task runners
                     settings_,                // settings
                     on_create_platform_view,  // platform view create callback
                     on_create_rasterizer      // rasterizer create callback
-                    );
+      );
 
   platform_view_ = weak_platform_view;
   FML_DCHECK(platform_view_);
@@ -157,18 +157,18 @@ void AndroidShellHolder::Launch(RunConfiguration config) {
     return;
   }
 
-  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable([
-    engine = shell_->GetEngine(),  //
-    config = std::move(config)     //
+  shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = shell_->GetEngine(),  //
+                         config = std::move(config)     //
   ]() mutable {
-    FML_LOG(INFO) << "Attempting to launch engine configuration...";
-    if (!engine || !engine->Run(std::move(config))) {
-      FML_LOG(ERROR) << "Could not launch engine in configuration.";
-    } else {
-      FML_LOG(INFO) << "Isolate for engine configuration successfully "
-                       "started and run.";
-    }
-  }));
+        FML_LOG(INFO) << "Attempting to launch engine configuration...";
+        if (!engine || !engine->Run(std::move(config))) {
+          FML_LOG(ERROR) << "Could not launch engine in configuration.";
+        } else {
+          FML_LOG(INFO) << "Isolate for engine configuration successfully "
+                           "started and run.";
+        }
+      }));
 }
 
 void AndroidShellHolder::SetViewportMetrics(
@@ -178,7 +178,7 @@ void AndroidShellHolder::SetViewportMetrics(
   }
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [ engine = shell_->GetEngine(), metrics ]() {
+      [engine = shell_->GetEngine(), metrics]() {
         if (engine) {
           engine->SetViewportMetrics(metrics);
         }
@@ -192,7 +192,7 @@ void AndroidShellHolder::DispatchPointerDataPacket(
   }
 
   shell_->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
-      [ engine = shell_->GetEngine(), packet = std::move(packet) ] {
+      [engine = shell_->GetEngine(), packet = std::move(packet)] {
         if (engine) {
           engine->DispatchPointerDataPacket(*packet);
         }

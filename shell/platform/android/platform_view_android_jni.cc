@@ -271,7 +271,7 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
           env,                       // jni environment
           jAssetManager,             // asset manager
           std::move(apk_asset_dir))  // apk asset dir
-                              );
+      );
     }
   }
 
@@ -435,7 +435,7 @@ static void DispatchPlatformMessage(JNIEnv* env,
       message,                                     //
       position,                                    //
       responseId                                   //
-      );
+  );
 }
 
 static void DispatchEmptyPlatformMessage(JNIEnv* env,
@@ -447,7 +447,7 @@ static void DispatchEmptyPlatformMessage(JNIEnv* env,
       env,                                         //
       fml::jni::JavaStringToString(env, channel),  //
       responseId                                   //
-      );
+  );
 }
 
 static void DispatchPointerDataPacket(JNIEnv* env,
@@ -473,7 +473,7 @@ static void DispatchSemanticsAction(JNIEnv* env,
       action,        //
       args,          //
       args_position  //
-      );
+  );
 }
 
 static void SetSemanticsEnabled(JNIEnv* env,
@@ -502,7 +502,7 @@ static void RegisterTexture(JNIEnv* env,
   ANDROID_SHELL_HOLDER->GetPlatformView()->RegisterExternalTexture(
       static_cast<int64_t>(texture_id),                        //
       fml::jni::JavaObjectWeakGlobalRef(env, surface_texture)  //
-      );
+  );
 }
 
 static void MarkTextureFrameAvailable(JNIEnv* env,
@@ -532,7 +532,7 @@ static void InvokePlatformMessageResponseCallback(JNIEnv* env,
                                               responseId,  //
                                               message,     //
                                               position     //
-                                              );
+      );
 }
 
 static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
@@ -542,7 +542,7 @@ static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
   ANDROID_SHELL_HOLDER->GetPlatformView()
       ->InvokePlatformMessageEmptyResponseCallback(env,        //
                                                    responseId  //
-                                                   );
+      );
 }
 
 bool PlatformViewAndroid::Register(JNIEnv* env) {
