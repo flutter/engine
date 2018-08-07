@@ -44,6 +44,7 @@ class AccessibilityBridge
     private int previousRouteId = ROOT_NODE_ID;
     private List<Integer> previousRoutes;
     private final View mDecorView;
+    private Integer mLastLeftFrameInset = 0;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
@@ -622,6 +623,11 @@ class AccessibilityBridge
             if (Build.VERSION.SDK_INT >= 23) {
                 Rect visibleFrame = new Rect();
                 mDecorView.getWindowVisibleDisplayFrame(visibleFrame);
+                if (!mLastLeftFrameInset.equals(visibleFrame.left)) {
+                    rootObject.globalGeometryDirty = true;
+                    rootObject.inverseTransformDirty = true;
+                }
+                mLastLeftFrameInset = visibleFrame.left;
                 Matrix.translateM(identity, 0, visibleFrame.left, 0, 0);
             }
             rootObject.updateRecursively(identity, visitedObjects, false);
