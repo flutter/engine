@@ -219,9 +219,9 @@ public class FlutterMain {
             }
 
             String appBundlePath = findAppBundlePath(applicationContext);
-            String appRootPath = PathUtils.getFilesDir(applicationContext);
+            String appStoragePath = PathUtils.getFilesDir(applicationContext);
             nativeInit(applicationContext, shellArgs.toArray(new String[0]),
-                appBundlePath, appRootPath);
+                appBundlePath, appStoragePath);
 
             sInitialized = true;
         } catch (Exception e) {
@@ -230,7 +230,7 @@ public class FlutterMain {
         }
     }
 
-    private static native void nativeInit(Context context, String[] args, String bundlePath, String appRootPath);
+    private static native void nativeInit(Context context, String[] args, String bundlePath, String appStoragePath);
     private static native void nativeRecordStartTimestamp(long initTimeMillis);
 
     /**

@@ -46,7 +46,7 @@ void FlutterMain::Init(JNIEnv* env,
                        jobject context,
                        jobjectArray jargs,
                        jstring bundlePath,
-                       jstring appRootPath) {
+                       jstring appStoragePath) {
   std::vector<std::string> args;
   args.push_back("flutter");
   for (auto& arg : fml::jni::StringArrayToVector(env, jargs)) {
@@ -60,7 +60,7 @@ void FlutterMain::Init(JNIEnv* env,
 
   // Restore the callback cache.
   blink::DartCallbackCache::SetCachePath(
-      fml::jni::JavaStringToString(env, appRootPath));
+      fml::jni::JavaStringToString(env, appStoragePath));
   blink::DartCallbackCache::LoadCacheFromDisk();
 
   if (!blink::DartVM::IsRunningPrecompiledCode()) {
