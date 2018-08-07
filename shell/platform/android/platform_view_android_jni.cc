@@ -594,8 +594,9 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
       },
       {
           .name = "nativeRunBundleAndSnapshotFromLibrary",
-          .signature = "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;"
-                       "Ljava/lang/String;Landroid/content/res/AssetManager;)V",
+          .signature = 
+              "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;"
+              "Ljava/lang/String;Landroid/content/res/AssetManager;)V",
           .fnPtr =
               reinterpret_cast<void*>(&shell::RunBundleAndSnapshotFromLibrary),
       },
