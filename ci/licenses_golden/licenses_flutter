@@ -187,7 +187,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: engine
 ORIGIN: ../../../LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../flutter/.gdb_history
 FILE: ../../../flutter/DEPS
 FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
@@ -199,7 +198,6 @@ FILE: ../../../flutter/lib/ui/dart_ui.h
 FILE: ../../../flutter/lib/ui/natives.dart
 FILE: ../../../flutter/lib/ui/window/window.h
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
-FILE: ../../../flutter/shell/platform/android/android_shell_holder.cc.rej
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.cc
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/JSONUtil.java
 FILE: ../../../flutter/shell/platform/darwin/desktop/Info.plist
@@ -600,7 +598,6 @@ FILE: ../../../flutter/lib/ui/plugins/callback_cache.h
 FILE: ../../../flutter/shell/common/isolate_configuration.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.h
 FILE: ../../../flutter/shell/platform/android/android_shell_holder.cc
-FILE: ../../../flutter/shell/platform/android/android_shell_holder.cc.orig
 FILE: ../../../flutter/shell/platform/android/android_shell_holder.h
 FILE: ../../../flutter/shell/platform/android/platform_message_response_android.cc
 FILE: ../../../flutter/shell/platform/android/platform_message_response_android.h
