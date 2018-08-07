@@ -21,8 +21,6 @@ import io.flutter.plugin.common.StandardMessageCodec;
 import java.nio.ByteBuffer;
 import java.util.*;
 
-import com.sun.javafx.font.directwrite.RECT;
-
 class AccessibilityBridge
         extends AccessibilityNodeProvider implements BasicMessageChannel.MessageHandler<Object> {
     private static final String TAG = "FlutterView";
@@ -619,7 +617,8 @@ class AccessibilityBridge
             final float[] identity = new float[16];
             Matrix.setIdentityM(identity, 0);
             // in android devices above AP 23, the system nav bar can be placed on the left side
-            // of the screen in landscape mode. We must handle the translation ourselves for a11y.
+            // of the screen in landscape mode. We must handle the translation ourselves for the
+            // a11y nodes.
             if (Build.VERSION.SDK_INT >= 23) {
                 Rect visibleFrame = new Rect();
                 mDecorView.getWindowVisibleDisplayFrame(visibleFrame);
