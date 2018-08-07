@@ -824,6 +824,7 @@ class AccessibilityBridge
                         ROOT_NODE_ID, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
                 e.getText().add((String) data.get("message"));
                 sendAccessibilityEvent(e);
+                break;
             }
             // Requires that the node id provided corresponds to a live region, or TalkBack will
             // ignore the event. The event will cause talkback to read out the new label even
@@ -834,6 +835,7 @@ class AccessibilityBridge
                     return;
                 }
                 sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+                break;
             }
         }
     }
