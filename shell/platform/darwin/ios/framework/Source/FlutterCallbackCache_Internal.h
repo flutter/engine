@@ -7,7 +7,7 @@
 
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterCallbackCache.h"
 
-@interface FlutterCallbackCache()
+@interface FlutterCallbackCache ()
 
 + (void)setCachePath:(NSString*)path;
 

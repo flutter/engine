@@ -59,7 +59,8 @@ void FlutterMain::Init(JNIEnv* env,
   settings.assets_path = fml::jni::JavaStringToString(env, bundlePath);
 
   // Restore the callback cache.
-  blink::DartCallbackCache::SetCachePath(fml::jni::JavaStringToString(env, appRootPath));
+  blink::DartCallbackCache::SetCachePath(
+      fml::jni::JavaStringToString(env, appRootPath));
   blink::DartCallbackCache::LoadCacheFromDisk();
 
   if (!blink::DartVM::IsRunningPrecompiledCode()) {

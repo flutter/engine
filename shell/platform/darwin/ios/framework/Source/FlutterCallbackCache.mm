@@ -26,18 +26,19 @@
 + (void)setCachePath:(NSString*)path {
   assert(path != nil);
   blink::DartCallbackCache::SetCachePath([path UTF8String]);
-  NSString* cache_path = [NSString stringWithUTF8String:
-                            blink::DartCallbackCache::GetCachePath().c_str()];
+  NSString* cache_path =
+      [NSString stringWithUTF8String:blink::DartCallbackCache::GetCachePath().c_str()];
   // Set the "Do Not Backup" flag to ensure that the cache isn't moved off disk in
   // low-memory situations.
-  if(![[NSFileManager defaultManager] fileExistsAtPath: cache_path]) {
-    [[NSFileManager defaultManager] createFileAtPath: cache_path contents:nil attributes:nil];
+  if (![[NSFileManager defaultManager] fileExistsAtPath:cache_path]) {
+    [[NSFileManager defaultManager] createFileAtPath:cache_path contents:nil attributes:nil];
     NSError* error = nil;
-    NSURL* URL= [NSURL fileURLWithPath: cache_path];
-    BOOL success = [URL setResourceValue: [NSNumber numberWithBool: YES]
-                                  forKey: NSURLIsExcludedFromBackupKey error: &error];
-    if(!success){
-        NSLog(@"Error excluding %@ from backup %@", [URL lastPathComponent], error);
+    NSURL* URL = [NSURL fileURLWithPath:cache_path];
+    BOOL success = [URL setResourceValue:[NSNumber numberWithBool:YES]
+                                  forKey:NSURLIsExcludedFromBackupKey
+                                   error:&error];
+    if (!success) {
+      NSLog(@"Error excluding %@ from backup %@", [URL lastPathComponent], error);
     }
   }
 }
