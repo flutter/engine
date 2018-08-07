@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/lib/ui/plugins/callback_cache.h"
-#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
+#include "flutter/lib/ui/plugins/callback_cache.h"
+#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache_Internal.h"
 
 static const char* kCallbackCacheSubDir = "Library/Caches/";
 
@@ -20,7 +21,7 @@ static const char* kCallbackCacheSubDir = "Library/Caches/";
 - (instancetype)init {
   if (self = [super init]) {
     std::string cachePath = fml::paths::JoinPaths({getenv("HOME"), kCallbackCacheSubDir});
-    blink::DartCallbackCache::SetCachePath(cachePath);
+    [FlutterCallbackCache setCachePath:[NSString stringWithUTF8String: cachePath.c_str()]];
     _pluginDelegates = [[NSPointerArray weakObjectsPointerArray] retain];
   }
   return self;

@@ -25,6 +25,10 @@ typedef struct {
 class DartCallbackCache {
  public:
   static void SetCachePath(const std::string& path);
+  static std::string GetCachePath() {
+    return cache_path_;
+  }
+
   static int64_t GetCallbackHandle(const std::string& name,
                                    const std::string& class_name,
                                    const std::string& library_path)
