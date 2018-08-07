@@ -78,7 +78,6 @@ public class FlutterView
         int physicalViewInsetRight = 0;
         int physicalViewInsetBottom = 0;
         int physicalViewInsetLeft = 0;
-        int deviceOrientation = 0; // 0 = portrait, 1 = landscape, 2 = landscape reversed.
     }
 
     private final InputMethodManager mImm;
