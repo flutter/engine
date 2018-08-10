@@ -124,7 +124,7 @@ Future<int> starter(
     return await compiler.compile(options.rest[0], options) ? 0 : 254;
   }
 
-  Completer<int> completer = new Completer<int>();
+  final Completer<int> completer = new Completer<int>();
   frontend.listenAndCompile(compiler, input ?? stdin, options, completer);
   return completer.future;
 }
