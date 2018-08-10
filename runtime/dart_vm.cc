@@ -208,8 +208,8 @@ bool DartVM::IsKernelMapping(const fml::FileMapping* mapping) {
     return false;
   }
 
-  if (memcmp(kKernelHeaderMagic,
-             mapping->GetMapping(), kKernelHeaderMagicSize) != 0) {
+  if (memcmp(kKernelHeaderMagic, mapping->GetMapping(),
+             kKernelHeaderMagicSize) != 0) {
     return false;
   }
 
