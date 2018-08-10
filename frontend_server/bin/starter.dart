@@ -8,4 +8,5 @@ void main(List<String> args) async {
   final int exitCode = await starter(args);
   if (exitCode != 0) {
     exit(exitCode);
-  }}
+  }
+}
