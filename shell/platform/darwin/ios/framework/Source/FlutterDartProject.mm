@@ -25,11 +25,16 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   // Precedence:
   // 1. Settings from the specified NSBundle.
   // 2. Settings passed explicitly via command-line arguments.
-  // 3. Default values.
+  // 3. Settings from the NSBundle with the default bundle ID.
+  // 4. Settings from the main NSBundle and default values.
 
   NSBundle* mainBundle = [NSBundle mainBundle];
   NSBundle* engineBundle = [NSBundle bundleForClass:[FlutterViewController class]];
+
   bool hasExplicitBundle = bundle != nil;
+  if (bundle == nil) {
+    bundle = [NSBundle bundleWithIdentifier:[FlutterDartProject defaultBundleIdentifier]];
+  }
   if (bundle == nil) {
     bundle = mainBundle;
   }
@@ -231,6 +236,10 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
   return [self lookupKeyForAsset:[NSString stringWithFormat:@"packages/%@/%@", package, asset]];
+}
+
++ (NSString*)defaultBundleIdentifier {
+  return @"io.flutter.flutter.app";
 }
 
 @end
