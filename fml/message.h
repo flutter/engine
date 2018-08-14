@@ -114,7 +114,7 @@ class Message {
     }
 
     // Encode the type.
-    if (!Encode(T::GetSerializableTag(*value.get()))) {
+    if (!Encode(Traits::GetSerializableTag(*value.get()))) {
       return false;
     }
 
