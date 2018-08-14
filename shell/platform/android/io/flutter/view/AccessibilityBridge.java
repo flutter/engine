@@ -710,6 +710,17 @@ class AccessibilityBridge
                     event.setScrollX((int) position);
                     event.setMaxScrollX((int) max);
                 }
+                event.setFromIndex(object.scrollIndex);
+                event.setItemCount(object.scrollChildren);
+                if (object.childrenInTraversalOrder != null) {
+                    int visibleChildren = 0;
+                    // There may be invisible children at the beginning and end of the list.
+                    for (SemanticsObject child : object.childrenInTraversalOrder) {
+                        if (!child.hasFlag(Flag.IS_HIDDEN))
+                            visibleChildren += 1;
+                    }
+                    event.setToIndex(object.scrollIndex + visibleChildren);
+                }
                 sendAccessibilityEvent(event);
             }
             if (object.hasFlag(Flag.IS_LIVE_REGION) && !object.hadFlag(Flag.IS_LIVE_REGION)) {
@@ -940,6 +951,8 @@ class AccessibilityBridge
         int actions;
         int textSelectionBase;
         int textSelectionExtent;
+        int scrollIndex;
+        int scrollChildren;
         float scrollPosition;
         float scrollExtentMax;
         float scrollExtentMin;
@@ -955,6 +968,8 @@ class AccessibilityBridge
         int previousActions;
         int previousTextSelectionBase;
         int previousTextSelectionExtent;
+        int previousScrollIndex;
+        int previousScrollChildren;
         float previousScrollPosition;
         float previousScrollExtentMax;
         float previousScrollExtentMin;
@@ -1033,6 +1048,8 @@ class AccessibilityBridge
             previousActions = actions;
             previousTextSelectionBase = textSelectionBase;
             previousTextSelectionExtent = textSelectionExtent;
+            previousScrollIndex = scrollIndex;
+            previousScrollChildren = scrollChildren;
             previousScrollPosition = scrollPosition;
             previousScrollExtentMax = scrollExtentMax;
             previousScrollExtentMin = scrollExtentMin;
@@ -1041,6 +1058,8 @@ class AccessibilityBridge
             actions = buffer.getInt();
             textSelectionBase = buffer.getInt();
             textSelectionExtent = buffer.getInt();
+            scrollIndex = buffer.getInt();
+            scrollChildren = buffer.getInt();
             scrollPosition = buffer.getFloat();
             scrollExtentMax = buffer.getFloat();
             scrollExtentMin = buffer.getFloat();
