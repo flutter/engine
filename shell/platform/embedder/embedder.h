@@ -67,6 +67,8 @@ typedef enum {
   kUp,
   kDown,
   kMove,
+  kHover,
+  kScroll,
 } FlutterPointerPhase;
 
 typedef struct {
@@ -76,6 +78,8 @@ typedef struct {
   size_t timestamp;  // in microseconds.
   double x;
   double y;
+  double scroll_delta_x;
+  double scroll_delta_y;
 } FlutterPointerEvent;
 
 struct _FlutterPlatformMessageResponseHandle;

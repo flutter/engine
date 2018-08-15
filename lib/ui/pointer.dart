@@ -34,6 +34,9 @@ enum PointerChange {
 
   /// The pointer has stopped making contact with the device.
   up,
+
+  /// The pointer issued a scroll event (e.g., a mouse wheel).
+  scroll,
 }
 
 /// The kind of pointer device.
@@ -76,7 +79,9 @@ class PointerData {
     this.radiusMin: 0.0,
     this.radiusMax: 0.0,
     this.orientation: 0.0,
-    this.tilt: 0.0
+    this.tilt: 0.0,
+    this.scrollDeltaX: 0.0,
+    this.scrollDeltaY: 0.0,
   });
 
   /// Time of event dispatch, relative to an arbitrary timeline.
@@ -190,6 +195,18 @@ class PointerData {
   /// the stylus is flat on that surface).
   final double tilt;
 
+  /// For PointerChange.scroll:
+  ///
+  /// The amount to scroll in the x direction, in {XXX physical pixels?
+  /// Logical pixels?}.
+  final double scrollDeltaX;
+
+  /// For PointerChange.scroll:
+  ///
+  /// The amount to scroll in the y direction, in {XXX physical pixels?
+  /// Logical pixels?}.
+  final double scrollDeltaY;
+
   @override
   String toString() => '$runtimeType(x: $physicalX, y: $physicalY)';
 
@@ -213,7 +230,9 @@ class PointerData {
              'radiusMin: $radiusMin, '
              'radiusMax: $radiusMax, '
              'orientation: $orientation, '
-             'tilt: $tilt'
+             'tilt: $tilt, '
+             'scrollDeltaX: $scrollDeltaX, '
+             'scrollDeltaY: $scrollDeltaY'
            ')';
   }
 }

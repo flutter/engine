@@ -285,6 +285,10 @@ inline blink::PointerData::Change ToPointerDataChange(
       return blink::PointerData::Change::kDown;
     case kMove:
       return blink::PointerData::Change::kMove;
+    case kHover:
+      return blink::PointerData::Change::kHover;
+    case kScroll:
+      return blink::PointerData::Change::kScroll;
   }
   return blink::PointerData::Change::kCancel;
 }
@@ -309,6 +313,8 @@ FlutterResult FlutterEngineSendPointerEvent(FlutterEngine engine,
     pointer_data.kind = blink::PointerData::DeviceKind::kMouse;
     pointer_data.physical_x = SAFE_ACCESS(current, x, 0.0);
     pointer_data.physical_y = SAFE_ACCESS(current, y, 0.0);
+    pointer_data.scroll_delta_x = SAFE_ACCESS(current, scroll_delta_x, 0.0);
+    pointer_data.scroll_delta_y = SAFE_ACCESS(current, scroll_delta_y, 0.0);
     packet->SetPointerData(i, pointer_data);
     current = reinterpret_cast<const FlutterPointerEvent*>(
         reinterpret_cast<const uint8_t*>(current) + current->struct_size);

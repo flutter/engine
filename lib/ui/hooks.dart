@@ -179,7 +179,7 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1
 //
 //  * pointer_data.cc
 //  * FlutterView.java
-const int _kPointerDataFieldCount = 19;
+const int _kPointerDataFieldCount = 21;
 
 PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
@@ -208,7 +208,9 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
       radiusMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       radiusMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian)
+      tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian)
     );
     assert(offset == (i + 1) * _kPointerDataFieldCount);
   }

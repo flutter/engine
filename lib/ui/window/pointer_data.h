@@ -20,6 +20,7 @@ struct alignas(8) PointerData {
     kDown,
     kMove,
     kUp,
+    kScroll,
   };
 
   // Must match the PointerDeviceKind enum in pointer.dart.
@@ -49,6 +50,8 @@ struct alignas(8) PointerData {
   double radius_max;
   double orientation;
   double tilt;
+  double scroll_delta_x;
+  double scroll_delta_y;
 
   void Clear();
 };
