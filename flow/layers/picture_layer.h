@@ -41,6 +41,12 @@ class PictureLayer : public Layer {
   bool will_change_ = false;
   RasterCacheResult raster_cache_result_;
 
+  // |fml::MessageSerializable|
+  bool Serialize(fml::Message& message) const override;
+
+  // |fml::MessageSerializable|
+  bool Deserialize(fml::Message& message) override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(PictureLayer);
 };
 

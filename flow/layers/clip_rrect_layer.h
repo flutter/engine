@@ -28,6 +28,12 @@ class ClipRRectLayer : public ContainerLayer {
   SkRRect clip_rrect_;
   Clip clip_behavior_;
 
+  // |fml::MessageSerializable|
+  bool Serialize(fml::Message& message) const override;
+
+  // |fml::MessageSerializable|
+  bool Deserialize(fml::Message& message) override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ClipRRectLayer);
 };
 

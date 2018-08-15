@@ -14,6 +14,7 @@ namespace flow {
 class ShaderMaskLayer : public ContainerLayer {
  public:
   ShaderMaskLayer();
+
   ~ShaderMaskLayer() override;
 
   void set_shader(sk_sp<SkShader> shader) { shader_ = shader; }
@@ -28,6 +29,12 @@ class ShaderMaskLayer : public ContainerLayer {
   sk_sp<SkShader> shader_;
   SkRect mask_rect_;
   SkBlendMode blend_mode_;
+
+  // |fml::MessageSerializable|
+  bool Serialize(fml::Message& message) const override;
+
+  // |fml::MessageSerializable|
+  bool Deserialize(fml::Message& message) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShaderMaskLayer);
 };

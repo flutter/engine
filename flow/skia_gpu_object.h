@@ -68,6 +68,8 @@ class SkiaGPUObject {
 
   sk_sp<SkiaObjectType> get() const { return object_; }
 
+  fml::RefPtr<SkiaUnrefQueue> get_unref_queue() const { return queue_; }
+
   void reset() {
     if (object_) {
       queue_->Unref(object_.release());

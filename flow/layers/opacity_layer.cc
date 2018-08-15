@@ -21,4 +21,16 @@ void OpacityLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 }
 
+// |fml::MessageSerializable|
+bool OpacityLayer::Serialize(fml::Message& message) const {
+  FML_SERIALIZE(message, alpha_);
+  return ContainerLayer::Serialize(message);
+}
+
+// |fml::MessageSerializable|
+bool OpacityLayer::Deserialize(fml::Message& message) {
+  FML_DESERIALIZE(message, alpha_);
+  return ContainerLayer::Deserialize(message);
+}
+
 }  // namespace flow

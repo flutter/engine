@@ -26,4 +26,22 @@ void TextureLayer::Paint(PaintContext& context) const {
   texture->Paint(context.canvas, paint_bounds(), freeze_);
 }
 
+// |fml::MessageSerializable|
+bool TextureLayer::Serialize(fml::Message& message) const {
+  FML_SERIALIZE(message, offset_);
+  FML_SERIALIZE(message, size_);
+  FML_SERIALIZE(message, texture_id_);
+  FML_SERIALIZE(message, freeze_);
+  return true;
+}
+
+// |fml::MessageSerializable|
+bool TextureLayer::Deserialize(fml::Message& message) {
+  FML_DESERIALIZE(message, offset_);
+  FML_DESERIALIZE(message, size_);
+  FML_DESERIALIZE(message, texture_id_);
+  FML_DESERIALIZE(message, freeze_);
+  return true;
+}
+
 }  // namespace flow

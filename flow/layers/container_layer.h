@@ -31,6 +31,12 @@ class ContainerLayer : public Layer {
                        SkRect* child_paint_bounds);
   void PaintChildren(PaintContext& context) const;
 
+  // |fml::MessageSerializable|
+  bool Serialize(fml::Message& message) const override;
+
+  // |fml::MessageSerializable|
+  bool Deserialize(fml::Message& message) override;
+
 #if defined(OS_FUCHSIA)
   void UpdateSceneChildren(SceneUpdateContext& context);
 #endif  // defined(OS_FUCHSIA)

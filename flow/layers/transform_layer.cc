@@ -41,4 +41,16 @@ void TransformLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 }
 
+// |fml::MessageSerializable|
+bool TransformLayer::Serialize(fml::Message& message) const {
+  FML_SERIALIZE(message, transform_);
+  return ContainerLayer::Serialize(message);
+}
+
+// |fml::MessageSerializable|
+bool TransformLayer::Deserialize(fml::Message& message) {
+  FML_DESERIALIZE(message, transform_);
+  return ContainerLayer::Deserialize(message);
+}
+
 }  // namespace flow

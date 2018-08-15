@@ -14,6 +14,7 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/message.h"
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColor.h"
@@ -41,10 +42,15 @@ class ContainerLayer;
 
 // Represents a single composited layer. Created on the UI thread but then
 // subquently used on the Rasterizer thread.
-class Layer {
+class Layer : public fml::MessageSerializable {
  public:
   Layer();
   virtual ~Layer();
+
+  struct SerializationTraits {
+    static size_t GetSerializableTag(const Layer& layer);
+    static std::unique_ptr<Layer> CreateForSerializableTag(size_t tag);
+  };
 
   struct PrerollContext {
     RasterCache* raster_cache;

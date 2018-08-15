@@ -42,4 +42,9 @@ Layer::AutoSaveLayer::~AutoSaveLayer() {
   paint_context_.canvas.restore();
 }
 
+std::unique_ptr<Layer> Layer::SerializationTraits::CreateForSerializableTag(
+    size_t tag) {
+  return nullptr;
+}
+
 }  // namespace flow

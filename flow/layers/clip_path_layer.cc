@@ -4,6 +4,8 @@
 
 #include "flutter/flow/layers/clip_path_layer.h"
 
+#include "flutter/flow/serialization.h"
+
 #if defined(OS_FUCHSIA)
 
 #include "lib/ui/scenic/fidl_helpers.h"  // nogncheck
@@ -59,6 +61,25 @@ void ClipPathLayer::Paint(PaintContext& context) const {
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.canvas.restore();
   }
+}
+
+// |fml::MessageSerializable|
+bool ClipPathLayer::Serialize(fml::Message& message) const {
+  if (flow::Serialize(message, clip_path_)) {
+    return false;
+  }
+
+  FML_SERIALIZE(message, clip_behavior_);
+  return ContainerLayer::Serialize(message);
+}
+
+// |fml::MessageSerializable|
+bool ClipPathLayer::Deserialize(fml::Message& message) {
+  if (!flow::Deserialize(message, clip_path_)) {
+    return false;
+  }
+  FML_DESERIALIZE(message, clip_behavior_);
+  return ContainerLayer::Deserialize(message);
 }
 
 }  // namespace flow
