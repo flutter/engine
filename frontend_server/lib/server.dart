@@ -121,10 +121,9 @@ Future<int> starter(
   compiler ??= new _FlutterFrontendCompiler(output, trackWidgetCreation: options['track-widget-creation']);
 
   if (options.rest.isNotEmpty) {
-    return await compiler.compile(options.rest[0], options) ? 0 : 254;
+    exit(await compiler.compile(options.rest[0], options) ? 0 : 254);
   }
 
-  final Completer<int> completer = new Completer<int>();
-  frontend.listenAndCompile(compiler, input ?? stdin, options, completer);
-  return completer.future;
+  frontend.listenAndCompile(compiler, input ?? stdin, options, () { exit(0); } );
+  return 0;
 }
