@@ -1,4 +1,4 @@
-Signature: 7b57fc8eda48131a84e63774ad4992ab
+Signature: b8844aa28cbb7f26dbd0c4c91890f885
 
 UNUSED LICENSES:
 
@@ -1898,6 +1898,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: skia
 ORIGIN: ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/.vscode/settings.json
 FILE: ../../../third_party/skia/CQ_COMMITTERS
 FILE: ../../../third_party/skia/DEPS
 FILE: ../../../third_party/skia/Doxyfile
