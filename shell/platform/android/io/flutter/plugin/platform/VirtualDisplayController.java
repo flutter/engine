@@ -72,7 +72,7 @@ class VirtualDisplayController {
     }
 
     public void resize(final int width, final int height, final Runnable onNewSizeFrameAvailable) {
-        final PlatformView view = mPresentation.detachView();
+        final SingleViewPresentation.PresentationState presentationState = mPresentation.detachState();
         // We detach the surface to prevent it being destroyed when releasing the vd.
         //
         // setSurface is only available starting API 20. We could support API 19 by re-creating a new
@@ -98,9 +98,9 @@ class VirtualDisplayController {
         embeddedView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
             @Override
             public void onViewAttachedToWindow(View v) {
-                embeddedView.getViewTreeObserver().addOnDrawListener(new ViewTreeObserver.OnDrawListener() {
+                OneTimeOnDrawListener.schedule(embeddedView, new Runnable() {
                     @Override
-                    public void onDraw() {
+                    public void run() {
                         // We need some delay here until the frame propagates through the vd surface to to the texture,
                         // 128ms was picked pretty arbitrarily based on trial and error.
                         // As long as we invoke the runnable after a new frame is available we avoid the scaling jank
@@ -108,7 +108,6 @@ class VirtualDisplayController {
                         // We should ideally run onNewSizeFrameAvailable ASAP to make the embedded view more responsive
                         // following a resize.
                         embeddedView.postDelayed(onNewSizeFrameAvailable, 128);
-                        embeddedView.getViewTreeObserver().removeOnDrawListener(this);
                     }
                 });
                 embeddedView.removeOnAttachStateChangeListener(this);
@@ -118,18 +117,53 @@ class VirtualDisplayController {
             public void onViewDetachedFromWindow(View v) {}
         });
 
-        mPresentation = new SingleViewPresentation(mContext, mVirtualDisplay.getDisplay(), view);
+        mPresentation = new SingleViewPresentation(mContext, mVirtualDisplay.getDisplay(), presentationState);
         mPresentation.show();
     }
 
     public void dispose() {
-        mPresentation.detachView().dispose();
+        PlatformView view = mPresentation.getView();
+        mPresentation.detachState();
+        view.dispose();
         mVirtualDisplay.release();
     }
 
     public View getView() {
         if (mPresentation == null)
             return null;
-        return mPresentation.getView();
+        PlatformView platformView = mPresentation.getView();
+        return platformView.getView();
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+    static class OneTimeOnDrawListener implements ViewTreeObserver.OnDrawListener {
+        static void schedule(View view, Runnable runnable) {
+            OneTimeOnDrawListener listener = new OneTimeOnDrawListener(view, runnable);
+            view.getViewTreeObserver().addOnDrawListener(listener);
+        }
+
+        final View mView;
+        Runnable mOnDrawRunnable;
+
+        OneTimeOnDrawListener(View view, Runnable onDrawRunnable) {
+            this.mView = view;
+            this.mOnDrawRunnable = onDrawRunnable;
+        }
+
+        @Override
+        public void onDraw() {
+            if (mOnDrawRunnable == null) {
+                return;
+            }
+            mOnDrawRunnable.run();
+            mOnDrawRunnable = null;
+            mView.post(new Runnable() {
+                @Override
+                public void run() {
+                    mView.getViewTreeObserver().removeOnDrawListener(OneTimeOnDrawListener.this);
+                }
+            });
+        }
     }
 }
+

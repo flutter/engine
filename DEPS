@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '0d5d0659a684a147e36597d23679c45344b7bded',
+  'skia_revision': '4d727c560b5882197845a3efdf2d3a53839df920',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -98,6 +98,7 @@ vars = {
   'dart_watcher_rev': '0.9.7+10',
   'dart_web_socket_channel_tag': '1.0.9',
   'dart_yaml_tag': '2.1.15',
+
   # Build bot tooling for iOS
   'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
 
@@ -123,7 +124,7 @@ deps = {
    # and not have to specific specific hashes.
 
   'src/third_party/tonic':
-   Var('fuchsia_git') + '/tonic' + '@' + '57d508b12462db686573edcbc97891d90cf92f90',
+   Var('fuchsia_git') + '/tonic' + '@' + '6bab0f304b043d8cf09900334e78b63111f76c5c',
 
   'src/third_party/benchmark':
    Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',
@@ -350,7 +351,7 @@ deps = {
    Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
 
   'src/third_party/freetype2':
-   Var('fuchsia_git') + '/third_party/freetype2' + '@' + 'e23a030e9b43c648249477fdf7bf5305d2cc8f59',
+   Var('fuchsia_git') + '/third_party/freetype2' + '@' + '3515a77bb83002b69a2957efdbcb764de4de07da',
 
   'src/third_party/root_certificates':
    Var('dart_git') + '/root_certificates.git' + '@' + Var('dart_root_certificates_rev'),

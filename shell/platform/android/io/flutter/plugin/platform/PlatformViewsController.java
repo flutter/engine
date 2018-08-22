@@ -96,17 +96,30 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
             case "touch":
                 onTouch(call, result);
                 return;
+            case "setDirection":
+                setDirection(call, result);
+                return;
         }
         result.notImplemented();
     }
 
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     private void createPlatformView(MethodCall call, MethodChannel.Result result) {
         Map<String, Object> args = call.arguments();
         int id = (int) args.get("id");
         String viewType = (String) args.get("viewType");
         double logicalWidth = (double) args.get("width");
         double logicalHeight = (double) args.get("height");
+        int direction = (int) args.get("direction");
+
+        if (!validateDirection(direction)) {
+            result.error(
+                    "error",
+                    "Trying to create a view with unknown direction value: " + direction + "(view id: " + id + ")",
+                    null
+            );
+            return;
+        }
 
         if (vdControllers.containsKey(id)) {
             result.error(
@@ -147,6 +160,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         }
 
         vdControllers.put(id, vdController);
+        vdController.getView().setLayoutDirection(direction);
 
         // TODO(amirh): copy accessibility nodes to the FlutterView's accessibility tree.
 
@@ -204,8 +218,8 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         float density = mFlutterView.getContext().getResources().getDisplayMetrics().density;
 
         int id = (int) args.get(0);
-        int downTime = (int) args.get(1);
-        int eventTime = (int) args.get(2);
+        Number downTime = (Number) args.get(1);
+        Number eventTime = (Number) args.get(2);
         int action = (int) args.get(3);
         int pointerCount = (int) args.get(4);
         PointerProperties[] pointerProperties =
@@ -233,8 +247,8 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         }
 
         MotionEvent event = MotionEvent.obtain(
-                downTime,
-                eventTime,
+                downTime.intValue(),
+                eventTime.intValue(),
                 action,
                 pointerCount,
                 pointerProperties,
@@ -251,6 +265,39 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
 
         view.dispatchTouchEvent(event);
         result.success(null);
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private void setDirection(MethodCall call, MethodChannel.Result result) {
+        Map<String, Object> args = call.arguments();
+        int id = (int) args.get("id");
+        int direction = (int) args.get("direction");
+
+        if (!validateDirection(direction)) {
+            result.error(
+                    "error",
+                    "Trying to set unknown direction value: " + direction + "(view id: " + id + ")",
+                    null
+            );
+            return;
+        }
+
+        View view = vdControllers.get(id).getView();
+        if (view == null) {
+            result.error(
+                    "error",
+                    "Sending touch to an unknown view with id: " + id,
+                    null
+            );
+            return;
+        }
+
+        view.setLayoutDirection(direction);
+        result.success(null);
+    }
+
+    private static boolean validateDirection(int direction) {
+        return direction == View.LAYOUT_DIRECTION_LTR || direction == View.LAYOUT_DIRECTION_RTL;
     }
 
     @SuppressWarnings("unchecked")
