@@ -22,9 +22,15 @@
   [super dealloc];
 }
 
-- (BOOL)application:(UIApplication*)application
-    willFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
-  return [_lifeCycleDelegate application:application willFinishLaunchingWithOptions:launchOptions];
+- (BOOL)respondsToSelector:(SEL)selector {
+  return [super respondsToSelector:selector] || [_lifeCycleDelegate respondsToSelector:selector];
+}
+
+- (id)forwardingTargetForSelector:(SEL)selector {
+  if ([_lifeCycleDelegate respondsToSelector:selector]) {
+    return _lifeCycleDelegate;
+  }
+  return [super forwardingTargetForSelector:selector];
 }
 
 - (BOOL)application:(UIApplication*)application
@@ -49,95 +55,6 @@
   if (self.rootFlutterViewController != nil) {
     [self.rootFlutterViewController handleStatusBarTouches:event];
   }
-}
-
-- (void)applicationDidEnterBackground:(UIApplication*)application {
-  [_lifeCycleDelegate applicationDidEnterBackground:application];
-}
-
-- (void)applicationWillEnterForeground:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillEnterForeground:application];
-}
-
-- (void)applicationWillResignActive:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillResignActive:application];
-}
-
-- (void)applicationDidBecomeActive:(UIApplication*)application {
-  [_lifeCycleDelegate applicationDidBecomeActive:application];
-}
-
-- (void)applicationWillTerminate:(UIApplication*)application {
-  [_lifeCycleDelegate applicationWillTerminate:application];
-}
-
-- (void)application:(UIApplication*)application
-    didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings {
-  [_lifeCycleDelegate application:application
-      didRegisterUserNotificationSettings:notificationSettings];
-}
-
-- (void)application:(UIApplication*)application
-    didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
-  [_lifeCycleDelegate application:application
-      didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
-}
-
-- (void)application:(UIApplication*)application
-    didReceiveRemoteNotification:(NSDictionary*)userInfo
-          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-  [_lifeCycleDelegate application:application
-      didReceiveRemoteNotification:userInfo
-            fetchCompletionHandler:completionHandler];
-}
-
-- (BOOL)application:(UIApplication*)application
-            openURL:(NSURL*)url
-            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  return [_lifeCycleDelegate application:application openURL:url options:options];
-}
-
-- (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
-  return [_lifeCycleDelegate application:application handleOpenURL:url];
-}
-
-- (BOOL)application:(UIApplication*)application
-              openURL:(NSURL*)url
-    sourceApplication:(NSString*)sourceApplication
-           annotation:(id)annotation {
-  return [_lifeCycleDelegate application:application
-                                 openURL:url
-                       sourceApplication:sourceApplication
-                              annotation:annotation];
-}
-
-- (void)application:(UIApplication*)application
-    performActionForShortcutItem:(UIApplicationShortcutItem*)shortcutItem
-               completionHandler:(void (^)(BOOL succeeded))completionHandler NS_AVAILABLE_IOS(9_0) {
-  [_lifeCycleDelegate application:application
-      performActionForShortcutItem:shortcutItem
-                 completionHandler:completionHandler];
-}
-
-- (void)application:(UIApplication*)application
-    handleEventsForBackgroundURLSession:(nonnull NSString*)identifier
-                      completionHandler:(nonnull void (^)())completionHandler {
-  [_lifeCycleDelegate application:application
-      handleEventsForBackgroundURLSession:identifier
-                        completionHandler:completionHandler];
-}
-
-- (void)application:(UIApplication*)application
-    performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
-  [_lifeCycleDelegate application:application performFetchWithCompletionHandler:completionHandler];
-}
-
-- (BOOL)application:(UIApplication*)application
-    continueUserActivity:(NSUserActivity*)userActivity
-      restorationHandler:(void (^)(NSArray*))restorationHandler {
-  return [_lifeCycleDelegate application:application
-                    continueUserActivity:userActivity
-                      restorationHandler:restorationHandler];
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
