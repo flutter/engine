@@ -144,7 +144,9 @@ class AccessibilityBridge
         }
 
         AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner, virtualViewId);
-        result.setPackageName(mOwner.getContext().getPackageName());
+        // Work around for https://github.com/flutter/flutter/issues/2101 
+	result.setViewIdResourceName(""); 
+	result.setPackageName(mOwner.getContext().getPackageName());
         result.setClassName("android.view.View");
         result.setSource(mOwner, virtualViewId);
         result.setFocusable(object.isFocusable());
@@ -529,6 +531,7 @@ class AccessibilityBridge
 
     @Override
     public AccessibilityNodeInfo findFocus(int focus) {
+	Log.i(TAG, "Focus on " + Integer.toString(focus));
         switch (focus) {
             case AccessibilityNodeInfo.FOCUS_INPUT: {
                 if (mInputFocusedObject != null)
@@ -540,6 +543,7 @@ class AccessibilityBridge
                     return createAccessibilityNodeInfo(mA11yFocusedObject.id);
             }
         }
+	Log.i(TAG, "Did not find focus");
         return null;
     }
 
@@ -875,12 +879,12 @@ class AccessibilityBridge
         assert mObjects.containsKey(object.id);
         assert mObjects.get(object.id) == object;
         object.parent = null;
-        if (mA11yFocusedObject == object) {
+        if (mA11yFocusedObject != null && mA11yFocusedObject.id == object.id) {
             sendAccessibilityEvent(mA11yFocusedObject.id,
                     AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
             mA11yFocusedObject = null;
         }
-        if (mInputFocusedObject == object) {
+        if (mInputFocusedObject != null && mInputFocusedObject.id == object.id) {
             mInputFocusedObject = null;
         }
         if (mHoveredObject == object) {
