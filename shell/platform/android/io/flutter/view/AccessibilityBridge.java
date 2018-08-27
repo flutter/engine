@@ -531,7 +531,6 @@ class AccessibilityBridge
 
     @Override
     public AccessibilityNodeInfo findFocus(int focus) {
-	Log.i(TAG, "Focus on " + Integer.toString(focus));
         switch (focus) {
             case AccessibilityNodeInfo.FOCUS_INPUT: {
                 if (mInputFocusedObject != null)
