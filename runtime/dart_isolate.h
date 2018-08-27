@@ -5,7 +5,6 @@
 #ifndef FLUTTER_RUNTIME_DART_ISOLATE_H_
 #define FLUTTER_RUNTIME_DART_ISOLATE_H_
 
-#include <set>
 #include <string>
 
 #include "flutter/common/task_runners.h"
@@ -88,6 +87,10 @@ class DartIsolate : public UIDartState {
 
   void AddIsolateShutdownCallback(fml::closure closure);
 
+  void SetTerminateChildIsolates(const bool val);
+
+  bool GetTerminateChildIsolates() const;
+
   DartVM* GetDartVM() const;
 
   fml::RefPtr<DartSnapshot> GetIsolateSnapshot() const;
@@ -125,6 +128,8 @@ class DartIsolate : public UIDartState {
   std::vector<std::shared_ptr<const fml::Mapping>> kernel_buffers_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
   ChildIsolatePreparer child_isolate_preparer_;
+  bool terminate_child_isolates_ = true;
+  std::vector<std::weak_ptr<DartIsolate>> child_isolates_;
 
   FML_WARN_UNUSED_RESULT
   bool Initialize(Dart_Isolate isolate, bool is_root_isolate);
@@ -166,6 +171,9 @@ class DartIsolate : public UIDartState {
       std::shared_ptr<DartIsolate>* parent_embedder_isolate,
       bool is_root_isolate,
       char** error);
+
+  static void TerminateChildIsolatesIfNecessary(
+      std::shared_ptr<DartIsolate>* embedder_isolate);
 
   // |Dart_IsolateShutdownCallback|
   static void DartIsolateShutdownCallback(

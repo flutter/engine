@@ -111,7 +111,9 @@ source_set("runtime") {
 }
 
 test_fixtures("runtime_fixtures") {
-  fixtures = [ "fixtures/simple_main.dart" ]
+  fixtures = [
+    "fixtures/simple_main.dart",
+  ]
 }
 
 executable("runtime_unittests") {

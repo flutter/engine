@@ -138,6 +138,14 @@ DartVM* DartIsolate::GetDartVM() const {
   return vm_;
 }
 
+void DartIsolate::SetTerminateChildIsolates(const bool val) {
+  terminate_child_isolates_ = val;
+}
+
+bool DartIsolate::GetTerminateChildIsolates() const {
+  return terminate_child_isolates_;
+}
+
 bool DartIsolate::Initialize(Dart_Isolate dart_isolate, bool is_root_isolate) {
   TRACE_EVENT0("flutter", "DartIsolate::Initialize");
   if (phase_ != Phase::Uninitialized) {
@@ -541,17 +549,8 @@ bool DartIsolate::Shutdown() {
     return false;
   }
   phase_ = Phase::Shutdown;
-  Dart_Isolate vm_isolate = isolate();
-  // The isolate can be nullptr if this instance is the stub isolate data used
-  // during root isolate creation.
-  if (vm_isolate != nullptr) {
-    // We need to enter the isolate because Dart_ShutdownIsolate does not take
-    // the isolate to shutdown as a parameter.
-    FML_DCHECK(Dart_CurrentIsolate() == nullptr);
-    Dart_EnterIsolate(vm_isolate);
-    Dart_ShutdownIsolate();
-    FML_DCHECK(Dart_CurrentIsolate() == nullptr);
-  }
+  tonic::DartState::Scope scope(this);
+  Dart_ShutdownIsolate();
   return true;
 }
 
@@ -662,17 +661,20 @@ Dart_Isolate DartIsolate::DartIsolateCreateCallback(
     );
   }
 
-  return CreateDartVMAndEmbedderObjectPair(
-             advisory_script_uri,         // URI
-             advisory_script_entrypoint,  // entrypoint
-             package_root,                // package root
-             package_config,              // package config
-             flags,                       // isolate flags
-             parent_embedder_isolate,     // embedder data
-             false,                       // is root isolate
-             error                        // error
-             )
-      .first;
+  std::pair<Dart_Isolate, std::weak_ptr<DartIsolate>> created_isolate_pair =
+      CreateDartVMAndEmbedderObjectPair(
+          advisory_script_uri,         // URI
+          advisory_script_entrypoint,  // entrypoint
+          package_root,                // package root
+          package_config,              // package config
+          flags,                       // isolate flags
+          parent_embedder_isolate,     // embedder data
+          false,                       // is root isolate
+          error                        // error
+      );
+  (*parent_embedder_isolate)
+      ->child_isolates_.push_back(created_isolate_pair.second);
+  return created_isolate_pair.first;
 }
 
 std::pair<Dart_Isolate, std::weak_ptr<DartIsolate>>
@@ -793,20 +795,37 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
       return {nullptr, {}};
     }
   }
-
   // The ownership of the embedder object is controlled by the Dart VM. So the
   // only reference returned to the caller is weak.
   embedder_isolate.release();
   return {isolate, weak_embedder_isolate};
 }
 
+void DartIsolate::TerminateChildIsolatesIfNecessary(
+    std::shared_ptr<DartIsolate>* embedder_isolate) {
+  // Terminate child Isolates
+  if (!(*embedder_isolate)->terminate_child_isolates_) {
+    return;
+  }
+  for (std::weak_ptr<DartIsolate> child_isolate :
+       (*embedder_isolate)->child_isolates_) {
+    if (auto isolate = child_isolate.lock()) {
+      bool shutdown_success = isolate->Shutdown();
+      if (!shutdown_success) {
+        FML_DLOG(ERROR) << "Child Isolate failed to shutdown properly.";
+      }
+    }
+  }
+}
+
 // |Dart_IsolateShutdownCallback|
 void DartIsolate::DartIsolateShutdownCallback(
     std::shared_ptr<DartIsolate>* embedder_isolate) {
+  TerminateChildIsolatesIfNecessary(embedder_isolate);
+
   if (!tonic::DartStickyError::IsSet()) {
     return;
   }
-
   tonic::DartApiScope api_scope;
   Dart_Handle sticky_error = Dart_GetStickyError();
   if (!Dart_IsFatalError(sticky_error)) {
