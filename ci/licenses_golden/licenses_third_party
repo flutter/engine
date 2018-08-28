@@ -1,4 +1,4 @@
-Signature: 39110f8cc5232d6526d93cfcefe87975
+Signature: f003db5140a19691e0d3939e8e6a75d9
 
 UNUSED LICENSES:
 
@@ -4435,7 +4435,23 @@ FILE: ../../../third_party/dart/.mailmap
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
+FILE: ../../../third_party/dart/runtime/.idea/codeStyles/Project.xml
+FILE: ../../../third_party/dart/runtime/.idea/codeStyles/codeStyleConfig.xml
+FILE: ../../../third_party/dart/runtime/.idea/misc.xml
+FILE: ../../../third_party/dart/runtime/.idea/modules.xml
+FILE: ../../../third_party/dart/runtime/.idea/runtime.iml
+FILE: ../../../third_party/dart/runtime/.idea/workspace.xml
 FILE: ../../../third_party/dart/runtime/CPPLINT.cfg
+FILE: ../../../third_party/dart/runtime/bin/vmservice/.idea/codeStyles/codeStyleConfig.xml
+FILE: ../../../third_party/dart/runtime/bin/vmservice/.idea/libraries/Dart_SDK.xml
+FILE: ../../../third_party/dart/runtime/bin/vmservice/.idea/modules.xml
+FILE: ../../../third_party/dart/runtime/bin/vmservice/.idea/vmservice.iml
+FILE: ../../../third_party/dart/runtime/bin/vmservice/.idea/workspace.xml
+FILE: ../../../third_party/dart/runtime/observatory/.idea/codeStyles/codeStyleConfig.xml
+FILE: ../../../third_party/dart/runtime/observatory/.idea/libraries/Dart_SDK.xml
+FILE: ../../../third_party/dart/runtime/observatory/.idea/modules.xml
+FILE: ../../../third_party/dart/runtime/observatory/.idea/observatory.iml
+FILE: ../../../third_party/dart/runtime/observatory/.idea/workspace.xml
 FILE: ../../../third_party/dart/runtime/observatory/lib/elements.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/img/chromium_icon.png
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/img/dart_icon.png
@@ -4448,7 +4464,13 @@ FILE: ../../../third_party/dart/runtime/vm/snapshot_test_in.dat
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/html_common.dart
 FILE: ../../../third_party/dart/sdk/lib/libraries.json
+FILE: ../../../third_party/dart/sdk/lib/vmservice/.idea/codeStyles/codeStyleConfig.xml
+FILE: ../../../third_party/dart/sdk/lib/vmservice/.idea/libraries/Dart_SDK.xml
+FILE: ../../../third_party/dart/sdk/lib/vmservice/.idea/modules.xml
+FILE: ../../../third_party/dart/sdk/lib/vmservice/.idea/vmservice.iml
+FILE: ../../../third_party/dart/sdk/lib/vmservice/.idea/workspace.xml
 FILE: ../../../third_party/dart/sdk/lib/vmservice_libraries.json
+FILE: ../../../third_party/dart/t.diff
 FILE: ../../../third_party/dart/third_party/7zip.tar.gz.sha1
 FILE: ../../../third_party/dart/third_party/clang.tar.gz.sha1
 FILE: ../../../third_party/dart/third_party/gsutil.tar.gz.sha1
@@ -16700,6 +16722,50 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: tonic
+ORIGIN: ../../../garnet/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/tonic/dart_list.cc
+FILE: ../../../third_party/tonic/dart_list.h
+FILE: ../../../third_party/tonic/file_loader/file_loader_fuchsia.cc
+FILE: ../../../third_party/tonic/file_loader/file_loader_posix.cc
+FILE: ../../../third_party/tonic/file_loader/file_loader_win.cc
+FILE: ../../../third_party/tonic/filesystem/filesystem/path_win.cc
+FILE: ../../../third_party/tonic/filesystem/filesystem/portable_unistd.h
+FILE: ../../../third_party/tonic/platform/platform_utils.h
+FILE: ../../../third_party/tonic/platform/platform_utils_posix.cc
+FILE: ../../../third_party/tonic/platform/platform_utils_win.cc
+----------------------------------------------------------------------------------------------------
+Copyright 2017 The Fuchsia Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: tonic
 ORIGIN: ../../../third_party/tonic/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/tonic/common/build_config.h
@@ -16769,50 +16835,6 @@ FILE: ../../../third_party/tonic/common/log.h
 FILE: ../../../third_party/tonic/common/macros.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Fuchsia Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: tonic
-ORIGIN: ../../../third_party/tonic/file_loader/file_loader_fuchsia.cc + ../../../third_party/tonic/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/tonic/dart_list.cc
-FILE: ../../../third_party/tonic/dart_list.h
-FILE: ../../../third_party/tonic/file_loader/file_loader_fuchsia.cc
-FILE: ../../../third_party/tonic/file_loader/file_loader_posix.cc
-FILE: ../../../third_party/tonic/file_loader/file_loader_win.cc
-FILE: ../../../third_party/tonic/filesystem/filesystem/path_win.cc
-FILE: ../../../third_party/tonic/filesystem/filesystem/portable_unistd.h
-FILE: ../../../third_party/tonic/platform/platform_utils.h
-FILE: ../../../third_party/tonic/platform/platform_utils_posix.cc
-FILE: ../../../third_party/tonic/platform/platform_utils_win.cc
-----------------------------------------------------------------------------------------------------
-Copyright 2017 The Fuchsia Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
