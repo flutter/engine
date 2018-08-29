@@ -69,4 +69,14 @@ void ContainerLayer::UpdateSceneChildren(SceneUpdateContext& context) {
 
 #endif  // defined(OS_FUCHSIA)
 
+// |fml::MessageSerializable|
+bool ContainerLayer::Serialize(fml::Message& message) const {
+  return false;
+}
+
+// |fml::MessageSerializable|
+bool ContainerLayer::Deserialize(fml::Message& message) {
+  return false;
+}
+
 }  // namespace flow

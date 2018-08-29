@@ -45,6 +45,12 @@ class PhysicalShapeLayer : public ContainerLayer {
   bool isRect_;
   SkRRect frameRRect_;
   Clip clip_behavior_;
+
+  // |fml::MessageSerializable|
+  bool Serialize(fml::Message& message) const override;
+
+  // |fml::MessageSerializable|
+  bool Deserialize(fml::Message& message) override;
 };
 
 }  // namespace flow

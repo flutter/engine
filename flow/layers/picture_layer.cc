@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/picture_layer.h"
 
+#include "flutter/flow/serialization.h"
 #include "flutter/fml/logging.h"
 
 namespace flow {
@@ -50,6 +51,37 @@ void PictureLayer::Paint(PaintContext& context) const {
   } else {
     context.canvas.drawPicture(picture());
   }
+}
+
+// |fml::MessageSerializable|
+bool PictureLayer::Serialize(fml::Message& message) const {
+  FML_SERIALIZE(message, offset_);
+
+  if (!flow::Serialize(message, picture_.get())) {
+    return false;
+  }
+
+  FML_SERIALIZE(message, is_complex_);
+  FML_SERIALIZE(message, will_change_);
+  return true;
+}
+
+// |fml::MessageSerializable|
+bool PictureLayer::Deserialize(fml::Message& message) {
+  FML_DESERIALIZE(message, offset_);
+
+  {
+    sk_sp<SkPicture> new_picture;
+    if (!flow::Deserialize(message, new_picture)) {
+      return false;
+    }
+    picture_ = SkiaGPUObject<SkPicture>{std::move(new_picture),
+                                        picture_.get_unref_queue()};
+  }
+
+  FML_DESERIALIZE(message, is_complex_);
+  FML_DESERIALIZE(message, will_change_);
+  return true;
 }
 
 }  // namespace flow

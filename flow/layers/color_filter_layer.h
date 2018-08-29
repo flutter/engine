@@ -24,6 +24,12 @@ class ColorFilterLayer : public ContainerLayer {
   SkColor color_;
   SkBlendMode blend_mode_;
 
+  // |fml::MessageSerializable|
+  bool Serialize(fml::Message& message) const override;
+
+  // |fml::MessageSerializable|
+  bool Deserialize(fml::Message& message) override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterLayer);
 };
 

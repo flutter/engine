@@ -52,4 +52,18 @@ void ClipRectLayer::Paint(PaintContext& context) const {
   }
 }
 
+// |fml::MessageSerializable|
+bool ClipRectLayer::Serialize(fml::Message& message) const {
+  FML_SERIALIZE(message, clip_rect_);
+  FML_SERIALIZE(message, clip_behavior_);
+  return ContainerLayer::Serialize(message);
+}
+
+// |fml::MessageSerializable|
+bool ClipRectLayer::Deserialize(fml::Message& message) {
+  FML_DESERIALIZE(message, clip_rect_);
+  FML_DESERIALIZE(message, clip_behavior_);
+  return ContainerLayer::Deserialize(message);
+}
+
 }  // namespace flow

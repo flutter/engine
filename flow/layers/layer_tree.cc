@@ -120,4 +120,26 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   return recorder.finishRecordingAsPicture();
 }
 
+// |fml::MessageSerializable|
+bool LayerTree::Serialize(fml::Message& message) const {
+  FML_SERIALIZE(message, frame_size_);
+  FML_SERIALIZE_TRAITS(message, root_layer_, Layer::SerializationTraits);
+  FML_SERIALIZE(message, construction_time_);
+  FML_SERIALIZE(message, rasterizer_tracing_threshold_);
+  FML_SERIALIZE(message, checkerboard_raster_cache_images_);
+  FML_SERIALIZE(message, checkerboard_offscreen_layers_);
+  return true;
+}
+
+// |fml::MessageSerializable|
+bool LayerTree::Deserialize(fml::Message& message) {
+  FML_DESERIALIZE(message, frame_size_);
+  FML_DESERIALIZE_TRAITS(message, root_layer_, Layer::SerializationTraits);
+  FML_DESERIALIZE(message, construction_time_);
+  FML_DESERIALIZE(message, rasterizer_tracing_threshold_);
+  FML_DESERIALIZE(message, checkerboard_raster_cache_images_);
+  FML_DESERIALIZE(message, checkerboard_offscreen_layers_);
+  return true;
+}
+
 }  // namespace flow

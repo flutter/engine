@@ -5,6 +5,7 @@
 #include "flutter/flow/layers/physical_shape_layer.h"
 
 #include "flutter/flow/paint_utils.h"
+#include "flutter/flow/serialization.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
 namespace flow {
@@ -149,6 +150,42 @@ void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,
       canvas, path, SkPoint3::Make(0, 0, dpr * elevation),
       SkPoint3::Make(shadow_x, shadow_y, dpr * kLightHeight),
       dpr * kLightRadius, ambientColor, spotColor, flags);
+}
+
+// |fml::MessageSerializable|
+bool PhysicalShapeLayer::Serialize(fml::Message& message) const {
+  FML_SERIALIZE(message, elevation_);
+  FML_SERIALIZE(message, color_);
+  FML_SERIALIZE(message, shadow_color_);
+  FML_SERIALIZE(message, device_pixel_ratio_);
+
+  if (!flow::Serialize(message, path_)) {
+    return false;
+  }
+
+  FML_SERIALIZE(message, isRect_);
+  FML_SERIALIZE(message, frameRRect_);
+  FML_SERIALIZE(message, clip_behavior_);
+
+  return ContainerLayer::Serialize(message);
+}
+
+// |fml::MessageSerializable|
+bool PhysicalShapeLayer::Deserialize(fml::Message& message) {
+  FML_DESERIALIZE(message, elevation_);
+  FML_DESERIALIZE(message, color_);
+  FML_DESERIALIZE(message, shadow_color_);
+  FML_DESERIALIZE(message, device_pixel_ratio_);
+
+  if (!flow::Deserialize(message, path_)) {
+    return false;
+  }
+
+  FML_DESERIALIZE(message, isRect_);
+  FML_DESERIALIZE(message, frameRRect_);
+  FML_DESERIALIZE(message, clip_behavior_);
+
+  return ContainerLayer::Deserialize(message);
 }
 
 }  // namespace flow

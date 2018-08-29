@@ -4,6 +4,8 @@
 
 #include "flutter/flow/layers/shader_mask_layer.h"
 
+#include "flutter/flow/serialization.h"
+
 namespace flow {
 
 ShaderMaskLayer::ShaderMaskLayer() = default;
@@ -23,6 +25,26 @@ void ShaderMaskLayer::Paint(PaintContext& context) const {
   context.canvas.translate(mask_rect_.left(), mask_rect_.top());
   context.canvas.drawRect(
       SkRect::MakeWH(mask_rect_.width(), mask_rect_.height()), paint);
+}
+
+// |fml::MessageSerializable|
+bool ShaderMaskLayer::Serialize(fml::Message& message) const {
+  if (!flow::Serialize(message, shader_)) {
+    return false;
+  }
+  FML_SERIALIZE(message, mask_rect_);
+  FML_SERIALIZE(message, blend_mode_);
+  return ContainerLayer::Serialize(message);
+}
+
+// |fml::MessageSerializable|
+bool ShaderMaskLayer::Deserialize(fml::Message& message) {
+  if (!flow::Deserialize(message, shader_)) {
+    return false;
+  }
+  FML_DESERIALIZE(message, mask_rect_);
+  FML_DESERIALIZE(message, blend_mode_);
+  return ContainerLayer::Deserialize(message);
 }
 
 }  // namespace flow

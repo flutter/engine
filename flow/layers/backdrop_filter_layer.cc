@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 
+#include "flutter/flow/serialization.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
 
 namespace flow {
@@ -19,6 +20,22 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
   Layer::AutoSaveLayer(context, SkCanvas::SaveLayerRec{&paint_bounds(), nullptr,
                                                        filter_.get(), 0});
   PaintChildren(context);
+}
+
+// |fml::MessageSerializable|
+bool BackdropFilterLayer::Serialize(fml::Message& message) const {
+  if (!flow::Serialize(message, filter_)) {
+    return false;
+  }
+  return ContainerLayer::Serialize(message);
+}
+
+// |fml::MessageSerializable|
+bool BackdropFilterLayer::Deserialize(fml::Message& message) {
+  if (!flow::Deserialize(message, filter_)) {
+    return false;
+  }
+  return ContainerLayer::Deserialize(message);
 }
 
 }  // namespace flow

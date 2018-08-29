@@ -85,4 +85,16 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
                      options_ & kDisplayEngineStatistics, "UI");
 }
 
+// |fml::MessageSerializable|
+bool PerformanceOverlayLayer::Serialize(fml::Message& message) const {
+  FML_SERIALIZE(message, options_);
+  return true;
+}
+
+// |fml::MessageSerializable|
+bool PerformanceOverlayLayer::Deserialize(fml::Message& message) {
+  FML_DESERIALIZE(message, options_);
+  return true;
+}
+
 }  // namespace flow

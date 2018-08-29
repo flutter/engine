@@ -33,6 +33,12 @@ class TextureLayer : public Layer {
   int64_t texture_id_;
   bool freeze_;
 
+  // |fml::MessageSerializable|
+  bool Serialize(fml::Message& message) const override;
+
+  // |fml::MessageSerializable|
+  bool Deserialize(fml::Message& message) override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(TextureLayer);
 };
 

@@ -12,17 +12,18 @@
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/message.h"
 #include "flutter/fml/time/time_delta.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSize.h"
 
 namespace flow {
 
-class LayerTree {
+class LayerTree : public fml::MessageSerializable {
  public:
   LayerTree();
 
-  ~LayerTree();
+  virtual ~LayerTree();
 
   void Preroll(CompositorContext::ScopedFrame& frame,
                bool ignore_raster_cache = false);
@@ -78,6 +79,12 @@ class LayerTree {
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;
   bool checkerboard_offscreen_layers_;
+
+  // |fml::MessageSerializable|
+  bool Serialize(fml::Message& message) const override;
+
+  // |fml::MessageSerializable|
+  bool Deserialize(fml::Message& message) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(LayerTree);
 };

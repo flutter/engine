@@ -23,4 +23,18 @@ void ColorFilterLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 }
 
+// |fml::MessageSerializable|
+bool ColorFilterLayer::Serialize(fml::Message& message) const {
+  FML_SERIALIZE(message, color_);
+  FML_SERIALIZE(message, blend_mode_);
+  return ContainerLayer::Serialize(message);
+}
+
+// |fml::MessageSerializable|
+bool ColorFilterLayer::Deserialize(fml::Message& message) {
+  FML_DESERIALIZE(message, color_);
+  FML_DESERIALIZE(message, blend_mode_);
+  return ContainerLayer::Deserialize(message);
+}
+
 }  // namespace flow

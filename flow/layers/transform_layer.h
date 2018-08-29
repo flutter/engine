@@ -27,6 +27,12 @@ class TransformLayer : public ContainerLayer {
  private:
   SkMatrix transform_;
 
+  // |fml::MessageSerializable|
+  bool Serialize(fml::Message& message) const override;
+
+  // |fml::MessageSerializable|
+  bool Deserialize(fml::Message& message) override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(TransformLayer);
 };
 
