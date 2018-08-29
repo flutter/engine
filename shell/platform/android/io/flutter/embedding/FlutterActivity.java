@@ -7,12 +7,15 @@ package io.flutter.embedding;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
@@ -27,7 +30,7 @@ import io.flutter.view.FlutterMain;
  *
  * {@link FlutterActivity} is the simplest and most direct way to integrate Flutter within an
  * Android app.
- * TODO: how exactly does FlutterActivity need to be leveraged to display Flutter content?
+ * TODO(mattcarroll): how exactly does FlutterActivity need to be leveraged to display Flutter content?
  *
  * If Flutter is needed in a location that cannot use an {@code Activity>}, consider using
  * a {@link FlutterFragment}. Using a {@link FlutterFragment} requires forwarding some calls from
@@ -42,6 +45,8 @@ import io.flutter.view.FlutterMain;
  *
  * @see io.flutter.view.FlutterView
  */
+@SuppressLint("Registered")
+@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 public class FlutterActivity extends Activity {
   private static final String TAG = "FlutterActivity";
   private static final String TAG_FLUTTER_FRAGMENT = "flutter_fragment";
@@ -61,7 +66,7 @@ public class FlutterActivity extends Activity {
 
     configureStatusBarColor();
     createFlutterFragmentContainer();
-    createFlutterFragment(savedInstanceState == null);
+    createFlutterFragment();
   }
 
   @Override
@@ -75,7 +80,7 @@ public class FlutterActivity extends Activity {
     flutterFragment.onBackPressed();
   }
 
-  public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     flutterFragment.onRequestPermissionsResult(requestCode, permissions, grantResults);
   }
 
@@ -90,6 +95,7 @@ public class FlutterActivity extends Activity {
         // Fall back to the installation path if no bundle path was specified.
         appBundlePath = FlutterMain.findAppBundlePath(getApplicationContext());
       }
+      // TODO: What does it mean to have a null appBundlePath?  Should we throw exception in FlutterMain instead of returning null?
       flutterFragment.hotReload(route, appBundlePath);
     } else {
       // We're not in debug mode, or we're processing an action other than ACTION_RUN. Therefore,
@@ -106,7 +112,7 @@ public class FlutterActivity extends Activity {
 
   /**
    * Sets up a {@code FrameLayout} that takes up all available space in the {@code Activity}. This
-   * {@code FrameLayout} will hold the {@code FlutterFragment}.
+   * {@code FrameLayout} will hold a {@code FlutterFragment}, which displays a {@code FlutterView}.
    */
   private void createFlutterFragmentContainer() {
     FrameLayout container = new FrameLayout(this);
@@ -119,25 +125,27 @@ public class FlutterActivity extends Activity {
   }
 
   /**
-   * If {@code isInitialConfiguration} is true, creates a new {@link FlutterFragment} and places it
-   * within this {@code Activity}'s layout. Otherwise, this method simply grabs a reference to the
-   * existing {@code FlutterFragment}.
-   *
-   * @param isInitialConfiguration true if a {@code FlutterFragment} has not yet been created, false otherwise
+   * If no {@code FlutterFragment} exists in this {@code FlutterActivity}, then a {@code FlutterFragment}
+   * is created and added. If a {@code FlutterFragment} does exist in this {@code FlutterActivity}, then
+   * a reference to that {@code FlutterFragment} is retained in {@code flutterFragment}.
    */
-  private void createFlutterFragment(boolean isInitialConfiguration) {
-    if (isInitialConfiguration) {
+  private void createFlutterFragment() {
+    FragmentManager fragmentManager = getFragmentManager();
+
+    flutterFragment = (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
+
+    if (flutterFragment == null) {
+      // No FlutterFragment exists yet. This must be the initial Activity creation. We will create
+      // and add a new FlutterFragment to this Activity.
       flutterFragment = FlutterFragment.newInstance(
           isSplashScreenDesired(),
           getInitialRoute(),
           getAppBundlePath()
       );
-      getFragmentManager()
+      fragmentManager
           .beginTransaction()
           .add(CONTAINER_ID, flutterFragment, TAG_FLUTTER_FRAGMENT)
           .commit();
-    } else {
-      flutterFragment = (FlutterFragment) getFragmentManager().findFragmentByTag(TAG_FLUTTER_FRAGMENT);
     }
   }
 
@@ -164,8 +172,10 @@ public class FlutterActivity extends Activity {
    *
    * This preference is controlled by setting a {@code <meta-data>} tag in the Android
    * manifest for this {@code Activity}.
+   *
+   * TODO(mattcarroll): Should this preference be set by Intent parameter instead? How would a dev use this in production?
    */
-  private Boolean isSplashScreenDesired() {
+  private boolean isSplashScreenDesired() {
     try {
       @SuppressLint("WrongConstant")
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
@@ -187,6 +197,7 @@ public class FlutterActivity extends Activity {
    *
    * @return initial route to be rendered by Flutter
    */
+  @Nullable
   private String getInitialRoute() {
     return getIntent().getStringExtra("route");
   }
@@ -196,10 +207,12 @@ public class FlutterActivity extends Activity {
    *
    * @return file path to Flutter's app bundle
    */
+  @Nullable
   private String getAppBundlePath() {
     // If our launching Intent has ACTION_RUN then it indicates that this Activity
     // was launched from tooling. Therefore, our launching Intent may also include
     // a custom app bundle path within its data string.
+    // TODO(mattcarroll): Does ACTION_RUN have any other implication besides tooling?
     if (Intent.ACTION_RUN.equals(getIntent().getAction())) {
       String appBundlePath = getIntent().getDataString();
       if (appBundlePath != null) {
@@ -208,6 +221,7 @@ public class FlutterActivity extends Activity {
     }
 
     // Return the default app bundle path.
+    // TODO: What does it mean to have a null appBundlePath?  Should we throw exception in FlutterMain instead of returning null?
     return FlutterMain.findAppBundlePath(getApplicationContext());
   }
 

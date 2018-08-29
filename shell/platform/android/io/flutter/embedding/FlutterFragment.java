@@ -3,6 +3,7 @@ package io.flutter.embedding;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
@@ -11,6 +12,8 @@ import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -18,7 +21,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-
 import io.flutter.app.FlutterActivity;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.view.FlutterNativeView;
@@ -35,11 +37,11 @@ import io.flutter.view.FlutterView;
  *  - {@link Activity#onNewIntent(Intent)} ()}
  *  - {@link Activity#onUserLeaveHint()}
  *
- *  Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be sure
- *  to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than
- *  {@link Activity#startActivityForResult(Intent, int)}. If the {@code Activity} version of the
- *  method is invoked then this {@code Fragment} will never receive its
- *  {@link Fragment#onActivityResult(int, int, Intent)} callback.
+ * Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be sure
+ * to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than
+ * {@link Activity#startActivityForResult(Intent, int)}. If the {@code Activity} version of the
+ * method is invoked then this {@code Fragment} will never receive its
+ * {@link Fragment#onActivityResult(int, int, Intent)} callback.
  *
  * If convenient, consider using a {@link FlutterActivity} instead of a {@code FlutterFragment} to
  * avoid the work of forwarding calls.
@@ -54,6 +56,7 @@ import io.flutter.view.FlutterView;
  * @see io.flutter.view.FlutterView
  */
 @SuppressWarnings("WeakerAccess")
+@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 public class FlutterFragment extends Fragment implements PluginRegistry {
   private static final String TAG = "FlutterFragment";
 
@@ -64,10 +67,10 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
   private static final WindowManager.LayoutParams MATCH_PARENT =
       new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
 
-  // TODO: is appBundlePath truly nullable?
+  // TODO: is appBundlePath truly non-null?
   public static FlutterFragment newInstance(boolean isSplashScreenDesired,
-                                            String initialRoute,
-                                            String appBundlePath) {
+                                            @Nullable String initialRoute,
+                                            @NonNull String appBundlePath) {
     FlutterFragment frag = new FlutterFragment();
 
     Bundle args = new Bundle();
@@ -125,6 +128,7 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
   public void onDestroy() {
     super.onDestroy();
 
+    // TODO(mattcarroll): re-evaluate how Flutter plugins interact with FlutterView and FlutterNativeView
     final boolean detach = flutterView.getPluginRegistry().onViewDestroy(
       flutterView.getFlutterNativeView()
     );
@@ -141,11 +145,11 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     flutterView.popRoute();
   }
 
-  public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     flutterView.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
   }
 
-  public void onNewIntent(Intent intent) {
+  public void onNewIntent(@NonNull Intent intent) {
     flutterView.getPluginRegistry().onNewIntent(intent);
   }
 
@@ -196,12 +200,10 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
   /**
    * Hook for subclasses to customize the creation of the {@code FlutterView}.
    *
-   * The default implementation returns a newly instantiated {@code FlutterView} that takes up all
-   * available space.
-   *
    * TODO: get rid of dependency on Activity
    */
-  public FlutterView createFlutterView(Activity activity) {
+  @NonNull
+  protected FlutterView createFlutterView(@NonNull Activity activity) {
     FlutterNativeView nativeView = createFlutterNativeView(activity);
     return new FlutterView(activity, null, nativeView);
   }
@@ -210,11 +212,13 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
    * Hook for subclasses to customize the creation of the {@code FlutterNativeView}.
    *
    * This method is only invoked from the default implementation of {@link #createFlutterView(Activity)}.
-   * If {@link #createFlutterView(Activity)} is overridden, then this method will not be invoked.
+   * If {@link #createFlutterView(Activity)} is overridden, then this method will not be invoked unless
+   * it is invoked directly from the subclass.
    *
    * By default, this method returns a standard {@link FlutterNativeView} without any modification.
    */
-  public FlutterNativeView createFlutterNativeView(Context context) {
+  @NonNull
+  protected FlutterNativeView createFlutterNativeView(@NonNull Context context) {
     return new FlutterNativeView(context);
   }
 
@@ -222,7 +226,7 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
    * Hook for subclasses to customize aspects of the {@code FlutterView} that are not creation
    * dependent, e.g., {@code FlutterView}'s initial route.
    */
-  protected void onFlutterViewCreated(@SuppressWarnings("unused") FlutterView flutterView) {
+  protected void onFlutterViewCreated(@SuppressWarnings("unused") @NonNull FlutterView flutterView) {
     // no-op
   }
 
@@ -230,19 +234,14 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
    * Creates a {@link View} containing the same {@link Drawable} as the one set as the
    * {@code windowBackground} of the parent activity for use as a launch splash view.
    *
-   * Shows and then automatically animates out the launch view.
-   *
-   * If a launch screen is defined in the user application's AndroidManifest.xml as the
-   * activity's {@code windowBackground}, display it on top of the {@link FlutterView} and
-   * remove the activity's {@code windowBackground}.
-   *
-   * Fade it out and remove it when the {@link FlutterView} renders its first frame.
+   * Shows and then automatically animates out the launch view when Flutter renders its first frame.
    *
    * {@code FlutterView} must exist before this method is called.
    *
    * Returns null if no {@code windowBackground} is set for the activity.
    */
   @SuppressLint("NewApi")
+  @Nullable
   private View createLaunchView() {
     if (!isSplashScreenDesired()) {
       return null;
@@ -296,13 +295,16 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
   /**
    * Extracts a {@link Drawable} from the parent activity's {@code windowBackground}.
    *
-   * {@code android:windowBackground} is specifically reused instead of a other attributes
+   * {@code android:windowBackground} is specifically reused instead of other attributes
    * because the Android framework can display it fast enough when launching the app as opposed
    * to anything defined in the Activity subclass.
+   *
+   * TODO(mattcarroll): speed aside, should developers be given the opportunity to use different Drawables?
    *
    * Returns null if no {@code windowBackground} is set for the activity.
    */
   @SuppressWarnings("deprecation")
+  @Nullable
   private Drawable getSplashScreenDrawableFromActivityTheme() {
     TypedValue typedValue = new TypedValue();
     if (!getContextCompat().getTheme().resolveAttribute(
@@ -324,9 +326,12 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
 
   /**
    * Returns the Flutter view used by this {@code Fragment}; will be null before
-   * {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)} is called.
+   * {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)} is invoked. Will be
+   * non-null after {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)} is invoked, up
+   * until {@link #onDestroyView()} is invoked.
    */
   @SuppressWarnings("unused")
+  @Nullable
   public FlutterView getFlutterView() {
     return flutterView;
   }
@@ -345,12 +350,12 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
    * Reloads Dart code with that at the given {@code appBundlePath}, sets Flutter's initial route
    * to {@code initialRoute}, and then reloads the Dart VM.
    *
-   * TODO: is the above description accurate?
+   * TODO(mattcarroll): is the above description accurate?
    *
    * @param initialRoute initial Flutter route to display after reloading Dart code
    * @param appBundlePath Android file path to Flutter's app bundle
    */
-  public void hotReload(String initialRoute, String appBundlePath) {
+  public void hotReload(@Nullable String initialRoute, @NonNull String appBundlePath) {
     runFlutterView(initialRoute, appBundlePath, false);
   }
 
@@ -362,7 +367,7 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
    * @param appBundlePath Android file path to Flutter's app bundle
    * @param reuseIsolate whether or not to reuse an existing Dart isolate
    */
-  private void runFlutterView(String initialRoute, String appBundlePath, boolean reuseIsolate) {
+  private void runFlutterView(@Nullable String initialRoute, @NonNull String appBundlePath, boolean reuseIsolate) {
     if (initialRoute != null) {
       flutterView.setInitialRoute(initialRoute);
     }
@@ -372,27 +377,31 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     }
   }
 
+  @Nullable
   private String getInitialRoute() {
     return getArguments().getString(ARG_INITIAL_ROUTE);
   }
 
+  @Nullable
   private String getAppBundlePath() {
     return getArguments().getString(ARG_APP_BUNDLE_PATH);
   }
 
   @Override
-  public final boolean hasPlugin(String key) {
+  public final boolean hasPlugin(@NonNull String key) {
     return flutterView.getPluginRegistry().hasPlugin(key);
   }
 
   @Override
+  @Nullable
   @SuppressWarnings("unchecked")
-  public <T> T valuePublishedByPlugin(String pluginKey) {
+  public <T> T valuePublishedByPlugin(@NonNull String pluginKey) {
     return (T) flutterView.getPluginRegistry().valuePublishedByPlugin(pluginKey);
   }
 
   @Override
-  public PluginRegistry.Registrar registrarFor(String pluginKey) {
+  @NonNull
+  public PluginRegistry.Registrar registrarFor(@NonNull String pluginKey) {
     return flutterView.getPluginRegistry().registrarFor(pluginKey);
   }
 
@@ -401,6 +410,7 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     return false;
   }
 
+  @NonNull
   private Context getContextCompat() {
     return Build.VERSION.SDK_INT >= 23
       ? getContext()
