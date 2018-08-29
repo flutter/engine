@@ -34,9 +34,6 @@ enum PointerChange {
 
   /// The pointer has stopped making contact with the device.
   up,
-
-  /// The pointer issued a scroll event (e.g., a mouse wheel).
-  scroll,
 }
 
 /// The kind of pointer device.
@@ -53,7 +50,19 @@ enum PointerDeviceKind {
   /// A pointer device with a stylus that has been inverted.
   invertedStylus,
 
+  /// A pointer that generates gestures at a point (e.g., a trackpad).
+  gesture,
+
   /// An unknown pointer device.
+  unknown
+}
+
+/// The kind of [PointerDeviceKind.gesture].
+enum PointerGestureKind {
+  /// A pointer-generated scroll (e.g., mouse wheel or trackpad scroll).
+  scroll,
+
+  /// An unknown pointer gesture kind.
   unknown
 }
 
@@ -64,6 +73,7 @@ class PointerData {
     this.timeStamp: Duration.zero,
     this.change: PointerChange.cancel,
     this.kind: PointerDeviceKind.touch,
+    this.gestureKind,
     this.device: 0,
     this.physicalX: 0.0,
     this.physicalY: 0.0,
@@ -92,6 +102,9 @@ class PointerData {
 
   /// The kind of input device for which the event was generated.
   final PointerDeviceKind kind;
+
+  /// The kind of gesture for a gesture pointer event.
+  final PointerGestureKind gestureKind;
 
   /// Unique identifier for the pointing device, reused across interactions.
   final int device;
@@ -195,16 +208,14 @@ class PointerData {
   /// the stylus is flat on that surface).
   final double tilt;
 
-  /// For PointerChange.scroll:
+  /// For PointerDeviceKind.gesture with PointerGestureKind.scroll:
   ///
-  /// The amount to scroll in the x direction, in {XXX physical pixels?
-  /// Logical pixels?}.
+  /// The amount to scroll in the x direction, in physical pixels.
   final double scrollDeltaX;
 
-  /// For PointerChange.scroll:
+  /// For PointerDeviceKind.gesture with PointerGestureKind.scroll:
   ///
-  /// The amount to scroll in the y direction, in {XXX physical pixels?
-  /// Logical pixels?}.
+  /// The amount to scroll in the y direction, in physical pixels.
   final double scrollDeltaY;
 
   @override
@@ -216,6 +227,7 @@ class PointerData {
              'timeStamp: $timeStamp, '
              'change: $change, '
              'kind: $kind, '
+             'gestureKind: $gestureKind, '
              'device: $device, '
              'physicalX: $physicalX, '
              'physicalY: $physicalY, '

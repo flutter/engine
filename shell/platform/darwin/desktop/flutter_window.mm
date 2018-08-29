@@ -229,8 +229,6 @@ static std::string CreateThreadLabel() {
     case blink::PointerData::Change::kHover:
       FML_DCHECK(!_mouseIsDown);
       break;
-    case blink::PointerData::Change::kScroll:
-      break;
   }
 
   _shell->GetTaskRunners().GetUITaskRunner()->PostTask(

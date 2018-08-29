@@ -497,7 +497,7 @@ public class FlutterView extends SurfaceView
         }
 
         // These values must match the unpacking code in hooks.dart.
-        final int kPointerDataFieldCount = 21;
+        final int kPointerDataFieldCount = 22;
         final int kBytePerField = 8;
 
         int pointerCount = event.getPointerCount();

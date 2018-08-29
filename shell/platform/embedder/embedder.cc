@@ -274,6 +274,20 @@ FlutterResult FlutterEngineSendWindowMetricsEvent(
              : kInvalidArguments;
 }
 
+// Returns the blink::PointerData::DeviceKind for the given
+// FlutterPointerDeviceKind.
+inline blink::PointerData::DeviceKind ToPointerDataDeviceKind(
+    FlutterPointerDeviceKind kind) {
+  switch (kind) {
+    case kMouse:
+      return blink::PointerData::DeviceKind::kMouse;
+    case kGesture:
+      return blink::PointerData::DeviceKind::kGesture;
+  }
+  return blink::PointerData::DeviceKind::kMouse;
+}
+
+// Returns the blink::PointerData::Change for the given FlutterPointerPhase.
 inline blink::PointerData::Change ToPointerDataChange(
     FlutterPointerPhase phase) {
   switch (phase) {
@@ -285,12 +299,25 @@ inline blink::PointerData::Change ToPointerDataChange(
       return blink::PointerData::Change::kDown;
     case kMove:
       return blink::PointerData::Change::kMove;
+    case kAdd:
+      return blink::PointerData::Change::kAdd;
+    case kRemove:
+      return blink::PointerData::Change::kRemove;
     case kHover:
       return blink::PointerData::Change::kHover;
-    case kScroll:
-      return blink::PointerData::Change::kScroll;
   }
   return blink::PointerData::Change::kCancel;
+}
+
+// Returns the blink::PointerData::GestureKind for the given
+// FlutterPointerGestureKind.
+inline blink::PointerData::GestureKind ToPointerDataGestureKind(
+    FlutterPointerGestureKind kind) {
+  switch (kind) {
+    case kScroll:
+      return blink::PointerData::GestureKind::kScroll;
+  }
+  return blink::PointerData::GestureKind::kScroll;
 }
 
 FlutterResult FlutterEngineSendPointerEvent(FlutterEngine engine,
@@ -313,6 +340,10 @@ FlutterResult FlutterEngineSendPointerEvent(FlutterEngine engine,
     pointer_data.kind = blink::PointerData::DeviceKind::kMouse;
     pointer_data.physical_x = SAFE_ACCESS(current, x, 0.0);
     pointer_data.physical_y = SAFE_ACCESS(current, y, 0.0);
+    pointer_data.kind = ToPointerDataDeviceKind(
+        SAFE_ACCESS(current, kind, FlutterPointerDeviceKind::kMouse));
+    pointer_data.gesture_kind = ToPointerDataGestureKind(
+        SAFE_ACCESS(current, gesture_kind, FlutterPointerGestureKind::kScroll));
     pointer_data.scroll_delta_x = SAFE_ACCESS(current, scroll_delta_x, 0.0);
     pointer_data.scroll_delta_y = SAFE_ACCESS(current, scroll_delta_y, 0.0);
     packet->SetPointerData(i, pointer_data);
