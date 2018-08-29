@@ -53,6 +53,12 @@ FLUTTER_EXPORT
 
 - (id<FlutterPluginRegistry>)pluginRegistry;
 
+/**
+ Specifies the launch view to initialize the view with.  If not specified, uses a view
+ generated from `UILaunchStoryboardName` from the main bundle's `Info.plist` file.
+ */
+@property(strong, nonatomic) UIView* launchView;
+
 @end
 
 #endif  // FLUTTER_FLUTTERVIEWCONTROLLER_H_

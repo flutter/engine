@@ -330,20 +330,19 @@
 - (void)installLaunchViewIfNecessary {
   // Show the launch screen view again on top of the FlutterView if available.
   // This launch screen view will be removed once the first Flutter frame is rendered.
-  [_launchView.get() removeFromSuperview];
-  _launchView.reset();
-  NSString* launchStoryboardName =
-      [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UILaunchStoryboardName"];
-  if (launchStoryboardName && !self.isBeingPresented && !self.isMovingToParentViewController) {
-    UIViewController* launchViewController =
-        [[UIStoryboard storyboardWithName:launchStoryboardName bundle:nil]
-            instantiateInitialViewController];
-    _launchView.reset([launchViewController.view retain]);
-    _launchView.get().frame = self.view.bounds;
-    _launchView.get().autoresizingMask =
-        UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.view addSubview:_launchView.get()];
+  if (self.isBeingPresented || self.isMovingToParentViewController) {
+    [_launchView.get() removeFromSuperview];
+    _launchView.reset();
+    return;
   }
+
+  // Use the property getter to initialize the default value.
+  UIView* launchView = self.launchView;
+  if (launchView == nil) {
+    return;
+  }
+  launchView.frame = self.view.bounds;
+  [self.view addSubview:launchView];
 }
 
 - (void)removeLaunchViewIfPresent {
@@ -385,6 +384,28 @@
           }
         });
       });
+}
+
+#pragma mark - Properties
+
+- (UIView*)launchView {
+  if (_launchView == nullptr) {
+    NSString* launchStoryboardName =
+        [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UILaunchStoryboardName"];
+    UIStoryboard* storyboard = [UIStoryboard storyboardWithName:launchStoryboardName bundle:nil];
+    if (storyboard == nil) {
+      return nil;
+    }
+    UIViewController* launchViewController = [storyboard instantiateInitialViewController];
+    self.launchView = launchViewController.view;
+  }
+  return _launchView.get();
+}
+
+- (void)setLaunchView:(UIView*)view {
+  _launchView.reset([view retain]);
+  _launchView.get().autoresizingMask =
+      UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 }
 
 #pragma mark - Surface creation and teardown updates
