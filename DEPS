@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '0fdc53f9ffc6c8a25d551fb49de6f77f2a2fb5e6',
+  'skia_revision': '7ed0eae0cd13d3d687f7855b0620a0faad2ab5b3',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': 'ccb16f72824374163562364bf19dd18e8a882fab',
+  'dart_revision': '760a9690c22ec3f3d163173737f9949f97e6e02a',
 
   'dart_args_tag': '1.4.4',
   'dart_async_tag': '2.0.8',
@@ -46,8 +46,8 @@ vars = {
   'dart_crypto_tag': '2.0.6',
   'dart_csslib_tag': '0.14.4+1',
   'dart_dart2js_info_tag': '0.5.6+4',
-  'dart_dart_style_tag': '1.1.3',
-  'dart_dartdoc_tag': 'v0.20.2',
+  'dart_dart_style_tag': '6f3efd209ff1828835936397b64be79265cc0c19',
+  'dart_dartdoc_tag': 'v0.20.4',
   'dart_fixnum_tag': '0.10.8',
   'dart_glob_tag': '1.1.7',
   'dart_html_tag': '0.13.3+2',
@@ -58,7 +58,7 @@ vars = {
   'dart_http_throttle_tag': '1.0.2',
   'dart_intl_tag': '0.15.6',
   'dart_json_rpc_2_tag': '2.0.9',
-  'dart_linter_tag': '0.1.59',
+  'dart_linter_tag': '0.1.60',
   'dart_logging_tag': '0.11.3+2',
   'dart_markdown_tag': '2.0.2',
   'dart_matcher_tag': '0.12.3',
@@ -75,7 +75,7 @@ vars = {
   'dart_protobuf_tag': '0.9.0',
   'dart_pub_rev': '9f00679ef47bc79cadc18e143720ade6c06c0100',
   'dart_pub_semver_tag': '1.4.2',
-  'dart_quiver_tag': '0.29.0+2',
+  'dart_quiver_tag': '2.0.0+1',
   'dart_resource_rev': '2.1.5',
   'dart_root_certificates_rev': '16ef64be64c7dfdff2b9f4b910726e635ccc519e',
   'dart_shelf_packages_handler_tag': '1.0.4',
@@ -124,7 +124,7 @@ deps = {
    # and not have to specific specific hashes.
 
   'src/third_party/tonic':
-   Var('fuchsia_git') + '/tonic' + '@' + '6bab0f304b043d8cf09900334e78b63111f76c5c',
+   Var('fuchsia_git') + '/tonic' + '@' + '90c9c81f49461d9f4d414845a6eeba1c0df35bb4',
 
   'src/third_party/benchmark':
    Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',

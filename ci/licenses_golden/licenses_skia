@@ -1,4 +1,4 @@
-Signature: cd14b2c05a6198a845ccb22510a6694f
+Signature: 55fe586ba44fb4ac9fcec9857ce134ab
 
 UNUSED LICENSES:
 
@@ -906,6 +906,7 @@ FILE: ../../../third_party/skia/src/compute/hs/gen/target_glsl.c
 FILE: ../../../third_party/skia/src/compute/hs/gen/target_opencl.c
 FILE: ../../../third_party/skia/src/compute/hs/vk/bench/main.c
 FILE: ../../../third_party/skia/src/compute/hs/vk/hs_glsl_macros.h
+FILE: ../../../third_party/skia/src/compute/hs/vk/hs_glsl_preamble.h
 FILE: ../../../third_party/skia/src/compute/hs/vk/hs_vk.c
 FILE: ../../../third_party/skia/src/compute/hs/vk/hs_vk.h
 FILE: ../../../third_party/skia/src/compute/hs/vk/hs_vk_target.h
@@ -958,9 +959,6 @@ FILE: ../../../third_party/skia/src/core/SkColorSpace.cpp
 FILE: ../../../third_party/skia/src/core/SkColorSpacePriv.h
 FILE: ../../../third_party/skia/src/core/SkColorSpaceXform.cpp
 FILE: ../../../third_party/skia/src/core/SkColorSpaceXformPriv.h
-FILE: ../../../third_party/skia/src/core/SkColorSpace_A2B.cpp
-FILE: ../../../third_party/skia/src/core/SkColorSpace_A2B.h
-FILE: ../../../third_party/skia/src/core/SkColorSpace_ICC.cpp
 FILE: ../../../third_party/skia/src/core/SkColorSpace_XYZ.cpp
 FILE: ../../../third_party/skia/src/core/SkColorSpace_XYZ.h
 FILE: ../../../third_party/skia/src/core/SkCpu.cpp
@@ -969,7 +967,6 @@ FILE: ../../../third_party/skia/src/core/SkDeduper.h
 FILE: ../../../third_party/skia/src/core/SkExchange.h
 FILE: ../../../third_party/skia/src/core/SkFixed15.h
 FILE: ../../../third_party/skia/src/core/SkFuzzLogging.h
-FILE: ../../../third_party/skia/src/core/SkGammas.h
 FILE: ../../../third_party/skia/src/core/SkGlobalInitialization_core.cpp
 FILE: ../../../third_party/skia/src/core/SkICC.cpp
 FILE: ../../../third_party/skia/src/core/SkICCPriv.h
@@ -2255,6 +2252,8 @@ FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/failed_pull.jso
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/failed_push.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/internal_bot_2.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test.expected/trybot.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test_lottie_web.expected/Test-Debian9-none-GCE-CPU-AVX2-x86_64-Debug-All-LottieWeb.json
+FILE: ../../../third_party/skia/infra/bots/recipes/test_lottie_web.expected/lottie_web_trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test_pathkit.expected/Test-Debian9-EMCC-GCE-CPU-AVX2-asmjs-Debug-All-PathKit.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test_pathkit.expected/Test-Debian9-EMCC-GCE-CPU-AVX2-asmjs-Release-All-PathKit.json
 FILE: ../../../third_party/skia/infra/bots/recipes/test_pathkit.expected/Test-Debian9-EMCC-GCE-CPU-AVX2-wasm-Debug-All-PathKit.json
@@ -2286,6 +2285,8 @@ FILE: ../../../third_party/skia/infra/bots/tools/luci-go/win64/isolate.exe.sha1
 FILE: ../../../third_party/skia/infra/branch-config/cq.cfg
 FILE: ../../../third_party/skia/infra/config/recipes.cfg
 FILE: ../../../third_party/skia/infra/cts/whitelist_devices.json
+FILE: ../../../third_party/skia/infra/lottiecap/docker/gold-lottie-web-puppeteer/Dockerfile
+FILE: ../../../third_party/skia/infra/lottiecap/docker/lottie-web-puppeteer/Dockerfile
 FILE: ../../../third_party/skia/infra/pathkit/docker/emsdk-base/Dockerfile
 FILE: ../../../third_party/skia/infra/pathkit/docker/gold-karma-chrome-tests/Dockerfile
 FILE: ../../../third_party/skia/infra/pathkit/docker/karma-chrome-tests/Dockerfile
@@ -2707,7 +2708,6 @@ FILE: ../../../third_party/skia/samplecode/SamplePoints.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePolyToPoly.cpp
 FILE: ../../../third_party/skia/samplecode/SampleRegion.cpp
 FILE: ../../../third_party/skia/samplecode/SampleRepeatTile.cpp
-FILE: ../../../third_party/skia/samplecode/SampleShaderText.cpp
 FILE: ../../../third_party/skia/samplecode/SampleShaders.cpp
 FILE: ../../../third_party/skia/samplecode/SampleSlides.cpp
 FILE: ../../../third_party/skia/samplecode/SampleStrokePath.cpp
@@ -2716,7 +2716,6 @@ FILE: ../../../third_party/skia/samplecode/SampleText.cpp
 FILE: ../../../third_party/skia/samplecode/SampleTextAlpha.cpp
 FILE: ../../../third_party/skia/samplecode/SampleTextBox.cpp
 FILE: ../../../third_party/skia/samplecode/SampleTextEffects.cpp
-FILE: ../../../third_party/skia/samplecode/SampleTextOnPath.cpp
 FILE: ../../../third_party/skia/samplecode/SampleTextureDomain.cpp
 FILE: ../../../third_party/skia/samplecode/SampleTiling.cpp
 FILE: ../../../third_party/skia/samplecode/SampleVertices.cpp
@@ -5146,6 +5145,7 @@ ORIGIN: ../../../third_party/skia/include/gpu/GrDriverBugWorkaroundsAutogen.h + 
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/include/gpu/GrDriverBugWorkaroundsAutogen.h
 FILE: ../../../third_party/skia/include/utils/SkTraceEventPhase.h
+FILE: ../../../third_party/skia/infra/lottiecap/gold/lottie-web-aggregator.go
 FILE: ../../../third_party/skia/infra/pathkit/gold/pathkit_aggregator.go
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Chromium Authors. All rights reserved.
