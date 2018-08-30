@@ -144,14 +144,35 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     }
   }
 
+  /**
+   * The hardware back button was pressed.
+   *
+   * See {@link Activity#onBackPressed()}
+   */
   public void onBackPressed() {
     flutterView.popRoute();
   }
 
+  /**
+   * The result of a permission request has been received.
+   *
+   * See {@link Activity#onRequestPermissionsResult(int, String[], int[])}
+   *
+   * @param requestCode identifier passed with the initial permission request
+   * @param permissions permissions that were requested
+   * @param grantResults permission grants or denials
+   */
   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     flutterView.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
   }
 
+  /**
+   * A new Intent was received by the {@link Activity} that currently owns this {@link Fragment}.
+   *
+   * See {@link Activity#onNewIntent(Intent)}
+   *
+   * @param intent new Intent
+   */
   public void onNewIntent(@NonNull Intent intent) {
     flutterView.getPluginRegistry().onNewIntent(intent);
   }
@@ -161,6 +182,12 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     flutterView.getPluginRegistry().onActivityResult(requestCode, resultCode, data);
   }
 
+  /**
+   * The {@link Activity} that owns this {@link Fragment} is about to go to the background
+   * as the result of a user's choice/action, i.e., not as the result of an OS decision.
+   *
+   * See {@link Activity#onUserLeaveHint()}
+   */
   public void onUserLeaveHint() {
     flutterView.getPluginRegistry().onUserLeaveHint();
   }
@@ -363,7 +390,7 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
   }
 
   /**
-   * Instructs the FlutterView to start running with the given {@code appBundlePath}, and starting
+   * Instructs the FlutterView to start running with the given {@code appBundlePath}, and to start
    * Flutter at the given {@code initialRoute}.
    *
    * @param initialRoute initial Flutter route to display after reloading Dart code
