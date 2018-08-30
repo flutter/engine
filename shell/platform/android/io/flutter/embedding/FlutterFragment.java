@@ -135,7 +135,7 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     final boolean detach = flutterView.getPluginRegistry().onViewDestroy(
       flutterView.getFlutterNativeView()
     );
-    if (detach || retainFlutterNativeView()) {
+    if (detach || retainFlutterIsolate()) {
       // Detach, but do not destroy the FlutterView if a plugin expressed interest in its
       // FlutterNativeView.
       flutterView.detach();
@@ -438,8 +438,26 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     return flutterView.getPluginRegistry().registrarFor(pluginKey);
   }
 
-  // TODO: what is the significance of this method? should it be a subclass hook?
-  private boolean retainFlutterNativeView() {
+  /**
+   * Should the Flutter isolate that is connected to this {@code FlutterFragment}
+   * be retained after this {@code FlutterFragment} is destroyed?
+   *
+   * Defaults to false. This method can be overridden in subclasses to retain the
+   * Flutter isolate.
+   *
+   * Isolates in Dart/Flutter are similar to processes in other languages. Any data
+   * held within the Flutter isolate within this {@code FlutterFragment} will be lost
+   * if the isolate is destroyed. This loss of data is fine for most UI related Flutter
+   * behavior. However, if this {@code FlutterFragment}'s isolate contains application
+   * data that is required outside of this {@code FlutterFragment} then consider retaining
+   * the isolate for later use, or consider a data marshalling strategy to move long-lived
+   * data out of this isolate.
+   *
+   * See https://docs.flutter.io/flutter/dart-isolate/Isolate-class.html
+   *
+   * @return true if this FlutterFragment's Flutter isolate should be retained after destruction, false otherwise
+   */
+  protected boolean retainFlutterIsolate() {
     return false;
   }
 
