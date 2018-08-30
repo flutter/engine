@@ -490,9 +490,6 @@ FILE: ../../../flutter/lib/ui/semantics/custom_accessibility_action.h
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.h
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterActivity.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterFragment.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterShellArgs.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewFactory.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewRegistry.java
@@ -646,17 +643,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: engine
-ORIGIN: ../../../flutter/lib/ui/painting/image.cc + ../../../LICENSE
+ORIGIN: ../../../flutter/fml/time/time_delta_unittest.cc + ../../../third_party/tonic/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../flutter/lib/ui/painting/image.cc
-FILE: ../../../flutter/lib/ui/painting/image.h
-FILE: ../../../flutter/shell/common/switches.cc
-FILE: ../../../flutter/shell/common/switches.h
-FILE: ../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterMain.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java
+FILE: ../../../flutter/fml/export.h
+FILE: ../../../flutter/fml/time/time_delta_unittest.cc
+FILE: ../../../flutter/fml/time/time_point_unittest.cc
 ----------------------------------------------------------------------------------------------------
-Copyright 2013 The Chromium Authors. All rights reserved.
+Copyright 2017 The Fuchsia Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -687,13 +680,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: engine
-ORIGIN: ../../../garnet/LICENSE
+ORIGIN: ../../../flutter/lib/ui/painting/image.cc + ../../../LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../flutter/fml/export.h
-FILE: ../../../flutter/fml/time/time_delta_unittest.cc
-FILE: ../../../flutter/fml/time/time_point_unittest.cc
+FILE: ../../../flutter/lib/ui/painting/image.cc
+FILE: ../../../flutter/lib/ui/painting/image.h
+FILE: ../../../flutter/shell/common/switches.cc
+FILE: ../../../flutter/shell/common/switches.h
+FILE: ../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterMain.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java
 ----------------------------------------------------------------------------------------------------
-Copyright 2017 The Fuchsia Authors. All rights reserved.
+Copyright 2013 The Chromium Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -827,6 +824,7 @@ FILE: ../../../flutter/shell/common/shell.h
 FILE: ../../../flutter/shell/common/vsync_waiter.cc
 FILE: ../../../flutter/shell/common/vsync_waiter.h
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.h
+FILE: ../../../flutter/shell/platform/android/AndroidManifest.xml
 FILE: ../../../flutter/shell/platform/android/flutter_main.cc
 FILE: ../../../flutter/shell/platform/android/flutter_main.h
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivity.java
