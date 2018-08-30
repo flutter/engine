@@ -93,6 +93,9 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityDele
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityEvents.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterFragmentActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPluginRegistry.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterActivity.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterFragment.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterShellArgs.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BasicMessageChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BinaryCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BinaryMessenger.java
@@ -824,7 +827,6 @@ FILE: ../../../flutter/shell/common/shell.h
 FILE: ../../../flutter/shell/common/vsync_waiter.cc
 FILE: ../../../flutter/shell/common/vsync_waiter.h
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.h
-FILE: ../../../flutter/shell/platform/android/AndroidManifest.xml
 FILE: ../../../flutter/shell/platform/android/flutter_main.cc
 FILE: ../../../flutter/shell/platform/android/flutter_main.h
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivity.java
