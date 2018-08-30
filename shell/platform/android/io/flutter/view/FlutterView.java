@@ -382,7 +382,12 @@ public class FlutterView extends SurfaceView
     private static final int kPointerDeviceKindMouse = 1;
     private static final int kPointerDeviceKindStylus = 2;
     private static final int kPointerDeviceKindInvertedStylus = 3;
-    private static final int kPointerDeviceKindUnknown = 4;
+    private static final int kPointerDeviceKindGesture = 4;
+    private static final int kPointerDeviceKindUnknown = 5;
+
+    // Must match the PointerGestureKind enum in pointer.dart.
+    private static final int kPointerGestureKindScroll = 0;
+    private static final int kPointerGestureKindUnknown = 1;
 
     private int getPointerChangeForAction(int maskedAction) {
         // Primary pointer:
@@ -433,11 +438,15 @@ public class FlutterView extends SurfaceView
 
         int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
 
+        // This is ignored for non-gesture deviced kinds.
+        int gestureKind = kPointerGestureKindScroll;
+
         long timeStamp = event.getEventTime() * 1000; // Convert from milliseconds to microseconds.
 
         packet.putLong(timeStamp); // time_stamp
         packet.putLong(pointerChange); // change
         packet.putLong(pointerKind); // kind
+        packet.putLong(gestureKind); // gesture_kind
         packet.putLong(event.getPointerId(pointerIndex)); // device
         packet.putDouble(event.getX(pointerIndex)); // physical_x
         packet.putDouble(event.getY(pointerIndex)); // physical_y
@@ -479,6 +488,9 @@ public class FlutterView extends SurfaceView
         } else {
             packet.putDouble(0.0); // tilt
         }
+
+        packet.putDouble(0.0); // scroll_delta_x
+        packet.putDouble(0.0); // scroll_delta_y
     }
 
     @Override
