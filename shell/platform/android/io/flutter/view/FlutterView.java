@@ -406,6 +406,9 @@ public class FlutterView extends SurfaceView
         if (maskedAction == MotionEvent.ACTION_CANCEL) {
             return kPointerChangeCancel;
         }
+        if (maskedAction == MotionEvent.ACTION_HOVER_MOVE) {
+            return kPointerChangeHover;
+        }
         return -1;
     }
 
@@ -533,8 +536,7 @@ public class FlutterView extends SurfaceView
 
         boolean handled = handleAccessibilityHoverEvent(event);
         if (!handled) {
-            // TODO(ianh): Expose hover events to the platform,
-            // implementing ADD, REMOVE, etc.
+            onTouchEvent(event);
         }
         return handled;
     }
