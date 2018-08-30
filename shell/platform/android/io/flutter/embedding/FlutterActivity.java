@@ -95,7 +95,6 @@ public class FlutterActivity extends Activity {
         // Fall back to the installation path if no bundle path was specified.
         appBundlePath = FlutterMain.findAppBundlePath(getApplicationContext());
       }
-      // TODO: What does it mean to have a null appBundlePath?  Should we throw exception in FlutterMain instead of returning null?
       flutterFragment.hotReload(route, appBundlePath);
     } else {
       // We're not in debug mode, or we're processing an action other than ACTION_RUN. Therefore,
@@ -207,7 +206,7 @@ public class FlutterActivity extends Activity {
    *
    * @return file path to Flutter's app bundle
    */
-  @Nullable
+  @NonNull
   private String getAppBundlePath() {
     // If our launching Intent has ACTION_RUN then it indicates that this Activity
     // was launched from tooling. Therefore, our launching Intent may also include
@@ -221,7 +220,6 @@ public class FlutterActivity extends Activity {
     }
 
     // Return the default app bundle path.
-    // TODO: What does it mean to have a null appBundlePath?  Should we throw exception in FlutterMain instead of returning null?
     return FlutterMain.findAppBundlePath(getApplicationContext());
   }
 

@@ -71,7 +71,6 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
   private static final WindowManager.LayoutParams MATCH_PARENT =
       new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
 
-  // TODO: is appBundlePath truly non-null?
   public static FlutterFragment newInstance(boolean isSplashScreenDesired,
                                             @Nullable String initialRoute,
                                             @NonNull String appBundlePath) {
@@ -386,8 +385,11 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     return getArguments().getString(ARG_INITIAL_ROUTE);
   }
 
-  @Nullable
+  @NonNull
   private String getAppBundlePath() {
+    // Guaranteed non-null by Fragment factory method which declares the incoming
+    // parameter @NonNull.
+    //noinspection ConstantConditions
     return getArguments().getString(ARG_APP_BUNDLE_PATH);
   }
 
