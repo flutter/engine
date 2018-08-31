@@ -98,6 +98,12 @@ class DartIsolate : public UIDartState {
 
   std::weak_ptr<DartIsolate> GetWeakIsolatePtr();
 
+ protected:
+  std::weak_ptr<DartIsolate> parent_embedder_isolate_;
+  std::weak_ptr<DartIsolate> self_ptr_;
+
+  bool RemoveChildIsolate(std::weak_ptr<DartIsolate> child_isolate_embedder);
+
  private:
   bool LoadScriptSnapshot(std::shared_ptr<const fml::Mapping> mapping,
                           bool last_piece);
@@ -173,6 +179,9 @@ class DartIsolate : public UIDartState {
       char** error);
 
   static void TerminateChildIsolatesIfNecessary(
+      std::shared_ptr<DartIsolate>* embedder_isolate);
+
+  static void RemoveSelfFromParent(
       std::shared_ptr<DartIsolate>* embedder_isolate);
 
   // |Dart_IsolateShutdownCallback|

@@ -674,6 +674,9 @@ Dart_Isolate DartIsolate::DartIsolateCreateCallback(
       );
   (*parent_embedder_isolate)
       ->child_isolates_.push_back(created_isolate_pair.second);
+  created_isolate_pair.second.lock()->self_ptr_ = created_isolate_pair.second;
+  created_isolate_pair.second.lock()->parent_embedder_isolate_ =
+      (*parent_embedder_isolate);
   return created_isolate_pair.first;
 }
 
@@ -816,6 +819,33 @@ void DartIsolate::TerminateChildIsolatesIfNecessary(
       }
     }
   }
+}
+
+void DartIsolate::RemoveSelfFromParent(
+    std::shared_ptr<DartIsolate>* embedder_isolate) {
+  if (auto parent_embedder_isolate =
+          (*embedder_isolate)->parent_embedder_isolate_.lock()) {
+    parent_embedder_isolate->RemoveChildIsolate((*embedder_isolate)->self_ptr_);
+  }
+}
+
+static inline bool CompareWeakPtrEquality(
+    const std::weak_ptr<DartIsolate> ptr_one,
+    const std::weak_ptr<DartIsolate> ptr_two) {
+  // Compare control block order for pointer equality. If neither is before the
+  // other, then they must be the same.
+  return !ptr_one.owner_before(ptr_two) && !ptr_two.owner_before(ptr_one);
+}
+
+bool DartIsolate::RemoveChildIsolate(
+    std::weak_ptr<DartIsolate> child_isolate_embedder) {
+  for (size_t i = 0; i < child_isolates_.size(); ++i) {
+    if (CompareWeakPtrEquality(child_isolate_embedder, child_isolates_[i])) {
+      child_isolates_.erase(child_isolates_.begin() + i);
+      return true;
+    }
+  }
+  return false;
 }
 
 // |Dart_IsolateShutdownCallback|
