@@ -51,6 +51,7 @@
   // setup a shell along with its platform view before the view has to appear.
   fml::scoped_nsobject<FlutterView> _flutterView;
   fml::scoped_nsobject<UIView> _splashScreenView;
+  void (^firstFrameCallback)();
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
   blink::ViewportMetrics _viewportMetrics;
@@ -390,7 +391,6 @@
           // association. Thus, we are not convinced that the unsafe unretained weak object is in
           // fact alive.
           if (weak_platform_view) {
-            [weak_flutter_view_controller removeSplashScreenViewIfPresent];
             [weak_flutter_view_controller viewDidRenderFirstFlutterFrame];
           }
         });
@@ -442,6 +442,10 @@
   _splashScreenView.reset([view retain]);
   _splashScreenView.get().autoresizingMask =
       UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+}
+
+- (void)setFirstFrameListener:(void (^)(void))callback {
+  firstFrameCallback = [callback copy];
 }
 
 #pragma mark - Surface creation and teardown updates
@@ -510,6 +514,10 @@
 }
 
 - (void)viewDidRenderFirstFlutterFrame {
+  [self removeSplashScreenViewIfPresent];
+  if (firstFrameCallback != nil) {
+    firstFrameCallback();
+  }
 }
 
 - (void)dealloc {

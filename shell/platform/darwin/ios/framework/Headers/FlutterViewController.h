@@ -25,9 +25,11 @@ FLUTTER_EXPORT
 - (void)handleStatusBarTouches:(UIEvent*)event;
 
 /**
- Subclasses can override this to be notified when the first Flutter frame is rendered.
+ Registers a callback that will be invoked when the first Flutter is rendered.
+
+ Replaces an existing callback. Use a `nil` callback to unregister the existing one.
  */
-- (void)viewDidRenderFirstFlutterFrame;
+- (void)setFirstFrameListener:(void (^)(void))callback;
 
 /**
  Returns the file name for the given asset.
