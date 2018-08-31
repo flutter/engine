@@ -49,10 +49,17 @@ import io.flutter.view.FlutterMain;
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 public class FlutterActivity extends Activity {
   private static final String TAG = "FlutterActivity";
+
+  private static final String EXTRA_SHOW_SPLASH_SCREEN = "show_launch_screen";
+  // TODO: where did this package path come from? is this what it should be?
+  private static final String SPLASH_SCREEN_META_DATA_KEY = "io.flutter.app.android.SplashScreenUntilFirstFrame";
+  private static final String EXTRA_INITIAL_ROUTE = "route";
+  // TODO: where did this package path come from? is this what it should be?
+  private static final String INITIAL_ROUTE_META_DATA_KEY = "io.flutter.app.android.InitialRoute";
+
+  // FlutterFragment identifiers within this Activity.
   private static final String TAG_FLUTTER_FRAGMENT = "flutter_fragment";
   private static final int CONTAINER_ID = 609893468; // random number
-  private static final String SPLASH_SCREEN_META_DATA_KEY = "io.flutter.app.android.SplashScreenUntilFirstFrame";
-
   private FlutterFragment flutterFragment;
 
   @Override
@@ -86,16 +93,16 @@ public class FlutterActivity extends Activity {
 
   @Override
   protected void onNewIntent(Intent intent) {
+    // TODO(mattcarroll): Jason says this only happens on initial Flutter setup, so why is it in onNewIntent()?
     boolean isRunAction = Intent.ACTION_RUN.equals(intent.getAction());
     if (isDebuggable() && isRunAction) {
       // We're in debug mode, and processing an ACTION_RUN, so we will hot reload Flutter.
-      String route = intent.getStringExtra("route");
       String appBundlePath = intent.getDataString();
       if (appBundlePath == null) {
         // Fall back to the installation path if no bundle path was specified.
         appBundlePath = FlutterMain.findAppBundlePath(getApplicationContext());
       }
-      flutterFragment.hotReload(route, appBundlePath);
+      flutterFragment.hotReload(getInitialRoute(), appBundlePath);
     } else {
       // We're not in debug mode, or we're processing an action other than ACTION_RUN. Therefore,
       // we will not execute a hot reload on Flutter.  But, we will forward this event to the
@@ -166,15 +173,25 @@ public class FlutterActivity extends Activity {
   }
 
   /**
-   * Should the {@code Activity}'s {@code windowBackground} be used as a launch screen
+   * Should the {@code Activity}'s {@code windowBackground} be used as a splash screen
    * until the first frame of Flutter is rendered?
    *
-   * This preference is controlled by setting a {@code <meta-data>} tag in the Android
-   * manifest for this {@code Activity}.
+   * This preference can be controlled with 2 methods:
+   *  * Pass a boolean as {@link #EXTRA_SHOW_SPLASH_SCREEN} with the launching {@code Intent}, or
+   *  * Set a {@code <meta-data>} called {@link #SPLASH_SCREEN_META_DATA_KEY} for this
+   *    {@code Activity} in the Android manifest.
    *
-   * TODO(mattcarroll): Should this preference be set by Intent parameter instead? How would a dev use this in production?
+   * If both preferences are set, the {@code Intent} preference takes precedence.
+   *
+   * The reason that a {@code <meta-data>} preference is supported is because this {@code Activity}
+   * might be the very first {@code Activity} launched, which means the developer won't have
+   * control over the incoming {@code Intent}.
    */
   private boolean isSplashScreenDesired() {
+    if (getIntent().hasExtra(EXTRA_SHOW_SPLASH_SCREEN)) {
+      return getIntent().getBooleanExtra(EXTRA_SHOW_SPLASH_SCREEN, false);
+    }
+
     try {
       @SuppressLint("WrongConstant")
       ActivityInfo activityInfo = getPackageManager().getActivityInfo(
@@ -191,14 +208,36 @@ public class FlutterActivity extends Activity {
   /**
    * The initial route that a Flutter app will render upon loading and executing its Dart code.
    *
-   * The initial route is set by launching this {@code Activity} with a {@code String} extra called
-   * "route".
+   * This preference can be controlled with 2 methods:
+   *  * Pass a boolean as {@link #EXTRA_INITIAL_ROUTE} with the launching {@code Intent}, or
+   *  * Set a {@code <meta-data>} called {@link #INITIAL_ROUTE_META_DATA_KEY} for this
+   *    {@code Activity} in the Android manifest.
+   *
+   * If both preferences are set, the {@code Intent} preference takes precedence.
+   *
+   * The reason that a {@code <meta-data>} preference is supported is because this {@code Activity}
+   * might be the very first {@code Activity} launched, which means the developer won't have
+   * control over the incoming {@code Intent}.
    *
    * @return initial route to be rendered by Flutter
    */
   @Nullable
   private String getInitialRoute() {
-    return getIntent().getStringExtra("route");
+    if (getIntent().hasExtra(EXTRA_INITIAL_ROUTE)) {
+      return getIntent().getStringExtra(EXTRA_INITIAL_ROUTE);
+    }
+
+    try {
+      @SuppressLint("WrongConstant")
+      ActivityInfo activityInfo = getPackageManager().getActivityInfo(
+          getComponentName(),
+          PackageManager.GET_META_DATA|PackageManager.GET_ACTIVITIES
+      );
+      Bundle metadata = activityInfo.metaData;
+      return metadata != null ? metadata.getString(INITIAL_ROUTE_META_DATA_KEY) : null;
+    } catch (PackageManager.NameNotFoundException e) {
+      return null;
+    }
   }
 
   /**
