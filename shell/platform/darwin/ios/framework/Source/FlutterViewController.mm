@@ -391,6 +391,7 @@
           // fact alive.
           if (weak_platform_view) {
             [weak_flutter_view_controller removeSplashScreenViewIfPresent];
+            [weak_flutter_view_controller viewDidRenderFirstFlutterFrame];
           }
         });
       });
@@ -506,6 +507,9 @@
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
 
   [super viewDidDisappear:animated];
+}
+
+- (void)viewDidRenderFirstFlutterFrame {
 }
 
 - (void)dealloc {

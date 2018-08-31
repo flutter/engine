@@ -25,6 +25,11 @@ FLUTTER_EXPORT
 - (void)handleStatusBarTouches:(UIEvent*)event;
 
 /**
+ Subclasses can override this to be notified when the first Flutter frame is rendered.
+ */
+- (void)viewDidRenderFirstFlutterFrame;
+
+/**
  Returns the file name for the given asset.
  The returned file name can be used to access the asset in the application's main bundle.
 
