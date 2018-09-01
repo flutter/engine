@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.legacy;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.graphics.Rect;
 import android.opengl.Matrix;
@@ -14,21 +15,14 @@ import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.embedding.FlutterView;
 
+import java.nio.ByteBuffer;
+import java.util.*;
+
+@TargetApi(Build.VERSION_CODES.KITKAT)
 public class AccessibilityBridge
         extends AccessibilityNodeProvider implements BasicMessageChannel.MessageHandler<Object> {
     private static final String TAG = "FlutterView";
@@ -56,7 +50,7 @@ public class AccessibilityBridge
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
-    enum Action {
+    public enum Action {
         TAP(1 << 0),
         LONG_PRESS(1 << 1),
         SCROLL_LEFT(1 << 2),
@@ -83,7 +77,7 @@ public class AccessibilityBridge
             this.value = value;
         }
 
-        final int value;
+        public final int value;
     }
 
     enum Flag {
@@ -114,7 +108,7 @@ public class AccessibilityBridge
         final int value;
     }
 
-    AccessibilityBridge(FlutterView owner) {
+    public AccessibilityBridge(FlutterView owner) {
         assert owner != null;
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
@@ -125,7 +119,7 @@ public class AccessibilityBridge
         mDecorView = ((Activity) owner.getContext()).getWindow().getDecorView();
     }
 
-    void setAccessibilityEnabled(boolean accessibilityEnabled) {
+    public void setAccessibilityEnabled(boolean accessibilityEnabled) {
         mAccessibilityEnabled = accessibilityEnabled;
         if (accessibilityEnabled) {
             mFlutterAccessibilityChannel.setMessageHandler(this);
@@ -579,14 +573,14 @@ public class AccessibilityBridge
         return action;
     }
 
-    void handleTouchExplorationExit() {
+    public void handleTouchExplorationExit() {
         if (mHoveredObject != null) {
             sendAccessibilityEvent(mHoveredObject.id, AccessibilityEvent.TYPE_VIEW_HOVER_EXIT);
             mHoveredObject = null;
         }
     }
 
-    void handleTouchExploration(float x, float y) {
+    public void handleTouchExploration(float x, float y) {
         if (mObjects.isEmpty()) {
             return;
         }
@@ -603,7 +597,7 @@ public class AccessibilityBridge
         }
     }
 
-    void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
+    public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
         ArrayList<CustomAccessibilityAction> updatedActions =
                 new ArrayList<CustomAccessibilityAction>();
         while (buffer.hasRemaining()) {
@@ -617,7 +611,7 @@ public class AccessibilityBridge
         }
     }
 
-    void updateSemantics(ByteBuffer buffer, String[] strings) {
+    public void updateSemantics(ByteBuffer buffer, String[] strings) {
         ArrayList<SemanticsObject> updated = new ArrayList<SemanticsObject>();
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
@@ -898,7 +892,7 @@ public class AccessibilityBridge
         }
     }
 
-    void reset() {
+    public void reset() {
         mObjects.clear();
         if (mA11yFocusedObject != null)
             sendAccessibilityEvent(mA11yFocusedObject.id,

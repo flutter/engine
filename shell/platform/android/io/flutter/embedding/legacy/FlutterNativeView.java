@@ -8,15 +8,14 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.util.Log;
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.view.FlutterRunArguments;
+import io.flutter.embedding.FlutterView;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import io.flutter.plugin.common.BinaryMessenger;
-import io.flutter.view.FlutterRunArguments;
-import io.flutter.embedding.FlutterView;
 
 public class FlutterNativeView implements BinaryMessenger {
     private static final String TAG = "FlutterNativeView";

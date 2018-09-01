@@ -4,7 +4,6 @@
 
 package io.flutter.embedding.legacy;
 
-
 /**
  * Registry for platform view factories.
  * <p>

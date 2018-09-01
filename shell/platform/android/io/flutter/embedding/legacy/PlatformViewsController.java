@@ -9,18 +9,17 @@ import android.os.Build;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.StandardMethodCodec;
+import io.flutter.embedding.FlutterView;
+import io.flutter.view.TextureRegistry;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.flutter.plugin.common.MethodCall;
-import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.StandardMethodCodec;
-import io.flutter.embedding.FlutterView;
-import io.flutter.view.TextureRegistry;
 
 import static android.view.MotionEvent.PointerCoords;
 import static android.view.MotionEvent.PointerProperties;
@@ -220,6 +219,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         );
     }
 
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private void onTouch(MethodCall call, MethodChannel.Result result) {
         List<Object> args = call.arguments();
 
@@ -318,6 +318,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         return pointerProperties;
     }
 
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     @SuppressWarnings("unchecked")
     private static PointerProperties parsePointerProperties(Object rawProperties) {
         List<Object> propertiesList = (List<Object>) rawProperties;
@@ -337,6 +338,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         return pointerCoords;
     }
 
+    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     @SuppressWarnings("unchecked")
     private static PointerCoords parsePointerCoords(Object rawCoords, float density) {
         List<Object> coordsList = (List<Object>) rawCoords;

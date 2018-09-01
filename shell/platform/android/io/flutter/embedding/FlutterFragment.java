@@ -26,10 +26,8 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import io.flutter.app.BuildConfig;
-import io.flutter.app.FlutterActivity;
-import io.flutter.plugin.common.PluginRegistry;
-import io.flutter.view.FlutterNativeView;
-import io.flutter.view.FlutterView;
+import io.flutter.embedding.legacy.PluginRegistry;
+import io.flutter.embedding.legacy.FlutterNativeView;
 
 /**
  * {@code Fragment} which displays a {@link FlutterView} that takes up all available space.

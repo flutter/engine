@@ -4,7 +4,9 @@
 
 package io.flutter.embedding.legacy;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.os.Build;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
@@ -12,21 +14,20 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.view.FlutterView;
+import io.flutter.embedding.FlutterView;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Android implementation of the text input plugin.
  */
+@TargetApi(Build.VERSION_CODES.CUPCAKE)
 public class TextInputPlugin implements MethodCallHandler {
     private final FlutterView mView;
     private final InputMethodManager mImm;
@@ -160,8 +161,8 @@ public class TextInputPlugin implements MethodCallHandler {
         }
         outAttrs.imeOptions |= enterAction;
 
-        io.flutter.embedding.legacy.InputConnectionAdaptor connection =
-                new io.flutter.embedding.legacy.InputConnectionAdaptor(view, mClient, mFlutterChannel, mEditable);
+        InputConnectionAdaptor connection =
+                new InputConnectionAdaptor(view, mClient, mFlutterChannel, mEditable);
         outAttrs.initialSelStart = Selection.getSelectionStart(mEditable);
         outAttrs.initialSelEnd = Selection.getSelectionEnd(mEditable);
 

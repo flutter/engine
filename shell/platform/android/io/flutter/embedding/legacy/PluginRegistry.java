@@ -7,7 +7,6 @@ package io.flutter.embedding.legacy;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.embedding.FlutterView;
 import io.flutter.view.TextureRegistry;

@@ -7,16 +7,15 @@ package io.flutter.embedding.legacy;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.view.FlutterMain;
+import io.flutter.embedding.FlutterView;
+import io.flutter.view.TextureRegistry;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.flutter.plugin.common.BinaryMessenger;
-import io.flutter.view.FlutterMain;
-import io.flutter.embedding.FlutterView;
-import io.flutter.view.TextureRegistry;
 
 public class FlutterPluginRegistry
   implements PluginRegistry,
