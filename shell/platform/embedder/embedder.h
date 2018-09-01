@@ -84,7 +84,7 @@ typedef struct {
   size_t struct_size;
   // The callback presented to the embedder to present a fully populated buffer
   // to the user. The pixel format of the buffer is the native 32-bit RGBA
-  // format. The buffer is owned by the Flutter engine and must be copied if in
+  // format. The buffer is owned by the Flutter engine and must be copied in
   // this callback if needed.
   SoftwareSurfacePresentCallback surface_present_callback;
 } FlutterSoftwareRendererConfig;
