@@ -83,32 +83,18 @@ public class FlutterActivity extends Activity {
   }
 
   @Override
+  protected void onNewIntent(Intent intent) {
+    // Forward Intents to our FlutterFragment in case it cares.
+    flutterFragment.onNewIntent(intent);
+  }
+
+  @Override
   public void onBackPressed() {
     flutterFragment.onBackPressed();
   }
 
   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     flutterFragment.onRequestPermissionsResult(requestCode, permissions, grantResults);
-  }
-
-  @Override
-  protected void onNewIntent(Intent intent) {
-    // TODO(mattcarroll): Jason says this only happens on initial Flutter setup, so why is it in onNewIntent()?
-    boolean isRunAction = Intent.ACTION_RUN.equals(intent.getAction());
-    if (isDebuggable() && isRunAction) {
-      // We're in debug mode, and processing an ACTION_RUN, so we will hot reload Flutter.
-      String appBundlePath = intent.getDataString();
-      if (appBundlePath == null) {
-        // Fall back to the installation path if no bundle path was specified.
-        appBundlePath = FlutterMain.findAppBundlePath(getApplicationContext());
-      }
-      flutterFragment.hotReload(getInitialRoute(), appBundlePath);
-    } else {
-      // We're not in debug mode, or we're processing an action other than ACTION_RUN. Therefore,
-      // we will not execute a hot reload on Flutter.  But, we will forward this event to the
-      // Fragment so that the Intent can be delivered to any interested plugins.
-      flutterFragment.onNewIntent(intent);
-    }
   }
 
   @Override
@@ -170,6 +156,26 @@ public class FlutterActivity extends Activity {
       window.setStatusBarColor(0x40000000);
       window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
     }
+  }
+
+  /**
+   * The path to the bundle that contains this Flutter app's resources, e.g., Dart code snapshots.
+   *
+   * @return file path to Flutter's app bundle
+   */
+  @NonNull
+  private String getAppBundlePath() {
+    // If this Activity was launched from tooling, and the incoming Intent contains
+    // a custom app bundle path, return that path.
+    if (isDebuggable() && Intent.ACTION_RUN.equals(getIntent().getAction())) {
+      String appBundlePath = getIntent().getDataString();
+      if (appBundlePath != null) {
+        return appBundlePath;
+      }
+    }
+
+    // Return the default app bundle path.
+    return FlutterMain.findAppBundlePath(getApplicationContext());
   }
 
   /**
@@ -238,28 +244,6 @@ public class FlutterActivity extends Activity {
     } catch (PackageManager.NameNotFoundException e) {
       return null;
     }
-  }
-
-  /**
-   * The path to the bundle that contains this Flutter app's resources, e.g., Dart code snapshots.
-   *
-   * @return file path to Flutter's app bundle
-   */
-  @NonNull
-  private String getAppBundlePath() {
-    // If our launching Intent has ACTION_RUN then it indicates that this Activity
-    // was launched from tooling. Therefore, our launching Intent may also include
-    // a custom app bundle path within its data string.
-    // TODO(mattcarroll): Does ACTION_RUN have any other implication besides tooling?
-    if (Intent.ACTION_RUN.equals(getIntent().getAction())) {
-      String appBundlePath = getIntent().getDataString();
-      if (appBundlePath != null) {
-        return appBundlePath;
-      }
-    }
-
-    // Return the default app bundle path.
-    return FlutterMain.findAppBundlePath(getApplicationContext());
   }
 
   /**

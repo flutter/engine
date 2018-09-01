@@ -25,6 +25,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import io.flutter.app.BuildConfig;
 import io.flutter.app.FlutterActivity;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.view.FlutterNativeView;
@@ -135,7 +136,7 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     final boolean detach = flutterView.getPluginRegistry().onViewDestroy(
       flutterView.getFlutterNativeView()
     );
-    if (detach || retainFlutterIsolate()) {
+    if (detach || retainFlutterIsolateAfterFragmentDestruction()) {
       // Detach, but do not destroy the FlutterView if a plugin expressed interest in its
       // FlutterNativeView.
       flutterView.detach();
@@ -369,42 +370,17 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
   /**
    * Starts running Dart within the FlutterView for the first time.
    *
-   * The difference between the first run and subsequent reloads is that when FlutterView is
-   * run for the first time, it attempts to reuse an existing Dart isolate.
+   * Reloading/restarting Dart within a given FlutterView is not supported.
    */
   private void doInitialFlutterViewRun() {
-    runFlutterView(getInitialRoute(), getAppBundlePath(), true);
-  }
-
-  /**
-   * Reloads Dart code with that at the given {@code appBundlePath}, sets Flutter's initial route
-   * to {@code initialRoute}, and then reloads the Dart VM.
-   *
-   * TODO(mattcarroll): is the above description accurate?
-   *
-   * @param initialRoute initial Flutter route to display after reloading Dart code
-   * @param appBundlePath Android file path to Flutter's app bundle
-   */
-  public void hotReload(@Nullable String initialRoute, @NonNull String appBundlePath) {
-    runFlutterView(initialRoute, appBundlePath, false);
-  }
-
-  /**
-   * Instructs the FlutterView to start running with the given {@code appBundlePath}, and to start
-   * Flutter at the given {@code initialRoute}.
-   *
-   * @param initialRoute initial Flutter route to display after reloading Dart code
-   * @param appBundlePath Android file path to Flutter's app bundle
-   * @param reuseIsolate whether or not to reuse an existing Dart isolate
-   */
-  private void runFlutterView(@Nullable String initialRoute, @NonNull String appBundlePath, boolean reuseIsolate) {
-    if (initialRoute != null) {
-      flutterView.setInitialRoute(initialRoute);
+    if (BuildConfig.DEBUG && flutterView.getFlutterNativeView().isApplicationRunning()) {
+      throw new RuntimeException("Tried to initialize Dart execution in Flutter engine that is already running.");
     }
-    // TODO: what does it really mean for this condition to be false? is that ok? should we log?
-    if (!flutterView.getFlutterNativeView().isApplicationRunning()) {
-      flutterView.runFromBundle(appBundlePath, null, "main", reuseIsolate);
+
+    if (getInitialRoute() != null) {
+      flutterView.setInitialRoute(getInitialRoute());
     }
+    flutterView.runFromBundle(getAppBundlePath(), null, "main", false);
   }
 
   @Nullable
@@ -457,7 +433,7 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
    *
    * @return true if this FlutterFragment's Flutter isolate should be retained after destruction, false otherwise
    */
-  protected boolean retainFlutterIsolate() {
+  protected boolean retainFlutterIsolateAfterFragmentDestruction() {
     return false;
   }
 
