@@ -72,7 +72,7 @@ static bool IsSoftwareRendererConfigValid(const FlutterRendererConfig* config) {
 }
 
 static bool IsRendererValid(const FlutterRendererConfig* config) {
-  if (config == nullptr || config->type != kOpenGL) {
+  if (config == nullptr) {
     return false;
   }
 
