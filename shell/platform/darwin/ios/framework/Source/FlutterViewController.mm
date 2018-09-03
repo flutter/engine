@@ -25,8 +25,8 @@ static double kTouchTrackerCheckInterval = 1.f;
 
 @interface FlutterViewController () <FlutterTextInputDelegate>
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
-@property(nonatomic,retain) NSMutableSet *touchTrackerSet;
-@property(nonatomic,retain) NSMutableDictionary<NSValue *,NSNumber *> *touchTrackerDict;
+@property(nonatomic, retain) NSMutableSet* touchTrackerSet;
+@property(nonatomic, retain) NSMutableDictionary<NSValue*, NSNumber*>* touchTrackerDict;
 
 @end
 
@@ -74,7 +74,7 @@ static double kTouchTrackerCheckInterval = 1.f;
       _dartProject.reset([[FlutterDartProject alloc] init]);
     else
       _dartProject.reset([projectOrNil retain]);
-    
+
     _touchTrackerSet = [[NSMutableSet set] retain];
     _touchTrackerDict = [[NSMutableDictionary dictionary] retain];
 
@@ -558,7 +558,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   return blink::PointerData::DeviceKind::kTouch;
 }
 
-- (void)dispatchTouches:(NSSet*)touches phase:(UITouchPhase)phase trackTouches:(BOOL)bTrack{
+- (void)dispatchTouches:(NSSet*)touches phase:(UITouchPhase)phase trackTouches:(BOOL)bTrack {
   // Note: we cannot rely on touch.phase, since in some cases, e.g.,
   // handleStatusBarTouches, we synthesize touches from existing events.
   //
@@ -572,37 +572,37 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   int i = 0;
   for (UITouch* touch in touches) {
     int device_id = 0;
-    NSValue *key = [NSValue valueWithPointer:(void*)touch];
-      
+    NSValue* key = [NSValue valueWithPointer:(void*)touch];
+
     switch (eventTypePhase.second) {
-      case Accessed:{
+      case Accessed: {
         device_id = _touchMapper.identifierOf(touch);
-        if(bTrack){
-            [self.touchTrackerSet addObject:touch];
-            self.touchTrackerDict[key]=@(tsNow+kTouchTrackerCheckInterval);
+        if (bTrack) {
+          [self.touchTrackerSet addObject:touch];
+          self.touchTrackerDict[key] = @(tsNow + kTouchTrackerCheckInterval);
         }
         break;
       }
-      case Added:{
+      case Added: {
         device_id = _touchMapper.registerTouch(touch);
-        if(bTrack){
-            [self.touchTrackerSet addObject:touch];
-            self.touchTrackerDict[key]=@(tsNow+kTouchTrackerCheckInterval);
+        if (bTrack) {
+          [self.touchTrackerSet addObject:touch];
+          self.touchTrackerDict[key] = @(tsNow + kTouchTrackerCheckInterval);
         }
         break;
       }
-      case Removed:{
+      case Removed: {
         device_id = _touchMapper.unregisterTouch(touch);
-        if(bTrack){
-            [self.touchTrackerDict removeObjectForKey:key];
-            [self.touchTrackerSet removeObject:touch];
+        if (bTrack) {
+          [self.touchTrackerDict removeObjectForKey:key];
+          [self.touchTrackerSet removeObject:touch];
         }
         break;
       }
     }
-    
-    if(device_id == 0){
-        continue;
+
+    if (device_id == 0) {
+      continue;
     }
 
     FML_DCHECK(device_id != 0);
@@ -704,28 +704,28 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   [self dispatchTouches:touches phase:UITouchPhaseCancelled trackTouches:TRUE];
 }
 
-- (BOOL)checkIfCompleteTouches{
-    NSInteger cnt = self.touchTrackerSet.count;
-    if(cnt<=0)
-        return FALSE;
-    NSTimeInterval tsNow = [[NSDate date] timeIntervalSinceReferenceDate];
-    NSSet *tmpTrackingTouches = [self.touchTrackerSet copy];
-    NSMutableSet *set = [NSMutableSet set];
-    for(UITouch *touch in tmpTrackingTouches){
-        NSValue *key = [NSValue valueWithPointer:(void*)touch];
-        NSNumber *expiredTime = [self.touchTrackerDict objectForKey:key];
-        if(expiredTime.doubleValue<=tsNow){
-            [set addObject:touch];
-            [self.touchTrackerDict removeObjectForKey:key];
-            [self.touchTrackerSet removeObject:touch];
-        }
-    }
-    if(set.count>0){
-        [self dispatchTouches:set phase:UITouchPhaseBegan trackTouches:FALSE];
-        [self dispatchTouches:set phase:UITouchPhaseCancelled trackTouches:FALSE];
-        return TRUE;
-    }
+- (BOOL)checkIfCompleteTouches {
+  NSInteger cnt = self.touchTrackerSet.count;
+  if (cnt <= 0)
     return FALSE;
+  NSTimeInterval tsNow = [[NSDate date] timeIntervalSinceReferenceDate];
+  NSSet* tmpTrackingTouches = [self.touchTrackerSet copy];
+  NSMutableSet* set = [NSMutableSet set];
+  for (UITouch* touch in tmpTrackingTouches) {
+    NSValue* key = [NSValue valueWithPointer:(void*)touch];
+    NSNumber* expiredTime = [self.touchTrackerDict objectForKey:key];
+    if (expiredTime.doubleValue <= tsNow) {
+      [set addObject:touch];
+      [self.touchTrackerDict removeObjectForKey:key];
+      [self.touchTrackerSet removeObject:touch];
+    }
+  }
+  if (set.count > 0) {
+    [self dispatchTouches:set phase:UITouchPhaseBegan trackTouches:FALSE];
+    [self dispatchTouches:set phase:UITouchPhaseCancelled trackTouches:FALSE];
+    return TRUE;
+  }
+  return FALSE;
 }
 
 #pragma mark - Handle view resizing

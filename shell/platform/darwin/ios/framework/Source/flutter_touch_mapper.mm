@@ -11,8 +11,8 @@ TouchMapper::TouchMapper() : free_spots_(~0) {}
 TouchMapper::~TouchMapper() = default;
 
 int TouchMapper::registerTouch(UITouch* touch) {
-  if(touch_map_.find(touch) != touch_map_.end()){
-      return 0;
+  if (touch_map_.find(touch) != touch_map_.end()) {
+    return 0;
   }
   int freeSpot = ffsll(free_spots_);
   touch_map_[touch] = freeSpot;
@@ -21,8 +21,8 @@ int TouchMapper::registerTouch(UITouch* touch) {
 }
 
 int TouchMapper::unregisterTouch(UITouch* touch) {
-  if(touch_map_.find(touch) == touch_map_.end()){
-      return 0;
+  if (touch_map_.find(touch) == touch_map_.end()) {
+    return 0;
   }
   auto index = touch_map_[touch];
   free_spots_ |= 1 << (index - 1);
@@ -31,8 +31,8 @@ int TouchMapper::unregisterTouch(UITouch* touch) {
 }
 
 int TouchMapper::identifierOf(UITouch* touch) const {
-  if(touch_map_.find(touch) == touch_map_.end()){
-      return 0;
+  if (touch_map_.find(touch) == touch_map_.end()) {
+    return 0;
   }
   return touch_map_.at(touch);
 }
