@@ -26,8 +26,8 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import io.flutter.app.BuildConfig;
-import io.flutter.embedding.legacy.PluginRegistry;
 import io.flutter.embedding.legacy.FlutterNativeView;
+import io.flutter.embedding.legacy.FlutterPluginRegistry;
 
 /**
  * {@code Fragment} which displays a {@link FlutterView} that takes up all available space.
@@ -60,7 +60,7 @@ import io.flutter.embedding.legacy.FlutterNativeView;
  */
 @SuppressWarnings("WeakerAccess")
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
-public class FlutterFragment extends Fragment implements PluginRegistry {
+public class FlutterFragment extends Fragment {
   private static final String TAG = "FlutterFragment";
 
   private static final String ARG_IS_SPLASH_SCREEN_DESIRED = "show_splash_screen";
@@ -84,6 +84,7 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     return frag;
   }
 
+  private FlutterEngine flutterEngine;
   private FrameLayout container;
   private FlutterView flutterView;
   private View launchView;
@@ -131,7 +132,7 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     super.onDestroy();
 
     // TODO(mattcarroll): re-evaluate how Flutter plugins interact with FlutterView and FlutterNativeView
-    final boolean detach = flutterView.getPluginRegistry().onViewDestroy(
+    final boolean detach = flutterEngine.getPluginRegistry().onViewDestroy(
       flutterView.getFlutterNativeView()
     );
     if (detach || retainFlutterIsolateAfterFragmentDestruction()) {
@@ -234,7 +235,8 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
   @NonNull
   protected FlutterView createFlutterView(@NonNull Activity activity) {
     FlutterNativeView nativeView = createFlutterNativeView(activity);
-    return new FlutterView(activity, null, nativeView);
+    flutterEngine = new FlutterEngine(nativeView, new FlutterPluginRegistry(nativeView, getContextCompat()));
+    return new FlutterView(activity, null, nativeView, flutterEngine);
   }
 
   /**
@@ -392,24 +394,6 @@ public class FlutterFragment extends Fragment implements PluginRegistry {
     // parameter @NonNull.
     //noinspection ConstantConditions
     return getArguments().getString(ARG_APP_BUNDLE_PATH);
-  }
-
-  @Override
-  public final boolean hasPlugin(@NonNull String key) {
-    return flutterView.getPluginRegistry().hasPlugin(key);
-  }
-
-  @Override
-  @Nullable
-  @SuppressWarnings("unchecked")
-  public <T> T valuePublishedByPlugin(@NonNull String pluginKey) {
-    return (T) flutterView.getPluginRegistry().valuePublishedByPlugin(pluginKey);
-  }
-
-  @Override
-  @NonNull
-  public PluginRegistry.Registrar registrarFor(@NonNull String pluginKey) {
-    return flutterView.getPluginRegistry().registrarFor(pluginKey);
   }
 
   /**
