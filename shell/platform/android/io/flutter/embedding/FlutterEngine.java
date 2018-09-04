@@ -13,11 +13,17 @@ import java.nio.ByteBuffer;
 
 public class FlutterEngine implements BinaryMessenger {
   private FlutterNativeView nativeView;
+  private FlutterRenderer renderer;
   private FlutterPluginRegistry pluginRegistry;
 
   FlutterEngine(@NonNull FlutterNativeView nativeView, @NonNull FlutterPluginRegistry pluginRegistry) {
     this.nativeView = nativeView;
+    this.renderer = new FlutterRenderer();
     this.pluginRegistry = pluginRegistry;
+  }
+
+  public FlutterRenderer getRenderer() {
+    return renderer;
   }
 
   //------- START PLUGINS ------
