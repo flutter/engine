@@ -58,8 +58,6 @@ public class FlutterView extends SurfaceView implements
 
   private static final String TAG = "FlutterView";
 
-  private static final String ACTION_DISCOVER = "io.flutter.view.DISCOVER";
-
   // Must match the PointerChange enum in pointer.dart.
   private static final int kPointerChangeCancel = 0;
   private static final int kPointerChangeAdd = 1;
@@ -101,7 +99,6 @@ public class FlutterView extends SurfaceView implements
   private final BasicMessageChannel<String> mFlutterLifecycleChannel;
   private final BasicMessageChannel<Object> mFlutterSystemChannel;
   private final BasicMessageChannel<Object> mFlutterSettingsChannel;
-  private final BroadcastReceiver mDiscoveryReceiver;
   private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
   private final List<FirstFrameListener> mFirstFrameListeners;
   private final AtomicLong nextTextureId = new AtomicLong(0L);
@@ -198,34 +195,6 @@ public class FlutterView extends SurfaceView implements
 
     setLocale(getResources().getConfiguration().locale);
     setUserSettings();
-
-    if ((context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
-      mDiscoveryReceiver = new DiscoveryReceiver();
-      context.registerReceiver(mDiscoveryReceiver, new IntentFilter(ACTION_DISCOVER));
-    } else {
-      mDiscoveryReceiver = null;
-    }
-  }
-
-  /**
-   * Broadcast receiver used to discover active Flutter instances.
-   *
-   * This is used by the `flutter` tool to find the observatory ports for all the
-   * active Flutter views. We dump the data to the logs and the tool scrapes the
-   * log lines for the data.
-   */
-  private class DiscoveryReceiver extends BroadcastReceiver {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      URI observatoryUri = URI.create(FlutterNativeView.getObservatoryUri());
-      JSONObject discover = new JSONObject();
-      try {
-        discover.put("id", getContext().getPackageName());
-        discover.put("observatoryPort", observatoryUri.getPort());
-        Log.i(TAG, "DISCOVER: " + discover); // The tool looks for this data. See android_device.dart.
-      } catch (JSONException e) {
-      }
-    }
   }
 
   public void addActivityLifecycleListener(ActivityLifecycleListener listener) {
@@ -621,6 +590,10 @@ public class FlutterView extends SurfaceView implements
   }
   //----- END KEYEVENT.CALLBACK -----
 
+  public FlutterEngine getFlutterEngine() {
+    return flutterEngine;
+  }
+
   //----- START METHODS INVOKED BY FRAGMENT -----
   public FlutterNativeView getFlutterNativeView() {
     return mNativeView;
@@ -655,9 +628,6 @@ public class FlutterView extends SurfaceView implements
   public FlutterNativeView detach() {
     if (!isFlutterEngineAttached())
       return null;
-    if (mDiscoveryReceiver != null) {
-      getContext().unregisterReceiver(mDiscoveryReceiver);
-    }
     getHolder().removeCallback(mSurfaceCallback);
     mNativeView.detach();
 
@@ -669,10 +639,6 @@ public class FlutterView extends SurfaceView implements
   public void destroy() {
     if (!isFlutterEngineAttached())
       return;
-
-    if (mDiscoveryReceiver != null) {
-      getContext().unregisterReceiver(mDiscoveryReceiver);
-    }
 
     getHolder().removeCallback(mSurfaceCallback);
 
