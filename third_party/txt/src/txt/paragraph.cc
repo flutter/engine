@@ -417,7 +417,7 @@ void Paragraph::Layout(double width, bool force) {
   }
   needs_layout_ = false;
 
-  width_ = width;
+  width_ = floor(width);
 
   if (!ComputeLineBreaks())
     return;
@@ -434,6 +434,7 @@ void Paragraph::Layout(double width, bool force) {
 
   records_.clear();
   line_heights_.clear();
+  line_baselines_.clear();
   glyph_lines_.clear();
   code_unit_runs_.clear();
 
@@ -870,6 +871,9 @@ Paragraph::GetMinikinFontCollectionForStyle(const TextStyle& style) {
 sk_sp<SkTypeface> Paragraph::GetDefaultSkiaTypeface(const TextStyle& style) {
   std::shared_ptr<minikin::FontCollection> collection =
       GetMinikinFontCollectionForStyle(style);
+  if (!collection) {
+    return nullptr;
+  }
   minikin::FakedFont faked_font =
       collection->baseFontFaked(GetMinikinFontStyle(style));
   return static_cast<FontSkia*>(faked_font.font)->GetSkTypeface();

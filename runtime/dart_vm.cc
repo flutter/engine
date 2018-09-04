@@ -14,6 +14,7 @@
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/mapping.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
@@ -155,14 +156,13 @@ Dart_Handle GetVMServiceAssetsArchiveCallback() {
     (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE)
   return nullptr;
 #elif OS_FUCHSIA
-  std::vector<uint8_t> observatory_assets_archive;
-  if (!files::ReadFileToVector("pkg/data/observatory.tar",
-                               &observatory_assets_archive)) {
+  fml::FileMapping mapping("pkg/data/observatory.tar", false /* executable */);
+  if (mapping.GetSize() == 0 || mapping.GetMapping() == nullptr) {
     FML_LOG(ERROR) << "Fail to load Observatory archive";
     return nullptr;
   }
-  return tonic::DartConverter<tonic::Uint8List>::ToDart(
-      observatory_assets_archive.data(), observatory_assets_archive.size());
+  return tonic::DartConverter<tonic::Uint8List>::ToDart(mapping.GetMapping(),
+                                                        mapping.GetSize());
 #else
   return tonic::DartConverter<tonic::Uint8List>::ToDart(
       ::dart::observatory::observatory_assets_archive,
@@ -194,6 +194,26 @@ static void ServiceStreamCancelCallback(const char* stream_id) {
 
 bool DartVM::IsRunningPrecompiledCode() {
   return Dart_IsPrecompiledRuntime();
+}
+
+bool DartVM::IsKernelMapping(const fml::FileMapping* mapping) {
+  if (mapping == nullptr) {
+    return false;
+  }
+
+  const uint8_t kKernelHeaderMagic[] = {0x90, 0xAB, 0xCD, 0xEF};
+  const size_t kKernelHeaderMagicSize = sizeof(kKernelHeaderMagic);
+
+  if (mapping->GetSize() < kKernelHeaderMagicSize) {
+    return false;
+  }
+
+  if (memcmp(kKernelHeaderMagic, mapping->GetMapping(),
+             kKernelHeaderMagicSize) != 0) {
+    return false;
+  }
+
+  return true;
 }
 
 static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
@@ -237,6 +257,7 @@ fml::RefPtr<DartVM> DartVM::ForProcess(Settings settings) {
 }
 
 static std::once_flag gVMInitialization;
+static std::mutex gVMMutex;
 static fml::RefPtr<DartVM> gVM;
 
 fml::RefPtr<DartVM> DartVM::ForProcess(
@@ -244,6 +265,7 @@ fml::RefPtr<DartVM> DartVM::ForProcess(
     fml::RefPtr<DartSnapshot> vm_snapshot,
     fml::RefPtr<DartSnapshot> isolate_snapshot,
     fml::RefPtr<DartSnapshot> shared_snapshot) {
+  std::lock_guard<std::mutex> lock(gVMMutex);
   std::call_once(gVMInitialization, [settings,          //
                                      vm_snapshot,       //
                                      isolate_snapshot,  //
@@ -276,6 +298,7 @@ fml::RefPtr<DartVM> DartVM::ForProcess(
 }
 
 fml::RefPtr<DartVM> DartVM::ForProcessIfInitialized() {
+  std::lock_guard<std::mutex> lock(gVMMutex);
   return gVM;
 }
 

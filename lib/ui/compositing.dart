@@ -77,7 +77,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
                      double right,
                      double top,
                      double bottom,
-                     int clipMode) native 'SceneBuilder_pushClipRect';
+                     int clipBehavior) native 'SceneBuilder_pushClipRect';
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
   ///
@@ -90,7 +90,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(clipBehavior != Clip.none);
     _pushClipRRect(rrect._value, clipBehavior.index);
   }
-  void _pushClipRRect(Float32List rrect, int clipMode) native 'SceneBuilder_pushClipRRect';
+  void _pushClipRRect(Float32List rrect, int clipBehavior) native 'SceneBuilder_pushClipRRect';
 
   /// Pushes a path clip operation onto the operation stack.
   ///
@@ -103,7 +103,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(clipBehavior != Clip.none);
     _pushClipPath(path, clipBehavior.index);
   }
-  void _pushClipPath(Path path, int clipMode) native 'SceneBuilder_pushClipPath';
+  void _pushClipPath(Path path, int clipBehavior) native 'SceneBuilder_pushClipPath';
 
   /// Pushes an opacity operation onto the operation stack.
   ///
@@ -171,7 +171,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   void pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clipBehavior = defaultClipBehavior}) {
     _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipBehavior.index);
   }
-  void _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipMode) native
+  void _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipBehavior) native
     'SceneBuilder_pushPhysicalShape';
 
   /// Ends the effect of the most recently pushed operation.
@@ -235,11 +235,19 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Adds a backend texture to the scene.
   ///
   /// The texture is scaled to the given size and rasterized at the given offset.
-  void addTexture(int textureId, { Offset offset: Offset.zero, double width: 0.0, double height: 0.0 }) {
+  ///
+  /// If `freeze` is true the texture that is added to the scene will not
+  /// be updated with new frames. `freeze` is used when resizing an embedded
+  /// Android view: When resizing an Android view there is a short period during
+  /// which the framework cannot tell if the newest texture frame has the
+  /// previous or new size, to workaround this the framework "freezes" the
+  /// texture just before resizing the Android view and unfreezes it when it is
+  /// certain that a frame with the new size is ready.
+  void addTexture(int textureId, { Offset offset: Offset.zero, double width: 0.0, double height: 0.0 , bool freeze: false}) {
     assert(offset != null, 'Offset argument was null');
-    _addTexture(offset.dx, offset.dy, width, height, textureId);
+    _addTexture(offset.dx, offset.dy, width, height, textureId, freeze);
   }
-  void _addTexture(double dx, double dy, double width, double height, int textureId) native 'SceneBuilder_addTexture';
+  void _addTexture(double dx, double dy, double width, double height, int textureId, bool freeze) native 'SceneBuilder_addTexture';
 
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.

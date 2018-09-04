@@ -32,6 +32,8 @@ source_set("fml") {
     "memory/weak_ptr.h",
     "memory/weak_ptr_internal.cc",
     "memory/weak_ptr_internal.h",
+    "message.cc",
+    "message.h",
     "message_loop.cc",
     "message_loop.h",
     "message_loop_impl.cc",
@@ -59,6 +61,8 @@ source_set("fml") {
     "unique_fd.h",
     "unique_object.h",
   ]
+
+  public_deps = []
 
   deps = [
     "//third_party/dart/runtime:dart_api",
@@ -129,6 +133,8 @@ source_set("fml") {
 
   if (is_fuchsia) {
     sources += [ "platform/fuchsia/paths_fuchsia.cc" ]
+
+    public_deps += [ "//zircon/public/lib/trace-provider" ]
   }
 
   if (is_win) {
@@ -159,6 +165,7 @@ executable("fml_unittests") {
     "memory/ref_counted_unittest.cc",
     "memory/weak_ptr_unittest.cc",
     "message_loop_unittests.cc",
+    "message_unittests.cc",
     "string_view_unittest.cc",
     "synchronization/thread_annotations_unittest.cc",
     "synchronization/thread_checker_unittest.cc",

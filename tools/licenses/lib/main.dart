@@ -12,11 +12,11 @@ import 'dart:math' as math;
 
 import 'package:args/args.dart';
 import 'package:crypto/crypto.dart' as crypto;
+import 'package:licenses/patterns.dart';
 import 'package:path/path.dart' as path;
 
 import 'filesystem.dart' as fs;
 import 'licenses.dart';
-import 'patterns.dart';
 
 
 // REPOSITORY OBJECTS
@@ -54,7 +54,7 @@ abstract class RepositoryLicensedFile extends RepositoryFile {
   static final RegExp _readmeNamePattern = new RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
   static final RegExp _buildTimePattern = new RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties)$', caseSensitive: false);
   static final RegExp _docsPattern = new RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|.+\.spec(?:\.in)?)$', caseSensitive: false);
-  static final RegExp _devPattern = new RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml)$', caseSensitive: false);
+  static final RegExp _devPattern = new RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml)$', caseSensitive: false);
   static final RegExp _testsPattern = new RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
 
   bool get isIncludedInBuildProducts {
@@ -520,9 +520,11 @@ class RepositoryFreetypeLicenseFile extends RepositoryLicenseFile {
     r"    GPL\.  Note  that the  FTL is  incompatible  with  GPLv2 due  to  its\n"
     r"    advertisement clause\.\n"
     r"\n"
-    r"The contributed BDF and PCF drivers come with a license similar  to that\n"
+    r"The contributed BDF and PCF drivers  come with a license similar to that\n"
     r"of the X Window System\.  It is compatible to the above two licenses \(see\n"
-    r"file src/bdf/README and src/pcf/README\)\.\n"
+    r"file src/bdf/README and  src/pcf/README\)\.  The same holds  for the files\n"
+    r"`fthash\.c' and  `fthash\.h'; their  code was  part of  the BDF  driver in\n"
+    r"earlier FreeType versions\.\n"
     r"\n"
     r"The gzip module uses the zlib license \(see src/gzip/zlib\.h\) which too is\n"
     r"compatible to the above two licenses\.\n"
@@ -615,7 +617,7 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
     r' #  ---------COPYING\.libtabe ---- BEGIN--------------------\n'
     r' #\n'
     r' # +/\*\n'
-    r'( # +\* Copyrighy (?:.|\n)+?)\n' // yeah, that's a typo in the license. // 4
+    r'( # +\* Copyright (?:.|\n)+?)\n' // 4
     r' # +\*/\n'
     r' #\n'
     r' # +/\*\n'
@@ -642,7 +644,11 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
     r'( # +Copyright(?:.|\n)+?)\n' // 9
     r'\n'
     r' *5\. Time Zone Database\n'
-    r'((?:.|\n)+)$',
+    r'((?:.|\n)+)\n' // 10
+    r'\n'
+    r' *6\. Google double-conversion\n'
+    r'\n'
+    r'(Copyright(?:.|\n)+)\n$', // 11
     multiLine: true,
     caseSensitive: false
   );
@@ -664,8 +670,8 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
     final Match match = _pattern.firstMatch(io.readString());
     if (match == null)
       throw 'could not parse ICU license file';
-    assert(match.groupCount == 10);
-    if (match.group(10).contains(copyrightMentionPattern))
+    assert(match.groupCount == 11);
+    if (match.group(10).contains(copyrightMentionPattern) || match.group(11).contains('7.'))
       throw 'unexpected copyright in ICU license file';
     final List<License> result = <License>[
       new License.fromBodyAndType(_dewrap(match.group(1)), LicenseType.unknown, origin: io.fullName),
@@ -677,6 +683,7 @@ class RepositoryIcuLicenseFile extends RepositoryLicenseFile {
       new License.fromBodyAndType(_dewrap(match.group(7)), LicenseType.unknown, origin: io.fullName),
       new License.fromBodyAndType(_dewrap(match.group(8)), LicenseType.bsd, origin: io.fullName),
       new License.fromBodyAndType(_dewrap(match.group(9)), LicenseType.bsd, origin: io.fullName),
+      new License.fromBodyAndType(_dewrap(match.group(11)), LicenseType.bsd, origin: io.fullName),
     ];
     return result;
   }
@@ -736,33 +743,33 @@ class RepositoryMultiLicenseNoticesForFilesFile extends RepositoryLicenseFile {
     // "Notices for files contained in the"
     // ...then have a second line which is 60 "=" characters
     final List<List<int>> contents = splitIntList(io.readBytes(), 0x0A).toList();
-    if (!ASCII.decode(contents[0]).startsWith('Notices for files contained in') ||
-        ASCII.decode(contents[1]) != '============================================================\n')
+    if (!ascii.decode(contents[0]).startsWith('Notices for files contained in') ||
+        ascii.decode(contents[1]) != '============================================================\n')
       throw 'unrecognised syntax: ${io.fullName}';
     int index = 2;
     while (index < contents.length) {
-      if (ASCII.decode(contents[index]) != 'Notices for file(s):\n')
+      if (ascii.decode(contents[index]) != 'Notices for file(s):\n')
         throw 'unrecognised syntax on line ${index + 1}: ${io.fullName}';
       index += 1;
       final List<String> names = <String>[];
       do {
-        names.add(ASCII.decode(contents[index]));
+        names.add(ascii.decode(contents[index]));
         index += 1;
-      } while (ASCII.decode(contents[index]) != '------------------------------------------------------------\n');
+      } while (ascii.decode(contents[index]) != '------------------------------------------------------------\n');
       index += 1;
       final List<List<int>> body = <List<int>>[];
       do {
         body.add(contents[index]);
         index += 1;
       } while (index < contents.length &&
-               ASCII.decode(contents[index], allowInvalid: true) != '============================================================\n');
+          ascii.decode(contents[index], allowInvalid: true) != '============================================================\n');
       index += 1;
       final List<int> bodyBytes = body.expand((List<int> line) => line).toList();
       String bodyText;
       try {
-        bodyText = UTF8.decode(bodyBytes);
+        bodyText = utf8.decode(bodyBytes);
       } on FormatException {
-        bodyText = LATIN1.decode(bodyBytes);
+        bodyText = latin1.decode(bodyBytes);
       }
       License license = new License.unique(bodyText, LicenseType.unknown, origin: io.fullName);
       for (String name in names) {
@@ -1716,6 +1723,16 @@ class RepositoryIcuDirectory extends RepositoryDirectory {
   }
 }
 
+class RepositoryHarfbuzzDirectory extends RepositoryDirectory {
+  RepositoryHarfbuzzDirectory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'util' // utils are command line tools that do not end up in the binary
+        && super.shouldRecurse(entry);
+  }
+}
+
 class RepositoryJSR305Directory extends RepositoryDirectory {
   RepositoryJSR305Directory(RepositoryDirectory parent, fs.Directory io) : super(parent, io);
 
@@ -1942,6 +1959,8 @@ class RepositoryRootThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
       throw '//third_party/freetype-android is no longer part of this client: remove it';
     if (entry.name == 'freetype2')
       return new RepositoryFreetypeDirectory(this, entry);
+    if (entry.name == 'harfbuzz')
+      return new RepositoryHarfbuzzDirectory(this, entry);
     if (entry.name == 'icu')
       return new RepositoryIcuDirectory(this, entry);
     if (entry.name == 'jsr-305')
@@ -2194,7 +2213,7 @@ class RepositoryFlutterDirectory extends RepositoryDirectory {
         && entry.name != 'docs'
         && entry.name != 'examples'
         && entry.name != 'build'
-        && entry.name != 'travis'
+        && entry.name != 'ci'
         && entry.name != 'frontend_server'
         && super.shouldRecurse(entry);
   }
@@ -2545,7 +2564,7 @@ Future<Null> main(List<String> arguments) async {
           system.File goldenFile = new system.File(
               path.join(argResults['golden'], 'licenses_${component.io.name}'));
           String goldenSignature = await goldenFile.openRead()
-              .transform(UTF8.decoder).transform(new LineSplitter()).first;
+              .transform(utf8.decoder).transform(new LineSplitter()).first;
           Match goldenMatch = signaturePattern.matchAsPrefix(goldenSignature);
           if (goldenMatch != null && goldenMatch.group(1) == signature) {
             system.stderr.writeln('    Skipping this component - no change in signature');

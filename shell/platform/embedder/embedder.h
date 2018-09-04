@@ -27,12 +27,39 @@ typedef enum {
 
 typedef enum {
   kOpenGL,
+  kSoftware,
 } FlutterRendererType;
 
 typedef struct _FlutterEngine* FlutterEngine;
 
+typedef struct {
+  //   horizontal scale factor
+  double scaleX;
+  //    horizontal skew factor
+  double skewX;
+  //   horizontal translation
+  double transX;
+  //    vertical skew factor
+  double skewY;
+  //   vertical scale factor
+  double scaleY;
+  //   vertical translation
+  double transY;
+  //    input x-axis perspective factor
+  double pers0;
+  //    input y-axis perspective factor
+  double pers1;
+  //    perspective scale factor
+  double pers2;
+} FlutterTransformation;
+
 typedef bool (*BoolCallback)(void* /* user data */);
+typedef FlutterTransformation (*TransformationCallback)(void* /* user data */);
 typedef uint32_t (*UIntCallback)(void* /* user data */);
+typedef bool (*SoftwareSurfacePresentCallback)(void* /* user data */,
+                                               const void* /* allocation */,
+                                               size_t /* row bytes */,
+                                               size_t /* height */);
 
 typedef struct {
   // The size of this struct. Must be sizeof(FlutterOpenGLRendererConfig).
@@ -42,12 +69,31 @@ typedef struct {
   BoolCallback present;
   UIntCallback fbo_callback;
   BoolCallback make_resource_current;
+  // By default, the renderer config assumes that the FBO does not change for
+  // the duration of the engine run. If this argument is true, the
+  // engine will ask the embedder for an updated FBO target (via an fbo_callback
+  // invocation) after a present call.
+  bool fbo_reset_after_present;
+  // The transformation to apply to the render target before any rendering
+  // operations. This callback is optional.
+  TransformationCallback surface_transformation;
 } FlutterOpenGLRendererConfig;
+
+typedef struct {
+  // The size of this struct. Must be sizeof(FlutterSoftwareRendererConfig).
+  size_t struct_size;
+  // The callback presented to the embedder to present a fully populated buffer
+  // to the user. The pixel format of the buffer is the native 32-bit RGBA
+  // format. The buffer is owned by the Flutter engine and must be copied in
+  // this callback if needed.
+  SoftwareSurfacePresentCallback surface_present_callback;
+} FlutterSoftwareRendererConfig;
 
 typedef struct {
   FlutterRendererType type;
   union {
     FlutterOpenGLRendererConfig open_gl;
+    FlutterSoftwareRendererConfig software;
   };
 } FlutterRendererConfig;
 

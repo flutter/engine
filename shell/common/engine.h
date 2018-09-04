@@ -32,13 +32,13 @@ class Engine final : public blink::RuntimeDelegate {
   class Delegate {
    public:
     virtual void OnEngineUpdateSemantics(
-        const Engine& engine,
         blink::SemanticsNodeUpdates update,
         blink::CustomAccessibilityActionUpdates actions) = 0;
 
     virtual void OnEngineHandlePlatformMessage(
-        const Engine& engine,
         fml::RefPtr<blink::PlatformMessage> message) = 0;
+
+    virtual void OnPreEngineRestart() = 0;
   };
 
   Engine(Delegate& delegate,
@@ -99,7 +99,7 @@ class Engine final : public blink::RuntimeDelegate {
 
   void SetSemanticsEnabled(bool enabled);
 
-  void SetAssistiveTechnologyEnabled(bool enabled);
+  void SetAccessibilityFeatures(int32_t flags);
 
   void ScheduleFrame(bool regenerate_layer_tree = true) override;
 

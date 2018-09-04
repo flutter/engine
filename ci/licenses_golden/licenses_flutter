@@ -187,10 +187,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: engine
 ORIGIN: ../../../LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../flutter/.cirrus.yml
 FILE: ../../../flutter/DEPS
-FILE: ../../../flutter/ci/docker/build/Dockerfile
-FILE: ../../../flutter/ci/docker/build/engine_gclient
 FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries.json
@@ -500,9 +497,12 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/Platfor
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleViewPresentation.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterCallbackInformation.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterRunArguments.java
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterCallbackCache.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.mm
@@ -579,6 +579,9 @@ TYPE: LicenseType.bsd
 FILE: ../../../flutter/fml/file.h
 FILE: ../../../flutter/fml/macros.h
 FILE: ../../../flutter/fml/mapping.cc
+FILE: ../../../flutter/fml/message.cc
+FILE: ../../../flutter/fml/message.h
+FILE: ../../../flutter/fml/message_unittests.cc
 FILE: ../../../flutter/fml/native_library.h
 FILE: ../../../flutter/fml/paths.cc
 FILE: ../../../flutter/fml/platform/fuchsia/paths_fuchsia.cc
@@ -606,6 +609,14 @@ FILE: ../../../flutter/shell/platform/android/platform_message_response_android.
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.mm
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_gl.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_gl.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_software.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_software.h
+FILE: ../../../flutter/shell/version/version.cc
+FILE: ../../../flutter/shell/version/version.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Flutter Authors. All rights reserved.
 

@@ -28,6 +28,7 @@
 #include "flutter/shell/common/vsync_waiter.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/skia/include/core/SkGraphics.h"
+#include "third_party/tonic/common/log.h"
 
 #ifdef ERROR
 #undef ERROR
@@ -176,6 +177,9 @@ static void PerformInitializationTasks(const blink::Settings& settings) {
       fml::SetLogSettings(log_settings);
     }
 
+    tonic::SetLogHandler(
+        [](const char* message) { FML_LOG(ERROR) << message; });
+
     if (settings.trace_skia) {
       InitSkiaEventTracer(settings.trace_skia);
     }
@@ -314,11 +318,15 @@ Shell::~Shell() {
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetIOTaskRunner(),
-      fml::MakeCopyable(
-          [io_manager = std::move(io_manager_), &io_latch]() mutable {
-            io_manager.reset();
-            io_latch.Signal();
-          }));
+      fml::MakeCopyable([io_manager = std::move(io_manager_),
+                         platform_view = platform_view_.get(),
+                         &io_latch]() mutable {
+        io_manager.reset();
+        if (platform_view) {
+          platform_view->ReleaseResourceContext();
+        }
+        io_latch.Signal();
+      }));
 
   io_latch.Wait();
 
@@ -393,10 +401,8 @@ blink::DartVM& Shell::GetDartVM() const {
 }
 
 // |shell::PlatformView::Delegate|
-void Shell::OnPlatformViewCreated(const PlatformView& view,
-                                  std::unique_ptr<Surface> surface) {
+void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   // Note:
@@ -435,9 +441,8 @@ void Shell::OnPlatformViewCreated(const PlatformView& view,
 }
 
 // |shell::PlatformView::Delegate|
-void Shell::OnPlatformViewDestroyed(const PlatformView& view) {
+void Shell::OnPlatformViewDestroyed() {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   // Note:
@@ -485,10 +490,8 @@ void Shell::OnPlatformViewDestroyed(const PlatformView& view) {
 
 // |shell::PlatformView::Delegate|
 void Shell::OnPlatformViewSetViewportMetrics(
-    const PlatformView& view,
     const blink::ViewportMetrics& metrics) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
@@ -501,10 +504,8 @@ void Shell::OnPlatformViewSetViewportMetrics(
 
 // |shell::PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchPlatformMessage(
-    const PlatformView& view,
     fml::RefPtr<blink::PlatformMessage> message) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
@@ -517,10 +518,8 @@ void Shell::OnPlatformViewDispatchPlatformMessage(
 
 // |shell::PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchPointerDataPacket(
-    const PlatformView& view,
     std::unique_ptr<blink::PointerDataPacket> packet) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
       [engine = engine_->GetWeakPtr(), packet = std::move(packet)] {
@@ -531,12 +530,10 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
 }
 
 // |shell::PlatformView::Delegate|
-void Shell::OnPlatformViewDispatchSemanticsAction(const PlatformView& view,
-                                                  int32_t id,
+void Shell::OnPlatformViewDispatchSemanticsAction(int32_t id,
                                                   blink::SemanticsAction action,
                                                   std::vector<uint8_t> args) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
@@ -548,10 +545,8 @@ void Shell::OnPlatformViewDispatchSemanticsAction(const PlatformView& view,
 }
 
 // |shell::PlatformView::Delegate|
-void Shell::OnPlatformViewSetSemanticsEnabled(const PlatformView& view,
-                                              bool enabled) {
+void Shell::OnPlatformViewSetSemanticsEnabled(bool enabled) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
@@ -562,27 +557,23 @@ void Shell::OnPlatformViewSetSemanticsEnabled(const PlatformView& view,
       });
 }
 
-void Shell::OnPlatformViewSetAssistiveTechnologyEnabled(
-    const PlatformView& view,
-    bool enabled) {
+// |shell::PlatformView::Delegate|
+void Shell::OnPlatformViewSetAccessibilityFeatures(int32_t flags) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [engine = engine_->GetWeakPtr(), enabled] {
+      [engine = engine_->GetWeakPtr(), flags] {
         if (engine) {
-          engine->SetAssistiveTechnologyEnabled(enabled);
+          engine->SetAccessibilityFeatures(flags);
         }
       });
 }
 
 // |shell::PlatformView::Delegate|
 void Shell::OnPlatformViewRegisterTexture(
-    const PlatformView& view,
     std::shared_ptr<flow::Texture> texture) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetGPUTaskRunner()->PostTask(
@@ -596,10 +587,8 @@ void Shell::OnPlatformViewRegisterTexture(
 }
 
 // |shell::PlatformView::Delegate|
-void Shell::OnPlatformViewUnregisterTexture(const PlatformView& view,
-                                            int64_t texture_id) {
+void Shell::OnPlatformViewUnregisterTexture(int64_t texture_id) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetGPUTaskRunner()->PostTask(
@@ -613,10 +602,8 @@ void Shell::OnPlatformViewUnregisterTexture(const PlatformView& view,
 }
 
 // |shell::PlatformView::Delegate|
-void Shell::OnPlatformViewMarkTextureFrameAvailable(const PlatformView& view,
-                                                    int64_t texture_id) {
+void Shell::OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   // Tell the rasterizer that one of its textures has a new frame available.
@@ -646,10 +633,8 @@ void Shell::OnPlatformViewMarkTextureFrameAvailable(const PlatformView& view,
 }
 
 // |shell::PlatformView::Delegate|
-void Shell::OnPlatformViewSetNextFrameCallback(const PlatformView& view,
-                                               fml::closure closure) {
+void Shell::OnPlatformViewSetNextFrameCallback(fml::closure closure) {
   FML_DCHECK(is_setup_);
-  FML_DCHECK(&view == platform_view_.get());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetGPUTaskRunner()->PostTask(
@@ -661,8 +646,7 @@ void Shell::OnPlatformViewSetNextFrameCallback(const PlatformView& view,
 }
 
 // |shell::Animator::Delegate|
-void Shell::OnAnimatorBeginFrame(const Animator& animator,
-                                 fml::TimePoint frame_time) {
+void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_time) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
@@ -672,7 +656,7 @@ void Shell::OnAnimatorBeginFrame(const Animator& animator,
 }
 
 // |shell::Animator::Delegate|
-void Shell::OnAnimatorNotifyIdle(const Animator& animator, int64_t deadline) {
+void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
@@ -683,7 +667,6 @@ void Shell::OnAnimatorNotifyIdle(const Animator& animator, int64_t deadline) {
 
 // |shell::Animator::Delegate|
 void Shell::OnAnimatorDraw(
-    const Animator& animator,
     fml::RefPtr<flutter::Pipeline<flow::LayerTree>> pipeline) {
   FML_DCHECK(is_setup_);
 
@@ -697,7 +680,7 @@ void Shell::OnAnimatorDraw(
 }
 
 // |shell::Animator::Delegate|
-void Shell::OnAnimatorDrawLastLayerTree(const Animator& animator) {
+void Shell::OnAnimatorDrawLastLayerTree() {
   FML_DCHECK(is_setup_);
 
   task_runners_.GetGPUTaskRunner()->PostTask(
@@ -710,7 +693,6 @@ void Shell::OnAnimatorDrawLastLayerTree(const Animator& animator) {
 
 // |shell::Engine::Delegate|
 void Shell::OnEngineUpdateSemantics(
-    const Engine& engine,
     blink::SemanticsNodeUpdates update,
     blink::CustomAccessibilityActionUpdates actions) {
   FML_DCHECK(is_setup_);
@@ -727,7 +709,6 @@ void Shell::OnEngineUpdateSemantics(
 
 // |shell::Engine::Delegate|
 void Shell::OnEngineHandlePlatformMessage(
-    const Engine& engine,
     fml::RefPtr<blink::PlatformMessage> message) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
@@ -738,6 +719,25 @@ void Shell::OnEngineHandlePlatformMessage(
           view->HandlePlatformMessage(std::move(message));
         }
       });
+}
+
+// |shell::Engine::Delegate|
+void Shell::OnPreEngineRestart() {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetPlatformTaskRunner(),
+      [view = platform_view_->GetWeakPtr(), &latch]() {
+        if (view) {
+          view->OnPreEngineRestart();
+        }
+        latch.Signal();
+      });
+  // This is blocking as any embedded platform views has to be flushed before
+  // we re-run the Dart code.
+  latch.Wait();
 }
 
 // |blink::ServiceProtocol::Handler|
@@ -837,19 +837,6 @@ bool Shell::OnServiceProtocolScreenshotSKP(
   return false;
 }
 
-static bool FileNameIsDill(const std::string& name) {
-  const std::string suffix = ".dill";
-
-  if (name.size() < suffix.size()) {
-    return false;
-  }
-
-  if (name.rfind(suffix, name.size()) == name.size() - suffix.size()) {
-    return true;
-  }
-  return false;
-}
-
 // Service protocol handler
 bool Shell::OnServiceProtocolRunInView(
     const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
@@ -881,10 +868,13 @@ bool Shell::OnServiceProtocolRunInView(
   auto main_script_file =
       fml::paths::AbsolutePath(params.at("mainScript").ToString());
 
+  auto main_script_file_mapping =
+      std::make_unique<fml::FileMapping>(main_script_file, false);
+
   auto isolate_configuration =
-      FileNameIsDill(main_script_file)
+      blink::DartVM::IsKernelMapping(main_script_file_mapping.get())
           ? IsolateConfiguration::CreateForSnapshot(
-                std::make_unique<fml::FileMapping>(main_script_file, false))
+                std::move(main_script_file_mapping))
           : IsolateConfiguration::CreateForSource(
                 main_script_file, params.at("packagesFile").ToString());
 

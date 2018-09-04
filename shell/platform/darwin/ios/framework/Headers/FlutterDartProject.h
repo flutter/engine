@@ -21,7 +21,7 @@ FLUTTER_EXPORT
 - (instancetype)initWithFlutterAssetsWithScriptSnapshot:(NSURL*)flutterAssetsURL
     NS_DESIGNATED_INITIALIZER;
 
-- (instancetype)initFromDefaultSourceForConfiguration FLUTTER_DEPRECATED("Use -init instead.");
+- (instancetype)initFromDefaultSourceForConfiguration FLUTTER_UNAVAILABLE("Use -init instead.");
 
 /**
  Returns the file name for the given asset.
@@ -42,6 +42,12 @@ FLUTTER_EXPORT
  - Returns: the file name to be used for lookup in the main bundle.
  */
 + (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package;
+
+/**
+ Returns the default identifier for the bundle where we expect to find the Flutter Dart
+ application.
+ */
++ (NSString*)defaultBundleIdentifier;
 
 @end
 

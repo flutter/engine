@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '6cfa29738295cd1f11f2218cbbacd31cf0b7ce7f',
+  'skia_revision': '24e58341fbcd904fdf81d86e5a7703e254d63e35',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '08f59e5de360f53e370f4899144fe58f3bce5275',
+  'dart_revision': '760a9690c22ec3f3d163173737f9949f97e6e02a',
 
   'dart_args_tag': '1.4.4',
   'dart_async_tag': '2.0.8',
@@ -46,8 +46,8 @@ vars = {
   'dart_crypto_tag': '2.0.6',
   'dart_csslib_tag': '0.14.4+1',
   'dart_dart2js_info_tag': '0.5.6+4',
-  'dart_dart_style_tag': '1.1.3',
-  'dart_dartdoc_tag': 'v0.20.2',
+  'dart_dart_style_tag': '6f3efd209ff1828835936397b64be79265cc0c19',
+  'dart_dartdoc_tag': 'v0.20.4',
   'dart_fixnum_tag': '0.10.8',
   'dart_glob_tag': '1.1.7',
   'dart_html_tag': '0.13.3+2',
@@ -58,7 +58,7 @@ vars = {
   'dart_http_throttle_tag': '1.0.2',
   'dart_intl_tag': '0.15.6',
   'dart_json_rpc_2_tag': '2.0.9',
-  'dart_linter_tag': '0.1.58',
+  'dart_linter_tag': '0.1.60',
   'dart_logging_tag': '0.11.3+2',
   'dart_markdown_tag': '2.0.2',
   'dart_matcher_tag': '0.12.3',
@@ -73,9 +73,9 @@ vars = {
   'dart_plugin_tag': 'f5b4b0e32d1406d62daccea030ba6457d14b1c47',
   'dart_pool_tag': '1.3.6',
   'dart_protobuf_tag': '0.9.0',
-  'dart_pub_rev': '58fe996eab8d54f28f5109c407ff0ab62fbd835d',
+  'dart_pub_rev': '9f00679ef47bc79cadc18e143720ade6c06c0100',
   'dart_pub_semver_tag': '1.4.2',
-  'dart_quiver_tag': '0.29.0+2',
+  'dart_quiver_tag': '2.0.0+1',
   'dart_resource_rev': '2.1.5',
   'dart_root_certificates_rev': '16ef64be64c7dfdff2b9f4b910726e635ccc519e',
   'dart_shelf_packages_handler_tag': '1.0.4',
@@ -89,7 +89,7 @@ vars = {
   'dart_stream_channel_tag': '1.6.8',
   'dart_string_scanner_tag': '1.0.3',
   'dart_term_glyph_tag': '1.0.1',
-  'dart_test_reflective_loader_tag': '0.1.4',
+  'dart_test_reflective_loader_tag': '0.1.8',
   'dart_test_tag': '1.0.0',
   'dart_tuple_tag': 'v1.0.1',
   'dart_typed_data_tag': '1.1.6',
@@ -98,6 +98,7 @@ vars = {
   'dart_watcher_rev': '0.9.7+10',
   'dart_web_socket_channel_tag': '1.0.9',
   'dart_yaml_tag': '2.1.15',
+
   # Build bot tooling for iOS
   'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
 
@@ -114,7 +115,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '4fd7a2738de8fc8f9b498437cde96c1bf7562a04',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '35959f6255c341eee550884ed69afd6b2891bd53',
 
    # Fuchsia compatibility
    #
@@ -123,7 +124,7 @@ deps = {
    # and not have to specific specific hashes.
 
   'src/third_party/tonic':
-   Var('fuchsia_git') + '/tonic' + '@' + '57d508b12462db686573edcbc97891d90cf92f90',
+   Var('fuchsia_git') + '/tonic' + '@' + '90c9c81f49461d9f4d414845a6eeba1c0df35bb4',
 
   'src/third_party/benchmark':
    Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',
@@ -135,7 +136,7 @@ deps = {
    Var('fuchsia_git') + '/third_party/rapidjson' + '@' + '9defbb0209a534ffeb3a2b79d5ee440a77407292',
 
   'src/third_party/harfbuzz':
-   Var('fuchsia_git') + '/third_party/harfbuzz' + '@' + '39b423660aacf916f1cb01f24913f78eaacb3baf',
+   Var('fuchsia_git') + '/third_party/harfbuzz' + '@' + 'd837034f09a957faf2814002e8ebd81da6151d1b',
 
    # Chromium-style
    #
@@ -149,7 +150,7 @@ deps = {
    Var('chromium_git') + '/chromium/src/ios.git' + '@' + Var('ios_tools_revision'),
 
   'src/third_party/icu':
-   Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '08cb956852a5ccdba7f9c941728bb833529ba3c6',
+   Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'c56c671998902fcc4fc9ace88c83daa99f980793',
 
   'src/third_party/dart':
    Var('dart_git') + '/sdk.git' + '@' + Var('dart_revision'),
@@ -350,7 +351,7 @@ deps = {
    Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
 
   'src/third_party/freetype2':
-   Var('fuchsia_git') + '/third_party/freetype2' + '@' + 'e23a030e9b43c648249477fdf7bf5305d2cc8f59',
+   Var('fuchsia_git') + '/third_party/freetype2' + '@' + '3515a77bb83002b69a2957efdbcb764de4de07da',
 
   'src/third_party/root_certificates':
    Var('dart_git') + '/root_certificates.git' + '@' + Var('dart_root_certificates_rev'),
