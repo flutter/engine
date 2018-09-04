@@ -672,11 +672,14 @@ Dart_Isolate DartIsolate::DartIsolateCreateCallback(
           false,                       // is root isolate
           error                        // error
       );
+
+  // Establish references to child in parent and vice versa.
   (*parent_embedder_isolate)
-      ->child_isolates_.push_back(created_isolate_pair.second);
-  created_isolate_pair.second.lock()->self_ptr_ = created_isolate_pair.second;
-  created_isolate_pair.second.lock()->parent_embedder_isolate_ =
-      (*parent_embedder_isolate);
+      ->child_isolates_.insert(created_isolate_pair.second);
+  std::shared_ptr<DartIsolate> child_embedder_isolate =
+      created_isolate_pair.second.lock();
+  child_embedder_isolate->self_ptr_ = created_isolate_pair.second;
+  child_embedder_isolate->parent_embedder_isolate_ = (*parent_embedder_isolate);
   return created_isolate_pair.first;
 }
 
@@ -806,10 +809,10 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
 
 void DartIsolate::TerminateChildIsolatesIfNecessary(
     std::shared_ptr<DartIsolate>* embedder_isolate) {
-  // Terminate child Isolates
   if (!(*embedder_isolate)->terminate_child_isolates_) {
     return;
   }
+  // Terminate child Isolates
   for (std::weak_ptr<DartIsolate> child_isolate :
        (*embedder_isolate)->child_isolates_) {
     if (auto isolate = child_isolate.lock()) {
@@ -825,33 +828,33 @@ void DartIsolate::RemoveSelfFromParent(
     std::shared_ptr<DartIsolate>* embedder_isolate) {
   if (auto parent_embedder_isolate =
           (*embedder_isolate)->parent_embedder_isolate_.lock()) {
-    parent_embedder_isolate->RemoveChildIsolate((*embedder_isolate)->self_ptr_);
+    parent_embedder_isolate->QueueChildIsolateForRemoval(
+        (*embedder_isolate)->self_ptr_);
   }
 }
 
-static inline bool CompareWeakPtrEquality(
-    const std::weak_ptr<DartIsolate> ptr_one,
-    const std::weak_ptr<DartIsolate> ptr_two) {
-  // Compare control block order for pointer equality. If neither is before the
-  // other, then they must be the same.
-  return !ptr_one.owner_before(ptr_two) && !ptr_two.owner_before(ptr_one);
-}
-
-bool DartIsolate::RemoveChildIsolate(
+void DartIsolate::QueueChildIsolateForRemoval(
     std::weak_ptr<DartIsolate> child_isolate_embedder) {
-  for (size_t i = 0; i < child_isolates_.size(); ++i) {
-    if (CompareWeakPtrEquality(child_isolate_embedder, child_isolates_[i])) {
-      child_isolates_.erase(child_isolates_.begin() + i);
-      return true;
-    }
+  child_removal_queue_.push_back(child_isolate_embedder);
+}
+
+void DartIsolate::RemoveQueuedChildIsolates(
+    std::shared_ptr<DartIsolate>* embedder_isolate) {
+  for (auto child_isolate_embedder :
+       (*embedder_isolate)->child_removal_queue_) {
+    (*embedder_isolate)->child_isolates_.erase(child_isolate_embedder);
   }
-  return false;
+  (*embedder_isolate)->child_removal_queue_.clear();
 }
 
 // |Dart_IsolateShutdownCallback|
 void DartIsolate::DartIsolateShutdownCallback(
     std::shared_ptr<DartIsolate>* embedder_isolate) {
+  // Schedule/queue up for removal from parent embedder.
+  RemoveSelfFromParent(embedder_isolate);
   TerminateChildIsolatesIfNecessary(embedder_isolate);
+  // Perform the removal of queued child embedders and reset queue.
+  RemoveQueuedChildIsolates(embedder_isolate);
 
   if (!tonic::DartStickyError::IsSet()) {
     return;

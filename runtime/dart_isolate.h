@@ -6,6 +6,7 @@
 #define FLUTTER_RUNTIME_DART_ISOLATE_H_
 
 #include <string>
+#include <unordered_set>
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/compiler_specific.h"
@@ -102,7 +103,8 @@ class DartIsolate : public UIDartState {
   std::weak_ptr<DartIsolate> parent_embedder_isolate_;
   std::weak_ptr<DartIsolate> self_ptr_;
 
-  bool RemoveChildIsolate(std::weak_ptr<DartIsolate> child_isolate_embedder);
+  void QueueChildIsolateForRemoval(
+      std::weak_ptr<DartIsolate> child_isolate_embedder);
 
  private:
   bool LoadScriptSnapshot(std::shared_ptr<const fml::Mapping> mapping,
@@ -125,6 +127,24 @@ class DartIsolate : public UIDartState {
     fml::closure closure_;
     FML_DISALLOW_COPY_AND_ASSIGN(AutoFireClosure);
   };
+
+  class WeakPtrHash {
+   public:
+    size_t operator()(const std::weak_ptr<DartIsolate>& ptr) const {
+      return (size_t)ptr.lock().get();
+    }
+  };
+
+  class WeakPtrEquality {
+   public:
+    bool operator()(const std::weak_ptr<DartIsolate>& ptr_one,
+                    const std::weak_ptr<DartIsolate>& ptr_two) const {
+      // Compare control block order for pointer equality. If neither is before
+      // the other, then they must be the same.
+      return !ptr_one.owner_before(ptr_two) && !ptr_two.owner_before(ptr_one);
+    }
+  };
+
   friend class DartVM;
 
   DartVM* const vm_ = nullptr;
@@ -135,7 +155,11 @@ class DartIsolate : public UIDartState {
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
   ChildIsolatePreparer child_isolate_preparer_;
   bool terminate_child_isolates_ = true;
-  std::vector<std::weak_ptr<DartIsolate>> child_isolates_;
+  std::unordered_set<std::weak_ptr<DartIsolate>, WeakPtrHash, WeakPtrEquality>
+      child_isolates_;
+  // Keep vector of child embedders for removal. Cannot remove immediately
+  // because of threading and concurrent modification of child_isolates_ set.
+  std::vector<std::weak_ptr<DartIsolate>> child_removal_queue_;
 
   FML_WARN_UNUSED_RESULT
   bool Initialize(Dart_Isolate isolate, bool is_root_isolate);
@@ -182,6 +206,9 @@ class DartIsolate : public UIDartState {
       std::shared_ptr<DartIsolate>* embedder_isolate);
 
   static void RemoveSelfFromParent(
+      std::shared_ptr<DartIsolate>* embedder_isolate);
+
+  static void RemoveQueuedChildIsolates(
       std::shared_ptr<DartIsolate>* embedder_isolate);
 
   // |Dart_IsolateShutdownCallback|
