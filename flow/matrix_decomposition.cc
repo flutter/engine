@@ -82,13 +82,16 @@ MatrixDecomposition::MatrixDecomposition(SkMatrix44 matrix) : valid_(false) {
   }
 
   scale_.fX = row[0].length();
+
   row[0].normalize();
 
   shear_.fX = row[0].dot(row[1]);
   row[1] = SkVector3Combine(row[1], 1.0, row[0], -shear_.fX);
 
   scale_.fY = row[1].length();
+
   row[1].normalize();
+
   shear_.fX /= scale_.fY;
 
   shear_.fY = row[0].dot(row[2]);
@@ -97,6 +100,7 @@ MatrixDecomposition::MatrixDecomposition(SkMatrix44 matrix) : valid_(false) {
   row[2] = SkVector3Combine(row[2], 1.0, row[1], -shear_.fZ);
 
   scale_.fZ = row[2].length();
+
   row[2].normalize();
 
   shear_.fY /= scale_.fZ;

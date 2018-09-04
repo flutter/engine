@@ -4,9 +4,10 @@
 
 import("$flutter_root/testing/testing.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
+import("$flutter_root/shell/platform/embedder/embedder.gni")
 
 shell_gpu_configuration("embedder_gpu_configuration") {
-  enable_software = false
+  enable_software = true
   enable_vulkan = false
   enable_gl = true
 }
@@ -15,6 +16,12 @@ source_set("embedder") {
   sources = [
     "embedder.cc",
     "embedder.h",
+    "embedder_surface.cc",
+    "embedder_surface.h",
+    "embedder_surface_gl.cc",
+    "embedder_surface_gl.h",
+    "embedder_surface_software.cc",
+    "embedder_surface_software.h",
     "embedder_engine.cc",
     "embedder_engine.h",
     "embedder_include.c",
@@ -114,7 +121,7 @@ if (is_mac) {
   copy("copy_icu") {
     visibility = [ ":*" ]
     sources = [
-      "//third_party/icu/common/icudtl.dat",
+      "//third_party/icu/flutter/icudtl.dat",
     ]
     outputs = [
       "$_flutter_embedder_framework_dir/Versions/A/Resources/icudtl.dat",
@@ -205,14 +212,21 @@ if (is_mac) {
 }
 
 group("flutter_engine") {
-  # All platforms require the embedder dylib and headers.
-  deps = [
-    ":copy_headers",
-    ":flutter_engine_library",
-  ]
+  deps = []
 
-  # For the Mac, the dylib is packaged in a framework with the appropriate headers.
-  if (is_mac) {
-    deps += [ ":flutter_embedder_framework" ]
+  build_embedder_api =
+      current_toolchain == host_toolchain || embedder_for_target
+
+  if (build_embedder_api) {
+    # All platforms require the embedder dylib and headers.
+    deps += [
+      ":copy_headers",
+      ":flutter_engine_library",
+    ]
+
+    # For the Mac, the dylib is packaged in a framework with the appropriate headers.
+    if (is_mac) {
+      deps += [ ":flutter_embedder_framework" ]
+    }
   }
 }

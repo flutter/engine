@@ -463,8 +463,8 @@ bool DartIsolate::Run(const std::string& entrypoint_name) {
 
   tonic::DartState::Scope scope(this);
 
-  Dart_Handle entrypoint = Dart_GetClosure(
-      Dart_RootLibrary(), tonic::ToDart(entrypoint_name.c_str()));
+  Dart_Handle entrypoint =
+      Dart_GetField(Dart_RootLibrary(), tonic::ToDart(entrypoint_name.c_str()));
   if (tonic::LogIfError(entrypoint)) {
     return false;
   }
@@ -506,7 +506,7 @@ bool DartIsolate::RunFromLibrary(const std::string& library_name,
   }
 
   Dart_Handle entrypoint =
-      Dart_GetClosure(library, tonic::ToDart(entrypoint_name.c_str()));
+      Dart_GetField(library, tonic::ToDart(entrypoint_name.c_str()));
   if (tonic::LogIfError(entrypoint)) {
     return false;
   }
@@ -808,10 +808,12 @@ void DartIsolate::DartIsolateShutdownCallback(
   }
 
   tonic::DartApiScope api_scope;
-  FML_LOG(ERROR) << "Isolate " << tonic::StdStringFromDart(Dart_DebugName())
-                 << " exited with an error";
   Dart_Handle sticky_error = Dart_GetStickyError();
-  FML_CHECK(tonic::LogIfError(sticky_error));
+  if (!Dart_IsFatalError(sticky_error)) {
+    FML_LOG(ERROR) << "Isolate " << tonic::StdStringFromDart(Dart_DebugName())
+                   << " exited with an error";
+    FML_CHECK(tonic::LogIfError(sticky_error));
+  }
 }
 
 // |Dart_IsolateCleanupCallback|

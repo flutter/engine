@@ -133,8 +133,10 @@ java_library("flutter_shell_java") {
     "io/flutter/util/PathUtils.java",
     "io/flutter/util/Preconditions.java",
     "io/flutter/view/AccessibilityBridge.java",
+    "io/flutter/view/FlutterCallbackInformation.java",
     "io/flutter/view/FlutterMain.java",
     "io/flutter/view/FlutterNativeView.java",
+    "io/flutter/view/FlutterRunArguments.java",
     "io/flutter/view/FlutterView.java",
     "io/flutter/view/ResourceCleaner.java",
     "io/flutter/view/ResourceExtractor.java",
@@ -160,7 +162,7 @@ copy("flutter_shell_assets") {
   visibility = [ ":*" ]
 
   sources = [
-    "//third_party/icu/android/icudtl.dat",
+    "//third_party/icu/flutter/icudtl.dat",
   ]
 
   outputs = [

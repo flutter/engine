@@ -1,38 +1,6 @@
-Signature: 9c2e8832352ffc7775c039012cb195af
+Signature: 149340ef002a59fe0840631d6cfd1773
 
 UNUSED LICENSES:
-
-====================================================================================================
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
-TYPE: LicenseType.bsd
-----------------------------------------------------------------------------------------------------
-Copyright 2006-2011, the V8 project authors. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
 
 ====================================================================================================
 ORIGIN: ../../../third_party/dart/third_party/observatory_pub_packages/packages/dart_internal/LICENSE
@@ -4780,9 +4748,9 @@ FILE: ../../../third_party/dart/runtime/vm/heap/heap.h
 FILE: ../../../third_party/dart/runtime/vm/heap/heap_test.cc
 FILE: ../../../third_party/dart/runtime/vm/heap/pages.cc
 FILE: ../../../third_party/dart/runtime/vm/heap/pages_test.cc
+FILE: ../../../third_party/dart/runtime/vm/heap/pointer_block.cc
+FILE: ../../../third_party/dart/runtime/vm/heap/pointer_block.h
 FILE: ../../../third_party/dart/runtime/vm/heap/scavenger.h
-FILE: ../../../third_party/dart/runtime/vm/heap/store_buffer.cc
-FILE: ../../../third_party/dart/runtime/vm/heap/store_buffer.h
 FILE: ../../../third_party/dart/runtime/vm/heap/verifier.cc
 FILE: ../../../third_party/dart/runtime/vm/instructions_ia32.cc
 FILE: ../../../third_party/dart/runtime/vm/instructions_ia32.h
@@ -5493,6 +5461,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/base_flow_graph_builder.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/base_flow_graph_builder.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_reader.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_reader.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/constant_evaluator.cc
@@ -6324,6 +6294,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: double-conversion
+LIBRARY: icu
 ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/bignum-dtoa.cc
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/bignum-dtoa.cc
@@ -6340,6 +6311,18 @@ FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/fixed-
 FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/strtod.cc
 FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/strtod.h
 FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/utils.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-bignum-dtoa.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion-bignum-dtoa.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-bignum.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion-bignum.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-cached-powers.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-diy-fp.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion-diy-fp.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-fast-dtoa.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-strtod.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion-strtod.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-utils.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2010 the V8 project authors. All rights reserved.
 Redistribution and use in source and binary forms, with or without
@@ -6371,9 +6354,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: double-conversion
+LIBRARY: icu
 ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/cached-powers.cc
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/cached-powers.cc
+FILE: ../../../third_party/icu/source/i18n/double-conversion-cached-powers.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2006-2008 the V8 project authors. All rights reserved.
 Redistribution and use in source and binary forms, with or without
@@ -6405,11 +6390,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: double-conversion
+LIBRARY: icu
 ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/double-conversion.h
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/double-conversion.h
 FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/fast-dtoa.cc
 FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/ieee.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-fast-dtoa.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion-ieee.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2012 the V8 project authors. All rights reserved.
 Redistribution and use in source and binary forms, with or without
@@ -6587,96 +6576,99 @@ FILE: ../../../third_party/freetype2/Jamfile
 FILE: ../../../third_party/freetype2/Jamrules
 FILE: ../../../third_party/freetype2/devel/ft2build.h
 FILE: ../../../third_party/freetype2/devel/ftoption.h
-FILE: ../../../third_party/freetype2/include/config/ftconfig.h
-FILE: ../../../third_party/freetype2/include/config/ftheader.h
-FILE: ../../../third_party/freetype2/include/config/ftmodule.h
-FILE: ../../../third_party/freetype2/include/config/ftoption.h
-FILE: ../../../third_party/freetype2/include/config/ftstdlib.h
 FILE: ../../../third_party/freetype2/include/freetype-fuchsia-config/ftmodule.h
 FILE: ../../../third_party/freetype2/include/freetype-fuchsia-config/ftoption.h
-FILE: ../../../third_party/freetype2/include/freetype.h
+FILE: ../../../third_party/freetype2/include/freetype/config/ftconfig.h
+FILE: ../../../third_party/freetype2/include/freetype/config/ftheader.h
+FILE: ../../../third_party/freetype2/include/freetype/config/ftmodule.h
+FILE: ../../../third_party/freetype2/include/freetype/config/ftoption.h
+FILE: ../../../third_party/freetype2/include/freetype/config/ftstdlib.h
+FILE: ../../../third_party/freetype2/include/freetype/freetype.h
+FILE: ../../../third_party/freetype2/include/freetype/ftadvanc.h
+FILE: ../../../third_party/freetype2/include/freetype/ftbbox.h
+FILE: ../../../third_party/freetype2/include/freetype/ftbdf.h
+FILE: ../../../third_party/freetype2/include/freetype/ftbitmap.h
+FILE: ../../../third_party/freetype2/include/freetype/ftbzip2.h
+FILE: ../../../third_party/freetype2/include/freetype/ftcache.h
+FILE: ../../../third_party/freetype2/include/freetype/ftchapters.h
+FILE: ../../../third_party/freetype2/include/freetype/ftcid.h
+FILE: ../../../third_party/freetype2/include/freetype/ftdriver.h
+FILE: ../../../third_party/freetype2/include/freetype/fterrdef.h
+FILE: ../../../third_party/freetype2/include/freetype/fterrors.h
+FILE: ../../../third_party/freetype2/include/freetype/ftfntfmt.h
+FILE: ../../../third_party/freetype2/include/freetype/ftgasp.h
+FILE: ../../../third_party/freetype2/include/freetype/ftglyph.h
+FILE: ../../../third_party/freetype2/include/freetype/ftgxval.h
+FILE: ../../../third_party/freetype2/include/freetype/ftgzip.h
+FILE: ../../../third_party/freetype2/include/freetype/ftimage.h
+FILE: ../../../third_party/freetype2/include/freetype/ftincrem.h
+FILE: ../../../third_party/freetype2/include/freetype/ftlcdfil.h
+FILE: ../../../third_party/freetype2/include/freetype/ftlist.h
+FILE: ../../../third_party/freetype2/include/freetype/ftlzw.h
+FILE: ../../../third_party/freetype2/include/freetype/ftmac.h
+FILE: ../../../third_party/freetype2/include/freetype/ftmm.h
+FILE: ../../../third_party/freetype2/include/freetype/ftmodapi.h
+FILE: ../../../third_party/freetype2/include/freetype/ftmoderr.h
+FILE: ../../../third_party/freetype2/include/freetype/ftotval.h
+FILE: ../../../third_party/freetype2/include/freetype/ftoutln.h
+FILE: ../../../third_party/freetype2/include/freetype/ftparams.h
+FILE: ../../../third_party/freetype2/include/freetype/ftpfr.h
+FILE: ../../../third_party/freetype2/include/freetype/ftrender.h
+FILE: ../../../third_party/freetype2/include/freetype/ftsizes.h
+FILE: ../../../third_party/freetype2/include/freetype/ftsnames.h
+FILE: ../../../third_party/freetype2/include/freetype/ftstroke.h
+FILE: ../../../third_party/freetype2/include/freetype/ftsynth.h
+FILE: ../../../third_party/freetype2/include/freetype/ftsystem.h
+FILE: ../../../third_party/freetype2/include/freetype/fttrigon.h
+FILE: ../../../third_party/freetype2/include/freetype/fttypes.h
+FILE: ../../../third_party/freetype2/include/freetype/ftwinfnt.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/autohint.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/cffotypes.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/cfftypes.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftcalc.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftdebug.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftdrv.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftgloadr.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftmemory.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftobjs.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftpic.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftpsprop.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftrfork.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftserv.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftstream.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/fttrace.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/ftvalid.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/internal.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/psaux.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/pshints.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svbdf.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svcfftl.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svcid.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svfntfmt.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svgldict.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svgxval.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svkern.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svmetric.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svmm.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svotval.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svpfr.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svpostnm.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svprop.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svpscmap.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svpsinfo.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svsfnt.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svttcmap.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svtteng.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svttglyf.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/services/svwinfnt.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/sfnt.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/t1types.h
+FILE: ../../../third_party/freetype2/include/freetype/internal/tttypes.h
+FILE: ../../../third_party/freetype2/include/freetype/t1tables.h
+FILE: ../../../third_party/freetype2/include/freetype/ttnameid.h
+FILE: ../../../third_party/freetype2/include/freetype/tttables.h
+FILE: ../../../third_party/freetype2/include/freetype/tttags.h
 FILE: ../../../third_party/freetype2/include/ft2build.h
-FILE: ../../../third_party/freetype2/include/ftadvanc.h
-FILE: ../../../third_party/freetype2/include/ftautoh.h
-FILE: ../../../third_party/freetype2/include/ftbbox.h
-FILE: ../../../third_party/freetype2/include/ftbdf.h
-FILE: ../../../third_party/freetype2/include/ftbitmap.h
-FILE: ../../../third_party/freetype2/include/ftbzip2.h
-FILE: ../../../third_party/freetype2/include/ftcache.h
-FILE: ../../../third_party/freetype2/include/ftcffdrv.h
-FILE: ../../../third_party/freetype2/include/ftchapters.h
-FILE: ../../../third_party/freetype2/include/ftcid.h
-FILE: ../../../third_party/freetype2/include/fterrdef.h
-FILE: ../../../third_party/freetype2/include/fterrors.h
-FILE: ../../../third_party/freetype2/include/ftfntfmt.h
-FILE: ../../../third_party/freetype2/include/ftgasp.h
-FILE: ../../../third_party/freetype2/include/ftglyph.h
-FILE: ../../../third_party/freetype2/include/ftgxval.h
-FILE: ../../../third_party/freetype2/include/ftgzip.h
-FILE: ../../../third_party/freetype2/include/ftimage.h
-FILE: ../../../third_party/freetype2/include/ftincrem.h
-FILE: ../../../third_party/freetype2/include/ftlcdfil.h
-FILE: ../../../third_party/freetype2/include/ftlist.h
-FILE: ../../../third_party/freetype2/include/ftlzw.h
-FILE: ../../../third_party/freetype2/include/ftmac.h
-FILE: ../../../third_party/freetype2/include/ftmm.h
-FILE: ../../../third_party/freetype2/include/ftmodapi.h
-FILE: ../../../third_party/freetype2/include/ftmoderr.h
-FILE: ../../../third_party/freetype2/include/ftotval.h
-FILE: ../../../third_party/freetype2/include/ftoutln.h
-FILE: ../../../third_party/freetype2/include/ftpfr.h
-FILE: ../../../third_party/freetype2/include/ftrender.h
-FILE: ../../../third_party/freetype2/include/ftsizes.h
-FILE: ../../../third_party/freetype2/include/ftsnames.h
-FILE: ../../../third_party/freetype2/include/ftstroke.h
-FILE: ../../../third_party/freetype2/include/ftsynth.h
-FILE: ../../../third_party/freetype2/include/ftsystem.h
-FILE: ../../../third_party/freetype2/include/fttrigon.h
-FILE: ../../../third_party/freetype2/include/ftttdrv.h
-FILE: ../../../third_party/freetype2/include/fttypes.h
-FILE: ../../../third_party/freetype2/include/ftwinfnt.h
-FILE: ../../../third_party/freetype2/include/internal/autohint.h
-FILE: ../../../third_party/freetype2/include/internal/ftcalc.h
-FILE: ../../../third_party/freetype2/include/internal/ftdebug.h
-FILE: ../../../third_party/freetype2/include/internal/ftdriver.h
-FILE: ../../../third_party/freetype2/include/internal/ftgloadr.h
-FILE: ../../../third_party/freetype2/include/internal/ftmemory.h
-FILE: ../../../third_party/freetype2/include/internal/ftobjs.h
-FILE: ../../../third_party/freetype2/include/internal/ftpic.h
-FILE: ../../../third_party/freetype2/include/internal/ftrfork.h
-FILE: ../../../third_party/freetype2/include/internal/ftserv.h
-FILE: ../../../third_party/freetype2/include/internal/ftstream.h
-FILE: ../../../third_party/freetype2/include/internal/fttrace.h
-FILE: ../../../third_party/freetype2/include/internal/ftvalid.h
-FILE: ../../../third_party/freetype2/include/internal/internal.h
-FILE: ../../../third_party/freetype2/include/internal/psaux.h
-FILE: ../../../third_party/freetype2/include/internal/pshints.h
-FILE: ../../../third_party/freetype2/include/internal/services/svbdf.h
-FILE: ../../../third_party/freetype2/include/internal/services/svcid.h
-FILE: ../../../third_party/freetype2/include/internal/services/svfntfmt.h
-FILE: ../../../third_party/freetype2/include/internal/services/svgldict.h
-FILE: ../../../third_party/freetype2/include/internal/services/svgxval.h
-FILE: ../../../third_party/freetype2/include/internal/services/svkern.h
-FILE: ../../../third_party/freetype2/include/internal/services/svmm.h
-FILE: ../../../third_party/freetype2/include/internal/services/svotval.h
-FILE: ../../../third_party/freetype2/include/internal/services/svpfr.h
-FILE: ../../../third_party/freetype2/include/internal/services/svpostnm.h
-FILE: ../../../third_party/freetype2/include/internal/services/svprop.h
-FILE: ../../../third_party/freetype2/include/internal/services/svpscmap.h
-FILE: ../../../third_party/freetype2/include/internal/services/svpsinfo.h
-FILE: ../../../third_party/freetype2/include/internal/services/svsfnt.h
-FILE: ../../../third_party/freetype2/include/internal/services/svttcmap.h
-FILE: ../../../third_party/freetype2/include/internal/services/svtteng.h
-FILE: ../../../third_party/freetype2/include/internal/services/svttglyf.h
-FILE: ../../../third_party/freetype2/include/internal/services/svwinfnt.h
-FILE: ../../../third_party/freetype2/include/internal/sfnt.h
-FILE: ../../../third_party/freetype2/include/internal/t1types.h
-FILE: ../../../third_party/freetype2/include/internal/tttypes.h
-FILE: ../../../third_party/freetype2/include/t1tables.h
-FILE: ../../../third_party/freetype2/include/ttnameid.h
-FILE: ../../../third_party/freetype2/include/tttables.h
-FILE: ../../../third_party/freetype2/include/tttags.h
-FILE: ../../../third_party/freetype2/include/ttunpat.h
 FILE: ../../../third_party/freetype2/modules.cfg
 FILE: ../../../third_party/freetype2/src/Jamfile
 FILE: ../../../third_party/freetype2/src/autofit/Jamfile
@@ -6712,14 +6704,14 @@ FILE: ../../../third_party/freetype2/src/autofit/afpic.h
 FILE: ../../../third_party/freetype2/src/autofit/afranges.c
 FILE: ../../../third_party/freetype2/src/autofit/afranges.h
 FILE: ../../../third_party/freetype2/src/autofit/afscript.h
+FILE: ../../../third_party/freetype2/src/autofit/afshaper.c
+FILE: ../../../third_party/freetype2/src/autofit/afshaper.h
 FILE: ../../../third_party/freetype2/src/autofit/afstyles.h
 FILE: ../../../third_party/freetype2/src/autofit/aftypes.h
 FILE: ../../../third_party/freetype2/src/autofit/afwarp.c
 FILE: ../../../third_party/freetype2/src/autofit/afwarp.h
 FILE: ../../../third_party/freetype2/src/autofit/afwrtsys.h
 FILE: ../../../third_party/freetype2/src/autofit/autofit.c
-FILE: ../../../third_party/freetype2/src/autofit/hbshim.c
-FILE: ../../../third_party/freetype2/src/autofit/hbshim.h
 FILE: ../../../third_party/freetype2/src/base/Jamfile
 FILE: ../../../third_party/freetype2/src/base/basepic.c
 FILE: ../../../third_party/freetype2/src/base/basepic.h
@@ -6750,6 +6742,7 @@ FILE: ../../../third_party/freetype2/src/base/ftoutln.c
 FILE: ../../../third_party/freetype2/src/base/ftpatent.c
 FILE: ../../../third_party/freetype2/src/base/ftpfr.c
 FILE: ../../../third_party/freetype2/src/base/ftpic.c
+FILE: ../../../third_party/freetype2/src/base/ftpsprop.c
 FILE: ../../../third_party/freetype2/src/base/ftrfork.c
 FILE: ../../../third_party/freetype2/src/base/ftsnames.c
 FILE: ../../../third_party/freetype2/src/base/ftstream.c
@@ -6759,6 +6752,7 @@ FILE: ../../../third_party/freetype2/src/base/ftsystem.c
 FILE: ../../../third_party/freetype2/src/base/fttrigon.c
 FILE: ../../../third_party/freetype2/src/base/fttype1.c
 FILE: ../../../third_party/freetype2/src/base/ftutil.c
+FILE: ../../../third_party/freetype2/src/base/ftver.rc
 FILE: ../../../third_party/freetype2/src/base/ftwinfnt.c
 FILE: ../../../third_party/freetype2/src/base/md5.c
 FILE: ../../../third_party/freetype2/src/base/md5.h
@@ -6784,27 +6778,6 @@ FILE: ../../../third_party/freetype2/src/cache/ftcmru.h
 FILE: ../../../third_party/freetype2/src/cache/ftcsbits.c
 FILE: ../../../third_party/freetype2/src/cache/ftcsbits.h
 FILE: ../../../third_party/freetype2/src/cff/Jamfile
-FILE: ../../../third_party/freetype2/src/cff/cf2arrst.c
-FILE: ../../../third_party/freetype2/src/cff/cf2arrst.h
-FILE: ../../../third_party/freetype2/src/cff/cf2blues.c
-FILE: ../../../third_party/freetype2/src/cff/cf2blues.h
-FILE: ../../../third_party/freetype2/src/cff/cf2error.c
-FILE: ../../../third_party/freetype2/src/cff/cf2error.h
-FILE: ../../../third_party/freetype2/src/cff/cf2fixed.h
-FILE: ../../../third_party/freetype2/src/cff/cf2font.c
-FILE: ../../../third_party/freetype2/src/cff/cf2font.h
-FILE: ../../../third_party/freetype2/src/cff/cf2ft.c
-FILE: ../../../third_party/freetype2/src/cff/cf2ft.h
-FILE: ../../../third_party/freetype2/src/cff/cf2glue.h
-FILE: ../../../third_party/freetype2/src/cff/cf2hints.c
-FILE: ../../../third_party/freetype2/src/cff/cf2hints.h
-FILE: ../../../third_party/freetype2/src/cff/cf2intrp.c
-FILE: ../../../third_party/freetype2/src/cff/cf2intrp.h
-FILE: ../../../third_party/freetype2/src/cff/cf2read.c
-FILE: ../../../third_party/freetype2/src/cff/cf2read.h
-FILE: ../../../third_party/freetype2/src/cff/cf2stack.c
-FILE: ../../../third_party/freetype2/src/cff/cf2stack.h
-FILE: ../../../third_party/freetype2/src/cff/cf2types.h
 FILE: ../../../third_party/freetype2/src/cff/cff.c
 FILE: ../../../third_party/freetype2/src/cff/cffcmap.c
 FILE: ../../../third_party/freetype2/src/cff/cffcmap.h
@@ -6822,7 +6795,6 @@ FILE: ../../../third_party/freetype2/src/cff/cffparse.h
 FILE: ../../../third_party/freetype2/src/cff/cffpic.c
 FILE: ../../../third_party/freetype2/src/cff/cffpic.h
 FILE: ../../../third_party/freetype2/src/cff/cfftoken.h
-FILE: ../../../third_party/freetype2/src/cff/cfftypes.h
 FILE: ../../../third_party/freetype2/src/cid/Jamfile
 FILE: ../../../third_party/freetype2/src/cid/ciderrs.h
 FILE: ../../../third_party/freetype2/src/cid/cidgload.c
@@ -6912,14 +6884,37 @@ FILE: ../../../third_party/freetype2/src/pfr/pfrtypes.h
 FILE: ../../../third_party/freetype2/src/psaux/Jamfile
 FILE: ../../../third_party/freetype2/src/psaux/afmparse.c
 FILE: ../../../third_party/freetype2/src/psaux/afmparse.h
+FILE: ../../../third_party/freetype2/src/psaux/cffdecode.c
+FILE: ../../../third_party/freetype2/src/psaux/cffdecode.h
+FILE: ../../../third_party/freetype2/src/psaux/psarrst.c
+FILE: ../../../third_party/freetype2/src/psaux/psarrst.h
 FILE: ../../../third_party/freetype2/src/psaux/psaux.c
 FILE: ../../../third_party/freetype2/src/psaux/psauxerr.h
 FILE: ../../../third_party/freetype2/src/psaux/psauxmod.c
 FILE: ../../../third_party/freetype2/src/psaux/psauxmod.h
+FILE: ../../../third_party/freetype2/src/psaux/psblues.c
+FILE: ../../../third_party/freetype2/src/psaux/psblues.h
 FILE: ../../../third_party/freetype2/src/psaux/psconv.c
 FILE: ../../../third_party/freetype2/src/psaux/psconv.h
+FILE: ../../../third_party/freetype2/src/psaux/pserror.c
+FILE: ../../../third_party/freetype2/src/psaux/pserror.h
+FILE: ../../../third_party/freetype2/src/psaux/psfixed.h
+FILE: ../../../third_party/freetype2/src/psaux/psfont.c
+FILE: ../../../third_party/freetype2/src/psaux/psfont.h
+FILE: ../../../third_party/freetype2/src/psaux/psft.c
+FILE: ../../../third_party/freetype2/src/psaux/psft.h
+FILE: ../../../third_party/freetype2/src/psaux/psglue.h
+FILE: ../../../third_party/freetype2/src/psaux/pshints.c
+FILE: ../../../third_party/freetype2/src/psaux/pshints.h
+FILE: ../../../third_party/freetype2/src/psaux/psintrp.c
+FILE: ../../../third_party/freetype2/src/psaux/psintrp.h
 FILE: ../../../third_party/freetype2/src/psaux/psobjs.c
 FILE: ../../../third_party/freetype2/src/psaux/psobjs.h
+FILE: ../../../third_party/freetype2/src/psaux/psread.c
+FILE: ../../../third_party/freetype2/src/psaux/psread.h
+FILE: ../../../third_party/freetype2/src/psaux/psstack.c
+FILE: ../../../third_party/freetype2/src/psaux/psstack.h
+FILE: ../../../third_party/freetype2/src/psaux/pstypes.h
 FILE: ../../../third_party/freetype2/src/psaux/t1cmap.c
 FILE: ../../../third_party/freetype2/src/psaux/t1cmap.h
 FILE: ../../../third_party/freetype2/src/psaux/t1decode.c
@@ -7194,9 +7189,39 @@ Legal Terms
 
   Our home page can be found at
 
-    http://www.freetype.org
+    https://www.freetype.org
 
 --- end of FTL.TXT ---
+====================================================================================================
+
+====================================================================================================
+LIBRARY: freetype2
+ORIGIN: ../../../third_party/freetype2/include/freetype/internal/fthash.h
+TYPE: LicenseType.mit
+FILE: ../../../third_party/freetype2/include/freetype/internal/fthash.h
+FILE: ../../../third_party/freetype2/src/base/fthash.c
+----------------------------------------------------------------------------------------------------
+Copyright 2000 Computing Research Labs, New Mexico State University
+Copyright 2001-2015
+  Francesco Zappa Nardelli
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+THE COMPUTING RESEARCH LAB OR NEW MEXICO STATE UNIVERSITY BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
@@ -7403,9 +7428,9 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: freetype2
-ORIGIN: ../../../third_party/freetype2/src/gzip/zconf.h + ../../../third_party/freetype2/src/gzip/zlib.h
+ORIGIN: ../../../third_party/freetype2/src/gzip/ftzconf.h + ../../../third_party/freetype2/src/gzip/zlib.h
 TYPE: LicenseType.zlib
-FILE: ../../../third_party/freetype2/src/gzip/zconf.h
+FILE: ../../../third_party/freetype2/src/gzip/ftzconf.h
 FILE: ../../../third_party/freetype2/src/gzip/zutil.c
 FILE: ../../../third_party/freetype2/src/gzip/zutil.h
 ----------------------------------------------------------------------------------------------------
@@ -7683,6 +7708,30 @@ THE SOFTWARE.
 LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/COPYING
 TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/.circleci/config.yml
+FILE: ../../../third_party/harfbuzz/.editorconfig
+FILE: ../../../third_party/harfbuzz/THANKS
+FILE: ../../../third_party/harfbuzz/TODO
+FILE: ../../../third_party/harfbuzz/appveyor.yml
+FILE: ../../../third_party/harfbuzz/docs/HarfBuzz.png
+FILE: ../../../third_party/harfbuzz/docs/HarfBuzz.svg
+FILE: ../../../third_party/harfbuzz/docs/harfbuzz-docs.xml
+FILE: ../../../third_party/harfbuzz/docs/usermanual-buffers-language-script-and-direction.xml
+FILE: ../../../third_party/harfbuzz/docs/usermanual-clusters.xml
+FILE: ../../../third_party/harfbuzz/docs/usermanual-fonts-and-faces.xml
+FILE: ../../../third_party/harfbuzz/docs/usermanual-glyph-information.xml
+FILE: ../../../third_party/harfbuzz/docs/usermanual-hello-harfbuzz.xml
+FILE: ../../../third_party/harfbuzz/docs/usermanual-install-harfbuzz.xml
+FILE: ../../../third_party/harfbuzz/docs/usermanual-opentype-features.xml
+FILE: ../../../third_party/harfbuzz/docs/usermanual-what-is-harfbuzz.xml
+FILE: ../../../third_party/harfbuzz/docs/version.xml.in
+FILE: ../../../third_party/harfbuzz/harfbuzz.doap
+FILE: ../../../third_party/harfbuzz/src/Makefile.sources
+FILE: ../../../third_party/harfbuzz/src/harfbuzz-config.cmake.in
+FILE: ../../../third_party/harfbuzz/src/harfbuzz-gobject.pc.in
+FILE: ../../../third_party/harfbuzz/src/harfbuzz-icu.pc.in
+FILE: ../../../third_party/harfbuzz/src/harfbuzz-subset.pc.in
+FILE: ../../../third_party/harfbuzz/src/harfbuzz.pc.in
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-table.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-table.cc
@@ -7704,6 +7753,166 @@ Copyright © 2004,2007,2008,2009,2010  Red Hat, Inc.
 Copyright © 1998-2004  David Turner and Werner Lemberg
 
 For full copyright notices consult the individual files in the package.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/dump-emoji.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/dump-emoji.cc
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-ankr-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-bsln-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-feat-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-aat-ltag-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color-sbix-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color-svg-table.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2018  Ebrahim Byagowi
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/dump-indic-data.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/dump-indic-data.cc
+FILE: ../../../third_party/harfbuzz/src/dump-khmer-data.cc
+FILE: ../../../third_party/harfbuzz/src/dump-myanmar-data.cc
+FILE: ../../../third_party/harfbuzz/src/dump-use-data.cc
+FILE: ../../../third_party/harfbuzz/src/hb-iter-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-map-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-map.cc
+FILE: ../../../third_party/harfbuzz/src/hb-map.h
+FILE: ../../../third_party/harfbuzz/src/hb-ot-hdmx-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-os2-unicode-ranges.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-static.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-glyf.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-glyf.hh
+FILE: ../../../third_party/harfbuzz/src/hb-subset-input.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.hh
+FILE: ../../../third_party/harfbuzz/src/hb-subset-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-subset.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset.h
+FILE: ../../../third_party/harfbuzz/src/test-unicode-ranges.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2018  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-aat-layout-common-private.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-common-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-morx-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout.cc
+FILE: ../../../third_party/harfbuzz/src/hb-debug.hh
+FILE: ../../../third_party/harfbuzz/src/hb-dsalgs.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-kern-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-post-macroman.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-var-avar-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-var-fvar-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-var-hvar-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-var-mvar-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-var.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-var.h
+FILE: ../../../third_party/harfbuzz/src/hb-string-array.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2017  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-aat-layout-kerx-table.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-kerx-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-trak-table.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2018  Ebrahim Byagowi
+Copyright © 2018  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
 
 Permission is hereby granted, without written agreement and without
 license or royalty fees, to use, copy, modify, and distribute this
@@ -7759,9 +7968,68 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-blob-private.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-blob-private.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2009  Red Hat, Inc.
+Copyright © 2018  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-blob.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-blob.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2009  Red Hat, Inc.
+Copyright © 2018  Ebrahim Byagowi
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-blob.h
+TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-blob.h
 FILE: ../../../third_party/harfbuzz/src/hb-face.h
 FILE: ../../../third_party/harfbuzz/src/hb-font.h
@@ -7797,8 +8065,11 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-buffer-deserialize-json.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-buffer-deserialize-json.hh
+FILE: ../../../third_party/harfbuzz/src/hb-buffer-deserialize-json.rl
 FILE: ../../../third_party/harfbuzz/src/hb-buffer-deserialize-text.hh
+FILE: ../../../third_party/harfbuzz/src/hb-buffer-deserialize-text.rl
 FILE: ../../../third_party/harfbuzz/src/hb-deprecated.h
+FILE: ../../../third_party/harfbuzz/src/hb-gobject-enums.h.tmpl
 FILE: ../../../third_party/harfbuzz/src/hb-ot-layout-jstf-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-hangul.cc
 ----------------------------------------------------------------------------------------------------
@@ -7895,50 +8166,6 @@ FILE: ../../../third_party/harfbuzz/src/hb-buffer.h
 Copyright © 1998-2004  David Turner and Werner Lemberg
 Copyright © 2004,2007,2009  Red Hat, Inc.
 Copyright © 2011,2012  Google, Inc.
-
- This is part of HarfBuzz, a text shaping library.
-
-Permission is hereby granted, without written agreement and without
-license or royalty fees, to use, copy, modify, and distribute this
-software and its documentation for any purpose, provided that the
-above copyright notice and the following two paragraphs appear in
-all copies of this software.
-
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
-IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
-PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-cache-private.hh
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-cache-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-fallback.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-fallback-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-normalize-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-set-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-set.cc
-FILE: ../../../third_party/harfbuzz/src/hb-set.h
-FILE: ../../../third_party/harfbuzz/src/hb-shape-plan-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-shape-plan.cc
-FILE: ../../../third_party/harfbuzz/src/hb-shape-plan.h
-FILE: ../../../third_party/harfbuzz/src/hb-shaper-impl-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-shaper-list.hh
-FILE: ../../../third_party/harfbuzz/src/hb-shaper-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-shaper.cc
-FILE: ../../../third_party/harfbuzz/src/hb-warning.cc
-----------------------------------------------------------------------------------------------------
-Copyright © 2012  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -8083,10 +8310,70 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-directwrite.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-directwrite.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2015-2018  Ebrahim Byagowi
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-directwrite.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-directwrite.h
+----------------------------------------------------------------------------------------------------
+Copyright © 2015  Ebrahim Byagowi
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-face-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-face-private.hh
 FILE: ../../../third_party/harfbuzz/src/hb-font-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-glib.cc
+FILE: ../../../third_party/harfbuzz/src/hb-glib.h
 FILE: ../../../third_party/harfbuzz/src/hb-icu.h
 FILE: ../../../third_party/harfbuzz/src/hb-ot-tag.cc
 ----------------------------------------------------------------------------------------------------
@@ -8152,10 +8439,137 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-fallback-shape.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-fallback-shape.cc
+FILE: ../../../third_party/harfbuzz/src/hb-gobject-enums.cc.tmpl
+FILE: ../../../third_party/harfbuzz/src/hb-gobject-structs.cc
+FILE: ../../../third_party/harfbuzz/src/hb-gobject-structs.h
+FILE: ../../../third_party/harfbuzz/src/hb-gobject.h
 FILE: ../../../third_party/harfbuzz/src/hb-uniscribe.h
 FILE: ../../../third_party/harfbuzz/src/hb-version.h
+FILE: ../../../third_party/harfbuzz/src/hb-version.h.in
 ----------------------------------------------------------------------------------------------------
 Copyright © 2011  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ft.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ft.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2009  Red Hat, Inc.
+Copyright © 2009  Keith Stribley
+Copyright © 2015  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ft.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ft.h
+----------------------------------------------------------------------------------------------------
+Copyright © 2009  Red Hat, Inc.
+Copyright © 2015  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-graphite2.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-graphite2.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2011  Martin Hosken
+Copyright © 2011  SIL International
+Copyright © 2011,2012  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-graphite2.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-graphite2.h
+----------------------------------------------------------------------------------------------------
+Copyright © 2011  Martin Hosken
+Copyright © 2011  SIL International
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -8187,6 +8601,36 @@ FILE: ../../../third_party/harfbuzz/src/hb-icu.cc
 Copyright © 2009  Red Hat, Inc.
 Copyright © 2009  Keith Stribley
 Copyright © 2011  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-machinery-private.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-machinery-private.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2007,2008,2009,2010  Red Hat, Inc.
+Copyright © 2012,2018  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -8271,9 +8715,40 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-cbdt-table.hh
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-cmap-table.hh
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-ot-cbdt-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-cmap-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-font.h
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-win1256.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2014  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-color-cbdt-table.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color-cbdt-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-post-table.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2016  Google, Inc.
@@ -8301,13 +8776,13 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-cmap-table.hh
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-color-cpal-table.hh
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-ot-cmap-table.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-font.h
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-win1256.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color-cpal-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color.cc
 ----------------------------------------------------------------------------------------------------
-Copyright © 2014  Google, Inc.
+Copyright © 2016  Google, Inc.
+Copyright © 2018  Ebrahim Byagowi
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -8428,12 +8903,47 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-maxp-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-name-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-os2-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-machine.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-machine.rl
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer-machine.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer-machine.rl
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar-machine.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar-machine.rl
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-fallback.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-normalize.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2011,2012  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-layout-base-table.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-layout-base-table.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2016 Elie Roux <elie.roux@telecom-bretagne.eu>
+Copyright © 2018  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -8762,10 +9272,54 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-fallback.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-fallback.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-fallback-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-normalize-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-set-digest-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-set.cc
+FILE: ../../../third_party/harfbuzz/src/hb-set.h
+FILE: ../../../third_party/harfbuzz/src/hb-shape-plan-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-shape-plan.cc
+FILE: ../../../third_party/harfbuzz/src/hb-shape-plan.h
+FILE: ../../../third_party/harfbuzz/src/hb-shaper-impl-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-shaper-list.hh
+FILE: ../../../third_party/harfbuzz/src/hb-shaper-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-shaper.cc
+FILE: ../../../third_party/harfbuzz/src/hb-warning.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2012  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-private.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-machine.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-machine.rl
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-private.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use.cc
 ----------------------------------------------------------------------------------------------------
@@ -8831,6 +9385,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.cc
+FILE: ../../../third_party/harfbuzz/src/hb-uniscribe.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2011,2012,2013  Google, Inc.
 
@@ -8974,16 +9529,11 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-var-avar-table.hh
+ORIGIN: ../../../third_party/harfbuzz/src/hb-set-private.hh
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-ot-var-avar-table.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-var-fvar-table.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-var-hvar-table.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-var-mvar-table.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-var.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-var.h
+FILE: ../../../third_party/harfbuzz/src/hb-set-private.hh
 ----------------------------------------------------------------------------------------------------
-Copyright © 2017  Google, Inc.
+Copyright © 2012,2017  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -9004,6 +9554,51 @@ BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
 FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
 ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
 PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ucdn/COPYING
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ucdn/Makefile.sources
+FILE: ../../../third_party/harfbuzz/src/hb-ucdn/ucdn_db.h
+----------------------------------------------------------------------------------------------------
+The contents of this directory are licensed under the following terms:
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ucdn/ucdn.c
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ucdn.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ucdn/ucdn.c
+FILE: ../../../third_party/harfbuzz/src/hb-ucdn/ucdn.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) 2012 Grigori Goronzy <greg@kinoho.net>
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
@@ -9195,13 +9790,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: icu
-ORIGIN: ../../../third_party/icu/LICENSE
+ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/icu/android/brkitr.patch
 FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
 FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
@@ -9209,23 +9807,146 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/cjdict.patch
-FILE: ../../../third_party/icu/patches/collator_range.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
 FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fuchsia.patch
+FILE: ../../../third_party/icu/patches/decimalformat_align.patch
+FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/han_script.patch
+FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/linebrk.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/msvc4229.patch
-FILE: ../../../third_party/icu/patches/string_literal_charptr.patch
-FILE: ../../../third_party/icu/patches/tzdbname.patch
-FILE: ../../../third_party/icu/patches/ucase_utf8.patch
-FILE: ../../../third_party/icu/patches/ucurr_locale.patch
-FILE: ../../../third_party/icu/patches/uloc_buffer_overrun.patch
+FILE: ../../../third_party/icu/patches/locid_map.patch
+FILE: ../../../third_party/icu/patches/nf_maxsig.patch
+FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/wordbrk.patch
+FILE: ../../../third_party/icu/patches/wpo.patch
+FILE: ../../../third_party/icu/source/data/curr/pool.res
+FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
+FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
+FILE: ../../../third_party/icu/source/data/in/nfc.nrm
+FILE: ../../../third_party/icu/source/data/in/nfkc.nrm
+FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
+FILE: ../../../third_party/icu/source/data/in/pnames.icu
+FILE: ../../../third_party/icu/source/data/in/ubidi.icu
+FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/unames.icu
+FILE: ../../../third_party/icu/source/data/in/uprops.icu
+FILE: ../../../third_party/icu/source/data/in/uts46.nrm
+FILE: ../../../third_party/icu/source/data/lang/pool.res
+FILE: ../../../third_party/icu/source/data/locales/pool.res
+FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/gb18030.ucm
+FILE: ../../../third_party/icu/source/data/mappings/ibm866-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-10-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-13-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-14-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-15-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-16-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-2-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-3-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-4-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-5-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-6-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-7-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-8-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/koi8-r-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/koi8-u-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/macintosh-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/shift_jis-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1250-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1251-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1252-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1253-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1254-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1255-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1256-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1257-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
+FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
+FILE: ../../../third_party/icu/source/data/region/pool.res
+FILE: ../../../third_party/icu/source/data/unit/pool.res
+FILE: ../../../third_party/icu/source/data/zone/pool.res
+FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
+FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
+FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
+FILE: ../../../third_party/icu/source/tools/tzcode/asctime.c
+FILE: ../../../third_party/icu/source/tools/tzcode/ialloc.c
+FILE: ../../../third_party/icu/source/tools/tzcode/localtime.c
+FILE: ../../../third_party/icu/source/tools/tzcode/private.h
+FILE: ../../../third_party/icu/source/tools/tzcode/scheck.c
+FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
+FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
+FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
+FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
+FILE: ../../../third_party/icu/windows/icudt.dll
+----------------------------------------------------------------------------------------------------
+Copyright 2006-2011, the V8 project authors. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: icu
+ORIGIN: ../../../third_party/icu/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/icu/android/brkitr.patch
+FILE: ../../../third_party/icu/android/currencies.list
+FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/common/icudtb.dat
+FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
+FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
+FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
+FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/data.build.patch
+FILE: ../../../third_party/icu/patches/data.build.win.patch
+FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/decimalformat_align.patch
+FILE: ../../../third_party/icu/patches/double_conversion.patch
+FILE: ../../../third_party/icu/patches/gb_table.patch
+FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
+FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
+FILE: ../../../third_party/icu/patches/locale1.patch
+FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_map.patch
+FILE: ../../../third_party/icu/patches/nf_maxsig.patch
 FILE: ../../../third_party/icu/patches/vscomp.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -9333,8 +10054,11 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/icu/android/brkitr.patch
 FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
 FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
@@ -9342,23 +10066,150 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/cjdict.patch
-FILE: ../../../third_party/icu/patches/collator_range.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
 FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fuchsia.patch
+FILE: ../../../third_party/icu/patches/decimalformat_align.patch
+FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/han_script.patch
+FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/linebrk.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/msvc4229.patch
-FILE: ../../../third_party/icu/patches/string_literal_charptr.patch
-FILE: ../../../third_party/icu/patches/tzdbname.patch
-FILE: ../../../third_party/icu/patches/ucase_utf8.patch
-FILE: ../../../third_party/icu/patches/ucurr_locale.patch
-FILE: ../../../third_party/icu/patches/uloc_buffer_overrun.patch
+FILE: ../../../third_party/icu/patches/locid_map.patch
+FILE: ../../../third_party/icu/patches/nf_maxsig.patch
+FILE: ../../../third_party/icu/patches/vscomp.patch
+FILE: ../../../third_party/icu/patches/wordbrk.patch
+FILE: ../../../third_party/icu/patches/wpo.patch
+FILE: ../../../third_party/icu/source/data/curr/pool.res
+FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
+FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
+FILE: ../../../third_party/icu/source/data/in/nfc.nrm
+FILE: ../../../third_party/icu/source/data/in/nfkc.nrm
+FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
+FILE: ../../../third_party/icu/source/data/in/pnames.icu
+FILE: ../../../third_party/icu/source/data/in/ubidi.icu
+FILE: ../../../third_party/icu/source/data/in/ucase.icu
+FILE: ../../../third_party/icu/source/data/in/unames.icu
+FILE: ../../../third_party/icu/source/data/in/uprops.icu
+FILE: ../../../third_party/icu/source/data/in/uts46.nrm
+FILE: ../../../third_party/icu/source/data/lang/pool.res
+FILE: ../../../third_party/icu/source/data/locales/pool.res
+FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/gb18030.ucm
+FILE: ../../../third_party/icu/source/data/mappings/ibm866-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-10-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-13-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-14-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-15-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-16-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-2-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-3-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-4-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-5-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-6-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-7-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/iso-8859-8-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/koi8-r-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/koi8-u-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/macintosh-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/shift_jis-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1250-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1251-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1252-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1253-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1254-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1255-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1256-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1257-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
+FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
+FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
+FILE: ../../../third_party/icu/source/data/region/pool.res
+FILE: ../../../third_party/icu/source/data/unit/pool.res
+FILE: ../../../third_party/icu/source/data/zone/pool.res
+FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
+FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
+FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
+FILE: ../../../third_party/icu/source/tools/tzcode/asctime.c
+FILE: ../../../third_party/icu/source/tools/tzcode/ialloc.c
+FILE: ../../../third_party/icu/source/tools/tzcode/localtime.c
+FILE: ../../../third_party/icu/source/tools/tzcode/private.h
+FILE: ../../../third_party/icu/source/tools/tzcode/scheck.c
+FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
+FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
+FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
+FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
+FILE: ../../../third_party/icu/windows/icudt.dll
+----------------------------------------------------------------------------------------------------
+Copyright (c) 1999 TaBE Project.
+Copyright (c) 1999 Pai-Hsiang Hsiao.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+. Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+. Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in
+  the documentation and/or other materials provided with the
+  distribution.
+. Neither the name of the TaBE Project nor the names of its
+  contributors may be used to endorse or promote products derived
+  from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: icu
+ORIGIN: ../../../third_party/icu/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/icu/android/brkitr.patch
+FILE: ../../../third_party/icu/android/currencies.list
+FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/cast/icudtl.dat
+FILE: ../../../third_party/icu/common/icudtb.dat
+FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
+FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
+FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
+FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
+FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/cjdict.patch
+FILE: ../../../third_party/icu/patches/data.build.patch
+FILE: ../../../third_party/icu/patches/data.build.win.patch
+FILE: ../../../third_party/icu/patches/data_symb.patch
+FILE: ../../../third_party/icu/patches/decimalformat_align.patch
+FILE: ../../../third_party/icu/patches/double_conversion.patch
+FILE: ../../../third_party/icu/patches/gb_table.patch
+FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
+FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
+FILE: ../../../third_party/icu/patches/locale1.patch
+FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_map.patch
+FILE: ../../../third_party/icu/patches/nf_maxsig.patch
 FILE: ../../../third_party/icu/patches/vscomp.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -9471,8 +10322,11 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/icu/android/brkitr.patch
 FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
 FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
@@ -9480,23 +10334,19 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/cjdict.patch
-FILE: ../../../third_party/icu/patches/collator_range.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
 FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fuchsia.patch
+FILE: ../../../third_party/icu/patches/decimalformat_align.patch
+FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/han_script.patch
+FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/linebrk.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/msvc4229.patch
-FILE: ../../../third_party/icu/patches/string_literal_charptr.patch
-FILE: ../../../third_party/icu/patches/tzdbname.patch
-FILE: ../../../third_party/icu/patches/ucase_utf8.patch
-FILE: ../../../third_party/icu/patches/ucurr_locale.patch
-FILE: ../../../third_party/icu/patches/uloc_buffer_overrun.patch
+FILE: ../../../third_party/icu/patches/locid_map.patch
+FILE: ../../../third_party/icu/patches/nf_maxsig.patch
 FILE: ../../../third_party/icu/patches/vscomp.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -9608,8 +10458,11 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/icu/android/brkitr.patch
 FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
 FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
@@ -9617,155 +10470,19 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/cjdict.patch
-FILE: ../../../third_party/icu/patches/collator_range.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
 FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fuchsia.patch
+FILE: ../../../third_party/icu/patches/decimalformat_align.patch
+FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/han_script.patch
+FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/linebrk.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/msvc4229.patch
-FILE: ../../../third_party/icu/patches/string_literal_charptr.patch
-FILE: ../../../third_party/icu/patches/tzdbname.patch
-FILE: ../../../third_party/icu/patches/ucase_utf8.patch
-FILE: ../../../third_party/icu/patches/ucurr_locale.patch
-FILE: ../../../third_party/icu/patches/uloc_buffer_overrun.patch
-FILE: ../../../third_party/icu/patches/vscomp.patch
-FILE: ../../../third_party/icu/patches/wordbrk.patch
-FILE: ../../../third_party/icu/patches/wpo.patch
-FILE: ../../../third_party/icu/source/data/curr/pool.res
-FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
-FILE: ../../../third_party/icu/source/data/in/coll/ucadata-unihan.icu
-FILE: ../../../third_party/icu/source/data/in/nfc.nrm
-FILE: ../../../third_party/icu/source/data/in/nfkc.nrm
-FILE: ../../../third_party/icu/source/data/in/nfkc_cf.nrm
-FILE: ../../../third_party/icu/source/data/in/pnames.icu
-FILE: ../../../third_party/icu/source/data/in/ubidi.icu
-FILE: ../../../third_party/icu/source/data/in/ucase.icu
-FILE: ../../../third_party/icu/source/data/in/unames.icu
-FILE: ../../../third_party/icu/source/data/in/uprops.icu
-FILE: ../../../third_party/icu/source/data/in/uts46.nrm
-FILE: ../../../third_party/icu/source/data/lang/pool.res
-FILE: ../../../third_party/icu/source/data/locales/pool.res
-FILE: ../../../third_party/icu/source/data/mappings/big5-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/euc-jp-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/euc-kr-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/gb18030.ucm
-FILE: ../../../third_party/icu/source/data/mappings/ibm866-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-10-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-13-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-14-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-15-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-16-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-2-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-3-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-4-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-5-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-6-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-7-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/iso-8859-8-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/koi8-r-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/koi8-u-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/macintosh-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/shift_jis-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1250-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1251-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1252-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1253-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1254-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1255-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1256-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1257-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-1258-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-874-html.ucm
-FILE: ../../../third_party/icu/source/data/mappings/windows-936-2000.ucm
-FILE: ../../../third_party/icu/source/data/mappings/x-mac-cyrillic-html.ucm
-FILE: ../../../third_party/icu/source/data/region/pool.res
-FILE: ../../../third_party/icu/source/data/unit/pool.res
-FILE: ../../../third_party/icu/source/data/zone/pool.res
-FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsp
-FILE: ../../../third_party/icu/source/extra/scrptrun/srtest.dsw
-FILE: ../../../third_party/icu/source/samples/ucnv/data02.bin
-FILE: ../../../third_party/icu/source/tools/tzcode/asctime.c
-FILE: ../../../third_party/icu/source/tools/tzcode/ialloc.c
-FILE: ../../../third_party/icu/source/tools/tzcode/localtime.c
-FILE: ../../../third_party/icu/source/tools/tzcode/private.h
-FILE: ../../../third_party/icu/source/tools/tzcode/scheck.c
-FILE: ../../../third_party/icu/source/tools/tzcode/tzfile.h
-FILE: ../../../third_party/icu/source/tools/tzcode/tzselect.ksh
-FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
-FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
-FILE: ../../../third_party/icu/windows/icudt.dll
-----------------------------------------------------------------------------------------------------
-Copyrighy (c) 1999 TaBE Project.
-Copyright (c) 1999 Pai-Hsiang Hsiao.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-. Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-. Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-. Neither the name of the TaBE Project nor the names of its
-  contributors may be used to endorse or promote products derived
-  from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: icu
-ORIGIN: ../../../third_party/icu/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/icu/android/brkitr.patch
-FILE: ../../../third_party/icu/android/currencies.list
-FILE: ../../../third_party/icu/android/icudtl.dat
-FILE: ../../../third_party/icu/common/icudtb.dat
-FILE: ../../../third_party/icu/common/icudtl.dat
-FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
-FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
-FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
-FILE: ../../../third_party/icu/ios/icudtl.dat
-FILE: ../../../third_party/icu/patches/cjdict.patch
-FILE: ../../../third_party/icu/patches/collator_range.patch
-FILE: ../../../third_party/icu/patches/data.build.patch
-FILE: ../../../third_party/icu/patches/data.build.win.patch
-FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fuchsia.patch
-FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/han_script.patch
-FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/linebrk.patch
-FILE: ../../../third_party/icu/patches/locale1.patch
-FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/msvc4229.patch
-FILE: ../../../third_party/icu/patches/string_literal_charptr.patch
-FILE: ../../../third_party/icu/patches/tzdbname.patch
-FILE: ../../../third_party/icu/patches/ucase_utf8.patch
-FILE: ../../../third_party/icu/patches/ucurr_locale.patch
-FILE: ../../../third_party/icu/patches/uloc_buffer_overrun.patch
+FILE: ../../../third_party/icu/patches/locid_map.patch
+FILE: ../../../third_party/icu/patches/nf_maxsig.patch
 FILE: ../../../third_party/icu/patches/vscomp.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -9873,8 +10590,11 @@ TYPE: LicenseType.icu
 FILE: ../../../third_party/icu/android/brkitr.patch
 FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
 FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
@@ -9882,23 +10602,19 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/cjdict.patch
-FILE: ../../../third_party/icu/patches/collator_range.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
 FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fuchsia.patch
+FILE: ../../../third_party/icu/patches/decimalformat_align.patch
+FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/han_script.patch
+FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/linebrk.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/msvc4229.patch
-FILE: ../../../third_party/icu/patches/string_literal_charptr.patch
-FILE: ../../../third_party/icu/patches/tzdbname.patch
-FILE: ../../../third_party/icu/patches/ucase_utf8.patch
-FILE: ../../../third_party/icu/patches/ucurr_locale.patch
-FILE: ../../../third_party/icu/patches/uloc_buffer_overrun.patch
+FILE: ../../../third_party/icu/patches/locid_map.patch
+FILE: ../../../third_party/icu/patches/nf_maxsig.patch
 FILE: ../../../third_party/icu/patches/vscomp.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -10005,8 +10721,11 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/icu/android/brkitr.patch
 FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
 FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
@@ -10014,23 +10733,19 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/cjdict.patch
-FILE: ../../../third_party/icu/patches/collator_range.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
 FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fuchsia.patch
+FILE: ../../../third_party/icu/patches/decimalformat_align.patch
+FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/han_script.patch
+FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/linebrk.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/msvc4229.patch
-FILE: ../../../third_party/icu/patches/string_literal_charptr.patch
-FILE: ../../../third_party/icu/patches/tzdbname.patch
-FILE: ../../../third_party/icu/patches/ucase_utf8.patch
-FILE: ../../../third_party/icu/patches/ucurr_locale.patch
-FILE: ../../../third_party/icu/patches/uloc_buffer_overrun.patch
+FILE: ../../../third_party/icu/patches/locid_map.patch
+FILE: ../../../third_party/icu/patches/nf_maxsig.patch
 FILE: ../../../third_party/icu/patches/vscomp.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -10110,8 +10825,11 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/icu/android/brkitr.patch
 FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
 FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
@@ -10119,23 +10837,19 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/cjdict.patch
-FILE: ../../../third_party/icu/patches/collator_range.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
 FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fuchsia.patch
+FILE: ../../../third_party/icu/patches/decimalformat_align.patch
+FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/han_script.patch
+FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/linebrk.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/msvc4229.patch
-FILE: ../../../third_party/icu/patches/string_literal_charptr.patch
-FILE: ../../../third_party/icu/patches/tzdbname.patch
-FILE: ../../../third_party/icu/patches/ucase_utf8.patch
-FILE: ../../../third_party/icu/patches/ucurr_locale.patch
-FILE: ../../../third_party/icu/patches/uloc_buffer_overrun.patch
+FILE: ../../../third_party/icu/patches/locid_map.patch
+FILE: ../../../third_party/icu/patches/nf_maxsig.patch
 FILE: ../../../third_party/icu/patches/vscomp.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -10282,8 +10996,11 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/icu/android/brkitr.patch
 FILE: ../../../third_party/icu/android/currencies.list
 FILE: ../../../third_party/icu/android/icudtl.dat
+FILE: ../../../third_party/icu/cast/icudtl.dat
 FILE: ../../../third_party/icu/common/icudtb.dat
 FILE: ../../../third_party/icu/common/icudtl.dat
+FILE: ../../../third_party/icu/flutter/brkitr.patch
+FILE: ../../../third_party/icu/flutter/icudtl.dat
 FILE: ../../../third_party/icu/fuzzers/fuzzer_utils.h
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_break_iterator_utf32_fuzzer.cc
@@ -10291,23 +11008,19 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
 FILE: ../../../third_party/icu/patches/cjdict.patch
-FILE: ../../../third_party/icu/patches/collator_range.patch
 FILE: ../../../third_party/icu/patches/data.build.patch
 FILE: ../../../third_party/icu/patches/data.build.win.patch
 FILE: ../../../third_party/icu/patches/data_symb.patch
-FILE: ../../../third_party/icu/patches/fuchsia.patch
+FILE: ../../../third_party/icu/patches/decimalformat_align.patch
+FILE: ../../../third_party/icu/patches/double_conversion.patch
 FILE: ../../../third_party/icu/patches/gb_table.patch
-FILE: ../../../third_party/icu/patches/han_script.patch
+FILE: ../../../third_party/icu/patches/greek_lowercase.patch
+FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
-FILE: ../../../third_party/icu/patches/linebrk.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
-FILE: ../../../third_party/icu/patches/msvc4229.patch
-FILE: ../../../third_party/icu/patches/string_literal_charptr.patch
-FILE: ../../../third_party/icu/patches/tzdbname.patch
-FILE: ../../../third_party/icu/patches/ucase_utf8.patch
-FILE: ../../../third_party/icu/patches/ucurr_locale.patch
-FILE: ../../../third_party/icu/patches/uloc_buffer_overrun.patch
+FILE: ../../../third_party/icu/patches/locid_map.patch
+FILE: ../../../third_party/icu/patches/nf_maxsig.patch
 FILE: ../../../third_party/icu/patches/vscomp.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
@@ -10375,8 +11088,8 @@ FILE: ../../../third_party/icu/source/tools/tzcode/zdump.c
 FILE: ../../../third_party/icu/source/tools/tzcode/zic.c
 FILE: ../../../third_party/icu/windows/icudt.dll
 ----------------------------------------------------------------------------------------------------
-Copyright © 1991-2017 Unicode, Inc. All rights reserved.
-Distributed under the Terms of Use in http://www.unicode.org/copyright.html
+Copyright © 1991-2018 Unicode, Inc. All rights reserved.
+Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of the Unicode data files and any associated documentation
@@ -10495,6 +11208,8 @@ FILE: ../../../third_party/icu/source/common/bmpset.h
 FILE: ../../../third_party/icu/source/common/brkeng.cpp
 FILE: ../../../third_party/icu/source/common/brkeng.h
 FILE: ../../../third_party/icu/source/common/brkiter.cpp
+FILE: ../../../third_party/icu/source/common/bytesinkutil.cpp
+FILE: ../../../third_party/icu/source/common/bytesinkutil.h
 FILE: ../../../third_party/icu/source/common/bytestream.cpp
 FILE: ../../../third_party/icu/source/common/bytestrie.cpp
 FILE: ../../../third_party/icu/source/common/bytestriebuilder.cpp
@@ -10566,6 +11281,8 @@ FILE: ../../../third_party/icu/source/common/punycode.h
 FILE: ../../../third_party/icu/source/common/putil.cpp
 FILE: ../../../third_party/icu/source/common/putilimp.h
 FILE: ../../../third_party/icu/source/common/rbbi.cpp
+FILE: ../../../third_party/icu/source/common/rbbi_cache.cpp
+FILE: ../../../third_party/icu/source/common/rbbi_cache.h
 FILE: ../../../third_party/icu/source/common/rbbidata.cpp
 FILE: ../../../third_party/icu/source/common/rbbidata.h
 FILE: ../../../third_party/icu/source/common/rbbinode.cpp
@@ -10601,6 +11318,8 @@ FILE: ../../../third_party/icu/source/common/sharedobject.cpp
 FILE: ../../../third_party/icu/source/common/sharedobject.h
 FILE: ../../../third_party/icu/source/common/simpleformatter.cpp
 FILE: ../../../third_party/icu/source/common/sprpimpl.h
+FILE: ../../../third_party/icu/source/common/static_unicode_sets.cpp
+FILE: ../../../third_party/icu/source/common/static_unicode_sets.h
 FILE: ../../../third_party/icu/source/common/stringpiece.cpp
 FILE: ../../../third_party/icu/source/common/stringtriebuilder.cpp
 FILE: ../../../third_party/icu/source/common/uarrsort.cpp
@@ -10736,6 +11455,7 @@ FILE: ../../../third_party/icu/source/common/unicode/schriter.h
 FILE: ../../../third_party/icu/source/common/unicode/simpleformatter.h
 FILE: ../../../third_party/icu/source/common/unicode/std_string.h
 FILE: ../../../third_party/icu/source/common/unicode/strenum.h
+FILE: ../../../third_party/icu/source/common/unicode/stringoptions.h
 FILE: ../../../third_party/icu/source/common/unicode/stringpiece.h
 FILE: ../../../third_party/icu/source/common/unicode/stringtriebuilder.h
 FILE: ../../../third_party/icu/source/common/unicode/symtable.h
@@ -11107,8 +11827,6 @@ FILE: ../../../third_party/icu/source/extra/uconv/uconv.1.in
 FILE: ../../../third_party/icu/source/extra/uconv/uconv.cpp
 FILE: ../../../third_party/icu/source/extra/uconv/unicode/uwmsg.h
 FILE: ../../../third_party/icu/source/extra/uconv/uwmsg.c
-FILE: ../../../third_party/icu/source/i18n/affixpatternparser.cpp
-FILE: ../../../third_party/icu/source/i18n/affixpatternparser.h
 FILE: ../../../third_party/icu/source/i18n/alphaindex.cpp
 FILE: ../../../third_party/icu/source/i18n/anytrans.cpp
 FILE: ../../../third_party/icu/source/i18n/anytrans.h
@@ -11201,33 +11919,29 @@ FILE: ../../../third_party/icu/source/i18n/dangical.h
 FILE: ../../../third_party/icu/source/i18n/datefmt.cpp
 FILE: ../../../third_party/icu/source/i18n/dayperiodrules.cpp
 FILE: ../../../third_party/icu/source/i18n/dayperiodrules.h
-FILE: ../../../third_party/icu/source/i18n/dcfmtimp.h
 FILE: ../../../third_party/icu/source/i18n/dcfmtsym.cpp
 FILE: ../../../third_party/icu/source/i18n/decContext.cpp
 FILE: ../../../third_party/icu/source/i18n/decContext.h
 FILE: ../../../third_party/icu/source/i18n/decNumber.cpp
 FILE: ../../../third_party/icu/source/i18n/decNumber.h
 FILE: ../../../third_party/icu/source/i18n/decNumberLocal.h
-FILE: ../../../third_party/icu/source/i18n/decfmtst.cpp
-FILE: ../../../third_party/icu/source/i18n/decfmtst.h
-FILE: ../../../third_party/icu/source/i18n/decimalformatpattern.cpp
-FILE: ../../../third_party/icu/source/i18n/decimalformatpattern.h
-FILE: ../../../third_party/icu/source/i18n/decimalformatpatternimpl.h
 FILE: ../../../third_party/icu/source/i18n/decimfmt.cpp
-FILE: ../../../third_party/icu/source/i18n/decimfmtimpl.cpp
-FILE: ../../../third_party/icu/source/i18n/decimfmtimpl.h
-FILE: ../../../third_party/icu/source/i18n/digitaffix.cpp
-FILE: ../../../third_party/icu/source/i18n/digitaffix.h
-FILE: ../../../third_party/icu/source/i18n/digitaffixesandpadding.cpp
-FILE: ../../../third_party/icu/source/i18n/digitaffixesandpadding.h
-FILE: ../../../third_party/icu/source/i18n/digitformatter.cpp
-FILE: ../../../third_party/icu/source/i18n/digitformatter.h
-FILE: ../../../third_party/icu/source/i18n/digitgrouping.cpp
-FILE: ../../../third_party/icu/source/i18n/digitgrouping.h
-FILE: ../../../third_party/icu/source/i18n/digitinterval.cpp
-FILE: ../../../third_party/icu/source/i18n/digitinterval.h
-FILE: ../../../third_party/icu/source/i18n/digitlst.cpp
-FILE: ../../../third_party/icu/source/i18n/digitlst.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-bignum-dtoa.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion-bignum-dtoa.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-bignum.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion-bignum.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-cached-powers.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion-cached-powers.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-diy-fp.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion-diy-fp.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-fast-dtoa.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion-fast-dtoa.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-ieee.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-strtod.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion-strtod.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion-utils.h
+FILE: ../../../third_party/icu/source/i18n/double-conversion.cpp
+FILE: ../../../third_party/icu/source/i18n/double-conversion.h
 FILE: ../../../third_party/icu/source/i18n/dt_impl.h
 FILE: ../../../third_party/icu/source/i18n/dtfmtsym.cpp
 FILE: ../../../third_party/icu/source/i18n/dtitv_impl.h
@@ -11280,22 +11994,86 @@ FILE: ../../../third_party/icu/source/i18n/nfsubs.cpp
 FILE: ../../../third_party/icu/source/i18n/nfsubs.h
 FILE: ../../../third_party/icu/source/i18n/nortrans.cpp
 FILE: ../../../third_party/icu/source/i18n/nortrans.h
+FILE: ../../../third_party/icu/source/i18n/nounit.cpp
 FILE: ../../../third_party/icu/source/i18n/nultrans.cpp
 FILE: ../../../third_party/icu/source/i18n/nultrans.h
+FILE: ../../../third_party/icu/source/i18n/number_affixutils.cpp
+FILE: ../../../third_party/icu/source/i18n/number_affixutils.h
+FILE: ../../../third_party/icu/source/i18n/number_asformat.cpp
+FILE: ../../../third_party/icu/source/i18n/number_asformat.h
+FILE: ../../../third_party/icu/source/i18n/number_capi.cpp
+FILE: ../../../third_party/icu/source/i18n/number_compact.cpp
+FILE: ../../../third_party/icu/source/i18n/number_compact.h
+FILE: ../../../third_party/icu/source/i18n/number_currencysymbols.cpp
+FILE: ../../../third_party/icu/source/i18n/number_currencysymbols.h
+FILE: ../../../third_party/icu/source/i18n/number_decimalquantity.cpp
+FILE: ../../../third_party/icu/source/i18n/number_decimalquantity.h
+FILE: ../../../third_party/icu/source/i18n/number_decimfmtprops.cpp
+FILE: ../../../third_party/icu/source/i18n/number_decimfmtprops.h
+FILE: ../../../third_party/icu/source/i18n/number_decnum.h
+FILE: ../../../third_party/icu/source/i18n/number_fluent.cpp
+FILE: ../../../third_party/icu/source/i18n/number_formatimpl.cpp
+FILE: ../../../third_party/icu/source/i18n/number_formatimpl.h
+FILE: ../../../third_party/icu/source/i18n/number_grouping.cpp
+FILE: ../../../third_party/icu/source/i18n/number_integerwidth.cpp
+FILE: ../../../third_party/icu/source/i18n/number_longnames.cpp
+FILE: ../../../third_party/icu/source/i18n/number_longnames.h
+FILE: ../../../third_party/icu/source/i18n/number_mapper.cpp
+FILE: ../../../third_party/icu/source/i18n/number_mapper.h
+FILE: ../../../third_party/icu/source/i18n/number_microprops.h
+FILE: ../../../third_party/icu/source/i18n/number_modifiers.cpp
+FILE: ../../../third_party/icu/source/i18n/number_modifiers.h
+FILE: ../../../third_party/icu/source/i18n/number_multiplier.cpp
+FILE: ../../../third_party/icu/source/i18n/number_multiplier.h
+FILE: ../../../third_party/icu/source/i18n/number_notation.cpp
+FILE: ../../../third_party/icu/source/i18n/number_padding.cpp
+FILE: ../../../third_party/icu/source/i18n/number_patternmodifier.cpp
+FILE: ../../../third_party/icu/source/i18n/number_patternmodifier.h
+FILE: ../../../third_party/icu/source/i18n/number_patternstring.cpp
+FILE: ../../../third_party/icu/source/i18n/number_patternstring.h
+FILE: ../../../third_party/icu/source/i18n/number_rounding.cpp
+FILE: ../../../third_party/icu/source/i18n/number_roundingutils.h
+FILE: ../../../third_party/icu/source/i18n/number_scientific.cpp
+FILE: ../../../third_party/icu/source/i18n/number_scientific.h
+FILE: ../../../third_party/icu/source/i18n/number_skeletons.cpp
+FILE: ../../../third_party/icu/source/i18n/number_skeletons.h
+FILE: ../../../third_party/icu/source/i18n/number_stringbuilder.cpp
+FILE: ../../../third_party/icu/source/i18n/number_stringbuilder.h
+FILE: ../../../third_party/icu/source/i18n/number_types.h
+FILE: ../../../third_party/icu/source/i18n/number_utils.cpp
+FILE: ../../../third_party/icu/source/i18n/number_utils.h
+FILE: ../../../third_party/icu/source/i18n/number_utypes.h
 FILE: ../../../third_party/icu/source/i18n/numfmt.cpp
+FILE: ../../../third_party/icu/source/i18n/numparse_affixes.cpp
+FILE: ../../../third_party/icu/source/i18n/numparse_affixes.h
+FILE: ../../../third_party/icu/source/i18n/numparse_compositions.cpp
+FILE: ../../../third_party/icu/source/i18n/numparse_compositions.h
+FILE: ../../../third_party/icu/source/i18n/numparse_currency.cpp
+FILE: ../../../third_party/icu/source/i18n/numparse_currency.h
+FILE: ../../../third_party/icu/source/i18n/numparse_decimal.cpp
+FILE: ../../../third_party/icu/source/i18n/numparse_decimal.h
+FILE: ../../../third_party/icu/source/i18n/numparse_impl.cpp
+FILE: ../../../third_party/icu/source/i18n/numparse_impl.h
+FILE: ../../../third_party/icu/source/i18n/numparse_parsednumber.cpp
+FILE: ../../../third_party/icu/source/i18n/numparse_scientific.cpp
+FILE: ../../../third_party/icu/source/i18n/numparse_scientific.h
+FILE: ../../../third_party/icu/source/i18n/numparse_stringsegment.cpp
+FILE: ../../../third_party/icu/source/i18n/numparse_stringsegment.h
+FILE: ../../../third_party/icu/source/i18n/numparse_symbols.cpp
+FILE: ../../../third_party/icu/source/i18n/numparse_symbols.h
+FILE: ../../../third_party/icu/source/i18n/numparse_types.h
+FILE: ../../../third_party/icu/source/i18n/numparse_utils.h
+FILE: ../../../third_party/icu/source/i18n/numparse_validators.cpp
+FILE: ../../../third_party/icu/source/i18n/numparse_validators.h
 FILE: ../../../third_party/icu/source/i18n/numsys.cpp
 FILE: ../../../third_party/icu/source/i18n/numsys_impl.h
 FILE: ../../../third_party/icu/source/i18n/olsontz.cpp
 FILE: ../../../third_party/icu/source/i18n/olsontz.h
 FILE: ../../../third_party/icu/source/i18n/persncal.cpp
 FILE: ../../../third_party/icu/source/i18n/persncal.h
-FILE: ../../../third_party/icu/source/i18n/pluralaffix.cpp
-FILE: ../../../third_party/icu/source/i18n/pluralaffix.h
 FILE: ../../../third_party/icu/source/i18n/plurfmt.cpp
 FILE: ../../../third_party/icu/source/i18n/plurrule.cpp
 FILE: ../../../third_party/icu/source/i18n/plurrule_impl.h
-FILE: ../../../third_party/icu/source/i18n/precision.cpp
-FILE: ../../../third_party/icu/source/i18n/precision.h
 FILE: ../../../third_party/icu/source/i18n/quant.cpp
 FILE: ../../../third_party/icu/source/i18n/quant.h
 FILE: ../../../third_party/icu/source/i18n/quantityformatter.cpp
@@ -11343,10 +12121,7 @@ FILE: ../../../third_party/icu/source/i18n/sharedcalendar.h
 FILE: ../../../third_party/icu/source/i18n/shareddateformatsymbols.h
 FILE: ../../../third_party/icu/source/i18n/sharednumberformat.h
 FILE: ../../../third_party/icu/source/i18n/sharedpluralrules.h
-FILE: ../../../third_party/icu/source/i18n/significantdigitinterval.h
 FILE: ../../../third_party/icu/source/i18n/simpletz.cpp
-FILE: ../../../third_party/icu/source/i18n/smallintformatter.cpp
-FILE: ../../../third_party/icu/source/i18n/smallintformatter.h
 FILE: ../../../third_party/icu/source/i18n/smpdtfmt.cpp
 FILE: ../../../third_party/icu/source/i18n/smpdtfst.cpp
 FILE: ../../../third_party/icu/source/i18n/smpdtfst.h
@@ -11433,6 +12208,8 @@ FILE: ../../../third_party/icu/source/i18n/unicode/measfmt.h
 FILE: ../../../third_party/icu/source/i18n/unicode/measunit.h
 FILE: ../../../third_party/icu/source/i18n/unicode/measure.h
 FILE: ../../../third_party/icu/source/i18n/unicode/msgfmt.h
+FILE: ../../../third_party/icu/source/i18n/unicode/nounit.h
+FILE: ../../../third_party/icu/source/i18n/unicode/numberformatter.h
 FILE: ../../../third_party/icu/source/i18n/unicode/numfmt.h
 FILE: ../../../third_party/icu/source/i18n/unicode/numsys.h
 FILE: ../../../third_party/icu/source/i18n/unicode/plurfmt.h
@@ -11473,6 +12250,7 @@ FILE: ../../../third_party/icu/source/i18n/unicode/ulocdata.h
 FILE: ../../../third_party/icu/source/i18n/unicode/umsg.h
 FILE: ../../../third_party/icu/source/i18n/unicode/unirepl.h
 FILE: ../../../third_party/icu/source/i18n/unicode/unum.h
+FILE: ../../../third_party/icu/source/i18n/unicode/unumberformatter.h
 FILE: ../../../third_party/icu/source/i18n/unicode/unumsys.h
 FILE: ../../../third_party/icu/source/i18n/unicode/upluralrules.h
 FILE: ../../../third_party/icu/source/i18n/unicode/uregex.h
@@ -11503,10 +12281,6 @@ FILE: ../../../third_party/icu/source/i18n/utf8collationiterator.cpp
 FILE: ../../../third_party/icu/source/i18n/utf8collationiterator.h
 FILE: ../../../third_party/icu/source/i18n/utmscale.cpp
 FILE: ../../../third_party/icu/source/i18n/utrans.cpp
-FILE: ../../../third_party/icu/source/i18n/valueformatter.cpp
-FILE: ../../../third_party/icu/source/i18n/valueformatter.h
-FILE: ../../../third_party/icu/source/i18n/visibledigits.cpp
-FILE: ../../../third_party/icu/source/i18n/visibledigits.h
 FILE: ../../../third_party/icu/source/i18n/vtzone.cpp
 FILE: ../../../third_party/icu/source/i18n/vzone.cpp
 FILE: ../../../third_party/icu/source/i18n/vzone.h
@@ -11695,9 +12469,13 @@ FILE: ../../../third_party/icu/source/tools/gencolusb/extract_unsafe_backwards.c
 FILE: ../../../third_party/icu/source/tools/gencolusb/verify_uset.cpp
 FILE: ../../../third_party/icu/source/tools/gendict/gendict.1.in
 FILE: ../../../third_party/icu/source/tools/gendict/gendict.cpp
+FILE: ../../../third_party/icu/source/tools/gennorm2/extradata.cpp
+FILE: ../../../third_party/icu/source/tools/gennorm2/extradata.h
 FILE: ../../../third_party/icu/source/tools/gennorm2/gennorm2.cpp
 FILE: ../../../third_party/icu/source/tools/gennorm2/n2builder.cpp
 FILE: ../../../third_party/icu/source/tools/gennorm2/n2builder.h
+FILE: ../../../third_party/icu/source/tools/gennorm2/norms.cpp
+FILE: ../../../third_party/icu/source/tools/gennorm2/norms.h
 FILE: ../../../third_party/icu/source/tools/genrb/derb.1.in
 FILE: ../../../third_party/icu/source/tools/genrb/derb.cpp
 FILE: ../../../third_party/icu/source/tools/genrb/errmsg.c
@@ -11961,202 +12739,177 @@ attached.
 
 ====================================================================================================
 LIBRARY: icu
-ORIGIN: ../../../third_party/icu/source/i18n/decContext.cpp + ../../../third_party/icu/LICENSE
+ORIGIN: ../../../third_party/icu/source/i18n/decContext.cpp + ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/icu/source/i18n/decContext.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright (c) IBM Corporation, 2000-2012.  All rights reserved.
 
-                   Institute of Information Science, Academia
-  *                    Sinica. All rights reserved.
-
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
+modification, are permitted provided that the following conditions are
+met:
 
-. Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-. Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-. Neither the name of the Computer Systems and Communication Lab
-  nor the names of its contributors may be used to endorse or
-  promote products derived from this software without specific
-  prior written permission.
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
 LIBRARY: icu
-ORIGIN: ../../../third_party/icu/source/i18n/decContext.h + ../../../third_party/icu/LICENSE
+ORIGIN: ../../../third_party/icu/source/i18n/decContext.h + ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/icu/source/i18n/decContext.h
 ----------------------------------------------------------------------------------------------------
 Copyright (c) IBM Corporation, 2000-2011.   All rights reserved.
 
-                   Institute of Information Science, Academia
-  *                    Sinica. All rights reserved.
-
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
+modification, are permitted provided that the following conditions are
+met:
 
-. Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-. Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-. Neither the name of the Computer Systems and Communication Lab
-  nor the names of its contributors may be used to endorse or
-  promote products derived from this software without specific
-  prior written permission.
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
 LIBRARY: icu
-ORIGIN: ../../../third_party/icu/source/i18n/decNumber.cpp + ../../../third_party/icu/LICENSE
+ORIGIN: ../../../third_party/icu/source/i18n/decNumber.cpp + ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/icu/source/i18n/decNumber.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright (c) IBM Corporation, 2000-2014.  All rights reserved.
 
-                   Institute of Information Science, Academia
-  *                    Sinica. All rights reserved.
-
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
+modification, are permitted provided that the following conditions are
+met:
 
-. Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-. Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-. Neither the name of the Computer Systems and Communication Lab
-  nor the names of its contributors may be used to endorse or
-  promote products derived from this software without specific
-  prior written permission.
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
 LIBRARY: icu
-ORIGIN: ../../../third_party/icu/source/i18n/decNumber.h + ../../../third_party/icu/LICENSE
+ORIGIN: ../../../third_party/icu/source/i18n/decNumber.h + ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/icu/source/i18n/decNumber.h
 ----------------------------------------------------------------------------------------------------
 Copyright (c) IBM Corporation, 2000-2010.   All rights reserved.
 
-                   Institute of Information Science, Academia
-  *                    Sinica. All rights reserved.
-
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
+modification, are permitted provided that the following conditions are
+met:
 
-. Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-. Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-. Neither the name of the Computer Systems and Communication Lab
-  nor the names of its contributors may be used to endorse or
-  promote products derived from this software without specific
-  prior written permission.
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
 LIBRARY: icu
-ORIGIN: ../../../third_party/icu/source/i18n/decNumberLocal.h + ../../../third_party/icu/LICENSE
+ORIGIN: ../../../third_party/icu/source/i18n/decNumberLocal.h + ../../../third_party/dart/runtime/third_party/double-conversion/COPYING
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/icu/source/i18n/decNumberLocal.h
 ----------------------------------------------------------------------------------------------------
 Copyright (c) IBM Corporation, 2000-2016.   All rights reserved.
 
-                   Institute of Information Science, Academia
-  *                    Sinica. All rights reserved.
-
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
+modification, are permitted provided that the following conditions are
+met:
 
-. Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-. Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-. Neither the name of the Computer Systems and Communication Lab
-  nor the names of its contributors may be used to endorse or
-  promote products derived from this software without specific
-  prior written permission.
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
@@ -15947,50 +16700,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: tonic
-ORIGIN: ../../../garnet/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/tonic/dart_list.cc
-FILE: ../../../third_party/tonic/dart_list.h
-FILE: ../../../third_party/tonic/file_loader/file_loader_fuchsia.cc
-FILE: ../../../third_party/tonic/file_loader/file_loader_posix.cc
-FILE: ../../../third_party/tonic/file_loader/file_loader_win.cc
-FILE: ../../../third_party/tonic/filesystem/filesystem/path_win.cc
-FILE: ../../../third_party/tonic/filesystem/filesystem/portable_unistd.h
-FILE: ../../../third_party/tonic/platform/platform_utils.h
-FILE: ../../../third_party/tonic/platform/platform_utils_posix.cc
-FILE: ../../../third_party/tonic/platform/platform_utils_win.cc
-----------------------------------------------------------------------------------------------------
-Copyright 2017 The Fuchsia Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: tonic
 ORIGIN: ../../../third_party/tonic/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/tonic/common/build_config.h
@@ -16053,11 +16762,57 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: tonic
-ORIGIN: ../../../third_party/tonic/common/macros.h + ../../../third_party/tonic/LICENSE
+ORIGIN: ../../../third_party/tonic/common/log.cc + ../../../third_party/tonic/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/tonic/common/log.cc
+FILE: ../../../third_party/tonic/common/log.h
 FILE: ../../../third_party/tonic/common/macros.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Fuchsia Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: tonic
+ORIGIN: ../../../third_party/tonic/file_loader/file_loader_fuchsia.cc + ../../../third_party/tonic/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/tonic/dart_list.cc
+FILE: ../../../third_party/tonic/dart_list.h
+FILE: ../../../third_party/tonic/file_loader/file_loader_fuchsia.cc
+FILE: ../../../third_party/tonic/file_loader/file_loader_posix.cc
+FILE: ../../../third_party/tonic/file_loader/file_loader_win.cc
+FILE: ../../../third_party/tonic/filesystem/filesystem/path_win.cc
+FILE: ../../../third_party/tonic/filesystem/filesystem/portable_unistd.h
+FILE: ../../../third_party/tonic/platform/platform_utils.h
+FILE: ../../../third_party/tonic/platform/platform_utils_posix.cc
+FILE: ../../../third_party/tonic/platform/platform_utils_win.cc
+----------------------------------------------------------------------------------------------------
+Copyright 2017 The Fuchsia Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -16877,4 +17632,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 281
+Total license count: 299

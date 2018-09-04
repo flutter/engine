@@ -61,7 +61,7 @@ public class FlutterMain {
     private static final String DEFAULT_FLX = "app.flx";
     private static final String DEFAULT_SNAPSHOT_BLOB = "snapshot_blob.bin";
     private static final String DEFAULT_KERNEL_BLOB = "kernel_blob.bin";
-    private static final String DEFAULT_PLATFORM_DILL = "platform.dill";
+    private static final String DEFAULT_PLATFORM_DILL = "platform_strong.dill";
     private static final String DEFAULT_FLUTTER_ASSETS_DIR = "flutter_assets";
 
     // Assets that are shared among all Flutter apps within an APK.
@@ -219,8 +219,9 @@ public class FlutterMain {
             }
 
             String appBundlePath = findAppBundlePath(applicationContext);
+            String appStoragePath = PathUtils.getFilesDir(applicationContext);
             nativeInit(applicationContext, shellArgs.toArray(new String[0]),
-                appBundlePath);
+                appBundlePath, appStoragePath);
 
             sInitialized = true;
         } catch (Exception e) {
@@ -229,7 +230,7 @@ public class FlutterMain {
         }
     }
 
-    private static native void nativeInit(Context context, String[] args, String bundlePath);
+    private static native void nativeInit(Context context, String[] args, String bundlePath, String appStoragePath);
     private static native void nativeRecordStartTimestamp(long initTimeMillis);
 
     /**

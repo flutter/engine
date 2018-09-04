@@ -59,7 +59,7 @@ const String kMultiLicenseFileHeader = 'Notices for files contained in';
 
 bool isMultiLicenseNotice(Reader reader) {
   List<int> bytes = reader();
-  return (ASCII.decode(bytes.take(kMultiLicenseFileHeader.length).toList(), allowInvalid: true) == kMultiLicenseFileHeader);
+  return (ascii.decode(bytes.take(kMultiLicenseFileHeader.length).toList(), allowInvalid: true) == kMultiLicenseFileHeader);
 }
 
 FileType identifyFile(String name, Reader reader) {
@@ -67,7 +67,6 @@ FileType identifyFile(String name, Reader reader) {
   if ((path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/extra/uconv/README') || // This specific ICU README isn't in UTF-8.
       (path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/samples/uresb/sr.txt') || // This specific sample contains non-UTF-8 data (unlike other sr.txt files).
       (path.split(name).reversed.take(2).toList().reversed.join('/') == 'builds/detect.mk') || // This specific freetype sample contains non-UTF-8 data (unlike other .mk files).
-      (path.split(name).reversed.take(4).toList().reversed.join('/') == 'third_party/freetype2/docs/FTL.TXT') || // This file has a copyright symbol in Latin1 in it
       (path.split(name).reversed.take(3).toList().reversed.join('/') == 'third_party/cares/cares.rc')) // This file has a copyright symbol in Latin1 in it
     return FileType.latin1Text;
   if (path.split(name).reversed.take(6).toList().reversed.join('/') == 'dart/runtime/tests/vm/dart/bad_snapshot' || // Not any particular format
@@ -314,7 +313,7 @@ abstract class UTF8TextFile extends TextFile {
   @override
   String readString() {
     try {
-      return cache(new UTF8Of(this), () => UTF8.decode(readBytes()));
+      return cache(new UTF8Of(this), () => utf8.decode(readBytes()));
     } on FormatException {
       print(fullName);
       rethrow;
@@ -332,13 +331,13 @@ abstract class Latin1TextFile extends TextFile {
         throw '$fullName contains a U+0000 NULL and is probably not actually encoded as Win1252';
       bool isUTF8 = false;
       try {
-        cache(new UTF8Of(this), () => UTF8.decode(readBytes()));
+        cache(new UTF8Of(this), () => utf8.decode(readBytes()));
         isUTF8 = true;
       } on FormatException {
       }
       if (isUTF8)
         throw '$fullName contains valid UTF-8 and is probably not actually encoded as Win1252';
-      return LATIN1.decode(bytes);
+      return latin1.decode(bytes);
     });
   }
 }
