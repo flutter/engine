@@ -10,6 +10,7 @@ import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import io.flutter.util.PathUtils;
 
@@ -332,10 +333,18 @@ public class FlutterMain {
         return sIsPrecompiledAsBlobs || sIsPrecompiledAsSharedLibrary;
     }
 
-    public static String findAppBundlePath(Context applicationContext) {
+    @NonNull
+    public static String findAppBundlePath(@NonNull Context applicationContext) {
         String dataDirectory = PathUtils.getDataDirectory(applicationContext);
         File appBundle = new File(dataDirectory, sFlutterAssetsDir);
-        return appBundle.exists() ? appBundle.getPath() : null;
+        if (!appBundle.exists()) {
+            String errorMessage = String.format(
+                "Failed to locate Flutter app bundle. Please ensure it is available at: %s",
+                appBundle.getPath()
+            );
+            throw new RuntimeException(errorMessage);
+        }
+        return appBundle.getPath();
     }
 
     /**
