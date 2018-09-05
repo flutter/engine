@@ -13,6 +13,10 @@
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
+#ifdef ERROR
+#undef ERROR
+#endif
+
 namespace shell {
 
 Rasterizer::Rasterizer(blink::TaskRunners task_runners)
@@ -114,7 +118,7 @@ bool Rasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
       surface_->GetContext(), canvas, surface_->GetRootTransformation(), true);
 
   if (canvas) {
-    canvas->clear(SK_ColorBLACK);
+    canvas->clear(SK_ColorTRANSPARENT);
   }
 
   if (compositor_frame && compositor_frame->Raster(layer_tree, false)) {
@@ -173,6 +177,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsImage(
   auto snapshot_surface =
       CreateSnapshotSurface(surface_context, tree->frame_size());
   if (snapshot_surface == nullptr) {
+    FML_LOG(ERROR) << "Screenshot: unable to create snapshot surface";
     return nullptr;
   }
 
@@ -186,23 +191,25 @@ static sk_sp<SkData> ScreenshotLayerTreeAsImage(
 
   auto frame = compositor_context.AcquireFrame(
       surface_context, canvas, root_surface_transformation, false);
-  canvas->clear(SK_ColorBLACK);
+  canvas->clear(SK_ColorTRANSPARENT);
   frame->Raster(*tree, true);
   canvas->flush();
 
   // Prepare an image from the surface, this image may potentially be on th GPU.
   auto potentially_gpu_snapshot = snapshot_surface->makeImageSnapshot();
   if (!potentially_gpu_snapshot) {
+    FML_LOG(ERROR) << "Screenshot: unable to make image screenshot";
     return nullptr;
   }
 
   // Copy the GPU image snapshot into CPU memory.
   auto cpu_snapshot = potentially_gpu_snapshot->makeRasterImage();
   if (!cpu_snapshot) {
+    FML_LOG(ERROR) << "Screenshot: unable to make raster image";
     return nullptr;
   }
 
-  // If the caller want the pixels to be compressed, there is a Skia utilitiy to
+  // If the caller want the pixels to be compressed, there is a Skia utility to
   // compress to PNG. Use that.
   if (compressed) {
     return cpu_snapshot->encodeToData();
@@ -211,6 +218,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsImage(
   // Copy it into a bitmap and return the same.
   SkPixmap pixmap;
   if (!cpu_snapshot->peekPixels(&pixmap)) {
+    FML_LOG(ERROR) << "Screenshot: unable to obtain bitmap pixels";
     return nullptr;
   }
 
@@ -222,7 +230,7 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
     bool base64_encode) {
   auto layer_tree = GetLastLayerTree();
   if (layer_tree == nullptr) {
-    FML_DLOG(INFO) << "Last layer tree was null when screenshotting.";
+    FML_LOG(ERROR) << "Last layer tree was null when screenshotting.";
     return {};
   }
 
@@ -246,7 +254,7 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
   }
 
   if (data == nullptr) {
-    FML_DLOG(INFO) << "Sceenshot data was null.";
+    FML_LOG(ERROR) << "Screenshot data was null.";
     return {};
   }
 

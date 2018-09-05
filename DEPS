@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '1f0fb09d5e35e8136fd213d004b264c2fdba6eac',
+  'skia_revision': '343553a1fe9ec65ee6526015a7972435914d7a48',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '760a9690c22ec3f3d163173737f9949f97e6e02a',
+  'dart_revision': '2b995b2654ba162c48cdd187ce0b2f1d24c6838f',
 
   'dart_args_tag': '1.4.4',
   'dart_async_tag': '2.0.8',
@@ -115,7 +115,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '4fd7a2738de8fc8f9b498437cde96c1bf7562a04',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '7aadfaf196f9cd8a299f9ad78fab63362800466d',
 
    # Fuchsia compatibility
    #
@@ -124,7 +124,7 @@ deps = {
    # and not have to specific specific hashes.
 
   'src/third_party/tonic':
-   Var('fuchsia_git') + '/tonic' + '@' + '6bab0f304b043d8cf09900334e78b63111f76c5c',
+   Var('fuchsia_git') + '/tonic' + '@' + '90c9c81f49461d9f4d414845a6eeba1c0df35bb4',
 
   'src/third_party/benchmark':
    Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',

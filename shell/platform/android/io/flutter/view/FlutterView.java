@@ -69,8 +69,6 @@ public class FlutterView extends SurfaceView
 
     private static final String TAG = "FlutterView";
 
-    private static final String ACTION_DISCOVER = "io.flutter.view.DISCOVER";
-
     static final class ViewportMetrics {
         float devicePixelRatio = 1.0f;
         int physicalWidth = 0;
@@ -96,7 +94,6 @@ public class FlutterView extends SurfaceView
     private final BasicMessageChannel<String> mFlutterLifecycleChannel;
     private final BasicMessageChannel<Object> mFlutterSystemChannel;
     private final BasicMessageChannel<Object> mFlutterSettingsChannel;
-    private final BroadcastReceiver mDiscoveryReceiver;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private final List<FirstFrameListener> mFirstFrameListeners;
     private final AtomicLong nextTextureId = new AtomicLong(0L);
@@ -131,20 +128,11 @@ public class FlutterView extends SurfaceView
         }
         mNativeView.attachViewAndActivity(this, activity);
 
-        int color = 0xFF000000;
-        TypedValue typedValue = new TypedValue();
-        context.getTheme().resolveAttribute(android.R.attr.colorBackground, typedValue, true);
-        if (typedValue.type >= TypedValue.TYPE_FIRST_COLOR_INT && typedValue.type <= TypedValue.TYPE_LAST_COLOR_INT) {
-            color = typedValue.data;
-        }
-        // TODO(abarth): Consider letting the developer override this color.
-        final int backgroundColor = color;
-
         mSurfaceCallback = new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 assertAttached();
-                nativeSurfaceCreated(mNativeView.get(), holder.getSurface(), backgroundColor);
+                nativeSurfaceCreated(mNativeView.get(), holder.getSurface());
             }
 
             @Override
@@ -183,13 +171,6 @@ public class FlutterView extends SurfaceView
 
         setLocale(getResources().getConfiguration().locale);
         setUserSettings();
-
-        if ((context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
-            mDiscoveryReceiver = new DiscoveryReceiver();
-            context.registerReceiver(mDiscoveryReceiver, new IntentFilter(ACTION_DISCOVER));
-        } else {
-            mDiscoveryReceiver = null;
-        }
     }
 
     private void encodeKeyEvent(KeyEvent event, Map<String, Object> message) {
@@ -332,9 +313,6 @@ public class FlutterView extends SurfaceView
     public FlutterNativeView detach() {
         if (!isAttached())
             return null;
-        if (mDiscoveryReceiver != null) {
-            getContext().unregisterReceiver(mDiscoveryReceiver);
-        }
         getHolder().removeCallback(mSurfaceCallback);
         mNativeView.detach();
 
@@ -346,10 +324,6 @@ public class FlutterView extends SurfaceView
     public void destroy() {
         if (!isAttached())
             return;
-
-        if (mDiscoveryReceiver != null) {
-            getContext().unregisterReceiver(mDiscoveryReceiver);
-        }
 
         getHolder().removeCallback(mSurfaceCallback);
 
@@ -659,8 +633,7 @@ public class FlutterView extends SurfaceView
         return nativeGetBitmap(mNativeView.get());
     }
 
-    private static native void nativeSurfaceCreated(long nativePlatformViewAndroid, Surface surface,
-            int backgroundColor);
+    private static native void nativeSurfaceCreated(long nativePlatformViewAndroid, Surface surface);
 
     private static native void nativeSurfaceChanged(long nativePlatformViewAndroid, int width, int height);
 
@@ -955,28 +928,6 @@ public class FlutterView extends SurfaceView
     }
 
     /**
-     * Broadcast receiver used to discover active Flutter instances.
-     *
-     * This is used by the `flutter` tool to find the observatory ports for all the
-     * active Flutter views. We dump the data to the logs and the tool scrapes the
-     * log lines for the data.
-     */
-    private class DiscoveryReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            URI observatoryUri = URI.create(FlutterNativeView.getObservatoryUri());
-            JSONObject discover = new JSONObject();
-            try {
-                discover.put("id", getContext().getPackageName());
-                discover.put("observatoryPort", observatoryUri.getPort());
-                Log.i(TAG, "DISCOVER: " + discover); // The tool looks for this data. See
-                                                     // android_device.dart.
-            } catch (JSONException e) {
-            }
-        }
-    }
-
-    /**
      * Listener will be called on the Android UI thread once when Flutter renders
      * the first frame.
      */
@@ -1005,9 +956,19 @@ public class FlutterView extends SurfaceView
             this.surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
                 @Override
                 public void onFrameAvailable(SurfaceTexture texture) {
+                    if (released) {
+                        // Even though we make sure to unregister the callback before releasing, as of Android O
+                        // SurfaceTexture has a data race when accessing the callback, so the callback may
+                        // still be called by a stale reference after released==true and mNativeView==null.
+                        return;
+                    }
                     nativeMarkTextureFrameAvailable(mNativeView.get(), SurfaceTextureRegistryEntry.this.id);
                 }
-            });
+            },
+            // The callback relies on being executed on the UI thread (unsynchronised read of mNativeView
+            // and also the engine code check for platform thread in Shell::OnPlatformViewMarkTextureFrameAvailable),
+            // so we explicitly pass a Handler for the current thread.
+            new Handler());
         }
 
         @Override
@@ -1027,6 +988,9 @@ public class FlutterView extends SurfaceView
             }
             released = true;
             nativeUnregisterTexture(mNativeView.get(), id);
+            // Otherwise onFrameAvailableListener might be called after mNativeView==null
+            // (https://github.com/flutter/flutter/issues/20951). See also the check in onFrameAvailable.
+            surfaceTexture.setOnFrameAvailableListener(null);
             surfaceTexture.release();
         }
     }
