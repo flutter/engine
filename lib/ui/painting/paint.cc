@@ -30,6 +30,7 @@ constexpr int kColorFilterBlendModeIndex = 11;
 constexpr int kMaskFilterIndex = 12;
 constexpr int kMaskFilterBlurStyleIndex = 13;
 constexpr int kMaskFilterSigmaIndex = 14;
+constexpr int kInvertColorIndex = 15;
 constexpr size_t kDataByteCount = 75;  // 4 * (last index + 1)
 
 // Indices for objects.
@@ -132,6 +133,13 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
       double sigma = float_data[kMaskFilterSigmaIndex];
       paint_.setMaskFilter(SkMaskFilter::MakeBlur(blur_style, sigma));
       break;
+  }
+
+  if (uint_data[kInvertColorIndex]) {
+    SkScalar colorMatrix[20] = {-1.0, 0, 0,    1.0, 0, 0,   -1.0, 0,   1.0, 0,
+                                0,    0, -1.0, 1.0, 0, 1.0, 1.0,  1.0, 1.0, 0};
+    paint_.setColorFilter(
+        SkColorFilter::MakeMatrixFilterRowMajor255(colorMatrix));
   }
 }
 
