@@ -250,7 +250,7 @@ def main(argv):
   elif sys.platform == 'darwin':
     subdir = 'mac-x64'
   elif sys.platform.startswith('linux'):
-     subdir = 'linux64'
+     subdir = 'linux-x64'
   else:
     raise Error('Unknown platform: ' + sys.platform)
 
