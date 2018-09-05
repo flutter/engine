@@ -34,7 +34,7 @@
   _Pragma("clang diagnostic push")                                     \
       _Pragma("clang diagnostic ignored \"-Wself-assign-overloaded\"") \
           code_line;                                                   \
-   _Pragma("clang diagnostic pop")
+  _Pragma("clang diagnostic pop")
 #else
 #define ALLOW_SELF_ASSIGN_OVERLOADED(code_line) code_line;
 #endif
