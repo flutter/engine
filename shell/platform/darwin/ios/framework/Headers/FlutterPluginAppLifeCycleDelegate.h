@@ -22,6 +22,8 @@ FLUTTER_EXPORT
 */
 - (void)addDelegate:(NSObject<FlutterPlugin>*)delegate;
 
+- (BOOL)hasPluginThatRespondsToSelector:(SEL)selector;
+
 /**
  Calls all plugins registered for `UIApplicationDelegate` callbacks.
 
