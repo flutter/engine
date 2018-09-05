@@ -372,11 +372,10 @@ public class FlutterView extends SurfaceView
     private static final int kPointerChangeCancel = 0;
     private static final int kPointerChangeAdd = 1;
     private static final int kPointerChangeRemove = 2;
-    private static final int kPointerChangeHoverMove = 3;
+    private static final int kPointerChangeHover = 3;
     private static final int kPointerChangeDown = 4;
     private static final int kPointerChangeMove = 5;
     private static final int kPointerChangeUp = 6;
-    private static final int kPointerChangeHoverExit = 8;
 
     // Must match the PointerDeviceKind enum in pointer.dart.
     private static final int kPointerDeviceKindTouch = 0;
@@ -407,12 +406,14 @@ public class FlutterView extends SurfaceView
         if (maskedAction == MotionEvent.ACTION_CANCEL) {
             return kPointerChangeCancel;
         }
-        if (maskedAction == MotionEvent.ACTION_HOVER_MOVE ||
-            maskedAction == MotionEvent.ACTION_HOVER_ENTER) {
-            return kPointerChangeHoverMove;
+        if (maskedAction == MotionEvent.ACTION_HOVER_MOVE) {
+            return kPointerChangeHover;
+        }
+        if (maskedAction == MotionEvent.ACTION_HOVER_ENTER) {
+            return kPointerChangeAdd;
         }
         if (maskedAction == MotionEvent.ACTION_HOVER_EXIT) {
-            return kPointerChangeHoverExit;
+            return kPointerChangeRemove;
         }
         return -1;
     }
