@@ -49,9 +49,14 @@ constexpr uint32_t kBlendModeDefault =
 constexpr double kStrokeMiterLimitDefault = 4.0;
 
 // A color matrix which inverts colors.
-constexpr SkScalar invert_colors[20] = {-1.0, 0,   0,   1.0, 0,   0,    -1.0,
-                                        0,    1.0, 0,   0,   0,   -1.0, 1.0,
-                                        0,    1.0, 1.0, 1.0, 1.0, 0};
+// clang-format off
+constexpr SkScalar invert_colors[20] = {
+  -1.0,    0,    0, 1.0, 0,
+     0, -1.0,    0, 1.0, 0,
+     0,    0, -1.0, 1.0, 0,
+   1.0,  1.0,  1.0, 1.0, 0
+};
+// clang-format on
 
 // Must be kept in sync with the MaskFilter private constants in painting.dart.
 enum MaskFilterType { Null, Blur };
