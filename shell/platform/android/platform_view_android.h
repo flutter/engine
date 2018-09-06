@@ -24,6 +24,13 @@ class PlatformViewAndroid final : public PlatformView {
  public:
   static bool Register(JNIEnv* env);
 
+  // Creates a PlatformViewAndroid with no rendering surface for use with
+  // background execution.
+  PlatformViewAndroid(PlatformView::Delegate& delegate,
+                      blink::TaskRunners task_runners,
+                      fml::jni::JavaObjectWeakGlobalRef java_object);
+
+  // Creates a PlatformViewAndroid with a rendering surface.
   PlatformViewAndroid(PlatformView::Delegate& delegate,
                       blink::TaskRunners task_runners,
                       fml::jni::JavaObjectWeakGlobalRef java_object,
@@ -84,6 +91,9 @@ class PlatformViewAndroid final : public PlatformView {
       fml::RefPtr<blink::PlatformMessage> message) override;
 
   // |shell::PlatformView|
+  void OnPreEngineRestart() const override;
+
+  // |shell::PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
   // |shell::PlatformView|
@@ -91,6 +101,9 @@ class PlatformViewAndroid final : public PlatformView {
 
   // |shell::PlatformView|
   sk_sp<GrContext> CreateResourceContext() const override;
+
+  // |shell::PlatformView|
+  void ReleaseResourceContext() const override;
 
   void InstallFirstFrameCallback();
 

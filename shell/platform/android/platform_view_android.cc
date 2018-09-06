@@ -30,21 +30,36 @@ PlatformViewAndroid::PlatformViewAndroid(
          "rendering.";
 }
 
+PlatformViewAndroid::PlatformViewAndroid(
+    PlatformView::Delegate& delegate,
+    blink::TaskRunners task_runners,
+    fml::jni::JavaObjectWeakGlobalRef java_object)
+    : PlatformView(delegate, std::move(task_runners)),
+      java_object_(java_object),
+      android_surface_(nullptr) {}
+
 PlatformViewAndroid::~PlatformViewAndroid() = default;
 
 void PlatformViewAndroid::NotifyCreated(
     fml::RefPtr<AndroidNativeWindow> native_window) {
-  InstallFirstFrameCallback();
-  android_surface_->SetNativeWindow(native_window);
+  if (android_surface_) {
+    InstallFirstFrameCallback();
+    android_surface_->SetNativeWindow(native_window);
+  }
   PlatformView::NotifyCreated();
 }
 
 void PlatformViewAndroid::NotifyDestroyed() {
   PlatformView::NotifyDestroyed();
-  android_surface_->TeardownOnScreenContext();
+  if (android_surface_) {
+    android_surface_->TeardownOnScreenContext();
+  }
 }
 
 void PlatformViewAndroid::NotifyChanged(const SkISize& size) {
+  if (!android_surface_) {
+    return;
+  }
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetGPUTaskRunner(),  //
@@ -155,6 +170,17 @@ void PlatformViewAndroid::HandlePlatformMessage(
     FlutterViewHandlePlatformMessage(env, view.obj(), java_channel.obj(),
                                      nullptr, response_id);
   }
+}
+
+// |shell::PlatformView|
+void PlatformViewAndroid::OnPreEngineRestart() const {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  fml::jni::ScopedJavaLocalRef<jobject> view = java_object_.get(env);
+  if (view.is_null()) {
+    // The Java object died.
+    return;
+  }
+  FlutterViewOnPreEngineRestart(fml::jni::AttachCurrentThread(), view.obj());
 }
 
 void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env,
@@ -334,11 +360,17 @@ std::unique_ptr<VsyncWaiter> PlatformViewAndroid::CreateVSyncWaiter() {
 
 // |shell::PlatformView|
 std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
+  if (!android_surface_) {
+    return nullptr;
+  }
   return android_surface_->CreateGPUSurface();
 }
 
 // |shell::PlatformView|
 sk_sp<GrContext> PlatformViewAndroid::CreateResourceContext() const {
+  if (!android_surface_) {
+    return nullptr;
+  }
   sk_sp<GrContext> resource_context;
   if (android_surface_->ResourceContextMakeCurrent()) {
     // TODO(chinmaygarde): Currently, this code depends on the fact that only
@@ -351,6 +383,13 @@ sk_sp<GrContext> PlatformViewAndroid::CreateResourceContext() const {
   }
 
   return resource_context;
+}
+
+// |shell::PlatformView|
+void PlatformViewAndroid::ReleaseResourceContext() const {
+  if (android_surface_) {
+    android_surface_->ResourceContextClearCurrent();
+  }
 }
 
 void PlatformViewAndroid::InstallFirstFrameCallback() {
