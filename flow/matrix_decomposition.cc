@@ -28,6 +28,15 @@ static inline SkVector3 SkVector3Cross(const SkVector3& a, const SkVector3& b) {
 MatrixDecomposition::MatrixDecomposition(const SkMatrix& matrix)
     : MatrixDecomposition(SkMatrix44{matrix}) {}
 
+// Use custom normalize to avoid skia precision loss/normalize() privatization.
+static inline void SkVector3Normalize(SkVector3& v) {
+  double mag = sqrt(v.fX * v.fX + v.fY * v.fY + v.fZ * v.fZ);
+  double scale = 1.0 / mag;
+  v.fX *= scale;
+  v.fY *= scale;
+  v.fZ *= scale;
+}
+
 MatrixDecomposition::MatrixDecomposition(SkMatrix44 matrix) : valid_(false) {
   if (matrix.get(3, 3) == 0) {
     return;
@@ -83,14 +92,14 @@ MatrixDecomposition::MatrixDecomposition(SkMatrix44 matrix) : valid_(false) {
 
   scale_.fX = row[0].length();
 
-  row[0].normalize();
+  SkVector3Normalize(row[0]);
 
   shear_.fX = row[0].dot(row[1]);
   row[1] = SkVector3Combine(row[1], 1.0, row[0], -shear_.fX);
 
   scale_.fY = row[1].length();
 
-  row[1].normalize();
+  SkVector3Normalize(row[1]);
 
   shear_.fX /= scale_.fY;
 
@@ -101,7 +110,7 @@ MatrixDecomposition::MatrixDecomposition(SkMatrix44 matrix) : valid_(false) {
 
   scale_.fZ = row[2].length();
 
-  row[2].normalize();
+  SkVector3Normalize(row[2]);
 
   shear_.fY /= scale_.fZ;
   shear_.fZ /= scale_.fZ;
