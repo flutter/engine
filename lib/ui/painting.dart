@@ -1368,8 +1368,8 @@ class Paint {
   /// Whether the colors of the image are inverted when drawn.
   ///
   /// inverting the colors of an image applies a new color filter that will
-  /// override any user provided color filters. This is primarily intended to
-  /// be used for implementing smart invert on iOS.
+  /// be composed with any user provided color filters. This is primarily
+  /// used for implementing smart invert on iOS.
   bool get invertColors {
     return _data.getInt32(_kInvertColorOffset, _kFakeHostEndian) == 1;
   }

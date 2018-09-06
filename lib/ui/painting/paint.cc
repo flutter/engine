@@ -48,6 +48,11 @@ constexpr uint32_t kBlendModeDefault =
 // default SkPaintDefaults_MiterLimit in Skia (which is not in a public header).
 constexpr double kStrokeMiterLimitDefault = 4.0;
 
+// A color matrix which inverts colors.
+constexpr SkScalar invert_colors[20] = {-1.0, 0,   0,   1.0, 0,   0,    -1.0,
+                                        0,    1.0, 0,   0,   0,   -1.0, 1.0,
+                                        0,    1.0, 1.0, 1.0, 1.0, 0};
+
 // Must be kept in sync with the MaskFilter private constants in painting.dart.
 enum MaskFilterType { Null, Blur };
 
@@ -117,7 +122,19 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   if (filter_quality)
     paint_.setFilterQuality(static_cast<SkFilterQuality>(filter_quality));
 
-  if (uint_data[kColorFilterIndex]) {
+  if (uint_data[kColorFilterIndex] && uint_data[kInvertColorIndex]) {
+    SkColor color = uint_data[kColorFilterColorIndex];
+    SkBlendMode blend_mode =
+        static_cast<SkBlendMode>(uint_data[kColorFilterBlendModeIndex]);
+    sk_sp<SkColorFilter> color_filter =
+        SkColorFilter::MakeModeFilter(color, blend_mode);
+    sk_sp<SkColorFilter> invert_filter =
+        SkColorFilter::MakeMatrixFilterRowMajor255(invert_colors);
+    paint_.setColorFilter(invert_filter->makeComposed(color_filter));
+  } else if (uint_data[kInvertColorIndex]) {
+    paint_.setColorFilter(
+        SkColorFilter::MakeMatrixFilterRowMajor255(invert_colors));
+  } else if (uint_data[kColorFilterIndex]) {
     SkColor color = uint_data[kColorFilterColorIndex];
     SkBlendMode blend_mode =
         static_cast<SkBlendMode>(uint_data[kColorFilterBlendModeIndex]);
@@ -133,13 +150,6 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
       double sigma = float_data[kMaskFilterSigmaIndex];
       paint_.setMaskFilter(SkMaskFilter::MakeBlur(blur_style, sigma));
       break;
-  }
-
-  if (uint_data[kInvertColorIndex]) {
-    SkScalar colorMatrix[20] = {-1.0, 0, 0,    1.0, 0, 0,   -1.0, 0,   1.0, 0,
-                                0,    0, -1.0, 1.0, 0, 1.0, 1.0,  1.0, 1.0, 0};
-    paint_.setColorFilter(
-        SkColorFilter::MakeMatrixFilterRowMajor255(colorMatrix));
   }
 }
 
