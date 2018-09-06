@@ -51,7 +51,7 @@
   // setup a shell along with its platform view before the view has to appear.
   fml::scoped_nsobject<FlutterView> _flutterView;
   fml::scoped_nsobject<UIView> _splashScreenView;
-  void (^firstFrameCallback)();
+  void (^_flutterViewRenderedCallback)();
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
   blink::ViewportMetrics _viewportMetrics;
@@ -368,6 +368,9 @@
       completion:^(BOOL finished) {
         [_splashScreenView.get() removeFromSuperview];
         _splashScreenView.reset();
+        if (_flutterViewRenderedCallback != nil) {
+          _flutterViewRenderedCallback();
+        }
       }];
 }
 
@@ -391,7 +394,7 @@
           // association. Thus, we are not convinced that the unsafe unretained weak object is in
           // fact alive.
           if (weak_platform_view) {
-            [weak_flutter_view_controller viewDidRenderFirstFlutterFrame];
+            [weak_flutter_view_controller removeSplashScreenViewIfPresent];
           }
         });
       });
@@ -444,8 +447,8 @@
       UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 }
 
-- (void)setFirstFrameListener:(void (^)(void))callback {
-  firstFrameCallback = [callback copy];
+- (void)setFlutterViewDidRenderCallback:(void (^)(void))callback {
+  _flutterViewRenderedCallback = [callback copy];
 }
 
 #pragma mark - Surface creation and teardown updates
@@ -511,13 +514,6 @@
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
 
   [super viewDidDisappear:animated];
-}
-
-- (void)viewDidRenderFirstFlutterFrame {
-  [self removeSplashScreenViewIfPresent];
-  if (firstFrameCallback != nil) {
-    firstFrameCallback();
-  }
 }
 
 - (void)dealloc {

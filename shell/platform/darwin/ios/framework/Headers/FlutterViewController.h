@@ -25,11 +25,11 @@ FLUTTER_EXPORT
 - (void)handleStatusBarTouches:(UIEvent*)event;
 
 /**
- Registers a callback that will be invoked when the first Flutter is rendered.
+ Registers a callback that will be invoked when the Flutter view has been rendered.
 
  Replaces an existing callback. Use a `nil` callback to unregister the existing one.
  */
-- (void)setFirstFrameListener:(void (^)(void))callback;
+- (void)setFlutterViewDidRenderCallback:(void (^)(void))callback;
 
 /**
  Returns the file name for the given asset.
