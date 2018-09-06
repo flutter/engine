@@ -39,7 +39,7 @@ class _FlutterFrontendCompiler implements frontend.CompilerInterface{
     _compiler.acceptLastDelta();
   }
   
-    @override
+  @override
   Future<Null> rejectLastDelta() async {
     return _compiler.rejectLastDelta();
   }
