@@ -152,7 +152,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 
   frame->Raster(*tree, true);
 
-  SkSerialProcs procs;
+  SkSerialProcs procs = {0};
   procs.fTypefaceProc = SerializeTypeface;
 
   return recorder.finishRecordingAsPicture()->serialize(&procs);
