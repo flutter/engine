@@ -4,6 +4,8 @@
 
 package io.flutter.view;
 
+import android.app.Activity;
+import android.content.Context;
 import android.graphics.Rect;
 import android.opengl.Matrix;
 import android.os.Build;
@@ -41,6 +43,8 @@ class AccessibilityBridge
     private SemanticsObject mHoveredObject;
     private int previousRouteId = ROOT_NODE_ID;
     private List<Integer> previousRoutes;
+    private final View mDecorView;
+    private Integer mLastLeftFrameInset = 0;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
 
@@ -92,7 +96,8 @@ class AccessibilityBridge
         IS_IMAGE(1 << 14),
         IS_LIVE_REGION(1 << 15),
         HAS_TOGGLED_STATE(1 << 16),
-        IS_TOGGLED(1 << 17);
+        IS_TOGGLED(1 << 17),
+        HAS_IMPLICIT_SCROLLING(1 << 18);
 
         Flag(int value) {
             this.value = value;
@@ -109,6 +114,7 @@ class AccessibilityBridge
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(
                 owner, "flutter/accessibility", StandardMessageCodec.INSTANCE);
+        mDecorView = ((Activity) owner.getContext()).getWindow().getDecorView();
     }
 
     void setAccessibilityEnabled(boolean accessibilityEnabled) {
@@ -138,6 +144,8 @@ class AccessibilityBridge
         }
 
         AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner, virtualViewId);
+        // Work around for https://github.com/flutter/flutter/issues/2101 
+        result.setViewIdResourceName(""); 
         result.setPackageName(mOwner.getContext().getPackageName());
         result.setClassName("android.view.View");
         result.setSource(mOwner, virtualViewId);
@@ -256,8 +264,15 @@ class AccessibilityBridge
                 || object.hasAction(Action.SCROLL_RIGHT) || object.hasAction(Action.SCROLL_DOWN)) {
             result.setScrollable(true);
             // This tells Android's a11y to send scroll events when reaching the end of
-            // the visible viewport of a scrollable.
-            result.setClassName("android.widget.ScrollView");
+            // the visible viewport of a scrollable, unless the node itself does not
+            // allow implicit scrolling - then we leave the className as view.View.
+            if (object.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)) {
+                if (object.hasAction(Action.SCROLL_LEFT) || object.hasAction(Action.SCROLL_RIGHT)) {
+                    result.setClassName("android.widget.HorizontalScrollView");
+                } else {
+                    result.setClassName("android.widget.ScrollView");
+                }
+            }
             // TODO(ianh): Once we're on SDK v23+, call addAction to
             // expose AccessibilityAction.ACTION_SCROLL_LEFT, _RIGHT,
             // _UP, and _DOWN when appropriate.
@@ -289,6 +304,7 @@ class AccessibilityBridge
         result.setCheckable(hasCheckedState || hasToggledState);
         if (hasCheckedState) {
             result.setChecked(object.hasFlag(Flag.IS_CHECKED));
+            result.setContentDescription(object.getValueLabelHint());
             if (object.hasFlag(Flag.IS_IN_MUTUALLY_EXCLUSIVE_GROUP))
                 result.setClassName("android.widget.RadioButton");
             else
@@ -296,10 +312,14 @@ class AccessibilityBridge
         } else if (hasToggledState) {
             result.setChecked(object.hasFlag(Flag.IS_TOGGLED));
             result.setClassName("android.widget.Switch");
+            result.setContentDescription(object.getValueLabelHint());
+        } else {
+            // Setting the text directly instead of the content description
+            // will replace the "checked" or "not-checked" label.
+            result.setText(object.getValueLabelHint());
         }
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
-        result.setText(object.getValueLabelHint());
 
         // Accessibility Focus
         if (mA11yFocusedObject != null && mA11yFocusedObject.id == virtualViewId) {
@@ -612,6 +632,19 @@ class AccessibilityBridge
         if (rootObject != null) {
             final float[] identity = new float[16];
             Matrix.setIdentityM(identity, 0);
+            // in android devices above AP 23, the system nav bar can be placed on the left side
+            // of the screen in landscape mode. We must handle the translation ourselves for the
+            // a11y nodes.
+            if (Build.VERSION.SDK_INT >= 23) {
+                Rect visibleFrame = new Rect();
+                mDecorView.getWindowVisibleDisplayFrame(visibleFrame);
+                if (!mLastLeftFrameInset.equals(visibleFrame.left)) {
+                    rootObject.globalGeometryDirty = true;
+                    rootObject.inverseTransformDirty = true;
+                }
+                mLastLeftFrameInset = visibleFrame.left;
+                Matrix.translateM(identity, 0, visibleFrame.left, 0, 0);
+            }
             rootObject.updateRecursively(identity, visitedObjects, false);
             rootObject.collectRoutes(newRoutes);
         }
@@ -816,6 +849,7 @@ class AccessibilityBridge
                         ROOT_NODE_ID, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
                 e.getText().add((String) data.get("message"));
                 sendAccessibilityEvent(e);
+                break;
             }
             // Requires that the node id provided corresponds to a live region, or TalkBack will
             // ignore the event. The event will cause talkback to read out the new label even
@@ -826,6 +860,7 @@ class AccessibilityBridge
                     return;
                 }
                 sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+                break;
             }
         }
     }

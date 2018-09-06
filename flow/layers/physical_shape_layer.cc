@@ -87,9 +87,12 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
                SkColorGetA(color_) != 0xff, device_pixel_ratio_);
   }
 
+  // Call drawPath without clip if possible for better performance.
   SkPaint paint;
   paint.setColor(color_);
-  context.canvas.drawPath(path_, paint);
+  if (clip_behavior_ != Clip::antiAliasWithSaveLayer) {
+    context.canvas.drawPath(path_, paint);
+  }
 
   int saveCount = context.canvas.save();
   switch (clip_behavior_) {
@@ -105,6 +108,14 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
       break;
     case Clip::none:
       break;
+  }
+
+  if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
+    // If we want to avoid the bleeding edge artifact
+    // (https://github.com/flutter/flutter/issues/18057#issue-328003931)
+    // using saveLayer, we have to call drawPaint instead of drawPath as
+    // anti-aliased drawPath will always have such artifacts.
+    context.canvas.drawPaint(paint);
   }
 
   PaintChildren(context);

@@ -89,19 +89,6 @@ class ScriptCompletionTaskObserver {
   FML_DISALLOW_COPY_AND_ASSIGN(ScriptCompletionTaskObserver);
 };
 
-static bool FileNameIsDill(const std::string& name) {
-  const std::string suffix = ".dill";
-
-  if (name.size() < suffix.size()) {
-    return false;
-  }
-
-  if (name.rfind(suffix, name.size()) == name.size() - suffix.size()) {
-    return true;
-  }
-  return false;
-}
-
 int RunTester(const blink::Settings& settings, bool run_forever) {
   const auto thread_label = "io.flutter.test";
 
@@ -142,12 +129,13 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
     return EXIT_FAILURE;
   }
 
+  auto main_dart_file_mapping = std::make_unique<fml::FileMapping>(
+      fml::paths::AbsolutePath(settings.main_dart_file_path), false);
+
   auto isolate_configuration =
-      FileNameIsDill(settings.main_dart_file_path)
+      blink::DartVM::IsKernelMapping(main_dart_file_mapping.get())
           ? IsolateConfiguration::CreateForSnapshot(
-                std::make_unique<fml::FileMapping>(
-                    fml::paths::AbsolutePath(settings.main_dart_file_path),
-                    false))
+                std::move(main_dart_file_mapping))
           : IsolateConfiguration::CreateForSource(settings.main_dart_file_path,
                                                   settings.packages_file_path);
 
@@ -255,7 +243,7 @@ int main(int argc, char* argv[]) {
   settings.icu_data_path = "icudtl.dat";
 
   settings.platform_kernel_path =
-      fml::paths::JoinPaths({settings.assets_path, "platform.dill"});
+      fml::paths::JoinPaths({settings.assets_path, "platform_strong.dill"});
 
   // The tools that read logs get confused if there is a log tag specified.
   settings.log_tag = "";

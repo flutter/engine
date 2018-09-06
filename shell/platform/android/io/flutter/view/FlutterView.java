@@ -382,6 +382,7 @@ public class FlutterView extends SurfaceView
     private static final int kPointerDeviceKindMouse = 1;
     private static final int kPointerDeviceKindStylus = 2;
     private static final int kPointerDeviceKindInvertedStylus = 3;
+    private static final int kPointerDeviceKindUnknown = 4;
 
     private int getPointerChangeForAction(int maskedAction) {
         // Primary pointer:
@@ -416,9 +417,11 @@ public class FlutterView extends SurfaceView
             return kPointerDeviceKindStylus;
         case MotionEvent.TOOL_TYPE_MOUSE:
             return kPointerDeviceKindMouse;
+        case MotionEvent.TOOL_TYPE_ERASER:
+            return kPointerDeviceKindInvertedStylus;
         default:
             // MotionEvent.TOOL_TYPE_UNKNOWN will reach here.
-            return -1;
+            return kPointerDeviceKindUnknown;
         }
     }
 
@@ -429,9 +432,6 @@ public class FlutterView extends SurfaceView
         }
 
         int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
-        if (pointerKind == -1) {
-            return;
-        }
 
         long timeStamp = event.getEventTime() * 1000; // Convert from milliseconds to microseconds.
 
@@ -602,20 +602,43 @@ public class FlutterView extends SurfaceView
     private void postRun() {
     }
 
-    public void runFromBundle(String bundlePath, String snapshotOverride) {
-        runFromBundle(bundlePath, snapshotOverride, "main", false);
+    public void runFromBundle(FlutterRunArguments args) {
+      assertAttached();
+      preRun();
+      mNativeView.runFromBundle(args);
+      postRun();
     }
 
-    public void runFromBundle(String bundlePath, String snapshotOverride, String entrypoint) {
-        runFromBundle(bundlePath, snapshotOverride, entrypoint, false);
+    /**
+     * @deprecated
+     * Please use runFromBundle with `FlutterRunArguments`.
+     */
+    @Deprecated
+    public void runFromBundle(String bundlePath, String defaultPath) {
+        runFromBundle(bundlePath, defaultPath, "main", false);
     }
 
-    public void runFromBundle(String bundlePath, String snapshotOverride, String entrypoint,
-            boolean reuseRuntimeController) {
-        assertAttached();
-        preRun();
-        mNativeView.runFromBundle(bundlePath, snapshotOverride, entrypoint, reuseRuntimeController);
-        postRun();
+    /**
+     * @deprecated
+     * Please use runFromBundle with `FlutterRunArguments`.
+     */
+    @Deprecated
+    public void runFromBundle(String bundlePath, String defaultPath, String entrypoint) {
+        runFromBundle(bundlePath, defaultPath, entrypoint, false);
+    }
+
+    /**
+     * @deprecated
+     * Please use runFromBundle with `FlutterRunArguments`.
+     * Parameter `reuseRuntimeController` has no effect.
+     */
+    @Deprecated
+    public void runFromBundle(String bundlePath, String defaultPath, String entrypoint, boolean reuseRuntimeController) {
+        FlutterRunArguments args = new FlutterRunArguments();
+        args.bundlePath = bundlePath;
+        args.entrypoint = entrypoint;
+        args.defaultPath = defaultPath;
+        runFromBundle(args);
     }
 
     /**
