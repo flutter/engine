@@ -93,6 +93,9 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityDele
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityEvents.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterFragmentActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPluginRegistry.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/FlutterNativeView.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/FlutterPluginRegistry.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PluginRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BasicMessageChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BinaryCodec.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BinaryMessenger.java
@@ -378,6 +381,8 @@ FILE: ../../../flutter/shell/platform/android/android_surface_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_surface_gl.h
 FILE: ../../../flutter/shell/platform/android/android_surface_vulkan.cc
 FILE: ../../../flutter/shell/platform/android/android_surface_vulkan.h
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/InputConnectionAdaptor.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/TextInputPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/ActivityLifecycleListener.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/InputConnectionAdaptor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInputPlugin.java
@@ -493,6 +498,12 @@ FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterFragment.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterShellArgs.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PlatformViewFactory.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PlatformViewRegistry.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PlatformViewRegistryImpl.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PlatformViewsController.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/SingleViewPresentation.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/VirtualDisplayController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewFactory.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewRegistry.java
@@ -689,6 +700,8 @@ FILE: ../../../flutter/lib/ui/painting/image.cc
 FILE: ../../../flutter/lib/ui/painting/image.h
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterView.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/AccessibilityBridge.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterMain.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java
