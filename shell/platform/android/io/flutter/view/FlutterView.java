@@ -484,8 +484,8 @@ public class FlutterView extends SurfaceView
             packet.putDouble(0.0); // tilt
         }
 
-        packet.putDouble(0.0); // scroll_delta_x
-        packet.putDouble(0.0); // scroll_delta_y
+        packet.putDouble(event.getAxisValue(MotionEvent.AXIS_HSCROLL)); // scroll_delta_x
+        packet.putDouble(event.getAxisValue(MotionEvent.AXIS_VSCROLL)); // scroll_delta_y
     }
 
     @Override
