@@ -16,7 +16,8 @@ def get_out_dir(args):
     else:
         target_dir = ['host']
 
-    if args.dynamic:
+    runtime_mode = args.runtime_mode
+    if args.dynamic and runtime_mode in ['profile', 'release']:
         target_dir.append('dynamic')
 
     target_dir.append(args.runtime_mode)
@@ -89,6 +90,8 @@ def to_gn_args(args):
     gn_args['android_full_debug'] = args.target_os == 'android' and args.unoptimized
     gn_args['is_clang'] = not sys.platform.startswith(('cygwin', 'win'))
 
+    gn_args['embedder_for_target'] = args.embedder_for_target
+
     enable_lto = args.lto
     if args.unoptimized:
       # There is no point in enabling LTO in unoptimized builds.
@@ -117,6 +120,9 @@ def to_gn_args(args):
         gn_args['dart_runtime_mode'] = 'release'
     else:
         gn_args['dart_runtime_mode'] = runtime_mode
+
+    if args.dart_debug:
+        gn_args['dart_debug'] = True
 
     if args.target_os == 'android':
         gn_args['target_cpu'] = args.android_cpu
@@ -208,6 +214,7 @@ def parse_args(args):
   parser.add_argument('--runtime-mode', type=str, choices=['debug', 'profile', 'release'], default='debug')
   parser.add_argument('--dynamic', default=False, action='store_true')
   parser.add_argument('--interpreter', default=False, action='store_true')
+  parser.add_argument('--dart-debug', default=False, action='store_true')
 
   parser.add_argument('--target-os', type=str, choices=['android', 'ios', 'linux'])
   parser.add_argument('--android', dest='target_os', action='store_const', const='android')
@@ -229,8 +236,9 @@ def parse_args(args):
   parser.add_argument('--target-sysroot', type=str)
   parser.add_argument('--toolchain-prefix', type=str)
 
-  parser.add_argument('--use-glfw', action='store_true', default=False)
   parser.add_argument('--enable-vulkan', action='store_true', default=False)
+
+  parser.add_argument('--embedder-for-target', dest='embedder_for_target', action='store_true', default=False)
 
   return parser.parse_args(args)
 
@@ -240,9 +248,9 @@ def main(argv):
   if sys.platform.startswith(('cygwin', 'win')):
     subdir = 'win'
   elif sys.platform == 'darwin':
-    subdir = 'mac'
+    subdir = 'mac-x64'
   elif sys.platform.startswith('linux'):
-     subdir = 'linux64'
+     subdir = 'linux-x64'
   else:
     raise Error('Unknown platform: ' + sys.platform)
 

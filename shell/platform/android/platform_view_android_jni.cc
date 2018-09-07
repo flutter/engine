@@ -176,8 +176,7 @@ static jstring GetObservatoryUri(JNIEnv* env, jclass clazz) {
 static void SurfaceCreated(JNIEnv* env,
                            jobject jcaller,
                            jlong shell_holder,
-                           jobject jsurface,
-                           jint backgroundColor) {
+                           jobject jsurface) {
   // Note: This frame ensures that any local references used by
   // ANativeWindow_fromSurface are released immediately. This is needed as a
   // workaround for https://code.google.com/p/android/issues/detail?id=68174
@@ -241,7 +240,7 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
                                             jobject jcaller,
                                             jlong shell_holder,
                                             jstring jbundlepath,
-                                            jstring jsnapshotOverride,
+                                            jstring jdefaultPath,
                                             jstring jEntrypoint,
                                             jstring jLibraryUrl,
                                             jobject jAssetManager) {
@@ -275,7 +274,7 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
     }
   }
 
-  const auto defaultpath = fml::jni::JavaStringToString(env, jsnapshotOverride);
+  const auto defaultpath = fml::jni::JavaStringToString(env, jdefaultPath);
   if (defaultpath.size() > 0) {
     asset_manager->PushBack(std::make_unique<blink::DirectoryAssetBundle>(
         fml::OpenFile(defaultpath.c_str(), fml::OpenPermission::kRead, true)));
@@ -638,7 +637,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   static const JNINativeMethod view_methods[] = {
       {
           .name = "nativeSurfaceCreated",
-          .signature = "(JLandroid/view/Surface;I)V",
+          .signature = "(JLandroid/view/Surface;)V",
           .fnPtr = reinterpret_cast<void*>(&shell::SurfaceCreated),
       },
       {
