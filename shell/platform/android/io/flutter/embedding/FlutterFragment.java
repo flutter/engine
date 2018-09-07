@@ -400,18 +400,6 @@ public class FlutterFragment extends Fragment {
   }
 
   /**
-   * Returns the Flutter view used by this {@code Fragment}; will be null before
-   * {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)} is invoked. Will be
-   * non-null after {@link #onCreateView(LayoutInflater, ViewGroup, Bundle)} is invoked, up
-   * until {@link #onDestroyView()} is invoked.
-   */
-  @SuppressWarnings("unused")
-  @Nullable
-  public FlutterView getFlutterView() {
-    return flutterView;
-  }
-
-  /**
    * Starts running Dart within the FlutterView for the first time.
    *
    * Reloading/restarting Dart within a given FlutterView is not supported.
@@ -425,7 +413,16 @@ public class FlutterFragment extends Fragment {
     if (getInitialRoute() != null) {
       setInitialRoute(getInitialRoute());
     }
-    runFromBundle(getAppBundlePath(), null, "main", false);
+
+    // TODO(mattcarroll): are FlutterRunArguments and FlutterShellArgs the same thing? consolidate if they are
+    FlutterRunArguments args = new FlutterRunArguments();
+    args.bundlePath = getAppBundlePath();
+    args.entrypoint = "main";
+    args.defaultPath = null;
+    flutterEngine.runFromBundle(args);
+
+    // TODO(mattcarroll): why do we need to resetAccessibilityTree in this method? Can we call that from within FlutterView somewhere?
+    flutterView.resetAccessibilityTree();
   }
 
   @Nullable
@@ -473,65 +470,15 @@ public class FlutterFragment extends Fragment {
 //      : getActivity();
   }
 
-  public void setInitialRoute(String route) {
+  private void setInitialRoute(String route) {
     mFlutterNavigationChannel.invokeMethod("setInitialRoute", route);
   }
 
-  public void pushRoute(String route) {
+  private void pushRoute(String route) {
     mFlutterNavigationChannel.invokeMethod("pushRoute", route);
   }
 
-  public void popRoute() {
+  private void popRoute() {
     mFlutterNavigationChannel.invokeMethod("popRoute", null);
   }
-
-  //------ START RUN FROM BUNDLE -----
-  public void runFromBundle(FlutterRunArguments args) {
-    assertFlutterEngineAttached();
-    // TODO(mattcarroll): why do we need to resetAccessibilityTree here? Can we call that from within FlutterView somewhere?
-    flutterView.resetAccessibilityTree();
-    flutterEngine.runFromBundle(args);
-  }
-
-  /**
-   * @deprecated
-   * Please use runFromBundle with `FlutterRunArguments`.
-   */
-  @Deprecated
-  public void runFromBundle(String bundlePath, String defaultPath) {
-    runFromBundle(bundlePath, defaultPath, "main", false);
-  }
-
-  /**
-   * @deprecated
-   * Please use runFromBundle with `FlutterRunArguments`.
-   */
-  @Deprecated
-  public void runFromBundle(String bundlePath, String defaultPath, String entrypoint) {
-    runFromBundle(bundlePath, defaultPath, entrypoint, false);
-  }
-
-  /**
-   * @deprecated
-   * Please use runFromBundle with `FlutterRunArguments`.
-   * Parameter `reuseRuntimeController` has no effect.
-   */
-  @Deprecated
-  public void runFromBundle(String bundlePath, String defaultPath, String entrypoint, boolean reuseRuntimeController) {
-    FlutterRunArguments args = new FlutterRunArguments();
-    args.bundlePath = bundlePath;
-    args.entrypoint = entrypoint;
-    args.defaultPath = defaultPath;
-    runFromBundle(args);
-  }
-
-  private boolean isFlutterEngineAttached() {
-    return flutterEngine != null && flutterEngine.isAttached();
-  }
-
-  void assertFlutterEngineAttached() {
-    if (!isFlutterEngineAttached())
-      throw new AssertionError("Platform view is not attached");
-  }
-  //------ END RUN FROM BUNDLE ----
 }

@@ -14,20 +14,26 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import io.flutter.view.TextureRegistry;
 
+/**
+ * {@code FlutterRenderer} works in tandem with a provided {@link RenderSurface} to create an
+ * interactive Flutter UI.
+ *
+ * {@code FlutterRenderer} manages textures for rendering, and forwards messages to native Flutter
+ * code via JNI. The corresponding {@link RenderSurface} is used as a delegate to carry out
+ * certain actions on behalf of this {@code FlutterRenderer} within an Android view hierarchy.
+ *
+ * {@link FlutterView} is an implementation of a {@link RenderSurface}.
+ */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class FlutterRenderer implements TextureRegistry {
 
-  private final Set<OnFirstFrameRenderedListener> firstFrameListeners = new CopyOnWriteArraySet<>();
-  private final FlutterEngine flutterEngine;
   private final FlutterJNI flutterJNI;
   private final long nativeObjectReference;
+  private final AtomicLong nextTextureId = new AtomicLong(0L);
+  private final Set<OnFirstFrameRenderedListener> firstFrameListeners = new CopyOnWriteArraySet<>();
   private RenderSurface renderSurface;
 
-  FlutterRenderer(
-      @NonNull FlutterEngine flutterEngine,
-      @NonNull FlutterJNI flutterJNI,
-      long nativeObjectReference) {
-    this.flutterEngine = flutterEngine;
+  FlutterRenderer(@NonNull FlutterJNI flutterJNI, long nativeObjectReference) {
     this.flutterJNI = flutterJNI;
     this.nativeObjectReference = nativeObjectReference;
   }
@@ -63,8 +69,9 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   //------ START TextureRegistry IMPLEMENTATION -----
-  private final AtomicLong nextTextureId = new AtomicLong(0L);
-
+  // TODO(mattcarroll): this method probably shouldn't be public. It's part of an obscure relationship
+  //   with PlatformViewsController. Re-evaluate that relationship and see if we can get rid of
+  //   PlatformViewsController.
   // TODO(mattcarroll): detachFromGLContext requires API 16. what should we do for earlier APIs?
   @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
   @Override
@@ -110,26 +117,29 @@ public class FlutterRenderer implements TextureRegistry {
       if (released) {
         return;
       }
-      released = true;
       unregisterTexture(id);
       surfaceTexture.release();
+      released = true;
     }
   }
   //------ END TextureRegistry IMPLEMENTATION ----
 
-  //------ START MIGRATION FROM FlutterEngine to FlutterRenderer -----
+  // TODO(mattcarroll): what exactly is this method intended to do?
   public void surfaceCreated(Surface surface, int backgroundColor) {
     flutterJNI.nativeSurfaceCreated(nativeObjectReference, surface, backgroundColor);
   }
 
+  // TODO(mattcarroll): what exactly is this method intended to do?
   public void surfaceChanged(int width, int height) {
     flutterJNI.nativeSurfaceChanged(nativeObjectReference, width, height);
   }
 
+  // TODO(mattcarroll): what exactly is this method intended to do?
   public void surfaceDestroyed() {
     flutterJNI.nativeSurfaceDestroyed(nativeObjectReference);
   }
 
+  // TODO(mattcarroll): what exactly is this method intended to do?
   public void setViewportMetrics(float devicePixelRatio,
                                  int physicalWidth,
                                  int physicalHeight,
@@ -157,38 +167,47 @@ public class FlutterRenderer implements TextureRegistry {
     );
   }
 
+  // TODO(mattcarroll): why does this method exist?
   public Bitmap getBitmap() {
     return flutterJNI.nativeGetBitmap(nativeObjectReference);
   }
 
+  // TODO(mattcarroll): what exactly is this method intended to do?
   public void dispatchPointerDataPacket(ByteBuffer buffer, int position) {
     flutterJNI.nativeDispatchPointerDataPacket(nativeObjectReference, buffer, position);
   }
 
-  public void registerTexture(long textureId, SurfaceTexture surfaceTexture) {
+  // TODO(mattcarroll): what exactly is this method intended to do?
+  private void registerTexture(long textureId, SurfaceTexture surfaceTexture) {
     flutterJNI.nativeRegisterTexture(nativeObjectReference, textureId, surfaceTexture);
   }
 
-  public void markTextureFrameAvailable(long textureId) {
+  // TODO(mattcarroll): what exactly is this method intended to do?
+  private void markTextureFrameAvailable(long textureId) {
     flutterJNI.nativeMarkTextureFrameAvailable(nativeObjectReference, textureId);
   }
 
-  public void unregisterTexture(long textureId) {
+  // TODO(mattcarroll): what exactly is this method intended to do?
+  private void unregisterTexture(long textureId) {
     flutterJNI.nativeUnregisterTexture(nativeObjectReference, textureId);
   }
 
+  // TODO(mattcarroll): what exactly is this method intended to do?
   public boolean isSoftwareRenderingEnabled() {
     return flutterJNI.nativeGetIsSoftwareRenderingEnabled();
   }
 
+  // TODO(mattcarroll): what exactly is this method intended to do?
   public void setAccessibilityFeatures(int flags) {
     flutterJNI.nativeSetAccessibilityFeatures(nativeObjectReference, flags);
   }
 
+  // TODO(mattcarroll): what exactly is this method intended to do?
   public void setSemanticsEnabled(boolean enabled) {
     flutterJNI.nativeSetSemanticsEnabled(nativeObjectReference, enabled);
   }
 
+  // TODO(mattcarroll): what exactly is this method intended to do?
   public void dispatchSemanticsAction(int id,
                                       int action,
                                       ByteBuffer args,
@@ -201,8 +220,8 @@ public class FlutterRenderer implements TextureRegistry {
         argsPosition
     );
   }
-  //------ END MIGRATION FROM FlutterEngine to FlutterRenderer ----
 
+  // TODO(mattcarroll): change the JNI code to call these directly rather than forward these calls from FlutterEngine
   //------ START PACKAGE PRIVATE MESSAGES FROM FlutterEngine ------
   void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
     if (renderSurface != null) {
@@ -225,14 +244,41 @@ public class FlutterRenderer implements TextureRegistry {
   //------ END PACKAGE PRIVATE MESSAGES FROM FlutterEngine ------
 
   public interface OnFirstFrameRenderedListener {
+    /**
+     * A {@link FlutterRenderer} has painted its first frame since being initialized.
+     *
+     * This method will not be invoked if this listener is added after the first frame is rendered.
+     */
     void onFirstFrameRendered();
   }
 
+  /**
+   * Delegate used in conjunction with a {@link FlutterRenderer} to create an interactive Flutter
+   * UI.
+   *
+   * A {@code RenderSurface} is responsible for carrying out behaviors that are needed by a
+   * corresponding {@link FlutterRenderer}, e.g., {@link #updateSemantics(ByteBuffer, String[])}.
+   *
+   * A {@code RenderSurface} also receives callbacks for important events, e.g.,
+   * {@link #onFirstFrameRendered()}.
+   */
   public interface RenderSurface {
+    // TODO(mattcarroll): what is this method supposed to do?
     void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings);
 
+    // TODO(mattcarroll): what is this method supposed to do?
     void updateSemantics(ByteBuffer buffer, String[] strings);
 
+    /**
+     * The {@link FlutterRenderer} corresponding to this {@code RenderSurface} has painted its
+     * first frame since being initialized.
+     *
+     * "Initialized" refers to Flutter engine initialization, not the first frame after attaching
+     * to the {@link FlutterRenderer}. Therefore, the first frame may have already rendered by
+     * the time a {@code RenderSurface} has called {@link #attachToRenderSurface(RenderSurface)}
+     * on a {@link FlutterRenderer}. In such a situation, {@link #onFirstFrameRendered()} will
+     * never be called.
+     */
     void onFirstFrameRendered();
   }
 }

@@ -52,7 +52,31 @@ import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.view.VsyncWaiter;
 
 /**
- * An Android view containing a Flutter app.
+ * {@code View} which can render a Flutter UI by attaching itself to a {@link FlutterRenderer}.
+ *
+ * {@code FlutterView} does not take in any Flutter references within its constructor. This is done
+ * so that {@code FlutterView} can be instantiated from XML, and recreated on configuration change
+ * without introducing asymmetric APIs for construction.  As a result, users of {@code FlutterView}
+ * must explicitly attach to Flutter, and detach from Flutter, as desired.
+ *
+ * To start rendering a Flutter UI, use {@link #attachToFlutterRenderer(FlutterRenderer, BinaryMessenger)}.
+ *
+ * To stop rendering a Flutter UI, use {@link #detachFromFlutterRenderer()}.
+ *
+ * {@code FlutterView} extends {@link SurfaceView} because Flutter renders directly to a
+ * {@link android.view.Surface}, which is then displayed by this {@link SurfaceView}.
+ *
+ * {@code FlutterView} implements {@link FlutterRenderer.RenderSurface} so that it can operate with
+ * a {@link FlutterRenderer} to render an interactive Flutter UI. {@code FlutterView} sends commands
+ * to its {@link FlutterRenderer}, and the {@link FlutterRenderer} sends updates to this
+ * {@code FlutterView} by utilizing it as a {@link FlutterRenderer.RenderSurface}.
+ *
+ * See also
+ *  - {@link SurfaceView}, which displays {@link android.view.Surface}s.
+ *  - {@link FlutterRenderer.RenderSurface}, which is the interface that is implemented by anything
+ *    that wants to render a Flutter UI.
+ *  - {@link android.view.accessibility.AccessibilityManager.AccessibilityStateChangeListener}, which
+ *    receives callbacks when Android accessibility settings are changed.
  */
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class FlutterView extends SurfaceView implements
@@ -116,6 +140,9 @@ public class FlutterView extends SurfaceView implements
   private AccessibilityBridge mAccessibilityNodeProvider;
   private TouchExplorationListener mTouchExplorationListener;
 
+  // Connects the {@code Surface} beneath this {@code SurfaceView} with Flutter's native code.
+  // Callbacks are received by this Object and then those messages are forwarded to our
+  // FlutterRenderer, and then on to the JNI bridge over to native Flutter code.
   private final SurfaceHolder.Callback mSurfaceCallback = new SurfaceHolder.Callback() {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
@@ -559,30 +586,6 @@ public class FlutterView extends SurfaceView implements
   //----- END AccessibilityStateChangeListener ----
 
   //------- START ACCESSIBILITY ------
-  // Called by native to update the semantics/accessibility tree.
-  @SuppressWarnings("unused")
-  public void updateSemantics(ByteBuffer buffer, String[] strings) {
-    try {
-      if (mAccessibilityNodeProvider != null) {
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        mAccessibilityNodeProvider.updateSemantics(buffer, strings);
-      }
-    } catch (Exception ex) {
-      Log.e(TAG, "Uncaught exception while updating semantics", ex);
-    }
-  }
-
-  public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
-    try {
-      if (mAccessibilityNodeProvider != null) {
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        mAccessibilityNodeProvider.updateCustomAccessibilityActions(buffer, strings);
-      }
-    } catch (Exception ex) {
-      Log.e(TAG, "Uncaught exception while updating local context actions", ex);
-    }
-  }
-
   public void dispatchSemanticsAction(int id, AccessibilityBridge.Action action) {
     dispatchSemanticsAction(id, action, null);
   }
@@ -631,6 +634,14 @@ public class FlutterView extends SurfaceView implements
   //------- END ACCESSIBILITY ----
 
   //----- START FLUTTER INTEGRATION -----
+
+  /**
+   * Start rendering the UI for the given {@link FlutterRenderer}.
+   *
+   * @param flutterRenderer the FlutterRenderer for which this FlutterView will be a RenderSurface
+   * @param pluginMessenger the BinaryMessenger to use with any plugins that this FlutterView needs
+   *                        to register
+   */
   public void attachToFlutterRenderer(@NonNull FlutterRenderer flutterRenderer, @NonNull BinaryMessenger pluginMessenger) {
     if (isAttachedToRenderer) {
       detachFromFlutterRenderer();
@@ -640,9 +651,9 @@ public class FlutterView extends SurfaceView implements
     this.flutterRenderer = flutterRenderer;
     this.pluginMessenger = pluginMessenger;
 
+    // Instruct our FlutterRenderer that we are now its designated RenderSurface.
     this.flutterRenderer.attachToRenderSurface(this);
-
-    mIsSoftwareRenderingEnabled = flutterRenderer.isSoftwareRenderingEnabled();
+    isAttachedToRenderer = true;
 
     // Configure the platform plugins and flutter channels.
     mFlutterLocalizationChannel = new MethodChannel(pluginMessenger, "flutter/localization", JSONMethodCodec.INSTANCE);
@@ -653,29 +664,40 @@ public class FlutterView extends SurfaceView implements
     setFlutterLocale(getResources().getConfiguration().locale);
     setFlutterUserSettings();
 
+    // Grab a reference to our underlying Surface and register callbacks with that Surface so we
+    // can monitor changes and forward those changes on to native Flutter code.
     getHolder().addCallback(mSurfaceCallback);
 
-    isAttachedToRenderer = true;
+    mIsSoftwareRenderingEnabled = flutterRenderer.isSoftwareRenderingEnabled();
   }
 
   private void assertAttachedToFlutterRenderer() {
-    if (!isAttachedToRenderer)
+    if (!isAttachedToRenderer) {
       throw new AssertionError("FlutterView is not attached to a FlutterRenderer.");
+    }
   }
 
+  /**
+   * Stop rendering the UI for a given {@link FlutterRenderer}.
+   *
+   * If no {@link FlutterRenderer} is currently attached, this method does nothing.
+   */
   public void detachFromFlutterRenderer() {
-    if (!isAttachedToRenderer)
+    if (!isAttachedToRenderer) {
       return;
+    }
 
+    // Stop forwarding messages from our underlying Surface to native Flutter code.
     getHolder().removeCallback(mSurfaceCallback);
 
+    // Instruct our FlutterRenderer that we are no longer interested in being its RenderSurface.
     flutterRenderer.detachFromRenderSurface();
-
+    flutterRenderer = null;
     isAttachedToRenderer = false;
   }
 
   /**
-   * Send this Android device's {@link Locale} configuration to Flutter.
+   * Send the given {@link Locale} configuration to Flutter.
    * @param locale the user's locale
    */
   private void setFlutterLocale(@NonNull Locale locale) {
@@ -697,6 +719,30 @@ public class FlutterView extends SurfaceView implements
   //----- END FLUTTER INTEGRATION -----
 
   //------ START RenderingSurface -----
+  @Override
+  public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
+    try {
+      if (mAccessibilityNodeProvider != null) {
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        mAccessibilityNodeProvider.updateCustomAccessibilityActions(buffer, strings);
+      }
+    } catch (Exception ex) {
+      Log.e(TAG, "Uncaught exception while updating local context actions", ex);
+    }
+  }
+
+  @Override
+  public void updateSemantics(ByteBuffer buffer, String[] strings) {
+    try {
+      if (mAccessibilityNodeProvider != null) {
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        mAccessibilityNodeProvider.updateSemantics(buffer, strings);
+      }
+    } catch (Exception ex) {
+      Log.e(TAG, "Uncaught exception while updating semantics", ex);
+    }
+  }
+
   @Override
   public void onFirstFrameRendered() {
     // no-op

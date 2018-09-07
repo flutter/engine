@@ -3,10 +3,7 @@ package io.flutter.embedding;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.SurfaceTexture;
 import android.util.Log;
-import android.view.Surface;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -17,14 +14,37 @@ import io.flutter.embedding.legacy.FlutterPluginRegistry;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.view.FlutterRunArguments;
 
+/**
+ * A single Flutter execution environment.
+ *
+ * A {@code FlutterEngine} can execute in the background, or it can be rendered to the screen by
+ * using the accompanying {@link FlutterRenderer}.  Rendering can be started and stopped, thus
+ * allowing a {@code FlutterEngine} to move from UI interaction to data-only processing and then
+ * back to UI interaction.
+ *
+ * To start running Flutter within this {@code FlutterEngine}, use {@link #runFromBundle(FlutterRunArguments)}.
+ * The {@link #runFromBundle(FlutterRunArguments)} method may not be invoked twice on the same
+ * {@code FlutterEngine}.
+ *
+ * To start rendering Flutter content to the screen, use {@link #getRenderer()} to obtain a
+ * {@link FlutterRenderer} and then attach a {@link FlutterRenderer.RenderSurface}.  Consider using
+ * a {@link FlutterView} as a {@link FlutterRenderer.RenderSurface}.
+ * TODO(mattcarroll): for the above instructions for RenderSurface to be true, we need to refactor
+ *                    the native relationships and also the PlatformViewsController relationship.
+ */
 public class FlutterEngine implements BinaryMessenger {
   private static final String TAG = "FlutterEngine";
 
+  private final Resources resources;
+  private final FlutterJNI flutterJNI;
+  private final FlutterRenderer renderer;
+  private final FlutterPluginRegistry pluginRegistry;
+  private final Map<String, BinaryMessageHandler> mMessageHandlers;
+  private final Map<Integer, BinaryReply> mPendingReplies = new HashMap<>();
   private long nativeObjectReference;
-  private FlutterJNI flutterJNI;
-  private FlutterRenderer renderer;
-  private FlutterPluginRegistry pluginRegistry;
   private boolean isBackgroundView; // TODO(mattcarroll): rename to something without "view"
+  private boolean applicationIsRunning;
+  private int mNextReplyId = 1;
 
   FlutterEngine(
       Context context,
@@ -34,24 +54,102 @@ public class FlutterEngine implements BinaryMessenger {
     this.flutterJNI = new FlutterJNI();
     this.resources = resources;
     this.isBackgroundView = isBackgroundView;
-
     pluginRegistry = new FlutterPluginRegistry(this, context);
-    attach();
-    assertAttached();
-    // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling.
-    this.renderer = new FlutterRenderer(this, flutterJNI, nativeObjectReference);
     mMessageHandlers = new HashMap<>();
+
+    attach();
+    // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if possible.
+    this.renderer = new FlutterRenderer(flutterJNI, nativeObjectReference);
+  }
+
+  private void attach() {
+    // TODO(mattcarroll): what impact does "isBackgroundView' have?
+    nativeObjectReference = flutterJNI.nativeAttach(this, isBackgroundView);
+
+    if (!isAttached()) {
+      throw new RuntimeException("FlutterEngine failed to attach to its native Object reference.");
+    }
+  }
+
+  private void assertAttached() {
+    if (!isAttached()) throw new AssertionError("Platform view is not attached");
+  }
+
+  @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+  private boolean isAttached() {
+    return nativeObjectReference != 0;
+  }
+
+  public void detach() {
+    pluginRegistry.detach();
+    // TODO(mattcarroll): why do we have a nativeDetach() method? can we get rid of this?
+    flutterJNI.nativeDetach(nativeObjectReference);
+  }
+
+  public void destroy() {
+    pluginRegistry.destroy();
+    flutterJNI.nativeDestroy(nativeObjectReference);
+    nativeObjectReference = 0;
+    applicationIsRunning = false;
+  }
+
+  public void runFromBundle(FlutterRunArguments args) {
+    if (args.bundlePath == null) {
+      throw new AssertionError("A bundlePath must be specified");
+    } else if (args.entrypoint == null) {
+      throw new AssertionError("An entrypoint must be specified");
+    }
+    runFromBundleInternal(args.bundlePath, args.entrypoint, args.libraryPath, args.defaultPath);
+  }
+
+  private void runFromBundleInternal(
+      String bundlePath,
+      String entrypoint,
+      String libraryPath,
+      String defaultPath
+  ) {
+    assertAttached();
+
+    if (applicationIsRunning) {
+      throw new AssertionError("This Flutter engine instance is already running an application");
+    }
+
+    flutterJNI.nativeRunBundleAndSnapshotFromLibrary(nativeObjectReference, bundlePath,
+        defaultPath, entrypoint, libraryPath, resources.getAssets());
+
+    applicationIsRunning = true;
+  }
+
+  public boolean isApplicationRunning() {
+    return applicationIsRunning;
+  }
+
+  // TODO(mattcarroll): what does this callback actually represent?
+  // Called by native to notify when the engine is restarted (cold reload).
+  @SuppressWarnings("unused")
+  private void onPreEngineRestart() {
+    if (pluginRegistry == null)
+      return;
+    pluginRegistry.onPreEngineRestart();
   }
 
   public FlutterRenderer getRenderer() {
     return renderer;
   }
 
-  //------- START PLUGINS ------
   public FlutterPluginRegistry getPluginRegistry() {
     return pluginRegistry;
   }
-  //------- END PLUGINS -----
+
+  // TODO(mattcarroll): Is this method really all about plugins? or does it have other implications?
+  public void attachViewAndActivity(Activity activity) {
+    pluginRegistry.attach(this, activity);
+  }
+
+  // TODO(mattcarroll): This method says it's unused. Is that true? Do we need it?
+  public String getObservatoryUri() {
+    return flutterJNI.nativeGetObservatoryUri();
+  }
 
   //------- START ISOLATE METHOD CHANNEL COMMS ------
   @Override
@@ -66,87 +164,6 @@ public class FlutterEngine implements BinaryMessenger {
   @Override
   public void send(String channel, ByteBuffer message) {
     send(channel, message, null);
-  }
-  //------- END ISOLATE METHOD CHANNEL COMMS -----
-
-  //------- START COPY FROM FlutterNativeView -----
-  private final Map<String, BinaryMessageHandler> mMessageHandlers;
-  private int mNextReplyId = 1;
-  private final Map<Integer, BinaryReply> mPendingReplies = new HashMap<>();
-
-  private final Resources resources;
-  private boolean applicationIsRunning;
-
-  private void attach() {
-    nativeObjectReference = flutterJNI.nativeAttach(this, isBackgroundView);
-  }
-
-  public void detach() {
-    pluginRegistry.detach();
-    flutterJNI.nativeDetach(nativeObjectReference);
-  }
-
-  public void destroy() {
-    pluginRegistry.destroy();
-    flutterJNI.nativeDestroy(nativeObjectReference);
-    nativeObjectReference = 0;
-    applicationIsRunning = false;
-  }
-
-  public void attachViewAndActivity(Activity activity) {
-    pluginRegistry.attach(this, activity);
-  }
-
-  public boolean isAttached() {
-    return nativeObjectReference != 0;
-  }
-
-  public long get() {
-    return nativeObjectReference;
-  }
-
-  public void assertAttached() {
-    if (!isAttached()) throw new AssertionError("Platform view is not attached");
-  }
-
-  public void runFromBundle(FlutterRunArguments args) {
-    if (args.bundlePath == null) {
-      throw new AssertionError("A bundlePath must be specified");
-    } else if (args.entrypoint == null) {
-      throw new AssertionError("An entrypoint must be specified");
-    }
-    runFromBundleInternal(args.bundlePath, args.entrypoint, args.libraryPath, args.defaultPath);
-  }
-
-  /**
-   * @deprecated
-   * Please use runFromBundle with `FlutterRunArguments`.
-   * Parameter `reuseRuntimeController` has no effect.
-   */
-  @Deprecated
-  public void runFromBundle(String bundlePath, String defaultPath, String entrypoint,
-                            boolean reuseRuntimeController) {
-    runFromBundleInternal(bundlePath, entrypoint, null, defaultPath);
-  }
-
-  private void runFromBundleInternal(String bundlePath, String entrypoint,
-                                     String libraryPath, String defaultPath) {
-    assertAttached();
-    if (applicationIsRunning)
-      throw new AssertionError(
-          "This Flutter engine instance is already running an application");
-    flutterJNI.nativeRunBundleAndSnapshotFromLibrary(nativeObjectReference, bundlePath,
-        defaultPath, entrypoint, libraryPath, resources.getAssets());
-
-    applicationIsRunning = true;
-  }
-
-  public boolean isApplicationRunning() {
-    return applicationIsRunning;
-  }
-
-  public String getObservatoryUri() {
-    return flutterJNI.nativeGetObservatoryUri();
   }
 
   @Override
@@ -218,7 +235,9 @@ public class FlutterEngine implements BinaryMessenger {
       }
     }
   }
+  //------- END ISOLATE METHOD CHANNEL COMMS -----
 
+  //------ START NATIVE CALLBACKS THAT SHOULD BE MOVED TO FlutterRenderer ------
   // Called by native to update the semantics/accessibility tree.
   @SuppressWarnings("unused")
   private void updateSemantics(ByteBuffer buffer, String[] strings) {
@@ -239,13 +258,5 @@ public class FlutterEngine implements BinaryMessenger {
     Log.d(TAG, "onFirstFrame()");
     renderer.onFirstFrameRendered();
   }
-
-  // Called by native to notify when the engine is restarted (cold reload).
-  @SuppressWarnings("unused")
-  private void onPreEngineRestart() {
-    if (pluginRegistry == null)
-      return;
-    pluginRegistry.onPreEngineRestart();
-  }
-  //------- END COPY FROM FlutterNativeView ----
+  //------ END NATIVE CALLBACKS THAT SHOULD BE MOVED TO FlutterRenderer ------
 }
