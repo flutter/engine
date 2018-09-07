@@ -16,6 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
@@ -65,6 +66,7 @@ public class FlutterActivity extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    Log.d(TAG, "onCreate()");
 
     FlutterShellArgs args = FlutterShellArgs.fromIntent(getIntent());
     // TODO(mattcarroll): Change FlutterMain to accept FlutterShellArgs and move additional constants in
@@ -79,6 +81,7 @@ public class FlutterActivity extends Activity {
   @Override
   public void onPostResume() {
     super.onPostResume();
+    Log.d(TAG, "onPostResume()");
     flutterFragment.onPostResume();
   }
 
@@ -90,6 +93,7 @@ public class FlutterActivity extends Activity {
 
   @Override
   public void onBackPressed() {
+    Log.d(TAG, "onBackPressed()");
     flutterFragment.onBackPressed();
   }
 
@@ -107,6 +111,7 @@ public class FlutterActivity extends Activity {
    * {@code FrameLayout} will hold a {@code FlutterFragment}, which displays a {@code FlutterView}.
    */
   private void createFlutterFragmentContainer() {
+    Log.d(TAG, "createFlutterFragmentContainer()");
     FrameLayout container = new FrameLayout(this);
     container.setId(CONTAINER_ID);
     container.setLayoutParams(new ViewGroup.LayoutParams(
@@ -122,6 +127,7 @@ public class FlutterActivity extends Activity {
    * a reference to that {@code FlutterFragment} is retained in {@code flutterFragment}.
    */
   private void createFlutterFragment() {
+    Log.d(TAG, "createFlutterFragment()");
     FragmentManager fragmentManager = getFragmentManager();
 
     flutterFragment = (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);

@@ -7,9 +7,10 @@ package io.flutter.embedding.legacy;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+
+import io.flutter.embedding.FlutterEngine;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.view.FlutterMain;
-import io.flutter.embedding.FlutterView;
 import io.flutter.view.TextureRegistry;
 
 import java.util.ArrayList;
@@ -28,8 +29,8 @@ public class FlutterPluginRegistry
 
     private Activity mActivity;
     private Context mAppContext;
-    private FlutterNativeView mNativeView;
-    private FlutterView mFlutterView;
+    private BinaryMessenger mMessenger;
+    private FlutterEngine flutterEngine;
 
     private final PlatformViewsController mPlatformViewsController;
     private final Map<String, Object> mPluginMap = new LinkedHashMap<>(0);
@@ -39,8 +40,8 @@ public class FlutterPluginRegistry
     private final List<UserLeaveHintListener> mUserLeaveHintListeners = new ArrayList<>(0);
     private final List<ViewDestroyListener> mViewDestroyListeners = new ArrayList<>(0);
 
-    public FlutterPluginRegistry(FlutterNativeView nativeView, Context context) {
-        mNativeView = nativeView;
+    public FlutterPluginRegistry(BinaryMessenger messenger, Context context) {
+        mMessenger = messenger;
         mAppContext = context;
         mPlatformViewsController = new PlatformViewsController();
     }
@@ -65,16 +66,16 @@ public class FlutterPluginRegistry
         return new FlutterRegistrar(pluginKey);
     }
 
-    public void attach(FlutterView flutterView, Activity activity) {
-        mFlutterView = flutterView;
+    public void attach(FlutterEngine flutterEngine, Activity activity) {
+        this.flutterEngine = flutterEngine;
         mActivity = activity;
-        mPlatformViewsController.attachFlutterView(flutterView);
+        mPlatformViewsController.attachFlutterEngine(flutterEngine, activity);
     }
 
     public void detach() {
-        mPlatformViewsController.detachFlutterView();
+        mPlatformViewsController.detachFlutterEngine();
         mPlatformViewsController.onFlutterViewDestroyed();
-        mFlutterView = null;
+        flutterEngine = null;
         mActivity = null;
     }
 
@@ -106,22 +107,17 @@ public class FlutterPluginRegistry
 
         @Override
         public BinaryMessenger messenger() {
-            return mNativeView;
+            return mMessenger;
         }
 
         @Override
         public TextureRegistry textures() {
-            return mFlutterView;
+            return flutterEngine.getRenderer();
         }
 
         @Override
         public PlatformViewRegistry platformViewRegistry() {
             return mPlatformViewsController.getRegistry();
-        }
-
-        @Override
-        public FlutterView view() {
-            return mFlutterView;
         }
 
         @Override
@@ -228,10 +224,10 @@ public class FlutterPluginRegistry
     }
 
     @Override
-    public boolean onViewDestroy(FlutterNativeView view) {
+    public boolean onViewDestroy(FlutterEngine engine) {
         boolean handled = false;
         for (ViewDestroyListener listener : mViewDestroyListeners) {
-            if (listener.onViewDestroy(view)) {
+            if (listener.onViewDestroy(engine)) {
                 handled = true;
             }
         }

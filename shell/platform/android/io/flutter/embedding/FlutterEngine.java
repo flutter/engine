@@ -1,25 +1,46 @@
 package io.flutter.embedding;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
-import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.Surface;
-import io.flutter.embedding.legacy.FlutterNativeView;
-import io.flutter.embedding.legacy.FlutterPluginRegistry;
-import io.flutter.embedding.legacy.PluginRegistry;
-import io.flutter.plugin.common.BinaryMessenger;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.flutter.embedding.legacy.FlutterPluginRegistry;
+import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.view.FlutterRunArguments;
 
 public class FlutterEngine implements BinaryMessenger {
-  private FlutterNativeView nativeView;
+  private static final String TAG = "FlutterEngine";
+
+  private long nativeObjectReference;
+  private FlutterJNI flutterJNI;
   private FlutterRenderer renderer;
   private FlutterPluginRegistry pluginRegistry;
+  private boolean isBackgroundView; // TODO(mattcarroll): rename to something without "view"
 
-  FlutterEngine(@NonNull FlutterNativeView nativeView, @NonNull FlutterPluginRegistry pluginRegistry) {
-    this.nativeView = nativeView;
-    this.renderer = new FlutterRenderer();
-    this.pluginRegistry = pluginRegistry;
+  FlutterEngine(
+      Context context,
+      Resources resources,
+      boolean isBackgroundView
+  ) {
+    this.flutterJNI = new FlutterJNI();
+    this.resources = resources;
+    this.isBackgroundView = isBackgroundView;
+
+    pluginRegistry = new FlutterPluginRegistry(this, context);
+    attach();
+    assertAttached();
+    // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling.
+    this.renderer = new FlutterRenderer(this, flutterJNI, nativeObjectReference);
+    mMessageHandlers = new HashMap<>();
   }
 
   public FlutterRenderer getRenderer() {
@@ -34,69 +55,197 @@ public class FlutterEngine implements BinaryMessenger {
 
   //------- START ISOLATE METHOD CHANNEL COMMS ------
   @Override
-  public void setMessageHandler(String channel, BinaryMessenger.BinaryMessageHandler handler) {
-    // TODO: do we need to be attached for this?
-    nativeView.setMessageHandler(channel, handler);
+  public void setMessageHandler(String channel, BinaryMessageHandler handler) {
+    if (handler == null) {
+      mMessageHandlers.remove(channel);
+    } else {
+      mMessageHandlers.put(channel, handler);
+    }
   }
 
   @Override
   public void send(String channel, ByteBuffer message) {
     send(channel, message, null);
   }
-
-  @Override
-  public void send(String channel, ByteBuffer message, BinaryMessenger.BinaryReply callback) {
-    // TODO: ensure we're attached.
-    nativeView.send(channel, message, callback);
-  }
   //------- END ISOLATE METHOD CHANNEL COMMS -----
 
-  //------ START JNI CALLS -----
-  public native void nativeSurfaceCreated(long nativePlatformViewAndroid,
-                                          Surface surface,
-                                          int backgroundColor);
+  //------- START COPY FROM FlutterNativeView -----
+  private final Map<String, BinaryMessageHandler> mMessageHandlers;
+  private int mNextReplyId = 1;
+  private final Map<Integer, BinaryReply> mPendingReplies = new HashMap<>();
 
-  public native void nativeSurfaceChanged(long nativePlatformViewAndroid,
-                                          int width,
-                                          int height);
+  private final Resources resources;
+  private boolean applicationIsRunning;
 
-  public native void nativeSurfaceDestroyed(long nativePlatformViewAndroid);
+  private void attach() {
+    nativeObjectReference = flutterJNI.nativeAttach(this, isBackgroundView);
+  }
 
-  public native void nativeSetViewportMetrics(long nativePlatformViewAndroid,
-                                              float devicePixelRatio,
-                                              int physicalWidth,
-                                              int physicalHeight,
-                                              int physicalPaddingTop,
-                                              int physicalPaddingRight,
-                                              int physicalPaddingBottom,
-                                              int physicalPaddingLeft,
-                                              int physicalViewInsetTop,
-                                              int physicalViewInsetRight,
-                                              int physicalViewInsetBottom,
-                                              int physicalViewInsetLeft);
+  public void detach() {
+    pluginRegistry.detach();
+    flutterJNI.nativeDetach(nativeObjectReference);
+  }
 
-  public native Bitmap nativeGetBitmap(long nativePlatformViewAndroid);
+  public void destroy() {
+    pluginRegistry.destroy();
+    flutterJNI.nativeDestroy(nativeObjectReference);
+    nativeObjectReference = 0;
+    applicationIsRunning = false;
+  }
 
-  public native void nativeDispatchPointerDataPacket(long nativePlatformViewAndroid,
-                                                     ByteBuffer buffer,
-                                                     int position);
+  public void attachViewAndActivity(Activity activity) {
+    pluginRegistry.attach(this, activity);
+  }
 
-  public native void nativeDispatchSemanticsAction(long nativePlatformViewAndroid,
-                                                   int id,
-                                                   int action,
-                                                   ByteBuffer args,
-                                                   int argsPosition);
+  public boolean isAttached() {
+    return nativeObjectReference != 0;
+  }
 
-  public native void nativeSetSemanticsEnabled(long nativePlatformViewAndroid, boolean enabled);
+  public long get() {
+    return nativeObjectReference;
+  }
 
-  public native void nativeSetAccessibilityFeatures(long nativePlatformViewAndroid, int flags);
+  public void assertAttached() {
+    if (!isAttached()) throw new AssertionError("Platform view is not attached");
+  }
 
-  public native boolean nativeGetIsSoftwareRenderingEnabled();
+  public void runFromBundle(FlutterRunArguments args) {
+    if (args.bundlePath == null) {
+      throw new AssertionError("A bundlePath must be specified");
+    } else if (args.entrypoint == null) {
+      throw new AssertionError("An entrypoint must be specified");
+    }
+    runFromBundleInternal(args.bundlePath, args.entrypoint, args.libraryPath, args.defaultPath);
+  }
 
-  public native void nativeRegisterTexture(long nativePlatformViewAndroid, long textureId, SurfaceTexture surfaceTexture);
+  /**
+   * @deprecated
+   * Please use runFromBundle with `FlutterRunArguments`.
+   * Parameter `reuseRuntimeController` has no effect.
+   */
+  @Deprecated
+  public void runFromBundle(String bundlePath, String defaultPath, String entrypoint,
+                            boolean reuseRuntimeController) {
+    runFromBundleInternal(bundlePath, entrypoint, null, defaultPath);
+  }
 
-  public native void nativeMarkTextureFrameAvailable(long nativePlatformViewAndroid, long textureId);
+  private void runFromBundleInternal(String bundlePath, String entrypoint,
+                                     String libraryPath, String defaultPath) {
+    assertAttached();
+    if (applicationIsRunning)
+      throw new AssertionError(
+          "This Flutter engine instance is already running an application");
+    flutterJNI.nativeRunBundleAndSnapshotFromLibrary(nativeObjectReference, bundlePath,
+        defaultPath, entrypoint, libraryPath, resources.getAssets());
 
-  public native void nativeUnregisterTexture(long nativePlatformViewAndroid, long textureId);
-  //------ END JNI CALLS -----
+    applicationIsRunning = true;
+  }
+
+  public boolean isApplicationRunning() {
+    return applicationIsRunning;
+  }
+
+  public String getObservatoryUri() {
+    return flutterJNI.nativeGetObservatoryUri();
+  }
+
+  @Override
+  public void send(String channel, ByteBuffer message, BinaryReply callback) {
+    if (!isAttached()) {
+      Log.d(TAG, "FlutterView.send called on a detached view, channel=" + channel);
+      return;
+    }
+
+    int replyId = 0;
+    if (callback != null) {
+      replyId = mNextReplyId++;
+      mPendingReplies.put(replyId, callback);
+    }
+    if (message == null) {
+      flutterJNI.nativeDispatchEmptyPlatformMessage(nativeObjectReference, channel, replyId);
+    } else {
+      flutterJNI.nativeDispatchPlatformMessage(
+          nativeObjectReference, channel, message, message.position(), replyId);
+    }
+  }
+
+  // Called by native to send us a platform message.
+  @SuppressWarnings("unused")
+  private void handlePlatformMessage(final String channel, byte[] message, final int replyId) {
+    assertAttached();
+    BinaryMessageHandler handler = mMessageHandlers.get(channel);
+    if (handler != null) {
+      try {
+        final ByteBuffer buffer = (message == null ? null : ByteBuffer.wrap(message));
+        handler.onMessage(buffer, new BinaryReply() {
+          private final AtomicBoolean done = new AtomicBoolean(false);
+          @Override
+          public void reply(ByteBuffer reply) {
+            if (!isAttached()) {
+              Log.d(TAG,
+                  "handlePlatformMessage replying to a detached view, channel="
+                      + channel);
+              return;
+            }
+            if (done.getAndSet(true)) {
+              throw new IllegalStateException("Reply already submitted");
+            }
+            if (reply == null) {
+              flutterJNI.nativeInvokePlatformMessageEmptyResponseCallback(nativeObjectReference, replyId);
+            } else {
+              flutterJNI.nativeInvokePlatformMessageResponseCallback(nativeObjectReference, replyId, reply, reply.position());
+            }
+          }
+        });
+      } catch (Exception ex) {
+        Log.e(TAG, "Uncaught exception in binary message listener", ex);
+        flutterJNI.nativeInvokePlatformMessageEmptyResponseCallback(nativeObjectReference, replyId);
+      }
+      return;
+    }
+    flutterJNI.nativeInvokePlatformMessageEmptyResponseCallback(nativeObjectReference, replyId);
+  }
+
+  // Called by native to respond to a platform message that we sent.
+  @SuppressWarnings("unused")
+  private void handlePlatformMessageResponse(int replyId, byte[] reply) {
+    BinaryReply callback = mPendingReplies.remove(replyId);
+    if (callback != null) {
+      try {
+        callback.reply(reply == null ? null : ByteBuffer.wrap(reply));
+      } catch (Exception ex) {
+        Log.e(TAG, "Uncaught exception in binary message reply handler", ex);
+      }
+    }
+  }
+
+  // Called by native to update the semantics/accessibility tree.
+  @SuppressWarnings("unused")
+  private void updateSemantics(ByteBuffer buffer, String[] strings) {
+    Log.d(TAG, "updateSemantics()");
+    renderer.updateSemantics(buffer, strings);
+  }
+
+  // Called by native to update the custom accessibility actions.
+  @SuppressWarnings("unused")
+  private void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
+    Log.d(TAG, "updateCustomAccessibilityActions()");
+    renderer.updateCustomAccessibilityActions(buffer, strings);
+  }
+
+  // Called by native to notify first Flutter frame rendered.
+  @SuppressWarnings("unused")
+  private void onFirstFrame() {
+    Log.d(TAG, "onFirstFrame()");
+    renderer.onFirstFrameRendered();
+  }
+
+  // Called by native to notify when the engine is restarted (cold reload).
+  @SuppressWarnings("unused")
+  private void onPreEngineRestart() {
+    if (pluginRegistry == null)
+      return;
+    pluginRegistry.onPreEngineRestart();
+  }
+  //------- END COPY FROM FlutterNativeView ----
 }

@@ -14,6 +14,9 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+
+import io.flutter.embedding.FlutterEngine;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -37,11 +40,11 @@ public class TextInputPlugin implements MethodCallHandler {
     private Editable mEditable;
     private boolean mRestartInputPending;
 
-    public TextInputPlugin(FlutterView view) {
+    public TextInputPlugin(FlutterView view, BinaryMessenger pluginMessenger) {
         mView = view;
         mImm = (InputMethodManager) view.getContext().getSystemService(
                 Context.INPUT_METHOD_SERVICE);
-        mFlutterChannel = new MethodChannel(view, "flutter/textinput", JSONMethodCodec.INSTANCE);
+        mFlutterChannel = new MethodChannel(pluginMessenger, "flutter/textinput", JSONMethodCodec.INSTANCE);
         mFlutterChannel.setMethodCallHandler(this);
     }
 

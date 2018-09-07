@@ -15,7 +15,10 @@ import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
+
+import io.flutter.embedding.FlutterEngine;
 import io.flutter.plugin.common.BasicMessageChannel;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.embedding.FlutterView;
 
@@ -108,14 +111,14 @@ public class AccessibilityBridge
         final int value;
     }
 
-    public AccessibilityBridge(FlutterView owner) {
+    public AccessibilityBridge(FlutterView owner, BinaryMessenger pluginMessenger) {
         assert owner != null;
         mOwner = owner;
         mObjects = new HashMap<Integer, SemanticsObject>();
         mCustomAccessibilityActions = new HashMap<Integer, CustomAccessibilityAction>();
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(
-                owner, "flutter/accessibility", StandardMessageCodec.INSTANCE);
+                pluginMessenger, "flutter/accessibility", StandardMessageCodec.INSTANCE);
         mDecorView = ((Activity) owner.getContext()).getWindow().getDecorView();
     }
 

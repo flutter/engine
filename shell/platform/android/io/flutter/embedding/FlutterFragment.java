@@ -13,6 +13,7 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,9 +26,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-import io.flutter.app.BuildConfig;
-import io.flutter.embedding.legacy.FlutterNativeView;
-import io.flutter.embedding.legacy.FlutterPluginRegistry;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import io.flutter.plugin.common.BasicMessageChannel;
+import io.flutter.plugin.common.JSONMessageCodec;
+import io.flutter.plugin.common.JSONMethodCodec;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.StringCodec;
+import io.flutter.plugin.platform.PlatformPlugin;
+import io.flutter.view.FlutterRunArguments;
 
 /**
  * {@code Fragment} which displays a {@link FlutterView} that takes up all available space.
@@ -87,13 +96,19 @@ public class FlutterFragment extends Fragment {
   private FlutterEngine flutterEngine;
   private FrameLayout container;
   private FlutterView flutterView;
+  private PlatformPlugin platformPlugin;
+  private BasicMessageChannel<String> mFlutterLifecycleChannel;
+  private BasicMessageChannel<Object> mFlutterSystemChannel;
+  private MethodChannel mFlutterNavigationChannel;
   private View launchView;
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
+    Log.e(TAG, "onCreateView()");
     createLayout();
-    // TODO: Should we start running the FlutterView here or when attached? It was being done here
+    // TODO: Should we start running the FlutterView here or when attached to window? It was being done here
     //       in the Activity, but maybe that was a problem to begin with?
+    flutterView.attachToFlutterRenderer(flutterEngine.getRenderer(), flutterEngine);
     doInitialFlutterViewRun();
 
     return container;
@@ -102,45 +117,51 @@ public class FlutterFragment extends Fragment {
   @Override
   public void onStart() {
     super.onStart();
-    flutterView.onStart();
+    Log.d(TAG, "onStart()");
+    mFlutterLifecycleChannel.send("AppLifecycleState.inactive");
   }
 
   @Override
   public void onResume() {
     super.onResume();
-    // TODO: should flutterView have an onResume() method?
+    Log.d(TAG, "onResume()");
   }
 
   public void onPostResume() {
-    flutterView.onPostResume();
+    Log.d(TAG, "onPostResume()");
+    flutterView.updateAccessibilityFeatures();
+    platformPlugin.onPostResume();
+    mFlutterLifecycleChannel.send("AppLifecycleState.resumed");
   }
 
   @Override
   public void onPause() {
     super.onPause();
-    flutterView.onPause();
+    Log.d(TAG, "onPause()");
+    mFlutterLifecycleChannel.send("AppLifecycleState.inactive");
   }
 
   @Override
   public void onStop() {
     super.onStop();
-    flutterView.onStop();
+    Log.d(TAG, "onStop()");
+    mFlutterLifecycleChannel.send("AppLifecycleState.paused");
   }
 
   @Override
   public void onDestroy() {
     super.onDestroy();
+    Log.d(TAG, "onDestroy()");
 
     // TODO(mattcarroll): re-evaluate how Flutter plugins interact with FlutterView and FlutterNativeView
-    final boolean detach = flutterEngine.getPluginRegistry().onViewDestroy(
-      flutterView.getFlutterNativeView()
-    );
+    final boolean detach = flutterEngine.getPluginRegistry().onViewDestroy(flutterEngine);
+    flutterView.detachFromFlutterRenderer();
     if (detach || retainFlutterIsolateAfterFragmentDestruction()) {
       // Detach, but do not destroy the FlutterView if a plugin expressed interest in its
       // FlutterNativeView.
-      flutterView.detach();
+      flutterEngine.detach();
     } else {
-      flutterView.destroy();
+      flutterEngine.destroy();
     }
   }
 
@@ -150,7 +171,8 @@ public class FlutterFragment extends Fragment {
    * See {@link Activity#onBackPressed()}
    */
   public void onBackPressed() {
-    flutterView.popRoute();
+    Log.d(TAG, "onBackPressed()");
+    popRoute();
   }
 
   /**
@@ -163,7 +185,7 @@ public class FlutterFragment extends Fragment {
    * @param grantResults permission grants or denials
    */
   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    flutterView.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
+    flutterEngine.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
   }
 
   /**
@@ -174,12 +196,12 @@ public class FlutterFragment extends Fragment {
    * @param intent new Intent
    */
   public void onNewIntent(@NonNull Intent intent) {
-    flutterView.getPluginRegistry().onNewIntent(intent);
+    flutterEngine.getPluginRegistry().onNewIntent(intent);
   }
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    flutterView.getPluginRegistry().onActivityResult(requestCode, resultCode, data);
+    flutterEngine.getPluginRegistry().onActivityResult(requestCode, resultCode, data);
   }
 
   /**
@@ -189,7 +211,7 @@ public class FlutterFragment extends Fragment {
    * See {@link Activity#onUserLeaveHint()}
    */
   public void onUserLeaveHint() {
-    flutterView.getPluginRegistry().onUserLeaveHint();
+    flutterEngine.getPluginRegistry().onUserLeaveHint();
   }
 
   @Override
@@ -199,14 +221,20 @@ public class FlutterFragment extends Fragment {
     // Use a trim level delivered while the application is running so the
     // framework has a chance to react to the notification.
     if (level == TRIM_MEMORY_RUNNING_LOW) {
-      flutterView.onMemoryPressure();
+      sendMemoryPressureWarningToFlutter();
     }
   }
 
   @Override
   public void onLowMemory() {
     super.onLowMemory();
-    flutterView.onMemoryPressure();
+    sendMemoryPressureWarningToFlutter();
+  }
+
+  private void sendMemoryPressureWarningToFlutter() {
+    Map<String, Object> message = new HashMap<>(1);
+    message.put("type", "memoryPressure");
+    mFlutterSystemChannel.send(message);
   }
 
   /**
@@ -215,6 +243,7 @@ public class FlutterFragment extends Fragment {
    */
   private void createLayout() {
     container = new FrameLayout(getContextCompat());
+    container.setBackgroundColor(Color.RED);
     container.setLayoutParams(MATCH_PARENT);
 
     flutterView = createFlutterView(getActivity());
@@ -234,23 +263,37 @@ public class FlutterFragment extends Fragment {
    */
   @NonNull
   protected FlutterView createFlutterView(@NonNull Activity activity) {
-    FlutterNativeView nativeView = createFlutterNativeView(activity);
-    flutterEngine = new FlutterEngine(nativeView, new FlutterPluginRegistry(nativeView, getContextCompat()));
-    return new FlutterView(activity, null, nativeView, flutterEngine);
+    Log.d(TAG, "createFlutterView()");
+    flutterEngine = createFlutterEngine(activity);
+
+    platformPlugin = new PlatformPlugin(activity);
+    MethodChannel flutterPlatformChannel = new MethodChannel(flutterEngine, "flutter/platform", JSONMethodCodec.INSTANCE);
+    flutterPlatformChannel.setMethodCallHandler(platformPlugin);
+
+    mFlutterLifecycleChannel = new BasicMessageChannel<>(flutterEngine, "flutter/lifecycle", StringCodec.INSTANCE);
+    mFlutterSystemChannel = new BasicMessageChannel<>(flutterEngine, "flutter/system", JSONMessageCodec.INSTANCE);
+    mFlutterNavigationChannel = new MethodChannel(flutterEngine, "flutter/navigation", JSONMethodCodec.INSTANCE);
+
+    return new FlutterView(activity, null);
   }
 
   /**
-   * Hook for subclasses to customize the creation of the {@code FlutterNativeView}.
+   * Hook for subclasses to customize the creation of the {@code FlutterEngine}.
    *
    * This method is only invoked from the default implementation of {@link #createFlutterView(Activity)}.
    * If {@link #createFlutterView(Activity)} is overridden, then this method will not be invoked unless
    * it is invoked directly from the subclass.
    *
-   * By default, this method returns a standard {@link FlutterNativeView} without any modification.
+   * By default, this method returns a standard {@link FlutterEngine} without any modification.
    */
   @NonNull
-  protected FlutterNativeView createFlutterNativeView(@NonNull Context context) {
-    return new FlutterNativeView(context);
+  protected FlutterEngine createFlutterEngine(@NonNull Context context) {
+    Log.d(TAG, "createFlutterEngine()");
+    Activity activity = (Activity) context;
+    FlutterEngine flutterEngine = new FlutterEngine(activity, getResources(), false);
+    flutterEngine.attachViewAndActivity(activity);
+
+    return flutterEngine;
   }
 
   /**
@@ -288,9 +331,10 @@ public class FlutterFragment extends Fragment {
     // TODO(mattcarroll): this API version error exists in the original code. Why is it there?
     view.setBackground(launchScreenDrawable);
 
-    flutterView.addFirstFrameListener(new FlutterView.FirstFrameListener() {
+    // TODO(mattcarroll): move the launch screen support into FlutterView
+    flutterEngine.getRenderer().addOnFirstFrameRenderedListener(new FlutterRenderer.OnFirstFrameRenderedListener() {
       @Override
-      public void onFirstFrame() {
+      public void onFirstFrameRendered() {
         launchView.animate()
             .alpha(0f)
             // Use Android's default animation duration.
@@ -304,7 +348,7 @@ public class FlutterFragment extends Fragment {
               }
             });
 
-        flutterView.removeFirstFrameListener(this);
+        flutterEngine.getRenderer().removeOnFirstFrameRenderedListener(this);
       }
     });
 
@@ -373,14 +417,15 @@ public class FlutterFragment extends Fragment {
    * Reloading/restarting Dart within a given FlutterView is not supported.
    */
   private void doInitialFlutterViewRun() {
-    if (BuildConfig.DEBUG && flutterView.getFlutterNativeView().isApplicationRunning()) {
+//    if (BuildConfig.DEBUG && flutterView.getFlutterNativeView().isApplicationRunning()) {
+    if (flutterEngine.isApplicationRunning()) {
       throw new RuntimeException("Tried to initialize Dart execution in Flutter engine that is already running.");
     }
 
     if (getInitialRoute() != null) {
-      flutterView.setInitialRoute(getInitialRoute());
+      setInitialRoute(getInitialRoute());
     }
-    flutterView.runFromBundle(getAppBundlePath(), null, "main", false);
+    runFromBundle(getAppBundlePath(), null, "main", false);
   }
 
   @Nullable
@@ -421,8 +466,72 @@ public class FlutterFragment extends Fragment {
 
   @NonNull
   private Context getContextCompat() {
-    return Build.VERSION.SDK_INT >= 23
-      ? getContext()
-      : getActivity();
+    return getActivity();
+    // TODO(mattcarroll): bring back when target SDK is rev'd
+//    return Build.VERSION.SDK_INT >= 23
+//      ? getContext()
+//      : getActivity();
   }
+
+  public void setInitialRoute(String route) {
+    mFlutterNavigationChannel.invokeMethod("setInitialRoute", route);
+  }
+
+  public void pushRoute(String route) {
+    mFlutterNavigationChannel.invokeMethod("pushRoute", route);
+  }
+
+  public void popRoute() {
+    mFlutterNavigationChannel.invokeMethod("popRoute", null);
+  }
+
+  //------ START RUN FROM BUNDLE -----
+  public void runFromBundle(FlutterRunArguments args) {
+    assertFlutterEngineAttached();
+    // TODO(mattcarroll): why do we need to resetAccessibilityTree here? Can we call that from within FlutterView somewhere?
+    flutterView.resetAccessibilityTree();
+    flutterEngine.runFromBundle(args);
+  }
+
+  /**
+   * @deprecated
+   * Please use runFromBundle with `FlutterRunArguments`.
+   */
+  @Deprecated
+  public void runFromBundle(String bundlePath, String defaultPath) {
+    runFromBundle(bundlePath, defaultPath, "main", false);
+  }
+
+  /**
+   * @deprecated
+   * Please use runFromBundle with `FlutterRunArguments`.
+   */
+  @Deprecated
+  public void runFromBundle(String bundlePath, String defaultPath, String entrypoint) {
+    runFromBundle(bundlePath, defaultPath, entrypoint, false);
+  }
+
+  /**
+   * @deprecated
+   * Please use runFromBundle with `FlutterRunArguments`.
+   * Parameter `reuseRuntimeController` has no effect.
+   */
+  @Deprecated
+  public void runFromBundle(String bundlePath, String defaultPath, String entrypoint, boolean reuseRuntimeController) {
+    FlutterRunArguments args = new FlutterRunArguments();
+    args.bundlePath = bundlePath;
+    args.entrypoint = entrypoint;
+    args.defaultPath = defaultPath;
+    runFromBundle(args);
+  }
+
+  private boolean isFlutterEngineAttached() {
+    return flutterEngine != null && flutterEngine.isAttached();
+  }
+
+  void assertFlutterEngineAttached() {
+    if (!isFlutterEngineAttached())
+      throw new AssertionError("Platform view is not attached");
+  }
+  //------ END RUN FROM BUNDLE ----
 }
