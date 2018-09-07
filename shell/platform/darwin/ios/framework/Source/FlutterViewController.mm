@@ -835,9 +835,8 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   int32_t flags = 0;
   if (UIAccessibilityIsInvertColorsEnabled())
     flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kInvertColors);
-  // TODO(jonahwilliams): add a different flag for reduce motion since it is so different.
-  // if (UIAccessibilityIsReduceMotionEnabled())
-  //   flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kDisableAnimations);
+  if (UIAccessibilityIsReduceMotionEnabled())
+    flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kReduceMotion);
   if (UIAccessibilityIsBoldTextEnabled())
     flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kBoldText);
 #if TARGET_OS_SIMULATOR
