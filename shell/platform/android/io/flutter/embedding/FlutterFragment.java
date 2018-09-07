@@ -121,12 +121,6 @@ public class FlutterFragment extends Fragment {
     mFlutterLifecycleChannel.send("AppLifecycleState.inactive");
   }
 
-  @Override
-  public void onResume() {
-    super.onResume();
-    Log.d(TAG, "onResume()");
-  }
-
   public void onPostResume() {
     Log.d(TAG, "onPostResume()");
     flutterView.updateAccessibilityFeatures();
@@ -243,7 +237,6 @@ public class FlutterFragment extends Fragment {
    */
   private void createLayout() {
     container = new FrameLayout(getContextCompat());
-    container.setBackgroundColor(Color.RED);
     container.setLayoutParams(MATCH_PARENT);
 
     flutterView = createFlutterView(getActivity());

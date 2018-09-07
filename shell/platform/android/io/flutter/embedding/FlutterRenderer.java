@@ -238,8 +238,8 @@ public class FlutterRenderer implements TextureRegistry {
   void onFirstFrameRendered() {
     if (renderSurface != null) {
       renderSurface.onFirstFrameRendered();
-      notifyFirstFrameListeners();
     }
+    notifyFirstFrameListeners();
   }
   //------ END PACKAGE PRIVATE MESSAGES FROM FlutterEngine ------
 
