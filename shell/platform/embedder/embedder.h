@@ -111,7 +111,7 @@ typedef struct {
 // The kind of device generating a pointer event.
 typedef enum {
   kMouse,
-  kGesture,
+  // kGesture,
 } FlutterPointerDeviceKind;
 
 // The phase of the pointer event.
