@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '300b6197e344706f543b570bfcfa8f46da1dd2e3',
+  'skia_revision': 'a2bc1ca21bbc354ec6b1d2a3456ef0c367593e8b',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '760a9690c22ec3f3d163173737f9949f97e6e02a',
+  'dart_revision': 'cd9a42239f76e110dd73aeaac4c69a057a76ddf1',
 
   'dart_args_tag': '1.4.4',
   'dart_async_tag': '2.0.8',

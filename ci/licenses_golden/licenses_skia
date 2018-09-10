@@ -1,4 +1,4 @@
-Signature: 0d38433bf769eb57972110051ae31959
+Signature: 24e7f4dd7d374abb7118fdfe6a4c254e
 
 UNUSED LICENSES:
 
@@ -1310,6 +1310,7 @@ FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzRegionSetPath.cpp
 FILE: ../../../third_party/skia/gm/3dgm.cpp
 FILE: ../../../third_party/skia/gm/androidblendmodes.cpp
 FILE: ../../../third_party/skia/gm/clockwise.cpp
+FILE: ../../../third_party/skia/gm/crbug_847759.cpp
 FILE: ../../../third_party/skia/gm/hugepath.cpp
 FILE: ../../../third_party/skia/gm/localmatrixshader.cpp
 FILE: ../../../third_party/skia/gm/makeRasterImage.cpp
@@ -2056,6 +2057,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/checkout/examples/full
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/checkout/examples/full.expected/flutter_trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/checkout/examples/full.expected/parent_revision_trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/checkout/examples/full.expected/test.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/checkout/examples/full.expected/trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/ct/examples/full.expected/failed_gsutil.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/ct/examples/full.expected/test.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/doxygen/examples/full.expected/doxygen.json
