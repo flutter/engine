@@ -145,6 +145,16 @@ TEST(FlutterStandardCodec, CanEncodeAndDecodeByteArray) {
   checkEncodeDecode(value);
 }
 
+TEST(FlutterStandardCodec, CanEncodeAndDecodeNSData) {
+  FlutterStandardMessageCodec* codec = [FlutterStandardMessageCodec sharedInstance];
+  uint8_t bytes[4] = {0xBA, 0x5E, 0xBA, 0x11};
+  NSData* data = [NSData dataWithBytes:bytes length:4];
+  FlutterStandardTypedData* standardData = [FlutterStandardTypedData typedDataWithBytes:data];
+
+  NSData* encoded = [codec encode:data];
+  ASSERT_TRUE([encoded isEqual:[codec encode:standardData]]);
+}
+
 TEST(FlutterStandardCodec, CanEncodeAndDecodeInt32Array) {
   uint8_t bytes[8] = {0xBA, 0x5E, 0xBA, 0x11, 0xff, 0xff, 0xff, 0xff};
   NSData* data = [NSData dataWithBytes:bytes length:8];
