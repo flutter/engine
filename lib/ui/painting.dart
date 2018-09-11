@@ -1577,6 +1577,11 @@ class Codec extends NativeFieldWrapperClass2 {
   /// * -1 for infinity repetitions.
   int get repetitionCount native 'Codec_repetitionCount';
 
+  /// Clears the in-memory decoded frame cache and disables future caching of
+  /// decoded frames. This negatively impacts CPU usage, but reduces memory
+  /// consumption.
+  void clearAndDisableFrameCache() native 'Codec_clearAndDisableFrameCache';
+
   /// Fetches the next animation frame.
   ///
   /// Wraps back to the first frame after returning the last frame.

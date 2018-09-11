@@ -350,7 +350,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Codec);
   V(Codec, getNextFrame)    \
   V(Codec, frameCount)      \
   V(Codec, repetitionCount) \
-  V(Codec, dispose)
+  V(Codec, dispose)         \
+  V(Codec, clearAndDisableFrameCache)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -362,13 +363,29 @@ MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec)
     : codec_(std::move(codec)) {
   repetitionCount_ = codec_->getRepetitionCount();
   frameInfos_ = codec_->getFrameInfo();
-  frameBitmaps_.resize(frameInfos_.size());
+  frameBitmaps_.clear();
+  // Initialize the frame cache, marking frames that are required for other
+  // dependent frames to render.
+  for (size_t frameIndex = 0; frameIndex < frameInfos_.size(); frameIndex++) {
+    const auto& frameInfo = frameInfos_[frameIndex];
+    if (frameInfo.fRequiredFrame != SkCodec::kNoFrame) {
+      frameBitmaps_[frameInfo.fRequiredFrame] =
+          std::make_unique<DecodedFrame>(SkBitmap(), /*required=*/true);
+    }
+    if (cacheAllFrames_ && frameBitmaps_.count(frameIndex) < 1) {
+      frameBitmaps_[frameIndex] =
+          std::make_unique<DecodedFrame>(SkBitmap(), /*required=*/false);
+    }
+  }
   nextFrameIndex_ = 0;
 }
 
 sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
     fml::WeakPtr<GrContext> resourceContext) {
-  SkBitmap& bitmap = frameBitmaps_[nextFrameIndex_];
+  SkBitmap newBitmap;
+  SkBitmap& bitmap = cacheAllFrames_ && frameBitmaps_.count(nextFrameIndex_) > 0
+                         ? frameBitmaps_[nextFrameIndex_]->bitmap_
+                         : newBitmap;
   if (!bitmap.getPixels()) {  // We haven't decoded this frame yet
     const SkImageInfo info = codec_->getInfo().makeColorType(kN32_SkColorType);
     bitmap.allocPixels(info);
@@ -377,14 +394,12 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
     options.fFrameIndex = nextFrameIndex_;
     const int requiredFrame = frameInfos_[nextFrameIndex_].fRequiredFrame;
     if (requiredFrame != SkCodec::kNone) {
-      if (requiredFrame < 0 ||
-          static_cast<size_t>(requiredFrame) >= frameBitmaps_.size()) {
+      if (requiredFrame < 0 || frameBitmaps_.count(requiredFrame) < 1) {
         FML_LOG(ERROR) << "Frame " << nextFrameIndex_ << " depends on frame "
-                       << requiredFrame << " which out of range (0,"
-                       << frameBitmaps_.size() << ").";
+                       << requiredFrame << " which has not been cached.";
         return NULL;
       }
-      SkBitmap& requiredBitmap = frameBitmaps_[requiredFrame];
+      SkBitmap& requiredBitmap = frameBitmaps_[requiredFrame]->bitmap_;
       // For simplicity, do not try to cache old frames
       if (requiredBitmap.getPixels() &&
           copy_to(&bitmap, requiredBitmap.colorType(), requiredBitmap)) {
@@ -464,6 +479,17 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
       }));
 
   return Dart_Null();
+}
+
+void MultiFrameCodec::clearAndDisableFrameCache() {
+  cacheAllFrames_ = false;
+  for (auto it = frameBitmaps_.cbegin(); it != frameBitmaps_.cend();) {
+    if (!it->second->required_) {
+      it = frameBitmaps_.erase(it);
+    } else {
+      it++;
+    }
+  }
 }
 
 Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
