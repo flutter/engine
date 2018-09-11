@@ -206,6 +206,7 @@ class PointerData {
   /// The amount to scroll in the y direction, in physical pixels.
   final double scrollDeltaY;
 
+  /// A final value that is passed so that we are passing more than 21 values in the packet
   final double sentinal;
 
   @override

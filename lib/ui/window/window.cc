@@ -229,11 +229,6 @@ void Window::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {
       {ToDart(message->channel()), data_handle, ToDart(response_id)});
 }
 
-// union U8f {
-//     uint8_t byte[8];
-//     double d;
-// };
-
 void Window::DispatchPointerDataPacket(const PointerDataPacket& packet) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
   if (!dart_state)
@@ -243,21 +238,7 @@ void Window::DispatchPointerDataPacket(const PointerDataPacket& packet) {
   Dart_Handle data_handle = ToByteData(packet.data());
   if (Dart_IsError(data_handle))
     return;
-  // if (packet.data().size() != 0) {
-  //   // float64 f = packet.data()[20];
-  //   union U8f u8f;
-  //   u8f.byte[0] = packet.data()[160];
-  //   u8f.byte[1] = packet.data()[161];
-  //   u8f.byte[2] = packet.data()[162];
-  //   u8f.byte[3] = packet.data()[163];
-  //   u8f.byte[4] = packet.data()[164];
-  //   u8f.byte[5] = packet.data()[165];
-  //   u8f.byte[6] = packet.data()[166];
-  //   u8f.byte[7] = packet.data()[167];
-
-  //   FML_LOG(ERROR) << u8f.d ;
-  //   FML_LOG(ERROR) << packet.data().size();
-  // }
+  
   DartInvokeField(library_.value(), "_dispatchPointerDataPacket",
                   {data_handle});
 }

@@ -378,12 +378,7 @@ public class FlutterView extends SurfaceView
     private static final int kPointerDeviceKindMouse = 1;
     private static final int kPointerDeviceKindStylus = 2;
     private static final int kPointerDeviceKindInvertedStylus = 3;
-    private static final int kPointerDeviceKindGesture = 4;
-    private static final int kPointerDeviceKindUnknown = 5;
-
-    // Must match the PointerGestureKind enum in pointer.dart.
-    private static final int kPointerGestureKindScroll = 0;
-    private static final int kPointerGestureKindUnknown = 1;
+    private static final int kPointerDeviceKindUnknown = 4;
 
     private int getPointerChangeForAction(int maskedAction) {
         // Primary pointer:
@@ -477,7 +472,7 @@ public class FlutterView extends SurfaceView
         packet.putDouble(event.getToolMinor(pointerIndex)); // radius_minor
 
         packet.putDouble(0.0); // radius_min
-        packet.putDouble(586.0); // radius_max
+        packet.putDouble(0.0); // radius_max
 
         packet.putDouble(event.getAxisValue(MotionEvent.AXIS_ORIENTATION, pointerIndex)); // orientation        
 
@@ -491,7 +486,7 @@ public class FlutterView extends SurfaceView
 
         // Dummy value that is needed due to bug in the converter writing the last 8 bytes
         // of the packet to 0.
-        packet.putDouble(5.0);
+        packet.putDouble(0.0);
     }
 
     @Override
@@ -499,7 +494,7 @@ public class FlutterView extends SurfaceView
         if (!isAttached()) {
             return false;
         }
-        
+
         int maskedAction = event.getAction();
         if (maskedAction != MotionEvent.ACTION_SCROLL)
             return false;
