@@ -467,15 +467,15 @@ public class FlutterView extends SurfaceView
             packet.putDouble(0.0); // distance
             packet.putDouble(0.0); // distance_max
         }
-       
+
         packet.putDouble(event.getToolMajor(pointerIndex)); // radius_major
         packet.putDouble(event.getToolMinor(pointerIndex)); // radius_minor
 
         packet.putDouble(0.0); // radius_min
         packet.putDouble(0.0); // radius_max
 
-        packet.putDouble(event.getAxisValue(MotionEvent.AXIS_ORIENTATION, pointerIndex)); // orientation        
-
+        packet.putDouble(event.getAxisValue(MotionEvent.AXIS_ORIENTATION, pointerIndex)); // orientation
+        
         if (pointerKind == kPointerDeviceKindStylus) {
             packet.putDouble(event.getAxisValue(MotionEvent.AXIS_TILT, pointerIndex)); // tilt
         } else {
