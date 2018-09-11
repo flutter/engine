@@ -79,9 +79,10 @@ class PointerData {
     this.radiusMin: 0.0,
     this.radiusMax: 0.0,
     this.orientation: 0.0,
-    this.tilt: 0.0,
     this.scrollDeltaX: 0.0,
     this.scrollDeltaY: 0.0,
+    this.tilt: 0.0,
+    this.sentinal: 0.0,
   });
 
   /// Time of event dispatch, relative to an arbitrary timeline.
@@ -205,6 +206,8 @@ class PointerData {
   /// The amount to scroll in the y direction, in physical pixels.
   final double scrollDeltaY;
 
+  final double sentinal;
+
   @override
   String toString() => '$runtimeType(x: $physicalX, y: $physicalY)';
 
@@ -231,7 +234,8 @@ class PointerData {
              'orientation: $orientation, '
              'tilt: $tilt, '
              'scrollDeltaX: $scrollDeltaX, '
-             'scrollDeltaY: $scrollDeltaY'
+             'scrollDeltaY: $scrollDeltaY,'
+             'sentinal: $sentinal'
            ')';
   }
 }

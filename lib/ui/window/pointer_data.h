@@ -49,9 +49,10 @@ struct alignas(8) PointerData {
   double radius_min;
   double radius_max;
   double orientation;
-  double tilt;
   double scroll_delta_x;
   double scroll_delta_y;
+  double tilt;
+  double sentinal;
 
   void Clear();
 };

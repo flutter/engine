@@ -448,6 +448,7 @@ public class FlutterView extends SurfaceView
         packet.putDouble(event.getX(pointerIndex)); // physical_x
         packet.putDouble(event.getY(pointerIndex)); // physical_y
 
+        
         if (pointerKind == kPointerDeviceKindMouse) {
             packet.putLong(event.getButtonState() & 0x1F); // buttons
         } else if (pointerKind == kPointerDeviceKindStylus) {
@@ -471,23 +472,26 @@ public class FlutterView extends SurfaceView
             packet.putDouble(0.0); // distance
             packet.putDouble(0.0); // distance_max
         }
-
+       
         packet.putDouble(event.getToolMajor(pointerIndex)); // radius_major
         packet.putDouble(event.getToolMinor(pointerIndex)); // radius_minor
 
         packet.putDouble(0.0); // radius_min
-        packet.putDouble(0.0); // radius_max
+        packet.putDouble(586.0); // radius_max
 
-        packet.putDouble(event.getAxisValue(MotionEvent.AXIS_ORIENTATION, pointerIndex)); // orientation
+        packet.putDouble(event.getAxisValue(MotionEvent.AXIS_ORIENTATION, pointerIndex)); // orientation        
 
         if (pointerKind == kPointerDeviceKindStylus) {
             packet.putDouble(event.getAxisValue(MotionEvent.AXIS_TILT, pointerIndex)); // tilt
         } else {
-            packet.putDouble(0.0); // tilt
+            packet.putDouble(4.0); // tilt
         }
-
         packet.putDouble(event.getAxisValue(MotionEvent.AXIS_HSCROLL)); // scroll_delta_x
         packet.putDouble(event.getAxisValue(MotionEvent.AXIS_VSCROLL)); // scroll_delta_y
+
+        // Dummy value that is needed due to bug in the converter writing the last 8 bytes
+        // of the packet to 0.
+        packet.putDouble(5.0);
     }
 
     @Override
@@ -495,6 +499,10 @@ public class FlutterView extends SurfaceView
         if (!isAttached()) {
             return false;
         }
+        
+        int maskedAction = event.getAction();
+        if (maskedAction != MotionEvent.ACTION_SCROLL)
+            return false;
 
         // TODO(abarth): This version check might not be effective in some
         // versions of Android that statically compile code and will be upset
@@ -506,7 +514,7 @@ public class FlutterView extends SurfaceView
         }
 
         // These values must match the unpacking code in hooks.dart.
-        final int kPointerDataFieldCount = 21;
+        final int kPointerDataFieldCount = 22;
         final int kBytePerField = 8;
 
         int pointerCount = event.getPointerCount();
@@ -514,15 +522,9 @@ public class FlutterView extends SurfaceView
         ByteBuffer packet = ByteBuffer.allocateDirect(pointerCount * kPointerDataFieldCount * kBytePerField);
         packet.order(ByteOrder.LITTLE_ENDIAN);
 
-        int maskedAction = event.getAction();
-        // ACTION_UP, ACTION_POINTER_UP, ACTION_DOWN, and ACTION_POINTER_DOWN
-        // only apply to a single pointer, other events apply to all pointers.
-        if (maskedAction == MotionEvent.ACTION_SCROLL){
-            for (int p = 0; p < pointerCount; p++) {
-                addPointerForIndex(event, p, packet);
-            }
+        for (int p = 0; p < pointerCount; p++) {
+            addPointerForIndex(event, p, packet);
         }
-
         
         assert packet.position() % (kPointerDataFieldCount * kBytePerField) == 0;
         nativeDispatchPointerDataPacket(mNativeView.get(), packet, packet.position());
@@ -545,7 +547,7 @@ public class FlutterView extends SurfaceView
         }
 
         // These values must match the unpacking code in hooks.dart.
-        final int kPointerDataFieldCount = 21;
+        final int kPointerDataFieldCount = 22;
         final int kBytePerField = 8;
 
         int pointerCount = event.getPointerCount();

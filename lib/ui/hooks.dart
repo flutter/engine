@@ -179,7 +179,13 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1
 //
 //  * pointer_data.cc
 //  * FlutterView.java
-const int _kPointerDataFieldCount = 21;
+//  * pointer_data.h
+//  * pointer.dart
+//
+// While we're only sending 21 values across, we leave this as 22 due to a bug that
+// writes the last 8 bytes to 0 after a few hundred calls. The last value in the packet
+// then is not written to any variable.
+const int _kPointerDataFieldCount = 22;
 
 PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
@@ -210,7 +216,8 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
       orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian)
+      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      sentinal: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
     );
     assert(offset == (i + 1) * _kPointerDataFieldCount);
   }
