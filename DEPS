@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '106d04e907c1778810282dd53c1c5c0ca84ee389',
+  'skia_revision': 'e70aed7066c6870d60e39e84b53d037a28ee1204',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,7 +31,7 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '760a9690c22ec3f3d163173737f9949f97e6e02a',
+  'dart_revision': '05ccfa85024ab2985824ee8e4070c2eee8454f81',
 
   'dart_args_tag': '1.4.4',
   'dart_async_tag': '2.0.8',
@@ -115,7 +115,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'be483cb1cd3a9c4313b2e534034d23a05c3d849e',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'a11c4fd9fcc7ad84f465d74461421f3ec790fb99',
 
    # Fuchsia compatibility
    #
@@ -351,7 +351,7 @@ deps = {
    Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
 
   'src/third_party/freetype2':
-   Var('fuchsia_git') + '/third_party/freetype2' + '@' + '3515a77bb83002b69a2957efdbcb764de4de07da',
+   Var('fuchsia_git') + '/third_party/freetype2' + '@' + '6581fd3e9c8645f01c0d51e4f53893f5391f2bf3',
 
   'src/third_party/root_certificates':
    Var('dart_git') + '/root_certificates.git' + '@' + Var('dart_root_certificates_rev'),

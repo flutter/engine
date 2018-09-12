@@ -83,8 +83,8 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     // In case the application bundle is still not specified, look for the App.framework in the
     // Frameworks directory.
     if (settings.application_library_path.size() == 0) {
-      NSString* applicationFrameworkPath =
-          [mainBundle pathForResource:@"Frameworks/App.framework" ofType:@""];
+      NSString* applicationFrameworkPath = [mainBundle pathForResource:@"Frameworks/App.framework"
+                                                                ofType:@""];
       if (applicationFrameworkPath.length > 0) {
         NSString* executablePath =
             [NSBundle bundleWithPath:applicationFrameworkPath].executablePath;
@@ -197,8 +197,8 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
         [[NSFileManager defaultManager] fileExistsAtPath:flutterAssetsURL.path]) {
       _settings.assets_path = flutterAssetsURL.path.UTF8String;
 
-      NSURL* scriptSnapshotPath =
-          [NSURL URLWithString:@(kScriptSnapshotFileName) relativeToURL:flutterAssetsURL];
+      NSURL* scriptSnapshotPath = [NSURL URLWithString:@(kScriptSnapshotFileName)
+                                         relativeToURL:flutterAssetsURL];
       if ([[NSFileManager defaultManager] fileExistsAtPath:scriptSnapshotPath.path]) {
         _settings.script_snapshot_path = scriptSnapshotPath.path.UTF8String;
       }
