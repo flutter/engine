@@ -82,7 +82,7 @@ void SceneBuilder::pushTransform(const tonic::Float64List& matrix4) {
 
 void SceneBuilder::pushOffset(double dx, double dy) {
   SkMatrix sk_matrix = SkMatrix::MakeTrans(dx, dy);
-  auto layer = std::make_unique<flow::TransformLayer>();
+  auto layer = std::make_shared<flow::TransformLayer>();
   layer->set_transform(sk_matrix);
   PushLayer(std::move(layer));
 }
