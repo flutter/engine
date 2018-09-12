@@ -51,7 +51,7 @@
   // setup a shell along with its platform view before the view has to appear.
   fml::scoped_nsobject<FlutterView> _flutterView;
   fml::scoped_nsobject<UIView> _splashScreenView;
-  void (^_flutterViewRenderedCallback)();
+  void (^_flutterViewRenderedCallback)(void);
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
   blink::ViewportMetrics _viewportMetrics;
@@ -519,6 +519,7 @@
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_pluginPublications release];
+  [_flutterViewRenderedCallback release];
   [super dealloc];
 }
 
