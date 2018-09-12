@@ -51,7 +51,7 @@
   // setup a shell along with its platform view before the view has to appear.
   fml::scoped_nsobject<FlutterView> _flutterView;
   fml::scoped_nsobject<UIView> _splashScreenView;
-  void (^_flutterViewRenderedCallback)(void);
+  fml::ScopedBlock<void (^)(void)> _flutterViewRenderedCallback;
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
   blink::ViewportMetrics _viewportMetrics;
@@ -369,7 +369,7 @@
         [_splashScreenView.get() removeFromSuperview];
         _splashScreenView.reset();
         if (_flutterViewRenderedCallback != nil) {
-          _flutterViewRenderedCallback();
+          _flutterViewRenderedCallback.get()();
         }
       }];
 }
@@ -448,7 +448,7 @@
 }
 
 - (void)setFlutterViewDidRenderCallback:(void (^)(void))callback {
-  _flutterViewRenderedCallback = [callback copy];
+  _flutterViewRenderedCallback.reset(callback, fml::OwnershipPolicy::Retain);
 }
 
 #pragma mark - Surface creation and teardown updates
@@ -519,7 +519,6 @@
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_pluginPublications release];
-  [_flutterViewRenderedCallback release];
   [super dealloc];
 }
 
