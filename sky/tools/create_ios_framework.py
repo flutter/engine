@@ -18,7 +18,7 @@ def main():
   parser.add_argument('--armv7-out-dir', type=str, required=True)
   parser.add_argument('--simulator-out-dir', type=str, required=True)
   parser.add_argument('--strip', action="store_true", default=False)
-  parser.add_argument('--dsyms', action="store_true", default=False)
+  parser.add_argument('--dsym', action="store_true", default=False)
 
   args = parser.parse_args()
 
@@ -70,7 +70,7 @@ def main():
     linker_out
   ])
 
-  if args.dsyms:
+  if args.dsym:
     dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
     subprocess.call(['dsymutil', '-o', dsym_out, linker_out])
 
