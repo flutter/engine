@@ -596,7 +596,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// describe the maximum and minimum in-rage values that `scrollPosition` can
   /// be. Both or either may be infinity to indicate unbound scrolling. The
   /// value for `scrollPosition` can (temporarily) be outside this range, for
-  /// example during an overscroll.
+  /// example during an overscroll. `scrollChildren` is the count of the
+  /// total number of child nodes that contribute semantics and `scrollIndex`
+  /// is the index of the first visible child node that contributes semantics.
   ///
   /// The `rect` is the region occupied by this node in its own coordinate
   /// system.

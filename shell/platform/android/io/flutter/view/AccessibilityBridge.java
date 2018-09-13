@@ -720,6 +720,8 @@ class AccessibilityBridge
                 event.setItemCount(object.scrollChildren);
                 event.setFromIndex(object.scrollIndex);
                 int visibleChildren = object.childrenInHitTestOrder.size() - 1;
+                // We assume that only children at the end of the list can be hidden.
+                assert(!object.childrenInHitTestOrder.get(scrollIndex).hasFlag(Flag.IS_HIDDEN));
                 for (; visibleChildren >= 0; visibleChildren--) {
                     SemanticsObject child = object.childrenInHitTestOrder.get(visibleChildren);
                     if (!child.hasFlag(Flag.IS_HIDDEN)) {
@@ -729,12 +731,8 @@ class AccessibilityBridge
                 event.setToIndex(object.scrollIndex + visibleChildren);
                 sendAccessibilityEvent(event);
             }
-            if (object.hasFlag(Flag.IS_LIVE_REGION)) {
-                String label = object.label == null ? "" : object.label;
-                String previousLabel = object.previousLabel == null ? "" : object.previousLabel;
-                if (!label.equals(previousLabel) || !object.hadFlag(Flag.IS_LIVE_REGION)) {
-                    sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-                }
+            if (object.hasFlag(Flag.IS_LIVE_REGION) && !object.hadFlag(Flag.IS_LIVE_REGION)) {
+                sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
             } else if (object.hasFlag(Flag.IS_TEXT_FIELD) && object.didChangeLabel()
                     && mInputFocusedObject != null && mInputFocusedObject.id == object.id) {
                 // Text fields should announce when their label changes while focused. We use a live
