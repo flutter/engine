@@ -717,18 +717,20 @@ class AccessibilityBridge
                     event.setScrollX((int) position);
                     event.setMaxScrollX((int) max);
                 }
-                event.setItemCount(object.scrollChildren);
-                event.setFromIndex(object.scrollIndex);
-                int visibleChildren = object.childrenInHitTestOrder.size() - 1;
-                // We assume that only children at the end of the list can be hidden.
-                assert(!object.childrenInHitTestOrder.get(scrollIndex).hasFlag(Flag.IS_HIDDEN));
-                for (; visibleChildren >= 0; visibleChildren--) {
-                    SemanticsObject child = object.childrenInHitTestOrder.get(visibleChildren);
-                    if (!child.hasFlag(Flag.IS_HIDDEN)) {
-                        break;
+                if (object.scrollChildren > 0) {
+                    event.setItemCount(object.scrollChildren);
+                    event.setFromIndex(object.scrollIndex);
+                    int visibleChildren = object.childrenInHitTestOrder.size() - 1;
+                    // We assume that only children at the end of the list can be hidden.
+                    assert(!object.childrenInHitTestOrder.get(scrollIndex).hasFlag(Flag.IS_HIDDEN));
+                    for (; visibleChildren >= 0; visibleChildren--) {
+                        SemanticsObject child = object.childrenInHitTestOrder.get(visibleChildren);
+                        if (!child.hasFlag(Flag.IS_HIDDEN)) {
+                            break;
+                        }
                     }
+                    event.setToIndex(object.scrollIndex + visibleChildren);
                 }
-                event.setToIndex(object.scrollIndex + visibleChildren);
                 sendAccessibilityEvent(event);
             }
             if (object.hasFlag(Flag.IS_LIVE_REGION) && !object.hadFlag(Flag.IS_LIVE_REGION)) {
