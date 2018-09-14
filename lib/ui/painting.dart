@@ -1580,11 +1580,11 @@ class Codec extends NativeFieldWrapperClass2 {
   /// Clears the in-memory decoded frame cache and disables future caching of
   /// decoded frames. This negatively impacts CPU usage, but reduces memory
   /// consumption.
-  void clearAndDisableFrameCache() native 'Codec_clearAndDisableFrameCache';
+  Future<bool> clearAndDisableFrameCache() => _futurize(_clearAndDisableFrameCache);
 
   /// Re-enables caching of in-memory frames if caching has previously been
   /// disabled. See [clearAndDisableFrameCache].
-  void enableFrameCache() native 'Codec_enableFrameCache';
+  Future<bool> enableFrameCache() => _futurize(_enableFrameCache);
 
   /// Fetches the next animation frame.
   ///
@@ -1601,6 +1601,11 @@ class Codec extends NativeFieldWrapperClass2 {
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose() native 'Codec_dispose';
+
+  String _clearAndDisableFrameCache(_Callback<bool> callback) native 'Codec_clearAndDisableFrameCache';
+
+  String _enableFrameCache(_Callback<bool> callback) native 'Codec_enableFrameCache';
+
 }
 
 /// Instantiates an image codec [Codec] object.

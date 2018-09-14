@@ -72,6 +72,21 @@ void main() {
       [0, 240, 246],
     ]));
   });
+
+  test('frameCache methods smoke test', () async {
+    final Uint8List data = await _getSkiaResource('test640x479.gif').readAsBytes();
+    final ui.Codec codec = await ui.instantiateImageCodec(data);
+
+    // These methods should be disabling and enabling an in-memory cache of
+    // decoded frames in the native layer. No way to fully test the
+    // functionality from dart, but should at least verify that the calls run
+    // without errors.
+    await codec.getNextFrame();
+    expect(await codec.clearAndDisableFrameCache(), equals(true));
+    await codec.getNextFrame();
+    expect(await codec.enableFrameCache(), equals(true));
+    await codec.getNextFrame();
+  });
 }
 
 /// Returns a File handle to a file in the skia/resources directory.

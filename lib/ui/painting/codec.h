@@ -30,8 +30,12 @@ class Codec : public RefCountedDartWrappable<Codec> {
   virtual int repetitionCount() = 0;
   virtual Dart_Handle getNextFrame(Dart_Handle callback_handle) = 0;
   void dispose();
-  virtual void enableFrameCache() {}
-  virtual void clearAndDisableFrameCache() {}
+  virtual Dart_Handle enableFrameCache(Dart_Handle callback_handle) {
+    return Dart_NewStringFromCString("Unsupported");
+  }
+  virtual Dart_Handle clearAndDisableFrameCache(Dart_Handle callback_handle) {
+    return Dart_NewStringFromCString("Unsupported");
+  }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 };
@@ -43,11 +47,11 @@ class MultiFrameCodec : public Codec {
   Dart_Handle getNextFrame(Dart_Handle args);
   // Called to enable caching decoded frames in memory. Caching defaults to on,
   // so only has an effect if [clearAndDisableFrameCache] was previously called.
-  void enableFrameCache();
+  Dart_Handle enableFrameCache(Dart_Handle callback_handle);
   // Should be called to evict previously decoded frames in cases of memory
   // pressure. Multi frame codecs use much more CPU to render without frame
   // caching enabled.
-  void clearAndDisableFrameCache();
+  Dart_Handle clearAndDisableFrameCache(Dart_Handle callback_handle);
 
  private:
   MultiFrameCodec(std::unique_ptr<SkCodec> codec);

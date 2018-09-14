@@ -499,23 +499,45 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   return Dart_Null();
 }
 
-void MultiFrameCodec::clearAndDisableFrameCache() {
-  cacheAllFrames_ = false;
-  for (auto it = frameBitmaps_.cbegin(); it != frameBitmaps_.cend();) {
-    if (!it->second->required_) {
-      it = frameBitmaps_.erase(it);
-    } else {
-      it++;
-    }
-  }
+Dart_Handle MultiFrameCodec::clearAndDisableFrameCache(
+    Dart_Handle callback_handle) {
+  UIDartState::Current()->GetTaskRunners().GetIOTaskRunner()->PostTask(
+      fml::MakeCopyable([this,
+                         callback = std::make_unique<DartPersistentValue>(
+                             tonic::DartState::Current(), callback_handle)]() {
+        cacheAllFrames_ = false;
+        for (auto it = frameBitmaps_.cbegin(); it != frameBitmaps_.cend();) {
+          if (!it->second->required_) {
+            it = frameBitmaps_.erase(it);
+          } else {
+            it++;
+          }
+        }
+
+        tonic::DartState::Scope scope(callback->dart_state().lock());
+        DartInvoke(callback->value(), {Dart_True()});
+      }));
+
+  return Dart_Null();
 }
 
-void MultiFrameCodec::enableFrameCache() {
-  if (cacheAllFrames_) {
-    return;
-  }
-  cacheAllFrames_ = true;
-  populateFrameCache();
+Dart_Handle MultiFrameCodec::enableFrameCache(Dart_Handle callback_handle) {
+  UIDartState::Current()->GetTaskRunners().GetIOTaskRunner()->PostTask(
+      fml::MakeCopyable(
+          [this, callback = std::make_unique<DartPersistentValue>(
+                     tonic::DartState::Current(), callback_handle)]() {
+            if (cacheAllFrames_) {
+              callback->dart_state().lock();
+              tonic::DartState::Scope scope(callback->dart_state().lock());
+              return;
+            }
+            cacheAllFrames_ = true;
+            populateFrameCache();
+            tonic::DartState::Scope scope(callback->dart_state().lock());
+            DartInvoke(callback->value(), {Dart_True()});
+          }));
+
+  return Dart_Null();
 }
 
 Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
