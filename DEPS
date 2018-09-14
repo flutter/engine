@@ -58,7 +58,7 @@ vars = {
   'dart_http_throttle_tag': '1.0.2',
   'dart_intl_tag': '0.15.6',
   'dart_json_rpc_2_tag': '2.0.9',
-  'dart_linter_tag': '0.1.61',
+  'dart_linter_tag': '0.1.62',
   'dart_logging_tag': '0.11.3+2',
   'dart_markdown_tag': '2.0.2',
   'dart_matcher_tag': '0.12.3',
