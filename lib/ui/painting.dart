@@ -1582,6 +1582,10 @@ class Codec extends NativeFieldWrapperClass2 {
   /// consumption.
   void clearAndDisableFrameCache() native 'Codec_clearAndDisableFrameCache';
 
+  /// Re-enables caching of in-memory frames if caching has previously been
+  /// disabled. See [clearAndDisableFrameCache].
+  void enableFrameCache() native 'Codec_enableFrameCache';
+
   /// Fetches the next animation frame.
   ///
   /// Wraps back to the first frame after returning the last frame.

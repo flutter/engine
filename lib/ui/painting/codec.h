@@ -30,7 +30,8 @@ class Codec : public RefCountedDartWrappable<Codec> {
   virtual int repetitionCount() = 0;
   virtual Dart_Handle getNextFrame(Dart_Handle callback_handle) = 0;
   void dispose();
-  virtual void clearAndDisableFrameCache() = 0;
+  virtual void enableFrameCache() {}
+  virtual void clearAndDisableFrameCache() {}
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 };
@@ -40,6 +41,9 @@ class MultiFrameCodec : public Codec {
   int frameCount() { return frameInfos_.size(); }
   int repetitionCount() { return repetitionCount_; }
   Dart_Handle getNextFrame(Dart_Handle args);
+  // Called to enable caching decoded frames in memory. Caching defaults to on,
+  // so only has an effect if [clearAndDisableFrameCache] was previously called.
+  void enableFrameCache();
   // Should be called to evict previously decoded frames in cases of memory
   // pressure. Multi frame codecs use much more CPU to render without frame
   // caching enabled.
@@ -58,6 +62,8 @@ class MultiFrameCodec : public Codec {
       fml::WeakPtr<GrContext> resourceContext,
       fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
       size_t trace_id);
+  void populateFrameCache();
+  void updateOrInsertCacheEntry(int frameIndex, bool required);
 
   const std::unique_ptr<SkCodec> codec_;
   int repetitionCount_;
@@ -70,7 +76,7 @@ class MultiFrameCodec : public Codec {
   // other dependent frames.
   struct DecodedFrame {
     SkBitmap bitmap_;
-    const bool required_;
+    bool required_;
 
     DecodedFrame(SkBitmap bitmap, bool required)
         : bitmap_(bitmap), required_(required) {}
@@ -90,7 +96,6 @@ class SingleFrameCodec : public Codec {
   int frameCount() { return 1; }
   int repetitionCount() { return 0; }
   Dart_Handle getNextFrame(Dart_Handle args);
-  void clearAndDisableFrameCache() {}
 
  private:
   SingleFrameCodec(fml::RefPtr<FrameInfo> frame) : frame_(std::move(frame)) {}

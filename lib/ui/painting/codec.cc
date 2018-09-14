@@ -346,12 +346,13 @@ void InvokeNextFrameCallback(fml::RefPtr<FrameInfo> frameInfo,
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Codec);
 
-#define FOR_EACH_BINDING(V) \
-  V(Codec, getNextFrame)    \
-  V(Codec, frameCount)      \
-  V(Codec, repetitionCount) \
-  V(Codec, dispose)         \
-  V(Codec, clearAndDisableFrameCache)
+#define FOR_EACH_BINDING(V)           \
+  V(Codec, getNextFrame)              \
+  V(Codec, frameCount)                \
+  V(Codec, repetitionCount)           \
+  V(Codec, dispose)                   \
+  V(Codec, clearAndDisableFrameCache) \
+  V(Codec, enableFrameCache)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -364,26 +365,14 @@ MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec)
   repetitionCount_ = codec_->getRepetitionCount();
   frameInfos_ = codec_->getFrameInfo();
   frameBitmaps_.clear();
-  // Initialize the frame cache, marking frames that are required for other
-  // dependent frames to render.
-  for (size_t frameIndex = 0; frameIndex < frameInfos_.size(); frameIndex++) {
-    const auto& frameInfo = frameInfos_[frameIndex];
-    if (frameInfo.fRequiredFrame != SkCodec::kNoFrame) {
-      frameBitmaps_[frameInfo.fRequiredFrame] =
-          std::make_unique<DecodedFrame>(SkBitmap(), /*required=*/true);
-    }
-    if (cacheAllFrames_ && frameBitmaps_.count(frameIndex) < 1) {
-      frameBitmaps_[frameIndex] =
-          std::make_unique<DecodedFrame>(SkBitmap(), /*required=*/false);
-    }
-  }
+  populateFrameCache();
   nextFrameIndex_ = 0;
 }
 
 sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
     fml::WeakPtr<GrContext> resourceContext) {
   SkBitmap newBitmap;
-  SkBitmap& bitmap = cacheAllFrames_ && frameBitmaps_.count(nextFrameIndex_) > 0
+  SkBitmap& bitmap = frameBitmaps_.count(nextFrameIndex_) > 0
                          ? frameBitmaps_[nextFrameIndex_]->bitmap_
                          : newBitmap;
   if (!bitmap.getPixels()) {  // We haven't decoded this frame yet
@@ -453,6 +442,35 @@ void MultiFrameCodec::GetNextFrameAndInvokeCallback(
   TRACE_FLOW_END("flutter", kCodecNextFrameTraceTag, trace_id);
 }
 
+void MultiFrameCodec::populateFrameCache() {
+  // Mark frames that are required for other dependent frames to render.
+  // Preserve all previously cached frames.
+  for (size_t frameIndex = 0; frameIndex < frameInfos_.size(); frameIndex++) {
+    const auto& frameInfo = frameInfos_[frameIndex];
+    if (frameInfo.fRequiredFrame != SkCodec::kNoFrame) {
+      updateOrInsertCacheEntry(frameInfo.fRequiredFrame, /*required=*/true);
+    }
+    if (cacheAllFrames_) {
+      updateOrInsertCacheEntry(frameIndex, /*required=*/false);
+    }
+  }
+}
+
+void MultiFrameCodec::updateOrInsertCacheEntry(int frameIndex, bool required) {
+  if (frameBitmaps_.count(frameIndex) < 1) {
+    frameBitmaps_[frameIndex] =
+        std::make_unique<DecodedFrame>(SkBitmap(), required);
+  } else if (required) {
+    // Deliberately don't update frames previously marked as required to
+    // non-required. SkCodec::FrameInfo doesn't contain whether or not a frame
+    // is a known dependency of other frames in the sequence, so it's possible
+    // that a frame could be attempting to insert itself into the cache with
+    // `required=false` after having already been set as required by an
+    // earlier frame.
+    frameBitmaps_[frameIndex]->required_ = required;
+  }
+}
+
 Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   static size_t trace_counter = 1;
   const size_t trace_id = trace_counter++;
@@ -490,6 +508,14 @@ void MultiFrameCodec::clearAndDisableFrameCache() {
       it++;
     }
   }
+}
+
+void MultiFrameCodec::enableFrameCache() {
+  if (cacheAllFrames_) {
+    return;
+  }
+  cacheAllFrames_ = true;
+  populateFrameCache();
 }
 
 Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
