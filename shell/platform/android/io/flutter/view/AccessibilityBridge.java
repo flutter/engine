@@ -719,13 +719,16 @@ class AccessibilityBridge
                 }
                 if (object.scrollChildren > 0) {
                     event.setItemCount(object.scrollChildren);
-                    event.setFromIndex(object.scrollIndex + 1);
+                    // We don't need to add 1 to the scroll index because TalkBack does this automagically.
+                    event.setFromIndex(object.scrollIndex);
                     int visibleChildren = 0;
-                    for (SemanticsObject child :  object.childrenInHitTestOrder) {
+                    for (SemanticsObject child : object.childrenInHitTestOrder) {
                         if (!child.hasFlag(Flag.IS_HIDDEN)) {
                             visibleChildren += 1;
                         }
                     }
+                    assert(object.scrollIndex + visibleChildren <= object.scrollChildren);
+                    assert(!object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN));
                     event.setToIndex(object.scrollIndex + visibleChildren);
                 }
                 sendAccessibilityEvent(event);
