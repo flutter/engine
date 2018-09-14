@@ -719,14 +719,11 @@ class AccessibilityBridge
                 }
                 if (object.scrollChildren > 0) {
                     event.setItemCount(object.scrollChildren);
-                    event.setFromIndex(object.scrollIndex);
-                    int visibleChildren = object.childrenInHitTestOrder.size() - 1;
-                    // We assume that only children at the end of the list can be hidden.
-                    assert(!object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN));
-                    for (; visibleChildren >= 0; visibleChildren--) {
-                        SemanticsObject child = object.childrenInHitTestOrder.get(visibleChildren);
+                    event.setFromIndex(object.scrollIndex + 1);
+                    int visibleChildren = 0;
+                    for (SemanticsObject child :  object.childrenInHitTestOrder) {
                         if (!child.hasFlag(Flag.IS_HIDDEN)) {
-                            break;
+                            visibleChildren += 1;
                         }
                     }
                     event.setToIndex(object.scrollIndex + visibleChildren);
