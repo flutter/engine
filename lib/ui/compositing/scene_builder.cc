@@ -4,7 +4,6 @@
 
 #include "flutter/lib/ui/compositing/scene_builder.h"
 
-#include "flutter/fml/build_config.h"
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 #include "flutter/flow/layers/clip_path_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
@@ -20,6 +19,7 @@
 #include "flutter/flow/layers/shader_mask_layer.h"
 #include "flutter/flow/layers/texture_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
+#include "flutter/fml/build_config.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/painting/shader.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -155,7 +155,7 @@ void SceneBuilder::pushShaderMask(Shader* shader,
                                   double maskRectBottom,
                                   int blendMode) {
   SkRect rect = SkRect::MakeLTRB(maskRectLeft, maskRectTop, maskRectRight,
-                                maskRectBottom);
+                                 maskRectBottom);
   auto layer = std::make_unique<flow::ShaderMaskLayer>();
   layer->set_shader(shader->shader());
   layer->set_mask_rect(rect);
@@ -240,8 +240,7 @@ void SceneBuilder::addChildScene(double dx,
   if (!current_layer_) {
     return;
   }
-  SkRect sceneRect =
-      SkRect::MakeXYWH(dx, dy, width, height);
+  SkRect sceneRect = SkRect::MakeXYWH(dx, dy, width, height);
   if (!SkRect::Intersects(sceneRect, cull_rects_.top())) {
     return;
   }
@@ -281,11 +280,9 @@ void SceneBuilder::setCheckerboardOffscreenLayers(bool checkerboard) {
 }
 
 fml::RefPtr<Scene> SceneBuilder::build() {
-  fml::RefPtr<Scene> scene =
-      Scene::create(std::move(root_layer_),
-                    rasterizer_tracing_threshold_,
-                    checkerboard_raster_cache_images_,
-                    checkerboard_offscreen_layers_);
+  fml::RefPtr<Scene> scene = Scene::create(
+      std::move(root_layer_), rasterizer_tracing_threshold_,
+      checkerboard_raster_cache_images_, checkerboard_offscreen_layers_);
   ClearDartWrapper();
   return scene;
 }
