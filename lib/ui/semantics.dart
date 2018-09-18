@@ -552,7 +552,7 @@ class SemanticsFlag {
 /// [Window.updateSemantics] to update the semantics conveyed to the user.
 class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Creates an empty [SemanticsUpdateBuilder] object.
-  @pragma("vm:entry-point")
+  @pragma('vm:entry-point')
   SemanticsUpdateBuilder() { _constructor(); }
   void _constructor() native 'SemanticsUpdateBuilder_constructor';
 
@@ -728,7 +728,7 @@ class SemanticsUpdate extends NativeFieldWrapperClass2 {
   /// or extended directly.
   ///
   /// To create a SemanticsUpdate object, use a [SemanticsUpdateBuilder].
-  @pragma("vm:entry-point")
+  @pragma('vm:entry-point')
   SemanticsUpdate._();
 
   /// Releases the resources used by this semantics update.
