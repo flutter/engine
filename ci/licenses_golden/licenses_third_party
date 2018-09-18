@@ -1,4 +1,4 @@
-Signature: 149340ef002a59fe0840631d6cfd1773
+Signature: 5b5ec302d3f100a7ca4552f231d9f8b7
 
 UNUSED LICENSES:
 
@@ -4436,6 +4436,8 @@ FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
 FILE: ../../../third_party/dart/runtime/CPPLINT.cfg
+FILE: ../../../third_party/dart/runtime/docs/compiler/images/catch-block-entry-0.png
+FILE: ../../../third_party/dart/runtime/docs/compiler/images/catch-block-entry-1.png
 FILE: ../../../third_party/dart/runtime/observatory/lib/elements.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/img/chromium_icon.png
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/img/dart_icon.png
@@ -5452,17 +5454,22 @@ FILE: ../../../third_party/dart/runtime/bin/dart_embedder_api_impl.cc
 FILE: ../../../third_party/dart/runtime/bin/typed_data_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/typed_data_utils.h
 FILE: ../../../third_party/dart/runtime/include/dart_embedder_api.h
+FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz.dart
 FILE: ../../../third_party/dart/runtime/vm/base64.cc
 FILE: ../../../third_party/dart/runtime/vm/base64.h
 FILE: ../../../third_party/dart/runtime/vm/base64_test.cc
+FILE: ../../../third_party/dart/runtime/vm/code_patcher_kbc.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_state.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/base_flow_graph_builder.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/base_flow_graph_builder.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_flow_graph_builder.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_flow_graph_builder.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_reader.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/bytecode_reader.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/constant_evaluator.cc
@@ -5478,8 +5485,11 @@ FILE: ../../../third_party/dart/runtime/vm/constants_kbc.h
 FILE: ../../../third_party/dart/runtime/vm/datastream.cc
 FILE: ../../../third_party/dart/runtime/vm/finalizable_data.h
 FILE: ../../../third_party/dart/runtime/vm/hash.h
+FILE: ../../../third_party/dart/runtime/vm/instructions_kbc.cc
+FILE: ../../../third_party/dart/runtime/vm/instructions_kbc.h
 FILE: ../../../third_party/dart/runtime/vm/interpreter.cc
 FILE: ../../../third_party/dart/runtime/vm/interpreter.h
+FILE: ../../../third_party/dart/runtime/vm/interpreter_unsupported.cc
 FILE: ../../../third_party/dart/runtime/vm/stack_frame_kbc.h
 FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs.cc
 FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs.h

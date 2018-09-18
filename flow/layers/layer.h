@@ -12,6 +12,7 @@
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/texture.h"
 #include "flutter/fml/build_config.h"
+#include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/trace_event.h"
@@ -57,7 +58,6 @@ class Layer {
 
   struct PaintContext {
     SkCanvas& canvas;
-    const SkMatrix& root_surface_transformation;
     const Stopwatch& frame_time;
     const Stopwatch& engine_time;
     TextureRegistry& texture_registry;
@@ -68,6 +68,18 @@ class Layer {
   // draws a checkerboard over the layer if that is enabled in the PaintContext.
   class AutoSaveLayer {
    public:
+    FML_WARN_UNUSED_RESULT static AutoSaveLayer Create(
+        const PaintContext& paint_context,
+        const SkRect& bounds,
+        const SkPaint* paint);
+
+    FML_WARN_UNUSED_RESULT static AutoSaveLayer Create(
+        const PaintContext& paint_context,
+        const SkCanvas::SaveLayerRec& layer_rec);
+
+    ~AutoSaveLayer();
+
+   private:
     AutoSaveLayer(const PaintContext& paint_context,
                   const SkRect& bounds,
                   const SkPaint* paint);
@@ -75,9 +87,6 @@ class Layer {
     AutoSaveLayer(const PaintContext& paint_context,
                   const SkCanvas::SaveLayerRec& layer_rec);
 
-    ~AutoSaveLayer();
-
-   private:
     const PaintContext& paint_context_;
     const SkRect bounds_;
   };
