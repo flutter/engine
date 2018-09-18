@@ -46,7 +46,7 @@ public class FlutterEngine implements BinaryMessenger {
   private boolean applicationIsRunning;
   private int mNextReplyId = 1;
 
-  FlutterEngine(
+  public FlutterEngine(
       Context context,
       Resources resources,
       boolean isBackgroundView

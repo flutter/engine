@@ -91,6 +91,11 @@ public class FlutterPluginRegistry
         }
 
         @Override
+        public FlutterEngine getFlutterEngine() {
+            return flutterEngine;
+        }
+
+        @Override
         public Activity activity() {
             return mActivity;
         }

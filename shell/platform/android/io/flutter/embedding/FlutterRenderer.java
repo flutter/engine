@@ -72,6 +72,7 @@ public class FlutterRenderer implements TextureRegistry {
   // TODO(mattcarroll): this method probably shouldn't be public. It's part of an obscure relationship
   //   with PlatformViewsController. Re-evaluate that relationship and see if we can get rid of
   //   PlatformViewsController.
+  //   However, I did find that this method is called from the Camera plugin.
   // TODO(mattcarroll): detachFromGLContext requires API 16. what should we do for earlier APIs?
   @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
   @Override

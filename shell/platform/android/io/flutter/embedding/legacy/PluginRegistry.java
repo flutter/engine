@@ -10,7 +10,6 @@ import android.content.Intent;
 
 import io.flutter.embedding.FlutterEngine;
 import io.flutter.plugin.common.BinaryMessenger;
-import io.flutter.embedding.FlutterView;
 import io.flutter.view.TextureRegistry;
 
 /**
@@ -62,6 +61,9 @@ public interface PluginRegistry {
      * Receiver of registrations from a single plugin.
      */
     interface Registrar {
+        // TODO(mattcarroll): Added because plugins need to requisition SurfaceTextures
+        FlutterEngine getFlutterEngine();
+
         /**
          * Returns the {@link Activity} that forms the plugin's operating context.
          *

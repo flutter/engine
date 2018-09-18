@@ -298,6 +298,16 @@ public class FlutterFragment extends Fragment {
   }
 
   /**
+   * The {@link FlutterEngine} that backs the Flutter content presented by this {@code Fragment}.
+   *
+   * @return the {@link FlutterEngine} held by this {@code Fragment}
+   */
+  @Nullable
+  protected FlutterEngine getFlutterEngine() {
+    return flutterEngine;
+  }
+
+  /**
    * Creates a {@link View} containing the same {@link Drawable} as the one set as the
    * {@code windowBackground} of the parent activity for use as a launch splash view.
    *

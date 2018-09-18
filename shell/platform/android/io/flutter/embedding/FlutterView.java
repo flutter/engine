@@ -626,7 +626,7 @@ public class FlutterView extends SurfaceView implements
     mAccessibilityNodeProvider.setAccessibilityEnabled(true);
   }
 
-  void resetAccessibilityTree() {
+  public void resetAccessibilityTree() {
     if (mAccessibilityNodeProvider != null) {
       mAccessibilityNodeProvider.reset();
     }

@@ -22,6 +22,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
+import io.flutter.embedding.legacy.PluginRegistry;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 
@@ -104,6 +105,11 @@ public class FlutterActivity extends Activity {
   @Override
   public void onUserLeaveHint() {
     flutterFragment.onUserLeaveHint();
+  }
+
+  @Nullable
+  protected FlutterEngine getFlutterEngine() {
+    return flutterFragment.getFlutterEngine();
   }
 
   /**
