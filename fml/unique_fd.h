@@ -51,11 +51,11 @@ struct UniqueFDTraits {
 
 #if OS_WIN
 
-using UniqueFD = UniqueObject<HANDLE, internal::win::UniqueFDTraits>;
+using UniqueFD = UniqueObject<HANDLE, internal::os_win::UniqueFDTraits>;
 
 #else  // OS_WIN
 
-using UniqueFD = UniqueObject<int, internal::unix::UniqueFDTraits>;
+using UniqueFD = UniqueObject<int, internal::os_unix::UniqueFDTraits>;
 
 #endif  // OS_WIN
 
