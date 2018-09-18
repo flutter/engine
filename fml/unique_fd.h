@@ -23,7 +23,7 @@ namespace internal {
 
 #if OS_WIN
 
-namespace win {
+namespace os_win {
 
 struct UniqueFDTraits {
   static HANDLE InvalidValue() { return INVALID_HANDLE_VALUE; }
@@ -31,11 +31,11 @@ struct UniqueFDTraits {
   static void Free(HANDLE fd);
 };
 
-}  // namespace win
+}  // namespace os_win
 
 #else  // OS_WIN
 
-namespace unix {
+namespace os_unix {
 
 struct UniqueFDTraits {
   static int InvalidValue() { return -1; }
@@ -43,7 +43,7 @@ struct UniqueFDTraits {
   static void Free(int fd);
 };
 
-}  // namespace unix
+}  // namespace os_unix
 
 #endif  // OS_WIN
 
