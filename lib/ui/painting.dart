@@ -1487,13 +1487,13 @@ class _ImageInfo {
     rowBytes ??= width * 4;
   }
 
-  @pragma("vm:entry-point", "get")
+  @pragma('vm:entry-point', 'get')
   int width;
-  @pragma("vm:entry-point", "get")
+  @pragma('vm:entry-point', 'get')
   int height;
-  @pragma("vm:entry-point", "get")
+  @pragma('vm:entry-point', 'get')
   int format;
-  @pragma("vm:entry-point", "get")
+  @pragma('vm:entry-point', 'get')
   int rowBytes;
 }
 
