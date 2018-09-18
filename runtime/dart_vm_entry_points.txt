@@ -1,1 +1,2 @@
-
+# Please don't add entries to this file.
+# Use the @pragma('vm:entry-point') annotation instead.
