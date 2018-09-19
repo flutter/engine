@@ -542,9 +542,13 @@ public class FlutterView extends SurfaceView
         super.onSizeChanged(width, height, oldWidth, oldHeight);
     }
 
-    // Decide if we want to zero the sides to remove padding for hidden navbar.
+    // TODO(garyq): Add support for notch cutout API
+    // Decide if we want to zero the padding of the sides. When in Landscape orientation,
+    // android may decide to place the software navigation bars on the side. When the nav
+    // bar is hidden, the reported insets should be removed to prevent extra useless space
+    // on the sides.
     enum ZeroSides { NONE, LEFT, RIGHT, BOTH }
-    ZeroSides calculateShouldZeroSides(WindowInsets insets) {
+    ZeroSides calculateShouldZeroSides() {
         // We get both orientation and rotation because rotation is all 4
         // rotations relative to default rotation while orientation is portrait
         // or landscape. By combining both, we can obtain a more precise measure
@@ -572,22 +576,23 @@ public class FlutterView extends SurfaceView
     }
 
     // This callback is not present in API < 20, which means lower API devices will see
-    // worse/improper padding as of now when the status and/or nav bar are hidden.
+    // the wider than expected padding when the status and navigation bars are hidden.
     @Override
     public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
-        boolean statusBarVisible =
-            (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) == 0;
-        boolean navigationBarVisible =
-            (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
+        boolean statusBarHidden =
+            (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
+        boolean navigationBarHidden =
+            (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) != 0;
 
         // We zero the left and/or right sides to prevent the padding the
         // navigation bar would have caused.
         ZeroSides zeroSides = ZeroSides.NONE;
-        if (!navigationBarVisible) {
-            zeroSides = calculateShouldZeroSides(insets);
+        if (navigationBarHidden) {
+            zeroSides = calculateShouldZeroSides();
         }
 
-        mMetrics.physicalPaddingTop = !statusBarVisible ? 0 : insets.getSystemWindowInsetTop();
+        // The padding on top should be removed when the statusbar is hidden.
+        mMetrics.physicalPaddingTop = statusBarHidden ? 0 : insets.getSystemWindowInsetTop();
         mMetrics.physicalPaddingRight =
             zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH ? 0 : insets.getSystemWindowInsetRight();
         mMetrics.physicalPaddingBottom = 0;
