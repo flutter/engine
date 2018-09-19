@@ -13,7 +13,6 @@ import android.os.Build;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewTreeObserver;
-
 import io.flutter.plugin.platform.PlatformView;
 
 @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
@@ -54,7 +53,7 @@ class VirtualDisplayController {
     private final int mDensityDpi;
     private final SurfaceTexture mSurfaceTexture;
     private VirtualDisplay mVirtualDisplay;
-    private io.flutter.embedding.legacy.SingleViewPresentation mPresentation;
+    private SingleViewPresentation mPresentation;
     private Surface mSurface;
 
 
@@ -72,13 +71,13 @@ class VirtualDisplayController {
         mContext = context;
         mVirtualDisplay = virtualDisplay;
         mDensityDpi = context.getResources().getDisplayMetrics().densityDpi;
-        mPresentation = new io.flutter.embedding.legacy.SingleViewPresentation(
+        mPresentation = new SingleViewPresentation(
                 context, mVirtualDisplay.getDisplay(), viewFactory, viewId, createParams);
         mPresentation.show();
     }
 
     public void resize(final int width, final int height, final Runnable onNewSizeFrameAvailable) {
-        final io.flutter.embedding.legacy.SingleViewPresentation.PresentationState presentationState = mPresentation.detachState();
+        final SingleViewPresentation.PresentationState presentationState = mPresentation.detachState();
         // We detach the surface to prevent it being destroyed when releasing the vd.
         //
         // setSurface is only available starting API 20. We could support API 19 by re-creating a new
@@ -123,7 +122,7 @@ class VirtualDisplayController {
             public void onViewDetachedFromWindow(View v) {}
         });
 
-        mPresentation = new io.flutter.embedding.legacy.SingleViewPresentation(mContext, mVirtualDisplay.getDisplay(), presentationState);
+        mPresentation = new SingleViewPresentation(mContext, mVirtualDisplay.getDisplay(), presentationState);
         mPresentation.show();
     }
 

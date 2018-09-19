@@ -8,8 +8,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 
+import io.flutter.embedding.FlutterEngine;
 import io.flutter.plugin.common.BinaryMessenger;
-import io.flutter.embedding.FlutterView;
 import io.flutter.view.TextureRegistry;
 
 /**
@@ -61,6 +61,9 @@ public interface PluginRegistry {
      * Receiver of registrations from a single plugin.
      */
     interface Registrar {
+        // TODO(mattcarroll): Added because plugins need to requisition SurfaceTextures
+        FlutterEngine getFlutterEngine();
+
         /**
          * Returns the {@link Activity} that forms the plugin's operating context.
          *
@@ -106,13 +109,6 @@ public interface PluginRegistry {
          * Plugins can use the platform registry to register their view factories.
          */
         PlatformViewRegistry platformViewRegistry();
-
-        /**
-         * Returns the {@link FlutterView} that's instantiated by this plugin's
-         * {@link #activity() activity}.
-         */
-        FlutterView view();
-
 
         /**
          * Returns the file name for the given asset.
@@ -283,7 +279,7 @@ public interface PluginRegistry {
      * adopt the FlutterNativeView by retaining a reference and returning true.
      */
     interface ViewDestroyListener {
-        boolean onViewDestroy(FlutterNativeView view);
+        boolean onViewDestroy(FlutterEngine engine);
     }
 
     /**

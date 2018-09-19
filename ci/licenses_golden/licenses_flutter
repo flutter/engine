@@ -93,7 +93,6 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityDele
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityEvents.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterFragmentActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPluginRegistry.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/FlutterNativeView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/FlutterPluginRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PluginRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BasicMessageChannel.java
@@ -202,6 +201,9 @@ FILE: ../../../flutter/lib/ui/natives.dart
 FILE: ../../../flutter/lib/ui/window/window.h
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.cc
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterEngine.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterJNI.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterRenderer.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/JSONUtil.java
 FILE: ../../../flutter/shell/platform/darwin/desktop/Info.plist
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Flutter.podspec

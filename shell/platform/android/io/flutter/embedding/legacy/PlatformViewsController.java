@@ -5,22 +5,24 @@
 package io.flutter.embedding.legacy;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+
+import io.flutter.embedding.FlutterEngine;
+import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.StandardMethodCodec;
+import io.flutter.embedding.FlutterView;
+import io.flutter.view.TextureRegistry;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import io.flutter.plugin.common.MethodCall;
-import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.StandardMethodCodec;
-import io.flutter.embedding.FlutterView;
-import io.flutter.view.TextureRegistry;
 
 import static android.view.MotionEvent.PointerCoords;
 import static android.view.MotionEvent.PointerProperties;
@@ -41,7 +43,8 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
 
     private final PlatformViewRegistryImpl mRegistry;
 
-    private FlutterView mFlutterView;
+    private FlutterEngine flutterEngine;
+    private Context context;
 
     private final HashMap<Integer, VirtualDisplayController> vdControllers;
 
@@ -50,20 +53,21 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         vdControllers = new HashMap<>();
     }
 
-    public void attachFlutterView(FlutterView view) {
-        if (mFlutterView != null)
+    public void attachFlutterEngine(FlutterEngine flutterEngine, Context context) {
+        if (this.flutterEngine != null)
             throw new AssertionError(
-                    "A PlatformViewsController can only be attached to a single FlutterView.\n" +
-                    "attachFlutterView was called while a FlutterView was already attached."
+                    "A PlatformViewsController can only be attached to a single FlutterEngine.\n" +
+                    "attachFlutterEngine was called while a FlutterEngine was already attached."
             );
-        mFlutterView = view;
-        MethodChannel channel = new MethodChannel(view, CHANNEL_NAME, StandardMethodCodec.INSTANCE);
+        this.flutterEngine = flutterEngine;
+        this.context = context;
+        MethodChannel channel = new MethodChannel(flutterEngine, CHANNEL_NAME, StandardMethodCodec.INSTANCE);
         channel.setMethodCallHandler(this);
     }
 
-    public void detachFlutterView() {
-        mFlutterView.setMessageHandler(CHANNEL_NAME, null);
-        mFlutterView = null;
+    public void detachFlutterEngine() {
+        flutterEngine.setMessageHandler(CHANNEL_NAME, null);
+        flutterEngine = null;
     }
 
     public PlatformViewRegistry getRegistry() {
@@ -147,9 +151,9 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
             createParams = viewFactory.getCreateArgsCodec().decodeMessage(ByteBuffer.wrap((byte[]) args.get("params")));
         }
 
-        TextureRegistry.SurfaceTextureEntry textureEntry = mFlutterView.createSurfaceTexture();
+        TextureRegistry.SurfaceTextureEntry textureEntry = flutterEngine.getRenderer().createSurfaceTexture();
         VirtualDisplayController vdController = VirtualDisplayController.create(
-                mFlutterView.getContext(),
+                context,
                 viewFactory,
                 textureEntry.surfaceTexture(),
                 toPhysicalPixels(logicalWidth),
@@ -220,10 +224,11 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         );
     }
 
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     private void onTouch(MethodCall call, MethodChannel.Result result) {
         List<Object> args = call.arguments();
 
-        float density = mFlutterView.getContext().getResources().getDisplayMetrics().density;
+        float density = context.getResources().getDisplayMetrics().density;
 
         int id = (int) args.get(0);
         Number downTime = (Number) args.get(1);
@@ -318,6 +323,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         return pointerProperties;
     }
 
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     @SuppressWarnings("unchecked")
     private static PointerProperties parsePointerProperties(Object rawProperties) {
         List<Object> propertiesList = (List<Object>) rawProperties;
@@ -337,6 +343,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         return pointerCoords;
     }
 
+    @TargetApi(Build.VERSION_CODES.GINGERBREAD)
     @SuppressWarnings("unchecked")
     private static PointerCoords parsePointerCoords(Object rawCoords, float density) {
         List<Object> coordsList = (List<Object>) rawCoords;
@@ -354,7 +361,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
     }
 
     private int toPhysicalPixels(double logicalPixels) {
-        float density = mFlutterView.getContext().getResources().getDisplayMetrics().density;
+        float density = context.getResources().getDisplayMetrics().density;
         return (int) Math.round(logicalPixels * density);
     }
 

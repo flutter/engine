@@ -5,7 +5,6 @@
 package io.flutter.embedding.legacy;
 
 import android.content.Context;
-
 import io.flutter.plugin.common.MessageCodec;
 import io.flutter.plugin.platform.PlatformView;
 
