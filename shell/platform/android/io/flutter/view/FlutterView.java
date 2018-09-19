@@ -542,17 +542,62 @@ public class FlutterView extends SurfaceView
         super.onSizeChanged(width, height, oldWidth, oldHeight);
     }
 
+    // Decide if we want to zero the sides to remove padding for hidden navbar.
+    enum ZeroSides { NONE, LEFT, RIGHT, BOTH }
+    ZeroSides calculateShouldZeroSides(WindowInsets insets) {
+        // We get both orientation and rotation because rotation is all 4
+        // rotations relative to default rotation while orientation is portrait
+        // or landscape. By combining both, we can obtain a more precise measure
+        // of the rotation.
+        Activity activity = (Activity)getContext();
+        int orientation = activity.getResources().getConfiguration().orientation;
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            if (rotation == Surface.ROTATION_90) {
+                return ZeroSides.RIGHT;
+            }
+            else if (rotation == Surface.ROTATION_270) {
+                // In android API >= 23, the nav bar always appears on the "bottom" (USB) side.
+                return Build.VERSION.SDK_INT >= 23 ? ZeroSides.LEFT : ZeroSides.RIGHT;
+            }
+            // Ambiguous orientation due to landscape left/right default. Zero both sides.
+            else if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180) {
+                return ZeroSides.BOTH;
+            }
+        }
+        // Square orientation deprecated in API 16, we will not check for it and return false
+        // to be safe and not remove any unique padding for the devices that do use it.
+        return ZeroSides.NONE;
+    }
+
+    // This callback is not present in API < 20, which means lower API devices will see
+    // worse/improper padding as of now when the status and/or nav bar are hidden.
     @Override
     public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
-        // Status bar, left/right system insets partially obscure content (padding).
-        mMetrics.physicalPaddingTop = insets.getSystemWindowInsetTop();
-        mMetrics.physicalPaddingRight = insets.getSystemWindowInsetRight();
+        boolean statusBarVisible =
+            (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) == 0;
+        boolean navigationBarVisible =
+            (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
+
+        // We zero the left and/or right sides to prevent the padding the
+        // navigation bar would have caused.
+        ZeroSides zeroSides = ZeroSides.NONE;
+        if (!navigationBarVisible) {
+            zeroSides = calculateShouldZeroSides(insets);
+        }
+
+        mMetrics.physicalPaddingTop = !statusBarVisible ? 0 : insets.getSystemWindowInsetTop();
+        mMetrics.physicalPaddingRight =
+            zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH ? 0 : insets.getSystemWindowInsetRight();
         mMetrics.physicalPaddingBottom = 0;
-        mMetrics.physicalPaddingLeft = insets.getSystemWindowInsetLeft();
+        mMetrics.physicalPaddingLeft =
+            zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH ? 0 : insets.getSystemWindowInsetLeft();
 
         // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
         mMetrics.physicalViewInsetTop = 0;
         mMetrics.physicalViewInsetRight = 0;
+        // TODO(garyq): Detect and distinguish between bottom nav padding and keyboard padding.
         mMetrics.physicalViewInsetBottom = insets.getSystemWindowInsetBottom();
         mMetrics.physicalViewInsetLeft = 0;
         updateViewportMetrics();
