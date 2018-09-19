@@ -251,10 +251,6 @@ FILE: ../../../flutter/assets/asset_manager.h
 FILE: ../../../flutter/assets/asset_resolver.h
 FILE: ../../../flutter/common/task_runners.cc
 FILE: ../../../flutter/common/task_runners.h
-FILE: ../../../flutter/flow/layers/default_layer_builder.cc
-FILE: ../../../flutter/flow/layers/default_layer_builder.h
-FILE: ../../../flutter/flow/layers/layer_builder.cc
-FILE: ../../../flutter/flow/layers/layer_builder.h
 FILE: ../../../flutter/flow/skia_gpu_object.cc
 FILE: ../../../flutter/flow/skia_gpu_object.h
 FILE: ../../../flutter/runtime/dart_isolate.cc
@@ -486,6 +482,7 @@ LIBRARY: engine
 ORIGIN: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_locations.dart + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_locations.dart
+FILE: ../../../flutter/fml/paths_unittests.cc
 FILE: ../../../flutter/lib/ui/isolate_name_server.dart
 FILE: ../../../flutter/lib/ui/painting/image_encoding.cc
 FILE: ../../../flutter/lib/ui/painting/image_encoding.h
@@ -623,6 +620,12 @@ FILE: ../../../flutter/shell/platform/android/platform_message_response_android.
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.mm
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_gl.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_gl.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_software.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_software.h
 FILE: ../../../flutter/shell/version/version.cc
 FILE: ../../../flutter/shell/version/version.h
 ----------------------------------------------------------------------------------------------------
@@ -829,8 +832,6 @@ FILE: ../../../flutter/shell/common/animator.cc
 FILE: ../../../flutter/shell/common/animator.h
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
-FILE: ../../../flutter/shell/common/picture_serializer.cc
-FILE: ../../../flutter/shell/common/picture_serializer.h
 FILE: ../../../flutter/shell/common/platform_view.cc
 FILE: ../../../flutter/shell/common/platform_view.h
 FILE: ../../../flutter/shell/common/rasterizer.cc

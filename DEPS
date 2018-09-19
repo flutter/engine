@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '7ed0eae0cd13d3d687f7855b0620a0faad2ab5b3',
+  'skia_revision': '1d6281d4bb47510754f2c821482ee120c91bd438',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -31,11 +31,11 @@ vars = {
   # Dart is: https://github.com/dart-lang/sdk/blob/master/DEPS.
   # You can use //tools/dart/create_updated_flutter_deps.py to produce
   # updated revision list of existing dependencies.
-  'dart_revision': '760a9690c22ec3f3d163173737f9949f97e6e02a',
+  'dart_revision': '4eb879133a06c86869dc54cecf904f4b1d46c47b',
 
   'dart_args_tag': '1.4.4',
   'dart_async_tag': '2.0.8',
-  'dart_bazel_worker_tag': '0.1.11',
+  'dart_bazel_worker_tag': '0.1.14',
   'dart_boolean_selector_tag': '1.0.4',
   'dart_boringssl_gen_rev': 'fc47eaa1a245d858bae462cd64d4155605b850ea',
   'dart_boringssl_rev': '189270cd190267f5bd60cfe8f8ce7a61d07ba6f4',
@@ -58,7 +58,7 @@ vars = {
   'dart_http_throttle_tag': '1.0.2',
   'dart_intl_tag': '0.15.6',
   'dart_json_rpc_2_tag': '2.0.9',
-  'dart_linter_tag': '0.1.60',
+  'dart_linter_tag': '0.1.62',
   'dart_logging_tag': '0.11.3+2',
   'dart_markdown_tag': '2.0.2',
   'dart_matcher_tag': '0.12.3',
@@ -102,7 +102,7 @@ vars = {
   # Build bot tooling for iOS
   'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
 
-  'buildtools_revision': 'ae85410691b10aa2469695c2421b1fe751843e64',
+  'buildtools_revision': 'c1408453246f0475547b6fe634c2f3dad71c6457',
 }
 
 # Only these hosts are allowed for dependencies in this DEPS file.
@@ -115,7 +115,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '4fd7a2738de8fc8f9b498437cde96c1bf7562a04',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '7141218c62890635ce966e2530b465ea4c55c3e2',
 
    # Fuchsia compatibility
    #
@@ -124,7 +124,7 @@ deps = {
    # and not have to specific specific hashes.
 
   'src/third_party/tonic':
-   Var('fuchsia_git') + '/tonic' + '@' + '90c9c81f49461d9f4d414845a6eeba1c0df35bb4',
+   Var('fuchsia_git') + '/tonic' + '@' + 'd91fa62844f8531a3701450f6192298d0e873246',
 
   'src/third_party/benchmark':
    Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',
@@ -351,7 +351,7 @@ deps = {
    Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
 
   'src/third_party/freetype2':
-   Var('fuchsia_git') + '/third_party/freetype2' + '@' + '3515a77bb83002b69a2957efdbcb764de4de07da',
+   Var('fuchsia_git') + '/third_party/freetype2' + '@' + '6581fd3e9c8645f01c0d51e4f53893f5391f2bf3',
 
   'src/third_party/root_certificates':
    Var('dart_git') + '/root_certificates.git' + '@' + Var('dart_root_certificates_rev'),
