@@ -18,7 +18,6 @@ import android.support.annotation.NonNull;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -131,7 +130,6 @@ public class FlutterView extends SurfaceView implements
 
   private boolean isAttachedToRenderer = false;
   private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
-  private int backgroundColor;
 
   // Accessibility
   private boolean mAccessibilityEnabled = false;
@@ -178,24 +176,12 @@ public class FlutterView extends SurfaceView implements
     mAccessibilityManager = (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE);
     mAnimationScaleObserver = new AnimationScaleObserver(new Handler());
 
-    // Process any theme and attribute preferences.
-    readBackgroundColorFromThemeAndAttributes();
+    // Apply a splash background color if desired.
+    // TODO(mattcarroll): support attr and programmatic control
 
     // Initialize this View as needed.
     setFocusable(true);
     setFocusableInTouchMode(true);
-  }
-
-  // TODO(mattcarroll): add XML attribute support for background color
-  private void readBackgroundColorFromThemeAndAttributes() {
-    int color = 0xFF000000;
-    TypedValue typedValue = new TypedValue();
-    getContext().getTheme().resolveAttribute(android.R.attr.colorBackground, typedValue, true);
-    if (typedValue.type >= TypedValue.TYPE_FIRST_COLOR_INT && typedValue.type <= TypedValue.TYPE_LAST_COLOR_INT) {
-      color = typedValue.data;
-    }
-    // TODO(abarth): Consider letting the developer override this color.
-    backgroundColor = color;
   }
 
   @Override
