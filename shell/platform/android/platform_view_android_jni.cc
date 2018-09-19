@@ -853,7 +853,7 @@ bool RegisterNewApi(JNIEnv* env) {
       },
       {
           .name = "nativeSurfaceCreated",
-          .signature = "(JLandroid/view/Surface;I)V",
+          .signature = "(JLandroid/view/Surface;)V",
           .fnPtr = reinterpret_cast<void*>(&shell::SurfaceCreated),
       },
       {

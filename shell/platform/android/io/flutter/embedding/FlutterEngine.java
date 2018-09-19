@@ -23,7 +23,7 @@ import io.flutter.view.FlutterRunArguments;
  * back to UI interaction.
  *
  * To start running Flutter within this {@code FlutterEngine}, use {@link #runFromBundle(FlutterRunArguments)}.
- * The {@link #runFromBundle(FlutterRunArguments)} method may not be invoked twice on the same
+ * The {@link #runFromBundle(FlutterRunArguments)} method must not be invoked twice on the same
  * {@code FlutterEngine}.
  *
  * To start rendering Flutter content to the screen, use {@link #getRenderer()} to obtain a
@@ -146,8 +146,8 @@ public class FlutterEngine implements BinaryMessenger {
     pluginRegistry.attach(this, activity);
   }
 
-  // TODO(mattcarroll): This method says it's unused. Is that true? Do we need it?
-  public String getObservatoryUri() {
+  // TODO(mattcarroll): Implement observatory lookup for "flutter attach"
+  public String getObservatoryUrl() {
     return flutterJNI.nativeGetObservatoryUri();
   }
 

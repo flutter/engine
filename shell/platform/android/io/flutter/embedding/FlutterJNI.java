@@ -9,9 +9,7 @@ import java.nio.ByteBuffer;
 
 public class FlutterJNI {
   //----- Start from FlutterView -----
-  public native void nativeSurfaceCreated(long nativePlatformViewAndroid,
-                                          Surface surface,
-                                          int backgroundColor);
+  public native void nativeSurfaceCreated(long nativePlatformViewAndroid, Surface surface);
 
   public native void nativeSurfaceChanged(long nativePlatformViewAndroid,
                                           int width,

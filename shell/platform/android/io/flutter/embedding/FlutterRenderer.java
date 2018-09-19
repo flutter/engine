@@ -126,8 +126,8 @@ public class FlutterRenderer implements TextureRegistry {
   //------ END TextureRegistry IMPLEMENTATION ----
 
   // TODO(mattcarroll): what exactly is this method intended to do?
-  public void surfaceCreated(Surface surface, int backgroundColor) {
-    flutterJNI.nativeSurfaceCreated(nativeObjectReference, surface, backgroundColor);
+  public void surfaceCreated(Surface surface) {
+    flutterJNI.nativeSurfaceCreated(nativeObjectReference, surface);
   }
 
   // TODO(mattcarroll): what exactly is this method intended to do?

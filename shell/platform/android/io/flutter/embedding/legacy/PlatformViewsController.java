@@ -57,7 +57,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         if (this.flutterEngine != null)
             throw new AssertionError(
                     "A PlatformViewsController can only be attached to a single FlutterEngine.\n" +
-                    "attachFlutterEngine was called while a FlutterView was already attached."
+                    "attachFlutterEngine was called while a FlutterEngine was already attached."
             );
         this.flutterEngine = flutterEngine;
         this.context = context;

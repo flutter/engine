@@ -147,7 +147,7 @@ public class FlutterView extends SurfaceView implements
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
       assertAttachedToFlutterRenderer();
-      flutterRenderer.surfaceCreated(holder.getSurface(), backgroundColor);
+      flutterRenderer.surfaceCreated(holder.getSurface());
     }
 
     @Override
