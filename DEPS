@@ -35,7 +35,7 @@ vars = {
 
   'dart_args_tag': '1.4.4',
   'dart_async_tag': '2.0.8',
-  'dart_bazel_worker_tag': '0.1.11',
+  'dart_bazel_worker_tag': '0.1.14',
   'dart_boolean_selector_tag': '1.0.4',
   'dart_boringssl_gen_rev': 'fc47eaa1a245d858bae462cd64d4155605b850ea',
   'dart_boringssl_rev': '189270cd190267f5bd60cfe8f8ce7a61d07ba6f4',
