@@ -1,4 +1,4 @@
-Signature: 5f132cdc8fff1ec848c51ebfed97bf56
+Signature: 13d4d4aa718e0dbfaa422dba1464fb65
 
 UNUSED LICENSES:
 
@@ -2386,6 +2386,7 @@ FILE: ../../../third_party/skia/site/favicon.ico
 FILE: ../../../third_party/skia/site/user/METADATA
 FILE: ../../../third_party/skia/site/user/api/METADATA
 FILE: ../../../third_party/skia/site/user/api/catalog.htm
+FILE: ../../../third_party/skia/site/user/modules/METADATA
 FILE: ../../../third_party/skia/site/user/modules/PathKit_effects.png
 FILE: ../../../third_party/skia/site/user/sample/architecture.png
 FILE: ../../../third_party/skia/site/user/sample/detail_correct.png
