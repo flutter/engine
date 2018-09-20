@@ -9,12 +9,17 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.database.ContentObserver;
+import android.graphics.Color;
+import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.provider.Settings;
+import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -131,6 +136,12 @@ public class FlutterView extends SurfaceView implements
   private boolean isAttachedToRenderer = false;
   private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
 
+  // Splash
+  private boolean isPreRender = true; // TODO(mattcarroll): save this to View state for rotation
+
+  // Transparency
+  private boolean isTransparencyDesired = false; // TODO(mattcarroll): save this to View state for rotation
+
   // Accessibility
   private boolean mAccessibilityEnabled = false;
   private boolean mTouchExplorationEnabled = false;
@@ -177,7 +188,7 @@ public class FlutterView extends SurfaceView implements
     mAnimationScaleObserver = new AnimationScaleObserver(new Handler());
 
     // Apply a splash background color if desired.
-    // TODO(mattcarroll): support attr and programmatic control
+    // TODO(mattcarroll): support attr control
 
     // Initialize this View as needed.
     setFocusable(true);
@@ -537,6 +548,59 @@ public class FlutterView extends SurfaceView implements
   }
   //------ END VIEW OVERRIDES ----
 
+  //------ START SPLASH CONTROL -----
+  public void setSplashColor(@ColorInt int color) {
+    // Only worry about the splash background if we have yet to render Flutter's first frame.
+    if (isPreRender) {
+      disableTransparentBackground();
+      setBackgroundColor(color);
+    }
+  }
+
+  public void setSplashDrawable(@Nullable Drawable drawable) {
+    // Only worry about the splash background if we have yet to render Flutter's first frame.
+    if (isPreRender) {
+      // Only disable background transparency if we're actually showing a background drawable.
+      if (drawable != null) {
+        disableTransparentBackground();
+      }
+      setBackground(drawable);
+    }
+  }
+
+  private void removeSplash() {
+    isPreRender = false;
+
+    setBackground(null);
+
+    if (isTransparencyDesired) {
+      enableTransparentBackground();
+    }
+  }
+  //------ END SPLASH CONTROL -----
+
+  //------ START TRANSPARENCY -----
+  /**
+   * Updates this to support rendering as a transparent {@link SurfaceView}.
+   *
+   * Sets it on top of its window. The background color still needs to be
+   * controlled from within the Flutter UI itself.
+   */
+  public void enableTransparentBackground() {
+    setZOrderOnTop(true);
+    getHolder().setFormat(PixelFormat.TRANSPARENT);
+  }
+
+  /**
+   * Reverts this back to the {@link SurfaceView} defaults, at the back of its
+   * window and opaque.
+   */
+  public void disableTransparentBackground() {
+    setZOrderOnTop(false);
+    getHolder().setFormat(PixelFormat.OPAQUE);
+  }
+  //------ END TRANSPARENCY -----
+
   //----- START AccessibilityStateChangeListener -----
   @Override
   public void onAccessibilityStateChanged(boolean enabled) {
@@ -731,7 +795,7 @@ public class FlutterView extends SurfaceView implements
 
   @Override
   public void onFirstFrameRendered() {
-    // no-op
+    removeSplash();
   }
   //------ END RenderingSurface ----
 
