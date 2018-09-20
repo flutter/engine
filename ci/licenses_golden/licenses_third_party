@@ -1,4 +1,4 @@
-Signature: 5b5ec302d3f100a7ca4552f231d9f8b7
+Signature: cc4f58b58898cf88f1bfbf56ad022c96
 
 UNUSED LICENSES:
 
@@ -4446,6 +4446,7 @@ FILE: ../../../third_party/dart/runtime/observatory/web/favicon.ico
 FILE: ../../../third_party/dart/runtime/observatory/web/index.html
 FILE: ../../../third_party/dart/runtime/observatory/web/third_party/trace_viewer_full.html
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.html
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler.cc.rej
 FILE: ../../../third_party/dart/runtime/vm/snapshot_test_in.dat
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/html_common.dart
@@ -4550,6 +4551,7 @@ FILE: ../../../third_party/dart/runtime/bin/log_linux.cc
 FILE: ../../../third_party/dart/runtime/bin/log_macos.cc
 FILE: ../../../third_party/dart/runtime/bin/log_win.cc
 FILE: ../../../third_party/dart/runtime/bin/main.cc
+FILE: ../../../third_party/dart/runtime/bin/main.cc.orig
 FILE: ../../../third_party/dart/runtime/bin/platform.cc
 FILE: ../../../third_party/dart/runtime/bin/platform.h
 FILE: ../../../third_party/dart/runtime/bin/platform_android.cc
@@ -4628,6 +4630,7 @@ FILE: ../../../third_party/dart/runtime/lib/stopwatch.cc
 FILE: ../../../third_party/dart/runtime/lib/stopwatch_patch.dart
 FILE: ../../../third_party/dart/runtime/lib/string_buffer_patch.dart
 FILE: ../../../third_party/dart/runtime/lib/string_patch.dart
+FILE: ../../../third_party/dart/runtime/lib/string_patch.dart.orig
 FILE: ../../../third_party/dart/runtime/lib/timer_patch.dart
 FILE: ../../../third_party/dart/runtime/lib/type_patch.dart
 FILE: ../../../third_party/dart/runtime/lib/weak_property.cc
@@ -4773,7 +4776,9 @@ FILE: ../../../third_party/dart/runtime/vm/native_arguments.h
 FILE: ../../../third_party/dart/runtime/vm/native_message_handler.cc
 FILE: ../../../third_party/dart/runtime/vm/native_message_handler.h
 FILE: ../../../third_party/dart/runtime/vm/object.cc
+FILE: ../../../third_party/dart/runtime/vm/object.cc.orig
 FILE: ../../../third_party/dart/runtime/vm/object.h
+FILE: ../../../third_party/dart/runtime/vm/object.h.orig
 FILE: ../../../third_party/dart/runtime/vm/object_arm_test.cc
 FILE: ../../../third_party/dart/runtime/vm/object_ia32_test.cc
 FILE: ../../../third_party/dart/runtime/vm/object_set.h
@@ -4801,6 +4806,7 @@ FILE: ../../../third_party/dart/runtime/vm/proccpuinfo.cc
 FILE: ../../../third_party/dart/runtime/vm/proccpuinfo.h
 FILE: ../../../third_party/dart/runtime/vm/raw_object.cc
 FILE: ../../../third_party/dart/runtime/vm/raw_object.h
+FILE: ../../../third_party/dart/runtime/vm/raw_object.h.orig
 FILE: ../../../third_party/dart/runtime/vm/raw_object_snapshot.cc
 FILE: ../../../third_party/dart/runtime/vm/resolver_test.cc
 FILE: ../../../third_party/dart/runtime/vm/scanner.cc
@@ -4818,6 +4824,7 @@ FILE: ../../../third_party/dart/runtime/vm/stack_frame_test.cc
 FILE: ../../../third_party/dart/runtime/vm/stub_code.cc
 FILE: ../../../third_party/dart/runtime/vm/symbols.cc
 FILE: ../../../third_party/dart/runtime/vm/symbols.h
+FILE: ../../../third_party/dart/runtime/vm/symbols.h.orig
 FILE: ../../../third_party/dart/runtime/vm/thread_pool.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_pool.h
 FILE: ../../../third_party/dart/runtime/vm/thread_pool_test.cc
@@ -5696,6 +5703,7 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/sample_profile/sampl
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.js
 FILE: ../../../third_party/dart/runtime/vm/atomic_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler.cc.orig
 FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler.h
 FILE: ../../../third_party/dart/runtime/vm/log.cc
 FILE: ../../../third_party/dart/runtime/vm/log.h
