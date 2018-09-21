@@ -50,6 +50,7 @@ public class FlutterRenderer implements TextureRegistry {
   public void detachFromRenderSurface() {
     // TODO(mattcarroll): do we care if we're asked to detach without first being attached?
     if (this.renderSurface != null) {
+      surfaceDestroyed();
       this.renderSurface = null;
     }
   }

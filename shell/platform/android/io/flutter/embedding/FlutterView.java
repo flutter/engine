@@ -9,7 +9,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.database.ContentObserver;
-import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -142,6 +141,10 @@ public class FlutterView extends SurfaceView implements
   // Transparency
   private boolean isTransparencyDesired = false; // TODO(mattcarroll): save this to View state for rotation
 
+  // Track surface status
+  private boolean isSurfaceAvailableForRendering = false;
+  private SurfaceHolder surfaceHolder;
+
   // Accessibility
   private boolean mAccessibilityEnabled = false;
   private boolean mTouchExplorationEnabled = false;
@@ -155,20 +158,31 @@ public class FlutterView extends SurfaceView implements
   private final SurfaceHolder.Callback mSurfaceCallback = new SurfaceHolder.Callback() {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-      assertAttachedToFlutterRenderer();
-      flutterRenderer.surfaceCreated(holder.getSurface());
+      Log.d(TAG, "SurfaceHolder.Callback.surfaceCreated()");
+      isSurfaceAvailableForRendering = true;
+      surfaceHolder = holder;
+
+      if (isAttachedToRenderer) {
+        flutterRenderer.surfaceCreated(holder.getSurface());
+      }
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-      assertAttachedToFlutterRenderer();
-      flutterRenderer.surfaceChanged(width, height);
+      if (isAttachedToRenderer) {
+        flutterRenderer.surfaceChanged(width, height);
+      }
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-      assertAttachedToFlutterRenderer();
-      flutterRenderer.surfaceDestroyed();
+      Log.d(TAG, "SurfaceHolder.Callback.surfaceDestroyed()");
+      isSurfaceAvailableForRendering = false;
+      surfaceHolder = null;
+
+      if (isAttachedToRenderer) {
+        flutterRenderer.surfaceDestroyed();
+      }
     }
   };
 
@@ -200,6 +214,112 @@ public class FlutterView extends SurfaceView implements
     super.onAttachedToWindow();
     Log.d(TAG, "onAttachedToWindow()");
 
+    // Grab a reference to our underlying Surface and register callbacks with that Surface so we
+    // can monitor changes and forward those changes on to native Flutter code.
+    getHolder().addCallback(mSurfaceCallback);
+
+    if (flutterRenderer != null) {
+      onAttachedToWindowAndRenderer();
+    }
+  }
+
+  @Override
+  protected void onDetachedFromWindow() {
+    super.onDetachedFromWindow();
+    Log.d(TAG, "onDetachedFromWindow()");
+
+    if (isAttachedToRenderer) {
+      onDetachedFromWindowOrRenderer();
+    }
+  }
+
+  /**
+   * Start rendering the UI for the given {@link FlutterRenderer}.
+   *
+   * @param flutterRenderer the FlutterRenderer for which this FlutterView will be a RenderSurface
+   * @param pluginMessenger the BinaryMessenger to use with any plugins that this FlutterView needs
+   *                        to register
+   */
+  public void attachToFlutterRenderer(@NonNull FlutterRenderer flutterRenderer, @NonNull BinaryMessenger pluginMessenger) {
+    if (isAttachedToRenderer) {
+      detachFromFlutterRenderer();
+    }
+
+    this.flutterRenderer = flutterRenderer;
+    this.pluginMessenger = pluginMessenger;
+
+    // Instruct our FlutterRenderer that we are now its designated RenderSurface.
+    this.flutterRenderer.attachToRenderSurface(this);
+    isAttachedToRenderer = true;
+
+    // Configure the platform plugins and flutter channels.
+    // TODO(mattcarroll): should we move these channels into the renderer and then expose them?
+    //                    the channel names seem important and official, but by defining them
+    //                    in FlutterView, when others utilize the Renderer in their own View,
+    //                    they will have to discover these names and copy/paste.
+    mFlutterLocalizationChannel = new MethodChannel(pluginMessenger, "flutter/localization", JSONMethodCodec.INSTANCE);
+    mFlutterKeyEventChannel = new BasicMessageChannel<>(pluginMessenger, "flutter/keyevent", JSONMessageCodec.INSTANCE);
+    mFlutterSettingsChannel = new BasicMessageChannel<>(pluginMessenger, "flutter/settings", JSONMessageCodec.INSTANCE);
+    mTextInputPlugin = new TextInputPlugin(this, pluginMessenger);
+
+    // TODO(mattcarroll): in addition to moving the channels into the Renderer, we could also
+    //                    hide the channels behind a legitimate object API, e.g.,
+    //                    renderer.setLocale(myLocale)
+    //                    renderer.setUserSettings(settings)
+    setFlutterLocale(getResources().getConfiguration().locale);
+    setFlutterUserSettings();
+
+    mIsSoftwareRenderingEnabled = flutterRenderer.isSoftwareRenderingEnabled();
+
+    if (isAttachedToWindow()) {
+      onAttachedToWindowAndRenderer();
+    }
+  }
+
+  /**
+   * Stop rendering the UI for a given {@link FlutterRenderer}.
+   *
+   * If no {@link FlutterRenderer} is currently attached, this method does nothing.
+   */
+  public void detachFromFlutterRenderer() {
+    if (!isAttachedToRenderer) {
+      return;
+    }
+    Log.d(TAG, "Detaching from Flutter Renderer");
+
+    // Instruct our FlutterRenderer that we are no longer interested in being its RenderSurface.
+    flutterRenderer.detachFromRenderSurface();
+    flutterRenderer = null;
+
+    // Null out other Flutter UI connections.
+    this.pluginMessenger = null;
+    // TODO(mattcarroll): is null'ing out these platform channel enough? do we need to free any resources?
+    mFlutterLocalizationChannel = null;
+    mFlutterKeyEventChannel = null;
+    mFlutterSettingsChannel = null;
+    mTextInputPlugin = null;
+
+    isAttachedToRenderer = false;
+
+    // TODO(mattcarroll): clear the surface when JNI doesn't blow up
+//    if (isSurfaceAvailableForRendering) {
+//      Canvas canvas = surfaceHolder.lockCanvas();
+//      canvas.drawColor(Color.RED);
+//      surfaceHolder.unlockCanvasAndPost(canvas);
+//    }
+
+    if (isAttachedToWindow()) {
+      onDetachedFromWindowOrRenderer();
+    }
+  }
+
+  private void onAttachedToWindowAndRenderer() {
+    Log.d(TAG, "onAttachedToWindowAndRenderer()");
+    if (isSurfaceAvailableForRendering) {
+      Log.d(TAG, "Surface already exists. Connecting it to Flutter.");
+      flutterRenderer.surfaceCreated(surfaceHolder.getSurface());
+    }
+
     // Read accessibility settings.
     mAccessibilityEnabled = mAccessibilityManager.isEnabled();
     mTouchExplorationEnabled = mAccessibilityManager.isTouchExplorationEnabled();
@@ -230,10 +350,10 @@ public class FlutterView extends SurfaceView implements
     }
   }
 
-  @Override
-  protected void onDetachedFromWindow() {
-    super.onDetachedFromWindow();
-    Log.d(TAG, "onDetachedFromWindow()");
+  private void onDetachedFromWindowOrRenderer() {
+    Log.d(TAG, "onDetachedFromWindowOrRenderer");
+    // Stop forwarding messages from our underlying Surface to native Flutter code.
+    getHolder().removeCallback(mSurfaceCallback);
 
     // Stop listening for changes to Android's animation scale setting.
     getContext().getContentResolver().unregisterContentObserver(mAnimationScaleObserver);
@@ -247,11 +367,15 @@ public class FlutterView extends SurfaceView implements
 
   @Override
   public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-    try {
-      mLastInputConnection = mTextInputPlugin.createInputConnection(this, outAttrs);
-      return mLastInputConnection;
-    } catch (JSONException e) {
-      Log.e(TAG, "Failed to create input connection", e);
+    if (isAttachedToWindow() && isAttachedToRenderer) {
+      try {
+        mLastInputConnection = mTextInputPlugin.createInputConnection(this, outAttrs);
+        return mLastInputConnection;
+      } catch (JSONException e) {
+        Log.e(TAG, "Failed to create input connection", e);
+        return null;
+      }
+    } else {
       return null;
     }
   }
@@ -437,7 +561,7 @@ public class FlutterView extends SurfaceView implements
   protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
     mMetrics.physicalWidth = width;
     mMetrics.physicalHeight = height;
-    updateViewportMetrics();
+    sendViewportMetricsToFlutter();
     super.onSizeChanged(width, height, oldWidth, oldHeight);
   }
 
@@ -456,7 +580,7 @@ public class FlutterView extends SurfaceView implements
     mMetrics.physicalViewInsetRight = 0;
     mMetrics.physicalViewInsetBottom = insets.getSystemWindowInsetBottom();
     mMetrics.physicalViewInsetLeft = 0;
-    updateViewportMetrics();
+    sendViewportMetricsToFlutter();
     return super.onApplyWindowInsets(insets);
   }
 
@@ -475,14 +599,14 @@ public class FlutterView extends SurfaceView implements
       mMetrics.physicalViewInsetRight = 0;
       mMetrics.physicalViewInsetBottom = insets.bottom;
       mMetrics.physicalViewInsetLeft = 0;
-      updateViewportMetrics();
+      sendViewportMetricsToFlutter();
       return true;
     } else {
       return super.fitSystemWindows(insets);
     }
   }
 
-  private void updateViewportMetrics() {
+  private void sendViewportMetricsToFlutter() {
     if (!isAttachedToRenderer)
       return;
 
@@ -684,68 +808,6 @@ public class FlutterView extends SurfaceView implements
   //------- END ACCESSIBILITY ----
 
   //----- START FLUTTER INTEGRATION -----
-
-  /**
-   * Start rendering the UI for the given {@link FlutterRenderer}.
-   *
-   * @param flutterRenderer the FlutterRenderer for which this FlutterView will be a RenderSurface
-   * @param pluginMessenger the BinaryMessenger to use with any plugins that this FlutterView needs
-   *                        to register
-   */
-  public void attachToFlutterRenderer(@NonNull FlutterRenderer flutterRenderer, @NonNull BinaryMessenger pluginMessenger) {
-    if (isAttachedToRenderer) {
-      detachFromFlutterRenderer();
-    }
-
-    // TODO(mattcarroll): what should we do if we're not currently attached to the window?
-    this.flutterRenderer = flutterRenderer;
-    this.pluginMessenger = pluginMessenger;
-
-    // Instruct our FlutterRenderer that we are now its designated RenderSurface.
-    this.flutterRenderer.attachToRenderSurface(this);
-    isAttachedToRenderer = true;
-
-    // Configure the platform plugins and flutter channels.
-    mFlutterLocalizationChannel = new MethodChannel(pluginMessenger, "flutter/localization", JSONMethodCodec.INSTANCE);
-    mFlutterKeyEventChannel = new BasicMessageChannel<>(pluginMessenger, "flutter/keyevent", JSONMessageCodec.INSTANCE);
-    mFlutterSettingsChannel = new BasicMessageChannel<>(pluginMessenger, "flutter/settings", JSONMessageCodec.INSTANCE);
-    mTextInputPlugin = new TextInputPlugin(this, pluginMessenger);
-
-    setFlutterLocale(getResources().getConfiguration().locale);
-    setFlutterUserSettings();
-
-    // Grab a reference to our underlying Surface and register callbacks with that Surface so we
-    // can monitor changes and forward those changes on to native Flutter code.
-    getHolder().addCallback(mSurfaceCallback);
-
-    mIsSoftwareRenderingEnabled = flutterRenderer.isSoftwareRenderingEnabled();
-  }
-
-  private void assertAttachedToFlutterRenderer() {
-    if (!isAttachedToRenderer) {
-      throw new AssertionError("FlutterView is not attached to a FlutterRenderer.");
-    }
-  }
-
-  /**
-   * Stop rendering the UI for a given {@link FlutterRenderer}.
-   *
-   * If no {@link FlutterRenderer} is currently attached, this method does nothing.
-   */
-  public void detachFromFlutterRenderer() {
-    if (!isAttachedToRenderer) {
-      return;
-    }
-
-    // Stop forwarding messages from our underlying Surface to native Flutter code.
-    getHolder().removeCallback(mSurfaceCallback);
-
-    // Instruct our FlutterRenderer that we are no longer interested in being its RenderSurface.
-    flutterRenderer.detachFromRenderSurface();
-    flutterRenderer = null;
-    isAttachedToRenderer = false;
-  }
-
   /**
    * Send the given {@link Locale} configuration to Flutter.
    * @param locale the user's locale
