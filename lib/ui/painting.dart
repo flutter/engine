@@ -1567,6 +1567,25 @@ class FrameInfo extends NativeFieldWrapperClass2 {
   Image get image native 'FrameInfo_image';
 }
 
+/// The default maximum multiple of the compressed image size to use when
+/// caching an animated image. See [decodedCacheRatioCapOverride].
+const double _kDefaultDecodedCacheRatioCap = 25.0;
+
+/// Specifies the maximum multiple of the compressed image size to use when
+/// caching an animated image.
+///
+/// By default individual frames of animated images are cached into memory to
+/// avoid using CPU to re-decode them for every loop in the animation. This
+/// behavior will result in out-of-memory crashes when decoding large
+/// (or large numbers of) animated images. Set this value to limit how much
+/// memory each animated image is allowed to use to cache decoded frames
+/// compared to its compressed size. For example, setting this to `2.0` means
+/// that a 400KB GIF would be allowed at most to use 800KB of memory caching
+/// unessential decoded frames. A setting of `1.0` or less disables all caching
+/// of unessential decoded frames. See [_kDefaultDecodedCacheRatioCap] for the
+/// default value.
+double decodedCacheRatioCapOverride;
+
 /// A handle to an image codec.
 class Codec extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
@@ -1614,14 +1633,15 @@ class Codec extends NativeFieldWrapperClass2 {
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list) {
   return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null)
+    (_Callback<Codec> callback) =>
+        _instantiateImageCodec(list, callback, null, decodedCacheRatioCapOverride ?? _kDefaultDecodedCacheRatioCap)
   );
 }
 
 /// Instantiates a [Codec] object for an image binary data.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo)
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1656,7 +1676,8 @@ void decodeImageFromPixels(
 ) {
   final _ImageInfo imageInfo = new _ImageInfo(width, height, format.index, rowBytes);
   final Future<Codec> codecFuture = _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo)
+    (_Callback<Codec> callback) =>
+        _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCapOverride ?? _kDefaultDecodedCacheRatioCap)
   );
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));
