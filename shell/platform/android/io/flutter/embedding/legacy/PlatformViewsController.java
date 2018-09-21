@@ -11,11 +11,10 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import io.flutter.embedding.FlutterEngine;
+import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
-import io.flutter.embedding.FlutterView;
 import io.flutter.view.TextureRegistry;
 
 import java.nio.ByteBuffer;

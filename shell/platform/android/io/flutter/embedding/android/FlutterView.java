@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package io.flutter.embedding;
+package io.flutter.embedding.android;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.legacy.AccessibilityBridge;
 import io.flutter.embedding.legacy.TextInputPlugin;
 import io.flutter.plugin.common.BasicMessageChannel;

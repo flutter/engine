@@ -785,7 +785,7 @@ bool RegisterOldApi(JNIEnv* env) {
 
 bool RegisterNewApi(JNIEnv* env) {
   g_flutter_engine_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
-      env, env->FindClass("io/flutter/embedding/FlutterEngine"));
+      env, env->FindClass("io/flutter/embedding/engine/FlutterEngine"));
   if (g_flutter_engine_class->is_null()) {
     FML_LOG(ERROR) << "Failed to find FlutterEngine Class.";
     return false;
@@ -795,7 +795,7 @@ bool RegisterNewApi(JNIEnv* env) {
       // Start of methods from FlutterNativeView
       {
           .name = "nativeAttach",
-          .signature = "(Lio/flutter/embedding/FlutterEngine;Z)J",
+          .signature = "(Lio/flutter/embedding/engine/FlutterEngine;Z)J",
           .fnPtr = reinterpret_cast<void*>(&shell::AttachJNI),
       },
       {
@@ -1001,7 +1001,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
   // simultaneously.
   bool is_using_new_api = false;
   g_flutter_jni_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
-      env, env->FindClass("io/flutter/embedding/FlutterJNI"));
+      env, env->FindClass("io/flutter/embedding/engine/FlutterJNI"));
   if (g_flutter_jni_class->is_null()) {
     FML_LOG(ERROR) << "Failed to find FlutterJNI Class. Assuming old API";
   } else {

@@ -1,4 +1,4 @@
-package io.flutter.embedding;
+package io.flutter.embedding.engine;
 
 import android.app.Activity;
 import android.content.Context;
@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.legacy.FlutterPluginRegistry;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.view.FlutterRunArguments;
@@ -28,7 +29,7 @@ import io.flutter.view.FlutterRunArguments;
  *
  * To start rendering Flutter content to the screen, use {@link #getRenderer()} to obtain a
  * {@link FlutterRenderer} and then attach a {@link FlutterRenderer.RenderSurface}.  Consider using
- * a {@link FlutterView} as a {@link FlutterRenderer.RenderSurface}.
+ * a {@link io.flutter.embedding.android.FlutterView} as a {@link FlutterRenderer.RenderSurface}.
  */
 public class FlutterEngine implements BinaryMessenger {
   private static final String TAG = "FlutterEngine";

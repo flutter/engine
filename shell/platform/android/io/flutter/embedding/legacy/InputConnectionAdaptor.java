@@ -14,7 +14,7 @@ import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.embedding.FlutterView;
+import io.flutter.embedding.android.FlutterView;
 
 import java.util.Arrays;
 import java.util.HashMap;

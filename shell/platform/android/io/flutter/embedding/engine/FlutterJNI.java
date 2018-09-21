@@ -1,4 +1,4 @@
-package io.flutter.embedding;
+package io.flutter.embedding.engine;
 
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;

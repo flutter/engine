@@ -97,13 +97,13 @@ java_library("flutter_shell_java") {
   supports_android = true
 
   java_files = [
-    "io/flutter/embedding/FlutterActivity.java",
-    "io/flutter/embedding/FlutterEngine.java",
-    "io/flutter/embedding/FlutterFragment.java",
-    "io/flutter/embedding/FlutterJNI.java",
-    "io/flutter/embedding/FlutterRenderer.java",
-    "io/flutter/embedding/FlutterShellArgs.java",
-    "io/flutter/embedding/FlutterView.java",
+    "io/flutter/embedding/android/FlutterActivity.java",
+    "io/flutter/embedding/android/FlutterFragment.java",
+    "io/flutter/embedding/android/FlutterView.java",
+    "io/flutter/embedding/engine/FlutterEngine.java",
+    "io/flutter/embedding/engine/FlutterJNI.java",
+    "io/flutter/embedding/engine/FlutterShellArgs.java",
+    "io/flutter/embedding/engine/renderer/FlutterRenderer.java",
     "io/flutter/embedding/legacy/AccessibilityBridge.java",
     "io/flutter/embedding/legacy/FlutterPluginRegistry.java",
     "io/flutter/embedding/legacy/InputConnectionAdaptor.java",
