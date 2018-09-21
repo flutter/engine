@@ -29,8 +29,6 @@ import io.flutter.view.FlutterRunArguments;
  * To start rendering Flutter content to the screen, use {@link #getRenderer()} to obtain a
  * {@link FlutterRenderer} and then attach a {@link FlutterRenderer.RenderSurface}.  Consider using
  * a {@link FlutterView} as a {@link FlutterRenderer.RenderSurface}.
- * TODO(mattcarroll): for the above instructions for RenderSurface to be true, we need to refactor
- *                    the native relationships and also the PlatformViewsController relationship.
  */
 public class FlutterEngine implements BinaryMessenger {
   private static final String TAG = "FlutterEngine";
@@ -57,30 +55,30 @@ public class FlutterEngine implements BinaryMessenger {
     pluginRegistry = new FlutterPluginRegistry(this, context);
     mMessageHandlers = new HashMap<>();
 
-    attach();
+    attachToJni();
     // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if possible.
     this.renderer = new FlutterRenderer(flutterJNI, nativeObjectReference);
   }
 
-  private void attach() {
+  private void attachToJni() {
     // TODO(mattcarroll): what impact does "isBackgroundView' have?
     nativeObjectReference = flutterJNI.nativeAttach(this, isBackgroundView);
 
-    if (!isAttached()) {
+    if (!isAttachedToJni()) {
       throw new RuntimeException("FlutterEngine failed to attach to its native Object reference.");
     }
   }
 
-  private void assertAttached() {
-    if (!isAttached()) throw new AssertionError("Platform view is not attached");
+  private void assertAttachedToJni() {
+    if (!isAttachedToJni()) throw new AssertionError("Platform view is not attached");
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-  private boolean isAttached() {
+  private boolean isAttachedToJni() {
     return nativeObjectReference != 0;
   }
 
-  public void detach() {
+  public void detachFromJni() {
     pluginRegistry.detach();
     // TODO(mattcarroll): why do we have a nativeDetach() method? can we get rid of this?
     flutterJNI.nativeDetach(nativeObjectReference);
@@ -108,7 +106,7 @@ public class FlutterEngine implements BinaryMessenger {
       String libraryPath,
       String defaultPath
   ) {
-    assertAttached();
+    assertAttachedToJni();
 
     if (applicationIsRunning) {
       throw new AssertionError("This Flutter engine instance is already running an application");
@@ -168,7 +166,7 @@ public class FlutterEngine implements BinaryMessenger {
 
   @Override
   public void send(String channel, ByteBuffer message, BinaryReply callback) {
-    if (!isAttached()) {
+    if (!isAttachedToJni()) {
       Log.d(TAG, "FlutterView.send called on a detached view, channel=" + channel);
       return;
     }
@@ -189,7 +187,7 @@ public class FlutterEngine implements BinaryMessenger {
   // Called by native to send us a platform message.
   @SuppressWarnings("unused")
   private void handlePlatformMessage(final String channel, byte[] message, final int replyId) {
-    assertAttached();
+    assertAttachedToJni();
     BinaryMessageHandler handler = mMessageHandlers.get(channel);
     if (handler != null) {
       try {
@@ -198,7 +196,7 @@ public class FlutterEngine implements BinaryMessenger {
           private final AtomicBoolean done = new AtomicBoolean(false);
           @Override
           public void reply(ByteBuffer reply) {
-            if (!isAttached()) {
+            if (!isAttachedToJni()) {
               Log.d(TAG,
                   "handlePlatformMessage replying to a detached view, channel="
                       + channel);

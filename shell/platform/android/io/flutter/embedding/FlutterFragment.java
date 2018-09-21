@@ -153,7 +153,7 @@ public class FlutterFragment extends Fragment {
     if (detach || retainFlutterIsolateAfterFragmentDestruction()) {
       // Detach, but do not destroy the FlutterView if a plugin expressed interest in its
       // FlutterNativeView.
-      flutterEngine.detach();
+      flutterEngine.detachFromJni();
     } else {
       flutterEngine.destroy();
     }
