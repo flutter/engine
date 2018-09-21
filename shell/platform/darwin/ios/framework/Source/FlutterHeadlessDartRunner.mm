@@ -20,10 +20,20 @@
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/darwin/common/command_line.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
+#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterAppDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/headless_platform_view_ios.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+
+@interface FlutterHeadlessDartRunner () 
+@property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
+@end
+
+@interface FlutterHeadlessDartRegistrar : NSObject <FlutterPluginRegistrar>
+- (instancetype)initWithPlugin:(NSString*)pluginKey
+         flutterHeadlessDartRunner:(FlutterHeadlessDartRunner*)flutterHeadlessDartRunner;
+@end
 
 static std::unique_ptr<shell::HeadlessPlatformViewIOS> CreateHeadlessPlatformView(
     shell::Shell& shell) {
@@ -108,6 +118,10 @@ static std::string CreateShellLabel() {
           success = YES;
         }
       }));
+
+  FlutterAppDelegate *app = (FlutterAppDelegate*)[[UIApplication sharedApplication] delegate];
+
+  [app registerHeadlessPlugins:self];
 }
 
 - (void)runWithEntrypoint:(NSString*)entrypoint {
@@ -144,6 +158,83 @@ static std::string CreateShellLabel() {
   reinterpret_cast<shell::HeadlessPlatformViewIOS*>(_shell->GetPlatformView().get())
       ->GetPlatformMessageRouter()
       .SetMessageHandler(channel.UTF8String, handler);
+}
+
+#pragma mark - FlutterPluginRegistry
+
+- (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
+  NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
+  self.pluginPublications[pluginKey] = [NSNull null];
+  return
+      [[FlutterHeadlessDartRegistrar alloc] initWithPlugin:pluginKey flutterHeadlessDartRunner:self];
+}
+
+- (BOOL)hasPlugin:(NSString*)pluginKey {
+  return _pluginPublications[pluginKey] != nil;
+}
+
+- (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
+  return _pluginPublications[pluginKey];
+}
+
+@end
+
+@implementation FlutterHeadlessDartRegistrar {
+  NSString* _pluginKey;
+  FlutterHeadlessDartRunner* _flutterViewController;
+}
+
+- (instancetype)initWithPlugin:(NSString*)pluginKey
+         flutterHeadlessDartRunner:(FlutterHeadlessDartRunner*)flutterHeadlessDartRunner {
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
+  _pluginKey = [pluginKey retain];
+  _flutterViewController = [flutterHeadlessDartRunner retain];
+  return self;
+}
+
+- (void)dealloc {
+  [_pluginKey release];
+  [_flutterViewController release];
+  [super dealloc];
+}
+
+- (NSObject<FlutterBinaryMessenger>*)messenger {
+  return _flutterViewController;
+}
+
+- (NSObject<FlutterTextureRegistry>*)textures {
+  return Nil;
+}
+
+- (void)publish:(NSObject*)value {
+  _flutterViewController.pluginPublications[_pluginKey] = value;
+}
+
+- (void)addMethodCallDelegate:(NSObject<FlutterPlugin>*)delegate
+                      channel:(FlutterMethodChannel*)channel {
+  [channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    [delegate handleMethodCall:call result:result];
+  }];
+}
+
+- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
+  id<UIApplicationDelegate> appDelegate = [[UIApplication sharedApplication] delegate];
+  if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifeCycleProvider)]) {
+    id<FlutterAppLifeCycleProvider> lifeCycleProvider =
+        (id<FlutterAppLifeCycleProvider>)appDelegate;
+    [lifeCycleProvider addApplicationLifeCycleDelegate:delegate];
+  }
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset {
+  return Nil;
+  //return [_flutterViewController lookupKeyForAsset:asset];
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
+  return Nil;
+  //return [_flutterViewController lookupKeyForAsset:asset fromPackage:package];
 }
 
 @end

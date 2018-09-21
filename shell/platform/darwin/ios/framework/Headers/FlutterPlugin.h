@@ -301,6 +301,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey;
 @end
 
+@protocol FlutterHeadlessPlugins 
+- (void)registerHeadlessPlugins:(NSObject<FlutterPluginRegistry>*)registrar;
+@end
+
 /**
  Implement this in the `UIAppDelegate` of your app to enable Flutter plugins to register themselves
  to the application life cycle events.

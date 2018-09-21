@@ -10,6 +10,7 @@
 #include "FlutterBinaryMessenger.h"
 #include "FlutterDartProject.h"
 #include "FlutterMacros.h"
+#include "FlutterPlugin.h"
 
 /**
 A callback for when FlutterHeadlessDartRunner has attempted to start a Dart
@@ -26,7 +27,7 @@ typedef void (^FlutterHeadlessDartRunnerCallback)(BOOL success);
  code e.g. in the background from a plugin.
 */
 FLUTTER_EXPORT
-@interface FlutterHeadlessDartRunner : NSObject <FlutterBinaryMessenger>
+@interface FlutterHeadlessDartRunner : NSObject <FlutterBinaryMessenger, FlutterPluginRegistry>
 
 /**
  Runs a Dart function on an Isolate that is not the main application's Isolate.

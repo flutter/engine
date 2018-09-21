@@ -174,4 +174,8 @@
   [_lifeCycleDelegate addDelegate:delegate];
 }
 
+- (void)registerHeadlessPlugins:(NSObject<FlutterPluginRegistrar>*)registrar {
+
+}
+
 @end
