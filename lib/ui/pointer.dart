@@ -21,8 +21,7 @@ enum PointerChange {
   /// detection range or might have been disconnected from the system entirely.
   remove,
 
-  /// The pointer has moved with respect to the device while not in contact with
-  /// the device.
+  /// The pointer has entered the flutter view
   hover,
 
   /// The pointer has made contact with the device.
