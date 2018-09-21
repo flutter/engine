@@ -61,7 +61,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
      * Attaches this platform views controller to its input and output channels.
      *
      * @param context The base context that will be passed to embedded views created by this controller.
-     *                This should be the context of the Fragment or Activity hosting the Flutter applicaiton.
+     *                This should be the context of the Activity hosting the Flutter application.
      * @param textureRegistry The texture registry which provides the output textures into which the embedded views
      *                        will be rendered.
      * @param messenger The Flutter application on the other side of this messenger drives this platform views controller.
