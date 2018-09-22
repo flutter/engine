@@ -60,12 +60,12 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
             );
         this.flutterEngine = flutterEngine;
         this.context = context;
-        MethodChannel channel = new MethodChannel(flutterEngine, CHANNEL_NAME, StandardMethodCodec.INSTANCE);
+        MethodChannel channel = new MethodChannel(flutterEngine.getDartExecutor(), CHANNEL_NAME, StandardMethodCodec.INSTANCE);
         channel.setMethodCallHandler(this);
     }
 
     public void detachFlutterEngine() {
-        flutterEngine.setMessageHandler(CHANNEL_NAME, null);
+        flutterEngine.getDartExecutor().setMessageHandler(CHANNEL_NAME, null);
         flutterEngine = null;
     }
 

@@ -3,11 +3,93 @@ package io.flutter.embedding.engine;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.util.Log;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+
+import io.flutter.embedding.engine.dart.PlatformMessageHandler;
+import io.flutter.embedding.engine.renderer.FlutterRenderer;
+import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
+import io.flutter.plugin.common.BinaryMessenger;
 
 public class FlutterJNI {
+  private static final String TAG = "FlutterJNI";
+
+  private FlutterRenderer.RenderSurface renderSurface;
+  private PlatformMessageHandler platformMessageHandler;
+  private final Set<OnFirstFrameRenderedListener> firstFrameListeners = new CopyOnWriteArraySet<>();
+
+  public void setRenderSurface(@Nullable FlutterRenderer.RenderSurface renderSurface) {
+    this.renderSurface = renderSurface;
+  }
+
+  public void setPlatformMessageHandler(@Nullable PlatformMessageHandler platformMessageHandler) {
+    this.platformMessageHandler = platformMessageHandler;
+  }
+
+  public void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
+    firstFrameListeners.add(listener);
+  }
+
+  public void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
+    firstFrameListeners.remove(listener);
+  }
+
+  //------ START RENDER SURFACE CALLBACKS -----
+  // Called by native to update the semantics/accessibility tree.
+  @SuppressWarnings("unused")
+  public void updateSemantics(ByteBuffer buffer, String[] strings) {
+    Log.d(TAG, "updateSemantics()");
+    if (renderSurface != null) {
+      renderSurface.updateSemantics(buffer, strings);
+    }
+  }
+
+  // Called by native to update the custom accessibility actions.
+  @SuppressWarnings("unused")
+  public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
+    Log.d(TAG, "updateCustomAccessibilityActions()");
+    if (renderSurface != null) {
+      renderSurface.updateCustomAccessibilityActions(buffer, strings);
+    }
+  }
+
+  // Called by native to notify first Flutter frame rendered.
+  @SuppressWarnings("unused")
+  private void onFirstFrame() {
+    Log.d(TAG, "onFirstFrame()");
+    if (renderSurface != null) {
+      renderSurface.onFirstFrameRendered();
+    }
+
+    for (OnFirstFrameRenderedListener listener : firstFrameListeners) {
+      listener.onFirstFrameRendered();
+    }
+  }
+  //------ END RENDER SURFACE CALLBACKS ------
+
+  //------ START PLATFORM MESSAGE CALLBACKS ----
+  @SuppressWarnings("unused")
+  private void handlePlatformMessage(final String channel, byte[] message, final int replyId) {
+    if (platformMessageHandler != null) {
+      platformMessageHandler.handlePlatformMessage(channel, message, replyId);
+    }
+  }
+
+  // Called by native to respond to a platform message that we sent.
+  @SuppressWarnings("unused")
+  private void handlePlatformMessageResponse(int replyId, byte[] reply) {
+    if (platformMessageHandler != null) {
+      platformMessageHandler.handlePlatformMessageResponse(replyId, reply);
+    }
+  }
+  //------ END PLATFORM MESSAGE CALLBACKS ----
+
   //----- Start from FlutterView -----
   public native void nativeSurfaceCreated(long nativePlatformViewAndroid, Surface surface);
 
@@ -56,7 +138,7 @@ public class FlutterJNI {
   //------- End from FlutterView -----
 
   //------ Start from FlutterNativeView ----
-  public native long nativeAttach(FlutterEngine engine, boolean isBackgroundView);
+  public native long nativeAttach(FlutterJNI flutterJNI, boolean isBackgroundView);
   public native void nativeDestroy(long nativePlatformViewAndroid);
   public native void nativeDetach(long nativePlatformViewAndroid);
 

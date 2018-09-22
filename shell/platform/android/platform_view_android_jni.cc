@@ -795,7 +795,7 @@ bool RegisterNewApi(JNIEnv* env) {
       // Start of methods from FlutterNativeView
       {
           .name = "nativeAttach",
-          .signature = "(Lio/flutter/embedding/engine/FlutterEngine;Z)J",
+          .signature = "(Lio/flutter/embedding/engine/FlutterJNI;Z)J",
           .fnPtr = reinterpret_cast<void*>(&shell::AttachJNI),
       },
       {
@@ -920,7 +920,7 @@ bool RegisterNewApi(JNIEnv* env) {
   }
 
   g_handle_platform_message_method =
-      env->GetMethodID(g_flutter_engine_class->obj(), "handlePlatformMessage",
+      env->GetMethodID(g_flutter_jni_class->obj(), "handlePlatformMessage",
                        "(Ljava/lang/String;[BI)V");
 
   if (g_handle_platform_message_method == nullptr) {
@@ -929,7 +929,7 @@ bool RegisterNewApi(JNIEnv* env) {
   }
 
   g_handle_platform_message_response_method = env->GetMethodID(
-      g_flutter_engine_class->obj(), "handlePlatformMessageResponse", "(I[B)V");
+      g_flutter_jni_class->obj(), "handlePlatformMessageResponse", "(I[B)V");
 
   if (g_handle_platform_message_response_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate handlePlatformMessageResponse method";
@@ -937,7 +937,7 @@ bool RegisterNewApi(JNIEnv* env) {
   }
 
   g_update_semantics_method =
-      env->GetMethodID(g_flutter_engine_class->obj(), "updateSemantics",
+      env->GetMethodID(g_flutter_jni_class->obj(), "updateSemantics",
                        "(Ljava/nio/ByteBuffer;[Ljava/lang/String;)V");
 
   if (g_update_semantics_method == nullptr) {
@@ -946,7 +946,7 @@ bool RegisterNewApi(JNIEnv* env) {
   }
 
   g_update_custom_accessibility_actions_method = env->GetMethodID(
-      g_flutter_engine_class->obj(), "updateCustomAccessibilityActions",
+      g_flutter_jni_class->obj(), "updateCustomAccessibilityActions",
       "(Ljava/nio/ByteBuffer;[Ljava/lang/String;)V");
 
   if (g_update_custom_accessibility_actions_method == nullptr) {
@@ -956,7 +956,7 @@ bool RegisterNewApi(JNIEnv* env) {
   }
 
   g_on_first_frame_method =
-      env->GetMethodID(g_flutter_engine_class->obj(), "onFirstFrame", "()V");
+      env->GetMethodID(g_flutter_jni_class->obj(), "onFirstFrame", "()V");
 
   if (g_on_first_frame_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onFirstFrame method";

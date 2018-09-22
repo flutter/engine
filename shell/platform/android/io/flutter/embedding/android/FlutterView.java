@@ -164,6 +164,7 @@ public class FlutterView extends SurfaceView implements
       surfaceHolder = holder;
 
       if (isAttachedToRenderer) {
+        Log.d(TAG, "Already attached to renderer. Notifying of surface creation.");
         flutterRenderer.surfaceCreated(holder.getSurface());
       }
     }
