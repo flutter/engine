@@ -110,11 +110,20 @@ typedef struct {
   double pixel_ratio;
 } FlutterWindowMetricsEvent;
 
+// The kind of device generating a pointer event.
+typedef enum {
+  kMouse,
+} FlutterPointerDeviceKind;
+
+// The phase of the pointer event.
 typedef enum {
   kCancel,
   kUp,
   kDown,
   kMove,
+  kAdd,
+  kRemove,
+  kHover,
 } FlutterPointerPhase;
 
 typedef struct {
@@ -124,6 +133,9 @@ typedef struct {
   size_t timestamp;  // in microseconds.
   double x;
   double y;
+  FlutterPointerDeviceKind kind;
+  double scroll_delta_x;
+  double scroll_delta_y;
 } FlutterPointerEvent;
 
 struct _FlutterPlatformMessageResponseHandle;

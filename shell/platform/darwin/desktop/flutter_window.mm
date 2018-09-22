@@ -226,6 +226,7 @@ static std::string CreateThreadLabel() {
       break;
     case blink::PointerData::Change::kAdd:
     case blink::PointerData::Change::kRemove:
+    case blink::PointerData::Change::kScroll:
     case blink::PointerData::Change::kHover:
       FML_DCHECK(!_mouseIsDown);
       break;

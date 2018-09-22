@@ -34,6 +34,9 @@ enum PointerChange {
 
   /// The pointer has stopped making contact with the device.
   up,
+
+  /// The pointer has scrolled
+  scroll,
 }
 
 /// The kind of pointer device.
@@ -51,7 +54,7 @@ enum PointerDeviceKind {
   invertedStylus,
 
   /// An unknown pointer device.
-  unknown
+  unknown,
 }
 
 /// Information about the state of a pointer.
@@ -76,7 +79,10 @@ class PointerData {
     this.radiusMin: 0.0,
     this.radiusMax: 0.0,
     this.orientation: 0.0,
-    this.tilt: 0.0
+    this.scrollDeltaX: 0.0,
+    this.scrollDeltaY: 0.0,
+    this.tilt: 0.0,
+    this.sentinal: 0.0,
   });
 
   /// Time of event dispatch, relative to an arbitrary timeline.
@@ -190,6 +196,19 @@ class PointerData {
   /// the stylus is flat on that surface).
   final double tilt;
 
+  /// For PointerDeviceKind.gesture with PointerGestureKind.scroll:
+  ///
+  /// The amount to scroll in the x direction, in physical pixels.
+  final double scrollDeltaX;
+
+  /// For PointerDeviceKind.gesture with PointerGestureKind.scroll:
+  ///
+  /// The amount to scroll in the y direction, in physical pixels.
+  final double scrollDeltaY;
+
+  /// A final value that is passed so that we are passing more than 21 values in the packet
+  final double sentinal;
+
   @override
   String toString() => '$runtimeType(x: $physicalX, y: $physicalY)';
 
@@ -203,6 +222,7 @@ class PointerData {
              'physicalX: $physicalX, '
              'physicalY: $physicalY, '
              'buttons: $buttons, '
+             'obscured: $obscured'
              'pressure: $pressure, '
              'pressureMin: $pressureMin, '
              'pressureMax: $pressureMax, '
@@ -213,7 +233,10 @@ class PointerData {
              'radiusMin: $radiusMin, '
              'radiusMax: $radiusMax, '
              'orientation: $orientation, '
-             'tilt: $tilt'
+             'tilt: $tilt, '
+             'scrollDeltaX: $scrollDeltaX, '
+             'scrollDeltaY: $scrollDeltaY,'
+             'sentinal: $sentinal'
            ')';
   }
 }

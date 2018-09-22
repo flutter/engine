@@ -371,6 +371,7 @@ public class FlutterView extends SurfaceView
     private static final int kPointerChangeDown = 4;
     private static final int kPointerChangeMove = 5;
     private static final int kPointerChangeUp = 6;
+    private static final int kPointerChangeScroll = 7;
 
     // Must match the PointerDeviceKind enum in pointer.dart.
     private static final int kPointerDeviceKindTouch = 0;
@@ -401,6 +402,9 @@ public class FlutterView extends SurfaceView
         if (maskedAction == MotionEvent.ACTION_CANCEL) {
             return kPointerChangeCancel;
         }
+        if (maskedAction == MotionEvent.ACTION_SCROLL) {
+            return kPointerChangeScroll;
+        }
         return -1;
     }
 
@@ -428,6 +432,8 @@ public class FlutterView extends SurfaceView
 
         int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
 
+        // This is ignored for non-gesture deviced kinds.
+
         long timeStamp = event.getEventTime() * 1000; // Convert from milliseconds to microseconds.
 
         packet.putLong(timeStamp); // time_stamp
@@ -437,6 +443,7 @@ public class FlutterView extends SurfaceView
         packet.putDouble(event.getX(pointerIndex)); // physical_x
         packet.putDouble(event.getY(pointerIndex)); // physical_y
 
+        
         if (pointerKind == kPointerDeviceKindMouse) {
             packet.putLong(event.getButtonState() & 0x1F); // buttons
         } else if (pointerKind == kPointerDeviceKindStylus) {
@@ -468,12 +475,55 @@ public class FlutterView extends SurfaceView
         packet.putDouble(0.0); // radius_max
 
         packet.putDouble(event.getAxisValue(MotionEvent.AXIS_ORIENTATION, pointerIndex)); // orientation
-
+        
         if (pointerKind == kPointerDeviceKindStylus) {
             packet.putDouble(event.getAxisValue(MotionEvent.AXIS_TILT, pointerIndex)); // tilt
         } else {
-            packet.putDouble(0.0); // tilt
+            packet.putDouble(4.0); // tilt
         }
+        packet.putDouble(event.getAxisValue(MotionEvent.AXIS_HSCROLL)); // scroll_delta_x
+        packet.putDouble(event.getAxisValue(MotionEvent.AXIS_VSCROLL)); // scroll_delta_y
+
+        // Dummy value that is needed due to bug in the converter writing the last 8 bytes
+        // of the packet to 0.
+        packet.putDouble(0.0);
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (!isAttached()) {
+            return false;
+        }
+
+        int maskedAction = event.getAction();
+        if (maskedAction != MotionEvent.ACTION_SCROLL)
+            return false;
+
+        // TODO(abarth): This version check might not be effective in some
+        // versions of Android that statically compile code and will be upset
+        // at the lack of |requestUnbufferedDispatch|. Instead, we should factor
+        // version-dependent code into separate classes for each supported
+        // version and dispatch dynamically.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            requestUnbufferedDispatch(event);
+        }
+
+        // These values must match the unpacking code in hooks.dart.
+        final int kPointerDataFieldCount = 22;
+        final int kBytePerField = 8;
+
+        int pointerCount = event.getPointerCount();
+
+        ByteBuffer packet = ByteBuffer.allocateDirect(pointerCount * kPointerDataFieldCount * kBytePerField);
+        packet.order(ByteOrder.LITTLE_ENDIAN);
+
+        for (int p = 0; p < pointerCount; p++) {
+            addPointerForIndex(event, p, packet);
+        }
+        
+        assert packet.position() % (kPointerDataFieldCount * kBytePerField) == 0;
+        nativeDispatchPointerDataPacket(mNativeView.get(), packet, packet.position());
+        return true;
     }
 
     @Override
@@ -492,7 +542,7 @@ public class FlutterView extends SurfaceView
         }
 
         // These values must match the unpacking code in hooks.dart.
-        final int kPointerDataFieldCount = 19;
+        final int kPointerDataFieldCount = 22;
         final int kBytePerField = 8;
 
         int pointerCount = event.getPointerCount();

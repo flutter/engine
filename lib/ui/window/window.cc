@@ -238,6 +238,7 @@ void Window::DispatchPointerDataPacket(const PointerDataPacket& packet) {
   Dart_Handle data_handle = ToByteData(packet.data());
   if (Dart_IsError(data_handle))
     return;
+  
   DartInvokeField(library_.value(), "_dispatchPointerDataPacket",
                   {data_handle});
 }
