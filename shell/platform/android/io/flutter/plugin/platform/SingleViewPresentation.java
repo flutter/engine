@@ -306,6 +306,7 @@ class SingleViewPresentation extends Presentation {
                 return;
             }
             View view = (View) args[0];
+            view.clearAnimation();
             mFakeWindowRootView.removeView(view);
         }
 
