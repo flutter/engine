@@ -143,7 +143,7 @@ static std::string CreateThreadLabel() {
        config = shell::RunConfiguration::InferFromSettings(_shell->GetSettings())]() mutable {
         if (engine) {
           auto result = engine->Run(std::move(config));
-          if (!result) {
+          if (result == shell::Engine::RunStatus::Failure) {
             FML_LOG(ERROR) << "Could not launch the engine with configuration.";
           }
         }
