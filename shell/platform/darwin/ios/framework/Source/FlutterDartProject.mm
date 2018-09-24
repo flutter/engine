@@ -99,6 +99,10 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     NSString* assetsPath = [bundle pathForResource:assetsName ofType:@""];
 
     if (assetsPath.length == 0) {
+      assetsPath = [mainBundle pathForResource:assetsName ofType:@""];
+    }
+
+    if (assetsPath.length == 0) {
       NSLog(@"Failed to find assets path for \"%@\"", assetsName);
     } else {
       settings.assets_path = assetsPath.UTF8String;
