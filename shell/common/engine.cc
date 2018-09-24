@@ -153,6 +153,13 @@ bool Engine::PrepareAndLaunchIsolate(RunConfiguration configuration) {
     return false;
   }
 
+  // This can happen on iOS after a plugin shows a native window and returns to
+  // the Flutter ViewController.
+  if (isolate->GetPhase() == blink::DartIsolate::Phase::Running) {
+    FML_DLOG(WARNING) << "Isolate was already running!";
+    return true;
+  }
+
   if (!isolate_configuration->PrepareIsolate(*isolate)) {
     FML_LOG(ERROR) << "Could not prepare to run the isolate.";
     return false;
