@@ -234,6 +234,7 @@ void Paragraph::SetText(std::vector<uint16_t> text, StyledRuns runs) {
 bool Paragraph::ComputeLineBreaks() {
   line_ranges_.clear();
   line_widths_.clear();
+  max_intrinsic_width_ = 0;
 
   std::vector<size_t> newline_positions;
   for (size_t i = 0; i < text_.size(); ++i) {
@@ -268,6 +269,7 @@ bool Paragraph::ComputeLineBreaks() {
     breaker_.setText();
 
     // Add the runs that include this line to the LineBreaker.
+    double block_total_width = 0;
     while (run_index < runs_.size()) {
       StyledRuns::Run run = runs_.GetRun(run_index);
       if (run.start >= block_end)
@@ -290,12 +292,16 @@ bool Paragraph::ComputeLineBreaks() {
       size_t run_start = std::max(run.start, block_start) - block_start;
       size_t run_end = std::min(run.end, block_end) - block_start;
       bool isRtl = (paragraph_style_.text_direction == TextDirection::rtl);
-      breaker_.addStyleRun(&paint, collection, font, run_start, run_end, isRtl);
+      double run_width = breaker_.addStyleRun(&paint, collection, font,
+                                              run_start, run_end, isRtl);
+      block_total_width += run_width;
 
       if (run.end > block_end)
         break;
       run_index++;
     }
+
+    max_intrinsic_width_ = std::max(max_intrinsic_width_, block_total_width);
 
     size_t breaks_count = breaker_.computeBreaks();
     const int* breaks = breaker_.getBreaks();
@@ -434,6 +440,7 @@ void Paragraph::Layout(double width, bool force) {
 
   records_.clear();
   line_heights_.clear();
+  line_baselines_.clear();
   glyph_lines_.clear();
   code_unit_runs_.clear();
 
@@ -767,17 +774,6 @@ void Paragraph::Layout(double width, bool force) {
     }
   }
 
-  max_intrinsic_width_ = 0;
-  double line_block_width = 0;
-  for (size_t i = 0; i < line_widths_.size(); ++i) {
-    line_block_width += line_widths_[i];
-    if (line_ranges_[i].hard_break) {
-      max_intrinsic_width_ = std::max(line_block_width, max_intrinsic_width_);
-      line_block_width = 0;
-    }
-  }
-  max_intrinsic_width_ = std::max(line_block_width, max_intrinsic_width_);
-
   if (paragraph_style_.max_lines == 1 ||
       (paragraph_style_.unlimited_lines() && paragraph_style_.ellipsized())) {
     min_intrinsic_width_ = max_intrinsic_width_;
@@ -870,6 +866,9 @@ Paragraph::GetMinikinFontCollectionForStyle(const TextStyle& style) {
 sk_sp<SkTypeface> Paragraph::GetDefaultSkiaTypeface(const TextStyle& style) {
   std::shared_ptr<minikin::FontCollection> collection =
       GetMinikinFontCollectionForStyle(style);
+  if (!collection) {
+    return nullptr;
+  }
   minikin::FakedFont faked_font =
       collection->baseFontFaked(GetMinikinFontStyle(style));
   return static_cast<FontSkia*>(faked_font.font)->GetSkTypeface();

@@ -38,15 +38,16 @@ class DartVM : public fml::RefCountedThreadSafe<DartVM> {
 
   static bool IsRunningPrecompiledCode();
 
-  const Settings& GetSettings() const;
+  static bool IsKernelMapping(const fml::FileMapping* mapping);
 
-  const fml::Mapping& GetPlatformKernel() const;
+  const Settings& GetSettings() const;
 
   const DartSnapshot& GetVMSnapshot() const;
 
   IsolateNameServer* GetIsolateNameServer();
 
   fml::RefPtr<DartSnapshot> GetIsolateSnapshot() const;
+
   fml::RefPtr<DartSnapshot> GetSharedSnapshot() const;
 
   fml::WeakPtr<DartVM> GetWeakPtr();
@@ -59,7 +60,6 @@ class DartVM : public fml::RefCountedThreadSafe<DartVM> {
   IsolateNameServer isolate_name_server_;
   const fml::RefPtr<DartSnapshot> isolate_snapshot_;
   const fml::RefPtr<DartSnapshot> shared_snapshot_;
-  std::unique_ptr<fml::Mapping> platform_kernel_mapping_;
   ServiceProtocol service_protocol_;
   fml::WeakPtrFactory<DartVM> weak_factory_;
 

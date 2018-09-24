@@ -5,16 +5,18 @@
 package io.flutter.plugin.platform;
 
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
-import io.flutter.view.FlutterView;
 import io.flutter.view.TextureRegistry;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +41,14 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
 
     private final PlatformViewRegistryImpl mRegistry;
 
-    private FlutterView mFlutterView;
+    // The context of the Activity or Fragment hosting the render target for the Flutter engine.
+    private Context mContext;
+
+    // The texture registry maintaining the textures into which the embedded views will be rendered.
+    private TextureRegistry mTextureRegistry;
+
+    // The messenger used to communicate with the framework over the platform views channel.
+    private BinaryMessenger mMessenger;
 
     private final HashMap<Integer, VirtualDisplayController> vdControllers;
 
@@ -48,20 +57,41 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         vdControllers = new HashMap<>();
     }
 
-    public void attachFlutterView(FlutterView view) {
-        if (mFlutterView != null)
+    /**
+     * Attaches this platform views controller to its input and output channels.
+     *
+     * @param context The base context that will be passed to embedded views created by this controller.
+     *                This should be the context of the Activity hosting the Flutter application.
+     * @param textureRegistry The texture registry which provides the output textures into which the embedded views
+     *                        will be rendered.
+     * @param messenger The Flutter application on the other side of this messenger drives this platform views controller.
+     */
+    public void attach(Context context, TextureRegistry textureRegistry, BinaryMessenger messenger) {
+        if (mContext != null) {
             throw new AssertionError(
-                    "A PlatformViewsController can only be attached to a single FlutterView.\n" +
-                    "attachFlutterView was called while a FlutterView was already attached."
+                    "A PlatformViewsController can only be attached to a single output target.\n" +
+                            "attach was called while the PlatformViewsController was already attached."
             );
-        mFlutterView = view;
-        MethodChannel channel = new MethodChannel(view, CHANNEL_NAME, StandardMethodCodec.INSTANCE);
+        }
+        mContext = context;
+        mTextureRegistry = textureRegistry;
+        mMessenger = messenger;
+        MethodChannel channel = new MethodChannel(messenger, CHANNEL_NAME, StandardMethodCodec.INSTANCE);
         channel.setMethodCallHandler(this);
     }
 
-    public void detachFlutterView() {
-        mFlutterView.setMessageHandler(CHANNEL_NAME, null);
-        mFlutterView = null;
+    /**
+     * Detaches this platform views controller.
+     *
+     * This is typically called when a Flutter applications moves to run in the background, or is destroyed.
+     * After calling this the platform views controller will no longer listen to it's previous messenger, and will
+     * not maintain references to the texture registry, context, and messenger passed to the previous attach call.
+     */
+    public void detach() {
+        mMessenger.setMessageHandler(CHANNEL_NAME, null);
+        mMessenger = null;
+        mContext = null;
+        mTextureRegistry = null;
     }
 
     public PlatformViewRegistry getRegistry() {
@@ -96,17 +126,30 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
             case "touch":
                 onTouch(call, result);
                 return;
+            case "setDirection":
+                setDirection(call, result);
+                return;
         }
         result.notImplemented();
     }
 
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     private void createPlatformView(MethodCall call, MethodChannel.Result result) {
         Map<String, Object> args = call.arguments();
         int id = (int) args.get("id");
         String viewType = (String) args.get("viewType");
         double logicalWidth = (double) args.get("width");
         double logicalHeight = (double) args.get("height");
+        int direction = (int) args.get("direction");
+
+        if (!validateDirection(direction)) {
+            result.error(
+                    "error",
+                    "Trying to create a view with unknown direction value: " + direction + "(view id: " + id + ")",
+                    null
+            );
+            return;
+        }
 
         if (vdControllers.containsKey(id)) {
             result.error(
@@ -127,14 +170,20 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
             return;
         }
 
-        TextureRegistry.SurfaceTextureEntry textureEntry = mFlutterView.createSurfaceTexture();
+        Object createParams = null;
+        if (args.containsKey("params")) {
+            createParams = viewFactory.getCreateArgsCodec().decodeMessage(ByteBuffer.wrap((byte[]) args.get("params")));
+        }
+
+        TextureRegistry.SurfaceTextureEntry textureEntry = mTextureRegistry.createSurfaceTexture();
         VirtualDisplayController vdController = VirtualDisplayController.create(
-                mFlutterView.getContext(),
+                mContext,
                 viewFactory,
                 textureEntry.surfaceTexture(),
                 toPhysicalPixels(logicalWidth),
                 toPhysicalPixels(logicalHeight),
-                id
+                id,
+                createParams
         );
 
         if (vdController == null) {
@@ -147,6 +196,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         }
 
         vdControllers.put(id, vdController);
+        vdController.getView().setLayoutDirection(direction);
 
         // TODO(amirh): copy accessibility nodes to the FlutterView's accessibility tree.
 
@@ -171,7 +221,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         result.success(null);
     }
 
-    private void resizePlatformView(MethodCall call, MethodChannel.Result result) {
+    private void resizePlatformView(MethodCall call, final MethodChannel.Result result) {
         Map<String, Object> args = call.arguments();
         int id = (int) args.get("id");
         double width = (double) args.get("width");
@@ -188,19 +238,24 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         }
         vdController.resize(
                 toPhysicalPixels(width),
-                toPhysicalPixels(height)
+                toPhysicalPixels(height),
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        result.success(null);
+                    }
+                }
         );
-        result.success(null);
     }
 
     private void onTouch(MethodCall call, MethodChannel.Result result) {
         List<Object> args = call.arguments();
 
-        float density = mFlutterView.getContext().getResources().getDisplayMetrics().density;
+        float density = mContext.getResources().getDisplayMetrics().density;
 
         int id = (int) args.get(0);
-        int downTime = (int) args.get(1);
-        int eventTime = (int) args.get(2);
+        Number downTime = (Number) args.get(1);
+        Number eventTime = (Number) args.get(2);
         int action = (int) args.get(3);
         int pointerCount = (int) args.get(4);
         PointerProperties[] pointerProperties =
@@ -228,8 +283,8 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
         }
 
         MotionEvent event = MotionEvent.obtain(
-                downTime,
-                eventTime,
+                downTime.longValue(),
+                eventTime.longValue(),
                 action,
                 pointerCount,
                 pointerProperties,
@@ -246,6 +301,39 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
 
         view.dispatchTouchEvent(event);
         result.success(null);
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private void setDirection(MethodCall call, MethodChannel.Result result) {
+        Map<String, Object> args = call.arguments();
+        int id = (int) args.get("id");
+        int direction = (int) args.get("direction");
+
+        if (!validateDirection(direction)) {
+            result.error(
+                    "error",
+                    "Trying to set unknown direction value: " + direction + "(view id: " + id + ")",
+                    null
+            );
+            return;
+        }
+
+        View view = vdControllers.get(id).getView();
+        if (view == null) {
+            result.error(
+                    "error",
+                    "Sending touch to an unknown view with id: " + id,
+                    null
+            );
+            return;
+        }
+
+        view.setLayoutDirection(direction);
+        result.success(null);
+    }
+
+    private static boolean validateDirection(int direction) {
+        return direction == View.LAYOUT_DIRECTION_LTR || direction == View.LAYOUT_DIRECTION_RTL;
     }
 
     @SuppressWarnings("unchecked")
@@ -294,7 +382,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
     }
 
     private int toPhysicalPixels(double logicalPixels) {
-        float density = mFlutterView.getContext().getResources().getDisplayMetrics().density;
+        float density = mContext.getResources().getDisplayMetrics().density;
         return (int) Math.round(logicalPixels * density);
     }
 

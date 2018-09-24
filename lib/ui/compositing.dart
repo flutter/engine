@@ -15,6 +15,7 @@ class Scene extends NativeFieldWrapperClass2 {
   /// or extended directly.
   ///
   /// To create a Scene object, use a [SceneBuilder].
+  @pragma('vm:entry-point')
   Scene._();
 
 
@@ -45,6 +46,7 @@ class Scene extends NativeFieldWrapperClass2 {
 /// it to the scene using [addPicture].
 class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Creates an empty [SceneBuilder] object.
+  @pragma('vm:entry-point')
   SceneBuilder() { _constructor(); }
   void _constructor() native 'SceneBuilder_constructor';
 
@@ -77,7 +79,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
                      double right,
                      double top,
                      double bottom,
-                     int clipMode) native 'SceneBuilder_pushClipRect';
+                     int clipBehavior) native 'SceneBuilder_pushClipRect';
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
   ///
@@ -90,7 +92,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(clipBehavior != Clip.none);
     _pushClipRRect(rrect._value, clipBehavior.index);
   }
-  void _pushClipRRect(Float32List rrect, int clipMode) native 'SceneBuilder_pushClipRRect';
+  void _pushClipRRect(Float32List rrect, int clipBehavior) native 'SceneBuilder_pushClipRRect';
 
   /// Pushes a path clip operation onto the operation stack.
   ///
@@ -103,7 +105,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(clipBehavior != Clip.none);
     _pushClipPath(path, clipBehavior.index);
   }
-  void _pushClipPath(Path path, int clipMode) native 'SceneBuilder_pushClipPath';
+  void _pushClipPath(Path path, int clipBehavior) native 'SceneBuilder_pushClipPath';
 
   /// Pushes an opacity operation onto the operation stack.
   ///
@@ -171,7 +173,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   void pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clipBehavior = defaultClipBehavior}) {
     _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipBehavior.index);
   }
-  void _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipMode) native
+  void _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipBehavior) native
     'SceneBuilder_pushPhysicalShape';
 
   /// Ends the effect of the most recently pushed operation.

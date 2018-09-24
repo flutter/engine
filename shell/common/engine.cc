@@ -47,7 +47,6 @@ Engine::Engine(Delegate& delegate,
     : delegate_(delegate),
       settings_(std::move(settings)),
       animator_(std::move(animator)),
-      load_script_error_(tonic::kNoError),
       activity_running_(false),
       have_surface_(false),
       weak_factory_(this) {
@@ -203,10 +202,6 @@ bool Engine::UIIsolateHasLivePorts() {
 
 tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
   return runtime_controller_->GetLastError();
-}
-
-tonic::DartErrorHandleType Engine::GetLoadScriptError() {
-  return load_script_error_;
 }
 
 void Engine::OnOutputSurfaceCreated() {
@@ -385,8 +380,7 @@ void Engine::Render(std::unique_ptr<flow::LayerTree> layer_tree) {
 
 void Engine::UpdateSemantics(blink::SemanticsNodeUpdates update,
                              blink::CustomAccessibilityActionUpdates actions) {
-  delegate_.OnEngineUpdateSemantics(*this, std::move(update),
-                                    std::move(actions));
+  delegate_.OnEngineUpdateSemantics(std::move(update), std::move(actions));
 }
 
 void Engine::HandlePlatformMessage(
@@ -394,7 +388,7 @@ void Engine::HandlePlatformMessage(
   if (message->channel() == kAssetChannel) {
     HandleAssetPlatformMessage(std::move(message));
   } else {
-    delegate_.OnEngineHandlePlatformMessage(*this, std::move(message));
+    delegate_.OnEngineHandlePlatformMessage(std::move(message));
   }
 }
 

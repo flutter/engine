@@ -66,6 +66,12 @@ bool AndroidSurfaceVulkan::ResourceContextMakeCurrent() {
 }
 
 // |shell::AndroidSurface|
+bool AndroidSurfaceVulkan::ResourceContextClearCurrent() {
+  FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
+  return false;
+}
+
+// |shell::AndroidSurface|
 bool AndroidSurfaceVulkan::SetNativeWindow(
     fml::RefPtr<AndroidNativeWindow> window) {
   native_window_ = std::move(window);

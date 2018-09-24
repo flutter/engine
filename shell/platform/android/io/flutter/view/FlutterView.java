@@ -12,6 +12,7 @@ import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.database.ContentObserver;
+import android.graphics.PixelFormat;
 import android.provider.Settings;
 import android.net.Uri;
 import android.os.Handler;
@@ -69,8 +70,6 @@ public class FlutterView extends SurfaceView
 
     private static final String TAG = "FlutterView";
 
-    private static final String ACTION_DISCOVER = "io.flutter.view.DISCOVER";
-
     static final class ViewportMetrics {
         float devicePixelRatio = 1.0f;
         int physicalWidth = 0;
@@ -96,7 +95,6 @@ public class FlutterView extends SurfaceView
     private final BasicMessageChannel<String> mFlutterLifecycleChannel;
     private final BasicMessageChannel<Object> mFlutterSystemChannel;
     private final BasicMessageChannel<Object> mFlutterSettingsChannel;
-    private final BroadcastReceiver mDiscoveryReceiver;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private final List<FirstFrameListener> mFirstFrameListeners;
     private final AtomicLong nextTextureId = new AtomicLong(0L);
@@ -131,20 +129,11 @@ public class FlutterView extends SurfaceView
         }
         mNativeView.attachViewAndActivity(this, activity);
 
-        int color = 0xFF000000;
-        TypedValue typedValue = new TypedValue();
-        context.getTheme().resolveAttribute(android.R.attr.colorBackground, typedValue, true);
-        if (typedValue.type >= TypedValue.TYPE_FIRST_COLOR_INT && typedValue.type <= TypedValue.TYPE_LAST_COLOR_INT) {
-            color = typedValue.data;
-        }
-        // TODO(abarth): Consider letting the developer override this color.
-        final int backgroundColor = color;
-
         mSurfaceCallback = new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 assertAttached();
-                nativeSurfaceCreated(mNativeView.get(), holder.getSurface(), backgroundColor);
+                nativeSurfaceCreated(mNativeView.get(), holder.getSurface());
             }
 
             @Override
@@ -183,13 +172,6 @@ public class FlutterView extends SurfaceView
 
         setLocale(getResources().getConfiguration().locale);
         setUserSettings();
-
-        if ((context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
-            mDiscoveryReceiver = new DiscoveryReceiver();
-            context.registerReceiver(mDiscoveryReceiver, new IntentFilter(ACTION_DISCOVER));
-        } else {
-            mDiscoveryReceiver = null;
-        }
     }
 
     private void encodeKeyEvent(KeyEvent event, Map<String, Object> message) {
@@ -295,6 +277,26 @@ public class FlutterView extends SurfaceView
         mFirstFrameListeners.remove(listener);
     }
 
+    /**
+     * Updates this to support rendering as a transparent {@link SurfaceView}.
+     *
+     * Sets it on top of its window. The background color still needs to be
+     * controlled from within the Flutter UI itself.
+     */
+    public void enableTransparentBackground() {
+        setZOrderOnTop(true);
+        getHolder().setFormat(PixelFormat.TRANSPARENT);
+    }
+
+    /**
+     * Reverts this back to the {@link SurfaceView} defaults, at the back of its
+     * window and opaque.
+     */
+    public void disableTransparentBackground() {
+        setZOrderOnTop(false);
+        getHolder().setFormat(PixelFormat.OPAQUE);
+    }
+
     public void setInitialRoute(String route) {
         mFlutterNavigationChannel.invokeMethod("setInitialRoute", route);
     }
@@ -332,9 +334,6 @@ public class FlutterView extends SurfaceView
     public FlutterNativeView detach() {
         if (!isAttached())
             return null;
-        if (mDiscoveryReceiver != null) {
-            getContext().unregisterReceiver(mDiscoveryReceiver);
-        }
         getHolder().removeCallback(mSurfaceCallback);
         mNativeView.detach();
 
@@ -346,10 +345,6 @@ public class FlutterView extends SurfaceView
     public void destroy() {
         if (!isAttached())
             return;
-
-        if (mDiscoveryReceiver != null) {
-            getContext().unregisterReceiver(mDiscoveryReceiver);
-        }
 
         getHolder().removeCallback(mSurfaceCallback);
 
@@ -559,17 +554,67 @@ public class FlutterView extends SurfaceView
         super.onSizeChanged(width, height, oldWidth, oldHeight);
     }
 
+    // TODO(garyq): Add support for notch cutout API
+    // Decide if we want to zero the padding of the sides. When in Landscape orientation,
+    // android may decide to place the software navigation bars on the side. When the nav
+    // bar is hidden, the reported insets should be removed to prevent extra useless space
+    // on the sides.
+    enum ZeroSides { NONE, LEFT, RIGHT, BOTH }
+    ZeroSides calculateShouldZeroSides() {
+        // We get both orientation and rotation because rotation is all 4
+        // rotations relative to default rotation while orientation is portrait
+        // or landscape. By combining both, we can obtain a more precise measure
+        // of the rotation.
+        Activity activity = (Activity)getContext();
+        int orientation = activity.getResources().getConfiguration().orientation;
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            if (rotation == Surface.ROTATION_90) {
+                return ZeroSides.RIGHT;
+            }
+            else if (rotation == Surface.ROTATION_270) {
+                // In android API >= 23, the nav bar always appears on the "bottom" (USB) side.
+                return Build.VERSION.SDK_INT >= 23 ? ZeroSides.LEFT : ZeroSides.RIGHT;
+            }
+            // Ambiguous orientation due to landscape left/right default. Zero both sides.
+            else if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180) {
+                return ZeroSides.BOTH;
+            }
+        }
+        // Square orientation deprecated in API 16, we will not check for it and return false
+        // to be safe and not remove any unique padding for the devices that do use it.
+        return ZeroSides.NONE;
+    }
+
+    // This callback is not present in API < 20, which means lower API devices will see
+    // the wider than expected padding when the status and navigation bars are hidden.
     @Override
     public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
-        // Status bar, left/right system insets partially obscure content (padding).
-        mMetrics.physicalPaddingTop = insets.getSystemWindowInsetTop();
-        mMetrics.physicalPaddingRight = insets.getSystemWindowInsetRight();
+        boolean statusBarHidden =
+            (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
+        boolean navigationBarHidden =
+            (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) != 0;
+
+        // We zero the left and/or right sides to prevent the padding the
+        // navigation bar would have caused.
+        ZeroSides zeroSides = ZeroSides.NONE;
+        if (navigationBarHidden) {
+            zeroSides = calculateShouldZeroSides();
+        }
+
+        // The padding on top should be removed when the statusbar is hidden.
+        mMetrics.physicalPaddingTop = statusBarHidden ? 0 : insets.getSystemWindowInsetTop();
+        mMetrics.physicalPaddingRight =
+            zeroSides == ZeroSides.RIGHT || zeroSides == ZeroSides.BOTH ? 0 : insets.getSystemWindowInsetRight();
         mMetrics.physicalPaddingBottom = 0;
-        mMetrics.physicalPaddingLeft = insets.getSystemWindowInsetLeft();
+        mMetrics.physicalPaddingLeft =
+            zeroSides == ZeroSides.LEFT || zeroSides == ZeroSides.BOTH ? 0 : insets.getSystemWindowInsetLeft();
 
         // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
         mMetrics.physicalViewInsetTop = 0;
         mMetrics.physicalViewInsetRight = 0;
+        // TODO(garyq): Detect and distinguish between bottom nav padding and keyboard padding.
         mMetrics.physicalViewInsetBottom = insets.getSystemWindowInsetBottom();
         mMetrics.physicalViewInsetLeft = 0;
         updateViewportMetrics();
@@ -623,31 +668,33 @@ public class FlutterView extends SurfaceView
 
     /**
      * @deprecated
-     * Please use runFromBundle with `FlutterRunArguments`. Parameter
-     * `snapshotOverride` has no effect.
+     * Please use runFromBundle with `FlutterRunArguments`.
      */
-    public void runFromBundle(String bundlePath, String snapshotOverride) {
-        runFromBundle(bundlePath, snapshotOverride, "main", false);
+    @Deprecated
+    public void runFromBundle(String bundlePath, String defaultPath) {
+        runFromBundle(bundlePath, defaultPath, "main", false);
     }
 
     /**
      * @deprecated
-     * Please use runFromBundle with `FlutterRunArguments`. Parameter
-     * `snapshotOverride` has no effect.
+     * Please use runFromBundle with `FlutterRunArguments`.
      */
-    public void runFromBundle(String bundlePath, String snapshotOverride, String entrypoint) {
-        runFromBundle(bundlePath, snapshotOverride, entrypoint, false);
+    @Deprecated
+    public void runFromBundle(String bundlePath, String defaultPath, String entrypoint) {
+        runFromBundle(bundlePath, defaultPath, entrypoint, false);
     }
 
     /**
      * @deprecated
-     * Please use runFromBundle with `FlutterRunArguments`. Parameters
-     * `snapshotOverride` and `reuseRuntimeController` have no effect.
+     * Please use runFromBundle with `FlutterRunArguments`.
+     * Parameter `reuseRuntimeController` has no effect.
      */
-    public void runFromBundle(String bundlePath, String snapshotOverride, String entrypoint, boolean reuseRuntimeController) {
+    @Deprecated
+    public void runFromBundle(String bundlePath, String defaultPath, String entrypoint, boolean reuseRuntimeController) {
         FlutterRunArguments args = new FlutterRunArguments();
         args.bundlePath = bundlePath;
         args.entrypoint = entrypoint;
+        args.defaultPath = defaultPath;
         runFromBundle(args);
     }
 
@@ -661,8 +708,7 @@ public class FlutterView extends SurfaceView
         return nativeGetBitmap(mNativeView.get());
     }
 
-    private static native void nativeSurfaceCreated(long nativePlatformViewAndroid, Surface surface,
-            int backgroundColor);
+    private static native void nativeSurfaceCreated(long nativePlatformViewAndroid, Surface surface);
 
     private static native void nativeSurfaceChanged(long nativePlatformViewAndroid, int width, int height);
 
@@ -957,28 +1003,6 @@ public class FlutterView extends SurfaceView
     }
 
     /**
-     * Broadcast receiver used to discover active Flutter instances.
-     *
-     * This is used by the `flutter` tool to find the observatory ports for all the
-     * active Flutter views. We dump the data to the logs and the tool scrapes the
-     * log lines for the data.
-     */
-    private class DiscoveryReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            URI observatoryUri = URI.create(FlutterNativeView.getObservatoryUri());
-            JSONObject discover = new JSONObject();
-            try {
-                discover.put("id", getContext().getPackageName());
-                discover.put("observatoryPort", observatoryUri.getPort());
-                Log.i(TAG, "DISCOVER: " + discover); // The tool looks for this data. See
-                                                     // android_device.dart.
-            } catch (JSONException e) {
-            }
-        }
-    }
-
-    /**
      * Listener will be called on the Android UI thread once when Flutter renders
      * the first frame.
      */
@@ -1007,9 +1031,19 @@ public class FlutterView extends SurfaceView
             this.surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
                 @Override
                 public void onFrameAvailable(SurfaceTexture texture) {
+                    if (released) {
+                        // Even though we make sure to unregister the callback before releasing, as of Android O
+                        // SurfaceTexture has a data race when accessing the callback, so the callback may
+                        // still be called by a stale reference after released==true and mNativeView==null.
+                        return;
+                    }
                     nativeMarkTextureFrameAvailable(mNativeView.get(), SurfaceTextureRegistryEntry.this.id);
                 }
-            });
+            },
+            // The callback relies on being executed on the UI thread (unsynchronised read of mNativeView
+            // and also the engine code check for platform thread in Shell::OnPlatformViewMarkTextureFrameAvailable),
+            // so we explicitly pass a Handler for the current thread.
+            new Handler());
         }
 
         @Override
@@ -1029,6 +1063,9 @@ public class FlutterView extends SurfaceView
             }
             released = true;
             nativeUnregisterTexture(mNativeView.get(), id);
+            // Otherwise onFrameAvailableListener might be called after mNativeView==null
+            // (https://github.com/flutter/flutter/issues/20951). See also the check in onFrameAvailable.
+            surfaceTexture.setOnFrameAvailableListener(null);
             surfaceTexture.release();
         }
     }

@@ -4,8 +4,6 @@
 
 #include "flutter/flow/layers/backdrop_filter_layer.h"
 
-#include "third_party/skia/include/core/SkImageFilter.h"
-
 namespace flow {
 
 BackdropFilterLayer::BackdropFilterLayer() = default;
@@ -16,8 +14,9 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "BackdropFilterLayer::Paint");
   FML_DCHECK(needs_painting());
 
-  Layer::AutoSaveLayer(context, SkCanvas::SaveLayerRec{&paint_bounds(), nullptr,
-                                                       filter_.get(), 0});
+  Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+      context,
+      SkCanvas::SaveLayerRec{&paint_bounds(), nullptr, filter_.get(), 0});
   PaintChildren(context);
 }
 

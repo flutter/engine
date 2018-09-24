@@ -40,6 +40,11 @@ class _FlutterFrontendCompiler implements frontend.CompilerInterface{
   }
 
   @override
+  Future<Null> rejectLastDelta() async {
+    return _compiler.rejectLastDelta();
+  }
+
+  @override
   void invalidate(Uri uri) {
     _compiler.invalidate(uri);
   }
@@ -73,7 +78,7 @@ class _FlutterFrontendCompiler implements frontend.CompilerInterface{
 /// version for testing.
 Future<int> starter(
     List<String> args, {
-      _FlutterFrontendCompiler compiler,
+      frontend.CompilerInterface compiler,
       Stream<List<int>> input,
       StringSink output,
     }) async {
@@ -121,11 +126,10 @@ Future<int> starter(
   compiler ??= new _FlutterFrontendCompiler(output, trackWidgetCreation: options['track-widget-creation']);
 
   if (options.rest.isNotEmpty) {
-    exit(await compiler.compile(options.rest[0], options)
-        ? 0
-        : 254);
+    return await compiler.compile(options.rest[0], options) ? 0 : 254;
   }
 
-  frontend.listenAndCompile(compiler, input ?? stdin, options, () { exit(0); } );
-  return 0;
+  final Completer<int> completer = new Completer<int>();
+  frontend.listenAndCompile(compiler, input ?? stdin, options, completer);
+  return completer.future;
 }

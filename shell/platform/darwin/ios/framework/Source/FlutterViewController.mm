@@ -49,7 +49,7 @@
   // We keep a separate reference to this and create it ahead of time because we want to be able to
   // setup a shell along with its platform view before the view has to appear.
   fml::scoped_nsobject<FlutterView> _flutterView;
-  fml::scoped_nsobject<UIView> _launchView;
+  fml::scoped_nsobject<UIView> _splashScreenView;
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
   blink::ViewportMetrics _viewportMetrics;
@@ -296,6 +296,11 @@
                object:nil];
 
   [center addObserver:self
+             selector:@selector(onAccessibilityStatusChanged:)
+                 name:UIAccessibilityBoldTextStatusDidChangeNotification
+               object:nil];
+
+  [center addObserver:self
              selector:@selector(onMemoryWarning:)
                  name:UIApplicationDidReceiveMemoryWarningNotification
                object:nil];
@@ -317,47 +322,46 @@
   self.view.multipleTouchEnabled = YES;
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
-  [self installLaunchViewIfNecessary];
+  [self installSplashScreenViewIfNecessary];
 }
 
 #pragma mark - Managing launch views
 
-- (void)installLaunchViewIfNecessary {
+- (void)installSplashScreenViewIfNecessary {
   // Show the launch screen view again on top of the FlutterView if available.
   // This launch screen view will be removed once the first Flutter frame is rendered.
-  [_launchView.get() removeFromSuperview];
-  _launchView.reset();
-  NSString* launchStoryboardName =
-      [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UILaunchStoryboardName"];
-  if (launchStoryboardName && !self.isBeingPresented && !self.isMovingToParentViewController) {
-    UIViewController* launchViewController =
-        [[UIStoryboard storyboardWithName:launchStoryboardName bundle:nil]
-            instantiateInitialViewController];
-    _launchView.reset([launchViewController.view retain]);
-    _launchView.get().frame = self.view.bounds;
-    _launchView.get().autoresizingMask =
-        UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.view addSubview:_launchView.get()];
+  if (self.isBeingPresented || self.isMovingToParentViewController) {
+    [_splashScreenView.get() removeFromSuperview];
+    _splashScreenView.reset();
+    return;
   }
+
+  // Use the property getter to initialize the default value.
+  UIView* splashScreenView = self.splashScreenView;
+  if (splashScreenView == nil) {
+    return;
+  }
+  splashScreenView.frame = self.view.bounds;
+  [self.view addSubview:splashScreenView];
 }
 
-- (void)removeLaunchViewIfPresent {
-  if (!_launchView) {
+- (void)removeSplashScreenViewIfPresent {
+  if (!_splashScreenView) {
     return;
   }
 
   [UIView animateWithDuration:0.2
       animations:^{
-        _launchView.get().alpha = 0;
+        _splashScreenView.get().alpha = 0;
       }
       completion:^(BOOL finished) {
-        [_launchView.get() removeFromSuperview];
-        _launchView.reset();
+        [_splashScreenView.get() removeFromSuperview];
+        _splashScreenView.reset();
       }];
 }
 
-- (void)installLaunchViewCallback {
-  if (!_shell || !_launchView) {
+- (void)installSplashScreenViewCallback {
+  if (!_shell || !_splashScreenView) {
     return;
   }
   auto weak_platform_view = _shell->GetPlatformView();
@@ -376,10 +380,57 @@
           // association. Thus, we are not convinced that the unsafe unretained weak object is in
           // fact alive.
           if (weak_platform_view) {
-            [weak_flutter_view_controller removeLaunchViewIfPresent];
+            [weak_flutter_view_controller removeSplashScreenViewIfPresent];
           }
         });
       });
+}
+
+#pragma mark - Properties
+
+- (UIView*)splashScreenView {
+  if (_splashScreenView == nullptr) {
+    NSString* launchscreenName =
+        [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UILaunchStoryboardName"];
+    if (launchscreenName == nil) {
+      return nil;
+    }
+    UIView* splashView = [self splashScreenFromStoryboard:launchscreenName];
+    if (!splashView) {
+      splashView = [self splashScreenFromXib:launchscreenName];
+    }
+    self.splashScreenView = splashView;
+  }
+  return _splashScreenView.get();
+}
+
+- (UIView*)splashScreenFromStoryboard:(NSString*)name {
+  UIStoryboard* storyboard = nil;
+  @try {
+    storyboard = [UIStoryboard storyboardWithName:name bundle:nil];
+  } @catch (NSException* exception) {
+    return nil;
+  }
+  if (storyboard) {
+    UIViewController* splashScreenViewController = [storyboard instantiateInitialViewController];
+    return splashScreenViewController.view;
+  }
+  return nil;
+}
+
+- (UIView*)splashScreenFromXib:(NSString*)name {
+  NSArray* objects = [[NSBundle mainBundle] loadNibNamed:name owner:self options:nil];
+  if ([objects count] != 0) {
+    UIView* view = [objects objectAtIndex:0];
+    return view;
+  }
+  return nil;
+}
+
+- (void)setSplashScreenView:(UIView*)view {
+  _splashScreenView.reset([view retain]);
+  _splashScreenView.get().autoresizingMask =
+      UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 }
 
 #pragma mark - Surface creation and teardown updates
@@ -387,7 +438,7 @@
 - (void)surfaceUpdated:(BOOL)appeared {
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
   if (appeared) {
-    [self installLaunchViewCallback];
+    [self installSplashScreenViewCallback];
     _shell->GetPlatformView()->NotifyCreated();
 
   } else {
@@ -659,8 +710,8 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 - (CGFloat)statusBarPadding {
   UIScreen* screen = self.view.window.screen;
   CGRect statusFrame = [UIApplication sharedApplication].statusBarFrame;
-  CGRect viewFrame =
-      [self.view convertRect:self.view.bounds toCoordinateSpace:screen.coordinateSpace];
+  CGRect viewFrame = [self.view convertRect:self.view.bounds
+                          toCoordinateSpace:screen.coordinateSpace];
   CGRect intersection = CGRectIntersection(statusFrame, viewFrame);
   return CGRectIsNull(intersection) ? 0.0 : intersection.size.height;
 }
@@ -711,12 +762,25 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   NSDictionary* info = [notification userInfo];
   CGFloat bottom = CGRectGetHeight([[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue]);
   CGFloat scale = [UIScreen mainScreen].scale;
+
+  // The keyboard is treated as an inset since we want to effectively reduce the window size by the
+  // keyboard height. We also eliminate any bottom safe-area padding since they keyboard 'consumes'
+  // the home indicator widget.
   _viewportMetrics.physical_view_inset_bottom = bottom * scale;
+  _viewportMetrics.physical_padding_bottom = 0;
   [self updateViewportMetrics];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
+  CGFloat scale = [UIScreen mainScreen].scale;
   _viewportMetrics.physical_view_inset_bottom = 0;
+
+  // Restore any safe area padding that the keyboard had consumed.
+  if (@available(iOS 11, *)) {
+    _viewportMetrics.physical_padding_bottom = self.view.safeAreaInsets.bottom * scale;
+  } else {
+    _viewportMetrics.physical_padding_top = [self statusBarPadding] * scale;
+  }
   [self updateViewportMetrics];
 }
 
@@ -810,7 +874,9 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   if (UIAccessibilityIsInvertColorsEnabled())
     flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kInvertColors);
   if (UIAccessibilityIsReduceMotionEnabled())
-    flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kDisableAnimations);
+    flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kReduceMotion);
+  if (UIAccessibilityIsBoldTextEnabled())
+    flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kBoldText);
 #if TARGET_OS_SIMULATOR
   // There doesn't appear to be any way to determine whether the accessibility
   // inspector is enabled on the simulator. We conservatively always turn on the
@@ -915,8 +981,9 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   // the "current system locale" or a custom one. On iOS it only applies to the current
   // system locale. Widget implementors must take this into account in order to provide
   // platform-idiomatic behavior in their widgets.
-  NSString* dateFormat =
-      [NSDateFormatter dateFormatFromTemplate:@"j" options:0 locale:[NSLocale currentLocale]];
+  NSString* dateFormat = [NSDateFormatter dateFormatFromTemplate:@"j"
+                                                         options:0
+                                                          locale:[NSLocale currentLocale]];
   return [dateFormat rangeOfString:@"a"].location == NSNotFound;
 }
 
@@ -1044,8 +1111,8 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
   self.pluginPublications[pluginKey] = [NSNull null];
-  return
-      [[FlutterViewControllerRegistrar alloc] initWithPlugin:pluginKey flutterViewController:self];
+  return [[FlutterViewControllerRegistrar alloc] initWithPlugin:pluginKey
+                                          flutterViewController:self];
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {

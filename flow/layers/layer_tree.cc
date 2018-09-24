@@ -32,7 +32,7 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       SkRect::MakeEmpty(),
   };
 
-  root_layer_->Preroll(&context, SkMatrix::I());
+  root_layer_->Preroll(&context, frame.root_surface_transformation());
 }
 
 #if defined(OS_FUCHSIA)
@@ -93,6 +93,9 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
 
   const Stopwatch unused_stopwatch;
   TextureRegistry unused_texture_registry;
+  SkMatrix root_surface_transformation;
+  // No root surface transformation. So assume identity.
+  root_surface_transformation.reset();
 
   Layer::PaintContext paint_context = {
       *canvas,                  // canvas
@@ -105,7 +108,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   // Even if we don't have a root layer, we still need to create an empty
   // picture.
   if (root_layer_) {
-    root_layer_->Preroll(&preroll_context, SkMatrix::I());
+    root_layer_->Preroll(&preroll_context, root_surface_transformation);
     // The needs painting flag may be set after the preroll. So check it after.
     if (root_layer_->needs_painting()) {
       root_layer_->Paint(paint_context);

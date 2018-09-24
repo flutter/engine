@@ -144,6 +144,8 @@ class AccessibilityBridge
         }
 
         AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner, virtualViewId);
+        // Work around for https://github.com/flutter/flutter/issues/2101
+        result.setViewIdResourceName("");
         result.setPackageName(mOwner.getContext().getPackageName());
         result.setClassName("android.view.View");
         result.setSource(mOwner, virtualViewId);
@@ -302,6 +304,7 @@ class AccessibilityBridge
         result.setCheckable(hasCheckedState || hasToggledState);
         if (hasCheckedState) {
             result.setChecked(object.hasFlag(Flag.IS_CHECKED));
+            result.setContentDescription(object.getValueLabelHint());
             if (object.hasFlag(Flag.IS_IN_MUTUALLY_EXCLUSIVE_GROUP))
                 result.setClassName("android.widget.RadioButton");
             else
@@ -309,10 +312,14 @@ class AccessibilityBridge
         } else if (hasToggledState) {
             result.setChecked(object.hasFlag(Flag.IS_TOGGLED));
             result.setClassName("android.widget.Switch");
+            result.setContentDescription(object.getValueLabelHint());
+        } else {
+            // Setting the text directly instead of the content description
+            // will replace the "checked" or "not-checked" label.
+            result.setText(object.getValueLabelHint());
         }
 
         result.setSelected(object.hasFlag(Flag.IS_SELECTED));
-        result.setText(object.getValueLabelHint());
 
         // Accessibility Focus
         if (mA11yFocusedObject != null && mA11yFocusedObject.id == virtualViewId) {
@@ -625,7 +632,7 @@ class AccessibilityBridge
         if (rootObject != null) {
             final float[] identity = new float[16];
             Matrix.setIdentityM(identity, 0);
-            // in android devices above AP 23, the system nav bar can be placed on the left side
+            // in android devices API 23 and above, the system nav bar can be placed on the left side
             // of the screen in landscape mode. We must handle the translation ourselves for the
             // a11y nodes.
             if (Build.VERSION.SDK_INT >= 23) {
@@ -710,10 +717,28 @@ class AccessibilityBridge
                     event.setScrollX((int) position);
                     event.setMaxScrollX((int) max);
                 }
+                if (object.scrollChildren > 0) {
+                    event.setItemCount(object.scrollChildren);
+                    event.setFromIndex(object.scrollIndex);
+                    int visibleChildren = object.childrenInHitTestOrder.size() - 1;
+                    // We assume that only children at the end of the list can be hidden.
+                    assert(!object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN));
+                    for (; visibleChildren >= 0; visibleChildren--) {
+                        SemanticsObject child = object.childrenInHitTestOrder.get(visibleChildren);
+                        if (!child.hasFlag(Flag.IS_HIDDEN)) {
+                            break;
+                        }
+                    }
+                    event.setToIndex(object.scrollIndex + visibleChildren);
+                }
                 sendAccessibilityEvent(event);
             }
-            if (object.hasFlag(Flag.IS_LIVE_REGION) && !object.hadFlag(Flag.IS_LIVE_REGION)) {
-                sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+            if (object.hasFlag(Flag.IS_LIVE_REGION)) {
+                String label = object.label == null ? "" : object.label;
+                String previousLabel = object.previousLabel == null ? "" : object.label;
+                if (!label.equals(previousLabel) || !object.hadFlag(Flag.IS_LIVE_REGION)) {
+                    sendAccessibilityEvent(object.id, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+                }
             } else if (object.hasFlag(Flag.IS_TEXT_FIELD) && object.didChangeLabel()
                     && mInputFocusedObject != null && mInputFocusedObject.id == object.id) {
                 // Text fields should announce when their label changes while focused. We use a live
@@ -844,17 +869,6 @@ class AccessibilityBridge
                 sendAccessibilityEvent(e);
                 break;
             }
-            // Requires that the node id provided corresponds to a live region, or TalkBack will
-            // ignore the event. The event will cause talkback to read out the new label even
-            // if node is not focused.
-            case "updateLiveRegion": {
-                Integer nodeId = (Integer) annotatedEvent.get("nodeId");
-                if (nodeId == null) {
-                    return;
-                }
-                sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-                break;
-            }
         }
     }
 
@@ -940,6 +954,8 @@ class AccessibilityBridge
         int actions;
         int textSelectionBase;
         int textSelectionExtent;
+        int scrollChildren;
+        int scrollIndex;
         float scrollPosition;
         float scrollExtentMax;
         float scrollExtentMin;
@@ -1041,6 +1057,8 @@ class AccessibilityBridge
             actions = buffer.getInt();
             textSelectionBase = buffer.getInt();
             textSelectionExtent = buffer.getInt();
+            scrollChildren = buffer.getInt();
+            scrollIndex = buffer.getInt();
             scrollPosition = buffer.getFloat();
             scrollExtentMax = buffer.getFloat();
             scrollExtentMin = buffer.getFloat();
