@@ -201,9 +201,12 @@ FILE: ../../../flutter/lib/ui/natives.dart
 FILE: ../../../flutter/lib/ui/window/window.h
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.cc
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterEngine.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterJNI.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterRenderer.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngine.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterJNI.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartExecutor.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/FlutterRenderer.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/OnFirstFrameRenderedListener.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/JSONUtil.java
 FILE: ../../../flutter/shell/platform/darwin/desktop/Info.plist
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Flutter.podspec
@@ -494,9 +497,9 @@ FILE: ../../../flutter/lib/ui/semantics/custom_accessibility_action.h
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.h
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterActivity.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterFragment.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterShellArgs.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivity.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterFragment.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterShellArgs.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PlatformViewFactory.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PlatformViewRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PlatformViewRegistryImpl.java
@@ -705,7 +708,7 @@ FILE: ../../../flutter/lib/ui/painting/image.cc
 FILE: ../../../flutter/lib/ui/painting/image.h
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/FlutterView.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/AccessibilityBridge.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterMain.java
