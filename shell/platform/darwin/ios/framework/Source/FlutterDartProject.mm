@@ -96,23 +96,28 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   // Checks to see if the flutter assets directory is already present.
   if (settings.assets_path.size() == 0) {
     NSString* assetsName = [FlutterDartProject flutterAssetsName:bundle];
-    NSString* assetsPath = [mainBundle pathForResource:assetsName ofType:@""];
+    NSString* assetsPath = [bundle pathForResource:assetsName ofType:@""];
 
-    if (assetsPath.length > 0) {
+    if (assetsPath.length == 0) {
+      assetsPath = [mainBundle pathForResource:assetsName ofType:@""];
+    }
+
+    if (assetsPath.length == 0) {
+      NSLog(@"Failed to find assets path for \"%@\"", assetsName);
+    } else {
       settings.assets_path = assetsPath.UTF8String;
 
+      // Check if there is an application kernel snapshot in the assets directory we could
+      // potentially use.  Looking for the snapshot makes sense only if we have a VM that can use
+      // it.
       if (!blink::DartVM::IsRunningPrecompiledCode()) {
-        // Looking for the various script and kernel snapshot buffers only makes sense if we have a
-        // VM that can use these buffers.
-        {
-          // Check if there is an application kernel snapshot in the assets directory we could
-          // potentially use.
-          NSURL* applicationKernelSnapshotURL =
-              [NSURL URLWithString:@(kApplicationKernelSnapshotFileName)
-                     relativeToURL:[NSURL fileURLWithPath:assetsPath]];
-          if ([[NSFileManager defaultManager] fileExistsAtPath:applicationKernelSnapshotURL.path]) {
-            settings.application_kernel_asset = applicationKernelSnapshotURL.path.UTF8String;
-          }
+        NSURL* applicationKernelSnapshotURL =
+            [NSURL URLWithString:@(kApplicationKernelSnapshotFileName)
+                   relativeToURL:[NSURL fileURLWithPath:assetsPath]];
+        if ([[NSFileManager defaultManager] fileExistsAtPath:applicationKernelSnapshotURL.path]) {
+          settings.application_kernel_asset = applicationKernelSnapshotURL.path.UTF8String;
+        } else {
+          NSLog(@"Failed to find snapshot: %@", applicationKernelSnapshotURL.path);
         }
       }
     }
