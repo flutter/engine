@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package io.flutter.embedding;
+package io.flutter.embedding.android;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -13,7 +13,6 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -30,6 +29,8 @@ import android.widget.FrameLayout;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.JSONMessageCodec;
 import io.flutter.plugin.common.JSONMethodCodec;
@@ -108,7 +109,7 @@ public class FlutterFragment extends Fragment {
     createLayout();
     // TODO: Should we start running the FlutterView here or when attached to window? It was being done here
     //       in the Activity, but maybe that was a problem to begin with?
-    flutterView.attachToFlutterRenderer(flutterEngine.getRenderer(), flutterEngine);
+    flutterView.attachToFlutterRenderer(flutterEngine.getRenderer(), flutterEngine.getDartExecutor());
     doInitialFlutterViewRun();
 
     return container;
@@ -245,6 +246,7 @@ public class FlutterFragment extends Fragment {
 
     launchView = createLaunchView();
     if (launchView != null) {
+      Log.d(TAG, "Showing launch view.");
       container.addView(launchView, MATCH_PARENT);
     }
   }
@@ -260,12 +262,12 @@ public class FlutterFragment extends Fragment {
     flutterEngine = createFlutterEngine(activity);
 
     platformPlugin = new PlatformPlugin(activity);
-    MethodChannel flutterPlatformChannel = new MethodChannel(flutterEngine, "flutter/platform", JSONMethodCodec.INSTANCE);
+    MethodChannel flutterPlatformChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/platform", JSONMethodCodec.INSTANCE);
     flutterPlatformChannel.setMethodCallHandler(platformPlugin);
 
-    mFlutterLifecycleChannel = new BasicMessageChannel<>(flutterEngine, "flutter/lifecycle", StringCodec.INSTANCE);
-    mFlutterSystemChannel = new BasicMessageChannel<>(flutterEngine, "flutter/system", JSONMessageCodec.INSTANCE);
-    mFlutterNavigationChannel = new MethodChannel(flutterEngine, "flutter/navigation", JSONMethodCodec.INSTANCE);
+    mFlutterLifecycleChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/lifecycle", StringCodec.INSTANCE);
+    mFlutterSystemChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/system", JSONMessageCodec.INSTANCE);
+    mFlutterNavigationChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/navigation", JSONMethodCodec.INSTANCE);
 
     return new FlutterView(activity, null);
   }
@@ -284,7 +286,7 @@ public class FlutterFragment extends Fragment {
     Log.d(TAG, "createFlutterEngine()");
     Activity activity = (Activity) context;
     FlutterEngine flutterEngine = new FlutterEngine(activity, getResources(), false);
-    flutterEngine.attachViewAndActivity(activity);
+    flutterEngine.getPluginRegistry().attach(activity);
 
     return flutterEngine;
   }
@@ -335,9 +337,10 @@ public class FlutterFragment extends Fragment {
     view.setBackground(launchScreenDrawable);
 
     // TODO(mattcarroll): move the launch screen support into FlutterView
-    flutterEngine.getRenderer().addOnFirstFrameRenderedListener(new FlutterRenderer.OnFirstFrameRenderedListener() {
+    flutterEngine.getRenderer().addOnFirstFrameRenderedListener(new OnFirstFrameRenderedListener() {
       @Override
       public void onFirstFrameRendered() {
+        Log.d(TAG, "onFirstFrameRendered(). Animating out the launch view");
         launchView.animate()
             .alpha(0f)
             // Use Android's default animation duration.
@@ -409,7 +412,7 @@ public class FlutterFragment extends Fragment {
    */
   private void doInitialFlutterViewRun() {
 //    if (BuildConfig.DEBUG && flutterView.getFlutterNativeView().isApplicationRunning()) {
-    if (flutterEngine.isApplicationRunning()) {
+    if (flutterEngine.getDartExecutor().isApplicationRunning()) {
       throw new RuntimeException("Tried to initialize Dart execution in Flutter engine that is already running.");
     }
 
@@ -422,7 +425,7 @@ public class FlutterFragment extends Fragment {
     args.bundlePath = getAppBundlePath();
     args.entrypoint = "main";
     args.defaultPath = null;
-    flutterEngine.runFromBundle(args);
+    flutterEngine.getDartExecutor().runFromBundle(args);
 
     // TODO(mattcarroll): why do we need to resetAccessibilityTree in this method? Can we call that from within FlutterView somewhere?
     flutterView.resetAccessibilityTree();

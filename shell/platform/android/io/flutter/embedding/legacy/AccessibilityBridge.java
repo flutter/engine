@@ -16,11 +16,10 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 
-import io.flutter.embedding.FlutterEngine;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StandardMessageCodec;
-import io.flutter.embedding.FlutterView;
+import io.flutter.embedding.android.FlutterView;
 
 import java.nio.ByteBuffer;
 import java.util.*;

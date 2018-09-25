@@ -11,11 +11,10 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import io.flutter.embedding.FlutterEngine;
+import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
-import io.flutter.embedding.FlutterView;
 import io.flutter.view.TextureRegistry;
 
 import java.nio.ByteBuffer;
@@ -61,12 +60,12 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler 
             );
         this.flutterEngine = flutterEngine;
         this.context = context;
-        MethodChannel channel = new MethodChannel(flutterEngine, CHANNEL_NAME, StandardMethodCodec.INSTANCE);
+        MethodChannel channel = new MethodChannel(flutterEngine.getDartExecutor(), CHANNEL_NAME, StandardMethodCodec.INSTANCE);
         channel.setMethodCallHandler(this);
     }
 
     public void detachFlutterEngine() {
-        flutterEngine.setMessageHandler(CHANNEL_NAME, null);
+        flutterEngine.getDartExecutor().setMessageHandler(CHANNEL_NAME, null);
         flutterEngine = null;
     }
 

@@ -1,4 +1,4 @@
-package io.flutter.embedding;
+package io.flutter.embedding.engine.renderer;
 
 import android.annotation.TargetApi;
 import android.graphics.Bitmap;
@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.flutter.embedding.android.FlutterView;
+import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
 
 /**
@@ -30,10 +32,9 @@ public class FlutterRenderer implements TextureRegistry {
   private final FlutterJNI flutterJNI;
   private final long nativeObjectReference;
   private final AtomicLong nextTextureId = new AtomicLong(0L);
-  private final Set<OnFirstFrameRenderedListener> firstFrameListeners = new CopyOnWriteArraySet<>();
   private RenderSurface renderSurface;
 
-  FlutterRenderer(@NonNull FlutterJNI flutterJNI, long nativeObjectReference) {
+  public FlutterRenderer(@NonNull FlutterJNI flutterJNI, long nativeObjectReference) {
     this.flutterJNI = flutterJNI;
     this.nativeObjectReference = nativeObjectReference;
   }
@@ -45,6 +46,7 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     this.renderSurface = renderSurface;
+    this.flutterJNI.setRenderSurface(renderSurface);
   }
 
   public void detachFromRenderSurface() {
@@ -52,21 +54,16 @@ public class FlutterRenderer implements TextureRegistry {
     if (this.renderSurface != null) {
       surfaceDestroyed();
       this.renderSurface = null;
+      this.flutterJNI.setRenderSurface(null);
     }
   }
 
   public void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
-    firstFrameListeners.add(listener);
+    flutterJNI.addOnFirstFrameRenderedListener(listener);
   }
 
   public void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
-    firstFrameListeners.remove(listener);
-  }
-
-  private void notifyFirstFrameListeners() {
-    for (OnFirstFrameRenderedListener listener : firstFrameListeners) {
-      listener.onFirstFrameRendered();
-    }
+    flutterJNI.removeOnFirstFrameRenderedListener(listener);
   }
 
   //------ START TextureRegistry IMPLEMENTATION -----
@@ -221,37 +218,6 @@ public class FlutterRenderer implements TextureRegistry {
         args,
         argsPosition
     );
-  }
-
-  // TODO(mattcarroll): change the JNI code to call these directly rather than forward these calls from FlutterEngine
-  //------ START PACKAGE PRIVATE MESSAGES FROM FlutterEngine ------
-  void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
-    if (renderSurface != null) {
-      renderSurface.updateCustomAccessibilityActions(buffer, strings);
-    }
-  }
-
-  void updateSemantics(ByteBuffer buffer, String[] strings) {
-    if (renderSurface != null) {
-      renderSurface.updateSemantics(buffer, strings);
-    }
-  }
-
-  void onFirstFrameRendered() {
-    if (renderSurface != null) {
-      renderSurface.onFirstFrameRendered();
-    }
-    notifyFirstFrameListeners();
-  }
-  //------ END PACKAGE PRIVATE MESSAGES FROM FlutterEngine ------
-
-  public interface OnFirstFrameRenderedListener {
-    /**
-     * A {@link FlutterRenderer} has painted its first frame since being initialized.
-     *
-     * This method will not be invoked if this listener is added after the first frame is rendered.
-     */
-    void onFirstFrameRendered();
   }
 
   /**

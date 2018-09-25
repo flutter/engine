@@ -8,7 +8,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 
-import io.flutter.embedding.FlutterEngine;
+import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.view.FlutterMain;
 import io.flutter.view.TextureRegistry;
@@ -28,9 +28,9 @@ public class FlutterPluginRegistry
     private static final String TAG = "FlutterPluginRegistry";
 
     private Activity mActivity;
-    private Context mAppContext;
-    private BinaryMessenger mMessenger;
-    private FlutterEngine flutterEngine;
+    private final Context mAppContext;
+    private final BinaryMessenger mMessenger;
+    private final FlutterEngine flutterEngine;
 
     private final PlatformViewsController mPlatformViewsController;
     private final Map<String, Object> mPluginMap = new LinkedHashMap<>(0);
@@ -40,7 +40,8 @@ public class FlutterPluginRegistry
     private final List<UserLeaveHintListener> mUserLeaveHintListeners = new ArrayList<>(0);
     private final List<ViewDestroyListener> mViewDestroyListeners = new ArrayList<>(0);
 
-    public FlutterPluginRegistry(BinaryMessenger messenger, Context context) {
+    public FlutterPluginRegistry(FlutterEngine flutterEngine, BinaryMessenger messenger, Context context) {
+        this.flutterEngine = flutterEngine;
         mMessenger = messenger;
         mAppContext = context;
         mPlatformViewsController = new PlatformViewsController();
@@ -66,8 +67,7 @@ public class FlutterPluginRegistry
         return new FlutterRegistrar(pluginKey);
     }
 
-    public void attach(FlutterEngine flutterEngine, Activity activity) {
-        this.flutterEngine = flutterEngine;
+    public void attach(Activity activity) {
         mActivity = activity;
         mPlatformViewsController.attachFlutterEngine(flutterEngine, activity);
     }
@@ -75,7 +75,6 @@ public class FlutterPluginRegistry
     public void detach() {
         mPlatformViewsController.detachFlutterEngine();
         mPlatformViewsController.onFlutterViewDestroyed();
-        flutterEngine = null;
         mActivity = null;
     }
 
