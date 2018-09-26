@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -34,6 +35,7 @@
   fml::scoped_nsobject<FlutterDartProject> _dartProject;
   shell::ThreadHost _threadHost;
   std::unique_ptr<shell::Shell> _shell;
+  fml::WeakPtrFactory<FlutterViewController>* _weakFactory;
 
   // Channels
   fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
@@ -65,6 +67,7 @@
                          bundle:(NSBundle*)nibBundleOrNil {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
+    _weakFactory = new fml::WeakPtrFactory<FlutterViewController>(self);
     if (projectOrNil == nil)
       _dartProject.reset([[FlutterDartProject alloc] init]);
     else
@@ -209,7 +212,7 @@
       binaryMessenger:self
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
-  _platformPlugin.reset([[FlutterPlatformPlugin alloc] init]);
+  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithViewController:_weakFactory->GetWeakPtr()]);
   [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [_platformPlugin.get() handleMethodCall:call result:result];
   }];
@@ -501,6 +504,7 @@
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_pluginPublications release];
+  delete _weakFactory;
   [super dealloc];
 }
 
