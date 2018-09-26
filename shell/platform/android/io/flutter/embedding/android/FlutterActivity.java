@@ -16,7 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
@@ -60,98 +60,16 @@ public class FlutterActivity extends Activity {
   // TODO: where did this package path come from? is this what it should be?
   private static final String INITIAL_ROUTE_META_DATA_KEY = "io.flutter.app.android.InitialRoute";
 
-  // FlutterFragment identifiers within this Activity.
   private static final String TAG_FLUTTER_FRAGMENT = "flutter_fragment";
-  private static final int CONTAINER_ID = 609893468; // random number
+  private static final int FRAGMENT_CONTAINER_ID = 609893468; // random number
   private FlutterFragment flutterFragment;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    Log.d(TAG, "onCreate()");
-
-    FlutterShellArgs args = FlutterShellArgs.fromIntent(getIntent());
-    // TODO(mattcarroll): Change FlutterMain to accept FlutterShellArgs and move additional constants in
-    //       FlutterMain over to FlutterShellArgs.
-    FlutterMain.ensureInitializationComplete(getApplicationContext(), args.toArray());
-
     configureStatusBarColor();
-    createFlutterFragmentContainer();
-    createFlutterFragment();
-  }
-
-  @Override
-  public void onPostResume() {
-    super.onPostResume();
-    Log.d(TAG, "onPostResume()");
-    flutterFragment.onPostResume();
-  }
-
-  @Override
-  protected void onNewIntent(Intent intent) {
-    // Forward Intents to our FlutterFragment in case it cares.
-    flutterFragment.onNewIntent(intent);
-  }
-
-  @Override
-  public void onBackPressed() {
-    Log.d(TAG, "onBackPressed()");
-    flutterFragment.onBackPressed();
-  }
-
-  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    flutterFragment.onRequestPermissionsResult(requestCode, permissions, grantResults);
-  }
-
-  @Override
-  public void onUserLeaveHint() {
-    flutterFragment.onUserLeaveHint();
-  }
-
-  @Nullable
-  protected FlutterEngine getFlutterEngine() {
-    return flutterFragment.getFlutterEngine();
-  }
-
-  /**
-   * Sets up a {@code FrameLayout} that takes up all available space in the {@code Activity}. This
-   * {@code FrameLayout} will hold a {@code FlutterFragment}, which displays a {@code FlutterView}.
-   */
-  private void createFlutterFragmentContainer() {
-    Log.d(TAG, "createFlutterFragmentContainer()");
-    FrameLayout container = new FrameLayout(this);
-    container.setId(CONTAINER_ID);
-    container.setLayoutParams(new ViewGroup.LayoutParams(
-        ViewGroup.LayoutParams.MATCH_PARENT,
-        ViewGroup.LayoutParams.MATCH_PARENT
-    ));
-    setContentView(container);
-  }
-
-  /**
-   * If no {@code FlutterFragment} exists in this {@code FlutterActivity}, then a {@code FlutterFragment}
-   * is created and added. If a {@code FlutterFragment} does exist in this {@code FlutterActivity}, then
-   * a reference to that {@code FlutterFragment} is retained in {@code flutterFragment}.
-   */
-  private void createFlutterFragment() {
-    Log.d(TAG, "createFlutterFragment()");
-    FragmentManager fragmentManager = getFragmentManager();
-
-    flutterFragment = (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
-
-    if (flutterFragment == null) {
-      // No FlutterFragment exists yet. This must be the initial Activity creation. We will create
-      // and add a new FlutterFragment to this Activity.
-      flutterFragment = FlutterFragment.newInstance(
-          isSplashScreenDesired(),
-          getInitialRoute(),
-          getAppBundlePath()
-      );
-      fragmentManager
-          .beginTransaction()
-          .add(CONTAINER_ID, flutterFragment, TAG_FLUTTER_FRAGMENT)
-          .commit();
-    }
+    setContentView(createFragmentContainer());
+    ensureFlutterFragmentCreated();
   }
 
   /**
@@ -169,6 +87,92 @@ public class FlutterActivity extends Activity {
       window.setStatusBarColor(0x40000000);
       window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
     }
+  }
+
+  /**
+   * If no {@code FlutterFragment} exists in this {@code FlutterActivity}, then a {@code FlutterFragment}
+   * is created and added. If a {@code FlutterFragment} does exist in this {@code FlutterActivity}, then
+   * a reference to that {@code FlutterFragment} is retained in {@code flutterFragment}.
+   */
+  private void ensureFlutterFragmentCreated() {
+    FragmentManager fragmentManager = getFragmentManager();
+    flutterFragment = (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
+
+    if (flutterFragment == null) {
+      // No FlutterFragment exists yet. This must be the initial Activity creation. We will create
+      // and add a new FlutterFragment to this Activity.
+      flutterFragment = createFlutterFragment();
+      fragmentManager
+          .beginTransaction()
+          .add(FRAGMENT_CONTAINER_ID, flutterFragment, TAG_FLUTTER_FRAGMENT)
+          .commit();
+    }
+  }
+
+  /**
+   * Creates a {@link FrameLayout} with an ID of {@link #FRAGMENT_CONTAINER_ID} that will contain
+   * the {@link FlutterFragment} displayed by this {@link Activity}.
+   *
+   * @return the FrameLayout container
+   */
+  @NonNull
+  private View createFragmentContainer() {
+    FrameLayout container = new FrameLayout(this);
+    container.setId(FRAGMENT_CONTAINER_ID);
+    container.setLayoutParams(new ViewGroup.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        ViewGroup.LayoutParams.MATCH_PARENT
+    ));
+    return container;
+  }
+
+  /**
+   * Factory method to create the instance of the {@link FlutterFragment} that this
+   * {@link FlutterActivity} displays.
+   *
+   * @return the {@link FlutterFragment} to be displayed in this {@link FlutterActivity}
+   */
+  @NonNull
+  protected FlutterFragment createFlutterFragment() {
+    return FlutterFragment.newInstance(
+        isSplashScreenDesired(),
+        getInitialRoute(),
+        getAppBundlePath(),
+        null, // TODO(mattcarroll): introduce Intent based entrypoint selection
+        FlutterShellArgs.fromIntent(getIntent())
+    );
+  }
+
+  @Override
+  public void onPostResume() {
+    super.onPostResume();
+    flutterFragment.onPostResume();
+  }
+
+  @Override
+  protected void onNewIntent(Intent intent) {
+    // Forward Intents to our FlutterFragment in case it cares.
+    flutterFragment.onNewIntent(intent);
+  }
+
+  @Override
+  public void onBackPressed() {
+    flutterFragment.onBackPressed();
+  }
+
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    flutterFragment.onRequestPermissionsResult(requestCode, permissions, grantResults);
+  }
+
+  @Override
+  public void onUserLeaveHint() {
+    flutterFragment.onUserLeaveHint();
+  }
+
+  @SuppressWarnings("unused")
+  @Nullable
+  protected FlutterEngine getFlutterEngine() {
+    return flutterFragment.getFlutterEngine();
   }
 
   /**
@@ -205,6 +209,8 @@ public class FlutterActivity extends Activity {
    * The reason that a {@code <meta-data>} preference is supported is because this {@code Activity}
    * might be the very first {@code Activity} launched, which means the developer won't have
    * control over the incoming {@code Intent}.
+   *
+   * TODO(mattcarroll): move all splash behavior to FlutterView
    */
   private boolean isSplashScreenDesired() {
     if (getIntent().hasExtra(EXTRA_SHOW_SPLASH_SCREEN)) {

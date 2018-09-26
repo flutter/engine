@@ -244,6 +244,11 @@ public class FlutterView extends SurfaceView implements
    */
   public void attachToFlutterRenderer(@NonNull FlutterRenderer flutterRenderer, @NonNull BinaryMessenger pluginMessenger) {
     if (isAttachedToRenderer) {
+      if (flutterRenderer == this.flutterRenderer) {
+        // We are already attached to this FlutterRenderer
+        return;
+      }
+
       detachFromFlutterRenderer();
     }
 

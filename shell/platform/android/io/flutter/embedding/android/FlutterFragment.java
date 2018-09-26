@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.JSONMessageCodec;
@@ -37,6 +38,7 @@ import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StringCodec;
 import io.flutter.plugin.platform.PlatformPlugin;
+import io.flutter.view.FlutterMain;
 import io.flutter.view.FlutterRunArguments;
 
 /**
@@ -73,25 +75,48 @@ import io.flutter.view.FlutterRunArguments;
 public class FlutterFragment extends Fragment {
   private static final String TAG = "FlutterFragment";
 
+  private static final String ARG_FLUTTER_INITIALIZATION_ARGS = "initialization_args";
   private static final String ARG_IS_SPLASH_SCREEN_DESIRED = "show_splash_screen";
   private static final String ARG_INITIAL_ROUTE = "initial_route";
   private static final String ARG_APP_BUNDLE_PATH = "app_bundle_path";
+  private static final String ARG_DART_ENTRYPOINT = "dart_entrypoint";
 
   private static final WindowManager.LayoutParams MATCH_PARENT =
       new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
 
   public static FlutterFragment newInstance(boolean isSplashScreenDesired,
                                             @Nullable String initialRoute,
-                                            @NonNull String appBundlePath) {
+                                            @NonNull String appBundlePath,
+                                            @Nullable String dartEntrypoint,
+                                            @Nullable FlutterShellArgs flutterShellArgs) {
     FlutterFragment frag = new FlutterFragment();
 
+    Bundle args = createArgsBundle(
+        isSplashScreenDesired,
+        initialRoute,
+        appBundlePath,
+        dartEntrypoint,
+        flutterShellArgs
+    );
+    frag.setArguments(args);
+
+    return frag;
+  }
+
+  public static Bundle createArgsBundle(boolean isSplashScreenDesired,
+                                        @Nullable String initialRoute,
+                                        @NonNull String appBundlePath,
+                                        @Nullable String dartEntrypoint,
+                                        @Nullable FlutterShellArgs flutterShellArgs) {
     Bundle args = new Bundle();
     args.putBoolean(ARG_IS_SPLASH_SCREEN_DESIRED, isSplashScreenDesired);
     args.putString(ARG_INITIAL_ROUTE, initialRoute);
     args.putString(ARG_APP_BUNDLE_PATH, appBundlePath);
-    frag.setArguments(args);
-
-    return frag;
+    args.putString(ARG_DART_ENTRYPOINT, dartEntrypoint);
+    if (null != flutterShellArgs) {
+      args.putStringArray(ARG_FLUTTER_INITIALIZATION_ARGS, flutterShellArgs.toArray());
+    }
+    return args;
   }
 
   private FlutterEngine flutterEngine;
@@ -103,16 +128,101 @@ public class FlutterFragment extends Fragment {
   private MethodChannel mFlutterNavigationChannel;
   private View launchView;
 
+  public FlutterFragment() {
+    setArguments(new Bundle());
+  }
+
+  @Override
+  public void onAttach(Activity activity) {
+    super.onAttach(activity);
+    Log.d(TAG, "onAttach()");
+    initializeFlutter(activity);
+  }
+
+  private void initializeFlutter(@NonNull Context context) {
+    String[] flutterShellArgsArray = getArguments().getStringArray(ARG_FLUTTER_INITIALIZATION_ARGS);
+    FlutterShellArgs flutterShellArgs = new FlutterShellArgs(
+        flutterShellArgsArray != null ? flutterShellArgsArray : new String[] {}
+    );
+    // TODO(mattcarroll): Change FlutterMain to accept FlutterShellArgs and move additional constants in
+    //                    FlutterMain over to FlutterShellArgs.
+    FlutterMain.ensureInitializationComplete(context.getApplicationContext(), flutterShellArgs.toArray());
+  }
+
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
     Log.e(TAG, "onCreateView()");
     createLayout();
+
+    // Create and register desired platform channels to communicate between Dart/Java.
+    platformPlugin = new PlatformPlugin(getActivity());
+    registerPlaformChannels();
+
     // TODO: Should we start running the FlutterView here or when attached to window? It was being done here
     //       in the Activity, but maybe that was a problem to begin with?
     flutterView.attachToFlutterRenderer(flutterEngine.getRenderer(), flutterEngine.getDartExecutor());
     doInitialFlutterViewRun();
 
     return container;
+  }
+
+  // TODO(mattcarroll): create infrastructure to take in channels. Right now the use of local variables
+  //                    prevents this method from being configured.
+  protected void registerPlaformChannels() {
+    MethodChannel flutterPlatformChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/platform", JSONMethodCodec.INSTANCE);
+    flutterPlatformChannel.setMethodCallHandler(platformPlugin);
+
+    mFlutterLifecycleChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/lifecycle", StringCodec.INSTANCE);
+    mFlutterSystemChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/system", JSONMessageCodec.INSTANCE);
+    mFlutterNavigationChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/navigation", JSONMethodCodec.INSTANCE);
+  }
+
+  /**
+   * Creates a {@code FrameLayout} that takes all available space, then creates a {@code FlutterView}
+   * within the FrameLayout container.
+   */
+  private void createLayout() {
+    container = new FrameLayout(getContextCompat());
+    container.setLayoutParams(MATCH_PARENT);
+
+    // Create a FlutterEngine to back our FlutterView.
+    flutterEngine = createFlutterEngine(getActivity());
+
+    // Create our FlutterView for rendering and user interaction.
+    flutterView = createFlutterView(getActivity());
+
+    // Allow subclasses to customize FlutterView as desired.
+    onFlutterViewCreated(flutterView);
+
+    // Add FlutterView to the View hierarchy.
+    container.addView(flutterView, MATCH_PARENT);
+
+    launchView = createLaunchView();
+    if (launchView != null) {
+      Log.d(TAG, "Showing launch view.");
+      container.addView(launchView, MATCH_PARENT);
+    }
+  }
+
+  /**
+   * Hook for subclasses to customize the creation of the {@code FlutterEngine}.
+   *
+   * This method is only invoked from the default implementation of {@link #createFlutterView(Activity)}.
+   * If {@link #createFlutterView(Activity)} is overridden, then this method will not be invoked unless
+   * it is invoked directly from the subclass.
+   *
+   * By default, this method returns a standard {@link FlutterEngine} without any modification.
+   *
+   * TODO(mattcarroll): get rid of dependency on Activity
+   */
+  @NonNull
+  protected FlutterEngine createFlutterEngine(@NonNull Context context) {
+    Log.d(TAG, "createFlutterEngine()");
+    Activity activity = (Activity) context;
+    FlutterEngine flutterEngine = new FlutterEngine(activity, getResources(), false);
+    flutterEngine.getPluginRegistry().attach(activity);
+
+    return flutterEngine;
   }
 
   @Override
@@ -232,63 +342,21 @@ public class FlutterFragment extends Fragment {
     mFlutterSystemChannel.send(message);
   }
 
-  /**
-   * Creates a {@code FrameLayout} that takes all available space, then creates a {@code FlutterView}
-   * within the FrameLayout container.
-   */
-  private void createLayout() {
-    container = new FrameLayout(getContextCompat());
-    container.setLayoutParams(MATCH_PARENT);
+  public void enableTransparentBackground() {
+    flutterView.enableTransparentBackground();
+  }
 
-    flutterView = createFlutterView(getActivity());
-    onFlutterViewCreated(flutterView);
-    container.addView(flutterView, MATCH_PARENT);
-
-    launchView = createLaunchView();
-    if (launchView != null) {
-      Log.d(TAG, "Showing launch view.");
-      container.addView(launchView, MATCH_PARENT);
-    }
+  public void disableTransparentBackground() {
+    flutterView.disableTransparentBackground();
   }
 
   /**
    * Hook for subclasses to customize the creation of the {@code FlutterView}.
-   *
-   * TODO: get rid of dependency on Activity
    */
   @NonNull
-  protected FlutterView createFlutterView(@NonNull Activity activity) {
+  protected FlutterView createFlutterView(@NonNull Context context) {
     Log.d(TAG, "createFlutterView()");
-    flutterEngine = createFlutterEngine(activity);
-
-    platformPlugin = new PlatformPlugin(activity);
-    MethodChannel flutterPlatformChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/platform", JSONMethodCodec.INSTANCE);
-    flutterPlatformChannel.setMethodCallHandler(platformPlugin);
-
-    mFlutterLifecycleChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/lifecycle", StringCodec.INSTANCE);
-    mFlutterSystemChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/system", JSONMessageCodec.INSTANCE);
-    mFlutterNavigationChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/navigation", JSONMethodCodec.INSTANCE);
-
-    return new FlutterView(activity, null);
-  }
-
-  /**
-   * Hook for subclasses to customize the creation of the {@code FlutterEngine}.
-   *
-   * This method is only invoked from the default implementation of {@link #createFlutterView(Activity)}.
-   * If {@link #createFlutterView(Activity)} is overridden, then this method will not be invoked unless
-   * it is invoked directly from the subclass.
-   *
-   * By default, this method returns a standard {@link FlutterEngine} without any modification.
-   */
-  @NonNull
-  protected FlutterEngine createFlutterEngine(@NonNull Context context) {
-    Log.d(TAG, "createFlutterEngine()");
-    Activity activity = (Activity) context;
-    FlutterEngine flutterEngine = new FlutterEngine(activity, getResources(), false);
-    flutterEngine.getPluginRegistry().attach(activity);
-
-    return flutterEngine;
+    return new FlutterView(context, null);
   }
 
   /**
@@ -423,7 +491,7 @@ public class FlutterFragment extends Fragment {
     // TODO(mattcarroll): are FlutterRunArguments and FlutterShellArgs the same thing? consolidate if they are
     FlutterRunArguments args = new FlutterRunArguments();
     args.bundlePath = getAppBundlePath();
-    args.entrypoint = "main";
+    args.entrypoint = getDartEntrypoint();
     args.defaultPath = null;
     flutterEngine.getDartExecutor().runFromBundle(args);
 
@@ -438,10 +506,12 @@ public class FlutterFragment extends Fragment {
 
   @NonNull
   private String getAppBundlePath() {
-    // Guaranteed non-null by Fragment factory method which declares the incoming
-    // parameter @NonNull.
-    //noinspection ConstantConditions
-    return getArguments().getString(ARG_APP_BUNDLE_PATH);
+    return getArguments().getString(ARG_APP_BUNDLE_PATH, FlutterMain.findAppBundlePath(getContextCompat()));
+  }
+
+  @NonNull
+  private String getDartEntrypoint() {
+    return getArguments().getString(ARG_DART_ENTRYPOINT, "main");
   }
 
   /**

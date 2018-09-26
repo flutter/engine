@@ -75,7 +75,7 @@ public class FlutterShellArgs {
    *
    * @param args arguments
    */
-  FlutterShellArgs(@NonNull String[] args) {
+  public FlutterShellArgs(@NonNull String[] args) {
     this.args = new HashSet<>(Arrays.asList(args));
   }
 
@@ -85,7 +85,7 @@ public class FlutterShellArgs {
    *
    * @param args arguments
    */
-  FlutterShellArgs(@NonNull List<String> args) {
+  public FlutterShellArgs(@NonNull List<String> args) {
     this.args = new HashSet<>(args);
   }
 
@@ -94,7 +94,7 @@ public class FlutterShellArgs {
    *
    * @param args arguments
    */
-  FlutterShellArgs(@NonNull Set<String> args) {
+  public FlutterShellArgs(@NonNull Set<String> args) {
     this.args = new HashSet<>(args);
   }
 

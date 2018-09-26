@@ -3,6 +3,7 @@ package io.flutter.embedding.engine;
 import android.content.Context;
 import android.content.res.Resources;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
@@ -34,14 +35,14 @@ public class FlutterEngine {
   private final DartExecutor dartExecutor;
   private final FlutterPluginRegistry pluginRegistry;
   private long nativeObjectReference;
-  private boolean isBackgroundView; // TODO(mattcarroll): rename to something without "view"
+  private boolean executeWithoutUi;
 
   public FlutterEngine(
       Context context,
       Resources resources,
-      boolean isBackgroundView
+      boolean executeWithoutUi
   ) {
-    this.isBackgroundView = isBackgroundView;
+    this.executeWithoutUi = executeWithoutUi;
 
     this.flutterJNI = new FlutterJNI();
     attachToJni();
@@ -56,8 +57,7 @@ public class FlutterEngine {
   }
 
   private void attachToJni() {
-    // TODO(mattcarroll): what impact does "isBackgroundView' have?
-    nativeObjectReference = flutterJNI.nativeAttach(flutterJNI, isBackgroundView);
+    nativeObjectReference = flutterJNI.nativeAttach(flutterJNI, executeWithoutUi);
 
     if (!isAttachedToJni()) {
       throw new RuntimeException("FlutterEngine failed to attach to its native Object reference.");
@@ -106,5 +106,53 @@ public class FlutterEngine {
     if (pluginRegistry == null)
       return;
     pluginRegistry.onPreEngineRestart();
+  }
+
+  public static class Builder {
+    String initialRoute;
+    String appBundlePath;
+    String dartEntrypoint;
+    boolean executeWithUi = true;
+
+    public Builder initialRoute(String initialRoute) {
+      this.initialRoute = initialRoute;
+      return this;
+    }
+
+    public Builder appBundlePath(String appBundlePath) {
+      this.appBundlePath = appBundlePath;
+      return this;
+    }
+
+    public Builder dartEntrypoint(String dartEntrypoint) {
+      this.dartEntrypoint = dartEntrypoint;
+      return this;
+    }
+
+    public Builder executeWithUi(boolean executeWithUi) {
+      this.executeWithUi = executeWithUi;
+      return this;
+    }
+
+    public FlutterEngine build(@NonNull Context context, @NonNull Resources resources) {
+      return new FlutterEngine(
+          context,
+          resources,
+          executeWithUi
+      );
+    }
+  }
+
+  private static class FlutterEngineConfiguration {
+    final String initialRoute;
+    final FlutterRunArguments flutterRunArguments;
+
+    FlutterEngineConfiguration(
+        @Nullable String initialRoute,
+        @NonNull FlutterRunArguments flutterRunArguments
+    ) {
+      this.initialRoute = initialRoute;
+      this.flutterRunArguments = flutterRunArguments;
+    }
   }
 }
