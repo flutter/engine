@@ -30,7 +30,7 @@ class PersistentCache : public GrContextOptions::PersistentCache {
  private:
   std::shared_ptr<fml::UniqueFD> cache_directory_;
   mutable std::mutex worker_task_runners_mutex_;
-  std::set<fml::RefPtr<fml::TaskRunner>> worker_task_runners_
+  std::multiset<fml::RefPtr<fml::TaskRunner>> worker_task_runners_
       FML_GUARDED_BY(worker_task_runners_mutex_);
 
   bool IsValid() const;
