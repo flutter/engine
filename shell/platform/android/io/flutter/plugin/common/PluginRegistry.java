@@ -7,6 +7,8 @@ package io.flutter.plugin.common;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+
+import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.platform.PlatformViewRegistry;
 import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterView;
@@ -113,6 +115,17 @@ public interface PluginRegistry {
          */
         FlutterView view();
 
+        /**
+         * Returns the new version of {@link io.flutter.embedding.android.FlutterView} if this
+         * registry is being used with the new embedding
+         */
+        io.flutter.embedding.android.FlutterView newView();
+
+        /**
+         * Returns the FlutterEngine that this plugin is attached to, if this plugin is
+         * attached. This method only applies to the new embedding.
+         */
+        FlutterEngine engine();
 
         /**
          * Returns the file name for the given asset.
@@ -283,7 +296,10 @@ public interface PluginRegistry {
      * adopt the FlutterNativeView by retaining a reference and returning true.
      */
     interface ViewDestroyListener {
+        // NOTE: old embedding
         boolean onViewDestroy(FlutterNativeView view);
+        // NOTE: new embedding
+        boolean onViewDestroy(FlutterEngine engine);
     }
 
     /**

@@ -7,6 +7,8 @@ package io.flutter.app;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+
+import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformViewRegistry;
@@ -34,6 +36,8 @@ public class FlutterPluginRegistry
     private Context mAppContext;
     private FlutterNativeView mNativeView;
     private FlutterView mFlutterView;
+    private FlutterEngine mFlutterEngine;
+    private io.flutter.embedding.android.FlutterView mNewFlutterView;
 
     private final PlatformViewsController mPlatformViewsController;
     private final Map<String, Object> mPluginMap = new LinkedHashMap<>(0);
@@ -43,8 +47,10 @@ public class FlutterPluginRegistry
     private final List<UserLeaveHintListener> mUserLeaveHintListeners = new ArrayList<>(0);
     private final List<ViewDestroyListener> mViewDestroyListeners = new ArrayList<>(0);
 
-    public FlutterPluginRegistry(FlutterNativeView nativeView, Context context) {
+    // NOTE: Either nativeView needs to be null, XOR flutterEngine needs to be null
+    public FlutterPluginRegistry(FlutterNativeView nativeView, FlutterEngine flutterEngine, Context context) {
         mNativeView = nativeView;
+        mFlutterEngine = flutterEngine;
         mAppContext = context;
         mPlatformViewsController = new PlatformViewsController();
     }
@@ -69,16 +75,26 @@ public class FlutterPluginRegistry
         return new FlutterRegistrar(pluginKey);
     }
 
+    // NOTE: This method has no meaning in the new embedding.
     public void attach(FlutterView flutterView, Activity activity) {
         mFlutterView = flutterView;
         mActivity = activity;
         mPlatformViewsController.attach(activity, flutterView, flutterView);
     }
 
+    // NOTE: This method only has meaning in teh new embedding.
+    public void attach(io.flutter.embedding.android.FlutterView flutterView, Activity activity) {
+        mNewFlutterView = flutterView;
+        mActivity = activity;
+        mPlatformViewsController.attachFlutterView(flutterView, mFlutterEngine);
+    }
+
+    // NOTE: This method has no meaning in the new embedding.
     public void detach() {
         mPlatformViewsController.detach();
         mPlatformViewsController.onFlutterViewDestroyed();
         mFlutterView = null;
+        mNewFlutterView = null;
         mActivity = null;
     }
 
@@ -110,12 +126,22 @@ public class FlutterPluginRegistry
 
         @Override
         public BinaryMessenger messenger() {
-            return mNativeView;
+            // NOTE: We have to decide what universe we're in before we can take action.
+            if (mNativeView != null) {
+                return mNativeView;
+            } else {
+                return mFlutterEngine.getDartExecutor();
+            }
         }
 
         @Override
         public TextureRegistry textures() {
-            return mFlutterView;
+            // NOTE: We have to decide what universe we're in before we can take action.
+            if (mFlutterView != null) {
+                return mFlutterView;
+            } else {
+                return mFlutterEngine.getRenderer();
+            }
         }
 
         @Override
@@ -123,9 +149,22 @@ public class FlutterPluginRegistry
             return mPlatformViewsController.getRegistry();
         }
 
+        // NOTE: This method has no meaning in the new embedding.
         @Override
         public FlutterView view() {
             return mFlutterView;
+        }
+
+        // NOTE: This method has no meaning in the old embedding.
+        @Override
+        public io.flutter.embedding.android.FlutterView newView() {
+            return mNewFlutterView;
+        }
+
+        // NOTE: This method has no meaning in the old embedding.
+        @Override
+        public FlutterEngine engine() {
+            return mFlutterEngine;
         }
 
         @Override
@@ -231,11 +270,24 @@ public class FlutterPluginRegistry
         }
     }
 
+    // NOTE: This method only has meaning in the old embedding.
     @Override
     public boolean onViewDestroy(FlutterNativeView view) {
         boolean handled = false;
         for (ViewDestroyListener listener : mViewDestroyListeners) {
             if (listener.onViewDestroy(view)) {
+                handled = true;
+            }
+        }
+        return handled;
+    }
+
+    // NOTE: This method only has meaning in the new embedding.
+    @Override
+    public boolean onViewDestroy(FlutterEngine engine) {
+        boolean handled = false;
+        for (ViewDestroyListener listener : mViewDestroyListeners) {
+            if (listener.onViewDestroy(engine)) {
                 handled = true;
             }
         }

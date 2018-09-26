@@ -34,7 +34,7 @@ public class FlutterNativeView implements BinaryMessenger {
 
     public FlutterNativeView(Context context, boolean isBackgroundView) {
         mContext = context;
-        mPluginRegistry = new FlutterPluginRegistry(this, context);
+        mPluginRegistry = new FlutterPluginRegistry(this, null, context);
         attach(this, isBackgroundView);
         assertAttached();
         mMessageHandlers = new HashMap<>();

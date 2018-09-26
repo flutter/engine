@@ -220,7 +220,7 @@ public class FlutterFragment extends Fragment {
     Log.d(TAG, "createFlutterEngine()");
     Activity activity = (Activity) context;
     FlutterEngine flutterEngine = new FlutterEngine(activity, getResources(), false);
-    flutterEngine.getPluginRegistry().attach(activity);
+    flutterEngine.getPluginRegistry().attach(flutterView, getActivity());
 
     return flutterEngine;
   }

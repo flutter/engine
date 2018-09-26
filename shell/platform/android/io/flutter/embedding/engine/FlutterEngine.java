@@ -5,9 +5,9 @@ import android.content.res.Resources;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
-import io.flutter.embedding.legacy.FlutterPluginRegistry;
 import io.flutter.view.FlutterRunArguments;
 
 /**
@@ -53,7 +53,8 @@ public class FlutterEngine {
     this.dartExecutor = new DartExecutor(flutterJNI, nativeObjectReference, resources);
     this.dartExecutor.onAttachedToJNI();
 
-    this.pluginRegistry = new FlutterPluginRegistry(this, dartExecutor, context);
+//    this.pluginRegistry = new FlutterPluginRegistry(this, dartExecutor, context);
+    this.pluginRegistry = new FlutterPluginRegistry(null, this, context);
   }
 
   private void attachToJni() {
