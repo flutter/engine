@@ -212,7 +212,8 @@
       binaryMessenger:self
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
-  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithViewController:_weakFactory->GetWeakPtr()]);
+  _platformPlugin.reset(
+      [[FlutterPlatformPlugin alloc] initWithViewController:_weakFactory->GetWeakPtr()]);
   [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [_platformPlugin.get() handleMethodCall:call result:result];
   }];

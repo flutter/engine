@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
+#include "flutter/fml/logging.h"
 
 #include <AudioToolbox/AudioToolbox.h>
 #include <Foundation/Foundation.h>
