@@ -647,7 +647,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
       (*embedder_isolate)->GetIsolateSnapshot()->GetInstructionsIfPresent(),
       (*embedder_isolate)->GetSharedSnapshot()->GetDataIfPresent(),
       (*embedder_isolate)->GetSharedSnapshot()->GetInstructionsIfPresent(),
-      NULL, embedder_isolate.get(), error);
+      flags, embedder_isolate.get(), error);
 
   if (isolate == nullptr) {
     FML_DLOG(ERROR) << *error;
