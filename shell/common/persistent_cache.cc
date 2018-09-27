@@ -51,7 +51,7 @@ PersistentCache::PersistentCache()
                           },
                           fml::FilePermission::kReadWrite))) {
   if (!IsValid()) {
-    FML_LOG(ERROR) << "Could not acquire the persistent cache directory. "
+    FML_LOG(WARNING) << "Could not acquire the persistent cache directory. "
                       "Caching of GPU resources on disk is disabled.";
   }
 }
@@ -99,12 +99,12 @@ static void PersistentCacheStore(fml::RefPtr<fml::TaskRunner> worker,
                               file_name.c_str(),  //
                               *mapping)           //
     ) {
-      FML_DLOG(ERROR) << "Could not write cache contents to persistent store.";
+      FML_DLOG(WARNING) << "Could not write cache contents to persistent store.";
     }
   });
 
   if (!worker) {
-    FML_LOG(ERROR)
+    FML_LOG(WARNING)
         << "The persistent cache has no available workers. Performing the task "
            "on the current thread. This slow operation is going to occur on a "
            "frame workload.";
