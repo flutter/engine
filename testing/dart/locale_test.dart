@@ -38,13 +38,6 @@ void main() {
             reason: "The only valid 4 character language subtag is 'root'.");
         expect(Locale.safe('abcdefghi').languageCode, 'und',
             reason: "Language subtags may not be more than 8 characters.");
-
-        expect(Locale.safe('IW').languageCode, 'und',
-            reason: "One character language subtags are invalid.");
-        expect(Locale.safe('en').languageCode, 'und',
-            reason: "The only valid 4 character language subtag is 'root'.");
-        expect(Locale.safe('en').languageCode, 'und',
-            reason: "Language subtags may not be more than 8 characters.");
       });
     });
   });
