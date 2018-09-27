@@ -35,7 +35,7 @@
   fml::scoped_nsobject<FlutterDartProject> _dartProject;
   shell::ThreadHost _threadHost;
   std::unique_ptr<shell::Shell> _shell;
-  fml::WeakPtrFactory<FlutterViewController>* _weakFactory;
+  std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
 
   // Channels
   fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
@@ -67,7 +67,8 @@
                          bundle:(NSBundle*)nibBundleOrNil {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
-    _weakFactory = new fml::WeakPtrFactory<FlutterViewController>(self);
+    _weakFactory = std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>>(
+        new fml::WeakPtrFactory<FlutterViewController>(self));
     if (projectOrNil == nil)
       _dartProject.reset([[FlutterDartProject alloc] init]);
     else
@@ -505,7 +506,6 @@
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_pluginPublications release];
-  delete _weakFactory;
   [super dealloc];
 }
 
