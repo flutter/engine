@@ -135,7 +135,7 @@ public class FlutterFragment extends Fragment {
   @Override
   public void onAttach(Activity activity) {
     super.onAttach(activity);
-    Log.d(TAG, "onAttach()");
+    Log.d(TAG, "onAttach(), engine: " + flutterEngine);
     initializeFlutter(activity);
   }
 
@@ -185,8 +185,16 @@ public class FlutterFragment extends Fragment {
     container = new FrameLayout(getContextCompat());
     container.setLayoutParams(MATCH_PARENT);
 
-    // Create a FlutterEngine to back our FlutterView.
-    flutterEngine = createFlutterEngine(getActivity());
+    // Create a FlutterEngine to back our FlutterView. It may already exist if this Fragment
+    // has been set to "retain instance".
+    if (flutterEngine == null) {
+      flutterEngine = createFlutterEngine(getActivity());
+
+      // Allow subclasses to customize FlutterEngine as desired.
+      onFlutterEngineCreated(flutterEngine);
+    }
+    Log.d(TAG, "createLayout: Attaching plugin registry to Activity");
+    flutterEngine.getPluginRegistry().attach(flutterView, getActivity());
 
     // Create our FlutterView for rendering and user interaction.
     flutterView = createFlutterView(getActivity());
@@ -218,11 +226,15 @@ public class FlutterFragment extends Fragment {
   @NonNull
   protected FlutterEngine createFlutterEngine(@NonNull Context context) {
     Log.d(TAG, "createFlutterEngine()");
-    Activity activity = (Activity) context;
-    FlutterEngine flutterEngine = new FlutterEngine(activity, getResources(), false);
-    flutterEngine.getPluginRegistry().attach(flutterView, getActivity());
+    return new FlutterEngine(context, getResources(), false);
+  }
 
-    return flutterEngine;
+  /**
+   * Hook for subclasses to customize the {@link FlutterEngine} owned by this {@link FlutterFragment}
+   * after the {@link FlutterEngine} has been instantiated.
+   */
+  protected void onFlutterEngineCreated(@NonNull FlutterEngine flutterEngine) {
+    // no-op
   }
 
   @Override
@@ -254,13 +266,19 @@ public class FlutterFragment extends Fragment {
   }
 
   @Override
+  public void onDestroyView() {
+    super.onDestroyView();
+    Log.d(TAG, "onDestroyView()");
+    flutterView.detachFromFlutterRenderer();
+  }
+
+  @Override
   public void onDestroy() {
     super.onDestroy();
     Log.d(TAG, "onDestroy()");
 
     // TODO(mattcarroll): re-evaluate how Flutter plugins interact with FlutterView and FlutterNativeView
     final boolean detach = flutterEngine.getPluginRegistry().onViewDestroy(flutterEngine);
-    flutterView.detachFromFlutterRenderer();
     if (detach || retainFlutterIsolateAfterFragmentDestruction()) {
       // Detach, but do not destroy the FlutterView if a plugin expressed interest in its
       // FlutterNativeView.
@@ -268,6 +286,13 @@ public class FlutterFragment extends Fragment {
     } else {
       flutterEngine.destroy();
     }
+  }
+
+  @Override
+  public void onDetach() {
+    super.onDetach();
+    Log.d(TAG, "onDetach: Detaching plugin registry from Activity.");
+    flutterEngine.getPluginRegistry().detach();
   }
 
   /**
@@ -481,7 +506,8 @@ public class FlutterFragment extends Fragment {
   private void doInitialFlutterViewRun() {
 //    if (BuildConfig.DEBUG && flutterView.getFlutterNativeView().isApplicationRunning()) {
     if (flutterEngine.getDartExecutor().isApplicationRunning()) {
-      throw new RuntimeException("Tried to initialize Dart execution in Flutter engine that is already running.");
+      return;
+//      throw new RuntimeException("Tried to initialize Dart execution in Flutter engine that is already running.");
     }
 
     if (getInitialRoute() != null) {
