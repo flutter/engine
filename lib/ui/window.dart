@@ -377,15 +377,27 @@ class Locale {
   @override
   int get hashCode => hashValues(languageCode, scriptCode, countryCode);
 
-  @override
-  String toString() {
+  /// Returns a syntactically valid Unicode BCP47 Locale Identifier.
+  ///
+  /// An example of such an identifier with Language, Script and Region subtags:
+  /// "en-Latn-UK", "zh-Hant-TW". See http://www.unicode.org/reports/tr35/ for
+  /// technical details.
+  String toLanguageTag() {
     final StringBuffer out = StringBuffer(languageCode);
     if (scriptCode != null)
-      out.write('_$scriptCode');
+      out.write('-$scriptCode');
     if (_countryCode != null)
-      out.write('_$countryCode');
+      out.write('-$countryCode');
     return out.toString();
   }
+
+  /// Returns a string representing the locale.
+  ///
+  /// This identifier happens to be a valid Unicode Locale Identifier using
+  /// underscores as separator, however it is intended to be used for debugging
+  /// purposes only. For parseable results, use [toLanguageTag] instead.
+  @override
+  String toString() => toLanguageTag().replaceAll('-', '_');
 }
 
 /// The most basic interface to the host operating system's user interface.

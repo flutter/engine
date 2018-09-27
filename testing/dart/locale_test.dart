@@ -9,13 +9,15 @@ import 'package:test/test.dart';
 void main() {
   test('Locale', () {
     final Null $null = null;
-    expect(const Locale('en').toString(), 'en');
+    expect(const Locale('en').toLanguageTag(), 'en');
     expect(const Locale('en'), new Locale('en', $null));
     expect(const Locale('en').hashCode, new Locale('en', $null).hashCode);
     expect(const Locale('en'), isNot(new Locale('en', '')));
     expect(const Locale('en').hashCode, isNot(new Locale('en', '').hashCode));
+    expect(const Locale('en', 'US').toLanguageTag(), 'en-US');
     expect(const Locale('en', 'US').toString(), 'en_US');
-    expect(const Locale('iw').toString(), 'he');
+    expect(const Locale('iw').toLanguageTag(), 'he');
+    expect(const Locale('iw', 'DD').toLanguageTag(), 'he-DE');
     expect(const Locale('iw', 'DD').toString(), 'he_DE');
     expect(const Locale('iw', 'DD'), const Locale('he', 'DE'));
   });
@@ -25,18 +27,18 @@ void main() {
     expect(const Locale.fromSubtags().scriptCode, null);
     expect(const Locale.fromSubtags().countryCode, null);
 
-    expect(const Locale.fromSubtags(languageCode: 'en').toString(), 'en');
+    expect(const Locale.fromSubtags(languageCode: 'en').toLanguageTag(), 'en');
     expect(const Locale.fromSubtags(languageCode: 'en').languageCode, 'en');
-    expect(const Locale.fromSubtags(scriptCode: 'Latn').toString(), 'und_Latn');
+    expect(const Locale.fromSubtags(scriptCode: 'Latn').toLanguageTag(), 'und-Latn');
     expect(const Locale.fromSubtags(scriptCode: 'Latn').scriptCode, 'Latn');
-    expect(const Locale.fromSubtags(countryCode: 'US').toString(), 'und_US');
+    expect(const Locale.fromSubtags(countryCode: 'US').toLanguageTag(), 'und-US');
     expect(const Locale.fromSubtags(countryCode: 'US').countryCode, 'US');
 
-    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').toString(), 'es_419');
+    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').toLanguageTag(), 'es-419');
     expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').languageCode, 'es');
     expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').countryCode, '419');
 
-    expect(Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN').toString(), 'zh_Hans_CN');
+    expect(Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN').toLanguageTag(), 'zh-Hans-CN');
   });
 
   test('Locale equality', () {
