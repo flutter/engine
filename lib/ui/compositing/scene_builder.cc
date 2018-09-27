@@ -83,7 +83,7 @@ void SceneBuilder::pushOffset(double dx, double dy) {
   SkMatrix sk_matrix = SkMatrix::MakeTrans(dx, dy);
   auto layer = std::make_unique<flow::TransformLayer>();
   layer->set_transform(sk_matrix);
-  PushLayer(std::move(layer), cull_rects_.top().makeOffset(-dx, -dy));
+  PushLayer(std::move(layer));
 }
 
 void SceneBuilder::pushClipRect(double left,
