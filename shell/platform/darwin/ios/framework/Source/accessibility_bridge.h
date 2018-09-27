@@ -144,7 +144,7 @@ class AccessibilityBridge final {
   int32_t previous_route_id_;
   std::unordered_map<int32_t, blink::CustomAccessibilityAction> actions_;
   std::vector<int32_t> previous_routes_;
-  NSString* last_scroll_announcement;
+  fml::scoped_nsobject<NSString> last_scroll_announcement_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridge);
 };

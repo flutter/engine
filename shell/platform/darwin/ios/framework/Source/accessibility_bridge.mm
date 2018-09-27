@@ -512,7 +512,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
       weak_factory_(this),
       previous_route_id_(0),
       previous_routes_({}),
-      last_scroll_announcement(@"") {
+      last_scroll_announcement_(@"") {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->GetOwnerViewController()
@@ -630,10 +630,8 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
   }
   if (scrollOccured) {
     NSString* scrollNotification = scrolledNode.scrollNotification;
-    if ([scrollNotification isEqualToString:@""] || ![scrollNotification isEqualToString:last_scroll_announcement]) {
-      [last_scroll_announcement release];
-      last_scroll_announcement = scrollNotification;
-      [scrollNotification retain];
+    if ([scrollNotification isEqualToString:@""] || ![scrollNotification isEqualToString:last_scroll_announcement_.get()]) {
+      last_scroll_announcement_.reset(scrollNotification);
       UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, scrollNotification);
     }
   }
