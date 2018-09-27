@@ -6,8 +6,8 @@ package io.flutter.embedding.android;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.Activity;
-import android.app.FragmentManager;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
@@ -50,7 +50,7 @@ import io.flutter.view.FlutterMain;
  */
 @SuppressLint("Registered")
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
-public class FlutterActivity extends Activity {
+public class FlutterActivity extends FragmentActivity {
   private static final String TAG = "FlutterActivity";
 
   private static final String EXTRA_SHOW_SPLASH_SCREEN = "show_launch_screen";
@@ -95,7 +95,7 @@ public class FlutterActivity extends Activity {
    * a reference to that {@code FlutterFragment} is retained in {@code flutterFragment}.
    */
   private void ensureFlutterFragmentCreated() {
-    FragmentManager fragmentManager = getFragmentManager();
+    FragmentManager fragmentManager = getSupportFragmentManager();
     flutterFragment = (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
 
     if (flutterFragment == null) {
@@ -167,6 +167,12 @@ public class FlutterActivity extends Activity {
   @Override
   public void onUserLeaveHint() {
     flutterFragment.onUserLeaveHint();
+  }
+
+  @Override
+  public void onTrimMemory(int level) {
+    super.onTrimMemory(level);
+    flutterFragment.onTrimMemory(level);
   }
 
   @SuppressWarnings("unused")

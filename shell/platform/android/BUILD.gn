@@ -162,6 +162,7 @@ java_library("flutter_shell_java") {
 
   deps = [
     ":android_support_v4",
+    ":android_support_fragment",
   ]
 
   jar_path = "$root_out_dir/flutter_java.jar"
@@ -171,6 +172,12 @@ java_prebuilt("android_support_v4") {
   supports_android = true
 
   jar_path = "//third_party/android_tools/sdk/extras/android/support/v4/android-support-v4.jar"
+}
+
+java_prebuilt("android_support_fragment") {
+  supports_android = true
+
+  jar_path = "//third_party/android_tools/sdk/support_fragment.jar"
 }
 
 copy("flutter_shell_assets") {

@@ -9,7 +9,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.Fragment;
+import android.support.v4.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -40,6 +40,8 @@ import io.flutter.plugin.common.StringCodec;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 import io.flutter.view.FlutterRunArguments;
+
+import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
 
 /**
  * {@code Fragment} which displays a {@link FlutterView} that takes up all available space.
@@ -344,10 +346,7 @@ public class FlutterFragment extends Fragment {
     flutterEngine.getPluginRegistry().onUserLeaveHint();
   }
 
-  @Override
   public void onTrimMemory(int level) {
-    super.onTrimMemory(level);
-
     // Use a trim level delivered while the application is running so the
     // framework has a chance to react to the notification.
     if (level == TRIM_MEMORY_RUNNING_LOW) {
