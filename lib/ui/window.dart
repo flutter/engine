@@ -313,7 +313,7 @@ class Locale {
   final String _countryCode;
 
   static String _canonicalizeRegionSubtag(String regionCode) {
-    if (regionCode.length < 2 || regionCode.length > 3) {
+    if (regionCode == null || regionCode.length < 2 || regionCode.length > 3) {
       return null;
     }
     return _replaceDeprecatedRegionSubtag(regionCode.toUpperCase());
