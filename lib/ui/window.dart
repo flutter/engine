@@ -116,9 +116,19 @@ class WindowPadding {
   }
 }
 
-/// An identifier used to select a user's language and formatting preferences,
-/// consisting of a language and a country. This is a subset of locale
-/// identifiers as defined by BCP 47.
+class LocaleParseException implements Exception {
+  LocaleParseException(this._message);
+  String _message;
+}
+
+/// An identifier used to select a user's language and formatting preferences.
+/// This implements Unicode Locale Identifiers as defined by [Unicode
+/// LDML](https://www.unicode.org/reports/tr35/).
+///
+/// When constructed correctly, instances of this Locale class will produce
+/// normalized syntactically valid output, although not necessarily valid (tags
+/// are not validated). See constructor and factory method documentation for
+/// details.
 ///
 /// Locales are canonicalized according to the "preferred value" entries in the
 /// [IANA Language Subtag
@@ -126,6 +136,8 @@ class WindowPadding {
 /// For example, `const Locale('he')` and `const Locale('iw')` are equal and
 /// both have the [languageCode] `he`, because `iw` is a deprecated language
 /// subtag that was replaced by the subtag `he`.
+///
+/// FIXME/WIP: switch to using CLDR directly instead of the IANA registry?
 ///
 /// See also:
 ///
@@ -143,14 +155,229 @@ class Locale {
   /// ```
   ///
   /// The primary language subtag must not be null. The region subtag is
-  /// optional.
+  /// optional. The values are _case sensitive_, and must match the values
+  /// listed in
+  /// http://unicode.org/repos/cldr/tags/latest/common/validity/language.xml and
+  /// http://unicode.org/repos/cldr/tags/latest/common/validity/region.xml.
   ///
-  /// The values are _case sensitive_, and should match the case of the relevant
-  /// subtags in the [IANA Language Subtag
-  /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
-  /// Typically this means the primary language subtag should be lowercase and
-  /// the region subtag should be uppercase.
-  const Locale(this._languageCode, [ this._countryCode ]) : assert(_languageCode != null);
+  /// This method only produces standards-compliant instances if valid language
+  /// and country codes are provided. Deprecated subtags will be replaced, but
+  /// incorrectly cased strings are not corrected.
+  const Locale(
+    this._languageCode, [
+    this._countryCode,
+  ])  : assert(_languageCode != null),
+        this._scriptCode = null,
+        this._variants = null,
+        this._extensions = null;
+
+  /// Creates a new Locale object with the specified parts.
+  ///
+  /// This is for internal use only. All fields must already be normalized, must
+  /// already be canonicalized. This method does not modify parameters in any
+  /// way or do any syntax checking.
+  ///
+  /// * language, script and region must be in canonical form.
+  /// * iterating over variants must provide variants in alphabetical order.
+  /// * The extensions map must contain only valid key/value pairs. "u" and "t"
+  ///   keys must be present, with an empty string as value, if there are any
+  ///   subtags for those singletons.
+  Locale._internal(
+    String language, {
+    String script,
+    String region,
+    collection.SplayTreeSet<String> variants,
+    collection.SplayTreeMap<String, String> extensions,
+  }) : assert(language != null),
+       assert(language.length >= 2),
+       assert(language.length <= 8),
+       assert(language.length != 4),
+       assert((script ?? "Xxxx").length == 4),
+       assert((region ?? "XX").length >= 2),
+       assert((region ?? "XX").length <= 3),
+       _languageCode = language,
+       _scriptCode = script,
+       _countryCode = region,
+       _variants = collection.LinkedHashSet<String>.from(variants ?? []),
+       _extensions = collection.LinkedHashMap<String, String>.from(extensions ?? {});
+
+  /// Parses [Unicode Locale
+  /// Identifiers](https://www.unicode.org/reports/tr35/#Identifiers).
+  ///
+  /// This method does not parse all BCP 47 tags. See [BCP 47
+  /// Conformance](https://www.unicode.org/reports/tr35/#BCP_47_Conformance) for
+  /// details.
+  factory Locale.parse(String localeId) {
+    assert(localeId != null);
+    localeId = localeId.toLowerCase();
+    if (localeId == 'root')
+      return Locale._internal('und');
+
+    List<String> locale_subtags = localeId.split(_re_sep);
+    String language, script, region;
+    var variants = collection.SplayTreeSet<String>();
+    // Using a SplayTreeMap for its automatic key sorting.
+    var extensions = collection.SplayTreeMap<String, String>();
+
+    List<String> problems = [];
+    if (_re_language.hasMatch(locale_subtags[0])) {
+      language = _replaceDeprecatedLanguageSubtag(locale_subtags.removeAt(0));
+    } else if (_re_script.hasMatch(locale_subtags[0])) {
+      // Identifiers without language subtags aren't valid BCP 47 tags and
+      // therefore not intended for general interchange, however they do match
+      // the LDML spec.
+      language = 'und';
+    } else {
+      problems.add('"${locale_subtags[0]}" is an invalid language subtag');
+    }
+    if (locale_subtags.length > 0 && _re_script.hasMatch(locale_subtags[0])) {
+      script = _capitalize(locale_subtags.removeAt(0));
+    }
+    if (locale_subtags.length > 0 && _re_region.hasMatch(locale_subtags[0])) {
+      region = locale_subtags.removeAt(0).toUpperCase();
+    }
+    while (locale_subtags.length > 0 && _re_variant.hasMatch(locale_subtags[0])) {
+      variants.add(locale_subtags.removeAt(0));
+    }
+
+    // Now we should be into extension territory, locale_subtags[0] should be a singleton.
+    if (locale_subtags.length > 0 && locale_subtags[0].length > 1) {
+      List<String> mismatched = [];
+      if (variants.length == 0) {
+        if (region == null) {
+          if (script == null) {
+            mismatched.add("script");
+          }
+          mismatched.add("region");
+        }
+        mismatched.add("variant");
+      }
+      problems.add('unrecognised subtag "${locale_subtags[0]}": is not a '
+          '${mismatched.join(", ")}');
+    }
+    _ParseExtensions(locale_subtags, extensions, problems);
+
+    if (problems.length > 0)
+      throw LocaleParseException('Locale Identifier $localeId is invalid: '
+                                 '${problems.join("; ")}.');
+
+    return Locale._internal(language,
+        script: script,
+        region: region,
+        variants: variants,
+        extensions: extensions);
+  }
+
+  /// * All subtags in locale_subtags must already be lowercase.
+  ///
+  /// * extensions must be a map with sorted iteration order, SplayTreeMap takes
+  ///   care of that for us.
+  static void _ParseExtensions(List<String> locale_subtags,
+                               collection.SplayTreeMap<String, String> extensions,
+                               List<String> problems) {
+    while (locale_subtags.length > 0) {
+      String singleton = locale_subtags.removeAt(0);
+      if (singleton == 'u') {
+        bool empty = true;
+        // unicode_locale_extensions: collect "(sep attribute)+" attributes.
+        var attributes = List<String>();
+        while (locale_subtags.length > 0 &&
+               _re_value_subtags.hasMatch(locale_subtags[0])) {
+          attributes.add(locale_subtags.removeAt(0));
+        }
+        if (attributes.length > 0) {
+          empty = false;
+        }
+        if (!extensions.containsKey(singleton)) {
+          extensions[singleton] = attributes.join('-');
+        } else {
+          problems.add('duplicate singleton: "${singleton}"');
+        }
+        // unicode_locale_extensions: collect "(sep keyword)*".
+        while (locale_subtags.length > 0 &&
+               _re_key.hasMatch(locale_subtags[0])) {
+          empty = false;
+          String key = locale_subtags.removeAt(0);
+          var type_parts = List<String>();
+          while (locale_subtags.length > 0 &&
+                 _re_value_subtags.hasMatch(locale_subtags[0])) {
+            type_parts.add(locale_subtags.removeAt(0));
+          }
+          if (!extensions.containsKey(key)) {
+            extensions[key] = type_parts.join('-');
+          } else {
+            problems.add('duplicate key: ${key}');
+          }
+        }
+        if (empty) {
+          problems.add('empty singleton: ${singleton}');
+        }
+      } else if (singleton == 't') {
+        bool empty = true;
+        // transformed_extensions: grab tlang if it exists.
+        var tlang = List<String>();
+        if (locale_subtags.length > 0 && _re_language.hasMatch(locale_subtags[0])) {
+          empty = false;
+          tlang.add(locale_subtags.removeAt(0));
+          if (locale_subtags.length > 0 && _re_script.hasMatch(locale_subtags[0]))
+            tlang.add(locale_subtags.removeAt(0));
+          if (locale_subtags.length > 0 && _re_region.hasMatch(locale_subtags[0]))
+            tlang.add(locale_subtags.removeAt(0));
+          while (locale_subtags.length > 0 && _re_variant.hasMatch(locale_subtags[0])) {
+            tlang.add(locale_subtags.removeAt(0));
+          }
+        }
+        if (!extensions.containsKey(singleton)) {
+          extensions[singleton] = tlang.join('-');
+        } else {
+          problems.add('duplicate singleton: "${singleton}"');
+        }
+        // transformed_extensions: collect "(sep tfield)*".
+        while (locale_subtags.length > 0 && _re_tkey.hasMatch(locale_subtags[0])) {
+          String tkey = locale_subtags.removeAt(0);
+          var tvalue_parts = List<String>();
+          while (locale_subtags.length > 0 && _re_value_subtags.hasMatch(locale_subtags[0])) {
+            tvalue_parts.add(locale_subtags.removeAt(0));
+          }
+          if (tvalue_parts.length > 0) {
+            empty = false;
+            if (!extensions.containsKey(tkey)) {
+                extensions[tkey] = tvalue_parts.join('-');
+            } else {
+              problems.add('duplicate key: ${tkey}');
+            }
+          }
+        }
+        if (empty) {
+          problems.add('empty singleton: ${singleton}');
+        }
+      } else if (singleton == 'x') {
+        // pu_extensions
+        var values = List<String>();
+        while (locale_subtags.length > 0 && _re_all_subtags.hasMatch(locale_subtags[0])) {
+          values.add(locale_subtags.removeAt(0));
+        }
+        extensions[singleton] = values.join('-');
+        if (locale_subtags.length > 0) {
+            problems.add('invalid part of private use subtags: "${locale_subtags.join('-')}"');
+        }
+        break;
+      } else if (_re_singleton.hasMatch(singleton)) {
+        // other_extensions
+        var values = List<String>();
+        while (locale_subtags.length > 0 && _re_other_subtags.hasMatch(locale_subtags[0])) {
+          values.add(locale_subtags.removeAt(0));
+        }
+        if (!extensions.containsKey(singleton)) {
+          extensions[singleton] = values.join('-');
+        } else {
+          problems.add('duplicate singleton: "${singleton}"');
+        }
+      } else {
+        problems.add('invalid subtag, should be singleton: "${singleton}"');
+      }
+    }
+  }
 
   /// The primary language subtag for the locale.
   ///
@@ -166,10 +393,15 @@ class Locale {
   /// Locale('he')` and `const Locale('iw')` are equal, and both have the
   /// [languageCode] `he`, because `iw` is a deprecated language subtag that was
   /// replaced by the subtag `he`.
-  String get languageCode => _canonicalizeLanguageCode(_languageCode);
+  String get languageCode => _replaceDeprecatedLanguageSubtag(_languageCode);
   final String _languageCode;
 
-  static String _canonicalizeLanguageCode(String languageCode) {
+  /// Replaces deprecated language subtags.
+  ///
+  /// The subtag must already be lowercase.
+  ///
+  /// This method's switch statement periodically needs a manual update.
+  static String _replaceDeprecatedLanguageSubtag(String languageCode) {
     // This switch statement is generated by //flutter/tools/gen_locale.dart
     // Mappings generated for language subtag registry as of 2018-08-08.
     switch (languageCode) {
@@ -255,6 +487,13 @@ class Locale {
     }
   }
 
+  String get scriptCode => _scriptCode;
+  final String _scriptCode;
+
+  // ASCII only. (TODO: Check first if already valid).
+  static String _capitalize(String word) =>
+      word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase();
+
   /// The region subtag for the locale.
   ///
   /// This can be null.
@@ -269,10 +508,15 @@ class Locale {
   /// 'DE')` and `const Locale('de', 'DD')` are equal, and both have the
   /// [countryCode] `DE`, because `DD` is a deprecated language subtag that was
   /// replaced by the subtag `DE`.
-  String get countryCode => _canonicalizeRegionCode(_countryCode);
+  String get countryCode => _replaceDeprecatedRegionSubtag(_countryCode);
   final String _countryCode;
 
-  static String _canonicalizeRegionCode(String regionCode) {
+  /// Replaces deprecated region subtags.
+  ///
+  /// The subtag must already be uppercase.
+  ///
+  /// This method's switch statement periodically needs a manual update.
+  static String _replaceDeprecatedRegionSubtag(String regionCode) {
     // This switch statement is generated by //flutter/tools/gen_locale.dart
     // Mappings generated for language subtag registry as of 2018-08-08.
     switch (regionCode) {
@@ -286,6 +530,158 @@ class Locale {
     }
   }
 
+  /// Unicode language variant codes.
+  ///
+  /// This iterable provides variants normalized to lowercase and in sorted
+  /// order, as per the Unicode LDML specification.
+  Iterable<String> get variants => _variants ?? [];
+
+  // The private _variants field must have variants in lowercase and already
+  // sorted: constructors must construct it as such.
+  final collection.LinkedHashSet<String> _variants;
+
+  // A map representing all Locale Identifier extensions.
+  //
+  // Keys in this ordered map must be sorted, and both keys and values must all
+  // be lowercase: constructors must construct it as such.
+  //
+  // This map simultaneously reprents T-extensions, U-extensions, other
+  // extensions and the private use extensions. Implementation detailsf:
+  //
+  // * The 't' entry represents the optional "tlang" identifier of the T
+  //   Extension. If the T Extension is present but has no tlang value, the 't'
+  //   map entry's value must be an empty string.
+  // * The 'u' entry represents the optional attributes of the U Extension. They
+  //   must be sorted in alphabetical order, separated by hyphens, and be
+  //   lowercase. If the U Extension is present but has no attributes, the 'u'
+  //   map entry's value must be an empty string.
+  // * U-Extension keyword keys, matching _re_key, and T-Extension fields in the
+  //   map, whos field separator subtags match _re_tkey, are directly entered
+  //   into this map. (These regular expressions don't match the same keys.)
+  // * Other singletons are entered directly into the map, with all
+  //   values/attributes associated with that singleton as the map entry's
+  //   value.
+  final collection.LinkedHashMap<String, String> _extensions;
+
+  /// Produces the Unicode BCP47 Locale Identifier for this locale.
+  ///
+  /// If the const constructor was used with bad parameters, the result might
+  /// not be standards-compliant.
+  String toLanguageTag() {
+    var out = StringBuffer(languageCode);
+    if (scriptCode != null) {
+      out.write('-$scriptCode');
+    }
+    if (_countryCode != null && _countryCode != '') {
+      out.write('-$countryCode');
+    }
+    for (String v in variants) {
+      out.write('-$v');
+    }
+    if (_extensions != null && _extensions.isNotEmpty) {
+      out.write(_ExtensionsToString(_extensions));
+    }
+    return out.toString();
+  }
+
+  /// Formats the extension map into a partial Unicode Locale Identifier.
+  ///
+  /// This covers everything after the unicode_language_id.
+  static String _ExtensionsToString(
+      collection.LinkedHashMap<String, String> extensions) {
+    String u_attr;
+    String t_attr;
+    var u_out = StringBuffer();
+    var t_out = StringBuffer();
+    var result = StringBuffer();
+    var result_vwyzx = StringBuffer();
+
+    for (MapEntry entry in extensions.entries) {
+      if (entry.key.length == 1) {
+        if (RegExp(r'^[a-s]$').hasMatch(entry.key)) {
+          result.write('-${entry.key}');
+          if (entry.value.length > 0)
+            result.write('-${entry.value}');
+        } else if (entry.key == 't') {
+          t_attr = entry.value;
+        } else if (entry.key == 'u') {
+          u_attr = entry.value;
+        } else if (RegExp(r'^[vwyz]$').hasMatch(entry.key)) {
+          result_vwyzx.write('-${entry.key}');
+          if (entry.value.length > 0)
+            result_vwyzx.write('-${entry.value}');
+        } else if (entry.key != 'x') {
+          throw UnimplementedError(
+              'Extension not supported/recognised: $entry.');
+        }
+      } else if (_re_key.hasMatch(entry.key)) {
+        // unicode_locale_extensions
+        if (entry.value == 'true' || entry.value == '') {
+          u_out.write('-${entry.key}');
+        } else {
+          u_out.write('-${entry.key}-${entry.value}');
+        }
+      } else if (_re_tkey.hasMatch(entry.key)) {
+        // transformed_extensions
+        t_out.write('-${entry.key}');
+        // FIXME: this is not standards compliant. What do we want to do with
+        // this case? Drop entry.key like we drop empty t and u singletons?
+        // Throw an exception probably.
+        if (entry.value.length > 0)
+          t_out.write('-${entry.value}');
+      } else {
+        throw UnimplementedError(
+            'Extension not supported/recognised: $entry.');
+      }
+    }
+    if (t_attr != null || t_out.length > 0) {
+      result.write('-t');
+      if (t_attr != null)
+        result.write('-$t_attr');
+      result.write(t_out.toString());
+    }
+    if (u_attr != null || u_out.length > 0) {
+      result.write('-u');
+      if (u_attr != null && u_attr.length > 0)
+        result.write('-$u_attr');
+      result.write(u_out.toString());
+    }
+    if (result_vwyzx.length > 0)
+      result.write(result_vwyzx.toString());
+    if (extensions.containsKey('x')) {
+      result.write('-x');
+      if (extensions['x'].length > 0) {
+        result.write('-${extensions["x"]}');
+      }
+    }
+    return result.toString();
+  }
+
+  // Unicode Language Identifier subtags
+  // TODO/WIP: because we lowercase Locale Identifiers before parsing, typical
+  // use of these regexps don't actually need to atch capitals too.
+  static final _re_singleton = RegExp(r'^[a-zA-Z]$');
+
+  // (https://www.unicode.org/reports/tr35/#Unicode_language_identifier).
+  static final _re_language = RegExp(r'^[a-zA-Z]{2,3}$|^[a-zA-Z]{5,8}$');
+  static final _re_script = RegExp(r'^[a-zA-Z]{4}$');
+  static final _re_region = RegExp(r'^[a-zA-Z]{2}$|^[0-9]{3}$');
+  static final _re_variant = RegExp(r'^[a-zA-Z0-9]{5,8}$|^[0-9][a-zA-Z0-9]{3}$');
+  static final _re_sep = RegExp(r'[-_]');
+
+  // Covers all subtags possible in Unicode Locale Identifiers, used for
+  // pu_extensions.
+  static final _re_all_subtags = RegExp(r'^[a-zA-Z0-9]{1,8}$');
+  // Covers all subtags within a particular extension, used for other_extensions.
+  static final _re_other_subtags = RegExp(r'^[a-zA-Z0-9]{2,8}$');
+  // Covers "attribute" and "type" from unicode_locale_extensions, and "tvalue" in
+  // transformed_extensions.
+  // (https://www.unicode.org/reports/tr35/#Unicode_locale_identifier).
+  static final _re_value_subtags = RegExp(r'^[a-zA-Z0-9]{3,8}$');
+
+  static final _re_key = RegExp('^[a-zA-Z0-9][a-zA-Z]\$');
+  static final _re_tkey = RegExp('^[a-zA-Z][0-9]\$');
+
   @override
   bool operator ==(dynamic other) {
     if (identical(this, other))
@@ -293,24 +689,33 @@ class Locale {
     if (other is! Locale)
       return false;
     final Locale typedOther = other;
-    return languageCode == typedOther.languageCode
-        && countryCode == typedOther.countryCode;
+
+    // TODO: improve efficiency of this, toLanguageTag() is too expensive.
+    // Comparing Sets and Maps requires reimplementing functionality in
+    // package:collection.
+    return this.toLanguageTag() == typedOther.toLanguageTag()
+        // toLanguageTag() cannot represent zero-length string as country-code.
+        && this.countryCode == typedOther.countryCode;
   }
 
   @override
   int get hashCode {
-    int result = 373;
-    result = 37 * result + languageCode.hashCode;
-    if (_countryCode != null)
-      result = 37 * result + countryCode.hashCode;
-    return result;
+    return this.toLanguageTag().hashCode
+        + 373 * this.countryCode.hashCode;
   }
 
+  /// Produces a non-BCP47 Unicode Locale Identifier for this locale.
+  ///
+  /// This Locale Identifier uses underscores as separator for historical
+  /// reasons. Use toLanguageTag() instead, it produces a Unicode BCP47 Locale
+  /// Identifier as recommended for general interchange.
   @override
   String toString() {
-    if (_countryCode == null)
-      return languageCode;
-    return '${languageCode}_$countryCode';
+    if (_countryCode == '') {
+      // Not standards-compliant, but kept for legacy reasons.
+      return '${languageCode}_';
+    }
+    return toLanguageTag().replaceAll('-', '_');
   }
 }
 
@@ -708,6 +1113,7 @@ class Window {
     if (error != null)
       throw new Exception(error);
   }
+
   String _sendPlatformMessage(String name,
                               PlatformMessageResponseCallback callback,
                               ByteData data) native 'Window_sendPlatformMessage';
