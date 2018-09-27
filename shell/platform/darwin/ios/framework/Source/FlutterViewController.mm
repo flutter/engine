@@ -67,8 +67,7 @@
                          bundle:(NSBundle*)nibBundleOrNil {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
-    _weakFactory = std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>>(
-        new fml::WeakPtrFactory<FlutterViewController>(self));
+    _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     if (projectOrNil == nil)
       _dartProject.reset([[FlutterDartProject alloc] init]);
     else
