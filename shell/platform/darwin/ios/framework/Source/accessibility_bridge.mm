@@ -179,6 +179,22 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   }
 }
 
+- (NSString*)scrollNotification {
+  int32_t scrollIndex = [self node].scrollIndex;
+  int32_t scrollChildren = [self node].scrollChildren;
+  if (scrollChildren == 0 || ![self hasChildren]) {
+    return @"";
+  }
+  int visibleChildren = 0;
+  for (SemanticsObject* child in self.children) {
+    if (![child node].HasFlag(blink::SemanticsFlags::kIsHidden)) {
+      visibleChildren += 1;
+    }
+  }
+  // TODO: add translations.
+  return [NSString stringWithFormat:@"Showing items %d to %d of %d", scrollIndex + 1, scrollIndex + visibleChildren, scrollChildren];
+}
+
 - (BOOL)onCustomAccessibilityAction:(FlutterCustomAccessibilityAction*)action {
   if (![self node].HasAction(blink::SemanticsAction::kCustomAction))
     return NO;
@@ -495,7 +511,8 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
       objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_id_(0),
-      previous_routes_({}) {
+      previous_routes_({}),
+      last_scroll_announcement_(@"") {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
       binaryMessenger:platform_view->GetOwnerViewController()
@@ -518,6 +535,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
                                           blink::CustomAccessibilityActionUpdates actions) {
   BOOL layoutChanged = NO;
   BOOL scrollOccured = NO;
+  SemanticsObject* scrolledNode = nil;
   for (const auto& entry : actions) {
     const blink::CustomAccessibilityAction& action = entry.second;
     actions_[action.id] = action;
@@ -526,7 +544,10 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
     const blink::SemanticsNode& node = entry.second;
     SemanticsObject* object = GetOrCreateObject(node.id, nodes);
     layoutChanged = layoutChanged || [object nodeWillCauseLayoutChange:&node];
-    scrollOccured = scrollOccured || [object nodeWillCauseScroll:&node];
+    if ([object nodeWillCauseScroll:&node]) {
+      scrollOccured = true;
+      scrolledNode = object;
+    }
     [object setSemanticsNode:&node];
     const NSUInteger newChildCount = node.childrenInTraversalOrder.size();
     NSMutableArray* newChildren =
@@ -608,8 +629,11 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
     UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, nil);
   }
   if (scrollOccured) {
-    // TODO(tvolkert): provide meaningful string (e.g. "page 2 of 5")
-    UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, @"");
+    NSString* scrollNotification = scrolledNode.scrollNotification;
+    if ([scrollNotification isEqualToString:@""] || ![scrollNotification isEqualToString:last_scroll_announcement_.get()]) {
+      last_scroll_announcement_.reset(scrollNotification);
+      UIAccessibilityPostNotification(UIAccessibilityPageScrolledNotification, scrollNotification);
+    }
   }
 }
 
