@@ -55,13 +55,11 @@ void main() {
     ]));
   });
 
-  test('decodedCacheRatioCapOverride', () async {
+  test('decodedCacheRatioCap', () async {
     // No real way to test the native layer, but a smoke test here to at least
     // verify that animation is still consistent with caching disabled.
-    ui.decodedCacheRatioCapOverride = 1.0;
-
     Uint8List data = await _getSkiaResource('test640x479.gif').readAsBytes();
-    ui.Codec codec = await ui.instantiateImageCodec(data);
+    ui.Codec codec = await ui.instantiateImageCodec(data, decodedCacheRatioCap: 1.0);
     List<List<int>> decodedFrameInfos = [];
     for (int i = 0; i < 5; i++) {
       ui.FrameInfo frameInfo = await codec.getNextFrame();

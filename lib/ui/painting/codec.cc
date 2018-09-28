@@ -405,15 +405,16 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
     options.fFrameIndex = nextFrameIndex_;
     const int requiredFrame = frameInfos_[nextFrameIndex_].fRequiredFrame;
     if (requiredFrame != SkCodec::kNone) {
-      if (frameBitmaps_[requiredFrame]->bitmap_ == nullptr) {
+      const SkBitmap* requiredBitmap =
+          frameBitmaps_[requiredFrame]->bitmap_.get();
+      if (requiredBitmap == nullptr) {
         FML_LOG(ERROR) << "Frame " << nextFrameIndex_ << " depends on frame "
                        << requiredFrame << " which has not been cached.";
         return NULL;
       }
 
-      SkBitmap requiredBitmap = *frameBitmaps_[requiredFrame]->bitmap_;
-      if (requiredBitmap.getPixels() &&
-          copy_to(&bitmap, requiredBitmap.colorType(), requiredBitmap)) {
+      if (requiredBitmap->getPixels() &&
+          copy_to(&bitmap, requiredBitmap->colorType(), *requiredBitmap)) {
         options.fPriorFrame = requiredFrame;
       }
     }
