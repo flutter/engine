@@ -85,7 +85,7 @@ class Shell final : public PlatformView::Delegate,
 
   const blink::TaskRunners task_runners_;
   const blink::Settings settings_;
-  fml::RefPtr<blink::DartVM> vm_;
+  std::shared_ptr<blink::DartVM> vm_;
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
   std::unique_ptr<Engine> engine_;               // on UI task runner
   std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner

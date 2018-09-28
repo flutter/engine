@@ -15,6 +15,7 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
@@ -239,54 +240,63 @@ static void EmbedderInformationCallback(Dart_EmbedderInformation* info) {
   info->name = "Flutter";
 }
 
-fml::RefPtr<DartVM> DartVM::ForProcess(Settings settings) {
+std::shared_ptr<DartVM> DartVM::ForProcess(Settings settings) {
   return ForProcess(settings, nullptr, nullptr, nullptr);
 }
 
-static std::once_flag gVMInitialization;
 static std::mutex gVMMutex;
-static fml::RefPtr<DartVM> gVM;
+static std::weak_ptr<DartVM> gVM;
 
-fml::RefPtr<DartVM> DartVM::ForProcess(
+std::shared_ptr<DartVM> DartVM::ForProcess(
     Settings settings,
     fml::RefPtr<DartSnapshot> vm_snapshot,
     fml::RefPtr<DartSnapshot> isolate_snapshot,
     fml::RefPtr<DartSnapshot> shared_snapshot) {
   std::lock_guard<std::mutex> lock(gVMMutex);
-  std::call_once(gVMInitialization, [settings,          //
-                                     vm_snapshot,       //
-                                     isolate_snapshot,  //
-                                     shared_snapshot    //
-  ]() mutable {
-    if (!vm_snapshot) {
-      vm_snapshot = DartSnapshot::VMSnapshotFromSettings(settings);
-    }
-    if (!(vm_snapshot && vm_snapshot->IsValid())) {
-      FML_LOG(ERROR) << "VM snapshot must be valid.";
-      return;
-    }
-    if (!isolate_snapshot) {
-      isolate_snapshot = DartSnapshot::IsolateSnapshotFromSettings(settings);
-    }
-    if (!(isolate_snapshot && isolate_snapshot->IsValid())) {
-      FML_LOG(ERROR) << "Isolate snapshot must be valid.";
-      return;
-    }
-    if (!shared_snapshot) {
-      shared_snapshot = DartSnapshot::Empty();
-    }
-    gVM = fml::MakeRefCounted<DartVM>(settings,                     //
-                                      std::move(vm_snapshot),       //
-                                      std::move(isolate_snapshot),  //
-                                      std::move(shared_snapshot)    //
-    );
-  });
-  return gVM;
+
+  // TODO(chinmaygarde): Make this an assertion instead so that callers are
+  // notified that the new settings might not hold because an exiting VM was
+  // being reused.
+  if (auto vm = gVM.lock()) {
+    return vm;
+  }
+
+  if (!vm_snapshot) {
+    vm_snapshot = DartSnapshot::VMSnapshotFromSettings(settings);
+  }
+
+  if (!(vm_snapshot && vm_snapshot->IsValid())) {
+    FML_LOG(ERROR) << "VM snapshot must be valid.";
+    return {};
+  }
+
+  if (!isolate_snapshot) {
+    isolate_snapshot = DartSnapshot::IsolateSnapshotFromSettings(settings);
+  }
+
+  if (!(isolate_snapshot && isolate_snapshot->IsValid())) {
+    FML_LOG(ERROR) << "Isolate snapshot must be valid.";
+    return {};
+  }
+
+  if (!shared_snapshot) {
+    shared_snapshot = DartSnapshot::Empty();
+  }
+
+  // Note: std::make_shared unviable due to hidden constructor.
+  auto vm = std::shared_ptr<DartVM>(new DartVM(settings,                     //
+                                               std::move(vm_snapshot),       //
+                                               std::move(isolate_snapshot),  //
+                                               std::move(shared_snapshot)    //
+                                               ));
+
+  gVM = vm;
+
+  return vm;
 }
 
-fml::RefPtr<DartVM> DartVM::ForProcessIfInitialized() {
-  std::lock_guard<std::mutex> lock(gVMMutex);
-  return gVM;
+std::shared_ptr<DartVM> DartVM::ForProcessIfInitialized() {
+  return gVM.lock();
 }
 
 DartVM::DartVM(const Settings& settings,
@@ -296,8 +306,7 @@ DartVM::DartVM(const Settings& settings,
     : settings_(settings),
       vm_snapshot_(std::move(vm_snapshot)),
       isolate_snapshot_(std::move(isolate_snapshot)),
-      shared_snapshot_(std::move(shared_snapshot)),
-      weak_factory_(this) {
+      shared_snapshot_(std::move(shared_snapshot)) {
   TRACE_EVENT0("flutter", "DartVMInitializer");
   FML_DLOG(INFO) << "Attempting Dart VM launch for mode: "
                  << (IsRunningPrecompiledCode() ? "AOT" : "Interpreter");
@@ -394,8 +403,6 @@ DartVM::DartVM(const Settings& settings,
 
   DartUI::InitForGlobal();
 
-  Dart_SetFileModifiedCallback(&DartFileModifiedCallback);
-
   {
     TRACE_EVENT0("flutter", "Dart_Initialize");
     Dart_InitializeParams params = {};
@@ -433,6 +440,8 @@ DartVM::DartVM(const Settings& settings,
     }
   }
 
+  Dart_SetFileModifiedCallback(&DartFileModifiedCallback);
+
   // Allow streaming of stdout and stderr by the Dart vm.
   Dart_SetServiceStreamCallbacks(&ServiceStreamListenCallback,
                                  &ServiceStreamCancelCallback);
@@ -441,10 +450,15 @@ DartVM::DartVM(const Settings& settings,
 }
 
 DartVM::~DartVM() {
+  std::lock_guard<std::mutex> lock(gVMMutex);
   if (Dart_CurrentIsolate() != nullptr) {
     Dart_ExitIsolate();
   }
+
   char* result = Dart_Cleanup();
+
+  dart::bin::CleanupDartIo();
+
   if (result != nullptr) {
     FML_LOG(ERROR) << "Could not cleanly shut down the Dart VM. Message: \""
                    << result << "\".";
@@ -474,10 +488,6 @@ fml::RefPtr<DartSnapshot> DartVM::GetSharedSnapshot() const {
 
 ServiceProtocol& DartVM::GetServiceProtocol() {
   return service_protocol_;
-}
-
-fml::WeakPtr<DartVM> DartVM::GetWeakPtr() {
-  return weak_factory_.GetWeakPtr();
 }
 
 }  // namespace blink

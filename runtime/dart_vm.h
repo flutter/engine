@@ -6,6 +6,7 @@
 #define FLUTTER_RUNTIME_DART_VM_H_
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -24,17 +25,19 @@
 
 namespace blink {
 
-class DartVM : public fml::RefCountedThreadSafe<DartVM> {
+class DartVM {
  public:
-  static fml::RefPtr<DartVM> ForProcess(Settings settings);
+  ~DartVM();
 
-  static fml::RefPtr<DartVM> ForProcess(
+  static std::shared_ptr<DartVM> ForProcess(Settings settings);
+
+  static std::shared_ptr<DartVM> ForProcess(
       Settings settings,
       fml::RefPtr<DartSnapshot> vm_snapshot,
       fml::RefPtr<DartSnapshot> isolate_snapshot,
       fml::RefPtr<DartSnapshot> shared_snapshot);
 
-  static fml::RefPtr<DartVM> ForProcessIfInitialized();
+  static std::shared_ptr<DartVM> ForProcessIfInitialized();
 
   static bool IsRunningPrecompiledCode();
 
@@ -50,8 +53,6 @@ class DartVM : public fml::RefCountedThreadSafe<DartVM> {
 
   fml::RefPtr<DartSnapshot> GetSharedSnapshot() const;
 
-  fml::WeakPtr<DartVM> GetWeakPtr();
-
   ServiceProtocol& GetServiceProtocol();
 
  private:
@@ -61,17 +62,12 @@ class DartVM : public fml::RefCountedThreadSafe<DartVM> {
   const fml::RefPtr<DartSnapshot> isolate_snapshot_;
   const fml::RefPtr<DartSnapshot> shared_snapshot_;
   ServiceProtocol service_protocol_;
-  fml::WeakPtrFactory<DartVM> weak_factory_;
 
   DartVM(const Settings& settings,
          fml::RefPtr<DartSnapshot> vm_snapshot,
          fml::RefPtr<DartSnapshot> isolate_snapshot,
          fml::RefPtr<DartSnapshot> shared_snapshot);
 
-  ~DartVM();
-
-  FML_FRIEND_REF_COUNTED_THREAD_SAFE(DartVM);
-  FML_FRIEND_MAKE_REF_COUNTED(DartVM);
   FML_DISALLOW_COPY_AND_ASSIGN(DartVM);
 };
 
