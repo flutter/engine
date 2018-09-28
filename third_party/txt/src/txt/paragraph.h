@@ -185,6 +185,8 @@ class Paragraph {
   FRIEND_TEST(ParagraphTest, RepeatLayoutParagraph);
   FRIEND_TEST(ParagraphTest, Ellipsize);
   FRIEND_TEST(ParagraphTest, UnderlineShiftParagraph);
+  FRIEND_TEST(ParagraphTest, SimpleShadow);
+  FRIEND_TEST(ParagraphTest, ComplexShadow);
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
@@ -327,6 +329,9 @@ class Paragraph {
   void PaintBackground(SkCanvas* canvas,
                        const PaintRecord& record,
                        SkPoint base_offset);
+
+  // Draws the shadows onto the canvas.
+  void PaintShadow(SkCanvas* canvas, const PaintRecord& record, SkPoint offset);
 
   // Obtain a Minikin font collection matching this text style.
   std::shared_ptr<minikin::FontCollection> GetMinikinFontCollectionForStyle(

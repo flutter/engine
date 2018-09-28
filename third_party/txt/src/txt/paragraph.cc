@@ -36,6 +36,7 @@
 #include "minikin/MinikinFont.h"
 #include "third_party/icu/source/common/unicode/ubidi.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/core/SkTypeface.h"
@@ -888,6 +889,7 @@ void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
     }
     SkPoint offset = base_offset + record.offset();
     PaintBackground(canvas, record, base_offset);
+    PaintShadow(canvas, record, offset);
     canvas->drawTextBlob(record.text(), offset.x(), offset.y(), paint);
     PaintDecorations(canvas, record, base_offset);
   }
@@ -1067,6 +1069,27 @@ void Paragraph::PaintBackground(SkCanvas* canvas,
   canvas->drawRect(rect, record.style().background);
 }
 
+void Paragraph::PaintShadow(SkCanvas* canvas,
+                            const PaintRecord& record,
+                            SkPoint offset) {
+  if (record.style().text_shadows.size() == 0)
+    return;
+  for (TextShadow text_shadow : record.style().text_shadows) {
+    if (!text_shadow.hasShadow()) {
+      continue;
+    }
+
+    SkPaint paint;
+    paint.setColor(text_shadow.color);
+    if (text_shadow.blur_radius != 0.0) {
+      paint.setMaskFilter(SkMaskFilter::MakeBlur(
+          kNormal_SkBlurStyle, text_shadow.blur_radius, false));
+    }
+    canvas->drawTextBlob(record.text(), offset.x() + text_shadow.offset.x(),
+                         offset.y() + text_shadow.offset.y(), paint);
+  }
+}
+
 std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(size_t start,
                                                             size_t end) const {
   std::map<size_t, std::vector<Paragraph::TextBox>> line_boxes;
@@ -1101,7 +1124,8 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(size_t start,
         SkRect::MakeLTRB(left, top, right, bottom), run.direction);
   }
 
-  // Add empty rectangles representing any newline characters within the range.
+  // Add empty rectangles representing any newline characters within the
+  // range.
   for (size_t line_number = 0; line_number < line_ranges_.size();
        ++line_number) {
     const LineRange& line = line_ranges_[line_number];
