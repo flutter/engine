@@ -12,6 +12,8 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.util.Log;
+
+import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.util.PathUtils;
 
 import java.io.File;
@@ -164,6 +166,10 @@ public class FlutterMain {
         // of the JNI call is negligible).
         long initTimeMillis = SystemClock.uptimeMillis() - initStartTimestampMillis;
         nativeRecordStartTimestamp(initTimeMillis);
+    }
+
+    public static void ensureInitializationComplete(Context applicationContext, FlutterShellArgs args) {
+        ensureInitializationComplete(applicationContext.getApplicationContext(), args.toArray());
     }
 
     /**

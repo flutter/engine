@@ -6,6 +6,7 @@ package io.flutter.embedding.android;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.content.Intent;
@@ -28,38 +29,53 @@ import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 
 /**
- * {@code Activity} which displays a {@link io.flutter.view.FlutterView} that takes up all
- * available space.
+ * {@code Activity} which displays a {@link FlutterFragment} that takes up all available space.
  *
  * {@link FlutterActivity} is the simplest and most direct way to integrate Flutter within an
  * Android app.
- * TODO(mattcarroll): how exactly does FlutterActivity need to be leveraged to display Flutter content?
  *
- * If Flutter is needed in a location that cannot use an {@code Activity>}, consider using
+ * By default, {@link FlutterActivity} configures itself to do the following:
+ *  - no splash screen
+ *  - asks {@link FlutterMain#findAppBundlePath(Context)} for the path to the Dart app bundle
+ *  - uses a default Dart entrypoint of "main"
+ *  - uses a default initial route of "/" within the Flutter app
+ *
+ * The display of a splash screen, app bundle path, Dart entrypoint, and initial route can each be
+ * controlled by overriding their respective methods in a subclass:
+ *  - {@link #isSplashScreenDesired()}
+ *  - {@link #getAppBundlePath()}
+ *  - {@link #getDartEntrypoint()}
+ *  - {@link #getInitialRoute()}
+ *
+ * If Flutter is needed in a location that cannot use an {@code Activity}, consider using
  * a {@link FlutterFragment}. Using a {@link FlutterFragment} requires forwarding some calls from
  * an {@code Activity} to the {@link FlutterFragment}.
  *
  * If Flutter is needed in a location that can only use a {@code View}, consider using a
- * {@link io.flutter.view.FlutterView}. Using a {@link io.flutter.view.FlutterView} requires
- * forwarding some calls from an {@code Activity}, as well as forwarding lifecycle calls from
- * an {@code Activity} or a {@code Fragment}.
+ * {@link FlutterView}. Using a {@link FlutterView} requires forwarding some calls from an
+ * {@code Activity}, as well as forwarding lifecycle calls from an {@code Activity} or a
+ * {@code Fragment}.
  *
- * @see FlutterFragment
- *
- * @see io.flutter.view.FlutterView
+ * @see FlutterFragment, which presents a Flutter app within a {@code Fragment}
+ * @see FlutterView, which renders the UI for a {@link FlutterEngine}
  */
 @SuppressLint("Registered")
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 public class FlutterActivity extends FragmentActivity {
   private static final String TAG = "FlutterActivity";
 
-  private static final String EXTRA_SHOW_SPLASH_SCREEN = "show_launch_screen";
+  // Meta-data arguments
   // TODO: where did this package path come from? is this what it should be?
   private static final String SPLASH_SCREEN_META_DATA_KEY = "io.flutter.app.android.SplashScreenUntilFirstFrame";
-  private static final String EXTRA_INITIAL_ROUTE = "route";
   // TODO: where did this package path come from? is this what it should be?
   private static final String INITIAL_ROUTE_META_DATA_KEY = "io.flutter.app.android.InitialRoute";
 
+  // Intent extra arguments
+  private static final String EXTRA_SHOW_SPLASH_SCREEN = "show_launch_screen";
+  private static final String EXTRA_DART_ENTRYPOINT = "dart_entrypoint";
+  private static final String EXTRA_INITIAL_ROUTE = "route";
+
+  // FlutterFragment management
   private static final String TAG_FLUTTER_FRAGMENT = "flutter_fragment";
   private static final int FRAGMENT_CONTAINER_ID = 609893468; // random number
   private FlutterFragment flutterFragment;
@@ -67,9 +83,9 @@ public class FlutterActivity extends FragmentActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    configureStatusBarColor();
     setContentView(createFragmentContainer());
     ensureFlutterFragmentCreated();
+    configureStatusBarColor();
   }
 
   /**
@@ -92,7 +108,7 @@ public class FlutterActivity extends FragmentActivity {
   /**
    * If no {@code FlutterFragment} exists in this {@code FlutterActivity}, then a {@code FlutterFragment}
    * is created and added. If a {@code FlutterFragment} does exist in this {@code FlutterActivity}, then
-   * a reference to that {@code FlutterFragment} is retained in {@code flutterFragment}.
+   * a reference to that {@code FlutterFragment} is retained in {@code #flutterFragment}.
    */
   private void ensureFlutterFragmentCreated() {
     FragmentManager fragmentManager = getSupportFragmentManager();
@@ -111,7 +127,7 @@ public class FlutterActivity extends FragmentActivity {
 
   /**
    * Creates a {@link FrameLayout} with an ID of {@link #FRAGMENT_CONTAINER_ID} that will contain
-   * the {@link FlutterFragment} displayed by this {@link Activity}.
+   * the {@link FlutterFragment} displayed by this {@link FlutterActivity}.
    *
    * @return the FrameLayout container
    */
@@ -130,6 +146,8 @@ public class FlutterActivity extends FragmentActivity {
    * Factory method to create the instance of the {@link FlutterFragment} that this
    * {@link FlutterActivity} displays.
    *
+   * Subclasses may override this method to return a specialization of {@link FlutterFragment}.
+   *
    * @return the {@link FlutterFragment} to be displayed in this {@link FlutterActivity}
    */
   @NonNull
@@ -138,7 +156,7 @@ public class FlutterActivity extends FragmentActivity {
         isSplashScreenDesired(),
         getInitialRoute(),
         getAppBundlePath(),
-        null, // TODO(mattcarroll): introduce Intent based entrypoint selection
+        getDartEntrypoint(),
         FlutterShellArgs.fromIntent(getIntent())
     );
   }
@@ -160,6 +178,7 @@ public class FlutterActivity extends FragmentActivity {
     flutterFragment.onBackPressed();
   }
 
+  // TODO(mattcarroll): there should be an @Override here but the build system is saying it's wrong
   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     flutterFragment.onRequestPermissionsResult(requestCode, permissions, grantResults);
   }
@@ -184,10 +203,17 @@ public class FlutterActivity extends FragmentActivity {
   /**
    * The path to the bundle that contains this Flutter app's resources, e.g., Dart code snapshots.
    *
+   * When this {@link FlutterActivity} is run by Flutter tooling and a data String is included
+   * in the launching {@code Intent}, that data String is interpreted as an app bundle path.
+   *
+   * By default, the app bundle path is obtained from {@link FlutterMain#findAppBundlePath(Context)}.
+   *
+   * Subclasses may override this method to return a custom app bundle path.
+   *
    * @return file path to Flutter's app bundle
    */
   @NonNull
-  private String getAppBundlePath() {
+  protected String getAppBundlePath() {
     // If this Activity was launched from tooling, and the incoming Intent contains
     // a custom app bundle path, return that path.
     if (isDebuggable() && Intent.ACTION_RUN.equals(getIntent().getAction())) {
@@ -199,6 +225,11 @@ public class FlutterActivity extends FragmentActivity {
 
     // Return the default app bundle path.
     return FlutterMain.findAppBundlePath(getApplicationContext());
+  }
+
+  @Nullable
+  protected String getDartEntrypoint() {
+    return getIntent().getStringExtra(EXTRA_DART_ENTRYPOINT);
   }
 
   /**
@@ -216,9 +247,12 @@ public class FlutterActivity extends FragmentActivity {
    * might be the very first {@code Activity} launched, which means the developer won't have
    * control over the incoming {@code Intent}.
    *
+   * Subclasses may override this method to directly control whether or not a splash screen is
+   * displayed.
+   *
    * TODO(mattcarroll): move all splash behavior to FlutterView
    */
-  private boolean isSplashScreenDesired() {
+  protected boolean isSplashScreenDesired() {
     if (getIntent().hasExtra(EXTRA_SHOW_SPLASH_SCREEN)) {
       return getIntent().getBooleanExtra(EXTRA_SHOW_SPLASH_SCREEN, false);
     }
@@ -250,10 +284,12 @@ public class FlutterActivity extends FragmentActivity {
    * might be the very first {@code Activity} launched, which means the developer won't have
    * control over the incoming {@code Intent}.
    *
+   * Subclasses may override this method to directly control the initial route.
+   *
    * @return initial route to be rendered by Flutter
    */
   @Nullable
-  private String getInitialRoute() {
+  protected String getInitialRoute() {
     if (getIntent().hasExtra(EXTRA_INITIAL_ROUTE)) {
       return getIntent().getStringExtra(EXTRA_INITIAL_ROUTE);
     }

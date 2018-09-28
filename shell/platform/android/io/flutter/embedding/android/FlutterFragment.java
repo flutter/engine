@@ -9,7 +9,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.support.v4.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -18,6 +17,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -53,6 +53,7 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
  *  - {@link Activity#onRequestPermissionsResult(int, String[], int[])} ()}
  *  - {@link Activity#onNewIntent(Intent)} ()}
  *  - {@link Activity#onUserLeaveHint()}
+ *  - {@link Activity#onTrimMemory(int)}
  *
  * Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be sure
  * to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than
@@ -64,31 +65,61 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
  * avoid the work of forwarding calls.
  *
  * If Flutter is needed in a location that can only use a {@code View}, consider using a
- * {@link io.flutter.view.FlutterView}. Using a {@link io.flutter.view.FlutterView} requires
- * forwarding some calls from an {@code Activity}, as well as forwarding lifecycle calls from
- * an {@code Activity} or a {@code Fragment}.
+ * {@link FlutterView}. Using a {@link FlutterView} requires forwarding some calls from an
+ * {@code Activity}, as well as forwarding lifecycle calls from an {@code Activity} or a
+ * {@code Fragment}.
  *
- * @see FlutterActivity
- *
- * @see io.flutter.view.FlutterView
+ * @see FlutterActivity, which displays a fullscreen Flutter app without any additional work
+ * @see FlutterView, which renders the UI for a {@link FlutterEngine}
  */
 @SuppressWarnings("WeakerAccess")
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 public class FlutterFragment extends Fragment {
   private static final String TAG = "FlutterFragment";
 
-  private static final String ARG_FLUTTER_INITIALIZATION_ARGS = "initialization_args";
   private static final String ARG_IS_SPLASH_SCREEN_DESIRED = "show_splash_screen";
   private static final String ARG_INITIAL_ROUTE = "initial_route";
   private static final String ARG_APP_BUNDLE_PATH = "app_bundle_path";
   private static final String ARG_DART_ENTRYPOINT = "dart_entrypoint";
+  private static final String ARG_FLUTTER_INITIALIZATION_ARGS = "initialization_args";
 
   private static final WindowManager.LayoutParams MATCH_PARENT =
       new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT);
 
+  /**
+   * Factory method that creates a new {@link FlutterFragment} with a default configuration.
+   *  - no splash screen
+   *  - initial route of "/"
+   *  - default app bundle location
+   *  - default Dart entrypoint of "main"
+   *  - no special engine arguments
+   *
+   * @return new {@link FlutterFragment}
+   */
+  public static FlutterFragment newInstance() {
+    return newInstance(
+        false,
+        null,
+        null,
+        null,
+        null
+    );
+  }
+
+  /**
+   * Factory method that creates a new {@link FlutterFragment} with the given configuration.
+   *
+   * @param isSplashScreenDesired should a splash screen be shown until the 1st Flutter frame is rendered?
+   * @param initialRoute the first route that a Flutter app will render in this {@link FlutterFragment}, defaults to "/"
+   * @param appBundlePath the path to the app bundle which contains the Dart app to execute
+   * @param dartEntrypoint the name of the initial Dart method to invoke, defaults to "main"
+   * @param flutterShellArgs any special configuration arguments for the Flutter engine
+   *
+   * @return a new {@link FlutterFragment}
+   */
   public static FlutterFragment newInstance(boolean isSplashScreenDesired,
                                             @Nullable String initialRoute,
-                                            @NonNull String appBundlePath,
+                                            @Nullable String appBundlePath,
                                             @Nullable String dartEntrypoint,
                                             @Nullable FlutterShellArgs flutterShellArgs) {
     FlutterFragment frag = new FlutterFragment();
@@ -105,9 +136,43 @@ public class FlutterFragment extends Fragment {
     return frag;
   }
 
+  /**
+   * Creates a {@link Bundle} or arguments that can be used to configure a {@link FlutterFragment}.
+   * This method is exposed so that developers can create subclasses of {@link FlutterFragment}.
+   * Subclasses should declare static factories that use this method to create arguments that will
+   * be understood by the base class, and then the subclass can add any additional arguments it
+   * wants to this {@link Bundle}. Example:
+   *
+   * <pre>{@code
+   * public static MyFlutterFragment newInstance(String myNewArg) {
+   *   // Create an instance of our subclass Fragment.
+   *   MyFlutterFragment myFrag = new MyFlutterFragment();
+   *
+   *   // Create the Bundle or args that FlutterFragment understands.
+   *   Bundle args = FlutterFragment.createArgsBundle(...);
+   *
+   *   // Add our new args to the bundle.
+   *   args.putString(ARG_MY_NEW_ARG, myNewArg);
+   *
+   *   // Give the args to our subclass Fragment.
+   *   myFrag.setArguments(args);
+   *
+   *   // Return the newly created subclass Fragment.
+   *   return myFrag;
+   * }
+   * }</pre>
+   *
+   * @param isSplashScreenDesired should a splash screen be shown until the 1st Flutter frame is rendered?
+   * @param initialRoute the first route that a Flutter app will render in this {@link FlutterFragment}, defaults to "/"
+   * @param appBundlePath the path to the app bundle which contains the Dart app to execute
+   * @param dartEntrypoint the name of the initial Dart method to invoke, defaults to "main"
+   * @param flutterShellArgs any special configuration arguments for the Flutter engine
+   *
+   * @return Bundle of arguments that configure a {@link FlutterFragment}
+   */
   public static Bundle createArgsBundle(boolean isSplashScreenDesired,
                                         @Nullable String initialRoute,
-                                        @NonNull String appBundlePath,
+                                        @Nullable String appBundlePath,
                                         @Nullable String dartEntrypoint,
                                         @Nullable FlutterShellArgs flutterShellArgs) {
     Bundle args = new Bundle();
@@ -124,31 +189,106 @@ public class FlutterFragment extends Fragment {
   private FlutterEngine flutterEngine;
   private FrameLayout container;
   private FlutterView flutterView;
+  private View launchView;
+
+  private MethodChannel flutterPlatformChannel;
   private PlatformPlugin platformPlugin;
   private BasicMessageChannel<String> mFlutterLifecycleChannel;
   private BasicMessageChannel<Object> mFlutterSystemChannel;
   private MethodChannel mFlutterNavigationChannel;
-  private View launchView;
 
   public FlutterFragment() {
+    // Ensure that we at least have an empty Bundle of arguments so that we don't
+    // need to continually check for null arguments before grabbing one.
     setArguments(new Bundle());
   }
 
   @Override
   public void onAttach(Activity activity) {
     super.onAttach(activity);
-    Log.d(TAG, "onAttach(), engine: " + flutterEngine);
-    initializeFlutter(activity);
+
+    platformPlugin = new PlatformPlugin(activity);
+    if (flutterEngine != null) {
+      flutterPlatformChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/platform", JSONMethodCodec.INSTANCE);
+      flutterPlatformChannel.setMethodCallHandler(platformPlugin);
+    }
   }
 
+  @Override
+  public void onCreate(@Nullable Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+
+    // TODO(mattcarroll): I think the build system is linking the wrong Fragment API. It says that
+    //                    getContext() cannot be found...
+    initializeFlutter(getActivity());
+
+    ensureFlutterEngineCreated();
+  }
+
+  // TODO(mattcarroll): does it really make sense to run this for every Fragment? Note: the
+  //                    implementation of the "ensure" method includes a reference to the default
+  //                    app bundle path. How does that jive with "doInitialFlutterViewRun"?
   private void initializeFlutter(@NonNull Context context) {
     String[] flutterShellArgsArray = getArguments().getStringArray(ARG_FLUTTER_INITIALIZATION_ARGS);
     FlutterShellArgs flutterShellArgs = new FlutterShellArgs(
         flutterShellArgsArray != null ? flutterShellArgsArray : new String[] {}
     );
-    // TODO(mattcarroll): Change FlutterMain to accept FlutterShellArgs and move additional constants in
-    //                    FlutterMain over to FlutterShellArgs.
-    FlutterMain.ensureInitializationComplete(context.getApplicationContext(), flutterShellArgs.toArray());
+
+    FlutterMain.ensureInitializationComplete(context.getApplicationContext(), flutterShellArgs);
+  }
+
+  /**
+   * Creates a new FlutterEngine instance if one does not already exist.
+   *
+   * In addition to creating a new FlutterEngine, this method creates a PlatformPlugin that is
+   * registered with the
+   */
+  private void ensureFlutterEngineCreated() {
+    // Create a FlutterEngine to back our FlutterView. It may already exist if this Fragment
+    // has been set to "retain instance".
+    if (flutterEngine == null) {
+      flutterEngine = createFlutterEngine(getActivity());
+
+      // Allow subclasses to customize FlutterEngine as desired.
+      onFlutterEngineCreated(flutterEngine);
+
+      // Create and register desired platform channels to communicate between Dart/Java.
+      registerPlaformChannels();
+
+      flutterPlatformChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/platform", JSONMethodCodec.INSTANCE);
+      flutterPlatformChannel.setMethodCallHandler(platformPlugin);
+    }
+  }
+
+  // TODO(mattcarroll): create infrastructure to take in channels. Right now the use of local variables
+  //                    prevents this method from being configured.
+  protected void registerPlaformChannels() {
+    mFlutterLifecycleChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/lifecycle", StringCodec.INSTANCE);
+    mFlutterSystemChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/system", JSONMessageCodec.INSTANCE);
+    mFlutterNavigationChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/navigation", JSONMethodCodec.INSTANCE);
+  }
+
+  /**
+   * Hook for subclasses to customize the creation of the {@code FlutterEngine}.
+   *
+   * This method is only invoked from the default implementation of {@link #createFlutterView(Context)}.
+   * If {@link #createFlutterView(Context)} is overridden, then this method will not be invoked unless
+   * it is invoked directly from the subclass.
+   *
+   * By default, this method returns a standard {@link FlutterEngine} without any modification.
+   */
+  @NonNull
+  protected FlutterEngine createFlutterEngine(@NonNull Context context) {
+    Log.d(TAG, "createFlutterEngine()");
+    return new FlutterEngine(context, getResources(), false);
+  }
+
+  /**
+   * Hook for subclasses to customize the {@link FlutterEngine} owned by this {@link FlutterFragment}
+   * after the {@link FlutterEngine} has been instantiated.
+   */
+  protected void onFlutterEngineCreated(@NonNull FlutterEngine flutterEngine) {
+    // no-op
   }
 
   @Override
@@ -156,9 +296,8 @@ public class FlutterFragment extends Fragment {
     Log.e(TAG, "onCreateView()");
     createLayout();
 
-    // Create and register desired platform channels to communicate between Dart/Java.
-    platformPlugin = new PlatformPlugin(getActivity());
-    registerPlaformChannels();
+    Log.d(TAG, "onCreateView: Attaching plugin registry to Activity");
+    flutterEngine.getPluginRegistry().attach(flutterView, getActivity());
 
     // TODO: Should we start running the FlutterView here or when attached to window? It was being done here
     //       in the Activity, but maybe that was a problem to begin with?
@@ -168,17 +307,6 @@ public class FlutterFragment extends Fragment {
     return container;
   }
 
-  // TODO(mattcarroll): create infrastructure to take in channels. Right now the use of local variables
-  //                    prevents this method from being configured.
-  protected void registerPlaformChannels() {
-    MethodChannel flutterPlatformChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/platform", JSONMethodCodec.INSTANCE);
-    flutterPlatformChannel.setMethodCallHandler(platformPlugin);
-
-    mFlutterLifecycleChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/lifecycle", StringCodec.INSTANCE);
-    mFlutterSystemChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/system", JSONMessageCodec.INSTANCE);
-    mFlutterNavigationChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/navigation", JSONMethodCodec.INSTANCE);
-  }
-
   /**
    * Creates a {@code FrameLayout} that takes all available space, then creates a {@code FlutterView}
    * within the FrameLayout container.
@@ -186,17 +314,6 @@ public class FlutterFragment extends Fragment {
   private void createLayout() {
     container = new FrameLayout(getContextCompat());
     container.setLayoutParams(MATCH_PARENT);
-
-    // Create a FlutterEngine to back our FlutterView. It may already exist if this Fragment
-    // has been set to "retain instance".
-    if (flutterEngine == null) {
-      flutterEngine = createFlutterEngine(getActivity());
-
-      // Allow subclasses to customize FlutterEngine as desired.
-      onFlutterEngineCreated(flutterEngine);
-    }
-    Log.d(TAG, "createLayout: Attaching plugin registry to Activity");
-    flutterEngine.getPluginRegistry().attach(flutterView, getActivity());
 
     // Create our FlutterView for rendering and user interaction.
     flutterView = createFlutterView(getActivity());
@@ -214,31 +331,6 @@ public class FlutterFragment extends Fragment {
     }
   }
 
-  /**
-   * Hook for subclasses to customize the creation of the {@code FlutterEngine}.
-   *
-   * This method is only invoked from the default implementation of {@link #createFlutterView(Activity)}.
-   * If {@link #createFlutterView(Activity)} is overridden, then this method will not be invoked unless
-   * it is invoked directly from the subclass.
-   *
-   * By default, this method returns a standard {@link FlutterEngine} without any modification.
-   *
-   * TODO(mattcarroll): get rid of dependency on Activity
-   */
-  @NonNull
-  protected FlutterEngine createFlutterEngine(@NonNull Context context) {
-    Log.d(TAG, "createFlutterEngine()");
-    return new FlutterEngine(context, getResources(), false);
-  }
-
-  /**
-   * Hook for subclasses to customize the {@link FlutterEngine} owned by this {@link FlutterFragment}
-   * after the {@link FlutterEngine} has been instantiated.
-   */
-  protected void onFlutterEngineCreated(@NonNull FlutterEngine flutterEngine) {
-    // no-op
-  }
-
   @Override
   public void onStart() {
     super.onStart();
@@ -248,8 +340,11 @@ public class FlutterFragment extends Fragment {
 
   public void onPostResume() {
     Log.d(TAG, "onPostResume()");
+    // TODO(mattcarroll): what does 'updateAccessibilityFeatures' do? why is it called here?
     flutterView.updateAccessibilityFeatures();
+    // TODO(mattcarroll): why does the platform plugin care about "post resume"?
     platformPlugin.onPostResume();
+    // TODO(mattcarroll): why does the lifecycle wait for "post resume" to say we're resumed?
     mFlutterLifecycleChannel.send("AppLifecycleState.resumed");
   }
 
@@ -272,6 +367,9 @@ public class FlutterFragment extends Fragment {
     super.onDestroyView();
     Log.d(TAG, "onDestroyView()");
     flutterView.detachFromFlutterRenderer();
+
+    // TODO(mattcarroll): what does 'detach' refer to?  The Activity? The UI? JNI?....
+    flutterEngine.getPluginRegistry().detach();
   }
 
   @Override
@@ -293,8 +391,10 @@ public class FlutterFragment extends Fragment {
   @Override
   public void onDetach() {
     super.onDetach();
-    Log.d(TAG, "onDetach: Detaching plugin registry from Activity.");
-    flutterEngine.getPluginRegistry().detach();
+    Log.d(TAG, "onDetach: Detaching platform channel.");
+    platformPlugin = null;
+    flutterPlatformChannel.setMethodCallHandler(null);
+    flutterPlatformChannel = null;
   }
 
   /**
@@ -465,6 +565,45 @@ public class FlutterFragment extends Fragment {
     return getArguments().getBoolean(ARG_IS_SPLASH_SCREEN_DESIRED, false);
   }
 
+  @Nullable
+  private String getInitialRoute() {
+    return getArguments().getString(ARG_INITIAL_ROUTE);
+  }
+
+  @NonNull
+  private String getAppBundlePath() {
+    return getArguments().getString(ARG_APP_BUNDLE_PATH, FlutterMain.findAppBundlePath(getContextCompat()));
+  }
+
+  @NonNull
+  private String getDartEntrypoint() {
+    return getArguments().getString(ARG_DART_ENTRYPOINT, "main");
+  }
+
+  /**
+   * Should the Flutter isolate that is connected to this {@code FlutterFragment}
+   * be retained after this {@code FlutterFragment} is destroyed?
+   *
+   * Defaults to false. This method can be overridden in subclasses to retain the
+   * Flutter isolate.
+   *
+   * Isolates in Dart/Flutter are similar to processes in other languages. Any data
+   * held within the Flutter isolate within this {@code FlutterFragment} will be lost
+   * if the isolate is destroyed. This loss of data is fine for most UI related Flutter
+   * behavior. However, if this {@code FlutterFragment}'s isolate contains application
+   * data that is required outside of this {@code FlutterFragment} then consider retaining
+   * the isolate for later use, or consider a data marshalling strategy to move long-lived
+   * data out of this isolate.
+   *
+   * See https://docs.flutter.io/flutter/dart-isolate/Isolate-class.html
+   *
+   * @return true if this FlutterFragment's Flutter isolate should be retained after destruction, false otherwise
+   */
+  // TODO(mattcarroll): how exactly does this retain the engine? is there a static reference somewhere?
+  protected boolean retainFlutterIsolateAfterFragmentDestruction() {
+    return false;
+  }
+
   /**
    * Extracts a {@link Drawable} from the parent activity's {@code windowBackground}.
    *
@@ -522,44 +661,6 @@ public class FlutterFragment extends Fragment {
 
     // TODO(mattcarroll): why do we need to resetAccessibilityTree in this method? Can we call that from within FlutterView somewhere?
     flutterView.resetAccessibilityTree();
-  }
-
-  @Nullable
-  private String getInitialRoute() {
-    return getArguments().getString(ARG_INITIAL_ROUTE);
-  }
-
-  @NonNull
-  private String getAppBundlePath() {
-    return getArguments().getString(ARG_APP_BUNDLE_PATH, FlutterMain.findAppBundlePath(getContextCompat()));
-  }
-
-  @NonNull
-  private String getDartEntrypoint() {
-    return getArguments().getString(ARG_DART_ENTRYPOINT, "main");
-  }
-
-  /**
-   * Should the Flutter isolate that is connected to this {@code FlutterFragment}
-   * be retained after this {@code FlutterFragment} is destroyed?
-   *
-   * Defaults to false. This method can be overridden in subclasses to retain the
-   * Flutter isolate.
-   *
-   * Isolates in Dart/Flutter are similar to processes in other languages. Any data
-   * held within the Flutter isolate within this {@code FlutterFragment} will be lost
-   * if the isolate is destroyed. This loss of data is fine for most UI related Flutter
-   * behavior. However, if this {@code FlutterFragment}'s isolate contains application
-   * data that is required outside of this {@code FlutterFragment} then consider retaining
-   * the isolate for later use, or consider a data marshalling strategy to move long-lived
-   * data out of this isolate.
-   *
-   * See https://docs.flutter.io/flutter/dart-isolate/Isolate-class.html
-   *
-   * @return true if this FlutterFragment's Flutter isolate should be retained after destruction, false otherwise
-   */
-  protected boolean retainFlutterIsolateAfterFragmentDestruction() {
-    return false;
   }
 
   @NonNull
