@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
+import io.flutter.embedding.engine.systemchannels.SystemChannels;
 import io.flutter.view.FlutterRunArguments;
 
 /**
@@ -33,6 +34,7 @@ public class FlutterEngine {
   private final FlutterJNI flutterJNI;
   private final FlutterRenderer renderer;
   private final DartExecutor dartExecutor;
+  private final SystemChannels systemChannels;
   private final FlutterPluginRegistry pluginRegistry;
   private long nativeObjectReference;
   private boolean executeWithoutUi;
@@ -47,11 +49,13 @@ public class FlutterEngine {
     this.flutterJNI = new FlutterJNI();
     attachToJni();
 
-    // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if possible.
-    this.renderer = new FlutterRenderer(flutterJNI, nativeObjectReference);
-
     this.dartExecutor = new DartExecutor(flutterJNI, nativeObjectReference, resources);
     this.dartExecutor.onAttachedToJNI();
+
+    this.systemChannels = new SystemChannels(dartExecutor);
+
+    // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if possible.
+    this.renderer = new FlutterRenderer(flutterJNI, nativeObjectReference);
 
 //    this.pluginRegistry = new FlutterPluginRegistry(this, dartExecutor, context);
     this.pluginRegistry = new FlutterPluginRegistry(null, this, context);
@@ -86,6 +90,16 @@ public class FlutterEngine {
   }
 
   @NonNull
+  public DartExecutor getDartExecutor() {
+    return dartExecutor;
+  }
+
+  @NonNull
+  public SystemChannels getSystemChannels() {
+    return systemChannels;
+  }
+
+  @NonNull
   public FlutterRenderer getRenderer() {
     return renderer;
   }
@@ -95,10 +109,6 @@ public class FlutterEngine {
     return pluginRegistry;
   }
 
-  @NonNull
-  public DartExecutor getDartExecutor() {
-    return dartExecutor;
-  }
 
   // TODO(mattcarroll): what does this callback actually represent?
   // Called by native to notify when the engine is restarted (cold reload).

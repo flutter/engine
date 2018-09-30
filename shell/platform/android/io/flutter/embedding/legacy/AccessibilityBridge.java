@@ -10,24 +10,29 @@ import android.graphics.Rect;
 import android.opengl.Matrix;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 
-import io.flutter.plugin.common.BasicMessageChannel;
-import io.flutter.plugin.common.BinaryMessenger;
-import io.flutter.plugin.common.StandardMessageCodec;
-import io.flutter.embedding.android.FlutterView;
-
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import io.flutter.embedding.android.FlutterView;
+import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 
 @TargetApi(Build.VERSION_CODES.KITKAT)
-public class AccessibilityBridge
-        extends AccessibilityNodeProvider implements BasicMessageChannel.MessageHandler<Object> {
-    private static final String TAG = "FlutterView";
+public class AccessibilityBridge extends AccessibilityNodeProvider {
+    private static final String TAG = "AccessibilityBridge";
 
     // Constants from higher API levels.
     // TODO(goderbauer): Get these from Android Support Library when
@@ -50,7 +55,7 @@ public class AccessibilityBridge
     private final View mDecorView;
     private Integer mLastLeftFrameInset = 0;
 
-    private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
+    private final AccessibilityChannel accesibilityChannel;
 
     public enum Action {
         TAP(1 << 0),
@@ -110,23 +115,50 @@ public class AccessibilityBridge
         final int value;
     }
 
-    public AccessibilityBridge(FlutterView owner, BinaryMessenger pluginMessenger) {
-        assert owner != null;
+    private final AccessibilityChannel.AccessibilityMessageHandler accessibilityMessageHandler = new AccessibilityChannel.AccessibilityMessageHandler() {
+        @Override
+        public void announce(@NonNull String message) {
+            mOwner.announceForAccessibility(message);
+        }
+
+        @Override
+        public void onTap(int nodeId) {
+            sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_CLICKED);
+        }
+
+        @Override
+        public void onLongPress(int nodeId) {
+            sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_LONG_CLICKED);
+        }
+
+        @Override
+        public void tooltip(@NonNull String message) {
+            AccessibilityEvent e = obtainAccessibilityEvent(ROOT_NODE_ID, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+            e.getText().add(message);
+            sendAccessibilityEvent(e);
+        }
+
+        @Override
+        public void updateLiveRegion(int nodeId) {
+            sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+        }
+    };
+
+    public AccessibilityBridge(@NonNull FlutterView owner, @NonNull AccessibilityChannel accessibilityChannel) {
         mOwner = owner;
-        mObjects = new HashMap<Integer, SemanticsObject>();
-        mCustomAccessibilityActions = new HashMap<Integer, CustomAccessibilityAction>();
+        this.accesibilityChannel = accessibilityChannel;
+        mObjects = new HashMap<>();
+        mCustomAccessibilityActions = new HashMap<>();
         previousRoutes = new ArrayList<>();
-        mFlutterAccessibilityChannel = new BasicMessageChannel<>(
-                pluginMessenger, "flutter/accessibility", StandardMessageCodec.INSTANCE);
         mDecorView = ((Activity) owner.getContext()).getWindow().getDecorView();
     }
 
     public void setAccessibilityEnabled(boolean accessibilityEnabled) {
         mAccessibilityEnabled = accessibilityEnabled;
         if (accessibilityEnabled) {
-            mFlutterAccessibilityChannel.setMessageHandler(this);
+            accesibilityChannel.setAccessibilityMessageHandler(accessibilityMessageHandler);
         } else {
-            mFlutterAccessibilityChannel.setMessageHandler(null);
+            accesibilityChannel.setAccessibilityMessageHandler(null);
         }
     }
 
@@ -818,55 +850,6 @@ public class AccessibilityBridge
             return;
         }
         mOwner.getParent().requestSendAccessibilityEvent(mOwner, event);
-    }
-
-    // Message Handler for [mFlutterAccessibilityChannel].
-    public void onMessage(Object message, BasicMessageChannel.Reply<Object> reply) {
-        @SuppressWarnings("unchecked")
-        final HashMap<String, Object> annotatedEvent = (HashMap<String, Object>) message;
-        final String type = (String) annotatedEvent.get("type");
-        @SuppressWarnings("unchecked")
-        final HashMap<String, Object> data = (HashMap<String, Object>) annotatedEvent.get("data");
-
-        switch (type) {
-            case "announce":
-                mOwner.announceForAccessibility((String) data.get("message"));
-                break;
-            case "longPress": {
-                Integer nodeId = (Integer) annotatedEvent.get("nodeId");
-                if (nodeId == null) {
-                    return;
-                }
-                sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_LONG_CLICKED);
-                break;
-            }
-            case "tap": {
-                Integer nodeId = (Integer) annotatedEvent.get("nodeId");
-                if (nodeId == null) {
-                    return;
-                }
-                sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_VIEW_CLICKED);
-                break;
-            }
-            case "tooltip": {
-                AccessibilityEvent e = obtainAccessibilityEvent(
-                        ROOT_NODE_ID, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
-                e.getText().add((String) data.get("message"));
-                sendAccessibilityEvent(e);
-                break;
-            }
-            // Requires that the node id provided corresponds to a live region, or TalkBack will
-            // ignore the event. The event will cause talkback to read out the new label even
-            // if node is not focused.
-            case "updateLiveRegion": {
-                Integer nodeId = (Integer) annotatedEvent.get("nodeId");
-                if (nodeId == null) {
-                    return;
-                }
-                sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-                break;
-            }
-        }
     }
 
     private void createWindowChangeEvent(SemanticsObject route) {

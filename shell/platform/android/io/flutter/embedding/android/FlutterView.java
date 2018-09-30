@@ -35,23 +35,14 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
-import org.json.JSONException;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
+import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.legacy.AccessibilityBridge;
 import io.flutter.embedding.legacy.TextInputPlugin;
-import io.flutter.plugin.common.BasicMessageChannel;
-import io.flutter.plugin.common.BinaryMessenger;
-import io.flutter.plugin.common.JSONMessageCodec;
-import io.flutter.plugin.common.JSONMethodCodec;
-import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.view.VsyncWaiter;
 
@@ -63,9 +54,9 @@ import io.flutter.view.VsyncWaiter;
  * without introducing asymmetric APIs for construction.  As a result, users of {@code FlutterView}
  * must explicitly attach to Flutter, and detach from Flutter, as desired.
  *
- * To start rendering a Flutter UI, use {@link #attachToFlutterRenderer(FlutterRenderer, BinaryMessenger)}.
+ * To start rendering a Flutter UI, use {@link #attachToFlutterEngine(FlutterEngine)}.
  *
- * To stop rendering a Flutter UI, use {@link #detachFromFlutterRenderer()}.
+ * To stop rendering a Flutter UI, use {@link #detachFromFlutterEngine()}.
  *
  * {@code FlutterView} extends {@link SurfaceView} because Flutter renders directly to a
  * {@link android.view.Surface}, which is then displayed by this {@link SurfaceView}.
@@ -119,60 +110,58 @@ public class FlutterView extends SurfaceView implements
     int physicalViewInsetLeft = 0;
   }
 
-  private final InputMethodManager mImm;
-  private final ViewportMetrics mMetrics;
-  private final AccessibilityManager mAccessibilityManager;
-  private final AnimationScaleObserver mAnimationScaleObserver;
-
-  private FlutterRenderer flutterRenderer;
-  private BinaryMessenger pluginMessenger;
-
-  private TextInputPlugin mTextInputPlugin;
-  private MethodChannel mFlutterLocalizationChannel;
-  private BasicMessageChannel<Object> mFlutterKeyEventChannel;
-  private BasicMessageChannel<Object> mFlutterSettingsChannel;
-  private InputConnection mLastInputConnection;
-
-  private boolean isAttachedToRenderer = false;
-  private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
-
   // Splash
   private boolean isPreRender = true; // TODO(mattcarroll): save this to View state for rotation
 
   // Transparency
   private boolean isTransparencyDesired = false; // TODO(mattcarroll): save this to View state for rotation
 
+  // Flutter engine
+  private FlutterEngine flutterEngine;
+  private boolean isAttachedToFlutterEngine = false;
+
   // Track surface status
   private boolean isSurfaceAvailableForRendering = false;
   private SurfaceHolder surfaceHolder;
 
+  // User input
+  private final InputMethodManager imm;
+  private TextInputPlugin textInputPlugin;
+  private InputConnection lastInputConnection;
+
+  // Android UI properties
+  private final ViewportMetrics metrics;
+  private final AnimationScaleObserver animationScaleObserver;
+  private boolean isSoftwareRenderingEnabled = false; // using the software renderer or not
+
   // Accessibility
-  private boolean mAccessibilityEnabled = false;
-  private boolean mTouchExplorationEnabled = false;
-  private int mAccessibilityFeatureFlags = 0;
-  private AccessibilityBridge mAccessibilityNodeProvider;
-  private TouchExplorationListener mTouchExplorationListener;
+  private final AccessibilityManager accessibilityManager;
+  private AccessibilityBridge accessibilityNodeProvider;
+  private TouchExplorationListener touchExplorationListener;
+  private boolean accessibilityEnabled = false;
+  private boolean touchExplorationEnabled = false;
+  private int accessibilityFeatureFlags = 0;
 
   // Connects the {@code Surface} beneath this {@code SurfaceView} with Flutter's native code.
   // Callbacks are received by this Object and then those messages are forwarded to our
   // FlutterRenderer, and then on to the JNI bridge over to native Flutter code.
-  private final SurfaceHolder.Callback mSurfaceCallback = new SurfaceHolder.Callback() {
+  private final SurfaceHolder.Callback surfaceCallback = new SurfaceHolder.Callback() {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
       Log.d(TAG, "SurfaceHolder.Callback.surfaceCreated()");
       isSurfaceAvailableForRendering = true;
       surfaceHolder = holder;
 
-      if (isAttachedToRenderer) {
+      if (isAttachedToFlutterEngine) {
         Log.d(TAG, "Already attached to renderer. Notifying of surface creation.");
-        flutterRenderer.surfaceCreated(holder.getSurface());
+        flutterEngine.getRenderer().surfaceCreated(holder.getSurface());
       }
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-      if (isAttachedToRenderer) {
-        flutterRenderer.surfaceChanged(width, height);
+      if (isAttachedToFlutterEngine) {
+        flutterEngine.getRenderer().surfaceChanged(width, height);
       }
     }
 
@@ -182,8 +171,8 @@ public class FlutterView extends SurfaceView implements
       isSurfaceAvailableForRendering = false;
       surfaceHolder = null;
 
-      if (isAttachedToRenderer) {
-        flutterRenderer.surfaceDestroyed();
+      if (isAttachedToFlutterEngine) {
+        flutterEngine.getRenderer().surfaceDestroyed();
       }
     }
   };
@@ -197,11 +186,11 @@ public class FlutterView extends SurfaceView implements
     super(context, attrs);
 
     // Cache references to Objects used throughout FlutterView.
-    mMetrics = new ViewportMetrics();
-    mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
-    mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-    mAccessibilityManager = (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE);
-    mAnimationScaleObserver = new AnimationScaleObserver(new Handler());
+    metrics = new ViewportMetrics();
+    metrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
+    imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+    accessibilityManager = (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE);
+    animationScaleObserver = new AnimationScaleObserver(new Handler());
 
     // Apply a splash background color if desired.
     // TODO(mattcarroll): support attr control
@@ -218,10 +207,12 @@ public class FlutterView extends SurfaceView implements
 
     // Grab a reference to our underlying Surface and register callbacks with that Surface so we
     // can monitor changes and forward those changes on to native Flutter code.
-    getHolder().addCallback(mSurfaceCallback);
+    getHolder().addCallback(surfaceCallback);
 
-    if (flutterRenderer != null) {
-      onAttachedToWindowAndRenderer();
+    // If we're already attached to a FlutterEngine then we're now attached to both an engine
+    // and the Android window, so FlutterView can begin rendering now.
+    if (isAttachedToFlutterEngine) {
+      onAttachedToWindowAndEngine();
     }
   }
 
@@ -230,83 +221,69 @@ public class FlutterView extends SurfaceView implements
     super.onDetachedFromWindow();
     Log.d(TAG, "onDetachedFromWindow()");
 
-    if (isAttachedToRenderer) {
-      onDetachedFromWindowOrRenderer();
+    // If we're attached to a FlutterEngine then we were rendering a Flutter UI. Now that
+    // this FlutterView is detached from the window, we need to stop rendering.
+    if (isAttachedToFlutterEngine) {
+      onDetachedFromWindowOrEngine();
     }
   }
 
   /**
-   * Start rendering the UI for the given {@link FlutterRenderer}.
+   * Start rendering the UI for the given {@link FlutterEngine}.
    *
-   * @param flutterRenderer the FlutterRenderer for which this FlutterView will be a RenderSurface
-   * @param pluginMessenger the BinaryMessenger to use with any plugins that this FlutterView needs
-   *                        to register
+   * @param flutterEngine the FlutterEngine for which this FlutterView will be a RenderSurface
    */
-  public void attachToFlutterRenderer(@NonNull FlutterRenderer flutterRenderer, @NonNull BinaryMessenger pluginMessenger) {
-    if (isAttachedToRenderer) {
-      if (flutterRenderer == this.flutterRenderer) {
-        // We are already attached to this FlutterRenderer
+  public void attachToFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    if (isAttachedToFlutterEngine) {
+      if (flutterEngine == this.flutterEngine) {
+        // We are already attached to this FlutterEngine
         return;
       }
 
-      detachFromFlutterRenderer();
+      detachFromFlutterEngine();
     }
 
-    this.flutterRenderer = flutterRenderer;
-    this.pluginMessenger = pluginMessenger;
+    this.flutterEngine = flutterEngine;
+    isAttachedToFlutterEngine = true;
 
     // Instruct our FlutterRenderer that we are now its designated RenderSurface.
-    this.flutterRenderer.attachToRenderSurface(this);
-    isAttachedToRenderer = true;
+    this.flutterEngine.getRenderer().attachToRenderSurface(this);
 
-    // Configure the platform plugins and flutter channels.
-    // TODO(mattcarroll): should we move these channels into the renderer and then expose them?
-    //                    the channel names seem important and official, but by defining them
-    //                    in FlutterView, when others utilize the Renderer in their own View,
-    //                    they will have to discover these names and copy/paste.
-    mFlutterLocalizationChannel = new MethodChannel(pluginMessenger, "flutter/localization", JSONMethodCodec.INSTANCE);
-    mFlutterKeyEventChannel = new BasicMessageChannel<>(pluginMessenger, "flutter/keyevent", JSONMessageCodec.INSTANCE);
-    mFlutterSettingsChannel = new BasicMessageChannel<>(pluginMessenger, "flutter/settings", JSONMessageCodec.INSTANCE);
-    mTextInputPlugin = new TextInputPlugin(this, pluginMessenger);
+    // Configure a TextInputPlugin to send text input events from this FlutterView to
+    // the Flutter app, and to respond to input events received from Flutter.
+    textInputPlugin = new TextInputPlugin(this, flutterEngine.getSystemChannels().textInput);
 
-    // TODO(mattcarroll): in addition to moving the channels into the Renderer, we could also
-    //                    hide the channels behind a legitimate object API, e.g.,
-    //                    renderer.setLocale(myLocale)
-    //                    renderer.setUserSettings(settings)
-    setFlutterLocale(getResources().getConfiguration().locale);
-    setFlutterUserSettings();
+    // TODO(mattcarroll): when we get the build system to recognize recent APIs, this call should be "getLocales().get(0)"
+    sendLocaleToFlutter(getResources().getConfiguration().locale);
+    sendUserSettingsToFlutter();
 
-    mIsSoftwareRenderingEnabled = flutterRenderer.isSoftwareRenderingEnabled();
+    isSoftwareRenderingEnabled = this.flutterEngine.getRenderer().isSoftwareRenderingEnabled();
 
     if (isAttachedToWindow()) {
-      onAttachedToWindowAndRenderer();
+      onAttachedToWindowAndEngine();
     }
   }
 
   /**
-   * Stop rendering the UI for a given {@link FlutterRenderer}.
+   * Stop rendering the UI for a given {@link FlutterEngine}.
    *
-   * If no {@link FlutterRenderer} is currently attached, this method does nothing.
+   * If no {@link FlutterEngine} is currently attached, this method does nothing.
    */
-  public void detachFromFlutterRenderer() {
-    if (!isAttachedToRenderer) {
+  public void detachFromFlutterEngine() {
+    if (!isAttachedToFlutterEngine) {
       return;
     }
-    Log.d(TAG, "Detaching from Flutter Renderer");
+    Log.d(TAG, "Detaching from Flutter Engine");
 
     // Instruct our FlutterRenderer that we are no longer interested in being its RenderSurface.
-    flutterRenderer.detachFromRenderSurface();
-    flutterRenderer = null;
+    flutterEngine.getRenderer().detachFromRenderSurface();
+    flutterEngine = null;
 
-    // Null out other Flutter UI connections.
-    this.pluginMessenger = null;
-    // TODO(mattcarroll): is null'ing out these platform channel enough? do we need to free any resources?
-    mFlutterLocalizationChannel = null;
-    mFlutterKeyEventChannel = null;
-    mFlutterSettingsChannel = null;
-    mTextInputPlugin = null;
+    // Destroy the TextInputPlugin because either there is no more FlutterEngine to receive
+    // text input.
+    textInputPlugin = null;
 
-    isAttachedToRenderer = false;
+    isAttachedToFlutterEngine = false;
 
     // TODO(mattcarroll): clear the surface when JNI doesn't blow up
 //    if (isSurfaceAvailableForRendering) {
@@ -316,72 +293,67 @@ public class FlutterView extends SurfaceView implements
 //    }
 
     if (isAttachedToWindow()) {
-      onDetachedFromWindowOrRenderer();
+      onDetachedFromWindowOrEngine();
     }
   }
 
-  private void onAttachedToWindowAndRenderer() {
-    Log.d(TAG, "onAttachedToWindowAndRenderer()");
+  private void onAttachedToWindowAndEngine() {
+    Log.d(TAG, "onAttachedToWindowAndEngine()");
     if (isSurfaceAvailableForRendering) {
       Log.d(TAG, "Surface already exists. Connecting it to Flutter.");
-      flutterRenderer.surfaceCreated(surfaceHolder.getSurface());
+      flutterEngine.getRenderer().surfaceCreated(surfaceHolder.getSurface());
     }
 
     // Read accessibility settings.
-    mAccessibilityEnabled = mAccessibilityManager.isEnabled();
-    mTouchExplorationEnabled = mAccessibilityManager.isTouchExplorationEnabled();
-    if (mAccessibilityEnabled || mTouchExplorationEnabled) {
+    accessibilityEnabled = accessibilityManager.isEnabled();
+    touchExplorationEnabled = accessibilityManager.isTouchExplorationEnabled();
+    if (accessibilityEnabled || touchExplorationEnabled) {
       ensureAccessibilityEnabled();
     }
-    if (mTouchExplorationEnabled) {
-      mAccessibilityFeatureFlags ^= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+    if (touchExplorationEnabled) {
+      accessibilityFeatureFlags ^= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
     }
 
     // Apply additional accessibility settings
     updateAccessibilityFeatures();
     resetWillNotDraw();
-    mAccessibilityManager.addAccessibilityStateChangeListener(this);
+    accessibilityManager.addAccessibilityStateChangeListener(this);
 
     // Start listening for changes to accessibility settings.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      if (mTouchExplorationListener == null) {
-        mTouchExplorationListener = new TouchExplorationListener();
+      if (touchExplorationListener == null) {
+        touchExplorationListener = new TouchExplorationListener();
       }
-      mAccessibilityManager.addTouchExplorationStateChangeListener(mTouchExplorationListener);
+      accessibilityManager.addTouchExplorationStateChangeListener(touchExplorationListener);
     }
 
     // Start listening for changes to Android's animation scale setting.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
       Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
-      getContext().getContentResolver().registerContentObserver(transitionUri, false, mAnimationScaleObserver);
+      getContext().getContentResolver().registerContentObserver(transitionUri, false, animationScaleObserver);
     }
   }
 
-  private void onDetachedFromWindowOrRenderer() {
-    Log.d(TAG, "onDetachedFromWindowOrRenderer");
+  private void onDetachedFromWindowOrEngine() {
+    Log.d(TAG, "onDetachedFromWindowOrEngine");
     // Stop forwarding messages from our underlying Surface to native Flutter code.
-    getHolder().removeCallback(mSurfaceCallback);
+    getHolder().removeCallback(surfaceCallback);
 
     // Stop listening for changes to Android's animation scale setting.
-    getContext().getContentResolver().unregisterContentObserver(mAnimationScaleObserver);
+    getContext().getContentResolver().unregisterContentObserver(animationScaleObserver);
 
     // Stop listening for changes to accessibility settings.
-    mAccessibilityManager.removeAccessibilityStateChangeListener(this);
+    accessibilityManager.removeAccessibilityStateChangeListener(this);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      mAccessibilityManager.removeTouchExplorationStateChangeListener(mTouchExplorationListener);
+      accessibilityManager.removeTouchExplorationStateChangeListener(touchExplorationListener);
     }
   }
 
   @Override
   public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-    if (isAttachedToWindow() && isAttachedToRenderer) {
-      try {
-        mLastInputConnection = mTextInputPlugin.createInputConnection(this, outAttrs);
-        return mLastInputConnection;
-      } catch (JSONException e) {
-        Log.e(TAG, "Failed to create input connection", e);
-        return null;
-      }
+    if (isAttachedToWindow() && isAttachedToFlutterEngine) {
+      lastInputConnection = textInputPlugin.createInputConnection(this, outAttrs);
+      return lastInputConnection;
     } else {
       return null;
     }
@@ -390,13 +362,14 @@ public class FlutterView extends SurfaceView implements
   @Override
   protected void onConfigurationChanged(Configuration newConfig) {
     super.onConfigurationChanged(newConfig);
-    setFlutterLocale(newConfig.locale);
-    setFlutterUserSettings();
+    // TODO(mattcarroll): when we get the build system to recognize recent APIs, this call should be "getLocales().get(0)"
+    sendLocaleToFlutter(newConfig.locale);
+    sendUserSettingsToFlutter();
   }
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
-    if (!isAttachedToRenderer) {
+    if (!isAttachedToFlutterEngine) {
       return false;
     }
 
@@ -434,7 +407,7 @@ public class FlutterView extends SurfaceView implements
     }
 
     assert packet.position() % (kPointerDataFieldCount * kBytePerField) == 0;
-    flutterRenderer.dispatchPointerDataPacket(packet, packet.position());
+    flutterEngine.getRenderer().dispatchPointerDataPacket(packet, packet.position());
     return true;
   }
 
@@ -537,7 +510,7 @@ public class FlutterView extends SurfaceView implements
 
   @Override
   public boolean onHoverEvent(MotionEvent event) {
-    if (!isAttachedToRenderer) {
+    if (!isAttachedToFlutterEngine) {
       return false;
     }
 
@@ -550,13 +523,13 @@ public class FlutterView extends SurfaceView implements
   }
 
   private boolean handleAccessibilityHoverEvent(MotionEvent event) {
-    if (!mTouchExplorationEnabled) {
+    if (!touchExplorationEnabled) {
       return false;
     }
     if (event.getAction() == MotionEvent.ACTION_HOVER_ENTER || event.getAction() == MotionEvent.ACTION_HOVER_MOVE) {
-      mAccessibilityNodeProvider.handleTouchExploration(event.getX(), event.getY());
+      accessibilityNodeProvider.handleTouchExploration(event.getX(), event.getY());
     } else if (event.getAction() == MotionEvent.ACTION_HOVER_EXIT) {
-      mAccessibilityNodeProvider.handleTouchExplorationExit();
+      accessibilityNodeProvider.handleTouchExplorationExit();
     } else {
       Log.d("flutter", "unexpected accessibility hover event: " + event);
       return false;
@@ -566,8 +539,8 @@ public class FlutterView extends SurfaceView implements
 
   @Override
   protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
-    mMetrics.physicalWidth = width;
-    mMetrics.physicalHeight = height;
+    metrics.physicalWidth = width;
+    metrics.physicalHeight = height;
     sendViewportMetricsToFlutter();
     super.onSizeChanged(width, height, oldWidth, oldHeight);
   }
@@ -577,16 +550,16 @@ public class FlutterView extends SurfaceView implements
   @Override
   public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
     // Status bar, left/right system insets partially obscure content (padding).
-    mMetrics.physicalPaddingTop = insets.getSystemWindowInsetTop();
-    mMetrics.physicalPaddingRight = insets.getSystemWindowInsetRight();
-    mMetrics.physicalPaddingBottom = 0;
-    mMetrics.physicalPaddingLeft = insets.getSystemWindowInsetLeft();
+    metrics.physicalPaddingTop = insets.getSystemWindowInsetTop();
+    metrics.physicalPaddingRight = insets.getSystemWindowInsetRight();
+    metrics.physicalPaddingBottom = 0;
+    metrics.physicalPaddingLeft = insets.getSystemWindowInsetLeft();
 
     // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
-    mMetrics.physicalViewInsetTop = 0;
-    mMetrics.physicalViewInsetRight = 0;
-    mMetrics.physicalViewInsetBottom = insets.getSystemWindowInsetBottom();
-    mMetrics.physicalViewInsetLeft = 0;
+    metrics.physicalViewInsetTop = 0;
+    metrics.physicalViewInsetRight = 0;
+    metrics.physicalViewInsetBottom = insets.getSystemWindowInsetBottom();
+    metrics.physicalViewInsetLeft = 0;
     sendViewportMetricsToFlutter();
     return super.onApplyWindowInsets(insets);
   }
@@ -596,16 +569,16 @@ public class FlutterView extends SurfaceView implements
   protected boolean fitSystemWindows(Rect insets) {
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
       // Status bar, left/right system insets partially obscure content (padding).
-      mMetrics.physicalPaddingTop = insets.top;
-      mMetrics.physicalPaddingRight = insets.right;
-      mMetrics.physicalPaddingBottom = 0;
-      mMetrics.physicalPaddingLeft = insets.left;
+      metrics.physicalPaddingTop = insets.top;
+      metrics.physicalPaddingRight = insets.right;
+      metrics.physicalPaddingBottom = 0;
+      metrics.physicalPaddingLeft = insets.left;
 
       // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
-      mMetrics.physicalViewInsetTop = 0;
-      mMetrics.physicalViewInsetRight = 0;
-      mMetrics.physicalViewInsetBottom = insets.bottom;
-      mMetrics.physicalViewInsetLeft = 0;
+      metrics.physicalViewInsetTop = 0;
+      metrics.physicalViewInsetRight = 0;
+      metrics.physicalViewInsetBottom = insets.bottom;
+      metrics.physicalViewInsetLeft = 0;
       sendViewportMetricsToFlutter();
       return true;
     } else {
@@ -614,21 +587,21 @@ public class FlutterView extends SurfaceView implements
   }
 
   private void sendViewportMetricsToFlutter() {
-    if (!isAttachedToRenderer)
+    if (!isAttachedToFlutterEngine)
       return;
 
-    flutterRenderer.setViewportMetrics(
-      mMetrics.devicePixelRatio,
-      mMetrics.physicalWidth,
-      mMetrics.physicalHeight,
-      mMetrics.physicalPaddingTop,
-      mMetrics.physicalPaddingRight,
-      mMetrics.physicalPaddingBottom,
-      mMetrics.physicalPaddingLeft,
-      mMetrics.physicalViewInsetTop,
-      mMetrics.physicalViewInsetRight,
-      mMetrics.physicalViewInsetBottom,
-      mMetrics.physicalViewInsetLeft
+    flutterEngine.getRenderer().setViewportMetrics(
+      metrics.devicePixelRatio,
+      metrics.physicalWidth,
+      metrics.physicalHeight,
+      metrics.physicalPaddingTop,
+      metrics.physicalPaddingRight,
+      metrics.physicalPaddingBottom,
+      metrics.physicalPaddingLeft,
+      metrics.physicalViewInsetTop,
+      metrics.physicalViewInsetRight,
+      metrics.physicalViewInsetBottom,
+      metrics.physicalViewInsetLeft
     );
 
     WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
@@ -638,48 +611,33 @@ public class FlutterView extends SurfaceView implements
 
   @Override
   public boolean onKeyUp(int keyCode, KeyEvent event) {
-    if (!isAttachedToRenderer) {
+    if (!isAttachedToFlutterEngine) {
       return super.onKeyUp(keyCode, event);
     }
 
-    Map<String, Object> message = new HashMap<>();
-    message.put("type", "keyup");
-    message.put("keymap", "android");
-    encodeKeyEvent(event, message);
-    mFlutterKeyEventChannel.send(message);
+    flutterEngine.getSystemChannels().keyEvent.keyUp(event);
     return super.onKeyUp(keyCode, event);
   }
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
-    if (!isAttachedToRenderer) {
+    if (!isAttachedToFlutterEngine) {
       return super.onKeyDown(keyCode, event);
     }
 
     if (event.getDeviceId() != KeyCharacterMap.VIRTUAL_KEYBOARD) {
-      if (mLastInputConnection != null && mImm.isAcceptingText()) {
-        mLastInputConnection.sendKeyEvent(event);
+      if (lastInputConnection != null && imm.isAcceptingText()) {
+        lastInputConnection.sendKeyEvent(event);
       }
     }
 
-    Map<String, Object> message = new HashMap<>();
-    message.put("type", "keydown");
-    message.put("keymap", "android");
-    encodeKeyEvent(event, message);
-    mFlutterKeyEventChannel.send(message);
+    flutterEngine.getSystemChannels().keyEvent.keyDown(event);
     return super.onKeyDown(keyCode, event);
-  }
-
-  private void encodeKeyEvent(KeyEvent event, Map<String, Object> message) {
-    message.put("flags", event.getFlags());
-    message.put("codePoint", event.getUnicodeChar());
-    message.put("keyCode", event.getKeyCode());
-    message.put("scanCode", event.getScanCode());
-    message.put("metaState", event.getMetaState());
   }
   //------ END VIEW OVERRIDES ----
 
   //------ START SPLASH CONTROL -----
+  @SuppressWarnings("unused")
   public void setSplashColor(@ColorInt int color) {
     // Only worry about the splash background if we have yet to render Flutter's first frame.
     if (isPreRender) {
@@ -688,6 +646,7 @@ public class FlutterView extends SurfaceView implements
     }
   }
 
+  @SuppressWarnings("unused")
   public void setSplashDrawable(@Nullable Drawable drawable) {
     // Only worry about the splash background if we have yet to render Flutter's first frame.
     if (isPreRender) {
@@ -718,6 +677,14 @@ public class FlutterView extends SurfaceView implements
    * controlled from within the Flutter UI itself.
    */
   public void enableTransparentBackground() {
+    isTransparencyDesired = true;
+    doEnableTransparentBackground();
+  }
+
+  // This private method is provided so that we can differentiate between an external
+  // desire to have a transparent background vs a temporary internal need to have
+  // a transparent background.
+  private void doEnableTransparentBackground() {
     setZOrderOnTop(true);
     getHolder().setFormat(PixelFormat.TRANSPARENT);
   }
@@ -727,6 +694,14 @@ public class FlutterView extends SurfaceView implements
    * window and opaque.
    */
   public void disableTransparentBackground() {
+    isTransparencyDesired = false;
+    doDisableTransparentBackground();
+  }
+
+  // This private method is provided so that we can differentiate between an external
+  // desire to have an opaque background vs a temporary internal need to have
+  // an opaque background.
+  private void doDisableTransparentBackground() {
     setZOrderOnTop(false);
     getHolder().setFormat(PixelFormat.OPAQUE);
   }
@@ -738,19 +713,19 @@ public class FlutterView extends SurfaceView implements
     if (enabled) {
       ensureAccessibilityEnabled();
     } else {
-      mAccessibilityEnabled = false;
-      if (mAccessibilityNodeProvider != null) {
-        mAccessibilityNodeProvider.setAccessibilityEnabled(false);
+      accessibilityEnabled = false;
+      if (accessibilityNodeProvider != null) {
+        accessibilityNodeProvider.setAccessibilityEnabled(false);
       }
-      flutterRenderer.setSemanticsEnabled(false);
+      flutterEngine.getRenderer().setSemanticsEnabled(false);
     }
     resetWillNotDraw();
   }
 
   @Override
   public AccessibilityNodeProvider getAccessibilityNodeProvider() {
-    if (mAccessibilityEnabled)
-      return mAccessibilityNodeProvider;
+    if (accessibilityEnabled)
+      return accessibilityNodeProvider;
     // TODO(goderbauer): when a11y is off this should return a one-off snapshot of
     // the a11y
     // tree.
@@ -758,10 +733,11 @@ public class FlutterView extends SurfaceView implements
   }
 
   private void resetWillNotDraw() {
-    if (!mIsSoftwareRenderingEnabled) {
-      setWillNotDraw(!(mAccessibilityEnabled || mTouchExplorationEnabled));
-    } else {
+    if (isSoftwareRenderingEnabled) {
       setWillNotDraw(false);
+    } else {
+      boolean willDraw = accessibilityEnabled || touchExplorationEnabled;
+      setWillNotDraw(!willDraw);
     }
   }
   //----- END AccessibilityStateChangeListener ----
@@ -772,15 +748,17 @@ public class FlutterView extends SurfaceView implements
   }
 
   public void dispatchSemanticsAction(int id, AccessibilityBridge.Action action, Object args) {
-    if (!isAttachedToRenderer)
+    if (!isAttachedToFlutterEngine) {
       return;
+    }
+
     ByteBuffer encodedArgs = null;
     int position = 0;
     if (args != null) {
       encodedArgs = StandardMessageCodec.INSTANCE.encodeMessage(args);
       position = encodedArgs.position();
     }
-    flutterRenderer.dispatchSemanticsAction(id, action.value, encodedArgs, position);
+    flutterEngine.getRenderer().dispatchSemanticsAction(id, action.value, encodedArgs, position);
   }
 
   public void updateAccessibilityFeatures() {
@@ -788,28 +766,30 @@ public class FlutterView extends SurfaceView implements
       String transitionAnimationScale = Settings.Global.getString(getContext().getContentResolver(),
           Settings.Global.TRANSITION_ANIMATION_SCALE);
       if (transitionAnimationScale != null && transitionAnimationScale.equals("0")) {
-        mAccessibilityFeatureFlags ^= AccessibilityFeature.DISABLE_ANIMATIONS.value;
+        accessibilityFeatureFlags ^= AccessibilityFeature.DISABLE_ANIMATIONS.value;
       } else {
-        mAccessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
+        accessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
       }
+    } else {
+      // TODO(mattcarroll): we need to do something here for API 16
     }
-    flutterRenderer.setAccessibilityFeatures(mAccessibilityFeatureFlags);
+    flutterEngine.getRenderer().setAccessibilityFeatures(accessibilityFeatureFlags);
   }
 
   void ensureAccessibilityEnabled() {
-    if (!isAttachedToRenderer)
+    if (!isAttachedToFlutterEngine)
       return;
-    mAccessibilityEnabled = true;
-    if (mAccessibilityNodeProvider == null) {
-      mAccessibilityNodeProvider = new AccessibilityBridge(this, pluginMessenger);
+    accessibilityEnabled = true;
+    if (accessibilityNodeProvider == null) {
+      accessibilityNodeProvider = new AccessibilityBridge(this, flutterEngine.getSystemChannels().accessibility);
     }
-    flutterRenderer.setSemanticsEnabled(true);
-    mAccessibilityNodeProvider.setAccessibilityEnabled(true);
+    flutterEngine.getRenderer().setSemanticsEnabled(true);
+    accessibilityNodeProvider.setAccessibilityEnabled(true);
   }
 
   public void resetAccessibilityTree() {
-    if (mAccessibilityNodeProvider != null) {
-      mAccessibilityNodeProvider.reset();
+    if (accessibilityNodeProvider != null) {
+      accessibilityNodeProvider.reset();
     }
   }
   //------- END ACCESSIBILITY ----
@@ -819,8 +799,8 @@ public class FlutterView extends SurfaceView implements
    * Send the given {@link Locale} configuration to Flutter.
    * @param locale the user's locale
    */
-  private void setFlutterLocale(@NonNull Locale locale) {
-    mFlutterLocalizationChannel.invokeMethod("setLocale", Arrays.asList(locale.getLanguage(), locale.getCountry()));
+  private void sendLocaleToFlutter(@NonNull Locale locale) {
+    flutterEngine.getSystemChannels().localization.setLocale(locale.getLanguage(), locale.getCountry());
   }
 
   /**
@@ -829,11 +809,11 @@ public class FlutterView extends SurfaceView implements
    * For example, sends the user's "text scale factor" preferences, as well as the user's clock
    * format preference.
    */
-  private void setFlutterUserSettings() {
-    Map<String, Object> message = new HashMap<>();
-    message.put("textScaleFactor", getResources().getConfiguration().fontScale);
-    message.put("alwaysUse24HourFormat", DateFormat.is24HourFormat(getContext()));
-    mFlutterSettingsChannel.send(message);
+  private void sendUserSettingsToFlutter() {
+    flutterEngine.getSystemChannels().settings.startMessage()
+        .setTextScaleFactor(getResources().getConfiguration().fontScale)
+        .setUse24HourFormat(DateFormat.is24HourFormat(getContext()))
+        .send();
   }
   //----- END FLUTTER INTEGRATION -----
 
@@ -841,9 +821,9 @@ public class FlutterView extends SurfaceView implements
   @Override
   public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
     try {
-      if (mAccessibilityNodeProvider != null) {
+      if (accessibilityNodeProvider != null) {
         buffer.order(ByteOrder.LITTLE_ENDIAN);
-        mAccessibilityNodeProvider.updateCustomAccessibilityActions(buffer, strings);
+        accessibilityNodeProvider.updateCustomAccessibilityActions(buffer, strings);
       }
     } catch (Exception ex) {
       Log.e(TAG, "Uncaught exception while updating local context actions", ex);
@@ -853,9 +833,9 @@ public class FlutterView extends SurfaceView implements
   @Override
   public void updateSemantics(ByteBuffer buffer, String[] strings) {
     try {
-      if (mAccessibilityNodeProvider != null) {
+      if (accessibilityNodeProvider != null) {
         buffer.order(ByteOrder.LITTLE_ENDIAN);
-        mAccessibilityNodeProvider.updateSemantics(buffer, strings);
+        accessibilityNodeProvider.updateSemantics(buffer, strings);
       }
     } catch (Exception ex) {
       Log.e(TAG, "Uncaught exception while updating semantics", ex);
@@ -870,6 +850,7 @@ public class FlutterView extends SurfaceView implements
 
   /// Must match the enum defined in window.dart.
   private enum AccessibilityFeature {
+    @SuppressWarnings("PointlessBitwiseExpression")
     ACCESSIBLE_NAVIGATION(1 << 0),
     INVERT_COLORS(1 << 1), // NOT SUPPORTED
     DISABLE_ANIMATIONS(1 << 2);
@@ -893,18 +874,28 @@ public class FlutterView extends SurfaceView implements
       this.onChange(selfChange, null);
     }
 
-    // TODO(mattcarroll): getString() requires API 17. what should we do for earlier APIs?
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     @Override
     public void onChange(boolean selfChange, Uri uri) {
-      String value = Settings.Global.getString(getContext().getContentResolver(),
-          Settings.Global.TRANSITION_ANIMATION_SCALE);
-      if (value.equals("0")) {
-        mAccessibilityFeatureFlags ^= AccessibilityFeature.DISABLE_ANIMATIONS.value;
+      String value;
+
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+        value = Settings.System.getString(
+            getContext().getContentResolver(),
+            Settings.System.TRANSITION_ANIMATION_SCALE
+        );
       } else {
-        mAccessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
+        value = Settings.Global.getString(
+            getContext().getContentResolver(),
+            Settings.Global.TRANSITION_ANIMATION_SCALE
+        );
       }
-      flutterRenderer.setAccessibilityFeatures(mAccessibilityFeatureFlags);
+
+      if (value.equals("0")) {
+        accessibilityFeatureFlags ^= AccessibilityFeature.DISABLE_ANIMATIONS.value;
+      } else {
+        accessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
+      }
+      flutterEngine.getRenderer().setAccessibilityFeatures(accessibilityFeatureFlags);
     }
   }
 
@@ -914,17 +905,17 @@ public class FlutterView extends SurfaceView implements
     @Override
     public void onTouchExplorationStateChanged(boolean enabled) {
       if (enabled) {
-        mTouchExplorationEnabled = true;
+        touchExplorationEnabled = true;
         ensureAccessibilityEnabled();
-        mAccessibilityFeatureFlags ^= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-        flutterRenderer.setAccessibilityFeatures(mAccessibilityFeatureFlags);
+        accessibilityFeatureFlags ^= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+        flutterEngine.getRenderer().setAccessibilityFeatures(accessibilityFeatureFlags);
       } else {
-        mTouchExplorationEnabled = false;
-        if (mAccessibilityNodeProvider != null) {
-          mAccessibilityNodeProvider.handleTouchExplorationExit();
+        touchExplorationEnabled = false;
+        if (accessibilityNodeProvider != null) {
+          accessibilityNodeProvider.handleTouchExplorationExit();
         }
-        mAccessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-        flutterRenderer.setAccessibilityFeatures(mAccessibilityFeatureFlags);
+        accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+        flutterEngine.getRenderer().setAccessibilityFeatures(accessibilityFeatureFlags);
       }
       resetWillNotDraw();
     }

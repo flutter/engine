@@ -26,17 +26,9 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
-import io.flutter.plugin.common.BasicMessageChannel;
-import io.flutter.plugin.common.JSONMessageCodec;
-import io.flutter.plugin.common.JSONMethodCodec;
-import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.StringCodec;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 import io.flutter.view.FlutterRunArguments;
@@ -191,11 +183,7 @@ public class FlutterFragment extends Fragment {
   private FlutterView flutterView;
   private View launchView;
 
-  private MethodChannel flutterPlatformChannel;
   private PlatformPlugin platformPlugin;
-  private BasicMessageChannel<String> mFlutterLifecycleChannel;
-  private BasicMessageChannel<Object> mFlutterSystemChannel;
-  private MethodChannel mFlutterNavigationChannel;
 
   public FlutterFragment() {
     // Ensure that we at least have an empty Bundle of arguments so that we don't
@@ -207,22 +195,20 @@ public class FlutterFragment extends Fragment {
   public void onAttach(Activity activity) {
     super.onAttach(activity);
 
-    platformPlugin = new PlatformPlugin(activity);
-    if (flutterEngine != null) {
-      flutterPlatformChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/platform", JSONMethodCodec.INSTANCE);
-      flutterPlatformChannel.setMethodCallHandler(platformPlugin);
-    }
-  }
-
-  @Override
-  public void onCreate(@Nullable Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-
     // TODO(mattcarroll): I think the build system is linking the wrong Fragment API. It says that
     //                    getContext() cannot be found...
-    initializeFlutter(getActivity());
+    initializeFlutter(activity);
 
-    ensureFlutterEngineCreated();
+    // When "retain instance" is true, the FlutterEngine will survive configuration
+    // changes. Therefore, we create a new one only if one does not already exist.
+    if (flutterEngine == null) {
+      createFlutterEngine();
+    }
+
+    // Regardless of whether or not a FlutterEngine already existed, the PlatformPlugin
+    // is bound to a specific Activity. Therefore, it needs to be created and configured
+    // every time this Fragment attaches to a new Activity.
+    connectFlutterEngineToAndroidPlatform();
   }
 
   // TODO(mattcarroll): does it really make sense to run this for every Fragment? Note: the
@@ -238,48 +224,30 @@ public class FlutterFragment extends Fragment {
   }
 
   /**
-   * Creates a new FlutterEngine instance if one does not already exist.
+   * Creates a new FlutterEngine instance.
    *
-   * In addition to creating a new FlutterEngine, this method creates a PlatformPlugin that is
-   * registered with the
+   * Subclasses can instantiate their own {@link FlutterEngine} by overriding
+   * {@link #onCreateFlutterEngine(Context)}.
+   *
+   * Subclasses can alter the {@link FlutterEngine} after creation by overriding
+   * {@link #onFlutterEngineCreated(FlutterEngine)}.
    */
-  private void ensureFlutterEngineCreated() {
-    // Create a FlutterEngine to back our FlutterView. It may already exist if this Fragment
-    // has been set to "retain instance".
-    if (flutterEngine == null) {
-      flutterEngine = createFlutterEngine(getActivity());
+  private void createFlutterEngine() {
+    // Create a FlutterEngine to back our FlutterView.
+    flutterEngine = onCreateFlutterEngine(getActivity());
 
-      // Allow subclasses to customize FlutterEngine as desired.
-      onFlutterEngineCreated(flutterEngine);
-
-      // Create and register desired platform channels to communicate between Dart/Java.
-      registerPlaformChannels();
-
-      flutterPlatformChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/platform", JSONMethodCodec.INSTANCE);
-      flutterPlatformChannel.setMethodCallHandler(platformPlugin);
-    }
-  }
-
-  // TODO(mattcarroll): create infrastructure to take in channels. Right now the use of local variables
-  //                    prevents this method from being configured.
-  protected void registerPlaformChannels() {
-    mFlutterLifecycleChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/lifecycle", StringCodec.INSTANCE);
-    mFlutterSystemChannel = new BasicMessageChannel<>(flutterEngine.getDartExecutor(), "flutter/system", JSONMessageCodec.INSTANCE);
-    mFlutterNavigationChannel = new MethodChannel(flutterEngine.getDartExecutor(), "flutter/navigation", JSONMethodCodec.INSTANCE);
+    // Allow subclasses to customize FlutterEngine as desired.
+    onFlutterEngineCreated(flutterEngine);
   }
 
   /**
    * Hook for subclasses to customize the creation of the {@code FlutterEngine}.
    *
-   * This method is only invoked from the default implementation of {@link #createFlutterView(Context)}.
-   * If {@link #createFlutterView(Context)} is overridden, then this method will not be invoked unless
-   * it is invoked directly from the subclass.
-   *
    * By default, this method returns a standard {@link FlutterEngine} without any modification.
    */
   @NonNull
-  protected FlutterEngine createFlutterEngine(@NonNull Context context) {
-    Log.d(TAG, "createFlutterEngine()");
+  protected FlutterEngine onCreateFlutterEngine(@NonNull Context context) {
+    Log.d(TAG, "onCreateFlutterEngine()");
     return new FlutterEngine(context, getResources(), false);
   }
 
@@ -291,30 +259,41 @@ public class FlutterFragment extends Fragment {
     // no-op
   }
 
+  /**
+   * Creates a {@link PlatformPlugin} that receives requests from the app running in the
+   * {@link FlutterEngine} and carries out the necessary Android behavior.
+   *
+   * The created plugin is connected to the {@link FlutterEngine} via its
+   * {@link io.flutter.embedding.engine.systemchannels.PlatformChannel}.
+   *
+   * Some examples of behavior carried about by the platform plugin include:
+   *  - clipboard
+   *  - haptic feedback
+   *  - playing system sounds
+   *  - etc.
+   */
+  private void connectFlutterEngineToAndroidPlatform() {
+    platformPlugin = new PlatformPlugin(getActivity());
+    flutterEngine.getSystemChannels().platform.setMethodCallHandler(platformPlugin);
+  }
+
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
     Log.e(TAG, "onCreateView()");
-    createLayout();
+    View layout = createLayout();
 
-    Log.d(TAG, "onCreateView: Attaching plugin registry to Activity");
     flutterEngine.getPluginRegistry().attach(flutterView, getActivity());
-
-    // TODO: Should we start running the FlutterView here or when attached to window? It was being done here
-    //       in the Activity, but maybe that was a problem to begin with?
-    flutterView.attachToFlutterRenderer(flutterEngine.getRenderer(), flutterEngine.getDartExecutor());
+    flutterView.attachToFlutterEngine(flutterEngine);
     doInitialFlutterViewRun();
 
-    return container;
+    return layout;
   }
 
   /**
    * Creates a {@code FrameLayout} that takes all available space, then creates a {@code FlutterView}
    * within the FrameLayout container.
    */
-  private void createLayout() {
-    container = new FrameLayout(getContextCompat());
-    container.setLayoutParams(MATCH_PARENT);
-
+  private View createLayout() {
     // Create our FlutterView for rendering and user interaction.
     flutterView = createFlutterView(getActivity());
 
@@ -322,156 +301,18 @@ public class FlutterFragment extends Fragment {
     onFlutterViewCreated(flutterView);
 
     // Add FlutterView to the View hierarchy.
+    container = new FrameLayout(getContextCompat());
+    container.setLayoutParams(MATCH_PARENT);
     container.addView(flutterView, MATCH_PARENT);
 
+    // Create and add a launch view, if desired.
     launchView = createLaunchView();
     if (launchView != null) {
       Log.d(TAG, "Showing launch view.");
       container.addView(launchView, MATCH_PARENT);
     }
-  }
 
-  @Override
-  public void onStart() {
-    super.onStart();
-    Log.d(TAG, "onStart()");
-    mFlutterLifecycleChannel.send("AppLifecycleState.inactive");
-  }
-
-  public void onPostResume() {
-    Log.d(TAG, "onPostResume()");
-    // TODO(mattcarroll): what does 'updateAccessibilityFeatures' do? why is it called here?
-    flutterView.updateAccessibilityFeatures();
-    // TODO(mattcarroll): why does the platform plugin care about "post resume"?
-    platformPlugin.onPostResume();
-    // TODO(mattcarroll): why does the lifecycle wait for "post resume" to say we're resumed?
-    mFlutterLifecycleChannel.send("AppLifecycleState.resumed");
-  }
-
-  @Override
-  public void onPause() {
-    super.onPause();
-    Log.d(TAG, "onPause()");
-    mFlutterLifecycleChannel.send("AppLifecycleState.inactive");
-  }
-
-  @Override
-  public void onStop() {
-    super.onStop();
-    Log.d(TAG, "onStop()");
-    mFlutterLifecycleChannel.send("AppLifecycleState.paused");
-  }
-
-  @Override
-  public void onDestroyView() {
-    super.onDestroyView();
-    Log.d(TAG, "onDestroyView()");
-    flutterView.detachFromFlutterRenderer();
-
-    // TODO(mattcarroll): what does 'detach' refer to?  The Activity? The UI? JNI?....
-    flutterEngine.getPluginRegistry().detach();
-  }
-
-  @Override
-  public void onDestroy() {
-    super.onDestroy();
-    Log.d(TAG, "onDestroy()");
-
-    // TODO(mattcarroll): re-evaluate how Flutter plugins interact with FlutterView and FlutterNativeView
-    final boolean detach = flutterEngine.getPluginRegistry().onViewDestroy(flutterEngine);
-    if (detach || retainFlutterIsolateAfterFragmentDestruction()) {
-      // Detach, but do not destroy the FlutterView if a plugin expressed interest in its
-      // FlutterNativeView.
-      flutterEngine.detachFromJni();
-    } else {
-      flutterEngine.destroy();
-    }
-  }
-
-  @Override
-  public void onDetach() {
-    super.onDetach();
-    Log.d(TAG, "onDetach: Detaching platform channel.");
-    platformPlugin = null;
-    flutterPlatformChannel.setMethodCallHandler(null);
-    flutterPlatformChannel = null;
-  }
-
-  /**
-   * The hardware back button was pressed.
-   *
-   * See {@link Activity#onBackPressed()}
-   */
-  public void onBackPressed() {
-    Log.d(TAG, "onBackPressed()");
-    popRoute();
-  }
-
-  /**
-   * The result of a permission request has been received.
-   *
-   * See {@link Activity#onRequestPermissionsResult(int, String[], int[])}
-   *
-   * @param requestCode identifier passed with the initial permission request
-   * @param permissions permissions that were requested
-   * @param grantResults permission grants or denials
-   */
-  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    flutterEngine.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
-  }
-
-  /**
-   * A new Intent was received by the {@link Activity} that currently owns this {@link Fragment}.
-   *
-   * See {@link Activity#onNewIntent(Intent)}
-   *
-   * @param intent new Intent
-   */
-  public void onNewIntent(@NonNull Intent intent) {
-    flutterEngine.getPluginRegistry().onNewIntent(intent);
-  }
-
-  @Override
-  public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    flutterEngine.getPluginRegistry().onActivityResult(requestCode, resultCode, data);
-  }
-
-  /**
-   * The {@link Activity} that owns this {@link Fragment} is about to go to the background
-   * as the result of a user's choice/action, i.e., not as the result of an OS decision.
-   *
-   * See {@link Activity#onUserLeaveHint()}
-   */
-  public void onUserLeaveHint() {
-    flutterEngine.getPluginRegistry().onUserLeaveHint();
-  }
-
-  public void onTrimMemory(int level) {
-    // Use a trim level delivered while the application is running so the
-    // framework has a chance to react to the notification.
-    if (level == TRIM_MEMORY_RUNNING_LOW) {
-      sendMemoryPressureWarningToFlutter();
-    }
-  }
-
-  @Override
-  public void onLowMemory() {
-    super.onLowMemory();
-    sendMemoryPressureWarningToFlutter();
-  }
-
-  private void sendMemoryPressureWarningToFlutter() {
-    Map<String, Object> message = new HashMap<>(1);
-    message.put("type", "memoryPressure");
-    mFlutterSystemChannel.send(message);
-  }
-
-  public void enableTransparentBackground() {
-    flutterView.enableTransparentBackground();
-  }
-
-  public void disableTransparentBackground() {
-    flutterView.disableTransparentBackground();
+    return container;
   }
 
   /**
@@ -492,16 +333,6 @@ public class FlutterFragment extends Fragment {
   }
 
   /**
-   * The {@link FlutterEngine} that backs the Flutter content presented by this {@code Fragment}.
-   *
-   * @return the {@link FlutterEngine} held by this {@code Fragment}
-   */
-  @Nullable
-  protected FlutterEngine getFlutterEngine() {
-    return flutterEngine;
-  }
-
-  /**
    * Creates a {@link View} containing the same {@link Drawable} as the one set as the
    * {@code windowBackground} of the parent activity for use as a launch splash view.
    *
@@ -510,10 +341,12 @@ public class FlutterFragment extends Fragment {
    * {@code FlutterView} must exist before this method is called.
    *
    * Returns null if no {@code windowBackground} is set for the activity.
+   *
+   * Subclasses may override this method to return a launch view of choice.
    */
   @SuppressLint("NewApi")
   @Nullable
-  private View createLaunchView() {
+  protected View createLaunchView() {
     if (!isSplashScreenDesired()) {
       return null;
     }
@@ -561,6 +394,216 @@ public class FlutterFragment extends Fragment {
     return view;
   }
 
+  /**
+   * Extracts a {@link Drawable} from the parent activity's {@code windowBackground}.
+   *
+   * {@code android:windowBackground} is specifically reused instead of other attributes
+   * because the Android framework can display it fast enough when launching the app as opposed
+   * to anything defined in the Activity subclass.
+   *
+   * TODO(mattcarroll): speed aside, should developers be given the opportunity to use different Drawables?
+   *
+   * Returns null if no {@code windowBackground} is set for the activity.
+   */
+  @SuppressWarnings("deprecation")
+  @Nullable
+  private Drawable getSplashScreenDrawableFromActivityTheme() {
+    TypedValue typedValue = new TypedValue();
+    if (!getContextCompat().getTheme().resolveAttribute(
+        android.R.attr.windowBackground,
+        typedValue,
+        true)) {
+      return null;
+    }
+    if (typedValue.resourceId == 0) {
+      return null;
+    }
+    try {
+      return getResources().getDrawable(typedValue.resourceId);
+    } catch (Resources.NotFoundException e) {
+      Log.e(TAG, "Referenced launch screen windowBackground resource does not exist");
+      return null;
+    }
+  }
+
+  @Override
+  public void onStart() {
+    super.onStart();
+    Log.d(TAG, "onStart()");
+    flutterEngine.getSystemChannels().lifecycle.appIsInactive();
+  }
+
+  public void onPostResume() {
+    Log.d(TAG, "onPostResume()");
+    // TODO(mattcarroll): what does 'updateAccessibilityFeatures' do? why is it called here?
+    flutterView.updateAccessibilityFeatures();
+    // TODO(mattcarroll): why does the platform plugin care about "post resume"?
+    platformPlugin.onPostResume();
+    // TODO(mattcarroll): why does the lifecycle wait for "post resume" to say we're resumed?
+    flutterEngine.getSystemChannels().lifecycle.appIsResumed();
+  }
+
+  @Override
+  public void onPause() {
+    super.onPause();
+    Log.d(TAG, "onPause()");
+    flutterEngine.getSystemChannels().lifecycle.appIsInactive();
+  }
+
+  @Override
+  public void onStop() {
+    super.onStop();
+    Log.d(TAG, "onStop()");
+    flutterEngine.getSystemChannels().lifecycle.appIsPaused();
+  }
+
+  @Override
+  public void onDestroyView() {
+    super.onDestroyView();
+    Log.d(TAG, "onDestroyView()");
+    flutterView.detachFromFlutterEngine();
+
+    // TODO(mattcarroll): what does 'detach' refer to?  The Activity? The UI? JNI?....
+    flutterEngine.getPluginRegistry().detach();
+  }
+
+  @Override
+  public void onDestroy() {
+    super.onDestroy();
+    Log.d(TAG, "onDestroy()");
+
+    // TODO(mattcarroll): re-evaluate how Flutter plugins interact with FlutterView and FlutterNativeView
+    final boolean detach = flutterEngine.getPluginRegistry().onViewDestroy(flutterEngine);
+    if (detach || retainFlutterIsolateAfterFragmentDestruction()) {
+      // Detach, but do not destroy the FlutterView if a plugin expressed interest in its
+      // FlutterNativeView.
+      flutterEngine.detachFromJni();
+    } else {
+      flutterEngine.destroy();
+    }
+  }
+
+  @Override
+  public void onDetach() {
+    super.onDetach();
+    Log.d(TAG, "onDetach: Detaching platform channel.");
+    flutterEngine.getSystemChannels().platform.setMethodCallHandler(null);
+    platformPlugin = null;
+  }
+
+  /**
+   * The hardware back button was pressed.
+   *
+   * See {@link Activity#onBackPressed()}
+   */
+  public void onBackPressed() {
+    Log.d(TAG, "onBackPressed()");
+    flutterEngine.getSystemChannels().navigation.popRoute();
+  }
+
+  /**
+   * The result of a permission request has been received.
+   *
+   * See {@link Activity#onRequestPermissionsResult(int, String[], int[])}
+   *
+   * @param requestCode identifier passed with the initial permission request
+   * @param permissions permissions that were requested
+   * @param grantResults permission grants or denials
+   */
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    flutterEngine.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
+  }
+
+  /**
+   * A new Intent was received by the {@link Activity} that currently owns this {@link Fragment}.
+   *
+   * See {@link Activity#onNewIntent(Intent)}
+   *
+   * @param intent new Intent
+   */
+  public void onNewIntent(@NonNull Intent intent) {
+    flutterEngine.getPluginRegistry().onNewIntent(intent);
+  }
+
+  /**
+   * A result has been returned after an invocation of {@link Fragment#startActivityForResult(Intent, int)}.
+   *
+   * @param requestCode request code sent with {@link Fragment#startActivityForResult(Intent, int)}
+   * @param resultCode code representing the result of the {@code Activity} that was launched
+   * @param data any corresponding return data, held within an {@code Intent}
+   */
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    flutterEngine.getPluginRegistry().onActivityResult(requestCode, resultCode, data);
+  }
+
+  /**
+   * The {@link Activity} that owns this {@link Fragment} is about to go to the background
+   * as the result of a user's choice/action, i.e., not as the result of an OS decision.
+   *
+   * See {@link Activity#onUserLeaveHint()}
+   */
+  public void onUserLeaveHint() {
+    flutterEngine.getPluginRegistry().onUserLeaveHint();
+  }
+
+  /**
+   * Callback invoked when memory is low.
+   *
+   * This implementation forwards a memory pressure warning to the running Flutter app.
+   *
+   * @param level level
+   */
+  public void onTrimMemory(int level) {
+    // Use a trim level delivered while the application is running so the
+    // framework has a chance to react to the notification.
+    if (level == TRIM_MEMORY_RUNNING_LOW) {
+      flutterEngine.getSystemChannels().system.sendMemoryPressureWarning();
+    }
+  }
+
+  /**
+   * Callback invoked when memory is low.
+   *
+   * This implementation forwards a memory pressure warning to the running Flutter app.
+   */
+  @Override
+  public void onLowMemory() {
+    super.onLowMemory();
+    flutterEngine.getSystemChannels().system.sendMemoryPressureWarning();
+  }
+
+  /**
+   * The {@link FlutterEngine} that backs the Flutter content presented by this {@code Fragment}.
+   *
+   * @return the {@link FlutterEngine} held by this {@code Fragment}
+   */
+  @Nullable
+  public FlutterEngine getFlutterEngine() {
+    return flutterEngine;
+  }
+
+  /**
+   * Enables transparency on this {@link FlutterFragment}'s {@link FlutterView}. If part of the
+   * Flutter app does not paint a background, the {@link FlutterView} will show through to whatever
+   * is behind this {@link FlutterFragment}.
+   *
+   * @see FlutterFragment#disableTransparentBackground()
+   */
+  public void enableTransparentBackground() {
+    flutterView.enableTransparentBackground();
+  }
+
+  /**
+   * Disables transparency on this {@link FlutterFragment}'s {@link FlutterView}. As a result, the
+   * entire {@link FlutterView} will be painted with some color.
+   *
+   * @see FlutterFragment#enableTransparentBackground()
+   */
+  public void disableTransparentBackground() {
+    flutterView.disableTransparentBackground();
+  }
+
   private boolean isSplashScreenDesired() {
     return getArguments().getBoolean(ARG_IS_SPLASH_SCREEN_DESIRED, false);
   }
@@ -605,38 +648,6 @@ public class FlutterFragment extends Fragment {
   }
 
   /**
-   * Extracts a {@link Drawable} from the parent activity's {@code windowBackground}.
-   *
-   * {@code android:windowBackground} is specifically reused instead of other attributes
-   * because the Android framework can display it fast enough when launching the app as opposed
-   * to anything defined in the Activity subclass.
-   *
-   * TODO(mattcarroll): speed aside, should developers be given the opportunity to use different Drawables?
-   *
-   * Returns null if no {@code windowBackground} is set for the activity.
-   */
-  @SuppressWarnings("deprecation")
-  @Nullable
-  private Drawable getSplashScreenDrawableFromActivityTheme() {
-    TypedValue typedValue = new TypedValue();
-    if (!getContextCompat().getTheme().resolveAttribute(
-        android.R.attr.windowBackground,
-        typedValue,
-        true)) {
-      return null;
-    }
-    if (typedValue.resourceId == 0) {
-      return null;
-    }
-    try {
-      return getResources().getDrawable(typedValue.resourceId);
-    } catch (Resources.NotFoundException e) {
-      Log.e(TAG, "Referenced launch screen windowBackground resource does not exist");
-      return null;
-    }
-  }
-
-  /**
    * Starts running Dart within the FlutterView for the first time.
    *
    * Reloading/restarting Dart within a given FlutterView is not supported.
@@ -649,7 +660,7 @@ public class FlutterFragment extends Fragment {
     }
 
     if (getInitialRoute() != null) {
-      setInitialRoute(getInitialRoute());
+      flutterEngine.getSystemChannels().navigation.setInitialRoute(getInitialRoute());
     }
 
     // TODO(mattcarroll): are FlutterRunArguments and FlutterShellArgs the same thing? consolidate if they are
@@ -670,17 +681,5 @@ public class FlutterFragment extends Fragment {
 //    return Build.VERSION.SDK_INT >= 23
 //      ? getContext()
 //      : getActivity();
-  }
-
-  private void setInitialRoute(String route) {
-    mFlutterNavigationChannel.invokeMethod("setInitialRoute", route);
-  }
-
-  private void pushRoute(String route) {
-    mFlutterNavigationChannel.invokeMethod("pushRoute", route);
-  }
-
-  private void popRoute() {
-    mFlutterNavigationChannel.invokeMethod("popRoute", null);
   }
 }
