@@ -165,7 +165,7 @@ static std::string CreateShellLabel() {
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
   self.pluginPublications[pluginKey] = [NSNull null];
-  return [[FlutterHeadlessDartRegistrar alloc] initWithPlugin:pluginKey 
+  return [[FlutterHeadlessDartRegistrar alloc] initWithPlugin:pluginKey
                                     flutterHeadlessDartRunner:self];
 }
 
