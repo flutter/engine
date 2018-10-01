@@ -33,6 +33,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   ~SceneBuilder() override;
 
   void pushTransform(const tonic::Float64List& matrix4);
+  void pushOffset(double dx, double dy);
   void pushClipRect(double left,
                     double right,
                     double top,
@@ -94,14 +95,11 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   std::unique_ptr<flow::ContainerLayer> root_layer_;
   flow::ContainerLayer* current_layer_ = nullptr;
 
-  std::stack<SkRect> cull_rects_;
-
   int rasterizer_tracing_threshold_ = 0;
   bool checkerboard_raster_cache_images_ = false;
   bool checkerboard_offscreen_layers_ = false;
 
-  void PushLayer(std::unique_ptr<flow::ContainerLayer> layer,
-                 const SkRect& cullRect);
+  void PushLayer(std::unique_ptr<flow::ContainerLayer> layer);
 
   FML_DISALLOW_COPY_AND_ASSIGN(SceneBuilder);
 };
