@@ -1130,7 +1130,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
     } else {
       // Set each box to the max height of each line to ensure continuity.
       float min_top = DBL_MAX;
-      float max_bottom = -1;
+      float max_bottom = 0;
       for (const Paragraph::TextBox& box : kv.second) {
         min_top = std::min(box.rect.fTop, min_top);
         max_bottom = std::max(box.rect.fBottom, max_bottom);
