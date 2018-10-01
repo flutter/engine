@@ -301,7 +301,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey;
 @end
 
-@protocol FlutterHeadlessPlugins 
+@protocol FlutterHeadlessPlugins
 - (void)registerHeadlessPlugins:(NSObject<FlutterPluginRegistry>*)registrar;
 @end
 

@@ -182,7 +182,6 @@
 }
 
 - (void)registerHeadlessPlugins:(NSObject<FlutterPluginRegistrar>*)registrar {
-
 }
 
 @end
