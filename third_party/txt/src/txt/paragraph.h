@@ -55,6 +55,8 @@ class Paragraph {
 
   enum Affinity { UPSTREAM, DOWNSTREAM };
 
+  // TODO(garyq): Implement kIncludeLineSpacing and kExtendEndOfLine
+
   // Options for various types of bounding boxes provided by
   // GetRectsForRange(...).
   // These options can be individually enabled, for example:
@@ -69,15 +71,7 @@ class Paragraph {
     // Provide tight bounding boxes that fit heights per span. Otherwise, the
     // heights of spans are the max of the heights of the line the span belongs
     // in.
-    kTight = 0x1,
-
-    // TODO(garyq): Implement line spacing inclusion/exclusion
-    // Include the height of the extra line spacing in the rects.
-    kIncludeLineSpacing = 0x2,
-
-    // TODO(garyq): Implement extension to end of line
-    // Extend the last rect of each line to the end of the line (macOS style)
-    kExtendEndOfLine = 0x4
+    kTight = 0x1
   };
 
   struct PositionWithAffinity {
