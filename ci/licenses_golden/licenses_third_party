@@ -1,4 +1,4 @@
-Signature: 5b5ec302d3f100a7ca4552f231d9f8b7
+Signature: 1a325f5834d49b7daa016a4f2b01be3d
 
 UNUSED LICENSES:
 
@@ -5455,6 +5455,7 @@ FILE: ../../../third_party/dart/runtime/bin/typed_data_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/typed_data_utils.h
 FILE: ../../../third_party/dart/runtime/include/dart_embedder_api.h
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz.dart
+FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz_test.dart
 FILE: ../../../third_party/dart/runtime/vm/base64.cc
 FILE: ../../../third_party/dart/runtime/vm/base64.h
 FILE: ../../../third_party/dart/runtime/vm/base64_test.cc
@@ -5662,10 +5663,10 @@ ORIGIN: ../../../third_party/dart/runtime/bin/vmservice/loader.dart + ../../../t
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/bin/address_sanitizer.cc
 FILE: ../../../third_party/dart/runtime/bin/builtin_common.cc
-FILE: ../../../third_party/dart/runtime/bin/embedded_dart_io.cc
-FILE: ../../../third_party/dart/runtime/bin/embedded_dart_io.h
+FILE: ../../../third_party/dart/runtime/bin/dart_io_api_impl.cc
 FILE: ../../../third_party/dart/runtime/bin/observatory_assets_empty.cc
 FILE: ../../../third_party/dart/runtime/bin/vmservice/loader.dart
+FILE: ../../../third_party/dart/runtime/include/bin/dart_io_api.h
 FILE: ../../../third_party/dart/runtime/lib/async_patch.dart
 FILE: ../../../third_party/dart/runtime/lib/compact_hash.dart
 FILE: ../../../third_party/dart/runtime/lib/developer.cc

@@ -13,6 +13,8 @@
 
 #include <trace/event.h>
 
+#define FML_TRACE_COUNTER(category_group, name, count) \
+  TRACE_COUNTER(category_group, name, 0u, name, count)
 #define TRACE_EVENT0(a, b) TRACE_DURATION(a, b)
 #define TRACE_EVENT1(a, b, c, d) TRACE_DURATION(a, b, c, d)
 #define TRACE_EVENT2(a, b, c, d, e, f) TRACE_DURATION(a, b, c, d, e, f)
@@ -33,19 +35,32 @@
 
 #ifndef TRACE_EVENT_HIDE_MACROS
 
+#define __FML__TOKEN_CAT__(x, y) x##y
+#define __FML__TOKEN_CAT__2(x, y) __FML__TOKEN_CAT__(x, y)
+#define __FML__AUTO_TRACE_END(name)                                  \
+  ::fml::tracing::ScopedInstantEnd __FML__TOKEN_CAT__2(__trace_end_, \
+                                                       __LINE__)(name);
+
+// This macro has the FML_ prefix so that it does not collide with the macros
+// from trace/event.h on Fuchsia.
+//
+// TODO(chinmaygarde): All macros here should have the FML prefix.
+#define FML_TRACE_COUNTER(category_group, name, count) \
+  ::fml::tracing::TraceCounter(category_group, name, count);
+
 #define TRACE_EVENT0(category_group, name)           \
   ::fml::tracing::TraceEvent0(category_group, name); \
-  ::fml::tracing::ScopedInstantEnd __trace_end0_##__LINE__(name);
+  __FML__AUTO_TRACE_END(name)
 
 #define TRACE_EVENT1(category_group, name, arg1_name, arg1_val)           \
   ::fml::tracing::TraceEvent1(category_group, name, arg1_name, arg1_val); \
-  ::fml::tracing::ScopedInstantEnd __trace_end1_##__LINE__(name);
+  __FML__AUTO_TRACE_END(name)
 
 #define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, \
                      arg2_val)                                             \
   ::fml::tracing::TraceEvent2(category_group, name, arg1_name, arg1_val,   \
                               arg2_name, arg2_val);                        \
-  ::fml::tracing::ScopedInstantEnd __trace_end2_##__LINE__(name);
+  __FML__AUTO_TRACE_END(name)
 
 #define TRACE_EVENT_ASYNC_BEGIN0(category_group, name, id) \
   ::fml::tracing::TraceEventAsyncBegin0(category_group, name, id);
@@ -83,6 +98,8 @@ namespace tracing {
 
 using TraceArg = const char*;
 using TraceIDArg = int64_t;
+
+void TraceCounter(TraceArg category_group, TraceArg name, TraceIDArg count);
 
 void TraceEvent0(TraceArg category_group, TraceArg name);
 

@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -34,6 +35,7 @@
   fml::scoped_nsobject<FlutterDartProject> _dartProject;
   shell::ThreadHost _threadHost;
   std::unique_ptr<shell::Shell> _shell;
+  std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
 
   // Channels
   fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
@@ -65,6 +67,7 @@
                          bundle:(NSBundle*)nibBundleOrNil {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
+    _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     if (projectOrNil == nil)
       _dartProject.reset([[FlutterDartProject alloc] init]);
     else
@@ -209,7 +212,8 @@
       binaryMessenger:self
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
-  _platformPlugin.reset([[FlutterPlatformPlugin alloc] init]);
+  _platformPlugin.reset(
+      [[FlutterPlatformPlugin alloc] initWithViewController:_weakFactory->GetWeakPtr()]);
   [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [_platformPlugin.get() handleMethodCall:call result:result];
   }];
@@ -315,6 +319,14 @@
   [_navigationChannel.get() invokeMethod:@"setInitialRoute" arguments:route];
 }
 
+- (void)popRoute {
+  [_navigationChannel.get() invokeMethod:@"popRoute" arguments:nil];
+}
+
+- (void)pushRoute:(NSString*)route {
+  [_navigationChannel.get() invokeMethod:@"pushRoute" arguments:route];
+}
+
 #pragma mark - Loading the view
 
 - (void)loadView {
@@ -390,19 +402,41 @@
 
 - (UIView*)splashScreenView {
   if (_splashScreenView == nullptr) {
-    NSString* launchStoryboardName =
+    NSString* launchscreenName =
         [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UILaunchStoryboardName"];
-    if (launchStoryboardName == nil) {
+    if (launchscreenName == nil) {
       return nil;
     }
-    UIStoryboard* storyboard = [UIStoryboard storyboardWithName:launchStoryboardName bundle:nil];
-    if (storyboard == nil) {
-      return nil;
+    UIView* splashView = [self splashScreenFromStoryboard:launchscreenName];
+    if (!splashView) {
+      splashView = [self splashScreenFromXib:launchscreenName];
     }
-    UIViewController* splashScreenViewController = [storyboard instantiateInitialViewController];
-    self.splashScreenView = splashScreenViewController.view;
+    self.splashScreenView = splashView;
   }
   return _splashScreenView.get();
+}
+
+- (UIView*)splashScreenFromStoryboard:(NSString*)name {
+  UIStoryboard* storyboard = nil;
+  @try {
+    storyboard = [UIStoryboard storyboardWithName:name bundle:nil];
+  } @catch (NSException* exception) {
+    return nil;
+  }
+  if (storyboard) {
+    UIViewController* splashScreenViewController = [storyboard instantiateInitialViewController];
+    return splashScreenViewController.view;
+  }
+  return nil;
+}
+
+- (UIView*)splashScreenFromXib:(NSString*)name {
+  NSArray* objects = [[NSBundle mainBundle] loadNibNamed:name owner:self options:nil];
+  if ([objects count] != 0) {
+    UIView* view = [objects objectAtIndex:0];
+    return view;
+  }
+  return nil;
 }
 
 - (void)setSplashScreenView:(UIView*)view {
@@ -436,7 +470,7 @@
   ]() mutable {
         if (engine) {
           auto result = engine->Run(std::move(config));
-          if (!result) {
+          if (result == shell::Engine::RunStatus::Failure) {
             FML_LOG(ERROR) << "Could not launch engine with configuration.";
           }
         }
@@ -688,8 +722,8 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 - (CGFloat)statusBarPadding {
   UIScreen* screen = self.view.window.screen;
   CGRect statusFrame = [UIApplication sharedApplication].statusBarFrame;
-  CGRect viewFrame =
-      [self.view convertRect:self.view.bounds toCoordinateSpace:screen.coordinateSpace];
+  CGRect viewFrame = [self.view convertRect:self.view.bounds
+                          toCoordinateSpace:screen.coordinateSpace];
   CGRect intersection = CGRectIntersection(statusFrame, viewFrame);
   return CGRectIsNull(intersection) ? 0.0 : intersection.size.height;
 }
@@ -740,12 +774,25 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   NSDictionary* info = [notification userInfo];
   CGFloat bottom = CGRectGetHeight([[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue]);
   CGFloat scale = [UIScreen mainScreen].scale;
+
+  // The keyboard is treated as an inset since we want to effectively reduce the window size by the
+  // keyboard height. We also eliminate any bottom safe-area padding since they keyboard 'consumes'
+  // the home indicator widget.
   _viewportMetrics.physical_view_inset_bottom = bottom * scale;
+  _viewportMetrics.physical_padding_bottom = 0;
   [self updateViewportMetrics];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
+  CGFloat scale = [UIScreen mainScreen].scale;
   _viewportMetrics.physical_view_inset_bottom = 0;
+
+  // Restore any safe area padding that the keyboard had consumed.
+  if (@available(iOS 11, *)) {
+    _viewportMetrics.physical_padding_bottom = self.view.safeAreaInsets.bottom * scale;
+  } else {
+    _viewportMetrics.physical_padding_top = [self statusBarPadding] * scale;
+  }
   [self updateViewportMetrics];
 }
 
@@ -946,8 +993,9 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   // the "current system locale" or a custom one. On iOS it only applies to the current
   // system locale. Widget implementors must take this into account in order to provide
   // platform-idiomatic behavior in their widgets.
-  NSString* dateFormat =
-      [NSDateFormatter dateFormatFromTemplate:@"j" options:0 locale:[NSLocale currentLocale]];
+  NSString* dateFormat = [NSDateFormatter dateFormatFromTemplate:@"j"
+                                                         options:0
+                                                          locale:[NSLocale currentLocale]];
   return [dateFormat rangeOfString:@"a"].location == NSNotFound;
 }
 
@@ -1075,8 +1123,8 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
   NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
   self.pluginPublications[pluginKey] = [NSNull null];
-  return
-      [[FlutterViewControllerRegistrar alloc] initWithPlugin:pluginKey flutterViewController:self];
+  return [[FlutterViewControllerRegistrar alloc] initWithPlugin:pluginKey
+                                          flutterViewController:self];
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {

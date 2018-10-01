@@ -169,7 +169,9 @@ class AccessibilityBridge
                 // Text fields will always be created as a live region, so that updates to
                 // the label trigger polite announcements. This makes it easy to follow a11y
                 // guidelines for text fields on Android.
-                result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+                }
             }
 
             // Cursor movements
@@ -294,7 +296,7 @@ class AccessibilityBridge
                 result.addAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
             }
         }
-        if (object.hasFlag(Flag.IS_LIVE_REGION)) {
+        if (object.hasFlag(Flag.IS_LIVE_REGION) && Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
             result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         }
 
@@ -632,7 +634,7 @@ class AccessibilityBridge
         if (rootObject != null) {
             final float[] identity = new float[16];
             Matrix.setIdentityM(identity, 0);
-            // in android devices above AP 23, the system nav bar can be placed on the left side
+            // in android devices API 23 and above, the system nav bar can be placed on the left side
             // of the screen in landscape mode. We must handle the translation ourselves for the
             // a11y nodes.
             if (Build.VERSION.SDK_INT >= 23) {
@@ -718,17 +720,19 @@ class AccessibilityBridge
                     event.setMaxScrollX((int) max);
                 }
                 if (object.scrollChildren > 0) {
+                    // We don't need to add 1 to the scroll index because TalkBack does this automagically.
                     event.setItemCount(object.scrollChildren);
                     event.setFromIndex(object.scrollIndex);
-                    int visibleChildren = object.childrenInHitTestOrder.size() - 1;
-                    // We assume that only children at the end of the list can be hidden.
-                    assert(!object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN));
-                    for (; visibleChildren >= 0; visibleChildren--) {
-                        SemanticsObject child = object.childrenInHitTestOrder.get(visibleChildren);
+                    int visibleChildren = 0;
+                    // handle hidden children at the beginning and end of the list.
+                    for (SemanticsObject child : object.childrenInHitTestOrder) {
                         if (!child.hasFlag(Flag.IS_HIDDEN)) {
                             break;
                         }
+                        visibleChildren += 1;
                     }
+                    assert(object.scrollIndex + visibleChildren <= object.scrollChildren);
+                    assert(!object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN));
                     event.setToIndex(object.scrollIndex + visibleChildren);
                 }
                 sendAccessibilityEvent(event);
