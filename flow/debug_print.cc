@@ -72,8 +72,8 @@ std::ostream& operator<<(std::ostream& os, const SkPoint& r) {
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const flow::RasterCacheKey& k) {
-  os << "Picture: " << k.picture_id() << " matrix: " << k.matrix();
+std::ostream& operator<<(std::ostream& os, const flow::PictureRasterCacheKey& k) {
+  os << "Picture: " << k.id() << " matrix: " << k.matrix();
   return os;
 }
 
