@@ -1093,7 +1093,6 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
     size_t start,
     size_t end,
     RectStyle rect_style) const {
-
   std::map<size_t, std::vector<Paragraph::TextBox>> line_boxes;
 
   for (const CodeUnitRun& run : code_unit_runs_) {

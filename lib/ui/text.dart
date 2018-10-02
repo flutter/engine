@@ -726,7 +726,7 @@ class TextShadow {
     final int byteCount = shadows.length * _kBytesPerShadow;
     final ByteData shadowsData = ByteData(byteCount);
 
-    int shadowOffset = shadowIndex * _kBytesPerShadow;
+    int shadowOffset = 0;
     for (int shadowIndex = 0; shadowIndex < shadows.length; ++shadowIndex) {
       final TextShadow shadow = shadows[shadowIndex];
       if (shadow == null)
