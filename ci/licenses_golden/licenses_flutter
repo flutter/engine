@@ -269,6 +269,7 @@ FILE: ../../../flutter/shell/common/thread_host.cc
 FILE: ../../../flutter/shell/common/thread_host.h
 FILE: ../../../flutter/shell/platform/darwin/common/command_line.h
 FILE: ../../../flutter/shell/platform/darwin/common/command_line.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h
 FILE: ../../../flutter/shell/platform/embedder/embedder.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_engine.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_engine.h
