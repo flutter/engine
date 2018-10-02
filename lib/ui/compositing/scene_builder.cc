@@ -81,7 +81,7 @@ void SceneBuilder::pushTransform(const tonic::Float64List& matrix4) {
   PushLayer(std::move(layer));
 }
 
-RetainedLayer SceneBuilder::pushOffset(double dx, double dy) {
+fml::RefPtr<EngineLayer> SceneBuilder::pushOffset(double dx, double dy) {
   SkMatrix sk_matrix = SkMatrix::MakeTrans(dx, dy);
   auto layer = std::make_shared<flow::TransformLayer>();
   layer->set_transform(sk_matrix);
@@ -150,11 +150,11 @@ void SceneBuilder::pushShaderMask(Shader* shader,
   PushLayer(std::move(layer));
 }
 
-RetainedLayer SceneBuilder::pushPhysicalShape(const CanvasPath* path,
-                                              double elevation,
-                                              int color,
-                                              int shadow_color,
-                                              int clipBehavior) {
+fml::RefPtr<EngineLayer> SceneBuilder::pushPhysicalShape(const CanvasPath* path,
+                                                         double elevation,
+                                                         int color,
+                                                         int shadow_color,
+                                                         int clipBehavior) {
   const SkPath& sk_path = path->path();
   flow::Clip clip_behavior = static_cast<flow::Clip>(clipBehavior);
   auto layer = std::make_shared<flow::PhysicalShapeLayer>(clip_behavior);
@@ -168,7 +168,7 @@ RetainedLayer SceneBuilder::pushPhysicalShape(const CanvasPath* path,
   return EngineLayer::MakeRetained(layer);
 }
 
-void SceneBuilder::addRetained(RetainedLayer retainedLayer) {
+void SceneBuilder::addRetained(fml::RefPtr<EngineLayer> retainedLayer) {
   if (!current_layer_) {
     return;
   }

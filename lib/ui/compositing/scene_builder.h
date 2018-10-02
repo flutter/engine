@@ -34,7 +34,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   ~SceneBuilder() override;
 
   void pushTransform(const tonic::Float64List& matrix4);
-  RetainedLayer pushOffset(double dx, double dy);
+  fml::RefPtr<EngineLayer> pushOffset(double dx, double dy);
   void pushClipRect(double left,
                     double right,
                     double top,
@@ -51,13 +51,13 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                       double maskRectTop,
                       double maskRectBottom,
                       int blendMode);
-  RetainedLayer pushPhysicalShape(const CanvasPath* path,
-                                  double elevation,
-                                  int color,
-                                  int shadowColor,
-                                  int clipBehavior);
+  fml::RefPtr<EngineLayer> pushPhysicalShape(const CanvasPath* path,
+                                             double elevation,
+                                             int color,
+                                             int shadowColor,
+                                             int clipBehavior);
 
-  void addRetained(RetainedLayer retainedLayer);
+  void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
 
   void pop();
 

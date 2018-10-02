@@ -19,7 +19,7 @@ EngineLayer::~EngineLayer() = default;
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, EngineLayer);
 
-#define FOR_EACH_BINDING(V) // nothing to bind
+#define FOR_EACH_BINDING(V)  // nothing to bind
 
 DART_BIND_ALL(EngineLayer, FOR_EACH_BINDING)
 

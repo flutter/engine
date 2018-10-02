@@ -17,15 +17,13 @@ namespace blink {
 
 class EngineLayer;
 
-using RetainedLayer = fml::RefPtr<EngineLayer>;
-
 class EngineLayer : public RefCountedDartWrappable<EngineLayer> {
   DEFINE_WRAPPERTYPEINFO();
-  FML_FRIEND_MAKE_REF_COUNTED(EngineLayer);
 
  public:
   ~EngineLayer() override;
-  static RetainedLayer MakeRetained(std::shared_ptr<flow::ContainerLayer> layer) {
+  static fml::RefPtr<EngineLayer> MakeRetained(
+      std::shared_ptr<flow::ContainerLayer> layer) {
     return fml::MakeRefCounted<EngineLayer>(layer);
   }
 
@@ -34,8 +32,11 @@ class EngineLayer : public RefCountedDartWrappable<EngineLayer> {
   std::shared_ptr<flow::ContainerLayer> Layer() const { return layer_; }
 
  private:
-  explicit EngineLayer(std::shared_ptr<flow::ContainerLayer> layer) : layer_(layer) {}
+  explicit EngineLayer(std::shared_ptr<flow::ContainerLayer> layer)
+      : layer_(layer) {}
   std::shared_ptr<flow::ContainerLayer> layer_;
+
+  FML_FRIEND_MAKE_REF_COUNTED(EngineLayer);
 };
 
 }  // namespace blink
