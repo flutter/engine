@@ -248,7 +248,7 @@ public class FlutterFragment extends Fragment {
   @NonNull
   protected FlutterEngine onCreateFlutterEngine(@NonNull Context context) {
     Log.d(TAG, "onCreateFlutterEngine()");
-    return new FlutterEngine(context, getResources(), false);
+    return new FlutterEngine(context, getResources());
   }
 
   /**
