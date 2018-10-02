@@ -10,13 +10,20 @@
 
 #include "FlutterBinaryMessenger.h"
 #include "FlutterDartProject.h"
+#include "FlutterEngine.h"
 #include "FlutterMacros.h"
 #include "FlutterPlugin.h"
 #include "FlutterTexture.h"
 
+@class FlutterEngine;
+
 FLUTTER_EXPORT
 @interface FlutterViewController
-    : UIViewController <FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
+    : UIViewController<FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
+
+- (instancetype)initWithEngine:(FlutterEngine*)engine
+                       nibName:(NSString*)nibNameOrNil
+                        bundle:(NSBundle*)nibBundleOrNil NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)initWithProject:(FlutterDartProject*)projectOrNil
                         nibName:(NSString*)nibNameOrNil
@@ -26,7 +33,8 @@ FLUTTER_EXPORT
 
 /**
  Returns the file name for the given asset.
- The returned file name can be used to access the asset in the application's main bundle.
+ The returned file name can be used to access the asset in the application's
+ main bundle.
 
  - Parameter asset: The name of the asset. The name can be hierarchical.
  - Returns: the file name to be used for lookup in the main bundle.
@@ -34,8 +42,10 @@ FLUTTER_EXPORT
 - (NSString*)lookupKeyForAsset:(NSString*)asset;
 
 /**
- Returns the file name for the given asset which originates from the specified package.
- The returned file name can be used to access the asset in the application's main bundle.
+ Returns the file name for the given asset which originates from the specified
+ package.
+ The returned file name can be used to access the asset in the application's
+ main bundle.
 
  - Parameters:
    - asset: The name of the asset. The name can be hierarchical.
@@ -72,15 +82,20 @@ FLUTTER_EXPORT
 - (id<FlutterPluginRegistry>)pluginRegistry;
 
 /**
- Specifies the view to use as a splash screen. Flutter's rendering is asynchronous, so the first
- frame rendered by the Flutter application might not immediately appear when the Flutter view is
- initially placed in the view hierarchy. The splash screen view will be used as a replacement
+ Specifies the view to use as a splash screen. Flutter's rendering is
+ asynchronous, so the first
+ frame rendered by the Flutter application might not immediately appear when the
+ Flutter view is
+ initially placed in the view hierarchy. The splash screen view will be used as
+ a replacement
  until the first frame is rendered.
 
- The view used should be appropriate for multiple sizes; an autoresizing mask to have a flexible
+ The view used should be appropriate for multiple sizes; an autoresizing mask to
+ have a flexible
  width and height will be applied automatically.
 
- If not specified, uses a view generated from `UILaunchStoryboardName` from the main bundle's
+ If not specified, uses a view generated from `UILaunchStoryboardName` from the
+ main bundle's
  `Info.plist` file.
  */
 @property(strong, nonatomic) UIView* splashScreenView;

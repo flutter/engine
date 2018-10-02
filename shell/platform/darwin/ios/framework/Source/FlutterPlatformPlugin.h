@@ -11,7 +11,7 @@
 #include <UIKit/UIKit.h>
 
 @interface FlutterPlatformPlugin : NSObject
-- (instancetype)init NS_UNAVAILABLE;
+- (instancetype)init NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithViewController:(fml::WeakPtr<UIViewController>)viewController
     NS_DESIGNATED_INITIALIZER;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;

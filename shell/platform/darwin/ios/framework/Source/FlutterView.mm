@@ -13,6 +13,7 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
@@ -90,10 +91,9 @@
     return;
   }
 
-  auto& shell = [controller shell];
-
-  auto screenshot = shell.Screenshot(shell::Rasterizer::ScreenshotType::UncompressedImage,
-                                     false /* base64 encode */);
+  auto screenshot =
+      [controller.engine screenshot:shell::Rasterizer::ScreenshotType::UncompressedImage
+                       base64Encode:false];
 
   if (!screenshot.data || screenshot.data->isEmpty() || screenshot.frame_size.isEmpty()) {
     return;

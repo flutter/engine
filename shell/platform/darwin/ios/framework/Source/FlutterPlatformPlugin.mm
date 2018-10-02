@@ -37,13 +37,10 @@ using namespace shell;
 }
 
 - (instancetype)init {
-  @throw([NSException exceptionWithName:@"FlutterPlatformPlugin must initWithViewController"
-                                 reason:nil
-                               userInfo:nil]);
+  return [super init];
 }
 
 - (instancetype)initWithViewController:(fml::WeakPtr<UIViewController>)viewController {
-  FML_DCHECK(viewController) << "viewController must be set";
   self = [super init];
 
   if (self) {
@@ -203,7 +200,7 @@ using namespace shell;
   UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
   if ([viewController isKindOfClass:[UINavigationController class]]) {
     [((UINavigationController*)viewController) popViewControllerAnimated:NO];
-  } else if (viewController != _viewController.get()) {
+  } else if (_viewController && viewController != _viewController.get()) {
     [_viewController.get() dismissViewControllerAnimated:NO completion:nil];
   }
 }

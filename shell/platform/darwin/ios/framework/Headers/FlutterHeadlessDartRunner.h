@@ -9,6 +9,7 @@
 
 #include "FlutterBinaryMessenger.h"
 #include "FlutterDartProject.h"
+#include "FlutterEngine.h"
 #include "FlutterMacros.h"
 
 /**
@@ -26,7 +27,7 @@ typedef void (^FlutterHeadlessDartRunnerCallback)(BOOL success);
  code e.g. in the background from a plugin.
 */
 FLUTTER_EXPORT
-@interface FlutterHeadlessDartRunner : NSObject <FlutterBinaryMessenger>
+@interface FlutterHeadlessDartRunner : FlutterEngine
 
 /**
  Runs a Dart function on an Isolate that is not the main application's Isolate.
@@ -36,7 +37,7 @@ FLUTTER_EXPORT
  - Parameter entrypoint: The name of a top-level function from the same Dart
    library that contains the app's main() function.
 */
-- (void)runWithEntrypoint:(NSString*)entrypoint;
+- (bool)runWithEntrypoint:(NSString*)entrypoint;
 
 /**
  Runs a Dart function on an Isolate that is not the main application's Isolate.
@@ -46,7 +47,7 @@ FLUTTER_EXPORT
  - Parameter entrypoint: The name of a top-level function from a Dart library.
  - Parameter uri: The URI of the Dart library which contains entrypoint.
 */
-- (void)runWithEntrypointAndLibraryUri:(NSString*)entrypoint libraryUri:(NSString*)uri;
+- (bool)runWithEntrypointAndLibraryUri:(NSString*)entrypoint libraryUri:(NSString*)uri;
 
 @end
 
