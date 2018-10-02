@@ -259,7 +259,7 @@ Int32List _encodeTextStyle(
   Locale locale,
   Paint background,
   Paint foreground,
-  List<TextShadow> shadows
+  List<Shadow> shadows
 ) {
   final Int32List result = new Int32List(8);
   if (color != null) {
@@ -364,7 +364,7 @@ class TextStyle {
     Locale locale,
     Paint background,
     Paint foreground,
-    List<TextShadow> shadows,
+    List<Shadow> shadows,
   }) : assert(color == null || foreground == null,
          'Cannot provide both a color and a foreground\n'
          'The color argument is just a shorthand for "foreground: new Paint()..color = color".'
@@ -406,7 +406,7 @@ class TextStyle {
   final Locale _locale;
   final Paint _background;
   final Paint _foreground;
-  final List<TextShadow> _shadows;
+  final List<Shadow> _shadows;
 
   @override
   bool operator ==(dynamic other) {
@@ -428,7 +428,7 @@ class TextStyle {
       if (_encoded[index] != typedOther._encoded[index])
         return false;
     }
-    if (!TextShadow.shadowsListEquals(_shadows, typedOther._shadows))
+    if (!Shadow.shadowsListEquals(_shadows, typedOther._shadows))
       return false;
     return true;
   }
@@ -654,106 +654,6 @@ class ParagraphStyle {
              'locale: ${        _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}'
            ')';
   }
-}
-
-/// A single text shadow.
-///
-/// Multiple shadows are stacked together in a [TextStyle].
-///
-/// This class is mainly used as a dart:ui native parallel to downstream
-/// versions of shadows. TextShadow provides serialization to connect to LibTxt.
-class TextShadow {
-  const TextShadow({
-    this.color = const Color(_kColorDefault),
-    this.offset = Offset.zero,
-    this.blurRadius = 0.0,
-  }) : assert(color != null, 'Text shadow color was null.'),
-       assert(offset != null, 'Text shadow offset was null.'),
-       assert(blurRadius >= 0.0, 'Text shadow blur radius should be non-negative.');
-
-  static const int _kColorDefault = 0xFF000000;
-    // Constants for shadow encoding.
-  static const int _kBytesPerShadow = 16;
-  static const int _kColorOffset = 0 << 2;
-  static const int _kXOffset = 1 << 2;
-  static const int _kYOffset = 2 << 2;
-  static const int _kBlurOffset = 3 << 2;
-
-  final Color color;
-
-  /// The displacement of the shadow from the casting element.
-  final Offset offset;
-
-  /// The standard deviation of the Gaussian to convolve with the shadow's shape.
-  final double blurRadius;
-
-  @override
-  bool operator ==(dynamic other) {
-    if (identical(this, other))
-      return true;
-    if (other is! TextShadow)
-      return false;
-    final TextShadow typedOther = other;
-    return color == typedOther.color &&
-      offset == typedOther.offset &&
-      blurRadius == typedOther.blurRadius;
-  }
-
-  /// Determines if lists [a] and [b] are equivalent. Handles all cases of null/non-null
-  /// values of a and b.
-  static bool shadowsListEquals(List<TextShadow> a, List<TextShadow> b) {
-    // Compare _shadows
-    if (a == null && b == null)
-      return true;
-    if (a != null && b == null ||
-      a == null && b != null)
-      return false;
-    if (a.length != b.length)
-      return false;
-    for (int index = 0; index < a.length; ++index)
-      if (a[index] != b[index])
-        return false;
-    return true;
-  }
-
-  // Serialize [shadows] into ByteData. The format is a single uint_32_t at
-  // the beginning indicating the number of shadows, followed by _kBytesPerShadow
-  // bytes for each shadow.
-  static ByteData encodeShadows(List<TextShadow> shadows) {
-    if (shadows == null)
-      return ByteData(0);
-
-    final int byteCount = shadows.length * _kBytesPerShadow;
-    final ByteData shadowsData = ByteData(byteCount);
-
-    int shadowOffset = 0;
-    for (int shadowIndex = 0; shadowIndex < shadows.length; ++shadowIndex) {
-      final TextShadow shadow = shadows[shadowIndex];
-      if (shadow == null)
-        continue;
-      shadowOffset = shadowIndex * _kBytesPerShadow;
-
-      shadowsData.setInt32(_kColorOffset + shadowOffset,
-        shadow.color.value ^ TextShadow._kColorDefault, _kFakeHostEndian);
-
-      shadowsData.setFloat32(_kXOffset + shadowOffset,
-        shadow.offset.dx, _kFakeHostEndian);
-
-      shadowsData.setFloat32(_kYOffset + shadowOffset,
-        shadow.offset.dy, _kFakeHostEndian);
-
-      shadowsData.setFloat32(_kBlurOffset + shadowOffset,
-        shadow.blurRadius, _kFakeHostEndian);
-    }
-
-    return shadowsData;
-  }
-
-  @override
-  int get hashCode => hashValues(color, offset, blurRadius);
-
-  @override
-  String toString() => 'TextShadow($color, $offset, $blurRadius)';
 }
 
 /// A direction in which text flows.
@@ -1157,8 +1057,8 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Applies the given style to the added text until [pop] is called.
   ///
   /// See [pop] for details.
-  void pushStyle(TextStyle style) => _pushStyle(style._encoded, style._fontFamily, style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, TextShadow.encodeShadows(style._shadows));
-  void _pushStyle(Int32List encoded, String fontFamily, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadows_data) native 'ParagraphBuilder_pushStyle';
+  void pushStyle(TextStyle style) => _pushStyle(style._encoded, style._fontFamily, style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, Shadow.encodeShadows(style._shadows));
+  void _pushStyle(Int32List encoded, String fontFamily, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadowsData) native 'ParagraphBuilder_pushStyle';
 
   static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
 
