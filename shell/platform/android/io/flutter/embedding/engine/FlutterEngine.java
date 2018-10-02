@@ -37,15 +37,11 @@ public class FlutterEngine {
   private final SystemChannels systemChannels;
   private final FlutterPluginRegistry pluginRegistry;
   private long nativeObjectReference;
-  private boolean executeWithoutUi;
 
   public FlutterEngine(
       Context context,
-      Resources resources,
-      boolean executeWithoutUi
+      Resources resources
   ) {
-    this.executeWithoutUi = executeWithoutUi;
-
     this.flutterJNI = new FlutterJNI();
     attachToJni();
 
@@ -62,7 +58,8 @@ public class FlutterEngine {
   }
 
   private void attachToJni() {
-    nativeObjectReference = flutterJNI.nativeAttach(flutterJNI, executeWithoutUi);
+    // TODO(mattcarroll): update native call to not take in "isBackgroundView"
+    nativeObjectReference = flutterJNI.nativeAttach(flutterJNI, false);
 
     if (!isAttachedToJni()) {
       throw new RuntimeException("FlutterEngine failed to attach to its native Object reference.");
@@ -110,60 +107,12 @@ public class FlutterEngine {
   }
 
 
-  // TODO(mattcarroll): what does this callback actually represent?
+  // TODO(mattcarroll): what does this callback actually represent? nothing uses it...
   // Called by native to notify when the engine is restarted (cold reload).
   @SuppressWarnings("unused")
   private void onPreEngineRestart() {
     if (pluginRegistry == null)
       return;
     pluginRegistry.onPreEngineRestart();
-  }
-
-  public static class Builder {
-    String initialRoute;
-    String appBundlePath;
-    String dartEntrypoint;
-    boolean executeWithUi = true;
-
-    public Builder initialRoute(String initialRoute) {
-      this.initialRoute = initialRoute;
-      return this;
-    }
-
-    public Builder appBundlePath(String appBundlePath) {
-      this.appBundlePath = appBundlePath;
-      return this;
-    }
-
-    public Builder dartEntrypoint(String dartEntrypoint) {
-      this.dartEntrypoint = dartEntrypoint;
-      return this;
-    }
-
-    public Builder executeWithUi(boolean executeWithUi) {
-      this.executeWithUi = executeWithUi;
-      return this;
-    }
-
-    public FlutterEngine build(@NonNull Context context, @NonNull Resources resources) {
-      return new FlutterEngine(
-          context,
-          resources,
-          executeWithUi
-      );
-    }
-  }
-
-  private static class FlutterEngineConfiguration {
-    final String initialRoute;
-    final FlutterRunArguments flutterRunArguments;
-
-    FlutterEngineConfiguration(
-        @Nullable String initialRoute,
-        @NonNull FlutterRunArguments flutterRunArguments
-    ) {
-      this.initialRoute = initialRoute;
-      this.flutterRunArguments = flutterRunArguments;
-    }
   }
 }

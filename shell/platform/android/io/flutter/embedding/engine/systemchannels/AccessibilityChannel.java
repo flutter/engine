@@ -50,16 +50,6 @@ public class AccessibilityChannel {
           handler.tooltip((String) data.get("message"));
           break;
         }
-        // Requires that the node id provided corresponds to a live region, or TalkBack will
-        // ignore the event. The event will cause talkback to read out the new label even
-        // if node is not focused.
-        case "updateLiveRegion": {
-          Integer nodeId = (Integer) annotatedEvent.get("nodeId");
-          if (nodeId != null) {
-            handler.updateLiveRegion(nodeId);
-          }
-          break;
-        }
       }
     }
   };
