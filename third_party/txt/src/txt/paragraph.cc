@@ -739,7 +739,7 @@ void Paragraph::Layout(double width, bool force) {
           // TODO(garyq): Properly implement ideographic_baseline_ and update
           // tests.
           ideographic_baseline_ =
-              (metrics.fUnderlinePosition - metrics.fAscent) * style.height;
+              (metrics.fDescent - metrics.fAscent) * style.height;
         }
       }
       max_line_spacing = std::max(line_spacing, max_line_spacing);
