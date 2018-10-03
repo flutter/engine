@@ -28,10 +28,10 @@ import android.widget.FrameLayout;
 
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
+import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
-import io.flutter.view.FlutterRunArguments;
 
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
 
@@ -248,7 +248,7 @@ public class FlutterFragment extends Fragment {
   @NonNull
   protected FlutterEngine onCreateFlutterEngine(@NonNull Context context) {
     Log.d(TAG, "onCreateFlutterEngine()");
-    return new FlutterEngine(context, getResources());
+    return new FlutterEngine(context);
   }
 
   /**
@@ -619,7 +619,7 @@ public class FlutterFragment extends Fragment {
   }
 
   @NonNull
-  private String getDartEntrypoint() {
+  private String getDartEntrypointFunctionName() {
     return getArguments().getString(ARG_DART_ENTRYPOINT, "main");
   }
 
@@ -654,7 +654,7 @@ public class FlutterFragment extends Fragment {
    */
   private void doInitialFlutterViewRun() {
 //    if (BuildConfig.DEBUG && flutterView.getFlutterNativeView().isApplicationRunning()) {
-    if (flutterEngine.getDartExecutor().isApplicationRunning()) {
+    if (flutterEngine.getDartExecutor().isExecutingDart()) {
       return;
 //      throw new RuntimeException("Tried to initialize Dart execution in Flutter engine that is already running.");
     }
@@ -663,12 +663,12 @@ public class FlutterFragment extends Fragment {
       flutterEngine.getSystemChannels().navigation.setInitialRoute(getInitialRoute());
     }
 
-    // TODO(mattcarroll): are FlutterRunArguments and FlutterShellArgs the same thing? consolidate if they are
-    FlutterRunArguments args = new FlutterRunArguments();
-    args.bundlePath = getAppBundlePath();
-    args.entrypoint = getDartEntrypoint();
-    args.defaultPath = null;
-    flutterEngine.getDartExecutor().runFromBundle(args);
+    DartExecutor.DartEntrypoint entrypoint = new DartExecutor.DartEntrypoint(
+        getResources().getAssets(),
+        getAppBundlePath(),
+        getDartEntrypointFunctionName()
+    );
+    flutterEngine.getDartExecutor().executeDartEntrypoint(entrypoint);
 
     // TODO(mattcarroll): why do we need to resetAccessibilityTree in this method? Can we call that from within FlutterView somewhere?
     flutterView.resetAccessibilityTree();

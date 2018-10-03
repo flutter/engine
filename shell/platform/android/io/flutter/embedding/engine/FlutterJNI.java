@@ -144,11 +144,11 @@ public class FlutterJNI {
 
   public native void nativeRunBundleAndSnapshotFromLibrary(
       long nativePlatformViewAndroid,
-      String bundlePath,
-      String defaultPath,
-      String entrypoint,
-      String libraryUrl,
-      AssetManager manager
+      @NonNull String pathToBundleWithEntrypoint,
+      @Nullable String pathToFallbackBundle,
+      @Nullable String entrypointFunctionName,
+      @Nullable String pathToEntrypointFunction,
+      @NonNull AssetManager manager
   );
 
   public native String nativeGetObservatoryUri();

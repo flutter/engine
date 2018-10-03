@@ -38,14 +38,11 @@ public class FlutterEngine {
   private final FlutterPluginRegistry pluginRegistry;
   private long nativeObjectReference;
 
-  public FlutterEngine(
-      Context context,
-      Resources resources
-  ) {
+  public FlutterEngine(Context context) {
     this.flutterJNI = new FlutterJNI();
     attachToJni();
 
-    this.dartExecutor = new DartExecutor(flutterJNI, nativeObjectReference, resources);
+    this.dartExecutor = new DartExecutor(flutterJNI, nativeObjectReference);
     this.dartExecutor.onAttachedToJNI();
 
     this.systemChannels = new SystemChannels(dartExecutor);
@@ -80,8 +77,6 @@ public class FlutterEngine {
 
   public void destroy() {
     pluginRegistry.destroy();
-    dartExecutor.stop();
-
     flutterJNI.nativeDestroy(nativeObjectReference);
     nativeObjectReference = 0;
   }
