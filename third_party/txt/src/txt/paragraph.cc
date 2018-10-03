@@ -736,8 +736,6 @@ void Paragraph::Layout(double width, bool force) {
         max_line_spacing = line_spacing;
         if (line_number == 0) {
           alphabetic_baseline_ = line_spacing;
-          // TODO(garyq): Properly implement ideographic_baseline_ and update
-          // tests.
           ideographic_baseline_ =
               (metrics.fDescent - metrics.fAscent) * style.height;
         }
