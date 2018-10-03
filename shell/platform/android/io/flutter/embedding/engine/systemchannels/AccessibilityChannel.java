@@ -30,7 +30,8 @@ public class AccessibilityChannel {
 
       switch (type) {
         case "announce":
-          handler.announce((String) data.get("message"));
+          String announceMessage = (String) data.get("message");
+          handler.announce(announceMessage == null ? "" : announceMessage);
           break;
         case "tap": {
           Integer nodeId = (Integer) annotatedEvent.get("nodeId");
@@ -47,7 +48,8 @@ public class AccessibilityChannel {
           break;
         }
         case "tooltip": {
-          handler.tooltip((String) data.get("message"));
+          String tooltipMessage = (String) data.get("message");
+          handler.tooltip(tooltipMessage == null ? "" : tooltipMessage);
           break;
         }
       }
@@ -85,7 +87,5 @@ public class AccessibilityChannel {
     void onLongPress(int nodeId);
 
     void tooltip(@NonNull String message);
-
-    void updateLiveRegion(int nodeId);
   }
 }

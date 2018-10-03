@@ -137,11 +137,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             e.getText().add(message);
             sendAccessibilityEvent(e);
         }
-
-        @Override
-        public void updateLiveRegion(int nodeId) {
-            sendAccessibilityEvent(nodeId, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-        }
     };
 
     public AccessibilityBridge(@NonNull FlutterView owner, @NonNull AccessibilityChannel accessibilityChannel) {
