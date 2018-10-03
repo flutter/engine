@@ -45,6 +45,7 @@
   NSAssert(engine != nil, @"Engine is required");
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
+    _flutterView.reset([[FlutterView alloc] init]);
     _engine.reset(engine);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     [self performCommonViewControllerInitialization];
@@ -58,9 +59,12 @@
                          bundle:(NSBundle*)nibBundleOrNil {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
+    _flutterView.reset([[FlutterView alloc] init]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter" andProject:projectOrNil]);
     [_engine.get() runWithEntrypoint:nil];
+    [_engine.get() setViewController:self];
+
     [self performCommonViewControllerInitialization];
   }
 
@@ -86,8 +90,6 @@
     return;
 
   _initialized = YES;
-
-  _flutterView.reset([[FlutterView alloc] init]);
 
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
@@ -342,7 +344,7 @@
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
 
-  [_engine.get() run];
+  [_engine.get() launchEngine];
 
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.

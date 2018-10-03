@@ -37,12 +37,22 @@ FlutterViewController* PlatformViewIOS::GetOwnerViewController() const {
 
 void PlatformViewIOS::SetOwnerViewController(FlutterViewController* owner_controller) {
   owner_controller_ = owner_controller;
-  ios_surface_ = static_cast<FlutterView*>(owner_controller_.view).createSurface;
-  FML_DCHECK(ios_surface_ != nullptr);
-  FML_DCHECK(owner_controller_ != nullptr);
+  if (owner_controller_) {
+    ios_surface_ = static_cast<FlutterView*>(owner_controller_.view).createSurface;
+    FML_DCHECK(ios_surface_ != nullptr);
 
-  if (accessibility_bridge_) {
-    accessibility_bridge_.reset(new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.view), this));
+    if (accessibility_bridge_) {
+      accessibility_bridge_.reset(
+          new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.view), this));
+    }
+    NotifyCreated();
+
+  } else {
+    ios_surface_ = nullptr;
+    if (accessibility_bridge_) {
+      accessibility_bridge_.reset();
+    }
+    NotifyDestroyed();
   }
 }
 
@@ -80,8 +90,8 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
                       "PlatformViewIOS has no ViewController.";
   }
   if (enabled && !accessibility_bridge_) {
-    accessibility_bridge_ =
-        std::make_unique<AccessibilityBridge>(static_cast<FlutterView*>(owner_controller_.view), this);
+    accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
+        static_cast<FlutterView*>(owner_controller_.view), this);
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
   }

@@ -26,7 +26,7 @@ FLUTTER_EXPORT
                   andProject:(FlutterDartProject*)projectOrNil NS_DESIGNATED_INITIALIZER;
 - (instancetype)init NS_UNAVAILABLE;
 
-- (void)run;
+- (void)launchEngine;
 
 /**
  Runs a Dart function on an Isolate.
