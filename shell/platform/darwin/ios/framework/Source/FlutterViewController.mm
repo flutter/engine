@@ -23,7 +23,6 @@
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 @implementation FlutterViewController {
-  fml::scoped_nsobject<FlutterDartProject> _dartProject;
   std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
   fml::scoped_nsobject<FlutterEngine> _engine;
 
@@ -47,6 +46,7 @@
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
     _engine.reset(engine);
+    _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     [self performCommonViewControllerInitialization];
   }
 
@@ -59,12 +59,8 @@
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
-    if (projectOrNil == nil)
-      _dartProject.reset([[FlutterDartProject alloc] init]);
-    else
-      _dartProject.reset([projectOrNil retain]);
-
     _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter" andProject:projectOrNil]);
+    [_engine.get() runWithEntrypoint:nil];
     [self performCommonViewControllerInitialization];
   }
 
@@ -90,6 +86,8 @@
     return;
 
   _initialized = YES;
+
+  _flutterView.reset([[FlutterView alloc] init]);
 
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;

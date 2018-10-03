@@ -63,14 +63,13 @@ static NSString* CreateShellLabel(NSString* label) {
   NSAssert(self, @"Super init cannot be nil");
   NSAssert(labelPrefix, @"labelPrefix is required");
   _labelPrefix = labelPrefix;
+
   if (projectOrNil == nil)
     _dartProject.reset([[FlutterDartProject alloc] init]);
   else
     _dartProject.reset([projectOrNil retain]);
 
   _pluginPublications = [NSMutableDictionary new];
-
-  [self setupChannels];
 
   return self;
 }
@@ -104,20 +103,24 @@ static NSString* CreateShellLabel(NSString* label) {
 }
 
 - (fml::WeakPtr<shell::PlatformView>)platformView {
+  FML_DCHECK(_shell);
   return _shell->GetPlatformView();
 }
 
 - (shell::PlatformViewIOS*)iosPlatformView {
+  FML_DCHECK(_shell);
   return static_cast<shell::PlatformViewIOS*>(_shell->GetPlatformView().get());
 }
 
 - (fml::RefPtr<fml::TaskRunner>)platformTaskRunner {
+  FML_DCHECK(_shell);
   return _shell->GetTaskRunners().GetPlatformTaskRunner();
 }
 
 - (void)setViewController:(FlutterViewController*)viewController {
   FML_DCHECK(self.iosPlatformView);
   self.iosPlatformView->SetOwnerViewController(viewController);
+  [self setupPlatformChannel];
 }
 
 - (FlutterViewController*)getViewController {
@@ -191,17 +194,7 @@ static NSString* CreateShellLabel(NSString* label) {
       binaryMessenger:self
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
-  auto flutterViewController = self.iosPlatformView->GetOwnerViewController();
-  if (flutterViewController) {
-    auto weakPtr = flutterViewController.getWeakPtr;
-    _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithViewController:weakPtr]);
-  } else {
-    _platformPlugin.reset([[FlutterPlatformPlugin alloc] init]);
-  }
-
-  [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-    [_platformPlugin.get() handleMethodCall:call result:result];
-  }];
+  [self setupPlatformChannel];
 
   _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
   _textInputPlugin.get().textInputDelegate = self;
@@ -211,12 +204,29 @@ static NSString* CreateShellLabel(NSString* label) {
   self.iosPlatformView->SetTextInputPlugin(_textInputPlugin);
 }
 
+- (void)setupPlatformChannel {
+  if (_shell && self.shell.IsSetup()) {
+    auto flutterViewController = self.iosPlatformView->GetOwnerViewController();
+    if (flutterViewController) {
+      auto weakPtr = flutterViewController.getWeakPtr;
+      _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithViewController:weakPtr]);
+    }
+    [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+      [_platformPlugin.get() handleMethodCall:call result:result];
+    }];
+
+  } else {
+    _platformPlugin.reset([[FlutterPlatformPlugin alloc] init]);
+  }
+}
+
 - (shell::Rasterizer::Screenshot)screenshot:(shell::Rasterizer::ScreenshotType)type
                                base64Encode:(bool)base64Encode {
   return self.shell.Screenshot(type, base64Encode);
 }
 
 - (void)run {
+  [self runWithEntrypointAndLibraryUri:_dartEntrypoint libraryUri:_dartLibrary];
   // Launch the Dart application with the inferred run configuration.
   self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
       [engine = _shell->GetEngine(),  //
@@ -234,7 +244,7 @@ static NSString* CreateShellLabel(NSString* label) {
 
 - (bool)runWithEntrypointAndLibraryUri:(NSString*)entrypoint libraryUri:(NSString*)libraryUri {
   if (_shell != nullptr) {
-    FML_LOG(ERROR) << "This FlutterEngine was already invoked.";
+    FML_LOG(WARNING) << "This FlutterEngine was already invoked.";
     return false;
   }
 
@@ -250,7 +260,8 @@ static NSString* CreateShellLabel(NSString* label) {
 
   const auto threadLabel = CreateShellLabel(_labelPrefix);
 
-  auto settings = shell::SettingsFromCommandLine(shell::CommandLineFromNSProcessInfo());
+  auto settings = [_dartProject
+      settings];  // shell::SettingsFromCommandLine(shell::CommandLineFromNSProcessInfo());
 
   // These values set the name of the isolate for debugging.
   settings.advisory_script_entrypoint = entrypoint.UTF8String;
@@ -294,7 +305,10 @@ static NSString* CreateShellLabel(NSString* label) {
   if (_shell == nullptr) {
     FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
                    << entrypoint.UTF8String;
+  } else {
+    [self setupChannels];
   }
+
   return _shell != nullptr;
 }
 
@@ -382,6 +396,7 @@ static NSString* CreateShellLabel(NSString* label) {
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
   NSAssert(channel, @"The channel must not be null");
+  FML_DCHECK(_shell && _shell->IsSetup());
   self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.UTF8String, handler);
 }
 
