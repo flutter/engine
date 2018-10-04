@@ -33,18 +33,21 @@ const char* const kOverlayStyleUpdateNotificationKey =
 using namespace shell;
 
 @implementation FlutterPlatformPlugin {
-  fml::WeakPtr<UIViewController> _viewController;
+  fml::WeakPtr<FlutterEngine> _engine;
 }
 
 - (instancetype)init {
-  return [super init];
+  @throw([NSException exceptionWithName:@"FlutterPlatformPlugin must initWithEngine"
+                                 reason:nil
+                               userInfo:nil]);
 }
 
-- (instancetype)initWithViewController:(fml::WeakPtr<UIViewController>)viewController {
+- (instancetype)initWithEngine:(fml::WeakPtr<FlutterEngine>)engine {
+  FML_DCHECK(engine) << "engine must be set";
   self = [super init];
 
   if (self) {
-    _viewController = viewController;
+    _engine = engine;
   }
 
   return self;
@@ -200,8 +203,13 @@ using namespace shell;
   UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
   if ([viewController isKindOfClass:[UINavigationController class]]) {
     [((UINavigationController*)viewController) popViewControllerAnimated:NO];
-  } else if (_viewController && viewController != _viewController.get()) {
-    [_viewController.get() dismissViewControllerAnimated:NO completion:nil];
+    [_engine.get() setViewController:nil];
+  } else {
+    auto engineViewController = static_cast<UIViewController*>([_engine.get() getViewController]);
+    if (engineViewController != viewController) {
+      [engineViewController dismissViewControllerAnimated:NO completion:nil];
+      [_engine.get() setViewController:nil];
+    }
   }
 }
 

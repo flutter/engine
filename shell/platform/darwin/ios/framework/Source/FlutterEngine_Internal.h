@@ -7,6 +7,7 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"

@@ -36,8 +36,8 @@
   fml::scoped_nsobject<FlutterDartProject> _dartProject;
   std::unique_ptr<shell::Shell> _shell;
   NSString* _labelPrefix;
-  NSString* _dartEntrypoint;
-  NSString* _dartLibrary;
+  shell::ThreadHost _threadHost;
+  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
 
   fml::WeakPtr<FlutterViewController> _viewController;
 
@@ -61,12 +61,16 @@
   NSAssert(labelPrefix, @"labelPrefix is required");
   _labelPrefix = [labelPrefix copy];
 
+  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(self);
+
   if (projectOrNil == nil)
     _dartProject.reset([[FlutterDartProject alloc] init]);
   else
     _dartProject.reset([projectOrNil retain]);
 
   _pluginPublications = [NSMutableDictionary new];
+
+  [self setupChannels];
 
   return self;
 }
@@ -79,6 +83,10 @@
 - (shell::Shell&)shell {
   FML_DCHECK(_shell);
   return *_shell;
+}
+
+- (fml::WeakPtr<FlutterEngine>)getWeakPtr {
+  return _weakFactory->GetWeakPtr();
 }
 
 - (void)updateViewportMetrics:(blink::ViewportMetrics)viewportMetrics {
@@ -118,7 +126,7 @@
   FML_DCHECK(self.iosPlatformView);
   _viewController = [viewController getWeakPtr];
   self.iosPlatformView->SetOwnerViewController(viewController);
-  [self setupPlatformChannel];
+  [self maybeSetupPlatformViewChannels];
 }
 
 - (FlutterViewController*)getViewController {
@@ -192,24 +200,24 @@
       binaryMessenger:self
                 codec:[FlutterJSONMessageCodec sharedInstance]]);
 
-  [self setupPlatformChannel];
-
   _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
   _textInputPlugin.get().textInputDelegate = self;
-  [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-    [_textInputPlugin.get() handleMethodCall:call result:result];
-  }];
-  self.iosPlatformView->SetTextInputPlugin(_textInputPlugin);
+
+  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
+
+  [self maybeSetupPlatformViewChannels];
 }
 
-- (void)setupPlatformChannel {
+- (void)maybeSetupPlatformViewChannels {
   if (_shell && self.shell.IsSetup()) {
-    _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithViewController:_viewController]);
     [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [_platformPlugin.get() handleMethodCall:call result:result];
     }];
-  } else {
-    _platformPlugin.reset([[FlutterPlatformPlugin alloc] init]);
+
+    [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+      [_textInputPlugin.get() handleMethodCall:call result:result];
+    }];
+    self.iosPlatformView->SetTextInputPlugin(_textInputPlugin);
   }
 }
 
@@ -219,7 +227,6 @@
 }
 
 - (void)launchEngine {
-  // [self runWithEntrypointAndLibraryUri:_dartEntrypoint libraryUri:_dartLibrary];
   // Launch the Dart application with the inferred run configuration.
   self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(
       fml::MakeCopyable([engine = _shell->GetEngine(),                   //
@@ -242,39 +249,38 @@
 
   static size_t shellCount = 1;
 
-  if (!entrypoint) {
-    entrypoint = @"main";
-  }
-  if (!libraryUri) {
-    libraryUri = @"main.dart";
-  }
+  auto config = [_dartProject.get() runConfiguration];
+  auto settings = [_dartProject.get() settings];
 
-  _dartEntrypoint = entrypoint;
-  _dartLibrary = libraryUri;
+  if (libraryUri) {
+    FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
+    config.SetEntrypointAndLibrary(entrypoint.UTF8String, libraryUri.UTF8String);
+    settings.advisory_script_entrypoint = entrypoint.UTF8String;
+    settings.advisory_script_uri = libraryUri.UTF8String;
+  } else if (entrypoint) {
+    config.SetEntrypoint(std::string(entrypoint.UTF8String));
+    settings.advisory_script_entrypoint = entrypoint.UTF8String;
+    settings.advisory_script_entrypoint = std::string("main.dart");
+  } else {
+    settings.advisory_script_entrypoint = std::string("main");
+    settings.advisory_script_entrypoint = std::string("main.dart");
+  }
 
   const auto threadLabel = [NSString stringWithFormat:@"%@.%zu", _labelPrefix, shellCount++];
 
-  auto settings = [_dartProject
-      settings];  // shell::SettingsFromCommandLine(shell::CommandLineFromNSProcessInfo());
-
-  // These values set the name of the isolate for debugging.
-  settings.advisory_script_entrypoint = entrypoint.UTF8String;
-  settings.advisory_script_uri = libraryUri.UTF8String;
-
-  // The current thread will be used as the platform thread. Ensure that the
-  // message loop is
+  // The current thread will be used as the platform thread. Ensure that the message loop is
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
-  shell::ThreadHost threadHost = {
+  _threadHost = {
       threadLabel.UTF8String,  // label
       shell::ThreadHost::Type::UI | shell::ThreadHost::Type::GPU | shell::ThreadHost::Type::IO};
 
   blink::TaskRunners task_runners(threadLabel.UTF8String,                          // label
                                   fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
-                                  threadHost.gpu_thread->GetTaskRunner(),          // gpu
-                                  threadHost.ui_thread->GetTaskRunner(),           // ui
-                                  threadHost.io_thread->GetTaskRunner()            // io
+                                  _threadHost.gpu_thread->GetTaskRunner(),         // gpu
+                                  _threadHost.ui_thread->GetTaskRunner(),          // ui
+                                  _threadHost.io_thread->GetTaskRunner()           // io
   );
 
   // Lambda captures by pointers to ObjC objects are fine here because the
@@ -300,8 +306,8 @@
     FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
                    << entrypoint.UTF8String;
   } else {
+    [self maybeSetupPlatformViewChannels];
     [self launchEngine];
-    [self setupChannels];
   }
 
   return _shell != nullptr;

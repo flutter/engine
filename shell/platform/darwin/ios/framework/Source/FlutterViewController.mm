@@ -344,8 +344,6 @@
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
 
-  [_engine.get() launchEngine];
-
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
   if (_viewportMetrics.physical_width)
