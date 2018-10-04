@@ -20,8 +20,8 @@
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
+#include "rapidjson/document.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
-#include "third_party/rapidjson/rapidjson/document.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
