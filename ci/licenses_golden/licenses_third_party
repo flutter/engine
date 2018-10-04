@@ -1,4 +1,4 @@
-Signature: 251f936d9bd8ced851a73a4413f02e30
+Signature: 14f17f5bf4ce856269c03d80572e5e03
 
 UNUSED LICENSES:
 
@@ -4493,7 +4493,6 @@ FILE: ../../../third_party/dart/runtime/bin/builtin.h
 FILE: ../../../third_party/dart/runtime/bin/builtin_gen_snapshot.cc
 FILE: ../../../third_party/dart/runtime/bin/builtin_in.cc
 FILE: ../../../third_party/dart/runtime/bin/builtin_natives.cc
-FILE: ../../../third_party/dart/runtime/bin/builtin_nolib.cc
 FILE: ../../../third_party/dart/runtime/bin/common_patch.dart
 FILE: ../../../third_party/dart/runtime/bin/crypto.cc
 FILE: ../../../third_party/dart/runtime/bin/crypto.h
@@ -4675,7 +4674,6 @@ FILE: ../../../third_party/dart/runtime/vm/bootstrap.cc
 FILE: ../../../third_party/dart/runtime/vm/bootstrap.h
 FILE: ../../../third_party/dart/runtime/vm/bootstrap_natives.cc
 FILE: ../../../third_party/dart/runtime/vm/bootstrap_natives.h
-FILE: ../../../third_party/dart/runtime/vm/bootstrap_nocore.cc
 FILE: ../../../third_party/dart/runtime/vm/class_finalizer.h
 FILE: ../../../third_party/dart/runtime/vm/class_finalizer_test.cc
 FILE: ../../../third_party/dart/runtime/vm/class_table.cc
