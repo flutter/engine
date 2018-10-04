@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': 'bfa76f20bfcf46e8a3ae53dd0957bbb0216a3ed8',
+  'skia_revision': '8841085abeb96c0c33d71a106d0136eea73af2ef',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -129,13 +129,13 @@ deps = {
    Var('fuchsia_git') + '/tonic' + '@' + 'd91fa62844f8531a3701450f6192298d0e873246',
 
   'src/third_party/benchmark':
-   Var('fuchsia_git') + '/third_party/benchmark' + '@' + '296537bc48d380adf21567c5d736ab79f5363d22',
+   Var('fuchsia_git') + '/third_party/benchmark' + '@' + '21f1eb3fe269ea43eba862bf6b699cde46587ade',
 
   'src/third_party/googletest':
    Var('fuchsia_git') + '/third_party/googletest' + '@' + '2072b0053d3537fa5e8d222e34c759987aae1320',
 
   'src/third_party/rapidjson':
-   Var('fuchsia_git') + '/third_party/rapidjson' + '@' + '9defbb0209a534ffeb3a2b79d5ee440a77407292',
+   Var('fuchsia_git') + '/third_party/rapidjson' + '@' + '32d07c55db1bb6c2ae17cba4033491a667647753',
 
   'src/third_party/harfbuzz':
    Var('fuchsia_git') + '/third_party/harfbuzz' + '@' + 'd837034f09a957faf2814002e8ebd81da6151d1b',
