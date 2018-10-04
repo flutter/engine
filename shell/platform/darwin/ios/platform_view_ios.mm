@@ -36,10 +36,10 @@ FlutterViewController* PlatformViewIOS::GetOwnerViewController() const {
 }
 
 void PlatformViewIOS::SetOwnerViewController(FlutterViewController* owner_controller) {
-  if (ios_surface_) {
-    FML_LOG(WARNING) << "Already had ios_surface when setting owner view controller, tearing down.";
+  if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
     ios_surface_.release();
+    accessibility_bridge_.release();
   }
   owner_controller_ = owner_controller;
   if (owner_controller_) {
@@ -51,10 +51,6 @@ void PlatformViewIOS::SetOwnerViewController(FlutterViewController* owner_contro
           new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.view), this));
     }
     NotifyCreated();
-  } else {
-    ios_surface_.release();
-    accessibility_bridge_.release();
-    NotifyDestroyed();
   }
 }
 

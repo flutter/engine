@@ -267,7 +267,7 @@
   }
 
   const auto threadLabel = [NSString stringWithFormat:@"%@.%zu", _labelPrefix, shellCount++];
-
+  FML_DLOG(INFO) << "Creating threadHost for " << threadLabel.UTF8String;
   // The current thread will be used as the platform thread. Ensure that the message loop is
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
