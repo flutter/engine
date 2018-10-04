@@ -46,6 +46,14 @@ void PictureLayer::Paint(PaintContext& context) const {
 
   if (raster_cache_result_.is_valid()) {
     raster_cache_result_.draw(context.canvas);
+
+    // We cannot share the RasterCacheResult with the framework (UI thread)
+    // because it includes an SkImage and its associated GrContext doesn't
+    // seem to be thread safe when we construct SkImage in one thread and
+    // destruct it in another thread. Hence set it to empty right after use
+    // so the retained engine layer that's sent to the framework doesn't hold
+    // an SkImage reference.
+    raster_cache_result_ = {};
   } else {
     context.canvas.drawPicture(picture());
   }
