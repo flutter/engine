@@ -76,7 +76,8 @@ class RasterCache {
                const SkMatrix& ctm);
 
   RasterCacheResult Get(const SkPicture& picture, const SkMatrix& ctm) const;
-  RasterCacheResult Get(std::shared_ptr<Layer> layer, const SkMatrix& ctm) const;
+  RasterCacheResult Get(std::shared_ptr<Layer> layer,
+                        const SkMatrix& ctm) const;
 
   void SweepAfterFrame();
 

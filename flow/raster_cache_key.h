@@ -17,8 +17,7 @@ namespace flow {
 template <typename ID>
 class RasterCacheKey {
  public:
-  RasterCacheKey(ID id, const SkMatrix& ctm)
-      : id_(id), matrix_(ctm) {
+  RasterCacheKey(ID id, const SkMatrix& ctm) : id_(id), matrix_(ctm) {
     matrix_[SkMatrix::kMTransX] = SkScalarFraction(ctm.getTranslateX());
     matrix_[SkMatrix::kMTransY] = SkScalarFraction(ctm.getTranslateY());
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION

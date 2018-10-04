@@ -33,8 +33,7 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame.context().frame_time(),
       frame.context().engine_time(),
       frame.context().texture_registry(),
-      checkerboard_offscreen_layers_
-  };
+      checkerboard_offscreen_layers_};
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
 }
@@ -73,8 +72,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       frame.context().engine_time(),
       frame.context().texture_registry(),
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
-      checkerboard_offscreen_layers_
-  };
+      checkerboard_offscreen_layers_};
 
   if (root_layer_->needs_painting())
     root_layer_->Paint(context);
@@ -97,13 +95,13 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   root_surface_transformation.reset();
 
   PrerollContext preroll_context{
-      nullptr,                  // raster_cache (don't consult the cache)
-      nullptr,                  // gr_context  (used for the raster cache)
-      nullptr,                  // SkColorSpace* dst_color_space
-      SkRect::MakeEmpty(),      // SkRect child_paint_bounds
-      unused_stopwatch,         // frame time (dont care)
-      unused_stopwatch,         // engine time (dont care)
-      unused_texture_registry   // texture registry (not supported)
+      nullptr,                 // raster_cache (don't consult the cache)
+      nullptr,                 // gr_context  (used for the raster cache)
+      nullptr,                 // SkColorSpace* dst_color_space
+      SkRect::MakeEmpty(),     // SkRect child_paint_bounds
+      unused_stopwatch,        // frame time (dont care)
+      unused_stopwatch,        // engine time (dont care)
+      unused_texture_registry  // texture registry (not supported)
   };
 
   Layer::PaintContext paint_context = {

@@ -21,9 +21,8 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     ctm = RasterCache::GetIntegralTransCTM(ctm);
 #endif
-    cache->Prepare(
-        context->gr_context, sk_picture, ctm, context->dst_color_space,
-        is_complex_, will_change_);
+    cache->Prepare(context->gr_context, sk_picture, ctm,
+                   context->dst_color_space, is_complex_, will_change_);
   }
 
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
