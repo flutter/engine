@@ -50,7 +50,6 @@ static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_callback_info_class =
 // FlutterJNI.java, used in 2nd iteration of embedding to centralize all JNI
 // calls.
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_jni_class = nullptr;
-static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_engine_class = nullptr;
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_surface_texture_class = nullptr;
 
@@ -548,13 +547,6 @@ static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
 }
 
 bool RegisterApi(JNIEnv* env) {
-  g_flutter_engine_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
-      env, env->FindClass("io/flutter/embedding/engine/FlutterEngine"));
-  if (g_flutter_engine_class->is_null()) {
-    FML_LOG(ERROR) << "Failed to find FlutterEngine Class.";
-    return false;
-  }
-
   static const JNINativeMethod flutter_jni_methods[] = {
       // Start of methods from FlutterNativeView
       {
@@ -727,8 +719,8 @@ bool RegisterApi(JNIEnv* env) {
     return false;
   }
 
-  g_on_engine_restart_method = env->GetMethodID(g_flutter_engine_class->obj(),
-                                                "onPreEngineRestart", "()V");
+  g_on_engine_restart_method =
+      env->GetMethodID(g_flutter_jni_class->obj(), "onPreEngineRestart", "()V");
 
   if (g_on_engine_restart_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate onEngineRestart method";

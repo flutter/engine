@@ -44,6 +44,14 @@ public class FlutterEngine {
     this.isBackgroundView = isBackgroundView;
 
     this.flutterJNI = new FlutterJNI();
+    flutterJNI.setEngineHandler(new EngineHandler() {
+      @SuppressWarnings("unused")
+      public void onPreEngineRestart() {
+        if (pluginRegistry == null)
+          return;
+        pluginRegistry.onPreEngineRestart();
+      }
+    });
     attachToJni();
 
     // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if possible.
@@ -99,12 +107,9 @@ public class FlutterEngine {
     return dartExecutor;
   }
 
-  // TODO(mattcarroll): what does this callback actually represent?
-  // Called by native to notify when the engine is restarted (cold reload).
-  @SuppressWarnings("unused")
-  private void onPreEngineRestart() {
-    if (pluginRegistry == null)
-      return;
-    pluginRegistry.onPreEngineRestart();
+  /** Callbacks triggered by the C++ layer in response to Engine lifecycle events. */
+  public interface EngineHandler {
+    /** Called when the engine is restarted. This happens during hot restart. */
+    void onPreEngineRestart();
   }
 }

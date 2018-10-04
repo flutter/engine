@@ -9,6 +9,7 @@ import android.content.Context;
 import android.util.Log;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.embedding.engine.FlutterEngine.EngineHandler;
 import io.flutter.embedding.engine.renderer.FlutterRenderer.RenderSurface;
 import io.flutter.plugin.common.*;
 import java.nio.ByteBuffer;
@@ -29,8 +30,6 @@ public class FlutterNativeView implements BinaryMessenger {
     private long mNativePlatformView;
     private FlutterView mFlutterView;
     private FlutterJNI mFlutterJNI;
-    private final PlatformMessageHandlerImpl mPlatformMessageHandler;
-    private final RenderSurfaceImpl mRenderSurface;
     private final Context mContext;
     private boolean applicationIsRunning;
 
@@ -42,10 +41,9 @@ public class FlutterNativeView implements BinaryMessenger {
         mContext = context;
         mPluginRegistry = new FlutterPluginRegistry(this, context);
         mFlutterJNI = new FlutterJNI();
-        mRenderSurface = new RenderSurfaceImpl();
-        mFlutterJNI.setRenderSurface(mRenderSurface);
-        mPlatformMessageHandler = new PlatformMessageHandlerImpl();
-        mFlutterJNI.setPlatformMessageHandler(mPlatformMessageHandler);
+        mFlutterJNI.setRenderSurface(new RenderSurfaceImpl());
+        mFlutterJNI.setPlatformMessageHandler(new PlatformMessageHandlerImpl());
+        mFlutterJNI.setEngineHandler(new EngineHandlerImpl());
         attach(this, isBackgroundView);
         assertAttached();
         mMessageHandlers = new HashMap<>();
@@ -246,11 +244,13 @@ public class FlutterNativeView implements BinaryMessenger {
         }
     }
 
-    // Called by native to notify when the engine is restarted (cold reload).
-    @SuppressWarnings("unused")
-    private void onPreEngineRestart() {
-        if (mPluginRegistry == null)
-            return;
-        mPluginRegistry.onPreEngineRestart();
+    private final class EngineHandlerImpl implements EngineHandler {
+        // Called by native to notify when the engine is restarted (cold reload).
+        @SuppressWarnings("unused")
+        public void onPreEngineRestart() {
+            if (mPluginRegistry == null)
+                return;
+            mPluginRegistry.onPreEngineRestart();
+        }
     }
 }
