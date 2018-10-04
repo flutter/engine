@@ -119,6 +119,7 @@ class Engine final : public blink::RuntimeDelegate {
   std::unique_ptr<blink::RuntimeController> runtime_controller_;
   std::string initial_route_;
   blink::ViewportMetrics viewport_metrics_;
+  bool viewport_metrics_changed_;
   fml::RefPtr<blink::AssetManager> asset_manager_;
   bool activity_running_;
   bool have_surface_;

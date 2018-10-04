@@ -190,6 +190,10 @@ shell::Engine::RunStatus Engine::PrepareAndLaunchIsolate(
 
 void Engine::BeginFrame(fml::TimePoint frame_time) {
   TRACE_EVENT0("flutter", "Engine::BeginFrame");
+  if (viewport_metrics_changed_) {
+    viewport_metrics_changed_ = false;
+    runtime_controller_->SetViewportMetrics(viewport_metrics_);
+  }
   runtime_controller_->BeginFrame(frame_time);
 }
 
@@ -234,7 +238,10 @@ void Engine::SetViewportMetrics(const blink::ViewportMetrics& metrics) {
       viewport_metrics_.physical_height != metrics.physical_height ||
       viewport_metrics_.physical_width != metrics.physical_width;
   viewport_metrics_ = metrics;
-  runtime_controller_->SetViewportMetrics(viewport_metrics_);
+  viewport_metrics_changed_ = true;
+
+  FML_LOG(INFO) << "Engine::SetViewportMetrics., dimensions changed? "
+                << dimensions_changed;
   if (animator_) {
     if (dimensions_changed)
       animator_->SetDimensionChangePending();

@@ -422,6 +422,7 @@ class Window {
   VoidCallback _onMetricsChanged;
   Zone _onMetricsChangedZone;
   set onMetricsChanged(VoidCallback callback) {
+    print("onMetricsChanged");
     _onMetricsChanged = callback;
     _onMetricsChangedZone = Zone.current;
   }
