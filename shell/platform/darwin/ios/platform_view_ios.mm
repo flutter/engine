@@ -31,11 +31,11 @@ void PlatformViewIOS::HandlePlatformMessage(fml::RefPtr<blink::PlatformMessage> 
   platform_message_router_.HandlePlatformMessage(std::move(message));
 }
 
-FlutterViewController* PlatformViewIOS::GetOwnerViewController() const {
+fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() const {
   return owner_controller_;
 }
 
-void PlatformViewIOS::SetOwnerViewController(FlutterViewController* owner_controller) {
+void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
     ios_surface_.release();
@@ -43,12 +43,12 @@ void PlatformViewIOS::SetOwnerViewController(FlutterViewController* owner_contro
   }
   owner_controller_ = owner_controller;
   if (owner_controller_) {
-    ios_surface_ = static_cast<FlutterView*>(owner_controller_.view).createSurface;
+    ios_surface_ = static_cast<FlutterView*>(owner_controller_.get().view).createSurface;
     FML_DCHECK(ios_surface_ != nullptr);
 
     if (accessibility_bridge_) {
       accessibility_bridge_.reset(
-          new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.view), this));
+          new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this));
     }
     NotifyCreated();
   }
@@ -66,7 +66,19 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
                       "has no ViewController.";
     return nullptr;
   }
-  return ios_surface_->CreateGPUSurface();
+  
+  fml::AutoResetWaitableEvent latch;
+  std::unique_ptr<Surface> surface;
+  auto gpu_task = [ios_surface = ios_surface_.get(), &surface, &latch]() {
+    if (ios_surface) {
+      surface = ios_surface->CreateGPUSurface();
+    }
+    latch.Signal();
+  };
+
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetGPUTaskRunner(), gpu_task);
+  latch.Wait();
+  return surface;
 }
 
 // |shell::PlatformView|
@@ -89,7 +101,7 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
   }
   if (enabled && !accessibility_bridge_) {
     accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
-        static_cast<FlutterView*>(owner_controller_.view), this);
+        static_cast<FlutterView*>(owner_controller_.get().view), this);
   } else if (!enabled && accessibility_bridge_) {
     accessibility_bridge_.reset();
   }

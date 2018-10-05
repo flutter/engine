@@ -38,6 +38,7 @@
 
 - (FlutterPlatformPlugin*)platformPlugin;
 - (FlutterTextInputPlugin*)textInputPlugin;
+- (void)launchEngine;
 
 @end
 

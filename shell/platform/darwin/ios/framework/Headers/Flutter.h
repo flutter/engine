@@ -8,6 +8,12 @@
 /**
  BREAKING CHANGES:
 
+ October 5, 2018:
+  - Removed FlutterNavigationController.h/.mm
+  - Changed return signature of `FlutterDartHeadlessCodeRunner.run*` from void to bool
+  - Removed HeadlessPlatformViewIOS
+  - Marked FlutterDartHeadlessCodeRunner deprecated
+  
  August 31, 2018: Marked -[FlutterDartProject
  initFromDefaultSourceForConfiguration] and FlutterStandardBigInteger as
  unavailable.
@@ -50,7 +56,6 @@
 #include "FlutterEngine.h"
 #include "FlutterHeadlessDartRunner.h"
 #include "FlutterMacros.h"
-#include "FlutterNavigationController.h"
 #include "FlutterPlugin.h"
 #include "FlutterPluginAppLifeCycleDelegate.h"
 #include "FlutterTexture.h"

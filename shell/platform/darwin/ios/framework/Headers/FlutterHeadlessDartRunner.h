@@ -13,41 +13,25 @@
 #include "FlutterMacros.h"
 
 /**
-A callback for when FlutterHeadlessDartRunner has attempted to start a Dart
-Isolate in the background.
-
-- Parameter success: YES if the Isolate was started and run successfully, NO
-  otherwise.
-*/
+ * A callback for when FlutterHeadlessDartRunner has attempted to start a Dart
+ * Isolate in the background.
+ *
+ * @param success YES if the Isolate was started and run successfully, NO
+ *   otherwise.
+ */
 typedef void (^FlutterHeadlessDartRunnerCallback)(BOOL success);
 
 /**
- The FlutterHeadlessDartRunner runs Flutter Dart code with a null rasterizer,
- and no native drawing surface. It is appropriate for use in running Dart
- code e.g. in the background from a plugin.
-*/
+ * The FlutterHeadlessDartRunner runs Flutter Dart code with a null rasterizer,
+ * and no native drawing surface. It is appropriate for use in running Dart
+ * code e.g. in the background from a plugin.
+ *
+ * Most callers should prefer using `FlutterEngine` directly; this interface exists
+ * for legacy support.
+ */
 FLUTTER_EXPORT
+FLUTTER_DEPRECATED("FlutterEngine should be used rather than FlutterHeadlessDartRunner")
 @interface FlutterHeadlessDartRunner : FlutterEngine
-
-/**
- Runs a Dart function on an Isolate that is not the main application's Isolate.
- The first call will create a new Isolate. Subsequent calls will return
- immediately.
-
- - Parameter entrypoint: The name of a top-level function from the same Dart
-   library that contains the app's main() function.
-*/
-- (bool)runWithEntrypoint:(NSString*)entrypoint;
-
-/**
- Runs a Dart function on an Isolate that is not the main application's Isolate.
- The first call will create a new Isolate. Subsequent calls will return
- immediately.
-
- - Parameter entrypoint: The name of a top-level function from a Dart library.
- - Parameter uri: The URI of the Dart library which contains entrypoint.
-*/
-- (bool)runWithEntrypointAndLibraryUri:(NSString*)entrypoint libraryUri:(NSString*)uri;
 
 @end
 

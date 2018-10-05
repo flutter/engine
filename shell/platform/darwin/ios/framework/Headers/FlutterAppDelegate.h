@@ -11,11 +11,11 @@
 #include "FlutterPlugin.h"
 
 /**
- * UIApplicationDelegate subclass for simple apps that want default behavior.
+ * `UIApplicationDelegate` subclass for simple apps that want default behavior.
  *
- * This class provides the following behaviors:
+ * This class implements the following behaviors:
  *   * Status bar touches are forwarded to the key window's root view
- *     FlutterViewController, in order to trigger scroll to top.
+ *     `FlutterViewController`, in order to trigger scroll to top.
  *   * Keeps the Flutter connection open in debug mode when the phone screen
  *     locks.
  *

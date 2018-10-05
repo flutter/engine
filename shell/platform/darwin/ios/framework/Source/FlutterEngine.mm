@@ -34,9 +34,9 @@
 
 @implementation FlutterEngine {
   fml::scoped_nsobject<FlutterDartProject> _dartProject;
+  shell::ThreadHost _threadHost;
   std::unique_ptr<shell::Shell> _shell;
   NSString* _labelPrefix;
-  shell::ThreadHost _threadHost;
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
 
   fml::WeakPtr<FlutterViewController> _viewController;
@@ -55,7 +55,7 @@
   int64_t _nextTextureId;
 }
 
-- (instancetype)initWithName:(NSString*)labelPrefix andProject:(FlutterDartProject*)projectOrNil {
+- (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   NSAssert(labelPrefix, @"labelPrefix is required");
@@ -125,7 +125,7 @@
 - (void)setViewController:(FlutterViewController*)viewController {
   FML_DCHECK(self.iosPlatformView);
   _viewController = [viewController getWeakPtr];
-  self.iosPlatformView->SetOwnerViewController(viewController);
+  self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
 }
 

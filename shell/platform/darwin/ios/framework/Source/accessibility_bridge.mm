@@ -498,7 +498,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
       previous_routes_({}) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
-      binaryMessenger:platform_view->GetOwnerViewController()
+      binaryMessenger:platform_view->GetOwnerViewController().get()
                 codec:[FlutterStandardMessageCodec sharedInstance]]);
   [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);

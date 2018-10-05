@@ -32,8 +32,9 @@ class PlatformViewIOS final : public PlatformView {
 
   PlatformMessageRouter& GetPlatformMessageRouter();
 
-  FlutterViewController* GetOwnerViewController() const;
-  void SetOwnerViewController(FlutterViewController* owner_controller);
+  fml::WeakPtr<FlutterViewController> GetOwnerViewController() const;
+  void SetOwnerViewController(
+      fml::WeakPtr<FlutterViewController> owner_controller);
 
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
@@ -43,7 +44,7 @@ class PlatformViewIOS final : public PlatformView {
       fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin);
 
  private:
-  FlutterViewController* owner_controller_;  // weak reference.
+  fml::WeakPtr<FlutterViewController> owner_controller_;
   std::unique_ptr<IOSSurface> ios_surface_;
   PlatformMessageRouter platform_message_router_;
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
@@ -51,7 +52,8 @@ class PlatformViewIOS final : public PlatformView {
   fml::closure firstFrameCallback_;
 
   // |shell::PlatformView|
-  void HandlePlatformMessage(fml::RefPtr<blink::PlatformMessage> message) override;
+  void HandlePlatformMessage(
+      fml::RefPtr<blink::PlatformMessage> message) override;
 
   // |shell::PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;

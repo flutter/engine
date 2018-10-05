@@ -46,9 +46,10 @@
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
     _flutterView.reset([[FlutterView alloc] init]);
-    _engine.reset(engine);
+    _engine.reset([engine retain]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     [self performCommonViewControllerInitialization];
+    [engine setViewController:self];
   }
 
   return self;
@@ -61,7 +62,7 @@
   if (self) {
     _flutterView.reset([[FlutterView alloc] init]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
-    _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter" andProject:projectOrNil]);
+    _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter" project:projectOrNil]);
     [_engine.get() runWithEntrypoint:nil];
     [_engine.get() setViewController:self];
 
