@@ -13,8 +13,10 @@ void main() {
       expect(const Locale('en').toString(), 'en');
       expect(const Locale('en'), new Locale('en', $null));
       expect(const Locale('en').hashCode, new Locale('en', $null).hashCode);
-      expect(const Locale('en'), isNot(new Locale('en', '')));
-      expect(const Locale('en').hashCode, isNot(new Locale('en', '').hashCode));
+      expect(const Locale('en'), new Locale('en', ''),
+             reason: 'Empty string means no subtag present.');
+      expect(const Locale('en').hashCode, new Locale('en', '').hashCode,
+             reason: 'Empty string means no subtag present.');
       expect(const Locale('en', 'US').toString(), 'en_US');
       expect(const Locale('iw').toString(), 'he');
       expect(const Locale('iw', 'DD').toString(), 'he_DE');
