@@ -48,7 +48,7 @@ FLUTTER_EXPORT
  * On the Dart side, messages are represented using `ByteData`.
  */
 FLUTTER_EXPORT
-@interface FlutterBinaryCodec : NSObject<FlutterMessageCodec>
+@interface FlutterBinaryCodec : NSObject <FlutterMessageCodec>
 @end
 
 /**
@@ -59,7 +59,7 @@ FLUTTER_EXPORT
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  */
 FLUTTER_EXPORT
-@interface FlutterStringCodec : NSObject<FlutterMessageCodec>
+@interface FlutterStringCodec : NSObject <FlutterMessageCodec>
 @end
 
 /**
@@ -77,7 +77,7 @@ FLUTTER_EXPORT
  * package.
  */
 FLUTTER_EXPORT
-@interface FlutterJSONMessageCodec : NSObject<FlutterMessageCodec>
+@interface FlutterJSONMessageCodec : NSObject <FlutterMessageCodec>
 @end
 
 /**
@@ -156,7 +156,7 @@ FLUTTER_EXPORT
  * - `NSDictionary`: `Map`
  */
 FLUTTER_EXPORT
-@interface FlutterStandardMessageCodec : NSObject<FlutterMessageCodec>
+@interface FlutterStandardMessageCodec : NSObject <FlutterMessageCodec>
 + (instancetype)codecWithReaderWriter:(FlutterStandardReaderWriter*)readerWriter;
 @end
 
@@ -300,12 +300,11 @@ FLUTTER_EXPORT
  * and `FlutterStandardMethodCodec`.
  */
 FLUTTER_EXPORT
-FLUTTER_UNAVAILABLE(
-    "Unavailable on 2018-08-31. Deprecated on 2018-01-09. "
-    "FlutterStandardBigInteger was needed because the Dart 1.0 int type had no "
-    "size limit. With Dart 2.0, the int type is a fixed-size, 64-bit signed "
-    "integer. If you need to communicate larger integers, use NSString encoding "
-    "instead.")
+FLUTTER_UNAVAILABLE("Unavailable on 2018-08-31. Deprecated on 2018-01-09. "
+                    "FlutterStandardBigInteger was needed because the Dart 1.0 int type had no "
+                    "size limit. With Dart 2.0, the int type is a fixed-size, 64-bit signed "
+                    "integer. If you need to communicate larger integers, use NSString encoding "
+                    "instead.")
 @interface FlutterStandardBigInteger : NSObject
 @end
 
@@ -389,7 +388,7 @@ FLUTTER_EXPORT
  * those supported as top-level or leaf values by `FlutterJSONMessageCodec`.
  */
 FLUTTER_EXPORT
-@interface FlutterJSONMethodCodec : NSObject<FlutterMethodCodec>
+@interface FlutterJSONMethodCodec : NSObject <FlutterMethodCodec>
 @end
 
 /**
@@ -403,7 +402,7 @@ FLUTTER_EXPORT
  * `FlutterStandardMessageCodec`.
  */
 FLUTTER_EXPORT
-@interface FlutterStandardMethodCodec : NSObject<FlutterMethodCodec>
+@interface FlutterStandardMethodCodec : NSObject <FlutterMethodCodec>
 + (instancetype)codecWithReaderWriter:(FlutterStandardReaderWriter*)readerWriter;
 @end
 

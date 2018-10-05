@@ -19,22 +19,22 @@
 /**
  * The FlutterEngine class coordinates a single instance of execution for a
  * `FlutterDartProject`.  It may have one `FlutterViewController` at any given
- * time, which can be `-setViewController:` or with `FlutterViewController`'s 
+ * time, which can be `-setViewController:` or with `FlutterViewController`'s
  * `initWithEngine` initializer.
- * 
+ *
  * A FlutterEngine can be created independently of a `FlutterViewController` for
- * headless execution.  It can also persist across the lifespan of multiple 
+ * headless execution.  It can also persist across the lifespan of multiple
  * `FlutterViewController` instances to maintain state and/or asynchronous tasks
  * (such as downloading a large file).
- * 
+ *
  * Alternatively, you can simply create a new `FlutterViewController` with only a
- * `FlutterDartProject`. That `FlutterViewController` will internally manage its 
+ * `FlutterDartProject`. That `FlutterViewController` will internally manage its
  * own instance of a FlutterEngine, but will not guarantee survival of the engine
  * beyond the life of the ViewController.
  */
 FLUTTER_EXPORT
 @interface FlutterEngine
-    : NSObject<FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
+    : NSObject <FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
 /**
  * Iniitalize this FlutterEngine with a `FlutterDartProject`.
  *
@@ -66,24 +66,24 @@ FLUTTER_EXPORT
 - (bool)runWithEntrypoint:(NSString*)entrypoint;
 
 /**
-* Runs a Dart program on an Isolate.
-* 
-* The first call will create a new Isolate. Subsequent calls will return immediately.
-* 
-* @param entrypoint The name of a top-level function from a Dart library.
-* @param libraryUri The URI of the Dart library which contains the entrypoint method.
-* @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
-*/
+ * Runs a Dart program on an Isolate.
+ *
+ * The first call will create a new Isolate. Subsequent calls will return immediately.
+ *
+ * @param entrypoint The name of a top-level function from a Dart library.
+ * @param libraryUri The URI of the Dart library which contains the entrypoint method.
+ * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
+ */
 - (bool)runWithEntrypointAndLibraryUri:(NSString*)entrypoint libraryUri:(NSString*)uri;
 
 /**
  * Sets the `FlutterViewController` for this instance; callers may pass nil to
  * remove the viewController and have the engine run headless in the current process.
- * 
- * A FlutterEngine can only have one `FlutterViewController` at a time. If there is 
+ *
+ * A FlutterEngine can only have one `FlutterViewController` at a time. If there is
  * already a `FlutterViewController` associated with this instance, this method will replace
  * the engine's current viewController with the newly specified one.
- * 
+ *
  * @param viewController The `FlutterViewController` (or nil) to set. Kept as a weak reference.
  */
 - (void)setViewController:(FlutterViewController*)viewController;
@@ -99,8 +99,9 @@ FLUTTER_EXPORT
 - (FlutterMethodChannel*)localizationChannel;
 /**
  * The `FlutterMethodChannel` used for navigation related platform messages.
- * 
- * @see [Navigation Channel](https://docs.flutter.io/flutter/services/SystemChannels/navigation-constant.html)
+ *
+ * @see [Navigation
+ * Channel](https://docs.flutter.io/flutter/services/SystemChannels/navigation-constant.html)
  * @see [Navigator Widget](https://docs.flutter.io/flutter/widgets/Navigator-class.html)
  */
 - (FlutterMethodChannel*)navigationChannel;
@@ -112,22 +113,25 @@ FLUTTER_EXPORT
 /**
  * The `FlutterMethodChannel` used to communicate text input events to the
  * Dart Isolate.
- * 
- * @see [Text Input Channel](https://docs.flutter.io/flutter/services/SystemChannels/textInput-constant.html)
+ *
+ * @see [Text Input
+ * Channel](https://docs.flutter.io/flutter/services/SystemChannels/textInput-constant.html)
  */
 - (FlutterMethodChannel*)textInputChannel;
 /**
  * The `FlutterBasicMessageChannel` used to communicate app lifecycle events
  * to the Dart Isolate.
- * 
- * @see [Lifecycle Channel](https://docs.flutter.io/flutter/services/SystemChannels/lifecycle-constant.html)
+ *
+ * @see [Lifecycle
+ * Channel](https://docs.flutter.io/flutter/services/SystemChannels/lifecycle-constant.html)
  */
 - (FlutterBasicMessageChannel*)lifecycleChannel;
 /**
  * The `FlutterBasicMessageChannel` used for communicating system events, such as
  * memory pressure events.
- * 
- * @see [System Channel](https://docs.flutter.io/flutter/services/SystemChannels/system-constant.html)
+ *
+ * @see [System
+ * Channel](https://docs.flutter.io/flutter/services/SystemChannels/system-constant.html)
  */
 - (FlutterBasicMessageChannel*)systemChannel;
 /**

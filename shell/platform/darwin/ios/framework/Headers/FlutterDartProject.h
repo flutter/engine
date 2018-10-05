@@ -16,7 +16,7 @@ FLUTTER_EXPORT
 @interface FlutterDartProject : NSObject
 
 /**
- * Initializes with a specific 
+ * Initializes with a specific
  */
 - (instancetype)initWithPrecompiledDartBundle:(NSBundle*)bundle NS_DESIGNATED_INITIALIZER;
 

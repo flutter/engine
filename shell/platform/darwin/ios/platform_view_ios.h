@@ -25,23 +25,20 @@ namespace shell {
 
 class PlatformViewIOS final : public PlatformView {
  public:
-  explicit PlatformViewIOS(PlatformView::Delegate& delegate,
-                           blink::TaskRunners task_runners);
+  explicit PlatformViewIOS(PlatformView::Delegate& delegate, blink::TaskRunners task_runners);
 
   ~PlatformViewIOS();
 
   PlatformMessageRouter& GetPlatformMessageRouter();
 
   fml::WeakPtr<FlutterViewController> GetOwnerViewController() const;
-  void SetOwnerViewController(
-      fml::WeakPtr<FlutterViewController> owner_controller);
+  void SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller);
 
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> GetTextInputPlugin() const;
 
-  void SetTextInputPlugin(
-      fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin);
+  void SetTextInputPlugin(fml::scoped_nsprotocol<FlutterTextInputPlugin*> plugin);
 
  private:
   fml::WeakPtr<FlutterViewController> owner_controller_;
@@ -52,8 +49,7 @@ class PlatformViewIOS final : public PlatformView {
   fml::closure firstFrameCallback_;
 
   // |shell::PlatformView|
-  void HandlePlatformMessage(
-      fml::RefPtr<blink::PlatformMessage> message) override;
+  void HandlePlatformMessage(fml::RefPtr<blink::PlatformMessage> message) override;
 
   // |shell::PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
@@ -68,9 +64,8 @@ class PlatformViewIOS final : public PlatformView {
   void SetAccessibilityFeatures(int32_t flags) override;
 
   // |shell::PlatformView|
-  void UpdateSemantics(
-      blink::SemanticsNodeUpdates update,
-      blink::CustomAccessibilityActionUpdates actions) override;
+  void UpdateSemantics(blink::SemanticsNodeUpdates update,
+                       blink::CustomAccessibilityActionUpdates actions) override;
 
   // |shell::PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;

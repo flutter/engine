@@ -16,7 +16,7 @@
 - (shell::RunConfiguration)runConfiguration;
 - (shell::RunConfiguration)runConfigurationForEntrypoint:(NSString*)entrypointOrNil;
 - (shell::RunConfiguration)runConfigurationForEntrypoint:(NSString*)entrypointOrNil
-                                                 libraryOrNil:(NSString*)dartLibraryOrNil;
+                                            libraryOrNil:(NSString*)dartLibraryOrNil;
 
 + (NSString*)flutterAssetsName:(NSBundle*)bundle;
 
