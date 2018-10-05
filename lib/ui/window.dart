@@ -157,8 +157,8 @@ class Locale {
        assert(_languageCode.length >= 2),
        assert(_languageCode.length != 4),
        assert(_languageCode.length <= 8),
-       assert((_countryCode ?? "XX").length >= 2),
-       assert((_countryCode ?? "XX").length <= 3);
+       assert((_countryCode ?? 'XX').length >= 2),
+       assert((_countryCode ?? 'XX').length <= 3);
 
   /// The primary language subtag for the locale.
   ///
