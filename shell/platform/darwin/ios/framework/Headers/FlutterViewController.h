@@ -28,7 +28,7 @@
  * or it can be initialized with a `FlutterDartProject` that will be used to spin up
  * a new `FlutterEngine`.  Developers looking to present and hide FlutterViewControllers
  * in native iOS applications will usually want to maintain the `FlutterEngine` instance
- * so as not to lose Dart-related state and asynchronous tasks when navigating back and 
+ * so as not to lose Dart-related state and asynchronous tasks when navigating back and
  * forth between a FlutterViewController and other `UIViewController`s.
  */
 FLUTTER_EXPORT

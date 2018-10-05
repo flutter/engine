@@ -24,6 +24,8 @@
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 @interface FlutterEngine () <FlutterTextInputDelegate>
+// Maintains a dictionary of plugin names that have registered with the engine.  Used by
+// FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
 @end
 

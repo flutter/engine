@@ -79,7 +79,7 @@ FLUTTER_EXPORT
 /**
  * Runs a Dart program on an Isolate using the specified entrypoint and Dart library,
  * which may not be the same as the library containing the Dart program's `main()` function.
- * 
+ *
  * The first call to this method will create a new Isolate. Subsequent calls will return
  * immediately.
  *
@@ -100,10 +100,10 @@ FLUTTER_EXPORT
  * A FlutterEngine can only have one `FlutterViewController` at a time. If there is
  * already a `FlutterViewController` associated with this instance, this method will replace
  * the engine's current viewController with the newly specified one.
- * 
- * Setting the viewController will signal the engine to start animations and drawing, and unsetting it
- * will signal the engine to stop animations and drawing.  However, neither will
- * impact the state of the Dart program's execution.
+ *
+ * Setting the viewController will signal the engine to start animations and drawing, and unsetting
+ * it will signal the engine to stop animations and drawing.  However, neither will impact the state
+ * of the Dart program's execution.
  *
  * @param viewController The `FlutterViewController` (or nil) to set. Kept as a weak reference.
  */
