@@ -585,7 +585,6 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbac
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/headless_platform_view_ios.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Chromium Authors. All rights reserved.
 
