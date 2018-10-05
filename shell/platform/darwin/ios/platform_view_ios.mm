@@ -43,7 +43,8 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   }
   owner_controller_ = owner_controller;
   if (owner_controller_) {
-    ios_surface_ = static_cast<FlutterView*>(owner_controller_.get().view).createSurface;
+    ios_surface_ = [static_cast<FlutterView*>(owner_controller.get().view)
+        createSurface:task_runners_.GetGPUTaskRunner()];
     FML_DCHECK(ios_surface_ != nullptr);
 
     if (accessibility_bridge_) {
@@ -96,8 +97,9 @@ sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
 // |shell::PlatformView|
 void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
   if (!owner_controller_) {
-    FML_DLOG(INFO) << "Could not set semantics to enabled, this "
-                      "PlatformViewIOS has no ViewController.";
+    FML_DLOG(WARNING) << "Could not set semantics to enabled, this "
+                         "PlatformViewIOS has no ViewController.";
+    return;
   }
   if (enabled && !accessibility_bridge_) {
     accessibility_bridge_ = std::make_unique<AccessibilityBridge>(
