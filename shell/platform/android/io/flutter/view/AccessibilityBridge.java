@@ -5,7 +5,6 @@
 package io.flutter.view;
 
 import android.app.Activity;
-import android.content.Context;
 import android.graphics.Rect;
 import android.opengl.Matrix;
 import android.os.Build;
@@ -145,7 +144,9 @@ class AccessibilityBridge
 
         AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner, virtualViewId);
         // Work around for https://github.com/flutter/flutter/issues/2101
-        result.setViewIdResourceName("");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            result.setViewIdResourceName("");
+        }
         result.setPackageName(mOwner.getContext().getPackageName());
         result.setClassName("android.view.View");
         result.setSource(mOwner, virtualViewId);
@@ -598,8 +599,6 @@ class AccessibilityBridge
     }
 
     void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
-        ArrayList<CustomAccessibilityAction> updatedActions =
-                new ArrayList<CustomAccessibilityAction>();
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
             CustomAccessibilityAction action = getOrCreateAction(id);
