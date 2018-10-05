@@ -20,7 +20,6 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/flutter_touch_mapper.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 

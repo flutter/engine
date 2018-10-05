@@ -27,36 +27,4 @@
 @implementation FlutterHeadlessDartRunner {
 }
 
-- (bool)runWithEntrypointAndLibraryUri:(NSString*)entrypoint libraryUri:(NSString*)uri {
-  bool shellCreated = [super runWithEntrypointAndLibraryUri:entrypoint libraryUri:uri];
-  if (!shellCreated || entrypoint.length == 0) {
-    FML_LOG(ERROR)
-        << "FlutterHeadlessDartRunner requires on proper setup of shell and a valid entrypoint.";
-    return false;
-  }
-
-  FlutterDartProject* project = [[[FlutterDartProject alloc] init] autorelease];
-
-  auto config = project.runConfiguration;
-  config.SetEntrypointAndLibrary(entrypoint.UTF8String, uri.UTF8String);
-
-  // Override the default run configuration with the specified entrypoint.
-  self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = self.shell.GetEngine(), config = std::move(config)]() mutable {
-        BOOL success = NO;
-        FML_LOG(INFO) << "Attempting to launch background engine configuration...";
-        if (!engine || engine->Run(std::move(config)) == shell::Engine::RunStatus::Failure) {
-          FML_LOG(ERROR) << "Could not launch engine with configuration.";
-        } else {
-          FML_LOG(INFO) << "Background Isolate successfully started and run.";
-          success = YES;
-        }
-      }));
-  return true;
-}
-
-- (bool)runWithEntrypoint:(NSString*)entrypoint {
-  return [self runWithEntrypointAndLibraryUri:entrypoint libraryUri:nil];
-}
-
 @end
