@@ -25,7 +25,12 @@
  * A FlutterEngine can be created independently of a `FlutterViewController` for
  * headless execution.  It can also persist across the lifespan of multiple 
  * `FlutterViewController` instances to maintain state and/or asynchronous tasks
- * (such as downloading a large file).  Alternatively, you can 
+ * (such as downloading a large file).
+ * 
+ * Alternatively, you can simply create a new `FlutterViewController` with only a
+ * `FlutterDartProject`. That `FlutterViewController` will internally manage its 
+ * own instance of a FlutterEngine, but will not guarantee survival of the engine
+ * beyond the life of the ViewController.
  */
 FLUTTER_EXPORT
 @interface FlutterEngine
