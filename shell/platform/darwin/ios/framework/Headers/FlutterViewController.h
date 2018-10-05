@@ -22,14 +22,14 @@
  *
  * Dart execution, channel communication, texture registration, and plugin registration
  * are all handled by `FlutterEngine`.  Calls on this class to those members all proxy
- * through to the `FlutterEngine` that manages this FlutterViewController.
+ * through to the `FlutterEngine` attached FlutterViewController.
  *
  * A FlutterViewController can be initialized either with an already-running `FlutterEngine`,
  * or it can be initialized with a `FlutterDartProject` that will be used to spin up
  * a new `FlutterEngine`.  Developers looking to present and hide FlutterViewControllers
  * in native iOS applications will usually want to maintain the `FlutterEngine` instance
- * so as not to lose state or asynchronous tasks when navigating back and forth between a
- * FlutterViewController and other `UIViewController`s.
+ * so as not to lose Dart-related state and asynchronous tasks when navigating back and 
+ * forth between a FlutterViewController and other `UIViewController`s.
  */
 FLUTTER_EXPORT
 @interface FlutterViewController
