@@ -726,13 +726,12 @@ class AccessibilityBridge
                     // handle hidden children at the beginning and end of the list.
                     for (SemanticsObject child : object.childrenInHitTestOrder) {
                         if (!child.hasFlag(Flag.IS_HIDDEN)) {
-                            break;
+                            visibleChildren += 1;
                         }
-                        visibleChildren += 1;
                     }
                     assert(object.scrollIndex + visibleChildren <= object.scrollChildren);
                     assert(!object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN));
-                    event.setToIndex(object.scrollIndex + visibleChildren);
+                    event.setToIndex(object.scrollIndex + visibleChildren - 1);
                 }
                 sendAccessibilityEvent(event);
             }
