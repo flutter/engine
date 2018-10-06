@@ -63,24 +63,15 @@
 #endif  // TARGET_IPHONE_SIMULATOR
 }
 
-- (std::unique_ptr<shell::IOSSurface>)createSurface:(fml::RefPtr<fml::TaskRunner>)gpuTaskRunner {
-  fml::AutoResetWaitableEvent latch;
-  std::unique_ptr<shell::IOSSurface> ios_surface;
-  auto gpu_task = [layer = self.layer, &ios_surface, &latch]() {
-    if ([layer isKindOfClass:[CAEAGLLayer class]]) {
-      fml::scoped_nsobject<CAEAGLLayer> eagl_layer(reinterpret_cast<CAEAGLLayer*>([layer retain]));
-      ios_surface = std::make_unique<shell::IOSSurfaceGL>(std::move(eagl_layer));
-    } else {
-      fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([layer retain]));
-      ios_surface = std::make_unique<shell::IOSSurfaceSoftware>(std::move(layer));
-    }
-    latch.Signal();
-  };
-
-  fml::TaskRunner::RunNowOrPostTask(gpuTaskRunner, gpu_task);
-
-  latch.Wait();
-  return ios_surface;
+- (std::unique_ptr<shell::IOSSurface>)createSurface {
+  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
+    fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
+        reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
+    return std::make_unique<shell::IOSSurfaceGL>(std::move(eagl_layer));
+  } else {
+    fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
+    return std::make_unique<shell::IOSSurfaceSoftware>(std::move(layer));
+  }
 }
 
 - (BOOL)enableInputClicksWhenVisible {

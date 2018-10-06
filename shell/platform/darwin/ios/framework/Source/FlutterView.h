@@ -9,13 +9,11 @@
 
 #include <memory>
 
-#include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/fml/task_runner.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @interface FlutterView : UIView
 
-- (std::unique_ptr<shell::IOSSurface>)createSurface:(fml::RefPtr<fml::TaskRunner>)gpuTaskRunner;
+- (std::unique_ptr<shell::IOSSurface>)createSurface;
 
 @end
 

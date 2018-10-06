@@ -43,8 +43,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   }
   owner_controller_ = owner_controller;
   if (owner_controller_) {
-    ios_surface_ = [static_cast<FlutterView*>(owner_controller.get().view)
-        createSurface:task_runners_.GetGPUTaskRunner()];
+    ios_surface_ = static_cast<FlutterView*>(owner_controller.get().view).createSurface;
     FML_DCHECK(ios_surface_ != nullptr);
 
     if (accessibility_bridge_) {
@@ -70,14 +69,14 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 
   fml::AutoResetWaitableEvent latch;
   std::unique_ptr<Surface> surface;
-  auto gpu_task = [ios_surface = ios_surface_.get(), &surface, &latch]() {
+  auto gpu_task = [ios_surface = ios_surface_.get(), &surface, &latch]() mutable {
     if (ios_surface) {
       surface = ios_surface->CreateGPUSurface();
     }
     latch.Signal();
   };
 
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetGPUTaskRunner(), gpu_task);
+  task_runners_.GetGPUTaskRunner()->PostTask(gpu_task);
   latch.Wait();
   return surface;
 }
