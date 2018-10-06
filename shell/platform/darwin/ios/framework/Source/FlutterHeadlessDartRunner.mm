@@ -27,4 +27,10 @@
 @implementation FlutterHeadlessDartRunner {
 }
 
+- (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil {
+  return [super initWithName:labelPrefix project:projectOrNil];
+}
+- (instancetype)init {
+  return [self initWithName:@"io.flutter.headless" project:nil];
+}
 @end

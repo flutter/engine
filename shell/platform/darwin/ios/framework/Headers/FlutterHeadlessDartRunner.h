@@ -33,6 +33,28 @@ FLUTTER_EXPORT
 FLUTTER_DEPRECATED("FlutterEngine should be used rather than FlutterHeadlessDartRunner")
 @interface FlutterHeadlessDartRunner : FlutterEngine
 
+/**
+ * Iniitalize this FlutterHeadlessDartRunner with a `FlutterDartProject`.
+ *
+ * If the FlutterDartProject is not specified, the FlutterHeadlessDartRunner will attempt to locate
+ * the project in a default location.
+ *
+ * A newly initialized engine will not run the `FlutterDartProject` until either
+ * `-runWithEntrypoint:` or `-runWithEntrypointAndLibraryUri:` is called.
+ *
+ * @param labelPrefix The label prefix used to identify threads for this instance. Should
+ * be unique across FlutterEngine instances
+ * @param project The `FlutterDartProject` to run.
+ */
+- (instancetype)initWithName:(NSString*)labelPrefix
+                     project:(FlutterDartProject*)projectOrNil NS_DESIGNATED_INITIALIZER;
+
+/**
+ * Not recommended for use - will initialize with a default label ("io.flutter.headless")
+ * and the default FlutterDartProject.
+ */
+- (instancetype)init;
+
 @end
 
 #endif  // FLUTTER_FLUTTERHEADLESSDARTRUNNER_H_
