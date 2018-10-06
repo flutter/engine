@@ -38,7 +38,7 @@
 
 - (FlutterPlatformPlugin*)platformPlugin;
 - (FlutterTextInputPlugin*)textInputPlugin;
-- (void)launchEngine;
+- (void)launchEngine:(NSString*)entrypoint libraryUri:(NSString*)libraryOrNil;
 
 @end
 

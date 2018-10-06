@@ -227,11 +227,12 @@
   return self.shell.Screenshot(type, base64Encode);
 }
 
-- (void)launchEngine {
+- (void)launchEngine:(NSString*)entrypoint libraryUri:(NSString*)libraryOrNil {
   // Launch the Dart application with the inferred run configuration.
-  self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = _shell->GetEngine(),                   //
-                         config = [_dartProject.get() runConfiguration]  //
+  self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
+      [engine = _shell->GetEngine(),
+       config = [_dartProject.get() runConfigurationForEntrypoint:entrypoint
+                                                     libraryOrNil:libraryOrNil]  //
   ]() mutable {
         if (engine) {
           auto result = engine->Run(std::move(config));
@@ -250,16 +251,13 @@
 
   static size_t shellCount = 1;
 
-  auto config = [_dartProject.get() runConfiguration];
   auto settings = [_dartProject.get() settings];
 
   if (libraryUri) {
     FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
-    config.SetEntrypointAndLibrary(entrypoint.UTF8String, libraryUri.UTF8String);
     settings.advisory_script_entrypoint = entrypoint.UTF8String;
     settings.advisory_script_uri = libraryUri.UTF8String;
   } else if (entrypoint) {
-    config.SetEntrypoint(std::string(entrypoint.UTF8String));
     settings.advisory_script_entrypoint = entrypoint.UTF8String;
     settings.advisory_script_entrypoint = std::string("main.dart");
   } else {
@@ -308,7 +306,7 @@
                    << entrypoint.UTF8String;
   } else {
     [self maybeSetupPlatformViewChannels];
-    [self launchEngine];
+    [self launchEngine:entrypoint libraryUri:libraryUri];
   }
 
   return _shell != nullptr;
