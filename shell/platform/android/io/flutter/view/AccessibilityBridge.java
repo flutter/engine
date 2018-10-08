@@ -731,6 +731,14 @@ class AccessibilityBridge
                     }
                     assert(object.scrollIndex + visibleChildren <= object.scrollChildren);
                     assert(!object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN));
+                    // The setToIndex should be the index of the last visible child. Because we counted all
+                    // children, including the first index we need to subtract one.
+                    //
+                    //   [0, 1, 2, 3, 4, 5]
+                    //    ^     ^
+                    // In the example above where 0 is the first visible index and 2 is the last, we will
+                    // count 3 total visible children. We then subtract one to get the correct last visible
+                    // index of 2.
                     event.setToIndex(object.scrollIndex + visibleChildren - 1);
                 }
                 sendAccessibilityEvent(event);
