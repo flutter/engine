@@ -257,10 +257,10 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
 }
 
 - (void)dealloc{
-    [_name release];
-    [_codec release];
-    [_messenger release];
-    [super dealloc];
+  [_name release];
+  [_codec release];
+  [_messenger release];
+  [super dealloc];
 }
 
 - (void)setStreamHandler:(NSObject<FlutterStreamHandler>*)handler {
