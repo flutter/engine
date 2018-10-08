@@ -21,9 +21,9 @@
 + (instancetype)messageChannelWithName:(NSString*)name
                        binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                                  codec:(NSObject<FlutterMessageCodec>*)codec {
-  return
-      [[[FlutterBasicMessageChannel alloc] initWithName:name binaryMessenger:messenger codec:codec]
-          autorelease];
+  return [[[FlutterBasicMessageChannel alloc] initWithName:name
+                                           binaryMessenger:messenger
+                                                     codec:codec] autorelease];
 }
 
 - (instancetype)initWithName:(NSString*)name
@@ -162,8 +162,8 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
 + (instancetype)methodChannelWithName:(NSString*)name
                       binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                                 codec:(NSObject<FlutterMethodCodec>*)codec {
-  return [[[FlutterMethodChannel alloc] initWithName:name binaryMessenger:messenger codec:codec]
-      autorelease];
+  return [[[FlutterMethodChannel alloc] initWithName:name binaryMessenger:messenger
+                                               codec:codec] autorelease];
 }
 
 - (instancetype)initWithName:(NSString*)name
@@ -185,8 +185,8 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
 }
 
 - (void)invokeMethod:(NSString*)method arguments:(id)arguments {
-  FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:method arguments:arguments];
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:method
+                                                                    arguments:arguments];
   NSData* message = [_codec encodeMethodCall:methodCall];
   [_messenger sendOnChannel:_name message:message];
 }
@@ -241,8 +241,8 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
 + (instancetype)eventChannelWithName:(NSString*)name
                      binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
                                codec:(NSObject<FlutterMethodCodec>*)codec {
-  return [[[FlutterEventChannel alloc] initWithName:name binaryMessenger:messenger codec:codec]
-      autorelease];
+  return [[[FlutterEventChannel alloc] initWithName:name binaryMessenger:messenger
+                                              codec:codec] autorelease];
 }
 
 - (instancetype)initWithName:(NSString*)name
