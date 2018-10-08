@@ -5,17 +5,17 @@
 import("//build/dart/dart_library.gni")
 
 dart_library("flutter_kernel_transformers") {
-    disable_analysis = true
-    package_name = "flutter_kernel_transformers"
+  disable_analysis = true
+  package_name = "flutter_kernel_transformers"
 
-    sources = [
-        "track_widget_constructor_locations.dart",
-    ]
+  sources = [
+    "track_widget_constructor_locations.dart",
+  ]
 
-    deps = [
-        "//third_party/dart/pkg/front_end",
-        "//third_party/dart/pkg/kernel",
-        "//third_party/dart/pkg/vm",
-        "//third_party/dart-pkg/pub/meta",
-    ]
+  deps = [
+    "//third_party/dart/pkg/front_end",
+    "//third_party/dart/pkg/kernel",
+    "//third_party/dart/pkg/vm",
+    "//third_party/dart-pkg/pub/meta",
+  ]
 }
