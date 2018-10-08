@@ -41,16 +41,18 @@ FLUTTER_EXPORT
 @interface FlutterEngine
     : NSObject <FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
 /**
- * Iniitalize this FlutterEngine with a `FlutterDartProject`.
+ * Initialize this FlutterEngine with a `FlutterDartProject`.
  *
  * If the FlutterDartProject is not specified, the FlutterEngine will attempt to locate
- * the project in a default location.
+ * the project in a default location (the flutter_assets folder in the iOS application
+ * bundle).
  *
  * A newly initialized engine will not run the `FlutterDartProject` until either
  * `-runWithEntrypoint:` or `-runWithEntrypointAndLibraryUri:` is called.
  *
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
- * be unique across FlutterEngine instances
+ *   be unique across FlutterEngine instances, and is used in instrumentation to label
+ *   the threads used by this FlutterEngine.
  * @param project The `FlutterDartProject` to run.
  */
 - (instancetype)initWithName:(NSString*)labelPrefix
@@ -84,9 +86,9 @@ FLUTTER_EXPORT
  * immediately.
  *
  * @param entrypoint The name of a top-level function from a Dart library.  If nil, this will
- *    default to `main()`.
+ *   default to `main()`.
  * @param libraryUri The URI of the Dart library which contains the entrypoint method.  IF nil,
- *    this will default to the same library as the `main()` function in the Dart program.
+ *   this will default to the same library as the `main()` function in the Dart program.
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
 - (bool)runWithEntrypointAndLibraryUri:(NSString*)entrypoint libraryUri:(NSString*)uri;
