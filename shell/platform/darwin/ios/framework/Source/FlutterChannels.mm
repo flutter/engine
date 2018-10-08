@@ -192,8 +192,8 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
 }
 
 - (void)invokeMethod:(NSString*)method arguments:(id)arguments result:(FlutterResult)callback {
-  FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:method arguments:arguments];
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:method
+                                                                    arguments:arguments];
   NSData* message = [_codec encodeMethodCall:methodCall];
   FlutterBinaryReply reply = ^(NSData* data) {
     if (callback) {
