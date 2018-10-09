@@ -137,7 +137,9 @@ class LocaleParseException implements Exception {
 /// both have the [languageCode] `he`, because `iw` is a deprecated language
 /// subtag that was replaced by the subtag `he`.
 ///
-/// FIXME/WIP: switch to using CLDR directly instead of the IANA registry?
+/// TODO: evalute using CLDR instead of the IANA registry, and determine whether
+/// there are more replacement reasons that should be grabbed:
+/// https://www.unicode.org/repos/cldr/tags/latest/common/supplemental/supplementalMetadata.xml
 ///
 /// See also:
 ///
@@ -166,10 +168,10 @@ class Locale {
   const Locale(
     this._languageCode, [
     this._countryCode,
-  ])  : assert(_languageCode != null),
-        this._scriptCode = null,
-        this._variants = null,
-        this._extensions = null;
+  ]) : assert(_languageCode != null),
+       this._scriptCode = null,
+       this._variants = null,
+       this._extensions = null;
 
   /// Creates a new Locale object with the specified parts.
   ///
@@ -207,6 +209,9 @@ class Locale {
   /// This method does not parse all BCP 47 tags. See [BCP 47
   /// Conformance](https://www.unicode.org/reports/tr35/#BCP_47_Conformance) for
   /// details.
+  ///
+  /// TODO: we should try to support parsing all BCP 47 tags, even if we produce
+  /// only Unicode BCP47 Locale Identifiers as output.
   factory Locale.parse(String localeId) {
     assert(localeId != null);
     localeId = localeId.toLowerCase();
@@ -268,10 +273,10 @@ class Locale {
         extensions: extensions);
   }
 
-  /// * All subtags in locale_subtags must already be lowercase.
-  ///
-  /// * extensions must be a map with sorted iteration order, SplayTreeMap takes
-  ///   care of that for us.
+  // * All subtags in locale_subtags must already be lowercase.
+  //
+  // * extensions must be a map with sorted iteration order, SplayTreeMap takes
+  //   care of that for us.
   static void _ParseExtensions(List<String> locale_subtags,
                                collection.SplayTreeMap<String, String> extensions,
                                List<String> problems) {
@@ -490,9 +495,11 @@ class Locale {
   String get scriptCode => _scriptCode;
   final String _scriptCode;
 
-  // ASCII only. (TODO: Check first if already valid).
-  static String _capitalize(String word) =>
-      word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase();
+  // Uses the language independent Unicode mapping. For use in Locales, we only
+  // care about ASCII. (TODO: optimize by checking if already valid?)
+  static String _capitalize(String word) {
+    return word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase();
+  }
 
   /// The region subtag for the locale.
   ///
@@ -624,9 +631,9 @@ class Locale {
       } else if (_re_tkey.hasMatch(entry.key)) {
         // transformed_extensions
         t_out.write('-${entry.key}');
-        // FIXME: this is not standards compliant. What do we want to do with
+        // TODO: this is not standards compliant. What do we want to do with
         // this case? Drop entry.key like we drop empty t and u singletons?
-        // Throw an exception probably.
+        // Or simply ensure we don't ever create such an instance?
         if (entry.value.length > 0)
           t_out.write('-${entry.value}');
       } else {
@@ -690,16 +697,19 @@ class Locale {
       return false;
     final Locale typedOther = other;
 
-    // TODO: improve efficiency of this, toLanguageTag() is too expensive.
+    // TODO: improve efficiency of this?
     // Comparing Sets and Maps requires reimplementing functionality in
-    // package:collection.
+    // package:collection, comparing canonical string is simple.
     return this.toLanguageTag() == typedOther.toLanguageTag()
-        // toLanguageTag() cannot represent zero-length string as country-code.
+        // toLanguageTag() cannot represent zero-length string as country-code,
+        // but we need to distinguish it for backward compatibility reasons.
         && this.countryCode == typedOther.countryCode;
   }
 
   @override
   int get hashCode {
+    // toLanguageTag() cannot represent zero-length string as country-code,
+    // but we need to distinguish it for backward compatibility reasons.
     return this.toLanguageTag().hashCode
         + 373 * this.countryCode.hashCode;
   }
@@ -711,11 +721,13 @@ class Locale {
   /// Identifier as recommended for general interchange.
   @override
   String toString() {
-    if (_countryCode == '') {
-      // Not standards-compliant, but kept for legacy reasons.
-      return '${languageCode}_';
+    String identifier = toLanguageTag().replaceAll('-', '_');
+    if (_countryCode == '' && identifier == languageCode) {
+      // Not standards-compliant, but kept for legacy reasons. Only the const
+      // unnamed constructor should be able to create instances like these.
+      identifier = '${languageCode}_';
     }
-    return toLanguageTag().replaceAll('-', '_');
+    return identifier;
   }
 }
 
