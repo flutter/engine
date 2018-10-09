@@ -11,6 +11,7 @@
 #include "flutter/common/settings.h"
 #include "flutter/fml/eintr_wrapper.h"
 #include "flutter/fml/file.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
@@ -325,14 +326,61 @@ bool Engine::HandleLocalizationPlatformMessage(
   if (args == root.MemberEnd() || !args->value.IsArray())
     return false;
 
-  const auto& language = args->value[0];
-  const auto& country = args->value[1];
+  const auto& languageBuffer = args->value[0];
+  const auto& countryBuffer = args->value[1];
 
-  if (!language.IsString() || !country.IsString())
+  if (!languageBuffer.IsString() || !countryBuffer.IsString())
     return false;
 
-  return runtime_controller_->SetLocale(language.GetString(),
-                                        country.GetString());
+  std::string languageString = languageBuffer.GetString();
+  std::string countryString = countryBuffer.GetString();
+
+// iOS only because only valid locales can be passed in from Android
+#if defined(OS_IOS)
+  // TODO(garyq): Add support for script codes and derive script codes from
+  // unspecified locales.
+  //
+  // This is a hack.
+  //
+  // Manually handle iOS invalid lang-country combinations for Chinese.
+  // Locale resolution fails (picks first zh script) when Locales such as
+  // zh_Hant_US are specified because we do not support scriptcodes yet.
+  // This will prevent simplified scripts from being selected when Hanst
+  // is provided and vice-versa. The proper fix is to support scriptcodes
+  // in dart:ui Locale.
+  //
+  // This hack does not work for any non-chinese languages and is meant to
+  // resolve the issue for large languages without a breaking API change.
+  // The full fix is expected to take a non-trivial amount of time.
+  //
+  // This hack will not work if 'zh_HK' or 'zh' locales are not enabled.
+  //
+  // This hack will also make small dialects of Chinese harder to surface
+  // due to it blanket changing non-TW/HK countries into simplified CN.
+  // The trade off is we will not accidentally show traditional where
+  // simplified was requested and vice versa, which is a much larger scale
+  // issue.
+  const auto& scriptBuffer = args->value[2];
+  if (scriptBuffer.IsString()) {
+    std::string scriptString = scriptBuffer.GetString();
+    // Convert unspecified traditional to "HK"
+    if (languageString == "zh" && scriptString == "Hant" &&
+        countryString != "TW" && countryString != "HK") {
+      countryString = "HK";
+    } else if (languageString == "zh" && scriptString == "Hans") {
+      // Convert unspecified Hans to ""
+      countryString = "";
+    } else if (languageString == "zh" && countryString != "TW" &&
+               countryString != "HK") {
+      // Derive missing script code from country for Chinese.
+      // Prevents unspecified or zh_CN from resolving to traditional
+      countryString = "";
+    }
+  }
+
+#endif
+
+  return runtime_controller_->SetLocale(languageString, countryString);
 }
 
 void Engine::HandleSettingsPlatformMessage(blink::PlatformMessage* message) {
