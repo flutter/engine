@@ -256,6 +256,13 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
   return self;
 }
 
+- (void)dealloc {
+  [_name release];
+  [_codec release];
+  [_messenger release];
+  [super dealloc];
+}
+
 - (void)setStreamHandler:(NSObject<FlutterStreamHandler>*)handler {
   if (!handler) {
     [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
