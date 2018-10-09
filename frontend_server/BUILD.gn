@@ -30,6 +30,7 @@ if (is_fuchsia_host || is_fuchsia) {
     main_dart = "bin/starter.dart"
     source_dir = "."
     disable_analysis = true
+    output_name = "frontend_server"
 
     sources = []
 
