@@ -71,7 +71,7 @@ public class FlutterPluginRegistry
 
     public void attach(Activity activity) {
         mActivity = activity;
-        mPlatformViewsController.attach(activity, flutterEngine.getRenderer(), flutterEngine);
+        mPlatformViewsController.attach(activity, flutterEngine.getRenderer(), flutterEngine.getDartExecutor());
     }
 
     public void detach() {
