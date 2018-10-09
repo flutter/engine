@@ -73,7 +73,9 @@ FLUTTER_EXPORT
  *
  * @param entrypoint The name of a top-level function from the same Dart
  *   library that contains the app's main() function.  If this is nil, it will
- *   default to `main()`.
+ *   default to `main()`.  If it is not the app's main() function, that function
+ *   must be decorated with `@pragma(vm:entry-point)` to ensure the method is not
+ *   tree-shaken by the Dart compiler.
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
 - (bool)runWithEntrypoint:(NSString*)entrypoint;
@@ -86,7 +88,9 @@ FLUTTER_EXPORT
  * immediately.
  *
  * @param entrypoint The name of a top-level function from a Dart library.  If nil, this will
- *   default to `main()`.
+ *   default to `main()`.  If it is not the app's main() function, that function
+ *   must be decorated with `@pragma(vm:entry-point)` to ensure the method is not
+ *   tree-shaken by the Dart compiler.
  * @param libraryUri The URI of the Dart library which contains the entrypoint method.  IF nil,
  *   this will default to the same library as the `main()` function in the Dart program.
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
