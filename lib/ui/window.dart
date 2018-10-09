@@ -119,6 +119,7 @@ class WindowPadding {
 class LocaleParseException implements Exception {
   LocaleParseException(this._message);
   String _message;
+  String toString() => 'LocaleParseException: $_message';
 }
 
 /// An identifier used to select a user's language and formatting preferences.
@@ -218,17 +219,18 @@ class Locale {
     if (localeId == 'root')
       return Locale._internal('und');
 
-    List<String> localeSubtags = localeId.split(_re_sep);
+    final List<String> localeSubtags = localeId.split(_reSep);
     String language, script, region;
-    String variants = collection.SplayTreeSet<String>();
+    final collection.SplayTreeSet<String> variants =
+        collection.SplayTreeSet<String>();
     // Using a SplayTreeMap for its automatic key sorting.
-    collection.SplayTreeMap<String, String> extensions =
+    final collection.SplayTreeMap<String, String> extensions =
         collection.SplayTreeMap<String, String>();
 
     final List<String> problems = <String>[];
-    if (_re_language.hasMatch(localeSubtags[0])) {
+    if (_reLanguage.hasMatch(localeSubtags[0])) {
       language = _replaceDeprecatedLanguageSubtag(localeSubtags.removeAt(0));
-    } else if (_re_script.hasMatch(localeSubtags[0])) {
+    } else if (_reScript.hasMatch(localeSubtags[0])) {
       // Identifiers without language subtags aren't valid BCP 47 tags and
       // therefore not intended for general interchange, however they do match
       // the LDML spec.
@@ -236,32 +238,32 @@ class Locale {
     } else {
       problems.add('"${localeSubtags[0]}" is an invalid language subtag');
     }
-    if (localeSubtags.isNotEmpty && _re_script.hasMatch(localeSubtags[0])) {
+    if (localeSubtags.isNotEmpty && _reScript.hasMatch(localeSubtags[0])) {
       script = _capitalize(localeSubtags.removeAt(0));
     }
-    if (localeSubtags.isNotEmpty && _re_region.hasMatch(localeSubtags[0])) {
+    if (localeSubtags.isNotEmpty && _reRegion.hasMatch(localeSubtags[0])) {
       region = localeSubtags.removeAt(0).toUpperCase();
     }
-    while (localeSubtags.isNotEmpty && _re_variant.hasMatch(localeSubtags[0])) {
+    while (localeSubtags.isNotEmpty && _reVariant.hasMatch(localeSubtags[0])) {
       variants.add(localeSubtags.removeAt(0));
     }
 
     // Now we should be into extension territory, localeSubtags[0] should be a singleton.
     if (localeSubtags.isNotEmpty && localeSubtags[0].length > 1) {
-      List<String> mismatched = [];
-      if (variants.length == 0) {
+      final List<String> mismatched = <String>[];
+      if (variants.isEmpty) {
         if (region == null) {
           if (script == null) {
-            mismatched.add("script");
+            mismatched.add('script');
           }
-          mismatched.add("region");
+          mismatched.add('region');
         }
-        mismatched.add("variant");
+        mismatched.add('variant');
       }
       problems.add('unrecognised subtag "${localeSubtags[0]}": is not a '
           '${mismatched.join(", ")}');
     }
-    _ParseExtensions(localeSubtags, extensions, problems);
+    _parseExtensions(localeSubtags, extensions, problems);
 
     if (problems.isNotEmpty)
       throw LocaleParseException('Locale Identifier $localeId is invalid: '
@@ -278,18 +280,18 @@ class Locale {
   //
   // * extensions must be a map with sorted iteration order, SplayTreeMap takes
   //   care of that for us.
-  static void _ParseExtensions(List<String> locale_subtags,
+  static void _parseExtensions(List<String> localeSubtags,
                                collection.SplayTreeMap<String, String> extensions,
                                List<String> problems) {
-    while (locale_subtags.isNotEmpty) {
-      String singleton = locale_subtags.removeAt(0);
+    while (localeSubtags.isNotEmpty) {
+      final String singleton = localeSubtags.removeAt(0);
       if (singleton == 'u') {
         bool empty = true;
         // unicode_locale_extensions: collect "(sep attribute)+" attributes.
-        List<String> attributes = List<String>();
-        while (locale_subtags.isNotEmpty &&
-               _re_value_subtags.hasMatch(locale_subtags[0])) {
-          attributes.add(locale_subtags.removeAt(0));
+        final List<String> attributes = [];
+        while (localeSubtags.isNotEmpty &&
+               _reValueSubtags.hasMatch(localeSubtags[0])) {
+          attributes.add(localeSubtags.removeAt(0));
         }
         if (attributes.isNotEmpty) {
           empty = false;
@@ -297,90 +299,90 @@ class Locale {
         if (!extensions.containsKey(singleton)) {
           extensions[singleton] = attributes.join('-');
         } else {
-          problems.add('duplicate singleton: "${singleton}"');
+          problems.add('duplicate singleton: "$singleton"');
         }
         // unicode_locale_extensions: collect "(sep keyword)*".
-        while (locale_subtags.isNotEmpty &&
-               _re_key.hasMatch(locale_subtags[0])) {
+        while (localeSubtags.isNotEmpty &&
+               _reKey.hasMatch(localeSubtags[0])) {
           empty = false;
-          String key = locale_subtags.removeAt(0);
-          List<String> type_parts = List<String>();
-          while (locale_subtags.isNotEmpty &&
-                 _re_value_subtags.hasMatch(locale_subtags[0])) {
-            type_parts.add(locale_subtags.removeAt(0));
+          final String key = localeSubtags.removeAt(0);
+          final List<String> typeParts = [];
+          while (localeSubtags.isNotEmpty &&
+                 _reValueSubtags.hasMatch(localeSubtags[0])) {
+            typeParts.add(localeSubtags.removeAt(0));
           }
           if (!extensions.containsKey(key)) {
-            extensions[key] = type_parts.join('-');
+            extensions[key] = typeParts.join('-');
           } else {
-            problems.add('duplicate key: ${key}');
+            problems.add('duplicate key: $key');
           }
         }
         if (empty) {
-          problems.add('empty singleton: ${singleton}');
+          problems.add('empty singleton: $singleton');
         }
       } else if (singleton == 't') {
         bool empty = true;
         // transformed_extensions: grab tlang if it exists.
-        List<String> tlang = List<String>();
-        if (locale_subtags.isNotEmpty && _re_language.hasMatch(locale_subtags[0])) {
+        final List<String> tlang = [];
+        if (localeSubtags.isNotEmpty && _reLanguage.hasMatch(localeSubtags[0])) {
           empty = false;
-          tlang.add(locale_subtags.removeAt(0));
-          if (locale_subtags.isNotEmpty && _re_script.hasMatch(locale_subtags[0]))
-            tlang.add(locale_subtags.removeAt(0));
-          if (locale_subtags.isNotEmpty && _re_region.hasMatch(locale_subtags[0]))
-            tlang.add(locale_subtags.removeAt(0));
-          while (locale_subtags.isNotEmpty && _re_variant.hasMatch(locale_subtags[0])) {
-            tlang.add(locale_subtags.removeAt(0));
+          tlang.add(localeSubtags.removeAt(0));
+          if (localeSubtags.isNotEmpty && _reScript.hasMatch(localeSubtags[0]))
+            tlang.add(localeSubtags.removeAt(0));
+          if (localeSubtags.isNotEmpty && _reRegion.hasMatch(localeSubtags[0]))
+            tlang.add(localeSubtags.removeAt(0));
+          while (localeSubtags.isNotEmpty && _reVariant.hasMatch(localeSubtags[0])) {
+            tlang.add(localeSubtags.removeAt(0));
           }
         }
         if (!extensions.containsKey(singleton)) {
           extensions[singleton] = tlang.join('-');
         } else {
-          problems.add('duplicate singleton: "${singleton}"');
+          problems.add('duplicate singleton: "$singleton"');
         }
         // transformed_extensions: collect "(sep tfield)*".
-        while (locale_subtags.isNotEmpty && _re_tkey.hasMatch(locale_subtags[0])) {
-          String tkey = locale_subtags.removeAt(0);
-          List<String> tvalue_parts = List<String>();
-          while (locale_subtags.isNotEmpty && _re_value_subtags.hasMatch(locale_subtags[0])) {
-            tvalue_parts.add(locale_subtags.removeAt(0));
+        while (localeSubtags.isNotEmpty && _reTkey.hasMatch(localeSubtags[0])) {
+          final String tkey = localeSubtags.removeAt(0);
+          final List<String> tvalueParts = [];
+          while (localeSubtags.isNotEmpty && _reValueSubtags.hasMatch(localeSubtags[0])) {
+            tvalueParts.add(localeSubtags.removeAt(0));
           }
-          if (tvalue_parts.isNotEmpty) {
+          if (tvalueParts.isNotEmpty) {
             empty = false;
             if (!extensions.containsKey(tkey)) {
-                extensions[tkey] = tvalue_parts.join('-');
+                extensions[tkey] = tvalueParts.join('-');
             } else {
-              problems.add('duplicate key: ${tkey}');
+              problems.add('duplicate key: $tkey');
             }
           }
         }
         if (empty) {
-          problems.add('empty singleton: ${singleton}');
+          problems.add('empty singleton: $singleton');
         }
       } else if (singleton == 'x') {
         // pu_extensions
-        List<String> values = List<String>();
-        while (locale_subtags.isNotEmpty && _re_all_subtags.hasMatch(locale_subtags[0])) {
-          values.add(locale_subtags.removeAt(0));
+        final List<String> values = [];
+        while (localeSubtags.isNotEmpty && _reAllSubtags.hasMatch(localeSubtags[0])) {
+          values.add(localeSubtags.removeAt(0));
         }
         extensions[singleton] = values.join('-');
-        if (locale_subtags.isNotEmpty) {
-            problems.add('invalid part of private use subtags: "${locale_subtags.join('-')}"');
+        if (localeSubtags.isNotEmpty) {
+            problems.add('invalid part of private use subtags: "${localeSubtags.join('-')}"');
         }
         break;
       } else if (_re_singleton.hasMatch(singleton)) {
         // other_extensions
-        List<String> values = List<String>();
-        while (locale_subtags.isNotEmpty && _re_other_subtags.hasMatch(locale_subtags[0])) {
-          values.add(locale_subtags.removeAt(0));
+        final List<String> values = [];
+        while (localeSubtags.isNotEmpty && _reOtherSubtags.hasMatch(localeSubtags[0])) {
+          values.add(localeSubtags.removeAt(0));
         }
         if (!extensions.containsKey(singleton)) {
           extensions[singleton] = values.join('-');
         } else {
-          problems.add('duplicate singleton: "${singleton}"');
+          problems.add('duplicate singleton: "$singleton"');
         }
       } else {
-        problems.add('invalid subtag, should be singleton: "${singleton}"');
+        problems.add('invalid subtag, should be singleton: "$singleton"');
       }
     }
   }
@@ -542,7 +544,7 @@ class Locale {
   ///
   /// This iterable provides variants normalized to lowercase and in sorted
   /// order, as per the Unicode LDML specification.
-  Iterable<String> get variants => _variants ?? [];
+  Iterable<String> get variants => _variants ?? <String>[];
 
   // The private _variants field must have variants in lowercase and already
   // sorted: constructors must construct it as such.
@@ -563,8 +565,8 @@ class Locale {
   //   must be sorted in alphabetical order, separated by hyphens, and be
   //   lowercase. If the U Extension is present but has no attributes, the 'u'
   //   map entry's value must be an empty string.
-  // * U-Extension keyword keys, matching _re_key, and T-Extension fields in the
-  //   map, whos field separator subtags match _re_tkey, are directly entered
+  // * U-Extension keyword keys, matching _reKey, and T-Extension fields in the
+  //   map, whos field separator subtags match _reTkey, are directly entered
   //   into this map. (These regular expressions don't match the same keys.)
   // * Other singletons are entered directly into the map, with all
   //   values/attributes associated with that singleton as the map entry's
@@ -587,7 +589,7 @@ class Locale {
       out.write('-$v');
     }
     if (_extensions != null && _extensions.isNotEmpty) {
-      out.write(_ExtensionsToString(_extensions));
+      out.write(_extensionsToString(_extensions));
     }
     return out.toString();
   }
@@ -595,67 +597,67 @@ class Locale {
   /// Formats the extension map into a partial Unicode Locale Identifier.
   ///
   /// This covers everything after the unicode_language_id.
-  static String _ExtensionsToString(
+  static String _extensionsToString(
       collection.LinkedHashMap<String, String> extensions) {
-    String u_attr;
-    String t_attr;
-    StringBuffer u_out = StringBuffer();
-    StringBuffer t_out = StringBuffer();
-    StringBuffer result = StringBuffer();
-    StringBuffer result_vwyzx = StringBuffer();
+    String uAttr;
+    String tAttr;
+    final StringBuffer uOut = StringBuffer();
+    final StringBuffer tOut = StringBuffer();
+    final StringBuffer result = StringBuffer();
+    final StringBuffer resultVWYZX = StringBuffer();
 
-    for (MapEntry entry in extensions.entries) {
+    for (MapEntry<String, String> entry in extensions.entries) {
       if (entry.key.length == 1) {
         if (RegExp(r'^[a-s]$').hasMatch(entry.key)) {
           result.write('-${entry.key}');
           if (entry.value.isNotEmpty)
             result.write('-${entry.value}');
         } else if (entry.key == 't') {
-          t_attr = entry.value;
+          tAttr = entry.value;
         } else if (entry.key == 'u') {
-          u_attr = entry.value;
+          uAttr = entry.value;
         } else if (RegExp(r'^[vwyz]$').hasMatch(entry.key)) {
-          result_vwyzx.write('-${entry.key}');
+          resultVWYZX.write('-${entry.key}');
           if (entry.value.isNotEmpty)
-            result_vwyzx.write('-${entry.value}');
+            resultVWYZX.write('-${entry.value}');
         } else if (entry.key != 'x') {
           throw UnimplementedError(
               'Extension not supported/recognised: $entry.');
         }
-      } else if (_re_key.hasMatch(entry.key)) {
+      } else if (_reKey.hasMatch(entry.key)) {
         // unicode_locale_extensions
         if (entry.value == 'true' || entry.value == '') {
-          u_out.write('-${entry.key}');
+          uOut.write('-${entry.key}');
         } else {
-          u_out.write('-${entry.key}-${entry.value}');
+          uOut.write('-${entry.key}-${entry.value}');
         }
-      } else if (_re_tkey.hasMatch(entry.key)) {
+      } else if (_reTkey.hasMatch(entry.key)) {
         // transformed_extensions
-        t_out.write('-${entry.key}');
+        tOut.write('-${entry.key}');
         // TODO: this is not standards compliant. What do we want to do with
         // this case? Drop entry.key like we drop empty t and u singletons?
         // Or simply ensure we don't ever create such an instance?
         if (entry.value.isNotEmpty)
-          t_out.write('-${entry.value}');
+          tOut.write('-${entry.value}');
       } else {
         throw UnimplementedError(
             'Extension not supported/recognised: $entry.');
       }
     }
-    if (t_attr != null || t_out.isNotEmpty) {
+    if (tAttr != null || tOut.isNotEmpty) {
       result.write('-t');
-      if (t_attr != null)
-        result.write('-$t_attr');
-      result.write(t_out.toString());
+      if (tAttr != null)
+        result.write('-$tAttr');
+      result.write(tOut.toString());
     }
-    if (u_attr != null || u_out.isNotEmpty) {
+    if (uAttr != null || uOut.isNotEmpty) {
       result.write('-u');
-      if (u_attr != null && u_attr.isNotEmpty)
-        result.write('-$u_attr');
-      result.write(u_out.toString());
+      if (uAttr != null && uAttr.isNotEmpty)
+        result.write('-$uAttr');
+      result.write(uOut.toString());
     }
-    if (result_vwyzx.isNotEmpty)
-      result.write(result_vwyzx.toString());
+    if (resultVWYZX.isNotEmpty)
+      result.write(resultVWYZX.toString());
     if (extensions.containsKey('x')) {
       result.write('-x');
       if (extensions['x'].isNotEmpty) {
@@ -671,24 +673,24 @@ class Locale {
   static final _re_singleton = RegExp(r'^[a-zA-Z]$');
 
   // (https://www.unicode.org/reports/tr35/#Unicode_language_identifier).
-  static final _re_language = RegExp(r'^[a-zA-Z]{2,3}$|^[a-zA-Z]{5,8}$');
-  static final _re_script = RegExp(r'^[a-zA-Z]{4}$');
-  static final _re_region = RegExp(r'^[a-zA-Z]{2}$|^[0-9]{3}$');
-  static final _re_variant = RegExp(r'^[a-zA-Z0-9]{5,8}$|^[0-9][a-zA-Z0-9]{3}$');
-  static final _re_sep = RegExp(r'[-_]');
+  static final _reLanguage = RegExp(r'^[a-zA-Z]{2,3}$|^[a-zA-Z]{5,8}$');
+  static final _reScript = RegExp(r'^[a-zA-Z]{4}$');
+  static final _reRegion = RegExp(r'^[a-zA-Z]{2}$|^[0-9]{3}$');
+  static final _reVariant = RegExp(r'^[a-zA-Z0-9]{5,8}$|^[0-9][a-zA-Z0-9]{3}$');
+  static final _reSep = RegExp(r'[-_]');
 
   // Covers all subtags possible in Unicode Locale Identifiers, used for
   // pu_extensions.
-  static final _re_all_subtags = RegExp(r'^[a-zA-Z0-9]{1,8}$');
+  static final _reAllSubtags = RegExp(r'^[a-zA-Z0-9]{1,8}$');
   // Covers all subtags within a particular extension, used for other_extensions.
-  static final _re_other_subtags = RegExp(r'^[a-zA-Z0-9]{2,8}$');
+  static final _reOtherSubtags = RegExp(r'^[a-zA-Z0-9]{2,8}$');
   // Covers "attribute" and "type" from unicode_locale_extensions, and "tvalue" in
   // transformed_extensions.
   // (https://www.unicode.org/reports/tr35/#Unicode_locale_identifier).
-  static final _re_value_subtags = RegExp(r'^[a-zA-Z0-9]{3,8}$');
+  static final _reValueSubtags = RegExp(r'^[a-zA-Z0-9]{3,8}$');
 
-  static final _re_key = RegExp('^[a-zA-Z0-9][a-zA-Z]\$');
-  static final _re_tkey = RegExp('^[a-zA-Z][0-9]\$');
+  static final _reKey = RegExp('^[a-zA-Z0-9][a-zA-Z]\$');
+  static final _reTkey = RegExp('^[a-zA-Z][0-9]\$');
 
   @override
   bool operator ==(dynamic other) {
