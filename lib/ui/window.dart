@@ -194,14 +194,14 @@ class Locale {
        assert(language.length >= 2),
        assert(language.length <= 8),
        assert(language.length != 4),
-       assert((script ?? "Xxxx").length == 4),
-       assert((region ?? "XX").length >= 2),
-       assert((region ?? "XX").length <= 3),
+       assert((script ?? 'Xxxx').length == 4),
+       assert((region ?? 'XX').length >= 2),
+       assert((region ?? 'XX').length <= 3),
        _languageCode = language,
        _scriptCode = script,
        _countryCode = region,
-       _variants = collection.LinkedHashSet<String>.from(variants ?? []),
-       _extensions = collection.LinkedHashMap<String, String>.from(extensions ?? {});
+       _variants = collection.LinkedHashSet<String>.from(variants ?? <String>[]),
+       _extensions = collection.LinkedHashMap<String, String>.from(extensions ?? <String, String>{});
 
   /// Parses [Unicode Locale
   /// Identifiers](https://www.unicode.org/reports/tr35/#Identifiers).
@@ -218,35 +218,36 @@ class Locale {
     if (localeId == 'root')
       return Locale._internal('und');
 
-    List<String> locale_subtags = localeId.split(_re_sep);
+    List<String> localeSubtags = localeId.split(_re_sep);
     String language, script, region;
-    var variants = collection.SplayTreeSet<String>();
+    String variants = collection.SplayTreeSet<String>();
     // Using a SplayTreeMap for its automatic key sorting.
-    var extensions = collection.SplayTreeMap<String, String>();
+    collection.SplayTreeMap<String, String> extensions =
+        collection.SplayTreeMap<String, String>();
 
-    List<String> problems = [];
-    if (_re_language.hasMatch(locale_subtags[0])) {
-      language = _replaceDeprecatedLanguageSubtag(locale_subtags.removeAt(0));
-    } else if (_re_script.hasMatch(locale_subtags[0])) {
+    final List<String> problems = <String>[];
+    if (_re_language.hasMatch(localeSubtags[0])) {
+      language = _replaceDeprecatedLanguageSubtag(localeSubtags.removeAt(0));
+    } else if (_re_script.hasMatch(localeSubtags[0])) {
       // Identifiers without language subtags aren't valid BCP 47 tags and
       // therefore not intended for general interchange, however they do match
       // the LDML spec.
       language = 'und';
     } else {
-      problems.add('"${locale_subtags[0]}" is an invalid language subtag');
+      problems.add('"${localeSubtags[0]}" is an invalid language subtag');
     }
-    if (locale_subtags.length > 0 && _re_script.hasMatch(locale_subtags[0])) {
-      script = _capitalize(locale_subtags.removeAt(0));
+    if (localeSubtags.isNotEmpty && _re_script.hasMatch(localeSubtags[0])) {
+      script = _capitalize(localeSubtags.removeAt(0));
     }
-    if (locale_subtags.length > 0 && _re_region.hasMatch(locale_subtags[0])) {
-      region = locale_subtags.removeAt(0).toUpperCase();
+    if (localeSubtags.isNotEmpty && _re_region.hasMatch(localeSubtags[0])) {
+      region = localeSubtags.removeAt(0).toUpperCase();
     }
-    while (locale_subtags.length > 0 && _re_variant.hasMatch(locale_subtags[0])) {
-      variants.add(locale_subtags.removeAt(0));
+    while (localeSubtags.isNotEmpty && _re_variant.hasMatch(localeSubtags[0])) {
+      variants.add(localeSubtags.removeAt(0));
     }
 
-    // Now we should be into extension territory, locale_subtags[0] should be a singleton.
-    if (locale_subtags.length > 0 && locale_subtags[0].length > 1) {
+    // Now we should be into extension territory, localeSubtags[0] should be a singleton.
+    if (localeSubtags.isNotEmpty && localeSubtags[0].length > 1) {
       List<String> mismatched = [];
       if (variants.length == 0) {
         if (region == null) {
@@ -257,12 +258,12 @@ class Locale {
         }
         mismatched.add("variant");
       }
-      problems.add('unrecognised subtag "${locale_subtags[0]}": is not a '
+      problems.add('unrecognised subtag "${localeSubtags[0]}": is not a '
           '${mismatched.join(", ")}');
     }
-    _ParseExtensions(locale_subtags, extensions, problems);
+    _ParseExtensions(localeSubtags, extensions, problems);
 
-    if (problems.length > 0)
+    if (problems.isNotEmpty)
       throw LocaleParseException('Locale Identifier $localeId is invalid: '
                                  '${problems.join("; ")}.');
 
@@ -273,24 +274,24 @@ class Locale {
         extensions: extensions);
   }
 
-  // * All subtags in locale_subtags must already be lowercase.
+  // * All subtags in localeSubtags must already be lowercase.
   //
   // * extensions must be a map with sorted iteration order, SplayTreeMap takes
   //   care of that for us.
   static void _ParseExtensions(List<String> locale_subtags,
                                collection.SplayTreeMap<String, String> extensions,
                                List<String> problems) {
-    while (locale_subtags.length > 0) {
+    while (locale_subtags.isNotEmpty) {
       String singleton = locale_subtags.removeAt(0);
       if (singleton == 'u') {
         bool empty = true;
         // unicode_locale_extensions: collect "(sep attribute)+" attributes.
-        var attributes = List<String>();
-        while (locale_subtags.length > 0 &&
+        List<String> attributes = List<String>();
+        while (locale_subtags.isNotEmpty &&
                _re_value_subtags.hasMatch(locale_subtags[0])) {
           attributes.add(locale_subtags.removeAt(0));
         }
-        if (attributes.length > 0) {
+        if (attributes.isNotEmpty) {
           empty = false;
         }
         if (!extensions.containsKey(singleton)) {
@@ -299,12 +300,12 @@ class Locale {
           problems.add('duplicate singleton: "${singleton}"');
         }
         // unicode_locale_extensions: collect "(sep keyword)*".
-        while (locale_subtags.length > 0 &&
+        while (locale_subtags.isNotEmpty &&
                _re_key.hasMatch(locale_subtags[0])) {
           empty = false;
           String key = locale_subtags.removeAt(0);
-          var type_parts = List<String>();
-          while (locale_subtags.length > 0 &&
+          List<String> type_parts = List<String>();
+          while (locale_subtags.isNotEmpty &&
                  _re_value_subtags.hasMatch(locale_subtags[0])) {
             type_parts.add(locale_subtags.removeAt(0));
           }
@@ -320,15 +321,15 @@ class Locale {
       } else if (singleton == 't') {
         bool empty = true;
         // transformed_extensions: grab tlang if it exists.
-        var tlang = List<String>();
-        if (locale_subtags.length > 0 && _re_language.hasMatch(locale_subtags[0])) {
+        List<String> tlang = List<String>();
+        if (locale_subtags.isNotEmpty && _re_language.hasMatch(locale_subtags[0])) {
           empty = false;
           tlang.add(locale_subtags.removeAt(0));
-          if (locale_subtags.length > 0 && _re_script.hasMatch(locale_subtags[0]))
+          if (locale_subtags.isNotEmpty && _re_script.hasMatch(locale_subtags[0]))
             tlang.add(locale_subtags.removeAt(0));
-          if (locale_subtags.length > 0 && _re_region.hasMatch(locale_subtags[0]))
+          if (locale_subtags.isNotEmpty && _re_region.hasMatch(locale_subtags[0]))
             tlang.add(locale_subtags.removeAt(0));
-          while (locale_subtags.length > 0 && _re_variant.hasMatch(locale_subtags[0])) {
+          while (locale_subtags.isNotEmpty && _re_variant.hasMatch(locale_subtags[0])) {
             tlang.add(locale_subtags.removeAt(0));
           }
         }
@@ -338,13 +339,13 @@ class Locale {
           problems.add('duplicate singleton: "${singleton}"');
         }
         // transformed_extensions: collect "(sep tfield)*".
-        while (locale_subtags.length > 0 && _re_tkey.hasMatch(locale_subtags[0])) {
+        while (locale_subtags.isNotEmpty && _re_tkey.hasMatch(locale_subtags[0])) {
           String tkey = locale_subtags.removeAt(0);
-          var tvalue_parts = List<String>();
-          while (locale_subtags.length > 0 && _re_value_subtags.hasMatch(locale_subtags[0])) {
+          List<String> tvalue_parts = List<String>();
+          while (locale_subtags.isNotEmpty && _re_value_subtags.hasMatch(locale_subtags[0])) {
             tvalue_parts.add(locale_subtags.removeAt(0));
           }
-          if (tvalue_parts.length > 0) {
+          if (tvalue_parts.isNotEmpty) {
             empty = false;
             if (!extensions.containsKey(tkey)) {
                 extensions[tkey] = tvalue_parts.join('-');
@@ -358,19 +359,19 @@ class Locale {
         }
       } else if (singleton == 'x') {
         // pu_extensions
-        var values = List<String>();
-        while (locale_subtags.length > 0 && _re_all_subtags.hasMatch(locale_subtags[0])) {
+        List<String> values = List<String>();
+        while (locale_subtags.isNotEmpty && _re_all_subtags.hasMatch(locale_subtags[0])) {
           values.add(locale_subtags.removeAt(0));
         }
         extensions[singleton] = values.join('-');
-        if (locale_subtags.length > 0) {
+        if (locale_subtags.isNotEmpty) {
             problems.add('invalid part of private use subtags: "${locale_subtags.join('-')}"');
         }
         break;
       } else if (_re_singleton.hasMatch(singleton)) {
         // other_extensions
-        var values = List<String>();
-        while (locale_subtags.length > 0 && _re_other_subtags.hasMatch(locale_subtags[0])) {
+        List<String> values = List<String>();
+        while (locale_subtags.isNotEmpty && _re_other_subtags.hasMatch(locale_subtags[0])) {
           values.add(locale_subtags.removeAt(0));
         }
         if (!extensions.containsKey(singleton)) {
@@ -575,7 +576,7 @@ class Locale {
   /// If the const constructor was used with bad parameters, the result might
   /// not be standards-compliant.
   String toLanguageTag() {
-    var out = StringBuffer(languageCode);
+    StringBuffer out = StringBuffer(languageCode);
     if (scriptCode != null) {
       out.write('-$scriptCode');
     }
@@ -598,16 +599,16 @@ class Locale {
       collection.LinkedHashMap<String, String> extensions) {
     String u_attr;
     String t_attr;
-    var u_out = StringBuffer();
-    var t_out = StringBuffer();
-    var result = StringBuffer();
-    var result_vwyzx = StringBuffer();
+    StringBuffer u_out = StringBuffer();
+    StringBuffer t_out = StringBuffer();
+    StringBuffer result = StringBuffer();
+    StringBuffer result_vwyzx = StringBuffer();
 
     for (MapEntry entry in extensions.entries) {
       if (entry.key.length == 1) {
         if (RegExp(r'^[a-s]$').hasMatch(entry.key)) {
           result.write('-${entry.key}');
-          if (entry.value.length > 0)
+          if (entry.value.isNotEmpty)
             result.write('-${entry.value}');
         } else if (entry.key == 't') {
           t_attr = entry.value;
@@ -615,7 +616,7 @@ class Locale {
           u_attr = entry.value;
         } else if (RegExp(r'^[vwyz]$').hasMatch(entry.key)) {
           result_vwyzx.write('-${entry.key}');
-          if (entry.value.length > 0)
+          if (entry.value.isNotEmpty)
             result_vwyzx.write('-${entry.value}');
         } else if (entry.key != 'x') {
           throw UnimplementedError(
@@ -634,30 +635,30 @@ class Locale {
         // TODO: this is not standards compliant. What do we want to do with
         // this case? Drop entry.key like we drop empty t and u singletons?
         // Or simply ensure we don't ever create such an instance?
-        if (entry.value.length > 0)
+        if (entry.value.isNotEmpty)
           t_out.write('-${entry.value}');
       } else {
         throw UnimplementedError(
             'Extension not supported/recognised: $entry.');
       }
     }
-    if (t_attr != null || t_out.length > 0) {
+    if (t_attr != null || t_out.isNotEmpty) {
       result.write('-t');
       if (t_attr != null)
         result.write('-$t_attr');
       result.write(t_out.toString());
     }
-    if (u_attr != null || u_out.length > 0) {
+    if (u_attr != null || u_out.isNotEmpty) {
       result.write('-u');
-      if (u_attr != null && u_attr.length > 0)
+      if (u_attr != null && u_attr.isNotEmpty)
         result.write('-$u_attr');
       result.write(u_out.toString());
     }
-    if (result_vwyzx.length > 0)
+    if (result_vwyzx.isNotEmpty)
       result.write(result_vwyzx.toString());
     if (extensions.containsKey('x')) {
       result.write('-x');
-      if (extensions['x'].length > 0) {
+      if (extensions['x'].isNotEmpty) {
         result.write('-${extensions["x"]}');
       }
     }
@@ -700,18 +701,18 @@ class Locale {
     // TODO: improve efficiency of this?
     // Comparing Sets and Maps requires reimplementing functionality in
     // package:collection, comparing canonical string is simple.
-    return this.toLanguageTag() == typedOther.toLanguageTag()
+    return toLanguageTag() == typedOther.toLanguageTag()
         // toLanguageTag() cannot represent zero-length string as country-code,
         // but we need to distinguish it for backward compatibility reasons.
-        && this.countryCode == typedOther.countryCode;
+        && countryCode == typedOther.countryCode;
   }
 
   @override
   int get hashCode {
     // toLanguageTag() cannot represent zero-length string as country-code,
     // but we need to distinguish it for backward compatibility reasons.
-    return this.toLanguageTag().hashCode
-        + 373 * this.countryCode.hashCode;
+    return toLanguageTag().hashCode
+        + 373 * countryCode.hashCode;
   }
 
   /// Produces a non-BCP47 Unicode Locale Identifier for this locale.
