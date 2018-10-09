@@ -581,7 +581,7 @@ class Locale {
   /// If the const constructor was used with bad parameters, the result might
   /// not be standards-compliant.
   String toLanguageTag() {
-    StringBuffer out = StringBuffer(languageCode);
+    final StringBuffer out = StringBuffer(languageCode);
     if (scriptCode != null) {
       out.write('-$scriptCode');
     }
