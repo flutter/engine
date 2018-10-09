@@ -118,7 +118,10 @@ class WindowPadding {
 
 class LocaleParseException implements Exception {
   LocaleParseException(this._message);
+
   String _message;
+
+  @override
   String toString() => 'LocaleParseException: $_message';
 }
 
@@ -288,7 +291,7 @@ class Locale {
       if (singleton == 'u') {
         bool empty = true;
         // unicode_locale_extensions: collect "(sep attribute)+" attributes.
-        final List<String> attributes = [];
+        final List<String> attributes = <String>[];
         while (localeSubtags.isNotEmpty &&
                _reValueSubtags.hasMatch(localeSubtags[0])) {
           attributes.add(localeSubtags.removeAt(0));
@@ -306,7 +309,7 @@ class Locale {
                _reKey.hasMatch(localeSubtags[0])) {
           empty = false;
           final String key = localeSubtags.removeAt(0);
-          final List<String> typeParts = [];
+          final List<String> typeParts = <String>[];
           while (localeSubtags.isNotEmpty &&
                  _reValueSubtags.hasMatch(localeSubtags[0])) {
             typeParts.add(localeSubtags.removeAt(0));
@@ -323,7 +326,7 @@ class Locale {
       } else if (singleton == 't') {
         bool empty = true;
         // transformed_extensions: grab tlang if it exists.
-        final List<String> tlang = [];
+        final List<String> tlang = <String>[];
         if (localeSubtags.isNotEmpty && _reLanguage.hasMatch(localeSubtags[0])) {
           empty = false;
           tlang.add(localeSubtags.removeAt(0));
@@ -343,7 +346,7 @@ class Locale {
         // transformed_extensions: collect "(sep tfield)*".
         while (localeSubtags.isNotEmpty && _reTkey.hasMatch(localeSubtags[0])) {
           final String tkey = localeSubtags.removeAt(0);
-          final List<String> tvalueParts = [];
+          final List<String> tvalueParts = <String>[];
           while (localeSubtags.isNotEmpty && _reValueSubtags.hasMatch(localeSubtags[0])) {
             tvalueParts.add(localeSubtags.removeAt(0));
           }
@@ -361,7 +364,7 @@ class Locale {
         }
       } else if (singleton == 'x') {
         // pu_extensions
-        final List<String> values = [];
+        final List<String> values = <String>[];
         while (localeSubtags.isNotEmpty && _reAllSubtags.hasMatch(localeSubtags[0])) {
           values.add(localeSubtags.removeAt(0));
         }
@@ -370,9 +373,9 @@ class Locale {
             problems.add('invalid part of private use subtags: "${localeSubtags.join('-')}"');
         }
         break;
-      } else if (_re_singleton.hasMatch(singleton)) {
+      } else if (_reSingleton.hasMatch(singleton)) {
         // other_extensions
-        final List<String> values = [];
+        final List<String> values = <String>[];
         while (localeSubtags.isNotEmpty && _reOtherSubtags.hasMatch(localeSubtags[0])) {
           values.add(localeSubtags.removeAt(0));
         }
@@ -670,27 +673,27 @@ class Locale {
   // Unicode Language Identifier subtags
   // TODO/WIP: because we lowercase Locale Identifiers before parsing, typical
   // use of these regexps don't actually need to atch capitals too.
-  static final _re_singleton = RegExp(r'^[a-zA-Z]$');
+  static final RegExp _reSingleton = RegExp(r'^[a-zA-Z]$');
 
   // (https://www.unicode.org/reports/tr35/#Unicode_language_identifier).
-  static final _reLanguage = RegExp(r'^[a-zA-Z]{2,3}$|^[a-zA-Z]{5,8}$');
-  static final _reScript = RegExp(r'^[a-zA-Z]{4}$');
-  static final _reRegion = RegExp(r'^[a-zA-Z]{2}$|^[0-9]{3}$');
-  static final _reVariant = RegExp(r'^[a-zA-Z0-9]{5,8}$|^[0-9][a-zA-Z0-9]{3}$');
-  static final _reSep = RegExp(r'[-_]');
+  static final RegExp _reLanguage = RegExp(r'^[a-zA-Z]{2,3}$|^[a-zA-Z]{5,8}$');
+  static final RegExp _reScript = RegExp(r'^[a-zA-Z]{4}$');
+  static final RegExp _reRegion = RegExp(r'^[a-zA-Z]{2}$|^[0-9]{3}$');
+  static final RegExp _reVariant = RegExp(r'^[a-zA-Z0-9]{5,8}$|^[0-9][a-zA-Z0-9]{3}$');
+  static final RegExp _reSep = RegExp(r'[-_]');
 
   // Covers all subtags possible in Unicode Locale Identifiers, used for
   // pu_extensions.
-  static final _reAllSubtags = RegExp(r'^[a-zA-Z0-9]{1,8}$');
+  static final RegExp _reAllSubtags = RegExp(r'^[a-zA-Z0-9]{1,8}$');
   // Covers all subtags within a particular extension, used for other_extensions.
-  static final _reOtherSubtags = RegExp(r'^[a-zA-Z0-9]{2,8}$');
+  static final RegExp _reOtherSubtags = RegExp(r'^[a-zA-Z0-9]{2,8}$');
   // Covers "attribute" and "type" from unicode_locale_extensions, and "tvalue" in
   // transformed_extensions.
   // (https://www.unicode.org/reports/tr35/#Unicode_locale_identifier).
-  static final _reValueSubtags = RegExp(r'^[a-zA-Z0-9]{3,8}$');
+  static final RegExp _reValueSubtags = RegExp(r'^[a-zA-Z0-9]{3,8}$');
 
-  static final _reKey = RegExp('^[a-zA-Z0-9][a-zA-Z]\$');
-  static final _reTkey = RegExp('^[a-zA-Z][0-9]\$');
+  static final RegExp _reKey = RegExp('^[a-zA-Z0-9][a-zA-Z]\$');
+  static final RegExp _reTkey = RegExp('^[a-zA-Z][0-9]\$');
 
   @override
   bool operator ==(dynamic other) {
