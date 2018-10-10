@@ -3616,6 +3616,16 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
 ///
 /// Multiple shadows are stacked together in a [TextStyle].
 class Shadow {
+  /// Construct a shadow.
+  /// 
+  /// The default shadow is a black shadow with zero offset and zero blur.
+  /// Default shadows should be completely covered by the casting element,
+  /// and not be visble.
+  /// 
+  /// Transparency should be adjusted through the [color] alpha.
+  /// 
+  /// Shadow order matters due to compositing multiple translucent objects not
+  /// being commutative.
   const Shadow({
     this.color = const Color(_kColorDefault),
     this.offset = Offset.zero,
@@ -3625,16 +3635,24 @@ class Shadow {
        assert(blurRadius >= 0.0, 'Text shadow blur radius should be non-negative.');
 
   static const int _kColorDefault = 0xFF000000;
-    // Constants for shadow encoding.
+  // Constants for shadow encoding.
   static const int _kBytesPerShadow = 16;
   static const int _kColorOffset = 0 << 2;
   static const int _kXOffset = 1 << 2;
   static const int _kYOffset = 2 << 2;
   static const int _kBlurOffset = 3 << 2;
 
+  /// Color that the shadow will be drawn with.
+  /// 
+  /// The shadows are shapes composited directly over the base canvas, and do not
+  /// represent optical occlusion.
   final Color color;
 
   /// The displacement of the shadow from the casting element.
+  /// 
+  /// Positive x/y offsets will shift the shadow to the right and down, while
+  /// negative offsets shift the shadow to the left and up. The offsets are
+  /// relative to the position of the element that is casting it.
   final Offset offset;
 
   /// The standard deviation of the Gaussian to convolve with the shadow's shape.
@@ -3660,14 +3678,18 @@ class Shadow {
   /// The [offset] is not represented in the [Paint] object.
   /// To honor this as well, the shape should be translated by [offset] before
   /// being filled using this [Paint].
-  Paint toPaint({bool debugDisableShadows = false}) {
-    final Paint result = Paint()
+  /// 
+  /// This class does not provide a way to disable shadows to avoid inconsistencies
+  /// in shadow blur rendering, primarily as a method of reducing test flakiness.
+  /// [toPaint] should be overriden in subclasses to provide this functionality.
+  Paint toPaint() {
+    return Paint()
       ..color = color
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, blurSigma);
-    return result;
   }
 
-  /// Returns a new box shadow with its offset and blurRadius scaled by the given factor.
+  /// Returns a new shadow with its [offset] and [blurRadius] scaled by the given
+  /// factor.
   Shadow scale(double factor) {
     return Shadow(
       color: color,
@@ -3728,20 +3750,23 @@ class Shadow {
       return false;
     final Shadow typedOther = other;
     return color == typedOther.color &&
-      offset == typedOther.offset &&
-      blurRadius == typedOther.blurRadius;
+           offset == typedOther.offset &&
+           blurRadius == typedOther.blurRadius;
   }
 
-  /// Determines if lists [a] and [b] are equivalent. Handles all cases of null/non-null
-  /// values of a and b.
-  static bool shadowsListEquals(List<Shadow> a, List<Shadow> b) {
+  @override
+  int get hashCode => hashValues(color, offset, blurRadius);
+
+  /// Determines if lists [a] and [b] are deep equivalent.
+  /// 
+  /// Returns true if the lists are both null, or if they are both non-null, have
+  /// the same length, and contain the same Shadows in the same order. Returns
+  /// false otherwise.
+  static bool _shadowsListEquals(List<Shadow> a, List<Shadow> b) {
     // Compare _shadows
-    if (a == null && b == null)
-      return true;
-    if (a != null && b == null ||
-      a == null && b != null)
-      return false;
-    if (a.length != b.length)
+    if (a == null)
+      return b == null;
+    if (b == null || a.length != b.length)
       return false;
     for (int index = 0; index < a.length; ++index)
       if (a[index] != b[index])
@@ -3752,7 +3777,7 @@ class Shadow {
   // Serialize [shadows] into ByteData. The format is a single uint_32_t at
   // the beginning indicating the number of shadows, followed by _kBytesPerShadow
   // bytes for each shadow.
-  static ByteData encodeShadows(List<Shadow> shadows) {
+  static ByteData _encodeShadows(List<Shadow> shadows) {
     if (shadows == null)
       return ByteData(0);
 
@@ -3781,9 +3806,6 @@ class Shadow {
 
     return shadowsData;
   }
-
-  @override
-  int get hashCode => hashValues(color, offset, blurRadius);
 
   @override
   String toString() => 'TextShadow($color, $offset, $blurRadius)';
