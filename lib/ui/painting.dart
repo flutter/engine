@@ -1746,6 +1746,7 @@ enum PathOperation {
 class EngineLayer extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
+  @pragma('vm:entry-point')
   EngineLayer._();
 }
 
