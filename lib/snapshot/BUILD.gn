@@ -196,7 +196,6 @@ compile_platform("strong_platform") {
 
   args = [
     "--target=flutter",
-    "--strong",
     "dart:core",
   ]
 }
