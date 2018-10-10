@@ -894,8 +894,17 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
   NSLocale* currentLocale = [NSLocale currentLocale];
   NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
   NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
-  if (languageCode && countryCode)
-    [_localizationChannel.get() invokeMethod:@"setLocale" arguments:@[ languageCode, countryCode ]];
+  NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
+  if (languageCode && countryCode) {
+    // Script code is not present when a language only has one script.
+    if (scriptCode) {
+      [_localizationChannel.get() invokeMethod:@"setLocale"
+                                     arguments:@[ languageCode, countryCode, scriptCode ]];
+    } else {
+      [_localizationChannel.get() invokeMethod:@"setLocale"
+                                     arguments:@[ languageCode, countryCode, @"" ]];
+    }
+  }
 }
 
 #pragma mark - Set user settings
