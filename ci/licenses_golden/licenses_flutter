@@ -496,12 +496,6 @@ FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterFragment.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterShellArgs.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PlatformViewFactory.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PlatformViewRegistry.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PlatformViewRegistryImpl.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/PlatformViewsController.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/SingleViewPresentation.java
-FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/legacy/VirtualDisplayController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewFactory.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewRegistry.java
