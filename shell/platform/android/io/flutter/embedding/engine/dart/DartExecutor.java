@@ -176,6 +176,26 @@ public class DartExecutor implements BinaryMessenger {
    * to find that entrypoint and other assets required for Dart execution.
    */
   public static class DartEntrypoint {
+    /**
+     * Standard Android AssetManager, provided from some {@code Context} or {@code Resources}.
+     */
+    public final AssetManager androidAssetManager;
+
+    /**
+     * The first place that Dart will look for a given function or asset.
+     */
+    public final String pathToPrimaryBundle;
+
+    /**
+     * A secondary fallback location that Dart will look for a given function or asset.
+     */
+    public final String pathToFallbackBundle;
+
+    /**
+     * The name of a Dart function to execute.
+     */
+    public final String dartEntrypointFunctionName;
+
     public DartEntrypoint(
         @NonNull AssetManager androidAssetManager,
         @NonNull String pathToBundle,
@@ -200,7 +220,13 @@ public class DartExecutor implements BinaryMessenger {
       this.pathToFallbackBundle = pathToFallbackBundle;
       this.dartEntrypointFunctionName = dartEntrypointFunctionName;
     }
+  }
 
+  /**
+   * Configuration options that specify which Dart callback function is executed and where
+   * to find that callback and other assets required for Dart execution.
+   */
+  public static class DartCallback {
     /**
      * Standard Android AssetManager, provided from some {@code Context} or {@code Resources}.
      */
@@ -217,16 +243,10 @@ public class DartExecutor implements BinaryMessenger {
     public final String pathToFallbackBundle;
 
     /**
-     * The name of a Dart function to execute.
+     * A Dart callback that was previously registered with the Dart VM.
      */
-    public final String dartEntrypointFunctionName;
-  }
+    public final FlutterCallbackInformation callbackHandle;
 
-  /**
-   * Configuration options that specify which Dart callback function is executed and where
-   * to find that callback and other assets required for Dart execution.
-   */
-  public static class DartCallback {
     public DartCallback(
         @NonNull AssetManager androidAssetManager,
         @NonNull String pathToPrimaryBundle,
@@ -251,25 +271,5 @@ public class DartExecutor implements BinaryMessenger {
       this.pathToFallbackBundle = pathToFallbackBundle;
       this.callbackHandle = callbackHandle;
     }
-
-    /**
-     * Standard Android AssetManager, provided from some {@code Context} or {@code Resources}.
-     */
-    public final AssetManager androidAssetManager;
-
-    /**
-     * The first place that Dart will look for a given function or asset.
-     */
-    public final String pathToPrimaryBundle;
-
-    /**
-     * A secondary fallback location that Dart will look for a given function or asset.
-     */
-    public final String pathToFallbackBundle;
-
-    /**
-     * A Dart callback that was previously registered with the Dart VM.
-     */
-    public final FlutterCallbackInformation callbackHandle;
   }
 }

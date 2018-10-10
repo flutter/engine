@@ -102,8 +102,11 @@ public class FlutterFragment extends Fragment {
    * Factory method that creates a new {@link FlutterFragment} with the given configuration.
    *
    * @param isSplashScreenDesired should a splash screen be shown until the 1st Flutter frame is rendered?
-   * @param initialRoute the first route that a Flutter app will render in this {@link FlutterFragment}, defaults to "/"
-   * @param appBundlePath the path to the app bundle which contains the Dart app to execute
+   *                              Defaults to false.
+   * @param initialRoute the first route that a Flutter app will render in this {@link FlutterFragment},
+   *                     defaults to "/"
+   * @param appBundlePath the path to the app bundle which contains the Dart app to execute, defaults
+   *                      to {@link FlutterMain#findAppBundlePath(Context)}
    * @param dartEntrypoint the name of the initial Dart method to invoke, defaults to "main"
    * @param flutterShellArgs any special configuration arguments for the Flutter engine
    *
@@ -261,7 +264,7 @@ public class FlutterFragment extends Fragment {
 
   /**
    * Creates a {@link PlatformPlugin} that receives requests from the app running in the
-   * {@link FlutterEngine} and carries out the necessary Android behavior.
+   * {@link FlutterEngine} and carries out the corresponding Android platform behavior.
    *
    * The created plugin is connected to the {@link FlutterEngine} via its
    * {@link io.flutter.embedding.engine.systemchannels.PlatformChannel}.
@@ -327,10 +330,10 @@ public class FlutterFragment extends Fragment {
   /**
    * Hook for subclasses to customize aspects of the {@code FlutterView} that are not creation
    * dependent, e.g., {@code FlutterView}'s initial route.
+   *
+   * By default, no customization is done.
    */
-  protected void onFlutterViewCreated(@SuppressWarnings("unused") @NonNull FlutterView flutterView) {
-    // no-op
-  }
+  protected void onFlutterViewCreated(@SuppressWarnings("unused") @NonNull FlutterView flutterView) {}
 
   /**
    * Creates a {@link View} containing the same {@link Drawable} as the one set as the
@@ -347,6 +350,10 @@ public class FlutterFragment extends Fragment {
   @SuppressLint("NewApi")
   @Nullable
   protected View createLaunchView() {
+    if (flutterView == null) {
+      throw new IllegalStateException("flutterView must be created before invoking createLaunchView() in FlutterFragment");
+    }
+
     if (!isSplashScreenDesired()) {
       return null;
     }

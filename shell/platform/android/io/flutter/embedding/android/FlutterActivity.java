@@ -7,6 +7,7 @@ package io.flutter.embedding.android;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.support.annotation.ColorInt;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.content.Intent;
@@ -36,9 +37,9 @@ import io.flutter.view.FlutterMain;
  *
  * By default, {@link FlutterActivity} configures itself to do the following:
  *  - no splash screen
- *  - asks {@link FlutterMain#findAppBundlePath(Context)} for the path to the Dart app bundle
- *  - uses a default Dart entrypoint of "main"
- *  - uses a default initial route of "/" within the Flutter app
+ *  - ask {@link FlutterMain#findAppBundlePath(Context)} for the path to the Dart app bundle
+ *  - use a default Dart entrypoint of "main"
+ *  - use a default initial route of "/" within the Flutter app
  *
  * The display of a splash screen, app bundle path, Dart entrypoint, and initial route can each be
  * controlled by overriding their respective methods in a subclass:
@@ -59,15 +60,22 @@ import io.flutter.view.FlutterMain;
  * @see FlutterFragment, which presents a Flutter app within a {@code Fragment}
  * @see FlutterView, which renders the UI for a {@link FlutterEngine}
  */
+// TODO(mattcarroll): explain why each forwarded call is relevant (first requires resolution of PluginRegistry API).
 @SuppressLint("Registered")
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
 public class FlutterActivity extends FragmentActivity {
   private static final String TAG = "FlutterActivity";
 
   // Meta-data arguments
-  // TODO: where did this package path come from? is this what it should be?
+  // TODO(mattcarroll): consider changing this package name to "io.flutter" to be more accurate.
+  //                    Doing so will have some impact on manifest specification, so if this will
+  //                    break production apps then we should just keep this one package and remove
+  //                    this to-do.
   private static final String SPLASH_SCREEN_META_DATA_KEY = "io.flutter.app.android.SplashScreenUntilFirstFrame";
-  // TODO: where did this package path come from? is this what it should be?
+  // TODO(mattcarroll): consider changing this package name to "io.flutter" to be more accurate.
+  //                    Doing so will have some impact on manifest specification, so if this will
+  //                    break production apps then we should just keep this one package and remove
+  //                    this to-do.
   private static final String INITIAL_ROUTE_META_DATA_KEY = "io.flutter.app.android.InitialRoute";
 
   // Intent extra arguments
@@ -79,6 +87,8 @@ public class FlutterActivity extends FragmentActivity {
   private static final String TAG_FLUTTER_FRAGMENT = "flutter_fragment";
   private static final int FRAGMENT_CONTAINER_ID = 609893468; // random number
   private FlutterFragment flutterFragment;
+
+  private static final @ColorInt int STATUS_BAR_COLOR = 0x40000000;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -100,12 +110,14 @@ public class FlutterActivity extends FragmentActivity {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       Window window = getWindow();
       window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-      window.setStatusBarColor(0x40000000);
+      window.setStatusBarColor(STATUS_BAR_COLOR);
       window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
     }
   }
 
   /**
+   * Ensure that a {@code FlutterFragment} is attached to this {@code FlutterActivity}.
+   *
    * If no {@code FlutterFragment} exists in this {@code FlutterActivity}, then a {@code FlutterFragment}
    * is created and added. If a {@code FlutterFragment} does exist in this {@code FlutterActivity}, then
    * a reference to that {@code FlutterFragment} is retained in {@code #flutterFragment}.
@@ -113,7 +125,6 @@ public class FlutterActivity extends FragmentActivity {
   private void ensureFlutterFragmentCreated() {
     FragmentManager fragmentManager = getSupportFragmentManager();
     flutterFragment = (FlutterFragment) fragmentManager.findFragmentByTag(TAG_FLUTTER_FRAGMENT);
-
     if (flutterFragment == null) {
       // No FlutterFragment exists yet. This must be the initial Activity creation. We will create
       // and add a new FlutterFragment to this Activity.
@@ -143,8 +154,7 @@ public class FlutterActivity extends FragmentActivity {
   }
 
   /**
-   * Factory method to create the instance of the {@link FlutterFragment} that this
-   * {@link FlutterActivity} displays.
+   * Creates the instance of the {@link FlutterFragment} that this {@link FlutterActivity} displays.
    *
    * Subclasses may override this method to return a specialization of {@link FlutterFragment}.
    *
@@ -178,7 +188,8 @@ public class FlutterActivity extends FragmentActivity {
     flutterFragment.onBackPressed();
   }
 
-  // TODO(mattcarroll): there should be an @Override here but the build system is saying it's wrong
+  // TODO(mattcarroll): there should be an @Override here but the build system is saying it's wrong.
+  //                    This is because the buildroot Android SDK version is out of date.
   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     flutterFragment.onRequestPermissionsResult(requestCode, permissions, grantResults);
   }
@@ -233,7 +244,7 @@ public class FlutterActivity extends FragmentActivity {
   }
 
   /**
-   * Should the {@code Activity}'s {@code windowBackground} be used as a splash screen
+   * Returns true if the {@code Activity}'s {@code windowBackground} should be used as a splash screen
    * until the first frame of Flutter is rendered?
    *
    * This preference can be controlled with 2 methods:
@@ -249,9 +260,8 @@ public class FlutterActivity extends FragmentActivity {
    *
    * Subclasses may override this method to directly control whether or not a splash screen is
    * displayed.
-   *
-   * TODO(mattcarroll): move all splash behavior to FlutterView
    */
+  // TODO(mattcarroll): move all splash behavior to FlutterView
   protected boolean isSplashScreenDesired() {
     if (getIntent().hasExtra(EXTRA_SHOW_SPLASH_SCREEN)) {
       return getIntent().getBooleanExtra(EXTRA_SHOW_SPLASH_SCREEN, false);

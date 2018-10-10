@@ -120,7 +120,6 @@ java_library("flutter_shell_java") {
     "io/flutter/embedding/engine/systemchannels/SystemChannels.java",
     "io/flutter/embedding/engine/systemchannels/TextInputChannel.java",
     "io/flutter/embedding/legacy/AccessibilityBridge.java",
-    "io/flutter/embedding/legacy/FlutterPluginRegistry.java",
     "io/flutter/embedding/legacy/InputConnectionAdaptor.java",
     "io/flutter/embedding/legacy/PluginRegistry.java",
     "io/flutter/embedding/legacy/TextInputPlugin.java",

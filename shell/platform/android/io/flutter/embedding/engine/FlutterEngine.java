@@ -51,7 +51,7 @@ public class FlutterEngine {
     this.renderer = new FlutterRenderer(flutterJNI, nativeObjectReference);
 
 //    this.pluginRegistry = new FlutterPluginRegistry(this, dartExecutor, context);
-    this.pluginRegistry = new FlutterPluginRegistry(null, this, context);
+    this.pluginRegistry = new FlutterPluginRegistry(this, context);
   }
 
   private void attachToJni() {
