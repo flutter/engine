@@ -5,6 +5,7 @@
 #include "flutter/shell/common/engine.h"
 
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "flutter/common/settings.h"
@@ -19,7 +20,8 @@
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
-#include "third_party/rapidjson/rapidjson/document.h"
+#include "rapidjson/document.h"
+#include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
@@ -194,7 +196,8 @@ void Engine::BeginFrame(fml::TimePoint frame_time) {
 }
 
 void Engine::NotifyIdle(int64_t deadline) {
-  TRACE_EVENT0("flutter", "Engine::NotifyIdle");
+  TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
+               std::to_string(deadline - Dart_TimelineGetMicros()).c_str());
   runtime_controller_->NotifyIdle(deadline);
 }
 
@@ -324,12 +327,15 @@ bool Engine::HandleLocalizationPlatformMessage(
 
   const auto& language = args->value[0];
   const auto& country = args->value[1];
+  const auto& script = args->value[2];
+  const auto& variant = args->value[3];
 
   if (!language.IsString() || !country.IsString())
     return false;
 
   return runtime_controller_->SetLocale(language.GetString(),
-                                        country.GetString());
+                                        country.GetString(), script.GetString(),
+                                        variant.GetString());
 }
 
 void Engine::HandleSettingsPlatformMessage(blink::PlatformMessage* message) {
