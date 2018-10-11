@@ -189,7 +189,8 @@ SceneUpdateContext::ExecutePaintTasks(CompositorContext::ScopedFrame& frame) {
     SkCanvas* canvas = task.surface->GetSkiaSurface()->getCanvas();
     Layer::PaintContext context = {*canvas, frame.context().frame_time(),
                                    frame.context().engine_time(),
-                                   frame.context().texture_registry(), false};
+                                   frame.context().texture_registry(),
+                                   &frame.context().raster_cache(), false};
     canvas->restoreToCount(1);
     canvas->save();
     canvas->clear(task.background_color);

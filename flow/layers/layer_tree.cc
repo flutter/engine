@@ -101,7 +101,8 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
       SkRect::MakeEmpty(),     // SkRect child_paint_bounds
       unused_stopwatch,        // frame time (dont care)
       unused_stopwatch,        // engine time (dont care)
-      unused_texture_registry  // texture registry (not supported)
+      unused_texture_registry, // texture registry (not supported)
+      false,                   // checkerboard_offscreen_layers
   };
 
   Layer::PaintContext paint_context = {
