@@ -370,6 +370,7 @@
         _splashScreenView.reset();
         if (_flutterViewRenderedCallback != nil) {
           _flutterViewRenderedCallback.get()();
+          _flutterViewRenderedCallback.reset();
         }
       }];
 }

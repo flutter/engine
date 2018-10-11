@@ -26,6 +26,7 @@ FLUTTER_EXPORT
 
 /**
  Registers a callback that will be invoked when the Flutter view has been rendered.
+ The callback will be fired only once.
 
  Replaces an existing callback. Use a `nil` callback to unregister the existing one.
  */
