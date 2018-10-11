@@ -59,7 +59,7 @@ using PictureRasterCacheKey = RasterCacheKey<uint32_t>;
 
 class Layer;
 
-using LayerRasterCacheKey = RasterCacheKey<std::shared_ptr<Layer>>;
+using LayerRasterCacheKey = RasterCacheKey<Layer*>;
 
 }  // namespace flow
 

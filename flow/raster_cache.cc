@@ -146,7 +146,7 @@ static inline size_t ClampSize(size_t value, size_t min, size_t max) {
 }
 
 void RasterCache::Prepare(PrerollContext* context,
-                          std::shared_ptr<Layer> layer,
+                          Layer* layer,
                           const SkMatrix& ctm) {
   LayerRasterCacheKey cache_key(layer, ctm);
   Entry& entry = layer_cache_[cache_key];
@@ -213,8 +213,7 @@ RasterCacheResult RasterCache::Get(const SkPicture& picture,
   return it == picture_cache_.end() ? RasterCacheResult() : it->second.image;
 }
 
-RasterCacheResult RasterCache::Get(std::shared_ptr<Layer> layer,
-                                   const SkMatrix& ctm) const {
+RasterCacheResult RasterCache::Get(Layer* layer, const SkMatrix& ctm) const {
   LayerRasterCacheKey cache_key(layer, ctm);
   auto it = layer_cache_.find(cache_key);
   return it == layer_cache_.end() ? RasterCacheResult() : it->second.image;

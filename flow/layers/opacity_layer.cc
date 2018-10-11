@@ -13,7 +13,7 @@ OpacityLayer::~OpacityLayer() = default;
 void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer::Preroll(context, matrix);
   if (context->raster_cache && layers().size() == 1) {
-    std::shared_ptr<Layer> child = layers()[0];
+    Layer* child = layers()[0].get();
     SkMatrix ctm = matrix;
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     ctm = RasterCache::GetIntegralTransCTM(ctm);
@@ -38,7 +38,8 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
   if (layers().size() == 1 && context.raster_cache) {
     const SkMatrix& ctm = context.canvas.getTotalMatrix();
-    RasterCacheResult child_cache = context.raster_cache->Get(layers()[0], ctm);
+    RasterCacheResult child_cache =
+        context.raster_cache->Get(layers()[0].get(), ctm);
     if (child_cache.is_valid()) {
       child_cache.draw(context.canvas, &paint);
       return;

@@ -71,13 +71,10 @@ class RasterCache {
                bool is_complex,
                bool will_change);
 
-  void Prepare(PrerollContext* context,
-               std::shared_ptr<Layer> layer,
-               const SkMatrix& ctm);
+  void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
 
   RasterCacheResult Get(const SkPicture& picture, const SkMatrix& ctm) const;
-  RasterCacheResult Get(std::shared_ptr<Layer> layer,
-                        const SkMatrix& ctm) const;
+  RasterCacheResult Get(Layer* layer, const SkMatrix& ctm) const;
 
   void SweepAfterFrame();
 
