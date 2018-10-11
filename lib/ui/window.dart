@@ -177,25 +177,26 @@ class Locale {
        this._variants = null,
        this._extensions = null;
 
-  /// Creates a new Locale object with the specified parts.
-  ///
-  /// This is for internal use only. All fields must already be normalized, must
-  /// already be canonicalized. This method does not modify parameters in any
-  /// way or do any syntax checking.
-  ///
-  /// * language, script and region must be in canonical form.
-  /// * Iterating over variants must provide variants in alphabetical order. We
-  ///   force this by taking a SplayTreeSet as parameter input, which
-  ///   automatically sorts its items. We then convert to a LinkedHashSet for
-  ///   faster access and iteration.
-  /// * The extensions map must contain only valid key/value pairs. "u" and "t"
-  ///   keys must be present, with an empty string as value, if there are any
-  ///   subtags for those singletons.
+  // Creates a new Locale object with the specified parts.
+  //
+  // This is for internal use only. All fields must already be normalized, must
+  // already be canonicalized. This method does not modify parameters in any
+  // way or do any syntax checking.
+  //
+  // * language, script and region must be in normalized form.
+  // * variants must already be sorted, with each subtag in normalized form.
+  // * Iterating over variants must provide variants in alphabetical order. We
+  //   force this by taking a SplayTreeSet as parameter input, which
+  //   automatically sorts its items. We then convert to a LinkedHashSet for
+  //   faster access and iteration.
+  // * The extensions map must contain only valid key/value pairs. "u" and "t"
+  //   keys must be present, with an empty string as value, if there are any
+  //   subtags for those singletons.
   Locale._internal(
     String language, {
     String script,
     String region,
-    collection.SplayTreeSet<String> variants,
+    List<String> variants,
     collection.SplayTreeMap<String, String> extensions,
   }) : assert(language != null),
        assert(language.length >= 2 && language.length <= 8),
@@ -207,6 +208,29 @@ class Locale {
        _countryCode = region,
        _variants = List<String>.unmodifiable(variants ?? const <String>[]),
        _extensions = collection.LinkedHashMap<String, String>.from(extensions ?? const <String, String>{});
+
+  // TODO: unit-test this, pick the right name, make it public, update this
+  // documentation.
+  //
+  // TODO: might we prefer constructing with a single string as "variants"
+  // rather than a list of strings?
+  //
+  // TODO: this constructor modifies the list passed to variants.Is this the
+  // right design? "We mutate what you give us!" feels bad.
+  //
+  // Extensions are not yet supported by this constructor, it would require
+  // first finalizing the design of the extensions map we wish to expose.
+  factory Locale._fromComponents({
+    String language,
+    String script,
+    String region,
+    List<String> variants,
+  }) {
+    if (variants != null) {
+      variants.sort();
+    }
+    return Locale._internal(language, script: script, region: region, variants: variants);
+  }
 
   /// Parses [Unicode CLDR Locale
   /// Identifiers](https://www.unicode.org/reports/tr35/#Identifiers).
@@ -224,8 +248,7 @@ class Locale {
 
     final List<String> localeSubtags = localeId.split(_reSep);
     String language, script, region;
-    final collection.SplayTreeSet<String> variants =
-        collection.SplayTreeSet<String>();
+    final List<String> variants = <String>[];
     // Using a SplayTreeMap for its automatic key sorting.
     final collection.SplayTreeMap<String, String> extensions =
         collection.SplayTreeMap<String, String>();
@@ -274,6 +297,7 @@ class Locale {
                                  '${problems.join("; ")}.');
     }
 
+    variants.sort();
     return Locale._internal(
         language,
         script: script,
