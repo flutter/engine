@@ -1731,4 +1731,165 @@ TEST_F(ParagraphTest, UnderlineShiftParagraph) {
   }
 }
 
+TEST_F(ParagraphTest, SimpleShadow) {
+  const char* text = "Hello World Text Dialog";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
+  text_style.color = SK_ColorBLACK;
+  text_style.text_shadows.emplace_back(SK_ColorBLACK, SkPoint::Make(2.0, 2.0),
+                                       1.0);
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth());
+  paragraph->Paint(GetCanvas(), 10.0, 15.0);
+
+  ASSERT_EQ(paragraph->text_.size(), std::string{text}.length());
+  for (size_t i = 0; i < u16_text.length(); i++) {
+    ASSERT_EQ(paragraph->text_[i], u16_text[i]);
+  }
+  ASSERT_EQ(paragraph->runs_.runs_.size(), 1ull);
+  ASSERT_EQ(paragraph->runs_.styles_.size(), 2ull);
+  ASSERT_TRUE(paragraph->runs_.styles_[1].equals(text_style));
+  ASSERT_EQ(paragraph->records_[0].style().color, text_style.color);
+
+  ASSERT_EQ(paragraph->records_[0].style().text_shadows.size(), 1ull);
+  ASSERT_EQ(paragraph->records_[0].style().text_shadows[0],
+            text_style.text_shadows[0]);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, ComplexShadow) {
+  const char* text = "Text Chunk ";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_family = "Roboto";
+  text_style.color = SK_ColorBLACK;
+  text_style.text_shadows.emplace_back(SK_ColorBLACK, SkPoint::Make(2.0, 2.0),
+                                       1.0);
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  text_style.text_shadows.emplace_back(SK_ColorRED, SkPoint::Make(2.0, 2.0),
+                                       5.0);
+  text_style.text_shadows.emplace_back(SK_ColorGREEN, SkPoint::Make(10.0, -5.0),
+                                       3.0);
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+  builder.AddText(u16_text);
+
+  text_style.text_shadows.emplace_back(SK_ColorGREEN, SkPoint::Make(0.0, -1.0),
+                                       0.0);
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  builder.Pop();
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth());
+  paragraph->Paint(GetCanvas(), 10.0, 15.0);
+
+  ASSERT_EQ(paragraph->text_.size(), std::string{text}.length() * 5);
+  for (size_t i = 0; i < u16_text.length(); i++) {
+    ASSERT_EQ(paragraph->text_[i], u16_text[i]);
+  }
+
+  ASSERT_EQ(paragraph->records_[0].style().text_shadows.size(), 1ull);
+  ASSERT_EQ(paragraph->records_[1].style().text_shadows.size(), 3ull);
+  ASSERT_EQ(paragraph->records_[2].style().text_shadows.size(), 1ull);
+  ASSERT_EQ(paragraph->records_[3].style().text_shadows.size(), 4ull);
+  ASSERT_EQ(paragraph->records_[4].style().text_shadows.size(), 1ull);
+  for (size_t i = 0; i < 1; ++i)
+    ASSERT_EQ(paragraph->records_[0].style().text_shadows[i],
+              text_style.text_shadows[i]);
+  for (size_t i = 0; i < 3; ++i)
+    ASSERT_EQ(paragraph->records_[1].style().text_shadows[i],
+              text_style.text_shadows[i]);
+  for (size_t i = 0; i < 1; ++i)
+    ASSERT_EQ(paragraph->records_[2].style().text_shadows[i],
+              text_style.text_shadows[i]);
+  for (size_t i = 0; i < 4; ++i)
+    ASSERT_EQ(paragraph->records_[3].style().text_shadows[i],
+              text_style.text_shadows[i]);
+  for (size_t i = 0; i < 1; ++i)
+    ASSERT_EQ(paragraph->records_[4].style().text_shadows[i],
+              text_style.text_shadows[i]);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, BaselineParagraph) {
+  const char* text =
+      "左線読設Byg後碁給能上目秘使約。満毎冠行来昼本可必図将発確年。今属場育"
+      "図情闘陰野高備込制詩西校客。審対江置講今固残必託地集済決維駆年策。立得";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 14;
+  paragraph_style.text_align = TextAlign::justify;
+  paragraph_style.line_height = 1.5;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.color = SK_ColorBLACK;
+  text_style.font_size = 55;
+  text_style.letter_spacing = 2;
+  text_style.font_family = "Source Han Serif CN";
+  text_style.decoration_style = txt::TextDecorationStyle::kSolid;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth() - 100);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+  paint.setColor(SK_ColorRED);
+  GetCanvas()->drawLine(0, paragraph->GetIdeographicBaseline(),
+                        paragraph->GetMaxWidth(),
+                        paragraph->GetIdeographicBaseline(), paint);
+
+  paint.setColor(SK_ColorGREEN);
+
+  GetCanvas()->drawLine(0, paragraph->GetAlphabeticBaseline(),
+                        paragraph->GetMaxWidth(),
+                        paragraph->GetAlphabeticBaseline(), paint);
+  ASSERT_DOUBLE_EQ(paragraph->GetIdeographicBaseline(), 79.035003662109375);
+  ASSERT_DOUBLE_EQ(paragraph->GetAlphabeticBaseline(), 63.305000305175781);
+
+  ASSERT_TRUE(Snapshot());
+}
+
 }  // namespace txt
