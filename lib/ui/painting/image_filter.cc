@@ -61,6 +61,7 @@ void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
   filter_ = SkImageFilter::MakeMatrixFilter(
       ToSkMatrix(matrix4), static_cast<SkFilterQuality>(filterQuality),
       nullptr);
+  matrix4.Release();
 }
 
 }  // namespace blink
