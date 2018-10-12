@@ -21,6 +21,8 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
+
 @interface FlutterViewController () <FlutterTextInputDelegate>
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
 @end
@@ -57,6 +59,8 @@
   blink::ViewportMetrics _viewportMetrics;
   int64_t _nextTextureId;
   BOOL _initialized;
+
+  FlutterObservatoryPublisher* _publisher;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -97,6 +101,8 @@
     return;
 
   _initialized = YES;
+
+  _publisher = [[FlutterObservatoryPublisher alloc] init];
 
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
@@ -172,6 +178,7 @@
     return false;
   }
 
+  [_publisher registerForDiscovery:12345];
   return true;
 }
 
