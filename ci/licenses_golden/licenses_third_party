@@ -1,4 +1,4 @@
-Signature: d56ae5b92307d86a0b6fd2fa753c2626
+Signature: fdca1329924137c20fa4747361eb5014
 
 UNUSED LICENSES:
 
@@ -5458,6 +5458,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.c
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/loops.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/loops.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_state.h
