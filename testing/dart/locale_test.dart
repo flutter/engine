@@ -19,4 +19,28 @@ void main() {
     expect(const Locale('iw', 'DD').toString(), 'he_DE');
     expect(const Locale('iw', 'DD'), const Locale('he', 'DE'));
   });
+
+  test('Locale.fromComponents', () {
+    expect(
+      const Locale.fromComponents(language: 'en').toString(),
+      'en',
+    );
+    expect(
+      const Locale.fromComponents(script: 'Latn').toString(),
+      'und_Latn',
+    );
+    expect(
+      const Locale.fromComponents(region: 'US').toString(),
+      'und_US',
+    );
+    expect(
+      const Locale.fromComponents(variants: 'fonipa').toString(),
+      'und_fonipa',
+    );
+    expect(
+      const Locale.fromComponents(language: 'zh', script: 'Hans', region: 'CN')
+          .toString(),
+      'zh_Hans_CN',
+    );
+  });
 }
