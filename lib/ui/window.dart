@@ -440,6 +440,10 @@ class Window {
   Locale get locale => _locale;
   Locale _locale;
 
+
+  List<Locale> get locales => _locales;
+  List<Locale> _locales;
+
   /// A callback that is invoked whenever [locale] changes value.
   ///
   /// The framework invokes this callback in the same zone in which the
@@ -745,7 +749,7 @@ class Window {
 
     // Store the zone in which the callback is being registered.
     final Zone registrationZone = Zone.current;
-
+    // assert(false);
     return (ByteData data) {
       registrationZone.runUnaryGuarded(callback, data);
     };

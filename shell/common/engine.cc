@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/eintr_wrapper.h"
@@ -325,17 +326,27 @@ bool Engine::HandleLocalizationPlatformMessage(
   if (args == root.MemberEnd() || !args->value.IsArray())
     return false;
 
-  const auto& language = args->value[0];
-  const auto& country = args->value[1];
-  const auto& script = args->value[2];
-  const auto& variant = args->value[3];
-
-  if (!language.IsString() || !country.IsString())
+  if (args->value.Size() % 4 != 0)
     return false;
 
-  return runtime_controller_->SetLocale(language.GetString(),
-                                        country.GetString(), script.GetString(),
-                                        variant.GetString());
+  std::vector<std::string> locale_data;
+  for (size_t index = 0; index < args->value.Size(); ++index) {
+    locale_data.push_back(args->value[index].GetString());
+    FML_DLOG(ERROR) << locale_data[locale_data.size() - 1];
+  }
+  // for (auto÷)
+  // const auto& language = args->value[0];
+  // const auto& country = args->value[1];
+  // const auto& script = args->value[2];
+  // const auto& variant = args->value[3];
+
+  // if (!language.IsString() || !country.IsString())
+  //   return false;
+
+  // return runtime_controller_->SetLocales(
+  //     language.GetString(), country.GetString(), script.GetString(),
+  //     variant.GetString());
+  return runtime_controller_->SetLocales(locale_data);
 }
 
 void Engine::HandleSettingsPlatformMessage(blink::PlatformMessage* message) {

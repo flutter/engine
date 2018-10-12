@@ -4,6 +4,7 @@
 
 #include "flutter/runtime/runtime_controller.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
@@ -156,6 +157,36 @@ bool RuntimeController::SetLocale(const std::string& language_code,
   }
 
   return false;
+}
+
+bool RuntimeController::SetLocales(
+    const std::vector<std::string>& locale_data) {
+  const size_t strings_per_locale = 4;
+  FML_DLOG(ERROR) << "RUNTIME CONTROLLER SET LOCALES";
+  for (auto str : locale_data) {
+    FML_LOG(ERROR) << str;
+  }
+  for (size_t locale_index = 0;
+       locale_index < locale_data.size() / strings_per_locale; ++locale_index) {
+    window_data_.locales.emplace_back(
+        locale_data[locale_index * strings_per_locale],
+        locale_data[locale_index * strings_per_locale + 1],
+        locale_data[locale_index * strings_per_locale + 2],
+        locale_data[locale_index * strings_per_locale + 3]);
+  }
+  // window_data_.language_code = language_code;
+  // window_data_.country_code = country_code;
+  // window_data_.script_code = script_code;
+  // window_data_.variant_code = variant_code;
+
+  if (auto window = GetWindowIfAvailable()) {
+    window->UpdateLocales(locale_data);
+    return true;
+  }
+
+  // return false;
+
+  return true;
 }
 
 bool RuntimeController::SetUserSettingsData(const std::string& data) {

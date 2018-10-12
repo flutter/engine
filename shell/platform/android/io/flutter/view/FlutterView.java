@@ -171,6 +171,7 @@ public class FlutterView extends SurfaceView
         mTextInputPlugin = new TextInputPlugin(this);
 
         setLocale(getResources().getConfiguration().locale);
+        setLocales(getResources().getConfiguration().getLocales());
         setUserSettings();
     }
 
@@ -318,6 +319,17 @@ public class FlutterView extends SurfaceView
 
     private void setLocale(Locale locale) {
         mFlutterLocalizationChannel.invokeMethod("setLocale", Arrays.asList(locale.getLanguage(), locale.getCountry(), locale.getScript(), locale.getVariant()));
+    }
+
+    private void setLocales(LocaleList locales) {
+        List<String> data = new ArrayList<String>();
+        for (int index = 0; index < locales.size(); ++index) {
+            data.add(locales.get(index).getLanguage);
+            data.add(locales.get(index).getCountry);
+            data.add(locales.get(index).getScript);
+            data.add(locales.get(index).getVariant);
+        }
+        mFlutterLocalizationChannel.invokeMethod("setLocale", data);
     }
 
     @Override
