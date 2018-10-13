@@ -178,7 +178,6 @@
     return false;
   }
 
-  [_publisher registerForDiscovery:12345];
   return true;
 }
 

@@ -5,6 +5,7 @@
 #include "flutter/runtime/dart_service_isolate.h"
 
 #include <string.h>
+#include <algorithm>
 
 #include "flutter/fml/logging.h"
 #include "flutter/runtime/embedder_resources.h"
@@ -53,11 +54,43 @@ void DartServiceIsolate::NotifyServerState(Dart_NativeArguments args) {
       tonic::DartConverter<std::string>::FromArguments(args, 0, exception);
   if (!exception) {
     observatory_uri_ = uri;
+    for (auto it = callbacks_.begin(); it != callbacks_.end(); it++) {
+      std::pair<int, DartServiceIsolate::ObservatoryServerStateCallback> pair =
+          *it;
+      pair.second(uri);
+    }
   }
 }
 
 std::string DartServiceIsolate::GetObservatoryUri() {
   return observatory_uri_;
+}
+
+int DartServiceIsolate::handle_count_ = 0;
+std::vector<std::pair<int, DartServiceIsolate::ObservatoryServerStateCallback>>
+    DartServiceIsolate::callbacks_;
+
+int DartServiceIsolate::AddServerStatusCallback(
+    DartServiceIsolate::ObservatoryServerStateCallback callback) {
+  callbacks_.push_back(std::make_pair(++handle_count_, callback));
+  if (!observatory_uri_.empty()) {
+    callback(observatory_uri_);
+  }
+  return handle_count_;
+}
+
+void DartServiceIsolate::RemoveServerStatusCallback(int handle) {
+  if (handle < 0 || handle > handle_count_)
+    return;
+
+  for (auto it = callbacks_.begin(); it != callbacks_.end(); it++) {
+    std::pair<int, DartServiceIsolate::ObservatoryServerStateCallback> pair =
+        *it;
+    if (pair.first == handle) {
+      callbacks_.erase(it);
+      return;
+    }
+  }
 }
 
 void DartServiceIsolate::Shutdown(Dart_NativeArguments args) {
