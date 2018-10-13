@@ -563,6 +563,8 @@ FILE: ../../../flutter/flow/layers/platform_view_layer.h
 FILE: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_locations.dart
 FILE: ../../../flutter/fml/paths_unittests.cc
 FILE: ../../../flutter/lib/ui/isolate_name_server.dart
+FILE: ../../../flutter/lib/ui/painting/engine_layer.cc
+FILE: ../../../flutter/lib/ui/painting/engine_layer.h
 FILE: ../../../flutter/lib/ui/painting/image_encoding.cc
 FILE: ../../../flutter/lib/ui/painting/image_encoding.h
 FILE: ../../../flutter/lib/ui/plugins.dart
@@ -1001,6 +1003,7 @@ FILE: ../../../flutter/third_party/txt/src/minikin/WordBreaker.cpp
 FILE: ../../../flutter/third_party/txt/src/minikin/WordBreaker.h
 FILE: ../../../flutter/third_party/txt/src/txt/asset_font_manager.cc
 FILE: ../../../flutter/third_party/txt/src/txt/asset_font_manager.h
+FILE: ../../../flutter/third_party/txt/src/txt/font_asset_provider.cc
 FILE: ../../../flutter/third_party/txt/src/txt/font_asset_provider.h
 FILE: ../../../flutter/third_party/txt/src/txt/font_collection.cc
 FILE: ../../../flutter/third_party/txt/src/txt/font_collection.h
@@ -1023,6 +1026,8 @@ FILE: ../../../flutter/third_party/txt/src/txt/test_font_manager.h
 FILE: ../../../flutter/third_party/txt/src/txt/text_baseline.h
 FILE: ../../../flutter/third_party/txt/src/txt/text_decoration.cc
 FILE: ../../../flutter/third_party/txt/src/txt/text_decoration.h
+FILE: ../../../flutter/third_party/txt/src/txt/text_shadow.cc
+FILE: ../../../flutter/third_party/txt/src/txt/text_shadow.h
 FILE: ../../../flutter/third_party/txt/src/txt/text_style.cc
 FILE: ../../../flutter/third_party/txt/src/txt/text_style.h
 FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.cc

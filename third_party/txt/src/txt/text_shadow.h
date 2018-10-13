@@ -14,25 +14,31 @@
  * limitations under the License.
  */
 
-#ifndef TXT_FONT_ASSET_PROVIDER_H_
-#define TXT_FONT_ASSET_PROVIDER_H_
+#ifndef LIB_TXT_SRC_TEXT_SHADOW_H_
+#define LIB_TXT_SRC_TEXT_SHADOW_H_
 
-#include "third_party/skia/include/core/SkFontMgr.h"
+#include "third_party/skia/include/core/SkColor.h"
+#include "third_party/skia/include/core/SkPoint.h"
 
 namespace txt {
 
-class FontAssetProvider {
+class TextShadow {
  public:
-  virtual ~FontAssetProvider() = default;
+  SkColor color = SK_ColorBLACK;
+  SkPoint offset;
+  double blur_radius = 0.0;
 
-  virtual size_t GetFamilyCount() const = 0;
-  virtual std::string GetFamilyName(int index) const = 0;
-  virtual SkFontStyleSet* MatchFamily(const std::string& family_name) = 0;
+  TextShadow();
 
- protected:
-  static std::string CanonicalFamilyName(std::string family_name);
+  TextShadow(SkColor color, SkPoint offset, double blur_radius);
+
+  bool operator==(const TextShadow& other) const;
+
+  bool operator!=(const TextShadow& other) const;
+
+  bool hasShadow() const;
 };
 
 }  // namespace txt
 
-#endif  // TXT_FONT_ASSET_PROVIDER_H_
+#endif  // LIB_TXT_SRC_TEXT_SHADOW_H_
