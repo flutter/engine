@@ -556,9 +556,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: engine
-ORIGIN: ../../../flutter/flow/layers/embedded_view_layer.cc + ../../../LICENSE
+ORIGIN: ../../../flutter/flow/layers/platform_view_layer.cc + ../../../LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../flutter/flow/layers/embedded_view_layer.cc
 FILE: ../../../flutter/flow/layers/platform_view_layer.cc
 FILE: ../../../flutter/flow/layers/platform_view_layer.h
 FILE: ../../../flutter/flutter_kernel_transformers/lib/track_widget_constructor_locations.dart
