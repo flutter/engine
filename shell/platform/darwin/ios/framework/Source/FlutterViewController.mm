@@ -526,6 +526,7 @@
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_pluginPublications release];
+  [_publisher release];
   [super dealloc];
 }
 

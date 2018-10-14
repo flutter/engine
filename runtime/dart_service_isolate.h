@@ -16,7 +16,8 @@ namespace blink {
 
 class DartServiceIsolate {
  public:
-  using ObservatoryServerStateCallback = std::function<void(const std::string&)>;
+  using ObservatoryServerStateCallback =
+      std::function<void(const std::string&)>;
 
   static bool Startup(std::string server_ip,
                       intptr_t server_port,
