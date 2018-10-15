@@ -14,14 +14,13 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
-
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 
 @interface FlutterViewController () <FlutterTextInputDelegate>
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
