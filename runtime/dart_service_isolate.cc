@@ -54,10 +54,11 @@ void DartServiceIsolate::NotifyServerState(Dart_NativeArguments args) {
       tonic::DartConverter<std::string>::FromArguments(args, 0, exception);
   if (!exception) {
     observatory_uri_ = uri;
-    for (auto it = callbacks_.begin(); it != callbacks_.end(); it++) {
-      std::pair<int, DartServiceIsolate::ObservatoryServerStateCallback> pair =
-          *it;
-      pair.second(uri);
+
+    auto callbacks = std::move(callbacks_);
+    for (auto it = callbacks.begin(); it != callbacks.end(); it++) {
+      auto callback = std::move(**it);
+      callback(uri);
     }
   }
 }
@@ -66,31 +67,29 @@ std::string DartServiceIsolate::GetObservatoryUri() {
   return observatory_uri_;
 }
 
-int DartServiceIsolate::handle_count_ = 0;
-std::vector<std::pair<int, DartServiceIsolate::ObservatoryServerStateCallback>>
+std::set<std::unique_ptr<DartServiceIsolate::ObservatoryServerStateCallback>>
     DartServiceIsolate::callbacks_;
 
-int DartServiceIsolate::AddServerStatusCallback(
+std::unique_ptr<DartServiceIsolate::ObservatoryServerStateCallback>
+DartServiceIsolate::AddServerStatusCallback(
     DartServiceIsolate::ObservatoryServerStateCallback callback) {
-  callbacks_.push_back(std::make_pair(++handle_count_, callback));
+  auto callback_pointer =
+      std::make_unique<DartServiceIsolate::ObservatoryServerStateCallback>(
+          callback);
+  callbacks_.insert(std::move(callback_pointer));
   if (!observatory_uri_.empty()) {
     callback(observatory_uri_);
   }
-  return handle_count_;
+  return callback_pointer;
 }
 
-void DartServiceIsolate::RemoveServerStatusCallback(int handle) {
-  if (handle < 0 || handle > handle_count_)
+void DartServiceIsolate::RemoveServerStatusCallback(
+    std::unique_ptr<DartServiceIsolate::ObservatoryServerStateCallback>
+        callback_pointer) {
+  if (!callback_pointer)
     return;
 
-  for (auto it = callbacks_.begin(); it != callbacks_.end(); it++) {
-    std::pair<int, DartServiceIsolate::ObservatoryServerStateCallback> pair =
-        *it;
-    if (pair.first == handle) {
-      callbacks_.erase(it);
-      return;
-    }
-  }
+  callbacks_.erase(callback_pointer);
 }
 
 void DartServiceIsolate::Shutdown(Dart_NativeArguments args) {

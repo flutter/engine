@@ -60,7 +60,7 @@
   int64_t _nextTextureId;
   BOOL _initialized;
 
-  FlutterObservatoryPublisher* _publisher;
+  fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -102,7 +102,7 @@
 
   _initialized = YES;
 
-  _publisher = [[FlutterObservatoryPublisher alloc] init];
+  _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
 
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
@@ -526,7 +526,6 @@
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_pluginPublications release];
-  [_publisher release];
   [super dealloc];
 }
 

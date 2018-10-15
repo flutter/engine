@@ -6,6 +6,7 @@
 #define FLUTTER_RUNTIME_DART_SERVICE_ISOLATE_H_
 
 #include <functional>
+#include <set>
 #include <string>
 
 #include "flutter/fml/compiler_specific.h"
@@ -29,18 +30,19 @@ class DartServiceIsolate {
 
   // Returns a handle for the callback that can be used in
   // RemoveServerStatusCallback
-  FML_WARN_UNUSED_RESULT static int AddServerStatusCallback(
-      ObservatoryServerStateCallback callback);
+  FML_WARN_UNUSED_RESULT static std::unique_ptr<
+      DartServiceIsolate::ObservatoryServerStateCallback>
+  AddServerStatusCallback(ObservatoryServerStateCallback callback);
   // Accepts the handle returned by AddServerStatusCallback
-  static void RemoveServerStatusCallback(int handle);
+  static void RemoveServerStatusCallback(
+      std::unique_ptr<ObservatoryServerStateCallback> handle);
 
  private:
   // Native entries.
   static void NotifyServerState(Dart_NativeArguments args);
   static void Shutdown(Dart_NativeArguments args);
 
-  static int handle_count_;
-  static std::vector<std::pair<int, ObservatoryServerStateCallback>> callbacks_;
+  static std::set<std::unique_ptr<ObservatoryServerStateCallback>> callbacks_;
 };
 
 }  // namespace blink

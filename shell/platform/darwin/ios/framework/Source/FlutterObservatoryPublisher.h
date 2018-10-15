@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface FlutterObservatoryPublisher : NSObject <NSNetServiceDelegate>
+@interface FlutterObservatoryPublisher : NSObject
 
 @end
 
