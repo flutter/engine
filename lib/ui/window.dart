@@ -164,19 +164,19 @@ class Locale {
   /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
   /// [script](http://unicode.org/cldr/latest/common/validity/script.xml),
   /// [region](http://unicode.org/cldr/latest/common/validity/region.xml) and
-  /// [variant](http://unicode.org/cldr/latest/common/validity/variant.xml).
-  /// There may be multiple variants as long as they appear in sorted order and
-  /// are joined by hyphens.
-  const Locale.fromComponents({
+  /// [variant](http://unicode.org/cldr/latest/common/validity/variant.xml). If
+  /// there is more than one variant, they should be in sorted order. This list
+  /// will be used as-is, and should never again be modified.
+  const Locale.create({
     String language,
     String script,
     String region,
-    String variants,
+    List<String> variants,
   }) : assert(language == null || (language.length >= 2 && language.length <= 8
                                    && language.length != 4)),
        assert(script == null || script.length == 4),
        assert(region == null || (region.length >= 2 && region.length <= 3)),
-       assert(variants == null || variants.length >= 4),
+       assert(variants == null || variants[0].length >= 4),
        _languageCode = language ?? 'und',
        scriptCode = script,
        _countryCode = region,
@@ -335,10 +335,10 @@ class Locale {
   Iterable<String> get variants {
     if (_variants == null)
       return const <String>[];
-    return _variants.split('-');
+    return _variants;
   }
 
-  /// Hyphen-separated variants subtags for the locale.
+  /// Variants subtags for the locale.
   ///
   /// This can be null.
   ///
@@ -347,7 +347,7 @@ class Locale {
   /// supplemental data:
   /// http://unicode.org/cldr/latest/common/validity/variants.xml. Please see
   /// constructor documentation.
-  final String _variants;
+  final List<String> _variants;
 
   @override
   bool operator ==(dynamic other) {
@@ -380,7 +380,7 @@ class Locale {
     if (_countryCode != null)
       out.write('-$countryCode');
     if (_variants != null)
-      out.write('-$_variants');
+      out.write('-${_variants.join("-")}');
     return out.toString();
   }
 }

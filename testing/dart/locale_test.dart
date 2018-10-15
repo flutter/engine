@@ -20,29 +20,29 @@ void main() {
     expect(const Locale('iw', 'DD'), const Locale('he', 'DE'));
   });
 
-  test('Locale.fromComponents', () {
-    expect(const Locale.fromComponents().languageCode, 'und');
-    expect(const Locale.fromComponents().scriptCode, null);
-    expect(const Locale.fromComponents().countryCode, null);
-    expect(const Locale.fromComponents().variants, orderedEquals([]));
+  test('Locale.create', () {
+    expect(const Locale.create().languageCode, 'und');
+    expect(const Locale.create().scriptCode, null);
+    expect(const Locale.create().countryCode, null);
+    expect(const Locale.create().variants, orderedEquals([]));
 
-    expect(const Locale.fromComponents(language: 'en').toString(), 'en');
-    expect(const Locale.fromComponents(language: 'en').languageCode, 'en');
-    expect(const Locale.fromComponents(script: 'Latn').toString(), 'und-Latn');
-    expect(const Locale.fromComponents(script: 'Latn').scriptCode, 'Latn');
-    expect(const Locale.fromComponents(region: 'US').toString(), 'und-US');
-    expect(const Locale.fromComponents(region: 'US').countryCode, 'US');
-    expect(const Locale.fromComponents(variants: 'fonipa-scouse').variants,
+    expect(const Locale.create(language: 'en').toString(), 'en');
+    expect(const Locale.create(language: 'en').languageCode, 'en');
+    expect(const Locale.create(script: 'Latn').toString(), 'und-Latn');
+    expect(const Locale.create(script: 'Latn').scriptCode, 'Latn');
+    expect(const Locale.create(region: 'US').toString(), 'und-US');
+    expect(const Locale.create(region: 'US').countryCode, 'US');
+    expect(const Locale.create(variants: ['fonipa', 'scouse']).variants,
            orderedEquals(['fonipa', 'scouse']));
 
-    expect(Locale.fromComponents(language: 'es', region: '419').toString(), 'es-419');
-    expect(Locale.fromComponents(language: 'es', region: '419').languageCode, 'es');
-    expect(Locale.fromComponents(language: 'es', region: '419').countryCode, '419');
-    expect(Locale.fromComponents(script: 'Latn', variants: 'fonipa').toString(), 'und-Latn-fonipa');
-    expect(Locale.fromComponents(script: 'Latn', variants: 'fonipa').scriptCode, 'Latn');
-    expect(Locale.fromComponents(script: 'Latn', variants: 'fonipa').variants,
+    expect(Locale.create(language: 'es', region: '419').toString(), 'es-419');
+    expect(Locale.create(language: 'es', region: '419').languageCode, 'es');
+    expect(Locale.create(language: 'es', region: '419').countryCode, '419');
+    expect(Locale.create(script: 'Latn', variants: ['fonipa']).toString(), 'und-Latn-fonipa');
+    expect(Locale.create(script: 'Latn', variants: ['fonipa']).scriptCode, 'Latn');
+    expect(Locale.create(script: 'Latn', variants: ['fonipa']).variants,
            orderedEquals(['fonipa']));
 
-    expect(Locale.fromComponents(language: 'zh', script: 'Hans', region: 'CN').toString(), 'zh-Hans-CN');
+    expect(Locale.create(language: 'zh', script: 'Hans', region: 'CN').toString(), 'zh-Hans-CN');
   });
 }
