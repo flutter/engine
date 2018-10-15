@@ -514,6 +514,8 @@ FILE: ../../../flutter/shell/platform/android/android_shell_holder.h
 FILE: ../../../flutter/shell/platform/android/platform_message_response_android.cc
 FILE: ../../../flutter/shell/platform/android/platform_message_response_android.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.mm
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
