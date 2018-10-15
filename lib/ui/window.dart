@@ -176,7 +176,7 @@ class Locale {
                                    && language.length != 4)),
        assert(script == null || script.length == 4),
        assert(region == null || (region.length >= 2 && region.length <= 3)),
-       assert(variants == null || variants[0].length >= 4),
+       assert(variants == null || variants.length == 0 || variants[0].length >= 4),
        _languageCode = language,
        scriptCode = script,
        _countryCode = region,
