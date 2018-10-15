@@ -51,8 +51,8 @@
   _netService.reset([NSNetService alloc]);
 
   blink::DartServiceIsolate::ObservatoryServerStateCallback callback =
-      fml::MakeCopyable([delegate = _delegate, netService = _netService,
-                         loop = currentLoop](const std::string& uri) mutable {
+      fml::MakeCopyable([delegate = std::move(_delegate), netService = std::move(_netService),
+                         loop = std::move(currentLoop)](const std::string& uri) mutable {
         if (uri.empty()) {
           [netService stop];
           return;

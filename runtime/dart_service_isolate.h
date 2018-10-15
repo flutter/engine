@@ -6,6 +6,7 @@
 #define FLUTTER_RUNTIME_DART_SERVICE_ISOLATE_H_
 
 #include <functional>
+#include <mutex>
 #include <set>
 #include <string>
 
@@ -42,6 +43,7 @@ class DartServiceIsolate {
   static void NotifyServerState(Dart_NativeArguments args);
   static void Shutdown(Dart_NativeArguments args);
 
+  static std::mutex callbacks_mutex_;
   static std::set<std::unique_ptr<ObservatoryServerStateCallback>> callbacks_;
 };
 

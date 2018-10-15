@@ -48,6 +48,10 @@ const uint8_t* GetSymbol(Dart_NativeFunction native_function) {
 
 }  // namespace
 
+std::mutex DartServiceIsolate::callbacks_mutex_;
+std::set<std::unique_ptr<DartServiceIsolate::ObservatoryServerStateCallback>>
+    DartServiceIsolate::callbacks_;
+
 void DartServiceIsolate::NotifyServerState(Dart_NativeArguments args) {
   Dart_Handle exception = nullptr;
   std::string uri =
@@ -55,6 +59,7 @@ void DartServiceIsolate::NotifyServerState(Dart_NativeArguments args) {
   if (!exception) {
     observatory_uri_ = uri;
 
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
     auto callbacks = std::move(callbacks_);
     for (auto it = callbacks.begin(); it != callbacks.end(); it++) {
       auto callback = std::move(**it);
@@ -67,15 +72,14 @@ std::string DartServiceIsolate::GetObservatoryUri() {
   return observatory_uri_;
 }
 
-std::set<std::unique_ptr<DartServiceIsolate::ObservatoryServerStateCallback>>
-    DartServiceIsolate::callbacks_;
-
 std::unique_ptr<DartServiceIsolate::ObservatoryServerStateCallback>
 DartServiceIsolate::AddServerStatusCallback(
     DartServiceIsolate::ObservatoryServerStateCallback callback) {
   auto callback_pointer =
       std::make_unique<DartServiceIsolate::ObservatoryServerStateCallback>(
           callback);
+
+  std::lock_guard<std::mutex> lock(callbacks_mutex_);
   callbacks_.insert(std::move(callback_pointer));
   if (!observatory_uri_.empty()) {
     callback(observatory_uri_);
@@ -89,6 +93,7 @@ void DartServiceIsolate::RemoveServerStatusCallback(
   if (!callback_pointer)
     return;
 
+  std::lock_guard<std::mutex> lock(callbacks_mutex_);
   callbacks_.erase(callback_pointer);
 }
 
