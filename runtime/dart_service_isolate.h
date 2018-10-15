@@ -30,14 +30,16 @@ class DartServiceIsolate {
 
   static std::string GetObservatoryUri();
 
+  using CallbackHandle = ptrdiff_t;
+
   // Returns a handle for the callback that can be used in
   // RemoveServerStatusCallback
-  FML_WARN_UNUSED_RESULT static std::unique_ptr<
-      DartServiceIsolate::ObservatoryServerStateCallback>
-  AddServerStatusCallback(ObservatoryServerStateCallback callback);
+  FML_WARN_UNUSED_RESULT
+  static CallbackHandle AddServerStatusCallback(
+      ObservatoryServerStateCallback callback);
+
   // Accepts the handle returned by AddServerStatusCallback
-  static void RemoveServerStatusCallback(
-      std::unique_ptr<ObservatoryServerStateCallback> handle);
+  static bool RemoveServerStatusCallback(CallbackHandle handle);
 
  private:
   // Native entries.
@@ -45,8 +47,8 @@ class DartServiceIsolate {
   static void Shutdown(Dart_NativeArguments args);
 
   static std::mutex callbacks_mutex_;
-  FML_GUARDED_BY(callbacks_mutex_)
-  static std::set<std::unique_ptr<ObservatoryServerStateCallback>> callbacks_;
+  static std::set<std::unique_ptr<ObservatoryServerStateCallback>> callbacks_
+      FML_GUARDED_BY(callbacks_mutex_);
 };
 
 }  // namespace blink
