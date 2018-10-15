@@ -369,11 +369,11 @@ class Locale {
   String toString() {
     final StringBuffer out = StringBuffer(languageCode);
     if (scriptCode != null)
-      out.write('-$scriptCode');
+      out.write('_$scriptCode');
     if (_countryCode != null)
-      out.write('-$countryCode');
+      out.write('_$countryCode');
     if (_variants != null)
-      out.write('-${_variants.join("-")}');
+      out.write('_${_variants.join("_")}');
     return out.toString();
   }
 }
