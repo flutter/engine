@@ -59,8 +59,13 @@ void DartServiceIsolate::NotifyServerState(Dart_NativeArguments args) {
   if (!exception) {
     observatory_uri_ = uri;
 
-    std::lock_guard<std::mutex> lock(callbacks_mutex_);
-    auto callbacks = std::move(callbacks_);
+    std::set<
+        std::unique_ptr<DartServiceIsolate::ObservatoryServerStateCallback>>
+        callbacks;
+    {
+      std::lock_guard<std::mutex> lock(callbacks_mutex_);
+      callbacks = std::move(callbacks_);
+    }
     for (auto it = callbacks.begin(); it != callbacks.end(); it++) {
       auto callback = std::move(**it);
       callback(uri);
