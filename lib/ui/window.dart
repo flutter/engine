@@ -168,7 +168,7 @@ class Locale {
   /// there is more than one variant, they should be in sorted order. This list
   /// will be used as-is, and should never again be modified.
   const Locale.create({
-    String language,
+    String language = 'und',
     String script,
     String region,
     List<String> variants,
@@ -177,7 +177,7 @@ class Locale {
        assert(script == null || script.length == 4),
        assert(region == null || (region.length >= 2 && region.length <= 3)),
        assert(variants == null || variants[0].length >= 4),
-       _languageCode = language ?? 'und',
+       _languageCode = language,
        scriptCode = script,
        _countryCode = region,
        _variants = variants;
@@ -363,14 +363,7 @@ class Locale {
   }
 
   @override
-  int get hashCode {
-    int result = 373;
-    result = 37 * result + languageCode.hashCode;
-    result = 37 * result + scriptCode.hashCode;
-    result = 37 * result + countryCode.hashCode;
-    result = 37 * result + _variants.hashCode;
-    return result;
-  }
+  int get hashCode => hashValues(languageCode, scriptCode, countryCode, hashList(_variants));
 
   @override
   String toString() {
