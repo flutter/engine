@@ -1,4 +1,4 @@
-Signature: 93e25f3892c4748d74a3d1abf63db5f2
+Signature: e5ce4475f43e5b88cbbddc19f9a46b31
 
 UNUSED LICENSES:
 
@@ -723,12 +723,6 @@ FILE: ../../../third_party/skia/bench/StreamBench.cpp
 FILE: ../../../third_party/skia/bench/SwizzleBench.cpp
 FILE: ../../../third_party/skia/bench/TileImageFilterBench.cpp
 FILE: ../../../third_party/skia/bench/VertexColorSpaceBench.cpp
-FILE: ../../../third_party/skia/experimental/pipe/SkPipe.h
-FILE: ../../../third_party/skia/experimental/pipe/SkPipeCanvas.cpp
-FILE: ../../../third_party/skia/experimental/pipe/SkPipeCanvas.h
-FILE: ../../../third_party/skia/experimental/pipe/SkPipeFormat.h
-FILE: ../../../third_party/skia/experimental/pipe/SkPipeReader.cpp
-FILE: ../../../third_party/skia/experimental/pipe/SkRefSet.h
 FILE: ../../../third_party/skia/experimental/svg/model/SkPEG.h
 FILE: ../../../third_party/skia/experimental/svg/model/SkSVGAttribute.cpp
 FILE: ../../../third_party/skia/experimental/svg/model/SkSVGAttribute.h
@@ -1494,9 +1488,6 @@ FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCStrokeGeometry.cpp
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCStrokeGeometry.h
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCStroker.cpp
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCCStroker.h
-FILE: ../../../third_party/skia/src/gpu/effects/GrAARectEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/GrAARectEffect.fp
-FILE: ../../../third_party/skia/src/gpu/effects/GrAARectEffect.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrAlphaThresholdFragmentProcessor.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrAlphaThresholdFragmentProcessor.fp
 FILE: ../../../third_party/skia/src/gpu/effects/GrAlphaThresholdFragmentProcessor.h
@@ -2214,6 +2205,9 @@ FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win10-Clan
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win10-Clang-NUC6i5SYK-GPU-IntelIris540-x86_64-Release-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-iOS-Clang-iPadPro-GPU-PowerVRGT7800-arm64-Release-All.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/trybot.json
+FILE: ../../../third_party/skia/infra/bots/recipes/perf_pathkit.expected/Perf-Debian9-EMCC-GCE-CPU-AVX2-asmjs-Release-All-PathKit.json
+FILE: ../../../third_party/skia/infra/bots/recipes/perf_pathkit.expected/Perf-Debian9-EMCC-GCE-CPU-AVX2-wasm-Release-All-PathKit.json
+FILE: ../../../third_party/skia/infra/bots/recipes/perf_pathkit.expected/pathkit_trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/recreate_skps.expected/Housekeeper-Nightly-RecreateSKPs_Canary.json
 FILE: ../../../third_party/skia/infra/bots/recipes/recreate_skps.expected/Housekeeper-Weekly-RecreateSKPs.json
 FILE: ../../../third_party/skia/infra/bots/recipes/recreate_skps.expected/failed_upload.json
@@ -2316,6 +2310,7 @@ FILE: ../../../third_party/skia/infra/lottiecap/docker/lottie-web-puppeteer/Dock
 FILE: ../../../third_party/skia/infra/pathkit/docker/emsdk-base/Dockerfile
 FILE: ../../../third_party/skia/infra/pathkit/docker/gold-karma-chrome-tests/Dockerfile
 FILE: ../../../third_party/skia/infra/pathkit/docker/karma-chrome-tests/Dockerfile
+FILE: ../../../third_party/skia/infra/pathkit/docker/perf-karma-chrome-tests/Dockerfile
 FILE: ../../../third_party/skia/infra/project-config/cr-buildbucket.cfg
 FILE: ../../../third_party/skia/infra/project-config/project.cfg
 FILE: ../../../third_party/skia/infra/project-config/refs.cfg
@@ -2323,8 +2318,13 @@ FILE: ../../../third_party/skia/infra/skqp/docker/android-skqp/Dockerfile
 FILE: ../../../third_party/skia/modules/pathkit/chaining.js
 FILE: ../../../third_party/skia/modules/pathkit/externs.js
 FILE: ../../../third_party/skia/modules/pathkit/helper.js
+FILE: ../../../third_party/skia/modules/pathkit/karma.bench.conf.js
 FILE: ../../../third_party/skia/modules/pathkit/karma.conf.js
 FILE: ../../../third_party/skia/modules/pathkit/package.json
+FILE: ../../../third_party/skia/modules/pathkit/perf/effects.bench.js
+FILE: ../../../third_party/skia/modules/pathkit/perf/path.bench.js
+FILE: ../../../third_party/skia/modules/pathkit/perf/pathops.bench.js
+FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../third_party/skia/public.bzl
 FILE: ../../../third_party/skia/site/METADATA
 FILE: ../../../third_party/skia/site/dev/METADATA
@@ -5131,6 +5131,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/include/docs/SkPDFDocument.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/include/docs/SkPDFDocument.h
+FILE: ../../../third_party/skia/src/gpu/GrPathRendering_none.cpp
 FILE: ../../../third_party/skia/src/utils/SkUTF.cpp
 FILE: ../../../third_party/skia/src/utils/SkUTF.h
 ----------------------------------------------------------------------------------------------------
@@ -5266,6 +5267,7 @@ FILE: ../../../third_party/skia/include/gpu/GrDriverBugWorkaroundsAutogen.h
 FILE: ../../../third_party/skia/include/utils/SkTraceEventPhase.h
 FILE: ../../../third_party/skia/infra/lottiecap/gold/lottie-web-aggregator.go
 FILE: ../../../third_party/skia/infra/pathkit/gold/pathkit_gold_aggregator.go
+FILE: ../../../third_party/skia/infra/pathkit/perf/pathkit_perf_aggregator.go
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 The Chromium Authors. All rights reserved.
 
