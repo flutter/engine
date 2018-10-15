@@ -32,6 +32,8 @@ void main() {
     expect(const Locale.create(script: 'Latn').scriptCode, 'Latn');
     expect(const Locale.create(region: 'US').toString(), 'und_US');
     expect(const Locale.create(region: 'US').countryCode, 'US');
+    expect(const Locale.create(variants: []).variants,
+           orderedEquals([]));
     expect(const Locale.create(variants: ['fonipa', 'scouse']).variants,
            orderedEquals(['fonipa', 'scouse']));
 
