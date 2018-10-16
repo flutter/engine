@@ -274,33 +274,28 @@ void main() {
     // effort" locale?
     test('Strict parsing examples.', () {
       expect(
-        () => Locale.parse('nl-u-x'),
-        throwsA(TypeMatcher<LocaleParseException>()),
+        () => Locale.parse('nl-u-x'), throws,
         reason: 'With no "u" attributes there should be no "u" singleton. '
             'Could be lenient: "nl-x".',
       );
       expect(
-        () => Locale.parse('fr-t-x'),
-        throwsA(TypeMatcher<LocaleParseException>()),
+        () => Locale.parse('fr-t-x'), throws,
         reason: 'With no "t" attributes there should be no "t" singleton. '
             'Could be lenient: "fr-x".',
       );
       expect(
-        () => Locale.parse('it-u-nu-romanlow-a-u-attr'),
-        throwsA(TypeMatcher<LocaleParseException>()),
+        () => Locale.parse('it-u-nu-romanlow-a-u-attr'), throws,
         reason: 'Duplicate "u" singletons could be merged if only one has '
             'attributes. Could be lenient: "it-a-u-attr-nu-romanlow".',
       );
       expect(
-        () => Locale.parse('pl-t-cs-b-t-h0-hybrid'),
-        throwsA(TypeMatcher<LocaleParseException>()),
+        () => Locale.parse('pl-t-cs-b-t-h0-hybrid'), throws,
         reason: 'Duplicate "t" singletons could be merged if only one has '
             'tlang specified. Could be lenient: "pl-b-t-cs-h0-hybrid".',
       );
 
       expect(
-        () => Locale.parse('ro-t-hu-HU-cu-ron'),
-        throwsA(TypeMatcher<LocaleParseException>()),
+        () => Locale.parse('ro-t-hu-HU-cu-ron'), throws,
         reason: 'U-extension keywords misplaced under the -t- singleton '
             'could be moved if unambiguous enough. '
             'Could be lenient: "ro-t-hu-hu-u-cu-ron".',
@@ -315,15 +310,13 @@ void main() {
       );
 
       expect(
-        () => Locale.parse('pt-BR-u-h0-hybrid-t-pt-PT'),
-        throwsA(TypeMatcher<LocaleParseException>()),
+        () => Locale.parse('pt-BR-u-h0-hybrid-t-pt-PT'), throws,
         reason: 'T-extension "tfields" misplaced under the U-extension. '
             'Could be lenient: "pt-BR-t-pt-pt-h0-hybrid".',
       );
 
       expect(
-        () => Locale.parse('pl-t-h0'),
-        throwsA(TypeMatcher<LocaleParseException>()),
+        () => Locale.parse('pl-t-h0'), throws,
         reason: 'Locale tag pl-t-h0 is not spec compliant. How to best fix it '
             'is unclear: it is underspecified.',
       );
@@ -331,8 +324,7 @@ void main() {
 
     test('Locale.parse(): invalid identifiers.', () {
       expect(
-        () => Locale.parse('a'),
-        throwsA(TypeMatcher<LocaleParseException>()),
+        () => Locale.parse('a'), throws,
         reason: 'One character language subtags are invalid.',
       );
       expect(
@@ -348,18 +340,15 @@ void main() {
             'language subtag can be skipped if a script is specified.',
       );
       expect(
-        () => Locale.parse('abcdefghi'),
-        throwsA(TypeMatcher<LocaleParseException>()),
+        () => Locale.parse('abcdefghi'), throws,
         reason: 'Language subtags may not be more than 8 characters.',
       );
       expect(
-        () => Locale.parse(r'e$'),
-        throwsA(TypeMatcher<LocaleParseException>()),
+        () => Locale.parse(r'e$'), throws,
         reason: 'Invalid character for language subtag, only a-z allowed.',
       );
       expect(
-        () => Locale.parse('fr-RU-Hant'),
-        throwsA(TypeMatcher<LocaleParseException>()),
+        () => Locale.parse('fr-RU-Hant'), throws,
         reason: 'Swapping region and script is not allowed.',
       );
     });

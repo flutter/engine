@@ -116,15 +116,6 @@ class WindowPadding {
   }
 }
 
-class LocaleParseException implements Exception {
-  LocaleParseException(this._message);
-
-  String _message;
-
-  @override
-  String toString() => 'LocaleParseException: $_message';
-}
-
 /// An identifier used to select a user's language and formatting preferences.
 /// This implements Unicode Locale Identifiers as defined by [Unicode
 /// LDML](https://www.unicode.org/reports/tr35/).
@@ -293,8 +284,8 @@ class Locale {
     _parseExtensions(localeSubtags, extensions, problems);
 
     if (problems.isNotEmpty) {
-      throw LocaleParseException('Locale Identifier $localeId is invalid: '
-                                 '${problems.join("; ")}.');
+      throw FormatException('Locale Identifier $localeId is invalid: '
+                            '${problems.join("; ")}.');
     }
 
     variants.sort();
