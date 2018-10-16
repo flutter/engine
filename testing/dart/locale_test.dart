@@ -47,4 +47,15 @@ void main() {
 
     expect(Locale.create(language: 'zh', script: 'Hans', region: 'CN').toString(), 'zh_Hans_CN');
   });
+
+  test('Locale equality', () {
+    expect(Locale.create(language: 'en', variants: ['fonipa']),
+           Locale.create(language: 'en', variants: ['fonipa']));
+    expect(Locale.create(language: 'en', variants: ['fonipa']).hashCode,
+           Locale.create(language: 'en', variants: ['fonipa']).hashCode);
+    expect(Locale.create(language: 'en'),
+           isNot(Locale.create(language: 'en', script: 'Latn')));
+    expect(Locale.create(language: 'en').hashCode,
+           isNot(Locale.create(language: 'en', script: 'Latn').hashCode));
+  });
 }

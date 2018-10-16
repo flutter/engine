@@ -359,7 +359,19 @@ class Locale {
     return languageCode == typedOther.languageCode
         && scriptCode == typedOther.scriptCode
         && countryCode == typedOther.countryCode
-        && _variants == typedOther._variants;
+        && _listEquals<String>(_variants, typedOther._variants);
+  }
+
+  bool _listEquals<T>(List<T> a, List<T> b) {
+    if (a == null)
+      return b == null;
+    if (b == null || a.length != b.length)
+      return false;
+    for (int index = 0; index < a.length; index += 1) {
+      if (a[index] != b[index])
+        return false;
+    }
+    return true;
   }
 
   @override
