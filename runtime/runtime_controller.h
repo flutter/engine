@@ -43,10 +43,6 @@ class RuntimeController final : public WindowClient {
 
   bool SetViewportMetrics(const ViewportMetrics& metrics);
 
-  bool SetLocale(const std::string& language_code,
-                 const std::string& country_code,
-                 const std::string& script_code,
-                 const std::string& variant_code);
   bool SetLocales(const std::vector<std::string>& locale_data);
 
   bool SetUserSettingsData(const std::string& data);
@@ -104,7 +100,7 @@ class RuntimeController final : public WindowClient {
     std::string country_code;
     std::string script_code;
     std::string variant_code;
-    std::vector<Locale> locales;
+    std::vector<std::string> locale_data;
     std::string user_settings_data = "{}";
     bool semantics_enabled = false;
     bool assistive_technology_enabled = false;

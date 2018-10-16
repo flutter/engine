@@ -426,10 +426,30 @@ class Window {
     _onMetricsChangedZone = Zone.current;
   }
 
-  /// The system-reported locale.
+  /// The system-reported default locale of the device.
   ///
   /// This establishes the language and formatting conventions that application
   /// should, if possible, use to render their user interface.
+  ///
+  /// This is the first locale selected by the user and should be the user's
+  /// primary locale.
+  /// 
+  /// This is equivalent to `locales[0]` and will provide an empty non-null locale
+  /// if the [locales] list has not been set or is empty.
+  Locale get locale {
+    if (_locales != null && _locales.length != 0) {
+      return _locales[0];
+    }
+    return new Locale("", "");
+  }
+
+  /// The full system-reported supported locales of the device.
+  ///
+  /// This establishes the language and formatting conventions that application
+  /// should, if possible, use to render their user interface.
+  ///
+  /// The list is ordered in order of priority, with lower-indexed locales being
+  /// preferred over higher-indexed ones. The zeroth element is the default [locale].
   ///
   /// The [onLocaleChanged] callback is called whenever this value changes.
   ///
@@ -437,10 +457,6 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  Locale get locale => _locale;
-  Locale _locale;
-
-
   List<Locale> get locales => _locales;
   List<Locale> _locales;
 
@@ -749,7 +765,7 @@ class Window {
 
     // Store the zone in which the callback is being registered.
     final Zone registrationZone = Zone.current;
-    // assert(false);
+
     return (ByteData data) {
       registrationZone.runUnaryGuarded(callback, data);
     };

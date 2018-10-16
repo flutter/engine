@@ -42,31 +42,21 @@ void _updateWindowMetrics(double devicePixelRatio,
 
 typedef _LocaleClosure = String Function();
 
-String _localeClosure() => window._locale.toString();
+String _localeClosure() => window.locale.toString();
 
 @pragma('vm:entry-point')
 _LocaleClosure _getLocaleClosure() => _localeClosure;
-
-@pragma('vm:entry-point')
-void _updateLocale(String languageCode, String countryCode, String scriptCode, String variantCode) {
-  window._locale = new Locale(languageCode, countryCode);
-  _invoke(window.onLocaleChanged, window._onLocaleChangedZone);
-}
 
 @pragma('vm:entry-point')
 void _updateLocales(List<String> locales) {
   final int stringsPerLocale = 4;
   int numLocales = (locales.length / stringsPerLocale).toInt();
   window._locales = new List<Locale>(numLocales);
-  for (int localeIndex = 0; localeIndex < numLocales; ++localeIndex) {
-    // TODO(garyq): pass on the script and variant codes, which are the third and fourth elements
-    window._locales[localeIndex] = new Locale(locales[localeIndex * stringsPerLocale],
-                                   locales[localeIndex * stringsPerLocale + 1]);
+  for (int localeIndex = 0; localeIndex < numLocales; localeIndex += stringsPerLocale) {
+    window._locales[localeIndex] = new Locale(locales[localeIndex],
+                                   locales[localeIndex + 1]);
   }
-  print(window._locales);
-  window._locale = new Locale(locales[0], locales[1]);
   _invoke(window.onLocaleChanged, window._onLocaleChangedZone);
-  print("FINISHED");
 }
 
 @pragma('vm:entry-point')

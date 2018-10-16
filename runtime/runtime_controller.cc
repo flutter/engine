@@ -4,7 +4,6 @@
 
 #include "flutter/runtime/runtime_controller.h"
 
-#include "flutter/fml/logging.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
@@ -125,8 +124,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
 
 bool RuntimeController::FlushRuntimeStateToIsolate() {
   return SetViewportMetrics(window_data_.viewport_metrics) &&
-         SetLocale(window_data_.language_code, window_data_.country_code,
-                   window_data_.script_code, window_data_.variant_code) &&
+         SetLocales(window_data_.locale_data) &&
          SetSemanticsEnabled(window_data_.semantics_enabled) &&
          SetAccessibilityFeatures(window_data_.accessibility_feature_flags_);
 }
@@ -141,51 +139,14 @@ bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
   return false;
 }
 
-bool RuntimeController::SetLocale(const std::string& language_code,
-                                  const std::string& country_code,
-                                  const std::string& script_code,
-                                  const std::string& variant_code) {
-  window_data_.language_code = language_code;
-  window_data_.country_code = country_code;
-  window_data_.script_code = script_code;
-  window_data_.variant_code = variant_code;
-
-  if (auto window = GetWindowIfAvailable()) {
-    window->UpdateLocale(window_data_.language_code, window_data_.country_code,
-                         window_data_.script_code, window_data_.variant_code);
-    return true;
-  }
-
-  return false;
-}
-
 bool RuntimeController::SetLocales(
     const std::vector<std::string>& locale_data) {
-  const size_t strings_per_locale = 4;
-  FML_DLOG(ERROR) << "RUNTIME CONTROLLER SET LOCALES";
-  for (auto str : locale_data) {
-    FML_LOG(ERROR) << str;
-  }
-  for (size_t locale_index = 0;
-       locale_index < locale_data.size() / strings_per_locale; ++locale_index) {
-    window_data_.locales.emplace_back(
-        locale_data[locale_index * strings_per_locale],
-        locale_data[locale_index * strings_per_locale + 1],
-        locale_data[locale_index * strings_per_locale + 2],
-        locale_data[locale_index * strings_per_locale + 3]);
-  }
-  // window_data_.language_code = language_code;
-  // window_data_.country_code = country_code;
-  // window_data_.script_code = script_code;
-  // window_data_.variant_code = variant_code;
+  window_data_.locale_data = locale_data;
 
   if (auto window = GetWindowIfAvailable()) {
     window->UpdateLocales(locale_data);
     return true;
   }
-
-  // return false;
-
   return true;
 }
 

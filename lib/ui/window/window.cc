@@ -4,7 +4,6 @@
 
 #include "flutter/lib/ui/window/window.h"
 
-#include "flutter/fml/logging.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_message_response_dart.h"
@@ -163,32 +162,11 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
                   });
 }
 
-void Window::UpdateLocale(const std::string& language_code,
-                          const std::string& country_code,
-                          const std::string& script_code,
-                          const std::string& variant_code) {
-  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
-    return;
-  tonic::DartState::Scope scope(dart_state);
-
-  DartInvokeField(library_.value(), "_updateLocale",
-                  {
-                      StdStringToDart(language_code),
-                      StdStringToDart(country_code),
-                      StdStringToDart(script_code),
-                      StdStringToDart(variant_code),
-                  });
-}
-
 void Window::UpdateLocales(const std::vector<std::string>& locales) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
   if (!dart_state)
     return;
   tonic::DartState::Scope scope(dart_state);
-  for (auto str : locales) {
-    FML_LOG(ERROR) << str;
-  }
   DartInvokeField(library_.value(), "_updateLocales",
                   {
                       tonic::ToDart<std::vector<std::string>>(locales),
