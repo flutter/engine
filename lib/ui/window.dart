@@ -187,7 +187,7 @@ class Locale {
     String region,
     List<String> variants,
   }) : _languageCode = language,
-       scriptCode = script,  // ignore: prefer_initializing_formals, https://github.com/dart-lang/sdk/issues/34797
+       scriptCode = script,  // ignore: prefer_initializing_formals, parameter name and member name are different.
        _countryCode = region,
        _variants = variants;
 
