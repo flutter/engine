@@ -714,11 +714,12 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
   if (languageCode && countryCode)
     // We pass empty strings for undefined scripts and variants to ensure the JSON encoder/decoder
     // functions properly.
-    [_localizationChannel.get() invokeMethod:@"setLocale"
-                                   arguments:@[
-                                     languageCode, countryCode, scriptCode ? scriptCode : @"",
-                                     variantCode ? variantCode : @""
-                                   ]];
+    [[_engine.get() localizationChannel]
+        invokeMethod:@"setLocale"
+           arguments:@[
+             languageCode, countryCode, scriptCode ? scriptCode : @"",
+             variantCode ? variantCode : @""
+           ]];
 }
 
 #pragma mark - Set user settings
