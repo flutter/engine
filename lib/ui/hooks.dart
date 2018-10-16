@@ -52,9 +52,9 @@ void _updateLocales(List<String> locales) {
   final int stringsPerLocale = 4;
   int numLocales = (locales.length / stringsPerLocale).toInt();
   window._locales = new List<Locale>(numLocales);
-  for (int localeIndex = 0; localeIndex < numLocales; localeIndex += stringsPerLocale) {
-    window._locales[localeIndex] = new Locale(locales[localeIndex],
-                                   locales[localeIndex + 1]);
+  for (int localeIndex = 0; localeIndex < numLocales; localeIndex++) {
+    window._locales[localeIndex] = new Locale(locales[localeIndex * stringsPerLocale],
+                                   locales[localeIndex * stringsPerLocale + 1]);
   }
   _invoke(window.onLocaleChanged, window._onLocaleChangedZone);
 }

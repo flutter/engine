@@ -329,10 +329,8 @@ bool Engine::HandleLocalizationPlatformMessage(
   const size_t strings_per_locale = 4;
   if (args->value.Size() % strings_per_locale != 0)
     return false;
-
   std::vector<std::string> locale_data;
-  for (size_t locale_index = 0;
-       locale_index < args->value.Size() / strings_per_locale;
+  for (size_t locale_index = 0; locale_index < args->value.Size();
        locale_index += strings_per_locale) {
     if (!args->value[locale_index].IsString() ||
         !args->value[locale_index + 1].IsString())

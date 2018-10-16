@@ -152,6 +152,9 @@ class Locale {
   /// the region subtag should be uppercase.
   const Locale(this._languageCode, [ this._countryCode ]) : assert(_languageCode != null);
 
+  /// Empty locale constant. This is an invalid locale.
+  static const Locale none = const Locale('', '');
+
   /// The primary language subtag for the locale.
   ///
   /// This must not be null.
@@ -431,16 +434,16 @@ class Window {
   /// This establishes the language and formatting conventions that application
   /// should, if possible, use to render their user interface.
   ///
-  /// This is the first locale selected by the user and should be the user's
-  /// primary locale.
-  /// 
-  /// This is equivalent to `locales[0]` and will provide an empty non-null locale
+  /// This is the first locale selected by the user and is the user's
+  /// primary locale (the locale the device UI is displayed in)
+  ///
+  /// This is equivalent to `locales.first` and will provide an empty non-null locale
   /// if the [locales] list has not been set or is empty.
   Locale get locale {
-    if (_locales != null && _locales.length != 0) {
-      return _locales[0];
+    if (_locales != null && _locales.isNotEmpty) {
+      return _locales.first;
     }
-    return new Locale("", "");
+    return Locale.none;
   }
 
   /// The full system-reported supported locales of the device.
@@ -449,7 +452,7 @@ class Window {
   /// should, if possible, use to render their user interface.
   ///
   /// The list is ordered in order of priority, with lower-indexed locales being
-  /// preferred over higher-indexed ones. The zeroth element is the default [locale].
+  /// preferred over higher-indexed ones. The first element is the primary [locale].
   ///
   /// The [onLocaleChanged] callback is called whenever this value changes.
   ///
