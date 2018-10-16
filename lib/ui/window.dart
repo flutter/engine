@@ -116,9 +116,9 @@ class WindowPadding {
   }
 }
 
-/// An identifier used to select a user's language and formatting preferences,
-/// consisting of a language and a country. This is a subset of locale
-/// identifiers as defined by BCP 47.
+/// An identifier used to select a user's language and formatting preferences.
+/// This represents a [Unicode Language
+/// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier).
 ///
 /// Locales are canonicalized according to the "preferred value" entries in the
 /// [IANA Language Subtag
@@ -145,11 +145,20 @@ class Locale {
   /// The primary language subtag must not be null. The region subtag is
   /// optional.
   ///
-  /// The values are _case sensitive_, and should match the case of the relevant
-  /// subtags in the [IANA Language Subtag
-  /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
-  /// Typically this means the primary language subtag should be lowercase and
-  /// the region subtag should be uppercase.
+  /// The subtag values are _case sensitive_ and should be one of the valid
+  /// subtags according to CLDR supplemental data:
+  /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
+  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml). The
+  /// primary language subtag should be two to three lowercase letters. The
+  /// region region subtag should be two uppercase letters or three digits. See
+  /// the [Unicode Language
+  /// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier)
+  /// specification.
+  ///
+  /// Validity is not checked by default, but some methods may throw away
+  /// invalid data.
+  ///
+  /// See also: [Locale.create].
   const Locale(
     this._languageCode, [
     this._countryCode,
@@ -159,14 +168,19 @@ class Locale {
 
   /// Creates a new Locale object.
   ///
-  /// The keyword arguments specify the subtags of the Locale. The subtag values
-  /// should match the values listed as valid in Unicode CLDR supplemental data:
+  /// The keyword arguments specify the subtags of the Locale.
+  ///
+  /// The subtag values are _case sensitive_ and should be valid subtags
+  /// according to CLDR supplemental data:
   /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
   /// [script](http://unicode.org/cldr/latest/common/validity/script.xml),
   /// [region](http://unicode.org/cldr/latest/common/validity/region.xml) and
   /// [variant](http://unicode.org/cldr/latest/common/validity/variant.xml). If
   /// there is more than one variant, they should be in sorted order. This list
   /// will be used as-is, and should never again be modified.
+  ///
+  /// Validity is not checked by default, but some methods may throw away
+  /// invalid data.
   const Locale.create({
     String language = 'und',
     String script,
@@ -337,9 +351,8 @@ class Locale {
   ///
   /// This can be null.
   ///
-  /// This is expected to be a hyphen-separated sorted list of valid Unicode
-  /// Language Identifier variant subtags that are listed in Unicode CLDR
-  /// supplemental data:
+  /// This is expected to be a sorted list of valid Unicode Language Identifier
+  /// variant subtags that are listed in Unicode CLDR supplemental data:
   /// http://unicode.org/cldr/latest/common/validity/variants.xml. Please see
   /// constructor documentation.
   final List<String> _variants;
