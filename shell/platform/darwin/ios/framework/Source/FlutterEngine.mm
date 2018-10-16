@@ -17,6 +17,7 @@
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/darwin/common/command_line.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
@@ -41,6 +42,7 @@
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
 
   fml::WeakPtr<FlutterViewController> _viewController;
+  fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
 
   // Channels
   fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
@@ -70,6 +72,7 @@
     _dartProject.reset([projectOrNil retain]);
 
   _pluginPublications = [NSMutableDictionary new];
+  _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
 
   [self setupChannels];
 

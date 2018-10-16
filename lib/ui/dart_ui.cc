@@ -11,6 +11,7 @@
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server_natives.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/codec.h"
+#include "flutter/lib/ui/painting/engine_layer.h"
 #include "flutter/lib/ui/painting/frame_info.h"
 #include "flutter/lib/ui/painting/gradient.h"
 #include "flutter/lib/ui/painting/image.h"
@@ -23,6 +24,7 @@
 #include "flutter/lib/ui/painting/vertices.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
+#include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/lib/ui/text/paragraph_builder.h"
 #include "flutter/lib/ui/window/window.h"
@@ -70,6 +72,8 @@ void DartUI::InitForGlobal() {
     CanvasPathMeasure::RegisterNatives(g_natives);
     Codec::RegisterNatives(g_natives);
     DartRuntimeHooks::RegisterNatives(g_natives);
+    EngineLayer::RegisterNatives(g_natives);
+    FontCollection::RegisterNatives(g_natives);
     FrameInfo::RegisterNatives(g_natives);
     ImageFilter::RegisterNatives(g_natives);
     ImageShader::RegisterNatives(g_natives);
