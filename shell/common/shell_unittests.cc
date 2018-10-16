@@ -50,7 +50,7 @@ class TestPlatformView : public PlatformView,
   FML_DISALLOW_COPY_AND_ASSIGN(TestPlatformView);
 };
 
-bool ValidateShell(Shell* shell) {
+static bool ValidateShell(Shell* shell) {
   if (!shell) {
     return false;
   }
