@@ -95,7 +95,7 @@ FLUTTER_EXPORT
 
 /**
  * Controls whether the created view will be opaque or not.
- * 
+ *
  * Default is `YES`.  Note that setting this to `NO` may negatively impact performance
  * when using hardware accelleration.
  */
