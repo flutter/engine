@@ -205,6 +205,15 @@ class Locale {
   /// Locale('he')` and `const Locale('iw')` are equal, and both have the
   /// [languageCode] `he`, because `iw` is a deprecated language subtag that was
   /// replaced by the subtag `he`.
+  ///
+  /// This should be a valid Unicode Language subtag as listed in [Unicode CLDR
+  /// supplemental
+  /// data](http://unicode.org/cldr/latest/common/validity/language.xml).
+  ///
+  /// See also:
+  ///
+  ///  * [Locale.fromSubtags], which describes the conventions for creating
+  ///    [Locale] objects.
   String get languageCode => _replaceDeprecatedLanguageSubtag(_languageCode);
   final String _languageCode;
 
@@ -296,17 +305,21 @@ class Locale {
 
   /// The script subtag for the locale.
   ///
-  /// This can be null.
+  /// This may be null, indicating that there is no specified script subtag.
   ///
-  /// This is expected to be a valid Unicode Language Identifier script subtag
-  /// that is listed in Unicode CLDR supplemental data:
-  /// http://unicode.org/cldr/latest/common/validity/script.xml. Please see
-  /// constructor documentation.
+  /// This should be a valid Unicode Language Identifier script subtag as listed
+  /// in [Unicode CLDR supplemental
+  /// data](http://unicode.org/cldr/latest/common/validity/script.xml).
+  ///
+  /// See also:
+  ///
+  ///  * [Locale.fromSubtags], which describes the conventions for creating
+  ///    [Locale] objects.
   final String scriptCode;
 
   /// The region subtag for the locale.
   ///
-  /// This can be null.
+  /// This may be null, indicating that there is no specified region subtag.
   ///
   /// This is expected to be string registered in the [IANA Language Subtag
   /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry)
@@ -318,6 +331,11 @@ class Locale {
   /// 'DE')` and `const Locale('de', 'DD')` are equal, and both have the
   /// [countryCode] `DE`, because `DD` is a deprecated language subtag that was
   /// replaced by the subtag `DE`.
+  ///
+  /// See also:
+  ///
+  ///  * [Locale.fromSubtags], which describes the conventions for creating
+  ///    [Locale] objects.
   String get countryCode => _replaceDeprecatedRegionSubtag(_countryCode);
   final String _countryCode;
 
@@ -341,20 +359,30 @@ class Locale {
   /// subtag that is listed in Unicode CLDR supplemental data:
   /// http://unicode.org/cldr/latest/common/validity/variants.xml. Please see
   /// constructor documentation.
+  ///
+  /// See also:
+  ///
+  ///  * [Locale.fromSubtags], which describes the conventions for creating
+  ///    [Locale] objects.
   Iterable<String> get variants {
     if (_variants == null)
       return const <String>[];
     return _variants;
   }
 
-  /// Variants subtags for the locale.
+  /// The variants subtags for the locale.
   ///
-  /// This can be null.
+  /// This may be null, indicating that there is no specified variants subtag.
   ///
   /// This is expected to be a sorted list of valid Unicode Language Identifier
   /// variant subtags that are listed in Unicode CLDR supplemental data:
   /// http://unicode.org/cldr/latest/common/validity/variants.xml. Please see
   /// constructor documentation.
+  ///
+  /// See also:
+  ///
+  ///  * [Locale.fromSubtags], which describes the conventions for creating
+  ///    [Locale] objects.
   final List<String> _variants;
 
   @override
