@@ -181,7 +181,7 @@ class Locale {
   ///
   /// Validity is not checked by default, but some methods may throw away
   /// invalid data.
-  const Locale.create({
+  const Locale.fromSubtags({
     String language = 'und',
     String script,
     String region,
