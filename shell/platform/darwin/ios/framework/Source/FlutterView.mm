@@ -43,10 +43,9 @@ fml::WeakPtr<FlutterViewController> _viewController;
                                userInfo:nil]);
 }
 
-- (instancetype)initWithViewController:(fml::WeakPtr<FlutterViewController>)viewController
-                                 frame:(CGRect)frame {
+- (instancetype)initWithViewController:(fml::WeakPtr<FlutterViewController>)viewController {
   FML_DCHECK(viewController) << "viewController must be set";
-  self = [super initWithFrame:frame];
+  self = [super initWithFrame:CGRectNull];
 
   if (self) {
     _viewController = viewController;

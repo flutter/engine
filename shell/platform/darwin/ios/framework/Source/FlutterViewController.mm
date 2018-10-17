@@ -149,8 +149,7 @@
                                   _threadHost.io_thread->GetTaskRunner()           // io
   );
 
-  _flutterView.reset([[FlutterView alloc] initWithViewController:_weakFactory->GetWeakPtr()
-                                                           frame:CGRectNull]);
+  _flutterView.reset([[FlutterView alloc] initWithViewController:_weakFactory->GetWeakPtr()]);
 
   // Lambda captures by pointers to ObjC objects are fine here because the create call is
   // synchronous.

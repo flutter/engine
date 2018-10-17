@@ -20,7 +20,7 @@
 - (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
 
 - (instancetype)initWithViewController:(fml::WeakPtr<FlutterViewController>)viewController
-                                 frame:(CGRect)frame NS_DESIGNATED_INITIALIZER;
+    NS_DESIGNATED_INITIALIZER;
 - (std::unique_ptr<shell::IOSSurface>)createSurface;
 
 @end
