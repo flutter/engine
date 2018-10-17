@@ -45,11 +45,11 @@
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
     layer.allowsGroupOpacity = YES;
-    layer.opaque = YES;
     CGFloat screenScale = [UIScreen mainScreen].scale;
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
   }
+  self.layer.opaque = [self flutterViewController].viewIsOpaque;
 
   [super layoutSubviews];
 }

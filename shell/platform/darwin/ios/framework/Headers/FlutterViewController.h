@@ -93,6 +93,14 @@ FLUTTER_EXPORT
  */
 @property(strong, nonatomic) UIView* splashScreenView;
 
+/**
+ * Controls whether the created view will be opaque or not.
+ * 
+ * Default is `YES`.  Note that setting this to `NO` may negatively impact performance
+ * when using hardware accelleration.
+ */
+@property() BOOL viewIsOpaque;
+
 @end
 
 #endif  // FLUTTER_FLUTTERVIEWCONTROLLER_H_

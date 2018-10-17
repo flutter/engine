@@ -75,6 +75,8 @@
     else
       _dartProject.reset([projectOrNil retain]);
 
+    self.viewIsOpaque = YES;
+
     [self performCommonViewControllerInitialization];
   }
 
