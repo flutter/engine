@@ -8,6 +8,7 @@ import 'dart:async';
 import 'dart:io' hide FileSystemEntity;
 
 import 'package:args/args.dart';
+import 'package:kernel/kernel.dart';
 import 'package:path/path.dart' as path;
 
 import 'package:flutter_kernel_transformers/track_widget_constructor_locations.dart';
@@ -18,13 +19,23 @@ import 'package:vm/frontend_server.dart' as frontend show FrontendCompiler,
 /// Wrapper around [FrontendCompiler] that adds [widgetCreatorTracker] kernel
 /// transformation to the compilation.
 class _FlutterFrontendCompiler implements frontend.CompilerInterface{
-  final frontend.CompilerInterface _compiler;
+  frontend.CompilerInterface _compiler;
+
+  final bool trackWidgetCreation;
 
   _FlutterFrontendCompiler(StringSink output,
-      {bool trackWidgetCreation: false, bool unsafePackageSerialization}) :
-          _compiler = new frontend.FrontendCompiler(output,
-          transformer: trackWidgetCreation ? new WidgetCreatorTracker() : null,
-          unsafePackageSerialization: unsafePackageSerialization);
+      {this.trackWidgetCreation: false, bool unsafePackageSerialization}) {
+    _compiler = new frontend.FrontendCompiler(
+      output,
+      transformer: trackWidgetCreation ? new WidgetCreatorTracker() : null,
+      isComponentCompatibleCallback: _isComponentCompatible,
+      unsafePackageSerialization: unsafePackageSerialization,
+    );
+  }
+
+  bool _isComponentCompatible(Component component) {
+    return WidgetCreatorTracker.isComponentCompatible(component, trackWidgetCreation);
+  }
 
   @override
   Future<bool> compile(String filename, ArgResults options, {IncrementalCompiler generator}) async {

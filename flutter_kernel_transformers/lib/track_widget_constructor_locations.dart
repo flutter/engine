@@ -301,6 +301,37 @@ class WidgetCreatorTracker implements ProgramTransformer {
   /// valid anymore.
   ClassHierarchy hierarchy;
 
+  /// Returns whether the specified component is compatible with this value for
+  /// [trackWidgetCreationEnabled].
+  static bool isComponentCompatible(Component component, bool trackWidgetCreationEnabled) {
+    if (trackWidgetCreationEnabled) {
+      // The only incompatible case is if the component ran the
+      // WidgetCreatorTracker transform but the transform is not currently
+      // enabled.
+      //
+      // Ideally we would use a tag in the header of the kernel file to
+      // determine if the transform was run but kernel does not support that
+      // functionality yet so we have to check whether the Widget class
+      // implements the _HasCreationLocation interface which can only occur
+      // if the transform has run due to the interface being private in the
+      // widget_inspector.dart library.
+      // https://github.com/dart-lang/sdk/issues/31545
+      return true;
+    }
+    final WidgetCreatorTracker tracker = new WidgetCreatorTracker();
+    tracker._resolveFlutterClasses(component.libraries);
+    final Class widgetClass = tracker._widgetClass;
+    final Class hasCreationLocationClass = tracker._hasCreationLocationClass;
+    if (widgetClass == null) {
+      // This component doesn't use flutter so has to be compatible.
+      return true;
+    }
+    final bool transformRun = widgetClass.implementedTypes.any(
+      (Supertype supertype) => supertype.classNode == hasCreationLocationClass
+    );
+    return transformRun == trackWidgetCreationEnabled;
+  }
+
   void _resolveFlutterClasses(Iterable<Library> libraries) {
     // If the Widget or Debug location classes have been updated we need to get
     // the latest version
