@@ -12,7 +12,6 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
@@ -23,33 +22,27 @@
 
 @implementation FlutterView
 
-fml::WeakPtr<FlutterViewController> _viewController;
+id<FlutterScreenshotDelegate> _delegate;
 
 - (instancetype)init {
-  @throw([NSException exceptionWithName:@"FlutterView must initWithViewController"
-                                 reason:nil
-                               userInfo:nil]);
+  @throw([NSException exceptionWithName:@"FlutterView must initWithShell" reason:nil userInfo:nil]);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
-  @throw([NSException exceptionWithName:@"FlutterView must initWithViewController"
-                                 reason:nil
-                               userInfo:nil]);
+  @throw([NSException exceptionWithName:@"FlutterView must initWithShell" reason:nil userInfo:nil]);
 }
 
 - (instancetype)initWithCoder:(NSCoder*)aDecoder {
-  @throw([NSException exceptionWithName:@"FlutterView must initWithViewController"
-                                 reason:nil
-                               userInfo:nil]);
+  @throw([NSException exceptionWithName:@"FlutterView must initWithShell" reason:nil userInfo:nil]);
 }
 
-- (instancetype)initWithViewController:(fml::WeakPtr<FlutterViewController>)viewController {
-  FML_DCHECK(viewController) << "viewController must be set";
+- (instancetype)initWithDelegate:(id<FlutterScreenshotDelegate>)delegate opaque:(BOOL)opaque {
+  FML_DCHECK(delegate) << "Delegate must not be nil.";
   self = [super initWithFrame:CGRectNull];
 
   if (self) {
-    _viewController = viewController;
-    self.layer.opaque = _viewController.get().isViewOpaque;
+    _delegate = delegate;
+    self.layer.opaque = opaque;
   }
 
   return self;
@@ -97,10 +90,8 @@ fml::WeakPtr<FlutterViewController> _viewController;
     return;
   }
 
-  auto& shell = [_viewController.get() shell];
-
-  auto screenshot = shell.Screenshot(shell::Rasterizer::ScreenshotType::UncompressedImage,
-                                     false /* base64 encode */);
+  auto screenshot = [_delegate takeScreenshot:shell::Rasterizer::ScreenshotType::UncompressedImage
+                              asBase64Encoded:NO];
 
   if (!screenshot.data || screenshot.data->isEmpty() || screenshot.frame_size.isEmpty()) {
     return;

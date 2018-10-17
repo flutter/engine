@@ -22,7 +22,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-@interface FlutterViewController () <FlutterTextInputDelegate>
+@interface FlutterViewController () <FlutterTextInputDelegate, FlutterScreenshotDelegate>
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
 @end
 
@@ -149,7 +149,7 @@
                                   _threadHost.io_thread->GetTaskRunner()           // io
   );
 
-  _flutterView.reset([[FlutterView alloc] initWithViewController:_weakFactory->GetWeakPtr()]);
+  _flutterView.reset([[FlutterView alloc] initWithDelegate:self opaque:self.isViewOpaque]);
 
   // Lambda captures by pointers to ObjC objects are fine here because the create call is
   // synchronous.
@@ -853,6 +853,14 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
   }
   [_textInputChannel.get() invokeMethod:@"TextInputClient.performAction"
                               arguments:@[ @(client), actionString ]];
+}
+
+#pragma mark - Screenshot Delegate
+
+- (shell::Rasterizer::Screenshot)takeScreenshot:(shell::Rasterizer::ScreenshotType)type
+                                asBase64Encoded:(BOOL)base64Encode {
+  FML_DCHECK(_shell) << "Cannot takeScreenshot without a shell";
+  return _shell->Screenshot(type, base64Encode);
 }
 
 #pragma mark - Orientation updates

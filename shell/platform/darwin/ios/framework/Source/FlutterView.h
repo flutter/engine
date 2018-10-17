@@ -10,8 +10,15 @@
 #include <memory>
 
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#include "flutter/shell/common/shell.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
+
+@protocol FlutterScreenshotDelegate <NSObject>
+
+- (shell::Rasterizer::Screenshot)takeScreenshot:(shell::Rasterizer::ScreenshotType)type
+                                asBase64Encoded:(BOOL)base64Encode;
+
+@end
 
 @interface FlutterView : UIView
 
@@ -19,8 +26,8 @@
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
 - (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
 
-- (instancetype)initWithViewController:(fml::WeakPtr<FlutterViewController>)viewController
-    NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithDelegate:(id<FlutterScreenshotDelegate>)delegate
+                          opaque:(BOOL)opaque NS_DESIGNATED_INITIALIZER;
 - (std::unique_ptr<shell::IOSSurface>)createSurface;
 
 @end
