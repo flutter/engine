@@ -49,8 +49,8 @@ _LocaleClosure _getLocaleClosure() => _localeClosure;
 
 @pragma('vm:entry-point')
 void _updateLocales(List<String> locales) {
-  final int stringsPerLocale = 4;
-  int numLocales = (locales.length / stringsPerLocale).toInt();
+  const int stringsPerLocale = 4;
+  final int numLocales = locales.length ~/ stringsPerLocale;
   window._locales = new List<Locale>(numLocales);
   for (int localeIndex = 0; localeIndex < numLocales; localeIndex++) {
     window._locales[localeIndex] = new Locale(locales[localeIndex * stringsPerLocale],
