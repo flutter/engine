@@ -54,7 +54,7 @@
   fml::scoped_nsobject<FlutterView> _flutterView;
   fml::scoped_nsobject<UIView> _splashScreenView;
   fml::ScopedBlock<void (^)(void)> _flutterViewRenderedCallback;
-  fml::scoped_nsobject<FlutterPlatformViewsController> _platformViewsController;
+  std::unique_ptr<shell::FlutterPlatformViewsController> _platformViewsController;
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
   blink::ViewportMetrics _viewportMetrics;
@@ -115,7 +115,7 @@
     [self setupChannels];
     [self setupNotificationCenterObservers];
 
-    _platformViewsController.reset([[FlutterPlatformViewsController alloc] init:self]);
+    _platformViewsController.reset(new shell::FlutterPlatformViewsController(self));
     _pluginPublications = [NSMutableDictionary new];
   }
 }
@@ -1096,7 +1096,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 #pragma mark - Platform views
 
-- (FlutterPlatformViewsController*)platformViewsController {
+- (shell::FlutterPlatformViewsController*)platformViewsController {
   return _platformViewsController.get();
 }
 
@@ -1208,7 +1208,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(NSString*)factoryId {
-  [[_flutterViewController platformViewsController] registerViewFactory:factory withId:factoryId];
+  [_flutterViewController platformViewsController] -> RegisterViewFactory(factory, factoryId);
 }
 
 - (void)publish:(NSObject*)value {

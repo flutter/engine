@@ -5,17 +5,30 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterBinaryMessenger.h"
+#include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 
-@interface FlutterPlatformViewsController : NSObject
+namespace shell {
 
-- (instancetype)init:(NSObject<FlutterBinaryMessenger>*)withMessenger;
+class FlutterPlatformViewsController {
+ public:
+  FlutterPlatformViewsController(NSObject<FlutterBinaryMessenger>* messenger);
 
-- (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
-                     withId:(NSString*)factoryId;
+  void RegisterViewFactory(NSObject<FlutterPlatformViewFactory>* factory, NSString* factoryId);
 
-@end
+ private:
+  fml::scoped_nsobject<FlutterMethodChannel> channel_;
+  std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
+  std::map<long, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
+
+  void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
+  void OnCreate(FlutterMethodCall* call, FlutterResult& result);
+  void OnDispose(FlutterMethodCall* call, FlutterResult& result);
+};
+
+}  // namespace shell
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_

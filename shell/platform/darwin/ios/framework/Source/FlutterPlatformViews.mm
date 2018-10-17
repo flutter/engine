@@ -10,58 +10,42 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterChannels.h"
 
-@implementation FlutterPlatformViewsController {
-  fml::scoped_nsobject<FlutterMethodChannel> _channel;
-  std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> _factories;
-  std::map<long, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> _views;
+namespace shell {
+
+FlutterPlatformViewsController::FlutterPlatformViewsController(
+    NSObject<FlutterBinaryMessenger>* messenger) {
+  channel_.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/platform_views"
+      binaryMessenger:messenger
+                codec:[FlutterStandardMethodCodec sharedInstance]]);
+  [channel_.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    OnMethodCall(call, result);
+  }];
 }
 
-- (instancetype)init:(NSObject<FlutterBinaryMessenger>*)withMessenger {
-  if (self = [super init]) {
-    _channel.reset([[FlutterMethodChannel alloc]
-           initWithName:@"flutter/platform_views"
-        binaryMessenger:withMessenger
-                  codec:[FlutterStandardMethodCodec sharedInstance]]);
-    [_channel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-      [self methodCallHandler:call withResult:result];
-    }];
-  }
-  return self;
-}
-
-- (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
-                     withId:(NSString*)factoryId {
-  std::string idString([factoryId UTF8String]);
-  NSAssert(_factories.count(idString) == 0,
-           ([NSString stringWithFormat:@"Can't register an already registered view factory: %@",
-                                       factoryId]));
-  _factories[idString] =
-      fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>([factory retain]);
-}
-
-- (void)methodCallHandler:(FlutterMethodCall*)call withResult:(FlutterResult)result {
+void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult& result) {
   if ([[call method] isEqualToString:@"create"]) {
-    [self handleCreate:call withResult:result];
+    OnCreate(call, result);
   } else if ([[call method] isEqualToString:@"dispose"]) {
-    [self handleDispose:call withResult:result];
+    OnDispose(call, result);
   } else {
     result(FlutterMethodNotImplemented);
   }
 }
 
-- (void)handleCreate:(FlutterMethodCall*)call withResult:(FlutterResult)result {
+void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult& result) {
   NSDictionary<NSString*, id>* args = [call arguments];
 
   long viewId = [args[@"id"] longValue];
   std::string viewType([args[@"viewType"] UTF8String]);
 
-  if (_views[viewId] != nil) {
+  if (views_[viewId] != nil) {
     result([FlutterError errorWithCode:@"recreating_view"
                                message:@"trying to create an already created view"
                                details:[NSString stringWithFormat:@"view id: '%ld'", viewId]]);
   }
 
-  NSObject<FlutterPlatformViewFactory>* factory = _factories[viewType].get();
+  NSObject<FlutterPlatformViewFactory>* factory = factories_[viewType].get();
   if (factory == nil) {
     result([FlutterError errorWithCode:@"unregistered_view_type"
                                message:@"trying to create a view with an unregistered type"
@@ -71,26 +55,35 @@
   }
 
   // TODO(amirh): decode and pass the creation args.
-  _views[viewId] =
+  views_[viewId] =
       fml::scoped_nsobject<NSObject<FlutterPlatformView>>([[factory createWithFrame:CGRectZero
                                                                             andArgs:nil] retain]);
   result(nil);
 }
 
-- (void)handleDispose:(FlutterMethodCall*)call withResult:(FlutterResult)result {
+void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult& result) {
   NSDictionary<NSString*, id>* args = [call arguments];
   long viewId = [args[@"id"] longValue];
 
-  if (_views[viewId] == nil) {
+  if (views_[viewId] == nil) {
     result([FlutterError errorWithCode:@"unknown_view"
                                message:@"trying to dispose an unknown"
                                details:[NSString stringWithFormat:@"view id: '%ld'", viewId]]);
     return;
   }
 
-  [_views[viewId] dispose];
-  _views.erase(viewId);
+  [views_[viewId] dispose];
+  views_.erase(viewId);
   result(nil);
 }
 
-@end
+void FlutterPlatformViewsController::RegisterViewFactory(
+    NSObject<FlutterPlatformViewFactory>* factory,
+    NSString* factoryId) {
+  std::string idString([factoryId UTF8String]);
+  FML_CHECK(factories_.count(idString) == 0);
+  factories_[idString] =
+      fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>([factory retain]);
+}
+
+}  // namespace shell
