@@ -13,7 +13,6 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
@@ -24,21 +23,37 @@
 
 @implementation FlutterView
 
-- (FlutterViewController*)flutterViewController {
-  // Find the first view controller in the responder chain and see if it is a FlutterViewController.
-  for (UIResponder* responder = self.nextResponder; responder != nil;
-       responder = responder.nextResponder) {
-    if ([responder isKindOfClass:[UIViewController class]]) {
-      if ([responder isKindOfClass:[FlutterViewController class]]) {
-        return reinterpret_cast<FlutterViewController*>(responder);
-      } else {
-        // Should only happen if a non-FlutterViewController tries to somehow (via dynamic class
-        // resolution or reparenting) set a FlutterView as its view.
-        return nil;
-      }
-    }
+fml::WeakPtr<FlutterViewController> _viewController;
+
+- (instancetype)init {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithViewController"
+                                 reason:nil
+                               userInfo:nil]);
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithViewController"
+                                 reason:nil
+                               userInfo:nil]);
+}
+
+- (instancetype)initWithCoder:(NSCoder*)aDecoder {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithViewController"
+                                 reason:nil
+                               userInfo:nil]);
+}
+
+- (instancetype)initWithViewController:(fml::WeakPtr<FlutterViewController>)viewController
+                                 frame:(CGRect)frame {
+  FML_DCHECK(viewController) << "viewController must be set";
+  self = [super initWithFrame:frame];
+
+  if (self) {
+    _viewController = viewController;
+    self.layer.opaque = _viewController.get().isViewOpaque;
   }
-  return nil;
+
+  return self;
 }
 
 - (void)layoutSubviews {
@@ -49,7 +64,6 @@
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
   }
-  self.layer.opaque = [self flutterViewController].viewIsOpaque;
 
   [super layoutSubviews];
 }
@@ -84,13 +98,7 @@
     return;
   }
 
-  FlutterViewController* controller = [self flutterViewController];
-
-  if (controller == nil) {
-    return;
-  }
-
-  auto& shell = [controller shell];
+  auto& shell = [_viewController.get() shell];
 
   auto screenshot = shell.Screenshot(shell::Rasterizer::ScreenshotType::UncompressedImage,
                                      false /* base64 encode */);

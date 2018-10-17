@@ -58,6 +58,7 @@
   blink::ViewportMetrics _viewportMetrics;
   int64_t _nextTextureId;
   BOOL _initialized;
+  BOOL _isViewOpaque;
 
   fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
 }
@@ -75,7 +76,7 @@
     else
       _dartProject.reset([projectOrNil retain]);
 
-    self.viewIsOpaque = YES;
+    self.isViewOpaque = YES;
 
     [self performCommonViewControllerInitialization];
   }
@@ -148,7 +149,8 @@
                                   _threadHost.io_thread->GetTaskRunner()           // io
   );
 
-  _flutterView.reset([[FlutterView alloc] init]);
+  _flutterView.reset([[FlutterView alloc] initWithViewController:_weakFactory->GetWeakPtr()
+                                                           frame:CGRectNull]);
 
   // Lambda captures by pointers to ObjC objects are fine here because the create call is
   // synchronous.
@@ -180,6 +182,18 @@
   }
 
   return true;
+}
+
+- (BOOL)isViewOpaque {
+  return _isViewOpaque;
+}
+
+- (void)isViewOpaque:(BOOL)value {
+  _isViewOpaque = value;
+  if (_flutterView.get().layer.opaque != value) {
+    _flutterView.get().layer.opaque = value;
+    [_flutterView.get().layer setNeedsLayout];
+  }
 }
 
 - (void)setupChannels {

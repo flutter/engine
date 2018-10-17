@@ -9,10 +9,18 @@
 
 #include <memory>
 
+#include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @interface FlutterView : UIView
 
+- (instancetype)init NS_UNAVAILABLE;
+- (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
+- (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
+
+- (instancetype)initWithViewController:(fml::WeakPtr<FlutterViewController>)viewController
+                                 frame:(CGRect)frame NS_DESIGNATED_INITIALIZER;
 - (std::unique_ptr<shell::IOSSurface>)createSurface;
 
 @end

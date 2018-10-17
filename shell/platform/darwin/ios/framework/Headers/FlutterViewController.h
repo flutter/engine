@@ -97,9 +97,10 @@ FLUTTER_EXPORT
  * Controls whether the created view will be opaque or not.
  *
  * Default is `YES`.  Note that setting this to `NO` may negatively impact performance
- * when using hardware accelleration.
+ * when using hardware accelleration, and toggling this will trigger a re-layout of the
+ * view.
  */
-@property() BOOL viewIsOpaque;
+@property(nonatomic, getter=isViewOpaque, setter=isViewOpaque:) BOOL isViewOpaque;
 
 @end
 
