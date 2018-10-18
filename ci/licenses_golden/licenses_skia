@@ -1,4 +1,4 @@
-Signature: b057b889cea5ca9c9f140935cabc33b4
+Signature: b10468433dabee219765b0ad41e005fd
 
 UNUSED LICENSES:
 
@@ -709,7 +709,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/AndroidCodecBench.cpp
 FILE: ../../../third_party/skia/bench/AndroidCodecBench.h
 FILE: ../../../third_party/skia/bench/DrawLatticeBench.cpp
-FILE: ../../../third_party/skia/bench/EncoderBench.cpp
+FILE: ../../../third_party/skia/bench/EncodeBench.cpp
 FILE: ../../../third_party/skia/bench/GrMipMapBench.cpp
 FILE: ../../../third_party/skia/bench/HardStopGradientBench_ScaleNumColors.cpp
 FILE: ../../../third_party/skia/bench/HardStopGradientBench_ScaleNumHardStops.cpp
@@ -2018,8 +2018,14 @@ FILE: ../../../third_party/skia/experimental/canvaskit/externs.js
 FILE: ../../../third_party/skia/experimental/canvaskit/gpu.js
 FILE: ../../../third_party/skia/experimental/canvaskit/helper.js
 FILE: ../../../third_party/skia/experimental/canvaskit/interface.js
+FILE: ../../../third_party/skia/experimental/canvaskit/karma.bench.conf.js
 FILE: ../../../third_party/skia/experimental/canvaskit/karma.conf.js
 FILE: ../../../third_party/skia/experimental/canvaskit/package.json
+FILE: ../../../third_party/skia/experimental/canvaskit/perf/animation.bench.js
+FILE: ../../../third_party/skia/experimental/canvaskit/perf/assets/confetti.json
+FILE: ../../../third_party/skia/experimental/canvaskit/perf/assets/drinks.json
+FILE: ../../../third_party/skia/experimental/canvaskit/perf/assets/lego_loader.json
+FILE: ../../../third_party/skia/experimental/canvaskit/perf/assets/onboarding.json
 FILE: ../../../third_party/skia/experimental/docs/animationCommon.js
 FILE: ../../../third_party/skia/experimental/docs/backend.js
 FILE: ../../../third_party/skia/experimental/docs/canvasBackend.js
@@ -2211,6 +2217,8 @@ FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win10-Clan
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-Win10-Clang-NUC6i5SYK-GPU-IntelIris540-x86_64-Release-All-Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/Perf-iOS-Clang-iPadPro-GPU-PowerVRGT7800-arm64-Release-All.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf.expected/trybot.json
+FILE: ../../../third_party/skia/infra/bots/recipes/perf_canvaskit.expected/Perf-Debian9-EMCC-GCE-CPU-AVX2-wasm-Release-All-CanvasKit.json
+FILE: ../../../third_party/skia/infra/bots/recipes/perf_canvaskit.expected/pathkit_trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf_pathkit.expected/Perf-Debian9-EMCC-GCE-CPU-AVX2-asmjs-Release-All-PathKit.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf_pathkit.expected/Perf-Debian9-EMCC-GCE-CPU-AVX2-wasm-Release-All-PathKit.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf_pathkit.expected/pathkit_trybot.json
@@ -3654,7 +3662,6 @@ FILE: ../../../third_party/skia/src/core/SkOpts.h
 FILE: ../../../third_party/skia/src/core/SkPathPriv.h
 FILE: ../../../third_party/skia/src/core/SkPictureCommon.h
 FILE: ../../../third_party/skia/src/core/SkPictureImageGenerator.cpp
-FILE: ../../../third_party/skia/src/core/SkPictureImageGenerator.h
 FILE: ../../../third_party/skia/src/core/SkPixmap.cpp
 FILE: ../../../third_party/skia/src/core/SkPixmapPriv.h
 FILE: ../../../third_party/skia/src/core/SkPoint3.cpp
@@ -4625,6 +4632,7 @@ FILE: ../../../third_party/skia/fuzz/FuzzEncoders.cpp
 FILE: ../../../third_party/skia/fuzz/FuzzPolyUtils.cpp
 FILE: ../../../third_party/skia/include/private/GrSkSLFPFactoryCache.h
 FILE: ../../../third_party/skia/modules/pathkit/pathkit_wasm_bindings.cpp
+FILE: ../../../third_party/skia/src/core/SkPicture_none.cpp
 FILE: ../../../third_party/skia/src/gpu/ccpr/GrCoverageCountingPathRenderer_none.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 Google LLC
