@@ -258,6 +258,14 @@ class Paragraph {
   std::vector<double> line_baselines_;
   bool did_exceed_max_lines_;
 
+  // Metrics for use in GetRectsForRange(...);
+  // Per-line min and max top/bottom edges over all runs in a given line.
+  std::vector<SkScalar> line_max_bottoms_;
+  std::vector<SkScalar> line_min_tops_;
+  // Overall left and right extremes over all lines.
+  double max_right_;
+  double min_left_;
+
   class BidiRun {
    public:
     BidiRun(size_t s, size_t e, TextDirection d, const TextStyle& st)

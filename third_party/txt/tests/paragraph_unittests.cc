@@ -1175,7 +1175,6 @@ TEST_F(ParagraphTest,
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  paragraph_style.line_height = 2.0;
   paragraph_style.text_align = TextAlign::left;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
@@ -1186,7 +1185,7 @@ TEST_F(ParagraphTest,
   text_style.font_weight = FontWeight::w500;
   text_style.word_spacing = 0;
   text_style.color = SK_ColorBLACK;
-  text_style.height = 1;
+  text_style.height = 2.0;
   builder.PushStyle(text_style);
 
   builder.AddText(u16_text);
@@ -1224,9 +1223,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 46.199219);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 17.429688);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 82.203125);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 133.99609);
 
   paint.setColor(SK_ColorBLUE);
   boxes =
@@ -1236,9 +1235,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 67.429688);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 46.199219);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 190.00781);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 82.203125);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 133.99609);
 
   paint.setColor(SK_ColorGREEN);
   boxes =
@@ -1248,9 +1247,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 46.199219);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 508.0625);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 82.203125);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 133.99609);
 
   paint.setColor(SK_ColorRED);
   boxes =
@@ -1260,34 +1259,34 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 6ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 82.203125);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 133.99609);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 525.6875);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 187.20312);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 250.99609);
 
   EXPECT_FLOAT_EQ(boxes[1].rect.left(), 525.6875);
-  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 82.203125);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 133.99609);
   EXPECT_FLOAT_EQ(boxes[1].rect.right(), 570.02344);
-  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 187.20312);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 250.99609);
 
   EXPECT_FLOAT_EQ(boxes[2].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[2].rect.top(), 187.20312);
+  EXPECT_FLOAT_EQ(boxes[2].rect.top(), 250.99609);
   EXPECT_FLOAT_EQ(boxes[2].rect.right(), 531.57422);
-  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 292.20312);
+  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 367.99609);
 
   EXPECT_FLOAT_EQ(boxes[3].rect.left(), 531.57422);
-  EXPECT_FLOAT_EQ(boxes[3].rect.top(), 187.20312);
+  EXPECT_FLOAT_EQ(boxes[3].rect.top(), 250.99609);
   EXPECT_FLOAT_EQ(boxes[3].rect.right(), 570.02344);
-  EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 292.20312);
+  EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 367.99609);
 
   EXPECT_FLOAT_EQ(boxes[4].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[4].rect.top(), 292.20312);
+  EXPECT_FLOAT_EQ(boxes[4].rect.top(), 367.99609);
   EXPECT_FLOAT_EQ(boxes[4].rect.right(), 570.02344);
-  EXPECT_FLOAT_EQ(boxes[4].rect.bottom(), 397.20312);
+  EXPECT_FLOAT_EQ(boxes[4].rect.bottom(), 484.99609);
 
   EXPECT_FLOAT_EQ(boxes[5].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[5].rect.top(), 397.20312);
+  EXPECT_FLOAT_EQ(boxes[5].rect.top(), 484.99609);
   EXPECT_FLOAT_EQ(boxes[5].rect.right(), 228.45703);
-  EXPECT_FLOAT_EQ(boxes[5].rect.bottom(), 502.20312);
+  EXPECT_FLOAT_EQ(boxes[5].rect.bottom(), 601.99609);
 
   paint.setColor(SK_ColorBLUE);
   boxes =
@@ -1297,9 +1296,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 463.72656);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 46.199219);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 530.23047);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 82.203125);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 133.99609);
 
   paint.setColor(SK_ColorRED);
   boxes =
@@ -1327,7 +1326,6 @@ TEST_F(ParagraphTest,
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  paragraph_style.line_height = 2.0;
   paragraph_style.text_align = TextAlign::left;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
@@ -1338,7 +1336,7 @@ TEST_F(ParagraphTest,
   text_style.font_weight = FontWeight::w500;
   text_style.word_spacing = 0;
   text_style.color = SK_ColorBLACK;
-  text_style.height = 1;
+  text_style.height = 2.0;
   builder.PushStyle(text_style);
 
   builder.AddText(u16_text);
@@ -1376,9 +1374,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 46.199219);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 17.429688);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 104.79297);
 
   paint.setColor(SK_ColorBLUE);
   boxes =
@@ -1388,9 +1386,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 67.429688);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 46.199219);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 190.00781);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 104.79297);
 
   paint.setColor(SK_ColorGREEN);
   boxes =
@@ -1400,9 +1398,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 46.199219);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 508.0625);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 104.79297);
 
   paint.setColor(SK_ColorRED);
   boxes =
@@ -1412,34 +1410,34 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 6ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 59);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 104.79297);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 525.6875);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 164);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 221.79297);
 
   EXPECT_FLOAT_EQ(boxes[1].rect.left(), 525.6875);
-  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 59);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 104.79297);
   EXPECT_FLOAT_EQ(boxes[1].rect.right(), 570.02344);
-  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 164);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 221.79297);
 
   EXPECT_FLOAT_EQ(boxes[2].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[2].rect.top(), 164);
+  EXPECT_FLOAT_EQ(boxes[2].rect.top(), 221.79297);
   EXPECT_FLOAT_EQ(boxes[2].rect.right(), 531.57422);
-  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 269);
+  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 338.79297);
 
   EXPECT_FLOAT_EQ(boxes[3].rect.left(), 531.57422);
-  EXPECT_FLOAT_EQ(boxes[3].rect.top(), 164);
+  EXPECT_FLOAT_EQ(boxes[3].rect.top(), 221.79297);
   EXPECT_FLOAT_EQ(boxes[3].rect.right(), 570.02344);
-  EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 269);
+  EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 338.79297);
 
   EXPECT_FLOAT_EQ(boxes[4].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[4].rect.top(), 269);
+  EXPECT_FLOAT_EQ(boxes[4].rect.top(), 338.79297);
   EXPECT_FLOAT_EQ(boxes[4].rect.right(), 570.02344);
-  EXPECT_FLOAT_EQ(boxes[4].rect.bottom(), 374);
+  EXPECT_FLOAT_EQ(boxes[4].rect.bottom(), 455.79297);
 
   EXPECT_FLOAT_EQ(boxes[5].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[5].rect.top(), 374);
+  EXPECT_FLOAT_EQ(boxes[5].rect.top(), 455.79297);
   EXPECT_FLOAT_EQ(boxes[5].rect.right(), 228.45703);
-  EXPECT_FLOAT_EQ(boxes[5].rect.bottom(), 479);
+  EXPECT_FLOAT_EQ(boxes[5].rect.bottom(), 572.79297);
 
   paint.setColor(SK_ColorBLUE);
   boxes =
@@ -1449,9 +1447,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 463.72656);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 46.199219);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 530.23047);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 104.79297);
 
   paint.setColor(SK_ColorRED);
   boxes =
@@ -1479,7 +1477,6 @@ TEST_F(ParagraphTest,
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  paragraph_style.line_height = 2.0;
   paragraph_style.text_align = TextAlign::left;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
@@ -1490,7 +1487,7 @@ TEST_F(ParagraphTest,
   text_style.font_weight = FontWeight::w500;
   text_style.word_spacing = 0;
   text_style.color = SK_ColorBLACK;
-  text_style.height = 1;
+  text_style.height = 1.3;
   builder.PushStyle(text_style);
 
   builder.AddText(u16_text);
@@ -1528,9 +1525,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 17.429688);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 105.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89.744141);
 
   paint.setColor(SK_ColorBLUE);
   boxes =
@@ -1540,9 +1537,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 67.429688);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 190.00781);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 105.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89.744141);
 
   paint.setColor(SK_ColorGREEN);
   boxes =
@@ -1552,9 +1549,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 508.0625);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 105.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89.744141);
 
   paint.setColor(SK_ColorRED);
   boxes =
@@ -1564,34 +1561,34 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 8ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 105.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 89.744141);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 525.6875);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 210.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 165.74414);
 
   EXPECT_FLOAT_EQ(boxes[1].rect.left(), 525.6875);
-  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 105.40625);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 89.744141);
   EXPECT_FLOAT_EQ(boxes[1].rect.right(), 570.02344);
-  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 210.40625);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 165.74414);
 
   EXPECT_FLOAT_EQ(boxes[2].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[2].rect.top(), 210.40625);
+  EXPECT_FLOAT_EQ(boxes[2].rect.top(), 165.74414);
   EXPECT_FLOAT_EQ(boxes[2].rect.right(), 531.57422);
-  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 315.40625);
+  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 241.74414);
 
   EXPECT_FLOAT_EQ(boxes[3].rect.left(), 531.57422);
-  EXPECT_FLOAT_EQ(boxes[3].rect.top(), 210.40625);
+  EXPECT_FLOAT_EQ(boxes[3].rect.top(), 165.74414);
   EXPECT_FLOAT_EQ(boxes[3].rect.right(), 570.02344);
-  EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 315.40625);
+  EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 241.74414);
 
   EXPECT_FLOAT_EQ(boxes[4].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[4].rect.top(), 315.40625);
+  EXPECT_FLOAT_EQ(boxes[4].rect.top(), 241.74414);
   EXPECT_FLOAT_EQ(boxes[4].rect.right(), 570.02344);
-  EXPECT_FLOAT_EQ(boxes[4].rect.bottom(), 420.40625);
+  EXPECT_FLOAT_EQ(boxes[4].rect.bottom(), 317.74414);
 
   EXPECT_FLOAT_EQ(boxes[5].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[5].rect.top(), 420.40625);
+  EXPECT_FLOAT_EQ(boxes[5].rect.top(), 317.74414);
   EXPECT_FLOAT_EQ(boxes[5].rect.right(), 570.02344);
-  EXPECT_FLOAT_EQ(boxes[5].rect.bottom(), 525.40625);
+  EXPECT_FLOAT_EQ(boxes[5].rect.bottom(), 393.74414);
 
   paint.setColor(SK_ColorBLUE);
   boxes =
@@ -1601,9 +1598,9 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 463.72656);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 530.23047);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 105.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89.744141);
 
   paint.setColor(SK_ColorRED);
   boxes =
