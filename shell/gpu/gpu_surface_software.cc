@@ -9,6 +9,10 @@
 
 namespace shell {
 
+flow::ViewEmbedder* GPUSurfaceSoftwareDelegate::GetViewEmbedder() {
+  return nullptr;
+}
+
 GPUSurfaceSoftware::GPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate)
     : delegate_(delegate), weak_factory_(this) {}
 
@@ -73,6 +77,11 @@ SkMatrix GPUSurfaceSoftware::GetRootTransformation() const {
 GrContext* GPUSurfaceSoftware::GetContext() {
   // There is no GrContext associated with a software surface.
   return nullptr;
+}
+
+// |shell::Surface|
+flow::ViewEmbedder* GPUSurfaceSoftware::GetViewEmbedder() {
+  return delegate_->GetViewEmbedder();
 }
 
 }  // namespace shell

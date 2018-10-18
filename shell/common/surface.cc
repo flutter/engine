@@ -64,4 +64,8 @@ Surface::Surface() = default;
 
 Surface::~Surface() = default;
 
+flow::ViewEmbedder* Surface::GetViewEmbedder() {
+  return nullptr;
+}
+
 }  // namespace shell

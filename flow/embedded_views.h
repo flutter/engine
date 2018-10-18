@@ -1,0 +1,30 @@
+// Copyright 2017 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+//
+#ifndef FLUTTER_FLOW_EMBEDDED_VIEWS_H_
+#define FLUTTER_FLOW_EMBEDDED_VIEWS_H_
+
+#include "flutter/fml/memory/ref_counted.h"
+
+namespace flow {
+
+class EmbeddedViewCompositingParams {
+ public:
+  double x;
+  double y;
+  double width;
+  double height;
+};
+
+class ViewEmbedder : public fml::RefCountedThreadSafe<ViewEmbedder> {
+ public:
+  virtual void CompositeEmbeddedView(int view_id,
+                                     EmbeddedViewCompositingParams& params) {}
+
+  virtual ~ViewEmbedder() {}
+};
+
+}  // namespace flow
+
+#endif  // FLUTTER_FLOW_EMBEDDED_VIEWS_H_
