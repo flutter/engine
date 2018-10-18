@@ -25,15 +25,15 @@
 id<FlutterScreenshotDelegate> _delegate;
 
 - (instancetype)init {
-  @throw([NSException exceptionWithName:@"FlutterView must initWithShell" reason:nil userInfo:nil]);
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate" reason:nil userInfo:nil]);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
-  @throw([NSException exceptionWithName:@"FlutterView must initWithShell" reason:nil userInfo:nil]);
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate" reason:nil userInfo:nil]);
 }
 
 - (instancetype)initWithCoder:(NSCoder*)aDecoder {
-  @throw([NSException exceptionWithName:@"FlutterView must initWithShell" reason:nil userInfo:nil]);
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate" reason:nil userInfo:nil]);
 }
 
 - (instancetype)initWithDelegate:(id<FlutterScreenshotDelegate>)delegate opaque:(BOOL)opaque {
