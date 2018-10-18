@@ -269,7 +269,7 @@ void RuntimeController::SetIsolateDebugName(const std::string name) {
   if (!root_isolate) {
     return;
   }
-  root_isolate->SetDebugName(name);
+  root_isolate->set_debug_name(name);
 }
 
 FontCollection& RuntimeController::GetFontCollection() {

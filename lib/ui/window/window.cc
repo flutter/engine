@@ -56,7 +56,8 @@ void UpdateSemantics(Dart_NativeArguments args) {
 
 void SetIsolateDebugName(Dart_NativeArguments args) {
   Dart_Handle exception = nullptr;
-  const std::string name = tonic::DartConverter<std::string>::FromArguments(args, 1, exception);
+  const std::string name =
+      tonic::DartConverter<std::string>::FromArguments(args, 1, exception);
   if (exception) {
     Dart_ThrowException(exception);
     return;
