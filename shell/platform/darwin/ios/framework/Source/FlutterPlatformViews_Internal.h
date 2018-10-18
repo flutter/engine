@@ -22,7 +22,7 @@ class FlutterPlatformViewsController {
  private:
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
-  std::map<long, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
+  std::map<long long, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
   void OnCreate(FlutterMethodCall* call, FlutterResult& result);

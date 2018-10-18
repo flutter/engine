@@ -57,18 +57,19 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   // TODO(amirh): decode and pass the creation args.
   views_[viewId] =
       fml::scoped_nsobject<NSObject<FlutterPlatformView>>([[factory createWithFrame:CGRectZero
+                                                                             viewId:viewId
                                                                             andArgs:nil] retain]);
   result(nil);
 }
 
 void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult& result) {
   NSDictionary<NSString*, id>* args = [call arguments];
-  long viewId = [args[@"id"] longValue];
+  int64_t viewId = [args[@"id"] longLongValue];
 
   if (views_[viewId] == nil) {
     result([FlutterError errorWithCode:@"unknown_view"
                                message:@"trying to dispose an unknown"
-                               details:[NSString stringWithFormat:@"view id: '%ld'", viewId]]);
+                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
     return;
   }
 

@@ -205,14 +205,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSObject<FlutterTextureRegistry>*)textures;
 
 /**
- Registers a `FlutterPlatformViewFactory` for creation of platfrom views.
-
- Plugins expose `UIView` for embedding in Flutter apps by registering a view factory.
-
- - Parameters:
-   - factory: The view factory that will be registered.
-   - factoryId:: A unique identifier for the factory, the Dart code of the Flutter app can use
-     this identifier to request creation of a `UIView` by the registered factory.
+ * Registers a `FlutterPlatformViewFactory` for creation of platfrom views.
+ *
+ * Plugins expose `UIView` for embedding in Flutter apps by registering a view factory.
+ *
+ * @param factory The view factory that will be registered.
+ * @param factoryId:: A unique identifier for the factory, the Dart code of the Flutter app can use
+ *   this identifier to request creation of a `UIView` by the registered factory.
  */
 - (void)registerViewFactory:(NSObject<FlutterPlatformViewFactory>*)factory
                      withId:(NSString*)factoryId;
