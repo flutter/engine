@@ -47,8 +47,10 @@ String _localeClosure() => window.locale.toString();
 @pragma('vm:entry-point')
 _LocaleClosure _getLocaleClosure() => _localeClosure;
 
+// BUG: https://github.com/flutter/flutter/issues/23246
+// Change back to List<String> when fixed
 @pragma('vm:entry-point')
-void _updateLocales(List<String> locales) {
+void _updateLocales(List<dynamic> locales) {
   const int stringsPerLocale = 4;
   final int numLocales = locales.length ~/ stringsPerLocale;
   window._locales = new List<Locale>(numLocales);
