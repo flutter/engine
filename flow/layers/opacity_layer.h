@@ -17,7 +17,6 @@ class OpacityLayer : public ContainerLayer {
   void set_alpha(int alpha) { alpha_ = alpha; }
   void set_offset(const SkPoint& offset) { offset_ = offset; }
 
-
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
