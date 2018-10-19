@@ -420,7 +420,7 @@ class Locale {
       out.write('_$scriptCode');
     if (_countryCode != null)
       out.write('_$countryCode');
-    if (_variants != null)
+    if (_variants != null && _variants.isNotEmpty)
       out.write('_${_variants.join("_")}');
     return out.toString();
   }

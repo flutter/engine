@@ -32,6 +32,7 @@ void main() {
     expect(const Locale.fromSubtags(script: 'Latn').scriptCode, 'Latn');
     expect(const Locale.fromSubtags(region: 'US').toString(), 'und_US');
     expect(const Locale.fromSubtags(region: 'US').countryCode, 'US');
+    expect(const Locale.fromSubtags(variants: []).toString(), 'und');
     expect(const Locale.fromSubtags(variants: []).variants,
            orderedEquals([]));
     expect(const Locale.fromSubtags(variants: ['fonipa', 'scouse']).variants,
