@@ -175,16 +175,16 @@ class Locale {
   /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
   /// [script](http://unicode.org/cldr/latest/common/validity/script.xml),
   /// [region](http://unicode.org/cldr/latest/common/validity/region.xml).
+  /// for each of languageCode, scriptCode and countryCode respectively.
   ///
   /// Validity is not checked by default, but some methods may throw away
   /// invalid data.
   const Locale.fromSubtags({
-    String language = 'und',
-    String script,
-    String region,
-  }) : _languageCode = language,
-       scriptCode = script,  // ignore: prefer_initializing_formals, parameter name and member name are different.
-       _countryCode = region;
+    String languageCode = 'und',
+    this.scriptCode,
+    String countryCode,
+  }) : _languageCode = languageCode,
+       _countryCode = countryCode;
 
   /// The primary language subtag for the locale.
   ///

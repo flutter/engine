@@ -25,24 +25,24 @@ void main() {
     expect(const Locale.fromSubtags().scriptCode, null);
     expect(const Locale.fromSubtags().countryCode, null);
 
-    expect(const Locale.fromSubtags(language: 'en').toString(), 'en');
-    expect(const Locale.fromSubtags(language: 'en').languageCode, 'en');
-    expect(const Locale.fromSubtags(script: 'Latn').toString(), 'und_Latn');
-    expect(const Locale.fromSubtags(script: 'Latn').scriptCode, 'Latn');
-    expect(const Locale.fromSubtags(region: 'US').toString(), 'und_US');
-    expect(const Locale.fromSubtags(region: 'US').countryCode, 'US');
+    expect(const Locale.fromSubtags(languageCode: 'en').toString(), 'en');
+    expect(const Locale.fromSubtags(languageCode: 'en').languageCode, 'en');
+    expect(const Locale.fromSubtags(scriptCode: 'Latn').toString(), 'und_Latn');
+    expect(const Locale.fromSubtags(scriptCode: 'Latn').scriptCode, 'Latn');
+    expect(const Locale.fromSubtags(countryCode: 'US').toString(), 'und_US');
+    expect(const Locale.fromSubtags(countryCode: 'US').countryCode, 'US');
 
-    expect(Locale.fromSubtags(language: 'es', region: '419').toString(), 'es_419');
-    expect(Locale.fromSubtags(language: 'es', region: '419').languageCode, 'es');
-    expect(Locale.fromSubtags(language: 'es', region: '419').countryCode, '419');
+    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').toString(), 'es_419');
+    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').languageCode, 'es');
+    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').countryCode, '419');
 
-    expect(Locale.fromSubtags(language: 'zh', script: 'Hans', region: 'CN').toString(), 'zh_Hans_CN');
+    expect(Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN').toString(), 'zh_Hans_CN');
   });
 
   test('Locale equality', () {
-    expect(Locale.fromSubtags(language: 'en'),
-           isNot(Locale.fromSubtags(language: 'en', script: 'Latn')));
-    expect(Locale.fromSubtags(language: 'en').hashCode,
-           isNot(Locale.fromSubtags(language: 'en', script: 'Latn').hashCode));
+    expect(Locale.fromSubtags(languageCode: 'en'),
+           isNot(Locale.fromSubtags(languageCode: 'en', scriptCode: 'Latn')));
+    expect(Locale.fromSubtags(languageCode: 'en').hashCode,
+           isNot(Locale.fromSubtags(languageCode: 'en', scriptCode: 'Latn').hashCode));
   });
 }
