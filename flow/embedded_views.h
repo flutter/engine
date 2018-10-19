@@ -11,6 +11,10 @@ namespace flow {
 
 class EmbeddedViewParams {
  public:
+  double translateXPixels;
+  double translateYPixels;
+  double widthPoints;
+  double heightPoints;
 };
 
 // This is only used on iOS when running in a non headless mode,

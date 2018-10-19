@@ -23,6 +23,12 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
     return;
   }
   EmbeddedViewParams params;
+  SkMatrix transform = context.canvas.getTotalMatrix();
+  params.translateXPixels = transform.getTranslateX();
+  params.translateYPixels = transform.getTranslateY();
+  params.widthPoints = size_.width();
+  params.heightPoints = size_.height();
+
   context.view_embedder->CompositeEmbeddedView(view_id_, params);
 }
 }  // namespace flow
