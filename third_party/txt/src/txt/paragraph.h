@@ -259,9 +259,10 @@ class Paragraph {
   bool did_exceed_max_lines_;
 
   // Metrics for use in GetRectsForRange(...);
-  // Per-line min and max top/bottom edges over all runs in a given line.
-  std::vector<SkScalar> line_max_bottoms_;
-  std::vector<SkScalar> line_min_tops_;
+  // Per-line max metrics over all runs in a given line.
+  std::vector<SkScalar> line_max_spacings_;
+  std::vector<SkScalar> line_max_descent_;
+  std::vector<SkScalar> line_max_ascent_;
   // Overall left and right extremes over all lines.
   double max_right_;
   double min_left_;
