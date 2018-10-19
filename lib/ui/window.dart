@@ -118,7 +118,8 @@ class WindowPadding {
 
 /// An identifier used to select a user's language and formatting preferences.
 /// This represents a [Unicode Language
-/// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier).
+/// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier),
+/// except variants have not been implemented yet..
 ///
 /// Locales are canonicalized according to the "preferred value" entries in the
 /// [IANA Language Subtag
@@ -163,8 +164,7 @@ class Locale {
     this._languageCode, [
     this._countryCode,
   ]) : assert(_languageCode != null),
-       this.scriptCode = null,
-       this._variants = null;
+       this.scriptCode = null;
 
   /// Creates a new Locale object.
   ///
@@ -174,10 +174,7 @@ class Locale {
   /// according to CLDR supplemental data:
   /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
   /// [script](http://unicode.org/cldr/latest/common/validity/script.xml),
-  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml) and
-  /// [variant](http://unicode.org/cldr/latest/common/validity/variant.xml). If
-  /// there is more than one variant, they should be in sorted order. This list
-  /// will be used as-is, and should never again be modified.
+  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml).
   ///
   /// Validity is not checked by default, but some methods may throw away
   /// invalid data.
@@ -185,11 +182,9 @@ class Locale {
     String language = 'und',
     String script,
     String region,
-    List<String> variants,
   }) : _languageCode = language,
        scriptCode = script,  // ignore: prefer_initializing_formals, parameter name and member name are different.
-       _countryCode = region,
-       _variants = variants;
+       _countryCode = region;
 
   /// The primary language subtag for the locale.
   ///
@@ -353,38 +348,6 @@ class Locale {
     }
   }
 
-  /// The variants subtags for the locale.
-  ///
-  /// Each subtag is expected to be a valid Unicode Language Identifier variant
-  /// subtag that is listed in Unicode CLDR supplemental data:
-  /// http://unicode.org/cldr/latest/common/validity/variants.xml. Please see
-  /// constructor documentation.
-  ///
-  /// See also:
-  ///
-  ///  * [Locale.fromSubtags], which describes the conventions for creating
-  ///    [Locale] objects.
-  Iterable<String> get variants {
-    if (_variants == null)
-      return const <String>[];
-    return _variants;
-  }
-
-  /// The variants subtags for the locale.
-  ///
-  /// This may be null, indicating that there is no specified variants subtag.
-  ///
-  /// This is expected to be a sorted list of valid Unicode Language Identifier
-  /// variant subtags that are listed in Unicode CLDR supplemental data:
-  /// http://unicode.org/cldr/latest/common/validity/variants.xml. Please see
-  /// constructor documentation.
-  ///
-  /// See also:
-  ///
-  ///  * [Locale.fromSubtags], which describes the conventions for creating
-  ///    [Locale] objects.
-  final List<String> _variants;
-
   @override
   bool operator ==(dynamic other) {
     if (identical(this, other))
@@ -394,8 +357,7 @@ class Locale {
     final Locale typedOther = other;
     return languageCode == typedOther.languageCode
         && scriptCode == typedOther.scriptCode
-        && countryCode == typedOther.countryCode
-        && _listEquals<String>(_variants, typedOther._variants);
+        && countryCode == typedOther.countryCode;
   }
 
   bool _listEquals<T>(List<T> a, List<T> b) {
@@ -411,7 +373,7 @@ class Locale {
   }
 
   @override
-  int get hashCode => hashValues(languageCode, scriptCode, countryCode, hashList(_variants));
+  int get hashCode => hashValues(languageCode, scriptCode, countryCode);
 
   @override
   String toString() {
@@ -420,8 +382,6 @@ class Locale {
       out.write('_$scriptCode');
     if (_countryCode != null)
       out.write('_$countryCode');
-    if (_variants != null && _variants.isNotEmpty)
-      out.write('_${_variants.join("_")}');
     return out.toString();
   }
 }
