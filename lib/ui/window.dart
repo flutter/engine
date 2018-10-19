@@ -179,30 +179,17 @@ class Locale {
   /// there is more than one variant, they should be in sorted order. This list
   /// will be used as-is, and should never again be modified.
   ///
-  /// Well-formedness is not fully checked by this constructor: language, script
-  /// and region subtags with bad length are discarded, however characters are
-  /// not checked. Other methods may throw away subtags with syntactically
-  /// invalid contents.
+  /// Validity is not checked by default, but some methods may throw away
+  /// invalid data.
   const Locale.fromSubtags({
     String language = 'und',
     String script,
     String region,
     List<String> variants,
-  }) : _languageCode = (language == null || language.length == 4 ||
-                        language.length < 2 || language.length > 8)
-                       ? 'und' : language,
-       // Essentially we'd like to catch errors in debug mode:
-       // assert(_languageCode == language):
-       assert(language == null ||
-              (language.length != 4 && language.length >= 2 && language.length <= 8)),
-       scriptCode = (script == null || script.length != 4) ? null : script,
-       assert(script == null || script.length == 4),
-       _countryCode = (region == null || region.length < 2 || region.length > 3) ? null : region,
-       assert(region == null || (region.length >= 2 && region.length <= 3)),
-       // We can check "variants[0].length >= 4" in a const expression, but
-       // there's not much we can do in response except drop all variants.
-       _variants = (variants == null || variants.length == 0) ? null : variants, // ignore: prefer_is_empty, const_eval_type_bool_num_string
-       assert(variants == null || variants.length > 0); // ignore: prefer_is_empty, const_eval_type_bool_num_string, https://github.com/dart-lang/sdk/issues/34798, https://dart-review.googlesource.com/c/sdk/+/71340
+  }) : _languageCode = language,
+       scriptCode = script,  // ignore: prefer_initializing_formals, parameter name and member name are different.
+       _countryCode = region,
+       _variants = variants;
 
   /// The primary language subtag for the locale.
   ///
@@ -434,7 +421,7 @@ class Locale {
     if (_countryCode != null)
       out.write('_$countryCode');
     if (_variants != null)
-      out.write('_${variants.join("_")}');
+      out.write('_${_variants.join("_")}');
     return out.toString();
   }
 }

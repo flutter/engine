@@ -32,23 +32,10 @@ void main() {
     expect(const Locale.fromSubtags(script: 'Latn').scriptCode, 'Latn');
     expect(const Locale.fromSubtags(region: 'US').toString(), 'und_US');
     expect(const Locale.fromSubtags(region: 'US').countryCode, 'US');
-    expect(const Locale.fromSubtags(variants: ['fonipa', 'scouse']).toString(),
-           'und_fonipa_scouse');
+    expect(const Locale.fromSubtags(variants: []).variants,
+           orderedEquals([]));
     expect(const Locale.fromSubtags(variants: ['fonipa', 'scouse']).variants,
            orderedEquals(['fonipa', 'scouse']));
-
-    // Cannot test these here, because this would be the case in production
-    // mode, whereas in debug mode they cause assertion failures:
-    //
-    // expect(const Locale.fromSubtags(language: 'a').languageCode, 'und',
-    //        reason: 'Valid language subtags are 2 to 8 characters long.');
-    // expect(const Locale.fromSubtags(language: 'Latn').languageCode, 'und',
-    //        reason: 'Valid language subtags are not 4 characters long, '
-    //                'to not be confused with script subtags.');
-    // expect(const Locale.fromSubtags(script: 'en').scriptCode, null,
-    //        reason: 'Valid script subtags are 4 characters.');
-    // expect(const Locale.fromSubtags(region: 'Germany').countryCode, null,
-    //        reason: 'Valid region subtags are 2 characters or 3 digits.');
 
     expect(Locale.fromSubtags(language: 'es', region: '419').toString(), 'es_419');
     expect(Locale.fromSubtags(language: 'es', region: '419').languageCode, 'es');
