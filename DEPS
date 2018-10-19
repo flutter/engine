@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': 'cb65ce7f77c905a05df309aa656b387ff0008cda',
+  'skia_revision': 'eb772c0869d5fb2fad64a31ff66c056dbe81fa55',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -126,7 +126,7 @@ deps = {
    # and not have to specific specific hashes.
 
   'src/third_party/tonic':
-   Var('fuchsia_git') + '/tonic' + '@' + '077be256142ede39a271385907faadf4fcc62a4d',
+   Var('fuchsia_git') + '/tonic' + '@' + '5c9c2b63091ffd6000d44a3b5ff86e4f349e6978',
 
   'src/third_party/benchmark':
    Var('fuchsia_git') + '/third_party/benchmark' + '@' + '21f1eb3fe269ea43eba862bf6b699cde46587ade',
