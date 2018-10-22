@@ -360,18 +360,6 @@ class Locale {
         && countryCode == typedOther.countryCode;
   }
 
-  bool _listEquals<T>(List<T> a, List<T> b) {
-    if (a == null)
-      return b == null;
-    if (b == null || a.length != b.length)
-      return false;
-    for (int index = 0; index < a.length; index += 1) {
-      if (a[index] != b[index])
-        return false;
-    }
-    return true;
-  }
-
   @override
   int get hashCode => hashValues(languageCode, scriptCode, countryCode);
 
