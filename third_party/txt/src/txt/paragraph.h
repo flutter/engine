@@ -60,12 +60,12 @@ class Paragraph {
   // Options for various types of bounding boxes provided by
   // GetRectsForRange(...).
   enum class RectHeightStyle {
+    // Provide tight bounding boxes that fit heights per run.
+    kTight,
+
     // The height of the boxes will be the maximum height of all runs in the
     // line. All rects in the same line will be the same height.
     kMax,
-
-    // Provide tight bounding boxes that fit heights per run.
-    kTight,
 
     // Extends the top and/or bottom edge of the bounds to fully cover any line
     // spacing. The top edge of each line should be the same as the bottom edge
@@ -82,13 +82,13 @@ class Paragraph {
   };
 
   enum class RectWidthStyle {
-    // Extends the width of the last rect of each line to match the position of
-    // the widest rect over all the lines.
-    kMax,
-
     // Provide tight bounding boxes that fit widths to the runs of each line
     // independently.
-    kTight
+    kTight,
+
+    // Extends the width of the last rect of each line to match the position of
+    // the widest rect over all the lines.
+    kMax
   };
 
   struct PositionWithAffinity {
