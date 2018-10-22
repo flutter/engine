@@ -150,7 +150,7 @@ class Locale {
   /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
   /// Typically this means the primary language subtag should be lowercase and
   /// the region subtag should be uppercase.
-  const Locale(this._languageCode, [ this._countryCode ]) : assert(_languageCode != null), assert(_languageCode != "");
+  const Locale(this._languageCode, [ this._countryCode ]) : assert(_languageCode != null), assert(_languageCode != '');
 
   /// The primary language subtag for the locale.
   ///
