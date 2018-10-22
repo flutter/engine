@@ -272,8 +272,8 @@ class Paragraph {
     // Per-line metrics for max and min coordinates for left and right boxes.
     // These metrics cannot be calculated in layout generically because of
     // selections that do not cover the whole line.
-    SkScalar max_right = FLT_MAX;
-    SkScalar min_left = FLT_MIN;
+    SkScalar max_right = FLT_MIN;
+    SkScalar min_left = FLT_MAX;
   };
 
   class BidiRun {

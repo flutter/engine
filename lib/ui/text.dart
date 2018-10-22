@@ -947,59 +947,6 @@ class ParagraphConstraints {
   String toString() => '$runtimeType(width: $width)';
 }
 
-/// Defines various ways to vertically bound the boxes returned by
-/// [Paragraph.getBoxesForRange].
-enum RectHeightStyle {
-    /// The height of the boxes will be the maximum height of all runs in the
-    /// line. All boxes in the same line will be the same height.
-    max,
-
-    /// Provide tight bounding boxes that fit heights per run. This style may result
-    /// in uneven bounding boxes that do not nicely connect with the lines above and
-    /// below.
-    tight,
-
-    /// Extends the top and bottom edge of the bounds to fully cover any line
-    /// spacing.
-    ///
-    /// The top and bottom of each rect will cover half of the
-    /// space above and half of the space below the line. The text should be
-    /// centered vertically within the box.
-    ///
-    /// {@template flutter.dart:ui.rectHeightStyle.includeLineSpacing}
-    /// The top edge of each line should be the same as the bottom edge
-    /// of the line above. There should be no gaps in vertical coverage given any
-    /// amount of line spacing. Line spacing is not included above the first line
-    /// below the last line due to no additional space present there.
-    /// {@endtemplate}
-    includeLineSpacingMiddle,
-    /// Extends the top edge of the bounds to fully cover any line spacing.
-    ///
-    /// {@macro flutter.dart:ui.rectHeightStyle.includeLineSpacing}
-    ///
-    /// The line spacing will be added to the top of the rect.
-    includeLineSpacingTop,
-    /// Extends the bottom edge of the bounds to fully cover any line spacing.
-    ///
-    /// {@macro flutter.dart:ui.rectHeightStyle.includeLineSpacing}
-    ///
-    /// The line spacing will be added to the bottom of the rect.
-    includeLineSpacingBottom
-}
-
-/// Defines various ways to horizontally bound the boxes returned by
-/// [Paragraph.getBoxesForRange].
-enum RectWidthStyle {
-    /// Extends the width of the last rect of each line to match the position of
-    /// the widest rect over all the lines. This will add an additional box that
-    /// runs from the end of the last box in the line to the max width position
-    /// whenever the last box does not reach the max width.
-    max,
-
-    // Provide tight bounding boxes that fit widths to the runs of each line
-    // independently.
-    tight
-}
 /// A paragraph of text.
 ///
 /// A paragraph retains the size and position of each glyph in the text and can

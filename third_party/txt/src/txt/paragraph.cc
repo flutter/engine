@@ -1128,13 +1128,6 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
 
   // Generate initial boxes and calculate metrics.
   for (const CodeUnitRun& run : code_unit_runs_) {
-    // if (rect_width_style == RectWidthStyle::kMax) {
-    //   // Init metrics vectors as needed.
-    //   while (run.line_number >= min_lefts.size()) {
-    //     min_lefts.push_back(FLT_MAX);
-    //     max_rights.push_back(FLT_MIN);
-    //   }
-    // }
     // Check to see if we are finished.
     if (run.code_units.start >= end)
       break;
@@ -1168,11 +1161,6 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
     // Keep track of the min and max horizontal coordinates over all lines. Not
     // needed for kTight.
     if (rect_width_style == RectWidthStyle::kMax) {
-      // Init metrics vectors as needed.
-      // while (run.line_number >= min_lefts.size()) {
-      //   min_lefts.push_back(FLT_MAX);
-      //   max_rights.push_back(FLT_MIN);
-      // }
       line_metrics[run.line_number].max_right =
           std::max(line_metrics[run.line_number].max_right, right);
       line_metrics[run.line_number].min_left =
@@ -1252,19 +1240,18 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
     } else if (rect_height_style ==
                RectHeightStyle::kIncludeLineSpacingMiddle) {
       SkScalar adjusted_bottom =
-          kv.first >= line_ranges_.size() - 1
-              ? line_baselines_[kv.first] + line_max_descent_[kv.first]
-              : line_baselines_[kv.first] + line_max_descent_[kv.first] +
-                    (line_max_spacings_[kv.first + 1] -
-                     line_max_ascent_[kv.first + 1]) /
-                        2;
+          line_baselines_[kv.first] + line_max_descent_[kv.first];
+      if (kv.first < line_ranges_.size() - 1) {
+        adjusted_bottom += (line_max_spacings_[kv.first + 1] -
+                            line_max_ascent_[kv.first + 1]) /
+                           2;
+      }
       SkScalar adjusted_top =
-          kv.first == 0
-              ? line_baselines_[kv.first] - line_max_ascent_[kv.first]
-              : line_baselines_[kv.first] - line_max_ascent_[kv.first] -
-                    (line_max_spacings_[kv.first] -
-                     line_max_ascent_[kv.first]) /
-                        2;
+          line_baselines_[kv.first] - line_max_ascent_[kv.first];
+      if (kv.first != 0) {
+        adjusted_top -=
+            (line_max_spacings_[kv.first] - line_max_ascent_[kv.first]) / 2;
+      }
       for (const Paragraph::TextBox& box : kv.second.boxes) {
         boxes.emplace_back(SkRect::MakeLTRB(box.rect.fLeft, adjusted_top,
                                             box.rect.fRight, adjusted_bottom),
