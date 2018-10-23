@@ -13,7 +13,8 @@
 namespace shell {
 
 RunConfiguration RunConfiguration::InferFromSettings(
-    const blink::Settings& settings) {
+    const blink::Settings& settings,
+    fml::RefPtr<fml::TaskRunner> io_worker) {
   auto asset_manager = std::make_shared<blink::AssetManager>();
 
   asset_manager->PushBack(std::make_unique<blink::DirectoryAssetBundle>(
@@ -23,7 +24,8 @@ RunConfiguration RunConfiguration::InferFromSettings(
       std::make_unique<blink::DirectoryAssetBundle>(fml::OpenDirectory(
           settings.assets_path.c_str(), false, fml::FilePermission::kRead)));
 
-  return {IsolateConfiguration::InferFromSettings(settings, asset_manager),
+  return {IsolateConfiguration::InferFromSettings(settings, asset_manager,
+                                                  io_worker),
           asset_manager};
 }
 

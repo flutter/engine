@@ -20,7 +20,9 @@ namespace shell {
 
 class RunConfiguration {
  public:
-  static RunConfiguration InferFromSettings(const blink::Settings& settings);
+  static RunConfiguration InferFromSettings(
+      const blink::Settings& settings,
+      fml::RefPtr<fml::TaskRunner> io_worker = nullptr);
 
   RunConfiguration(std::unique_ptr<IsolateConfiguration> configuration);
 

@@ -192,6 +192,17 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::CreateForKernel(
 }
 
 std::unique_ptr<IsolateConfiguration> IsolateConfiguration::CreateForKernelList(
+    std::vector<std::unique_ptr<fml::Mapping>> kernel_pieces) {
+  std::vector<std::future<std::unique_ptr<fml::Mapping>>> pieces;
+  for (auto& piece : kernel_pieces) {
+    std::promise<std::unique_ptr<fml::Mapping>> promise;
+    pieces.push_back(promise.get_future());
+    promise.set_value(std::move(piece));
+  }
+  return CreateForKernelList(std::move(pieces));
+}
+
+std::unique_ptr<IsolateConfiguration> IsolateConfiguration::CreateForKernelList(
     std::vector<std::future<std::unique_ptr<fml::Mapping>>> kernel_pieces) {
   return std::make_unique<KernelListIsolateConfiguration>(
       std::move(kernel_pieces));
