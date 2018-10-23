@@ -55,10 +55,9 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   }
 
   // TODO(amirh): decode and pass the creation args.
-  views_[viewId] =
-      fml::scoped_nsobject<NSObject<FlutterPlatformView>>([[factory createWithFrame:CGRectZero
-                                                                             viewId:viewId
-                                                                            andArgs:nil] retain]);
+  views_[viewId] = fml::scoped_nsobject<UIView>([[factory createWithFrame:CGRectZero
+                                                           viewIdentifier:viewId
+                                                                arguments:nil] retain]);
   result(nil);
 }
 
@@ -73,7 +72,6 @@ void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterR
     return;
   }
 
-  [views_[viewId] dispose];
   views_.erase(viewId);
   result(nil);
 }
