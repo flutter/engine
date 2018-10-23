@@ -14,6 +14,7 @@
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
@@ -21,7 +22,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-@interface FlutterViewController () <FlutterTextInputDelegate>
+@interface FlutterViewController () <FlutterTextInputDelegate, FlutterScreenshotDelegate>
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
 @end
 
@@ -57,6 +58,9 @@
   blink::ViewportMetrics _viewportMetrics;
   int64_t _nextTextureId;
   BOOL _initialized;
+  BOOL _viewOpaque;
+
+  fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -71,6 +75,8 @@
       _dartProject.reset([[FlutterDartProject alloc] init]);
     else
       _dartProject.reset([projectOrNil retain]);
+
+    self.viewOpaque = YES;
 
     [self performCommonViewControllerInitialization];
   }
@@ -97,6 +103,8 @@
     return;
 
   _initialized = YES;
+
+  _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
 
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
@@ -141,7 +149,7 @@
                                   _threadHost.io_thread->GetTaskRunner()           // io
   );
 
-  _flutterView.reset([[FlutterView alloc] init]);
+  _flutterView.reset([[FlutterView alloc] initWithDelegate:self opaque:self.isViewOpaque]);
 
   // Lambda captures by pointers to ObjC objects are fine here because the create call is
   // synchronous.
@@ -173,6 +181,18 @@
   }
 
   return true;
+}
+
+- (BOOL)isViewOpaque {
+  return _viewOpaque;
+}
+
+- (void)viewOpaque:(BOOL)value {
+  _viewOpaque = value;
+  if (_flutterView.get().layer.opaque != value) {
+    _flutterView.get().layer.opaque = value;
+    [_flutterView.get().layer setNeedsLayout];
+  }
 }
 
 - (void)setupChannels {
@@ -835,6 +855,14 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
                               arguments:@[ @(client), actionString ]];
 }
 
+#pragma mark - Screenshot Delegate
+
+- (shell::Rasterizer::Screenshot)takeScreenshot:(shell::Rasterizer::ScreenshotType)type
+                                asBase64Encoded:(BOOL)base64Encode {
+  FML_DCHECK(_shell) << "Cannot takeScreenshot without a shell";
+  return _shell->Screenshot(type, base64Encode);
+}
+
 #pragma mark - Orientation updates
 
 - (void)onOrientationPreferencesUpdated:(NSNotification*)notification {
@@ -900,19 +928,26 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 #pragma mark - Locale updates
 
 - (void)onLocaleUpdated:(NSNotification*)notification {
-  NSLocale* currentLocale = [NSLocale currentLocale];
-  NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
-  NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
-  NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
-  NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
-  if (languageCode && countryCode)
-    // We pass empty strings for undefined scripts and variants to ensure the JSON encoder/decoder
-    // functions properly.
-    [_localizationChannel.get() invokeMethod:@"setLocale"
-                                   arguments:@[
-                                     languageCode, countryCode, scriptCode ? scriptCode : @"",
-                                     variantCode ? variantCode : @""
-                                   ]];
+  NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
+  NSMutableArray<NSString*>* data = [NSMutableArray new];
+  for (NSString* localeID in preferredLocales) {
+    NSLocale* currentLocale = [[NSLocale alloc] initWithLocaleIdentifier:localeID];
+    NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
+    NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
+    NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
+    NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
+    if (!languageCode || !countryCode) {
+      continue;
+    }
+    [data addObject:languageCode];
+    [data addObject:countryCode];
+    [data addObject:(scriptCode ? scriptCode : @"")];
+    [data addObject:(variantCode ? variantCode : @"")];
+  }
+  if (data.count == 0) {
+    return;
+  }
+  [_localizationChannel.get() invokeMethod:@"setLocale" arguments:data];
 }
 
 #pragma mark - Set user settings

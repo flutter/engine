@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/eintr_wrapper.h"
@@ -44,6 +45,7 @@ Engine::Engine(Delegate& delegate,
                blink::TaskRunners task_runners,
                blink::Settings settings,
                std::unique_ptr<Animator> animator,
+               fml::WeakPtr<blink::SnapshotDelegate> snapshot_delegate,
                fml::WeakPtr<GrContext> resource_context,
                fml::RefPtr<flow::SkiaUnrefQueue> unref_queue)
     : delegate_(delegate),
@@ -61,6 +63,7 @@ Engine::Engine(Delegate& delegate,
       std::move(isolate_snapshot),          // isolate snapshot
       std::move(shared_snapshot),           // shared snapshot
       std::move(task_runners),              // task runners
+      std::move(snapshot_delegate),         // snapshot delegate
       std::move(resource_context),          // resource context
       std::move(unref_queue),               // skia unref queue
       settings_.advisory_script_uri,        // advisory script uri
@@ -325,17 +328,22 @@ bool Engine::HandleLocalizationPlatformMessage(
   if (args == root.MemberEnd() || !args->value.IsArray())
     return false;
 
-  const auto& language = args->value[0];
-  const auto& country = args->value[1];
-  const auto& script = args->value[2];
-  const auto& variant = args->value[3];
-
-  if (!language.IsString() || !country.IsString())
+  const size_t strings_per_locale = 4;
+  if (args->value.Size() % strings_per_locale != 0)
     return false;
+  std::vector<std::string> locale_data;
+  for (size_t locale_index = 0; locale_index < args->value.Size();
+       locale_index += strings_per_locale) {
+    if (!args->value[locale_index].IsString() ||
+        !args->value[locale_index + 1].IsString())
+      return false;
+    locale_data.push_back(args->value[locale_index].GetString());
+    locale_data.push_back(args->value[locale_index + 1].GetString());
+    locale_data.push_back(args->value[locale_index + 2].GetString());
+    locale_data.push_back(args->value[locale_index + 3].GetString());
+  }
 
-  return runtime_controller_->SetLocale(language.GetString(),
-                                        country.GetString(), script.GetString(),
-                                        variant.GetString());
+  return runtime_controller_->SetLocales(locale_data);
 }
 
 void Engine::HandleSettingsPlatformMessage(blink::PlatformMessage* message) {
