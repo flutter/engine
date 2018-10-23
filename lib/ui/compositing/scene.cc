@@ -126,7 +126,7 @@ Dart_Handle Scene::toImage(uint32_t width,
     gpu_task_runner->PostTask([snapshot_delegate, picture, picture_bounds,
                                ui_task]() {
       // Snapshot the picture on the GPU thread. This thread has access to the
-      // GPU contexts that may contain the sole references to a texture backed
+      // GPU contexts that may contain the sole references to texture backed
       // images in the picture.
       ui_task(snapshot_delegate->MakeRasterSnapshot(picture, picture_bounds));
     });

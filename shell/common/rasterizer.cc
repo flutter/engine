@@ -122,7 +122,7 @@ sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
 
   sk_sp<SkImage> device_snapshot;
   {
-    TRACE_EVENT0("flutter", "MakeDeviceSnpshot");
+    TRACE_EVENT0("flutter", "MakeDeviceSnpashot");
     device_snapshot = surface->makeImageSnapshot();
   }
 
@@ -131,7 +131,7 @@ sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
   }
 
   {
-    TRACE_EVENT0("flutter", "DeviceHostTranfer");
+    TRACE_EVENT0("flutter", "DeviceHostTransfer");
     if (auto raster_image = device_snapshot->makeRasterImage()) {
       return raster_image;
     }
