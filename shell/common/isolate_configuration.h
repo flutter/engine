@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_COMMON_ISOLATE_CONFIGURATION_H_
 #define FLUTTER_SHELL_COMMON_ISOLATE_CONFIGURATION_H_
 
+#include <future>
 #include <memory>
 #include <string>
 
@@ -22,7 +23,8 @@ class IsolateConfiguration {
  public:
   static std::unique_ptr<IsolateConfiguration> InferFromSettings(
       const blink::Settings& settings,
-      fml::RefPtr<blink::AssetManager> asset_manager);
+      std::shared_ptr<blink::AssetManager> asset_manager,
+      fml::RefPtr<fml::TaskRunner> io_worker = nullptr);
 
   static std::unique_ptr<IsolateConfiguration> CreateForAppSnapshot();
 
@@ -30,7 +32,7 @@ class IsolateConfiguration {
       std::unique_ptr<fml::Mapping> kernel);
 
   static std::unique_ptr<IsolateConfiguration> CreateForKernelList(
-      std::vector<std::unique_ptr<fml::Mapping>> kernel_pieces);
+      std::vector<std::future<std::unique_ptr<fml::Mapping>>> kernel_pieces);
 
   IsolateConfiguration();
 
