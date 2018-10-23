@@ -9,7 +9,7 @@
 
 namespace flow {
 
-class EmbeddedViewCompositingParams {
+class EmbeddedViewParams {
  public:
   double x;
   double y;
@@ -17,10 +17,14 @@ class EmbeddedViewCompositingParams {
   double height;
 };
 
-class ViewEmbedder : public fml::RefCountedThreadSafe<ViewEmbedder> {
+// This is only used on iOS when running in a non headless mode,
+// in this case ViewEmbedded is a reference to the
+// FlutterPlatformViewsController which is owned by FlutterViewController.
+class ViewEmbedder {
  public:
+  // Must be called on the UI thread.
   virtual void CompositeEmbeddedView(int view_id,
-                                     EmbeddedViewCompositingParams& params) {}
+                                     const EmbeddedViewParams& params) {}
 
   virtual ~ViewEmbedder() {}
 };

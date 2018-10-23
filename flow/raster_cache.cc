@@ -153,18 +153,19 @@ void RasterCache::Prepare(PrerollContext* context,
   entry.access_count = ClampSize(entry.access_count + 1, 0, threshold_);
   entry.used_this_frame = true;
   if (!entry.image.is_valid()) {
-    entry.image =
-        Rasterize(context->gr_context, ctm, context->dst_color_space,
-                  checkerboard_images_, layer->paint_bounds(),
-                  [layer, context](SkCanvas* canvas) {
-                    Layer::PaintContext paintContext = {
-                        *canvas,
-                        // TODO(amirh): do we need a view embedded here?
-                        nullptr, context->frame_time, context->engine_time,
-                        context->texture_registry, context->raster_cache,
-                        context->checkerboard_offscreen_layers};
-                    layer->Paint(paintContext);
-                  });
+    entry.image = Rasterize(context->gr_context, ctm, context->dst_color_space,
+                            checkerboard_images_, layer->paint_bounds(),
+                            [layer, context](SkCanvas* canvas) {
+                              Layer::PaintContext paintContext = {
+                                  *canvas,
+                                  nullptr,
+                                  context->frame_time,
+                                  context->engine_time,
+                                  context->texture_registry,
+                                  context->raster_cache,
+                                  context->checkerboard_offscreen_layers};
+                              layer->Paint(paintContext);
+                            });
   }
 }
 

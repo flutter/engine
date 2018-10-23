@@ -20,7 +20,7 @@ class FlutterPlatformViewsController : public flow::ViewEmbedder {
 
   void RegisterViewFactory(NSObject<FlutterPlatformViewFactory>* factory, NSString* factoryId);
 
-  void CompositeEmbeddedView(int view_id, flow::EmbeddedViewCompositingParams& params);
+  void CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params);
 
  private:
   fml::scoped_nsobject<FlutterMethodChannel> channel_;

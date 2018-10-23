@@ -198,6 +198,8 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
 
+  // TODO(amirh): figure out how to take a screenshot with embedded UIView.
+  // https://github.com/flutter/flutter/issues/23435
   auto frame = compositor_context.AcquireFrame(
       nullptr, recorder.getRecordingCanvas(), nullptr,
       root_surface_transformation, false);

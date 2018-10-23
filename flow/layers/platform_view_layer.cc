@@ -17,7 +17,7 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
 }
 
 void PlatformViewLayer::Paint(PaintContext& context) const {
-  EmbeddedViewCompositingParams params;
+  EmbeddedViewParams params;
   context.view_embedder->CompositeEmbeddedView(view_id_, params);
 }
 }  // namespace flow
