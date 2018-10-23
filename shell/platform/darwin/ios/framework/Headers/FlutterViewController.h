@@ -100,7 +100,7 @@ FLUTTER_EXPORT
  * when using hardware acceleration, and toggling this will trigger a re-layout of the
  * view.
  */
-@property(nonatomic, getter=isViewOpaque, setter=isViewOpaque:) BOOL isViewOpaque;
+@property(nonatomic, getter=isViewOpaque) BOOL viewOpaque;
 
 @end
 

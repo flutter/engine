@@ -58,7 +58,7 @@
   blink::ViewportMetrics _viewportMetrics;
   int64_t _nextTextureId;
   BOOL _initialized;
-  BOOL _isViewOpaque;
+  BOOL _viewOpaque;
 
   fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
 }
@@ -76,7 +76,7 @@
     else
       _dartProject.reset([projectOrNil retain]);
 
-    self.isViewOpaque = YES;
+    self.viewOpaque = YES;
 
     [self performCommonViewControllerInitialization];
   }
@@ -184,11 +184,11 @@
 }
 
 - (BOOL)isViewOpaque {
-  return _isViewOpaque;
+  return _viewOpaque;
 }
 
-- (void)isViewOpaque:(BOOL)value {
-  _isViewOpaque = value;
+- (void)viewOpaque:(BOOL)value {
+  _viewOpaque = value;
   if (_flutterView.get().layer.opaque != value) {
     _flutterView.get().layer.opaque = value;
     [_flutterView.get().layer setNeedsLayout];
