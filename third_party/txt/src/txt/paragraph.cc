@@ -1117,6 +1117,16 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
     size_t end,
     RectHeightStyle rect_height_style,
     RectWidthStyle rect_width_style) const {
+  // Struct that holds calculated metrics for each line.
+  struct LineBoxMetrics {
+    std::vector<Paragraph::TextBox> boxes;
+    // Per-line metrics for max and min coordinates for left and right boxes.
+    // These metrics cannot be calculated in layout generically because of
+    // selections that do not cover the whole line.
+    SkScalar max_right = FLT_MIN;
+    SkScalar min_left = FLT_MAX;
+  };
+
   std::map<size_t, LineBoxMetrics> line_metrics;
   // Text direction of the first line so we can extend the correct side for
   // RectWidthStyle::kMax.
@@ -1272,10 +1282,11 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
     } else {  // kIncludeLineSpacingBottom
       for (const Paragraph::TextBox& box : kv.second.boxes) {
         SkScalar adjusted_bottom =
-            kv.first >= line_ranges_.size() - 1
-                ? line_baselines_[kv.first] + line_max_descent_[kv.first]
-                : line_baselines_[kv.first] + line_max_descent_[kv.first] -
-                      line_max_ascent_[kv.first] + line_max_spacings_[kv.first];
+            line_baselines_[kv.first] + line_max_descent_[kv.first];
+        if (kv.first < line_ranges_.size() - 1) {
+          adjusted_bottom +=
+              -line_max_ascent_[kv.first] + line_max_spacings_[kv.first];
+        }
         boxes.emplace_back(SkRect::MakeLTRB(box.rect.fLeft,
                                             line_baselines_[kv.first] -
                                                 line_max_ascent_[kv.first],

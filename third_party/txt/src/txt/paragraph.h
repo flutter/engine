@@ -267,15 +267,6 @@ class Paragraph {
   double max_right_;
   double min_left_;
 
-  struct LineBoxMetrics {
-    std::vector<Paragraph::TextBox> boxes;
-    // Per-line metrics for max and min coordinates for left and right boxes.
-    // These metrics cannot be calculated in layout generically because of
-    // selections that do not cover the whole line.
-    SkScalar max_right = FLT_MIN;
-    SkScalar min_left = FLT_MAX;
-  };
-
   class BidiRun {
    public:
     BidiRun(size_t s, size_t e, TextDirection d, const TextStyle& st)
