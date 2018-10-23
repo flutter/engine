@@ -1072,6 +1072,13 @@ class Paragraph extends NativeFieldWrapperClass2 {
   void _layout(double width) native 'Paragraph_layout';
 
   /// Returns a list of text boxes that enclose the given text range.
+  ///
+  /// [boxHeightStyle] and [boxWidthStyle] allow customization of how the boxes
+  /// are bound vertically and horizontally. Both style parameters default to
+  /// the tight option, which will provide close fitting boxes and will not
+  /// account for any line spacing.
+  ///
+  /// See [BoxHeightStyle] and [BoxWidthStyle] for full descriptions of each option.
   List<TextBox> getBoxesForRange(int start, int end, {BoxHeightStyle boxHeightStyle = BoxHeightStyle.tight, BoxWidthStyle boxWidthStyle = BoxWidthStyle.tight}) {
     return _getBoxesForRange(start, end, boxHeightStyle.index, boxWidthStyle.index);
   }
