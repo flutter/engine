@@ -176,19 +176,16 @@ class Locale {
   //
   // * language, script and region must be in normalized form.
   // * variants must already be sorted, with each subtag in normalized form.
-  // * Iterating over variants must provide variants in alphabetical order. We
-  //   force this by taking a SplayTreeSet as parameter input, which
-  //   automatically sorts its items. We then convert to a LinkedHashSet for
-  //   faster access and iteration.
+  // * Iterating over variants must provide variants in alphabetical order.
   // * The extensions map must contain only valid key/value pairs. "u" and "t"
   //   keys must be present, with an empty string as value, if there are any
-  //   subtags for those singletons.
+  //   subtags for those singletons. Takes ownership of the LinkedHashMap.
   Locale._internal(
     String language, {
     String script,
     String region,
     List<String> variants,
-    collection.SplayTreeMap<String, String> extensions,
+    collection.LinkedHashMap<String, String> extensions,
   }) : assert(language != null),
        assert(language.length >= 2 && language.length <= 8),
        assert(language.length != 4),
@@ -197,8 +194,8 @@ class Locale {
        _languageCode = language,
        _scriptCode = script,
        _countryCode = region,
-       _variants = List<String>.unmodifiable(variants ?? const <String>[]),
-       _extensions = collection.LinkedHashMap<String, String>.from(extensions ?? const <String, String>{});
+      _variants = (variants != null && variants.length > 0) ? List<String>.unmodifiable(variants) : null,
+       _extensions = (extensions != null && extensions.isNotEmpty) ? extensions : null;
 
   // TODO: unit-test this, pick the right name, make it public, update this
   // documentation.
@@ -240,9 +237,8 @@ class Locale {
     final List<String> localeSubtags = localeId.split(_reSep);
     String language, script, region;
     final List<String> variants = <String>[];
-    // Using a SplayTreeMap for its automatic key sorting.
-    final collection.SplayTreeMap<String, String> extensions =
-        collection.SplayTreeMap<String, String>();
+    final collection.LinkedHashMap<String, String> extensions =
+        collection.LinkedHashMap<String, String>();
 
     final List<String> problems = <String>[];
     if (_reLanguage.hasMatch(localeSubtags[0])) {
@@ -300,11 +296,12 @@ class Locale {
 
   // * All subtags in localeSubtags must already be lowercase.
   //
-  // * extensions must be a map with sorted iteration order, SplayTreeMap takes
-  //   care of that for us.
+  // * extensions must be a map with sorted iteration order. LinkedHashMap
+  //   preserves order for us.
   static void _parseExtensions(List<String> localeSubtags,
-                               collection.SplayTreeMap<String, String> extensions,
+                               collection.LinkedHashMap<String, String> extensions,
                                List<String> problems) {
+    Map<String, String> ext = {};
     while (localeSubtags.isNotEmpty) {
       final String singleton = localeSubtags.removeAt(0);
       if (singleton == 'u') {
@@ -318,8 +315,8 @@ class Locale {
         if (attributes.isNotEmpty) {
           empty = false;
         }
-        if (!extensions.containsKey(singleton)) {
-          extensions[singleton] = attributes.join('-');
+        if (!ext.containsKey(singleton)) {
+          ext[singleton] = attributes.join('-');
         } else {
           problems.add('duplicate singleton: "$singleton"');
         }
@@ -333,8 +330,12 @@ class Locale {
                  _reValueSubtags.hasMatch(localeSubtags[0])) {
             typeParts.add(localeSubtags.removeAt(0));
           }
-          if (!extensions.containsKey(key)) {
-            extensions[key] = typeParts.join('-');
+          if (!ext.containsKey(key)) {
+            if (typeParts.length == 1 && typeParts[0] == 'true') {
+              ext[key] = '';
+            } else {
+              ext[key] = typeParts.join('-');
+            }
           } else {
             problems.add('duplicate key: $key');
           }
@@ -357,8 +358,8 @@ class Locale {
             tlang.add(localeSubtags.removeAt(0));
           }
         }
-        if (!extensions.containsKey(singleton)) {
-          extensions[singleton] = tlang.join('-');
+        if (!ext.containsKey(singleton)) {
+          ext[singleton] = tlang.join('-');
         } else {
           problems.add('duplicate singleton: "$singleton"');
         }
@@ -371,8 +372,8 @@ class Locale {
           }
           if (tvalueParts.isNotEmpty) {
             empty = false;
-            if (!extensions.containsKey(tkey)) {
-                extensions[tkey] = tvalueParts.join('-');
+            if (!ext.containsKey(tkey)) {
+                ext[tkey] = tvalueParts.join('-');
             } else {
               problems.add('duplicate key: $tkey');
             }
@@ -387,7 +388,7 @@ class Locale {
         while (localeSubtags.isNotEmpty && _reAllSubtags.hasMatch(localeSubtags[0])) {
           values.add(localeSubtags.removeAt(0));
         }
-        extensions[singleton] = values.join('-');
+        ext[singleton] = values.join('-');
         if (localeSubtags.isNotEmpty) {
             problems.add('invalid part of private use subtags: "${localeSubtags.join('-')}"');
         }
@@ -398,14 +399,19 @@ class Locale {
         while (localeSubtags.isNotEmpty && _reOtherSubtags.hasMatch(localeSubtags[0])) {
           values.add(localeSubtags.removeAt(0));
         }
-        if (!extensions.containsKey(singleton)) {
-          extensions[singleton] = values.join('-');
+        if (!ext.containsKey(singleton)) {
+          ext[singleton] = values.join('-');
         } else {
           problems.add('duplicate singleton: "$singleton"');
         }
       } else {
         problems.add('invalid subtag, should be singleton: "$singleton"');
       }
+    }
+    List<String> ks = ext.keys.toList();
+    ks.sort();
+    for (String k in ks) {
+      extensions[k] = ext[k];
     }
   }
 
@@ -595,6 +601,9 @@ class Locale {
   //   value.
   final collection.LinkedHashMap<String, String> _extensions;
 
+  // TMP FIXME
+  collection.LinkedHashMap<String, String> get myexthelper => _extensions;
+
   // Produces the Unicode BCP47 Locale Identifier for this locale.
   //
   // If the unnamed constructor was used with bad parameters, the result might
@@ -733,24 +742,36 @@ class Locale {
     return languageCode == typedOther.languageCode
         && countryCode == typedOther.countryCode
         && scriptCode == typedOther.scriptCode
-        && variants.join('-') == typedOther.variants.join('-')
-        && _extensionsToString(_extensions) == _extensionsToString(typedOther._extensions);
+        && _listEquals<String>(_variants, typedOther._variants)
+        && _mapEquals<String, String>(_extensions, typedOther._extensions);
+  }
+
+  bool _listEquals<T>(List<T> a, List<T> b) {
+    if (a == null)
+      return b == null;
+    if (b == null || a.length != b.length)
+      return false;
+    for (int index = 0; index < a.length; index += 1) {
+      if (a[index] != b[index])
+        return false;
+    }
+    return true;
+  }
+
+  bool _mapEquals<T1, T2>(Map<T1, T2> a, Map<T1, T2> b) {
+    if (a == null)
+      return b == null;
+    if (b == null || a.length != b.length)
+      return false;
+    for (T1 k in a.keys) {
+      if (a[k] != b[k])
+        return false;
+    }
+    return true;
   }
 
   @override
-  int get hashCode {
-    int result = 373;
-    result = 37 * result + languageCode.hashCode;
-    if (_scriptCode != null)
-      result = 37 * result + scriptCode.hashCode;
-    if (_countryCode != null)
-      result = 37 * result + countryCode.hashCode;
-    if (_variants != null && _variants.isNotEmpty)
-      result = 37 * result + variants.join('-').hashCode;
-    if (_extensions != null && _extensions.isNotEmpty)
-      result = 37 * result + _extensionsToString(_extensions).hashCode;
-    return result;
-  }
+  int get hashCode => hashValues(languageCode, scriptCode, countryCode, hashList(_variants), hashMap(_extensions));
 
   /// Produces a non-BCP47 Unicode Locale Identifier for this locale.
   ///
@@ -765,7 +786,7 @@ class Locale {
       // unnamed constructor should be able to create instances like these.
       identifier = '${languageCode}_';
     }
-    return identifier;
+    return '$identifier';
   }
 }
 

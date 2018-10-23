@@ -403,15 +403,17 @@ void main() {
       isNot(Locale.parse('en-u-nu-roman').hashCode),
     );
 
+    Locale a = Locale.parse('en-u-kb');
+    Locale b = Locale.parse('en-u-kb-true');
     expect(
-      Locale.parse('en-u-kb'),
-      Locale.parse('en-u-kb-true'),
+      a,
+      b,
       reason: '-u-kb should parse to the same result as -u-kb-true.',
     );
     expect(
-      Locale.parse('en-u-kb').hashCode,
-      Locale.parse('en-u-kb-true').hashCode,
-      reason: '-u-kb should parse to the same result as -u-kb-true.',
+      a.hashCode,
+      b.hashCode,
+      reason: '-u-kb should parse to the same result as -u-kb-true. ${a.myexthelper}, ${b.myexthelper}.',
     );
 
     expect(
