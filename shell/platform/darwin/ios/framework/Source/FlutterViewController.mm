@@ -117,7 +117,6 @@
   return _engine;
 }
 
-
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr {
   return _weakFactory->GetWeakPtr();
 }
