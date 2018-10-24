@@ -951,8 +951,7 @@ class ParagraphConstraints {
 /// [Paragraph.getBoxesForRange].
 enum BoxHeightStyle {
     /// Provide tight bounding boxes that fit heights per run. This style may result
-    /// in uneven bounding boxes that do not nicely connect with the boxes above,
-    /// below, and adjacent.
+    /// in uneven bounding boxes that do not nicely connect with adjacent boxes.
     tight,
 
     /// The height of the boxes will be the maximum height of all runs in the
@@ -969,14 +968,13 @@ enum BoxHeightStyle {
     /// spacing.
     ///
     /// The top and bottom of each box will cover half of the
-    /// space above and half of the space below the line. The text should be
-    /// centered vertically within the box.
+    /// space above and half of the space below the line.
     ///
     /// {@template flutter.dart:ui.boxHeightStyle.includeLineSpacing}
     /// The top edge of each line should be the same as the bottom edge
     /// of the line above. There should be no gaps in vertical coverage given any
     /// amount of line spacing. Line spacing is not included above the first line
-    /// below the last line due to no additional space present there.
+    /// and below the last line due to no additional space present there.
     /// {@endtemplate}
     includeLineSpacingMiddle,
 
