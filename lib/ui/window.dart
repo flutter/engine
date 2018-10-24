@@ -117,9 +117,10 @@ class WindowPadding {
 }
 
 /// An identifier used to select a user's language and formatting preferences.
+///
 /// This represents a [Unicode Language
-/// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier),
-/// except variants have not been implemented yet..
+/// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier)
+/// (i.e. without Locale extensions), except variants are not supported.
 ///
 /// Locales are canonicalized according to the "preferred value" entries in the
 /// [IANA Language Subtag
@@ -159,7 +160,9 @@ class Locale {
   /// Validity is not checked by default, but some methods may throw away
   /// invalid data.
   ///
-  /// See also: [Locale.create].
+  /// See also:
+  ///
+  ///  * [new Locale.fromSubtags].
   const Locale(
     this._languageCode, [
     this._countryCode,
@@ -184,12 +187,14 @@ class Locale {
     String languageCode = 'und',
     this.scriptCode,
     String countryCode,
-  }) : _languageCode = languageCode,
+  }) : assert(_languageCode != null),
+       assert(_languageCode != ''),
+       _languageCode = languageCode,
        _countryCode = countryCode;
 
   /// The primary language subtag for the locale.
   ///
-  /// This must not be null.
+  /// This must not be null. It may be 'und' representing 'undefined'.
   ///
   /// This is expected to be string registered in the [IANA Language Subtag
   /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry)
@@ -208,7 +213,7 @@ class Locale {
   ///
   /// See also:
   ///
-  ///  * [Locale.fromSubtags], which describes the conventions for creating
+  ///  * [new Locale.fromSubtags], which describes the conventions for creating
   ///    [Locale] objects.
   String get languageCode => _replaceDeprecatedLanguageSubtag(_languageCode);
   final String _languageCode;
@@ -309,7 +314,7 @@ class Locale {
   ///
   /// See also:
   ///
-  ///  * [Locale.fromSubtags], which describes the conventions for creating
+  ///  * [new Locale.fromSubtags], which describes the conventions for creating
   ///    [Locale] objects.
   final String scriptCode;
 
@@ -330,7 +335,7 @@ class Locale {
   ///
   /// See also:
   ///
-  ///  * [Locale.fromSubtags], which describes the conventions for creating
+  ///  * [new Locale.fromSubtags], which describes the conventions for creating
   ///    [Locale] objects.
   String get countryCode => _replaceDeprecatedRegionSubtag(_countryCode);
   final String _countryCode;
