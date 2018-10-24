@@ -22,7 +22,7 @@
 
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 
-@interface FlutterEngine ()
+@interface FlutterEngine () <FlutterScreenshotDelegate>
 
 - (shell::Shell&)shell;
 

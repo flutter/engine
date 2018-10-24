@@ -24,6 +24,7 @@ RuntimeController::RuntimeController(
     fml::RefPtr<DartSnapshot> p_isolate_snapshot,
     fml::RefPtr<DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
+    fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
     fml::WeakPtr<GrContext> p_resource_context,
     fml::RefPtr<flow::SkiaUnrefQueue> p_unref_queue,
     std::string p_advisory_script_uri,
@@ -33,6 +34,7 @@ RuntimeController::RuntimeController(
                         std::move(p_isolate_snapshot),
                         std::move(p_shared_snapshot),
                         std::move(p_task_runners),
+                        std::move(p_snapshot_delegate),
                         std::move(p_resource_context),
                         std::move(p_unref_queue),
                         std::move(p_advisory_script_uri),
@@ -45,6 +47,7 @@ RuntimeController::RuntimeController(
     fml::RefPtr<DartSnapshot> p_isolate_snapshot,
     fml::RefPtr<DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
+    fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
     fml::WeakPtr<GrContext> p_resource_context,
     fml::RefPtr<flow::SkiaUnrefQueue> p_unref_queue,
     std::string p_advisory_script_uri,
@@ -55,6 +58,7 @@ RuntimeController::RuntimeController(
       isolate_snapshot_(std::move(p_isolate_snapshot)),
       shared_snapshot_(std::move(p_shared_snapshot)),
       task_runners_(p_task_runners),
+      snapshot_delegate_(p_snapshot_delegate),
       resource_context_(p_resource_context),
       unref_queue_(p_unref_queue),
       advisory_script_uri_(p_advisory_script_uri),
@@ -66,6 +70,7 @@ RuntimeController::RuntimeController(
                                          shared_snapshot_,
                                          task_runners_,
                                          std::make_unique<Window>(this),
+                                         snapshot_delegate_,
                                          resource_context_,
                                          unref_queue_,
                                          p_advisory_script_uri,
@@ -114,6 +119,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
       isolate_snapshot_,            //
       shared_snapshot_,             //
       task_runners_,                //
+      snapshot_delegate_,           //
       resource_context_,            //
       unref_queue_,                 //
       advisory_script_uri_,         //
@@ -124,8 +130,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
 
 bool RuntimeController::FlushRuntimeStateToIsolate() {
   return SetViewportMetrics(window_data_.viewport_metrics) &&
-         SetLocale(window_data_.language_code, window_data_.country_code,
-                   window_data_.script_code, window_data_.variant_code) &&
+         SetLocales(window_data_.locale_data) &&
          SetSemanticsEnabled(window_data_.semantics_enabled) &&
          SetAccessibilityFeatures(window_data_.accessibility_feature_flags_);
 }
@@ -140,22 +145,15 @@ bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
   return false;
 }
 
-bool RuntimeController::SetLocale(const std::string& language_code,
-                                  const std::string& country_code,
-                                  const std::string& script_code,
-                                  const std::string& variant_code) {
-  window_data_.language_code = language_code;
-  window_data_.country_code = country_code;
-  window_data_.script_code = script_code;
-  window_data_.variant_code = variant_code;
+bool RuntimeController::SetLocales(
+    const std::vector<std::string>& locale_data) {
+  window_data_.locale_data = locale_data;
 
   if (auto window = GetWindowIfAvailable()) {
-    window->UpdateLocale(window_data_.language_code, window_data_.country_code,
-                         window_data_.script_code, window_data_.variant_code);
+    window->UpdateLocales(locale_data);
     return true;
   }
-
-  return false;
+  return true;
 }
 
 bool RuntimeController::SetUserSettingsData(const std::string& data) {
@@ -270,6 +268,14 @@ void RuntimeController::UpdateSemantics(SemanticsUpdate* update) {
 void RuntimeController::HandlePlatformMessage(
     fml::RefPtr<PlatformMessage> message) {
   client_.HandlePlatformMessage(std::move(message));
+}
+
+void RuntimeController::SetIsolateDebugName(const std::string name) {
+  std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
+  if (!root_isolate) {
+    return;
+  }
+  root_isolate->set_debug_name(name);
 }
 
 FontCollection& RuntimeController::GetFontCollection() {

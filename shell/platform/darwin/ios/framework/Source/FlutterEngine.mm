@@ -371,6 +371,14 @@
                               arguments:@[ @(client), actionString ]];
 }
 
+#pragma mark - Screenshot Delegate
+
+- (shell::Rasterizer::Screenshot)takeScreenshot:(shell::Rasterizer::ScreenshotType)type
+                                asBase64Encoded:(BOOL)base64Encode {
+  FML_DCHECK(_shell) << "Cannot takeScreenshot without a shell";
+  return _shell->Screenshot(type, base64Encode);
+}
+
 #pragma mark - FlutterBinaryMessenger
 
 - (void)sendOnChannel:(NSString*)channel message:(NSData*)message {

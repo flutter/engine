@@ -34,6 +34,7 @@
   UIStatusBarStyle _statusBarStyle;
   blink::ViewportMetrics _viewportMetrics;
   BOOL _initialized;
+  BOOL _viewOpaque;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -44,9 +45,11 @@
   NSAssert(engine != nil, @"Engine is required");
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
-    _flutterView.reset([[FlutterView alloc] init]);
+    _viewOpaque = YES;
     _engine.reset([engine retain]);
+    _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+
     [self performCommonViewControllerInitialization];
     [engine setViewController:self];
   }
@@ -59,9 +62,10 @@
                          bundle:(NSBundle*)nibBundleOrNil {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
-    _flutterView.reset([[FlutterView alloc] init]);
+    _viewOpaque = YES;
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter" project:projectOrNil]);
+    _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() runWithEntrypoint:nil];
     [_engine.get() setViewController:self];
 
@@ -81,6 +85,18 @@
 
 - (instancetype)init {
   return [self initWithProject:nil nibName:nil bundle:nil];
+}
+
+- (BOOL)isViewOpaque {
+  return _viewOpaque;
+}
+
+- (void)setViewOpaque:(BOOL)value {
+  _viewOpaque = value;
+  if (_flutterView.get().layer.opaque != value) {
+    _flutterView.get().layer.opaque = value;
+    [_flutterView.get().layer setNeedsLayout];
+  }
 }
 
 #pragma mark - Common view controller initialization tasks
@@ -706,20 +722,26 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 #pragma mark - Locale updates
 
 - (void)onLocaleUpdated:(NSNotification*)notification {
-  NSLocale* currentLocale = [NSLocale currentLocale];
-  NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
-  NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
-  NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
-  NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
-  if (languageCode && countryCode)
-    // We pass empty strings for undefined scripts and variants to ensure the JSON encoder/decoder
-    // functions properly.
-    [[_engine.get() localizationChannel]
-        invokeMethod:@"setLocale"
-           arguments:@[
-             languageCode, countryCode, scriptCode ? scriptCode : @"",
-             variantCode ? variantCode : @""
-           ]];
+  NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
+  NSMutableArray<NSString*>* data = [NSMutableArray new];
+  for (NSString* localeID in preferredLocales) {
+    NSLocale* currentLocale = [[NSLocale alloc] initWithLocaleIdentifier:localeID];
+    NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
+    NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
+    NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
+    NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
+    if (!languageCode || !countryCode) {
+      continue;
+    }
+    [data addObject:languageCode];
+    [data addObject:countryCode];
+    [data addObject:(scriptCode ? scriptCode : @"")];
+    [data addObject:(variantCode ? variantCode : @"")];
+  }
+  if (data.count == 0) {
+    return;
+  }
+  [[_engine.get() localizationChannel] invokeMethod:@"setLocale" arguments:data];
 }
 
 #pragma mark - Set user settings
