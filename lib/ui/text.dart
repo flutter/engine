@@ -1002,8 +1002,9 @@ enum BoxWidthStyle {
 
     /// Adds up to two additional boxes as needed at the beginning and/or end
     /// of each line so that the widths of the boxes in line are the same width
-    /// as the widest line in the paragraph. The additional boxes are only added
-    /// when the first/last box does not span the max width of the paragraph.
+    /// as the widest line in the paragraph. The additional boxes on each line
+    /// are only added when the relevant box at the relevant edge of that line
+    /// does not span the maximum width of the paragraph.
     max,
 }
 
@@ -1071,13 +1072,17 @@ class Paragraph extends NativeFieldWrapperClass2 {
 
   /// Returns a list of text boxes that enclose the given text range.
   ///
-  /// [boxHeightStyle] and [boxWidthStyle] allow customization of how the boxes
-  /// are bound vertically and horizontally. Both style parameters default to
-  /// the tight option, which will provide close fitting boxes and will not
-  /// account for any line spacing.
+  /// The [boxHeightStyle] and [boxWidthStyle] parameters allow customization
+  /// of how the boxes are bound vertically and horizontally. Both style
+  /// parameters default to the tight option, which will provide close-fitting
+  /// boxes and will not account for any line spacing.
+  ///
+  /// The [boxHeightStyle] and [boxWidthStyle] parameters must not be null.
   ///
   /// See [BoxHeightStyle] and [BoxWidthStyle] for full descriptions of each option.
   List<TextBox> getBoxesForRange(int start, int end, {BoxHeightStyle boxHeightStyle = BoxHeightStyle.tight, BoxWidthStyle boxWidthStyle = BoxWidthStyle.tight}) {
+    assert(boxHeightStyle != null);
+    assert(boxWidthStyle != null);
     return _getBoxesForRange(start, end, boxHeightStyle.index, boxWidthStyle.index);
   }
 
