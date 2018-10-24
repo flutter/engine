@@ -150,7 +150,7 @@ class Locale {
   /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
   /// Typically this means the primary language subtag should be lowercase and
   /// the region subtag should be uppercase.
-  const Locale(this._languageCode, [ this._countryCode ]) : assert(_languageCode != null);
+  const Locale(this._languageCode, [ this._countryCode ]) : assert(_languageCode != null), assert(_languageCode != '');
 
   /// The primary language subtag for the locale.
   ///
@@ -426,10 +426,30 @@ class Window {
     _onMetricsChangedZone = Zone.current;
   }
 
-  /// The system-reported locale.
+  /// The system-reported default locale of the device.
   ///
   /// This establishes the language and formatting conventions that application
   /// should, if possible, use to render their user interface.
+  ///
+  /// This is the first locale selected by the user and is the user's
+  /// primary locale (the locale the device UI is displayed in)
+  ///
+  /// This is equivalent to `locales.first` and will provide an empty non-null locale
+  /// if the [locales] list has not been set or is empty.
+  Locale get locale {
+    if (_locales != null && _locales.isNotEmpty) {
+      return _locales.first;
+    }
+    return null;
+  }
+
+  /// The full system-reported supported locales of the device.
+  ///
+  /// This establishes the language and formatting conventions that application
+  /// should, if possible, use to render their user interface.
+  ///
+  /// The list is ordered in order of priority, with lower-indexed locales being
+  /// preferred over higher-indexed ones. The first element is the primary [locale].
   ///
   /// The [onLocaleChanged] callback is called whenever this value changes.
   ///
@@ -437,8 +457,8 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  Locale get locale => _locale;
-  Locale _locale;
+  List<Locale> get locales => _locales;
+  List<Locale> _locales;
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -690,6 +710,16 @@ class Window {
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
   void updateSemantics(SemanticsUpdate update) native 'Window_updateSemantics';
+
+  /// Set the debug name associated with this window's root isolate.
+  ///
+  /// Normally debug names are automatically generated from the Dart port, entry
+  /// point, and source file. For example: `main.dart$main-1234`.
+  ///
+  /// This can be combined with flutter tools `--isolate-filter` flag to debug
+  /// specific root isolates. For example: `flutter attach --isolate-filter=[name]`.
+  /// Note that this does not rename any child isolates of the root.
+  void setIsolateDebugName(String name) native 'Window_setIsolateDebugName';
 
   /// Sends a message to a platform-specific plugin.
   ///
