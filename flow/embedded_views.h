@@ -22,11 +22,15 @@ class EmbeddedViewParams {
 // FlutterPlatformViewsController which is owned by FlutterViewController.
 class ViewEmbedder {
  public:
+  ViewEmbedder() {}
+
   // Must be called on the UI thread.
   virtual void CompositeEmbeddedView(int view_id,
                                      const EmbeddedViewParams& params) {}
 
   virtual ~ViewEmbedder() {}
+
+  FML_DISALLOW_COPY_AND_ASSIGN(ViewEmbedder);
 };
 
 }  // namespace flow
