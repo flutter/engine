@@ -36,7 +36,9 @@ class GPUSurfaceGLDelegate {
     return matrix;
   }
 
-  virtual flow::ViewEmbedder* GetViewEmbedder() { return nullptr; }
+  virtual flow::ExternalViewEmbedder* GetExternalViewEmbedder() {
+    return nullptr;
+  }
 
   using GLProcResolver =
       std::function<void* /* proc name */ (const char* /* proc address */)>;
@@ -62,7 +64,7 @@ class GPUSurfaceGL : public Surface {
   GrContext* GetContext() override;
 
   // |shell::Surface|
-  flow::ViewEmbedder* GetViewEmbedder() override;
+  flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
  private:
   GPUSurfaceGLDelegate* delegate_;

@@ -19,7 +19,7 @@
 
 @property(readonly) fml::scoped_nsobject<FlutterEngine> engine;
 
-- (flow::ViewEmbedder*)viewEmbedder;
+- (flow::ExternalViewEmbedder*)viewEmbedder;
 
 @end
 

@@ -14,7 +14,7 @@
 
 namespace shell {
 
-class FlutterPlatformViewsController : public flow::ViewEmbedder {
+class FlutterPlatformViewsController : public flow::ExternalViewEmbedder {
  public:
   FlutterPlatformViewsController(NSObject<FlutterBinaryMessenger>* messenger);
 

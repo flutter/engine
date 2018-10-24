@@ -27,7 +27,7 @@ class CompositorContext {
     ScopedFrame(CompositorContext& context,
                 GrContext* gr_context,
                 SkCanvas* canvas,
-                ViewEmbedder* view_embedder,
+                ExternalViewEmbedder* view_embedder,
                 const SkMatrix& root_surface_transformation,
                 bool instrumentation_enabled);
 
@@ -35,7 +35,7 @@ class CompositorContext {
 
     SkCanvas* canvas() { return canvas_; }
 
-    ViewEmbedder* view_embedder() { return view_embedder_; }
+    ExternalViewEmbedder* view_embedder() { return view_embedder_; }
 
     CompositorContext& context() const { return context_; }
 
@@ -51,7 +51,7 @@ class CompositorContext {
     CompositorContext& context_;
     GrContext* gr_context_;
     SkCanvas* canvas_;
-    ViewEmbedder* view_embedder_;
+    ExternalViewEmbedder* view_embedder_;
     const SkMatrix& root_surface_transformation_;
     const bool instrumentation_enabled_;
 
@@ -65,7 +65,7 @@ class CompositorContext {
   virtual std::unique_ptr<ScopedFrame> AcquireFrame(
       GrContext* gr_context,
       SkCanvas* canvas,
-      ViewEmbedder* view_embedder,
+      ExternalViewEmbedder* view_embedder,
       const SkMatrix& root_surface_transformation,
       bool instrumentation_enabled);
 

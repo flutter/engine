@@ -56,7 +56,7 @@ class Surface {
 
   virtual GrContext* GetContext() = 0;
 
-  virtual flow::ViewEmbedder* GetViewEmbedder();
+  virtual flow::ExternalViewEmbedder* GetExternalViewEmbedder();
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);

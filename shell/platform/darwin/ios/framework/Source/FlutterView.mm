@@ -93,7 +93,7 @@ id<FlutterScreenshotDelegate> _delegate;
 }
 
 - (std::unique_ptr<shell::IOSSurface>)createSurface {
-  ::shell::GetViewEmbedder get_view_embedder = [[^() {
+  ::shell::GetExternalViewEmbedder get_view_embedder = [[^() {
     return [[self flutterViewController] viewEmbedder];
   } copy] autorelease];
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {

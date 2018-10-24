@@ -9,7 +9,8 @@
 
 namespace shell {
 
-flow::ViewEmbedder* GPUSurfaceSoftwareDelegate::GetViewEmbedder() {
+flow::ExternalViewEmbedder*
+GPUSurfaceSoftwareDelegate::GetExternalViewEmbedder() {
   return nullptr;
 }
 
@@ -80,8 +81,8 @@ GrContext* GPUSurfaceSoftware::GetContext() {
 }
 
 // |shell::Surface|
-flow::ViewEmbedder* GPUSurfaceSoftware::GetViewEmbedder() {
-  return delegate_->GetViewEmbedder();
+flow::ExternalViewEmbedder* GPUSurfaceSoftware::GetExternalViewEmbedder() {
+  return delegate_->GetExternalViewEmbedder();
 }
 
 }  // namespace shell

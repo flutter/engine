@@ -65,7 +65,7 @@ class Layer {
 
   struct PaintContext {
     SkCanvas& canvas;
-    ViewEmbedder* view_embedder;
+    ExternalViewEmbedder* view_embedder;
     const Stopwatch& frame_time;
     const Stopwatch& engine_time;
     TextureRegistry& texture_registry;

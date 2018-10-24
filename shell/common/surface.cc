@@ -64,7 +64,7 @@ Surface::Surface() = default;
 
 Surface::~Surface() = default;
 
-flow::ViewEmbedder* Surface::GetViewEmbedder() {
+flow::ExternalViewEmbedder* Surface::GetExternalViewEmbedder() {
   return nullptr;
 }
 

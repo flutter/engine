@@ -167,7 +167,7 @@ bool Rasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
   auto canvas = frame->SkiaCanvas();
 
   auto compositor_frame = compositor_context_->AcquireFrame(
-      surface_->GetContext(), canvas, surface_->GetViewEmbedder(),
+      surface_->GetContext(), canvas, surface_->GetExternalViewEmbedder(),
       surface_->GetRootTransformation(), true);
 
   if (canvas) {

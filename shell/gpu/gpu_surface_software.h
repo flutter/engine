@@ -19,7 +19,7 @@ class GPUSurfaceSoftwareDelegate {
 
   virtual bool PresentBackingStore(sk_sp<SkSurface> backing_store) = 0;
 
-  virtual flow::ViewEmbedder* GetViewEmbedder();
+  virtual flow::ExternalViewEmbedder* GetExternalViewEmbedder();
 };
 
 class GPUSurfaceSoftware : public Surface {
@@ -41,7 +41,7 @@ class GPUSurfaceSoftware : public Surface {
   GrContext* GetContext() override;
 
   // |shell::Surface|
-  flow::ViewEmbedder* GetViewEmbedder() override;
+  flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
  private:
   GPUSurfaceSoftwareDelegate* delegate_;

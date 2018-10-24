@@ -124,7 +124,7 @@
   return _weakFactory->GetWeakPtr();
 }
 
-- (flow::ViewEmbedder*)viewEmbedder {
+- (flow::ExternalViewEmbedder*)viewEmbedder {
   return _platformViewsController.get();
 }
 

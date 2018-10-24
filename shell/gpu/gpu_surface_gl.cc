@@ -341,8 +341,8 @@ GrContext* GPUSurfaceGL::GetContext() {
 }
 
 // |shell::Surface|
-flow::ViewEmbedder* GPUSurfaceGL::GetViewEmbedder() {
-  return delegate_->GetViewEmbedder();
+flow::ExternalViewEmbedder* GPUSurfaceGL::GetExternalViewEmbedder() {
+  return delegate_->GetExternalViewEmbedder();
 }
 
 }  // namespace shell
