@@ -87,7 +87,7 @@ void FlutterPlatformViewsController::RegisterViewFactory(
 
 void FlutterPlatformViewsController::CompositeEmbeddedView(int view_id,
                                                            const flow::EmbeddedViewParams& params) {
-  // TODO(amirh): implements this.
+  // TODO(amirh): implement this.
 }
 
 }  // namespace shell

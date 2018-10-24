@@ -18,13 +18,13 @@ class EmbeddedViewParams {
 // FlutterPlatformViewsController which is owned by FlutterViewController.
 class ExternalViewEmbedder {
  public:
-  ExternalViewEmbedder() {}
+  ExternalViewEmbedder() = default;
 
   // Must be called on the UI thread.
   virtual void CompositeEmbeddedView(int view_id,
                                      const EmbeddedViewParams& params) {}
 
-  virtual ~ExternalViewEmbedder() {}
+  virtual ~ExternalViewEmbedder() = default;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 };
