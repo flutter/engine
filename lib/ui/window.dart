@@ -187,9 +187,11 @@ class Locale {
     String languageCode = 'und',
     this.scriptCode,
     String countryCode,
-  }) : assert(_languageCode != null),
-       assert(_languageCode != ''),
+  }) : assert(languageCode != null),
+       assert(languageCode != ''),
        _languageCode = languageCode,
+       assert(scriptCode != ''),
+       assert(countryCode != ''),
        _countryCode = countryCode;
 
   /// The primary language subtag for the locale.
