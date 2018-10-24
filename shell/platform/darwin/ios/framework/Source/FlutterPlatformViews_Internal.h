@@ -27,6 +27,8 @@ class FlutterPlatformViewsController {
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
   void OnCreate(FlutterMethodCall* call, FlutterResult& result);
   void OnDispose(FlutterMethodCall* call, FlutterResult& result);
+
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
 
 }  // namespace shell
