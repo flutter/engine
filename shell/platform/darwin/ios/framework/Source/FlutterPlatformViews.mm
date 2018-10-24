@@ -96,8 +96,8 @@ void FlutterPlatformViewsController::CompositeEmbeddedView(int view_id,
                                                            const flow::EmbeddedViewParams& params) {
   CGFloat screenScale = [[UIScreen mainScreen] scale];
   CGRect rect =
-      CGRectMake(params.translateXPixels / screenScale, params.translateYPixels / screenScale,
-                 params.widthPoints, params.heightPoints);
+      CGRectMake(params.translatePixels.x() / screenScale, params.translatePixels.y() / screenScale,
+                 params.sizePoints.width(), params.sizePoints.height());
 
   UIView* view = views_[view_id];
   [view setFrame:rect];

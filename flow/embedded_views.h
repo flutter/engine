@@ -6,15 +6,15 @@
 #define FLUTTER_FLOW_EMBEDDED_VIEWS_H_
 
 #include "flutter/fml/memory/ref_counted.h"
+#include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/skia/include/core/SkSize.h"
 
 namespace flow {
 
 class EmbeddedViewParams {
  public:
-  double translateXPixels;
-  double translateYPixels;
-  double widthPoints;
-  double heightPoints;
+  SkPoint translatePixels;
+  SkSize sizePoints;
 };
 
 // This is only used on iOS when running in a non headless mode,

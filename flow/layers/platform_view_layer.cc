@@ -24,10 +24,8 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   }
   EmbeddedViewParams params;
   SkMatrix transform = context.canvas.getTotalMatrix();
-  params.translateXPixels = transform.getTranslateX();
-  params.translateYPixels = transform.getTranslateY();
-  params.widthPoints = size_.width();
-  params.heightPoints = size_.height();
+  params.translatePixels = SkPoint::Make(transform.getTranslateX(), transform.getTranslateY());
+  params.sizePoints = size_;
 
   context.view_embedder->CompositeEmbeddedView(view_id_, params);
 }
