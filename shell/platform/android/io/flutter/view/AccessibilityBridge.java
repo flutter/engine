@@ -4,7 +4,6 @@
 
 package io.flutter.view;
 
-import android.app.Activity;
 import android.graphics.Rect;
 import android.opengl.Matrix;
 import android.os.Build;
@@ -42,7 +41,6 @@ class AccessibilityBridge
     private SemanticsObject mHoveredObject;
     private int previousRouteId = ROOT_NODE_ID;
     private List<Integer> previousRoutes;
-    private final View mDecorView;
     private Integer mLastLeftFrameInset = 0;
 
     private final BasicMessageChannel<Object> mFlutterAccessibilityChannel;
@@ -113,7 +111,6 @@ class AccessibilityBridge
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(
                 owner, "flutter/accessibility", StandardMessageCodec.INSTANCE);
-        mDecorView = ((Activity) owner.getContext()).getWindow().getDecorView();
     }
 
     void setAccessibilityEnabled(boolean accessibilityEnabled) {
@@ -638,7 +635,7 @@ class AccessibilityBridge
             // a11y nodes.
             if (Build.VERSION.SDK_INT >= 23) {
                 Rect visibleFrame = new Rect();
-                mDecorView.getWindowVisibleDisplayFrame(visibleFrame);
+                mOwner.getRootView().getWindowVisibleDisplayFrame(visibleFrame);
                 if (!mLastLeftFrameInset.equals(visibleFrame.left)) {
                     rootObject.globalGeometryDirty = true;
                     rootObject.inverseTransformDirty = true;
