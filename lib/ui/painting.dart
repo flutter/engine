@@ -1503,7 +1503,7 @@ class _ImageInfo {
 ///
 /// To draw an [Image], use one of the methods on the [Canvas] class, such as
 /// [Canvas.drawImage].
-@pragma("vm:entry-point")
+@pragma('vm:entry-point')
 class Image extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -1551,7 +1551,7 @@ typedef ImageDecoderCallback = void Function(Image result);
 ///
 /// To obtain an instance of the [FrameInfo] interface, see
 /// [Codec.getNextFrame].
-@pragma("vm:entry-point")
+@pragma('vm:entry-point')
 class FrameInfo extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -1570,7 +1570,7 @@ class FrameInfo extends NativeFieldWrapperClass2 {
 }
 
 /// A handle to an image codec.
-@pragma("vm:entry-point")
+@pragma('vm:entry-point')
 class Codec extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -1765,7 +1765,7 @@ enum PathOperation {
 }
 
 /// A handle for the framework to hold and retain an engine layer across frames.
-@pragma("vm:entry-point")
+@pragma('vm:entry-point')
 class EngineLayer extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -1790,7 +1790,7 @@ class EngineLayer extends NativeFieldWrapperClass2 {
 ///
 /// Paths can be drawn on canvases using [Canvas.drawPath], and can
 /// used to create clip regions using [Canvas.clipPath].
-@pragma("vm:entry-point")
+@pragma('vm:entry-point')
 class Path extends NativeFieldWrapperClass2 {
   /// Create a new empty [Path] object.
   @pragma('vm:entry-point')
@@ -3585,7 +3585,7 @@ class Canvas extends NativeFieldWrapperClass2 {
 /// A [Picture] can be placed in a [Scene] using a [SceneBuilder], via
 /// the [SceneBuilder.addPicture] method. A [Picture] can also be
 /// drawn into a [Canvas], using the [Canvas.drawPicture] method.
-@pragma("vm:entry-point")
+@pragma('vm:entry-point')
 class Picture extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
