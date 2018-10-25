@@ -133,7 +133,7 @@
   [self maybeSetupPlatformViewChannels];
 }
 
-- (FlutterViewController*)getViewController {
+- (FlutterViewController*)viewController {
   if (!_viewController) {
     return nil;
   }
@@ -230,7 +230,7 @@
   return self.shell.Screenshot(type, base64Encode);
 }
 
-- (void)launchEngine:(NSString*)entrypoint libraryUri:(NSString*)libraryOrNil {
+- (void)launchEngine:(NSString*)entrypoint libraryURI:(NSString*)libraryOrNil {
   // Launch the Dart application with the inferred run configuration.
   self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
       [engine = _shell->GetEngine(),
@@ -246,7 +246,7 @@
       }));
 }
 
-- (bool)runWithEntrypointAndLibraryUri:(NSString*)entrypoint libraryUri:(NSString*)libraryUri {
+- (bool)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   if (_shell != nullptr) {
     FML_LOG(WARNING) << "This FlutterEngine was already invoked.";
     return false;
@@ -256,10 +256,10 @@
 
   auto settings = [_dartProject.get() settings];
 
-  if (libraryUri) {
+  if (libraryURI) {
     FML_DCHECK(entrypoint) << "Must specify entrypoint if specifying library";
     settings.advisory_script_entrypoint = entrypoint.UTF8String;
-    settings.advisory_script_uri = libraryUri.UTF8String;
+    settings.advisory_script_uri = libraryURI.UTF8String;
   } else if (entrypoint) {
     settings.advisory_script_entrypoint = entrypoint.UTF8String;
     settings.advisory_script_entrypoint = std::string("main.dart");
@@ -309,14 +309,14 @@
                    << entrypoint.UTF8String;
   } else {
     [self maybeSetupPlatformViewChannels];
-    [self launchEngine:entrypoint libraryUri:libraryUri];
+    [self launchEngine:entrypoint libraryURI:libraryURI];
   }
 
   return _shell != nullptr;
 }
 
 - (bool)runWithEntrypoint:(NSString*)entrypoint {
-  return [self runWithEntrypointAndLibraryUri:entrypoint libraryUri:nil];
+  return [self runWithEntrypoint:entrypoint libraryURI:nil];
 }
 
 #pragma mark - Text input delegate

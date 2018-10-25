@@ -34,12 +34,12 @@
  * beyond the life of the ViewController.
  *
  * A newly initialized FlutterEngine will not actually run a Dart Isolate until
- * either `-runWithEntrypoint:` or `-runWithEntrypointAndLibraryUri:` is invoked.
+ * either `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI` is invoked.
  * One of these methods must be invoked before calling `-setViewController:`.
  */
 FLUTTER_EXPORT
 @interface FlutterEngine
-    : NSObject <FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
+    : NSObject<FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
  *
@@ -48,7 +48,7 @@ FLUTTER_EXPORT
  * bundle).
  *
  * A newly initialized engine will not run the `FlutterDartProject` until either
- * `-runWithEntrypoint:` or `-runWithEntrypointAndLibraryUri:` is called.
+ * `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI:` is called.
  *
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  *   be unique across FlutterEngine instances, and is used in instrumentation to label
@@ -91,15 +91,15 @@ FLUTTER_EXPORT
  *   default to `main()`.  If it is not the app's main() function, that function
  *   must be decorated with `@pragma(vm:entry-point)` to ensure the method is not
  *   tree-shaken by the Dart compiler.
- * @param libraryUri The URI of the Dart library which contains the entrypoint method.  IF nil,
+ * @param libraryURI The URI of the Dart library which contains the entrypoint method.  IF nil,
  *   this will default to the same library as the `main()` function in the Dart program.
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
-- (bool)runWithEntrypointAndLibraryUri:(NSString*)entrypoint libraryUri:(NSString*)uri;
+- (bool)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)uri;
 
 /**
  * Sets the `FlutterViewController` for this instance.  The FlutterEngine must be
- * running (e.g. a successful call to `-runWithEntrypoint:` or `-runWithEntrypointAndLibraryUri`)
+ * running (e.g. a successful call to `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI`)
  * before calling this method. Callers may pass nil to remove the viewController
  * and have the engine run headless in the current process.
  *
@@ -110,20 +110,14 @@ FLUTTER_EXPORT
  * Setting the viewController will signal the engine to start animations and drawing, and unsetting
  * it will signal the engine to stop animations and drawing.  However, neither will impact the state
  * of the Dart program's execution.
- *
- * @param viewController The `FlutterViewController` (or nil) to set. Kept as a weak reference.
  */
-- (void)setViewController:(FlutterViewController*)viewController;
-/**
- * Gets the `FlutterViewController` (may be nil) currently used by this instance.
- */
-- (FlutterViewController*)getViewController;
+@property(nonatomic, weak) FlutterViewController* viewController;
 
 /**
  * The `FlutterMethodChannel` used for localization related platform messages, such as
  * setting the locale.
  */
-- (FlutterMethodChannel*)localizationChannel;
+@property(nonatomic, readonly) FlutterMethodChannel* localizationChannel;
 /**
  * The `FlutterMethodChannel` used for navigation related platform messages.
  *
@@ -131,12 +125,14 @@ FLUTTER_EXPORT
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/navigation-constant.html)
  * @see [Navigator Widget](https://docs.flutter.io/flutter/widgets/Navigator-class.html)
  */
-- (FlutterMethodChannel*)navigationChannel;
+@property(nonatomic, readonly) FlutterMethodChannel* navigationChannel;
+
 /**
  * The `FlutterMethodChannel` used for core platform messages, such as
  * information about the screen orientation.
  */
-- (FlutterMethodChannel*)platformChannel;
+@property(nonatomic, readonly) FlutterMethodChannel* platformChannel;
+
 /**
  * The `FlutterMethodChannel` used to communicate text input events to the
  * Dart Isolate.
@@ -144,7 +140,8 @@ FLUTTER_EXPORT
  * @see [Text Input
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/textInput-constant.html)
  */
-- (FlutterMethodChannel*)textInputChannel;
+@property(nonatomic, readonly) FlutterMethodChannel* textInputChannel;
+
 /**
  * The `FlutterBasicMessageChannel` used to communicate app lifecycle events
  * to the Dart Isolate.
@@ -152,7 +149,8 @@ FLUTTER_EXPORT
  * @see [Lifecycle
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/lifecycle-constant.html)
  */
-- (FlutterBasicMessageChannel*)lifecycleChannel;
+@property(nonatomic, readonly) FlutterBasicMessageChannel* lifecycleChannel;
+
 /**
  * The `FlutterBasicMessageChannel` used for communicating system events, such as
  * memory pressure events.
@@ -160,12 +158,13 @@ FLUTTER_EXPORT
  * @see [System
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/system-constant.html)
  */
-- (FlutterBasicMessageChannel*)systemChannel;
+@property(nonatomic, readonly) FlutterBasicMessageChannel* systemChannel;
+
 /**
  * The `FlutterBasicMessageChannel` used for communicating user settings such as
  * clock format and text scale.
  */
-- (FlutterBasicMessageChannel*)settingsChannel;
+@property(nonatomic, readonly) FlutterBasicMessageChannel* settingsChannel;
 
 @end
 

@@ -40,7 +40,7 @@ FLUTTER_DEPRECATED("FlutterEngine should be used rather than FlutterHeadlessDart
  * the project in a default location.
  *
  * A newly initialized engine will not run the `FlutterDartProject` until either
- * `-runWithEntrypoint:` or `-runWithEntrypointAndLibraryUri:` is called.
+ * `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI` is called.
  *
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  * be unique across FlutterEngine instances
