@@ -13,7 +13,7 @@ namespace flow {
 
 class EmbeddedViewParams {
  public:
-  SkPoint translatePixels;
+  SkPoint offsetPixels;
   SkSize sizePoints;
 };
 

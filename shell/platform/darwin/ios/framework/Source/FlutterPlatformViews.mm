@@ -94,9 +94,11 @@ void FlutterPlatformViewsController::RegisterViewFactory(
 
 void FlutterPlatformViewsController::CompositeEmbeddedView(int view_id,
                                                            const flow::EmbeddedViewParams& params) {
+  // TODO(amirh): assert that this is running on the platform thread once we support the iOS
+  // embedded views thread configuration.
   CGFloat screenScale = [[UIScreen mainScreen] scale];
   CGRect rect =
-      CGRectMake(params.translatePixels.x() / screenScale, params.translatePixels.y() / screenScale,
+      CGRectMake(params.offsetPixels.x() / screenScale, params.offsetPixels.y() / screenScale,
                  params.sizePoints.width(), params.sizePoints.height());
 
   UIView* view = views_[view_id];
