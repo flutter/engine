@@ -39,7 +39,7 @@
  */
 FLUTTER_EXPORT
 @interface FlutterEngine
-    : NSObject<FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
+    : NSObject <FlutterBinaryMessenger, FlutterTextureRegistry, FlutterPluginRegistry>
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
  *
