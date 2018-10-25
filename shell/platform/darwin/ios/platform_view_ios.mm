@@ -79,7 +79,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
     latch.Signal();
   };
 
-  task_runners_.GetGPUTaskRunner()->PostTask(gpu_task);
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetGPUTaskRunner(), gpu_task);
   latch.Wait();
   return surface;
 }
