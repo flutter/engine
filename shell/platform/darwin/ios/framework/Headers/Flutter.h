@@ -57,6 +57,7 @@
 #include "FlutterEngine.h"
 #include "FlutterHeadlessDartRunner.h"
 #include "FlutterMacros.h"
+#include "FlutterPlatformViews.h"
 #include "FlutterPlugin.h"
 #include "FlutterPluginAppLifeCycleDelegate.h"
 #include "FlutterTexture.h"

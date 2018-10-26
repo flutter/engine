@@ -1,4 +1,4 @@
-Signature: 6191721212cb6d278c3d6d4d1716dd88
+Signature: bde06884d55ea0e9a302f2c44ee13732
 
 UNUSED LICENSES:
 
@@ -1289,6 +1289,7 @@ LIBRARY: skcms
 LIBRARY: skia
 LIBRARY: vulkan
 LIBRARY: vulkanmemoryallocator
+LIBRARY: wuffs
 ORIGIN: ../../../third_party/skia/bench/ClearBench.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/ClearBench.cpp
@@ -1352,6 +1353,7 @@ FILE: ../../../third_party/skia/include/private/SkSafe32.h
 FILE: ../../../third_party/skia/include/private/SkTo.h
 FILE: ../../../third_party/skia/include/utils/Sk3D.h
 FILE: ../../../third_party/skia/include/utils/SkAnimCodecPlayer.h
+FILE: ../../../third_party/skia/include/utils/SkTextUtils.h
 FILE: ../../../third_party/skia/infra/cts/run_testlab.go
 FILE: ../../../third_party/skia/modules/skottie/include/SkottieProperty.h
 FILE: ../../../third_party/skia/modules/skottie/src/SkottieAdapter.cpp
@@ -1399,6 +1401,8 @@ FILE: ../../../third_party/skia/samplecode/SampleNimaActor.h
 FILE: ../../../third_party/skia/src/android/SkAnimatedImage.cpp
 FILE: ../../../third_party/skia/src/c/sk_imageinfo.cpp
 FILE: ../../../third_party/skia/src/codec/SkEncodedInfo.cpp
+FILE: ../../../third_party/skia/src/codec/SkWuffsCodec.cpp
+FILE: ../../../third_party/skia/src/codec/SkWuffsCodec.h
 FILE: ../../../third_party/skia/src/compute/common/cl/find_cl.c
 FILE: ../../../third_party/skia/src/compute/common/cl/find_cl.h
 FILE: ../../../third_party/skia/src/compute/common/vk/cache_vk.c
@@ -1625,6 +1629,7 @@ FILE: ../../../third_party/skia/src/utils/SkAnimCodecPlayer.cpp
 FILE: ../../../third_party/skia/src/utils/SkCallableTraits.h
 FILE: ../../../third_party/skia/src/utils/SkJSON.cpp
 FILE: ../../../third_party/skia/src/utils/SkJSON.h
+FILE: ../../../third_party/skia/src/utils/SkTextUtils.cpp
 FILE: ../../../third_party/skia/src/utils/mac/SkUniqueCFRef.h
 FILE: ../../../third_party/skia/src/utils/win/SkDWriteNTDDI_VERSION.h
 FILE: ../../../third_party/skia/third_party/skcms/skcms.cc
@@ -1634,6 +1639,7 @@ FILE: ../../../third_party/skia/third_party/skcms/src/Transform_inl.h
 FILE: ../../../third_party/skia/third_party/vulkan/SkiaVulkan.h
 FILE: ../../../third_party/skia/third_party/vulkanmemoryallocator/GrVulkanMemoryAllocator.cpp
 FILE: ../../../third_party/skia/third_party/vulkanmemoryallocator/GrVulkanMemoryAllocator.h
+FILE: ../../../third_party/skia/third_party/wuffs/wuffs.c
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 Google Inc.
 
@@ -3826,7 +3832,6 @@ FILE: ../../../third_party/skia/src/opts/SkBlitMask_opts_arm_neon.cpp
 FILE: ../../../third_party/skia/src/opts/SkBlitMask_opts_arm_neon.h
 FILE: ../../../third_party/skia/src/opts/SkBlitRow_opts.h
 FILE: ../../../third_party/skia/src/opts/SkColor_opts_neon.h
-FILE: ../../../third_party/skia/src/opts/SkMorphologyImageFilter_opts.h
 FILE: ../../../third_party/skia/src/opts/SkNx_neon.h
 FILE: ../../../third_party/skia/src/opts/SkNx_sse.h
 FILE: ../../../third_party/skia/src/opts/SkOpts_sse41.cpp
