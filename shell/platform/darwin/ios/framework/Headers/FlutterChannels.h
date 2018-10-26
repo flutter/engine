@@ -24,7 +24,7 @@ typedef void (^FlutterReply)(id _Nullable reply);
  * asynchronous replies back to Flutter.
  *
  * @param message The message.
- * @param reply A callback for submitting a reply to the sender.
+ * @param callback A callback for submitting a reply to the sender.
  */
 typedef void (^FlutterMessageHandler)(id _Nullable message, FlutterReply callback);
 
@@ -226,7 +226,7 @@ FLUTTER_EXPORT
  * @param method The name of the method to invoke.
  * @param arguments The arguments. Must be a value supported by the codec of this
  *     channel.
- * @param result A callback that will be invoked with the asynchronous result.
+ * @param callback A callback that will be invoked with the asynchronous result.
  *     The result will be a `FlutterError` instance, if the method call resulted
  *     in an error on the Flutter side. Will be `FlutterMethodNotImplemented`, if
  *     the method called was not implemented on the Flutter side. Any other value,
@@ -317,7 +317,6 @@ FLUTTER_EXPORT
  *
  * @param name The channel name.
  * @param messenger The binary messenger.
- * @param codec The method codec.
  */
 + (instancetype)eventChannelWithName:(NSString*)name
                      binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger;

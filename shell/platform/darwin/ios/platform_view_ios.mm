@@ -69,19 +69,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
                       "has no ViewController.";
     return nullptr;
   }
-
-  fml::AutoResetWaitableEvent latch;
-  std::unique_ptr<Surface> surface;
-  auto gpu_task = [ios_surface = ios_surface_.get(), &surface, &latch]() mutable {
-    if (ios_surface) {
-      surface = ios_surface->CreateGPUSurface();
-    }
-    latch.Signal();
-  };
-
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetGPUTaskRunner(), gpu_task);
-  latch.Wait();
-  return surface;
+  return ios_surface_->CreateGPUSurface();
 }
 
 // |shell::PlatformView|

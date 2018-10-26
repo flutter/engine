@@ -44,7 +44,7 @@ FLUTTER_DEPRECATED("FlutterEngine should be used rather than FlutterHeadlessDart
  *
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  * be unique across FlutterEngine instances
- * @param project The `FlutterDartProject` to run.
+ * @param projectOrNil The `FlutterDartProject` to run.
  */
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(FlutterDartProject*)projectOrNil NS_DESIGNATED_INITIALIZER;

@@ -41,8 +41,8 @@ FLUTTER_EXPORT
  * The initialized viewcontroller will attach itself to the engine as part of this process.
  *
  * @param engine The `FlutterEngine` instance to attach to.
- * @param nibName The NIB name to initialize this UIViewController with.
- * @param bundle The NIB bundle
+ * @param nibNameOrNil The NIB name to initialize this UIViewController with.
+ * @param nibBundleOrNil The NIB bundle.
  */
 - (instancetype)initWithEngine:(FlutterEngine*)engine
                        nibName:(NSString*)nibNameOrNil
@@ -53,8 +53,8 @@ FLUTTER_EXPORT
  * `FlutterDartProject`.
  *
  * @param projectOrNil The `FlutterDartProject` to initialize the `FlutterEngine` with.
- * @param nibName The NIB name to initialize this UIViewController with.
- * @param bundle The NIB bundle
+ * @param nibNameOrNil The NIB name to initialize this UIViewController with.
+ * @param nibBundleOrNil The NIB bundle.
  */
 - (instancetype)initWithProject:(FlutterDartProject*)projectOrNil
                         nibName:(NSString*)nibNameOrNil

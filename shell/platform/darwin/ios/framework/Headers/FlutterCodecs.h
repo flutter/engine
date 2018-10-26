@@ -369,7 +369,7 @@ FLUTTER_EXPORT
 /**
  * Deccodes the specified result envelope from binary.
  *
- * @param error The error object.
+ * @param envelope The error object.
  * @return The result value, if the envelope represented a successful result,
  *   or a `FlutterError` instance, if not.
  */

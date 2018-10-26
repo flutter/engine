@@ -53,7 +53,7 @@ FLUTTER_EXPORT
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  *   be unique across FlutterEngine instances, and is used in instrumentation to label
  *   the threads used by this FlutterEngine.
- * @param project The `FlutterDartProject` to run.
+ * @param projectOrNil The `FlutterDartProject` to run.
  */
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(FlutterDartProject*)projectOrNil NS_DESIGNATED_INITIALIZER;
@@ -91,7 +91,7 @@ FLUTTER_EXPORT
  *   default to `main()`.  If it is not the app's main() function, that function
  *   must be decorated with `@pragma(vm:entry-point)` to ensure the method is not
  *   tree-shaken by the Dart compiler.
- * @param libraryURI The URI of the Dart library which contains the entrypoint method.  IF nil,
+ * @param uri The URI of the Dart library which contains the entrypoint method.  IF nil,
  *   this will default to the same library as the `main()` function in the Dart program.
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
