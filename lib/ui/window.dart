@@ -147,13 +147,13 @@ class Locale {
   /// The primary language subtag must not be null. The region subtag is
   /// optional.
   ///
-  /// The subtag values are _case sensitive_ and should be one of the valid
+  /// The subtag values are _case sensitive_ and must be one of the valid
   /// subtags according to CLDR supplemental data:
   /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
   /// [region](http://unicode.org/cldr/latest/common/validity/region.xml). The
-  /// primary language subtag should be two to three lowercase letters. The
-  /// region region subtag should be two uppercase letters or three digits. See
-  /// the [Unicode Language
+  /// primary language subtag must be at least two and at most eight lowercase
+  /// letters, but not four letters. The region region subtag must be two
+  /// uppercase letters or three digits. See the [Unicode Language
   /// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier)
   /// specification.
   ///
@@ -175,12 +175,12 @@ class Locale {
   ///
   /// The keyword arguments specify the subtags of the Locale.
   ///
-  /// The subtag values are _case sensitive_ and should be valid subtags
-  /// according to CLDR supplemental data:
+  /// The subtag values are _case sensitive_ and must be valid subtags according
+  /// to CLDR supplemental data:
   /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
-  /// [script](http://unicode.org/cldr/latest/common/validity/script.xml),
-  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml).
-  /// for each of languageCode, scriptCode and countryCode respectively.
+  /// [script](http://unicode.org/cldr/latest/common/validity/script.xml) and
+  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml) for
+  /// each of languageCode, scriptCode and countryCode respectively.
   ///
   /// Validity is not checked by default, but some methods may throw away
   /// invalid data.
@@ -210,7 +210,7 @@ class Locale {
   /// [languageCode] `he`, because `iw` is a deprecated language subtag that was
   /// replaced by the subtag `he`.
   ///
-  /// This should be a valid Unicode Language subtag as listed in [Unicode CLDR
+  /// This must be a valid Unicode Language subtag as listed in [Unicode CLDR
   /// supplemental
   /// data](http://unicode.org/cldr/latest/common/validity/language.xml).
   ///
@@ -311,7 +311,7 @@ class Locale {
   ///
   /// This may be null, indicating that there is no specified script subtag.
   ///
-  /// This should be a valid Unicode Language Identifier script subtag as listed
+  /// This must be a valid Unicode Language Identifier script subtag as listed
   /// in [Unicode CLDR supplemental
   /// data](http://unicode.org/cldr/latest/common/validity/script.xml).
   ///
