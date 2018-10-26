@@ -517,9 +517,11 @@
   // TODO(amirh/dnfield): this shouldn't need to fail - PlatformViewsController should be
   // independent. Dev builds of engine should just fail here.  We don't want to fail in release mode
   // because this shouldn't ordinarily happen.
-  FML_DCHECK(_viewController) << "Cannot register a view factory on a headless engine.";
-  if (_viewController) {
-    [_viewController platformViewsController] -> RegisterViewFactory(factory, factoryId);
+  FML_DCHECK([_flutterEngine viewController])
+      << "Cannot register a view factory on a headless engine.";
+  if ([_flutterEngine viewController]) {
+    [[_flutterEngine viewController] platformViewsController]->RegisterViewFactory(factory,
+                                                                                   factoryId);
   } else {
     // Shouldn't ordinarily happen, but at least give warning if it does.
     FML_LOG(ERROR) << "Cannot register a view factory on a headless engine.";
