@@ -162,7 +162,8 @@ class Locale {
   ///
   /// See also:
   ///
-  ///  * [new Locale.fromSubtags].
+  ///  * [new Locale.fromSubtags], which also allows a [scriptCode] to be
+  ///    specified.
   const Locale(
     this._languageCode, [
     this._countryCode,
@@ -196,7 +197,7 @@ class Locale {
 
   /// The primary language subtag for the locale.
   ///
-  /// This must not be null. It may be 'und' representing 'undefined'.
+  /// This must not be null. It may be 'und', representing 'undefined'.
   ///
   /// This is expected to be string registered in the [IANA Language Subtag
   /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry)
