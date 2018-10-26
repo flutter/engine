@@ -66,7 +66,7 @@ FLUTTER_EXPORT
 /**
  * Called if this plugin has been registered for `UIApplicationDelegate` callbacks.
  */
-#pragma GCC diagnostic push 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
     didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings;
