@@ -437,8 +437,8 @@ class Window {
   /// This is equivalent to `locales.first` and will provide an empty non-null locale
   /// if the [locales] list has not been set or is empty.
   Locale get locale {
-    if (_locales != null && _locales.isNotEmpty) {
-      return _locales.first;
+    if (locales != null && locales.isNotEmpty) {
+      return locales.first;
     }
     return null;
   }
@@ -457,7 +457,18 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  List<Locale> get locales => _locales;
+  List<Locale> get locales {
+    // Provide a minimal list of default locales for environments that do not
+    // support passing platform locales to Flutter. This will allow tests on
+    // these platforms to have similar expected behavior as Android and iOS where
+    // Locale passing is supported.
+    if ((_locales == null || _locales.isEmpty) && (Platform.isLinux || Platform.isMacOS || Platform.isFuchsia)) {
+      // TODO(garyq): As we add support for passing locales on additional platforms,
+      // return null for newly supported platforms.
+      _locales = <Locale>[Locale("en", "US"), Locale("zh", "CN")];
+    }
+    return _locales;
+  }
   List<Locale> _locales;
 
   /// A callback that is invoked whenever [locale] changes value.
