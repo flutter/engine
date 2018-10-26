@@ -16,7 +16,9 @@ constexpr LogSeverity LOG_ERROR = 2;
 constexpr LogSeverity LOG_FATAL = 3;
 constexpr LogSeverity LOG_NUM_SEVERITIES = 4;
 
-// It seems that one of the Windows header files defines ERROR as 0.
+// One of the Windows headers defines ERROR to 0. This makes the token
+// concatenation in FML_LOG(ERROR) to resolve to LOG_0. We define this back to
+// the appropriate log level.
 #ifdef _WIN32
 #define LOG_0 LOG_ERROR
 #endif
