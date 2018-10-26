@@ -16,6 +16,11 @@ constexpr LogSeverity LOG_ERROR = 2;
 constexpr LogSeverity LOG_FATAL = 3;
 constexpr LogSeverity LOG_NUM_SEVERITIES = 4;
 
+// It seems that one of the Windows header files defines ERROR as 0.
+#ifdef _WIN32
+#define LOG_0 LOG_ERROR
+#endif
+
 // LOG_DFATAL is LOG_FATAL in debug mode, ERROR in normal mode
 #ifdef NDEBUG
 const LogSeverity LOG_DFATAL = LOG_ERROR;
