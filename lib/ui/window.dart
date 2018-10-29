@@ -220,6 +220,8 @@ class Locale {
     return Locale._internal(language, script: script, region: region, variants: variants);
   }
 
+  static final RegExp _reSep = RegExp(r'[-_]');
+
   /// Parses [Unicode CLDR Locale
   /// Identifiers](https://www.unicode.org/reports/tr35/#Identifiers).
   ///
@@ -241,9 +243,13 @@ class Locale {
         collection.LinkedHashMap<String, String>();
 
     final List<String> problems = <String>[];
-    if (_reLanguage.hasMatch(localeSubtags[0])) {
+    if (_isAlphabetic(localeSubtags[0], 2, 8)
+        && localeSubtags[0].length != 4) {
+      // language subtag: r'^[a-zA-Z]{2,3}$|^[a-zA-Z]{5,8}$'
       language = _replaceDeprecatedLanguageSubtag(localeSubtags.removeAt(0));
-    } else if (_reScript.hasMatch(localeSubtags[0])) {
+    } else if (_isAlphabetic(localeSubtags[0], 4, 4)) {
+      // First subtag is already a script subtag.
+      //
       // Identifiers without language subtags aren't valid BCP 47 tags and
       // therefore not intended for general interchange, however they do match
       // the LDML spec.
@@ -251,14 +257,19 @@ class Locale {
     } else {
       problems.add('"${localeSubtags[0]}" is an invalid language subtag');
     }
-    if (localeSubtags.isNotEmpty && _reScript.hasMatch(localeSubtags[0])) {
+    if (localeSubtags.isNotEmpty
+        && _isAlphabetic(localeSubtags[0], 4, 4)) {
+      // script subtag: r'^[a-zA-Z]{4}$'
       final String s = localeSubtags.removeAt(0);
       script = s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase();
     }
-    if (localeSubtags.isNotEmpty && _reRegion.hasMatch(localeSubtags[0])) {
+    if (localeSubtags.isNotEmpty
+        && (_isAlphabetic(localeSubtags[0], 2, 2)
+            || _isNumeric(localeSubtags[0], 3, 3))) {
+      // region subtag: r'^[a-zA-Z]{2}$|^[0-9]{3}$';
       region = localeSubtags.removeAt(0).toUpperCase();
     }
-    while (localeSubtags.isNotEmpty && _reVariant.hasMatch(localeSubtags[0])) {
+    while (localeSubtags.isNotEmpty && _isVariantSubtag(localeSubtags[0])) {
       variants.add(localeSubtags.removeAt(0));
     }
 
@@ -308,8 +319,8 @@ class Locale {
         bool empty = true;
         // unicode_locale_extensions: collect "(sep attribute)+" attributes.
         final List<String> attributes = <String>[];
-        while (localeSubtags.isNotEmpty &&
-               _reValueSubtags.hasMatch(localeSubtags[0])) {
+        while (localeSubtags.isNotEmpty
+               && _isAlphaNumeric(localeSubtags[0], 3, 8)) {
           attributes.add(localeSubtags.removeAt(0));
         }
         if (attributes.isNotEmpty) {
@@ -321,13 +332,13 @@ class Locale {
           problems.add('duplicate singleton: "$singleton"');
         }
         // unicode_locale_extensions: collect "(sep keyword)*".
-        while (localeSubtags.isNotEmpty &&
-               _reKey.hasMatch(localeSubtags[0])) {
+        while (localeSubtags.isNotEmpty
+               && _isUExtensionKey(localeSubtags[0])) {
           empty = false;
           final String key = localeSubtags.removeAt(0);
           final List<String> typeParts = <String>[];
-          while (localeSubtags.isNotEmpty &&
-                 _reValueSubtags.hasMatch(localeSubtags[0])) {
+          while (localeSubtags.isNotEmpty
+                 && _isAlphaNumeric(localeSubtags[0], 3, 8)) {
             typeParts.add(localeSubtags.removeAt(0));
           }
           if (!ext.containsKey(key)) {
@@ -347,14 +358,22 @@ class Locale {
         bool empty = true;
         // transformed_extensions: grab tlang if it exists.
         final List<String> tlang = <String>[];
-        if (localeSubtags.isNotEmpty && _reLanguage.hasMatch(localeSubtags[0])) {
+        if (localeSubtags.isNotEmpty
+            && _isAlphabetic(localeSubtags[0], 2, 8)
+            && localeSubtags[0].length != 4) {
+          // language subtag
           empty = false;
           tlang.add(localeSubtags.removeAt(0));
-          if (localeSubtags.isNotEmpty && _reScript.hasMatch(localeSubtags[0]))
+          if (localeSubtags.isNotEmpty
+              && _isAlphabetic(localeSubtags[0], 4, 4))
+            // script subtag
             tlang.add(localeSubtags.removeAt(0));
-          if (localeSubtags.isNotEmpty && _reRegion.hasMatch(localeSubtags[0]))
+          if (localeSubtags.isNotEmpty
+              && (_isAlphabetic(localeSubtags[0], 2, 2)
+                  || _isNumeric(localeSubtags[0], 3, 3)))
+            // region subtag: r'^[a-zA-Z]{2}$|^[0-9]{3}$';
             tlang.add(localeSubtags.removeAt(0));
-          while (localeSubtags.isNotEmpty && _reVariant.hasMatch(localeSubtags[0])) {
+          while (localeSubtags.isNotEmpty && _isVariantSubtag(localeSubtags[0])) {
             tlang.add(localeSubtags.removeAt(0));
           }
         }
@@ -364,10 +383,11 @@ class Locale {
           problems.add('duplicate singleton: "$singleton"');
         }
         // transformed_extensions: collect "(sep tfield)*".
-        while (localeSubtags.isNotEmpty && _reTkey.hasMatch(localeSubtags[0])) {
+        while (localeSubtags.isNotEmpty && _isTExtensionKey(localeSubtags[0])) {
           final String tkey = localeSubtags.removeAt(0);
           final List<String> tvalueParts = <String>[];
-          while (localeSubtags.isNotEmpty && _reValueSubtags.hasMatch(localeSubtags[0])) {
+          while (localeSubtags.isNotEmpty
+                 && _isAlphaNumeric(localeSubtags[0], 3, 8)) {
             tvalueParts.add(localeSubtags.removeAt(0));
           }
           if (tvalueParts.isNotEmpty) {
@@ -385,7 +405,8 @@ class Locale {
       } else if (singleton == 'x') {
         // pu_extensions
         final List<String> values = <String>[];
-        while (localeSubtags.isNotEmpty && _reAllSubtags.hasMatch(localeSubtags[0])) {
+        while (localeSubtags.isNotEmpty
+               && _isAlphaNumeric(localeSubtags[0], 1, 8)) {
           values.add(localeSubtags.removeAt(0));
         }
         ext[singleton] = values.join('-');
@@ -393,10 +414,11 @@ class Locale {
             problems.add('invalid part of private use subtags: "${localeSubtags.join('-')}"');
         }
         break;
-      } else if (_reSingleton.hasMatch(singleton)) {
+      } else if (_isAlphabetic(singleton, 1, 1)) {
         // other_extensions
         final List<String> values = <String>[];
-        while (localeSubtags.isNotEmpty && _reOtherSubtags.hasMatch(localeSubtags[0])) {
+        while (localeSubtags.isNotEmpty
+               && _isAlphaNumeric(localeSubtags[0], 2, 8)) {
           values.add(localeSubtags.removeAt(0));
         }
         if (!ext.containsKey(singleton)) {
@@ -583,7 +605,7 @@ class Locale {
   // Keys in this ordered map must be sorted, and both keys and values must all
   // be lowercase: constructors must construct it as such.
   //
-  // This map simultaneously reprents T-extensions, U-extensions, other
+  // This map simultaneously represents T-extensions, U-extensions, other
   // extensions and the private use extensions. Implementation detailsf:
   //
   // * The 't' entry represents the optional "tlang" identifier of the T
@@ -593,9 +615,10 @@ class Locale {
   //   must be sorted in alphabetical order, separated by hyphens, and be
   //   lowercase. If the U Extension is present but has no attributes, the 'u'
   //   map entry's value must be an empty string.
-  // * U-Extension keyword keys, matching _reKey, and T-Extension fields in the
-  //   map, whos field separator subtags match _reTkey, are directly entered
-  //   into this map. (These regular expressions don't match the same keys.)
+  // * U-Extension keyword keys and T-Extension fields in the map are directly
+  //   entered into this map: their syntax are enough to distinguish
+  //   them. (_isUExtensionKey and _isTExtensionKey private methods check this
+  //   syntax.)
   // * Other singletons are entered directly into the map, with all
   //   values/attributes associated with that singleton as the map entry's
   //   value.
@@ -608,6 +631,7 @@ class Locale {
   //
   // If the unnamed constructor was used with bad parameters, the result might
   // not be standards-compliant.
+  // https://www.unicode.org/reports/tr35/#Unicode_locale_identifier
   //
   // FIXME/TODO: this must not be submitted as a public function until we've
   // made a final decision on toString() behaviour.
@@ -646,7 +670,7 @@ class Locale {
 
     for (MapEntry<String, String> entry in extensions.entries) {
       if (entry.key.length == 1) {
-        int letter = entry.key.codeUnitAt(0) - 0x61;
+        int letter = entry.key.codeUnitAt(0) - 0x61;  // Subtracting 'a'
         if (letter < 0 || letter >= 26) {
           throw UnimplementedError('Unexpected key in extensions map: $entry');
         } else if (letter < 19) {  // 'a' to 's' (19th letter)
@@ -662,14 +686,14 @@ class Locale {
           if (entry.value.isNotEmpty)
             resultVWYZ.write('-${entry.value}');
         }
-      } else if (_reKey.hasMatch(entry.key)) {
+      } else if (_isUExtensionKey(entry.key)) {
         // unicode_locale_extensions
         if (entry.value == 'true' || entry.value == '') {
           uOut.write('-${entry.key}');
         } else {
           uOut.write('-${entry.key}-${entry.value}');
         }
-      } else if (_reTkey.hasMatch(entry.key)) {
+      } else if (_isTExtensionKey(entry.key)) {
         // transformed_extensions
         tOut.write('-${entry.key}');
         // TODO: this is not standards compliant. What do we want to do with
@@ -704,30 +728,94 @@ class Locale {
     return result.toString();
   }
 
-  // Unicode Language Identifier subtags
-  // TODO/WIP: because we lowercase Locale Identifiers before parsing, typical
-  // use of these regexps don't actually need to atch capitals too.
-  static final RegExp _reSingleton = RegExp(r'^[a-zA-Z]$');
+  // Returns true if s is a string made of lower-case alphabetic characters
+  // (a-z) or digits (0-9), with specified min and max lengths.
+  //
+  // Benchmarks show that doing this with a lookup map is faster. This function
+  // chooses to not keep the needed 256 byte string around though.
+  static bool _isAlphaNumeric(String s, int minLength, int maxLength) {
+    if (s.length < minLength || s.length > maxLength)
+      return false;
+    for (int i = 0; i < s.length; i++) {
+      int char = s.codeUnitAt(i);
+      // 0-9: 0x30-0x39.
+      if (char ^ 0x30 <= 9)
+        continue;
+      // a-z: 0x61-0x7A
+      if ((char - 0x61) & 0xFFFF >= 26)
+        return false;
+    }
+    return true;
+  }
 
-  // (https://www.unicode.org/reports/tr35/#Unicode_language_identifier).
-  static final RegExp _reLanguage = RegExp(r'^[a-zA-Z]{2,3}$|^[a-zA-Z]{5,8}$');
-  static final RegExp _reScript = RegExp(r'^[a-zA-Z]{4}$');
-  static final RegExp _reRegion = RegExp(r'^[a-zA-Z]{2}$|^[0-9]{3}$');
-  static final RegExp _reVariant = RegExp(r'^[a-zA-Z0-9]{5,8}$|^[0-9][a-zA-Z0-9]{3}$');
-  static final RegExp _reSep = RegExp(r'[-_]');
+  // Returns true if s is a purely lower-case alphabetic (a-z) string with
+  // specified min and max lengths.
+  static bool _isAlphabetic(String s, int minLength, int maxLength) {
+    if (s.length < minLength || s.length > maxLength)
+      return false;
+    for (int i = 0; i < s.length; i++) {
+      int char = s.codeUnitAt(i);
+      // a-z: 0x61-0x7A
+      if ((char - 0x61) & 0xFFFF >= 26)
+        return false;
+    }
+    return true;
+  }
 
-  // Covers all subtags possible in Unicode Locale Identifiers, used for
-  // pu_extensions.
-  static final RegExp _reAllSubtags = RegExp(r'^[a-zA-Z0-9]{1,8}$');
-  // Covers all subtags within a particular extension, used for other_extensions.
-  static final RegExp _reOtherSubtags = RegExp(r'^[a-zA-Z0-9]{2,8}$');
-  // Covers "attribute" and "type" from unicode_locale_extensions, and "tvalue" in
-  // transformed_extensions.
-  // (https://www.unicode.org/reports/tr35/#Unicode_locale_identifier).
-  static final RegExp _reValueSubtags = RegExp(r'^[a-zA-Z0-9]{3,8}$');
+  // Returns true if s is a string consisting of 3 digits (0-9).
+  static bool _isNumeric(String s, int minLength, int maxLength) {
+    if (s.length < minLength || s.length > maxLength)
+      return false;
+    for (int i = 0; i < s.length; i++) {
+      // codeUnitAt returns a 16-bit number. Dart's default implementation has
+      // 64-bit ints, so this will be a positive number.
+      int char = s.codeUnitAt(i);
+      // 0-9: 0x30-0x39.
+      if (char ^ 0x30 > 9)
+        return false;
+    }
+    return true;
+  }
 
-  static final RegExp _reKey = RegExp('^[a-zA-Z0-9][a-zA-Z]\$');
-  static final RegExp _reTkey = RegExp('^[a-zA-Z][0-9]\$');
+  // Checks that the specified string matches the variant subtag syntax. Does
+  // not check the list of valid subtags!
+  //
+  // r'^[a-zA-Z0-9]{5,8}$|^[0-9][a-zA-Z0-9]{3}$'
+  static bool _isVariantSubtag(String s) {
+    if (!_isAlphaNumeric(s, 4, 8))
+      return false;
+    if (s.length == 4 && !_isNumeric(s[0], 1, 1))
+      return false;
+    return true;
+  }
+
+  // Checks that the specified string matches the syntax of U extension
+  // keys. Does not check that it is a valid key!
+  //
+  // r'^[a-zA-Z0-9][a-zA-Z]\$'
+  static bool _isUExtensionKey(String s) {
+    if (s.length != 2)
+      return false;
+    if (!_isAlphaNumeric(s[0], 1, 1))
+      return false;
+    if (!_isAlphabetic(s[1], 1, 1))
+      return false;
+    return true;
+  }
+
+  // Checks that the specified string matches the syntax of T extension
+  // keys. Does not check that it is a valid key!
+  //
+  // r'^[a-zA-Z][0-9]\$'
+  static bool _isTExtensionKey(String s) {
+    if (s.length != 2)
+      return false;
+    if (!_isAlphabetic(s[0], 1, 1))
+      return false;
+    if (!_isNumeric(s[1], 1, 1))
+      return false;
+    return true;
+  }
 
   @override
   bool operator ==(dynamic other) {
