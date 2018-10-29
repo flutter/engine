@@ -169,7 +169,8 @@ class Locale {
     this._countryCode,
   ]) : assert(_languageCode != null),
        assert(_languageCode != ''),
-       scriptCode = null;
+       scriptCode = null,
+       assert(_countryCode != '');
 
   /// Creates a new Locale object.
   ///
