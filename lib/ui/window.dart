@@ -642,24 +642,25 @@ class Locale {
     final StringBuffer uOut = StringBuffer();
     final StringBuffer tOut = StringBuffer();
     final StringBuffer result = StringBuffer();
-    final StringBuffer resultVWYZX = StringBuffer();
+    final StringBuffer resultVWYZ = StringBuffer();
 
     for (MapEntry<String, String> entry in extensions.entries) {
       if (entry.key.length == 1) {
-        if (RegExp(r'^[a-s]$').hasMatch(entry.key)) {
+        int letter = entry.key.codeUnitAt(0) - 0x61;
+        if (letter < 0 || letter >= 26) {
+          throw UnimplementedError('Unexpected key in extensions map: $entry');
+        } else if (letter < 19) {  // 'a' to 's' (19th letter)
           result.write('-${entry.key}');
           if (entry.value.isNotEmpty)
             result.write('-${entry.value}');
-        } else if (entry.key == 't') {
+        } else if (letter == 19) {  // t
           tLang = entry.value;
-        } else if (entry.key == 'u') {
+        } else if (letter == 20) {  // u
           uAttributes = entry.value;
-        } else if (RegExp(r'^[vwyz]$').hasMatch(entry.key)) {
-          resultVWYZX.write('-${entry.key}');
+        } else if (letter != 23) {  // not x: vwyz
+          resultVWYZ.write('-${entry.key}');
           if (entry.value.isNotEmpty)
-            resultVWYZX.write('-${entry.value}');
-        } else if (entry.key != 'x') {
-          throw UnimplementedError('Unexpected key in extensions map: $entry');
+            resultVWYZ.write('-${entry.value}');
         }
       } else if (_reKey.hasMatch(entry.key)) {
         // unicode_locale_extensions
@@ -692,8 +693,8 @@ class Locale {
         result.write('-$uAttributes');
       result.write(uOut.toString());
     }
-    if (resultVWYZX.isNotEmpty)
-      result.write(resultVWYZX.toString());
+    if (resultVWYZ.isNotEmpty)
+      result.write(resultVWYZ.toString());
     if (extensions.containsKey('x')) {
       result.write('-x');
       if (extensions['x'].isNotEmpty) {
