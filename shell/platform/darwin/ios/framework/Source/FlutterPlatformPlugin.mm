@@ -200,15 +200,23 @@ using namespace shell;
   // in the navigation hierarchy.
   // It's also possible in an Add2App scenario that the FlutterViewController was presented
   // outside the context of a UINavigationController, and still wants to be popped.
+  //
+  // We should avoid nilling out the FlutterEngine's view controller here (e.g. `[_engine.get()
+  // setViewcontroller:nil]`). Doing so could potentially get a caller into a bad state where the
+  // view controller has been nilled out and they aren't explicity bringing it back because they
+  // didn't realize they would have to, or they only ever called this from Dart code without any
+  // corresponding native code to re-attach the FlutterViewController, e.g.
+  // https://github.com/flutter/flutter/tree/master/dev/integration_tests/platform_interaction
+  // Unfortunately, this means that a simple call to `SystemNavigator.pop()` from Dart will not be
+  // enough to release some resources that could be released by nilling out the FlutterEngine's
+  // ViewController.
   UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
   if ([viewController isKindOfClass:[UINavigationController class]]) {
     [((UINavigationController*)viewController) popViewControllerAnimated:NO];
-    [_engine.get() setViewController:nil];
   } else {
     auto engineViewController = static_cast<UIViewController*>([_engine.get() viewController]);
     if (engineViewController != viewController) {
       [engineViewController dismissViewControllerAnimated:NO completion:nil];
-      [_engine.get() setViewController:nil];
     }
   }
 }
