@@ -265,43 +265,14 @@ Shell::Shell(blink::TaskRunners task_runners, blink::Settings settings)
       vm_(blink::DartVM::ForProcess(settings_)) {
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-
-  // Install service protocol handlers.
-
-  service_protocol_handlers_[blink::ServiceProtocol::kScreenshotExtensionName
-                                 .ToString()] = {
-      task_runners_.GetGPUTaskRunner(),
-      std::bind(&Shell::OnServiceProtocolScreenshot, this,
-                std::placeholders::_1, std::placeholders::_2)};
-  service_protocol_handlers_[blink::ServiceProtocol::kScreenshotSkpExtensionName
-                                 .ToString()] = {
-      task_runners_.GetGPUTaskRunner(),
-      std::bind(&Shell::OnServiceProtocolScreenshotSKP, this,
-                std::placeholders::_1, std::placeholders::_2)};
-  service_protocol_handlers_[blink::ServiceProtocol::kRunInViewExtensionName
-                                 .ToString()] = {
-      task_runners_.GetUITaskRunner(),
-      std::bind(&Shell::OnServiceProtocolRunInView, this, std::placeholders::_1,
-                std::placeholders::_2)};
-  service_protocol_handlers_
-      [blink::ServiceProtocol::kFlushUIThreadTasksExtensionName.ToString()] = {
-          task_runners_.GetUITaskRunner(),
-          std::bind(&Shell::OnServiceProtocolFlushUIThreadTasks, this,
-                    std::placeholders::_1, std::placeholders::_2)};
-  service_protocol_handlers_
-      [blink::ServiceProtocol::kSetAssetBundlePathExtensionName.ToString()] = {
-          task_runners_.GetUITaskRunner(),
-          std::bind(&Shell::OnServiceProtocolSetAssetBundlePath, this,
-                    std::placeholders::_1, std::placeholders::_2)};
 }
 
 Shell::~Shell() {
+  service_protocol_handler_->DetachFromShell();
+  service_protocol_handler_.reset();
+
   PersistentCache::GetCacheForProcess()->RemoveWorkerTaskRunner(
       task_runners_.GetIOTaskRunner());
-
-  if (auto vm = blink::DartVM::ForProcessIfInitialized()) {
-    vm->GetServiceProtocol().RemoveHandler(this);
-  }
 
   fml::AutoResetWaitableEvent ui_latch, gpu_latch, platform_latch, io_latch;
 
@@ -372,9 +343,8 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   is_setup_ = true;
 
-  if (auto vm = blink::DartVM::ForProcessIfInitialized()) {
-    vm->GetServiceProtocol().AddHandler(this);
-  }
+  service_protocol_handler_ = ServiceProtocolHandler::CreateAttachedToShell(
+      task_runners_, GetRasterizer(), GetEngine(), GetPlatformView());
 
   PersistentCache::GetCacheForProcess()->AddWorkerTaskRunner(
       task_runners_.GetIOTaskRunner());
@@ -747,225 +717,6 @@ void Shell::OnPreEngineRestart() {
   // This is blocking as any embedded platform views has to be flushed before
   // we re-run the Dart code.
   latch.Wait();
-}
-
-// |blink::ServiceProtocol::Handler|
-fml::RefPtr<fml::TaskRunner> Shell::GetServiceProtocolHandlerTaskRunner(
-    fml::StringView method) const {
-  FML_DCHECK(is_setup_);
-  auto found = service_protocol_handlers_.find(method.ToString());
-  if (found != service_protocol_handlers_.end()) {
-    return found->second.first;
-  }
-  return task_runners_.GetUITaskRunner();
-}
-
-// |blink::ServiceProtocol::Handler|
-bool Shell::HandleServiceProtocolMessage(
-    fml::StringView method,  // one if the extension names specified above.
-    const ServiceProtocolMap& params,
-    rapidjson::Document& response) {
-  auto found = service_protocol_handlers_.find(method.ToString());
-  if (found != service_protocol_handlers_.end()) {
-    return found->second.second(params, response);
-  }
-  return false;
-}
-
-// |blink::ServiceProtocol::Handler|
-blink::ServiceProtocol::Handler::Description
-Shell::GetServiceProtocolDescription() const {
-  return {
-      engine_->GetUIIsolateMainPort(),
-      engine_->GetUIIsolateName(),
-  };
-}
-
-static void ServiceProtocolParameterError(rapidjson::Document& response,
-                                          std::string error_details) {
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
-  const int64_t kInvalidParams = -32602;
-  response.AddMember("code", kInvalidParams, allocator);
-  response.AddMember("message", "Invalid params", allocator);
-  {
-    rapidjson::Value details(rapidjson::kObjectType);
-    details.AddMember("details", error_details, allocator);
-    response.AddMember("data", details, allocator);
-  }
-}
-
-static void ServiceProtocolFailureError(rapidjson::Document& response,
-                                        std::string message) {
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
-  const int64_t kJsonServerError = -32000;
-  response.AddMember("code", kJsonServerError, allocator);
-  response.AddMember("message", message, allocator);
-}
-
-// Service protocol handler
-bool Shell::OnServiceProtocolScreenshot(
-    const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
-  auto screenshot = rasterizer_->ScreenshotLastLayerTree(
-      Rasterizer::ScreenshotType::CompressedImage, true);
-  if (screenshot.data) {
-    response.SetObject();
-    auto& allocator = response.GetAllocator();
-    response.AddMember("type", "Screenshot", allocator);
-    rapidjson::Value image;
-    image.SetString(static_cast<const char*>(screenshot.data->data()),
-                    screenshot.data->size(), allocator);
-    response.AddMember("screenshot", image, allocator);
-    return true;
-  }
-  ServiceProtocolFailureError(response, "Could not capture image screenshot.");
-  return false;
-}
-
-// Service protocol handler
-bool Shell::OnServiceProtocolScreenshotSKP(
-    const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
-  FML_DCHECK(task_runners_.GetGPUTaskRunner()->RunsTasksOnCurrentThread());
-  auto screenshot = rasterizer_->ScreenshotLastLayerTree(
-      Rasterizer::ScreenshotType::SkiaPicture, true);
-  if (screenshot.data) {
-    response.SetObject();
-    auto& allocator = response.GetAllocator();
-    response.AddMember("type", "ScreenshotSkp", allocator);
-    rapidjson::Value skp;
-    skp.SetString(static_cast<const char*>(screenshot.data->data()),
-                  screenshot.data->size(), allocator);
-    response.AddMember("skp", skp, allocator);
-    return true;
-  }
-  ServiceProtocolFailureError(response, "Could not capture SKP screenshot.");
-  return false;
-}
-
-// Service protocol handler
-bool Shell::OnServiceProtocolRunInView(
-    const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
-  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
-
-  if (params.count("mainScript") == 0) {
-    ServiceProtocolParameterError(response,
-                                  "'mainScript' parameter is missing.");
-    return false;
-  }
-
-  // TODO(chinmaygarde): In case of hot-reload from .dill files, the packages
-  // file is ignored. Currently, the tool is passing a junk packages file to
-  // pass this check. Update the service protocol interface and remove this
-  // workaround.
-  if (params.count("packagesFile") == 0) {
-    ServiceProtocolParameterError(response,
-                                  "'packagesFile' parameter is missing.");
-    return false;
-  }
-
-  if (params.count("assetDirectory") == 0) {
-    ServiceProtocolParameterError(response,
-                                  "'assetDirectory' parameter is missing.");
-    return false;
-  }
-
-  std::string main_script_path =
-      fml::paths::FromURI(params.at("mainScript").ToString());
-  std::string packages_path =
-      fml::paths::FromURI(params.at("packagesFile").ToString());
-  std::string asset_directory_path =
-      fml::paths::FromURI(params.at("assetDirectory").ToString());
-
-  auto main_script_file_mapping =
-      std::make_unique<fml::FileMapping>(fml::OpenFile(
-          main_script_path.c_str(), false, fml::FilePermission::kRead));
-
-  auto isolate_configuration = IsolateConfiguration::CreateForKernel(
-      std::move(main_script_file_mapping));
-
-  RunConfiguration configuration(std::move(isolate_configuration));
-
-  configuration.AddAssetResolver(
-      std::make_unique<blink::DirectoryAssetBundle>(fml::OpenDirectory(
-          asset_directory_path.c_str(), false, fml::FilePermission::kRead)));
-
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
-  if (engine_->Restart(std::move(configuration))) {
-    response.AddMember("type", "Success", allocator);
-    auto new_description = GetServiceProtocolDescription();
-    rapidjson::Value view(rapidjson::kObjectType);
-    new_description.Write(this, view, allocator);
-    response.AddMember("view", view, allocator);
-    return true;
-  } else {
-    FML_DLOG(ERROR) << "Could not run configuration in engine.";
-    ServiceProtocolFailureError(response,
-                                "Could not run configuration in engine.");
-    return false;
-  }
-
-  FML_DCHECK(false);
-  return false;
-}
-
-// Service protocol handler
-bool Shell::OnServiceProtocolFlushUIThreadTasks(
-    const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
-  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
-  // This API should not be invoked by production code.
-  // It can potentially starve the service isolate if the main isolate pauses
-  // at a breakpoint or is in an infinite loop.
-  //
-  // It should be invoked from the VM Service and and blocks it until UI thread
-  // tasks are processed.
-  response.SetObject();
-  response.AddMember("type", "Success", response.GetAllocator());
-  return true;
-}
-
-// Service protocol handler
-bool Shell::OnServiceProtocolSetAssetBundlePath(
-    const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
-    rapidjson::Document& response) {
-  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
-
-  if (params.count("assetDirectory") == 0) {
-    ServiceProtocolParameterError(response,
-                                  "'assetDirectory' parameter is missing.");
-    return false;
-  }
-
-  auto& allocator = response.GetAllocator();
-  response.SetObject();
-
-  auto asset_manager = std::make_shared<blink::AssetManager>();
-
-  asset_manager->PushFront(std::make_unique<blink::DirectoryAssetBundle>(
-      fml::OpenDirectory(params.at("assetDirectory").ToString().c_str(), false,
-                         fml::FilePermission::kRead)));
-
-  if (engine_->UpdateAssetManager(std::move(asset_manager))) {
-    response.AddMember("type", "Success", allocator);
-    auto new_description = GetServiceProtocolDescription();
-    rapidjson::Value view(rapidjson::kObjectType);
-    new_description.Write(this, view, allocator);
-    response.AddMember("view", view, allocator);
-    return true;
-  } else {
-    FML_DLOG(ERROR) << "Could not update asset directory.";
-    ServiceProtocolFailureError(response, "Could not update asset directory.");
-    return false;
-  }
-
-  FML_DCHECK(false);
-  return false;
 }
 
 Rasterizer::Screenshot Shell::Screenshot(

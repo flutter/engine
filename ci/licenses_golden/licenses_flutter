@@ -511,6 +511,8 @@ FILE: ../../../flutter/shell/common/isolate_configuration.cc
 FILE: ../../../flutter/shell/common/isolate_configuration.h
 FILE: ../../../flutter/shell/common/persistent_cache.cc
 FILE: ../../../flutter/shell/common/persistent_cache.h
+FILE: ../../../flutter/shell/common/service_protocol_handler.cc
+FILE: ../../../flutter/shell/common/service_protocol_handler.h
 FILE: ../../../flutter/shell/common/shell_benchmarks.cc
 FILE: ../../../flutter/shell/platform/android/android_shell_holder.cc
 FILE: ../../../flutter/shell/platform/android/android_shell_holder.h

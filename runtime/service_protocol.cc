@@ -8,6 +8,7 @@
 
 #include <string.h>
 
+#include <algorithm>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -51,12 +52,12 @@ ServiceProtocol::~ServiceProtocol() {
   ToggleHooks(false);
 }
 
-void ServiceProtocol::AddHandler(Handler* handler) {
+void ServiceProtocol::AddHandler(std::weak_ptr<Handler> handler) {
   std::lock_guard<std::mutex> lock(handlers_mutex_);
   handlers_.emplace(handler);
 }
 
-void ServiceProtocol::RemoveHandler(Handler* handler) {
+void ServiceProtocol::RemoveHandler(std::weak_ptr<Handler> handler) {
   std::lock_guard<std::mutex> lock(handlers_mutex_);
   handlers_.erase(handler);
 }
@@ -133,24 +134,31 @@ bool ServiceProtocol::HandleMessage(fml::StringView method,
 
 FML_WARN_UNUSED_RESULT
 static bool HandleMessageOnHandler(
-    ServiceProtocol::Handler* handler,
+    std::weak_ptr<ServiceProtocol::Handler> handler_weak,
     fml::StringView method,
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
     rapidjson::Document& document) {
-  FML_DCHECK(handler);
+  auto handler = handler_weak.lock();
+
+  if (!handler) {
+    return false;
+  }
+
   fml::AutoResetWaitableEvent latch;
   bool result = false;
   fml::TaskRunner::RunNowOrPostTask(
       handler->GetServiceProtocolHandlerTaskRunner(method),
-      [&latch,    //
-       &result,   //
-       &handler,  //
-       &method,   //
-       &params,   //
-       &document  //
+      [&latch,        //
+       &result,       //
+       handler_weak,  //
+       &method,       //
+       &params,       //
+       &document      //
   ]() {
-        result =
-            handler->HandleServiceProtocolMessage(method, params, document);
+        if (auto handler = handler_weak.lock()) {
+          result =
+              handler->HandleServiceProtocolMessage(method, params, document);
+        }
         latch.Signal();
       });
   latch.Wait();
@@ -177,11 +185,18 @@ bool ServiceProtocol::HandleMessage(fml::StringView method,
   // Find the handler by its "viewId" in the params.
   auto view_id_param_found = params.find(fml::StringView{"viewId"});
   if (view_id_param_found != params.end()) {
-    auto handler = reinterpret_cast<Handler*>(std::stoull(
+    auto handler_ptr = reinterpret_cast<Handler*>(std::stoull(
         view_id_param_found->second.data() + kViewIdPrefx.size(), nullptr, 16));
-    auto handler_found = handlers_.find(handler);
+    auto handler_found =
+        std::find_if(handlers_.begin(), handlers_.end(),
+                     [handler_ptr](const auto& handler_weak) {
+                       if (auto handler = handler_weak.lock()) {
+                         return handler.get() == handler_ptr;
+                       }
+                       return false;
+                     });
     if (handler_found != handlers_.end()) {
-      return HandleMessageOnHandler(handler, method, params, response);
+      return HandleMessageOnHandler(*handler_found, method, params, response);
     }
   }
 
@@ -236,26 +251,41 @@ void ServiceProtocol::Handler::Description::Write(
 
 bool ServiceProtocol::HandleListViewsMethod(
     rapidjson::Document& response) const {
-  // Collect handler descriptions on their respective task runners.
-  std::lock_guard<std::mutex> lock(handlers_mutex_);
+  WeakHandlerCollection handlers;
+
+  {
+    // Copy the handlers out before enumerating over the same.
+    std::lock_guard<std::mutex> lock(handlers_mutex_);
+    handlers = handlers_;
+  }
+
   std::vector<std::pair<intptr_t, Handler::Description>> descriptions;
-  for (const auto& handler : handlers_) {
+  for (const auto& weak_handler : handlers) {
+    auto strong_handler = weak_handler.lock();
+
+    if (!strong_handler) {
+      continue;
+    }
+
     fml::AutoResetWaitableEvent latch;
     Handler::Description description;
 
     fml::TaskRunner::RunNowOrPostTask(
-        handler->GetServiceProtocolHandlerTaskRunner(
+        strong_handler->GetServiceProtocolHandlerTaskRunner(
             kListViewsExtensionName),  // task runner
-        [&latch,                       //
-         &description,                 //
-         &handler                      //
+        [&latch,                       // latch
+         &description,                 // description (out)
+         weak_handler                  // weak handler (copy)
     ]() {
-          description = handler->GetServiceProtocolDescription();
+          if (auto handler = weak_handler.lock()) {
+            description = handler->GetServiceProtocolDescription();
+          }
           latch.Signal();
         });
     latch.Wait();
     descriptions.emplace_back(std::make_pair<intptr_t, Handler::Description>(
-        reinterpret_cast<intptr_t>(handler), std::move(description)));
+        reinterpret_cast<intptr_t>(strong_handler.get()),
+        std::move(description)));
   }
 
   auto& allocator = response.GetAllocator();

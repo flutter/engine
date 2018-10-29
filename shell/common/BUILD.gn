@@ -76,6 +76,8 @@ source_set("common") {
     "rasterizer.h",
     "run_configuration.cc",
     "run_configuration.h",
+    "service_protocol_handler.cc",
+    "service_protocol_handler.h",
     "shell.cc",
     "shell.h",
     "skia_event_tracer_impl.cc",

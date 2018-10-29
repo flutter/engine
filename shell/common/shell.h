@@ -6,7 +6,6 @@
 #define SHELL_COMMON_SHELL_H_
 
 #include <functional>
-#include <unordered_map>
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
@@ -23,20 +22,19 @@
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/window/platform_message.h"
-#include "flutter/runtime/service_protocol.h"
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/io_manager.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
+#include "flutter/shell/common/service_protocol_handler.h"
 #include "flutter/shell/common/surface.h"
 
 namespace shell {
 
 class Shell final : public PlatformView::Delegate,
                     public Animator::Delegate,
-                    public Engine::Delegate,
-                    public blink::ServiceProtocol::Handler {
+                    public Engine::Delegate {
  public:
   template <class T>
   using CreateCallback = std::function<std::unique_ptr<T>(Shell&)>;
@@ -79,10 +77,6 @@ class Shell final : public PlatformView::Delegate,
                                     bool base64_encode);
 
  private:
-  using ServiceProtocolHandler = std::function<bool(
-      const blink::ServiceProtocol::Handler::ServiceProtocolMap&,
-      rapidjson::Document&)>;
-
   const blink::TaskRunners task_runners_;
   const blink::Settings settings_;
   fml::RefPtr<blink::DartVM> vm_;
@@ -90,13 +84,7 @@ class Shell final : public PlatformView::Delegate,
   std::unique_ptr<Engine> engine_;               // on UI task runner
   std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner
   std::unique_ptr<IOManager> io_manager_;        // on IO task runner
-
-  std::unordered_map<std::string,  // method
-                     std::pair<fml::RefPtr<fml::TaskRunner>,
-                               ServiceProtocolHandler>  // task-runner/function
-                                                        // pair
-                     >
-      service_protocol_handlers_;
+  std::shared_ptr<ServiceProtocolHandler> service_protocol_handler_;
   bool is_setup_ = false;
 
   Shell(blink::TaskRunners task_runners, blink::Settings settings);
@@ -181,45 +169,6 @@ class Shell final : public PlatformView::Delegate,
 
   // |shell::Engine::Delegate|
   void OnPreEngineRestart() override;
-
-  // |blink::ServiceProtocol::Handler|
-  fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(
-      fml::StringView method) const override;
-
-  // |blink::ServiceProtocol::Handler|
-  bool HandleServiceProtocolMessage(
-      fml::StringView method,  // one if the extension names specified above.
-      const ServiceProtocolMap& params,
-      rapidjson::Document& response) override;
-
-  // |blink::ServiceProtocol::Handler|
-  blink::ServiceProtocol::Handler::Description GetServiceProtocolDescription()
-      const override;
-
-  // Service protocol handler
-  bool OnServiceProtocolScreenshot(
-      const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
-
-  // Service protocol handler
-  bool OnServiceProtocolScreenshotSKP(
-      const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
-
-  // Service protocol handler
-  bool OnServiceProtocolRunInView(
-      const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
-
-  // Service protocol handler
-  bool OnServiceProtocolFlushUIThreadTasks(
-      const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
-
-  // Service protocol handler
-  bool OnServiceProtocolSetAssetBundlePath(
-      const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
-      rapidjson::Document& response);
 
   FML_DISALLOW_COPY_AND_ASSIGN(Shell);
 };

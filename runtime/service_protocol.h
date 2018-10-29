@@ -6,12 +6,15 @@
 #define FLUTTER_RUNTIME_SERVICE_PROTOCOL_H_
 
 #include <map>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <string>
+#include <unordered_set>
 
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/string_view.h"
 #include "flutter/fml/synchronization/thread_annotations.h"
 #include "flutter/fml/task_runner.h"
@@ -63,14 +66,26 @@ class ServiceProtocol {
 
   void ToggleHooks(bool set);
 
-  void AddHandler(Handler* handler);
+  void AddHandler(std::weak_ptr<Handler> handler);
 
-  void RemoveHandler(Handler* handler);
+  void RemoveHandler(std::weak_ptr<Handler> handler);
 
  private:
+  using WeakHandler = std::weak_ptr<Handler>;
+  struct WeakHandlerHashEqual {
+    std::size_t operator()(const WeakHandler& handler) const {
+      return reinterpret_cast<std::size_t>(handler.lock().get());
+    }
+    bool operator()(const WeakHandler& lhs, const WeakHandler& rhs) const {
+      return lhs.lock().get() == rhs.lock().get();
+    }
+  };
+  using WeakHandlerCollection = std::
+      unordered_set<WeakHandler, WeakHandlerHashEqual, WeakHandlerHashEqual>;
+
   const std::set<fml::StringView> endpoints_;
   mutable std::mutex handlers_mutex_;
-  std::set<Handler*> handlers_;
+  WeakHandlerCollection handlers_ FML_GUARDED_BY(handlers_mutex_);
 
   FML_WARN_UNUSED_RESULT
   static bool HandleMessage(const char* method,
