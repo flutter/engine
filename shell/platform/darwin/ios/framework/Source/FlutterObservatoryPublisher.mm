@@ -4,6 +4,9 @@
 
 #define FML_USED_ON_EMBEDDER
 
+// NSNetService works fine on physical devices, but doesn't expose the services to regular mDNS
+// queries on the Simulator.  We can work around this by using the lower level C API, but that's
+// only available from iOS 9.3+/macOS 10.11.4+.
 #include <dns_sd.h>
 #include <net/if.h>
 
@@ -25,9 +28,15 @@
 
 #else
 
+@interface FlutterObservatoryPublisher () <NSNetServiceDelegate>
+@end
+
 @implementation FlutterObservatoryPublisher {
+#if TARGET_IPHONE_SIMULATOR
   DNSServiceRef _dnsServiceRef;
-  bool _dnsServiceRefInitialized;
+#else   // TARGET_IPHONE_SIMULATOR
+  fml::scoped_nsobject<NSNetService> _netService;
+#endif  // TARGET_IPHONE_SIMULATOR
 
   blink::DartServiceIsolate::CallbackHandle _callbackHandle;
   std::unique_ptr<fml::WeakPtrFactory<FlutterObservatoryPublisher>> _weakFactory;
@@ -37,7 +46,6 @@
   self = [super init];
   NSAssert(self, @"Super must not return null on init.");
 
-  _dnsServiceRefInitialized = false;
   _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterObservatoryPublisher>>(self);
 
   fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -56,27 +64,28 @@
 }
 
 - (void)dealloc {
-  if (_dnsServiceRefInitialized) {
+#if TARGET_IPHONE_SIMULATOR
+  if (_dnsServiceRef) {
     DNSServiceRefDeallocate(_dnsServiceRef);
+    _dnsServiceRef = NULL;
   }
+#else   // TARGET_IPHONE_SIMULATOR
+  [_netService.get() stop];
+#endif  // TARGET_IPHONE_SIMULATOR
+
   blink::DartServiceIsolate::RemoveServerStatusCallback(std::move(_callbackHandle));
   [super dealloc];
 }
 
-- (uint32_t)resolveInterface {
-  // We want to use the loopback interface on the simulator, to force it to be available via
-  // standard mDNS queries.
-#if TARGET_IPHONE_SIMULATOR
-  return if_nametoindex("lo0");
-#else   // TARGET_IPHONE_SIMULATOR
-  return 0;
-#endif  // TARGET_IPHONE_SIMULATOR
-}
-
 - (void)publishServiceProtocolPort:(std::string)uri {
-  if (_dnsServiceRefInitialized) {
+#if TARGET_IPHONE_SIMULATOR
+  if (_dnsServiceRef) {
     DNSServiceRefDeallocate(_dnsServiceRef);
+    _dnsServiceRef = NULL;
   }
+#else   // TARGET_IPHONE_SIMULATOR
+  [_netService.get() stop];
+#endif  // TARGET_IPHONE_SIMULATOR
   if (uri.empty()) {
     return;
   }
@@ -88,8 +97,9 @@
   NSString* serviceName =
       [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"];
 
+#if TARGET_IPHONE_SIMULATOR
   DNSServiceFlags flags = kDNSServiceFlagsDefault;
-  uint32_t interfaceIndex = [self resolveInterface];
+  uint32_t interfaceIndex = if_nametoindex("lo0");
   const char* registrationType = "_dartobservatory._tcp";
   const char* domain = "local.";  // default domain
   uint16_t port = [[url port] intValue];
@@ -103,10 +113,26 @@
   } else {
     DNSServiceProcessResult(_dnsServiceRef);
   }
-
-  _dnsServiceRefInitialized = err == 0;
+#else   // TARGET_IPHONE_SIMULATOR
+  _netService.reset([[NSNetService alloc] initWithDomain:@"local."
+                                                    type:@"_dartobservatory._tcp."
+                                                    name:serviceName
+                                                    port:[[url port] intValue]]);
+  [_netService.get() setDelegate:self];
+  [_netService.get() publish];
+#endif  // TARGET_IPHONE_SIMULATOR
 }
 
+- (void)netServiceDidPublish:(NSNetService*)sender {
+  FML_LOG(INFO) << "FlutterObservatoryPublisher is ready!";
+}
+
+- (void)netService:(NSNetService*)sender didNotPublish:(NSDictionary*)errorDict {
+  FML_LOG(ERROR) << "Could not register as server for FlutterObservatoryPublisher. Check your "
+                    "network settings and relaunch the application.";
+}
+
+#if TARGET_IPHONE_SIMULATOR
 static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
                                            DNSServiceFlags flags,
                                            DNSServiceErrorType errorCode,
@@ -121,6 +147,7 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
                       "network settings and relaunch the application.";
   }
 }
+#endif  // TARGET_IPHONE_SIMULATOR
 
 #endif  // FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE && FLUTTER_RUNTIME_MODE !=
         // FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
