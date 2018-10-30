@@ -1,4 +1,4 @@
-Signature: 251f936d9bd8ced851a73a4413f02e30
+Signature: 0b4495d3d5939970345ed7265c27e7fb
 
 UNUSED LICENSES:
 
@@ -4432,6 +4432,7 @@ ORIGIN: ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/.gitconfig
 FILE: ../../../third_party/dart/.mailmap
+FILE: ../../../third_party/dart/.vpython
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
@@ -4493,7 +4494,6 @@ FILE: ../../../third_party/dart/runtime/bin/builtin.h
 FILE: ../../../third_party/dart/runtime/bin/builtin_gen_snapshot.cc
 FILE: ../../../third_party/dart/runtime/bin/builtin_in.cc
 FILE: ../../../third_party/dart/runtime/bin/builtin_natives.cc
-FILE: ../../../third_party/dart/runtime/bin/builtin_nolib.cc
 FILE: ../../../third_party/dart/runtime/bin/common_patch.dart
 FILE: ../../../third_party/dart/runtime/bin/crypto.cc
 FILE: ../../../third_party/dart/runtime/bin/crypto.h
@@ -4656,8 +4656,6 @@ FILE: ../../../third_party/dart/runtime/vm/allocation.cc
 FILE: ../../../third_party/dart/runtime/vm/allocation_test.cc
 FILE: ../../../third_party/dart/runtime/vm/assert_test.cc
 FILE: ../../../third_party/dart/runtime/vm/ast.h
-FILE: ../../../third_party/dart/runtime/vm/ast_printer_test.cc
-FILE: ../../../third_party/dart/runtime/vm/ast_test.cc
 FILE: ../../../third_party/dart/runtime/vm/base_isolate.h
 FILE: ../../../third_party/dart/runtime/vm/benchmark_test.cc
 FILE: ../../../third_party/dart/runtime/vm/benchmark_test.h
@@ -4675,7 +4673,6 @@ FILE: ../../../third_party/dart/runtime/vm/bootstrap.cc
 FILE: ../../../third_party/dart/runtime/vm/bootstrap.h
 FILE: ../../../third_party/dart/runtime/vm/bootstrap_natives.cc
 FILE: ../../../third_party/dart/runtime/vm/bootstrap_natives.h
-FILE: ../../../third_party/dart/runtime/vm/bootstrap_nocore.cc
 FILE: ../../../third_party/dart/runtime/vm/class_finalizer.h
 FILE: ../../../third_party/dart/runtime/vm/class_finalizer_test.cc
 FILE: ../../../third_party/dart/runtime/vm/class_table.cc
@@ -4705,7 +4702,6 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/inliner.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/cha.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/cha.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/cha_test.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/code_generator_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/flow_graph_builder.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/flow_graph_builder.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/intrinsifier.cc
@@ -5276,7 +5272,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/sourc
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/target.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/thread.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/timeline_event.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/token_stream.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/type_arguments.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/unknown.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/vm.dart
@@ -5365,7 +5360,6 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/flow_graph_compiler_
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_dbc.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/redundancy_elimination.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/redundancy_elimination.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/flow_graph_builder_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_binary_flowgraph.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_to_il.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_to_il.h
@@ -5464,6 +5458,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.c
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/loops.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/loops.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_state.h
@@ -5542,17 +5538,12 @@ FILE: ../../../third_party/dart/runtime/lib/object.cc
 FILE: ../../../third_party/dart/runtime/lib/string.cc
 FILE: ../../../third_party/dart/runtime/platform/c99_support_win.h
 FILE: ../../../third_party/dart/runtime/platform/inttypes_support_win.h
-FILE: ../../../third_party/dart/runtime/vm/ast.cc
-FILE: ../../../third_party/dart/runtime/vm/ast_printer.cc
-FILE: ../../../third_party/dart/runtime/vm/ast_printer.h
 FILE: ../../../third_party/dart/runtime/vm/bitfield.h
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_ia32_test.cc
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_x64_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_test.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler_stats.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler_stats.h
 FILE: ../../../third_party/dart/runtime/vm/cpu_ia32.cc
 FILE: ../../../third_party/dart/runtime/vm/custom_isolate_test.cc
 FILE: ../../../third_party/dart/runtime/vm/dart.h
@@ -5589,7 +5580,6 @@ FILE: ../../../third_party/dart/runtime/vm/native_entry_test.cc
 FILE: ../../../third_party/dart/runtime/vm/native_entry_test.h
 FILE: ../../../third_party/dart/runtime/vm/object_store_test.cc
 FILE: ../../../third_party/dart/runtime/vm/os.h
-FILE: ../../../third_party/dart/runtime/vm/parser_test.cc
 FILE: ../../../third_party/dart/runtime/vm/port.h
 FILE: ../../../third_party/dart/runtime/vm/resolver.cc
 FILE: ../../../third_party/dart/runtime/vm/resolver.h
@@ -5889,7 +5879,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/sentinel_va
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/sentinel_view.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/source_inset.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/stack_trace_tree_config.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/token_stream_ref.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/type_arguments_ref.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/unknown_ref.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/vm_view.dart
@@ -6194,8 +6183,6 @@ FILE: ../../../third_party/dart/runtime/platform/math.h
 FILE: ../../../third_party/dart/runtime/platform/memory_sanitizer.h
 FILE: ../../../third_party/dart/runtime/platform/safe_stack.h
 FILE: ../../../third_party/dart/runtime/tools/verbose_gc_to_bmu.dart
-FILE: ../../../third_party/dart/runtime/vm/ast_transformer.cc
-FILE: ../../../third_party/dart/runtime/vm/ast_transformer.h
 FILE: ../../../third_party/dart/runtime/vm/bit_set_test.cc
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_arm64_test.cc
@@ -15995,41 +15982,42 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: rapidjson
-ORIGIN: ../../../third_party/rapidjson/rapidjson/error/en.h
+ORIGIN: ../../../third_party/rapidjson/include/rapidjson/error/en.h
 TYPE: LicenseType.mit
-FILE: ../../../third_party/rapidjson/rapidjson/allocators.h
-FILE: ../../../third_party/rapidjson/rapidjson/document.h
-FILE: ../../../third_party/rapidjson/rapidjson/encodedstream.h
-FILE: ../../../third_party/rapidjson/rapidjson/encodings.h
-FILE: ../../../third_party/rapidjson/rapidjson/error/en.h
-FILE: ../../../third_party/rapidjson/rapidjson/error/error.h
-FILE: ../../../third_party/rapidjson/rapidjson/filereadstream.h
-FILE: ../../../third_party/rapidjson/rapidjson/filewritestream.h
-FILE: ../../../third_party/rapidjson/rapidjson/fwd.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/biginteger.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/diyfp.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/dtoa.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/ieee754.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/itoa.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/meta.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/pow10.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/regex.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/stack.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/strfunc.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/strtod.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/swap.h
-FILE: ../../../third_party/rapidjson/rapidjson/istreamwrapper.h
-FILE: ../../../third_party/rapidjson/rapidjson/memorybuffer.h
-FILE: ../../../third_party/rapidjson/rapidjson/memorystream.h
-FILE: ../../../third_party/rapidjson/rapidjson/ostreamwrapper.h
-FILE: ../../../third_party/rapidjson/rapidjson/pointer.h
-FILE: ../../../third_party/rapidjson/rapidjson/prettywriter.h
-FILE: ../../../third_party/rapidjson/rapidjson/rapidjson.h
-FILE: ../../../third_party/rapidjson/rapidjson/reader.h
-FILE: ../../../third_party/rapidjson/rapidjson/schema.h
-FILE: ../../../third_party/rapidjson/rapidjson/stream.h
-FILE: ../../../third_party/rapidjson/rapidjson/stringbuffer.h
-FILE: ../../../third_party/rapidjson/rapidjson/writer.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/allocators.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/cursorstreamwrapper.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/document.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/encodedstream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/encodings.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/error/en.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/error/error.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/filereadstream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/filewritestream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/fwd.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/biginteger.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/diyfp.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/dtoa.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/ieee754.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/itoa.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/meta.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/pow10.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/regex.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/stack.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/strfunc.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/strtod.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/swap.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/istreamwrapper.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/memorybuffer.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/memorystream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/ostreamwrapper.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/pointer.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/prettywriter.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/rapidjson.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/reader.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/schema.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/stream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/stringbuffer.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/writer.h
 ----------------------------------------------------------------------------------------------------
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -16040,10 +16028,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ====================================================================================================
 LIBRARY: rapidjson
-ORIGIN: ../../../third_party/rapidjson/rapidjson/msinttypes/inttypes.h
+ORIGIN: ../../../third_party/rapidjson/include/rapidjson/msinttypes/inttypes.h
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/rapidjson/rapidjson/msinttypes/inttypes.h
-FILE: ../../../third_party/rapidjson/rapidjson/msinttypes/stdint.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/msinttypes/inttypes.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/msinttypes/stdint.h
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2006-2013 Alexander Chemeris
 

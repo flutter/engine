@@ -4,6 +4,7 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
 #include <memory>
@@ -13,65 +14,62 @@
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#include "flutter/shell/platform/darwin/ios/framework/Source/flutter_touch_mapper.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-@interface FlutterViewController () <FlutterTextInputDelegate>
-@property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
-@end
-
-@interface FlutterViewControllerRegistrar : NSObject <FlutterPluginRegistrar>
-- (instancetype)initWithPlugin:(NSString*)pluginKey
-         flutterViewController:(FlutterViewController*)flutterViewController;
-@end
-
 @implementation FlutterViewController {
-  fml::scoped_nsobject<FlutterDartProject> _dartProject;
-  shell::ThreadHost _threadHost;
-  std::unique_ptr<shell::Shell> _shell;
   std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
-
-  // Channels
-  fml::scoped_nsobject<FlutterPlatformPlugin> _platformPlugin;
-  fml::scoped_nsobject<FlutterTextInputPlugin> _textInputPlugin;
-  fml::scoped_nsobject<FlutterMethodChannel> _localizationChannel;
-  fml::scoped_nsobject<FlutterMethodChannel> _navigationChannel;
-  fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
-  fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
-  fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
-  fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
-  fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
+  fml::scoped_nsobject<FlutterEngine> _engine;
 
   // We keep a separate reference to this and create it ahead of time because we want to be able to
   // setup a shell along with its platform view before the view has to appear.
   fml::scoped_nsobject<FlutterView> _flutterView;
   fml::scoped_nsobject<UIView> _splashScreenView;
+  fml::ScopedBlock<void (^)(void)> _flutterViewRenderedCallback;
+  std::unique_ptr<shell::FlutterPlatformViewsController> _platformViewsController;
   UIInterfaceOrientationMask _orientationPreferences;
   UIStatusBarStyle _statusBarStyle;
   blink::ViewportMetrics _viewportMetrics;
-  shell::TouchMapper _touchMapper;
-  int64_t _nextTextureId;
   BOOL _initialized;
+  BOOL _viewOpaque;
 }
 
 #pragma mark - Manage and override all designated initializers
+
+- (instancetype)initWithEngine:(FlutterEngine*)engine
+                       nibName:(NSString*)nibNameOrNil
+                        bundle:(NSBundle*)nibBundleOrNil {
+  NSAssert(engine != nil, @"Engine is required");
+  self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+  if (self) {
+    _viewOpaque = YES;
+    _engine.reset([engine retain]);
+    _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
+    _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+
+    [self performCommonViewControllerInitialization];
+    [engine setViewController:self];
+  }
+
+  return self;
+}
 
 - (instancetype)initWithProject:(FlutterDartProject*)projectOrNil
                         nibName:(NSString*)nibNameOrNil
                          bundle:(NSBundle*)nibBundleOrNil {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   if (self) {
+    _viewOpaque = YES;
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
-    if (projectOrNil == nil)
-      _dartProject.reset([[FlutterDartProject alloc] init]);
-    else
-      _dartProject.reset([projectOrNil retain]);
+    _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter" project:projectOrNil]);
+    _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
+    [_engine.get() runWithEntrypoint:nil];
+    [_engine.get() setViewController:self];
 
     [self performCommonViewControllerInitialization];
   }
@@ -91,6 +89,18 @@
   return [self initWithProject:nil nibName:nil bundle:nil];
 }
 
+- (BOOL)isViewOpaque {
+  return _viewOpaque;
+}
+
+- (void)setViewOpaque:(BOOL)value {
+  _viewOpaque = value;
+  if (_flutterView.get().layer.opaque != value) {
+    _flutterView.get().layer.opaque = value;
+    [_flutterView.get().layer setNeedsLayout];
+  }
+}
+
 #pragma mark - Common view controller initialization tasks
 
 - (void)performCommonViewControllerInitialization {
@@ -102,129 +112,21 @@
   _orientationPreferences = UIInterfaceOrientationMaskAll;
   _statusBarStyle = UIStatusBarStyleDefault;
 
-  if ([self setupShell]) {
-    [self setupChannels];
-    [self setupNotificationCenterObservers];
-
-    _pluginPublications = [NSMutableDictionary new];
-  }
+  [self setupNotificationCenterObservers];
+  _platformViewsController.reset(
+      new shell::FlutterPlatformViewsController(_engine.get(), _flutterView.get()));
 }
 
-- (shell::Shell&)shell {
-  FML_DCHECK(_shell);
-  return *_shell;
+- (fml::scoped_nsobject<FlutterEngine>)engine {
+  return _engine;
 }
 
-- (fml::WeakPtr<shell::PlatformViewIOS>)iosPlatformView {
-  FML_DCHECK(_shell);
-  return _shell->GetPlatformView();
+- (fml::WeakPtr<FlutterViewController>)getWeakPtr {
+  return _weakFactory->GetWeakPtr();
 }
 
-- (BOOL)setupShell {
-  FML_DCHECK(_shell == nullptr);
-
-  static size_t shell_count = 1;
-
-  auto threadLabel = [NSString stringWithFormat:@"io.flutter.%zu", shell_count++];
-
-  _threadHost = {
-      threadLabel.UTF8String,  // label
-      shell::ThreadHost::Type::UI | shell::ThreadHost::Type::GPU | shell::ThreadHost::Type::IO};
-
-  // The current thread will be used as the platform thread. Ensure that the message loop is
-  // initialized.
-  fml::MessageLoop::EnsureInitializedForCurrentThread();
-
-  blink::TaskRunners task_runners(threadLabel.UTF8String,                          // label
-                                  fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
-                                  _threadHost.gpu_thread->GetTaskRunner(),         // gpu
-                                  _threadHost.ui_thread->GetTaskRunner(),          // ui
-                                  _threadHost.io_thread->GetTaskRunner()           // io
-  );
-
-  _flutterView.reset([[FlutterView alloc] init]);
-
-  // Lambda captures by pointers to ObjC objects are fine here because the create call is
-  // synchronous.
-  shell::Shell::CreateCallback<shell::PlatformView> on_create_platform_view =
-      [flutter_view_controller = self, flutter_view = _flutterView.get()](shell::Shell& shell) {
-        auto platform_view_ios = std::make_unique<shell::PlatformViewIOS>(
-            shell,                    // delegate
-            shell.GetTaskRunners(),   // task runners
-            flutter_view_controller,  // flutter view controller owner
-            flutter_view              // flutter view owner
-        );
-        return platform_view_ios;
-      };
-
-  shell::Shell::CreateCallback<shell::Rasterizer> on_create_rasterizer = [](shell::Shell& shell) {
-    return std::make_unique<shell::Rasterizer>(shell.GetTaskRunners());
-  };
-
-  // Create the shell.
-  _shell = shell::Shell::Create(std::move(task_runners),  //
-                                [_dartProject settings],  //
-                                on_create_platform_view,  //
-                                on_create_rasterizer      //
-  );
-
-  if (!_shell) {
-    FML_LOG(ERROR) << "Could not setup a shell to run the Dart application.";
-    return false;
-  }
-
-  return true;
-}
-
-- (void)setupChannels {
-  _localizationChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/localization"
-      binaryMessenger:self
-                codec:[FlutterJSONMethodCodec sharedInstance]]);
-
-  _navigationChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/navigation"
-      binaryMessenger:self
-                codec:[FlutterJSONMethodCodec sharedInstance]]);
-
-  _platformChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/platform"
-      binaryMessenger:self
-                codec:[FlutterJSONMethodCodec sharedInstance]]);
-
-  _textInputChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/textinput"
-      binaryMessenger:self
-                codec:[FlutterJSONMethodCodec sharedInstance]]);
-
-  _lifecycleChannel.reset([[FlutterBasicMessageChannel alloc]
-         initWithName:@"flutter/lifecycle"
-      binaryMessenger:self
-                codec:[FlutterStringCodec sharedInstance]]);
-
-  _systemChannel.reset([[FlutterBasicMessageChannel alloc]
-         initWithName:@"flutter/system"
-      binaryMessenger:self
-                codec:[FlutterJSONMessageCodec sharedInstance]]);
-
-  _settingsChannel.reset([[FlutterBasicMessageChannel alloc]
-         initWithName:@"flutter/settings"
-      binaryMessenger:self
-                codec:[FlutterJSONMessageCodec sharedInstance]]);
-
-  _platformPlugin.reset(
-      [[FlutterPlatformPlugin alloc] initWithViewController:_weakFactory->GetWeakPtr()]);
-  [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-    [_platformPlugin.get() handleMethodCall:call result:result];
-  }];
-
-  _textInputPlugin.reset([[FlutterTextInputPlugin alloc] init]);
-  _textInputPlugin.get().textInputDelegate = self;
-  [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-    [_textInputPlugin.get() handleMethodCall:call result:result];
-  }];
-  static_cast<shell::PlatformViewIOS*>(_shell->GetPlatformView().get())
-      ->SetTextInputPlugin(_textInputPlugin);
+- (flow::ExternalViewEmbedder*)viewEmbedder {
+  return _platformViewsController.get();
 }
 
 - (void)setupNotificationCenterObservers {
@@ -316,15 +218,15 @@
 }
 
 - (void)setInitialRoute:(NSString*)route {
-  [_navigationChannel.get() invokeMethod:@"setInitialRoute" arguments:route];
+  [[_engine.get() navigationChannel] invokeMethod:@"setInitialRoute" arguments:route];
 }
 
 - (void)popRoute {
-  [_navigationChannel.get() invokeMethod:@"popRoute" arguments:nil];
+  [[_engine.get() navigationChannel] invokeMethod:@"popRoute" arguments:nil];
 }
 
 - (void)pushRoute:(NSString*)route {
-  [_navigationChannel.get() invokeMethod:@"pushRoute" arguments:route];
+  [[_engine.get() navigationChannel] invokeMethod:@"pushRoute" arguments:route];
 }
 
 #pragma mark - Loading the view
@@ -369,36 +271,43 @@
       completion:^(BOOL finished) {
         [_splashScreenView.get() removeFromSuperview];
         _splashScreenView.reset();
+        if (_flutterViewRenderedCallback != nil) {
+          _flutterViewRenderedCallback.get()();
+          _flutterViewRenderedCallback.reset();
+        }
       }];
 }
 
 - (void)installSplashScreenViewCallback {
-  if (!_shell || !_splashScreenView) {
+  if (!_splashScreenView) {
     return;
   }
-  auto weak_platform_view = _shell->GetPlatformView();
+  auto weak_platform_view = [_engine.get() platformView];
   if (!weak_platform_view) {
     return;
   }
   __unsafe_unretained auto weak_flutter_view_controller = self;
   // This is on the platform thread.
-  weak_platform_view->SetNextFrameCallback(
-      [weak_platform_view, weak_flutter_view_controller,
-       task_runner = _shell->GetTaskRunners().GetPlatformTaskRunner()]() {
-        // This is on the GPU thread.
-        task_runner->PostTask([weak_platform_view, weak_flutter_view_controller]() {
-          // We check if the weak platform view is alive. If it is alive, then the view controller
-          // also has to be alive since the view controller owns the platform view via the shell
-          // association. Thus, we are not convinced that the unsafe unretained weak object is in
-          // fact alive.
-          if (weak_platform_view) {
-            [weak_flutter_view_controller removeSplashScreenViewIfPresent];
-          }
-        });
-      });
+  weak_platform_view->SetNextFrameCallback([weak_platform_view, weak_flutter_view_controller,
+                                            task_runner = [_engine.get() platformTaskRunner]]() {
+    // This is on the GPU thread.
+    task_runner->PostTask([weak_platform_view, weak_flutter_view_controller]() {
+      // We check if the weak platform view is alive. If it is alive, then the view controller
+      // also has to be alive since the view controller owns the platform view via the shell
+      // association. Thus, we are not convinced that the unsafe unretained weak object is in
+      // fact alive.
+      if (weak_platform_view) {
+        [weak_flutter_view_controller removeSplashScreenViewIfPresent];
+      }
+    });
+  });
 }
 
 #pragma mark - Properties
+
+- (FlutterView*)flutterView {
+  return _flutterView;
+}
 
 - (UIView*)splashScreenView {
   if (_splashScreenView == nullptr) {
@@ -445,16 +354,20 @@
       UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 }
 
+- (void)setFlutterViewDidRenderCallback:(void (^)(void))callback {
+  _flutterViewRenderedCallback.reset(callback, fml::OwnershipPolicy::Retain);
+}
+
 #pragma mark - Surface creation and teardown updates
 
 - (void)surfaceUpdated:(BOOL)appeared {
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
   if (appeared) {
     [self installSplashScreenViewCallback];
-    _shell->GetPlatformView()->NotifyCreated();
+    [_engine.get() platformView] -> NotifyCreated();
 
   } else {
-    _shell->GetPlatformView()->NotifyDestroyed();
+    [_engine.get() platformView] -> NotifyDestroyed();
   }
 }
 
@@ -463,24 +376,11 @@
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
 
-  // Launch the Dart application with the inferred run configuration.
-  _shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = _shell->GetEngine(),                   //
-                         config = [_dartProject.get() runConfiguration]  //
-  ]() mutable {
-        if (engine) {
-          auto result = engine->Run(std::move(config));
-          if (result == shell::Engine::RunStatus::Failure) {
-            FML_LOG(ERROR) << "Could not launch engine with configuration.";
-          }
-        }
-      }));
-
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
-  [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
+  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 
   [super viewWillAppear:animated];
 }
@@ -490,14 +390,14 @@
   [self onLocaleUpdated:nil];
   [self onUserSettingsChanged:nil];
   [self onAccessibilityStatusChanged:nil];
-  [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.resumed"];
+  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
 
   [super viewDidAppear:animated];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillDisappear");
-  [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
+  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 
   [super viewWillDisappear:animated];
 }
@@ -505,14 +405,13 @@
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
   [self surfaceUpdated:NO];
-  [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
+  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
 
   [super viewDidDisappear:animated];
 }
 
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
-  [_pluginPublications release];
   [super dealloc];
 }
 
@@ -520,55 +419,48 @@
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
-  [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.resumed"];
+  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
-  [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
+  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
   [self surfaceUpdated:NO];
-  [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
+  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
 }
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
-  [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
+  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 }
 
 #pragma mark - Touch event handling
 
-enum MapperPhase {
-  Accessed,
-  Added,
-  Removed,
-};
-
-using PointerChangeMapperPhase = std::pair<blink::PointerData::Change, MapperPhase>;
-static inline PointerChangeMapperPhase PointerChangePhaseFromUITouchPhase(UITouchPhase phase) {
+static blink::PointerData::Change PointerDataChangeFromUITouchPhase(UITouchPhase phase) {
   switch (phase) {
     case UITouchPhaseBegan:
-      return PointerChangeMapperPhase(blink::PointerData::Change::kDown, MapperPhase::Added);
+      return blink::PointerData::Change::kDown;
     case UITouchPhaseMoved:
     case UITouchPhaseStationary:
       // There is no EVENT_TYPE_POINTER_STATIONARY. So we just pass a move type
       // with the same coordinates
-      return PointerChangeMapperPhase(blink::PointerData::Change::kMove, MapperPhase::Accessed);
+      return blink::PointerData::Change::kMove;
     case UITouchPhaseEnded:
-      return PointerChangeMapperPhase(blink::PointerData::Change::kUp, MapperPhase::Removed);
+      return blink::PointerData::Change::kUp;
     case UITouchPhaseCancelled:
-      return PointerChangeMapperPhase(blink::PointerData::Change::kCancel, MapperPhase::Removed);
+      return blink::PointerData::Change::kCancel;
   }
 
-  return PointerChangeMapperPhase(blink::PointerData::Change::kCancel, MapperPhase::Accessed);
+  return blink::PointerData::Change::kCancel;
 }
 
-static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
+static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
   if (@available(iOS 9, *)) {
     switch (touch.type) {
       case UITouchTypeDirect:
@@ -584,33 +476,18 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   return blink::PointerData::DeviceKind::kTouch;
 }
 
-- (void)dispatchTouches:(NSSet*)touches phase:(UITouchPhase)phase {
-  // Note: we cannot rely on touch.phase, since in some cases, e.g.,
-  // handleStatusBarTouches, we synthesize touches from existing events.
-  //
-  // TODO(cbracken) consider creating out own class with the touch fields we
-  // need.
-  auto eventTypePhase = PointerChangePhaseFromUITouchPhase(phase);
+// Dispatches the UITouches to the engine. Usually, the type of change of the touch is determined
+// from the UITouch's phase. However, FlutterAppDelegate fakes touches to ensure that touch events
+// in the status bar area are available to framework code. The change type (optional) of the faked
+// touch is specified in the second argument.
+- (void)dispatchTouches:(NSSet*)touches
+    pointerDataChangeOverride:(blink::PointerData::Change*)overridden_change {
   const CGFloat scale = [UIScreen mainScreen].scale;
   auto packet = std::make_unique<blink::PointerDataPacket>(touches.count);
 
-  int i = 0;
+  size_t pointer_index = 0;
+
   for (UITouch* touch in touches) {
-    int device_id = 0;
-
-    switch (eventTypePhase.second) {
-      case Accessed:
-        device_id = _touchMapper.identifierOf(touch);
-        break;
-      case Added:
-        device_id = _touchMapper.registerTouch(touch);
-        break;
-      case Removed:
-        device_id = _touchMapper.unregisterTouch(touch);
-        break;
-    }
-
-    FML_DCHECK(device_id != 0);
     CGPoint windowCoordinates = [touch locationInView:self.view];
 
     blink::PointerData pointer_data;
@@ -619,11 +496,13 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
     constexpr int kMicrosecondsPerSecond = 1000 * 1000;
     pointer_data.time_stamp = touch.timestamp * kMicrosecondsPerSecond;
 
-    pointer_data.change = eventTypePhase.first;
+    pointer_data.change = overridden_change != nullptr
+                              ? *overridden_change
+                              : PointerDataChangeFromUITouchPhase(touch.phase);
 
     pointer_data.kind = DeviceKindFromTouchType(touch);
 
-    pointer_data.device = device_id;
+    pointer_data.device = reinterpret_cast<int64_t>(touch);
 
     pointer_data.physical_x = windowCoordinates.x * scale;
     pointer_data.physical_y = windowCoordinates.y * scale;
@@ -681,42 +560,32 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
       pointer_data.orientation = [touch azimuthAngleInView:nil] - M_PI_2;
     }
 
-    packet->SetPointerData(i++, pointer_data);
+    packet->SetPointerData(pointer_index++, pointer_data);
   }
 
-  _shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = _shell->GetEngine(), packet = std::move(packet)] {
-        if (engine) {
-          engine->DispatchPointerDataPacket(*packet);
-        }
-      }));
+  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches phase:UITouchPhaseBegan];
+  [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches phase:UITouchPhaseMoved];
+  [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches phase:UITouchPhaseEnded];
+  [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches phase:UITouchPhaseCancelled];
+  [self dispatchTouches:touches pointerDataChangeOverride:nullptr];
 }
 
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetrics {
-  _shell->GetTaskRunners().GetUITaskRunner()->PostTask(
-      [engine = _shell->GetEngine(), metrics = _viewportMetrics]() {
-        if (engine) {
-          engine->SetViewportMetrics(std::move(metrics));
-        }
-      });
+  [_engine.get() updateViewportMetrics:_viewportMetrics];
 }
 
 - (CGFloat)statusBarPadding {
@@ -796,58 +665,6 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   [self updateViewportMetrics];
 }
 
-#pragma mark - Text input delegate
-
-- (void)updateEditingClient:(int)client withState:(NSDictionary*)state {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingState"
-                              arguments:@[ @(client), state ]];
-}
-
-- (void)performAction:(FlutterTextInputAction)action withClient:(int)client {
-  NSString* actionString;
-  switch (action) {
-    case FlutterTextInputActionUnspecified:
-      // Where did the term "unspecified" come from? iOS has a "default" and Android
-      // has "unspecified." These 2 terms seem to mean the same thing but we need
-      // to pick just one. "unspecified" was chosen because "default" is often a
-      // reserved word in languages with switch statements (dart, java, etc).
-      actionString = @"TextInputAction.unspecified";
-      break;
-    case FlutterTextInputActionDone:
-      actionString = @"TextInputAction.done";
-      break;
-    case FlutterTextInputActionGo:
-      actionString = @"TextInputAction.go";
-      break;
-    case FlutterTextInputActionSend:
-      actionString = @"TextInputAction.send";
-      break;
-    case FlutterTextInputActionSearch:
-      actionString = @"TextInputAction.search";
-      break;
-    case FlutterTextInputActionNext:
-      actionString = @"TextInputAction.next";
-      break;
-    case FlutterTextInputActionContinue:
-      actionString = @"TextInputAction.continue";
-      break;
-    case FlutterTextInputActionJoin:
-      actionString = @"TextInputAction.join";
-      break;
-    case FlutterTextInputActionRoute:
-      actionString = @"TextInputAction.route";
-      break;
-    case FlutterTextInputActionEmergencyCall:
-      actionString = @"TextInputAction.emergencyCall";
-      break;
-    case FlutterTextInputActionNewline:
-      actionString = @"TextInputAction.newline";
-      break;
-  }
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.performAction"
-                              arguments:@[ @(client), actionString ]];
-}
-
 #pragma mark - Orientation updates
 
 - (void)onOrientationPreferencesUpdated:(NSNotification*)notification {
@@ -881,7 +698,7 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 #pragma mark - Accessibility
 
 - (void)onAccessibilityStatusChanged:(NSNotification*)notification {
-  auto platformView = _shell->GetPlatformView();
+  auto platformView = [_engine.get() platformView];
   int32_t flags = 0;
   if (UIAccessibilityIsInvertColorsEnabled())
     flags ^= static_cast<int32_t>(blink::AccessibilityFeatureFlag::kInvertColors);
@@ -907,23 +724,38 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 #pragma mark - Memory Notifications
 
 - (void)onMemoryWarning:(NSNotification*)notification {
-  [_systemChannel.get() sendMessage:@{@"type" : @"memoryPressure"}];
+  [[_engine.get() systemChannel] sendMessage:@{@"type" : @"memoryPressure"}];
 }
 
 #pragma mark - Locale updates
 
 - (void)onLocaleUpdated:(NSNotification*)notification {
-  NSLocale* currentLocale = [NSLocale currentLocale];
-  NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
-  NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
-  if (languageCode && countryCode)
-    [_localizationChannel.get() invokeMethod:@"setLocale" arguments:@[ languageCode, countryCode ]];
+  NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
+  NSMutableArray<NSString*>* data = [NSMutableArray new];
+  for (NSString* localeID in preferredLocales) {
+    NSLocale* currentLocale = [[NSLocale alloc] initWithLocaleIdentifier:localeID];
+    NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
+    NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
+    NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
+    NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
+    if (!languageCode || !countryCode) {
+      continue;
+    }
+    [data addObject:languageCode];
+    [data addObject:countryCode];
+    [data addObject:(scriptCode ? scriptCode : @"")];
+    [data addObject:(variantCode ? variantCode : @"")];
+  }
+  if (data.count == 0) {
+    return;
+  }
+  [[_engine.get() localizationChannel] invokeMethod:@"setLocale" arguments:data];
 }
 
 #pragma mark - Set user settings
 
 - (void)onUserSettingsChanged:(NSNotification*)notification {
-  [_settingsChannel.get() sendMessage:@{
+  [[_engine.get() settingsChannel] sendMessage:@{
     @"textScaleFactor" : @([self textScaleFactor]),
     @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
   }];
@@ -1024,8 +856,11 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
       CGPoint screenLoc = [touch.window convertPoint:windowLoc toWindow:nil];
       if (CGRectContainsPoint(statusBarFrame, screenLoc)) {
         NSSet* statusbarTouches = [NSSet setWithObject:touch];
-        [self dispatchTouches:statusbarTouches phase:UITouchPhaseBegan];
-        [self dispatchTouches:statusbarTouches phase:UITouchPhaseEnded];
+
+        blink::PointerData::Change change = blink::PointerData::Change::kDown;
+        [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change];
+        change = blink::PointerData::Change::kUp;
+        [self dispatchTouches:statusbarTouches pointerDataChangeOverride:&change];
         return;
       }
     }
@@ -1058,52 +893,43 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   });
 }
 
+#pragma mark - Platform views
+
+- (shell::FlutterPlatformViewsController*)platformViewsController {
+  return _platformViewsController.get();
+}
+
 #pragma mark - FlutterBinaryMessenger
 
 - (void)sendOnChannel:(NSString*)channel message:(NSData*)message {
-  [self sendOnChannel:channel message:message binaryReply:nil];
+  [_engine.get() sendOnChannel:channel message:message];
 }
 
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData*)message
           binaryReply:(FlutterBinaryReply)callback {
   NSAssert(channel, @"The channel must not be null");
-  fml::RefPtr<shell::PlatformMessageResponseDarwin> response =
-      (callback == nil) ? nullptr
-                        : fml::MakeRefCounted<shell::PlatformMessageResponseDarwin>(
-                              ^(NSData* reply) {
-                                callback(reply);
-                              },
-                              _shell->GetTaskRunners().GetPlatformTaskRunner());
-  fml::RefPtr<blink::PlatformMessage> platformMessage =
-      (message == nil) ? fml::MakeRefCounted<blink::PlatformMessage>(channel.UTF8String, response)
-                       : fml::MakeRefCounted<blink::PlatformMessage>(
-                             channel.UTF8String, shell::GetVectorFromNSData(message), response);
-
-  _shell->GetPlatformView()->DispatchPlatformMessage(platformMessage);
+  [_engine.get() sendOnChannel:channel message:message binaryReply:callback];
 }
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
   NSAssert(channel, @"The channel must not be null");
-  [self iosPlatformView] -> GetPlatformMessageRouter().SetMessageHandler(channel.UTF8String,
-                                                                         handler);
+  [_engine.get() setMessageHandlerOnChannel:channel binaryMessageHandler:handler];
 }
 
 #pragma mark - FlutterTextureRegistry
 
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture {
-  int64_t textureId = _nextTextureId++;
-  [self iosPlatformView] -> RegisterExternalTexture(textureId, texture);
-  return textureId;
+  return [_engine.get() registerTexture:texture];
 }
 
 - (void)unregisterTexture:(int64_t)textureId {
-  _shell->GetPlatformView()->UnregisterTexture(textureId);
+  [_engine.get() unregisterTexture:textureId];
 }
 
 - (void)textureFrameAvailable:(int64_t)textureId {
-  _shell->GetPlatformView()->MarkTextureFrameAvailable(textureId);
+  [_engine.get() textureFrameAvailable:textureId];
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset {
@@ -1115,81 +941,21 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 }
 
 - (id<FlutterPluginRegistry>)pluginRegistry {
-  return self;
+  return _engine;
 }
 
 #pragma mark - FlutterPluginRegistry
 
 - (NSObject<FlutterPluginRegistrar>*)registrarForPlugin:(NSString*)pluginKey {
-  NSAssert(self.pluginPublications[pluginKey] == nil, @"Duplicate plugin key: %@", pluginKey);
-  self.pluginPublications[pluginKey] = [NSNull null];
-  return [[FlutterViewControllerRegistrar alloc] initWithPlugin:pluginKey
-                                          flutterViewController:self];
+  return [_engine.get() registrarForPlugin:pluginKey];
 }
 
 - (BOOL)hasPlugin:(NSString*)pluginKey {
-  return _pluginPublications[pluginKey] != nil;
+  return [_engine.get() hasPlugin:pluginKey];
 }
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
-  return _pluginPublications[pluginKey];
-}
-@end
-
-@implementation FlutterViewControllerRegistrar {
-  NSString* _pluginKey;
-  FlutterViewController* _flutterViewController;
-}
-
-- (instancetype)initWithPlugin:(NSString*)pluginKey
-         flutterViewController:(FlutterViewController*)flutterViewController {
-  self = [super init];
-  NSAssert(self, @"Super init cannot be nil");
-  _pluginKey = [pluginKey retain];
-  _flutterViewController = [flutterViewController retain];
-  return self;
-}
-
-- (void)dealloc {
-  [_pluginKey release];
-  [_flutterViewController release];
-  [super dealloc];
-}
-
-- (NSObject<FlutterBinaryMessenger>*)messenger {
-  return _flutterViewController;
-}
-
-- (NSObject<FlutterTextureRegistry>*)textures {
-  return _flutterViewController;
-}
-
-- (void)publish:(NSObject*)value {
-  _flutterViewController.pluginPublications[_pluginKey] = value;
-}
-
-- (void)addMethodCallDelegate:(NSObject<FlutterPlugin>*)delegate
-                      channel:(FlutterMethodChannel*)channel {
-  [channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-    [delegate handleMethodCall:call result:result];
-  }];
-}
-
-- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
-  id<UIApplicationDelegate> appDelegate = [[UIApplication sharedApplication] delegate];
-  if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifeCycleProvider)]) {
-    id<FlutterAppLifeCycleProvider> lifeCycleProvider =
-        (id<FlutterAppLifeCycleProvider>)appDelegate;
-    [lifeCycleProvider addApplicationLifeCycleDelegate:delegate];
-  }
-}
-
-- (NSString*)lookupKeyForAsset:(NSString*)asset {
-  return [_flutterViewController lookupKeyForAsset:asset];
-}
-
-- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-  return [_flutterViewController lookupKeyForAsset:asset fromPackage:package];
+  return [_engine.get() valuePublishedByPlugin:pluginKey];
 }
 
 @end

@@ -12,7 +12,6 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
@@ -23,6 +22,38 @@
 @end
 
 @implementation FlutterView
+
+id<FlutterScreenshotDelegate> _delegate;
+
+- (instancetype)init {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
+                                 reason:nil
+                               userInfo:nil]);
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
+                                 reason:nil
+                               userInfo:nil]);
+}
+
+- (instancetype)initWithCoder:(NSCoder*)aDecoder {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
+                                 reason:nil
+                               userInfo:nil]);
+}
+
+- (instancetype)initWithDelegate:(id<FlutterScreenshotDelegate>)delegate opaque:(BOOL)opaque {
+  FML_DCHECK(delegate) << "Delegate must not be nil.";
+  self = [super initWithFrame:CGRectNull];
+
+  if (self) {
+    _delegate = delegate;
+    self.layer.opaque = opaque;
+  }
+
+  return self;
+}
 
 - (FlutterViewController*)flutterViewController {
   // Find the first view controller in the responder chain and see if it is a FlutterViewController.
@@ -45,7 +76,6 @@
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
     layer.allowsGroupOpacity = YES;
-    layer.opaque = YES;
     CGFloat screenScale = [UIScreen mainScreen].scale;
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
@@ -63,13 +93,16 @@
 }
 
 - (std::unique_ptr<shell::IOSSurface>)createSurface {
+  ::shell::GetExternalViewEmbedder get_view_embedder = [[^() {
+    return [[self flutterViewController] viewEmbedder];
+  } copy] autorelease];
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
         reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
-    return std::make_unique<shell::IOSSurfaceGL>(std::move(eagl_layer));
+    return std::make_unique<shell::IOSSurfaceGL>(std::move(eagl_layer), get_view_embedder);
   } else {
     fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
-    return std::make_unique<shell::IOSSurfaceSoftware>(std::move(layer));
+    return std::make_unique<shell::IOSSurfaceSoftware>(std::move(layer), get_view_embedder);
   }
 }
 
@@ -84,16 +117,8 @@
     return;
   }
 
-  FlutterViewController* controller = [self flutterViewController];
-
-  if (controller == nil) {
-    return;
-  }
-
-  auto& shell = [controller shell];
-
-  auto screenshot = shell.Screenshot(shell::Rasterizer::ScreenshotType::UncompressedImage,
-                                     false /* base64 encode */);
+  auto screenshot = [_delegate takeScreenshot:shell::Rasterizer::ScreenshotType::UncompressedImage
+                              asBase64Encoded:NO];
 
   if (!screenshot.data || screenshot.data->isEmpty() || screenshot.frame_size.isEmpty()) {
     return;

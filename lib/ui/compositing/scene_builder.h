@@ -12,6 +12,7 @@
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/compositing/scene_host.h"
 #include "flutter/lib/ui/dart_wrapper.h"
+#include "flutter/lib/ui/painting/engine_layer.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/path.h"
 #include "flutter/lib/ui/painting/picture.h"
@@ -33,7 +34,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   ~SceneBuilder() override;
 
   void pushTransform(const tonic::Float64List& matrix4);
-  void pushOffset(double dx, double dy);
+  fml::RefPtr<EngineLayer> pushOffset(double dx, double dy);
   void pushClipRect(double left,
                     double right,
                     double top,
@@ -41,7 +42,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                     int clipBehavior);
   void pushClipRRect(const RRect& rrect, int clipBehavior);
   void pushClipPath(const CanvasPath* path, int clipBehavior);
-  void pushOpacity(int alpha);
+  void pushOpacity(int alpha, double dx = 0, double dy = 0);
   void pushColorFilter(int color, int blendMode);
   void pushBackdropFilter(ImageFilter* filter);
   void pushShaderMask(Shader* shader,
@@ -50,11 +51,13 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                       double maskRectTop,
                       double maskRectBottom,
                       int blendMode);
-  void pushPhysicalShape(const CanvasPath* path,
-                         double elevation,
-                         int color,
-                         int shadowColor,
-                         int clipBehavior);
+  fml::RefPtr<EngineLayer> pushPhysicalShape(const CanvasPath* path,
+                                             double elevation,
+                                             int color,
+                                             int shadowColor,
+                                             int clipBehavior);
+
+  void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
 
   void pop();
 
@@ -72,6 +75,12 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                   double height,
                   int64_t textureId,
                   bool freeze);
+
+  void addPlatformView(double dx,
+                       double dy,
+                       double width,
+                       double height,
+                       int64_t viewId);
 
   void addChildScene(double dx,
                      double dy,
@@ -92,14 +101,14 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
  private:
   SceneBuilder();
 
-  std::unique_ptr<flow::ContainerLayer> root_layer_;
+  std::shared_ptr<flow::ContainerLayer> root_layer_;
   flow::ContainerLayer* current_layer_ = nullptr;
 
   int rasterizer_tracing_threshold_ = 0;
   bool checkerboard_raster_cache_images_ = false;
   bool checkerboard_offscreen_layers_ = false;
 
-  void PushLayer(std::unique_ptr<flow::ContainerLayer> layer);
+  void PushLayer(std::shared_ptr<flow::ContainerLayer> layer);
 
   FML_DISALLOW_COPY_AND_ASSIGN(SceneBuilder);
 };

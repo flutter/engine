@@ -19,6 +19,7 @@
 #include "flutter/flow/layers/performance_overlay_layer.h"
 #include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/flow/layers/picture_layer.h"
+#include "flutter/flow/layers/platform_view_layer.h"
 #include "flutter/flow/layers/shader_mask_layer.h"
 #include "flutter/flow/layers/texture_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
@@ -53,6 +54,8 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
   V(SceneBuilder, pushShaderMask)                   \
   V(SceneBuilder, pushPhysicalShape)                \
   V(SceneBuilder, pop)                              \
+  V(SceneBuilder, addPlatformView)                  \
+  V(SceneBuilder, addRetained)                      \
   V(SceneBuilder, addPicture)                       \
   V(SceneBuilder, addTexture)                       \
   V(SceneBuilder, addChildScene)                    \
@@ -80,11 +83,12 @@ void SceneBuilder::pushTransform(const tonic::Float64List& matrix4) {
   PushLayer(std::move(layer));
 }
 
-void SceneBuilder::pushOffset(double dx, double dy) {
+fml::RefPtr<EngineLayer> SceneBuilder::pushOffset(double dx, double dy) {
   SkMatrix sk_matrix = SkMatrix::MakeTrans(dx, dy);
-  auto layer = std::make_unique<flow::TransformLayer>();
+  auto layer = std::make_shared<flow::TransformLayer>();
   layer->set_transform(sk_matrix);
-  PushLayer(std::move(layer));
+  PushLayer(layer);
+  return EngineLayer::MakeRetained(layer);
 }
 
 void SceneBuilder::pushClipRect(double left,
@@ -114,9 +118,10 @@ void SceneBuilder::pushClipPath(const CanvasPath* path, int clipBehavior) {
   PushLayer(std::move(layer));
 }
 
-void SceneBuilder::pushOpacity(int alpha) {
+void SceneBuilder::pushOpacity(int alpha, double dx, double dy) {
   auto layer = std::make_unique<flow::OpacityLayer>();
   layer->set_alpha(alpha);
+  layer->set_offset(SkPoint::Make(dx, dy));
   PushLayer(std::move(layer));
 }
 
@@ -148,21 +153,29 @@ void SceneBuilder::pushShaderMask(Shader* shader,
   PushLayer(std::move(layer));
 }
 
-void SceneBuilder::pushPhysicalShape(const CanvasPath* path,
-                                     double elevation,
-                                     int color,
-                                     int shadow_color,
-                                     int clipBehavior) {
+fml::RefPtr<EngineLayer> SceneBuilder::pushPhysicalShape(const CanvasPath* path,
+                                                         double elevation,
+                                                         int color,
+                                                         int shadow_color,
+                                                         int clipBehavior) {
   const SkPath& sk_path = path->path();
   flow::Clip clip_behavior = static_cast<flow::Clip>(clipBehavior);
-  auto layer = std::make_unique<flow::PhysicalShapeLayer>(clip_behavior);
+  auto layer = std::make_shared<flow::PhysicalShapeLayer>(clip_behavior);
   layer->set_path(sk_path);
   layer->set_elevation(elevation);
   layer->set_color(static_cast<SkColor>(color));
   layer->set_shadow_color(static_cast<SkColor>(shadow_color));
   layer->set_device_pixel_ratio(
       UIDartState::Current()->window()->viewport_metrics().device_pixel_ratio);
-  PushLayer(std::move(layer));
+  PushLayer(layer);
+  return EngineLayer::MakeRetained(layer);
+}
+
+void SceneBuilder::addRetained(fml::RefPtr<EngineLayer> retainedLayer) {
+  if (!current_layer_) {
+    return;
+  }
+  current_layer_->Add(retainedLayer->Layer());
 }
 
 void SceneBuilder::pop() {
@@ -204,6 +217,21 @@ void SceneBuilder::addTexture(double dx,
   layer->set_size(SkSize::Make(width, height));
   layer->set_texture_id(textureId);
   layer->set_freeze(freeze);
+  current_layer_->Add(std::move(layer));
+}
+
+void SceneBuilder::addPlatformView(double dx,
+                                   double dy,
+                                   double width,
+                                   double height,
+                                   int64_t viewId) {
+  if (!current_layer_) {
+    return;
+  }
+  auto layer = std::make_unique<flow::PlatformViewLayer>();
+  layer->set_offset(SkPoint::Make(dx, dy));
+  layer->set_size(SkSize::Make(width, height));
+  layer->set_view_id(viewId);
   current_layer_->Add(std::move(layer));
 }
 
@@ -260,7 +288,7 @@ fml::RefPtr<Scene> SceneBuilder::build() {
   return scene;
 }
 
-void SceneBuilder::PushLayer(std::unique_ptr<flow::ContainerLayer> layer) {
+void SceneBuilder::PushLayer(std::shared_ptr<flow::ContainerLayer> layer) {
   FML_DCHECK(layer);
 
   if (!root_layer_) {

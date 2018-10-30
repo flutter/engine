@@ -117,13 +117,10 @@ class WindowPadding {
 }
 
 /// An identifier used to select a user's language and formatting preferences.
-/// This implements Unicode Locale Identifiers as defined by [Unicode
-/// LDML](https://www.unicode.org/reports/tr35/).
 ///
-/// When constructed correctly, instances of this Locale class will produce
-/// normalized syntactically valid output, although not necessarily valid (tags
-/// are not validated). See constructor and factory method documentation for
-/// details.
+/// This represents a [Unicode Locale
+/// Identifier](https://www.unicode.org/reports/tr35/#Unicode_locale_identifier)
+/// (i.e. without Locale extensions), except variants are not supported.
 ///
 /// Locales are canonicalized according to the "preferred value" entries in the
 /// [IANA Language Subtag
@@ -135,6 +132,11 @@ class WindowPadding {
 /// TODO: evalute using CLDR instead of the IANA registry, and determine whether
 /// there are more replacement reasons that should be grabbed:
 /// https://www.unicode.org/repos/cldr/tags/latest/common/supplemental/supplementalMetadata.xml
+///
+/// When constructed correctly, instances of this Locale class will produce
+/// normalized syntactically valid output, although not necessarily valid (tags
+/// are not validated). See constructor and factory method documentation for
+/// details.
 ///
 /// See also:
 ///
@@ -160,13 +162,45 @@ class Locale {
   /// This method only produces standards-compliant instances if valid language
   /// and country codes are provided. Deprecated subtags will be replaced, but
   /// incorrectly cased strings are not corrected.
+  ///
+  /// Validity is not checked by default, but some methods may throw away
+  /// invalid data.
+  ///
+  /// See also:
+  ///
+  ///  * [new Locale.fromSubtags], which also allows a [scriptCode] to be
+  ///    specified.
   const Locale(
     this._languageCode, [
     this._countryCode,
   ]) : assert(_languageCode != null),
-       this._scriptCode = null,
-       this._variants = null,
-       this._extensions = null;
+       scriptCode = null,
+       _variants = null,
+       _extensions = null;
+
+  /// Creates a new Locale object.
+  ///
+  /// The keyword arguments specify the subtags of the Locale.
+  ///
+  /// The subtag values are _case sensitive_ and must be valid subtags according
+  /// to CLDR supplemental data:
+  /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
+  /// [script](http://unicode.org/cldr/latest/common/validity/script.xml) and
+  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml) for
+  /// each of languageCode, scriptCode and countryCode respectively.
+  ///
+  /// Validity is not checked by default, but some methods may throw away
+  /// invalid data.
+  const Locale.fromSubtags({
+    String languageCode = 'und',
+    this.scriptCode,
+    String countryCode,
+  }) : assert(languageCode != null),
+       assert(languageCode != ''),
+       _languageCode = languageCode,
+       assert(scriptCode != ''),
+       assert(countryCode != ''),
+       _countryCode = countryCode;
 
   // Creates a new Locale object with the specified parts.
   //
@@ -439,7 +473,7 @@ class Locale {
 
   /// The primary language subtag for the locale.
   ///
-  /// This must not be null.
+  /// This must not be null. It may be 'und', representing 'undefined'.
   ///
   /// This is expected to be string registered in the [IANA Language Subtag
   /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry)
@@ -455,6 +489,15 @@ class Locale {
   /// New deprecations in the registry are not automatically picked up by this
   /// library, so this class will not make such changes for deprecations that
   /// are too recent.
+  ///
+  /// This must be a valid Unicode Language subtag as listed in [Unicode CLDR
+  /// supplemental
+  /// data](http://unicode.org/cldr/latest/common/validity/language.xml).
+  ///
+  /// See also:
+  ///
+  ///  * [new Locale.fromSubtags], which describes the conventions for creating
+  ///    [Locale] objects.
   String get languageCode => _replaceDeprecatedLanguageSubtag(_languageCode);
   final String _languageCode;
 
@@ -547,12 +590,23 @@ class Locale {
     }
   }
 
-  String get scriptCode => _scriptCode;
-  final String _scriptCode;
+  /// The script subtag for the locale.
+  ///
+  /// This may be null, indicating that there is no specified script subtag.
+  ///
+  /// This must be a valid Unicode Language Identifier script subtag as listed
+  /// in [Unicode CLDR supplemental
+  /// data](http://unicode.org/cldr/latest/common/validity/script.xml).
+  ///
+  /// See also:
+  ///
+  ///  * [new Locale.fromSubtags], which describes the conventions for creating
+  ///    [Locale] objects.
+  final String scriptCode;
 
   /// The region subtag for the locale.
   ///
-  /// This can be null.
+  /// This may be null, indicating that there is no specified region subtag.
   ///
   /// This is expected to be string registered in the [IANA Language Subtag
   /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry)
@@ -568,6 +622,11 @@ class Locale {
   /// New deprecations in the registry are not automatically picked up by this
   /// library, so this class will not make such changes for deprecations that
   /// are too recent.
+  ///
+  /// See also:
+  ///
+  ///  * [new Locale.fromSubtags], which describes the conventions for creating
+  ///    [Locale] objects.
   String get countryCode => _replaceDeprecatedRegionSubtag(_countryCode);
   final String _countryCode;
 
@@ -991,10 +1050,30 @@ class Window {
     _onMetricsChangedZone = Zone.current;
   }
 
-  /// The system-reported locale.
+  /// The system-reported default locale of the device.
   ///
   /// This establishes the language and formatting conventions that application
   /// should, if possible, use to render their user interface.
+  ///
+  /// This is the first locale selected by the user and is the user's
+  /// primary locale (the locale the device UI is displayed in)
+  ///
+  /// This is equivalent to `locales.first` and will provide an empty non-null locale
+  /// if the [locales] list has not been set or is empty.
+  Locale get locale {
+    if (_locales != null && _locales.isNotEmpty) {
+      return _locales.first;
+    }
+    return null;
+  }
+
+  /// The full system-reported supported locales of the device.
+  ///
+  /// This establishes the language and formatting conventions that application
+  /// should, if possible, use to render their user interface.
+  ///
+  /// The list is ordered in order of priority, with lower-indexed locales being
+  /// preferred over higher-indexed ones. The first element is the primary [locale].
   ///
   /// The [onLocaleChanged] callback is called whenever this value changes.
   ///
@@ -1002,8 +1081,8 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  Locale get locale => _locale;
-  Locale _locale;
+  List<Locale> get locales => _locales;
+  List<Locale> _locales;
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -1255,6 +1334,16 @@ class Window {
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
   void updateSemantics(SemanticsUpdate update) native 'Window_updateSemantics';
+
+  /// Set the debug name associated with this window's root isolate.
+  ///
+  /// Normally debug names are automatically generated from the Dart port, entry
+  /// point, and source file. For example: `main.dart$main-1234`.
+  ///
+  /// This can be combined with flutter tools `--isolate-filter` flag to debug
+  /// specific root isolates. For example: `flutter attach --isolate-filter=[name]`.
+  /// Note that this does not rename any child isolates of the root.
+  void setIsolateDebugName(String name) native 'Window_setIsolateDebugName';
 
   /// Sends a message to a platform-specific plugin.
   ///

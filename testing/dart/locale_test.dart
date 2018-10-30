@@ -425,4 +425,30 @@ void main() {
       isNot(Locale.parse('en-t-hi-h0-hybrid').hashCode),
     );
   });
+
+  test('Locale.fromSubtags', () {
+    expect(const Locale.fromSubtags().languageCode, 'und');
+    expect(const Locale.fromSubtags().scriptCode, null);
+    expect(const Locale.fromSubtags().countryCode, null);
+
+    expect(const Locale.fromSubtags(languageCode: 'en').toString(), 'en');
+    expect(const Locale.fromSubtags(languageCode: 'en').languageCode, 'en');
+    expect(const Locale.fromSubtags(scriptCode: 'Latn').toString(), 'und_Latn');
+    expect(const Locale.fromSubtags(scriptCode: 'Latn').scriptCode, 'Latn');
+    expect(const Locale.fromSubtags(countryCode: 'US').toString(), 'und_US');
+    expect(const Locale.fromSubtags(countryCode: 'US').countryCode, 'US');
+
+    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').toString(), 'es_419');
+    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').languageCode, 'es');
+    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').countryCode, '419');
+
+    expect(Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN').toString(), 'zh_Hans_CN');
+  });
+
+  test('Locale equality', () {
+    expect(Locale.fromSubtags(languageCode: 'en'),
+           isNot(Locale.fromSubtags(languageCode: 'en', scriptCode: 'Latn')));
+    expect(Locale.fromSubtags(languageCode: 'en').hashCode,
+           isNot(Locale.fromSubtags(languageCode: 'en', scriptCode: 'Latn').hashCode));
+  });
 }

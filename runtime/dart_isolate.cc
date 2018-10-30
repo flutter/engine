@@ -26,10 +26,6 @@
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
 
-#ifdef ERROR
-#undef ERROR
-#endif
-
 namespace blink {
 
 std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
@@ -38,6 +34,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     fml::RefPtr<DartSnapshot> shared_snapshot,
     TaskRunners task_runners,
     std::unique_ptr<Window> window,
+    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::WeakPtr<GrContext> resource_context,
     fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
     std::string advisory_script_uri,
@@ -54,14 +51,15 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   // isolate lifecycle is entirely managed by the VM).
   auto root_embedder_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::make_shared<DartIsolate>(
-          vm,                           // VM
-          std::move(isolate_snapshot),  // isolate snapshot
-          std::move(shared_snapshot),   // shared snapshot
-          task_runners,                 // task runners
-          std::move(resource_context),  // resource context
-          std::move(unref_queue),       // skia unref queue
-          advisory_script_uri,          // advisory URI
-          advisory_script_entrypoint,   // advisory entrypoint
+          vm,                            // VM
+          std::move(isolate_snapshot),   // isolate snapshot
+          std::move(shared_snapshot),    // shared snapshot
+          task_runners,                  // task runners
+          std::move(snapshot_delegate),  // snapshot delegate
+          std::move(resource_context),   // resource context
+          std::move(unref_queue),        // skia unref queue
+          advisory_script_uri,           // advisory URI
+          advisory_script_entrypoint,    // advisory entrypoint
           nullptr  // child isolate preparer will be set when this isolate is
                    // prepared to run
           ));
@@ -101,6 +99,7 @@ DartIsolate::DartIsolate(DartVM* vm,
                          fml::RefPtr<DartSnapshot> isolate_snapshot,
                          fml::RefPtr<DartSnapshot> shared_snapshot,
                          TaskRunners task_runners,
+                         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
                          fml::WeakPtr<GrContext> resource_context,
                          fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
                          std::string advisory_script_uri,
@@ -109,6 +108,7 @@ DartIsolate::DartIsolate(DartVM* vm,
     : UIDartState(std::move(task_runners),
                   vm->GetSettings().task_observer_add,
                   vm->GetSettings().task_observer_remove,
+                  std::move(snapshot_delegate),
                   std::move(resource_context),
                   std::move(unref_queue),
                   advisory_script_uri,
@@ -243,7 +243,7 @@ bool DartIsolate::LoadLibraries(bool is_root_isolate) {
 
   DartIO::InitForIsolate();
 
-  DartUI::InitForIsolate();
+  DartUI::InitForIsolate(is_root_isolate);
 
   const bool is_service_isolate = Dart_IsServiceIsolate(isolate());
 
@@ -477,6 +477,7 @@ bool DartIsolate::Shutdown() {
     // the isolate to shutdown as a parameter.
     FML_DCHECK(Dart_CurrentIsolate() == nullptr);
     Dart_EnterIsolate(vm_isolate);
+    shutdown_callbacks_.clear();
     Dart_ShutdownIsolate();
     FML_DCHECK(Dart_CurrentIsolate() == nullptr);
   }
@@ -519,6 +520,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           vm->GetSharedSnapshot(),   // shared snapshot
           null_task_runners,         // task runners
           nullptr,                   // window
+          {},                        // snapshot delegate
           {},                        // resource context
           {},                        // unref queue
           advisory_script_uri == nullptr ? ""
@@ -629,6 +631,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
             (*raw_embedder_isolate)->GetIsolateSnapshot(),  // isolate_snapshot
             (*raw_embedder_isolate)->GetSharedSnapshot(),   // shared_snapshot
             null_task_runners,                              // task_runners
+            fml::WeakPtr<SnapshotDelegate>{},               // snapshot_delegate
             fml::WeakPtr<GrContext>{},                      // resource_context
             nullptr,                                        // unref_queue
             advisory_script_uri,         // advisory_script_uri

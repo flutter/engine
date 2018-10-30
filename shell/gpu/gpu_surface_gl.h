@@ -8,6 +8,7 @@
 #include <functional>
 #include <memory>
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/surface.h"
@@ -35,6 +36,10 @@ class GPUSurfaceGLDelegate {
     return matrix;
   }
 
+  virtual flow::ExternalViewEmbedder* GetExternalViewEmbedder() {
+    return nullptr;
+  }
+
   using GLProcResolver =
       std::function<void* /* proc name */ (const char* /* proc address */)>;
   virtual GLProcResolver GetGLProcResolver() const { return nullptr; }
@@ -58,6 +63,9 @@ class GPUSurfaceGL : public Surface {
   // |shell::Surface|
   GrContext* GetContext() override;
 
+  // |shell::Surface|
+  flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+
  private:
   GPUSurfaceGLDelegate* delegate_;
   GPUSurfaceGLDelegate::GLProcResolver proc_resolver_;
@@ -74,6 +82,8 @@ class GPUSurfaceGL : public Surface {
       const SkMatrix& root_surface_transformation);
 
   bool PresentSurface(SkCanvas* canvas);
+
+  bool IsProcResolverOpenGLES();
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
 };

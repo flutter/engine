@@ -5,7 +5,9 @@
 #include "flutter/shell/common/engine.h"
 
 #include <memory>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/eintr_wrapper.h"
@@ -19,13 +21,10 @@
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
-#include "third_party/rapidjson/rapidjson/document.h"
+#include "rapidjson/document.h"
+#include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
-
-#ifdef ERROR
-#undef ERROR
-#endif
 
 namespace shell {
 
@@ -42,6 +41,7 @@ Engine::Engine(Delegate& delegate,
                blink::TaskRunners task_runners,
                blink::Settings settings,
                std::unique_ptr<Animator> animator,
+               fml::WeakPtr<blink::SnapshotDelegate> snapshot_delegate,
                fml::WeakPtr<GrContext> resource_context,
                fml::RefPtr<flow::SkiaUnrefQueue> unref_queue)
     : delegate_(delegate),
@@ -59,6 +59,7 @@ Engine::Engine(Delegate& delegate,
       std::move(isolate_snapshot),          // isolate snapshot
       std::move(shared_snapshot),           // shared snapshot
       std::move(task_runners),              // task runners
+      std::move(snapshot_delegate),         // snapshot delegate
       std::move(resource_context),          // resource context
       std::move(unref_queue),               // skia unref queue
       settings_.advisory_script_uri,        // advisory script uri
@@ -73,7 +74,7 @@ fml::WeakPtr<Engine> Engine::GetWeakPtr() const {
 }
 
 bool Engine::UpdateAssetManager(
-    fml::RefPtr<blink::AssetManager> new_asset_manager) {
+    std::shared_ptr<blink::AssetManager> new_asset_manager) {
   if (asset_manager_ == new_asset_manager) {
     return false;
   }
@@ -194,7 +195,8 @@ void Engine::BeginFrame(fml::TimePoint frame_time) {
 }
 
 void Engine::NotifyIdle(int64_t deadline) {
-  TRACE_EVENT0("flutter", "Engine::NotifyIdle");
+  TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
+               std::to_string(deadline - Dart_TimelineGetMicros()).c_str());
   runtime_controller_->NotifyIdle(deadline);
 }
 
@@ -322,14 +324,22 @@ bool Engine::HandleLocalizationPlatformMessage(
   if (args == root.MemberEnd() || !args->value.IsArray())
     return false;
 
-  const auto& language = args->value[0];
-  const auto& country = args->value[1];
-
-  if (!language.IsString() || !country.IsString())
+  const size_t strings_per_locale = 4;
+  if (args->value.Size() % strings_per_locale != 0)
     return false;
+  std::vector<std::string> locale_data;
+  for (size_t locale_index = 0; locale_index < args->value.Size();
+       locale_index += strings_per_locale) {
+    if (!args->value[locale_index].IsString() ||
+        !args->value[locale_index + 1].IsString())
+      return false;
+    locale_data.push_back(args->value[locale_index].GetString());
+    locale_data.push_back(args->value[locale_index + 1].GetString());
+    locale_data.push_back(args->value[locale_index + 2].GetString());
+    locale_data.push_back(args->value[locale_index + 3].GetString());
+  }
 
-  return runtime_controller_->SetLocale(language.GetString(),
-                                        country.GetString());
+  return runtime_controller_->SetLocales(locale_data);
 }
 
 void Engine::HandleSettingsPlatformMessage(blink::PlatformMessage* message) {

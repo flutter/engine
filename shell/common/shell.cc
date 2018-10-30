@@ -31,10 +31,6 @@
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/tonic/common/log.h"
 
-#ifdef ERROR
-#undef ERROR
-#endif
-
 namespace shell {
 
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
@@ -92,31 +88,37 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // Create the rasterizer on the GPU thread.
   fml::AutoResetWaitableEvent gpu_latch;
   std::unique_ptr<Rasterizer> rasterizer;
+  fml::WeakPtr<blink::SnapshotDelegate> snapshot_delegate;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners.GetGPUTaskRunner(), [&gpu_latch,            //
                                         &rasterizer,           //
                                         on_create_rasterizer,  //
-                                        shell = shell.get()    //
+                                        shell = shell.get(),   //
+                                        &snapshot_delegate     //
   ]() {
         if (auto new_rasterizer = on_create_rasterizer(*shell)) {
           rasterizer = std::move(new_rasterizer);
+          snapshot_delegate = rasterizer->GetSnapshotDelegate();
         }
         gpu_latch.Signal();
       });
+
+  gpu_latch.Wait();
 
   // Create the engine on the UI thread.
   fml::AutoResetWaitableEvent ui_latch;
   std::unique_ptr<Engine> engine;
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetUITaskRunner(),
-      fml::MakeCopyable([&ui_latch,                                       //
-                         &engine,                                         //
-                         shell = shell.get(),                             //
-                         isolate_snapshot = std::move(isolate_snapshot),  //
-                         shared_snapshot = std::move(shared_snapshot),    //
-                         vsync_waiter = std::move(vsync_waiter),          //
-                         resource_context = std::move(resource_context),  //
-                         unref_queue = std::move(unref_queue)             //
+      fml::MakeCopyable([&ui_latch,                                         //
+                         &engine,                                           //
+                         shell = shell.get(),                               //
+                         isolate_snapshot = std::move(isolate_snapshot),    //
+                         shared_snapshot = std::move(shared_snapshot),      //
+                         vsync_waiter = std::move(vsync_waiter),            //
+                         snapshot_delegate = std::move(snapshot_delegate),  //
+                         resource_context = std::move(resource_context),    //
+                         unref_queue = std::move(unref_queue)               //
   ]() mutable {
         const auto& task_runners = shell->GetTaskRunners();
 
@@ -125,20 +127,20 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         auto animator = std::make_unique<Animator>(*shell, task_runners,
                                                    std::move(vsync_waiter));
 
-        engine = std::make_unique<Engine>(*shell,                       //
-                                          shell->GetDartVM(),           //
-                                          std::move(isolate_snapshot),  //
-                                          std::move(shared_snapshot),   //
-                                          task_runners,                 //
-                                          shell->GetSettings(),         //
-                                          std::move(animator),          //
-                                          std::move(resource_context),  //
-                                          std::move(unref_queue)        //
+        engine = std::make_unique<Engine>(*shell,                        //
+                                          shell->GetDartVM(),            //
+                                          std::move(isolate_snapshot),   //
+                                          std::move(shared_snapshot),    //
+                                          task_runners,                  //
+                                          shell->GetSettings(),          //
+                                          std::move(animator),           //
+                                          std::move(snapshot_delegate),  //
+                                          std::move(resource_context),   //
+                                          std::move(unref_queue)         //
         );
         ui_latch.Signal();
       }));
 
-  gpu_latch.Wait();
   ui_latch.Wait();
   // We are already on the platform thread. So there is no platform latch to
   // wait on.
@@ -943,7 +945,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
   auto& allocator = response.GetAllocator();
   response.SetObject();
 
-  auto asset_manager = fml::MakeRefCounted<blink::AssetManager>();
+  auto asset_manager = std::make_shared<blink::AssetManager>();
 
   asset_manager->PushFront(std::make_unique<blink::DirectoryAssetBundle>(
       fml::OpenDirectory(params.at("assetDirectory").ToString().c_str(), false,

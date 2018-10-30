@@ -21,10 +21,6 @@
 #include "flutter/shell/common/thread_host.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 
-#ifdef ERROR
-#undef ERROR
-#endif
-
 namespace shell {
 
 // Checks whether the engine's main Dart isolate has no pending work.  If so,
@@ -129,6 +125,19 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
     return EXIT_FAILURE;
   }
 
+  // Initialize default testing locales. There is no platform to
+  // pass locales on the tester, so to retain expected locale behavior,
+  // we emulate it in here by passing in 'en_US' and 'zh_CN' as test locales.
+  const char* locale_json =
+      "{\"method\":\"setLocale\",\"args\":[\"en\",\"US\",\"\",\"\",\"zh\","
+      "\"CN\",\"\",\"\"]}";
+  std::vector<uint8_t> locale_bytes(locale_json,
+                                    locale_json + std::strlen(locale_json));
+  fml::RefPtr<blink::PlatformMessageResponse> response;
+  shell->GetPlatformView()->DispatchPlatformMessage(
+      fml::MakeRefCounted<blink::PlatformMessage>("flutter/localization",
+                                                  locale_bytes, response));
+
   std::initializer_list<fml::FileMapping::Protection> protection = {
       fml::FileMapping::Protection::kRead};
   auto main_dart_file_mapping = std::make_unique<fml::FileMapping>(
@@ -145,7 +154,7 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
     return EXIT_FAILURE;
   }
 
-  auto asset_manager = fml::MakeRefCounted<blink::AssetManager>();
+  auto asset_manager = std::make_shared<blink::AssetManager>();
   asset_manager->PushBack(std::make_unique<blink::DirectoryAssetBundle>(
       fml::Duplicate(settings.assets_dir)));
   asset_manager->PushBack(

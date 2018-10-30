@@ -14,10 +14,10 @@
 
 namespace shell {
 
-class IOSSurfaceSoftware final : public IOSSurface,
-                                 public GPUSurfaceSoftwareDelegate {
+class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDelegate {
  public:
-  IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer);
+  IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
+                     ::shell::GetExternalViewEmbedder get_view_embedder);
 
   ~IOSSurfaceSoftware() override;
 
@@ -39,8 +39,12 @@ class IOSSurfaceSoftware final : public IOSSurface,
   // |shell::GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
 
+  // |shell::GPUSurfaceSoftwareDelegate|
+  flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+
  private:
   fml::scoped_nsobject<CALayer> layer_;
+  fml::scoped_nsprotocol<::shell::GetExternalViewEmbedder> get_view_embedder_;
   sk_sp<SkSurface> sk_surface_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IOSSurfaceSoftware);

@@ -33,10 +33,6 @@
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/typed_data/uint8_list.h"
 
-#ifdef ERROR
-#undef ERROR
-#endif
-
 namespace dart {
 namespace observatory {
 
@@ -64,11 +60,7 @@ static const char* kDartLanguageArgs[] = {
     // clang-format off
     "--enable_mirrors=false",
     "--background_compilation",
-    "--await_is_keyword",
     "--causal_async_stacks",
-    "--strong",
-    "--reify_generic_functions",
-    "--sync_async",
     // clang-format on
 };
 
@@ -354,10 +346,6 @@ DartVM::DartVM(const Settings& settings,
   PushBackAll(&args, kDartWriteProtectCodeArgs,
               arraysize(kDartWriteProtectCodeArgs));
 #endif
-
-  const bool is_preview_dart2 =
-      Dart_IsDart2Snapshot(isolate_snapshot_->GetData()->GetSnapshotPointer());
-  FML_CHECK(is_preview_dart2) << "Not Dart 2!";
 
   if (use_checked_mode) {
     PushBackAll(&args, kDartAssertArgs, arraysize(kDartAssertArgs));

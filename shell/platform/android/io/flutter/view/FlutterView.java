@@ -37,6 +37,7 @@ import io.flutter.plugin.platform.PlatformPlugin;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -170,7 +171,8 @@ public class FlutterView extends SurfaceView
         mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         mTextInputPlugin = new TextInputPlugin(this);
 
-        setLocale(getResources().getConfiguration().locale);
+
+        setLocales(getResources().getConfiguration());
         setUserSettings();
     }
 
@@ -316,14 +318,39 @@ public class FlutterView extends SurfaceView
         mFlutterSettingsChannel.send(message);
     }
 
-    private void setLocale(Locale locale) {
-        mFlutterLocalizationChannel.invokeMethod("setLocale", Arrays.asList(locale.getLanguage(), locale.getCountry()));
+    private void setLocales(Configuration config) {
+        if (Build.VERSION.SDK_INT >= 24) {
+            try {
+                // Passes the full list of locales for android API >= 24 with reflection.
+                Object localeList = config.getClass().getDeclaredMethod("getLocales").invoke(config);
+                Method localeListGet = localeList.getClass().getDeclaredMethod("get", int.class);
+                Method localeListSize = localeList.getClass().getDeclaredMethod("size");
+                int localeCount = (int)localeListSize.invoke(localeList);
+                List<String> data = new ArrayList<String>();
+                for (int index = 0; index < localeCount; ++index) {
+                    Locale locale = (Locale)localeListGet.invoke(localeList, index);
+                    data.add(locale.getLanguage());
+                    data.add(locale.getCountry());
+                    data.add(locale.getScript());
+                    data.add(locale.getVariant());
+                }
+                mFlutterLocalizationChannel.invokeMethod("setLocale", data);
+                return;
+            } catch (Exception exception) {
+                // Any exception is a failure. Resort to fallback of sending only one locale.
+            }
+        }
+        // Fallback single locale passing for android API < 24. Should work always.
+        Locale locale = config.locale;
+        // getScript() is gated because it is added in API 21.
+        mFlutterLocalizationChannel.invokeMethod("setLocale", Arrays.asList(locale.getLanguage(), locale.getCountry(), Build.VERSION.SDK_INT >= 21 ? locale.getScript() : "", locale.getVariant()));
+        
     }
 
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        setLocale(newConfig.locale);
+        setLocales(newConfig);
         setUserSettings();
     }
 
@@ -461,6 +488,8 @@ public class FlutterView extends SurfaceView
             packet.putDouble(0.0); // distance_max
         }
 
+        packet.putDouble(event.getSize(pointerIndex)); // size
+
         packet.putDouble(event.getToolMajor(pointerIndex)); // radius_major
         packet.putDouble(event.getToolMinor(pointerIndex)); // radius_minor
 
@@ -492,7 +521,7 @@ public class FlutterView extends SurfaceView
         }
 
         // These values must match the unpacking code in hooks.dart.
-        final int kPointerDataFieldCount = 19;
+        final int kPointerDataFieldCount = 20;
         final int kBytePerField = 8;
 
         int pointerCount = event.getPointerCount();
@@ -1041,23 +1070,32 @@ public class FlutterView extends SurfaceView
         SurfaceTextureRegistryEntry(long id, SurfaceTexture surfaceTexture) {
             this.id = id;
             this.surfaceTexture = surfaceTexture;
-            this.surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
-                @Override
-                public void onFrameAvailable(SurfaceTexture texture) {
-                    if (released) {
-                        // Even though we make sure to unregister the callback before releasing, as of Android O
-                        // SurfaceTexture has a data race when accessing the callback, so the callback may
-                        // still be called by a stale reference after released==true and mNativeView==null.
-                        return;
-                    }
-                    nativeMarkTextureFrameAvailable(mNativeView.get(), SurfaceTextureRegistryEntry.this.id);
-                }
-            },
-            // The callback relies on being executed on the UI thread (unsynchronised read of mNativeView
-            // and also the engine code check for platform thread in Shell::OnPlatformViewMarkTextureFrameAvailable),
-            // so we explicitly pass a Handler for the current thread.
-            new Handler());
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                // The callback relies on being executed on the UI thread (unsynchronised read of mNativeView
+                // and also the engine code check for platform thread in Shell::OnPlatformViewMarkTextureFrameAvailable),
+                // so we explicitly pass a Handler for the current thread.
+                this.surfaceTexture.setOnFrameAvailableListener(onFrameListener, new Handler());
+            } else {
+                // Android documentation states that the listener can be called on an arbitrary thread.
+                // But in practice, versions of Android that predate the newer API will call the listener
+                // on the thread where the SurfaceTexture was constructed.
+                this.surfaceTexture.setOnFrameAvailableListener(onFrameListener);
+            }
         }
+
+        private SurfaceTexture.OnFrameAvailableListener onFrameListener = new SurfaceTexture.OnFrameAvailableListener() {
+            @Override
+            public void onFrameAvailable(SurfaceTexture texture) {
+                if (released) {
+                    // Even though we make sure to unregister the callback before releasing, as of Android O
+                    // SurfaceTexture has a data race when accessing the callback, so the callback may
+                    // still be called by a stale reference after released==true and mNativeView==null.
+                    return;
+                }
+                nativeMarkTextureFrameAvailable(mNativeView.get(), SurfaceTextureRegistryEntry.this.id);
+            }
+        };
 
         @Override
         public SurfaceTexture surfaceTexture() {

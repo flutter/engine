@@ -42,14 +42,20 @@ void _updateWindowMetrics(double devicePixelRatio,
 
 typedef _LocaleClosure = String Function();
 
-String _localeClosure() => window._locale.toString();
+String _localeClosure() => window.locale.toString();
 
 @pragma('vm:entry-point')
 _LocaleClosure _getLocaleClosure() => _localeClosure;
 
 @pragma('vm:entry-point')
-void _updateLocale(String languageCode, String countryCode) {
-  window._locale = new Locale(languageCode, countryCode);
+void _updateLocales(List<String> locales) {
+  const int stringsPerLocale = 4;
+  final int numLocales = locales.length ~/ stringsPerLocale;
+  window._locales = new List<Locale>(numLocales);
+  for (int localeIndex = 0; localeIndex < numLocales; localeIndex++) {
+    window._locales[localeIndex] = new Locale(locales[localeIndex * stringsPerLocale],
+                                   locales[localeIndex * stringsPerLocale + 1]);
+  }
   _invoke(window.onLocaleChanged, window._onLocaleChangedZone);
 }
 
@@ -190,7 +196,7 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1
 //
 //  * pointer_data.cc
 //  * FlutterView.java
-const int _kPointerDataFieldCount = 19;
+const int _kPointerDataFieldCount = 20;
 
 PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
@@ -214,6 +220,7 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
       pressureMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       distance: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       distanceMax: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      size: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       radiusMajor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       radiusMinor: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       radiusMin: packet.getFloat64(kStride * offset++, _kFakeHostEndian),

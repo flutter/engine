@@ -879,7 +879,7 @@ enum StrokeCap {
 enum StrokeJoin {
   /// Joins between line segments form sharp corners.
   ///
-  /// {@animation joinMiterEnum 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
+  /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
   ///
   /// The center of the line segment is colored in the diagram above to
   /// highlight the join, but in normal usage the join is the same color as the
@@ -895,7 +895,7 @@ enum StrokeJoin {
 
   /// Joins between line segments are semi-circular.
   ///
-  /// {@animation joinRoundEnum 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/round_join.mp4}
+  /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/round_join.mp4}
   ///
   /// The center of the line segment is colored in the diagram above to
   /// highlight the join, but in normal usage the join is the same color as the
@@ -910,7 +910,7 @@ enum StrokeJoin {
   /// Joins between line segments connect the corners of the butt ends of the
   /// line segments to give a beveled appearance.
   ///
-  /// {@animation joinBevelEnum 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/bevel_join.mp4}
+  /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/bevel_join.mp4}
   ///
   /// The center of the line segment is colored in the diagram above to
   /// highlight the join, but in normal usage the join is the same color as the
@@ -1209,11 +1209,11 @@ class Paint {
   ///
   /// Some examples of joins:
   ///
-  /// {@animation joinMiterStrokeJoin 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
+  /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
   ///
-  /// {@animation joinRoundStrokeJoin 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/round_join.mp4}
+  /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/round_join.mp4}
   ///
-  /// {@animation joinBevelStrokeJoin 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/bevel_join.mp4}
+  /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/bevel_join.mp4}
   ///
   /// The centers of the line segments are colored in the diagrams above to
   /// highlight the joins, but in normal usage the join is the same color as the
@@ -1248,11 +1248,11 @@ class Paint {
   /// Defaults to 4.0.  Using zero as a limit will cause a [StrokeJoin.bevel]
   /// join to be used all the time.
   ///
-  /// {@animation joinMiter0Limit 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_0_join.mp4}
+  /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_0_join.mp4}
   ///
-  /// {@animation joinMiter4Limit 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
+  /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_4_join.mp4}
   ///
-  /// {@animation joinMiter6Limit 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_6_join.mp4}
+  /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/dart-ui/miter_6_join.mp4}
   ///
   /// The centers of the line segments are colored in the diagrams above to
   /// highlight the joins, but in normal usage the join is the same color as the
@@ -1503,6 +1503,7 @@ class _ImageInfo {
 ///
 /// To draw an [Image], use one of the methods on the [Canvas] class, such as
 /// [Canvas.drawImage].
+@pragma('vm:entry-point')
 class Image extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -1550,6 +1551,7 @@ typedef ImageDecoderCallback = void Function(Image result);
 ///
 /// To obtain an instance of the [FrameInfo] interface, see
 /// [Codec.getNextFrame].
+@pragma('vm:entry-point')
 class FrameInfo extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -1568,6 +1570,7 @@ class FrameInfo extends NativeFieldWrapperClass2 {
 }
 
 /// A handle to an image codec.
+@pragma('vm:entry-point')
 class Codec extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -1606,22 +1609,32 @@ class Codec extends NativeFieldWrapperClass2 {
 /// Instantiates an image codec [Codec] object.
 ///
 /// [list] is the binary image data (e.g a PNG or GIF binary data).
-/// The data can be for either static or animated images.
+/// The data can be for either static or animated images. The following image
+/// formats are supported: {@macro flutter.dart:ui.imageFormats}
 ///
-/// The following image formats are supported: {@macro flutter.dart:ui.imageFormats}
+/// The [decodedCacheRatioCap] is the default maximum multiple of the compressed
+/// image size to cache when decoding animated image frames. For example,
+/// setting this to `2.0` means that a 400KB GIF would be allowed at most to use
+/// 800KB of memory caching unessential decoded frames. Caching decoded frames
+/// saves CPU but can result in out-of-memory crashes when decoding large (or
+/// multiple) animated images. Note that GIFs are highly compressed, and it's
+/// unlikely that a factor that low will be sufficient to cache all decoded
+/// frames. The default value is `25.0`.
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
-Future<Codec> instantiateImageCodec(Uint8List list) {
+Future<Codec> instantiateImageCodec(Uint8List list, {
+  double decodedCacheRatioCap = double.infinity,
+}) {
   return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null)
+    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, decodedCacheRatioCap),
   );
 }
 
 /// Instantiates a [Codec] object for an image binary data.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo)
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1646,17 +1659,26 @@ Future<Null> _decodeImageFromListAsync(Uint8List list,
 /// [rowBytes] is the number of bytes consumed by each row of pixels in the
 /// data buffer.  If unspecified, it defaults to [width] multipled by the
 /// number of bytes per pixel in the provided [format].
+///
+/// The [decodedCacheRatioCap] is the default maximum multiple of the compressed
+/// image size to cache when decoding animated image frames. For example,
+/// setting this to `2.0` means that a 400KB GIF would be allowed at most to use
+/// 800KB of memory caching unessential decoded frames. Caching decoded frames
+/// saves CPU but can result in out-of-memory crashes when decoding large (or
+/// multiple) animated images. Note that GIFs are highly compressed, and it's
+/// unlikely that a factor that low will be sufficient to cache all decoded
+/// frames. The default value is `25.0`.
 void decodeImageFromPixels(
   Uint8List pixels,
   int width,
   int height,
   PixelFormat format,
   ImageDecoderCallback callback,
-  {int rowBytes}
+  {int rowBytes, double decodedCacheRatioCap = double.infinity}
 ) {
   final _ImageInfo imageInfo = new _ImageInfo(width, height, format.index, rowBytes);
   final Future<Codec> codecFuture = _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo)
+    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap)
   );
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));
@@ -1742,6 +1764,15 @@ enum PathOperation {
   reverseDifference,
 }
 
+/// A handle for the framework to hold and retain an engine layer across frames.
+@pragma('vm:entry-point')
+class EngineLayer extends NativeFieldWrapperClass2 {
+  /// This class is created by the engine, and should not be instantiated
+  /// or extended directly.
+  @pragma('vm:entry-point')
+  EngineLayer._();
+}
+
 /// A complex, one-dimensional subset of a plane.
 ///
 /// A path consists of a number of subpaths, and a _current point_.
@@ -1759,6 +1790,7 @@ enum PathOperation {
 ///
 /// Paths can be drawn on canvases using [Canvas.drawPath], and can
 /// used to create clip regions using [Canvas.clipPath].
+@pragma('vm:entry-point')
 class Path extends NativeFieldWrapperClass2 {
   /// Create a new empty [Path] object.
   @pragma('vm:entry-point')
@@ -3553,6 +3585,7 @@ class Canvas extends NativeFieldWrapperClass2 {
 /// A [Picture] can be placed in a [Scene] using a [SceneBuilder], via
 /// the [SceneBuilder.addPicture] method. A [Picture] can also be
 /// drawn into a [Canvas], using the [Canvas.drawPicture] method.
+@pragma('vm:entry-point')
 class Picture extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -3610,6 +3643,217 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   ///
   /// Returns null if the PictureRecorder is not associated with a canvas.
   Picture endRecording() native 'PictureRecorder_endRecording';
+}
+
+/// A single shadow.
+///
+/// Multiple shadows are stacked together in a [TextStyle].
+class Shadow {
+  /// Construct a shadow.
+  ///
+  /// The default shadow is a black shadow with zero offset and zero blur.
+  /// Default shadows should be completely covered by the casting element,
+  /// and not be visble.
+  ///
+  /// Transparency should be adjusted through the [color] alpha.
+  ///
+  /// Shadow order matters due to compositing multiple translucent objects not
+  /// being commutative.
+  const Shadow({
+    this.color = const Color(_kColorDefault),
+    this.offset = Offset.zero,
+    this.blurRadius = 0.0,
+  }) : assert(color != null, 'Text shadow color was null.'),
+       assert(offset != null, 'Text shadow offset was null.'),
+       assert(blurRadius >= 0.0, 'Text shadow blur radius should be non-negative.');
+
+  static const int _kColorDefault = 0xFF000000;
+  // Constants for shadow encoding.
+  static const int _kBytesPerShadow = 16;
+  static const int _kColorOffset = 0 << 2;
+  static const int _kXOffset = 1 << 2;
+  static const int _kYOffset = 2 << 2;
+  static const int _kBlurOffset = 3 << 2;
+
+  /// Color that the shadow will be drawn with.
+  ///
+  /// The shadows are shapes composited directly over the base canvas, and do not
+  /// represent optical occlusion.
+  final Color color;
+
+  /// The displacement of the shadow from the casting element.
+  ///
+  /// Positive x/y offsets will shift the shadow to the right and down, while
+  /// negative offsets shift the shadow to the left and up. The offsets are
+  /// relative to the position of the element that is casting it.
+  final Offset offset;
+
+  /// The standard deviation of the Gaussian to convolve with the shadow's shape.
+  final double blurRadius;
+
+  /// Converts a blur radius in pixels to sigmas.
+  ///
+  /// See the sigma argument to [MaskFilter.blur].
+  ///
+  // See SkBlurMask::ConvertRadiusToSigma().
+  // <https://github.com/google/skia/blob/bb5b77db51d2e149ee66db284903572a5aac09be/src/effects/SkBlurMask.cpp#L23>
+  static double convertRadiusToSigma(double radius) {
+    return radius * 0.57735 + 0.5;
+  }
+
+  /// The [blurRadius] in sigmas instead of logical pixels.
+  ///
+  /// See the sigma argument to [MaskFilter.blur].
+  double get blurSigma => convertRadiusToSigma(blurRadius);
+
+  /// Create the [Paint] object that corresponds to this shadow description.
+  ///
+  /// The [offset] is not represented in the [Paint] object.
+  /// To honor this as well, the shape should be translated by [offset] before
+  /// being filled using this [Paint].
+  ///
+  /// This class does not provide a way to disable shadows to avoid inconsistencies
+  /// in shadow blur rendering, primarily as a method of reducing test flakiness.
+  /// [toPaint] should be overriden in subclasses to provide this functionality.
+  Paint toPaint() {
+    return Paint()
+      ..color = color
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, blurSigma);
+  }
+
+  /// Returns a new shadow with its [offset] and [blurRadius] scaled by the given
+  /// factor.
+  Shadow scale(double factor) {
+    return Shadow(
+      color: color,
+      offset: offset * factor,
+      blurRadius: blurRadius * factor,
+    );
+  }
+
+  /// Linearly interpolate between two shadows.
+  ///
+  /// If either shadow is null, this function linearly interpolates from a
+  /// a shadow that matches the other shadow in color but has a zero
+  /// offset and a zero blurRadius.
+  ///
+  /// {@template dart.ui.shadow.lerp}
+  /// The `t` argument represents position on the timeline, with 0.0 meaning
+  /// that the interpolation has not started, returning `a` (or something
+  /// equivalent to `a`), 1.0 meaning that the interpolation has finished,
+  /// returning `b` (or something equivalent to `b`), and values in between
+  /// meaning that the interpolation is at the relevant point on the timeline
+  /// between `a` and `b`. The interpolation can be extrapolated beyond 0.0 and
+  /// 1.0, so negative values and values greater than 1.0 are valid (and can
+  /// easily be generated by curves such as [Curves.elasticInOut]).
+  ///
+  /// Values for `t` are usually obtained from an [Animation<double>], such as
+  /// an [AnimationController].
+  /// {@endtemplate}
+  static Shadow lerp(Shadow a, Shadow b, double t) {
+    assert(t != null);
+    if (a == null && b == null)
+      return null;
+    if (a == null)
+      return b.scale(t);
+    if (b == null)
+      return a.scale(1.0 - t);
+    return Shadow(
+      color: Color.lerp(a.color, b.color, t),
+      offset: Offset.lerp(a.offset, b.offset, t),
+      blurRadius: lerpDouble(a.blurRadius, b.blurRadius, t),
+    );
+  }
+
+  /// Linearly interpolate between two lists of shadows.
+  ///
+  /// If the lists differ in length, excess items are lerped with null.
+  ///
+  /// {@macro dart.ui.shadow.lerp}
+  static List<Shadow> lerpList(List<Shadow> a, List<Shadow> b, double t) {
+    assert(t != null);
+    if (a == null && b == null)
+      return null;
+    a ??= <Shadow>[];
+    b ??= <Shadow>[];
+    final List<Shadow> result = <Shadow>[];
+    final int commonLength = math.min(a.length, b.length);
+    for (int i = 0; i < commonLength; i += 1)
+      result.add(Shadow.lerp(a[i], b[i], t));
+    for (int i = commonLength; i < a.length; i += 1)
+      result.add(a[i].scale(1.0 - t));
+    for (int i = commonLength; i < b.length; i += 1)
+      result.add(b[i].scale(t));
+    return result;
+  }
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other))
+      return true;
+    if (other is! Shadow)
+      return false;
+    final Shadow typedOther = other;
+    return color == typedOther.color &&
+           offset == typedOther.offset &&
+           blurRadius == typedOther.blurRadius;
+  }
+
+  @override
+  int get hashCode => hashValues(color, offset, blurRadius);
+
+  /// Determines if lists [a] and [b] are deep equivalent.
+  ///
+  /// Returns true if the lists are both null, or if they are both non-null, have
+  /// the same length, and contain the same Shadows in the same order. Returns
+  /// false otherwise.
+  static bool _shadowsListEquals(List<Shadow> a, List<Shadow> b) {
+    // Compare _shadows
+    if (a == null)
+      return b == null;
+    if (b == null || a.length != b.length)
+      return false;
+    for (int index = 0; index < a.length; ++index)
+      if (a[index] != b[index])
+        return false;
+    return true;
+  }
+
+  // Serialize [shadows] into ByteData. The format is a single uint_32_t at
+  // the beginning indicating the number of shadows, followed by _kBytesPerShadow
+  // bytes for each shadow.
+  static ByteData _encodeShadows(List<Shadow> shadows) {
+    if (shadows == null)
+      return ByteData(0);
+
+    final int byteCount = shadows.length * _kBytesPerShadow;
+    final ByteData shadowsData = ByteData(byteCount);
+
+    int shadowOffset = 0;
+    for (int shadowIndex = 0; shadowIndex < shadows.length; ++shadowIndex) {
+      final Shadow shadow = shadows[shadowIndex];
+      if (shadow == null)
+        continue;
+      shadowOffset = shadowIndex * _kBytesPerShadow;
+
+      shadowsData.setInt32(_kColorOffset + shadowOffset,
+        shadow.color.value ^ Shadow._kColorDefault, _kFakeHostEndian);
+
+      shadowsData.setFloat32(_kXOffset + shadowOffset,
+        shadow.offset.dx, _kFakeHostEndian);
+
+      shadowsData.setFloat32(_kYOffset + shadowOffset,
+        shadow.offset.dy, _kFakeHostEndian);
+
+      shadowsData.setFloat32(_kBlurOffset + shadowOffset,
+        shadow.blurRadius, _kFakeHostEndian);
+    }
+
+    return shadowsData;
+  }
+
+  @override
+  String toString() => 'TextShadow($color, $offset, $blurRadius)';
 }
 
 /// Generic callback signature, used by [_futurize].
