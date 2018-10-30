@@ -119,8 +119,7 @@ class WindowPadding {
 /// An identifier used to select a user's language and formatting preferences.
 ///
 /// This represents a [Unicode Locale
-/// Identifier](https://www.unicode.org/reports/tr35/#Unicode_locale_identifier)
-/// (i.e. without Locale extensions), except variants are not supported.
+/// Identifier](https://www.unicode.org/reports/tr35/#Unicode_locale_identifier).
 ///
 /// Locales are canonicalized according to the "preferred value" entries in the
 /// [IANA Language Subtag
@@ -129,14 +128,10 @@ class WindowPadding {
 /// both have the [languageCode] `he`, because `iw` is a deprecated language
 /// subtag that was replaced by the subtag `he`.
 ///
-/// TODO: evalute using CLDR instead of the IANA registry, and determine whether
-/// there are more replacement reasons that should be grabbed:
-/// https://www.unicode.org/repos/cldr/tags/latest/common/supplemental/supplementalMetadata.xml
-///
 /// When constructed correctly, instances of this Locale class will produce
-/// normalized syntactically valid output, although not necessarily valid (tags
-/// are not validated). See constructor and factory method documentation for
-/// details.
+/// normalized syntactically correct output, although not necessarily valid
+/// (because tags are not validated). See constructor and factory method
+/// documentation for details.
 ///
 /// See also:
 ///
@@ -154,10 +149,17 @@ class Locale {
   /// ```
   ///
   /// The primary language subtag must not be null. The region subtag is
-  /// optional. The values are _case sensitive_, and must match the values
-  /// listed in
-  /// http://unicode.org/repos/cldr/tags/latest/common/validity/language.xml and
-  /// http://unicode.org/repos/cldr/tags/latest/common/validity/region.xml.
+  /// optional.
+  ///
+  /// The subtag values are _case sensitive_ and must be one of the valid
+  /// subtags according to CLDR supplemental data:
+  /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
+  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml). The
+  /// primary language subtag must be at least two and at most eight lowercase
+  /// letters, but not four letters. The region region subtag must be two
+  /// uppercase letters or three digits. See the [Unicode Language
+  /// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier)
+  /// specification.
   ///
   /// This method only produces standards-compliant instances if valid language
   /// and country codes are provided. Deprecated subtags will be replaced, but
@@ -200,7 +202,9 @@ class Locale {
        _languageCode = languageCode,
        assert(scriptCode != ''),
        assert(countryCode != ''),
-       _countryCode = countryCode;
+       _countryCode = countryCode,
+       _variants = null,
+       _extensions = null;
 
   // Creates a new Locale object with the specified parts.
   //
@@ -215,44 +219,20 @@ class Locale {
   //   keys must be present, with an empty string as value, if there are any
   //   subtags for those singletons. Takes ownership of the LinkedHashMap.
   Locale._internal(
-    String language, {
-    String script,
-    String region,
+    String languageCode, {
+    this.scriptCode,
+    String countryCode,
     List<String> variants,
     collection.LinkedHashMap<String, String> extensions,
-  }) : assert(language != null),
-       assert(language.length >= 2 && language.length <= 8),
-       assert(language.length != 4),
-       assert(script == null || script.length == 4),
-       assert(region == null || (region.length >= 2 && region.length <= 3)),
-       _languageCode = language,
-       _scriptCode = script,
-       _countryCode = region,
-      _variants = (variants != null && variants.length > 0) ? List<String>.unmodifiable(variants) : null,
+  }) : assert(languageCode != null),
+       assert(languageCode.length >= 2 && languageCode.length <= 8),
+       assert(languageCode.length != 4),
+       assert(scriptCode == null || scriptCode.length == 4),
+       assert(countryCode == null || (countryCode.length >= 2 && countryCode.length <= 3)),
+       _languageCode = languageCode,
+       _countryCode = countryCode,
+      _variants = (variants != null && variants.isNotEmpty) ? List<String>.unmodifiable(variants) : null,
        _extensions = (extensions != null && extensions.isNotEmpty) ? extensions : null;
-
-  // TODO: unit-test this, pick the right name, make it public, update this
-  // documentation.
-  //
-  // TODO: might we prefer constructing with a single string as "variants"
-  // rather than a list of strings?
-  //
-  // TODO: this constructor modifies the list passed to variants.Is this the
-  // right design? "We mutate what you give us!" feels bad.
-  //
-  // Extensions are not yet supported by this constructor, it would require
-  // first finalizing the design of the extensions map we wish to expose.
-  factory Locale._fromComponents({
-    String language,
-    String script,
-    String region,
-    List<String> variants,
-  }) {
-    if (variants != null) {
-      variants.sort();
-    }
-    return Locale._internal(language, script: script, region: region, variants: variants);
-  }
 
   static final RegExp _reSep = RegExp(r'[-_]');
 
@@ -332,8 +312,8 @@ class Locale {
     variants.sort();
     return Locale._internal(
         language,
-        script: script,
-        region: region,
+        scriptCode: script,
+        countryCode: region,
         variants: variants,
         extensions: extensions,
     );
@@ -346,7 +326,7 @@ class Locale {
   static void _parseExtensions(List<String> localeSubtags,
                                collection.LinkedHashMap<String, String> extensions,
                                List<String> problems) {
-    Map<String, String> ext = {};
+    final Map<String, String> ext = <String, String>{};
     while (localeSubtags.isNotEmpty) {
       final String singleton = localeSubtags.removeAt(0);
       if (singleton == 'u') {
@@ -464,8 +444,7 @@ class Locale {
         problems.add('invalid subtag, should be singleton: "$singleton"');
       }
     }
-    List<String> ks = ext.keys.toList();
-    ks.sort();
+    final List<String> ks = ext.keys.toList()..sort();
     for (String k in ks) {
       extensions[k] = ext[k];
     }
@@ -486,13 +465,13 @@ class Locale {
   /// [languageCode] `he`, because `iw` is a deprecated language subtag that was
   /// replaced by the subtag `he`.
   ///
-  /// New deprecations in the registry are not automatically picked up by this
-  /// library, so this class will not make such changes for deprecations that
-  /// are too recent.
-  ///
   /// This must be a valid Unicode Language subtag as listed in [Unicode CLDR
   /// supplemental
   /// data](http://unicode.org/cldr/latest/common/validity/language.xml).
+  ///
+  /// New deprecations in the registry are not automatically picked up by this
+  /// library, so this class will not make such changes for deprecations that
+  /// are too recent.
   ///
   /// See also:
   ///
@@ -729,7 +708,7 @@ class Locale {
 
     for (MapEntry<String, String> entry in extensions.entries) {
       if (entry.key.length == 1) {
-        int letter = entry.key.codeUnitAt(0) - 0x61;  // Subtracting 'a'
+        final int letter = entry.key.codeUnitAt(0) - 0x61;  // Subtracting 'a'
         if (letter < 0 || letter >= 26) {
           throw UnimplementedError('Unexpected key in extensions map: $entry');
         } else if (letter < 19) {  // 'a' to 's' (19th letter)
@@ -796,7 +775,7 @@ class Locale {
     if (s.length < minLength || s.length > maxLength)
       return false;
     for (int i = 0; i < s.length; i++) {
-      int char = s.codeUnitAt(i);
+      final int char = s.codeUnitAt(i);
       // 0-9: 0x30-0x39.
       if (char ^ 0x30 <= 9)
         continue;
@@ -813,7 +792,7 @@ class Locale {
     if (s.length < minLength || s.length > maxLength)
       return false;
     for (int i = 0; i < s.length; i++) {
-      int char = s.codeUnitAt(i);
+      final int char = s.codeUnitAt(i);
       // a-z: 0x61-0x7A
       if ((char - 0x61) & 0xFFFF >= 26)
         return false;
@@ -828,7 +807,7 @@ class Locale {
     for (int i = 0; i < s.length; i++) {
       // codeUnitAt returns a 16-bit number. Dart's default implementation has
       // 64-bit ints, so this will be a positive number.
-      int char = s.codeUnitAt(i);
+      final int char = s.codeUnitAt(i);
       // 0-9: 0x30-0x39.
       if (char ^ 0x30 > 9)
         return false;
@@ -888,8 +867,8 @@ class Locale {
     // package:collection. Variants and extensions are rare, so we convert them
     // to canonical/normalized strings for comparison.
     return languageCode == typedOther.languageCode
-        && countryCode == typedOther.countryCode
         && scriptCode == typedOther.scriptCode
+        && countryCode == typedOther.countryCode
         && _listEquals<String>(_variants, typedOther._variants)
         && _mapEquals<String, String>(_extensions, typedOther._extensions);
   }
@@ -1362,7 +1341,6 @@ class Window {
     if (error != null)
       throw new Exception(error);
   }
-
   String _sendPlatformMessage(String name,
                               PlatformMessageResponseCallback callback,
                               ByteData data) native 'Window_sendPlatformMessage';
