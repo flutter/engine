@@ -34,6 +34,12 @@ enum PointerChange {
 
   /// The pointer has stopped making contact with the device.
   up,
+
+  /// The pointer data has changed.
+  ///
+  /// This event is sent on Android for non-primary pointers when their position,
+  /// pressure or other data change.
+  update,
 }
 
 /// The kind of pointer device.
