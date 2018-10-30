@@ -670,9 +670,6 @@ class Locale {
   //   value.
   final collection.LinkedHashMap<String, String> _extensions;
 
-  // TMP FIXME
-  collection.LinkedHashMap<String, String> get myexthelper => _extensions;
-
   // Produces the Unicode BCP47 Locale Identifier for this locale.
   //
   // If the unnamed constructor was used with bad parameters, the result might

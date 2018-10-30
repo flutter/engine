@@ -9,61 +9,30 @@ import 'package:test/test.dart';
 void main() {
   test('Locale', () {
     final Null $null = null;
-    expect(
-      const Locale('en').toString(),
-      'en',
-    );
-    expect(
-      const Locale('en'),
-      new Locale('en', $null),
-    );
-    expect(
-      const Locale('en').hashCode,
-      new Locale('en', $null).hashCode,
-    );
-
-    expect(
-      const Locale('en'),
-      isNot(new Locale('en', '')),
+    expect(const Locale('en').toString(), 'en');
+    expect(const Locale('en'), new Locale('en', $null));
+    expect(const Locale('en').hashCode, new Locale('en', $null).hashCode);
+    expect(const Locale('en'), isNot(new Locale('en', '')),
       reason: 'Legacy. (The semantic difference between Locale("en") and '
-          'Locale("en", "") is not defined.)',
-    );
-    expect(
-      const Locale('en').hashCode,
-      isNot(new Locale('en', '').hashCode),
+          'Locale("en", "") is not defined.)');
+    expect(const Locale('en').hashCode, isNot(new Locale('en', '').hashCode),
       reason: 'Legacy. (The semantic difference between Locale("en") and '
-          'Locale("en", "") is not defined.)',
-    );
-    expect(
-      const Locale('en', 'US').toString(),
-      'en_US',
+          'Locale("en", "") is not defined.)');
+    expect(const Locale('en', 'US').toString(), 'en_US',
       reason: 'Legacy. en_US is a valid Unicode Locale Identifier, but '
-          'not a valid Unicode BCP47 Locale Identifier.',
-    );
-    expect(
-      const Locale('en', 'US').toLanguageTag(),
-      'en-US',
-      reason: 'Unicode BCP47 Locale Identifier, as recommended for general '
-          'interchange.',
-    );
-
-    expect(
-      const Locale('iw').toString(),
-      'he',
-      reason: 'The language code for Hebrew was officially changed in 1989.',
-    );
-    expect(
-      const Locale('iw', 'DD').toString(),
-      'he_DE',
+          'not a valid Unicode BCP47 Locale Identifier.');
+    expect(const Locale('iw').toString(), 'he',
+      reason: 'The language code for Hebrew was officially changed in 1989.');
+    expect(const Locale('iw', 'DD').toString(), 'he_DE',
       reason: 'Legacy. This is a valid Unicode Locale Identifier, even if '
-          'not a valid Unicode BCP47 Locale Identifier',
-    );
-    expect(
-      const Locale('iw', 'DD'),
-      const Locale('he', 'DE'),
+          'not a valid Unicode BCP47 Locale Identifier');
+    expect(const Locale('iw', 'DD'), const Locale('he', 'DE'),
       reason: 'The German Democratic Republic ceased to exist in '
-          'October 1990.',
-    );
+          'October 1990.');
+
+    expect(const Locale('en', 'US').toLanguageTag(), 'en-US',
+      reason: 'Unicode BCP47 Locale Identifier, as recommended for general '
+          'interchange.');
   });
 
   test('Locale unnamed constructor idiosyncrasies', () {
@@ -130,6 +99,32 @@ void main() {
           'Only validation against CLDR validity data would show "true" is '
           'not a valid value for "nu".',
     );
+  });
+
+  test('Locale.fromSubtags', () {
+    expect(const Locale.fromSubtags().languageCode, 'und');
+    expect(const Locale.fromSubtags().scriptCode, null);
+    expect(const Locale.fromSubtags().countryCode, null);
+
+    expect(const Locale.fromSubtags(languageCode: 'en').toString(), 'en');
+    expect(const Locale.fromSubtags(languageCode: 'en').languageCode, 'en');
+    expect(const Locale.fromSubtags(scriptCode: 'Latn').toString(), 'und_Latn');
+    expect(const Locale.fromSubtags(scriptCode: 'Latn').scriptCode, 'Latn');
+    expect(const Locale.fromSubtags(countryCode: 'US').toString(), 'und_US');
+    expect(const Locale.fromSubtags(countryCode: 'US').countryCode, 'US');
+
+    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').toString(), 'es_419');
+    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').languageCode, 'es');
+    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').countryCode, '419');
+
+    expect(Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN').toString(), 'zh_Hans_CN');
+  });
+
+  test('Locale equality: fromSubtags', () {
+    expect(Locale.fromSubtags(languageCode: 'en'),
+           isNot(Locale.fromSubtags(languageCode: 'en', scriptCode: 'Latn')));
+    expect(Locale.fromSubtags(languageCode: 'en').hashCode,
+           isNot(Locale.fromSubtags(languageCode: 'en', scriptCode: 'Latn').hashCode));
   });
 
   group('Locale.parse():', () {
@@ -352,103 +347,75 @@ void main() {
         reason: 'Swapping region and script is not allowed.',
       );
     });
-  });
 
-  test('Equality.', () {
-    expect(
-      Locale.parse('en'),
-      isNot(Locale.parse('en-Latn')),
-    );
-    expect(
-      Locale.parse('en').hashCode,
-      isNot(Locale.parse('en-Latn').hashCode),
-    );
+    test('Locale equality.', () {
+      expect(
+        Locale.parse('en'),
+        isNot(Locale.parse('en-Latn')),
+      );
+      expect(
+        Locale.parse('en').hashCode,
+        isNot(Locale.parse('en-Latn').hashCode),
+      );
 
-    expect(
-      Locale.parse('en'),
-      isNot(Locale.parse('en-US')),
-    );
-    expect(
-      Locale.parse('en').hashCode,
-      isNot(Locale.parse('en-US').hashCode),
-    );
+      expect(
+        Locale.parse('en'),
+        isNot(Locale.parse('en-US')),
+      );
+      expect(
+        Locale.parse('en').hashCode,
+        isNot(Locale.parse('en-US').hashCode),
+      );
 
-    expect(
-      Locale.parse('en'),
-      isNot(Locale.parse('en-fonipa')),
-    );
-    expect(
-      Locale.parse('en').hashCode,
-      isNot(Locale.parse('en-fonipa').hashCode),
-    );
+      expect(
+        Locale.parse('en'),
+        isNot(Locale.parse('en-fonipa')),
+      );
+      expect(
+        Locale.parse('en').hashCode,
+        isNot(Locale.parse('en-fonipa').hashCode),
+      );
 
-    expect(Locale.parse('en'), isNot(Locale.parse('en-a')));
-    expect(
-      Locale.parse('en').hashCode,
-      isNot(Locale.parse('en-a').hashCode),
-    );
+      expect(Locale.parse('en'), isNot(Locale.parse('en-a')));
+      expect(
+        Locale.parse('en').hashCode,
+        isNot(Locale.parse('en-a').hashCode),
+      );
 
-    expect(Locale.parse('en'), isNot(Locale.parse('en-a')));
-    expect(
-      Locale.parse('en').hashCode,
-      isNot(Locale.parse('en-a').hashCode),
-    );
+      expect(Locale.parse('en'), isNot(Locale.parse('en-a')));
+      expect(
+        Locale.parse('en').hashCode,
+        isNot(Locale.parse('en-a').hashCode),
+      );
 
-    expect(
-      Locale.parse('en-u-attr'),
-      isNot(Locale.parse('en-u-nu-roman')),
-    );
-    expect(
-      Locale.parse('en-u-attr').hashCode,
-      isNot(Locale.parse('en-u-nu-roman').hashCode),
-    );
+      expect(
+        Locale.parse('en-u-attr'),
+        isNot(Locale.parse('en-u-nu-roman')),
+      );
+      expect(
+        Locale.parse('en-u-attr').hashCode,
+        isNot(Locale.parse('en-u-nu-roman').hashCode),
+      );
 
-    Locale a = Locale.parse('en-u-kb');
-    Locale b = Locale.parse('en-u-kb-true');
-    expect(
-      a,
-      b,
-      reason: '-u-kb should parse to the same result as -u-kb-true.',
-    );
-    expect(
-      a.hashCode,
-      b.hashCode,
-      reason: '-u-kb should parse to the same result as -u-kb-true. ${a.myexthelper}, ${b.myexthelper}.',
-    );
+      expect(
+        Locale.parse('en-u-kb'),
+        Locale.parse('en-u-kb-true'),
+        reason: '-u-kb should parse to the same result as -u-kb-true.',
+      );
+      expect(
+        Locale.parse('en-u-kb').hashCode,
+        Locale.parse('en-u-kb-true').hashCode,
+        reason: '-u-kb should parse to the same result as -u-kb-true.',
+      );
 
-    expect(
-      Locale.parse('en-t-hi'),
-      isNot(Locale.parse('en-t-hi-h0-hybrid')),
-    );
-    expect(
-      Locale.parse('en-t-hi').hashCode,
-      isNot(Locale.parse('en-t-hi-h0-hybrid').hashCode),
-    );
-  });
-
-  test('Locale.fromSubtags', () {
-    expect(const Locale.fromSubtags().languageCode, 'und');
-    expect(const Locale.fromSubtags().scriptCode, null);
-    expect(const Locale.fromSubtags().countryCode, null);
-
-    expect(const Locale.fromSubtags(languageCode: 'en').toString(), 'en');
-    expect(const Locale.fromSubtags(languageCode: 'en').languageCode, 'en');
-    expect(const Locale.fromSubtags(scriptCode: 'Latn').toString(), 'und_Latn');
-    expect(const Locale.fromSubtags(scriptCode: 'Latn').scriptCode, 'Latn');
-    expect(const Locale.fromSubtags(countryCode: 'US').toString(), 'und_US');
-    expect(const Locale.fromSubtags(countryCode: 'US').countryCode, 'US');
-
-    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').toString(), 'es_419');
-    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').languageCode, 'es');
-    expect(Locale.fromSubtags(languageCode: 'es', countryCode: '419').countryCode, '419');
-
-    expect(Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN').toString(), 'zh_Hans_CN');
-  });
-
-  test('Locale equality', () {
-    expect(Locale.fromSubtags(languageCode: 'en'),
-           isNot(Locale.fromSubtags(languageCode: 'en', scriptCode: 'Latn')));
-    expect(Locale.fromSubtags(languageCode: 'en').hashCode,
-           isNot(Locale.fromSubtags(languageCode: 'en', scriptCode: 'Latn').hashCode));
+      expect(
+        Locale.parse('en-t-hi'),
+        isNot(Locale.parse('en-t-hi-h0-hybrid')),
+      );
+      expect(
+        Locale.parse('en-t-hi').hashCode,
+        isNot(Locale.parse('en-t-hi-h0-hybrid').hashCode),
+      );
+    });
   });
 }
