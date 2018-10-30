@@ -213,11 +213,11 @@ class Locale {
   // way or do any syntax checking.
   //
   // * language, script and region must be in normalized form.
-  // * variants must already be sorted, with each subtag in normalized form.
-  // * Iterating over variants must provide variants in alphabetical order.
+  // * variants need not be sorted, this constructor performs sorting. Each
+  //   variant subtag should already be in normalized form though.
   // * The extensions map must contain only valid key/value pairs. "u" and "t"
   //   keys must be present, with an empty string as value, if there are any
-  //   subtags for those singletons. Takes ownership of the LinkedHashMap.
+  //   subtags for those singletons.
   Locale._internal(
     String languageCode, {
     this.scriptCode,
@@ -231,8 +231,18 @@ class Locale {
        assert(countryCode == null || (countryCode.length >= 2 && countryCode.length <= 3)),
        _languageCode = languageCode,
        _countryCode = countryCode,
-      _variants = (variants != null && variants.isNotEmpty) ? List<String>.unmodifiable(variants) : null,
-       _extensions = (extensions != null && extensions.isNotEmpty) ? extensions : null;
+       _variants = (variants != null && variants.isNotEmpty) ? List<String>.from(variants) : null,
+       _extensions = (extensions != null && extensions.isNotEmpty) ? <String, String>{} : null
+  {
+    _variants?.sort();
+    if (extensions != null) {
+      // Insert extensions in sorted order.
+      final List<String> keys = extensions.keys.toList()..sort();
+      for (String key in keys) {
+        _extensions[key] = extensions[key];
+      }
+    }
+  }
 
   static final RegExp _reSep = RegExp(r'[-_]');
 
@@ -253,8 +263,7 @@ class Locale {
     final List<String> localeSubtags = localeId.split(_reSep);
     String language, script, region;
     final List<String> variants = <String>[];
-    final collection.LinkedHashMap<String, String> extensions =
-        collection.LinkedHashMap<String, String>();
+    final Map<String, String> extensions = <String, String>{};
 
     final List<String> problems = <String>[];
     if (_isAlphabetic(localeSubtags[0], 2, 8)
@@ -309,7 +318,6 @@ class Locale {
                             '${problems.join("; ")}.');
     }
 
-    variants.sort();
     return Locale._internal(
         language,
         scriptCode: script,
