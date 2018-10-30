@@ -120,16 +120,16 @@ int hashList(Iterable<Object> arguments) {
   return _Jenkins.finish(result);
 }
 
-/// Combine the [Object.hashCode] values of an arbitrary number of  from
-/// an [Iterable] into one value. This function will return the same value if
-/// given null as if given an empty list.
+/// Combine the [Object.hashCode] values of an arbitrary number of key and value
+/// objects from a [Map] into one value. This function will return the same
+/// value if given null as if given an empty map.
 int hashMap(Map<Object, Object> map) {
   int result = 0;
   if (map != null) {
-    // FIXME: sort the keys for deterministic iteration order.
-    for (MapEntry<Object, Object> entry in map.entries) {
-      result = _Jenkins.combine(result, entry.key);
-      result = _Jenkins.combine(result, entry.value);
+    final List<Object> keys = map.keys.toList()..sort();
+    for (Object key in keys) {
+      result = _Jenkins.combine(result, key);
+      result = _Jenkins.combine(result, map[key]);
     }
   }
   return _Jenkins.finish(result);
