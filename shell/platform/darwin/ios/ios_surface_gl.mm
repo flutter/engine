@@ -55,7 +55,12 @@ bool IOSSurfaceGL::GLContextClearCurrent() {
 
 bool IOSSurfaceGL::GLContextPresent() {
   TRACE_EVENT0("flutter", "IOSSurfaceGL::GLContextPresent");
-  return IsValid() ? context_.PresentRenderBuffer() : false;
+  if (!IsValid() || !context_.PresentRenderBuffer()) {
+    return false;
+  }
+
+  GetPlatformViewsController().Present();
+  return true;
 }
 
 flow::ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {

@@ -66,8 +66,6 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
                flutterView:flutter_view_] autorelease];
   views_[viewId] = fml::scoped_nsobject<FlutterTouchInterceptingView>([view retain]);
 
-  UIView* flutter_view = flutter_view_.get();
-  [flutter_view addSubview:views_[viewId].get()];
   result(nil);
 }
 
@@ -127,6 +125,28 @@ void FlutterPlatformViewsController::CompositeEmbeddedView(int view_id,
 
   UIView* view = views_[view_id];
   [view setFrame:rect];
+  composition_order_.push_back(view_id);
+}
+
+void FlutterPlatformViewsController::Present() {
+  if (composition_order_ == active_composition_order_) {
+    composition_order_.clear();
+    return;
+  }
+  UIView* flutter_view = flutter_view_.get();
+
+  for (UIView* sub_view in [flutter_view subviews]) {
+    [sub_view removeFromSuperview];
+  }
+
+  active_composition_order_.clear();
+  for (size_t i = 0; i < composition_order_.size(); i++) {
+    int view_id = composition_order_[i];
+    [flutter_view addSubview:views_[view_id].get()];
+    active_composition_order_.push_back(view_id);
+  }
+
+  composition_order_.clear();
 }
 
 }  // namespace shell

@@ -123,6 +123,8 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
 
   layer_.get().contents = reinterpret_cast<id>(static_cast<CGImageRef>(pixmap_image));
 
+  GetPlatformViewsController().Present();
+
   return true;
 }
 
