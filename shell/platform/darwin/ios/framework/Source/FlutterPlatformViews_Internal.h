@@ -26,7 +26,7 @@
 
 namespace shell {
 
-class FlutterPlatformViewsController : public flow::ExternalViewEmbedder {
+class FlutterPlatformViewsController {
  public:
   FlutterPlatformViewsController() = default;
 
