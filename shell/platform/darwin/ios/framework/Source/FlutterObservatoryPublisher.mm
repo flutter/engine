@@ -4,11 +4,15 @@
 
 #define FML_USED_ON_EMBEDDER
 
+#import <TargetConditionals.h>
+
 // NSNetService works fine on physical devices, but doesn't expose the services to regular mDNS
 // queries on the Simulator.  We can work around this by using the lower level C API, but that's
 // only available from iOS 9.3+/macOS 10.11.4+.
-#include <dns_sd.h>
-#include <net/if.h>
+#if TARGET_IPHONE_SIMULATOR
+#include <dns_sd.h>  // nogncheck
+#include <net/if.h>  // nogncheck
+#endif               // TARGET_IPHONE_SIMLUATOR
 
 #import "FlutterObservatoryPublisher.h"
 
