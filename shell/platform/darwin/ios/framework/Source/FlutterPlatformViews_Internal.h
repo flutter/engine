@@ -18,8 +18,8 @@
 // This view has 2 roles:
 // 1. Delay or prevent touch events from arriving the embedded view.
 // 2. Dispatching all events that are hittested to the embedded view to the FlutterView.
-@interface TouchInterceptingView : UIView
-- (instancetype)initWithSubView:(UIView*)embeddedView flutterView:(UIView*)flutterView;
+@interface FlutterTouchInterceptingView : UIView
+- (instancetype)initWithEmbeddedView:(UIView*)embeddedView flutterView:(UIView*)flutterView;
 
 // Stop delaying any active touch sequence (and let it arrive the embedded view).
 - (void)releaseGesture;
@@ -40,7 +40,7 @@ class FlutterPlatformViewsController : public flow::ExternalViewEmbedder {
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<FlutterView> flutter_view_;
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
-  std::map<int64_t, fml::scoped_nsobject<TouchInterceptingView>> views_;
+  std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView>> views_;
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
   void OnCreate(FlutterMethodCall* call, FlutterResult& result);

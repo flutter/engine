@@ -61,10 +61,10 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   }
 
   // TODO(amirh): decode and pass the creation args.
-  TouchInterceptingView* view = [[[TouchInterceptingView alloc]
-      initWithSubView:[factory createWithFrame:CGRectZero viewIdentifier:viewId arguments:nil]
-          flutterView:flutter_view_] autorelease];
-  views_[viewId] = fml::scoped_nsobject<TouchInterceptingView>([view retain]);
+  FlutterTouchInterceptingView* view = [[[FlutterTouchInterceptingView alloc]
+      initWithEmbeddedView:[factory createWithFrame:CGRectZero viewIdentifier:viewId arguments:nil]
+               flutterView:flutter_view_] autorelease];
+  views_[viewId] = fml::scoped_nsobject<FlutterTouchInterceptingView>([view retain]);
 
   FlutterView* flutter_view = flutter_view_.get();
   [flutter_view addSubview:views_[viewId].get()];
@@ -100,7 +100,7 @@ void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
     return;
   }
 
-  TouchInterceptingView* view = views_[viewId].get();
+  FlutterTouchInterceptingView* view = views_[viewId].get();
   [view releaseGesture];
 
   result(nil);
@@ -154,11 +154,10 @@ void FlutterPlatformViewsController::CompositeEmbeddedView(int view_id,
 - (instancetype)initWithTarget:(id)target flutterView:(UIView*)flutterView;
 @end
 
-@implementation TouchInterceptingView {
-  ForwardingGestureRecognizer* forwardingRecognizer;
-  DelayingGestureRecognizer* delayingRecognizer;
+@implementation FlutterTouchInterceptingView {
+  fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
 }
-- (instancetype)initWithSubView:(UIView*)embeddedView flutterView:(UIView*)flutterView {
+- (instancetype)initWithEmbeddedView:(UIView*)embeddedView flutterView:(UIView*)flutterView {
   self = [super initWithFrame:embeddedView.frame];
   if (self) {
     self.multipleTouchEnabled = YES;
@@ -167,21 +166,20 @@ void FlutterPlatformViewsController::CompositeEmbeddedView(int view_id,
 
     [self addSubview:embeddedView];
 
-    forwardingRecognizer =
+    ForwardingGestureRecognizer* forwardingRecognizer =
         [[[ForwardingGestureRecognizer alloc] initWithTarget:self
                                                  flutterView:flutterView] autorelease];
 
-    delayingRecognizer = [[[DelayingGestureRecognizer alloc] initWithTarget:self
-                                                                     action:nil] autorelease];
+    _delayingRecognizer.reset([[DelayingGestureRecognizer alloc] initWithTarget:self action:nil]);
 
-    [self addGestureRecognizer:delayingRecognizer];
+    [self addGestureRecognizer:_delayingRecognizer.get()];
     [self addGestureRecognizer:forwardingRecognizer];
   }
   return self;
 }
 
 - (void)releaseGesture {
-  delayingRecognizer.state = UIGestureRecognizerStateFailed;
+  _delayingRecognizer.get().state = UIGestureRecognizerStateFailed;
 }
 @end
 
@@ -219,11 +217,16 @@ void FlutterPlatformViewsController::CompositeEmbeddedView(int view_id,
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  self.state = UIGestureRecognizerStateCancelled;
+  self.state = UIGestureRecognizerStateRecognized;
 }
 @end
 
 @implementation ForwardingGestureRecognizer {
+  // We can't dispatch events to the framework without this back pointer.
+  // This is a weak reference, the ForwardingGestureRecognizer is owned by the
+  // FlutterTouchInterceptingView which is strong referenced only by the FlutterView.
+  // So this is safe as when FlutterView is deallocated the reference to ForwardingGestureRecognizer
+  // will go away.
   UIView* _flutterView;
 }
 
@@ -251,7 +254,7 @@ void FlutterPlatformViewsController::CompositeEmbeddedView(int view_id,
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
   [_flutterView touchesCancelled:touches withEvent:event];
-  self.state = UIGestureRecognizerStateCancelled;
+  self.state = UIGestureRecognizerStateRecognized;
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
