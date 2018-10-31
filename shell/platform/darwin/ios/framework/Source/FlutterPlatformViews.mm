@@ -69,11 +69,12 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
     }
   }
 
-  FlutterTouchInterceptingView* view = [[[FlutterTouchInterceptingView alloc]
-      initWithEmbeddedView:[factory createWithFrame:CGRectZero
-                                     viewIdentifier:viewId
-                                          arguments:params]
-               flutterView:flutter_view_] autorelease];
+  UIView* embedded_view = [factory createWithFrame:CGRectZero
+                                    viewIdentifier:viewId
+                                         arguments:params];
+  FlutterTouchInterceptingView* view =
+      [[[FlutterTouchInterceptingView alloc] initWithEmbeddedView:embedded_view
+                                                      flutterView:flutter_view_] autorelease];
   views_[viewId] = fml::scoped_nsobject<FlutterTouchInterceptingView>([view retain]);
 
   result(nil);
