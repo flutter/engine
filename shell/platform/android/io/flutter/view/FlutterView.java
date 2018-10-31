@@ -544,6 +544,8 @@ public class FlutterView extends SurfaceView
                     addPointerForIndex(event, p, kPointerChangeUpdate, packet);
                 }
             }
+            // It's important that we're sending the UP event last. This allows PlatformView
+            // to correctly batch everything back into the original Android event if needed.
             addPointerForIndex(event, event.getActionIndex(), pointerChange, packet);
         } else {
             // ACTION_MOVE may not actually mean all pointers have moved

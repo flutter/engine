@@ -37,8 +37,11 @@ enum PointerChange {
 
   /// The pointer data has changed.
   ///
-  /// This event is sent on Android for non-primary pointers when their position,
-  /// pressure or other data change.
+  /// This event is sent on Android for non-primary pointers when their data
+  /// such as position changes at the same time as the primary pointer changed.
+  /// This event is needed for those situations when we don't know yet whether
+  /// the secondary pointer change was a move or a hover because Android has
+  /// batched it with the primary pointer.
   update,
 }
 
