@@ -54,8 +54,8 @@ void _updateLocales(List<String> locales) {
   window._locales = new List<Locale>(numLocales);
   for (int localeIndex = 0; localeIndex < numLocales; localeIndex++) {
     window._locales[localeIndex] = new Locale.fromSubtags( languageCode: locales[localeIndex * stringsPerLocale],
-                                   countryCode: locales[localeIndex * stringsPerLocale + 1],
-                                   scriptCode: locales[localeIndex * stringsPerLocale + 2]);
+                                   countryCode: locales[localeIndex * stringsPerLocale + 1] == '' ? null : locales[localeIndex * stringsPerLocale + 1],
+                                   scriptCode: locales[localeIndex * stringsPerLocale + 2] == '' ? null : locales[localeIndex * stringsPerLocale + 2]);
   }
   _invoke(window.onLocaleChanged, window._onLocaleChangedZone);
 }
