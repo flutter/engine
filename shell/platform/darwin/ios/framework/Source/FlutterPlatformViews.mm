@@ -135,6 +135,11 @@ void FlutterPlatformViewsController::Present() {
   }
   UIView* flutter_view = flutter_view_.get();
 
+  // This can be more efficient, instead of removing all views and then re-attaching them,
+  // we should only remove the views that has been completly removed from the layer tree, and
+  // reorder the views using UIView's bringSubviewToFront.
+  // TODO(amirh): make this more efficient.
+  // https://github.com/flutter/flutter/issues/23793
   for (UIView* sub_view in [flutter_view subviews]) {
     [sub_view removeFromSuperview];
   }
