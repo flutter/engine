@@ -690,7 +690,7 @@ class Locale {
       out.write('-$v');
     }
     if (_extensions != null && _extensions.isNotEmpty) {
-      out.write(_extensionsToString(_extensions));
+      _extensionsToString(_extensions, out);
     }
     return out.toString();
   }
@@ -700,15 +700,14 @@ class Locale {
   // This covers everything after the unicode_language_id, and returns a string
   // starting with a hyphen. Returns '' if passed null or an empty extensions
   // map.
-  static String _extensionsToString(collection.LinkedHashMap<String, String> extensions) {
-    if (extensions == null || extensions.isEmpty) {
-      return '';
-    }
+  static void _extensionsToString(collection.LinkedHashMap<String, String> extensions, StringBuffer result) {
+    if (extensions == null || extensions.isEmpty)
+      return;
+
     String uAttributes;
     String tLang;
     final StringBuffer uOut = StringBuffer();
     final StringBuffer tOut = StringBuffer();
-    final StringBuffer result = StringBuffer();
     final StringBuffer resultVWYZ = StringBuffer();
 
     for (MapEntry<String, String> entry in extensions.entries) {
@@ -768,7 +767,6 @@ class Locale {
         result.write('-${extensions["x"]}');
       }
     }
-    return result.toString();
   }
 
   // Returns true if s is a string made of lower-case alphabetic characters
