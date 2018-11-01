@@ -541,9 +541,9 @@ public class FlutterView extends SurfaceView
             addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, packet);
         } else if (maskedAction == MotionEvent.ACTION_UP || maskedAction == MotionEvent.ACTION_POINTER_UP) {
             // ACTION_UP and ACTION_POINTER_UP may contain position updates for other pointers.
-            // We are converting these updates to move events here, with extra flag in order to
-            // help the framework reassemble the original Android event later, should it need
-            // to forward it to a PlatformView.
+            // We are converting these updates to move events here in order to preserve this data.
+            // We also mark these events with a flag in order to help the framework reassemble
+            // the original Android event later, should it need to forward it to a PlatformView.
             for (int p = 0; p < pointerCount; p++) {
                 if (p != event.getActionIndex()) {
                     if (event.getToolType(p) == MotionEvent.TOOL_TYPE_FINGER) {
