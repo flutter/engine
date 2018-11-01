@@ -46,7 +46,7 @@ class IOSSurfaceGL : public IOSSurface,
   flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
 
   // |flow::ExternalViewEmbedder|
-  SkCanvas& CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params) override;
+  SkCanvas* CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params) override;
 
  private:
   IOSGLContext context_;

@@ -29,9 +29,10 @@ void PlatformViewLayer::Paint(PaintContext& context) const {
   params.sizePoints = size_;
   params.canvasBaseLayerSize = context.canvas->getBaseLayerSize();
 
-  SkCanvas& canvas =
+  SkCanvas* canvas =
       context.view_embedder->CompositeEmbeddedView(view_id_, params);
-  canvas.concat(context.canvas->getTotalMatrix());
-  context.canvas = &canvas;
+  // TODO(amirh): copy the full canvas state here
+  canvas->concat(context.canvas->getTotalMatrix());
+  context.canvas = canvas;
 }
 }  // namespace flow

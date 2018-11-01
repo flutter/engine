@@ -70,7 +70,7 @@ flow::ExternalViewEmbedder* IOSSurfaceGL::GetExternalViewEmbedder() {
   return this;
 }
 
-SkCanvas& IOSSurfaceGL::CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params) {
+SkCanvas* IOSSurfaceGL::CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   return platform_views_controller->CompositeEmbeddedView(view_id, params, *this);

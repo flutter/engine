@@ -128,7 +128,7 @@ void FlutterPlatformViewsController::RegisterViewFactory(
       fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>([factory retain]);
 }
 
-SkCanvas& FlutterPlatformViewsController::CompositeEmbeddedView(
+SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(
     int view_id,
     const flow::EmbeddedViewParams& params,
     IOSSurface& ios_surface) {
@@ -148,19 +148,19 @@ SkCanvas& FlutterPlatformViewsController::CompositeEmbeddedView(
   composition_frames_.push_back(
       overlays_[view_id]->surface->AcquireFrame(params.canvasBaseLayerSize));
   SkCanvas* canvas = composition_frames_.back()->SkiaCanvas();
-  canvas->clear(SkColorSetARGB(0x00, 0x00, 0x00, 0x00));
-  return *canvas;
+  canvas->clear(SK_ColorTRANSPARENT);
+  return canvas;
 }
 
 bool FlutterPlatformViewsController::Present() {
-  bool retval = true;
+  bool did_submit = true;
   for (size_t i = 0; i < composition_frames_.size(); i++) {
-    retval &= composition_frames_[i]->Submit();
+    did_submit &= composition_frames_[i]->Submit();
   }
   composition_frames_.clear();
   if (composition_order_ == active_composition_order_) {
     composition_order_.clear();
-    return retval;
+    return did_submit;
   }
   UIView* flutter_view = flutter_view_.get();
 
@@ -182,7 +182,7 @@ bool FlutterPlatformViewsController::Present() {
   }
 
   composition_order_.clear();
-  return retval;
+  return did_submit;
 }
 
 void FlutterPlatformViewsController::EnsureOverlayInitialized(int64_t overlay_id) {

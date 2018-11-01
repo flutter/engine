@@ -49,7 +49,7 @@ class FlutterPlatformViewsController {
 
   void RegisterViewFactory(NSObject<FlutterPlatformViewFactory>* factory, NSString* factoryId);
 
-  SkCanvas& CompositeEmbeddedView(int view_id,
+  SkCanvas* CompositeEmbeddedView(int view_id,
                                   const flow::EmbeddedViewParams& params,
                                   IOSSurface& surface);
 

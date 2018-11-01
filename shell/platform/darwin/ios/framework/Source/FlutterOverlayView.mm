@@ -16,6 +16,8 @@
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
+// This is mostly a duplication of FlutterView.
+// TODO(amirh): once GL support is in evaluate if we can merge this with FlutterView.
 @implementation FlutterOverlayView
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -44,7 +46,7 @@
 - (void)layoutSubviews {
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
-    layer.allowsGroupOpacity = YES;
+    layer.allowsGroupOpacity = NO;
     CGFloat screenScale = [UIScreen mainScreen].scale;
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;

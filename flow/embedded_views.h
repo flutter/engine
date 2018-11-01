@@ -27,7 +27,7 @@ class ExternalViewEmbedder {
   ExternalViewEmbedder() = default;
 
   // Must be called on the UI thread.
-  virtual SkCanvas& CompositeEmbeddedView(int view_id,
+  virtual SkCanvas* CompositeEmbeddedView(int view_id,
                                           const EmbeddedViewParams& params) = 0;
 
   virtual ~ExternalViewEmbedder() = default;
