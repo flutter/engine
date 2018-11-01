@@ -527,6 +527,7 @@ public class FlutterView extends SurfaceView
         final int kBytePerField = 8;
 
         // This value must match the value in framework's platform_view.dart.
+        // This flag indicates whether the original Android pointer events were batched together.
         final int kPointerDataFlagBatched = 1;
 
         int pointerCount = event.getPointerCount();
