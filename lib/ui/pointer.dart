@@ -34,15 +34,6 @@ enum PointerChange {
 
   /// The pointer has stopped making contact with the device.
   up,
-
-  /// The pointer data has changed.
-  ///
-  /// This event is sent on Android for non-primary pointers when their data
-  /// such as position changes at the same time as the primary pointer changed.
-  /// This event is needed for those situations when we don't know yet whether
-  /// the secondary pointer change was a move or a hover because Android has
-  /// batched it with the primary pointer.
-  update,
 }
 
 /// The kind of pointer device.
@@ -86,7 +77,8 @@ class PointerData {
     this.radiusMin: 0.0,
     this.radiusMax: 0.0,
     this.orientation: 0.0,
-    this.tilt: 0.0
+    this.tilt: 0.0,
+    this.data: 0,
   });
 
   /// Time of event dispatch, relative to an arbitrary timeline.
@@ -208,6 +200,9 @@ class PointerData {
   /// the stylus is flat on that surface).
   final double tilt;
 
+  /// Opaque platform-specific data associated with the event.
+  final int data;
+
   @override
   String toString() => '$runtimeType(x: $physicalX, y: $physicalY)';
 
@@ -232,7 +227,8 @@ class PointerData {
              'radiusMin: $radiusMin, '
              'radiusMax: $radiusMax, '
              'orientation: $orientation, '
-             'tilt: $tilt'
+             'tilt: $tilt, '
+             'data: $data'
            ')';
   }
 }
