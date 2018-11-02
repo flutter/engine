@@ -78,7 +78,7 @@ class PointerData {
     this.radiusMax: 0.0,
     this.orientation: 0.0,
     this.tilt: 0.0,
-    this.data: 0,
+    this.platformData: 0,
   });
 
   /// Time of event dispatch, relative to an arbitrary timeline.
@@ -201,7 +201,7 @@ class PointerData {
   final double tilt;
 
   /// Opaque platform-specific data associated with the event.
-  final int data;
+  final int platformData;
 
   @override
   String toString() => '$runtimeType(x: $physicalX, y: $physicalY)';
@@ -228,7 +228,7 @@ class PointerData {
              'radiusMax: $radiusMax, '
              'orientation: $orientation, '
              'tilt: $tilt, '
-             'data: $data'
+             'platformData: $platformData'
            ')';
   }
 }

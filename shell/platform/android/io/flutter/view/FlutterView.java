@@ -504,7 +504,7 @@ public class FlutterView extends SurfaceView
             packet.putDouble(0.0); // tilt
         }
 
-        packet.putLong(pointerData); // data
+        packet.putLong(pointerData); // platformData
     }
 
     @Override
