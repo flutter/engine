@@ -327,6 +327,15 @@ class Locale {
     );
   }
 
+  static Locale tryParse(String localeId) {
+    try {
+      final Locale l = parse(localeId);
+      return l;
+    } on Exception {
+      return null;
+    }
+  }
+
   // * All subtags in localeSubtags must already be lowercase.
   //
   // * extensions must be a map with sorted iteration order. LinkedHashMap
