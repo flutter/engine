@@ -176,12 +176,9 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
   bool engine_did_run = false;
 
   fml::AutoResetWaitableEvent sync_run_latch;
-  fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetUITaskRunner(),
-      fml::MakeCopyable([&sync_run_latch, &completion_observer,
-                         engine = shell->GetEngine(),
-                         config = std::move(run_configuration),
-                         &engine_did_run]() mutable {
+  shell->GetTaskRunners().GetUITaskRunner()->RunNowOrPostTask(fml::MakeCopyable(
+      [&sync_run_latch, &completion_observer, engine = shell->GetEngine(),
+       config = std::move(run_configuration), &engine_did_run]() mutable {
         fml::MessageLoop::GetCurrent().AddTaskObserver(
             reinterpret_cast<intptr_t>(&completion_observer),
             [&completion_observer]() { completion_observer.DidProcessTask(); });
@@ -200,6 +197,7 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
         }
         sync_run_latch.Signal();
       }));
+
   sync_run_latch.Wait();
 
   // Run the message loop and wait for the script to do its thing.
@@ -208,13 +206,14 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
   // Cleanup the completion observer synchronously as it is living on the
   // stack.
   fml::AutoResetWaitableEvent latch;
-  fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetUITaskRunner(),
+
+  shell->GetTaskRunners().GetUITaskRunner()->RunNowOrPostTask(
       [&latch, &completion_observer] {
         fml::MessageLoop::GetCurrent().RemoveTaskObserver(
             reinterpret_cast<intptr_t>(&completion_observer));
         latch.Signal();
       });
+
   latch.Wait();
 
   if (!engine_did_run) {

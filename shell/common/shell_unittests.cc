@@ -61,8 +61,9 @@ static bool ValidateShell(Shell* shell) {
 
   {
     fml::AutoResetWaitableEvent latch;
-    fml::TaskRunner::RunNowOrPostTask(
-        shell->GetTaskRunners().GetPlatformTaskRunner(), [shell, &latch]() {
+
+    shell->GetTaskRunners().GetPlatformTaskRunner()->RunNowOrPostTask(
+        [shell, &latch]() {
           shell->GetPlatformView()->NotifyCreated();
           latch.Signal();
         });
@@ -71,8 +72,8 @@ static bool ValidateShell(Shell* shell) {
 
   {
     fml::AutoResetWaitableEvent latch;
-    fml::TaskRunner::RunNowOrPostTask(
-        shell->GetTaskRunners().GetPlatformTaskRunner(), [shell, &latch]() {
+    shell->GetTaskRunners().GetPlatformTaskRunner()->RunNowOrPostTask(
+        [shell, &latch]() {
           shell->GetPlatformView()->NotifyDestroyed();
           latch.Signal();
         });

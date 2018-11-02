@@ -5,7 +5,12 @@
 #ifndef FLUTTER_FML_MESSAGE_LOOP_H_
 #define FLUTTER_FML_MESSAGE_LOOP_H_
 
+#include <stack>
+
+#include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_counted.h"
+#include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/fml/task_runner.h"
 
 namespace fml {
@@ -13,14 +18,16 @@ namespace fml {
 class TaskRunner;
 class MessageLoopImpl;
 
-class MessageLoop {
+class MessageLoop : public fml::RefCountedThreadSafe<MessageLoop> {
  public:
   FML_EMBEDDER_ONLY
   static MessageLoop& GetCurrent();
 
   bool IsValid() const;
 
-  void Run();
+  size_t GetActivationCount() const;
+
+  void Run(fml::closure on_done = nullptr);
 
   void Terminate();
 
@@ -28,7 +35,7 @@ class MessageLoop {
 
   void RemoveTaskObserver(intptr_t key);
 
-  fml::RefPtr<fml::TaskRunner> GetTaskRunner() const;
+  fml::RefPtr<fml::TaskRunner> GetTaskRunner();
 
   // Exposed for the embedder shell which allows clients to poll for events
   // instead of dedicating a thread to the message loop.
@@ -44,13 +51,16 @@ class MessageLoop {
   friend class TaskRunner;
   friend class MessageLoopImpl;
 
-  fml::RefPtr<MessageLoopImpl> loop_;
-  fml::RefPtr<fml::TaskRunner> task_runner_;
+  std::stack<fml::RefPtr<MessageLoopImpl>> impls_;
 
   MessageLoop();
 
   fml::RefPtr<MessageLoopImpl> GetLoopImpl() const;
 
+  void PushMessageLoop();
+
+  FML_FRIEND_MAKE_REF_COUNTED(MessageLoop);
+  FML_FRIEND_REF_COUNTED_THREAD_SAFE(MessageLoop);
   FML_DISALLOW_COPY_AND_ASSIGN(MessageLoop);
 };
 

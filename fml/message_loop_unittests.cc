@@ -18,6 +18,8 @@
 #define PLATFORM_SPECIFIC_CAPTURE(...) [__VA_ARGS__]
 #endif
 
+namespace fml {
+
 TEST(MessageLoop, GetCurrent) {
   std::thread thread([]() {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -278,3 +280,65 @@ TEST(MessageLoop, TaskObserverFire) {
   ASSERT_TRUE(started);
   ASSERT_TRUE(terminated);
 }
+
+TEST(MessageLoop, NestedEventLoopActivations) {
+  AutoResetWaitableEvent latch;
+
+  fml::RefPtr<fml::TaskRunner> thread_runner;
+
+  // Sets up the thread whose message loop activation stack we will be modifying
+  // and querying from this thread.
+  std::thread thread1([&latch, &thread_runner]() {
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+    thread_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+    latch.Signal();
+    fml::MessageLoop::GetCurrent().Run();
+  });
+  latch.Wait();
+
+  ASSERT_TRUE(thread_runner);
+
+  // Runs a message loop activation and asserts that the activation counts are
+  // correct before and after the run call.
+  auto run_loop = [&latch](size_t current_loop_activation) {
+    ASSERT_EQ(fml::MessageLoop::GetCurrent().GetActivationCount(),
+              current_loop_activation);
+    fml::MessageLoop::GetCurrent().Run([&latch, current_loop_activation]() {
+      ASSERT_EQ(fml::MessageLoop::GetCurrent().GetActivationCount(),
+                current_loop_activation + 1);
+      latch.Signal();
+    });
+  };
+
+  // Terminates the topmost activation on the activation stack and ensures that
+  // the activation counts are correct before and after the terminate call.
+  auto quit_loop = [&latch](size_t current_loop_activation) {
+    ASSERT_EQ(fml::MessageLoop::GetCurrent().GetActivationCount(),
+              current_loop_activation);
+    fml::MessageLoop::GetCurrent().Terminate();
+
+    // The message loop activation count will never be zero. Terminating the
+    // sole message loop activation will just leave a non running activation on
+    // the thread activation stack.
+    size_t activation_count =
+        current_loop_activation == 1 ? 1 : current_loop_activation - 1;
+    ASSERT_EQ(fml::MessageLoop::GetCurrent().GetActivationCount(),
+              activation_count);
+    latch.Signal();
+  };
+
+  thread_runner->PostTask(std::bind(run_loop, 1));
+  latch.Wait();
+
+  thread_runner->PostTask(std::bind(quit_loop, 2));
+  latch.Wait();
+
+  // This is the sole activation on the activation stack. Terminating this will
+  // leave a non running activation on the thread local activation stack.
+  thread_runner->PostTask(std::bind(quit_loop, 1));
+  latch.Wait();
+
+  thread1.join();
+}
+
+}  // namespace fml

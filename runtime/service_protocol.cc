@@ -140,8 +140,7 @@ static bool HandleMessageOnHandler(
   FML_DCHECK(handler);
   fml::AutoResetWaitableEvent latch;
   bool result = false;
-  fml::TaskRunner::RunNowOrPostTask(
-      handler->GetServiceProtocolHandlerTaskRunner(method),
+  handler->GetServiceProtocolHandlerTaskRunner(method)->RunNowOrPostTask(
       [&latch,    //
        &result,   //
        &handler,  //
@@ -242,17 +241,15 @@ bool ServiceProtocol::HandleListViewsMethod(
   for (const auto& handler : handlers_) {
     fml::AutoResetWaitableEvent latch;
     Handler::Description description;
-
-    fml::TaskRunner::RunNowOrPostTask(
-        handler->GetServiceProtocolHandlerTaskRunner(
-            kListViewsExtensionName),  // task runner
-        [&latch,                       //
-         &description,                 //
-         &handler                      //
+    handler->GetServiceProtocolHandlerTaskRunner(kListViewsExtensionName)
+        ->RunNowOrPostTask([&latch,        //
+                            &description,  //
+                            &handler       //
     ]() {
           description = handler->GetServiceProtocolDescription();
           latch.Signal();
         });
+
     latch.Wait();
     descriptions.emplace_back(std::make_pair<intptr_t, Handler::Description>(
         reinterpret_cast<intptr_t>(handler), std::move(description)));

@@ -68,48 +68,48 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   fml::WeakPtr<GrContext> resource_context;
   fml::RefPtr<flow::SkiaUnrefQueue> unref_queue;
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
-  fml::TaskRunner::RunNowOrPostTask(
-      io_task_runner,
-      [&io_latch,          //
-       &io_manager,        //
-       &resource_context,  //
-       &unref_queue,       //
-       &platform_view,     //
-       io_task_runner      //
+
+  io_task_runner->RunNowOrPostTask([&io_latch,          //
+                                    &io_manager,        //
+                                    &resource_context,  //
+                                    &unref_queue,       //
+                                    &platform_view,     //
+                                    io_task_runner      //
   ]() {
-        io_manager = std::make_unique<IOManager>(
-            platform_view->CreateResourceContext(), io_task_runner);
-        resource_context = io_manager->GetResourceContext();
-        unref_queue = io_manager->GetSkiaUnrefQueue();
-        io_latch.Signal();
-      });
+    io_manager = std::make_unique<IOManager>(
+        platform_view->CreateResourceContext(), io_task_runner);
+    resource_context = io_manager->GetResourceContext();
+    unref_queue = io_manager->GetSkiaUnrefQueue();
+    io_latch.Signal();
+  });
+
   io_latch.Wait();
 
   // Create the rasterizer on the GPU thread.
   fml::AutoResetWaitableEvent gpu_latch;
   std::unique_ptr<Rasterizer> rasterizer;
   fml::WeakPtr<blink::SnapshotDelegate> snapshot_delegate;
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners.GetGPUTaskRunner(), [&gpu_latch,            //
-                                        &rasterizer,           //
-                                        on_create_rasterizer,  //
-                                        shell = shell.get(),   //
-                                        &snapshot_delegate     //
+
+  task_runners.GetGPUTaskRunner()->RunNowOrPostTask([&gpu_latch,            //
+                                                     &rasterizer,           //
+                                                     on_create_rasterizer,  //
+                                                     shell = shell.get(),   //
+                                                     &snapshot_delegate     //
   ]() {
-        if (auto new_rasterizer = on_create_rasterizer(*shell)) {
-          rasterizer = std::move(new_rasterizer);
-          snapshot_delegate = rasterizer->GetSnapshotDelegate();
-        }
-        gpu_latch.Signal();
-      });
+    if (auto new_rasterizer = on_create_rasterizer(*shell)) {
+      rasterizer = std::move(new_rasterizer);
+      snapshot_delegate = rasterizer->GetSnapshotDelegate();
+    }
+    gpu_latch.Signal();
+  });
 
   gpu_latch.Wait();
 
   // Create the engine on the UI thread.
   fml::AutoResetWaitableEvent ui_latch;
   std::unique_ptr<Engine> engine;
-  fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetUITaskRunner(),
+
+  shell->GetTaskRunners().GetUITaskRunner()->RunNowOrPostTask(
       fml::MakeCopyable([&ui_latch,                                         //
                          &engine,                                           //
                          shell = shell.get(),                               //
@@ -235,8 +235,7 @@ std::unique_ptr<Shell> Shell::Create(
 
   fml::AutoResetWaitableEvent latch;
   std::unique_ptr<Shell> shell;
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners.GetPlatformTaskRunner(),
+  task_runners.GetPlatformTaskRunner()->RunNowOrPostTask(
       [&latch,                                          //
        &shell,                                          //
        task_runners = std::move(task_runners),          //
@@ -305,28 +304,25 @@ Shell::~Shell() {
 
   fml::AutoResetWaitableEvent ui_latch, gpu_latch, platform_latch, io_latch;
 
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetUITaskRunner(),
+  task_runners_.GetUITaskRunner()->RunNowOrPostTask(
       fml::MakeCopyable([engine = std::move(engine_), &ui_latch]() mutable {
         engine.reset();
         ui_latch.Signal();
       }));
+
   ui_latch.Wait();
 
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetGPUTaskRunner(),
-      fml::MakeCopyable(
-          [rasterizer = std::move(rasterizer_), &gpu_latch]() mutable {
-            rasterizer.reset();
-            gpu_latch.Signal();
-          }));
+  task_runners_.GetGPUTaskRunner()->RunNowOrPostTask(fml::MakeCopyable(
+      [rasterizer = std::move(rasterizer_), &gpu_latch]() mutable {
+        rasterizer.reset();
+        gpu_latch.Signal();
+      }));
+
   gpu_latch.Wait();
 
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetIOTaskRunner(),
-      fml::MakeCopyable([io_manager = std::move(io_manager_),
-                         platform_view = platform_view_.get(),
-                         &io_latch]() mutable {
+  task_runners_.GetIOTaskRunner()->RunNowOrPostTask(fml::MakeCopyable(
+      [io_manager = std::move(io_manager_),
+       platform_view = platform_view_.get(), &io_latch]() mutable {
         io_manager.reset();
         if (platform_view) {
           platform_view->ReleaseResourceContext();
@@ -339,13 +335,13 @@ Shell::~Shell() {
   // The platform view must go last because it may be holding onto platform side
   // counterparts to resources owned by subsystems running on other threads. For
   // example, the NSOpenGLContext on the Mac.
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetPlatformTaskRunner(),
-      fml::MakeCopyable([platform_view = std::move(platform_view_),
-                         &platform_latch]() mutable {
+
+  task_runners_.GetPlatformTaskRunner()->RunNowOrPostTask(fml::MakeCopyable(
+      [platform_view = std::move(platform_view_), &platform_latch]() mutable {
         platform_view.reset();
         platform_latch.Signal();
       }));
+
   platform_latch.Wait();
 }
 
@@ -440,12 +436,12 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
     }
     // Step 1: Next, tell the GPU thread that it should create a surface for its
     // rasterizer.
-    fml::TaskRunner::RunNowOrPostTask(gpu_task_runner, gpu_task);
+    gpu_task_runner->RunNowOrPostTask(gpu_task);
   };
 
   // Step 0: Post a task onto the UI thread to tell the engine that it has an
   // output surface.
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
+  task_runners_.GetUITaskRunner()->RunNowOrPostTask(ui_task);
   latch.Wait();
 }
 
@@ -477,7 +473,7 @@ void Shell::OnPlatformViewDestroyed() {
       rasterizer->Teardown();
     }
     // Step 2: Next, tell the IO thread to complete its remaining work.
-    fml::TaskRunner::RunNowOrPostTask(io_task_runner, io_task);
+    io_task_runner->RunNowOrPostTask(io_task);
   };
 
   auto ui_task = [engine = engine_->GetWeakPtr(),
@@ -488,12 +484,12 @@ void Shell::OnPlatformViewDestroyed() {
     }
     // Step 1: Next, tell the GPU thread that its rasterizer should suspend
     // access to the underlying surface.
-    fml::TaskRunner::RunNowOrPostTask(gpu_task_runner, gpu_task);
+    gpu_task_runner->RunNowOrPostTask(gpu_task);
   };
 
   // Step 0: Post a task onto the UI thread to tell the engine that its output
   // surface is about to go away.
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
+  task_runners_.GetUITaskRunner()->RunNowOrPostTask(ui_task);
   latch.Wait();
 }
 
@@ -736,14 +732,15 @@ void Shell::OnPreEngineRestart() {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   fml::AutoResetWaitableEvent latch;
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetPlatformTaskRunner(),
+
+  task_runners_.GetPlatformTaskRunner()->RunNowOrPostTask(
       [view = platform_view_->GetWeakPtr(), &latch]() {
         if (view) {
           view->OnPreEngineRestart();
         }
         latch.Signal();
       });
+
   // This is blocking as any embedded platform views has to be flushed before
   // we re-run the Dart code.
   latch.Wait();
@@ -974,19 +971,19 @@ Rasterizer::Screenshot Shell::Screenshot(
   TRACE_EVENT0("flutter", "Shell::Screenshot");
   fml::AutoResetWaitableEvent latch;
   Rasterizer::Screenshot screenshot;
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetGPUTaskRunner(), [&latch,                        //
-                                         rasterizer = GetRasterizer(),  //
-                                         &screenshot,                   //
-                                         screenshot_type,               //
-                                         base64_encode                  //
+  task_runners_.GetGPUTaskRunner()->RunNowOrPostTask([&latch,  //
+                                                      rasterizer =
+                                                          GetRasterizer(),  //
+                                                      &screenshot,          //
+                                                      screenshot_type,      //
+                                                      base64_encode         //
   ]() {
-        if (rasterizer) {
-          screenshot = rasterizer->ScreenshotLastLayerTree(screenshot_type,
-                                                           base64_encode);
-        }
-        latch.Signal();
-      });
+    if (rasterizer) {
+      screenshot =
+          rasterizer->ScreenshotLastLayerTree(screenshot_type, base64_encode);
+    }
+    latch.Signal();
+  });
   latch.Wait();
   return screenshot;
 }

@@ -46,6 +46,8 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
   // instead of dedicating a thread to the message loop.
   void RunExpiredTasksNow();
 
+  bool DidRun() const;
+
  protected:
   MessageLoopImpl();
 
@@ -76,6 +78,7 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
   DelayedTaskQueue delayed_tasks_;
   size_t order_;
   std::atomic_bool terminated_;
+  std::atomic_bool did_run_;
 
   void RegisterTask(fml::closure task, fml::TimePoint target_time);
 

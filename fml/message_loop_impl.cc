@@ -39,7 +39,8 @@ fml::RefPtr<MessageLoopImpl> MessageLoopImpl::Create() {
 #endif
 }
 
-MessageLoopImpl::MessageLoopImpl() : order_(0), terminated_(false) {}
+MessageLoopImpl::MessageLoopImpl()
+    : order_(0), terminated_(false), did_run_(false) {}
 
 MessageLoopImpl::~MessageLoopImpl() = default;
 
@@ -67,11 +68,21 @@ void MessageLoopImpl::RemoveTaskObserver(intptr_t key) {
   task_observers_.erase(key);
 }
 
+bool MessageLoopImpl::DidRun() const {
+  return did_run_;
+}
+
+static void __MessageLoopDelayedTasksDropped__() {
+  FML_LOG(ERROR) << "Terminated a mesasge loop with pending delayed tasks. Set "
+                    "a breakpoint on '"
+                 << __FUNCTION__ << "' to debug.";
+}
+
 void MessageLoopImpl::DoRun() {
-  if (terminated_) {
-    // Message loops may be run only once.
-    return;
-  }
+  did_run_ = true;
+
+  // Message loops may be run only once.
+  FML_DCHECK(!terminated_);
 
   // Allow the implementation to do its thing.
   Run();
@@ -91,6 +102,9 @@ void MessageLoopImpl::DoRun() {
   // from the implementations |Run| method which we know is on the correct
   // thread. Drop all pending tasks on the floor.
   std::lock_guard<std::mutex> lock(delayed_tasks_mutex_);
+  if (delayed_tasks_.size() > 0) {
+    __MessageLoopDelayedTasksDropped__();
+  }
   delayed_tasks_ = {};
 }
 
@@ -99,12 +113,19 @@ void MessageLoopImpl::DoTerminate() {
   Terminate();
 }
 
+static void __MessageLoopTaskDropped__() {
+  FML_LOG(ERROR) << "Posted a task onto a terminated message loop. This task "
+                    "is being dropped. Set a breakpoint on '"
+                 << __FUNCTION__ << "' to debug.";
+}
+
 void MessageLoopImpl::RegisterTask(fml::closure task,
                                    fml::TimePoint target_time) {
   FML_DCHECK(task != nullptr);
   if (terminated_) {
     // If the message loop has already been terminated, PostTask should destruct
     // |task| synchronously within this function.
+    __MessageLoopTaskDropped__();
     return;
   }
   std::lock_guard<std::mutex> lock(delayed_tasks_mutex_);
