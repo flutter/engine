@@ -261,6 +261,8 @@ class Locale {
       return Locale._internal('und');
 
     final List<String> localeSubtags = localeId.split(_reSep);
+    int parseIdx = 0;
+
     String language, script, region;
     final List<String> variants = <String>[];
     final Map<String, String> extensions = <String, String>{};
@@ -269,7 +271,8 @@ class Locale {
     if (_isAlphabetic(localeSubtags[0], 2, 8)
         && localeSubtags[0].length != 4) {
       // language subtag: r'^[a-zA-Z]{2,3}$|^[a-zA-Z]{5,8}$'
-      language = _replaceDeprecatedLanguageSubtag(localeSubtags.removeAt(0));
+      language = _replaceDeprecatedLanguageSubtag(localeSubtags[0]);
+      parseIdx = 1;
     } else if (_isAlphabetic(localeSubtags[0], 4, 4)) {
       // First subtag is already a script subtag.
       //
@@ -280,24 +283,26 @@ class Locale {
     } else {
       problems.add('"${localeSubtags[0]}" is an invalid language subtag');
     }
-    if (localeSubtags.isNotEmpty
-        && _isAlphabetic(localeSubtags[0], 4, 4)) {
+    if (parseIdx < localeSubtags.length
+        && _isAlphabetic(localeSubtags[parseIdx], 4, 4)) {
       // script subtag: r'^[a-zA-Z]{4}$'
-      final String s = localeSubtags.removeAt(0);
+      final String s = localeSubtags[parseIdx++];
       script = s.substring(0, 1).toUpperCase() + s.substring(1).toLowerCase();
     }
-    if (localeSubtags.isNotEmpty
-        && (_isAlphabetic(localeSubtags[0], 2, 2)
-            || _isNumeric(localeSubtags[0], 3, 3))) {
+    if (parseIdx < localeSubtags.length
+        && (_isAlphabetic(localeSubtags[parseIdx], 2, 2)
+            || _isNumeric(localeSubtags[parseIdx], 3, 3))) {
       // region subtag: r'^[a-zA-Z]{2}$|^[0-9]{3}$';
-      region = localeSubtags.removeAt(0).toUpperCase();
+      region = localeSubtags[parseIdx++].toUpperCase();
     }
-    while (localeSubtags.isNotEmpty && _isVariantSubtag(localeSubtags[0])) {
-      variants.add(localeSubtags.removeAt(0));
+    while (parseIdx < localeSubtags.length
+           && _isVariantSubtag(localeSubtags[parseIdx])) {
+      variants.add(localeSubtags[parseIdx++]);
     }
 
-    // Now we should be into extension territory, localeSubtags[0] should be a singleton.
-    if (localeSubtags.isNotEmpty && localeSubtags[0].length > 1) {
+    // Now we should be into extension territory, localeSubtags[parseIdx] should
+    // be a singleton.
+    if (parseIdx < localeSubtags.length && localeSubtags[parseIdx].length > 1) {
       final List<String> mismatched = <String>[];
       if (variants.isEmpty) {
         if (region == null) {
@@ -308,10 +313,10 @@ class Locale {
         }
         mismatched.add('variant');
       }
-      problems.add('unrecognised subtag "${localeSubtags[0]}": is not a '
+      problems.add('unrecognised subtag "${localeSubtags[parseIdx]}": is not a '
           '${mismatched.join(", ")}');
     }
-    _parseExtensions(localeSubtags, extensions, problems);
+    _parseExtensions(localeSubtags, parseIdx, extensions, problems);
 
     if (problems.isNotEmpty) {
       throw FormatException('Locale Identifier $localeId is invalid: '
@@ -341,18 +346,19 @@ class Locale {
   // * extensions must be a map with sorted iteration order. LinkedHashMap
   //   preserves order for us.
   static void _parseExtensions(List<String> localeSubtags,
+                               int parseIdx,
                                collection.LinkedHashMap<String, String> extensions,
                                List<String> problems) {
     final Map<String, String> ext = <String, String>{};
-    while (localeSubtags.isNotEmpty) {
-      final String singleton = localeSubtags.removeAt(0);
+    while (parseIdx < localeSubtags.length) {
+      final String singleton = localeSubtags[parseIdx++];
       if (singleton == 'u') {
         bool empty = true;
         // unicode_locale_extensions: collect "(sep attribute)+" attributes.
         final List<String> attributes = <String>[];
-        while (localeSubtags.isNotEmpty
-               && _isAlphaNumeric(localeSubtags[0], 3, 8)) {
-          attributes.add(localeSubtags.removeAt(0));
+        while (parseIdx < localeSubtags.length
+               && _isAlphaNumeric(localeSubtags[parseIdx], 3, 8)) {
+          attributes.add(localeSubtags[parseIdx++]);
         }
         if (attributes.isNotEmpty) {
           empty = false;
@@ -363,14 +369,14 @@ class Locale {
           problems.add('duplicate singleton: "$singleton"');
         }
         // unicode_locale_extensions: collect "(sep keyword)*".
-        while (localeSubtags.isNotEmpty
-               && _isUExtensionKey(localeSubtags[0])) {
+        while (parseIdx < localeSubtags.length
+               && _isUExtensionKey(localeSubtags[parseIdx])) {
           empty = false;
-          final String key = localeSubtags.removeAt(0);
+          final String key = localeSubtags[parseIdx++];
           final List<String> typeParts = <String>[];
-          while (localeSubtags.isNotEmpty
-                 && _isAlphaNumeric(localeSubtags[0], 3, 8)) {
-            typeParts.add(localeSubtags.removeAt(0));
+          while (parseIdx < localeSubtags.length
+                 && _isAlphaNumeric(localeSubtags[parseIdx], 3, 8)) {
+            typeParts.add(localeSubtags[parseIdx++]);
           }
           if (!ext.containsKey(key)) {
             if (typeParts.length == 1 && typeParts[0] == 'true') {
@@ -389,23 +395,24 @@ class Locale {
         bool empty = true;
         // transformed_extensions: grab tlang if it exists.
         final List<String> tlang = <String>[];
-        if (localeSubtags.isNotEmpty
-            && _isAlphabetic(localeSubtags[0], 2, 8)
-            && localeSubtags[0].length != 4) {
+        if (parseIdx < localeSubtags.length
+            && _isAlphabetic(localeSubtags[parseIdx], 2, 8)
+            && localeSubtags[parseIdx].length != 4) {
           // language subtag
           empty = false;
-          tlang.add(localeSubtags.removeAt(0));
-          if (localeSubtags.isNotEmpty
-              && _isAlphabetic(localeSubtags[0], 4, 4))
+          tlang.add(localeSubtags[parseIdx++]);
+          if (parseIdx < localeSubtags.length
+              && _isAlphabetic(localeSubtags[parseIdx], 4, 4))
             // script subtag
-            tlang.add(localeSubtags.removeAt(0));
-          if (localeSubtags.isNotEmpty
-              && (_isAlphabetic(localeSubtags[0], 2, 2)
-                  || _isNumeric(localeSubtags[0], 3, 3)))
+            tlang.add(localeSubtags[parseIdx++]);
+          if (parseIdx < localeSubtags.length
+              && (_isAlphabetic(localeSubtags[parseIdx], 2, 2)
+                  || _isNumeric(localeSubtags[parseIdx], 3, 3)))
             // region subtag: r'^[a-zA-Z]{2}$|^[0-9]{3}$';
-            tlang.add(localeSubtags.removeAt(0));
-          while (localeSubtags.isNotEmpty && _isVariantSubtag(localeSubtags[0])) {
-            tlang.add(localeSubtags.removeAt(0));
+            tlang.add(localeSubtags[parseIdx++]);
+          while (parseIdx < localeSubtags.length
+                 && _isVariantSubtag(localeSubtags[parseIdx])) {
+            tlang.add(localeSubtags[parseIdx++]);
           }
         }
         if (!ext.containsKey(singleton)) {
@@ -414,12 +421,13 @@ class Locale {
           problems.add('duplicate singleton: "$singleton"');
         }
         // transformed_extensions: collect "(sep tfield)*".
-        while (localeSubtags.isNotEmpty && _isTExtensionKey(localeSubtags[0])) {
-          final String tkey = localeSubtags.removeAt(0);
+        while (parseIdx < localeSubtags.length
+               && _isTExtensionKey(localeSubtags[parseIdx])) {
+          final String tkey = localeSubtags[parseIdx++];
           final List<String> tvalueParts = <String>[];
-          while (localeSubtags.isNotEmpty
-                 && _isAlphaNumeric(localeSubtags[0], 3, 8)) {
-            tvalueParts.add(localeSubtags.removeAt(0));
+          while (parseIdx < localeSubtags.length
+                 && _isAlphaNumeric(localeSubtags[parseIdx], 3, 8)) {
+            tvalueParts.add(localeSubtags[parseIdx++]);
           }
           if (tvalueParts.isNotEmpty) {
             empty = false;
@@ -436,21 +444,22 @@ class Locale {
       } else if (singleton == 'x') {
         // pu_extensions
         final List<String> values = <String>[];
-        while (localeSubtags.isNotEmpty
-               && _isAlphaNumeric(localeSubtags[0], 1, 8)) {
-          values.add(localeSubtags.removeAt(0));
+        while (parseIdx < localeSubtags.length
+               && _isAlphaNumeric(localeSubtags[parseIdx], 1, 8)) {
+          values.add(localeSubtags[parseIdx++]);
         }
         ext[singleton] = values.join('-');
-        if (localeSubtags.isNotEmpty) {
-            problems.add('invalid part of private use subtags: "${localeSubtags.join('-')}"');
+        if (parseIdx < localeSubtags.length) {
+            problems.add('invalid part of private use subtags: "'
+              '${localeSubtags.getRange(parseIdx, localeSubtags.length).join('-')}"');
         }
         break;
       } else if (_isAlphabetic(singleton, 1, 1)) {
         // other_extensions
         final List<String> values = <String>[];
-        while (localeSubtags.isNotEmpty
-               && _isAlphaNumeric(localeSubtags[0], 2, 8)) {
-          values.add(localeSubtags.removeAt(0));
+        while (parseIdx < localeSubtags.length
+               && _isAlphaNumeric(localeSubtags[parseIdx], 2, 8)) {
+          values.add(localeSubtags[parseIdx++]);
         }
         if (!ext.containsKey(singleton)) {
           ext[singleton] = values.join('-');
