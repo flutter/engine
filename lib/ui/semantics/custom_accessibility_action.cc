@@ -10,4 +10,4 @@ CustomAccessibilityAction::CustomAccessibilityAction() = default;
 
 CustomAccessibilityAction::~CustomAccessibilityAction() = default;
 
-}
+}  // namespace blink
