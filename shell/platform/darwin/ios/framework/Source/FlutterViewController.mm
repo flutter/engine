@@ -419,12 +419,12 @@
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
+  [self surfaceUpdated:NO];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
-  [self surfaceUpdated:NO];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
 }
 
