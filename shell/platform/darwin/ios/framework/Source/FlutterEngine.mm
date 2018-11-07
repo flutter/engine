@@ -264,7 +264,7 @@
       }));
 }
 
-- (bool)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
+- (bool)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   if (_shell != nullptr) {
     FML_LOG(WARNING) << "This FlutterEngine was already invoked.";
     return false;
@@ -351,6 +351,13 @@
                    << entrypoint.UTF8String;
   } else {
     [self maybeSetupPlatformViewChannels];
+  }
+
+  return _shell != nullptr;
+}
+
+- (bool)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
+  if ([self createShell:entrypoint libraryURI:libraryURI]) {
     [self launchEngine:entrypoint libraryURI:libraryURI];
   }
 
