@@ -264,10 +264,10 @@
       }));
 }
 
-- (bool)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
+- (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   if (_shell != nullptr) {
     FML_LOG(WARNING) << "This FlutterEngine was already invoked.";
-    return false;
+    return NO;
   }
 
   static size_t shellCount = 1;
@@ -356,7 +356,7 @@
   return _shell != nullptr;
 }
 
-- (bool)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
+- (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   if ([self createShell:entrypoint libraryURI:libraryURI]) {
     [self launchEngine:entrypoint libraryURI:libraryURI];
   }
@@ -364,7 +364,7 @@
   return _shell != nullptr;
 }
 
-- (bool)runWithEntrypoint:(NSString*)entrypoint {
+- (BOOL)runWithEntrypoint:(NSString*)entrypoint {
   return [self runWithEntrypoint:entrypoint libraryURI:nil];
 }
 
@@ -379,7 +379,7 @@
   NSString* actionString;
   switch (action) {
     case FlutterTextInputActionUnspecified:
-      // Where did the term "unspecified" come from? iOS has a "default" and Android
+      // Where did the term "unspecified" come from? iOS has a "defasult" and Android
       // has "unspecified." These 2 terms seem to mean the same thing but we need
       // to pick just one. "unspecified" was chosen because "default" is often a
       // reserved word in languages with switch statements (dart, java, etc).

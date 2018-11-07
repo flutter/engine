@@ -42,7 +42,7 @@
 - (shell::FlutterPlatformViewsController*)platformViewsController;
 - (FlutterTextInputPlugin*)textInputPlugin;
 - (void)launchEngine:(NSString*)entrypoint libraryURI:(NSString*)libraryOrNil;
-- (bool)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryOrNil;
+- (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryOrNil;
 
 
 @end
