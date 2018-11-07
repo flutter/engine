@@ -379,7 +379,7 @@
   NSString* actionString;
   switch (action) {
     case FlutterTextInputActionUnspecified:
-      // Where did the term "unspecified" come from? iOS has a "defasult" and Android
+      // Where did the term "unspecified" come from? iOS has a "default" and Android
       // has "unspecified." These 2 terms seem to mean the same thing but we need
       // to pick just one. "unspecified" was chosen because "default" is often a
       // reserved word in languages with switch statements (dart, java, etc).
