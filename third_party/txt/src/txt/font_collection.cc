@@ -132,8 +132,13 @@ FontCollection::GetMinikinFontCollectionForFamily(
         minikin_family,
     };
     if (enable_font_fallback_) {
-      for (std::string fallback_family : fallback_fonts_for_locale_[locale])
-        minikin_families.push_back(fallback_fonts_[fallback_family]);
+      for (std::string fallback_family : fallback_fonts_for_locale_[locale]) {
+        std::shared_ptr<minikin::FontFamily> fallback_font_ =
+            fallback_fonts_[fallback_family];
+        if (fallback_font_.get() != nullptr) {
+          minikin_families.push_back(fallback_font_);
+        }
+      }
     }
 
     // Create the minikin font collection.
