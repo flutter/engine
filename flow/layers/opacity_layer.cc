@@ -49,7 +49,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
     RasterCacheResult child_cache =
         context.raster_cache->Get(layers()[0].get(), ctm);
     if (child_cache.is_valid()) {
-      child_cache.draw(*context.internal_nodes_canvas, &paint);
+      child_cache.draw(*context.leaf_nodes_canvas, &paint);
       return;
     }
   }
