@@ -112,7 +112,7 @@
   if (err != 0) {
     FML_LOG(ERROR) << "Failed to register observatory port with mDNS.";
   } else {
-    DNSServiceSetDispatchQueue(_dnsServiceRef, [NSOperationQueue currentQueue].underlyingQueue);
+    DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
   }
 #else   // TARGET_IPHONE_SIMULATOR
   _netService.reset([[NSNetService alloc] initWithDomain:@"local."
