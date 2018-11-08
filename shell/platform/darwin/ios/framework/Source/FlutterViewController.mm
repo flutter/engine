@@ -359,7 +359,10 @@
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
   if (appeared) {
     [self installSplashScreenViewCallback];
-    [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
+    if ([[[NSBundle mainBundle] objectForInfoDictionaryKey:@(shell::kEmbeddedViewsPreview)]
+            boolValue]) {
+      [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
+    }
     [_engine.get() platformView] -> NotifyCreated();
   } else {
     [_engine.get() platformView] -> NotifyDestroyed();

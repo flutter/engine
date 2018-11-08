@@ -77,7 +77,11 @@
 
   _pluginPublications = [NSMutableDictionary new];
   _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
-  _platformViewsController.reset(new shell::FlutterPlatformViewsController());
+
+  if ([[[NSBundle mainBundle] objectForInfoDictionaryKey:@(shell::kEmbeddedViewsPreview)]
+          boolValue]) {
+    _platformViewsController.reset(new shell::FlutterPlatformViewsController());
+  }
 
   [self setupChannels];
 
@@ -192,11 +196,13 @@
       binaryMessenger:self
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
-  _platformViewsChannel.reset([[FlutterMethodChannel alloc]
-         initWithName:@"flutter/platform_views"
-      binaryMessenger:self
-                codec:[FlutterStandardMethodCodec sharedInstance]]);
-
+  if ([[[NSBundle mainBundle] objectForInfoDictionaryKey:@(shell::kEmbeddedViewsPreview)]
+          boolValue]) {
+    _platformViewsChannel.reset([[FlutterMethodChannel alloc]
+           initWithName:@"flutter/platform_views"
+        binaryMessenger:self
+                  codec:[FlutterStandardMethodCodec sharedInstance]]);
+  }
   _textInputChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/textinput"
       binaryMessenger:self
@@ -231,10 +237,13 @@
       [_platformPlugin.get() handleMethodCall:call result:result];
     }];
 
-    [_platformViewsChannel.get()
-        setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-          _platformViewsController->OnMethodCall(call, result);
-        }];
+    if ([[[NSBundle mainBundle] objectForInfoDictionaryKey:@(shell::kEmbeddedViewsPreview)]
+            boolValue]) {
+      [_platformViewsChannel.get()
+          setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+            _platformViewsController->OnMethodCall(call, result);
+          }];
+    }
 
     [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [_textInputPlugin.get() handleMethodCall:call result:result];

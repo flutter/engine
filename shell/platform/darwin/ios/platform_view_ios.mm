@@ -123,7 +123,10 @@ void PlatformViewIOS::OnPreEngineRestart() const {
   if (!owner_controller_) {
     return;
   }
-  [owner_controller_.get() platformViewsController] -> Reset();
+  if ([[[NSBundle mainBundle] objectForInfoDictionaryKey:@(shell::kEmbeddedViewsPreview)]
+          boolValue]) {
+    [owner_controller_.get() platformViewsController] -> Reset();
+  }
 }
 
 fml::scoped_nsprotocol<FlutterTextInputPlugin*> PlatformViewIOS::GetTextInputPlugin() const {
