@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -264,10 +264,10 @@
       }));
 }
 
-- (bool)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
+- (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   if (_shell != nullptr) {
     FML_LOG(WARNING) << "This FlutterEngine was already invoked.";
-    return false;
+    return NO;
   }
 
   static size_t shellCount = 1;
@@ -356,7 +356,7 @@
   return _shell != nullptr;
 }
 
-- (bool)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
+- (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   if ([self createShell:entrypoint libraryURI:libraryURI]) {
     [self launchEngine:entrypoint libraryURI:libraryURI];
   }
@@ -364,7 +364,7 @@
   return _shell != nullptr;
 }
 
-- (bool)runWithEntrypoint:(NSString*)entrypoint {
+- (BOOL)runWithEntrypoint:(NSString*)entrypoint {
   return [self runWithEntrypoint:entrypoint libraryURI:nil];
 }
 

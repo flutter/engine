@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -42,8 +42,7 @@
 - (shell::FlutterPlatformViewsController*)platformViewsController;
 - (FlutterTextInputPlugin*)textInputPlugin;
 - (void)launchEngine:(NSString*)entrypoint libraryURI:(NSString*)libraryOrNil;
-- (bool)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryOrNil;
-
+- (BOOL)createShell:(NSString*)entrypoint libraryURI:(NSString*)libraryOrNil;
 
 @end
 

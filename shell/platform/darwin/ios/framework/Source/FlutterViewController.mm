@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -50,7 +50,7 @@
   if (self) {
     _viewOpaque = YES;
     _engine.reset([engine retain]);
-    _engineNeedsLaunch = false;
+    _engineNeedsLaunch = NO;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
 
@@ -71,7 +71,7 @@
     _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter" project:projectOrNil]);
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
-    _engineNeedsLaunch = true;
+    _engineNeedsLaunch = YES;
 
     [self performCommonViewControllerInitialization];
   }
@@ -376,7 +376,7 @@
   if (_engineNeedsLaunch) {
     [_engine.get() launchEngine:nil libraryURI:nil];
     [_engine.get() setViewController:self];
-    _engineNeedsLaunch = false;
+    _engineNeedsLaunch = NO;
   }
 
   // Only recreate surface on subsequent appearances when viewport metrics are known.

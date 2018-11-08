@@ -1,29 +1,24 @@
-// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package io.flutter.view;
 
 import android.app.Activity;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.database.ContentObserver;
-import android.graphics.PixelFormat;
-import android.provider.Settings;
-import android.net.Uri;
-import android.os.Handler;
 import android.graphics.Bitmap;
+import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.*;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeProvider;
@@ -35,10 +30,8 @@ import io.flutter.plugin.common.*;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
@@ -344,7 +337,7 @@ public class FlutterView extends SurfaceView
         Locale locale = config.locale;
         // getScript() is gated because it is added in API 21.
         mFlutterLocalizationChannel.invokeMethod("setLocale", Arrays.asList(locale.getLanguage(), locale.getCountry(), Build.VERSION.SDK_INT >= 21 ? locale.getScript() : "", locale.getVariant()));
-        
+
     }
 
     @Override
@@ -972,7 +965,7 @@ public class FlutterView extends SurfaceView
         public void onChange(boolean selfChange, Uri uri) {
             String value = Settings.Global.getString(getContext().getContentResolver(),
                     Settings.Global.TRANSITION_ANIMATION_SCALE);
-            if (value == "0") {
+            if (value != null && value.equals("0")) {
                 mAccessibilityFeatureFlags ^= AccessibilityFeature.DISABLE_ANIMATIONS.value;
             } else {
                 mAccessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
