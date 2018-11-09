@@ -9,8 +9,6 @@ LIBRARY: engine
 LIBRARY: txt
 ORIGIN: ../../../flutter/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../flutter/.idea/vcs.xml
-FILE: ../../../flutter/.idea/workspace.xml
 FILE: ../../../flutter/DEPS
 FILE: ../../../flutter/assets/asset_manager.cc
 FILE: ../../../flutter/assets/asset_manager.h
@@ -380,9 +378,6 @@ FILE: ../../../flutter/shell/gpu/gpu_surface_software.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan.h
-FILE: ../../../flutter/shell/platform/android/.idea/android.iml
-FILE: ../../../flutter/shell/platform/android/.idea/modules.xml
-FILE: ../../../flutter/shell/platform/android/.idea/workspace.xml
 FILE: ../../../flutter/shell/platform/android/AndroidManifest.xml
 FILE: ../../../flutter/shell/platform/android/android_context_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_context_gl.h
@@ -406,9 +401,6 @@ FILE: ../../../flutter/shell/platform/android/apk_asset_provider.cc
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
 FILE: ../../../flutter/shell/platform/android/flutter_main.cc
 FILE: ../../../flutter/shell/platform/android/flutter_main.h
-FILE: ../../../flutter/shell/platform/android/gen/io/flutter/app/BuildConfig.java
-FILE: ../../../flutter/shell/platform/android/gen/io/flutter/app/Manifest.java
-FILE: ../../../flutter/shell/platform/android/gen/io/flutter/app/R.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityDelegate.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityEvents.java
