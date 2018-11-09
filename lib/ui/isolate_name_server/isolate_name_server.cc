@@ -6,6 +6,8 @@
 
 namespace blink {
 
+IsolateNameServer::IsolateNameServer() {}
+
 Dart_Port IsolateNameServer::LookupIsolatePortByName(const std::string& name) {
   std::lock_guard<std::mutex> lock(mutex_);
   return LookupIsolatePortByNameUnprotected(name);

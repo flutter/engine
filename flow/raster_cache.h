@@ -19,10 +19,11 @@ namespace flow {
 
 class RasterCacheResult {
  public:
-  RasterCacheResult() {}
+  RasterCacheResult();
+  RasterCacheResult(const RasterCacheResult& other);
+  ~RasterCacheResult();
 
-  RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect)
-      : image_(std::move(image)), logical_rect_(logical_rect) {}
+  RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect);
 
   operator bool() const { return static_cast<bool>(image_); }
 

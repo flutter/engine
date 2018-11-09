@@ -22,6 +22,9 @@ using TaskObserverAdd =
 using TaskObserverRemove = std::function<void(intptr_t /* key */)>;
 
 struct Settings {
+  Settings();
+  ~Settings();
+
   // VM settings
   std::string vm_snapshot_data_path;
   std::string vm_snapshot_instr_path;
