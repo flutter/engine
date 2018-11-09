@@ -33,7 +33,7 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
 
   ~SceneBuilder() override;
 
-  fml::RefPtr<EngineLayer> pushTransform(const tonic::Float64List& matrix4);
+  fml::RefPtr<EngineLayer> pushTransform(tonic::Float64List& matrix4);
   fml::RefPtr<EngineLayer> pushOffset(double dx, double dy);
   fml::RefPtr<EngineLayer> pushClipRect(double left,
                     double right,

@@ -76,11 +76,13 @@ void SceneBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
 SceneBuilder::SceneBuilder() = default;
 SceneBuilder::~SceneBuilder() = default;
 
-fml::RefPtr<EngineLayer> SceneBuilder::pushTransform(const tonic::Float64List& matrix4) {
+fml::RefPtr<EngineLayer> SceneBuilder::pushTransform(tonic::Float64List& matrix4) {
   SkMatrix sk_matrix = ToSkMatrix(matrix4);
   auto layer = std::make_shared<flow::TransformLayer>();
   layer->set_transform(sk_matrix);
   PushLayer(layer);
+  // matrix4 has to be released before we can return another Dart object
+  matrix4.Release();
   return EngineLayer::MakeRetained(layer);
 }
 
