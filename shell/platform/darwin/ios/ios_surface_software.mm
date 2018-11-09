@@ -127,14 +127,14 @@ bool IOSSurfaceSoftware::PresentBackingStore(sk_sp<SkSurface> backing_store) {
 }
 
 flow::ExternalViewEmbedder* IOSSurfaceSoftware::GetExternalViewEmbedder() {
-  if ([[[NSBundle mainBundle] objectForInfoDictionaryKey:@(kEmbeddedViewsPreview)] boolValue]) {
+  if (IsIosEmbeddedViewsPreviewEnabled()) {
     return this;
   } else {
     return nullptr;
   }
 }
 
-void IOSSurfaceSoftware::SetFrameSize(SkISize frame_size) {
+void IOSSurfaceSoftware::BeginFrame(SkISize frame_size) {
   FlutterPlatformViewsController* platform_views_controller = GetPlatformViewsController();
   FML_CHECK(platform_views_controller != nullptr);
   platform_views_controller->SetFrameSize(frame_size);
