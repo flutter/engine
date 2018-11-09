@@ -79,8 +79,7 @@ id<FlutterViewEngineDelegate> _delegate;
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
         reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
-    if ([[[NSBundle mainBundle] objectForInfoDictionaryKey:@(shell::kEmbeddedViewsPreview)]
-            boolValue]) {
+    if (shell::IsIosEmbeddedViewsPreviewEnabled()) {
       // TODO(amirh): We can lower this to iOS 8.0 once we have a Metal rendering backend.
       // https://github.com/flutter/flutter/issues/24132
       if (@available(iOS 9.0, *)) {
