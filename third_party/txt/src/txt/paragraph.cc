@@ -1024,10 +1024,11 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
     double y_offset_original = y_offset;
     // Underline
     if (record.style().decoration & TextDecoration::kUnderline) {
-      y_offset += (metrics.fFlags &
-                   SkFontMetrics::FontMetricsFlags::kUnderlinePositionIsValid_Flag)
-                      ? metrics.fUnderlinePosition
-                      : underline_thickness;
+      y_offset +=
+          (metrics.fFlags &
+           SkFontMetrics::FontMetricsFlags::kUnderlinePositionIsValid_Flag)
+              ? metrics.fUnderlinePosition
+              : underline_thickness;
       if (record.style().decoration_style != TextDecorationStyle::kWavy) {
         canvas->drawLine(x, y + y_offset, x + width, y + y_offset, paint);
       } else {
@@ -1060,12 +1061,13 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
       // Make sure the double line is "centered" vertically.
       y_offset += (decoration_count - 1.0) * underline_thickness *
                   kDoubleDecorationSpacing / -2.0;
-      y_offset += (metrics.fFlags &
-                   SkFontMetrics::FontMetricsFlags::kStrikeoutThicknessIsValid_Flag)
-                      ? metrics.fStrikeoutPosition
-                      // Backup value if the strikeoutposition metric is not
-                      // available:
-                      : metrics.fXHeight / -2.0;
+      y_offset +=
+          (metrics.fFlags &
+           SkFontMetrics::FontMetricsFlags::kStrikeoutThicknessIsValid_Flag)
+              ? metrics.fStrikeoutPosition
+              // Backup value if the strikeoutposition metric is not
+              // available:
+              : metrics.fXHeight / -2.0;
       if (record.style().decoration_style != TextDecorationStyle::kWavy) {
         canvas->drawLine(x, y + y_offset, x + width, y + y_offset, paint);
       } else {
