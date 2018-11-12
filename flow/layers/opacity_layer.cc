@@ -14,6 +14,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkMatrix child_matrix = matrix;
   child_matrix.postTranslate(offset_.fX, offset_.fY);
   ContainerLayer::Preroll(context, child_matrix);
+  set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
   if (context->raster_cache && layers().size() == 1) {
     Layer* child = layers()[0].get();
     SkMatrix ctm = child_matrix;
