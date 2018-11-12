@@ -948,8 +948,8 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
   }
 
   SkScalar underline_thickness;
-  if ((metrics.fFlags & SkFontMetrics::FontMetricsFlags::
-                            kUnderlineThicknessIsValid_Flag) &&
+  if ((metrics.fFlags &
+       SkFontMetrics::FontMetricsFlags::kUnderlineThicknessIsValid_Flag) &&
       metrics.fUnderlineThickness > 0) {
     underline_thickness = metrics.fUnderlineThickness;
   } else {
@@ -1024,8 +1024,8 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
     double y_offset_original = y_offset;
     // Underline
     if (record.style().decoration & TextDecoration::kUnderline) {
-      y_offset += (metrics.fFlags & SkFontMetrics::FontMetricsFlags::
-                                        kUnderlinePositionIsValid_Flag)
+      y_offset += (metrics.fFlags &
+                   SkFontMetrics::FontMetricsFlags::kUnderlinePositionIsValid_Flag)
                       ? metrics.fUnderlinePosition
                       : underline_thickness;
       if (record.style().decoration_style != TextDecorationStyle::kWavy) {
@@ -1053,15 +1053,15 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
     }
     // Strikethrough
     if (record.style().decoration & TextDecoration::kLineThrough) {
-      if (metrics.fFlags & SkFontMetrics::FontMetricsFlags::
-                               kStrikeoutThicknessIsValid_Flag)
+      if (metrics.fFlags &
+          SkFontMetrics::FontMetricsFlags::kStrikeoutThicknessIsValid_Flag)
         paint.setStrokeWidth(metrics.fStrikeoutThickness *
                              record.style().decoration_thickness_multiplier);
       // Make sure the double line is "centered" vertically.
       y_offset += (decoration_count - 1.0) * underline_thickness *
                   kDoubleDecorationSpacing / -2.0;
-      y_offset += (metrics.fFlags & SkFontMetrics::FontMetricsFlags::
-                                        kStrikeoutThicknessIsValid_Flag)
+      y_offset += (metrics.fFlags &
+                   SkFontMetrics::FontMetricsFlags::kStrikeoutThicknessIsValid_Flag)
                       ? metrics.fStrikeoutPosition
                       // Backup value if the strikeoutposition metric is not
                       // available:
