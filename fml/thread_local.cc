@@ -8,7 +8,8 @@ namespace fml {
 
 ThreadLocal::ThreadLocal() : ThreadLocal(nullptr) {}
 
-ThreadLocal::ThreadLocal(ThreadLocalDestroyCallback destroy) : destroy_(destroy) {
+ThreadLocal::ThreadLocal(ThreadLocalDestroyCallback destroy)
+    : destroy_(destroy) {
   auto callback =
       reinterpret_cast<void (*)(void*)>(&ThreadLocal::ThreadLocalDestroy);
   FML_CHECK(pthread_key_create(&_key, callback) == 0);
@@ -32,4 +33,4 @@ ThreadLocal::Box::Box(ThreadLocalDestroyCallback destroy, intptr_t value)
 
 ThreadLocal::Box::~Box() = default;
 
-}
+}  // namespace fml

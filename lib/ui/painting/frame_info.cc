@@ -20,7 +20,7 @@ FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
 FrameInfo::FrameInfo(fml::RefPtr<CanvasImage> image, int durationMillis)
     : image_(std::move(image)), durationMillis_(durationMillis) {}
-FrameInfo::~FrameInfo() {};
+FrameInfo::~FrameInfo(){};
 
 void FrameInfo::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});

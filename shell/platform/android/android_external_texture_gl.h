@@ -19,9 +19,7 @@ class AndroidExternalTextureGL : public flow::Texture {
 
   ~AndroidExternalTextureGL() override;
 
-  void Paint(SkCanvas& canvas,
-                     const SkRect& bounds,
-                     bool freeze) override;
+  void Paint(SkCanvas& canvas, const SkRect& bounds, bool freeze) override;
 
   void OnGrContextCreated() override;
 

@@ -6,5 +6,7 @@
 
 namespace flow {
 
-  bool ExternalViewEmbedder::SubmitFrame(GrContext* context) { return false; };
+bool ExternalViewEmbedder::SubmitFrame(GrContext* context) {
+  return false;
+};
 }  // namespace flow

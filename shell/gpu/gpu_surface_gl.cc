@@ -368,9 +368,13 @@ bool GPUSurfaceGL::MakeRenderContextCurrent() {
   return delegate_->GLContextMakeCurrent();
 }
 
-bool GPUSurfaceGLDelegate::GLContextFBOResetAfterPresent() const { return false; }
+bool GPUSurfaceGLDelegate::GLContextFBOResetAfterPresent() const {
+  return false;
+}
 
-bool GPUSurfaceGLDelegate::UseOffscreenSurface() const { return false; }
+bool GPUSurfaceGLDelegate::UseOffscreenSurface() const {
+  return false;
+}
 
 SkMatrix GPUSurfaceGLDelegate::GLContextSurfaceTransformation() const {
   SkMatrix matrix;
@@ -382,6 +386,9 @@ flow::ExternalViewEmbedder* GPUSurfaceGLDelegate::GetExternalViewEmbedder() {
   return nullptr;
 }
 
-GPUSurfaceGLDelegate::GLProcResolver GPUSurfaceGLDelegate::GetGLProcResolver() const { return nullptr; }
+GPUSurfaceGLDelegate::GLProcResolver GPUSurfaceGLDelegate::GetGLProcResolver()
+    const {
+  return nullptr;
+}
 
 }  // namespace shell

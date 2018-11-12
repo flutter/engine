@@ -8,7 +8,9 @@
 
 namespace fml {
 
-size_t MessageSerializable::GetSerializableTag() const { return 0; };
+size_t MessageSerializable::GetSerializableTag() const {
+  return 0;
+};
 
 Message::Message() = default;
 

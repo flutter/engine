@@ -389,8 +389,12 @@ MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec,
 
 MultiFrameCodec::~MultiFrameCodec() {}
 
-int MultiFrameCodec::frameCount() { return frameInfos_.size(); }
-int MultiFrameCodec::repetitionCount() { return repetitionCount_; }
+int MultiFrameCodec::frameCount() {
+  return frameInfos_.size();
+}
+int MultiFrameCodec::repetitionCount() {
+  return repetitionCount_;
+}
 
 sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
     fml::WeakPtr<GrContext> resourceContext) {
@@ -504,14 +508,20 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   return Dart_Null();
 }
 
-MultiFrameCodec::DecodedFrame::DecodedFrame(bool required) : required_(required) {}
+MultiFrameCodec::DecodedFrame::DecodedFrame(bool required)
+    : required_(required) {}
 MultiFrameCodec::DecodedFrame::~DecodedFrame() = default;
 
-SingleFrameCodec::SingleFrameCodec(fml::RefPtr<FrameInfo> frame) : frame_(std::move(frame)) {}
+SingleFrameCodec::SingleFrameCodec(fml::RefPtr<FrameInfo> frame)
+    : frame_(std::move(frame)) {}
 SingleFrameCodec::~SingleFrameCodec() {}
 
-int SingleFrameCodec::frameCount() { return 1; }
-int SingleFrameCodec::repetitionCount() { return 0; }
+int SingleFrameCodec::frameCount() {
+  return 1;
+}
+int SingleFrameCodec::repetitionCount() {
+  return 0;
+}
 
 Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   if (!Dart_IsClosure(callback_handle)) {

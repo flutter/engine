@@ -311,9 +311,9 @@ std::pair<bool, uint32_t> RuntimeController::GetRootIsolateReturnCode() {
 }
 
 RuntimeController::Locale::Locale(std::string language_code_,
-       std::string country_code_,
-       std::string script_code_,
-       std::string variant_code_)
+                                  std::string country_code_,
+                                  std::string script_code_,
+                                  std::string variant_code_)
     : language_code(language_code_),
       country_code(country_code_),
       script_code(script_code_),

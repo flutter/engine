@@ -24,7 +24,8 @@ RasterCacheResult::RasterCacheResult(const RasterCacheResult& other) = default;
 
 RasterCacheResult::~RasterCacheResult() = default;
 
-RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect)
+RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
+                                     const SkRect& logical_rect)
     : image_(std::move(image)), logical_rect_(logical_rect) {}
 
 void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {

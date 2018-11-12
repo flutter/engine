@@ -6,13 +6,13 @@
 
 namespace shell {
 
-PlatformMessageResponseDarwin::PlatformMessageResponseDarwin(PlatformMessageResponseCallback callback,
-                                         fml::RefPtr<fml::TaskRunner> platform_task_runner)
-      : callback_(callback, fml::OwnershipPolicy::Retain),
-        platform_task_runner_(std::move(platform_task_runner)) {}
+PlatformMessageResponseDarwin::PlatformMessageResponseDarwin(
+    PlatformMessageResponseCallback callback,
+    fml::RefPtr<fml::TaskRunner> platform_task_runner)
+    : callback_(callback, fml::OwnershipPolicy::Retain),
+      platform_task_runner_(std::move(platform_task_runner)) {}
 
 PlatformMessageResponseDarwin::~PlatformMessageResponseDarwin() = default;
-
 
 void PlatformMessageResponseDarwin::Complete(std::unique_ptr<fml::Mapping> data) {
   fml::RefPtr<PlatformMessageResponseDarwin> self(this);
