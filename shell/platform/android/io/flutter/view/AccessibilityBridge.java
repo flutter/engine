@@ -763,6 +763,7 @@ class AccessibilityBridge
                 sendAccessibilityEvent(event);
             }
             if (mInputFocusedObject != null && mInputFocusedObject.id == object.id
+                    && (mA11yFocusedObject == null || (mA11yFocusedObject.id == mInputFocusedObject.id))
                     && object.hadFlag(Flag.IS_TEXT_FIELD) && object.hasFlag(Flag.IS_TEXT_FIELD)) {
                 String oldValue = object.previousValue != null ? object.previousValue : "";
                 String newValue = object.value != null ? object.value : "";
