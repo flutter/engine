@@ -1,5 +1,6 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
+#include "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 namespace shell {
 FlutterPlatformViewLayer::FlutterPlatformViewLayer(fml::scoped_nsobject<UIView> overlay_view,
