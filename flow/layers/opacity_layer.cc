@@ -65,7 +65,9 @@ void OpacityLayer::Paint(PaintContext& context) const {
   // not available (e.g., when we're using the software backend in golden
   // tests).
   SkRect saveLayerBounds;
-  paint_bounds().makeOffset(-offset_.fX, -offset_.fY).roundOut(&saveLayerBounds);
+  paint_bounds()
+      .makeOffset(-offset_.fX, -offset_.fY)
+      .roundOut(&saveLayerBounds);
 
   Layer::AutoSaveLayer save_layer =
       Layer::AutoSaveLayer::Create(context, saveLayerBounds, &paint);
