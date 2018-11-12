@@ -365,7 +365,7 @@ static jobject GetBitmap(JNIEnv* env, jobject jcaller, jlong shell_holder) {
     return nullptr;
   }
 
-  auto pixels_src = static_cast<const int32_t*>(screenshot.data->data());
+  auto* pixels_src = static_cast<const int32_t*>(screenshot.data->data());
 
   // Our configuration of Skia does not support rendering to the
   // BitmapConfig.ARGB_8888 format expected by android.graphics.Bitmap.
