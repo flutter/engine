@@ -69,6 +69,7 @@ enum class SemanticsFlags : int32_t {
 
 struct SemanticsNode {
   SemanticsNode();
+  SemanticsNode(const SemanticsNode& other);
   ~SemanticsNode();
 
   bool HasAction(SemanticsAction action);

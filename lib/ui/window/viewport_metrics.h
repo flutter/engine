@@ -10,6 +10,9 @@
 namespace blink {
 
 struct ViewportMetrics {
+  ViewportMetrics();
+  ViewportMetrics(const ViewportMetrics& other);
+
   double device_pixel_ratio = 1.0;
   double physical_width = 0;
   double physical_height = 0;

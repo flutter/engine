@@ -9,6 +9,7 @@
 namespace blink {
 
 Settings::Settings() = default;
+Settings::Settings(const Settings& other) = default;
 Settings::~Settings() = default;
 
 std::string Settings::ToString() const {
