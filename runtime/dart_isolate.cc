@@ -348,11 +348,11 @@ bool DartIsolate::PrepareForRunningFromKernel(
     return false;
   }
 
-  child_isolate_preparer_ = [this](DartIsolate* isolate) {
-    for (unsigned long i = 0; i < kernel_buffers_.size(); i++) {
-      bool last_piece = i + 1 == kernel_buffers_.size();
-      auto kernel_buffer = kernel_buffers_.at(i);
-      if (!isolate->PrepareForRunningFromKernel(kernel_buffer, last_piece)) {
+  child_isolate_preparer_ = [buffers = kernel_buffers_](DartIsolate* isolate) {
+    for (unsigned long i = 0; i < buffers.size(); i++) {
+      bool last_piece = i + 1 == buffers.size();
+      auto buffer = buffers.at(i);
+      if (!isolate->PrepareForRunningFromKernel(buffer, last_piece)) {
         return false;
       }
     }
