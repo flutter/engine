@@ -40,7 +40,7 @@ ThreadLocal::Box::~Box() = default;
 ThreadLocal::ThreadLocal() : ThreadLocal(nullptr) {}
 
 ThreadLocal::ThreadLocal(ThreadLocalDestroyCallback destroy)
-      : destroy_(destroy), value_(0) {}
+    : destroy_(destroy), value_(0) {}
 
 void ThreadLocal::Set(intptr_t value) {
   if (value_ == value) {
@@ -54,7 +54,9 @@ void ThreadLocal::Set(intptr_t value) {
   value_ = value;
 }
 
-intptr_t ThreadLocal::Get() { return value_; }
+intptr_t ThreadLocal::Get() {
+  return value_;
+}
 
 ThreadLocal::~ThreadLocal() {
   if (value_ != 0 && destroy_) {
