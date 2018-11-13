@@ -732,6 +732,7 @@ void DartIsolate::AddIsolateShutdownCallback(fml::closure closure) {
 
 DartIsolate::AutoFireClosure::AutoFireClosure(fml::closure closure)
     : closure_(std::move(closure)) {}
+
 DartIsolate::AutoFireClosure::~AutoFireClosure() {
   if (closure_) {
     closure_();

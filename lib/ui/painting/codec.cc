@@ -392,6 +392,7 @@ MultiFrameCodec::~MultiFrameCodec() {}
 int MultiFrameCodec::frameCount() {
   return frameInfos_.size();
 }
+
 int MultiFrameCodec::repetitionCount() {
   return repetitionCount_;
 }
@@ -510,15 +511,18 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
 
 MultiFrameCodec::DecodedFrame::DecodedFrame(bool required)
     : required_(required) {}
+
 MultiFrameCodec::DecodedFrame::~DecodedFrame() = default;
 
 SingleFrameCodec::SingleFrameCodec(fml::RefPtr<FrameInfo> frame)
     : frame_(std::move(frame)) {}
+
 SingleFrameCodec::~SingleFrameCodec() {}
 
 int SingleFrameCodec::frameCount() {
   return 1;
 }
+
 int SingleFrameCodec::repetitionCount() {
   return 0;
 }

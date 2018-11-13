@@ -11,6 +11,7 @@ namespace blink {
 
 struct ViewportMetrics {
   ViewportMetrics();
+
   ViewportMetrics(double p_device_pixel_ratio,
                   double p_physical_width,
                   double p_physical_height,
@@ -22,6 +23,7 @@ struct ViewportMetrics {
                   double p_physical_view_inset_right,
                   double p_physical_view_inset_bottom,
                   double p_physical_view_inset_left);
+
   ViewportMetrics(const ViewportMetrics& other);
 
   double device_pixel_ratio = 1.0;

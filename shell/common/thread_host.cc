@@ -7,6 +7,7 @@
 namespace shell {
 
 ThreadHost::ThreadHost() = default;
+
 ThreadHost::ThreadHost(ThreadHost&&) = default;
 
 ThreadHost::ThreadHost(std::string name_prefix, uint64_t mask) {

@@ -44,6 +44,7 @@ struct FlutterPlatformViewLayer {
 class FlutterPlatformViewsController {
  public:
   FlutterPlatformViewsController();
+
   ~FlutterPlatformViewsController();
 
   void SetFlutterView(UIView* flutter_view);

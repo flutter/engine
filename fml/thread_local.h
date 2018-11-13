@@ -32,6 +32,7 @@ class ThreadLocal {
   class Box {
    public:
     Box(ThreadLocalDestroyCallback destroy, intptr_t value);
+
     ~Box();
 
     intptr_t Value() const { return value_; }

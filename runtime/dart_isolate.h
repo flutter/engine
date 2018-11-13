@@ -99,6 +99,7 @@ class DartIsolate : public UIDartState {
   class AutoFireClosure {
    public:
     AutoFireClosure(fml::closure closure);
+
     ~AutoFireClosure();
 
    private:

@@ -318,10 +318,13 @@ RuntimeController::Locale::Locale(std::string language_code_,
       country_code(country_code_),
       script_code(script_code_),
       variant_code(variant_code_) {}
+
 RuntimeController::Locale::~Locale() = default;
 
 RuntimeController::WindowData::WindowData() = default;
+
 RuntimeController::WindowData::WindowData(const WindowData& other) = default;
+
 RuntimeController::WindowData::~WindowData() = default;
 
 }  // namespace blink

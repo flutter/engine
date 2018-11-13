@@ -125,6 +125,7 @@ SkTypeface* AssetManagerFontStyleSet::matchStyle(const SkFontStyle& pattern) {
 
 AssetManagerFontStyleSet::TypefaceAsset::TypefaceAsset(std::string a)
     : asset(std::move(a)) {}
+
 AssetManagerFontStyleSet::TypefaceAsset::TypefaceAsset(
     const AssetManagerFontStyleSet::TypefaceAsset& other) = default;
 

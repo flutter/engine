@@ -17,6 +17,7 @@ FlutterPlatformViewLayer::FlutterPlatformViewLayer(fml::scoped_nsobject<UIView> 
 FlutterPlatformViewLayer::~FlutterPlatformViewLayer() = default;
 
 FlutterPlatformViewsController::FlutterPlatformViewsController() = default;
+
 FlutterPlatformViewsController::~FlutterPlatformViewsController() = default;
 
 }  // namespace shell

@@ -26,6 +26,7 @@ class FrameInfo final : public RefCountedDartWrappable<FrameInfo> {
 
  private:
   FrameInfo(fml::RefPtr<CanvasImage> image, int durationMillis);
+
   ~FrameInfo() override;
 
   const fml::RefPtr<CanvasImage> image_;

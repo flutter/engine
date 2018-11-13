@@ -43,8 +43,11 @@ class AssetManagerFontStyleSet : public SkFontStyleSet {
 
   struct TypefaceAsset {
     TypefaceAsset(std::string a);
+
     TypefaceAsset(const TypefaceAsset& other);
+
     ~TypefaceAsset();
+
     std::string asset;
     sk_sp<SkTypeface> typeface;
   };

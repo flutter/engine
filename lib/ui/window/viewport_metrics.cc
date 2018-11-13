@@ -6,6 +6,7 @@
 
 namespace blink {
 ViewportMetrics::ViewportMetrics() = default;
+
 ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_width,
                                  double p_physical_height,

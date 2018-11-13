@@ -20,7 +20,9 @@ namespace flow {
 class RasterCacheResult {
  public:
   RasterCacheResult();
+
   RasterCacheResult(const RasterCacheResult& other);
+
   ~RasterCacheResult();
 
   RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect);

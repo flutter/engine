@@ -84,6 +84,7 @@ class RuntimeController final : public WindowClient {
            std::string country_code_,
            std::string script_code_,
            std::string variant_code_);
+
     ~Locale();
 
     std::string language_code;
@@ -94,7 +95,9 @@ class RuntimeController final : public WindowClient {
 
   struct WindowData {
     WindowData();
+
     WindowData(const WindowData& other);
+
     ~WindowData();
 
     ViewportMetrics viewport_metrics;
