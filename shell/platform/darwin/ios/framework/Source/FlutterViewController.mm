@@ -237,6 +237,11 @@
 #pragma mark - Managing launch views
 
 - (void)installSplashScreenViewIfNecessary {
+  // If the engine wasn't created by this FlutterViewController, we should avoid installing
+  // a splash screen - otherwise we may never get rid of it.
+  if (_engineNeedsLaunch == NO) {
+    return;
+  }
   // Show the launch screen view again on top of the FlutterView if available.
   // This launch screen view will be removed once the first Flutter frame is rendered.
   if (self.isBeingPresented || self.isMovingToParentViewController) {
