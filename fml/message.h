@@ -47,7 +47,7 @@ class MessageSerializable {
 
   virtual bool Deserialize(Message& message) = 0;
 
-  virtual size_t GetSerializableTag() const = 0;
+  virtual size_t GetSerializableTag() const;
 };
 
 // The traits passed to the encode/decode calls that accept traits should be
