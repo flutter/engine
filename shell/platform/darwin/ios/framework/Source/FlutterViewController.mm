@@ -239,7 +239,7 @@
 - (void)installSplashScreenViewIfNecessary {
   // If the engine wasn't created by this FlutterViewController, we should avoid installing
   // a splash screen - otherwise we may never get rid of it.
-  if (_engineNeedsLaunch == NO) {
+  if (!_engineNeedsLaunch) {
     return;
   }
   // Show the launch screen view again on top of the FlutterView if available.
