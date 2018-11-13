@@ -348,8 +348,15 @@ bool DartIsolate::PrepareForRunningFromKernel(
     return false;
   }
 
-  child_isolate_preparer_ = [mapping](DartIsolate* isolate) {
-    return isolate->PrepareForRunningFromKernel(mapping);
+  child_isolate_preparer_ = [this](DartIsolate* isolate) {
+    for (unsigned long i = 0; i < kernel_buffers_.size(); i++) {
+      bool last_piece = i + 1 == kernel_buffers_.size();
+      auto kernel_buffer = kernel_buffers_.at(i);
+      if (!isolate->PrepareForRunningFromKernel(kernel_buffer, last_piece)) {
+        return false;
+      }
+    }
+    return true;
   };
   phase_ = Phase::Ready;
   return true;
