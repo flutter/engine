@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -11,11 +11,11 @@
 #include "FlutterPlugin.h"
 
 /**
- * UIApplicationDelegate subclass for simple apps that want default behavior.
+ * `UIApplicationDelegate` subclass for simple apps that want default behavior.
  *
- * This class provides the following behaviors:
+ * This class implements the following behaviors:
  *   * Status bar touches are forwarded to the key window's root view
- *     FlutterViewController, in order to trigger scroll to top.
+ *     `FlutterViewController`, in order to trigger scroll to top.
  *   * Keeps the Flutter connection open in debug mode when the phone screen
  *     locks.
  *

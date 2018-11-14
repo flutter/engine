@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,7 +10,7 @@ ContainerLayer::ContainerLayer() {}
 
 ContainerLayer::~ContainerLayer() = default;
 
-void ContainerLayer::Add(std::unique_ptr<Layer> layer) {
+void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
   layer->set_parent(this);
   layers_.push_back(std::move(layer));
 }

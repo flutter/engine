@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -1903,8 +1903,8 @@ class RepositoryVulkanDirectory extends RepositoryDirectory {
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'doc' // documentation
-        && entry.name != 'out' // documentation
+    // Flutter only uses the headers in the include directory.
+    return entry.name == 'include'
         && super.shouldRecurse(entry);
   }
 
@@ -1938,6 +1938,7 @@ class RepositoryRootThirdPartyDirectory extends RepositoryGenericThirdPartyDirec
         && entry.name != 'binutils' // build-time dependency only
         && entry.name != 'instrumented_libraries' // unused according to chinmay
         && entry.name != 'android_tools' // excluded on advice
+        && entry.name != 'android_support' // build-time only
         && entry.name != 'googletest' // only used by tests
         && entry.name != 'skia' // treated as a separate component
         && super.shouldRecurse(entry);
@@ -2422,6 +2423,7 @@ Future<Null> main(List<String> arguments) async {
     } else {
       RegExp signaturePattern = new RegExp(r'Signature: (\w+)');
 
+      final List<String> usedGoldens = <String>[];
       bool isFirstComponent = true;
       for (RepositoryDirectory component in root.subdirectories) {
         system.stderr.writeln('Collecting licenses for ${component.io.name}');
@@ -2440,10 +2442,11 @@ Future<Null> main(List<String> arguments) async {
         // Check whether the golden file matches the signature of the current contents
         // of this directory.
         try {
-          system.File goldenFile = new system.File(
-              path.join(argResults['golden'], 'licenses_${component.io.name}'));
+          final String goldenFileName = 'licenses_${component.io.name}';
+          system.File goldenFile = new system.File(path.join(argResults['golden'], goldenFileName));
           String goldenSignature = await goldenFile.openRead()
               .transform(utf8.decoder).transform(new LineSplitter()).first;
+          usedGoldens.add(goldenFileName);
           Match goldenMatch = signaturePattern.matchAsPrefix(goldenSignature);
           if (goldenMatch != null && goldenMatch.group(1) == signature) {
             system.stderr.writeln('    Skipping this component - no change in signature');
@@ -2498,6 +2501,14 @@ Future<Null> main(List<String> arguments) async {
         progress.label = 'Done.';
         progress.flush();
         system.stderr.writeln('');
+      }
+
+      final Set<String> unusedGoldens = system.Directory(argResults['golden']).listSync().map((system.FileSystemEntity file) => path.basename(file.path)).toSet()
+        ..removeAll(usedGoldens);
+      if (unusedGoldens.isNotEmpty) {
+        system.stderr.writeln('The following golden files in ${argResults['golden']} are unused and need to be deleted:');
+        unusedGoldens.map((String s) => ' * $s').forEach(system.stderr.writeln);
+        system.exit(1);
       }
     }
   } catch (e, stack) {

@@ -1,11 +1,10 @@
-// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package io.flutter.view;
 
 import android.app.Activity;
-import android.content.Context;
 import android.graphics.Rect;
 import android.opengl.Matrix;
 import android.os.Build;
@@ -145,7 +144,9 @@ class AccessibilityBridge
 
         AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner, virtualViewId);
         // Work around for https://github.com/flutter/flutter/issues/2101
-        result.setViewIdResourceName("");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            result.setViewIdResourceName("");
+        }
         result.setPackageName(mOwner.getContext().getPackageName());
         result.setClassName("android.view.View");
         result.setSource(mOwner, virtualViewId);
@@ -166,10 +167,10 @@ class AccessibilityBridge
                 if (object.textSelectionBase != -1 && object.textSelectionExtent != -1) {
                     result.setTextSelection(object.textSelectionBase, object.textSelectionExtent);
                 }
-                // Text fields will always be created as a live region, so that updates to
-                // the label trigger polite announcements. This makes it easy to follow a11y
-                // guidelines for text fields on Android.
-                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                // Text fields will always be created as a live region when they have input focus,
+                // so that updates to the label trigger polite announcements. This makes it easy to
+                // follow a11y guidelines for text fields on Android.
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2 && mA11yFocusedObject != null && mA11yFocusedObject.id == virtualViewId) {
                     result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
                 }
             }
@@ -215,7 +216,7 @@ class AccessibilityBridge
             // TODO(jonahwilliams): Figure out a way conform to the expected id from TalkBack's
             // CustomLabelManager. talkback/src/main/java/labeling/CustomLabelManager.java#L525
         }
-        if (object.hasAction(Action.DISMISS)) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2 && object.hasAction(Action.DISMISS)) {
             result.setDismissable(true);
             result.addAction(AccessibilityNodeInfo.ACTION_DISMISS);
         }
@@ -598,8 +599,6 @@ class AccessibilityBridge
     }
 
     void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
-        ArrayList<CustomAccessibilityAction> updatedActions =
-                new ArrayList<CustomAccessibilityAction>();
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
             CustomAccessibilityAction action = getOrCreateAction(id);
@@ -720,18 +719,27 @@ class AccessibilityBridge
                     event.setMaxScrollX((int) max);
                 }
                 if (object.scrollChildren > 0) {
+                    // We don't need to add 1 to the scroll index because TalkBack does this automagically.
                     event.setItemCount(object.scrollChildren);
                     event.setFromIndex(object.scrollIndex);
-                    int visibleChildren = object.childrenInHitTestOrder.size() - 1;
-                    // We assume that only children at the end of the list can be hidden.
-                    assert(!object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN));
-                    for (; visibleChildren >= 0; visibleChildren--) {
-                        SemanticsObject child = object.childrenInHitTestOrder.get(visibleChildren);
+                    int visibleChildren = 0;
+                    // handle hidden children at the beginning and end of the list.
+                    for (SemanticsObject child : object.childrenInHitTestOrder) {
                         if (!child.hasFlag(Flag.IS_HIDDEN)) {
-                            break;
+                            visibleChildren += 1;
                         }
                     }
-                    event.setToIndex(object.scrollIndex + visibleChildren);
+                    assert(object.scrollIndex + visibleChildren <= object.scrollChildren);
+                    assert(!object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN));
+                    // The setToIndex should be the index of the last visible child. Because we counted all
+                    // children, including the first index we need to subtract one.
+                    //
+                    //   [0, 1, 2, 3, 4, 5]
+                    //    ^     ^
+                    // In the example above where 0 is the first visible index and 2 is the last, we will
+                    // count 3 total visible children. We then subtract one to get the correct last visible
+                    // index of 2.
+                    event.setToIndex(object.scrollIndex + visibleChildren - 1);
                 }
                 sendAccessibilityEvent(event);
             }
@@ -755,7 +763,12 @@ class AccessibilityBridge
                 sendAccessibilityEvent(event);
             }
             if (mInputFocusedObject != null && mInputFocusedObject.id == object.id
-                    && object.hadFlag(Flag.IS_TEXT_FIELD) && object.hasFlag(Flag.IS_TEXT_FIELD)) {
+                    && object.hadFlag(Flag.IS_TEXT_FIELD) && object.hasFlag(Flag.IS_TEXT_FIELD)
+                    // If we have a TextField that has InputFocus, we should avoid announcing it if something
+                    // else we track has a11y focus. This needs to still work when, e.g., IME has a11y focus
+                    // or the "PASTE" popup is used though.
+                    // See more discussion at https://github.com/flutter/flutter/issues/23180
+                    && (mA11yFocusedObject == null || (mA11yFocusedObject.id == mInputFocusedObject.id))) {
                 String oldValue = object.previousValue != null ? object.previousValue : "";
                 String newValue = object.value != null ? object.value : "";
                 AccessibilityEvent event = createTextChangedEvent(object.id, oldValue, newValue);

@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -41,7 +41,8 @@ bool ZipAssetStore::IsValid() const {
 // |blink::AssetResolver|
 std::unique_ptr<fml::Mapping> ZipAssetStore::GetAsMapping(
     const std::string& asset_name) const {
-  TRACE_EVENT0("flutter", "ZipAssetStore::GetAsMapping");
+  TRACE_EVENT1("flutter", "ZipAssetStore::GetAsMapping", "name",
+               asset_name.c_str());
   auto found = stat_cache_.find(asset_name);
 
   if (found == stat_cache_.end()) {

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -32,13 +32,14 @@ class LayerTree {
                    scenic::ContainerNode& container);
 #endif
 
-  void Paint(CompositorContext::ScopedFrame& frame) const;
+  void Paint(CompositorContext::ScopedFrame& frame,
+             bool ignore_raster_cache = false) const;
 
   sk_sp<SkPicture> Flatten(const SkRect& bounds);
 
   Layer* root_layer() const { return root_layer_.get(); }
 
-  void set_root_layer(std::unique_ptr<Layer> root_layer) {
+  void set_root_layer(std::shared_ptr<Layer> root_layer) {
     root_layer_ = std::move(root_layer);
   }
 
@@ -73,7 +74,7 @@ class LayerTree {
 
  private:
   SkISize frame_size_;  // Physical pixels.
-  std::unique_ptr<Layer> root_layer_;
+  std::shared_ptr<Layer> root_layer_;
   fml::TimeDelta construction_time_;
   uint32_t rasterizer_tracing_threshold_;
   bool checkerboard_raster_cache_images_;

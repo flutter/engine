@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -44,7 +44,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                  Dart_Handle background_objects,
                  Dart_Handle background_data,
                  Dart_Handle foreground_objects,
-                 Dart_Handle foreground_data);
+                 Dart_Handle foreground_data,
+                 Dart_Handle shadows_data);
 
   void pop();
 
