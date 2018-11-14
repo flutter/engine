@@ -27,6 +27,7 @@ class ServiceProtocol {
   static const fml::StringView kRunInViewExtensionName;
   static const fml::StringView kFlushUIThreadTasksExtensionName;
   static const fml::StringView kSetAssetBundlePathExtensionName;
+  static const fml::StringView kGetRefreshRateExtensionName;
 
   class Handler {
    public:
@@ -95,6 +96,9 @@ class ServiceProtocol {
 
   FML_WARN_UNUSED_RESULT
   bool HandleListViewsMethod(rapidjson::Document& response) const;
+
+  FML_WARN_UNUSED_RESULT
+  bool HandleGetRefreshRateMethod(rapidjson::Document& response) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ServiceProtocol);
 };

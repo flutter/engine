@@ -30,6 +30,8 @@ const fml::StringView ServiceProtocol::kFlushUIThreadTasksExtensionName =
     "_flutter.flushUIThreadTasks";
 const fml::StringView ServiceProtocol::kSetAssetBundlePathExtensionName =
     "_flutter.setAssetBundlePath";
+const fml::StringView ServiceProtocol::kGetRefreshRateExtensionName =
+    "_flutter.getRefreshRate";
 
 static constexpr fml::StringView kViewIdPrefx = "_flutterView/";
 static constexpr fml::StringView kListViewsExtensionName = "_flutter.listViews";
@@ -45,6 +47,7 @@ ServiceProtocol::ServiceProtocol()
           kRunInViewExtensionName,
           kFlushUIThreadTasksExtensionName,
           kSetAssetBundlePathExtensionName,
+          kGetRefreshRateExtensionName,
       }),
       handlers_mutex_(fml::SharedMutex::Create()) {}
 
@@ -270,6 +273,13 @@ bool ServiceProtocol::HandleListViewsMethod(
 
   response.AddMember("views", viewsList, allocator);
 
+  return true;
+}
+
+bool ServiceProtocol::HandleGetRefreshRateMethod(
+    rapidjson::Document& response) const {
+  response.SetObject();
+  response.AddMember("rate", "60.0", response.GetAllocator());
   return true;
 }
 
