@@ -348,7 +348,9 @@ bool DartIsolate::PrepareForRunningFromKernel(
     return false;
   }
 
-  // child isolate shares root isolate embedder_isolate (line 691 and 693 below)
+  // Child isolate shares root isolate embedder_isolate (lines 691 and 693
+  // below). Re-initializing child_isolate_preparer_ lambda while it is being
+  // executed leads to crashes.
   if (child_isolate_preparer_ == nullptr) {
     child_isolate_preparer_ = [buffers =
                                    kernel_buffers_](DartIsolate* isolate) {
