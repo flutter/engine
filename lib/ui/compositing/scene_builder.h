@@ -36,12 +36,13 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   fml::RefPtr<EngineLayer> pushTransform(tonic::Float64List& matrix4);
   fml::RefPtr<EngineLayer> pushOffset(double dx, double dy);
   fml::RefPtr<EngineLayer> pushClipRect(double left,
-                    double right,
-                    double top,
-                    double bottom,
-                    int clipBehavior);
+                                        double right,
+                                        double top,
+                                        double bottom,
+                                        int clipBehavior);
   fml::RefPtr<EngineLayer> pushClipRRect(const RRect& rrect, int clipBehavior);
-  fml::RefPtr<EngineLayer> pushClipPath(const CanvasPath* path, int clipBehavior);
+  fml::RefPtr<EngineLayer> pushClipPath(const CanvasPath* path,
+                                        int clipBehavior);
   fml::RefPtr<EngineLayer> pushOpacity(int alpha, double dx = 0, double dy = 0);
   fml::RefPtr<EngineLayer> pushColorFilter(int color, int blendMode);
   fml::RefPtr<EngineLayer> pushBackdropFilter(ImageFilter* filter);
