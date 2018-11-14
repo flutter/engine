@@ -878,6 +878,8 @@ public class FlutterView extends SurfaceView
         }
         if (mTouchExplorationEnabled) {
             mAccessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+        } else {
+            mAccessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
         }
         // Apply additional accessibility settings
         updateAccessibilityFeatures();
