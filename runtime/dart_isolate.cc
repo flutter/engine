@@ -354,12 +354,12 @@ bool DartIsolate::PrepareForRunningFromKernel(
   if (child_isolate_preparer_ == nullptr) {
     child_isolate_preparer_ = [buffers =
                                    kernel_buffers_](DartIsolate* isolate) {
-       for (unsigned long i = 0; i < buffers.size(); i++) {
-         bool last_piece = i + 1 == buffers.size();
-         const std::shared_ptr<const fml::Mapping>& buffer = buffers.at(i);
-         if (!isolate->PrepareForRunningFromKernel(buffer, last_piece)) {
-           return false;
-         }
+      for (unsigned long i = 0; i < buffers.size(); i++) {
+        bool last_piece = i + 1 == buffers.size();
+        const std::shared_ptr<const fml::Mapping>& buffer = buffers.at(i);
+        if (!isolate->PrepareForRunningFromKernel(buffer, last_piece)) {
+          return false;
+        }
       }
       return true;
     };
