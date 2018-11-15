@@ -49,10 +49,11 @@ abstract class PluginUtilities {
   /// null is returned.
   static CallbackHandle getCallbackHandle(Function callback) {
     assert(callback != null, "'callback' must not be null.");
-    return _forwardCache.putIfAbsent(callback, () {
+    final CallbackHandle result = _forwardCache.putIfAbsent(callback, () {
       final int handle = _getCallbackHandle(callback);
       return handle != null ? new CallbackHandle.fromRawHandle(handle) : null;
     });
+    return result;
   }
 
   /// Get a tear-off of a named top-level or static callback represented by a
