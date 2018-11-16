@@ -76,7 +76,6 @@
     _dartProject.reset([projectOrNil retain]);
 
   _pluginPublications = [NSMutableDictionary new];
-  _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
   _platformViewsController.reset(new shell::FlutterPlatformViewsController());
 
   [self setupChannels];
@@ -221,8 +220,6 @@
   _textInputPlugin.get().textInputDelegate = self;
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
-
-  [self maybeSetupPlatformViewChannels];
 }
 
 - (void)maybeSetupPlatformViewChannels {
@@ -348,6 +345,11 @@
     FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
                    << entrypoint.UTF8String;
   } else {
+    [self setupChannels];
+    if (!_platformViewsController) {
+      _platformViewsController.reset(new shell::FlutterPlatformViewsController());
+    }
+    _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
     [self maybeSetupPlatformViewChannels];
   }
 
@@ -359,6 +361,22 @@
     return;
   }
   [self setViewController:nil];
+
+  _publisher.reset();
+
+  _platformViewsController.reset();
+
+  _platformPlugin.reset();
+  _textInputPlugin.reset();
+  _localizationChannel.reset();
+  _navigationChannel.reset();
+  _platformChannel.reset();
+  _platformViewsChannel.reset();
+  _textInputChannel.reset();
+  _lifecycleChannel.reset();
+  _systemChannel.reset();
+  _settingsChannel.reset();
+
   _shell.reset();
   _threadHost.Reset();
 }
