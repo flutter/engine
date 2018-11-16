@@ -37,6 +37,7 @@
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
+  BOOL _engineIsOwnedByMe;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -50,6 +51,7 @@
     _viewOpaque = YES;
     _engine.reset([engine retain]);
     _engineNeedsLaunch = NO;
+    _engineIsOwnedByMe = NO;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
 
@@ -71,6 +73,7 @@
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
     _engineNeedsLaunch = YES;
+    _engineIsOwnedByMe = YES;
 
     [self performCommonViewControllerInitialization];
   }
@@ -387,9 +390,9 @@
 
   if (_engineNeedsLaunch) {
     [_engine.get() launchEngine:nil libraryURI:nil];
-    [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
   }
+  [_engine.get() setViewController:self];
 
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
@@ -421,12 +424,15 @@
   TRACE_EVENT0("flutter", "viewDidDisappear");
   [self surfaceUpdated:NO];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
-
+  [_engine.get() setViewController:nil];
   [super viewDidDisappear:animated];
 }
 
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+  if (_engineIsOwnedByMe) {
+    [_engine.release() dealloc];
+  }
   [super dealloc];
 }
 
