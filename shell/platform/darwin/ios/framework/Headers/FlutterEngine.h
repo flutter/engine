@@ -98,6 +98,11 @@ FLUTTER_EXPORT
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)uri;
 
 /**
+ * Shuts down the engine if it's running.
+ */
+- (void)shutdown;
+
+/**
  * Sets the `FlutterViewController` for this instance.  The FlutterEngine must be
  * running (e.g. a successful call to `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI`)
  * before calling this method. Callers may pass nil to remove the viewController

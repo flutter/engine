@@ -354,6 +354,15 @@
   return _shell != nullptr;
 }
 
+- (void)shutdown {
+  if (_shell == nullptr) {
+    return;
+  }
+  [self setViewController:nil];
+  _shell.reset();
+  _threadHost.Reset();
+}
+
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
   if ([self createShell:entrypoint libraryURI:libraryURI]) {
     [self launchEngine:entrypoint libraryURI:libraryURI];

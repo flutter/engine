@@ -431,7 +431,7 @@
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   if (_engineIsOwnedByMe) {
-    [_engine.release() dealloc];
+    [_engine.get() shutdown];
   }
   [super dealloc];
 }
