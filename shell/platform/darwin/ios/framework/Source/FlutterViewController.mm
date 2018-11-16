@@ -213,6 +213,12 @@
 }
 
 - (void)setInitialRoute:(NSString*)route {
+  if (!_engineNeedsLaunch) {
+    FML_LOG(WARNING) << "Calling -[FlutterViewController setInitialRoute:] has no effect once the "
+                      "engine has started running. You should consider using either "
+                      "-[FlutterViewController pushRoute] or creating a custom method channel to "
+                      "communicate about initial route state after the engine has started.";
+  }
   [[_engine.get() navigationChannel] invokeMethod:@"setInitialRoute" arguments:route];
 }
 
