@@ -683,10 +683,6 @@ fml::WeakPtr<AccessibilityBridge> AccessibilityBridge::GetWeakPtr() {
 }
 
 void AccessibilityBridge::clearState() {
-  for (id key in objects_.get()) {
-    [[objects_.get() objectForKey:key].children removeAllObjects];
-    // [[[objects_.get() objectForKey:key] accessibilityContainer] release];
-  }
   [objects_ removeAllObjects];
   previous_route_id_ = 0;
   previous_routes_.clear();
