@@ -90,7 +90,6 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
   std::unique_ptr<fml::WeakPtrFactory<SemanticsObject>> _weakFactory;
-
 }
 
 #pragma mark - Override base class designated initializers
@@ -269,8 +268,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 - (id)accessibilityContainer {
   if ([self hasChildren] || [self uid] == kRootNodeId) {
     if (_container == nil)
-      _container.reset([[SemanticsObjectContainer alloc] initWithSemanticsObject:_weakFactory->GetWeakPtr()
-                                                                          bridge:[self bridge]]);
+      _container.reset([[SemanticsObjectContainer alloc]
+          initWithSemanticsObject:_weakFactory->GetWeakPtr()
+                           bridge:[self bridge]]);
     return _container.get();
   }
   if ([self parent] == nil) {
