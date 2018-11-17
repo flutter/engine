@@ -19,25 +19,30 @@ LayerTree::LayerTree()
 
 LayerTree::~LayerTree() = default;
 
-void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
-                        bool ignore_raster_cache) {
+// Executes preroll on the root layer of the tree.
+// Returns size hints for the surfaces needed to draw the tree.
+std::vector<SkISize> LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
+                                        bool ignore_raster_cache) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
   SkColorSpace* color_space =
       frame.canvas() ? frame.canvas()->imageInfo().colorSpace() : nullptr;
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
+  std::vector<SkISize> sizes();
   PrerollContext context = {
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
       frame.gr_context(),
       frame.view_embedder(),
       color_space,
       SkRect::MakeEmpty(),
+      &sizes,
       frame.context().frame_time(),
       frame.context().engine_time(),
       frame.context().texture_registry(),
       checkerboard_offscreen_layers_};
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
+  return sizes;
 }
 
 #if defined(OS_FUCHSIA)

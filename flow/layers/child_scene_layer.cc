@@ -12,6 +12,9 @@ ChildSceneLayer::~ChildSceneLayer() = default;
 
 void ChildSceneLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_needs_system_composite(true);
+  // We may not need to provide this size as a hint if this layer is drawn
+  // for us.
+  context->size_hints->emplace_back(size_.width(), size_.height());
 }
 
 void ChildSceneLayer::Paint(PaintContext& context) const {

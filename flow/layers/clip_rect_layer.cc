@@ -18,6 +18,7 @@ void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   if (child_paint_bounds.intersect(clip_rect_)) {
     set_paint_bounds(child_paint_bounds);
   }
+  context->size_hints->emplace_back(clip_rect_.width(), clip_rect_.height());
 }
 
 #if defined(OS_FUCHSIA)

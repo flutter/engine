@@ -48,6 +48,7 @@ struct PrerollContext {
   ExternalViewEmbedder* view_embedder;
   SkColorSpace* dst_color_space;
   SkRect child_paint_bounds;
+  std::vector<SkISize>* size_hints;
 
   // The following allows us to paint in the end of subtree preroll
   const Stopwatch& frame_time;

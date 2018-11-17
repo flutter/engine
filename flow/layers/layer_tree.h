@@ -24,8 +24,8 @@ class LayerTree {
 
   ~LayerTree();
 
-  void Preroll(CompositorContext::ScopedFrame& frame,
-               bool ignore_raster_cache = false);
+  std::vector<SkISize> Preroll(CompositorContext::ScopedFrame& frame,
+                               bool ignore_raster_cache = false);
 
 #if defined(OS_FUCHSIA)
   void UpdateScene(SceneUpdateContext& context,
