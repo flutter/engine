@@ -16,6 +16,7 @@ class SharedMutex {
   virtual void Lock() = 0;
   virtual void LockShared() = 0;
   virtual void Unlock() = 0;
+  virtual void UnlockShared() = 0;
 };
 
 // RAII wrapper that does a shared acquire of a SharedMutex.
@@ -25,7 +26,7 @@ class SharedLock {
     shared_mutex_.LockShared();
   }
 
-  ~SharedLock() { shared_mutex_.Unlock(); }
+  ~SharedLock() { shared_mutex_.UnlockShared(); }
 
  private:
   SharedMutex& shared_mutex_;

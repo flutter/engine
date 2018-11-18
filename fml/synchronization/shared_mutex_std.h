@@ -15,6 +15,7 @@ class SharedMutexStd : public SharedMutex {
   virtual void Lock();
   virtual void LockShared();
   virtual void Unlock();
+  virtual void UnlockShared();
 
  private:
   friend SharedMutex* SharedMutex::Create();

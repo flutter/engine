@@ -22,4 +22,9 @@ void SharedMutexStd::Unlock() {
   mutex_.unlock();
 }
 
+
+void SharedMutexStd::UnlockShared() {
+  mutex_.unlock_shared();
+}
+
 }  // namespace fml

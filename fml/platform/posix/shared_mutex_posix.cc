@@ -27,4 +27,8 @@ void SharedMutexPosix::Unlock() {
   pthread_rwlock_unlock(&rwlock_);
 }
 
+void SharedMutexPosix::UnlockShared() {
+  pthread_rwlock_unlock(&rwlock_);
+}
+
 }  // namespace fml
