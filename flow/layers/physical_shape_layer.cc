@@ -59,7 +59,8 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
   }
-  context->size_hints->emplace_back(frameRRect_.width(), frameRRect_.height());
+  context->size_hints->emplace_back(
+      SkISize::Make(ceil(frameRRect_.width()), ceil(frameRRect_.height())));
 }
 
 #if defined(OS_FUCHSIA)

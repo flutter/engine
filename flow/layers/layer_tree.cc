@@ -20,7 +20,10 @@ LayerTree::LayerTree()
 LayerTree::~LayerTree() = default;
 
 // Executes preroll on the root layer of the tree.
-// Returns size hints for the surfaces needed to draw the tree.
+//
+// Returns size hints for the surfaces needed to draw the tree. This may
+// be used to make more intelligent decisions such as when on fuchsia, we
+// do smart allocation of Vulkan surfaces in the VulkanSurfacePool.
 std::vector<SkISize> LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
                                         bool ignore_raster_cache) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
@@ -28,7 +31,7 @@ std::vector<SkISize> LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame.canvas() ? frame.canvas()->imageInfo().colorSpace() : nullptr;
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
-  std::vector<SkISize> sizes();
+  std::vector<SkISize> sizes;
   PrerollContext context = {
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
       frame.gr_context(),
@@ -110,6 +113,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   const Stopwatch unused_stopwatch;
   TextureRegistry unused_texture_registry;
   SkMatrix root_surface_transformation;
+  std::vector<SkISize> unused_sizes;
   // No root surface transformation. So assume identity.
   root_surface_transformation.reset();
 
@@ -119,6 +123,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
       nullptr,                  // external view embedder
       nullptr,                  // SkColorSpace* dst_color_space
       SkRect::MakeEmpty(),      // SkRect child_paint_bounds
+      &unused_sizes,            // std::vector<SkISize>*
       unused_stopwatch,         // frame time (dont care)
       unused_stopwatch,         // engine time (dont care)
       unused_texture_registry,  // texture registry (not supported)

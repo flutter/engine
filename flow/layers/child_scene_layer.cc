@@ -14,7 +14,8 @@ void ChildSceneLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_needs_system_composite(true);
   // We may not need to provide this size as a hint if this layer is drawn
   // for us.
-  context->size_hints->emplace_back(size_.width(), size_.height());
+  context->size_hints->emplace_back(
+      SkISize::Make(ceil(size_.width()), ceil(size_.height())));
 }
 
 void ChildSceneLayer::Paint(PaintContext& context) const {
