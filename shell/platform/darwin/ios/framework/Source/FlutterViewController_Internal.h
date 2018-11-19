@@ -17,7 +17,7 @@
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr;
 - (shell::FlutterPlatformViewsController*)platformViewsController;
 
-@property(readonly) fml::scoped_nsobject<FlutterEngine> engine;
+// @property(readonly) fml::scoped_nsobject<FlutterEngine> engine;
 
 @end
 

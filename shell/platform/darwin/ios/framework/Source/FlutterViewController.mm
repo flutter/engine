@@ -119,8 +119,8 @@
   [self setupNotificationCenterObservers];
 }
 
-- (fml::scoped_nsobject<FlutterEngine>)engine {
-  return _engine;
+- (FlutterEngine*)engine {
+  return _engine.get();
 }
 
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr {
