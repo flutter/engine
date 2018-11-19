@@ -81,8 +81,7 @@ bool ShouldCreateLogMessage(LogSeverity severity);
 
 #ifndef NDEBUG
 #define FML_DLOG(severity) FML_LOG(severity)
-#define FML_DCHECK(condition) FML_EAT_STREAM_PARAMETERS(condition)
-// #define FML_DCHECK(condition) FML_CHECK(condition)
+#define FML_DCHECK(condition) FML_CHECK(condition)
 #else
 #define FML_DLOG(severity) FML_EAT_STREAM_PARAMETERS(true)
 #define FML_DCHECK(condition) FML_EAT_STREAM_PARAMETERS(condition)
