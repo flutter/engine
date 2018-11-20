@@ -16,6 +16,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.StandardMessageCodec;
+import io.flutter.util.Predicate;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -103,6 +104,74 @@ class AccessibilityBridge
         }
 
         final int value;
+
+        static String flagsToString(int value) {
+            if (value == 0) {
+                return "(no flags)";
+            }
+            StringBuilder builder = new StringBuilder();
+            if ((value & HAS_CHECKED_STATE.value) != 0) {
+                builder.append("HAS_CHECKED_STATE | ");
+            }
+            if ((value & IS_CHECKED.value) != 0) {
+                builder.append("IS_CHECKED | ");
+            }
+            if ((value & IS_SELECTED.value) != 0) {
+                builder.append("IS_SELECTED | ");
+            }
+            if ((value & IS_BUTTON.value) != 0) {
+                builder.append("IS_BUTTON | ");
+            }
+            if ((value & IS_TEXT_FIELD.value) != 0) {
+                builder.append("IS_TEXT_FIELD | ");
+            }
+            if ((value & IS_FOCUSED.value) != 0) {
+                builder.append("IS_FOCUSED | ");
+            }
+            if ((value & HAS_ENABLED_STATE.value) != 0) {
+                builder.append("HAS_ENABLED_STATE | ");
+            }
+            if ((value & IS_ENABLED.value) != 0) {
+                builder.append("IS_ENABLED | ");
+            }
+            if ((value & IS_IN_MUTUALLY_EXCLUSIVE_GROUP.value) != 0) {
+                builder.append("IS_IN_MUTUALLY_EXCLUSIVE_GROUP | ");
+            }
+            if ((value & IS_HEADER.value) != 0) {
+                builder.append("IS_HEADER | ");
+            }
+            if ((value & IS_OBSCURED.value) != 0) {
+                builder.append("IS_OBSCURED | ");
+            }
+            if ((value & SCOPES_ROUTE.value) != 0) {
+                builder.append("SCOPES_ROUTE | ");
+            }
+            if ((value & NAMES_ROUTE.value) != 0) {
+                builder.append("NAMES_ROUTE | ");
+            }
+            if ((value & IS_HIDDEN.value) != 0) {
+                builder.append("IS_HIDDEN | ");
+            }
+            if ((value & IS_IMAGE.value) != 0) {
+                builder.append("IS_IMAGE | ");
+            }
+            if ((value & IS_LIVE_REGION.value) != 0) {
+                builder.append("IS_LIVE_REGION | ");
+            }
+            if ((value & HAS_TOGGLED_STATE.value) != 0) {
+                builder.append("HAS_TOGGLED_STATE | ");
+            }
+            if ((value & IS_TOGGLED.value) != 0) {
+                builder.append("IS_TOGGLED | ");
+            }
+            if ((value & HAS_IMPLICIT_SCROLLING.value) != 0) {
+                builder.append("HAS_IMPLICIT_SCROLLING | ");
+            }
+            if (builder.length() > 3) {
+                builder.setLength(builder.length() - 3);
+            }
+            return builder.toString();
+        }
     }
 
     AccessibilityBridge(FlutterView owner) {
@@ -123,6 +192,36 @@ class AccessibilityBridge
         } else {
             mFlutterAccessibilityChannel.setMessageHandler(null);
         }
+    }
+
+    private boolean shouldSetCollectionInfo(SemanticsObject object) {
+        // TODO(dnfield): make these lambdas when Java 1.8 support lands.
+        Predicate<SemanticsObject> parentMatcher = new Predicate<SemanticsObject>() {
+            @Override
+            public boolean test(SemanticsObject o) {
+                return o == mA11yFocusedObject;
+            }
+        };
+
+        Predicate<SemanticsObject> flagMatcher = new Predicate<SemanticsObject>() {
+            @Override
+            public boolean test(SemanticsObject o) {
+                return o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING);
+            }
+        };
+
+        // TalkBack expects a number of rows and/or columns greater than 0 to announce
+        // in list and out of list.  For an infinite or growing list, you have to
+        // specify something > 0 to get "in list" announcements.
+        // TalkBack will also only track one list at a time, so we only want to set this
+        // for a list that contians the current a11y focused object - otherwise, if there
+        // are two lists or nested lists, we may end up with announcements for only the last
+        // one that is currently availalbe in the semantics tree.  However, we also want
+        // to set it if we're exiting a list to a non-list, so that we can get the "out of list"
+        // announcement when A11y focus moves out of a list and not into another list.
+        return object.scrollChildren > 0
+                && (hasSemanticsObjectAncestor(mA11yFocusedObject, parentMatcher)
+                    || !hasSemanticsObjectAncestor(mA11yFocusedObject, flagMatcher));
     }
 
     @Override
@@ -266,14 +365,29 @@ class AccessibilityBridge
         if (object.hasAction(Action.SCROLL_LEFT) || object.hasAction(Action.SCROLL_UP)
                 || object.hasAction(Action.SCROLL_RIGHT) || object.hasAction(Action.SCROLL_DOWN)) {
             result.setScrollable(true);
+
             // This tells Android's a11y to send scroll events when reaching the end of
             // the visible viewport of a scrollable, unless the node itself does not
             // allow implicit scrolling - then we leave the className as view.View.
+            //
+            // We should prefer setCollectionInfo to the class names, as this way we get "In List"
+            // and "Out of list" announcements.  But we don't always know the counts, so we
+            // can fallback to the generic scroll view class names.
+            // TODO(dnfield): We should add semantics properties for rows and columns in 2 dimensional lists, e.g.
+            // GridView.  Right now, we're only supporting ListViews and only if they have scroll children.
             if (object.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)) {
                 if (object.hasAction(Action.SCROLL_LEFT) || object.hasAction(Action.SCROLL_RIGHT)) {
-                    result.setClassName("android.widget.HorizontalScrollView");
+                    if (shouldSetCollectionInfo(object)) {
+                        result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(0, object.scrollChildren, false));
+                    } else {
+                        result.setClassName("android.widget.HorizontalScrollView");
+                    }
                 } else {
-                    result.setClassName("android.widget.ScrollView");
+                    if (shouldSetCollectionInfo(object)) {
+                        result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(object.scrollChildren, 0, false));
+                    } else {
+                        result.setClassName("android.widget.ScrollView");
+                    }
                 }
             }
             // TODO(ianh): Once we're on SDK v23+, call addAction to
@@ -960,6 +1074,11 @@ class AccessibilityBridge
     /// Value is derived from ACTION_TYPE_MASK in AccessibilityNodeInfo.java
     static int firstResourceId = 267386881;
 
+
+    static boolean hasSemanticsObjectAncestor(SemanticsObject target, Predicate<SemanticsObject> tester) {
+        return target != null && target.getAncestor(tester) != null;
+    }
+
     private class SemanticsObject {
         SemanticsObject() {}
 
@@ -1012,6 +1131,33 @@ class AccessibilityBridge
         private float[] globalTransform;
         private Rect globalRect;
 
+        SemanticsObject getAncestor(Predicate<SemanticsObject> tester) {
+            SemanticsObject nextAncestor = parent;
+            while (nextAncestor != null) {
+                if (tester.test(nextAncestor)) {
+                    return nextAncestor;
+                }
+                nextAncestor = nextAncestor.parent;
+            }
+            return null;
+        }
+
+        // boolean hasAncestor(SemanticsObject ancestor) {
+        //     SemanticsObject nextAncestor = parent;
+        //     while (nextAncestor != null && nextAncestor != ancestor) {
+        //         nextAncestor = nextAncestor.parent;
+        //     }
+        //     return nextAncestor == ancestor;
+        // }
+
+        // boolean hasAncestorWithFlag(Flag flag) {
+        //     SemanticsObject nextAncestor = parent;
+        //     while (nextAncestor != null && !nextAncestor.hasFlag(flag)) {
+        //         nextAncestor = nextAncestor.parent;
+        //     }
+        //     return nextAncestor != null && nextAncestor.hasFlag(flag);
+        // }
+
         boolean hasAction(Action action) {
             return (actions & action.value) != 0;
         }
@@ -1044,7 +1190,7 @@ class AccessibilityBridge
         void log(String indent, boolean recursive) {
             Log.i(TAG,
                     indent + "SemanticsObject id=" + id + " label=" + label + " actions=" + actions
-                            + " flags=" + flags + "\n" + indent + "  +-- textDirection="
+                            + " flags=" + Flag.flagsToString(flags) + "\n" + indent + "  +-- textDirection="
                             + textDirection + "\n" + indent + "  +-- rect.ltrb=(" + left + ", "
                             + top + ", " + right + ", " + bottom + ")\n" + indent
                             + "  +-- transform=" + Arrays.toString(transform) + "\n");
