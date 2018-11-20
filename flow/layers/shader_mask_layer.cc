@@ -10,8 +10,7 @@ ShaderMaskLayer::ShaderMaskLayer() = default;
 
 ShaderMaskLayer::~ShaderMaskLayer() = default;
 
-void ShaderMaskLayer::Preroll(PrerollContext* context,
-                                const SkMatrix& matrix) {
+void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->AddSizeHint(mask_rect_.width(), mask_rect_.height());
 }
 
