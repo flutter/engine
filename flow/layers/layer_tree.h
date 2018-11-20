@@ -24,6 +24,15 @@ class LayerTree {
 
   ~LayerTree();
 
+  // Executes preroll on the root layer of the tree.
+  //
+  // Returns size hints for the surfaces needed to draw the tree. This may
+  // be used to make more intelligent decisions such as when on fuchsia, we
+  // do smart allocation of Vulkan surfaces in the VulkanSurfacePool.
+  //
+  // The sizes are in logical pixels and have not been premultiplied by
+  // the device pixel ratio. To obtain physical pixels, multiply by the
+  // device pixel ratio. Empty sizes (0 by 0) have been filtered out.
   std::vector<SkISize> Preroll(CompositorContext::ScopedFrame& frame,
                                bool ignore_raster_cache = false);
 

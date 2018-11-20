@@ -55,6 +55,10 @@ struct PrerollContext {
   const Stopwatch& engine_time;
   TextureRegistry& texture_registry;
   const bool checkerboard_offscreen_layers;
+
+  // Performs a ceiling operation to obtain pixels from floating point
+  // size and adds to size_hints.
+  void AddSizeHint(double width, double height);
 };
 
 // Represents a single composited layer. Created on the UI thread but then

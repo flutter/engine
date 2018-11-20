@@ -9,6 +9,13 @@
 
 namespace flow {
 
+void PrerollContext::AddSizeHint(double width, double height) {
+  if (size_hints == nullptr || (width == 0 && height == 0)) {
+    return;
+  }
+  size_hints->emplace_back(SkISize::Make(ceil(width), ceil(height)));
+}
+
 Layer::Layer()
     : parent_(nullptr),
       needs_system_composite_(false),

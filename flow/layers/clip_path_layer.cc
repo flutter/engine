@@ -25,8 +25,7 @@ void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
     set_paint_bounds(child_paint_bounds);
   }
   auto bounds = clip_path_.getBounds();
-  context->size_hints->emplace_back(
-      SkISize::Make(ceil(bounds.width()), ceil(bounds.height())));
+  context->AddSizeHint(bounds.width(), bounds.height());
 }
 
 #if defined(OS_FUCHSIA)

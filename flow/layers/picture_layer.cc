@@ -27,6 +27,7 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);
+  context->AddSizeHint(bounds.width(), bounds.height());
 }
 
 void PictureLayer::Paint(PaintContext& context) const {
@@ -50,6 +51,14 @@ void PictureLayer::Paint(PaintContext& context) const {
     }
   }
   context.leaf_nodes_canvas->drawPicture(picture());
+  SkPaint paint;
+  paint.setStyle(SkPaint::Style::kStroke_Style);
+  paint.setStrokeWidth(4);
+  paint.setColor(SK_ColorBLUE);
+  SkPicture* sk_picture = picture();
+
+  // SkRect rect = SkRect::MakeWH(ceil(bounds.width()), ceil(bounds.height()));
+  context.leaf_nodes_canvas->drawRect(sk_picture->cullRect(), paint);
 }
 
 }  // namespace flow

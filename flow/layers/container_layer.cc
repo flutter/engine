@@ -21,6 +21,7 @@ void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
   set_paint_bounds(child_paint_bounds);
+  context->AddSizeHint(child_paint_bounds.width(), child_paint_bounds.height());
 }
 
 void ContainerLayer::PrerollChildren(PrerollContext* context,

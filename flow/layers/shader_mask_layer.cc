@@ -10,6 +10,11 @@ ShaderMaskLayer::ShaderMaskLayer() = default;
 
 ShaderMaskLayer::~ShaderMaskLayer() = default;
 
+void ShaderMaskLayer::Preroll(PrerollContext* context,
+                                const SkMatrix& matrix) {
+  context->AddSizeHint(mask_rect_.width(), mask_rect_.height());
+}
+
 void ShaderMaskLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting());

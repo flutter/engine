@@ -21,8 +21,7 @@ void PlatformViewLayer::Preroll(PrerollContext* context,
     return;
   }
   context->view_embedder->PrerollCompositeEmbeddedView(view_id_);
-  context->size_hints->emplace_back(
-      SkISize::Make(ceil(size_.width()), ceil(size_.height())));
+  context->AddSizeHint(size_.width(), size_.height());
 }
 
 void PlatformViewLayer::Paint(PaintContext& context) const {

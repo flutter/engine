@@ -15,8 +15,7 @@ TextureLayer::~TextureLayer() = default;
 void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
                                     size_.height()));
-  context->size_hints->emplace_back(
-      SkISize::Make(ceil(size_.width()), ceil(size_.height())));
+  context->AddSizeHint(size_.width(), size_.height());
 }
 
 void TextureLayer::Paint(PaintContext& context) const {

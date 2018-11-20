@@ -19,11 +19,6 @@ LayerTree::LayerTree()
 
 LayerTree::~LayerTree() = default;
 
-// Executes preroll on the root layer of the tree.
-//
-// Returns size hints for the surfaces needed to draw the tree. This may
-// be used to make more intelligent decisions such as when on fuchsia, we
-// do smart allocation of Vulkan surfaces in the VulkanSurfacePool.
 std::vector<SkISize> LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
                                         bool ignore_raster_cache) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
@@ -45,6 +40,10 @@ std::vector<SkISize> LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       checkerboard_offscreen_layers_};
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
+  FML_DLOG(ERROR) << "Size HINTS:";
+  for (auto size : sizes) {
+    FML_DLOG(ERROR) << size.width() << " " << size.height();
+  }
   return sizes;
 }
 
