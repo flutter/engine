@@ -122,13 +122,6 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   PaintChildren(context);
 
   context.internal_nodes_canvas->restoreToCount(saveCount);
-
-  paint.setStyle(SkPaint::Style::kStroke_Style);
-  paint.setStrokeWidth(3);
-  paint.setColor(SK_ColorGREEN);
-  SkRect rect = SkRect::MakeWH(frameRRect_.width(),  //  width
-                          frameRRect_.height());
-  context.internal_nodes_canvas->drawRect(rect, paint);
 }
 
 void PhysicalShapeLayer::DrawShadow(SkCanvas* canvas,

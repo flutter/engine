@@ -52,13 +52,6 @@ void ClipRectLayer::Paint(PaintContext& context) const {
   if (clip_behavior_ == Clip::antiAliasWithSaveLayer) {
     context.internal_nodes_canvas->restore();
   }
-  SkPaint paint;
-  paint.setStyle(SkPaint::Style::kStroke_Style);
-  paint.setStrokeWidth(8);
-  paint.setColor(SK_ColorRED);
-  SkRect rect = SkRect::MakeWH(clip_rect_.width(),  //  width
-                          clip_rect_.height());
-  context.internal_nodes_canvas->drawRect(rect, paint);
 }
 
 }  // namespace flow

@@ -40,10 +40,6 @@ std::vector<SkISize> LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       checkerboard_offscreen_layers_};
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
-  FML_DLOG(ERROR) << "Size HINTS:";
-  for (auto size : sizes) {
-    FML_DLOG(ERROR) << size.width() << " " << size.height();
-  }
   return sizes;
 }
 
