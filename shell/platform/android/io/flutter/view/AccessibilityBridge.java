@@ -104,74 +104,6 @@ class AccessibilityBridge
         }
 
         final int value;
-
-        static String flagsToString(int value) {
-            if (value == 0) {
-                return "(no flags)";
-            }
-            StringBuilder builder = new StringBuilder();
-            if ((value & HAS_CHECKED_STATE.value) != 0) {
-                builder.append("HAS_CHECKED_STATE | ");
-            }
-            if ((value & IS_CHECKED.value) != 0) {
-                builder.append("IS_CHECKED | ");
-            }
-            if ((value & IS_SELECTED.value) != 0) {
-                builder.append("IS_SELECTED | ");
-            }
-            if ((value & IS_BUTTON.value) != 0) {
-                builder.append("IS_BUTTON | ");
-            }
-            if ((value & IS_TEXT_FIELD.value) != 0) {
-                builder.append("IS_TEXT_FIELD | ");
-            }
-            if ((value & IS_FOCUSED.value) != 0) {
-                builder.append("IS_FOCUSED | ");
-            }
-            if ((value & HAS_ENABLED_STATE.value) != 0) {
-                builder.append("HAS_ENABLED_STATE | ");
-            }
-            if ((value & IS_ENABLED.value) != 0) {
-                builder.append("IS_ENABLED | ");
-            }
-            if ((value & IS_IN_MUTUALLY_EXCLUSIVE_GROUP.value) != 0) {
-                builder.append("IS_IN_MUTUALLY_EXCLUSIVE_GROUP | ");
-            }
-            if ((value & IS_HEADER.value) != 0) {
-                builder.append("IS_HEADER | ");
-            }
-            if ((value & IS_OBSCURED.value) != 0) {
-                builder.append("IS_OBSCURED | ");
-            }
-            if ((value & SCOPES_ROUTE.value) != 0) {
-                builder.append("SCOPES_ROUTE | ");
-            }
-            if ((value & NAMES_ROUTE.value) != 0) {
-                builder.append("NAMES_ROUTE | ");
-            }
-            if ((value & IS_HIDDEN.value) != 0) {
-                builder.append("IS_HIDDEN | ");
-            }
-            if ((value & IS_IMAGE.value) != 0) {
-                builder.append("IS_IMAGE | ");
-            }
-            if ((value & IS_LIVE_REGION.value) != 0) {
-                builder.append("IS_LIVE_REGION | ");
-            }
-            if ((value & HAS_TOGGLED_STATE.value) != 0) {
-                builder.append("HAS_TOGGLED_STATE | ");
-            }
-            if ((value & IS_TOGGLED.value) != 0) {
-                builder.append("IS_TOGGLED | ");
-            }
-            if ((value & HAS_IMPLICIT_SCROLLING.value) != 0) {
-                builder.append("HAS_IMPLICIT_SCROLLING | ");
-            }
-            if (builder.length() > 3) {
-                builder.setLength(builder.length() - 3);
-            }
-            return builder.toString();
-        }
     }
 
     AccessibilityBridge(FlutterView owner) {
@@ -1142,22 +1074,6 @@ class AccessibilityBridge
             return null;
         }
 
-        // boolean hasAncestor(SemanticsObject ancestor) {
-        //     SemanticsObject nextAncestor = parent;
-        //     while (nextAncestor != null && nextAncestor != ancestor) {
-        //         nextAncestor = nextAncestor.parent;
-        //     }
-        //     return nextAncestor == ancestor;
-        // }
-
-        // boolean hasAncestorWithFlag(Flag flag) {
-        //     SemanticsObject nextAncestor = parent;
-        //     while (nextAncestor != null && !nextAncestor.hasFlag(flag)) {
-        //         nextAncestor = nextAncestor.parent;
-        //     }
-        //     return nextAncestor != null && nextAncestor.hasFlag(flag);
-        // }
-
         boolean hasAction(Action action) {
             return (actions & action.value) != 0;
         }
@@ -1190,7 +1106,7 @@ class AccessibilityBridge
         void log(String indent, boolean recursive) {
             Log.i(TAG,
                     indent + "SemanticsObject id=" + id + " label=" + label + " actions=" + actions
-                            + " flags=" + Flag.flagsToString(flags) + "\n" + indent + "  +-- textDirection="
+                            + " flags=" + flags + "\n" + indent + "  +-- textDirection="
                             + textDirection + "\n" + indent + "  +-- rect.ltrb=(" + left + ", "
                             + top + ", " + right + ", " + bottom + ")\n" + indent
                             + "  +-- transform=" + Arrays.toString(transform) + "\n");
