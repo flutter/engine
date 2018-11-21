@@ -146,9 +146,9 @@ class AccessibilityBridge
         // in list and out of list.  For an infinite or growing list, you have to
         // specify something > 0 to get "in list" announcements.
         // TalkBack will also only track one list at a time, so we only want to set this
-        // for a list that contians the current a11y focused object - otherwise, if there
+        // for a list that contains the current a11y focused object - otherwise, if there
         // are two lists or nested lists, we may end up with announcements for only the last
-        // one that is currently availalbe in the semantics tree.  However, we also want
+        // one that is currently available in the semantics tree.  However, we also want
         // to set it if we're exiting a list to a non-list, so that we can get the "out of list"
         // announcement when A11y focus moves out of a list and not into another list.
         return object.scrollChildren > 0
