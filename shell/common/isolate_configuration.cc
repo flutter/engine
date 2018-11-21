@@ -107,38 +107,45 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
   // Running from kernel divided into several pieces (for sharing).
   // TODO(fuchsia): Use async blobfs API once it becomes available.
   if (asset_manager) {
+    if (settings.application_kernel_list_asset.empty()) {
+      FML_LOG(ERROR) << "Application kernel list asset not set";
+      return nullptr;
+    }
     std::unique_ptr<fml::Mapping> kernel_list =
         asset_manager->GetAsMapping(settings.application_kernel_list_asset);
-    if (kernel_list) {
-      const char* kernel_list_str =
-          reinterpret_cast<const char*>(kernel_list->GetMapping());
-      size_t kernel_list_size = kernel_list->GetSize();
-
-      std::vector<std::unique_ptr<fml::Mapping>> kernel_pieces;
-
-      size_t piece_path_start = 0;
-      while (piece_path_start < kernel_list_size) {
-        size_t piece_path_end = piece_path_start;
-        while ((piece_path_end < kernel_list_size) &&
-               (kernel_list_str[piece_path_end] != '\n')) {
-          piece_path_end++;
-        }
-
-        std::string piece_path(&kernel_list_str[piece_path_start],
-                               piece_path_end - piece_path_start);
-        std::unique_ptr<fml::Mapping> piece =
-            asset_manager->GetAsMapping(piece_path);
-        if (piece == nullptr) {
-          FML_LOG(ERROR) << "Failed to load: " << piece_path;
-          return nullptr;
-        }
-
-        kernel_pieces.emplace_back(std::move(piece));
-
-        piece_path_start = piece_path_end + 1;
-      }
-      return CreateForKernelList(std::move(kernel_pieces));
+    if (!kernel_list) {
+      FML_LOG(ERROR) << "Failed to load: " << settings.application_kernel_asset;
+      return nullptr;
     }
+
+    const char* kernel_list_str =
+        reinterpret_cast<const char*>(kernel_list->GetMapping());
+    size_t kernel_list_size = kernel_list->GetSize();
+
+    std::vector<std::unique_ptr<fml::Mapping>> kernel_pieces;
+
+    size_t piece_path_start = 0;
+    while (piece_path_start < kernel_list_size) {
+      size_t piece_path_end = piece_path_start;
+      while ((piece_path_end < kernel_list_size) &&
+             (kernel_list_str[piece_path_end] != '\n')) {
+        piece_path_end++;
+      }
+
+      std::string piece_path(&kernel_list_str[piece_path_start],
+                             piece_path_end - piece_path_start);
+      std::unique_ptr<fml::Mapping> piece =
+          asset_manager->GetAsMapping(piece_path);
+      if (piece == nullptr) {
+        FML_LOG(ERROR) << "Failed to load: " << piece_path;
+        return nullptr;
+      }
+
+      kernel_pieces.emplace_back(std::move(piece));
+
+      piece_path_start = piece_path_end + 1;
+    }
+    return CreateForKernelList(std::move(kernel_pieces));
   }
 
   return nullptr;
