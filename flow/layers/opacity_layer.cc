@@ -21,13 +21,6 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     ctm = RasterCache::GetIntegralTransCTM(ctm);
 #endif
-    // TODO TEST
-    SkDebugf("opacity child layer paint bounds: ");
-    child->paint_bounds().dump();
-    SkDebugf("clip_rect:");
-    context->clip_rect.dump();
-    SkDebugf("\n\n");
-
     context->raster_cache->Prepare(context, child, ctm);
   }
 }

@@ -12,11 +12,6 @@ ClipRectLayer::ClipRectLayer(Clip clip_behavior)
 ClipRectLayer::~ClipRectLayer() = default;
 
 void ClipRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  // TODO TEST
-  SkDebugf("ClipRect:");
-  clip_rect_.dump();
-  SkDebugf("\n\n");
-
   SkRect previous_clip_rect = context->clip_rect;
   if (context->clip_rect.intersect(clip_rect_)) {
     SkRect child_paint_bounds = SkRect::MakeEmpty();
