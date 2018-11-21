@@ -15,12 +15,19 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   child_matrix.postTranslate(offset_.fX, offset_.fY);
   ContainerLayer::Preroll(context, child_matrix);
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
-  if (context->raster_cache && layers().size() == 1) {
+  if (context->raster_cache && layers().size() == 1 && SkRect::Intersects(context->clip_rect, paint_bounds())) {
     Layer* child = layers()[0].get();
     SkMatrix ctm = child_matrix;
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     ctm = RasterCache::GetIntegralTransCTM(ctm);
 #endif
+    // TODO TEST
+    SkDebugf("opacity child layer paint bounds: ");
+    child->paint_bounds().dump();
+    SkDebugf("clip_rect:");
+    context->clip_rect.dump();
+    SkDebugf("\n\n");
+
     context->raster_cache->Prepare(context, child, ctm);
   }
 }

@@ -47,7 +47,7 @@ struct PrerollContext {
   GrContext* gr_context;
   ExternalViewEmbedder* view_embedder;
   SkColorSpace* dst_color_space;
-  SkRect child_paint_bounds;
+  SkRect clip_rect;
 
   // The following allows us to paint in the end of subtree preroll
   const Stopwatch& frame_time;
