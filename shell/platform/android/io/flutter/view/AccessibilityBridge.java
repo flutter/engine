@@ -126,7 +126,7 @@ class AccessibilityBridge
         }
     }
 
-    private boolean shouldSetCollectionInfo(SemanticsObject object) {
+    private boolean shouldSetCollectionInfo(final SemanticsObject object) {
         // TODO(dnfield): make these lambdas when Java 1.8 support lands.
         Predicate<SemanticsObject> parentMatcher = new Predicate<SemanticsObject>() {
             @Override
