@@ -373,6 +373,23 @@
                               arguments:@[ @(client), state ]];
 }
 
+- (void)updateCursor:(FlutterCursorAction)action withClient:(int)client withState:(NSDictionary*)point {
+  NSString* actionString;
+  switch (action) {
+    case FlutterCursorActionStart:
+      actionString = @"TextCursorAction.start";
+      break;
+    case FlutterCursorActionUpdate:
+      actionString = @"TextCursorAction.update";
+      break;
+    case FlutterCursorActionEnd:
+      actionString = @"TextCursorAction.end";
+      break;
+  }
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateCursor"
+                              arguments:@[ @(client), actionString, point ]];
+}
+
 - (void)performAction:(FlutterTextInputAction)action withClient:(int)client {
   NSString* actionString;
   switch (action) {

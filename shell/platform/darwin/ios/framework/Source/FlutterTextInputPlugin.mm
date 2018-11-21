@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -289,13 +289,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   }
 }
 
-- (id)insertDictationResultPlaceholder {
-  return @"";
-}
-
-- (void)removeDictationResultPlaceholder:(id)placeholder willInsertResult:(BOOL)willInsertResult {
-}
-
 - (NSString*)textInRange:(UITextRange*)range {
   NSRange textRange = ((FlutterTextRange*)range).range;
   return [self.text substringWithRange:textRange];
@@ -304,6 +297,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
   NSRange replaceRange = ((FlutterTextRange*)range).range;
   NSRange selectedRange = _selectedTextRange.range;
+
   // Adjust the text selection:
   // * reduce the length by the intersection length
   // * adjust the location by newLength - oldLength + intersectionLength
@@ -564,6 +558,21 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   // TODO(cbracken) Implement.
   NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
   return [FlutterTextRange rangeWithNSRange:[self rangeForCharacterAtIndex:currentIndex]];
+}
+
+- (void)beginFloatingCursorAtPoint:(CGPoint)point {
+  [_textInputDelegate updateCursor:FlutterCursorActionStart withClient:_textInputClient 
+    withState:@{@"X" : @(point.x), @"Y" : @(point.y)}];
+}
+
+- (void)updateFloatingCursorAtPoint:(CGPoint)point {
+  [_textInputDelegate updateCursor:FlutterCursorActionUpdate withClient:_textInputClient
+    withState:@{ @"X" : @(point.x), @"Y" : @(point.y)}];
+}
+
+- (void)endFloatingCursor {
+  [_textInputDelegate updateCursor:FlutterCursorActionEnd withClient:_textInputClient
+    withState:@{ @"X" : @(CGPointZero.x), @"Y" : @(CGPointZero.y)}];
 }
 
 #pragma mark - UIKeyInput Overrides

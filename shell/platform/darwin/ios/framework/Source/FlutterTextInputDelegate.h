@@ -21,10 +21,17 @@ typedef NS_ENUM(NSInteger, FlutterTextInputAction) {
   FlutterTextInputActionNewline,
 };
 
+typedef NS_ENUM(NSInteger, FlutterCursorAction) {
+  FlutterCursorActionStart,
+  FlutterCursorActionUpdate,
+  FlutterCursorActionEnd,
+};
+
 @protocol FlutterTextInputDelegate <NSObject>
 
 - (void)updateEditingClient:(int)client withState:(NSDictionary*)state;
 - (void)performAction:(FlutterTextInputAction)action withClient:(int)client;
+- (void)updateCursor:(FlutterCursorAction)action withClient:(int)client withState:(NSDictionary*)point;
 
 @end
 
