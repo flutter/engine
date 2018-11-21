@@ -131,7 +131,7 @@ class AccessibilityBridge
         Predicate<SemanticsObject> parentMatcher = new Predicate<SemanticsObject>() {
             @Override
             public boolean test(SemanticsObject o) {
-                return o == mA11yFocusedObject;
+                return o == object;
             }
         };
 
