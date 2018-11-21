@@ -310,13 +310,19 @@ class AccessibilityBridge
             if (object.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)) {
                 if (object.hasAction(Action.SCROLL_LEFT) || object.hasAction(Action.SCROLL_RIGHT)) {
                     if (shouldSetCollectionInfo(object)) {
-                        result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(0, object.scrollChildren, false));
+                        result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(
+                            0, // rows
+                            object.scrollChildren, // columns
+                            false)); // hierarchical
                     } else {
                         result.setClassName("android.widget.HorizontalScrollView");
                     }
                 } else {
                     if (shouldSetCollectionInfo(object)) {
-                        result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(object.scrollChildren, 0, false));
+                        result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(
+                            object.scrollChildren, // rows
+                            0, // columns
+                            false)); // hierarchical
                     } else {
                         result.setClassName("android.widget.ScrollView");
                     }
