@@ -561,18 +561,18 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 - (void)beginFloatingCursorAtPoint:(CGPoint)point {
-  [_textInputDelegate updateCursor:FlutterCursorActionStart withClient:_textInputClient 
-    withState:@{@"X" : @(point.x), @"Y" : @(point.y)}];
+  [_textInputDelegate updateFloatingCursor:FlutterCursorStateStart withClient:_textInputClient 
+    withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
 - (void)updateFloatingCursorAtPoint:(CGPoint)point {
-  [_textInputDelegate updateCursor:FlutterCursorActionUpdate withClient:_textInputClient
-    withState:@{ @"X" : @(point.x), @"Y" : @(point.y)}];
+  [_textInputDelegate updateFloatingCursor:FlutterCursorStateUpdate withClient:_textInputClient
+    withPosition:@{ @"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
 - (void)endFloatingCursor {
-  [_textInputDelegate updateCursor:FlutterCursorActionEnd withClient:_textInputClient
-    withState:@{ @"X" : @(CGPointZero.x), @"Y" : @(CGPointZero.y)}];
+  [_textInputDelegate updateFloatingCursor:FlutterCursorStateEnd withClient:_textInputClient
+    withPosition:@{ @"X" : @(0), @"Y" : @(0)}];
 }
 
 #pragma mark - UIKeyInput Overrides

@@ -373,21 +373,21 @@
                               arguments:@[ @(client), state ]];
 }
 
-- (void)updateCursor:(FlutterCursorAction)action withClient:(int)client withState:(NSDictionary*)point {
-  NSString* actionString;
-  switch (action) {
-    case FlutterCursorActionStart:
-      actionString = @"TextCursorAction.start";
+- (void)updateFloatingCursor:(FlutterCursorState)state withClient:(int)client withPosition:(NSDictionary*)position {
+  NSString* stateString;
+  switch (state) {
+    case FlutterCursorStateStart:
+      stateString = @"TextCursorState.start";
       break;
-    case FlutterCursorActionUpdate:
-      actionString = @"TextCursorAction.update";
+    case FlutterCursorStateUpdate:
+      stateString = @"TextCursorState.update";
       break;
-    case FlutterCursorActionEnd:
-      actionString = @"TextCursorAction.end";
+    case FlutterCursorStateEnd:
+      stateString = @"TextCursorState.end";
       break;
   }
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateCursor"
-                              arguments:@[ @(client), actionString, point ]];
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateFloatingCursor"
+                              arguments:@[ @(client), stateString, position ]];
 }
 
 - (void)performAction:(FlutterTextInputAction)action withClient:(int)client {
