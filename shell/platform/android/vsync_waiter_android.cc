@@ -28,6 +28,8 @@ VsyncWaiterAndroid::VsyncWaiterAndroid(blink::TaskRunners task_runners)
 
 VsyncWaiterAndroid::~VsyncWaiterAndroid() = default;
 
+constexpr float kUnknownRefreshRateFPS = 0.0;
+
 // |shell::VsyncWaiter|
 void VsyncWaiterAndroid::AwaitVSync() {
   std::weak_ptr<VsyncWaiter>* weak_this =
@@ -79,6 +81,19 @@ bool VsyncWaiterAndroid::Register(JNIEnv* env) {
   FML_CHECK(g_async_wait_for_vsync_method_ != nullptr);
 
   return env->RegisterNatives(clazz, methods, arraysize(methods)) == 0;
+}
+
+float VsyncWaiterAndroid::GetRefreshRateFPS() const {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  if (g_vsync_waiter_class == nullptr) {
+    return kUnknownRefreshRateFPS;
+  }
+  jclass clazz = g_vsync_waiter_class->obj();
+  if (clazz == nullptr) {
+    return kUnknownRefreshRateFPS;
+  }
+  jfieldID fid = env->GetStaticFieldID(clazz, "refreshRateFPS", "F");
+  return env->GetStaticFloatField(clazz, fid);
 }
 
 static void ConsumePendingCallback(jlong java_baton,

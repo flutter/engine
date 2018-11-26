@@ -26,6 +26,10 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   void FireCallback(fml::TimePoint frame_start_time,
                     fml::TimePoint frame_target_time);
 
+  // Get the display's maximum refresh rate in the unit of frame per second.
+  // Return 0.0 if the refresh rate is unkonwn.
+  virtual float GetRefreshRateFPS() const { return 0.0; }
+
  protected:
   const blink::TaskRunners task_runners_;
   std::mutex callback_mutex_;
