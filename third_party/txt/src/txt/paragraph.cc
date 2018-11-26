@@ -747,8 +747,6 @@ void Paragraph::Layout(double width, bool force) {
           style.use_custom_leading
               ? (metrics.fDescent - metrics.fAscent) * style.leading
               : metrics.fLeading;
-      FML_DLOG(ERROR) << leading << " " << style.use_custom_leading << " "
-                      << style.leading << " " << metrics.fLeading;
       double line_spacing = (line_number == 0)
                                 ? -metrics.fAscent * style.height
                                 : (-metrics.fAscent + leading) * style.height;
