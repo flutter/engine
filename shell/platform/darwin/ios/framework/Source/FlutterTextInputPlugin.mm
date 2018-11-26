@@ -292,7 +292,8 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (id)insertDictationResultPlaceholder {
   return @"";
 }
- - (void)removeDictationResultPlaceholder:(id)placeholder willInsertResult:(BOOL)willInsertResult {
+
+- (void)removeDictationResultPlaceholder:(id)placeholder willInsertResult:(BOOL)willInsertResult {
 }
 
 - (NSString*)textInRange:(UITextRange*)range {
