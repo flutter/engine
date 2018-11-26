@@ -50,7 +50,6 @@ public class FlutterEngine {
     // TODO(mattcarroll): FlutterRenderer is temporally coupled to attach(). Remove that coupling if possible.
     this.renderer = new FlutterRenderer(flutterJNI, nativeObjectReference);
 
-//    this.pluginRegistry = new FlutterPluginRegistry(this, dartExecutor, context);
     this.pluginRegistry = new FlutterPluginRegistry(this, context);
   }
 

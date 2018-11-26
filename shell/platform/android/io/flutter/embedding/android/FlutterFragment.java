@@ -40,12 +40,14 @@ import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
  *
  * Using a {@code FlutterFragment} requires forwarding a number of calls from an {@code Activity} to
  * ensure that the internal Flutter app behaves as expected:
- *  - {@link Activity#onPostResume()}
- *  - {@link Activity#onBackPressed()}
- *  - {@link Activity#onRequestPermissionsResult(int, String[], int[])} ()}
- *  - {@link Activity#onNewIntent(Intent)} ()}
- *  - {@link Activity#onUserLeaveHint()}
- *  - {@link Activity#onTrimMemory(int)}
+ * <ol>
+ *   <li>{@link Activity#onPostResume()}</li>
+ *   <li>{@link Activity#onBackPressed()}</li>
+ *   <li>{@link Activity#onRequestPermissionsResult(int, String[], int[])} ()}</li>
+ *   <li>{@link Activity#onNewIntent(Intent)} ()}</li>
+ *   <li>{@link Activity#onUserLeaveHint()}</li>
+ *   <li>{@link Activity#onTrimMemory(int)}</li>
+ * </ol>
  *
  * Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be sure
  * to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than
@@ -80,11 +82,13 @@ public class FlutterFragment extends Fragment {
 
   /**
    * Factory method that creates a new {@link FlutterFragment} with a default configuration.
-   *  - no splash screen
-   *  - initial route of "/"
-   *  - default app bundle location
-   *  - default Dart entrypoint of "main"
-   *  - no special engine arguments
+   * <ul>
+   *   <li>no splash screen</li>
+   *   <li>initial route of "/"</li>
+   *   <li>default app bundle location</li>
+   *   <li>default Dart entrypoint of "main"</li>
+   *   <li>no special engine arguments</li>
+   * </ul>
    *
    * @return new {@link FlutterFragment}
    */
@@ -132,7 +136,7 @@ public class FlutterFragment extends Fragment {
   }
 
   /**
-   * Creates a {@link Bundle} or arguments that can be used to configure a {@link FlutterFragment}.
+   * Creates a {@link Bundle} of arguments that can be used to configure a {@link FlutterFragment}.
    * This method is exposed so that developers can create subclasses of {@link FlutterFragment}.
    * Subclasses should declare static factories that use this method to create arguments that will
    * be understood by the base class, and then the subclass can add any additional arguments it
@@ -199,7 +203,8 @@ public class FlutterFragment extends Fragment {
     super.onAttach(activity);
 
     // TODO(mattcarroll): I think the build system is linking the wrong Fragment API. It says that
-    //                    getContext() cannot be found...
+    //                    getContext() cannot be found. I believe this is due to the Android SDK
+    //                    imposed by the buildroot.
     initializeFlutter(activity);
 
     // When "retain instance" is true, the FlutterEngine will survive configuration
@@ -270,10 +275,12 @@ public class FlutterFragment extends Fragment {
    * {@link io.flutter.embedding.engine.systemchannels.PlatformChannel}.
    *
    * Some examples of behavior carried about by the platform plugin include:
-   *  - clipboard
-   *  - haptic feedback
-   *  - playing system sounds
-   *  - etc.
+   * <ul>
+   *   <li>clipboard</li>
+   *   <li>haptic feedback</li>
+   *   <li>playing system sounds</li>
+   *   <li>etc.</li>
+   * </ul>
    */
   private void connectFlutterEngineToAndroidPlatform() {
     platformPlugin = new PlatformPlugin(getActivity());
@@ -660,10 +667,8 @@ public class FlutterFragment extends Fragment {
    * Reloading/restarting Dart within a given FlutterView is not supported.
    */
   private void doInitialFlutterViewRun() {
-//    if (BuildConfig.DEBUG && flutterView.getFlutterNativeView().isApplicationRunning()) {
     if (flutterEngine.getDartExecutor().isExecutingDart()) {
       return;
-//      throw new RuntimeException("Tried to initialize Dart execution in Flutter engine that is already running.");
     }
 
     if (getInitialRoute() != null) {
