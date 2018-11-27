@@ -276,7 +276,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// Only supported on iOS, this is currently a no-op on other platforms.
   ///
-  /// On iOS this layer splits the current output surface into 2 surfaces, one for the scene nodes
+  /// On iOS this layer splits the current output surface into two surfaces, one for the scene nodes
   /// preceding the platform view, and one for the scene nodes following the platform view.
   ///
   /// ## Performance impact
@@ -284,8 +284,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Adding an additional surface doubles the amount of graphics memory directly used by Flutter
   /// for output buffers. Quartz might allocated extra buffers for compositing the Flutter surfaces
   /// and the platform view.
-  /// 
-  /// With a platform view in the scene, Quarts has to composite the 2 Flutter surfaces and the
+  ///
+  /// With a platform view in the scene, Quartz has to composite the two Flutter surfaces and the
   /// embedded UIView. In addition to that, on iOS versions greater than 9, the Flutter frames are
   /// synchronized with the UIView frames adding additional performance overhead.
   void addPlatformView(int viewId, { Offset offset: Offset.zero, double width: 0.0, double height: 0.0}) {
