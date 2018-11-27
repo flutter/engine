@@ -90,7 +90,7 @@ public class FlutterPluginRegistry
         mPlatformViewsController.attach(activity, flutterView, flutterView);
     }
 
-    // This method only has meaning in teh new embedding.
+    // This method only has meaning in the new embedding.
     public void attach(io.flutter.embedding.android.FlutterView flutterView, Activity activity) {
         mNewFlutterView = flutterView;
         mActivity = activity;
