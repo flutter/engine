@@ -169,7 +169,7 @@ public class FlutterFragment extends Fragment {
    *
    * @return Bundle of arguments that configure a {@link FlutterFragment}
    */
-  public static Bundle createArgsBundle(boolean isSplashScreenDesired,
+  protected static Bundle createArgsBundle(boolean isSplashScreenDesired,
                                         @Nullable String initialRoute,
                                         @Nullable String appBundlePath,
                                         @Nullable String dartEntrypoint,
