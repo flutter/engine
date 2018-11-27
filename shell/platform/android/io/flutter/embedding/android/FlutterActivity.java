@@ -36,17 +36,21 @@ import io.flutter.view.FlutterMain;
  * Android app.
  *
  * By default, {@link FlutterActivity} configures itself to do the following:
- *  - no splash screen
- *  - ask {@link FlutterMain#findAppBundlePath(Context)} for the path to the Dart app bundle
- *  - use a default Dart entrypoint of "main"
- *  - use a default initial route of "/" within the Flutter app
+ * <ul>
+ *   <li>no splash screen</li>
+ *   <li>ask {@link FlutterMain#findAppBundlePath(Context)} for the path to the Dart app bundle</li>
+ *   <li>use a default Dart entrypoint of "main"</li>
+ *   <li>use a default initial route of "/" within the Flutter app</li>
+ * </ul>
  *
  * The display of a splash screen, app bundle path, Dart entrypoint, and initial route can each be
  * controlled by overriding their respective methods in a subclass:
- *  - {@link #isSplashScreenDesired()}
- *  - {@link #getAppBundlePath()}
- *  - {@link #getDartEntrypoint()}
- *  - {@link #getInitialRoute()}
+ * <ul>
+ *   <li>{@link #isSplashScreenDesired()}</li>
+ *   <li>{@link #getAppBundlePath()}</li>
+ *   <li>{@link #getDartEntrypoint()}</li>
+ *   <li>{@link #getInitialRoute()}</li>
+ * </ul>
  *
  * If Flutter is needed in a location that cannot use an {@code Activity}, consider using
  * a {@link FlutterFragment}. Using a {@link FlutterFragment} requires forwarding some calls from
