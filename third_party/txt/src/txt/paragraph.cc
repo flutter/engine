@@ -38,9 +38,9 @@
 #include "unicode/utf16.h"
 
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkPaint.h"
-#include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/core/SkTypeface.h"
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
@@ -535,9 +535,10 @@ void Paragraph::Layout(double width, bool force) {
             minikin_paint, minikin_font_collection, nullptr);
 
         std::vector<float> text_advances(text_count);
-        float text_width = layout.measureText(
-            text_ptr, text_start, text_count, text_.size(), run.is_rtl(), minikin_font,
-            minikin_paint, minikin_font_collection, text_advances.data());
+        float text_width =
+            layout.measureText(text_ptr, text_start, text_count, text_.size(),
+                               run.is_rtl(), minikin_font, minikin_paint,
+                               minikin_font_collection, text_advances.data());
 
         // Truncate characters from the text until the ellipsis fits.
         size_t truncate_count = 0;
