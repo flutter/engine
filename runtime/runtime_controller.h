@@ -44,8 +44,6 @@ class RuntimeController final : public WindowClient {
 
   bool SetViewportMetrics(const ViewportMetrics& metrics);
 
-  // Stashes the locale_data in window_data_ and then passes the
-  // locale_data to Window::UpdateLocales.
   bool SetLocales(const std::vector<std::string>& locale_data);
 
   bool SetUserSettingsData(const std::string& data);
