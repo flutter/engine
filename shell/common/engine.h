@@ -66,7 +66,7 @@ class Engine final : public blink::RuntimeDelegate {
 
   ~Engine() override;
 
-  float GetRefreshRateFPS() const { return animator_->GetRefreshRateFPS(); }
+  float QueryRefreshRateFPS() const { return animator_->QueryRefreshRateFPS(); }
 
   fml::WeakPtr<Engine> GetWeakPtr() const;
 

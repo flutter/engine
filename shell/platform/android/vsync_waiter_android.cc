@@ -83,7 +83,7 @@ bool VsyncWaiterAndroid::Register(JNIEnv* env) {
   return env->RegisterNatives(clazz, methods, arraysize(methods)) == 0;
 }
 
-float VsyncWaiterAndroid::GetRefreshRateFPS() const {
+float VsyncWaiterAndroid::QueryRefreshRateFPS() const {
   JNIEnv* env = fml::jni::AttachCurrentThread();
   if (g_vsync_waiter_class == nullptr) {
     return kUnknownRefreshRateFPS;

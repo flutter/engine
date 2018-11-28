@@ -36,7 +36,7 @@ class Animator final {
 
   ~Animator();
 
-  float GetRefreshRateFPS() const { return waiter_->GetRefreshRateFPS(); }
+  float QueryRefreshRateFPS() const { return waiter_->QueryRefreshRateFPS(); }
 
   void RequestFrame(bool regenerate_layer_tree = true);
 

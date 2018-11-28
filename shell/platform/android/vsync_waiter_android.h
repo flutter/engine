@@ -21,7 +21,7 @@ class VsyncWaiterAndroid final : public VsyncWaiter {
 
   ~VsyncWaiterAndroid() override;
 
-  float GetRefreshRateFPS() const override;
+  float QueryRefreshRateFPS() const override;
 
  private:
   // |shell::VsyncWaiter|
