@@ -949,7 +949,8 @@ bool Shell::OnServiceProtocolQueryRefreshRateFPS(
     rapidjson::Document& response) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   response.SetObject();
-  response.AddMember("fps", engine_->QueryRefreshRateFPS(), response.GetAllocator());
+  response.AddMember("fps", engine_->QueryRefreshRateFPS(),
+                     response.GetAllocator());
   return true;
 }
 
