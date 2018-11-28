@@ -749,17 +749,24 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 - (void)onLocaleUpdated:(NSNotification*)notification {
   NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
   NSMutableArray<NSString*>* data = [NSMutableArray new];
+  bool first = true;
   for (NSString* localeID in preferredLocales) {
-    NSLocale* currentLocale = [[NSLocale alloc] initWithLocaleIdentifier:localeID];
+    NSLocale* currentLocale;
+    if (first) {
+      currentLocale = [NSLocale currentLocale];
+      first = false;
+    } else {
+      currentLocale = [[NSLocale alloc] initWithLocaleIdentifier:localeID];
+    }
     NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
     NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
     NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
     NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
-    if (!languageCode || !countryCode) {
+    if (!languageCode) {
       continue;
     }
     [data addObject:languageCode];
-    [data addObject:countryCode];
+    [data addObject:(countryCode ? countryCode : @"")];
     [data addObject:(scriptCode ? scriptCode : @"")];
     [data addObject:(variantCode ? variantCode : @"")];
   }
