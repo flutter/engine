@@ -748,7 +748,7 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 
 - (void)onLocaleUpdated:(NSNotification*)notification {
   NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
-  NSMutableArray<NSString*>* data = [NSMutableArray new];
+  NSMutableArray<NSString*>* data = [[NSMutableArray new] autorelease];
 
   // Force prepend the [NSLocale currentLocale] to the front of the list
   // to ensure we are including the full default locale. preferredLocales
@@ -767,7 +767,7 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 
   // Add any secondary locales/languages to the list.
   for (NSString* localeID in preferredLocales) {
-    NSLocale* currentLocale = [[NSLocale alloc] initWithLocaleIdentifier:localeID];
+    NSLocale* currentLocale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
     NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
     NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
     NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
