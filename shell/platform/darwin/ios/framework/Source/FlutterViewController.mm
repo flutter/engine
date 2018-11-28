@@ -753,6 +753,8 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
   for (NSString* localeID in preferredLocales) {
     NSLocale* currentLocale;
     if (first) {
+      // Use a different API for first/default locale as preferredLanguages
+      // may strip the region/country code from the locales.
       currentLocale = [NSLocale currentLocale];
       first = false;
     } else {
