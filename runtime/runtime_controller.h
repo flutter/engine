@@ -44,6 +44,8 @@ class RuntimeController final : public WindowClient {
 
   bool SetViewportMetrics(const ViewportMetrics& metrics);
 
+  // Stashes the locale_data in window_data_ and then passes the
+  // locale_data to Window::UpdateLocales.
   bool SetLocales(const std::vector<std::string>& locale_data);
 
   bool SetUserSettingsData(const std::string& data);
@@ -93,6 +95,9 @@ class RuntimeController final : public WindowClient {
     std::string variant_code;
   };
 
+  // Stores data about the window to be used at startup
+  // as well as on hot restarts. Data kept here will persist
+  // after hot restart.
   struct WindowData {
     WindowData();
 
