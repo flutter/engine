@@ -28,8 +28,6 @@ VsyncWaiterAndroid::VsyncWaiterAndroid(blink::TaskRunners task_runners)
 
 VsyncWaiterAndroid::~VsyncWaiterAndroid() = default;
 
-constexpr float kUnknownRefreshRateFPS = 0.0;
-
 // |shell::VsyncWaiter|
 void VsyncWaiterAndroid::AwaitVSync() {
   std::weak_ptr<VsyncWaiter>* weak_this =
@@ -93,6 +91,9 @@ float VsyncWaiterAndroid::QueryRefreshRateFPS() const {
     return kUnknownRefreshRateFPS;
   }
   jfieldID fid = env->GetStaticFieldID(clazz, "refreshRateFPS", "F");
+  // We can safely read this 32-bit float from Java in any thread because
+  // 32-bits read and write are guaranteed to be atomic:
+  // https://stackoverflow.com/questions/11459543/should-getters-and-setters-be-synchronized/11459616#11459616
   return env->GetStaticFloatField(clazz, fid);
 }
 

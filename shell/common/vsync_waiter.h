@@ -14,6 +14,8 @@
 
 namespace shell {
 
+constexpr float kUnknownRefreshRateFPS = 0.0;
+
 class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
  public:
   using Callback = std::function<void(fml::TimePoint frame_start_time,
