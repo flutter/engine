@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -10,6 +10,7 @@ part of dart.ui;
 ///
 /// Scene objects can be displayed on the screen using the
 /// [Window.render] method.
+@pragma('vm:entry-point')
 class Scene extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -55,21 +56,21 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// The objects are transformed by the given matrix before rasterization.
   ///
   /// See [pop] for details about the operation stack.
-  void pushTransform(Float64List matrix4) {
+  EngineLayer pushTransform(Float64List matrix4) {
     if (matrix4 == null)
       throw new ArgumentError('"matrix4" argument cannot be null');
     if (matrix4.length != 16)
       throw new ArgumentError('"matrix4" must have 16 entries.');
-    _pushTransform(matrix4);
+    return _pushTransform(matrix4);
   }
-  void _pushTransform(Float64List matrix4) native 'SceneBuilder_pushTransform';
+  EngineLayer _pushTransform(Float64List matrix4) native 'SceneBuilder_pushTransform';
 
   /// Pushes an offset operation onto the operation stack.
   ///
   /// This is equivalent to [pushTransform] with a matrix with only translation.
   ///
   /// See [pop] for details about the operation stack.
-  void pushOffset(double dx, double dy) native 'SceneBuilder_pushOffset';
+  EngineLayer pushOffset(double dx, double dy) native 'SceneBuilder_pushOffset';
 
   /// Pushes a rectangular clip operation onto the operation stack.
   ///
@@ -77,16 +78,16 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  void pushClipRect(Rect rect, {Clip clipBehavior = Clip.antiAlias}) {
+  EngineLayer pushClipRect(Rect rect, {Clip clipBehavior = Clip.antiAlias}) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    _pushClipRect(rect.left, rect.right, rect.top, rect.bottom, clipBehavior.index);
+    return _pushClipRect(rect.left, rect.right, rect.top, rect.bottom, clipBehavior.index);
   }
-  void _pushClipRect(double left,
-                     double right,
-                     double top,
-                     double bottom,
-                     int clipBehavior) native 'SceneBuilder_pushClipRect';
+  EngineLayer _pushClipRect(double left,
+                            double right,
+                            double top,
+                            double bottom,
+                            int clipBehavior) native 'SceneBuilder_pushClipRect';
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
   ///
@@ -94,12 +95,12 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  void pushClipRRect(RRect rrect, {Clip clipBehavior = Clip.antiAlias}) {
+  EngineLayer pushClipRRect(RRect rrect, {Clip clipBehavior = Clip.antiAlias}) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    _pushClipRRect(rrect._value, clipBehavior.index);
+    return _pushClipRRect(rrect._value, clipBehavior.index);
   }
-  void _pushClipRRect(Float32List rrect, int clipBehavior) native 'SceneBuilder_pushClipRRect';
+  EngineLayer _pushClipRRect(Float32List rrect, int clipBehavior) native 'SceneBuilder_pushClipRRect';
 
   /// Pushes a path clip operation onto the operation stack.
   ///
@@ -107,12 +108,12 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack. See [Clip] for different clip modes.
   /// By default, the clip will be anti-aliased (clip = [Clip.antiAlias]).
-  void pushClipPath(Path path, {Clip clipBehavior = Clip.antiAlias}) {
+  EngineLayer pushClipPath(Path path, {Clip clipBehavior = Clip.antiAlias}) {
     assert(clipBehavior != null);
     assert(clipBehavior != Clip.none);
-    _pushClipPath(path, clipBehavior.index);
+    return _pushClipPath(path, clipBehavior.index);
   }
-  void _pushClipPath(Path path, int clipBehavior) native 'SceneBuilder_pushClipPath';
+  EngineLayer _pushClipPath(Path path, int clipBehavior) native 'SceneBuilder_pushClipPath';
 
   /// Pushes an opacity operation onto the operation stack.
   ///
@@ -122,7 +123,10 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// opacity).
   ///
   /// See [pop] for details about the operation stack.
-  void pushOpacity(int alpha) native 'SceneBuilder_pushOpacity';
+  EngineLayer pushOpacity(int alpha, {Offset offset = Offset.zero}) {
+    return _pushOpacity(alpha, offset.dx, offset.dy);
+  }
+  EngineLayer _pushOpacity(int alpha, double dx, double dy) native 'SceneBuilder_pushOpacity';
 
   /// Pushes a color filter operation onto the operation stack.
   ///
@@ -130,10 +134,10 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// blend mode.
   ///
   /// See [pop] for details about the operation stack.
-  void pushColorFilter(Color color, BlendMode blendMode) {
-    _pushColorFilter(color.value, blendMode.index);
+  EngineLayer pushColorFilter(Color color, BlendMode blendMode) {
+    return _pushColorFilter(color.value, blendMode.index);
   }
-  void _pushColorFilter(int color, int blendMode) native 'SceneBuilder_pushColorFilter';
+  EngineLayer _pushColorFilter(int color, int blendMode) native 'SceneBuilder_pushColorFilter';
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
@@ -141,7 +145,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// rasterizing the given objects.
   ///
   /// See [pop] for details about the operation stack.
-  void pushBackdropFilter(ImageFilter filter) native 'SceneBuilder_pushBackdropFilter';
+  EngineLayer pushBackdropFilter(ImageFilter filter) native 'SceneBuilder_pushBackdropFilter';
 
   /// Pushes a shader mask operation onto the operation stack.
   ///
@@ -149,20 +153,20 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// rectangle using the given blend mode.
   ///
   /// See [pop] for details about the operation stack.
-  void pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode) {
-    _pushShaderMask(shader,
-                    maskRect.left,
-                    maskRect.right,
-                    maskRect.top,
-                    maskRect.bottom,
-                    blendMode.index);
+  EngineLayer pushShaderMask(Shader shader, Rect maskRect, BlendMode blendMode) {
+    return _pushShaderMask(shader,
+                           maskRect.left,
+                           maskRect.right,
+                           maskRect.top,
+                           maskRect.bottom,
+                           blendMode.index);
   }
-  void _pushShaderMask(Shader shader,
-                       double maskRectLeft,
-                       double maskRectRight,
-                       double maskRectTop,
-                       double maskRectBottom,
-                       int blendMode) native 'SceneBuilder_pushShaderMask';
+  EngineLayer _pushShaderMask(Shader shader,
+                              double maskRectLeft,
+                              double maskRectRight,
+                              double maskRectTop,
+                              double maskRectBottom,
+                              int blendMode) native 'SceneBuilder_pushShaderMask';
 
   /// Pushes a physical layer operation for an arbitrary shape onto the
   /// operation stack.
@@ -177,10 +181,10 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   // ignore: deprecated_member_use
-  void pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clipBehavior = defaultClipBehavior}) {
-    _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipBehavior.index);
+  EngineLayer pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clipBehavior = defaultClipBehavior}) {
+    return _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipBehavior.index);
   }
-  void _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipBehavior) native
+  EngineLayer _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipBehavior) native
     'SceneBuilder_pushPhysicalShape';
 
   /// Ends the effect of the most recently pushed operation.
@@ -190,6 +194,16 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Calling this function removes the most recently added operation from the
   /// stack.
   void pop() native 'SceneBuilder_pop';
+
+  /// Add a retained engine layer subtree from previous frames.
+  ///
+  /// All the engine layers that are in the subtree of the retained layer will
+  /// be automatically appended to the current engine layer tree.
+  ///
+  /// Therefore, when implementing a subclas of the [Layer] concept defined in
+  /// the rendering layer of Flutter's framework, once this is called, there's
+  /// no need to call [addToScene] for its children layers.
+  EngineLayer addRetained(EngineLayer retainedLayer) native 'SceneBuilder_addRetained';
 
   /// Adds an object to the scene that displays performance statistics.
   ///
@@ -257,6 +271,28 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     _addTexture(offset.dx, offset.dy, width, height, textureId, freeze);
   }
   void _addTexture(double dx, double dy, double width, double height, int textureId, bool freeze) native 'SceneBuilder_addTexture';
+
+  /// Adds a platform view (e.g an iOS UIView) to the scene.
+  ///
+  /// Only supported on iOS, this is currently a no-op on other platforms.
+  ///
+  /// On iOS this layer splits the current output surface into two surfaces, one for the scene nodes
+  /// preceding the platform view, and one for the scene nodes following the platform view.
+  ///
+  /// ## Performance impact
+  ///
+  /// Adding an additional surface doubles the amount of graphics memory directly used by Flutter
+  /// for output buffers. Quartz might allocated extra buffers for compositing the Flutter surfaces
+  /// and the platform view.
+  ///
+  /// With a platform view in the scene, Quartz has to composite the two Flutter surfaces and the
+  /// embedded UIView. In addition to that, on iOS versions greater than 9, the Flutter frames are
+  /// synchronized with the UIView frames adding additional performance overhead.
+  void addPlatformView(int viewId, { Offset offset: Offset.zero, double width: 0.0, double height: 0.0}) {
+    assert(offset != null, 'Offset argument was null');
+    _addPlatformView(offset.dx, offset.dy, width, height, viewId);
+  }
+  void _addPlatformView(double dx, double dy, double width, double height, int viewId) native 'SceneBuilder_addPlatformView';
 
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.

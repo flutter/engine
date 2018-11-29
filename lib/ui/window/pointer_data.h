@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -43,12 +43,14 @@ struct alignas(8) PointerData {
   double pressure_max;
   double distance;
   double distance_max;
+  double size;
   double radius_major;
   double radius_minor;
   double radius_min;
   double radius_max;
   double orientation;
   double tilt;
+  int64_t platformData;
 
   void Clear();
 };

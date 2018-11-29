@@ -1,4 +1,4 @@
-Signature: 1a325f5834d49b7daa016a4f2b01be3d
+Signature: 688d05f1b8d8726e65b28a27ccc7dfcb
 
 UNUSED LICENSES:
 
@@ -466,8 +466,19 @@ FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/qu
 FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/src/time/util.dart
 FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/strings.dart
 FILE: ../../../third_party/dart/third_party/observatory_pub_packages/packages/quiver/lib/time.dart
-FILE: ../../../third_party/vulkan/src/vulkan/vk_platform.h
-FILE: ../../../third_party/vulkan/src/vulkan/vulkan.h
+FILE: ../../../third_party/vulkan/include/vulkan/vk_platform.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan_android.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan_core.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan_fuchsia.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan_ios.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan_macos.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan_vi.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan_wayland.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan_win32.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan_xcb.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan_xlib.h
+FILE: ../../../third_party/vulkan/include/vulkan/vulkan_xlib_xrandr.h
 ----------------------------------------------------------------------------------------------------
 Apache License
 Version 2.0, January 2004
@@ -4432,6 +4443,7 @@ ORIGIN: ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/.gitconfig
 FILE: ../../../third_party/dart/.mailmap
+FILE: ../../../third_party/dart/.vpython
 FILE: ../../../third_party/dart/client/idea/.idea/.name
 FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
 FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
@@ -4493,7 +4505,6 @@ FILE: ../../../third_party/dart/runtime/bin/builtin.h
 FILE: ../../../third_party/dart/runtime/bin/builtin_gen_snapshot.cc
 FILE: ../../../third_party/dart/runtime/bin/builtin_in.cc
 FILE: ../../../third_party/dart/runtime/bin/builtin_natives.cc
-FILE: ../../../third_party/dart/runtime/bin/builtin_nolib.cc
 FILE: ../../../third_party/dart/runtime/bin/common_patch.dart
 FILE: ../../../third_party/dart/runtime/bin/crypto.cc
 FILE: ../../../third_party/dart/runtime/bin/crypto.h
@@ -4656,8 +4667,6 @@ FILE: ../../../third_party/dart/runtime/vm/allocation.cc
 FILE: ../../../third_party/dart/runtime/vm/allocation_test.cc
 FILE: ../../../third_party/dart/runtime/vm/assert_test.cc
 FILE: ../../../third_party/dart/runtime/vm/ast.h
-FILE: ../../../third_party/dart/runtime/vm/ast_printer_test.cc
-FILE: ../../../third_party/dart/runtime/vm/ast_test.cc
 FILE: ../../../third_party/dart/runtime/vm/base_isolate.h
 FILE: ../../../third_party/dart/runtime/vm/benchmark_test.cc
 FILE: ../../../third_party/dart/runtime/vm/benchmark_test.h
@@ -4675,7 +4684,6 @@ FILE: ../../../third_party/dart/runtime/vm/bootstrap.cc
 FILE: ../../../third_party/dart/runtime/vm/bootstrap.h
 FILE: ../../../third_party/dart/runtime/vm/bootstrap_natives.cc
 FILE: ../../../third_party/dart/runtime/vm/bootstrap_natives.h
-FILE: ../../../third_party/dart/runtime/vm/bootstrap_nocore.cc
 FILE: ../../../third_party/dart/runtime/vm/class_finalizer.h
 FILE: ../../../third_party/dart/runtime/vm/class_finalizer_test.cc
 FILE: ../../../third_party/dart/runtime/vm/class_table.cc
@@ -4705,7 +4713,6 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/inliner.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/cha.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/cha.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/cha_test.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/code_generator_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/flow_graph_builder.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/flow_graph_builder.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/intrinsifier.cc
@@ -5276,7 +5283,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/sourc
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/target.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/thread.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/timeline_event.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/token_stream.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/type_arguments.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/unknown.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/vm.dart
@@ -5365,7 +5371,6 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/flow_graph_compiler_
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_dbc.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/redundancy_elimination.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/redundancy_elimination.h
-FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/flow_graph_builder_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_binary_flowgraph.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_to_il.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_to_il.h
@@ -5464,6 +5469,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.c
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_kbc.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/code_statistics.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/loops.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/loops.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_pass.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_state.h
@@ -5542,17 +5549,12 @@ FILE: ../../../third_party/dart/runtime/lib/object.cc
 FILE: ../../../third_party/dart/runtime/lib/string.cc
 FILE: ../../../third_party/dart/runtime/platform/c99_support_win.h
 FILE: ../../../third_party/dart/runtime/platform/inttypes_support_win.h
-FILE: ../../../third_party/dart/runtime/vm/ast.cc
-FILE: ../../../third_party/dart/runtime/vm/ast_printer.cc
-FILE: ../../../third_party/dart/runtime/vm/ast_printer.h
 FILE: ../../../third_party/dart/runtime/vm/bitfield.h
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_ia32_test.cc
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_x64_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_test.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler_stats.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler_stats.h
 FILE: ../../../third_party/dart/runtime/vm/cpu_ia32.cc
 FILE: ../../../third_party/dart/runtime/vm/custom_isolate_test.cc
 FILE: ../../../third_party/dart/runtime/vm/dart.h
@@ -5589,7 +5591,6 @@ FILE: ../../../third_party/dart/runtime/vm/native_entry_test.cc
 FILE: ../../../third_party/dart/runtime/vm/native_entry_test.h
 FILE: ../../../third_party/dart/runtime/vm/object_store_test.cc
 FILE: ../../../third_party/dart/runtime/vm/os.h
-FILE: ../../../third_party/dart/runtime/vm/parser_test.cc
 FILE: ../../../third_party/dart/runtime/vm/port.h
 FILE: ../../../third_party/dart/runtime/vm/resolver.cc
 FILE: ../../../third_party/dart/runtime/vm/resolver.h
@@ -5889,7 +5890,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/sentinel_va
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/sentinel_view.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/source_inset.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/stack_trace_tree_config.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/token_stream_ref.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/type_arguments_ref.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/unknown_ref.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/vm_view.dart
@@ -6194,8 +6194,6 @@ FILE: ../../../third_party/dart/runtime/platform/math.h
 FILE: ../../../third_party/dart/runtime/platform/memory_sanitizer.h
 FILE: ../../../third_party/dart/runtime/platform/safe_stack.h
 FILE: ../../../third_party/dart/runtime/tools/verbose_gc_to_bmu.dart
-FILE: ../../../third_party/dart/runtime/vm/ast_transformer.cc
-FILE: ../../../third_party/dart/runtime/vm/ast_transformer.h
 FILE: ../../../third_party/dart/runtime/vm/bit_set_test.cc
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/code_patcher_arm64_test.cc
@@ -7724,16 +7722,19 @@ FILE: ../../../third_party/harfbuzz/.editorconfig
 FILE: ../../../third_party/harfbuzz/THANKS
 FILE: ../../../third_party/harfbuzz/TODO
 FILE: ../../../third_party/harfbuzz/appveyor.yml
+FILE: ../../../third_party/harfbuzz/azure-pipelines.yml
 FILE: ../../../third_party/harfbuzz/docs/HarfBuzz.png
 FILE: ../../../third_party/harfbuzz/docs/HarfBuzz.svg
 FILE: ../../../third_party/harfbuzz/docs/harfbuzz-docs.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-buffers-language-script-and-direction.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-clusters.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-fonts-and-faces.xml
+FILE: ../../../third_party/harfbuzz/docs/usermanual-getting-started.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-glyph-information.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-hello-harfbuzz.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-install-harfbuzz.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-opentype-features.xml
+FILE: ../../../third_party/harfbuzz/docs/usermanual-shaping-concepts.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-what-is-harfbuzz.xml
 FILE: ../../../third_party/harfbuzz/docs/version.xml.in
 FILE: ../../../third_party/harfbuzz/harfbuzz.doap
@@ -7746,6 +7747,9 @@ FILE: ../../../third_party/harfbuzz/src/harfbuzz.pc.in
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-table.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-table.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-tag-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-unicode-emoji-table.hh
 ----------------------------------------------------------------------------------------------------
 HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
 For parts of HarfBuzz that are licensed under different licenses see individual
@@ -7828,23 +7832,37 @@ FILE: ../../../third_party/harfbuzz/src/dump-indic-data.cc
 FILE: ../../../third_party/harfbuzz/src/dump-khmer-data.cc
 FILE: ../../../third_party/harfbuzz/src/dump-myanmar-data.cc
 FILE: ../../../third_party/harfbuzz/src/dump-use-data.cc
+FILE: ../../../third_party/harfbuzz/src/hb-aat-map.hh
 FILE: ../../../third_party/harfbuzz/src/hb-iter-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-iter.hh
 FILE: ../../../third_party/harfbuzz/src/hb-map-private.hh
 FILE: ../../../third_party/harfbuzz/src/hb-map.cc
 FILE: ../../../third_party/harfbuzz/src/hb-map.h
+FILE: ../../../third_party/harfbuzz/src/hb-map.hh
+FILE: ../../../third_party/harfbuzz/src/hb-null.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-face.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-hdmx-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-os2-unicode-ranges.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.hh
 FILE: ../../../third_party/harfbuzz/src/hb-static.cc
 FILE: ../../../third_party/harfbuzz/src/hb-subset-glyf.cc
 FILE: ../../../third_party/harfbuzz/src/hb-subset-glyf.hh
 FILE: ../../../third_party/harfbuzz/src/hb-subset-input.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-input.hh
 FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.cc
 FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.hh
 FILE: ../../../third_party/harfbuzz/src/hb-subset-private.hh
 FILE: ../../../third_party/harfbuzz/src/hb-subset.cc
 FILE: ../../../third_party/harfbuzz/src/hb-subset.h
+FILE: ../../../third_party/harfbuzz/src/hb-subset.hh
+FILE: ../../../third_party/harfbuzz/src/test-name-table.cc
 FILE: ../../../third_party/harfbuzz/src/test-unicode-ranges.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2018  Google, Inc.
@@ -7875,9 +7893,11 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-aat-layout-common-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-common-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-common.hh
 FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-morx-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-aat-layout-private.hh
 FILE: ../../../third_party/harfbuzz/src/hb-aat-layout.cc
+FILE: ../../../third_party/harfbuzz/src/hb-aat-layout.hh
 FILE: ../../../third_party/harfbuzz/src/hb-debug.hh
 FILE: ../../../third_party/harfbuzz/src/hb-dsalgs.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-kern-table.hh
@@ -7946,11 +7966,45 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-aat-map.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-aat-map.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-map.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2009,2010  Red Hat, Inc.
+Copyright © 2010,2011,2013  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-atomic-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-atomic-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-atomic.hh
 FILE: ../../../third_party/harfbuzz/src/hb-mutex-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-mutex.hh
 FILE: ../../../third_party/harfbuzz/src/hb-object-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-object.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2007  Chris Wilson
 Copyright © 2009,2010  Red Hat, Inc.
@@ -7982,6 +8036,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-blob-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-blob-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-blob.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2009  Red Hat, Inc.
 Copyright © 2018  Google, Inc.
@@ -8113,6 +8168,7 @@ ORIGIN: ../../../third_party/harfbuzz/src/hb-buffer-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-buffer-private.hh
 FILE: ../../../third_party/harfbuzz/src/hb-buffer.cc
+FILE: ../../../third_party/harfbuzz/src/hb-buffer.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 1998-2004  David Turner and Werner Lemberg
 Copyright © 2004,2007,2009,2010  Red Hat, Inc.
@@ -8201,6 +8257,57 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-cache.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-cache.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-fallback.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-fallback-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-fallback.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-normalize-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-normalize.hh
+FILE: ../../../third_party/harfbuzz/src/hb-set-digest-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-set-digest.hh
+FILE: ../../../third_party/harfbuzz/src/hb-set.cc
+FILE: ../../../third_party/harfbuzz/src/hb-set.h
+FILE: ../../../third_party/harfbuzz/src/hb-shape-plan-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-shape-plan.cc
+FILE: ../../../third_party/harfbuzz/src/hb-shape-plan.h
+FILE: ../../../third_party/harfbuzz/src/hb-shape-plan.hh
+FILE: ../../../third_party/harfbuzz/src/hb-shaper-impl-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-shaper-impl.hh
+FILE: ../../../third_party/harfbuzz/src/hb-shaper-list.hh
+FILE: ../../../third_party/harfbuzz/src/hb-shaper-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-shaper.cc
+FILE: ../../../third_party/harfbuzz/src/hb-shaper.hh
+FILE: ../../../third_party/harfbuzz/src/hb-warning.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2012  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-common.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-common.cc
@@ -8235,6 +8342,7 @@ ORIGIN: ../../../third_party/harfbuzz/src/hb-common.h
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-common.h
 FILE: ../../../third_party/harfbuzz/src/hb-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2007,2008,2009  Red Hat, Inc.
 Copyright © 2011,2012  Google, Inc.
@@ -8382,7 +8490,9 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-face-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-face-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-face.hh
 FILE: ../../../third_party/harfbuzz/src/hb-font-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-font.hh
 FILE: ../../../third_party/harfbuzz/src/hb-glib.cc
 FILE: ../../../third_party/harfbuzz/src/hb-glib.h
 FILE: ../../../third_party/harfbuzz/src/hb-icu.h
@@ -8639,6 +8749,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-machinery-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-machinery-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-machinery.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2007,2008,2009,2010  Red Hat, Inc.
 Copyright © 2012,2018  Google, Inc.
@@ -8669,6 +8780,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-open-file-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-open-file-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-open-file.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2007,2008,2009  Red Hat, Inc.
 Copyright © 2012  Google, Inc.
@@ -8699,6 +8811,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-open-type-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-open-type-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-open-type.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2007,2008,2009,2010  Red Hat, Inc.
 Copyright © 2012  Google, Inc.
@@ -8794,6 +8907,69 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-color.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2016  Google, Inc.
 Copyright © 2018  Ebrahim Byagowi
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-color.h
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color.h
+----------------------------------------------------------------------------------------------------
+Copyright © 2016  Google, Inc.
+Copyright © 2018  Khaled Hosny
+Copyright © 2018  Ebrahim Byagowi
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-face.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-face.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-layout-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-layout.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2007,2008,2009  Red Hat, Inc.
+Copyright © 2012,2013  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -8982,6 +9158,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-layout-common-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-layout-common-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-layout-common.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2007,2008,2009  Red Hat, Inc.
 Copyright © 2010,2012  Google, Inc.
@@ -9073,39 +9250,10 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-layout-gsubgpos-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-layout-gsubgpos-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-layout-gsubgpos.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2007,2008,2009,2010  Red Hat, Inc.
 Copyright © 2010,2012  Google, Inc.
-
- This is part of HarfBuzz, a text shaping library.
-
-Permission is hereby granted, without written agreement and without
-license or royalty fees, to use, copy, modify, and distribute this
-software and its documentation for any purpose, provided that the
-above copyright notice and the following two paragraphs appear in
-all copies of this software.
-
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
-IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
-PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-layout-private.hh
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-ot-layout-private.hh
-----------------------------------------------------------------------------------------------------
-Copyright © 2007,2008,2009  Red Hat, Inc.
-Copyright © 2012,2013  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -9195,39 +9343,10 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-map-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-map-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-map.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2009,2010  Red Hat, Inc.
 Copyright © 2010,2011,2012,2013  Google, Inc.
-
- This is part of HarfBuzz, a text shaping library.
-
-Permission is hereby granted, without written agreement and without
-license or royalty fees, to use, copy, modify, and distribute this
-software and its documentation for any purpose, provided that the
-above copyright notice and the following two paragraphs appear in
-all copies of this software.
-
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
-IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
-PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-map.cc
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-ot-map.cc
-----------------------------------------------------------------------------------------------------
-Copyright © 2009,2010  Red Hat, Inc.
-Copyright © 2010,2011,2013  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -9283,25 +9402,11 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-fallback.hh
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-name.h
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-fallback.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-fallback-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-normalize-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-set-digest-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-set.cc
-FILE: ../../../third_party/harfbuzz/src/hb-set.h
-FILE: ../../../third_party/harfbuzz/src/hb-shape-plan-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-shape-plan.cc
-FILE: ../../../third_party/harfbuzz/src/hb-shape-plan.h
-FILE: ../../../third_party/harfbuzz/src/hb-shaper-impl-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-shaper-list.hh
-FILE: ../../../third_party/harfbuzz/src/hb-shaper-private.hh
-FILE: ../../../third_party/harfbuzz/src/hb-shaper.cc
-FILE: ../../../third_party/harfbuzz/src/hb-warning.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name.h
 ----------------------------------------------------------------------------------------------------
-Copyright © 2012  Google, Inc.
+Copyright © 2018  Ebrahim Byagowi.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -9329,10 +9434,12 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-machine.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-machine.rl
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-private.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2015  Mozilla Foundation.
 Copyright © 2015  Google, Inc.
@@ -9426,6 +9533,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2010,2011,2012  Google, Inc.
 
@@ -9455,6 +9563,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2010  Google, Inc.
 
@@ -9540,9 +9649,39 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-vorg-table.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-vorg-table.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2018 Adobe Systems Incorporated.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-set-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-set-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-set.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2012,2017  Google, Inc.
 
@@ -9618,6 +9757,7 @@ ORIGIN: ../../../third_party/harfbuzz/src/hb-unicode-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-unicode-private.hh
 FILE: ../../../third_party/harfbuzz/src/hb-unicode.cc
+FILE: ../../../third_party/harfbuzz/src/hb-unicode.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2009  Red Hat, Inc.
 Copyright © 2011  Codethink Limited
@@ -9680,8 +9820,38 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-utf-private.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-utf-private.hh
+FILE: ../../../third_party/harfbuzz/src/hb-utf.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2011,2012,2014  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-vector.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-vector.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2017,2018  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -9711,6 +9881,36 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/test-buffer-serialize.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2010,2011,2013  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/test-ot-color.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/test-ot-color.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2018  Ebrahim Byagowi
+Copyright © 2018  Khaled Hosny
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -15995,41 +16195,42 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: rapidjson
-ORIGIN: ../../../third_party/rapidjson/rapidjson/error/en.h
+ORIGIN: ../../../third_party/rapidjson/include/rapidjson/error/en.h
 TYPE: LicenseType.mit
-FILE: ../../../third_party/rapidjson/rapidjson/allocators.h
-FILE: ../../../third_party/rapidjson/rapidjson/document.h
-FILE: ../../../third_party/rapidjson/rapidjson/encodedstream.h
-FILE: ../../../third_party/rapidjson/rapidjson/encodings.h
-FILE: ../../../third_party/rapidjson/rapidjson/error/en.h
-FILE: ../../../third_party/rapidjson/rapidjson/error/error.h
-FILE: ../../../third_party/rapidjson/rapidjson/filereadstream.h
-FILE: ../../../third_party/rapidjson/rapidjson/filewritestream.h
-FILE: ../../../third_party/rapidjson/rapidjson/fwd.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/biginteger.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/diyfp.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/dtoa.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/ieee754.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/itoa.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/meta.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/pow10.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/regex.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/stack.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/strfunc.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/strtod.h
-FILE: ../../../third_party/rapidjson/rapidjson/internal/swap.h
-FILE: ../../../third_party/rapidjson/rapidjson/istreamwrapper.h
-FILE: ../../../third_party/rapidjson/rapidjson/memorybuffer.h
-FILE: ../../../third_party/rapidjson/rapidjson/memorystream.h
-FILE: ../../../third_party/rapidjson/rapidjson/ostreamwrapper.h
-FILE: ../../../third_party/rapidjson/rapidjson/pointer.h
-FILE: ../../../third_party/rapidjson/rapidjson/prettywriter.h
-FILE: ../../../third_party/rapidjson/rapidjson/rapidjson.h
-FILE: ../../../third_party/rapidjson/rapidjson/reader.h
-FILE: ../../../third_party/rapidjson/rapidjson/schema.h
-FILE: ../../../third_party/rapidjson/rapidjson/stream.h
-FILE: ../../../third_party/rapidjson/rapidjson/stringbuffer.h
-FILE: ../../../third_party/rapidjson/rapidjson/writer.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/allocators.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/cursorstreamwrapper.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/document.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/encodedstream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/encodings.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/error/en.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/error/error.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/filereadstream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/filewritestream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/fwd.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/biginteger.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/diyfp.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/dtoa.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/ieee754.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/itoa.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/meta.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/pow10.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/regex.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/stack.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/strfunc.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/strtod.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/internal/swap.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/istreamwrapper.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/memorybuffer.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/memorystream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/ostreamwrapper.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/pointer.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/prettywriter.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/rapidjson.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/reader.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/schema.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/stream.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/stringbuffer.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/writer.h
 ----------------------------------------------------------------------------------------------------
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -16040,10 +16241,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ====================================================================================================
 LIBRARY: rapidjson
-ORIGIN: ../../../third_party/rapidjson/rapidjson/msinttypes/inttypes.h
+ORIGIN: ../../../third_party/rapidjson/include/rapidjson/msinttypes/inttypes.h
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/rapidjson/rapidjson/msinttypes/inttypes.h
-FILE: ../../../third_party/rapidjson/rapidjson/msinttypes/stdint.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/msinttypes/inttypes.h
+FILE: ../../../third_party/rapidjson/include/rapidjson/msinttypes/stdint.h
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2006-2013 Alexander Chemeris
 
@@ -17643,4 +17844,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 299
+Total license count: 304

@@ -1,4 +1,4 @@
-# Copyright 2015 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -8,6 +8,8 @@ source_set("flow") {
     "compositor_context.h",
     "debug_print.cc",
     "debug_print.h",
+    "embedded_views.cc",
+    "embedded_views.h",
     "instrumentation.cc",
     "instrumentation.h",
     "layers/backdrop_filter_layer.cc",
@@ -34,6 +36,8 @@ source_set("flow") {
     "layers/physical_shape_layer.h",
     "layers/picture_layer.cc",
     "layers/picture_layer.h",
+    "layers/platform_view_layer.cc",
+    "layers/platform_view_layer.h",
     "layers/shader_mask_layer.cc",
     "layers/shader_mask_layer.h",
     "layers/texture_layer.cc",
@@ -63,7 +67,6 @@ source_set("flow") {
     "$flutter_root/fml",
     "$flutter_root/synchronization",
     "//third_party/skia",
-    "//third_party/skia:gpu",
   ]
 
   if (is_fuchsia) {

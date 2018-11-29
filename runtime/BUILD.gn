@@ -1,45 +1,10 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 import("//third_party/dart/runtime/bin/vmservice/vmservice_sources.gni")
 import("$flutter_root/common/config.gni")
 import("$flutter_root/testing/testing.gni")
-
-action("gen_embedded_resources_cc") {
-  script = "//third_party/dart/runtime/tools/create_resources.py"
-  output_file = "$target_gen_dir/embedded_resources.cc"
-  outputs = [
-    output_file,
-  ]
-
-  inputs = rebase_path(vmservice_sources,
-                       "",
-                       "//third_party/dart/runtime/bin/vmservice")
-
-  args = [
-           "--output",
-           rebase_path(output_file),
-           "--outer_namespace",
-           "flutter",
-           "--inner_namespace",
-           "runtime",
-           "--table_name",
-           "flutter_embedded_service_isolate",
-           "--root_prefix",
-           rebase_path("//third_party/dart/runtime/bin/"),
-         ] + rebase_path(inputs)
-}
-
-source_set("embedded_resources_cc") {
-  sources = [
-    "$target_gen_dir/embedded_resources.cc",
-  ]
-  deps = [
-    ":gen_embedded_resources_cc",
-  ]
-  public_configs = [ "$flutter_root:config" ]
-}
 
 source_set("test_font") {
   sources = [
@@ -84,7 +49,6 @@ source_set("runtime") {
   ]
 
   deps = [
-    ":embedded_resources_cc",
     ":test_font",
     "$flutter_root/assets",
     "$flutter_root/common",
@@ -95,9 +59,12 @@ source_set("runtime") {
     "$flutter_root/third_party/txt",
     "//third_party/dart/runtime:dart_api",
     "//third_party/dart/runtime/bin:dart_io_api",
-    "//third_party/rapidjson",
     "//third_party/skia",
     "//third_party/tonic",
+  ]
+
+  public_deps = [
+    "//third_party/rapidjson",
   ]
 
   public_configs = [ "$flutter_root:config" ]
@@ -119,6 +86,7 @@ executable("runtime_unittests") {
 
   sources = [
     "dart_isolate_unittests.cc",
+    "dart_service_isolate_unittests.cc",
     "dart_vm_unittests.cc",
   ]
 

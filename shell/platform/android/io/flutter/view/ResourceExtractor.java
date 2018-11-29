@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -101,6 +101,11 @@ class ResourceExtractor {
                     TIMESTAMP_PREFIX + packageInfo.versionCode + "-" + packageInfo.lastUpdateTime;
 
             final String[] existingTimestamps = getExistingTimestamps(dataDir);
+
+            if (existingTimestamps == null) {
+                return null;
+            }
+
             if (existingTimestamps.length != 1
                     || !expectedTimestamp.equals(existingTimestamps[0])) {
                 return expectedTimestamp;
@@ -173,7 +178,11 @@ class ResourceExtractor {
                 file.delete();
             }
         }
-        for (String timestamp : getExistingTimestamps(dataDir)) {
+        final String[] existingTimestamps = getExistingTimestamps(dataDir);
+        if (existingTimestamps == null) {
+            return;
+        }
+        for (String timestamp : existingTimestamps) {
             new File(dataDir, timestamp).delete();
         }
     }

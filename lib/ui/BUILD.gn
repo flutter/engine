@@ -1,4 +1,4 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -23,6 +23,8 @@ source_set("ui") {
     "painting/canvas.h",
     "painting/codec.cc",
     "painting/codec.h",
+    "painting/engine_layer.cc",
+    "painting/engine_layer.h",
     "painting/frame_info.cc",
     "painting/frame_info.h",
     "painting/gradient.cc",
@@ -63,6 +65,7 @@ source_set("ui") {
     "semantics/semantics_update.h",
     "semantics/semantics_update_builder.cc",
     "semantics/semantics_update_builder.h",
+    "snapshot_delegate.h",
     "text/asset_manager_font_provider.cc",
     "text/asset_manager_font_provider.h",
     "text/font_collection.cc",
@@ -89,6 +92,7 @@ source_set("ui") {
     "window/pointer_data.h",
     "window/pointer_data_packet.cc",
     "window/pointer_data_packet.h",
+    "window/viewport_metrics.cc",
     "window/viewport_metrics.h",
     "window/window.cc",
     "window/window.h",
@@ -105,8 +109,6 @@ source_set("ui") {
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
-    "//third_party/skia:effects",
-    "//third_party/skia:gpu",
     "//third_party/tonic",
   ]
   if (is_fuchsia) {

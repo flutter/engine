@@ -1,4 +1,4 @@
-// Copyright 2016 The Fuchsia Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -34,7 +34,7 @@ const char* StripDots(const char* path) {
 }
 
 const char* StripPath(const char* path) {
-  auto p = strrchr(path, '/');
+  auto* p = strrchr(path, '/');
   if (p)
     return p + 1;
   else

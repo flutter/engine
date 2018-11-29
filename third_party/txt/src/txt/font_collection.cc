@@ -84,6 +84,10 @@ void FontCollection::SetAssetFontManager(sk_sp<SkFontMgr> font_manager) {
   asset_font_manager_ = font_manager;
 }
 
+void FontCollection::SetDynamicFontManager(sk_sp<SkFontMgr> font_manager) {
+  dynamic_font_manager_ = font_manager;
+}
+
 void FontCollection::SetTestFontManager(sk_sp<SkFontMgr> font_manager) {
   test_font_manager_ = font_manager;
 }
@@ -93,6 +97,8 @@ std::vector<sk_sp<SkFontMgr>> FontCollection::GetFontManagerOrder() const {
   std::vector<sk_sp<SkFontMgr>> order;
   if (test_font_manager_)
     order.push_back(test_font_manager_);
+  if (dynamic_font_manager_)
+    order.push_back(dynamic_font_manager_);
   if (asset_font_manager_)
     order.push_back(asset_font_manager_);
   if (default_font_manager_)
@@ -126,8 +132,12 @@ FontCollection::GetMinikinFontCollectionForFamily(
         minikin_family,
     };
     if (enable_font_fallback_) {
-      for (std::string fallback_family : fallback_fonts_for_locale_[locale])
-        minikin_families.push_back(fallback_fonts_[fallback_family]);
+      for (std::string fallback_family : fallback_fonts_for_locale_[locale]) {
+        auto it = fallback_fonts_.find(fallback_family);
+        if (it != fallback_fonts_.end()) {
+          minikin_families.push_back(it->second);
+        }
+      }
     }
 
     // Create the minikin font collection.

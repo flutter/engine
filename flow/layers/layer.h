@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/texture.h"
@@ -24,6 +25,7 @@
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
+#include "third_party/skia/include/utils/SkNWayCanvas.h"
 
 #if defined(OS_FUCHSIA)
 
@@ -40,6 +42,20 @@ enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
 
 class ContainerLayer;
 
+struct PrerollContext {
+  RasterCache* raster_cache;
+  GrContext* gr_context;
+  ExternalViewEmbedder* view_embedder;
+  SkColorSpace* dst_color_space;
+  SkRect child_paint_bounds;
+
+  // The following allows us to paint in the end of subtree preroll
+  const Stopwatch& frame_time;
+  const Stopwatch& engine_time;
+  TextureRegistry& texture_registry;
+  const bool checkerboard_offscreen_layers;
+};
+
 // Represents a single composited layer. Created on the UI thread but then
 // subquently used on the Rasterizer thread.
 class Layer {
@@ -47,20 +63,26 @@ class Layer {
   Layer();
   virtual ~Layer();
 
-  struct PrerollContext {
-    RasterCache* raster_cache;
-    GrContext* gr_context;
-    SkColorSpace* dst_color_space;
-    SkRect child_paint_bounds;
-  };
-
   virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
 
   struct PaintContext {
-    SkCanvas& canvas;
+    // When splitting the scene into multiple canvases (e.g when embedding
+    // a platform view on iOS) during the paint traversal we apply the non leaf
+    // flow layers to all canvases, and leaf layers just to the "current"
+    // canvas. Applying the non leaf layers to all canvases ensures that when
+    // we switch a canvas (when painting a PlatformViewLayer) the next canvas
+    // has the exact same state as the current canvas.
+    // The internal_nodes_canvas is a SkNWayCanvas which is used by non leaf
+    // and applies the operations to all canvases.
+    // The leaf_nodes_canvas is the "current" canvas and is used by leaf
+    // layers.
+    SkCanvas* internal_nodes_canvas;
+    SkCanvas* leaf_nodes_canvas;
+    ExternalViewEmbedder* view_embedder;
     const Stopwatch& frame_time;
     const Stopwatch& engine_time;
     TextureRegistry& texture_registry;
+    const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
   };
 

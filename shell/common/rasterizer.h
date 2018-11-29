@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -13,12 +13,13 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/surface.h"
 #include "flutter/synchronization/pipeline.h"
 
 namespace shell {
 
-class Rasterizer final {
+class Rasterizer final : public blink::SnapshotDelegate {
  public:
   Rasterizer(blink::TaskRunners task_runners);
 
@@ -32,6 +33,8 @@ class Rasterizer final {
   void Teardown();
 
   fml::WeakPtr<Rasterizer> GetWeakPtr() const;
+
+  fml::WeakPtr<blink::SnapshotDelegate> GetSnapshotDelegate() const;
 
   flow::LayerTree* GetLastLayerTree();
 
@@ -51,10 +54,13 @@ class Rasterizer final {
     sk_sp<SkData> data;
     SkISize frame_size = SkISize::MakeEmpty();
 
-    Screenshot() {}
+    Screenshot();
 
-    Screenshot(sk_sp<SkData> p_data, SkISize p_size)
-        : data(std::move(p_data)), frame_size(p_size) {}
+    Screenshot(sk_sp<SkData> p_data, SkISize p_size);
+
+    Screenshot(const Screenshot& other);
+
+    ~Screenshot();
   };
 
   Screenshot ScreenshotLastLayerTree(ScreenshotType type, bool base64_encode);
@@ -74,6 +80,10 @@ class Rasterizer final {
   std::unique_ptr<flow::LayerTree> last_layer_tree_;
   fml::closure next_frame_callback_;
   fml::WeakPtrFactory<Rasterizer> weak_factory_;
+
+  // |blink::SnapshotDelegate|
+  sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
+                                    SkISize picture_size) override;
 
   void DoDraw(std::unique_ptr<flow::LayerTree> layer_tree);
 

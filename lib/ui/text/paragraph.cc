@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -84,8 +84,13 @@ void Paragraph::paint(Canvas* canvas, double x, double y) {
   m_paragraphImpl->paint(canvas, x, y);
 }
 
-std::vector<TextBox> Paragraph::getRectsForRange(unsigned start, unsigned end) {
-  return m_paragraphImpl->getRectsForRange(start, end);
+std::vector<TextBox> Paragraph::getRectsForRange(unsigned start,
+                                                 unsigned end,
+                                                 unsigned boxHeightStyle,
+                                                 unsigned boxWidthStyle) {
+  return m_paragraphImpl->getRectsForRange(
+      start, end, static_cast<txt::Paragraph::RectHeightStyle>(boxHeightStyle),
+      static_cast<txt::Paragraph::RectWidthStyle>(boxWidthStyle));
 }
 
 Dart_Handle Paragraph::getPositionForOffset(double dx, double dy) {

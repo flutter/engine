@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -14,6 +14,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -47,6 +48,9 @@ class Engine final : public blink::RuntimeDelegate {
         fml::RefPtr<blink::PlatformMessage> message) = 0;
 
     virtual void OnPreEngineRestart() = 0;
+
+    virtual void UpdateIsolateDescription(const std::string isolate_name,
+                                          int64_t isolate_port) = 0;
   };
 
   Engine(Delegate& delegate,
@@ -56,6 +60,7 @@ class Engine final : public blink::RuntimeDelegate {
          blink::TaskRunners task_runners,
          blink::Settings settings,
          std::unique_ptr<Animator> animator,
+         fml::WeakPtr<blink::SnapshotDelegate> snapshot_delegate,
          fml::WeakPtr<GrContext> resource_context,
          fml::RefPtr<flow::SkiaUnrefQueue> unref_queue);
 
@@ -73,7 +78,7 @@ class Engine final : public blink::RuntimeDelegate {
   FML_WARN_UNUSED_RESULT
   bool Restart(RunConfiguration configuration);
 
-  bool UpdateAssetManager(fml::RefPtr<blink::AssetManager> asset_manager);
+  bool UpdateAssetManager(std::shared_ptr<blink::AssetManager> asset_manager);
 
   void BeginFrame(fml::TimePoint frame_time);
 
@@ -119,7 +124,7 @@ class Engine final : public blink::RuntimeDelegate {
   std::unique_ptr<blink::RuntimeController> runtime_controller_;
   std::string initial_route_;
   blink::ViewportMetrics viewport_metrics_;
-  fml::RefPtr<blink::AssetManager> asset_manager_;
+  std::shared_ptr<blink::AssetManager> asset_manager_;
   bool activity_running_;
   bool have_surface_;
   blink::FontCollection font_collection_;
@@ -139,6 +144,10 @@ class Engine final : public blink::RuntimeDelegate {
   // |blink::RuntimeDelegate|
   void HandlePlatformMessage(
       fml::RefPtr<blink::PlatformMessage> message) override;
+
+  // |blink::RuntimeDelegate|
+  void UpdateIsolateDescription(const std::string isolate_name,
+                                int64_t isolate_port) override;
 
   void StopAnimator();
 

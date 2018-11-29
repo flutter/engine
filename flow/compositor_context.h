@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/texture.h"
@@ -26,12 +27,15 @@ class CompositorContext {
     ScopedFrame(CompositorContext& context,
                 GrContext* gr_context,
                 SkCanvas* canvas,
+                ExternalViewEmbedder* view_embedder,
                 const SkMatrix& root_surface_transformation,
                 bool instrumentation_enabled);
 
     virtual ~ScopedFrame();
 
     SkCanvas* canvas() { return canvas_; }
+
+    ExternalViewEmbedder* view_embedder() { return view_embedder_; }
 
     CompositorContext& context() const { return context_; }
 
@@ -47,6 +51,7 @@ class CompositorContext {
     CompositorContext& context_;
     GrContext* gr_context_;
     SkCanvas* canvas_;
+    ExternalViewEmbedder* view_embedder_;
     const SkMatrix& root_surface_transformation_;
     const bool instrumentation_enabled_;
 
@@ -60,6 +65,7 @@ class CompositorContext {
   virtual std::unique_ptr<ScopedFrame> AcquireFrame(
       GrContext* gr_context,
       SkCanvas* canvas,
+      ExternalViewEmbedder* view_embedder,
       const SkMatrix& root_surface_transformation,
       bool instrumentation_enabled);
 
