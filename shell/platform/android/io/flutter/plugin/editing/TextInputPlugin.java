@@ -36,7 +36,6 @@ public class TextInputPlugin implements MethodCallHandler {
 
     public TextInputPlugin(FlutterView view) {
         mView = view;
-        mView.requestFocus();
         mImm = (InputMethodManager) view.getContext().getSystemService(
                 Context.INPUT_METHOD_SERVICE);
         mFlutterChannel = new MethodChannel(view, "flutter/textinput", JSONMethodCodec.INSTANCE);
@@ -168,6 +167,7 @@ public class TextInputPlugin implements MethodCallHandler {
     }
 
     private void showTextInput(FlutterView view) {
+        view.requestFocus();
         mImm.showSoftInput(view, 0);
     }
 
