@@ -36,7 +36,7 @@ class Animator final {
 
   ~Animator();
 
-  float GetDisplayRefreshRate() const { return waiter_->GetDisplayRefreshRate(); }
+  float GetDisplayRefreshRate() const;
 
   void RequestFrame(bool regenerate_layer_tree = true);
 
