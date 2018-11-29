@@ -30,8 +30,8 @@ const fml::StringView ServiceProtocol::kFlushUIThreadTasksExtensionName =
     "_flutter.flushUIThreadTasks";
 const fml::StringView ServiceProtocol::kSetAssetBundlePathExtensionName =
     "_flutter.setAssetBundlePath";
-const fml::StringView ServiceProtocol::kQueryRefreshRateFPSExtensionName =
-    "_flutter.queryRefreshRateFPS";
+const fml::StringView ServiceProtocol::kGetDisplayRefreshRateExtensionName =
+    "_flutter.getDisplayRefreshRate";
 
 static constexpr fml::StringView kViewIdPrefx = "_flutterView/";
 static constexpr fml::StringView kListViewsExtensionName = "_flutter.listViews";
@@ -47,7 +47,7 @@ ServiceProtocol::ServiceProtocol()
           kRunInViewExtensionName,
           kFlushUIThreadTasksExtensionName,
           kSetAssetBundlePathExtensionName,
-          kQueryRefreshRateFPSExtensionName,
+          kGetDisplayRefreshRateExtensionName,
       }),
       handlers_mutex_(fml::SharedMutex::Create()) {}
 
@@ -204,7 +204,7 @@ bool ServiceProtocol::HandleMessage(fml::StringView method,
   if (method == kScreenshotExtensionName ||
       method == kScreenshotSkpExtensionName ||
       method == kFlushUIThreadTasksExtensionName ||
-      method == kQueryRefreshRateFPSExtensionName) {
+      method == kGetDisplayRefreshRateExtensionName) {
     return HandleMessageOnHandler(handlers_.begin()->first, method, params,
                                   response);
   }

@@ -294,9 +294,9 @@ Shell::Shell(blink::TaskRunners task_runners, blink::Settings settings)
           std::bind(&Shell::OnServiceProtocolSetAssetBundlePath, this,
                     std::placeholders::_1, std::placeholders::_2)};
   service_protocol_handlers_
-      [blink::ServiceProtocol::kQueryRefreshRateFPSExtensionName.ToString()] = {
+      [blink::ServiceProtocol::kGetDisplayRefreshRateExtensionName.ToString()] = {
           task_runners_.GetUITaskRunner(),
-          std::bind(&Shell::OnServiceProtocolQueryRefreshRateFPS, this,
+          std::bind(&Shell::OnServiceProtocolGetDisplayRefreshRate, this,
                     std::placeholders::_1, std::placeholders::_2)};
 }
 
@@ -944,12 +944,12 @@ bool Shell::OnServiceProtocolFlushUIThreadTasks(
   return true;
 }
 
-bool Shell::OnServiceProtocolQueryRefreshRateFPS(
+bool Shell::OnServiceProtocolGetDisplayRefreshRate(
     const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
     rapidjson::Document& response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   response.SetObject();
-  response.AddMember("fps", engine_->QueryRefreshRateFPS(),
+  response.AddMember("fps", engine_->GetDisplayRefreshRate(),
                      response.GetAllocator());
   return true;
 }

@@ -30,7 +30,7 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
 
   // Get the display's maximum refresh rate in the unit of frame per second.
   // Return 0.0 if the refresh rate is unkonwn.
-  virtual float QueryRefreshRateFPS() const { return 0.0; }
+  virtual float GetDisplayRefreshRate() const { return 0.0; }
 
  protected:
   const blink::TaskRunners task_runners_;

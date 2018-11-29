@@ -226,7 +226,7 @@ class Shell final : public PlatformView::Delegate,
       rapidjson::Document& response);
 
   // Service protocol handler
-  bool OnServiceProtocolQueryRefreshRateFPS(
+  bool OnServiceProtocolGetDisplayRefreshRate(
       const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document& response);
 
