@@ -1,9 +1,10 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package io.flutter.plugin.common;
 
+import android.support.annotation.Nullable;
 import java.util.Map;
 import org.json.JSONObject;
 
@@ -61,6 +62,7 @@ public final class MethodCall {
      * {@link JSONObject}.
      */
     @SuppressWarnings("unchecked")
+    @Nullable
     public <T> T argument(String key) {
         if (arguments == null) {
             return null;

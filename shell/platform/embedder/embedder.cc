@@ -1,10 +1,11 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/fml/build_config.h"
+#include "flutter/fml/native_library.h"
 
 #if OS_WIN
 #define FLUTTER_EXPORT __declspec(dllexport)
@@ -88,6 +89,19 @@ static bool IsRendererValid(const FlutterRendererConfig* config) {
   return false;
 }
 
+#if OS_LINUX || OS_WIN
+static void* DefaultGLProcResolver(const char* name) {
+  static fml::RefPtr<fml::NativeLibrary> proc_library =
+#if OS_LINUX
+      fml::NativeLibrary::CreateForCurrentProcess();
+#elif OS_WIN  // OS_LINUX
+      fml::NativeLibrary::Create("opengl32.dll");
+#endif        // OS_WIN
+  return static_cast<void*>(
+      const_cast<uint8_t*>(proc_library->ResolveSymbol(name)));
+}
+#endif  // OS_LINUX || OS_WIN
+
 static shell::Shell::CreateCallback<shell::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
@@ -144,6 +158,10 @@ InferOpenGLPlatformViewCreationCallback(
                         user_data](const char* gl_proc_name) {
       return ptr(user_data, gl_proc_name);
     };
+  } else {
+#if OS_LINUX || OS_WIN
+    gl_proc_resolver = DefaultGLProcResolver;
+#endif
   }
 
   bool fbo_reset_after_present =

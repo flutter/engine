@@ -66,6 +66,7 @@ source_set("txt") {
     "src/minikin/WordBreaker.h",
     "src/txt/asset_font_manager.cc",
     "src/txt/asset_font_manager.h",
+    "src/txt/font_asset_provider.cc",
     "src/txt/font_asset_provider.h",
     "src/txt/font_collection.cc",
     "src/txt/font_collection.h",
@@ -89,6 +90,8 @@ source_set("txt") {
     "src/txt/text_baseline.h",
     "src/txt/text_decoration.cc",
     "src/txt/text_decoration.h",
+    "src/txt/text_shadow.cc",
+    "src/txt/text_shadow.h",
     "src/txt/text_style.cc",
     "src/txt/text_style.h",
     "src/txt/typeface_font_asset_provider.cc",
@@ -110,7 +113,7 @@ source_set("txt") {
   ]
 
   deps = [
-    "//third_party/skia:effects",
+    "//third_party/skia",
   ]
 
   if (is_mac || is_ios) {

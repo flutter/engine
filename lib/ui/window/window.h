@@ -1,11 +1,13 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_LIB_UI_WINDOW_WINDOW_H_
 #define FLUTTER_LIB_UI_WINDOW_WINDOW_H_
 
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
@@ -42,6 +44,8 @@ class WindowClient {
   virtual void UpdateSemantics(SemanticsUpdate* update) = 0;
   virtual void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) = 0;
   virtual FontCollection& GetFontCollection() = 0;
+  virtual void UpdateIsolateDescription(const std::string isolate_name,
+                                        int64_t isolate_port) = 0;
 
  protected:
   virtual ~WindowClient();
@@ -59,8 +63,7 @@ class Window final {
 
   void DidCreateIsolate();
   void UpdateWindowMetrics(const ViewportMetrics& metrics);
-  void UpdateLocale(const std::string& language_code,
-                    const std::string& country_code);
+  void UpdateLocales(const std::vector<std::string>& locales);
   void UpdateUserSettingsData(const std::string& data);
   void UpdateSemanticsEnabled(bool enabled);
   void UpdateAccessibilityFeatures(int32_t flags);
