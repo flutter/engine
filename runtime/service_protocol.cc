@@ -203,8 +203,7 @@ bool ServiceProtocol::HandleMessage(fml::StringView method,
   // fallbacks.
   if (method == kScreenshotExtensionName ||
       method == kScreenshotSkpExtensionName ||
-      method == kFlushUIThreadTasksExtensionName ||
-      method == kGetDisplayRefreshRateExtensionName) {
+      method == kFlushUIThreadTasksExtensionName) {
     return HandleMessageOnHandler(handlers_.begin()->first, method, params,
                                   response);
   }
