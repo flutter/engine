@@ -376,14 +376,14 @@
 - (void)updateFloatingCursor:(FlutterCursorState)state withClient:(int)client withPosition:(NSDictionary*)position {
   NSString* stateString;
   switch (state) {
-    case FlutterCursorStateStart:
-      stateString = @"TextCursorState.start";
+    case FloatingCursorDragStateStart:
+      stateString = @"FloatingCursorDragState.start";
       break;
-    case FlutterCursorStateUpdate:
-      stateString = @"TextCursorState.update";
+    case FloatingCursorDragStateUpdate:
+      stateString = @"FloatingCursorDragState.update";
       break;
-    case FlutterCursorStateEnd:
-      stateString = @"TextCursorState.end";
+    case FloatingCursorDragStateEnd:
+      stateString = @"FloatingCursorDragState.end";
       break;
   }
   [_textInputChannel.get() invokeMethod:@"TextInputClient.updateFloatingCursor"
