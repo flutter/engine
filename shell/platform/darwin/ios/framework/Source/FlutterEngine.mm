@@ -373,16 +373,16 @@
                               arguments:@[ @(client), state ]];
 }
 
-- (void)updateFloatingCursor:(FlutterCursorState)state withClient:(int)client withPosition:(NSDictionary*)position {
+- (void)updateFloatingCursor:(FlutterFloatingCursorDragState)state withClient:(int)client withPosition:(NSDictionary*)position {
   NSString* stateString;
   switch (state) {
-    case FloatingCursorDragStateStart:
+    case FlutterFloatingCursorDragStateStart:
       stateString = @"FloatingCursorDragState.start";
       break;
-    case FloatingCursorDragStateUpdate:
+    case FlutterFloatingCursorDragStateUpdate:
       stateString = @"FloatingCursorDragState.update";
       break;
-    case FloatingCursorDragStateEnd:
+    case FlutterFloatingCursorDragStateEnd:
       stateString = @"FloatingCursorDragState.end";
       break;
   }

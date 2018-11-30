@@ -567,17 +567,17 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 - (void)beginFloatingCursorAtPoint:(CGPoint)point {
-  [_textInputDelegate updateFloatingCursor:FlutterCursorStateStart withClient:_textInputClient 
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateStart withClient:_textInputClient 
     withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
 - (void)updateFloatingCursorAtPoint:(CGPoint)point {
-  [_textInputDelegate updateFloatingCursor:FlutterCursorStateUpdate withClient:_textInputClient
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateUpdate withClient:_textInputClient
     withPosition:@{ @"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
 - (void)endFloatingCursor {
-  [_textInputDelegate updateFloatingCursor:FlutterCursorStateEnd withClient:_textInputClient
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateEnd withClient:_textInputClient
     withPosition:@{ @"X" : @(0), @"Y" : @(0)}];
 }
 
