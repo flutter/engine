@@ -294,10 +294,10 @@ Shell::Shell(blink::TaskRunners task_runners, blink::Settings settings)
           std::bind(&Shell::OnServiceProtocolSetAssetBundlePath, this,
                     std::placeholders::_1, std::placeholders::_2)};
   service_protocol_handlers_
-      [blink::ServiceProtocol::kGetDisplayRefreshRateExtensionName.ToString()] = {
-          task_runners_.GetUITaskRunner(),
-          std::bind(&Shell::OnServiceProtocolGetDisplayRefreshRate, this,
-                    std::placeholders::_1, std::placeholders::_2)};
+      [blink::ServiceProtocol::kGetDisplayRefreshRateExtensionName.ToString()] =
+          {task_runners_.GetUITaskRunner(),
+           std::bind(&Shell::OnServiceProtocolGetDisplayRefreshRate, this,
+                     std::placeholders::_1, std::placeholders::_2)};
 }
 
 Shell::~Shell() {
