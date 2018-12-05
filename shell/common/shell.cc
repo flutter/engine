@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -30,10 +30,6 @@
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/tonic/common/log.h"
-
-#ifdef ERROR
-#undef ERROR
-#endif
 
 namespace shell {
 
@@ -92,31 +88,37 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // Create the rasterizer on the GPU thread.
   fml::AutoResetWaitableEvent gpu_latch;
   std::unique_ptr<Rasterizer> rasterizer;
+  fml::WeakPtr<blink::SnapshotDelegate> snapshot_delegate;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners.GetGPUTaskRunner(), [&gpu_latch,            //
                                         &rasterizer,           //
                                         on_create_rasterizer,  //
-                                        shell = shell.get()    //
+                                        shell = shell.get(),   //
+                                        &snapshot_delegate     //
   ]() {
         if (auto new_rasterizer = on_create_rasterizer(*shell)) {
           rasterizer = std::move(new_rasterizer);
+          snapshot_delegate = rasterizer->GetSnapshotDelegate();
         }
         gpu_latch.Signal();
       });
+
+  gpu_latch.Wait();
 
   // Create the engine on the UI thread.
   fml::AutoResetWaitableEvent ui_latch;
   std::unique_ptr<Engine> engine;
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetUITaskRunner(),
-      fml::MakeCopyable([&ui_latch,                                       //
-                         &engine,                                         //
-                         shell = shell.get(),                             //
-                         isolate_snapshot = std::move(isolate_snapshot),  //
-                         shared_snapshot = std::move(shared_snapshot),    //
-                         vsync_waiter = std::move(vsync_waiter),          //
-                         resource_context = std::move(resource_context),  //
-                         unref_queue = std::move(unref_queue)             //
+      fml::MakeCopyable([&ui_latch,                                         //
+                         &engine,                                           //
+                         shell = shell.get(),                               //
+                         isolate_snapshot = std::move(isolate_snapshot),    //
+                         shared_snapshot = std::move(shared_snapshot),      //
+                         vsync_waiter = std::move(vsync_waiter),            //
+                         snapshot_delegate = std::move(snapshot_delegate),  //
+                         resource_context = std::move(resource_context),    //
+                         unref_queue = std::move(unref_queue)               //
   ]() mutable {
         const auto& task_runners = shell->GetTaskRunners();
 
@@ -125,20 +127,20 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         auto animator = std::make_unique<Animator>(*shell, task_runners,
                                                    std::move(vsync_waiter));
 
-        engine = std::make_unique<Engine>(*shell,                       //
-                                          shell->GetDartVM(),           //
-                                          std::move(isolate_snapshot),  //
-                                          std::move(shared_snapshot),   //
-                                          task_runners,                 //
-                                          shell->GetSettings(),         //
-                                          std::move(animator),          //
-                                          std::move(resource_context),  //
-                                          std::move(unref_queue)        //
+        engine = std::make_unique<Engine>(*shell,                        //
+                                          shell->GetDartVM(),            //
+                                          std::move(isolate_snapshot),   //
+                                          std::move(shared_snapshot),    //
+                                          task_runners,                  //
+                                          shell->GetSettings(),          //
+                                          std::move(animator),           //
+                                          std::move(snapshot_delegate),  //
+                                          std::move(resource_context),   //
+                                          std::move(unref_queue)         //
         );
         ui_latch.Signal();
       }));
 
-  gpu_latch.Wait();
   ui_latch.Wait();
   // We are already on the platform thread. So there is no platform latch to
   // wait on.
@@ -371,7 +373,7 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   is_setup_ = true;
 
   if (auto vm = blink::DartVM::ForProcessIfInitialized()) {
-    vm->GetServiceProtocol().AddHandler(this);
+    vm->GetServiceProtocol().AddHandler(this, GetServiceProtocolDescription());
   }
 
   PersistentCache::GetCacheForProcess()->AddWorkerTaskRunner(
@@ -586,7 +588,7 @@ void Shell::OnPlatformViewRegisterTexture(
   task_runners_.GetGPUTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), texture] {
         if (rasterizer) {
-          if (auto registry = rasterizer->GetTextureRegistry()) {
+          if (auto* registry = rasterizer->GetTextureRegistry()) {
             registry->RegisterTexture(texture);
           }
         }
@@ -601,7 +603,7 @@ void Shell::OnPlatformViewUnregisterTexture(int64_t texture_id) {
   task_runners_.GetGPUTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), texture_id]() {
         if (rasterizer) {
-          if (auto registry = rasterizer->GetTextureRegistry()) {
+          if (auto* registry = rasterizer->GetTextureRegistry()) {
             registry->UnregisterTexture(texture_id);
           }
         }
@@ -616,7 +618,7 @@ void Shell::OnPlatformViewMarkTextureFrameAvailable(int64_t texture_id) {
   // Tell the rasterizer that one of its textures has a new frame available.
   task_runners_.GetGPUTaskRunner()->PostTask(
       [rasterizer = rasterizer_->GetWeakPtr(), texture_id]() {
-        auto registry = rasterizer->GetTextureRegistry();
+        auto* registry = rasterizer->GetTextureRegistry();
 
         if (!registry) {
           return;
@@ -745,6 +747,15 @@ void Shell::OnPreEngineRestart() {
   // This is blocking as any embedded platform views has to be flushed before
   // we re-run the Dart code.
   latch.Wait();
+}
+
+// |shell::Engine::Delegate|
+void Shell::UpdateIsolateDescription(const std::string isolate_name,
+                                     int64_t isolate_port) {
+  if (auto vm = blink::DartVM::ForProcessIfInitialized()) {
+    Handler::Description description(isolate_port, isolate_name);
+    vm->GetServiceProtocol().SetHandlerDescription(this, description);
+  }
 }
 
 // |blink::ServiceProtocol::Handler|
@@ -943,7 +954,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
   auto& allocator = response.GetAllocator();
   response.SetObject();
 
-  auto asset_manager = fml::MakeRefCounted<blink::AssetManager>();
+  auto asset_manager = std::make_shared<blink::AssetManager>();
 
   asset_manager->PushFront(std::make_unique<blink::DirectoryAssetBundle>(
       fml::OpenDirectory(params.at("assetDirectory").ToString().c_str(), false,

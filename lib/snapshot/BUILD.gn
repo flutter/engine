@@ -1,4 +1,4 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -57,7 +57,6 @@ compiled_action("generate_snapshot_bin") {
     "--sync-async",
     "--reify-generic-functions",
     "--snapshot_kind=core",
-    "--await_is_keyword",
     "--enable_mirrors=false",
     "--vm_snapshot_data=" + rebase_path(vm_snapshot_data),
     "--vm_snapshot_instructions=" + rebase_path(vm_snapshot_instructions),
@@ -169,7 +168,9 @@ source_set("snapshot") {
 }
 
 compile_platform("non_strong_platform") {
-  libraries_specification_uri = "libraries.json"
+  single_root_scheme = "org-dartlang-sdk"
+  single_root_base = rebase_path("../../../")
+  libraries_specification_uri = "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
 
   outputs = [
     "$root_out_dir/flutter_patched_sdk/platform.dill",
@@ -183,7 +184,9 @@ compile_platform("non_strong_platform") {
 }
 
 compile_platform("strong_platform") {
-  libraries_specification_uri = "libraries.json"
+  single_root_scheme = "org-dartlang-sdk"
+  single_root_base = rebase_path("../../../")
+  libraries_specification_uri = "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
 
   outputs = [
     "$root_out_dir/flutter_patched_sdk/platform_strong.dill",
@@ -192,7 +195,6 @@ compile_platform("strong_platform") {
 
   args = [
     "--target=flutter",
-    "--strong",
     "dart:core",
   ]
 }

@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -20,10 +20,6 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
-
-#ifdef ERROR
-#undef ERROR
-#endif
 
 namespace shell {
 
@@ -124,17 +120,30 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
     return EXIT_FAILURE;
   }
 
-  if (settings.main_dart_file_path.empty()) {
-    FML_LOG(ERROR) << "Main dart file not specified.";
+  if (settings.application_kernel_asset.empty()) {
+    FML_LOG(ERROR) << "Dart kernel file not specified.";
     return EXIT_FAILURE;
   }
+
+  // Initialize default testing locales. There is no platform to
+  // pass locales on the tester, so to retain expected locale behavior,
+  // we emulate it in here by passing in 'en_US' and 'zh_CN' as test locales.
+  const char* locale_json =
+      "{\"method\":\"setLocale\",\"args\":[\"en\",\"US\",\"\",\"\",\"zh\","
+      "\"CN\",\"\",\"\"]}";
+  std::vector<uint8_t> locale_bytes(locale_json,
+                                    locale_json + std::strlen(locale_json));
+  fml::RefPtr<blink::PlatformMessageResponse> response;
+  shell->GetPlatformView()->DispatchPlatformMessage(
+      fml::MakeRefCounted<blink::PlatformMessage>("flutter/localization",
+                                                  locale_bytes, response));
 
   std::initializer_list<fml::FileMapping::Protection> protection = {
       fml::FileMapping::Protection::kRead};
   auto main_dart_file_mapping = std::make_unique<fml::FileMapping>(
       fml::OpenFile(
-          fml::paths::AbsolutePath(settings.main_dart_file_path).c_str(), false,
-          fml::FilePermission::kRead),
+          fml::paths::AbsolutePath(settings.application_kernel_asset).c_str(),
+          false, fml::FilePermission::kRead),
       protection);
 
   auto isolate_configuration =
@@ -145,7 +154,7 @@ int RunTester(const blink::Settings& settings, bool run_forever) {
     return EXIT_FAILURE;
   }
 
-  auto asset_manager = fml::MakeRefCounted<blink::AssetManager>();
+  auto asset_manager = std::make_shared<blink::AssetManager>();
   asset_manager->PushBack(std::make_unique<blink::DirectoryAssetBundle>(
       fml::Duplicate(settings.assets_dir)));
   asset_manager->PushBack(
@@ -234,11 +243,11 @@ int main(int argc, char* argv[]) {
   if (command_line.positional_args().size() > 0) {
     // The tester may not use the switch for the main dart file path. Specifying
     // it as a positional argument instead.
-    settings.main_dart_file_path = command_line.positional_args()[0];
+    settings.application_kernel_asset = command_line.positional_args()[0];
   }
 
-  if (settings.main_dart_file_path.size() == 0) {
-    FML_LOG(ERROR) << "Main dart file path not specified.";
+  if (settings.application_kernel_asset.size() == 0) {
+    FML_LOG(ERROR) << "Dart kernel file not specified.";
     return EXIT_FAILURE;
   }
 

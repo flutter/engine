@@ -1,8 +1,9 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 import("$flutter_root/testing/testing.gni")
+import("$flutter_root/shell/gpu/gpu.gni")
 
 # Template to generate a dart embedder resource.cc file.
 # Required invoker inputs:
@@ -100,36 +101,68 @@ source_set("common") {
     "$flutter_root/runtime",
     "$flutter_root/synchronization",
     "//third_party/dart/runtime:dart_api",
-    "//third_party/rapidjson",
     "//third_party/skia",
-    "//third_party/skia:gpu",
   ]
 
   public_deps = [
     "$flutter_root/shell/version",
     "$flutter_root/third_party/txt",
+    "//third_party/rapidjson",
     "//third_party/tonic",
   ]
 
   public_configs = [ "$flutter_root:config" ]
 }
 
-executable("shell_unittests") {
-  testonly = true
+template("shell_host_executable") {
+  executable(target_name) {
+    testonly = true
 
+    deps = []
+
+    ldflags = []
+
+    forward_variables_from(invoker, "*")
+
+    deps += [
+      ":common",
+      "$flutter_root/fml",
+      "$flutter_root/lib/snapshot",
+      "//third_party/dart/runtime:libdart_jit",
+      "//third_party/skia",
+      "//third_party/tonic",
+    ]
+
+    if (is_linux) {
+      ldflags += [ "-rdynamic" ]
+    }
+  }
+}
+
+shell_gpu_configuration("shell_unittests_gpu_configuration") {
+  enable_software = true
+  enable_vulkan = false
+  enable_gl = false
+}
+
+shell_host_executable("shell_unittests") {
   sources = [
     "shell_unittests.cc",
   ]
+
   deps = [
-    ":common",
-    "$flutter_root/fml",
-    "$flutter_root/lib/snapshot",
+    ":shell_unittests_gpu_configuration",
+    "$flutter_root/shell/",
     "$flutter_root/testing",
-    "//third_party/dart/runtime:libdart_jit",
-    "//third_party/skia",
-    "//third_party/tonic",
   ]
-  if (is_linux) {
-    ldflags = [ "-rdynamic" ]
-  }
+}
+
+shell_host_executable("shell_benchmarks") {
+  sources = [
+    "shell_benchmarks.cc",
+  ]
+
+  deps = [
+    "$flutter_root/benchmarking",
+  ]
 }

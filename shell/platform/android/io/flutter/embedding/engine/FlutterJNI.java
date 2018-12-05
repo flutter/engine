@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.embedding.engine;
 
 import android.content.res.AssetManager;
@@ -13,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
+import io.flutter.embedding.engine.FlutterEngine.EngineHandler;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -22,6 +27,7 @@ public class FlutterJNI {
 
   private FlutterRenderer.RenderSurface renderSurface;
   private PlatformMessageHandler platformMessageHandler;
+  private @Nullable EngineHandler engineHandler;
   private final Set<OnFirstFrameRenderedListener> firstFrameListeners = new CopyOnWriteArraySet<>();
 
   public void setRenderSurface(@Nullable FlutterRenderer.RenderSurface renderSurface) {
@@ -30,6 +36,10 @@ public class FlutterJNI {
 
   public void setPlatformMessageHandler(@Nullable PlatformMessageHandler platformMessageHandler) {
     this.platformMessageHandler = platformMessageHandler;
+  }
+
+  public void setEngineHandler(@Nullable EngineHandler engineHandler) {
+    this.engineHandler = engineHandler;
   }
 
   public void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
@@ -183,4 +193,14 @@ public class FlutterJNI {
       int position
   );
   //------ End from FlutterNativeView ----
+
+  //------ Start from Engine ---
+  @SuppressWarnings("unused")
+  private void onPreEngineRestart() {
+    if (engineHandler == null) {
+      return;
+    }
+    engineHandler.onPreEngineRestart();
+  }
+  //------ End from Engine ---
 }

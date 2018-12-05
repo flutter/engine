@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -23,7 +23,7 @@ void TextureLayer::Paint(PaintContext& context) const {
   if (!texture) {
     return;
   }
-  texture->Paint(context.canvas, paint_bounds(), freeze_);
+  texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_);
 }
 
 }  // namespace flow

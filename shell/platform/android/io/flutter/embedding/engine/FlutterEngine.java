@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.embedding.engine;
 
 import android.content.Context;
@@ -40,6 +44,14 @@ public class FlutterEngine {
 
   public FlutterEngine(Context context) {
     this.flutterJNI = new FlutterJNI();
+    flutterJNI.setEngineHandler(new EngineHandler() {
+      @SuppressWarnings("unused")
+      public void onPreEngineRestart() {
+        if (pluginRegistry == null)
+          return;
+        pluginRegistry.onPreEngineRestart();
+      }
+    });
     attachToJni();
 
     this.dartExecutor = new DartExecutor(flutterJNI, nativeObjectReference);
@@ -108,5 +120,11 @@ public class FlutterEngine {
     if (pluginRegistry == null)
       return;
     pluginRegistry.onPreEngineRestart();
+  }
+
+  /** Callbacks triggered by the C++ layer in response to Engine lifecycle events. */
+  public interface EngineHandler {
+    /** Called when the engine is restarted. This happens during hot restart. */
+    void onPreEngineRestart();
   }
 }
