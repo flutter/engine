@@ -108,38 +108,38 @@ public class FlutterView extends SurfaceView
     public FlutterView(Context context, AttributeSet attrs, FlutterNativeView nativeView) {
         super(context, attrs);
 
-        mIsSoftwareRenderingEnabled = nativeGetIsSoftwareRenderingEnabled();
-        mAnimationScaleObserver = new AnimationScaleObserver(new Handler());
-        mMetrics = new ViewportMetrics();
-        mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
-        setFocusable(true);
-        setFocusableInTouchMode(true);
-
         Activity activity = (Activity) getContext();
         if (nativeView == null) {
             mNativeView = new FlutterNativeView(activity.getApplicationContext());
         } else {
             mNativeView = nativeView;
         }
+        mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().nativeGetIsSoftwareRenderingEnabled();
+        mAnimationScaleObserver = new AnimationScaleObserver(new Handler());
+        mMetrics = new ViewportMetrics();
+        mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
+        setFocusable(true);
+        setFocusableInTouchMode(true);
+
         mNativeView.attachViewAndActivity(this, activity);
 
         mSurfaceCallback = new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 assertAttached();
-                nativeSurfaceCreated(mNativeView.get(), holder.getSurface());
+                mNativeView.getFlutterJNI().nativeSurfaceCreated(mNativeView.get(), holder.getSurface());
             }
 
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
                 assertAttached();
-                nativeSurfaceChanged(mNativeView.get(), width, height);
+                mNativeView.getFlutterJNI().nativeSurfaceChanged(mNativeView.get(), width, height);
             }
 
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
                 assertAttached();
-                nativeSurfaceDestroyed(mNativeView.get());
+                mNativeView.getFlutterJNI().nativeSurfaceDestroyed(mNativeView.get());
             }
         };
         getHolder().addCallback(mSurfaceCallback);
@@ -558,7 +558,7 @@ public class FlutterView extends SurfaceView
         }
 
         assert packet.position() % (kPointerDataFieldCount * kBytePerField) == 0;
-        nativeDispatchPointerDataPacket(mNativeView.get(), packet, packet.position());
+        mNativeView.getFlutterJNI().nativeDispatchPointerDataPacket(mNativeView.get(), packet, packet.position());
         return true;
     }
 
@@ -760,45 +760,13 @@ public class FlutterView extends SurfaceView
      */
     public Bitmap getBitmap() {
         assertAttached();
-        return nativeGetBitmap(mNativeView.get());
+        return mNativeView.getFlutterJNI().nativeGetBitmap(mNativeView.get());
     }
-
-    private static native void nativeSurfaceCreated(long nativePlatformViewAndroid, Surface surface);
-
-    private static native void nativeSurfaceChanged(long nativePlatformViewAndroid, int width, int height);
-
-    private static native void nativeSurfaceDestroyed(long nativePlatformViewAndroid);
-
-    private static native void nativeSetViewportMetrics(long nativePlatformViewAndroid, float devicePixelRatio,
-            int physicalWidth, int physicalHeight, int physicalPaddingTop, int physicalPaddingRight,
-            int physicalPaddingBottom, int physicalPaddingLeft, int physicalViewInsetTop, int physicalViewInsetRight,
-            int physicalViewInsetBottom, int physicalViewInsetLeft);
-
-    private static native Bitmap nativeGetBitmap(long nativePlatformViewAndroid);
-
-    private static native void nativeDispatchPointerDataPacket(long nativePlatformViewAndroid, ByteBuffer buffer,
-            int position);
-
-    private static native void nativeDispatchSemanticsAction(long nativePlatformViewAndroid, int id, int action,
-            ByteBuffer args, int argsPosition);
-
-    private static native void nativeSetSemanticsEnabled(long nativePlatformViewAndroid, boolean enabled);
-
-    private static native void nativeSetAccessibilityFeatures(long nativePlatformViewAndroid, int flags);
-
-    private static native boolean nativeGetIsSoftwareRenderingEnabled();
-
-    private static native void nativeRegisterTexture(long nativePlatformViewAndroid, long textureId,
-            SurfaceTexture surfaceTexture);
-
-    private static native void nativeMarkTextureFrameAvailable(long nativePlatformViewAndroid, long textureId);
-
-    private static native void nativeUnregisterTexture(long nativePlatformViewAndroid, long textureId);
 
     private void updateViewportMetrics() {
         if (!isAttached())
             return;
-        nativeSetViewportMetrics(mNativeView.get(), mMetrics.devicePixelRatio, mMetrics.physicalWidth,
+        mNativeView.getFlutterJNI().nativeSetViewportMetrics(mNativeView.get(), mMetrics.devicePixelRatio, mMetrics.physicalWidth,
                 mMetrics.physicalHeight, mMetrics.physicalPaddingTop, mMetrics.physicalPaddingRight,
                 mMetrics.physicalPaddingBottom, mMetrics.physicalPaddingLeft, mMetrics.physicalViewInsetTop,
                 mMetrics.physicalViewInsetRight, mMetrics.physicalViewInsetBottom, mMetrics.physicalViewInsetLeft);
@@ -860,7 +828,7 @@ public class FlutterView extends SurfaceView
             encodedArgs = StandardMessageCodec.INSTANCE.encodeMessage(args);
             position = encodedArgs.position();
         }
-        nativeDispatchSemanticsAction(mNativeView.get(), id, action.value, encodedArgs, position);
+        mNativeView.getFlutterJNI().nativeDispatchSemanticsAction(mNativeView.get(), id, action.value, encodedArgs, position);
     }
 
     @Override
@@ -903,7 +871,7 @@ public class FlutterView extends SurfaceView
                 mAccessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
             }
         }
-        nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
+        mNativeView.getFlutterJNI().nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
     }
 
     @Override
@@ -933,7 +901,7 @@ public class FlutterView extends SurfaceView
             if (mAccessibilityNodeProvider != null) {
                 mAccessibilityNodeProvider.setAccessibilityEnabled(false);
             }
-            nativeSetSemanticsEnabled(mNativeView.get(), false);
+            mNativeView.getFlutterJNI().nativeSetSemanticsEnabled(mNativeView.get(), false);
         }
         resetWillNotDraw();
     }
@@ -972,7 +940,7 @@ public class FlutterView extends SurfaceView
             } else {
                 mAccessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
             }
-            nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
+            mNativeView.getFlutterJNI().nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
         }
     }
 
@@ -983,14 +951,14 @@ public class FlutterView extends SurfaceView
                 mTouchExplorationEnabled = true;
                 ensureAccessibilityEnabled();
                 mAccessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-                nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
+                mNativeView.getFlutterJNI().nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
             } else {
                 mTouchExplorationEnabled = false;
                 if (mAccessibilityNodeProvider != null) {
                     mAccessibilityNodeProvider.handleTouchExplorationExit();
                 }
                 mAccessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-                nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
+                mNativeView.getFlutterJNI().nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
             }
             resetWillNotDraw();
         }
@@ -1015,7 +983,7 @@ public class FlutterView extends SurfaceView
         if (mAccessibilityNodeProvider == null) {
             mAccessibilityNodeProvider = new AccessibilityBridge(this);
         }
-        nativeSetSemanticsEnabled(mNativeView.get(), true);
+        mNativeView.getFlutterJNI().nativeSetSemanticsEnabled(mNativeView.get(), true);
         mAccessibilityNodeProvider.setAccessibilityEnabled(true);
     }
 
@@ -1073,7 +1041,7 @@ public class FlutterView extends SurfaceView
         surfaceTexture.detachFromGLContext();
         final SurfaceTextureRegistryEntry entry = new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(),
                 surfaceTexture);
-        nativeRegisterTexture(mNativeView.get(), entry.id(), surfaceTexture);
+        mNativeView.getFlutterJNI().nativeRegisterTexture(mNativeView.get(), entry.id(), surfaceTexture);
         return entry;
     }
 
@@ -1108,7 +1076,7 @@ public class FlutterView extends SurfaceView
                     // still be called by a stale reference after released==true and mNativeView==null.
                     return;
                 }
-                nativeMarkTextureFrameAvailable(mNativeView.get(), SurfaceTextureRegistryEntry.this.id);
+                mNativeView.getFlutterJNI().nativeMarkTextureFrameAvailable(mNativeView.get(), SurfaceTextureRegistryEntry.this.id);
             }
         };
 
@@ -1128,7 +1096,7 @@ public class FlutterView extends SurfaceView
                 return;
             }
             released = true;
-            nativeUnregisterTexture(mNativeView.get(), id);
+            mNativeView.getFlutterJNI().nativeUnregisterTexture(mNativeView.get(), id);
             // Otherwise onFrameAvailableListener might be called after mNativeView==null
             // (https://github.com/flutter/flutter/issues/20951). See also the check in onFrameAvailable.
             surfaceTexture.setOnFrameAvailableListener(null);
