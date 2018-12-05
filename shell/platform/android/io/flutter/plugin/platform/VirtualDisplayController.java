@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,13 +6,13 @@ package io.flutter.plugin.platform;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.SurfaceTexture;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.os.Build;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import io.flutter.view.TextureRegistry;
 
 @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
 class VirtualDisplayController {
@@ -20,14 +20,14 @@ class VirtualDisplayController {
     public static VirtualDisplayController create(
             Context context,
             PlatformViewFactory viewFactory,
-            SurfaceTexture surfaceTexture,
+            TextureRegistry.SurfaceTextureEntry textureEntry,
             int width,
             int height,
             int viewId,
             Object createParams
     ) {
-        surfaceTexture.setDefaultBufferSize(width, height);
-        Surface surface = new Surface(surfaceTexture);
+        textureEntry.surfaceTexture().setDefaultBufferSize(width, height);
+        Surface surface = new Surface(textureEntry.surfaceTexture());
         DisplayManager displayManager = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
 
         int densityDpi = context.getResources().getDisplayMetrics().densityDpi;
@@ -45,12 +45,12 @@ class VirtualDisplayController {
         }
 
         return new VirtualDisplayController(
-                context, virtualDisplay, viewFactory, surface, surfaceTexture, viewId, createParams);
+                context, virtualDisplay, viewFactory, surface, textureEntry, viewId, createParams);
     }
 
     private final Context mContext;
     private final int mDensityDpi;
-    private final SurfaceTexture mSurfaceTexture;
+    private final TextureRegistry.SurfaceTextureEntry mTextureEntry;
     private VirtualDisplay mVirtualDisplay;
     private SingleViewPresentation mPresentation;
     private Surface mSurface;
@@ -61,11 +61,11 @@ class VirtualDisplayController {
             VirtualDisplay virtualDisplay,
             PlatformViewFactory viewFactory,
             Surface surface,
-            SurfaceTexture surfaceTexture,
+            TextureRegistry.SurfaceTextureEntry textureEntry,
             int viewId,
             Object createParams
     ) {
-        mSurfaceTexture = surfaceTexture;
+        mTextureEntry = textureEntry;
         mSurface = surface;
         mContext = context;
         mVirtualDisplay = virtualDisplay;
@@ -85,7 +85,7 @@ class VirtualDisplayController {
         mVirtualDisplay.setSurface(null);
         mVirtualDisplay.release();
 
-        mSurfaceTexture.setDefaultBufferSize(width, height);
+        mTextureEntry.surfaceTexture().setDefaultBufferSize(width, height);
         DisplayManager displayManager = (DisplayManager) mContext.getSystemService(Context.DISPLAY_SERVICE);
         mVirtualDisplay = displayManager.createVirtualDisplay(
                 "flutter-vd",
@@ -130,6 +130,7 @@ class VirtualDisplayController {
         mPresentation.detachState();
         view.dispose();
         mVirtualDisplay.release();
+        mTextureEntry.release();
     }
 
     public View getView() {

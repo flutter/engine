@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -84,7 +84,7 @@ bool VsyncWaiterAndroid::Register(JNIEnv* env) {
 static void ConsumePendingCallback(jlong java_baton,
                                    fml::TimePoint frame_start_time,
                                    fml::TimePoint frame_target_time) {
-  auto weak_this = reinterpret_cast<std::weak_ptr<VsyncWaiter>*>(java_baton);
+  auto* weak_this = reinterpret_cast<std::weak_ptr<VsyncWaiter>*>(java_baton);
   auto shared_this = weak_this->lock();
   delete weak_this;
 

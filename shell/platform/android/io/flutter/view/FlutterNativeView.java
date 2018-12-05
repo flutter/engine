@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -222,20 +222,25 @@ public class FlutterNativeView implements BinaryMessenger {
     private final class RenderSurfaceImpl implements RenderSurface {
         // Called by native to update the semantics/accessibility tree.
         public void updateSemantics(ByteBuffer buffer, String[] strings) {
-            if (mFlutterView == null) return;
+            if (mFlutterView == null) {
+                return;
+            }
             mFlutterView.updateSemantics(buffer, strings);
         }
 
         // Called by native to update the custom accessibility actions.
         public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
-            if (mFlutterView == null)
+            if (mFlutterView == null) {
                 return;
+            }
             mFlutterView.updateCustomAccessibilityActions(buffer, strings);
         }
 
         // Called by native to notify first Flutter frame rendered.
         public void onFirstFrameRendered() {
-            if (mFlutterView == null) return;
+            if (mFlutterView == null) {
+                return;
+            }
             mFlutterView.onFirstFrame();
         }
 
@@ -248,8 +253,12 @@ public class FlutterNativeView implements BinaryMessenger {
         // Called by native to notify when the engine is restarted (cold reload).
         @SuppressWarnings("unused")
         public void onPreEngineRestart() {
-            if (mPluginRegistry == null)
+            if (mFlutterView != null) {
+                mFlutterView.resetAccessibilityTree();
+            }
+            if (mPluginRegistry == null) {
                 return;
+            }
             mPluginRegistry.onPreEngineRestart();
         }
     }

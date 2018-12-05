@@ -1,4 +1,4 @@
-// Copyright 2017 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -45,20 +45,30 @@ ServiceProtocol::ServiceProtocol()
           kRunInViewExtensionName,
           kFlushUIThreadTasksExtensionName,
           kSetAssetBundlePathExtensionName,
-      }) {}
+      }),
+      handlers_mutex_(fml::SharedMutex::Create()) {}
 
 ServiceProtocol::~ServiceProtocol() {
   ToggleHooks(false);
 }
 
-void ServiceProtocol::AddHandler(Handler* handler) {
-  std::lock_guard<std::mutex> lock(handlers_mutex_);
-  handlers_.emplace(handler);
+void ServiceProtocol::AddHandler(Handler* handler,
+                                 Handler::Description description) {
+  fml::UniqueLock lock(*handlers_mutex_);
+  handlers_.emplace(handler, description);
 }
 
 void ServiceProtocol::RemoveHandler(Handler* handler) {
-  std::lock_guard<std::mutex> lock(handlers_mutex_);
+  fml::UniqueLock lock(*handlers_mutex_);
   handlers_.erase(handler);
+}
+
+void ServiceProtocol::SetHandlerDescription(Handler* handler,
+                                            Handler::Description description) {
+  fml::SharedLock lock(*handlers_mutex_);
+  auto it = handlers_.find(handler);
+  if (it != handlers_.end())
+    it->second.Store(description);
 }
 
 void ServiceProtocol::ToggleHooks(bool set) {
@@ -166,7 +176,7 @@ bool ServiceProtocol::HandleMessage(fml::StringView method,
     return HandleListViewsMethod(response);
   }
 
-  std::lock_guard<std::mutex> lock(handlers_mutex_);
+  fml::SharedLock lock(*handlers_mutex_);
 
   if (handlers_.size() == 0) {
     WriteServerErrorResponse(response,
@@ -177,7 +187,7 @@ bool ServiceProtocol::HandleMessage(fml::StringView method,
   // Find the handler by its "viewId" in the params.
   auto view_id_param_found = params.find(fml::StringView{"viewId"});
   if (view_id_param_found != params.end()) {
-    auto handler = reinterpret_cast<Handler*>(std::stoull(
+    auto* handler = reinterpret_cast<Handler*>(std::stoull(
         view_id_param_found->second.data() + kViewIdPrefx.size(), nullptr, 16));
     auto handler_found = handlers_.find(handler);
     if (handler_found != handlers_.end()) {
@@ -191,7 +201,8 @@ bool ServiceProtocol::HandleMessage(fml::StringView method,
   if (method == kScreenshotExtensionName ||
       method == kScreenshotSkpExtensionName ||
       method == kFlushUIThreadTasksExtensionName) {
-    return HandleMessageOnHandler(*handlers_.begin(), method, params, response);
+    return HandleMessageOnHandler(handlers_.begin()->first, method, params,
+                                  response);
   }
 
   WriteServerErrorResponse(
@@ -236,26 +247,11 @@ void ServiceProtocol::Handler::Description::Write(
 
 bool ServiceProtocol::HandleListViewsMethod(
     rapidjson::Document& response) const {
-  // Collect handler descriptions on their respective task runners.
-  std::lock_guard<std::mutex> lock(handlers_mutex_);
+  fml::SharedLock lock(*handlers_mutex_);
   std::vector<std::pair<intptr_t, Handler::Description>> descriptions;
   for (const auto& handler : handlers_) {
-    fml::AutoResetWaitableEvent latch;
-    Handler::Description description;
-
-    fml::TaskRunner::RunNowOrPostTask(
-        handler->GetServiceProtocolHandlerTaskRunner(
-            kListViewsExtensionName),  // task runner
-        [&latch,                       //
-         &description,                 //
-         &handler                      //
-    ]() {
-          description = handler->GetServiceProtocolDescription();
-          latch.Signal();
-        });
-    latch.Wait();
-    descriptions.emplace_back(std::make_pair<intptr_t, Handler::Description>(
-        reinterpret_cast<intptr_t>(handler), std::move(description)));
+    descriptions.emplace_back(reinterpret_cast<intptr_t>(handler.first),
+                              handler.second.Load());
   }
 
   auto& allocator = response.GetAllocator();

@@ -55,6 +55,42 @@ class Paragraph {
 
   enum Affinity { UPSTREAM, DOWNSTREAM };
 
+  // TODO(garyq): Implement kIncludeLineSpacing and kExtendEndOfLine
+
+  // Options for various types of bounding boxes provided by
+  // GetRectsForRange(...).
+  enum class RectHeightStyle {
+    // Provide tight bounding boxes that fit heights per run.
+    kTight,
+
+    // The height of the boxes will be the maximum height of all runs in the
+    // line. All rects in the same line will be the same height.
+    kMax,
+
+    // Extends the top and/or bottom edge of the bounds to fully cover any line
+    // spacing. The top edge of each line should be the same as the bottom edge
+    // of the line above. There should be no gaps in vertical coverage given any
+    // ParagraphStyle line_height.
+    //
+    // The top and bottom of each rect will cover half of the
+    // space above and half of the space below the line.
+    kIncludeLineSpacingMiddle,
+    // The line spacing will be added to the top of the rect.
+    kIncludeLineSpacingTop,
+    // The line spacing will be added to the bottom of the rect.
+    kIncludeLineSpacingBottom
+  };
+
+  enum class RectWidthStyle {
+    // Provide tight bounding boxes that fit widths to the runs of each line
+    // independently.
+    kTight,
+
+    // Extends the width of the last rect of each line to match the position of
+    // the widest rect over all the lines.
+    kMax
+  };
+
   struct PositionWithAffinity {
     const size_t position;
     const Affinity affinity;
@@ -137,7 +173,10 @@ class Paragraph {
 
   // Returns a vector of bounding boxes that enclose all text between start and
   // end glyph indexes, including start and excluding end.
-  std::vector<TextBox> GetRectsForRange(size_t start, size_t end) const;
+  std::vector<TextBox> GetRectsForRange(size_t start,
+                                        size_t end,
+                                        RectHeightStyle rect_height_style,
+                                        RectWidthStyle rect_width_style) const;
 
   // Returns the index of the glyph that corresponds to the provided coordinate,
   // with the top left corner as the origin, and +y direction as down.
@@ -185,6 +224,8 @@ class Paragraph {
   FRIEND_TEST(ParagraphTest, RepeatLayoutParagraph);
   FRIEND_TEST(ParagraphTest, Ellipsize);
   FRIEND_TEST(ParagraphTest, UnderlineShiftParagraph);
+  FRIEND_TEST(ParagraphTest, SimpleShadow);
+  FRIEND_TEST(ParagraphTest, ComplexShadow);
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
@@ -216,6 +257,15 @@ class Paragraph {
   std::vector<double> line_heights_;
   std::vector<double> line_baselines_;
   bool did_exceed_max_lines_;
+
+  // Metrics for use in GetRectsForRange(...);
+  // Per-line max metrics over all runs in a given line.
+  std::vector<SkScalar> line_max_spacings_;
+  std::vector<SkScalar> line_max_descent_;
+  std::vector<SkScalar> line_max_ascent_;
+  // Overall left and right extremes over all lines.
+  double max_right_;
+  double min_left_;
 
   class BidiRun {
    public:
@@ -260,14 +310,14 @@ class Paragraph {
     Range<size_t> code_units;
     Range<double> x_pos;
     size_t line_number;
-    SkPaint::FontMetrics font_metrics;
+    SkFontMetrics font_metrics;
     TextDirection direction;
 
     CodeUnitRun(std::vector<GlyphPosition>&& p,
                 Range<size_t> cu,
                 Range<double> x,
                 size_t line,
-                const SkPaint::FontMetrics& metrics,
+                const SkFontMetrics& metrics,
                 TextDirection dir);
 
     void Shift(double delta);
@@ -327,6 +377,9 @@ class Paragraph {
   void PaintBackground(SkCanvas* canvas,
                        const PaintRecord& record,
                        SkPoint base_offset);
+
+  // Draws the shadows onto the canvas.
+  void PaintShadow(SkCanvas* canvas, const PaintRecord& record, SkPoint offset);
 
   // Obtain a Minikin font collection matching this text style.
   std::shared_ptr<minikin::FontCollection> GetMinikinFontCollectionForStyle(

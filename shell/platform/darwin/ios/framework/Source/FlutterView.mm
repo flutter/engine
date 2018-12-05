@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -12,7 +12,6 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
 #include "flutter/shell/platform/darwin/ios/ios_surface_software.h"
@@ -24,28 +23,42 @@
 
 @implementation FlutterView
 
-- (FlutterViewController*)flutterViewController {
-  // Find the first view controller in the responder chain and see if it is a FlutterViewController.
-  for (UIResponder* responder = self.nextResponder; responder != nil;
-       responder = responder.nextResponder) {
-    if ([responder isKindOfClass:[UIViewController class]]) {
-      if ([responder isKindOfClass:[FlutterViewController class]]) {
-        return reinterpret_cast<FlutterViewController*>(responder);
-      } else {
-        // Should only happen if a non-FlutterViewController tries to somehow (via dynamic class
-        // resolution or reparenting) set a FlutterView as its view.
-        return nil;
-      }
-    }
+id<FlutterViewEngineDelegate> _delegate;
+
+- (instancetype)init {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
+                                 reason:nil
+                               userInfo:nil]);
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
+                                 reason:nil
+                               userInfo:nil]);
+}
+
+- (instancetype)initWithCoder:(NSCoder*)aDecoder {
+  @throw([NSException exceptionWithName:@"FlutterView must initWithDelegate"
+                                 reason:nil
+                               userInfo:nil]);
+}
+
+- (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate opaque:(BOOL)opaque {
+  FML_DCHECK(delegate) << "Delegate must not be nil.";
+  self = [super initWithFrame:CGRectNull];
+
+  if (self) {
+    _delegate = delegate;
+    self.layer.opaque = opaque;
   }
-  return nil;
+
+  return self;
 }
 
 - (void)layoutSubviews {
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
     layer.allowsGroupOpacity = YES;
-    layer.opaque = YES;
     CGFloat screenScale = [UIScreen mainScreen].scale;
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
@@ -66,10 +79,21 @@
   if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     fml::scoped_nsobject<CAEAGLLayer> eagl_layer(
         reinterpret_cast<CAEAGLLayer*>([self.layer retain]));
-    return std::make_unique<shell::IOSSurfaceGL>(std::move(eagl_layer));
+    if (shell::IsIosEmbeddedViewsPreviewEnabled()) {
+      // TODO(amirh): We can lower this to iOS 8.0 once we have a Metal rendering backend.
+      // https://github.com/flutter/flutter/issues/24132
+      if (@available(iOS 9.0, *)) {
+        // TODO(amirh): only do this if there's an embedded view.
+        // https://github.com/flutter/flutter/issues/24133
+        eagl_layer.get().presentsWithTransaction = YES;
+      }
+    }
+    return std::make_unique<shell::IOSSurfaceGL>(std::move(eagl_layer),
+                                                 [_delegate platformViewsController]);
   } else {
     fml::scoped_nsobject<CALayer> layer(reinterpret_cast<CALayer*>([self.layer retain]));
-    return std::make_unique<shell::IOSSurfaceSoftware>(std::move(layer));
+    return std::make_unique<shell::IOSSurfaceSoftware>(std::move(layer),
+                                                       [_delegate platformViewsController]);
   }
 }
 
@@ -84,16 +108,8 @@
     return;
   }
 
-  FlutterViewController* controller = [self flutterViewController];
-
-  if (controller == nil) {
-    return;
-  }
-
-  auto& shell = [controller shell];
-
-  auto screenshot = shell.Screenshot(shell::Rasterizer::ScreenshotType::UncompressedImage,
-                                     false /* base64 encode */);
+  auto screenshot = [_delegate takeScreenshot:shell::Rasterizer::ScreenshotType::UncompressedImage
+                              asBase64Encoded:NO];
 
   if (!screenshot.data || screenshot.data->isEmpty() || screenshot.frame_size.isEmpty()) {
     return;

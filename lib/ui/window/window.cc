@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -52,6 +52,17 @@ void UpdateSemantics(Dart_NativeArguments args) {
     return;
   }
   UIDartState::Current()->window()->client()->UpdateSemantics(update);
+}
+
+void SetIsolateDebugName(Dart_NativeArguments args) {
+  Dart_Handle exception = nullptr;
+  const std::string name =
+      tonic::DartConverter<std::string>::FromArguments(args, 1, exception);
+  if (exception) {
+    Dart_ThrowException(exception);
+    return;
+  }
+  UIDartState::Current()->SetDebugName(name);
 }
 
 Dart_Handle SendPlatformMessage(Dart_Handle window,
@@ -162,17 +173,14 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
                   });
 }
 
-void Window::UpdateLocale(const std::string& language_code,
-                          const std::string& country_code) {
+void Window::UpdateLocales(const std::vector<std::string>& locales) {
   std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
   if (!dart_state)
     return;
   tonic::DartState::Scope scope(dart_state);
-
-  DartInvokeField(library_.value(), "_updateLocale",
+  DartInvokeField(library_.value(), "_updateLocales",
                   {
-                      StdStringToDart(language_code),
-                      StdStringToDart(country_code),
+                      tonic::ToDart<std::vector<std::string>>(locales),
                   });
 }
 
@@ -309,6 +317,7 @@ void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
       {"Window_respondToPlatformMessage", _RespondToPlatformMessage, 3, true},
       {"Window_render", Render, 2, true},
       {"Window_updateSemantics", UpdateSemantics, 2, true},
+      {"Window_setIsolateDebugName", SetIsolateDebugName, 2, true},
   });
 }
 
