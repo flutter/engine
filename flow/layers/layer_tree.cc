@@ -113,7 +113,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
       nullptr,                  // gr_context  (used for the raster cache)
       nullptr,                  // external view embedder
       nullptr,                  // SkColorSpace* dst_color_space
-      SkRect::MakeEmpty(),      // SkRect child_paint_bounds
+      kGiantRect,               // SkRect cull_rect
       unused_stopwatch,         // frame time (dont care)
       unused_stopwatch,         // engine time (dont care)
       unused_texture_registry,  // texture registry (not supported)
