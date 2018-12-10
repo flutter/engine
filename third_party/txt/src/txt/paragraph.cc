@@ -479,8 +479,8 @@ void Paragraph::Layout(double width, bool force) {
       }
     }
 
-    // Exclude trailing whitespace from right-justified lines so the last
-    // visible character in the line will be flush with the right margin.
+    // Exclude trailing whitespace from right and center-justified lines so the
+    // last visible character in the line will be flush with the right margin.
     size_t line_end_index =
         (paragraph_style_.effective_align() == TextAlign::right ||
          paragraph_style_.effective_align() == TextAlign::center)
