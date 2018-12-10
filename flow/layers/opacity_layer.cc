@@ -16,7 +16,7 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   ContainerLayer::Preroll(context, child_matrix);
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
   if (context->raster_cache && layers().size() == 1 &&
-      SkRect::Intersects(context->clip_rect, paint_bounds())) {
+      SkRect::Intersects(context->cull_rect, paint_bounds())) {
     Layer* child = layers()[0].get();
     SkMatrix ctm = child_matrix;
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION

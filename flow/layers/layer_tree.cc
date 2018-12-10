@@ -11,8 +11,6 @@
 
 namespace flow {
 
-static const SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
-
 LayerTree::LayerTree()
     : frame_size_{},
       rasterizer_tracing_threshold_(0),
