@@ -11,6 +11,8 @@
 
 namespace flow {
 
+static const SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
+
 LayerTree::LayerTree()
     : frame_size_{},
       rasterizer_tracing_threshold_(0),
@@ -31,7 +33,7 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       frame.gr_context(),
       frame.view_embedder(),
       color_space,
-      SkRect::MakeLTRB(-1e6, -1e6, 1e6, 1e6),
+      kGiantRect,
       frame.context().frame_time(),
       frame.context().engine_time(),
       frame.context().texture_registry(),

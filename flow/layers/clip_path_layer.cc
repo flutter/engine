@@ -18,12 +18,17 @@ ClipPathLayer::ClipPathLayer(Clip clip_behavior)
 ClipPathLayer::~ClipPathLayer() = default;
 
 void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_paint_bounds);
+  SkRect previous_clip_rect = context->clip_rect;
+  SkRect clip_path_bounds = clip_path_.getBounds();
+  if (context->clip_rect.intersect(clip_path_bounds)) {
+    SkRect child_paint_bounds = SkRect::MakeEmpty();
+    PrerollChildren(context, matrix, &child_paint_bounds);
 
-  if (child_paint_bounds.intersect(clip_path_.getBounds())) {
-    set_paint_bounds(child_paint_bounds);
+    if (child_paint_bounds.intersect(clip_path_bounds)) {
+      set_paint_bounds(child_paint_bounds);
+    }
   }
+  context->clip_rect = previous_clip_rect;
 }
 
 #if defined(OS_FUCHSIA)
