@@ -567,18 +567,21 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 - (void)beginFloatingCursorAtPoint:(CGPoint)point {
-  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateStart withClient:_textInputClient 
-    withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateStart
+                                withClient:_textInputClient
+                              withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
 - (void)updateFloatingCursorAtPoint:(CGPoint)point {
-  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateUpdate withClient:_textInputClient
-    withPosition:@{ @"X" : @(point.x), @"Y" : @(point.y)}];
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
+                                withClient:_textInputClient
+                              withPosition:@{ @"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
 - (void)endFloatingCursor {
-  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateEnd withClient:_textInputClient
-    withPosition:@{ @"X" : @(0), @"Y" : @(0)}];
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateEnd
+                                withClient:_textInputClient
+                              withPosition:@{ @"X" : @(0), @"Y" : @(0)}];
 }
 
 #pragma mark - UIKeyInput Overrides

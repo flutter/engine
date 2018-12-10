@@ -373,7 +373,9 @@
                               arguments:@[ @(client), state ]];
 }
 
-- (void)updateFloatingCursor:(FlutterFloatingCursorDragState)state withClient:(int)client withPosition:(NSDictionary*)position {
+- (void)updateFloatingCursor:(FlutterFloatingCursorDragState)state
+                  withClient:(int)client
+                withPosition:(NSDictionary*)position {
   NSString* stateString;
   switch (state) {
     case FlutterFloatingCursorDragStateStart:
