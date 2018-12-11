@@ -130,6 +130,30 @@ public class FlutterJNI {
     }
   }
 
+  /**
+   * Sets the handler for all platform messages that come from the attached platform view to Java.
+   *
+   * Communication between a specific Flutter context (Dart) and the host platform (Java) is
+   * accomplished by passing messages. Messages can be sent from Java to Dart with the corresponding
+   * {@code FlutterJNI} methods:
+   * <ul>
+   *   <li>{@link #dispatchPlatformMessage(String, ByteBuffer, int, int)}</li>
+   *   <li>{@link #dispatchEmptyPlatformMessage(String, int)}</li>
+   * </ul>
+   *
+   * {@code FlutterJNI} is also the recipient of all platform messages sent from its attached
+   * Flutter context (AKA platform view). {@code FlutterJNI} does not know what to do with these
+   * messages, so a handler is exposed to allow these messages to be processed in whatever manner is
+   * desired:
+   *
+   * {@code setPlatformMessageHandler(PlatformMessageHandler)}
+   *
+   * If a message is received but no {@link PlatformMessageHandler} is registered, that message will
+   * be dropped (ignored). Therefore, when using {@code FlutterJNI} to integrate a Flutter context
+   * in an app, a {@link PlatformMessageHandler} must be registered for 2-way Java/Dart communication
+   * to operate correctly. Moreover, the handler must be implemented such that fundamental platform
+   * messages are handled as expected. See {@link FlutterNativeView} for an example implementation.
+   */
   public void setPlatformMessageHandler(@Nullable PlatformMessageHandler platformMessageHandler) {
     this.platformMessageHandler = platformMessageHandler;
   }
