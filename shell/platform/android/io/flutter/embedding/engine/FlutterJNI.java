@@ -96,6 +96,22 @@ public class FlutterJNI {
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
   private final Set<OnFirstFrameRenderedListener> firstFrameListeners = new CopyOnWriteArraySet<>();
 
+  /**
+   * Sets the {@link FlutterRenderer.RenderSurface} delegate for the attached Flutter context.
+   *
+   * Flutter expects a user interface to exist on the platform side (Android), and that interface
+   * is expected to offer some capabilities that Flutter depends upon. The {@link FlutterRenderer.RenderSurface}
+   * interface represents those expectations. For example, Flutter expects to be able to request
+   * that its user interface "update custom accessibility actions" and therefore the delegate interface
+   * declares a corresponding method, {@link FlutterRenderer.RenderSurface#updateCustomAccessibilityActions(ByteBuffer, String[])}.
+   *
+   * If an app includes a user interface that renders a Flutter UI then a {@link FlutterRenderer.RenderSurface}
+   * should be set (this is the typical Flutter scenario). If no UI is being rendered, such as a
+   * Flutter app that is running Dart code in the background, then no registration may be necessary.
+   *
+   * If no {@link FlutterRenderer.RenderSurface} is registered then related messages coming from
+   * Flutter will be dropped (ignored).
+   */
   public void setRenderSurface(@Nullable FlutterRenderer.RenderSurface renderSurface) {
     this.renderSurface = renderSurface;
   }
@@ -107,6 +123,7 @@ public class FlutterJNI {
     if (renderSurface != null) {
       renderSurface.updateSemantics(buffer, strings);
     }
+    // TODO(mattcarroll): log dropped messages when in debug mode
   }
 
   // TODO(mattcarroll): define "update"
@@ -116,6 +133,7 @@ public class FlutterJNI {
     if (renderSurface != null) {
       renderSurface.updateCustomAccessibilityActions(buffer, strings);
     }
+    // TODO(mattcarroll): log dropped messages when in debug mode
   }
 
   // Called by native to notify first Flutter frame rendered.
@@ -124,6 +142,7 @@ public class FlutterJNI {
     if (renderSurface != null) {
       renderSurface.onFirstFrameRendered();
     }
+    // TODO(mattcarroll): log dropped messages when in debug mode
 
     for (OnFirstFrameRenderedListener listener : firstFrameListeners) {
       listener.onFirstFrameRendered();
@@ -164,6 +183,7 @@ public class FlutterJNI {
     if (platformMessageHandler != null) {
       platformMessageHandler.handlePlatformMessage(channel, message, replyId);
     }
+    // TODO(mattcarroll): log dropped messages when in debug mode
   }
 
   // Called by native to respond to a platform message that we sent.
@@ -172,6 +192,7 @@ public class FlutterJNI {
     if (platformMessageHandler != null) {
       platformMessageHandler.handlePlatformMessageResponse(replyId, reply);
     }
+    // TODO(mattcarroll): log dropped messages when in debug mode
   }
 
   public void addEngineLifecycleListener(@NonNull EngineLifecycleListener engineLifecycleListener) {
