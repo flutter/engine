@@ -127,19 +127,19 @@ public class FlutterView extends SurfaceView
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 assertAttached();
-                mNativeView.getFlutterJNI().nativeSurfaceCreated(mNativeView.get(), holder.getSurface());
+                mNativeView.getFlutterJNI().onSurfaceCreated(holder.getSurface());
             }
 
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
                 assertAttached();
-                mNativeView.getFlutterJNI().nativeSurfaceChanged(mNativeView.get(), width, height);
+                mNativeView.getFlutterJNI().onSurfaceChanged(width, height);
             }
 
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
                 assertAttached();
-                mNativeView.getFlutterJNI().nativeSurfaceDestroyed(mNativeView.get());
+                mNativeView.getFlutterJNI().onSurfaceDestroyed();
             }
         };
         getHolder().addCallback(mSurfaceCallback);
@@ -558,7 +558,7 @@ public class FlutterView extends SurfaceView
         }
 
         assert packet.position() % (kPointerDataFieldCount * kBytePerField) == 0;
-        mNativeView.getFlutterJNI().nativeDispatchPointerDataPacket(mNativeView.get(), packet, packet.position());
+        mNativeView.getFlutterJNI().dispatchPointerDataPacket(packet, packet.position());
         return true;
     }
 
@@ -760,13 +760,13 @@ public class FlutterView extends SurfaceView
      */
     public Bitmap getBitmap() {
         assertAttached();
-        return mNativeView.getFlutterJNI().nativeGetBitmap(mNativeView.get());
+        return mNativeView.getFlutterJNI().getBitmap();
     }
 
     private void updateViewportMetrics() {
         if (!isAttached())
             return;
-        mNativeView.getFlutterJNI().nativeSetViewportMetrics(mNativeView.get(), mMetrics.devicePixelRatio, mMetrics.physicalWidth,
+        mNativeView.getFlutterJNI().setViewportMetrics(mMetrics.devicePixelRatio, mMetrics.physicalWidth,
                 mMetrics.physicalHeight, mMetrics.physicalPaddingTop, mMetrics.physicalPaddingRight,
                 mMetrics.physicalPaddingBottom, mMetrics.physicalPaddingLeft, mMetrics.physicalViewInsetTop,
                 mMetrics.physicalViewInsetRight, mMetrics.physicalViewInsetBottom, mMetrics.physicalViewInsetLeft);
@@ -828,7 +828,7 @@ public class FlutterView extends SurfaceView
             encodedArgs = StandardMessageCodec.INSTANCE.encodeMessage(args);
             position = encodedArgs.position();
         }
-        mNativeView.getFlutterJNI().nativeDispatchSemanticsAction(mNativeView.get(), id, action.value, encodedArgs, position);
+        mNativeView.getFlutterJNI().dispatchSemanticsAction(id, action.value, encodedArgs, position);
     }
 
     @Override
@@ -871,7 +871,7 @@ public class FlutterView extends SurfaceView
                 mAccessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
             }
         }
-        mNativeView.getFlutterJNI().nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
+        mNativeView.getFlutterJNI().setAccessibilityFeatures(mAccessibilityFeatureFlags);
     }
 
     @Override
@@ -901,7 +901,7 @@ public class FlutterView extends SurfaceView
             if (mAccessibilityNodeProvider != null) {
                 mAccessibilityNodeProvider.setAccessibilityEnabled(false);
             }
-            mNativeView.getFlutterJNI().nativeSetSemanticsEnabled(mNativeView.get(), false);
+            mNativeView.getFlutterJNI().setSemanticsEnabled(false);
         }
         resetWillNotDraw();
     }
@@ -940,7 +940,7 @@ public class FlutterView extends SurfaceView
             } else {
                 mAccessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
             }
-            mNativeView.getFlutterJNI().nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
+            mNativeView.getFlutterJNI().setAccessibilityFeatures(mAccessibilityFeatureFlags);
         }
     }
 
@@ -951,14 +951,14 @@ public class FlutterView extends SurfaceView
                 mTouchExplorationEnabled = true;
                 ensureAccessibilityEnabled();
                 mAccessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-                mNativeView.getFlutterJNI().nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
+                mNativeView.getFlutterJNI().setAccessibilityFeatures(mAccessibilityFeatureFlags);
             } else {
                 mTouchExplorationEnabled = false;
                 if (mAccessibilityNodeProvider != null) {
                     mAccessibilityNodeProvider.handleTouchExplorationExit();
                 }
                 mAccessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-                mNativeView.getFlutterJNI().nativeSetAccessibilityFeatures(mNativeView.get(), mAccessibilityFeatureFlags);
+                mNativeView.getFlutterJNI().setAccessibilityFeatures(mAccessibilityFeatureFlags);
             }
             resetWillNotDraw();
         }
@@ -983,7 +983,7 @@ public class FlutterView extends SurfaceView
         if (mAccessibilityNodeProvider == null) {
             mAccessibilityNodeProvider = new AccessibilityBridge(this);
         }
-        mNativeView.getFlutterJNI().nativeSetSemanticsEnabled(mNativeView.get(), true);
+        mNativeView.getFlutterJNI().setSemanticsEnabled(true);
         mAccessibilityNodeProvider.setAccessibilityEnabled(true);
     }
 
@@ -1041,7 +1041,7 @@ public class FlutterView extends SurfaceView
         surfaceTexture.detachFromGLContext();
         final SurfaceTextureRegistryEntry entry = new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(),
                 surfaceTexture);
-        mNativeView.getFlutterJNI().nativeRegisterTexture(mNativeView.get(), entry.id(), surfaceTexture);
+        mNativeView.getFlutterJNI().registerTexture(entry.id(), surfaceTexture);
         return entry;
     }
 
@@ -1076,7 +1076,7 @@ public class FlutterView extends SurfaceView
                     // still be called by a stale reference after released==true and mNativeView==null.
                     return;
                 }
-                mNativeView.getFlutterJNI().nativeMarkTextureFrameAvailable(mNativeView.get(), SurfaceTextureRegistryEntry.this.id);
+                mNativeView.getFlutterJNI().markTextureFrameAvailable(SurfaceTextureRegistryEntry.this.id);
             }
         };
 
@@ -1096,7 +1096,7 @@ public class FlutterView extends SurfaceView
                 return;
             }
             released = true;
-            mNativeView.getFlutterJNI().nativeUnregisterTexture(mNativeView.get(), id);
+            mNativeView.getFlutterJNI().unregisterTexture(id);
             // Otherwise onFrameAvailableListener might be called after mNativeView==null
             // (https://github.com/flutter/flutter/issues/20951). See also the check in onFrameAvailable.
             surfaceTexture.setOnFrameAvailableListener(null);

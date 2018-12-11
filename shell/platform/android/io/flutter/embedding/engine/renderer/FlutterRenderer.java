@@ -35,13 +35,11 @@ import io.flutter.view.TextureRegistry;
 public class FlutterRenderer implements TextureRegistry {
 
   private final FlutterJNI flutterJNI;
-  private final long nativeObjectReference;
   private final AtomicLong nextTextureId = new AtomicLong(0L);
   private RenderSurface renderSurface;
 
-  public FlutterRenderer(@NonNull FlutterJNI flutterJNI, long nativeObjectReference) {
+  public FlutterRenderer(@NonNull FlutterJNI flutterJNI) {
     this.flutterJNI = flutterJNI;
-    this.nativeObjectReference = nativeObjectReference;
   }
 
   public void attachToRenderSurface(@NonNull RenderSurface renderSurface) {
@@ -148,17 +146,17 @@ public class FlutterRenderer implements TextureRegistry {
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public void surfaceCreated(Surface surface) {
-    flutterJNI.nativeSurfaceCreated(nativeObjectReference, surface);
+    flutterJNI.onSurfaceCreated(surface);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public void surfaceChanged(int width, int height) {
-    flutterJNI.nativeSurfaceChanged(nativeObjectReference, width, height);
+    flutterJNI.onSurfaceChanged(width, height);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public void surfaceDestroyed() {
-    flutterJNI.nativeSurfaceDestroyed(nativeObjectReference);
+    flutterJNI.onSurfaceDestroyed();
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
@@ -173,8 +171,7 @@ public class FlutterRenderer implements TextureRegistry {
                                  int physicalViewInsetRight,
                                  int physicalViewInsetBottom,
                                  int physicalViewInsetLeft) {
-    flutterJNI.nativeSetViewportMetrics(
-        nativeObjectReference,
+    flutterJNI.setViewportMetrics(
         devicePixelRatio,
         physicalWidth,
         physicalHeight,
@@ -191,42 +188,42 @@ public class FlutterRenderer implements TextureRegistry {
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public Bitmap getBitmap() {
-    return flutterJNI.nativeGetBitmap(nativeObjectReference);
+    return flutterJNI.getBitmap();
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public void dispatchPointerDataPacket(ByteBuffer buffer, int position) {
-    flutterJNI.nativeDispatchPointerDataPacket(nativeObjectReference, buffer, position);
+    flutterJNI.dispatchPointerDataPacket(buffer, position);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   private void registerTexture(long textureId, SurfaceTexture surfaceTexture) {
-    flutterJNI.nativeRegisterTexture(nativeObjectReference, textureId, surfaceTexture);
+    flutterJNI.registerTexture(textureId, surfaceTexture);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   private void markTextureFrameAvailable(long textureId) {
-    flutterJNI.nativeMarkTextureFrameAvailable(nativeObjectReference, textureId);
+    flutterJNI.markTextureFrameAvailable(textureId);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   private void unregisterTexture(long textureId) {
-    flutterJNI.nativeUnregisterTexture(nativeObjectReference, textureId);
+    flutterJNI.unregisterTexture(textureId);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public boolean isSoftwareRenderingEnabled() {
-    return flutterJNI.nativeGetIsSoftwareRenderingEnabled();
+    return FlutterJNI.nativeGetIsSoftwareRenderingEnabled();
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public void setAccessibilityFeatures(int flags) {
-    flutterJNI.nativeSetAccessibilityFeatures(nativeObjectReference, flags);
+    flutterJNI.setAccessibilityFeatures(flags);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
   public void setSemanticsEnabled(boolean enabled) {
-    flutterJNI.nativeSetSemanticsEnabled(nativeObjectReference, enabled);
+    flutterJNI.setSemanticsEnabled(enabled);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
@@ -234,8 +231,7 @@ public class FlutterRenderer implements TextureRegistry {
                                       int action,
                                       ByteBuffer args,
                                       int argsPosition) {
-    flutterJNI.nativeDispatchSemanticsAction(
-        nativeObjectReference,
+    flutterJNI.dispatchSemanticsAction(
         id,
         action,
         args,

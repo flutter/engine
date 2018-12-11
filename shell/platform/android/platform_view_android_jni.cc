@@ -47,8 +47,6 @@ bool CheckException(JNIEnv* env) {
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_callback_info_class =
     nullptr;
 
-// FlutterJNI.java, used in 2nd iteration of embedding to centralize all JNI
-// calls.
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_jni_class = nullptr;
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_surface_texture_class = nullptr;

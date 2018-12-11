@@ -9,7 +9,6 @@ import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
@@ -22,12 +21,76 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 
 /**
+ * Interface between Flutter embedding's Java code and Flutter engine's C/C++ code.
+ *
  * WARNING: THIS CLASS IS EXPERIMENTAL. DO NOT SHIP A DEPENDENCY ON THIS CODE.
  * IF YOU USE IT, WE WILL BREAK YOU.
+ *
+ * Flutter's engine is built with C/C++. The Android Flutter embedding is responsible for
+ * coordinating Android OS events and app user interactions with the C/C++ engine. Such coordination
+ * requires messaging from an Android app in Java code to the C/C++ engine code. This
+ * communication requires a JNI (Java Native Interface) API to cross the Java/native boundary.
+ *
+ * The entirety of Flutter's JNI API is codified in {@code FlutterJNI}. There are multiple reasons
+ * that all such calls are centralized in one class. First, JNI calls are inherently static and
+ * contain no Java implementation, therefore there is little reason to associate calls with different
+ * classes. Second, every JNI call must be registered in C/C++ code and this registration becomes
+ * more complicated with every additional Java class that contains JNI calls. Third, most Android
+ * developers are not familiar with native development or JNI intricacies, therefore it is in the
+ * interest of future maintenance to reduce the API surface that includes JNI declarations. Thus,
+ * all Flutter JNI calls are centralized in {@code FlutterJNI}.
+ *
+ * Despite the fact that individual JNI calls are inherently static, there is state that exists
+ * within {@code FlutterJNI}. Most calls within {@code FlutterJNI} correspond to a specific
+ * "platform view", of which there may be many. Therefore, each {@code FlutterJNI} instance holds
+ * onto a "native platform view ID" after {@link #attachToNative(boolean)}, which is shared with
+ * the native C/C++ engine code. That ID is passed to every platform-view-specific native method.
+ * ID management is handled within {@code FlutterJNI} so that developers don't have to hold onto
+ * that ID.
+ *
+ * To connect part of an Android app to Flutter's C/C++ engine, instantiate a {@code FlutterJNI} and
+ * then attach it to the native side:
+ *
+ * {@code
+ *     // Instantiate FlutterJNI and attach to the native side.
+ *     FlutterJNI flutterJNI = new FlutterJNI();
+ *     flutterJNI.attachToNative();
+ *
+ *     // Use FlutterJNI as desired.
+ *     flutterJNI.dispatchPointerDataPacket(...);
+ *
+ *     // Destroy the connection to the native side and cleanup.
+ *     flutterJNI.detachFromNativeAndReleaseResources();
+ * }
+ *
+ * To provide a visual, interactive surface for Flutter rendering and touch events, register a
+ * {@link FlutterRenderer.RenderSurface} with {@link #setRenderSurface(FlutterRenderer.RenderSurface)}
+ *
+ * To receive callbacks for certain events that occur on the native side, register listeners:
+ *
+ * <ol>
+ *   <li>{@link #addEngineLifecycleListener(EngineLifecycleListener)}</li>
+ *   <li>{@link #addOnFirstFrameRenderedListener(OnFirstFrameRenderedListener)}</li>
+ * </ol>
+ *
+ * To facilitate platform messages between Java and Dart running in Flutter, register a handler:
+ *
+ * {@link #setPlatformMessageHandler(PlatformMessageHandler)}
+ *
+ * To invoke a native method that is not associated with a platform view, invoke it statically:
+ *
+ * {@code
+ *    String uri = FlutterJNI.nativeGetObservatoryUri();
+ * }
  */
 public class FlutterJNI {
   private static final String TAG = "FlutterJNI";
 
+  public static native boolean nativeGetIsSoftwareRenderingEnabled();
+
+  public static native String nativeGetObservatoryUri();
+  
+  private Long nativePlatformViewId;
   private FlutterRenderer.RenderSurface renderSurface;
   private PlatformMessageHandler platformMessageHandler;
   private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
@@ -37,8 +100,54 @@ public class FlutterJNI {
     this.renderSurface = renderSurface;
   }
 
+  // TODO(mattcarroll): define "update"
+  // Called by native to update the semantics/accessibility tree.
+  @SuppressWarnings("unused")
+  private void updateSemantics(ByteBuffer buffer, String[] strings) {
+    if (renderSurface != null) {
+      renderSurface.updateSemantics(buffer, strings);
+    }
+  }
+
+  // TODO(mattcarroll): define "update"
+  // Called by native to update the custom accessibility actions.
+  @SuppressWarnings("unused")
+  private void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
+    if (renderSurface != null) {
+      renderSurface.updateCustomAccessibilityActions(buffer, strings);
+    }
+  }
+
+  // Called by native to notify first Flutter frame rendered.
+  @SuppressWarnings("unused")
+  private void onFirstFrame() {
+    if (renderSurface != null) {
+      renderSurface.onFirstFrameRendered();
+    }
+
+    for (OnFirstFrameRenderedListener listener : firstFrameListeners) {
+      listener.onFirstFrameRendered();
+    }
+  }
+
   public void setPlatformMessageHandler(@Nullable PlatformMessageHandler platformMessageHandler) {
     this.platformMessageHandler = platformMessageHandler;
+  }
+
+  // Called by native.
+  @SuppressWarnings("unused")
+  private void handlePlatformMessage(final String channel, byte[] message, final int replyId) {
+    if (platformMessageHandler != null) {
+      platformMessageHandler.handlePlatformMessage(channel, message, replyId);
+    }
+  }
+
+  // Called by native to respond to a platform message that we sent.
+  @SuppressWarnings("unused")
+  private void handlePlatformMessageResponse(int replyId, byte[] reply) {
+    if (platformMessageHandler != null) {
+      platformMessageHandler.handlePlatformMessageResponse(replyId, reply);
+    }
   }
 
   public void addEngineLifecycleListener(@NonNull EngineLifecycleListener engineLifecycleListener) {
@@ -57,114 +166,180 @@ public class FlutterJNI {
     firstFrameListeners.remove(listener);
   }
 
-  //------ START RENDER SURFACE CALLBACKS -----
-  // TODO(mattcarroll): define "update"
-  // Called by native to update the semantics/accessibility tree.
-  @SuppressWarnings("unused")
-  public void updateSemantics(ByteBuffer buffer, String[] strings) {
-    Log.d(TAG, "updateSemantics()");
-    if (renderSurface != null) {
-      renderSurface.updateSemantics(buffer, strings);
-    }
-  }
-
-  // TODO(mattcarroll): define "update"
-  // Called by native to update the custom accessibility actions.
-  @SuppressWarnings("unused")
-  public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
-    Log.d(TAG, "updateCustomAccessibilityActions()");
-    if (renderSurface != null) {
-      renderSurface.updateCustomAccessibilityActions(buffer, strings);
-    }
-  }
-
-  // Called by native to notify first Flutter frame rendered.
-  @SuppressWarnings("unused")
-  private void onFirstFrame() {
-    Log.d(TAG, "onFirstFrame()");
-    if (renderSurface != null) {
-      renderSurface.onFirstFrameRendered();
-    }
-
-    for (OnFirstFrameRenderedListener listener : firstFrameListeners) {
-      listener.onFirstFrameRendered();
-    }
-  }
-  //------ END RENDER SURFACE CALLBACKS ------
-
-  //------ START PLATFORM MESSAGE CALLBACKS ----
-  @SuppressWarnings("unused")
-  private void handlePlatformMessage(final String channel, byte[] message, final int replyId) {
-    if (platformMessageHandler != null) {
-      platformMessageHandler.handlePlatformMessage(channel, message, replyId);
-    }
-  }
-
-  // Called by native to respond to a platform message that we sent.
-  @SuppressWarnings("unused")
-  private void handlePlatformMessageResponse(int replyId, byte[] reply) {
-    if (platformMessageHandler != null) {
-      platformMessageHandler.handlePlatformMessageResponse(replyId, reply);
-    }
-  }
-  //------ END PLATFORM MESSAGE CALLBACKS ----
-
   // TODO(mattcarroll): rename comments after refactor is done and their origin no longer matters
   //----- Start from FlutterView -----
-  public native void nativeSurfaceCreated(long nativePlatformViewAndroid, Surface surface);
+  public void onSurfaceCreated(@NonNull Surface surface) {
+    ensureAttachedToNative();
+    nativeSurfaceCreated(nativePlatformViewId, surface);
+  }
 
-  public native void nativeSurfaceChanged(long nativePlatformViewAndroid,
-                                          int width,
-                                          int height);
+  private native void nativeSurfaceCreated(long nativePlatformViewId, Surface surface);
 
-  public native void nativeSurfaceDestroyed(long nativePlatformViewAndroid);
+  public void onSurfaceChanged(int width, int height) {
+    ensureAttachedToNative();
+    nativeSurfaceChanged(nativePlatformViewId, width, height);
+  }
 
-  public native void nativeSetViewportMetrics(long nativePlatformViewAndroid,
-                                              float devicePixelRatio,
-                                              int physicalWidth,
-                                              int physicalHeight,
-                                              int physicalPaddingTop,
-                                              int physicalPaddingRight,
-                                              int physicalPaddingBottom,
-                                              int physicalPaddingLeft,
-                                              int physicalViewInsetTop,
-                                              int physicalViewInsetRight,
-                                              int physicalViewInsetBottom,
-                                              int physicalViewInsetLeft);
+  private native void nativeSurfaceChanged(long nativePlatformViewId, int width, int height);
 
-  public native Bitmap nativeGetBitmap(long nativePlatformViewAndroid);
+  public void onSurfaceDestroyed() {
+    ensureAttachedToNative();
+    nativeSurfaceDestroyed(nativePlatformViewId);
+  }
 
-  public native void nativeDispatchPointerDataPacket(long nativePlatformViewAndroid,
-                                                     ByteBuffer buffer,
-                                                     int position);
+  private native void nativeSurfaceDestroyed(long nativePlatformViewId);
 
-  public native void nativeDispatchSemanticsAction(long nativePlatformViewAndroid,
-                                                   int id,
-                                                   int action,
-                                                   ByteBuffer args,
-                                                   int argsPosition);
+  public void setViewportMetrics(float devicePixelRatio,
+                                 int physicalWidth,
+                                 int physicalHeight,
+                                 int physicalPaddingTop,
+                                 int physicalPaddingRight,
+                                 int physicalPaddingBottom,
+                                 int physicalPaddingLeft,
+                                 int physicalViewInsetTop,
+                                 int physicalViewInsetRight,
+                                 int physicalViewInsetBottom,
+                                 int physicalViewInsetLeft) {
+    ensureAttachedToNative();
+    nativeSetViewportMetrics(
+        nativePlatformViewId,
+        devicePixelRatio,
+        physicalWidth,
+        physicalHeight,
+        physicalPaddingTop,
+        physicalPaddingRight,
+        physicalPaddingBottom,
+        physicalPaddingLeft,
+        physicalViewInsetTop,
+        physicalViewInsetRight,
+        physicalViewInsetBottom,
+        physicalViewInsetLeft
+    );
+  }
 
-  public native void nativeSetSemanticsEnabled(long nativePlatformViewAndroid, boolean enabled);
+  private native void nativeSetViewportMetrics(long nativePlatformViewId,
+                                               float devicePixelRatio,
+                                               int physicalWidth,
+                                               int physicalHeight,
+                                               int physicalPaddingTop,
+                                               int physicalPaddingRight,
+                                               int physicalPaddingBottom,
+                                               int physicalPaddingLeft,
+                                               int physicalViewInsetTop,
+                                               int physicalViewInsetRight,
+                                               int physicalViewInsetBottom,
+                                               int physicalViewInsetLeft);
 
-  public native void nativeSetAccessibilityFeatures(long nativePlatformViewAndroid, int flags);
+  public Bitmap getBitmap() {
+    ensureAttachedToNative();
+    return nativeGetBitmap(nativePlatformViewId);
+  }
 
-  public native boolean nativeGetIsSoftwareRenderingEnabled();
+  private native Bitmap nativeGetBitmap(long nativePlatformViewId);
 
-  public native void nativeRegisterTexture(long nativePlatformViewAndroid, long textureId, SurfaceTexture surfaceTexture);
+  public void dispatchPointerDataPacket(ByteBuffer buffer, int position) {
+    ensureAttachedToNative();
+    nativeDispatchPointerDataPacket(nativePlatformViewId, buffer, position);
+  }
 
-  public native void nativeMarkTextureFrameAvailable(long nativePlatformViewAndroid, long textureId);
+  private native void nativeDispatchPointerDataPacket(long nativePlatformViewId,
+                                                      ByteBuffer buffer,
+                                                      int position);
 
-  public native void nativeUnregisterTexture(long nativePlatformViewAndroid, long textureId);
+  public void dispatchSemanticsAction(int id, int action, ByteBuffer args, int argsPosition) {
+    ensureAttachedToNative();
+    nativeDispatchSemanticsAction(nativePlatformViewId, id, action, args, argsPosition);
+  }
+
+  private native void nativeDispatchSemanticsAction(long nativePlatformViewId,
+                                                    int id,
+                                                    int action,
+                                                    ByteBuffer args,
+                                                    int argsPosition);
+
+  public void setSemanticsEnabled(boolean enabled) {
+    ensureAttachedToNative();
+    nativeSetSemanticsEnabled(nativePlatformViewId, enabled);
+  }
+
+  private native void nativeSetSemanticsEnabled(long nativePlatformViewId, boolean enabled);
+
+  public void setAccessibilityFeatures(int flags) {
+    ensureAttachedToNative();
+    nativeSetAccessibilityFeatures(nativePlatformViewId, flags);
+  }
+
+  private native void nativeSetAccessibilityFeatures(long nativePlatformViewId, int flags);
+
+  public void registerTexture(long textureId, SurfaceTexture surfaceTexture) {
+    ensureAttachedToNative();
+    nativeRegisterTexture(nativePlatformViewId, textureId, surfaceTexture);
+  }
+
+  private native void nativeRegisterTexture(long nativePlatformViewId, long textureId, SurfaceTexture surfaceTexture);
+
+  public void markTextureFrameAvailable(long textureId) {
+    ensureAttachedToNative();
+    nativeMarkTextureFrameAvailable(nativePlatformViewId, textureId);
+  }
+
+  private native void nativeMarkTextureFrameAvailable(long nativePlatformViewId, long textureId);
+
+  public void unregisterTexture(long textureId) {
+    ensureAttachedToNative();
+    nativeUnregisterTexture(nativePlatformViewId, textureId);
+  }
+
+  private native void nativeUnregisterTexture(long nativePlatformViewId, long textureId);
   //------- End from FlutterView -----
 
   // TODO(mattcarroll): rename comments after refactor is done and their origin no longer matters
   //------ Start from FlutterNativeView ----
-  public native long nativeAttach(FlutterJNI flutterJNI, boolean isBackgroundView);
-  public native void nativeDestroy(long nativePlatformViewAndroid);
-  public native void nativeDetach(long nativePlatformViewAndroid);
+  public boolean isAttached() {
+    return nativePlatformViewId != null;
+  }
 
-  public native void nativeRunBundleAndSnapshotFromLibrary(
-      long nativePlatformViewAndroid,
+  public void attachToNative(boolean isBackgroundView) {
+    ensureNotAttachedToNative();
+    nativePlatformViewId = nativeAttach(this, isBackgroundView);
+  }
+
+  private native long nativeAttach(FlutterJNI flutterJNI, boolean isBackgroundView);
+
+  public void detachFromNativeButKeepNativeResources() {
+    ensureAttachedToNative();
+    nativeDetach(nativePlatformViewId);
+    nativePlatformViewId = null;
+  }
+
+  private native void nativeDetach(long nativePlatformViewId);
+
+  public void detachFromNativeAndReleaseResources() {
+    ensureAttachedToNative();
+    nativeDestroy(nativePlatformViewId);
+    nativePlatformViewId = null;
+  }
+
+  private native void nativeDestroy(long nativePlatformViewId);
+
+  public void runBundleAndSnapshotFromLibrary(@NonNull String pathToBundleWithEntrypoint,
+                                              @Nullable String pathToFallbackBundle,
+                                              @Nullable String entrypointFunctionName,
+                                              @Nullable String pathToEntrypointFunction,
+                                              @NonNull AssetManager assetManager) {
+    ensureAttachedToNative();
+    nativeRunBundleAndSnapshotFromLibrary(
+        nativePlatformViewId,
+        pathToBundleWithEntrypoint,
+        pathToFallbackBundle,
+        entrypointFunctionName,
+        pathToEntrypointFunction,
+        assetManager
+    );
+  }
+
+  private native void nativeRunBundleAndSnapshotFromLibrary(
+      long nativePlatformViewId,
       @NonNull String pathToBundleWithEntrypoint,
       @Nullable String pathToFallbackBundle,
       @Nullable String entrypointFunctionName,
@@ -172,33 +347,62 @@ public class FlutterJNI {
       @NonNull AssetManager manager
   );
 
-  public native String nativeGetObservatoryUri();
+  public void dispatchEmptyPlatformMessage(String channel, int responseId) {
+    ensureAttachedToNative();
+    nativeDispatchEmptyPlatformMessage(nativePlatformViewId, channel, responseId);
+  }
 
   // Send an empty platform message to Dart.
-  public native void nativeDispatchEmptyPlatformMessage(
-      long nativePlatformViewAndroid,
+  private native void nativeDispatchEmptyPlatformMessage(
+      long nativePlatformViewId,
       String channel,
       int responseId
   );
 
+  public void dispatchPlatformMessage(String channel, ByteBuffer message, int position, int responseId) {
+    ensureAttachedToNative();
+    nativeDispatchPlatformMessage(
+        nativePlatformViewId,
+        channel,
+        message,
+        position,
+        responseId
+    );
+  }
+
   // Send a data-carrying platform message to Dart.
-  public native void nativeDispatchPlatformMessage(
-      long nativePlatformViewAndroid,
+  private native void nativeDispatchPlatformMessage(
+      long nativePlatformViewId,
       String channel,
       ByteBuffer message,
       int position,
       int responseId
   );
 
+  public void invokePlatformMessageEmptyResponseCallback(int responseId) {
+    ensureAttachedToNative();
+    nativeInvokePlatformMessageEmptyResponseCallback(nativePlatformViewId, responseId);
+  }
+
   // Send an empty response to a platform message received from Dart.
-  public native void nativeInvokePlatformMessageEmptyResponseCallback(
-      long nativePlatformViewAndroid,
+  private native void nativeInvokePlatformMessageEmptyResponseCallback(
+      long nativePlatformViewId,
       int responseId
   );
 
+  public void invokePlatformMessageResponseCallback(int responseId, ByteBuffer message, int position) {
+    ensureAttachedToNative();
+    nativeInvokePlatformMessageResponseCallback(
+        nativePlatformViewId,
+        responseId,
+        message,
+        position
+    );
+  }
+
   // Send a data-carrying response to a platform message received from Dart.
-  public native void nativeInvokePlatformMessageResponseCallback(
-      long nativePlatformViewAndroid,
+  private native void nativeInvokePlatformMessageResponseCallback(
+      long nativePlatformViewId,
       int responseId,
       ByteBuffer message,
       int position
@@ -207,6 +411,7 @@ public class FlutterJNI {
 
   // TODO(mattcarroll): rename comments after refactor is done and their origin no longer matters
   //------ Start from Engine ---
+  // Called by native.
   @SuppressWarnings("unused")
   private void onPreEngineRestart() {
     for (EngineLifecycleListener listener : engineLifecycleListeners) {
@@ -214,4 +419,16 @@ public class FlutterJNI {
     }
   }
   //------ End from Engine ---
+
+  private void ensureNotAttachedToNative() {
+    if (nativePlatformViewId != null) {
+      throw new RuntimeException("Cannot execute operation because FlutterJNI is attached to native.");
+    }
+  }
+
+  private void ensureAttachedToNative() {
+    if (nativePlatformViewId == null) {
+      throw new RuntimeException("Cannot execute operation because FlutterJNI is not attached to native.");
+    }
+  }
 }
