@@ -48,4 +48,16 @@ format_and_dart_test_task:
   build_script: cd $ENGINE_PATH/src/flutter && ./ci/build.sh
 
 tree_status_task:
+  container:
+    image: gcr.io/flutter-cirrus/build-engine-image:latest
+
+  env:
+    CIRRUS_WORKING_DIR: "/tmp/github_repo"
+
+  replace_engine_script: |
+    cd $ENGINE_PATH/src
+    rm -r flutter
+    cp $CIRRUS_WORKING_DIR -r ./flutter
+    gclient sync
+
   check_script: cd $ENGINE_PATH/src/flutter && ./ci/tree_status.sh
