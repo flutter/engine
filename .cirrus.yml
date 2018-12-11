@@ -46,3 +46,6 @@ format_and_dart_test_task:
 
   format_script: cd $ENGINE_PATH/src/flutter && ./ci/format.sh
   build_script: cd $ENGINE_PATH/src/flutter && ./ci/build.sh
+
+tree_status_task:
+  check_script: cd $ENGINE_PATH/src/flutter && ./ci/tree_status.sh
