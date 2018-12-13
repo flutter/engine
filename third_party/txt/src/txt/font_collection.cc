@@ -205,8 +205,7 @@ const std::shared_ptr<minikin::FontFamily>& FontCollection::MatchFallbackFont(
   // Check if the ch's matched font has been cached. We cache the results of
   // this method as repeated matchFamilyStyleCharacter calls can become
   // extremely laggy when typing a large number of complex emojis.
-  std::unordered_map<uint32_t, const std::shared_ptr<minikin::FontFamily>*>::
-      const_iterator lookup = fallback_match_cache_.find(ch);
+  auto lookup = fallback_match_cache_.find(ch);
   if (lookup != fallback_match_cache_.end()) {
     return *lookup->second;
   }
