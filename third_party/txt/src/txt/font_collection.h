@@ -80,6 +80,8 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
                      std::shared_ptr<minikin::FontCollection>,
                      FamilyKey::Hasher>
       font_collections_cache_;
+  // Cache that stores the results of MatchFallbackFont to ensure lag-free emoji
+  // font fallback matching.
   std::unordered_map<uint32_t, const std::shared_ptr<minikin::FontFamily>*>
       fallback_match_cache_;
   std::unordered_map<std::string, std::shared_ptr<minikin::FontFamily>>

@@ -202,6 +202,9 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
 const std::shared_ptr<minikin::FontFamily>& FontCollection::MatchFallbackFont(
     uint32_t ch,
     std::string locale) {
+  // Check if the ch's matched font has been cached. We cache the results of
+  // this method as repeated matchFamilyStyleCharacter calls can become
+  // extremely laggy when typing a large number of complex emojis.
   if (fallback_match_cache_.count(ch) > 0) {
     return *fallback_match_cache_[ch];
   }

@@ -20,7 +20,6 @@
 #include <unicode/ubidi.h>
 #include <unicode/utf16.h>
 #include <algorithm>
-#include <chrono>
 #include <fstream>
 #include <iostream>  // for debugging
 #include <string>
@@ -41,7 +40,6 @@
 #include "HbFontCache.h"
 #include "LayoutUtils.h"
 #include "MinikinInternal.h"
-#include "flutter/fml/logging.h"
 
 using std::string;
 using std::vector;
@@ -664,17 +662,10 @@ float Layout::doLayoutRunCached(
       }
       ctx->paint.hyphenEdit = hyphen;
       size_t wordcount = std::min(start + count, wordend) - iter;
-      std::chrono::milliseconds startTime =
-          std::chrono::duration_cast<std::chrono::milliseconds>(
-              std::chrono::system_clock::now().time_since_epoch());
       advance += doLayoutWord(buf + wordstart, iter - wordstart, wordcount,
                               wordend - wordstart, isRtl, ctx, iter - dstStart,
                               collection, layout,
                               advances ? advances + (iter - start) : advances);
-      std::chrono::milliseconds endTime =
-          std::chrono::duration_cast<std::chrono::milliseconds>(
-              std::chrono::system_clock::now().time_since_epoch());
-      FML_DLOG(ERROR) << endTime.count() - startTime.count() << " " << count;
       wordstart = wordend;
     }
   } else {
