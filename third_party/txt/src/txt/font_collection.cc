@@ -205,9 +205,20 @@ const std::shared_ptr<minikin::FontFamily>& FontCollection::MatchFallbackFont(
   // Check if the ch's matched font has been cached. We cache the results of
   // this method as repeated matchFamilyStyleCharacter calls can become
   // extremely laggy when typing a large number of complex emojis.
-  if (fallback_match_cache_.count(ch) > 0) {
-    return *fallback_match_cache_[ch];
+  std::unordered_map<uint32_t, const std::shared_ptr<minikin::FontFamily>*>::
+      const_iterator lookup = fallback_match_cache_.find(ch);
+  if (lookup != fallback_match_cache_.end()) {
+    return *lookup->second;
   }
+  const std::shared_ptr<minikin::FontFamily>* match =
+      &DoMatchFallbackFont(ch, locale);
+  fallback_match_cache_.insert(std::make_pair(ch, match));
+  return *match;
+}
+
+const std::shared_ptr<minikin::FontFamily>& FontCollection::DoMatchFallbackFont(
+    uint32_t ch,
+    std::string locale) {
   for (const sk_sp<SkFontMgr>& manager : GetFontManagerOrder()) {
     std::vector<const char*> bcp47;
     if (!locale.empty())
@@ -223,13 +234,8 @@ const std::shared_ptr<minikin::FontFamily>& FontCollection::MatchFallbackFont(
 
     fallback_fonts_for_locale_[locale].insert(family_name);
 
-    const std::shared_ptr<minikin::FontFamily>* match =
-        &GetFallbackFontFamily(manager, family_name);
-    fallback_match_cache_.insert(std::make_pair(ch, match));
-    return *match;
+    return GetFallbackFontFamily(manager, family_name);
   }
-
-  fallback_match_cache_.insert(std::make_pair(ch, &g_null_family));
   return g_null_family;
 }
 

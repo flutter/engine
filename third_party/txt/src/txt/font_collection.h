@@ -49,6 +49,8 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
       const std::string& family,
       const std::string& locale);
 
+  // Provides a FontFamily that contains glyphs for ch. This caches previously
+  // matched fonts. Also see FontCollection::DoMatchFallbackFont.
   const std::shared_ptr<minikin::FontFamily>& MatchFallbackFont(
       uint32_t ch,
       std::string locale);
@@ -89,6 +91,12 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
   std::unordered_map<std::string, std::set<std::string>>
       fallback_fonts_for_locale_;
   bool enable_font_fallback_;
+
+  // Performs the actual work of MatchFallbackFont. The result is cached in
+  // fallback_match_cache_.
+  const std::shared_ptr<minikin::FontFamily>& DoMatchFallbackFont(
+      uint32_t ch,
+      std::string locale);
 
   std::vector<sk_sp<SkFontMgr>> GetFontManagerOrder() const;
 
