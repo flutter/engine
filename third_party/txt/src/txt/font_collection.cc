@@ -202,6 +202,9 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
 const std::shared_ptr<minikin::FontFamily>& FontCollection::MatchFallbackFont(
     uint32_t ch,
     std::string locale) {
+  if (fallback_match_cache_.count(ch) > 0) {
+    return *fallback_match_cache_[ch];
+  }
   for (const sk_sp<SkFontMgr>& manager : GetFontManagerOrder()) {
     std::vector<const char*> bcp47;
     if (!locale.empty())
@@ -217,9 +220,13 @@ const std::shared_ptr<minikin::FontFamily>& FontCollection::MatchFallbackFont(
 
     fallback_fonts_for_locale_[locale].insert(family_name);
 
-    return GetFallbackFontFamily(manager, family_name);
+    const std::shared_ptr<minikin::FontFamily>* match =
+        &GetFallbackFontFamily(manager, family_name);
+    fallback_match_cache_.insert(std::make_pair(ch, match));
+    return *match;
   }
 
+  fallback_match_cache_.insert(std::make_pair(ch, &g_null_family));
   return g_null_family;
 }
 
