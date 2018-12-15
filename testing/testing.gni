@@ -34,6 +34,7 @@ template("test_fixtures") {
 
   fixtures_source_set_target_name = target_name + "_gen_fixtures_source_set"
   source_set(fixtures_source_set_target_name) {
+    testonly = true
     sources = [
       fixtures_location_file,
     ]
@@ -45,6 +46,7 @@ template("test_fixtures") {
 
   fixtures_kernel_target_name = target_name + "_kernel"
   prebuilt_dart_action(fixtures_kernel_target_name) {
+    testonly = true
     script = "$root_out_dir/frontend_server.dart.snapshot"
 
     fixture_paths = []
@@ -66,6 +68,7 @@ template("test_fixtures") {
   }
 
   group(target_name) {
+    testonly = true
     deps = [
       ":$fixtures_kernel_target_name",
       ":$fixtures_source_set_target_name",
