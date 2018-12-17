@@ -74,7 +74,6 @@
     [_engine.get() createShell:nil libraryURI:nil];
     _engineNeedsLaunch = YES;
     _engineIsOwnedByMe = YES;
-
     [self loadDefaultSplashScreenView];
     [self performCommonViewControllerInitialization];
   }
