@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': 'a89316d8227b5eff8196ef0d01ab1b045826f00e',
+  'skia_revision': 'e6f635476da3f0d1e6532a735418af93beb15626',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -104,7 +104,7 @@ vars = {
   # Build bot tooling for iOS
   'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
 
-  'buildtools_revision': '5a9e1b3a0b84a2871f20f85fde665e54a894ba72',
+  'buildtools_revision': 'bac220c15490dcf7b7d8136f75100bbc77e8d217',
 }
 
 # Only these hosts are allowed for dependencies in this DEPS file.
@@ -117,7 +117,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '2b7fe9635c00c932f86627988e797a097574929e',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '8e538639660413490ea9261eee84864005e240f4',
 
    # Fuchsia compatibility
    #
@@ -139,6 +139,12 @@ deps = {
 
   'src/third_party/harfbuzz':
    Var('fuchsia_git') + '/third_party/harfbuzz' + '@' + '02caec6c1c6ad996666788b8e920ccaec8b385e5',
+
+  'src/third_party/libcxx':
+   Var('fuchsia_git') + '/third_party/libcxx' + '@' + 'c5a5fa59789213c7dae68d2e51cb28ef681d8257',
+
+  'src/third_party/libcxxabi':
+   Var('fuchsia_git') + '/third_party/libcxxabi' + '@' + '1a9753522f1ae8d72848d365902f39e0d3d59a39',
 
    # Chromium-style
    #

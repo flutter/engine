@@ -48,6 +48,9 @@ class Engine final : public blink::RuntimeDelegate {
         fml::RefPtr<blink::PlatformMessage> message) = 0;
 
     virtual void OnPreEngineRestart() = 0;
+
+    virtual void UpdateIsolateDescription(const std::string isolate_name,
+                                          int64_t isolate_port) = 0;
   };
 
   Engine(Delegate& delegate,
@@ -62,6 +65,8 @@ class Engine final : public blink::RuntimeDelegate {
          fml::RefPtr<flow::SkiaUnrefQueue> unref_queue);
 
   ~Engine() override;
+
+  float GetDisplayRefreshRate() const;
 
   fml::WeakPtr<Engine> GetWeakPtr() const;
 
@@ -141,6 +146,10 @@ class Engine final : public blink::RuntimeDelegate {
   // |blink::RuntimeDelegate|
   void HandlePlatformMessage(
       fml::RefPtr<blink::PlatformMessage> message) override;
+
+  // |blink::RuntimeDelegate|
+  void UpdateIsolateDescription(const std::string isolate_name,
+                                int64_t isolate_port) override;
 
   void StopAnimator();
 

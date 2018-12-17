@@ -69,6 +69,10 @@ Engine::Engine(Delegate& delegate,
 
 Engine::~Engine() = default;
 
+float Engine::GetDisplayRefreshRate() const {
+  return animator_->GetDisplayRefreshRate();
+}
+
 fml::WeakPtr<Engine> Engine::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }
@@ -86,10 +90,10 @@ bool Engine::UpdateAssetManager(
   }
 
   // Using libTXT as the text engine.
+  font_collection_.RegisterFonts(asset_manager_);
+
   if (settings_.use_test_fonts) {
     font_collection_.RegisterTestFonts();
-  } else {
-    font_collection_.RegisterFonts(asset_manager_);
   }
 
   return true;
@@ -414,6 +418,11 @@ void Engine::HandlePlatformMessage(
   } else {
     delegate_.OnEngineHandlePlatformMessage(std::move(message));
   }
+}
+
+void Engine::UpdateIsolateDescription(const std::string isolate_name,
+                                      int64_t isolate_port) {
+  delegate_.UpdateIsolateDescription(isolate_name, isolate_port);
 }
 
 blink::FontCollection& Engine::GetFontCollection() {

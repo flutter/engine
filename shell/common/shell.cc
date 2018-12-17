@@ -293,6 +293,11 @@ Shell::Shell(blink::TaskRunners task_runners, blink::Settings settings)
           task_runners_.GetUITaskRunner(),
           std::bind(&Shell::OnServiceProtocolSetAssetBundlePath, this,
                     std::placeholders::_1, std::placeholders::_2)};
+  service_protocol_handlers_
+      [blink::ServiceProtocol::kGetDisplayRefreshRateExtensionName.ToString()] =
+          {task_runners_.GetUITaskRunner(),
+           std::bind(&Shell::OnServiceProtocolGetDisplayRefreshRate, this,
+                     std::placeholders::_1, std::placeholders::_2)};
 }
 
 Shell::~Shell() {
@@ -373,7 +378,7 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   is_setup_ = true;
 
   if (auto vm = blink::DartVM::ForProcessIfInitialized()) {
-    vm->GetServiceProtocol().AddHandler(this);
+    vm->GetServiceProtocol().AddHandler(this, GetServiceProtocolDescription());
   }
 
   PersistentCache::GetCacheForProcess()->AddWorkerTaskRunner(
@@ -749,6 +754,15 @@ void Shell::OnPreEngineRestart() {
   latch.Wait();
 }
 
+// |shell::Engine::Delegate|
+void Shell::UpdateIsolateDescription(const std::string isolate_name,
+                                     int64_t isolate_port) {
+  if (auto vm = blink::DartVM::ForProcessIfInitialized()) {
+    Handler::Description description(isolate_port, isolate_name);
+    vm->GetServiceProtocol().SetHandlerDescription(this, description);
+  }
+}
+
 // |blink::ServiceProtocol::Handler|
 fml::RefPtr<fml::TaskRunner> Shell::GetServiceProtocolHandlerTaskRunner(
     fml::StringView method) const {
@@ -927,6 +941,16 @@ bool Shell::OnServiceProtocolFlushUIThreadTasks(
   // tasks are processed.
   response.SetObject();
   response.AddMember("type", "Success", response.GetAllocator());
+  return true;
+}
+
+bool Shell::OnServiceProtocolGetDisplayRefreshRate(
+    const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
+    rapidjson::Document& response) {
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+  response.SetObject();
+  response.AddMember("fps", engine_->GetDisplayRefreshRate(),
+                     response.GetAllocator());
   return true;
 }
 

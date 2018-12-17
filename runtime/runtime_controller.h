@@ -93,6 +93,9 @@ class RuntimeController final : public WindowClient {
     std::string variant_code;
   };
 
+  // Stores data about the window to be used at startup
+  // as well as on hot restarts. Data kept here will persist
+  // after hot restart.
   struct WindowData {
     WindowData();
 
@@ -158,10 +161,11 @@ class RuntimeController final : public WindowClient {
   void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message) override;
 
   // |blink::WindowClient|
-  void SetIsolateDebugName(const std::string name) override;
+  FontCollection& GetFontCollection() override;
 
   // |blink::WindowClient|
-  FontCollection& GetFontCollection() override;
+  void UpdateIsolateDescription(const std::string isolate_name,
+                                int64_t isolate_port) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
 };

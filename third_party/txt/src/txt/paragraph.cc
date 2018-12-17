@@ -38,6 +38,7 @@
 #include "unicode/utf16.h"
 
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
@@ -62,10 +63,10 @@ class GlyphTypeface {
 
   bool operator!=(GlyphTypeface& other) { return !(*this == other); }
 
-  void apply(SkPaint& paint) {
-    paint.setTypeface(typeface_);
-    paint.setFakeBoldText(fake_bold_);
-    paint.setTextSkewX(fake_italic_ ? -SK_Scalar1 / 4 : 0);
+  void apply(SkFont& font) {
+    font.setTypeface(typeface_);
+    font.setEmbolden(fake_bold_);
+    font.setSkewX(fake_italic_ ? -SK_Scalar1 / 4 : 0);
   }
 
  private:
@@ -435,11 +436,10 @@ void Paragraph::Layout(double width, bool force) {
   if (!ComputeBidiRuns(&bidi_runs))
     return;
 
-  SkPaint paint;
-  paint.setAntiAlias(true);
-  paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
-  paint.setSubpixelText(true);
-  paint.setHinting(kSlight_SkFontHinting);
+  SkFont font;
+  font.setEdging(SkFont::Edging::kAntiAlias);
+  font.setSubpixel(true);
+  font.setHinting(kSlight_SkFontHinting);
 
   records_.clear();
   line_heights_.clear();
@@ -479,8 +479,8 @@ void Paragraph::Layout(double width, bool force) {
       }
     }
 
-    // Exclude trailing whitespace from right-justified lines so the last
-    // visible character in the line will be flush with the right margin.
+    // Exclude trailing whitespace from right and center-justified lines so the
+    // last visible character in the line will be flush with the right margin.
     size_t line_end_index =
         (paragraph_style_.effective_align() == TextAlign::right ||
          paragraph_style_.effective_align() == TextAlign::center)
@@ -507,10 +507,10 @@ void Paragraph::Layout(double width, bool force) {
     for (auto line_run_it = line_runs.begin(); line_run_it != line_runs.end();
          ++line_run_it) {
       const BidiRun& run = *line_run_it;
-      minikin::FontStyle font;
+      minikin::FontStyle minikin_font;
       minikin::MinikinPaint minikin_paint;
-      GetFontAndMinikinPaint(run.style(), &font, &minikin_paint);
-      paint.setTextSize(run.style().font_size);
+      GetFontAndMinikinPaint(run.style(), &minikin_font, &minikin_paint);
+      font.setSize(run.style().font_size);
 
       std::shared_ptr<minikin::FontCollection> minikin_font_collection =
           GetMinikinFontCollectionForStyle(run.style());
@@ -531,13 +531,14 @@ void Paragraph::Layout(double width, bool force) {
            paragraph_style_.unlimited_lines())) {
         float ellipsis_width = layout.measureText(
             reinterpret_cast<const uint16_t*>(ellipsis.data()), 0,
-            ellipsis.length(), ellipsis.length(), run.is_rtl(), font,
+            ellipsis.length(), ellipsis.length(), run.is_rtl(), minikin_font,
             minikin_paint, minikin_font_collection, nullptr);
 
         std::vector<float> text_advances(text_count);
-        float text_width = layout.measureText(
-            text_ptr, text_start, text_count, text_.size(), run.is_rtl(), font,
-            minikin_paint, minikin_font_collection, text_advances.data());
+        float text_width =
+            layout.measureText(text_ptr, text_start, text_count, text_.size(),
+                               run.is_rtl(), minikin_font, minikin_paint,
+                               minikin_font_collection, text_advances.data());
 
         // Truncate characters from the text until the ellipsis fits.
         size_t truncate_count = 0;
@@ -568,7 +569,7 @@ void Paragraph::Layout(double width, bool force) {
       }
 
       layout.doLayout(text_ptr, text_start, text_count, text_size, run.is_rtl(),
-                      font, minikin_paint, minikin_font_collection);
+                      minikin_font, minikin_paint, minikin_font_collection);
 
       if (layout.nGlyphs() == 0)
         continue;
@@ -585,9 +586,9 @@ void Paragraph::Layout(double width, bool force) {
       for (const Range<size_t>& glyph_blob : glyph_blobs) {
         std::vector<GlyphPosition> glyph_positions;
 
-        GetGlyphTypeface(layout, glyph_blob.start).apply(paint);
+        GetGlyphTypeface(layout, glyph_blob.start).apply(font);
         const SkTextBlobBuilder::RunBuffer& blob_buffer =
-            builder.allocRunPos(paint, glyph_blob.end - glyph_blob.start);
+            builder.allocRunPos(font, glyph_blob.end - glyph_blob.start);
 
         for (size_t glyph_index = glyph_blob.start;
              glyph_index < glyph_blob.end;) {
@@ -687,7 +688,7 @@ void Paragraph::Layout(double width, bool force) {
         if (glyph_positions.empty())
           continue;
         SkFontMetrics metrics;
-        paint.getFontMetrics(&metrics);
+        font.getMetrics(&metrics);
         paint_records.emplace_back(run.style(), SkPoint::Make(run_x_offset, 0),
                                    builder.make(), metrics, line_number,
                                    layout.getAdvance());
@@ -735,6 +736,23 @@ void Paragraph::Layout(double width, bool force) {
     code_unit_runs_.insert(code_unit_runs_.end(), line_code_unit_runs.begin(),
                            line_code_unit_runs.end());
 
+    // Add extra empty metrics for skipped whitespace at line end. This allows
+    // GetRectsForRange to properly draw empty rects at the ends of lines with
+    // truncated whitespace.
+    if (line_end_index < line_range.end && !line_code_unit_runs.empty()) {
+      std::vector<GlyphPosition> empty_glyph_positions;
+      double end_x = line_code_unit_runs.back().positions.back().x_pos.end;
+      for (size_t index = line_end_index; index < line_range.end; ++index) {
+        empty_glyph_positions.emplace_back(end_x, 0, index, 1);
+      }
+      code_unit_runs_.emplace_back(
+          std::move(empty_glyph_positions),
+          Range<size_t>(line_end_index, line_range.end),
+          Range<double>(end_x, end_x), line_code_unit_runs.back().line_number,
+          line_code_unit_runs.back().font_metrics,
+          line_code_unit_runs.back().direction);
+    }
+
     double max_line_spacing = 0;
     double max_descent = 0;
     SkScalar max_unscaled_ascent = 0;
@@ -770,9 +788,9 @@ void Paragraph::Layout(double width, bool force) {
     if (paint_records.empty()) {
       SkFontMetrics metrics;
       TextStyle style(paragraph_style_.GetTextStyle());
-      paint.setTypeface(GetDefaultSkiaTypeface(style));
-      paint.setTextSize(style.font_size);
-      paint.getFontMetrics(&metrics);
+      font.setTypeface(GetDefaultSkiaTypeface(style));
+      font.setSize(style.font_size);
+      font.getMetrics(&metrics);
       update_line_metrics(metrics, style);
     }
 

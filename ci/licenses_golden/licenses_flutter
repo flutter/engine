@@ -164,6 +164,8 @@ FILE: ../../../flutter/fml/platform/posix/file_posix.cc
 FILE: ../../../flutter/fml/platform/posix/mapping_posix.cc
 FILE: ../../../flutter/fml/platform/posix/native_library_posix.cc
 FILE: ../../../flutter/fml/platform/posix/paths_posix.cc
+FILE: ../../../flutter/fml/platform/posix/shared_mutex_posix.cc
+FILE: ../../../flutter/fml/platform/posix/shared_mutex_posix.h
 FILE: ../../../flutter/fml/platform/win/errors_win.cc
 FILE: ../../../flutter/fml/platform/win/errors_win.h
 FILE: ../../../flutter/fml/platform/win/file_win.cc
@@ -176,9 +178,13 @@ FILE: ../../../flutter/fml/platform/win/wstring_conversion.h
 FILE: ../../../flutter/fml/string_view.cc
 FILE: ../../../flutter/fml/string_view.h
 FILE: ../../../flutter/fml/string_view_unittest.cc
+FILE: ../../../flutter/fml/synchronization/atomic_object.h
 FILE: ../../../flutter/fml/synchronization/count_down_latch.cc
 FILE: ../../../flutter/fml/synchronization/count_down_latch.h
 FILE: ../../../flutter/fml/synchronization/count_down_latch_unittests.cc
+FILE: ../../../flutter/fml/synchronization/shared_mutex.h
+FILE: ../../../flutter/fml/synchronization/shared_mutex_std.cc
+FILE: ../../../flutter/fml/synchronization/shared_mutex_std.h
 FILE: ../../../flutter/fml/synchronization/thread_annotations.h
 FILE: ../../../flutter/fml/synchronization/thread_annotations_unittest.cc
 FILE: ../../../flutter/fml/synchronization/thread_checker.h
@@ -448,6 +454,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourceCleaner.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourceExtractor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourcePaths.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/TextureRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/VsyncWaiter.java
 FILE: ../../../flutter/shell/platform/android/library_loader.cc
@@ -588,8 +595,6 @@ FILE: ../../../flutter/vulkan/vulkan_native_surface.cc
 FILE: ../../../flutter/vulkan/vulkan_native_surface.h
 FILE: ../../../flutter/vulkan/vulkan_native_surface_android.cc
 FILE: ../../../flutter/vulkan/vulkan_native_surface_android.h
-FILE: ../../../flutter/vulkan/vulkan_native_surface_magma.cc
-FILE: ../../../flutter/vulkan/vulkan_native_surface_magma.h
 FILE: ../../../flutter/vulkan/vulkan_proc_table.cc
 FILE: ../../../flutter/vulkan/vulkan_proc_table.h
 FILE: ../../../flutter/vulkan/vulkan_provider.cc
@@ -598,6 +603,7 @@ FILE: ../../../flutter/vulkan/vulkan_surface.cc
 FILE: ../../../flutter/vulkan/vulkan_surface.h
 FILE: ../../../flutter/vulkan/vulkan_swapchain.cc
 FILE: ../../../flutter/vulkan/vulkan_swapchain.h
+FILE: ../../../flutter/vulkan/vulkan_swapchain_stub.cc
 FILE: ../../../flutter/vulkan/vulkan_utilities.cc
 FILE: ../../../flutter/vulkan/vulkan_utilities.h
 FILE: ../../../flutter/vulkan/vulkan_window.cc

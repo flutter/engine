@@ -75,6 +75,7 @@
     _engineNeedsLaunch = YES;
     _engineIsOwnedByMe = YES;
 
+    [self loadDefaultSplashScreenView];
     [self performCommonViewControllerInitialization];
   }
 
@@ -242,7 +243,7 @@
 - (void)installSplashScreenViewIfNecessary {
   // Show the launch screen view again on top of the FlutterView if available.
   // This launch screen view will be removed once the first Flutter frame is rendered.
-  if (self.isBeingPresented || self.isMovingToParentViewController) {
+  if (_splashScreenView && (self.isBeingPresented || self.isMovingToParentViewController)) {
     [_splashScreenView.get() removeFromSuperview];
     _splashScreenView.reset();
     return;
@@ -308,19 +309,27 @@
 }
 
 - (UIView*)splashScreenView {
-  if (_splashScreenView == nullptr) {
-    NSString* launchscreenName =
-        [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UILaunchStoryboardName"];
-    if (launchscreenName == nil) {
-      return nil;
-    }
-    UIView* splashView = [self splashScreenFromStoryboard:launchscreenName];
-    if (!splashView) {
-      splashView = [self splashScreenFromXib:launchscreenName];
-    }
-    self.splashScreenView = splashView;
+  if (!_splashScreenView) {
+    return nil;
   }
   return _splashScreenView.get();
+}
+
+- (BOOL)loadDefaultSplashScreenView {
+  NSString* launchscreenName =
+      [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UILaunchStoryboardName"];
+  if (launchscreenName == nil) {
+    return NO;
+  }
+  UIView* splashView = [self splashScreenFromStoryboard:launchscreenName];
+  if (!splashView) {
+    splashView = [self splashScreenFromXib:launchscreenName];
+  }
+  if (!splashView) {
+    return NO;
+  }
+  self.splashScreenView = splashView;
+  return YES;
 }
 
 - (UIView*)splashScreenFromStoryboard:(NSString*)name {
@@ -350,16 +359,10 @@
   if (!view) {
     // Special case: user wants to remove the splash screen view.
     [self removeSplashScreenViewIfPresent];
-  } else if (_splashScreenView) {
-    FML_LOG(ERROR) << "Attempt to set the FlutterViewController's splash screen multiple times was "
-                      "ignored. The FlutterViewController's splash screen can only be set once. "
-                      "This condition can occur if a running FlutterEngine instance has been "
-                      "passed into the FlutterViewController and a consumer later called "
-                      "[FlutterViewController setSplashScreen:]. Setting the splash screen on a "
-                      "FlutterViewController with an already running engine is not supported, as "
-                      "the rasterizer will already be running by the time the view is shown.";
+    _splashScreenView.reset();
     return;
   }
+
   _splashScreenView.reset([view retain]);
   _splashScreenView.get().autoresizingMask =
       UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -753,17 +756,34 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 - (void)onLocaleUpdated:(NSNotification*)notification {
   NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
   NSMutableArray<NSString*>* data = [[NSMutableArray new] autorelease];
+
+  // Force prepend the [NSLocale currentLocale] to the front of the list
+  // to ensure we are including the full default locale. preferredLocales
+  // is not guaranteed to include anything beyond the languageCode.
+  NSLocale* currentLocale = [NSLocale currentLocale];
+  NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
+  NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
+  NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
+  NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
+  if (languageCode) {
+    [data addObject:languageCode];
+    [data addObject:(countryCode ? countryCode : @"")];
+    [data addObject:(scriptCode ? scriptCode : @"")];
+    [data addObject:(variantCode ? variantCode : @"")];
+  }
+
+  // Add any secondary locales/languages to the list.
   for (NSString* localeID in preferredLocales) {
-    NSLocale* currentLocale = [[NSLocale alloc] initWithLocaleIdentifier:localeID];
+    NSLocale* currentLocale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
     NSString* languageCode = [currentLocale objectForKey:NSLocaleLanguageCode];
     NSString* countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
     NSString* scriptCode = [currentLocale objectForKey:NSLocaleScriptCode];
     NSString* variantCode = [currentLocale objectForKey:NSLocaleVariantCode];
-    if (!languageCode || !countryCode) {
+    if (!languageCode) {
       continue;
     }
     [data addObject:languageCode];
-    [data addObject:countryCode];
+    [data addObject:(countryCode ? countryCode : @"")];
     [data addObject:(scriptCode ? scriptCode : @"")];
     [data addObject:(variantCode ? variantCode : @"")];
   }

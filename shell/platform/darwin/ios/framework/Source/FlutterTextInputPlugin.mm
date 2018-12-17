@@ -216,6 +216,14 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     [self.text setString:newText];
   }
 
+  NSInteger composingBase = [state[@"composingBase"] intValue];
+  NSInteger composingExtent = [state[@"composingExtent"] intValue];
+  NSRange composingRange = [self clampSelection:NSMakeRange(MIN(composingBase, composingExtent),
+                                                            ABS(composingBase - composingExtent))
+                                        forText:self.text];
+  self.markedTextRange =
+      composingRange.length > 0 ? [FlutterTextRange rangeWithNSRange:composingRange] : nil;
+
   NSInteger selectionBase = [state[@"selectionBase"] intValue];
   NSInteger selectionExtent = [state[@"selectionExtent"] intValue];
   NSRange selectedRange = [self clampSelection:NSMakeRange(MIN(selectionBase, selectionExtent),
@@ -232,14 +240,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
       _selectionAffinity = _kTextAffinityUpstream;
     [self.inputDelegate selectionDidChange:self];
   }
-
-  NSInteger composingBase = [state[@"composingBase"] intValue];
-  NSInteger composingExtent = [state[@"composingExtent"] intValue];
-  NSRange composingRange = [self clampSelection:NSMakeRange(MIN(composingBase, composingExtent),
-                                                            ABS(composingBase - composingExtent))
-                                        forText:self.text];
-  self.markedTextRange =
-      composingRange.length > 0 ? [FlutterTextRange rangeWithNSRange:composingRange] : nil;
 
   if (textChanged) {
     [self.inputDelegate textDidChange:self];
@@ -564,6 +564,24 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   // TODO(cbracken) Implement.
   NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
   return [FlutterTextRange rangeWithNSRange:[self rangeForCharacterAtIndex:currentIndex]];
+}
+
+- (void)beginFloatingCursorAtPoint:(CGPoint)point {
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateStart
+                                withClient:_textInputClient
+                              withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
+}
+
+- (void)updateFloatingCursorAtPoint:(CGPoint)point {
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
+                                withClient:_textInputClient
+                              withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
+}
+
+- (void)endFloatingCursor {
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateEnd
+                                withClient:_textInputClient
+                              withPosition:@{@"X" : @(0), @"Y" : @(0)}];
 }
 
 #pragma mark - UIKeyInput Overrides
