@@ -55,8 +55,7 @@ FLUTTER_EXPORT
  *   the threads used by this FlutterEngine.
  * @param projectOrNil The `FlutterDartProject` to run.
  */
-- (instancetype)initWithName:(NSString*)labelPrefix
-                     project:(FlutterDartProject*)projectOrNil;
+- (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil;
 
 /**
  * Initialize this FlutterEngine with a `FlutterDartProject`.
@@ -77,7 +76,7 @@ FLUTTER_EXPORT
  */
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(FlutterDartProject*)projectOrNil
-                     allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
+      allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
 
 /**
  * The default initializer is not available for this object.

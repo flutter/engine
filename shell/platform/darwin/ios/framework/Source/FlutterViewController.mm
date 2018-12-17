@@ -67,7 +67,9 @@
   if (self) {
     _viewOpaque = YES;
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
-    _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter" project:projectOrNil allowHeadlessExecution:NO]);
+    _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
+                                              project:projectOrNil
+                               allowHeadlessExecution:NO]);
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
     _engineNeedsLaunch = YES;

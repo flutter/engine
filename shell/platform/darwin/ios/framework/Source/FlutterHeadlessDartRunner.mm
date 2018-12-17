@@ -34,7 +34,8 @@
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(FlutterDartProject*)projectOrNil
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
-  NSAssert(allowHeadlessExecution == YES, @"Cannot initialize a FlutterHeadlessDartRunner without headless execution.");
+  NSAssert(allowHeadlessExecution == YES,
+           @"Cannot initialize a FlutterHeadlessDartRunner without headless execution.");
   return [super initWithName:labelPrefix
                      project:projectOrNil
       allowHeadlessExecution:allowHeadlessExecution];
