@@ -37,7 +37,6 @@
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
-  BOOL _engineIsOwnedByMe;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -51,7 +50,6 @@
     _viewOpaque = YES;
     _engine.reset([engine retain]);
     _engineNeedsLaunch = NO;
-    _engineIsOwnedByMe = NO;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
 
@@ -69,11 +67,10 @@
   if (self) {
     _viewOpaque = YES;
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
-    _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter" project:projectOrNil]);
+    _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter" project:projectOrNil allowHeadlessExecution:NO]);
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
     _engineNeedsLaunch = YES;
-    _engineIsOwnedByMe = YES;
     [self loadDefaultSplashScreenView];
     [self performCommonViewControllerInitialization];
   }
@@ -432,9 +429,6 @@
 
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
-  if (_engineIsOwnedByMe) {
-    [_engine.get() shutdown];
-  }
   [super dealloc];
 }
 

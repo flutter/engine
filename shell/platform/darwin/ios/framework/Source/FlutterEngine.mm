@@ -60,12 +60,22 @@
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
 
   int64_t _nextTextureId;
+
+  BOOL _allowHeadlessExecution;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil {
+  return [self initWithName:labelPrefix project:projectOrNil allowHeadlessExecution:YES];
+}
+
+- (instancetype)initWithName:(NSString*)labelPrefix
+                     project:(FlutterDartProject*)projectOrNil
+      allowHeadlessExecution:(BOOL)allowHeadlessExecution {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   NSAssert(labelPrefix, @"labelPrefix is required");
+
+  _allowHeadlessExecution = allowHeadlessExecution;
   _labelPrefix = [labelPrefix copy];
 
   _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(self);
@@ -134,7 +144,14 @@
   FML_DCHECK(self.iosPlatformView);
   _viewController = [viewController getWeakPtr];
   self.iosPlatformView->SetOwnerViewController(_viewController);
-  [self maybeSetupPlatformViewChannels];
+  if (!viewController && !_allowHeadlessExecution) {
+    [self resetChannels];
+
+    _shell.reset();
+    _threadHost.Reset();
+  } else {
+    [self maybeSetupPlatformViewChannels];
+  }
 }
 
 - (FlutterViewController*)viewController {
@@ -175,6 +192,20 @@
   return _settingsChannel.get();
 }
 
+- (void)resetChannels {
+  _localizationChannel.reset();
+  _navigationChannel.reset();
+  _platformChannel.reset();
+  _platformViewsChannel.reset();
+  _textInputChannel.reset();
+  _lifecycleChannel.reset();
+  _systemChannel.reset();
+  _settingsChannel.reset();
+}
+
+// If you add a channel, be sure to also update `resetChannels`.
+// Channels get a reference to the engine, and therefore need manual
+// cleanup for proper collection.
 - (void)setupChannels {
   _localizationChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/localization"
@@ -354,31 +385,6 @@
   }
 
   return _shell != nullptr;
-}
-
-- (void)shutdown {
-  if (_shell == nullptr) {
-    return;
-  }
-  [self setViewController:nil];
-
-  _publisher.reset();
-
-  _platformViewsController.reset();
-
-  _platformPlugin.reset();
-  _textInputPlugin.reset();
-  _localizationChannel.reset();
-  _navigationChannel.reset();
-  _platformChannel.reset();
-  _platformViewsChannel.reset();
-  _textInputChannel.reset();
-  _lifecycleChannel.reset();
-  _systemChannel.reset();
-  _settingsChannel.reset();
-
-  _shell.reset();
-  _threadHost.Reset();
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)libraryURI {
