@@ -838,23 +838,42 @@ class TextBox {
 /// For example, when a text position exists at a line break, a single offset has
 /// two visual positions, one prior to the line break (at the end of the first
 /// line) and one after the line break (at the start of the second line). A text
-/// affinity disambiguates between those cases. (Something similar happens with
-/// between runs of bidirectional text.)
+/// affinity disambiguates between those cases.
+///
+/// This affects only line breaks caused by wrapping, not explicit newline
+/// characters. For newline characters, the position is fully specified by the
+/// offset alone, and there is no ambiguity.
+///
+/// TextAffinity also affects bidirectional text at the interface between
+/// LTR and RTL text. Consider the following string, where the lowercase letters
+/// will be displayed as LTR and the uppercase letters RTL: "helloHELLO".  The
+/// string would appear as "helloOLLEH". A text position of 6 would be
+/// ambiguous, since it could be represented as being to the right of the "o"
+/// or to the right of the "H".
 enum TextAffinity {
   /// The position has affinity for the upstream side of the text position.
   ///
-  /// For example, if the offset of the text position is a line break, the
+  /// For example, if the offset of the text position is at a line break, the
   /// position represents the end of the first line.
+  ///
+  /// As another example, in the bidirectional text example above, a text
+  /// position of 6 would appear just to the right of the "o".
   upstream,
 
   /// The position has affinity for the downstream side of the text position.
   ///
-  /// For example, if the offset of the text position is a line break, the
+  /// For example, if the offset of the text position is at a line break, the
   /// position represents the start of the second line.
+  ///
+  /// As another example, in the bidirectional text example above, a text
+  /// position of 6 would appear just to the right of the "H".
   downstream,
 }
 
 /// A visual position in a string of text.
+///
+/// Must be specified along with [TextAffinity] in order to disambiguate certain
+/// situations. See the docs for TextAffinity for further details.
 class TextPosition {
   /// Creates an object representing a particular position in a string.
   ///
