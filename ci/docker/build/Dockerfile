@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:18.04
 
 ENV DEPOT_TOOLS_PATH $HOME/depot_tools
 ENV ENGINE_PATH $HOME/engine
