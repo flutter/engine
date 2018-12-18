@@ -13,16 +13,17 @@ using tonic::ToDart;
 
 namespace blink {
 
-UIDartState::UIDartState(TaskRunners task_runners,
-                         TaskObserverAdd add_callback,
-                         TaskObserverRemove remove_callback,
-                         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                         fml::WeakPtr<ResourceContextManager> resource_context_manager,
-                         fml::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue,
-                         std::string advisory_script_uri,
-                         std::string advisory_script_entrypoint,
-                         std::string logger_prefix,
-                         IsolateNameServer* isolate_name_server)
+UIDartState::UIDartState(
+    TaskRunners task_runners,
+    TaskObserverAdd add_callback,
+    TaskObserverRemove remove_callback,
+    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::WeakPtr<ResourceContextManager> resource_context_manager,
+    fml::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue,
+    std::string advisory_script_uri,
+    std::string advisory_script_entrypoint,
+    std::string logger_prefix,
+    IsolateNameServer* isolate_name_server)
     : task_runners_(std::move(task_runners)),
       add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),

@@ -51,15 +51,15 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   // isolate lifecycle is entirely managed by the VM).
   auto root_embedder_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::make_shared<DartIsolate>(
-          vm,                            // VM
-          std::move(isolate_snapshot),   // isolate snapshot
-          std::move(shared_snapshot),    // shared snapshot
-          task_runners,                  // task runners
-          std::move(snapshot_delegate),  // snapshot delegate
-          std::move(resource_context_manager),   // resource context_manager
-          std::move(unref_queue),        // skia unref queue
-          advisory_script_uri,           // advisory URI
-          advisory_script_entrypoint,    // advisory entrypoint
+          vm,                                   // VM
+          std::move(isolate_snapshot),          // isolate snapshot
+          std::move(shared_snapshot),           // shared snapshot
+          task_runners,                         // task runners
+          std::move(snapshot_delegate),         // snapshot delegate
+          std::move(resource_context_manager),  // resource context_manager
+          std::move(unref_queue),               // skia unref queue
+          advisory_script_uri,                  // advisory URI
+          advisory_script_entrypoint,           // advisory entrypoint
           nullptr  // child isolate preparer will be set when this isolate is
                    // prepared to run
           ));
@@ -95,16 +95,17 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   return embedder_isolate;
 }
 
-DartIsolate::DartIsolate(DartVM* vm,
-                         fml::RefPtr<DartSnapshot> isolate_snapshot,
-                         fml::RefPtr<DartSnapshot> shared_snapshot,
-                         TaskRunners task_runners,
-                         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                         fml::WeakPtr<ResourceContextManager> resource_context_manager,
-                         fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
-                         std::string advisory_script_uri,
-                         std::string advisory_script_entrypoint,
-                         ChildIsolatePreparer child_isolate_preparer)
+DartIsolate::DartIsolate(
+    DartVM* vm,
+    fml::RefPtr<DartSnapshot> isolate_snapshot,
+    fml::RefPtr<DartSnapshot> shared_snapshot,
+    TaskRunners task_runners,
+    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::WeakPtr<ResourceContextManager> resource_context_manager,
+    fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+    std::string advisory_script_uri,
+    std::string advisory_script_entrypoint,
+    ChildIsolatePreparer child_isolate_preparer)
     : UIDartState(std::move(task_runners),
                   vm->GetSettings().task_observer_add,
                   vm->GetSettings().task_observer_remove,
@@ -645,9 +646,9 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
             (*raw_embedder_isolate)->GetSharedSnapshot(),   // shared_snapshot
             null_task_runners,                              // task_runners
             fml::WeakPtr<SnapshotDelegate>{},               // snapshot_delegate
-            fml::WeakPtr<ResourceContextManager>{}, // resource_context_manager
-            nullptr,                                        // unref_queue
-            advisory_script_uri,         // advisory_script_uri
+            fml::WeakPtr<ResourceContextManager>{},  // resource_context_manager
+            nullptr,                                 // unref_queue
+            advisory_script_uri,                     // advisory_script_uri
             advisory_script_entrypoint,  // advisory_script_entrypoint
             (*raw_embedder_isolate)->child_isolate_preparer_));
   }

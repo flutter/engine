@@ -13,7 +13,7 @@ namespace shell {
 
 sk_sp<GrContext> IOManager::CreateCompatibleResourceLoadingContext(
     GrBackend backend) {
-      FML_DLOG(ERROR) << "Creating resource context for iomanager";
+  FML_DLOG(ERROR) << "Creating resource context for iomanager";
   if (backend != GrBackend::kOpenGL_GrBackend) {
     return nullptr;
   }
@@ -43,8 +43,9 @@ sk_sp<GrContext> IOManager::CreateCompatibleResourceLoadingContext(
   return nullptr;
 }
 
-IOManager::IOManager(fml::WeakPtr<blink::ResourceContextManager> resource_context_manager,
-                     fml::RefPtr<fml::TaskRunner> unref_queue_task_runner)
+IOManager::IOManager(
+    fml::WeakPtr<blink::ResourceContextManager> resource_context_manager,
+    fml::RefPtr<fml::TaskRunner> unref_queue_task_runner)
     : resource_context_manager_(std::move(resource_context_manager)),
       unref_queue_(fml::MakeRefCounted<flow::SkiaUnrefQueue>(
           std::move(unref_queue_task_runner),
@@ -58,7 +59,8 @@ IOManager::~IOManager() {
 }
 
 fml::WeakPtr<GrContext> IOManager::GetResourceContext() const {
-  auto resource_context = resource_context_manager_->GetOrCreateWeakResourceContext();
+  auto resource_context =
+      resource_context_manager_->GetOrCreateWeakResourceContext();
   if (!resource_context) {
     FML_DLOG(WARNING) << "The IO manager was unable to get a resource "
                          "context. Async texture uploads will be disabled. "

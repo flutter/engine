@@ -69,13 +69,14 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
-      [&io_latch,          //
-       &io_manager,        //
-       &unref_queue,       //
-       &platform_view,     //
-       io_task_runner      //
+      [&io_latch,       //
+       &io_manager,     //
+       &unref_queue,    //
+       &platform_view,  //
+       io_task_runner   //
   ]() {
-        io_manager = std::make_unique<IOManager>(platform_view->GetWeakPtr(), io_task_runner);
+        io_manager = std::make_unique<IOManager>(platform_view->GetWeakPtr(),
+                                                 io_task_runner);
         unref_queue = io_manager->GetSkiaUnrefQueue();
         io_latch.Signal();
       });

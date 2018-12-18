@@ -116,7 +116,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
       shared_snapshot_,             //
       task_runners_,                //
       snapshot_delegate_,           //
-      resource_context_manager_,            //
+      resource_context_manager_,    //
       unref_queue_,                 //
       advisory_script_uri_,         //
       advisory_script_entrypoint_,  //

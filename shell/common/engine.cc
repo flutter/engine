@@ -34,16 +34,17 @@ static constexpr char kNavigationChannel[] = "flutter/navigation";
 static constexpr char kLocalizationChannel[] = "flutter/localization";
 static constexpr char kSettingsChannel[] = "flutter/settings";
 
-Engine::Engine(Delegate& delegate,
-               blink::DartVM& vm,
-               fml::RefPtr<blink::DartSnapshot> isolate_snapshot,
-               fml::RefPtr<blink::DartSnapshot> shared_snapshot,
-               blink::TaskRunners task_runners,
-               blink::Settings settings,
-               std::unique_ptr<Animator> animator,
-               fml::WeakPtr<blink::SnapshotDelegate> snapshot_delegate,
-               fml::WeakPtr<blink::ResourceContextManager> resource_context_manager,
-               fml::RefPtr<flow::SkiaUnrefQueue> unref_queue)
+Engine::Engine(
+    Delegate& delegate,
+    blink::DartVM& vm,
+    fml::RefPtr<blink::DartSnapshot> isolate_snapshot,
+    fml::RefPtr<blink::DartSnapshot> shared_snapshot,
+    blink::TaskRunners task_runners,
+    blink::Settings settings,
+    std::unique_ptr<Animator> animator,
+    fml::WeakPtr<blink::SnapshotDelegate> snapshot_delegate,
+    fml::WeakPtr<blink::ResourceContextManager> resource_context_manager,
+    fml::RefPtr<flow::SkiaUnrefQueue> unref_queue)
     : delegate_(delegate),
       settings_(std::move(settings)),
       animator_(std::move(animator)),
