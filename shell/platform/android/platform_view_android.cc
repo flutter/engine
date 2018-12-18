@@ -387,7 +387,7 @@ sk_sp<GrContext> PlatformViewAndroid::CreateResourceContext() {
 }
 
 // |shell::PlatformView|
-sk_sp<GrContext> PlatformViewIOS::GetOrCreateResourceContext() {
+sk_sp<GrContext> PlatformViewAndroid::GetOrCreateResourceContext() {
   if (!resource_context_ || resource_context_->abandoned()) {
     return CreateResourceContext();
   }
