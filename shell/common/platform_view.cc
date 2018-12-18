@@ -67,10 +67,24 @@ void PlatformView::NotifyDestroyed() {
   delegate_.OnPlatformViewDestroyed();
 }
 
-sk_sp<GrContext> PlatformView::CreateResourceContext() const {
+sk_sp<GrContext> PlatformView::CreateResourceContext() {
   FML_DLOG(WARNING) << "This platform does not setup the resource "
                        "context on the IO thread for async texture uploads.";
   return nullptr;
+}
+
+sk_sp<GrContext> PlatformView::GetOrCreateResourceContext() {
+  FML_DLOG(WARNING) << "This platform does not setup the resource "
+                       "context on the IO thread for async texture uploads.";
+  return nullptr;
+}
+
+fml::WeakPtr<GrContext> PlatformView::GetOrCreateWeakResourceContext() {
+  auto context = GetOrCreateResourceContext();
+  if (context) {
+    return fml::WeakPtrFactory<GrContext>(context.get()).GetWeakPtr();
+  }
+  return fml::WeakPtr<GrContext>();
 }
 
 void PlatformView::ReleaseResourceContext() const {}

@@ -280,6 +280,7 @@ FILE: ../../../flutter/lib/ui/plugins.dart
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.cc
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.h
 FILE: ../../../flutter/lib/ui/pointer.dart
+FILE: ../../../flutter/lib/ui/resource_context_manager.h
 FILE: ../../../flutter/lib/ui/semantics.dart
 FILE: ../../../flutter/lib/ui/semantics/custom_accessibility_action.cc
 FILE: ../../../flutter/lib/ui/semantics/custom_accessibility_action.h

@@ -35,7 +35,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     TaskRunners task_runners,
     std::unique_ptr<Window> window,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-    fml::WeakPtr<GrContext> resource_context,
+    fml::WeakPtr<ResourceContextManager> resource_context_manager,
     fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
     std::string advisory_script_uri,
     std::string advisory_script_entrypoint,
@@ -56,7 +56,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
           std::move(shared_snapshot),    // shared snapshot
           task_runners,                  // task runners
           std::move(snapshot_delegate),  // snapshot delegate
-          std::move(resource_context),   // resource context
+          std::move(resource_context_manager),   // resource context_manager
           std::move(unref_queue),        // skia unref queue
           advisory_script_uri,           // advisory URI
           advisory_script_entrypoint,    // advisory entrypoint
@@ -100,7 +100,7 @@ DartIsolate::DartIsolate(DartVM* vm,
                          fml::RefPtr<DartSnapshot> shared_snapshot,
                          TaskRunners task_runners,
                          fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                         fml::WeakPtr<GrContext> resource_context,
+                         fml::WeakPtr<ResourceContextManager> resource_context_manager,
                          fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
                          std::string advisory_script_uri,
                          std::string advisory_script_entrypoint,
@@ -109,7 +109,7 @@ DartIsolate::DartIsolate(DartVM* vm,
                   vm->GetSettings().task_observer_add,
                   vm->GetSettings().task_observer_remove,
                   std::move(snapshot_delegate),
-                  std::move(resource_context),
+                  std::move(resource_context_manager),
                   std::move(unref_queue),
                   advisory_script_uri,
                   advisory_script_entrypoint,
@@ -645,7 +645,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
             (*raw_embedder_isolate)->GetSharedSnapshot(),   // shared_snapshot
             null_task_runners,                              // task_runners
             fml::WeakPtr<SnapshotDelegate>{},               // snapshot_delegate
-            fml::WeakPtr<GrContext>{},                      // resource_context
+            fml::WeakPtr<ResourceContextManager>{}, // resource_context_manager
             nullptr,                                        // unref_queue
             advisory_script_uri,         // advisory_script_uri
             advisory_script_entrypoint,  // advisory_script_entrypoint

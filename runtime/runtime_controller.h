@@ -12,6 +12,7 @@
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/text/font_collection.h"
+#include "flutter/lib/ui/resource_context_manager.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/window.h"
@@ -33,7 +34,7 @@ class RuntimeController final : public WindowClient {
                     fml::RefPtr<DartSnapshot> shared_snapshot,
                     TaskRunners task_runners,
                     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                    fml::WeakPtr<GrContext> resource_context,
+                    fml::WeakPtr<ResourceContextManager> resource_context_manager,
                     fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
                     std::string advisory_script_uri,
                     std::string advisory_script_entrypoint);
@@ -121,7 +122,7 @@ class RuntimeController final : public WindowClient {
   fml::RefPtr<DartSnapshot> shared_snapshot_;
   TaskRunners task_runners_;
   fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
-  fml::WeakPtr<GrContext> resource_context_;
+  fml::WeakPtr<ResourceContextManager> resource_context_manager_;
   fml::RefPtr<flow::SkiaUnrefQueue> unref_queue_;
   std::string advisory_script_uri_;
   std::string advisory_script_entrypoint_;
@@ -135,7 +136,7 @@ class RuntimeController final : public WindowClient {
                     fml::RefPtr<DartSnapshot> shared_snapshot,
                     TaskRunners task_runners,
                     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                    fml::WeakPtr<GrContext> resource_context,
+                    fml::WeakPtr<ResourceContextManager> resource_context_manager,
                     fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
                     std::string advisory_script_uri,
                     std::string advisory_script_entrypoint,

@@ -5,6 +5,7 @@
 #include "flutter/shell/common/io_manager.h"
 
 #include "flutter/fml/message_loop.h"
+#include "flutter/lib/ui/resource_context_manager.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
@@ -12,6 +13,7 @@ namespace shell {
 
 sk_sp<GrContext> IOManager::CreateCompatibleResourceLoadingContext(
     GrBackend backend) {
+      FML_DLOG(ERROR) << "Creating resource context for iomanager";
   if (backend != GrBackend::kOpenGL_GrBackend) {
     return nullptr;
   }
@@ -41,23 +43,13 @@ sk_sp<GrContext> IOManager::CreateCompatibleResourceLoadingContext(
   return nullptr;
 }
 
-IOManager::IOManager(sk_sp<GrContext> resource_context,
+IOManager::IOManager(fml::WeakPtr<blink::ResourceContextManager> resource_context_manager,
                      fml::RefPtr<fml::TaskRunner> unref_queue_task_runner)
-    : resource_context_(std::move(resource_context)),
-      resource_context_weak_factory_(
-          resource_context_ ? std::make_unique<fml::WeakPtrFactory<GrContext>>(
-                                  resource_context_.get())
-                            : nullptr),
+    : resource_context_manager_(std::move(resource_context_manager)),
       unref_queue_(fml::MakeRefCounted<flow::SkiaUnrefQueue>(
           std::move(unref_queue_task_runner),
           fml::TimeDelta::FromMilliseconds(250))),
-      weak_factory_(this) {
-  if (!resource_context_) {
-    FML_DLOG(WARNING) << "The IO manager was initialized without a resource "
-                         "context. Async texture uploads will be disabled. "
-                         "Expect performance degradation.";
-  }
-}
+      weak_factory_(this) {}
 
 IOManager::~IOManager() {
   // Last chance to drain the IO queue as the platform side reference to the
@@ -66,9 +58,13 @@ IOManager::~IOManager() {
 }
 
 fml::WeakPtr<GrContext> IOManager::GetResourceContext() const {
-  return resource_context_weak_factory_
-             ? resource_context_weak_factory_->GetWeakPtr()
-             : fml::WeakPtr<GrContext>();
+  auto resource_context = resource_context_manager_->GetOrCreateWeakResourceContext();
+  if (!resource_context) {
+    FML_DLOG(WARNING) << "The IO manager was unable to get a resource "
+                         "context. Async texture uploads will be disabled. "
+                         "Expect performance degradation.";
+  }
+  return resource_context;
 }
 
 fml::RefPtr<flow::SkiaUnrefQueue> IOManager::GetSkiaUnrefQueue() const {

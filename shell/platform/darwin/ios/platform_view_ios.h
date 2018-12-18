@@ -47,6 +47,7 @@ class PlatformViewIOS final : public PlatformView {
   std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
   fml::closure firstFrameCallback_;
+  sk_sp<GrContext> resource_context_;
 
   // |shell::PlatformView|
   void HandlePlatformMessage(fml::RefPtr<blink::PlatformMessage> message) override;
@@ -55,7 +56,10 @@ class PlatformViewIOS final : public PlatformView {
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |shell::PlatformView|
-  sk_sp<GrContext> CreateResourceContext() const override;
+  sk_sp<GrContext> CreateResourceContext() override;
+
+  // |shell::PlatformView|
+  sk_sp<GrContext> GetOrCreateResourceContext() override;
 
   // |shell::PlatformView|
   void SetSemanticsEnabled(bool enabled) override;

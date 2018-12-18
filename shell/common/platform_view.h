@@ -11,6 +11,7 @@
 #include "flutter/flow/texture.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/lib/ui/resource_context_manager.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/window/platform_message.h"
@@ -25,7 +26,7 @@ namespace shell {
 
 class Shell;
 
-class PlatformView {
+class PlatformView : public blink::ResourceContextManager {
  public:
   class Delegate {
    public:
@@ -84,14 +85,6 @@ class PlatformView {
 
   virtual void NotifyDestroyed();
 
-  // Unlike all other methods on the platform view, this one may be called on a
-  // non-platform task runner.
-  virtual sk_sp<GrContext> CreateResourceContext() const;
-
-  // Unlike all other methods on the platform view, this one may be called on a
-  // non-platform task runner.
-  virtual void ReleaseResourceContext() const;
-
   fml::WeakPtr<PlatformView> GetWeakPtr() const;
 
   virtual void UpdateSemantics(blink::SemanticsNodeUpdates updates,
@@ -115,6 +108,14 @@ class PlatformView {
 
   // Called once per texture update (e.g. video frame), on the platform thread.
   void MarkTextureFrameAvailable(int64_t texture_id);
+
+  virtual sk_sp<GrContext> CreateResourceContext() override;
+
+  virtual sk_sp<GrContext> GetOrCreateResourceContext() override;
+
+  virtual fml::WeakPtr<GrContext> GetOrCreateWeakResourceContext() override;
+
+  virtual void ReleaseResourceContext() const override;
 
  protected:
   PlatformView::Delegate& delegate_;

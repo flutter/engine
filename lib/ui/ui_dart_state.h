@@ -15,6 +15,7 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
+#include "flutter/lib/ui/resource_context_manager.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/gpu/GrContext.h"
@@ -72,7 +73,7 @@ class UIDartState : public tonic::DartState {
               TaskObserverAdd add_callback,
               TaskObserverRemove remove_callback,
               fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-              fml::WeakPtr<GrContext> resource_context,
+              fml::WeakPtr<ResourceContextManager> resource_context_manager,
               fml::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue,
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
@@ -94,7 +95,7 @@ class UIDartState : public tonic::DartState {
   const TaskObserverAdd add_callback_;
   const TaskObserverRemove remove_callback_;
   fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
-  fml::WeakPtr<GrContext> resource_context_;
+  fml::WeakPtr<ResourceContextManager> resource_context_manager_;
   const std::string advisory_script_uri_;
   const std::string advisory_script_entrypoint_;
   const std::string logger_prefix_;

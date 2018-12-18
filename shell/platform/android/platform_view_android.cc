@@ -369,22 +369,30 @@ std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
 }
 
 // |shell::PlatformView|
-sk_sp<GrContext> PlatformViewAndroid::CreateResourceContext() const {
+sk_sp<GrContext> PlatformViewAndroid::CreateResourceContext() {
   if (!android_surface_) {
     return nullptr;
   }
-  sk_sp<GrContext> resource_context;
   if (android_surface_->ResourceContextMakeCurrent()) {
     // TODO(chinmaygarde): Currently, this code depends on the fact that only
     // the OpenGL surface will be able to make a resource context current. If
     // this changes, this assumption breaks. Handle the same.
-    resource_context = IOManager::CreateCompatibleResourceLoadingContext(
+    resource_context_ = IOManager::CreateCompatibleResourceLoadingContext(
         GrBackend::kOpenGL_GrBackend);
   } else {
     FML_DLOG(ERROR) << "Could not make the resource context current.";
   }
 
-  return resource_context;
+  return resource_context_;
+}
+
+// |shell::PlatformView|
+sk_sp<GrContext> PlatformViewIOS::GetOrCreateResourceContext() {
+  if (!resource_context_ || resource_context_->abandoned()) {
+    return CreateResourceContext();
+  }
+
+  return resource_context_;
 }
 
 // |shell::PlatformView|

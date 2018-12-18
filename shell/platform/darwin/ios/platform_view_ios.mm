@@ -39,6 +39,7 @@ fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() co
 void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
+    resource_context_->releaseResourcesAndAbandonContext();
     ios_surface_.reset();
     accessibility_bridge_.reset();
   }
@@ -74,7 +75,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 }
 
 // |shell::PlatformView|
-sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
+sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() {
   if (!ios_surface_ || !ios_surface_->ResourceContextMakeCurrent()) {
     FML_DLOG(INFO) << "Could not make resource context current on IO thread. "
                       "Async texture uploads "
@@ -82,7 +83,17 @@ sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() const {
     return nullptr;
   }
 
-  return IOManager::CreateCompatibleResourceLoadingContext(GrBackend::kOpenGL_GrBackend);
+  resource_context_ = IOManager::CreateCompatibleResourceLoadingContext(GrBackend::kOpenGL_GrBackend);
+  return resource_context_;
+}
+
+// |shell::PlatformView|
+sk_sp<GrContext> PlatformViewIOS::GetOrCreateResourceContext() {
+  if (!resource_context_ || resource_context_->abandoned()) {
+    return CreateResourceContext();
+  }
+
+  return resource_context_;
 }
 
 // |shell::PlatformView|

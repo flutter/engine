@@ -17,7 +17,7 @@ UIDartState::UIDartState(TaskRunners task_runners,
                          TaskObserverAdd add_callback,
                          TaskObserverRemove remove_callback,
                          fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                         fml::WeakPtr<GrContext> resource_context,
+                         fml::WeakPtr<ResourceContextManager> resource_context_manager,
                          fml::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue,
                          std::string advisory_script_uri,
                          std::string advisory_script_entrypoint,
@@ -27,7 +27,7 @@ UIDartState::UIDartState(TaskRunners task_runners,
       add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),
       snapshot_delegate_(std::move(snapshot_delegate)),
-      resource_context_(std::move(resource_context)),
+      resource_context_manager_(std::move(resource_context_manager)),
       advisory_script_uri_(std::move(advisory_script_uri)),
       advisory_script_entrypoint_(std::move(advisory_script_entrypoint)),
       logger_prefix_(std::move(logger_prefix)),
@@ -114,7 +114,7 @@ fml::WeakPtr<SnapshotDelegate> UIDartState::GetSnapshotDelegate() const {
 }
 
 fml::WeakPtr<GrContext> UIDartState::GetResourceContext() const {
-  return resource_context_;
+  return resource_context_manager_->GetOrCreateWeakResourceContext();
 }
 
 IsolateNameServer* UIDartState::GetIsolateNameServer() {

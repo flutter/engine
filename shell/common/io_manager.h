@@ -10,6 +10,7 @@
 #include "flutter/flow/skia_gpu_object.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/lib/ui/resource_context_manager.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 
 namespace shell {
@@ -22,7 +23,7 @@ class IOManager {
   static sk_sp<GrContext> CreateCompatibleResourceLoadingContext(
       GrBackend backend);
 
-  IOManager(sk_sp<GrContext> resource_context,
+  IOManager(fml::WeakPtr<blink::ResourceContextManager> resource_context_manager,
             fml::RefPtr<fml::TaskRunner> unref_queue_task_runner);
 
   ~IOManager();
@@ -33,9 +34,7 @@ class IOManager {
 
  private:
   // Resource context management.
-  sk_sp<GrContext> resource_context_;
-  std::unique_ptr<fml::WeakPtrFactory<GrContext>>
-      resource_context_weak_factory_;
+  fml::WeakPtr<blink::ResourceContextManager> resource_context_manager_;
 
   // Unref queue management.
   fml::RefPtr<flow::SkiaUnrefQueue> unref_queue_;

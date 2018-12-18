@@ -80,6 +80,7 @@ class PlatformViewAndroid final : public PlatformView {
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<blink::PlatformMessageResponse>>
       pending_responses_;
+  sk_sp<GrContext> resource_context_;
 
   // |shell::PlatformView|
   void UpdateSemantics(
@@ -100,7 +101,10 @@ class PlatformViewAndroid final : public PlatformView {
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |shell::PlatformView|
-  sk_sp<GrContext> CreateResourceContext() const override;
+  sk_sp<GrContext> CreateResourceContext() override;
+
+  // |shell::PlatformView|
+  sk_sp<GrContext> GetOrCreateResourceContext() override;
 
   // |shell::PlatformView|
   void ReleaseResourceContext() const override;

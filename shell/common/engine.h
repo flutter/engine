@@ -12,6 +12,7 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/lib/ui/resource_context_manager.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
@@ -61,7 +62,7 @@ class Engine final : public blink::RuntimeDelegate {
          blink::Settings settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<blink::SnapshotDelegate> snapshot_delegate,
-         fml::WeakPtr<GrContext> resource_context,
+         fml::WeakPtr<blink::ResourceContextManager> resource_context_manager,
          fml::RefPtr<flow::SkiaUnrefQueue> unref_queue);
 
   ~Engine() override;

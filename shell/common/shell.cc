@@ -65,21 +65,17 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // other subsystems.
   fml::AutoResetWaitableEvent io_latch;
   std::unique_ptr<IOManager> io_manager;
-  fml::WeakPtr<GrContext> resource_context;
   fml::RefPtr<flow::SkiaUnrefQueue> unref_queue;
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
       [&io_latch,          //
        &io_manager,        //
-       &resource_context,  //
        &unref_queue,       //
        &platform_view,     //
        io_task_runner      //
   ]() {
-        io_manager = std::make_unique<IOManager>(
-            platform_view->CreateResourceContext(), io_task_runner);
-        resource_context = io_manager->GetResourceContext();
+        io_manager = std::make_unique<IOManager>(platform_view->GetWeakPtr(), io_task_runner);
         unref_queue = io_manager->GetSkiaUnrefQueue();
         io_latch.Signal();
       });
@@ -117,7 +113,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          shared_snapshot = std::move(shared_snapshot),      //
                          vsync_waiter = std::move(vsync_waiter),            //
                          snapshot_delegate = std::move(snapshot_delegate),  //
-                         resource_context = std::move(resource_context),    //
+                         platform_view = platform_view->GetWeakPtr(),       //
                          unref_queue = std::move(unref_queue)               //
   ]() mutable {
         const auto& task_runners = shell->GetTaskRunners();
@@ -135,7 +131,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                                           shell->GetSettings(),          //
                                           std::move(animator),           //
                                           std::move(snapshot_delegate),  //
-                                          std::move(resource_context),   //
+                                          std::move(platform_view),      //
                                           std::move(unref_queue)         //
         );
         ui_latch.Signal();
