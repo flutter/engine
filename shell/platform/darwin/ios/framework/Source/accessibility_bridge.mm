@@ -123,7 +123,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     child.parent = nil;
   }
   [_children removeAllObjects];
-  [_children dealloc];
+  [_children release];
   _parent = nil;
   [super dealloc];
 }
