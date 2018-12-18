@@ -59,12 +59,21 @@ std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
 }
 
 // |shell::PlatformView|
-sk_sp<GrContext> PlatformViewEmbedder::CreateResourceContext() const {
+sk_sp<GrContext> PlatformViewEmbedder::CreateResourceContext() {
   if (embedder_surface_ == nullptr) {
     FML_LOG(ERROR) << "Embedder surface was null.";
     return nullptr;
   }
-  return embedder_surface_->CreateResourceContext();
+  resource_context_ = embedder_surface_->CreateResourceContext();
+  return resource_context_;
+}
+
+sk_sp<GrContext> PlatformViewEmbedder::GetOrCreateResourceContext() {
+  if (!resource_context_ || resource_context_->abandoned()) {
+    return CreateResourceContext();
+  }
+
+  return resource_context_;
 }
 
 }  // namespace shell

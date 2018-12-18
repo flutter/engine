@@ -49,12 +49,16 @@ class PlatformViewEmbedder final : public PlatformView {
  private:
   std::unique_ptr<EmbedderSurface> embedder_surface_;
   PlatformDispatchTable platform_dispatch_table_;
+  sk_sp<GrContext> resource_context_;
 
   // |shell::PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |shell::PlatformView|
-  sk_sp<GrContext> CreateResourceContext() const override;
+  sk_sp<GrContext> CreateResourceContext() override;
+
+  // |shell::PlatformView|
+  sk_sp<GrContext> GetOrCreateResourceContext() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewEmbedder);
 };
