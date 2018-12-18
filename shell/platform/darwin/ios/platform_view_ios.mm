@@ -83,7 +83,8 @@ sk_sp<GrContext> PlatformViewIOS::CreateResourceContext() {
     return nullptr;
   }
 
-  resource_context_ = IOManager::CreateCompatibleResourceLoadingContext(GrBackend::kOpenGL_GrBackend);
+  resource_context_ =
+      IOManager::CreateCompatibleResourceLoadingContext(GrBackend::kOpenGL_GrBackend);
   return resource_context_;
 }
 
