@@ -46,8 +46,7 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
   void SetTestFontManager(sk_sp<SkFontMgr> font_manager);
 
   std::shared_ptr<minikin::FontCollection> GetMinikinFontCollectionForFamily(
-      const std::string& family,
-      const std::vector<std::string>& font_family_fallback,
+      const std::vector<std::string>& font_families,
       const std::string& locale);
 
   // Provides a FontFamily that contains glyphs for ch. This caches previously
@@ -62,10 +61,10 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
 
  private:
   struct FamilyKey {
-    FamilyKey(const std::string& family, const std::string& loc)
-        : font_family(family), locale(loc) {}
+    FamilyKey(const std::vector<std::string>& families, const std::string& loc);
 
-    std::string font_family;
+    // Concatenated string with all font families.
+    std::string font_families;
     std::string locale;
 
     bool operator==(const FamilyKey& other) const;

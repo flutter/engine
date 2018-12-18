@@ -40,7 +40,7 @@ TEST_F(ParagraphTest, SimpleParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorBLACK;
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
@@ -73,7 +73,7 @@ TEST_F(ParagraphTest, SimpleRedParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorRED;
   builder.PushStyle(text_style);
 
@@ -128,7 +128,7 @@ TEST_F(ParagraphTest, RainbowParagraph) {
 
   txt::TextStyle text_style1;
   text_style1.color = SK_ColorRED;
-  text_style1.font_family = "Roboto";
+
   builder.PushStyle(text_style1);
 
   builder.AddText(u16_text1);
@@ -139,7 +139,7 @@ TEST_F(ParagraphTest, RainbowParagraph) {
   text_style2.word_spacing = 30;
   text_style2.font_weight = txt::FontWeight::w600;
   text_style2.color = SK_ColorGREEN;
-  text_style2.font_family = "Roboto";
+  text_style2.font_families = std::vector<std::string>(1, "Roboto");
   text_style2.decoration = TextDecoration::kUnderline |
                            TextDecoration::kOverline |
                            TextDecoration::kLineThrough;
@@ -149,7 +149,7 @@ TEST_F(ParagraphTest, RainbowParagraph) {
   builder.AddText(u16_text2);
 
   txt::TextStyle text_style3;
-  text_style3.font_family = "Homemade Apple";
+  text_style3.font_families = std::vector<std::string>(1, "Homemade Apple");
   builder.PushStyle(text_style3);
 
   builder.AddText(u16_text3);
@@ -157,7 +157,7 @@ TEST_F(ParagraphTest, RainbowParagraph) {
   txt::TextStyle text_style4;
   text_style4.font_size = 14;
   text_style4.color = SK_ColorBLUE;
-  text_style4.font_family = "Roboto";
+  text_style4.font_families = std::vector<std::string>(1, "Roboto");
   text_style4.decoration = TextDecoration::kUnderline |
                            TextDecoration::kOverline |
                            TextDecoration::kLineThrough;
@@ -233,7 +233,7 @@ TEST_F(ParagraphTest, BoldParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 60;
   text_style.letter_spacing = 0;
   text_style.font_weight = txt::FontWeight::w900;
@@ -289,7 +289,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 26;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
@@ -386,7 +386,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(RightAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 26;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
@@ -495,7 +495,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(CenterAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 26;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
@@ -603,7 +603,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 26;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 5;
@@ -670,7 +670,7 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 26;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 5;
@@ -748,7 +748,7 @@ TEST_F(ParagraphTest, ItalicsParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorRED;
   text_style.font_size = 10;
   builder.PushStyle(text_style);
@@ -795,7 +795,7 @@ TEST_F(ParagraphTest, ChineseParagraph) {
   text_style.color = SK_ColorBLACK;
   text_style.font_size = 35;
   text_style.letter_spacing = 2;
-  text_style.font_family = "Source Han Serif CN";
+  text_style.font_families = std::vector<std::string>(1, "Source Han Serif CN");
   text_style.decoration = TextDecoration::kUnderline |
                           TextDecoration::kOverline |
                           TextDecoration::kLineThrough;
@@ -840,7 +840,7 @@ TEST_F(ParagraphTest, DISABLED_ArabicParagraph) {
   text_style.color = SK_ColorBLACK;
   text_style.font_size = 35;
   text_style.letter_spacing = 2;
-  text_style.font_family = "Katibeh";
+  text_style.font_families = std::vector<std::string>(1, "Katibeh");
   text_style.decoration = TextDecoration::kUnderline |
                           TextDecoration::kOverline |
                           TextDecoration::kLineThrough;
@@ -887,7 +887,7 @@ TEST_F(ParagraphTest, GetGlyphPositionAtCoordinateParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 50;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
@@ -955,7 +955,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -1085,7 +1085,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeTight)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Noto Sans CJK JP";
+  text_style.font_families = std::vector<std::string>(1, "Noto Sans CJK JP");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -1179,7 +1179,8 @@ TEST_F(ParagraphTest,
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  // text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -1330,7 +1331,7 @@ TEST_F(ParagraphTest,
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -1481,7 +1482,7 @@ TEST_F(ParagraphTest,
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -1626,7 +1627,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeCenterParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -1734,7 +1735,7 @@ TEST_F(ParagraphTest,
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -1874,7 +1875,7 @@ TEST_F(ParagraphTest, GetWordBoundaryParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 52;
   text_style.letter_spacing = 1.19039;
   text_style.word_spacing = 5;
@@ -1980,7 +1981,7 @@ TEST_F(ParagraphTest, SpacingParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 50;
   text_style.letter_spacing = 20;
   text_style.word_spacing = 0;
@@ -2069,7 +2070,7 @@ TEST_F(ParagraphTest, LongWordParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 31;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
@@ -2106,7 +2107,7 @@ TEST_F(ParagraphTest, KernScaleParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Droid Serif";
+  text_style.font_families = std::vector<std::string>(1, "Droid Serif");
   text_style.font_size = 100 / scale;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
@@ -2148,7 +2149,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(NewlineParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 60;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
@@ -2195,7 +2196,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(EmojiParagraph)) {
 
   txt::TextStyle text_style;
   text_style.color = SK_ColorBLACK;
-  text_style.font_family = "Noto Color Emoji";
+  text_style.font_families = std::vector<std::string>(1, "Noto Color Emoji");
   text_style.font_size = 50;
   text_style.decoration = TextDecoration::kUnderline;
   builder.PushStyle(text_style);
@@ -2239,7 +2240,7 @@ TEST_F(ParagraphTest, HyphenBreakParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 31;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
@@ -2283,7 +2284,7 @@ TEST_F(ParagraphTest, RepeatLayoutParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 31;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
@@ -2343,7 +2344,7 @@ TEST_F(ParagraphTest, Ellipsize) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorBLACK;
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
@@ -2385,14 +2386,14 @@ TEST_F(ParagraphTest, UnderlineShiftParagraph) {
 
   txt::TextStyle text_style1;
   text_style1.color = SK_ColorBLACK;
-  text_style1.font_family = "Roboto";
+  text_style1.font_families = std::vector<std::string>(1, "Roboto");
   builder.PushStyle(text_style1);
 
   builder.AddText(u16_text1);
 
   txt::TextStyle text_style2;
   text_style2.color = SK_ColorBLACK;
-  text_style2.font_family = "Roboto";
+  text_style2.font_families = std::vector<std::string>(1, "Roboto");
   text_style2.decoration = TextDecoration::kUnderline;
   text_style2.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style2);
@@ -2454,7 +2455,7 @@ TEST_F(ParagraphTest, SimpleShadow) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorBLACK;
   text_style.text_shadows.emplace_back(SK_ColorBLACK, SkPoint::Make(2.0, 2.0),
                                        1.0);
@@ -2493,7 +2494,7 @@ TEST_F(ParagraphTest, ComplexShadow) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorBLACK;
   text_style.text_shadows.emplace_back(SK_ColorBLACK, SkPoint::Make(2.0, 2.0),
                                        1.0);
@@ -2571,7 +2572,7 @@ TEST_F(ParagraphTest, BaselineParagraph) {
   text_style.color = SK_ColorBLACK;
   text_style.font_size = 55;
   text_style.letter_spacing = 2;
-  text_style.font_family = "Source Han Serif CN";
+  text_style.font_families = std::vector<std::string>(1, "Source Han Serif CN");
   text_style.decoration_style = txt::TextDecorationStyle::kSolid;
   text_style.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style);

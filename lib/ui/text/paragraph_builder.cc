@@ -203,25 +203,9 @@ void decodeTextShadows(Dart_Handle shadows_data,
   }
 }
 
-// Converts a comma-delimited string into a vector of strings.
-void decodeFontFamilyFallback(const std::string& font_family_fallback, std::vector<std::string>& decoded_fonts) {
-  const std::string delimiter = ",";
-  size_t begin = 0;
-  size_t end = 0;
-  while (true) {
-    end = font_family_fallback.find(delimiter, begin);
-    if (end == std::string::npos) {
-      decoded_fonts.emplace_back(font_family_fallback, begin, end - begin);
-      break;
-    }
-    decoded_fonts.emplace_back(font_family_fallback, begin, end - begin);
-    begin = end + 1;
-  }
-}
-
 void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
                                  const std::string& fontFamily,
-                                 const std::string& fontFamilyFallback,
+                                 const std::vector<std::string>& fontFamilyFallback,
                                  double fontSize,
                                  double letterSpacing,
                                  double wordSpacing,
@@ -272,7 +256,8 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
       style.font_style = static_cast<txt::FontStyle>(encoded[tsFontStyleIndex]);
 
     if (mask & tsFontFamilyMask)
-      style.font_family = fontFamily;
+      style.font_families.push_back(fontFamily);// = fontFamily;
+      // style.font_family = fontFamily;
 
     if (mask & tsFontSizeMask)
       style.font_size = fontSize;
@@ -313,7 +298,7 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
   }
 
   if (mask & tsFontFamilyFallbackMask) {
-    decodeFontFamilyFallback(fontFamilyFallback, style.font_family_fallback);
+    style.font_families.insert(style.font_families.end(), fontFamilyFallback.begin(), fontFamilyFallback.end());
   }
 
   m_paragraphBuilder->PushStyle(style);

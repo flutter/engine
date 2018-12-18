@@ -1164,24 +1164,10 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Applies the given style to the added text until [pop] is called.
   ///
   /// See [pop] for details.
-  void pushStyle(TextStyle style) => _pushStyle(style._encoded, style._fontFamily, _encodeFontFamilyFallback(style._fontFamilyFallback), style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, Shadow._encodeShadows(style._shadows));
-  void _pushStyle(Int32List encoded, String fontFamily, String fontFamilyFallback, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadowsData) native 'ParagraphBuilder_pushStyle';
+  void pushStyle(TextStyle style) => _pushStyle(style._encoded, style._fontFamily, style._fontFamilyFallback, style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, Shadow._encodeShadows(style._shadows));
+  void _pushStyle(Int32List encoded, String fontFamily, List<dynamic> fontFamilyFallback, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadowsData) native 'ParagraphBuilder_pushStyle';
 
   static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
-
-  // Generates a comma-separated string that includes all of the fallback font families.
-  static String _encodeFontFamilyFallback(List<String> fontFamilyFallback) {
-    String out = '';
-    if (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty) {
-      for (int i = 0; i < fontFamilyFallback.length; i += 1) {
-        out += fontFamilyFallback[i];
-        if (i != fontFamilyFallback.length - 1) {
-          out += ',';
-        }
-      }
-    }
-    return out;
-  }
 
   /// Ends the effect of the most recent call to [pushStyle].
   ///
