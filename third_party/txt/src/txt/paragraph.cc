@@ -900,7 +900,7 @@ Paragraph::GetMinikinFontCollectionForStyle(const TextStyle& style) {
     }
   }
 
-  return font_collection_->GetMinikinFontCollectionForFamily(style.font_family,
+  return font_collection_->GetMinikinFontCollectionForFamily(style.font_family, style.font_family_fallback,
                                                              locale);
 }
 

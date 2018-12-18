@@ -36,6 +36,7 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
 
   void pushStyle(tonic::Int32List& encoded,
                  const std::string& fontFamily,
+                 const std::string& fontFamilyFallback,
                  double fontSize,
                  double letterSpacing,
                  double wordSpacing,

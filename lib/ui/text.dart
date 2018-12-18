@@ -252,6 +252,7 @@ Int32List _encodeTextStyle(
   FontStyle fontStyle,
   TextBaseline textBaseline,
   String fontFamily,
+  List<String> fontFamilyFallback,
   double fontSize,
   double letterSpacing,
   double wordSpacing,
@@ -294,36 +295,40 @@ Int32List _encodeTextStyle(
     result[0] |= 1 << 8;
     // Passed separately to native.
   }
-  if (fontSize != null) {
+  if (fontFamilyFallback != null) {
     result[0] |= 1 << 9;
     // Passed separately to native.
   }
-  if (letterSpacing != null) {
+  if (fontSize != null) {
     result[0] |= 1 << 10;
     // Passed separately to native.
   }
-  if (wordSpacing != null) {
+  if (letterSpacing != null) {
     result[0] |= 1 << 11;
     // Passed separately to native.
   }
-  if (height != null) {
+  if (wordSpacing != null) {
     result[0] |= 1 << 12;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (height != null) {
     result[0] |= 1 << 13;
     // Passed separately to native.
   }
-  if (background != null) {
+  if (locale != null) {
     result[0] |= 1 << 14;
     // Passed separately to native.
   }
-  if (foreground != null) {
+  if (background != null) {
     result[0] |= 1 << 15;
     // Passed separately to native.
   }
-  if (shadows != null) {
+  if (foreground != null) {
     result[0] |= 1 << 16;
+    // Passed separately to native.
+  }
+  if (shadows != null) {
+    result[0] |= 1 << 17;
     // Passed separately to native.
   }
   return result;
@@ -340,6 +345,7 @@ class TextStyle {
   /// * `fontWeight`: The typeface thickness to use when painting the text (e.g., bold).
   /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g., italics).
   /// * `fontFamily`: The name of the font to use when painting the text (e.g., Roboto).
+  /// * `fontFamily`: An ordered list of the names of the fonts to fallback on when a glyph cannot be found in a higher priority font.
   /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting the text.
   /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
   /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
@@ -357,6 +363,7 @@ class TextStyle {
     FontStyle fontStyle,
     TextBaseline textBaseline,
     String fontFamily,
+    List<String> fontFamilyFallback,
     double fontSize,
     double letterSpacing,
     double wordSpacing,
@@ -378,6 +385,7 @@ class TextStyle {
          fontStyle,
          textBaseline,
          fontFamily,
+         fontFamilyFallback,
          fontSize,
          letterSpacing,
          wordSpacing,
@@ -388,6 +396,7 @@ class TextStyle {
          shadows,
        ),
        _fontFamily = fontFamily ?? '',
+       _fontFamilyFallback = fontFamilyFallback,
        _fontSize = fontSize,
        _letterSpacing = letterSpacing,
        _wordSpacing = wordSpacing,
@@ -399,6 +408,7 @@ class TextStyle {
 
   final Int32List _encoded;
   final String _fontFamily;
+  final List<String> _fontFamilyFallback;
   final double _fontSize;
   final double _letterSpacing;
   final double _wordSpacing;
@@ -428,33 +438,52 @@ class TextStyle {
       if (_encoded[index] != typedOther._encoded[index])
         return false;
     }
-    if (!Shadow._shadowsListEquals(_shadows, typedOther._shadows))
+    if (!_listEquals(_shadows, typedOther._shadows))
+      return false;
+    if (!_listEquals(_fontFamilyFallback, typedOther._fontFamilyFallback))
       return false;
     return true;
   }
 
+  /// Determines if lists [a] and [b] are deep equivalent.
+  ///
+  /// Returns true if the lists are both null, or if they are both non-null, have
+  /// the same length, and contain the same elements in the same order. Returns
+  /// false otherwise.
+  static bool _listEquals(List<dynamic> a, List<dynamic> b) {
+    if (a == null)
+      return b == null;
+    if (b == null || a.length != b.length)
+      return false;
+    for (int index = 0; index < a.length; ++index)
+      if (a[index] != b[index])
+        return false;
+    return true;
+  }
+
   @override
-  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground);
+  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, _shadows);
 
   @override
   String toString() {
     return 'TextStyle('
-             'color: ${          _encoded[0] & 0x00002 == 0x00002 ? new Color(_encoded[1])                  : "unspecified"}, '
-             'decoration: ${     _encoded[0] & 0x00004 == 0x00004 ? new TextDecoration._(_encoded[2])       : "unspecified"}, '
-             'decorationColor: ${_encoded[0] & 0x00008 == 0x00008 ? new Color(_encoded[3])                  : "unspecified"}, '
-             'decorationStyle: ${_encoded[0] & 0x00010 == 0x00010 ? TextDecorationStyle.values[_encoded[4]] : "unspecified"}, '
-             'fontWeight: ${     _encoded[0] & 0x00020 == 0x00020 ? FontWeight.values[_encoded[5]]          : "unspecified"}, '
-             'fontStyle: ${      _encoded[0] & 0x00040 == 0x00040 ? FontStyle.values[_encoded[6]]           : "unspecified"}, '
-             'textBaseline: ${   _encoded[0] & 0x00080 == 0x00080 ? TextBaseline.values[_encoded[7]]        : "unspecified"}, '
-             'fontFamily: ${     _encoded[0] & 0x00100 == 0x00100 ? _fontFamily                             : "unspecified"}, '
-             'fontSize: ${       _encoded[0] & 0x00200 == 0x00200 ? _fontSize                               : "unspecified"}, '
-             'letterSpacing: ${  _encoded[0] & 0x00400 == 0x00400 ? "${_letterSpacing}x"                    : "unspecified"}, '
-             'wordSpacing: ${    _encoded[0] & 0x00800 == 0x00800 ? "${_wordSpacing}x"                      : "unspecified"}, '
-             'height: ${         _encoded[0] & 0x01000 == 0x01000 ? "${_height}x"                           : "unspecified"}, '
-             'locale: ${         _encoded[0] & 0x02000 == 0x02000 ? _locale                                 : "unspecified"}, '
-             'background: ${     _encoded[0] & 0x04000 == 0x04000 ? _background                             : "unspecified"}, '
-             'foreground: ${     _encoded[0] & 0x08000 == 0x08000 ? _foreground                             : "unspecified"}, '
-             'shadows: ${        _encoded[0] & 0x10000 == 0x10000 ? _shadows                                : "unspecified"}'
+             'color: ${             _encoded[0] & 0x00002 == 0x00002 ? new Color(_encoded[1])                  : "unspecified"}, '
+             'decoration: ${        _encoded[0] & 0x00004 == 0x00004 ? new TextDecoration._(_encoded[2])       : "unspecified"}, '
+             'decorationColor: ${   _encoded[0] & 0x00008 == 0x00008 ? new Color(_encoded[3])                  : "unspecified"}, '
+             'decorationStyle: ${   _encoded[0] & 0x00010 == 0x00010 ? TextDecorationStyle.values[_encoded[4]] : "unspecified"}, '
+             'fontWeight: ${        _encoded[0] & 0x00020 == 0x00020 ? FontWeight.values[_encoded[5]]          : "unspecified"}, '
+             'fontStyle: ${         _encoded[0] & 0x00040 == 0x00040 ? FontStyle.values[_encoded[6]]           : "unspecified"}, '
+             'textBaseline: ${      _encoded[0] & 0x00080 == 0x00080 ? TextBaseline.values[_encoded[7]]        : "unspecified"}, '
+             'fontFamily: ${        _encoded[0] & 0x00100 == 0x00100 ? _fontFamily                             : "unspecified"}, '
+             'fontFamilyFallback: ${_encoded[0] & 0x00200 == 0x00200 ? _fontFamilyFallback                     : "unspecified"}, '
+             'fontSize: ${          _encoded[0] & 0x00400 == 0x00400 ? _fontSize                               : "unspecified"}, '
+             'letterSpacing: ${     _encoded[0] & 0x00800 == 0x00800 ? "${_letterSpacing}x"                    : "unspecified"}, '
+             'wordSpacing: ${       _encoded[0] & 0x01000 == 0x01000 ? "${_wordSpacing}x"                      : "unspecified"}, '
+             'height: ${            _encoded[0] & 0x02000 == 0x02000 ? "${_height}x"                           : "unspecified"}, '
+             'locale: ${            _encoded[0] & 0x04000 == 0x04000 ? _locale                                 : "unspecified"}, '
+             'background: ${        _encoded[0] & 0x08000 == 0x08000 ? _background                             : "unspecified"}, '
+             'foreground: ${        _encoded[0] & 0x10000 == 0x10000 ? _foreground                             : "unspecified"}, '
+             'shadows: ${           _encoded[0] & 0x20000 == 0x20000 ? _shadows                                : "unspecified"}'
            ')';
   }
 }
@@ -1135,10 +1164,24 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Applies the given style to the added text until [pop] is called.
   ///
   /// See [pop] for details.
-  void pushStyle(TextStyle style) => _pushStyle(style._encoded, style._fontFamily, style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, Shadow._encodeShadows(style._shadows));
-  void _pushStyle(Int32List encoded, String fontFamily, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadowsData) native 'ParagraphBuilder_pushStyle';
+  void pushStyle(TextStyle style) => _pushStyle(style._encoded, style._fontFamily, _encodeFontFamilyFallback(style._fontFamilyFallback), style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, Shadow._encodeShadows(style._shadows));
+  void _pushStyle(Int32List encoded, String fontFamily, String fontFamilyFallback, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadowsData) native 'ParagraphBuilder_pushStyle';
 
   static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
+
+  // Generates a comma-separated string that includes all of the fallback font families.
+  static String _encodeFontFamilyFallback(List<String> fontFamilyFallback) {
+    String out = '';
+    if (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty) {
+      for (int i = 0; i < fontFamilyFallback.length; i += 1) {
+        out += fontFamilyFallback[i];
+        if (i != fontFamilyFallback.length - 1) {
+          out += ',';
+        }
+      }
+    }
+    return out;
+  }
 
   /// Ends the effect of the most recent call to [pushStyle].
   ///

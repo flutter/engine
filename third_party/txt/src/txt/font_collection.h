@@ -47,6 +47,7 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
 
   std::shared_ptr<minikin::FontCollection> GetMinikinFontCollectionForFamily(
       const std::string& family,
+      const std::vector<std::string>& font_family_fallback,
       const std::string& locale);
 
   // Provides a FontFamily that contains glyphs for ch. This caches previously

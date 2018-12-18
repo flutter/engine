@@ -44,6 +44,7 @@ class TextStyle {
   FontStyle font_style = FontStyle::normal;
   TextBaseline text_baseline = TextBaseline::kAlphabetic;
   std::string font_family;
+  std::vector<std::string> font_family_fallback;
   double font_size = 14.0;
   double letter_spacing = 0.0;
   double word_spacing = 0.0;

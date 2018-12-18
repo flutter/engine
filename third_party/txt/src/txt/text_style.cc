@@ -53,6 +53,11 @@ bool TextStyle::equals(const TextStyle& other) const {
     return false;
   if (text_shadows.size() != other.text_shadows.size())
     return false;
+  for (size_t font_index = 0; font_index < font_family_fallback.size();
+       ++font_index) {
+    if (font_family_fallback[font_index] != other.font_family_fallback[font_index])
+      return false;
+  }
   for (size_t shadow_index = 0; shadow_index < text_shadows.size();
        ++shadow_index) {
     if (text_shadows[shadow_index] != other.text_shadows[shadow_index])
