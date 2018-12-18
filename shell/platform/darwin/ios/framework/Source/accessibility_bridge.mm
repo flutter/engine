@@ -111,7 +111,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   if (self) {
     _bridge = bridge;
     _uid = uid;
-    self.children = [[[NSMutableArray alloc] init] autorelease];
+    _children = [[NSMutableArray alloc] init];
     _weakFactory = std::make_unique<fml::WeakPtrFactory<SemanticsObject>>(self);
   }
 
@@ -123,7 +123,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     child.parent = nil;
   }
   [_children removeAllObjects];
-  [_children dealloc];
+  [_children release];
   _parent = nil;
   [super dealloc];
 }
