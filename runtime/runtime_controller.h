@@ -11,8 +11,8 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
-#include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/resource_context_manager.h"
+#include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/window.h"
@@ -28,16 +28,17 @@ class Window;
 
 class RuntimeController final : public WindowClient {
  public:
-  RuntimeController(RuntimeDelegate& client,
-                    DartVM* vm,
-                    fml::RefPtr<DartSnapshot> isolate_snapshot,
-                    fml::RefPtr<DartSnapshot> shared_snapshot,
-                    TaskRunners task_runners,
-                    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                    fml::WeakPtr<ResourceContextManager> resource_context_manager,
-                    fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
-                    std::string advisory_script_uri,
-                    std::string advisory_script_entrypoint);
+  RuntimeController(
+      RuntimeDelegate& client,
+      DartVM* vm,
+      fml::RefPtr<DartSnapshot> isolate_snapshot,
+      fml::RefPtr<DartSnapshot> shared_snapshot,
+      TaskRunners task_runners,
+      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+      fml::WeakPtr<ResourceContextManager> resource_context_manager,
+      fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+      std::string advisory_script_uri,
+      std::string advisory_script_entrypoint);
 
   ~RuntimeController() override;
 
@@ -130,17 +131,18 @@ class RuntimeController final : public WindowClient {
   std::weak_ptr<DartIsolate> root_isolate_;
   std::pair<bool, uint32_t> root_isolate_return_code_ = {false, 0};
 
-  RuntimeController(RuntimeDelegate& client,
-                    DartVM* vm,
-                    fml::RefPtr<DartSnapshot> isolate_snapshot,
-                    fml::RefPtr<DartSnapshot> shared_snapshot,
-                    TaskRunners task_runners,
-                    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                    fml::WeakPtr<ResourceContextManager> resource_context_manager,
-                    fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
-                    std::string advisory_script_uri,
-                    std::string advisory_script_entrypoint,
-                    WindowData data);
+  RuntimeController(
+      RuntimeDelegate& client,
+      DartVM* vm,
+      fml::RefPtr<DartSnapshot> isolate_snapshot,
+      fml::RefPtr<DartSnapshot> shared_snapshot,
+      TaskRunners task_runners,
+      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+      fml::WeakPtr<ResourceContextManager> resource_context_manager,
+      fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+      std::string advisory_script_uri,
+      std::string advisory_script_entrypoint,
+      WindowData data);
 
   Window* GetWindowIfAvailable();
 

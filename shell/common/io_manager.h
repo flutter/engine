@@ -23,8 +23,9 @@ class IOManager {
   static sk_sp<GrContext> CreateCompatibleResourceLoadingContext(
       GrBackend backend);
 
-  IOManager(fml::WeakPtr<blink::ResourceContextManager> resource_context_manager,
-            fml::RefPtr<fml::TaskRunner> unref_queue_task_runner);
+  IOManager(
+      fml::WeakPtr<blink::ResourceContextManager> resource_context_manager,
+      fml::RefPtr<fml::TaskRunner> unref_queue_task_runner);
 
   ~IOManager();
 

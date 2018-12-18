@@ -32,4 +32,4 @@ class ResourceContextManager {
 
 }  // namespace blink
 
-#endif // FLUTTER_LIB_UI_RESOURCE_CONTEXT_MANAGER_H_
+#endif  // FLUTTER_LIB_UI_RESOURCE_CONTEXT_MANAGER_H_
