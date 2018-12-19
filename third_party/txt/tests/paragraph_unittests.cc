@@ -2686,11 +2686,21 @@ TEST_F(ParagraphTest, FontFallbackParagraph) {
   ASSERT_DOUBLE_EQ(paragraph->records_[3].GetRunWidth(), 90.24609375);
   ASSERT_DOUBLE_EQ(paragraph->records_[4].GetRunWidth(), 90.24609375);
   // When a different font is resolved, then the metrics are different.
-  ASSERT_TRUE(paragraph->records_[2].metrics().fTop - paragraph->records_[4].metrics().fTop != 0);
-  ASSERT_TRUE(paragraph->records_[2].metrics().fAscent - paragraph->records_[4].metrics().fAscent != 0);
-  ASSERT_TRUE(paragraph->records_[2].metrics().fDescent - paragraph->records_[4].metrics().fDescent != 0);
-  ASSERT_TRUE(paragraph->records_[2].metrics().fBottom - paragraph->records_[4].metrics().fBottom != 0);
-  ASSERT_TRUE(paragraph->records_[2].metrics().fAvgCharWidth - paragraph->records_[4].metrics().fAvgCharWidth != 0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fTop -
+                  paragraph->records_[4].metrics().fTop !=
+              0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fAscent -
+                  paragraph->records_[4].metrics().fAscent !=
+              0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fDescent -
+                  paragraph->records_[4].metrics().fDescent !=
+              0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fBottom -
+                  paragraph->records_[4].metrics().fBottom !=
+              0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fAvgCharWidth -
+                  paragraph->records_[4].metrics().fAvgCharWidth !=
+              0);
 }
 
 }  // namespace txt
