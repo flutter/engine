@@ -345,7 +345,7 @@ class TextStyle {
   /// * `fontWeight`: The typeface thickness to use when painting the text (e.g., bold).
   /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g., italics).
   /// * `fontFamily`: The name of the font to use when painting the text (e.g., Roboto).
-  /// * `fontFamily`: An ordered list of the names of the fonts to fallback on when a glyph cannot be found in a higher priority font.
+  /// * `fontFamilyFallback`: An ordered list of the names of the fonts to fallback on when a glyph cannot be found in a higher priority font.
   /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting the text.
   /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
   /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
