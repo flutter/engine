@@ -43,7 +43,7 @@ FontCollection::FamilyKey::FamilyKey(const std::vector<std::string>& families,
 
   std::stringstream stream;
   for_each(families.begin(), families.end(),
-           [&stream](const std::string& str) { stream << str; });
+           [&stream](const std::string& str) { stream << str << ','; });
   font_families = stream.str();
 }
 
@@ -133,15 +133,14 @@ FontCollection::GetMinikinFontCollectionForFamily(
   }
 
   const auto default_font_family = GetDefaultFontFamily();
-  size_t font_families_count = font_families.size();
 
   // Attempt to match each font family in order.
-  for (size_t fallback_index = 0; fallback_index < font_families_count + 1;
+  for (size_t fallback_index = 0; fallback_index < font_families.size() + 1;
        fallback_index++) {
     std::string font_family;
     // When we run out of fonts to attempt to find, try to match the default
     // font.
-    if (fallback_index == font_families_count) {
+    if (fallback_index == font_families.size()) {
       font_family = default_font_family;
     } else {
       font_family = font_families[fallback_index];

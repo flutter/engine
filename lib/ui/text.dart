@@ -291,44 +291,40 @@ Int32List _encodeTextStyle(
     result[0] |= 1 << 7;
     result[7] = textBaseline.index;
   }
-  if (fontFamily != null) {
+  if (fontFamily != null || (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty)) {
     result[0] |= 1 << 8;
     // Passed separately to native.
   }
-  if (fontFamilyFallback != null) {
+  if (fontSize != null) {
     result[0] |= 1 << 9;
     // Passed separately to native.
   }
-  if (fontSize != null) {
+  if (letterSpacing != null) {
     result[0] |= 1 << 10;
     // Passed separately to native.
   }
-  if (letterSpacing != null) {
+  if (wordSpacing != null) {
     result[0] |= 1 << 11;
     // Passed separately to native.
   }
-  if (wordSpacing != null) {
+  if (height != null) {
     result[0] |= 1 << 12;
     // Passed separately to native.
   }
-  if (height != null) {
+  if (locale != null) {
     result[0] |= 1 << 13;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (background != null) {
     result[0] |= 1 << 14;
     // Passed separately to native.
   }
-  if (background != null) {
+  if (foreground != null) {
     result[0] |= 1 << 15;
     // Passed separately to native.
   }
-  if (foreground != null) {
-    result[0] |= 1 << 16;
-    // Passed separately to native.
-  }
   if (shadows != null) {
-    result[0] |= 1 << 17;
+    result[0] |= 1 << 16;
     // Passed separately to native.
   }
   return result;
@@ -344,8 +340,15 @@ class TextStyle {
   /// * `decorationStyle`: The style in which to paint the text decorations (e.g., dashed).
   /// * `fontWeight`: The typeface thickness to use when painting the text (e.g., bold).
   /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g., italics).
-  /// * `fontFamily`: The name of the font to use when painting the text (e.g., Roboto).
-  /// * `fontFamilyFallback`: An ordered list of the names of the fonts to fallback on when a glyph cannot be found in a higher priority font.
+  /// * `fontFamily`: The name of the font to use when painting the text (e.g., Roboto). If a `fontFamilyFallback` is
+  ///   provided and `fontFamily` is not, then the first font family in `fontFamilyFallback` will take the postion of
+  ///   the preferred font family. When a higher priority font cannot be found or does not contain a glyph, a lower
+  ///   priority font will be used.
+  /// * `fontFamilyFallback`: An ordered list of the names of the fonts to fallback on when a glyph cannot
+  ///   be found in a higher priority font. When the `fontFamily` is null, the first font family in this list
+  ///   is used as the preferred font. Internally, the 'fontFamily` is concatenated to the front of this list.
+  ///   When no font family is provided through 'fontFamilyFallback' (null or empty) or `fontFamily`, then the
+  ///   platform default font will be used.
   /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting the text.
   /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
   /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
@@ -438,9 +441,9 @@ class TextStyle {
       if (_encoded[index] != typedOther._encoded[index])
         return false;
     }
-    if (!_listEquals(_shadows, typedOther._shadows))
+    if (!_listEquals<Shadow>(_shadows, typedOther._shadows))
       return false;
-    if (!_listEquals(_fontFamilyFallback, typedOther._fontFamilyFallback))
+    if (!_listEquals<String>(_fontFamilyFallback, typedOther._fontFamilyFallback))
       return false;
     return true;
   }
@@ -450,16 +453,17 @@ class TextStyle {
   /// Returns true if the lists are both null, or if they are both non-null, have
   /// the same length, and contain the same elements in the same order. Returns
   /// false otherwise.
-  static bool _listEquals(List<dynamic> a, List<dynamic> b) {
+  bool _listEquals<T>(List<T> a, List<T> b) {
     if (a == null)
       return b == null;
     if (b == null || a.length != b.length)
       return false;
-    for (int index = 0; index < a.length; ++index)
+    for (int index = 0; index < a.length; index += 1) {
       if (a[index] != b[index])
         return false;
-    return true;
-  }
+    }
+  return true;
+}
 
   @override
   int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, _shadows);
@@ -1164,8 +1168,15 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Applies the given style to the added text until [pop] is called.
   ///
   /// See [pop] for details.
-  void pushStyle(TextStyle style) => _pushStyle(style._encoded, style._fontFamily, style._fontFamilyFallback, style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, Shadow._encodeShadows(style._shadows));
-  void _pushStyle(Int32List encoded, String fontFamily, List<dynamic> fontFamilyFallback, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadowsData) native 'ParagraphBuilder_pushStyle';
+  void pushStyle(TextStyle style) {
+    List<String> fullFontFamilies = [];
+    if (style._fontFamily != null)
+      fullFontFamilies.add(style._fontFamily);
+    if (style._fontFamilyFallback != null)
+      fullFontFamilies.addAll(style._fontFamilyFallback);
+    _pushStyle(style._encoded, fullFontFamilies, style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, Shadow._encodeShadows(style._shadows));
+  }
+  void _pushStyle(Int32List encoded, List<dynamic> fontFamilies, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadowsData) native 'ParagraphBuilder_pushStyle';
 
   static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
 

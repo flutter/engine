@@ -37,15 +37,14 @@ const int tsFontWeightIndex = 5;
 const int tsFontStyleIndex = 6;
 const int tsTextBaselineIndex = 7;
 const int tsFontFamilyIndex = 8;
-const int tsFontFamilyFallbackIndex = 9;
-const int tsFontSizeIndex = 10;
-const int tsLetterSpacingIndex = 11;
-const int tsWordSpacingIndex = 12;
-const int tsHeightIndex = 13;
-const int tsLocaleIndex = 14;
-const int tsBackgroundIndex = 15;
-const int tsForegroundIndex = 16;
-const int tsTextShadowsIndex = 17;
+const int tsFontSizeIndex = 9;
+const int tsLetterSpacingIndex = 10;
+const int tsWordSpacingIndex = 11;
+const int tsHeightIndex = 12;
+const int tsLocaleIndex = 13;
+const int tsBackgroundIndex = 14;
+const int tsForegroundIndex = 15;
+const int tsTextShadowsIndex = 16;
 
 const int tsColorMask = 1 << tsColorIndex;
 const int tsTextDecorationMask = 1 << tsTextDecorationIndex;
@@ -55,7 +54,6 @@ const int tsFontWeightMask = 1 << tsFontWeightIndex;
 const int tsFontStyleMask = 1 << tsFontStyleIndex;
 const int tsTextBaselineMask = 1 << tsTextBaselineIndex;
 const int tsFontFamilyMask = 1 << tsFontFamilyIndex;
-const int tsFontFamilyFallbackMask = 1 << tsFontFamilyFallbackIndex;
 const int tsFontSizeMask = 1 << tsFontSizeIndex;
 const int tsLetterSpacingMask = 1 << tsLetterSpacingIndex;
 const int tsWordSpacingMask = 1 << tsWordSpacingIndex;
@@ -204,8 +202,7 @@ void decodeTextShadows(Dart_Handle shadows_data,
 }
 
 void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
-                                 const std::string& fontFamily,
-                                 const std::vector<std::string>& fontFamilyFallback,
+                                 const std::vector<std::string>& fontFamilies,
                                  double fontSize,
                                  double letterSpacing,
                                  double wordSpacing,
@@ -246,18 +243,14 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
     // property wasn't wired up either.
   }
 
-  if (mask & (tsFontWeightMask | tsFontStyleMask | tsFontFamilyMask |
-              tsFontSizeMask | tsLetterSpacingMask | tsWordSpacingMask)) {
+  if (mask & (tsFontWeightMask | tsFontStyleMask | tsFontSizeMask |
+              tsLetterSpacingMask | tsWordSpacingMask)) {
     if (mask & tsFontWeightMask)
       style.font_weight =
           static_cast<txt::FontWeight>(encoded[tsFontWeightIndex]);
 
     if (mask & tsFontStyleMask)
       style.font_style = static_cast<txt::FontStyle>(encoded[tsFontStyleIndex]);
-
-    if (mask & tsFontFamilyMask)
-      style.font_families.push_back(fontFamily);// = fontFamily;
-      // style.font_family = fontFamily;
 
     if (mask & tsFontSizeMask)
       style.font_size = fontSize;
@@ -297,8 +290,9 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
     decodeTextShadows(shadows_data, style.text_shadows);
   }
 
-  if (mask & tsFontFamilyFallbackMask) {
-    style.font_families.insert(style.font_families.end(), fontFamilyFallback.begin(), fontFamilyFallback.end());
+  if (mask & tsFontFamilyMask) {
+    style.font_families.insert(style.font_families.end(), fontFamilies.begin(),
+                               fontFamilies.end());
   }
 
   m_paragraphBuilder->PushStyle(style);
