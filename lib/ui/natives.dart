@@ -36,6 +36,10 @@ void _setupHooks() {
   }());
 }
 
+/// Saves Dart compilation trace to a file.
+///
+/// The output is a list of symbols compiled by the Dart JIT at runtime up to this point,
+/// and can be passed later to Dart tools in order to precompile this code offline.
 void saveCompilationTrace(String filePath) {
   final dynamic result = _saveCompilationTrace();
   if (result is Error)
@@ -45,6 +49,10 @@ void saveCompilationTrace(String filePath) {
   file.writeAsBytesSync(result);
 }
 
+/// Returns Dart compilation trace as a memory buffer.
+///
+/// The output is a list of symbols compiled by the Dart JIT at runtime up to this point,
+/// and can be passed later to Dart tools in order to precompile this code offline.
 List<int> dumpCompilationTrace() {
   final dynamic result = _saveCompilationTrace();
   if (result is Error)
