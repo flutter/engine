@@ -1169,7 +1169,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details.
   void pushStyle(TextStyle style) {
-    List<String> fullFontFamilies = [];
+    final List<String> fullFontFamilies = [];
     if (style._fontFamily != null)
       fullFontFamilies.add(style._fontFamily);
     if (style._fontFamilyFallback != null)
