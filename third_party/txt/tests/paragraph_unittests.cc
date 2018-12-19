@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <iostream>
+
 #include "flutter/fml/logging.h"
 #include "render_test.h"
 #include "third_party/icu/source/common/unicode/unistr.h"
@@ -40,6 +42,10 @@ TEST_F(ParagraphTest, SimpleParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
+  // We must supply a font here, as the default is Arial, and we do not
+  // include Arial in our test fonts as it is proprietary. We want it to
+  // be Arial default though as it is one of the most common fonts on host
+  // platforms. On real devices/apps, Arial should be able to be resolved.
   text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorBLACK;
   builder.PushStyle(text_style);
@@ -127,6 +133,7 @@ TEST_F(ParagraphTest, RainbowParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style1;
+  text_style1.font_families = std::vector<std::string>(1, "Roboto");
   text_style1.color = SK_ColorRED;
 
   builder.PushStyle(text_style1);
@@ -174,7 +181,6 @@ TEST_F(ParagraphTest, RainbowParagraph) {
 
   auto paragraph = builder.Build();
   paragraph->Layout(GetTestCanvasWidth());
-
   paragraph->Paint(GetCanvas(), 0, 0);
 
   u16_text1 += u16_text2 + u16_text3 + u16_text4;
@@ -2604,6 +2610,87 @@ TEST_F(ParagraphTest, BaselineParagraph) {
   ASSERT_DOUBLE_EQ(paragraph->GetAlphabeticBaseline(), 63.305000305175781);
 
   ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, FontFallbackParagraph) {
+  const char* text = "Roboto 字典 ";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+  const char* text2 = "Homemade Apple 字典";
+  icu_text = icu::UnicodeString::fromUTF8(text2);
+  std::u16string u16_text2(icu_text.getBuffer(),
+                           icu_text.getBuffer() + icu_text.length());
+  const char* text3 = "Chinese 字典";
+  icu_text = icu::UnicodeString::fromUTF8(text3);
+  std::u16string u16_text3(icu_text.getBuffer(),
+                           icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  // No chinese fallback provided, should not be able to render the chinese.
+  text_style.font_families = std::vector<std::string>(1, "Not a real font");
+  text_style.font_families.push_back("Also a fake font");
+  text_style.font_families.push_back("So fake it is obvious");
+  text_style.font_families.push_back("Next one should be a real font...");
+  text_style.font_families.push_back("Roboto");
+  text_style.font_families.push_back("another fake one in between");
+  text_style.font_families.push_back("Homemade Apple");
+  text_style.color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  // Japanese version of the chinese should be rendered.
+  text_style.font_families = std::vector<std::string>(1, "Not a real font");
+  text_style.font_families.push_back("Also a fake font");
+  text_style.font_families.push_back("So fake it is obvious");
+  text_style.font_families.push_back("Homemade Apple");
+  text_style.font_families.push_back("Next one should be a real font...");
+  text_style.font_families.push_back("Roboto");
+  text_style.font_families.push_back("another fake one in between");
+  text_style.font_families.push_back("Noto Sans CJK JP");
+  text_style.font_families.push_back("Source Han Serif CN");
+  text_style.color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text2);
+
+  // Chinese font defiend first
+  text_style.font_families = std::vector<std::string>(1, "Not a real font");
+  text_style.font_families.push_back("Also a fake font");
+  text_style.font_families.push_back("So fake it is obvious");
+  text_style.font_families.push_back("Homemade Apple");
+  text_style.font_families.push_back("Next one should be a real font...");
+  text_style.font_families.push_back("Roboto");
+  text_style.font_families.push_back("another fake one in between");
+  text_style.font_families.push_back("Source Han Serif CN");
+  text_style.font_families.push_back("Noto Sans CJK JP");
+  text_style.color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text3);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 10.0, 15.0);
+
+  ASSERT_TRUE(Snapshot());
+
+  ASSERT_EQ(paragraph->records_.size(), 5ull);
+  ASSERT_DOUBLE_EQ(paragraph->records_[0].GetRunWidth(), 64.19921875);
+  ASSERT_DOUBLE_EQ(paragraph->records_[1].GetRunWidth(), 167.1171875);
+  ASSERT_DOUBLE_EQ(paragraph->records_[2].GetRunWidth(), 167.1171875);
+  ASSERT_DOUBLE_EQ(paragraph->records_[3].GetRunWidth(), 90.24609375);
+  ASSERT_DOUBLE_EQ(paragraph->records_[4].GetRunWidth(), 90.24609375);
+  // When a different font is resolved, then the metrics are different.
+  ASSERT_TRUE(paragraph->records_[2].metrics().fTop - paragraph->records_[4].metrics().fTop != 0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fAscent - paragraph->records_[4].metrics().fAscent != 0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fDescent - paragraph->records_[4].metrics().fDescent != 0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fBottom - paragraph->records_[4].metrics().fBottom != 0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fAvgCharWidth - paragraph->records_[4].metrics().fAvgCharWidth != 0);
 }
 
 }  // namespace txt
