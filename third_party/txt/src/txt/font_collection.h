@@ -45,7 +45,7 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
   void SetDynamicFontManager(sk_sp<SkFontMgr> font_manager);
   void SetTestFontManager(sk_sp<SkFontMgr> font_manager);
 
-  std::shared_ptr<minikin::FontCollection> GetMinikinFontCollectionForFamily(
+  std::shared_ptr<minikin::FontCollection> GetMinikinFontCollectionForFamilies(
       const std::vector<std::string>& font_families,
       const std::string& locale);
 
@@ -99,6 +99,9 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
       std::string locale);
 
   std::vector<sk_sp<SkFontMgr>> GetFontManagerOrder() const;
+
+  std::shared_ptr<minikin::FontFamily> FindFontFamilyInManagers(
+      const std::string& family_name);
 
   std::shared_ptr<minikin::FontFamily> CreateMinikinFontFamily(
       const sk_sp<SkFontMgr>& manager,

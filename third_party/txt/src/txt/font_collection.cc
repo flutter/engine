@@ -122,7 +122,7 @@ void FontCollection::DisableFontFallback() {
 }
 
 std::shared_ptr<minikin::FontCollection>
-FontCollection::GetMinikinFontCollectionForFamily(
+FontCollection::GetMinikinFontCollectionForFamilies(
     const std::vector<std::string>& font_families,
     const std::string& locale) {
   // Look inside the font collections cache first.
@@ -132,67 +132,62 @@ FontCollection::GetMinikinFontCollectionForFamily(
     return cached->second;
   }
 
-  const auto default_font_family = GetDefaultFontFamily();
+  std::vector<std::shared_ptr<minikin::FontFamily>> minikin_families;
 
-  // Attempt to match each font family in order.
-  for (size_t fallback_index = 0; fallback_index < font_families.size() + 1;
+  // Search for all user provided font families.
+  for (size_t fallback_index = 0; fallback_index < font_families.size();
        fallback_index++) {
-    std::string font_family;
-    // When we run out of fonts to attempt to find, try to match the default
-    // font.
-    if (fallback_index == font_families.size()) {
-      font_family = default_font_family;
-    } else {
-      font_family = font_families[fallback_index];
-    }
-    // Search for the font family in each font manager.
-    for (sk_sp<SkFontMgr>& manager : GetFontManagerOrder()) {
-      std::shared_ptr<minikin::FontFamily> minikin_family =
-          CreateMinikinFontFamily(manager, font_family);
-      if (!minikin_family)
-        continue;
-
-      // Create a vector of font families for the Minikin font collection.
-      std::vector<std::shared_ptr<minikin::FontFamily>> minikin_families = {
-          minikin_family,
-      };
-
-      // Add font fallback as appropriate:
-      //
-      // We add user-specified fallback fonts always
-      for (size_t family_index = fallback_index + 1;
-           family_index < font_families.size(); family_index += 1) {
-        std::string fallback_family = font_families[family_index];
-        std::shared_ptr<minikin::FontFamily> family =
-            CreateMinikinFontFamily(manager, fallback_family);
-        if (family != nullptr)
-          minikin_families.push_back(family);
-      }
-      // Only add minikin fallback fonts when enabled
-      if (enable_font_fallback_) {
-        for (std::string fallback_family : fallback_fonts_for_locale_[locale]) {
-          auto it = fallback_fonts_.find(fallback_family);
-          if (it != fallback_fonts_.end()) {
-            minikin_families.push_back(it->second);
-          }
-        }
-      }
-      // Create the minikin font collection.
-      auto font_collection = std::make_shared<minikin::FontCollection>(
-          std::move(minikin_families));
-      if (enable_font_fallback_) {
-        font_collection->set_fallback_font_provider(
-            std::make_unique<TxtFallbackFontProvider>(shared_from_this()));
-      }
-
-      // Cache the font collection for future queries.
-      font_collections_cache_[family_key] = font_collection;
-
-      return font_collection;
+    std::shared_ptr<minikin::FontFamily> minikin_family =
+        FindFontFamilyInManagers(font_families[fallback_index]);
+    if (minikin_family != nullptr) {
+      minikin_families.push_back(minikin_family);
     }
   }
+  // Search for default font family if no user font families were found.
+  if (minikin_families.empty()) {
+    const auto default_font_family = GetDefaultFontFamily();
+    std::shared_ptr<minikin::FontFamily> minikin_family =
+        FindFontFamilyInManagers(default_font_family);
+    if (minikin_family != nullptr) {
+      minikin_families.push_back(minikin_family);
+    }
+  }
+  // Default font family also not found. We fail to get a FontCollection.
+  if (minikin_families.empty()) {
+    return nullptr;
+  }
+  if (enable_font_fallback_) {
+    for (std::string fallback_family : fallback_fonts_for_locale_[locale]) {
+      auto it = fallback_fonts_.find(fallback_family);
+      if (it != fallback_fonts_.end()) {
+        minikin_families.push_back(it->second);
+      }
+    }
+  }
+  // Create the minikin font collection.
+  auto font_collection =
+      std::make_shared<minikin::FontCollection>(std::move(minikin_families));
+  if (enable_font_fallback_) {
+    font_collection->set_fallback_font_provider(
+        std::make_unique<TxtFallbackFontProvider>(shared_from_this()));
+  }
 
-  // Failed to match on any provided font family or the default font.
+  // Cache the font collection for future queries.
+  font_collections_cache_[family_key] = font_collection;
+
+  return font_collection;
+}
+
+std::shared_ptr<minikin::FontFamily> FontCollection::FindFontFamilyInManagers(
+    const std::string& family_name) {
+  // Search for the font family in each font manager.
+  for (sk_sp<SkFontMgr>& manager : GetFontManagerOrder()) {
+    std::shared_ptr<minikin::FontFamily> minikin_family =
+        CreateMinikinFontFamily(manager, family_name);
+    if (!minikin_family)
+      continue;
+    return minikin_family;
+  }
   return nullptr;
 }
 

@@ -903,7 +903,7 @@ Paragraph::GetMinikinFontCollectionForStyle(const TextStyle& style) {
     }
   }
 
-  return font_collection_->GetMinikinFontCollectionForFamily(
+  return font_collection_->GetMinikinFontCollectionForFamilies(
       style.font_families, locale);
 }
 
