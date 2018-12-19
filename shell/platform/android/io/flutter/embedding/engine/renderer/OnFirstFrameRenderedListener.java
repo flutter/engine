@@ -5,6 +5,8 @@
 package io.flutter.embedding.engine.renderer;
 
 /**
+ * Listener invoked after Flutter paints its first frame since being initialized.
+ *
  * WARNING: THIS CLASS IS EXPERIMENTAL. DO NOT SHIP A DEPENDENCY ON THIS CODE.
  * IF YOU USE IT, WE WILL BREAK YOU.
  */

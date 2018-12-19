@@ -25,7 +25,7 @@ import io.flutter.view.TextureRegistry;
  * {@code FlutterRenderer} works in tandem with a provided {@link RenderSurface} to create an
  * interactive Flutter UI.
  *
- * {@code FlutterRenderer} manages textures for rendering, and forwards messages to native Flutter
+ * {@code FlutterRenderer} manages textures for rendering, and forwards some Java calls to native Flutter
  * code via JNI. The corresponding {@link RenderSurface} is used as a delegate to carry out
  * certain actions on behalf of this {@code FlutterRenderer} within an Android view hierarchy.
  *

@@ -15,6 +15,9 @@ package io.flutter.embedding.engine;
  * allowing a {@code FlutterEngine} to move from UI interaction to data-only processing and then
  * back to UI interaction.
  *
+ * Multiple {@code FlutterEngine}s may exist, execute Dart code, and render UIs within a single
+ * Android app.
+ *
  * To start running Flutter within this {@code FlutterEngine}, get a reference to this engine's
  * {@link DartExecutor} and then use {@link DartExecutor#runFromBundle(FlutterRunArguments)}.
  * The {@link DartExecutor#runFromBundle(FlutterRunArguments)} method must not be invoked twice on the same
@@ -32,7 +35,7 @@ public class FlutterEngine {
    */
   public interface EngineLifecycleListener {
     /**
-     * Lifecycle callback invoked after a hot restart of the Flutter engine.
+     * Lifecycle callback invoked before a hot restart of the Flutter engine.
      */
     void onPreEngineRestart();
   }
