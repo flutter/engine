@@ -16,6 +16,7 @@
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/lib/ui/io_manager.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 
@@ -33,8 +34,7 @@ class RuntimeController final : public WindowClient {
                     fml::RefPtr<DartSnapshot> shared_snapshot,
                     TaskRunners task_runners,
                     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                    fml::WeakPtr<GrContext> resource_context,
-                    fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+                    fml::WeakPtr<IOManager> io_manager,
                     std::string advisory_script_uri,
                     std::string advisory_script_entrypoint);
 
@@ -121,8 +121,7 @@ class RuntimeController final : public WindowClient {
   fml::RefPtr<DartSnapshot> shared_snapshot_;
   TaskRunners task_runners_;
   fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
-  fml::WeakPtr<GrContext> resource_context_;
-  fml::RefPtr<flow::SkiaUnrefQueue> unref_queue_;
+  fml::WeakPtr<IOManager> io_manager_;
   std::string advisory_script_uri_;
   std::string advisory_script_entrypoint_;
   WindowData window_data_;
@@ -135,8 +134,7 @@ class RuntimeController final : public WindowClient {
                     fml::RefPtr<DartSnapshot> shared_snapshot,
                     TaskRunners task_runners,
                     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                    fml::WeakPtr<GrContext> resource_context,
-                    fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+                    fml::WeakPtr<IOManager> io_manager,
                     std::string advisory_script_uri,
                     std::string advisory_script_entrypoint,
                     WindowData data);

@@ -21,8 +21,7 @@ RuntimeController::RuntimeController(
     fml::RefPtr<DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
     fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
-    fml::WeakPtr<GrContext> p_resource_context,
-    fml::RefPtr<flow::SkiaUnrefQueue> p_unref_queue,
+    fml::WeakPtr<IOManager> p_io_manager,
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint)
     : RuntimeController(p_client,
@@ -31,8 +30,7 @@ RuntimeController::RuntimeController(
                         std::move(p_shared_snapshot),
                         std::move(p_task_runners),
                         std::move(p_snapshot_delegate),
-                        std::move(p_resource_context),
-                        std::move(p_unref_queue),
+                        std::move(p_io_manager),
                         std::move(p_advisory_script_uri),
                         std::move(p_advisory_script_entrypoint),
                         WindowData{/* default window data */}) {}
@@ -44,8 +42,7 @@ RuntimeController::RuntimeController(
     fml::RefPtr<DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
     fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
-    fml::WeakPtr<GrContext> p_resource_context,
-    fml::RefPtr<flow::SkiaUnrefQueue> p_unref_queue,
+    fml::WeakPtr<IOManager> p_io_manager,
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint,
     WindowData p_window_data)
@@ -55,8 +52,7 @@ RuntimeController::RuntimeController(
       shared_snapshot_(std::move(p_shared_snapshot)),
       task_runners_(p_task_runners),
       snapshot_delegate_(p_snapshot_delegate),
-      resource_context_(p_resource_context),
-      unref_queue_(p_unref_queue),
+      io_manager_(p_io_manager),
       advisory_script_uri_(p_advisory_script_uri),
       advisory_script_entrypoint_(p_advisory_script_entrypoint),
       window_data_(std::move(p_window_data)),
@@ -67,8 +63,7 @@ RuntimeController::RuntimeController(
                                          task_runners_,
                                          std::make_unique<Window>(this),
                                          snapshot_delegate_,
-                                         resource_context_,
-                                         unref_queue_,
+                                         io_manager_,
                                          p_advisory_script_uri,
                                          p_advisory_script_entrypoint)) {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
@@ -116,8 +111,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
       shared_snapshot_,             //
       task_runners_,                //
       snapshot_delegate_,           //
-      resource_context_,            //
-      unref_queue_,                 //
+      io_manager_,                  //
       advisory_script_uri_,         //
       advisory_script_entrypoint_,  //
       window_data_                  //

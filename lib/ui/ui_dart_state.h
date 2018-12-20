@@ -16,6 +16,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
+#include "flutter/lib/ui/io_manager.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 #include "third_party/tonic/dart_microtask_queue.h"
@@ -72,8 +73,7 @@ class UIDartState : public tonic::DartState {
               TaskObserverAdd add_callback,
               TaskObserverRemove remove_callback,
               fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-              fml::WeakPtr<GrContext> resource_context,
-              fml::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue,
+              fml::WeakPtr<IOManager> io_manager,
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
               std::string logger_prefix,
@@ -94,14 +94,13 @@ class UIDartState : public tonic::DartState {
   const TaskObserverAdd add_callback_;
   const TaskObserverRemove remove_callback_;
   fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
-  fml::WeakPtr<GrContext> resource_context_;
+  fml::WeakPtr<IOManager> io_manager_;
   const std::string advisory_script_uri_;
   const std::string advisory_script_entrypoint_;
   const std::string logger_prefix_;
   Dart_Port main_port_ = ILLEGAL_PORT;
   std::string debug_name_;
   std::unique_ptr<Window> window_;
-  fml::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue_;
   tonic::DartMicrotaskQueue microtask_queue_;
   IsolateNameServer* isolate_name_server_;
 
