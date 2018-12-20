@@ -80,6 +80,7 @@ class MultiFrameCodec : public Codec {
   // [SkCodec::getFrameInfo()]. Will cache other non-essential frames until
   // [decodedCacheSize_] : [compressedSize_] exceeds [decodedCacheRatioCap_].
   std::map<int, std::unique_ptr<DecodedFrame>> frameBitmaps_;
+  int lastDecodedRequiredFrame_ = -1;
 
   FML_FRIEND_MAKE_REF_COUNTED(MultiFrameCodec);
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(MultiFrameCodec);

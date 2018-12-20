@@ -434,11 +434,29 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
     // Cache the bitmap if this is a required frame or if we're still under our
     // ratio cap.
     const size_t cachedFrameSize = bitmap.computeByteSize();
-    if (cacheEntry.required_ ||
-        ((decodedCacheSize_ + cachedFrameSize) / compressedSizeBytes_) <=
-            decodedCacheRatioCap_) {
+    const bool cacheOverflowed = ((decodedCacheSize_ + cachedFrameSize) /
+                                  compressedSizeBytes_) > decodedCacheRatioCap_;
+    const bool shouldCache = !cacheOverflowed || cacheEntry.required_;
+    if (shouldCache) {
       cacheEntry.bitmap_ = std::make_unique<SkBitmap>(bitmap);
       decodedCacheSize_ += cachedFrameSize;
+    }
+
+    // Currently all the formats that we support only depend on the last
+    // required frame, if they're using required frames at all. This means we
+    // can safely clear the previously required entry if we're overflowed.
+    const bool shouldClearLastRequiredFrame = cacheEntry.required_ &&
+                                              cacheOverflowed &&
+                                              lastDecodedRequiredFrame_ != -1;
+    if (shouldClearLastRequiredFrame) {
+      DecodedFrame& previouslyRequired =
+          *frameBitmaps_[lastDecodedRequiredFrame_];
+      decodedCacheSize_ -= previouslyRequired.bitmap_->computeByteSize();
+      previouslyRequired.bitmap_->reset();
+    }
+
+    if (cacheEntry.required_) {
+      lastDecodedRequiredFrame_ = nextFrameIndex_;
     }
   }
 
