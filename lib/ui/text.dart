@@ -833,31 +833,31 @@ class TextBox {
   String toString() => 'TextBox.fromLTRBD(${left.toStringAsFixed(1)}, ${top.toStringAsFixed(1)}, ${right.toStringAsFixed(1)}, ${bottom.toStringAsFixed(1)}, $direction)';
 }
 
-/// Disambiguates cases where an offset into a string in code could represent
-/// two different visual positions in the corresponding rendered text.
+/// Disambiguates cases where a string offset could match two locations in the
+/// rendered string.
 ///
 /// For example, at an offset where the rendered text wraps, there are two
 /// visual positions that the offset could represent: one prior to the line
 /// break (at the end of the first line) and one after the line break (at the
-/// start of the second line). A text affinity disambiguates between those two
+/// start of the second line). A text affinity disambiguates between these two
 /// cases.
 ///
 /// This affects only line breaks caused by wrapping, not explicit newline
 /// characters. For newline characters, the position is fully specified by the
 /// offset alone, and there is no ambiguity.
 ///
-/// TextAffinity also affects bidirectional text at the interface between
-/// LTR and RTL text. Consider the following string representation in code,
-/// where the lowercase letters will be displayed as LTR and the uppercase
-/// letters RTL: "helloHELLO".  When rendered, the string would be appear
-/// visually as "helloOLLEH".  An offset of 5 would be ambiguous without a
-/// corresponding TextAffinity.  Looking at the string in code, the offset
-/// represents the position just after the "o" and just before the "H".  When
-/// rendered, this offset could be either in the middle of the string to the
-/// right of the "o" or at the end of the string to the right of the "H".
+/// TextAffinity also affects bidirectional text at the interface between LTR
+/// and RTL text. Consider the following string, where the lowercase letters
+/// will be displayed as LTR and the uppercase letters RTL: "helloHELLO".  When
+/// rendered, the string would appear visually as "helloOLLEH".  An offset of 5
+/// would be ambiguous without a corresponding TextAffinity.  Looking at the
+/// string in code, the offset represents the position just after the "o" and
+/// just before the "H".  When rendered, this offset could be either in the
+/// middle of the string to the right of the "o" or at the end of the string to
+/// the right of the "H".
 enum TextAffinity {
   /// The position has affinity for the upstream side of the text position, or
-  /// in the direction of the beginning of the string in code.
+  /// in the direction of the beginning of the string.
   ///
   /// In the example of an offset at the place where text is wrapping, upstream
   /// indicates the end of the first line.
@@ -868,7 +868,7 @@ enum TextAffinity {
   upstream,
 
   /// The position has affinity for the downstream side of the text position, or
-  /// in the direction of the end of the string in code.
+  /// in the direction of the end of the string.
   ///
   /// In the example of an offset at the place where text is wrapping,
   /// downstream indicates the beginning of the second line.
@@ -884,13 +884,12 @@ enum TextAffinity {
 /// be used to locate the same position visually in a rendered string of text
 /// (using [offset] and, when needed to resolve ambiguity, [affinity]).
 ///
-/// An offset into a string in code is ambiguous with its corresponding position
-/// in the rendered string in two cases.  One happens when rendered text is
-/// forced to wrap. In this case, the offset where the wrap occurs could
-/// visually appear either at the end of the first line or the beginning of the
-/// second line. The second way is with bidirectional text.  An offset at the
-/// interface between two different text directions could have one of two
-/// locations in the rendered text.
+/// The location of an offset in a rendered string is ambiguous in two cases.
+/// One happens when rendered text is forced to wrap. In this case, the offset
+/// where the wrap occurs could visually appear either at the end of the first
+/// line or the beginning of the second line. The second way is with
+/// bidirectional text.  An offset at the interface between two different text
+/// directions could have one of two locations in the rendered text.
 ///
 /// See the documentation for [TextAffinity] for more information on how
 /// TextAffinity disambiguates situations like these.
@@ -905,7 +904,7 @@ class TextPosition {
        assert(affinity != null);
 
   /// The index of the character that immediately follows the position in the
-  /// string represenation of the text.
+  /// string representation of the text.
   ///
   /// For example, given the string `'Hello'`, offset 0 represents the cursor
   /// being before the `H`, while offset 5 represents the cursor being just
