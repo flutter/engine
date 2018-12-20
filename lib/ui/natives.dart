@@ -60,7 +60,12 @@ List<int> saveCompilationTrace() {
 }
 
 // TODO(sbaranov): This function will go away in subsequent PR, once the framework has caught up.
-List<int> dumpCompilationTrace() { return null; }
+List<int> dumpCompilationTrace() {
+  final dynamic result = _saveCompilationTrace();
+  if (result is Error)
+    throw result;
+  return result;
+}
 
 dynamic _saveCompilationTrace() native 'SaveCompilationTrace';
 
