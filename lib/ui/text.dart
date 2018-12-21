@@ -218,6 +218,23 @@ enum TextDecorationStyle {
   wavy
 }
 
+/// Determines if lists [a] and [b] are deep equivalent.
+///
+/// Returns true if the lists are both null, or if they are both non-null, have
+/// the same length, and contain the same elements in the same order. Returns
+/// false otherwise.
+bool _listEquals<T>(List<T> a, List<T> b) {
+  if (a == null)
+    return b == null;
+  if (b == null || a.length != b.length)
+    return false;
+  for (int index = 0; index < a.length; index += 1) {
+    if (a[index] != b[index])
+      return false;
+  }
+  return true;
+}
+
 // This encoding must match the C++ version of ParagraphBuilder::pushStyle.
 //
 // The encoded array buffer has 8 elements.
@@ -447,23 +464,6 @@ class TextStyle {
       return false;
     return true;
   }
-
-  /// Determines if lists [a] and [b] are deep equivalent.
-  ///
-  /// Returns true if the lists are both null, or if they are both non-null, have
-  /// the same length, and contain the same elements in the same order. Returns
-  /// false otherwise.
-  bool _listEquals<T>(List<T> a, List<T> b) {
-    if (a == null)
-      return b == null;
-    if (b == null || a.length != b.length)
-      return false;
-    for (int index = 0; index < a.length; index += 1) {
-      if (a[index] != b[index])
-        return false;
-    }
-  return true;
-}
 
   @override
   int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, _shadows);
