@@ -117,7 +117,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '5f54a3e98dea0a79589820527658b49fef7916ea',
+  'src': 'https://github.com/dnfield/flutter_buildroot.git' + '@' + '0d05a92780514506ffa7da94a3e8a61e136c3dbf',
 
    # Fuchsia compatibility
    #
@@ -407,11 +407,36 @@ hooks = [
     'action': ['python', 'src/build/vs_toolchain.py', 'update'],
   },
   {
+    # Pull dart sdk if needed
+    # this will be used by android_tools
+    'name': 'dart',
+    'pattern': '.',
+    'action': ['python', 'src/tools/dart/update.py'],
+  },
+  {
+    'name': 'prepare_android_downloader',
+    'pattern': '.',
+    'cwd': 'src/tools/android/android_sdk_downloader',
+    'action': [
+        '../../../third_party/dart/tools/sdks/dart-sdk/bin/pub', # this hook _must_ be run _after_ the dart hook.
+        'get'
+    ],
+  },
+  {
     'name': 'download_android_tools',
     'pattern': '.',
     'action': [
-        'python',
-        'src/tools/android/download_android_tools.py',
+        'src/third_party/dart/tools/sdks/dart-sdk/bin/dart', # this hook _must_ be run _after_ the dart hook.
+        '--enable-asserts',
+        'src/tools/android/android_sdk_downloader/lib/main.dart',
+        '-y', # Accept licenses
+        '--out=src/third_party/android_tools',
+        '--platform=28',
+        '--platform-revision=6',
+        '--build-tools-version=28.0.3',
+        '--platform-tools-version=28.0.1',
+        '--tools-version=26.1.1',
+        '--ndk-version=18.1.5063045'
     ],
   },
   {
@@ -429,12 +454,6 @@ hooks = [
       'python',
       'src/tools/buildtools/update.py',
     ],
-  },
-  {
-    # Pull dart sdk if needed
-    'name': 'dart',
-    'pattern': '.',
-    'action': ['python', 'src/tools/dart/update.py'],
   },
   {
     'name': 'generate_package_files',
