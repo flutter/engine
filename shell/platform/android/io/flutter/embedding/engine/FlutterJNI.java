@@ -9,11 +9,12 @@ import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.UiThread;
 import android.view.Surface;
 
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
@@ -86,15 +87,17 @@ import io.flutter.embedding.engine.renderer.OnFirstFrameRenderedListener;
 public class FlutterJNI {
   private static final String TAG = "FlutterJNI";
 
+  @UiThread
   public static native boolean nativeGetIsSoftwareRenderingEnabled();
 
+  @UiThread
   public static native String nativeGetObservatoryUri();
   
   private Long nativePlatformViewId;
   private FlutterRenderer.RenderSurface renderSurface;
   private PlatformMessageHandler platformMessageHandler;
-  private final Set<EngineLifecycleListener> engineLifecycleListeners = new CopyOnWriteArraySet<>();
-  private final Set<OnFirstFrameRenderedListener> firstFrameListeners = new CopyOnWriteArraySet<>();
+  private final Set<EngineLifecycleListener> engineLifecycleListeners = new HashSet<>();
+  private final Set<OnFirstFrameRenderedListener> firstFrameListeners = new HashSet<>();
 
   /**
    * Sets the {@link FlutterRenderer.RenderSurface} delegate for the attached Flutter context.
@@ -112,37 +115,49 @@ public class FlutterJNI {
    * If no {@link FlutterRenderer.RenderSurface} is registered then related messages coming from
    * Flutter will be dropped (ignored).
    */
+  @UiThread
   public void setRenderSurface(@Nullable FlutterRenderer.RenderSurface renderSurface) {
     this.renderSurface = renderSurface;
   }
 
-  // TODO(mattcarroll): define "update"
-  // Called by native to update the semantics/accessibility tree.
+  /**
+   * Call invoked by native to be forwarded to an {@link io.flutter.view.AccessibilityBridge}.
+   *
+   * The {@code buffer} and {@code strings} form a communication protocol that is implemented here:
+   * https://github.com/flutter/engine/blob/master/shell/platform/android/platform_view_android.cc#L207
+   */
   @SuppressWarnings("unused")
+  @UiThread
   private void updateSemantics(ByteBuffer buffer, String[] strings) {
     if (renderSurface != null) {
       renderSurface.updateSemantics(buffer, strings);
     }
-    // TODO(mattcarroll): log dropped messages when in debug mode
+    // TODO(mattcarroll): log dropped messages when in debug mode (https://github.com/flutter/flutter/issues/25391)
   }
 
-  // TODO(mattcarroll): define "update"
-  // Called by native to update the custom accessibility actions.
+  /**
+   * Call invoked by native to be forwarded to an {@link io.flutter.view.AccessibilityBridge}.
+   *
+   * The {@code buffer} and {@code strings} form a communication protocol that is implemented here:
+   * https://github.com/flutter/engine/blob/master/shell/platform/android/platform_view_android.cc#L207
+   */
   @SuppressWarnings("unused")
+  @UiThread
   private void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
     if (renderSurface != null) {
       renderSurface.updateCustomAccessibilityActions(buffer, strings);
     }
-    // TODO(mattcarroll): log dropped messages when in debug mode
+    // TODO(mattcarroll): log dropped messages when in debug mode (https://github.com/flutter/flutter/issues/25391)
   }
 
   // Called by native to notify first Flutter frame rendered.
   @SuppressWarnings("unused")
+  @UiThread
   private void onFirstFrame() {
     if (renderSurface != null) {
       renderSurface.onFirstFrameRendered();
     }
-    // TODO(mattcarroll): log dropped messages when in debug mode
+    // TODO(mattcarroll): log dropped messages when in debug mode (https://github.com/flutter/flutter/issues/25391)
 
     for (OnFirstFrameRenderedListener listener : firstFrameListeners) {
       listener.onFirstFrameRendered();
@@ -173,6 +188,7 @@ public class FlutterJNI {
    * to operate correctly. Moreover, the handler must be implemented such that fundamental platform
    * messages are handled as expected. See {@link FlutterNativeView} for an example implementation.
    */
+  @UiThread
   public void setPlatformMessageHandler(@Nullable PlatformMessageHandler platformMessageHandler) {
     this.platformMessageHandler = platformMessageHandler;
   }
@@ -183,7 +199,7 @@ public class FlutterJNI {
     if (platformMessageHandler != null) {
       platformMessageHandler.handlePlatformMessage(channel, message, replyId);
     }
-    // TODO(mattcarroll): log dropped messages when in debug mode
+    // TODO(mattcarroll): log dropped messages when in debug mode (https://github.com/flutter/flutter/issues/25391)
   }
 
   // Called by native to respond to a platform message that we sent.
@@ -192,27 +208,32 @@ public class FlutterJNI {
     if (platformMessageHandler != null) {
       platformMessageHandler.handlePlatformMessageResponse(replyId, reply);
     }
-    // TODO(mattcarroll): log dropped messages when in debug mode
+    // TODO(mattcarroll): log dropped messages when in debug mode (https://github.com/flutter/flutter/issues/25391)
   }
 
+  @UiThread
   public void addEngineLifecycleListener(@NonNull EngineLifecycleListener engineLifecycleListener) {
     engineLifecycleListeners.add(engineLifecycleListener);
   }
 
+  @UiThread
   public void removeEngineLifecycleListener(@NonNull EngineLifecycleListener engineLifecycleListener) {
     engineLifecycleListeners.remove(engineLifecycleListener);
   }
 
+  @UiThread
   public void addOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
     firstFrameListeners.add(listener);
   }
 
+  @UiThread
   public void removeOnFirstFrameRenderedListener(@NonNull OnFirstFrameRenderedListener listener) {
     firstFrameListeners.remove(listener);
   }
 
-  // TODO(mattcarroll): rename comments after refactor is done and their origin no longer matters
+  // TODO(mattcarroll): rename comments after refactor is done and their origin no longer matters (https://github.com/flutter/flutter/issues/25533)
   //----- Start from FlutterView -----
+  @UiThread
   public void onSurfaceCreated(@NonNull Surface surface) {
     ensureAttachedToNative();
     nativeSurfaceCreated(nativePlatformViewId, surface);
@@ -220,6 +241,7 @@ public class FlutterJNI {
 
   private native void nativeSurfaceCreated(long nativePlatformViewId, Surface surface);
 
+  @UiThread
   public void onSurfaceChanged(int width, int height) {
     ensureAttachedToNative();
     nativeSurfaceChanged(nativePlatformViewId, width, height);
@@ -227,6 +249,7 @@ public class FlutterJNI {
 
   private native void nativeSurfaceChanged(long nativePlatformViewId, int width, int height);
 
+  @UiThread
   public void onSurfaceDestroyed() {
     ensureAttachedToNative();
     nativeSurfaceDestroyed(nativePlatformViewId);
@@ -234,17 +257,20 @@ public class FlutterJNI {
 
   private native void nativeSurfaceDestroyed(long nativePlatformViewId);
 
-  public void setViewportMetrics(float devicePixelRatio,
-                                 int physicalWidth,
-                                 int physicalHeight,
-                                 int physicalPaddingTop,
-                                 int physicalPaddingRight,
-                                 int physicalPaddingBottom,
-                                 int physicalPaddingLeft,
-                                 int physicalViewInsetTop,
-                                 int physicalViewInsetRight,
-                                 int physicalViewInsetBottom,
-                                 int physicalViewInsetLeft) {
+  @UiThread
+  public void setViewportMetrics(
+      float devicePixelRatio,
+      int physicalWidth,
+      int physicalHeight,
+      int physicalPaddingTop,
+      int physicalPaddingRight,
+      int physicalPaddingBottom,
+      int physicalPaddingLeft,
+      int physicalViewInsetTop,
+      int physicalViewInsetRight,
+      int physicalViewInsetBottom,
+      int physicalViewInsetLeft
+  ) {
     ensureAttachedToNative();
     nativeSetViewportMetrics(
         nativePlatformViewId,
@@ -262,19 +288,22 @@ public class FlutterJNI {
     );
   }
 
-  private native void nativeSetViewportMetrics(long nativePlatformViewId,
-                                               float devicePixelRatio,
-                                               int physicalWidth,
-                                               int physicalHeight,
-                                               int physicalPaddingTop,
-                                               int physicalPaddingRight,
-                                               int physicalPaddingBottom,
-                                               int physicalPaddingLeft,
-                                               int physicalViewInsetTop,
-                                               int physicalViewInsetRight,
-                                               int physicalViewInsetBottom,
-                                               int physicalViewInsetLeft);
+  private native void nativeSetViewportMetrics(
+      long nativePlatformViewId,
+      float devicePixelRatio,
+      int physicalWidth,
+      int physicalHeight,
+      int physicalPaddingTop,
+      int physicalPaddingRight,
+      int physicalPaddingBottom,
+      int physicalPaddingLeft,
+      int physicalViewInsetTop,
+      int physicalViewInsetRight,
+      int physicalViewInsetBottom,
+      int physicalViewInsetLeft
+  );
 
+  @UiThread
   public Bitmap getBitmap() {
     ensureAttachedToNative();
     return nativeGetBitmap(nativePlatformViewId);
@@ -282,6 +311,7 @@ public class FlutterJNI {
 
   private native Bitmap nativeGetBitmap(long nativePlatformViewId);
 
+  @UiThread
   public void dispatchPointerDataPacket(ByteBuffer buffer, int position) {
     ensureAttachedToNative();
     nativeDispatchPointerDataPacket(nativePlatformViewId, buffer, position);
@@ -291,17 +321,21 @@ public class FlutterJNI {
                                                       ByteBuffer buffer,
                                                       int position);
 
+  @UiThread
   public void dispatchSemanticsAction(int id, int action, ByteBuffer args, int argsPosition) {
     ensureAttachedToNative();
     nativeDispatchSemanticsAction(nativePlatformViewId, id, action, args, argsPosition);
   }
 
-  private native void nativeDispatchSemanticsAction(long nativePlatformViewId,
-                                                    int id,
-                                                    int action,
-                                                    ByteBuffer args,
-                                                    int argsPosition);
+  private native void nativeDispatchSemanticsAction(
+      long nativePlatformViewId,
+      int id,
+      int action,
+      ByteBuffer args,
+      int argsPosition
+  );
 
+  @UiThread
   public void setSemanticsEnabled(boolean enabled) {
     ensureAttachedToNative();
     nativeSetSemanticsEnabled(nativePlatformViewId, enabled);
@@ -309,6 +343,7 @@ public class FlutterJNI {
 
   private native void nativeSetSemanticsEnabled(long nativePlatformViewId, boolean enabled);
 
+  @UiThread
   public void setAccessibilityFeatures(int flags) {
     ensureAttachedToNative();
     nativeSetAccessibilityFeatures(nativePlatformViewId, flags);
@@ -316,6 +351,7 @@ public class FlutterJNI {
 
   private native void nativeSetAccessibilityFeatures(long nativePlatformViewId, int flags);
 
+  @UiThread
   public void registerTexture(long textureId, SurfaceTexture surfaceTexture) {
     ensureAttachedToNative();
     nativeRegisterTexture(nativePlatformViewId, textureId, surfaceTexture);
@@ -323,6 +359,7 @@ public class FlutterJNI {
 
   private native void nativeRegisterTexture(long nativePlatformViewId, long textureId, SurfaceTexture surfaceTexture);
 
+  @UiThread
   public void markTextureFrameAvailable(long textureId) {
     ensureAttachedToNative();
     nativeMarkTextureFrameAvailable(nativePlatformViewId, textureId);
@@ -330,6 +367,7 @@ public class FlutterJNI {
 
   private native void nativeMarkTextureFrameAvailable(long nativePlatformViewId, long textureId);
 
+  @UiThread
   public void unregisterTexture(long textureId) {
     ensureAttachedToNative();
     nativeUnregisterTexture(nativePlatformViewId, textureId);
@@ -338,12 +376,13 @@ public class FlutterJNI {
   private native void nativeUnregisterTexture(long nativePlatformViewId, long textureId);
   //------- End from FlutterView -----
 
-  // TODO(mattcarroll): rename comments after refactor is done and their origin no longer matters
+  // TODO(mattcarroll): rename comments after refactor is done and their origin no longer matters (https://github.com/flutter/flutter/issues/25533)
   //------ Start from FlutterNativeView ----
   public boolean isAttached() {
     return nativePlatformViewId != null;
   }
 
+  @UiThread
   public void attachToNative(boolean isBackgroundView) {
     ensureNotAttachedToNative();
     nativePlatformViewId = nativeAttach(this, isBackgroundView);
@@ -351,6 +390,7 @@ public class FlutterJNI {
 
   private native long nativeAttach(FlutterJNI flutterJNI, boolean isBackgroundView);
 
+  @UiThread
   public void detachFromNativeButKeepNativeResources() {
     ensureAttachedToNative();
     nativeDetach(nativePlatformViewId);
@@ -359,6 +399,7 @@ public class FlutterJNI {
 
   private native void nativeDetach(long nativePlatformViewId);
 
+  @UiThread
   public void detachFromNativeAndReleaseResources() {
     ensureAttachedToNative();
     nativeDestroy(nativePlatformViewId);
@@ -367,16 +408,17 @@ public class FlutterJNI {
 
   private native void nativeDestroy(long nativePlatformViewId);
 
-  public void runBundleAndSnapshotFromLibrary(@NonNull String pathToBundleWithEntrypoint,
-                                              @Nullable String pathToFallbackBundle,
-                                              @Nullable String entrypointFunctionName,
-                                              @Nullable String pathToEntrypointFunction,
-                                              @NonNull AssetManager assetManager) {
+  @UiThread
+  public void runBundleAndSnapshotFromLibrary(
+      @NonNull String[] prioritizedBundlePaths,
+      @Nullable String entrypointFunctionName,
+      @Nullable String pathToEntrypointFunction,
+      @NonNull AssetManager assetManager
+  ) {
     ensureAttachedToNative();
     nativeRunBundleAndSnapshotFromLibrary(
         nativePlatformViewId,
-        pathToBundleWithEntrypoint,
-        pathToFallbackBundle,
+        prioritizedBundlePaths,
         entrypointFunctionName,
         pathToEntrypointFunction,
         assetManager
@@ -385,13 +427,13 @@ public class FlutterJNI {
 
   private native void nativeRunBundleAndSnapshotFromLibrary(
       long nativePlatformViewId,
-      @NonNull String pathToBundleWithEntrypoint,
-      @Nullable String pathToFallbackBundle,
+      @NonNull String[] prioritizedBundlePaths,
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction,
       @NonNull AssetManager manager
   );
 
+  @UiThread
   public void dispatchEmptyPlatformMessage(String channel, int responseId) {
     ensureAttachedToNative();
     nativeDispatchEmptyPlatformMessage(nativePlatformViewId, channel, responseId);
@@ -404,6 +446,7 @@ public class FlutterJNI {
       int responseId
   );
 
+  @UiThread
   public void dispatchPlatformMessage(String channel, ByteBuffer message, int position, int responseId) {
     ensureAttachedToNative();
     nativeDispatchPlatformMessage(
@@ -424,6 +467,7 @@ public class FlutterJNI {
       int responseId
   );
 
+  @UiThread
   public void invokePlatformMessageEmptyResponseCallback(int responseId) {
     ensureAttachedToNative();
     nativeInvokePlatformMessageEmptyResponseCallback(nativePlatformViewId, responseId);
@@ -435,6 +479,7 @@ public class FlutterJNI {
       int responseId
   );
 
+  @UiThread
   public void invokePlatformMessageResponseCallback(int responseId, ByteBuffer message, int position) {
     ensureAttachedToNative();
     nativeInvokePlatformMessageResponseCallback(
@@ -454,7 +499,7 @@ public class FlutterJNI {
   );
   //------ End from FlutterNativeView ----
 
-  // TODO(mattcarroll): rename comments after refactor is done and their origin no longer matters
+  // TODO(mattcarroll): rename comments after refactor is done and their origin no longer matters (https://github.com/flutter/flutter/issues/25533)
   //------ Start from Engine ---
   // Called by native.
   @SuppressWarnings("unused")
