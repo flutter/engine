@@ -166,11 +166,17 @@ public final class FlutterActivityDelegate
         if (loadIntent(activity.getIntent())) {
             return;
         }
+
         if (!flutterView.getFlutterNativeView().isApplicationRunning()) {
           String appBundlePath = FlutterMain.findAppBundlePath(activity.getApplicationContext());
           if (appBundlePath != null) {
             FlutterRunArguments arguments = new FlutterRunArguments();
-            arguments.bundlePath = appBundlePath;
+            ArrayList<String> bundlePaths = new ArrayList<>();
+            if (FlutterMain.getUpdateInstallationPath() != null) {
+                bundlePaths.add(FlutterMain.getUpdateInstallationPath());
+            }
+            bundlePaths.add(appBundlePath);
+            arguments.bundlePaths = bundlePaths.toArray(new String[0]);
             arguments.entrypoint = "main";
             flutterView.runFromBundle(arguments);
           }
@@ -290,7 +296,7 @@ public final class FlutterActivityDelegate
         // Before adding more entries to this list, consider that arbitrary
         // Android applications can generate intents with extra data and that
         // there are many security-sensitive args in the binary.
-        ArrayList<String> args = new ArrayList<String>();
+        ArrayList<String> args = new ArrayList<>();
         if (intent.getBooleanExtra("trace-startup", false)) {
             args.add("--trace-startup");
         }
@@ -337,7 +343,12 @@ public final class FlutterActivityDelegate
             }
             if (!flutterView.getFlutterNativeView().isApplicationRunning()) {
               FlutterRunArguments args = new FlutterRunArguments();
-              args.bundlePath = appBundlePath;
+              ArrayList<String> bundlePaths = new ArrayList<>();
+              if (FlutterMain.getUpdateInstallationPath() != null) {
+                  bundlePaths.add(FlutterMain.getUpdateInstallationPath());
+              }
+              bundlePaths.add(appBundlePath);
+              args.bundlePaths = bundlePaths.toArray(new String[0]);
               args.entrypoint = "main";
               flutterView.runFromBundle(args);
             }

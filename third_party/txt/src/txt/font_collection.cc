@@ -95,12 +95,12 @@ void FontCollection::SetTestFontManager(sk_sp<SkFontMgr> font_manager) {
 // Return the available font managers in the order they should be queried.
 std::vector<sk_sp<SkFontMgr>> FontCollection::GetFontManagerOrder() const {
   std::vector<sk_sp<SkFontMgr>> order;
-  if (test_font_manager_)
-    order.push_back(test_font_manager_);
   if (dynamic_font_manager_)
     order.push_back(dynamic_font_manager_);
   if (asset_font_manager_)
     order.push_back(asset_font_manager_);
+  if (test_font_manager_)
+    order.push_back(test_font_manager_);
   if (default_font_manager_)
     order.push_back(default_font_manager_);
   return order;
@@ -202,6 +202,22 @@ std::shared_ptr<minikin::FontFamily> FontCollection::CreateMinikinFontFamily(
 const std::shared_ptr<minikin::FontFamily>& FontCollection::MatchFallbackFont(
     uint32_t ch,
     std::string locale) {
+  // Check if the ch's matched font has been cached. We cache the results of
+  // this method as repeated matchFamilyStyleCharacter calls can become
+  // extremely laggy when typing a large number of complex emojis.
+  auto lookup = fallback_match_cache_.find(ch);
+  if (lookup != fallback_match_cache_.end()) {
+    return *lookup->second;
+  }
+  const std::shared_ptr<minikin::FontFamily>* match =
+      &DoMatchFallbackFont(ch, locale);
+  fallback_match_cache_.insert(std::make_pair(ch, match));
+  return *match;
+}
+
+const std::shared_ptr<minikin::FontFamily>& FontCollection::DoMatchFallbackFont(
+    uint32_t ch,
+    std::string locale) {
   for (const sk_sp<SkFontMgr>& manager : GetFontManagerOrder()) {
     std::vector<const char*> bcp47;
     if (!locale.empty())
@@ -219,7 +235,6 @@ const std::shared_ptr<minikin::FontFamily>& FontCollection::MatchFallbackFont(
 
     return GetFallbackFontFamily(manager, family_name);
   }
-
   return g_null_family;
 }
 

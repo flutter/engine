@@ -319,7 +319,7 @@ public class FlutterView extends SurfaceView
                 Method localeListGet = localeList.getClass().getDeclaredMethod("get", int.class);
                 Method localeListSize = localeList.getClass().getDeclaredMethod("size");
                 int localeCount = (int)localeListSize.invoke(localeList);
-                List<String> data = new ArrayList<String>();
+                List<String> data = new ArrayList<>();
                 for (int index = 0; index < localeCount; ++index) {
                     Locale locale = (Locale)localeListGet.invoke(localeList, index);
                     data.add(locale.getLanguage());
@@ -774,6 +774,7 @@ public class FlutterView extends SurfaceView
         WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
         float fps = wm.getDefaultDisplay().getRefreshRate();
         VsyncWaiter.refreshPeriodNanos = (long) (1000000000.0 / fps);
+        VsyncWaiter.refreshRateFPS = fps;
     }
 
     // Called by native to update the semantics/accessibility tree.

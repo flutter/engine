@@ -79,12 +79,21 @@ public class FlutterNativeView implements BinaryMessenger {
     }
 
     public void runFromBundle(FlutterRunArguments args) {
-        if (args.bundlePath == null) {
-          throw new AssertionError("A bundlePath must be specified");
+        boolean hasBundlePaths = args.bundlePaths != null && args.bundlePaths.length != 0;
+        if (args.bundlePath == null && !hasBundlePaths) {
+            throw new AssertionError("Either bundlePath or bundlePaths must be specified");
+        } else if ((args.bundlePath != null || args.defaultPath != null) &&
+                hasBundlePaths) {
+            throw new AssertionError("Can't specify both bundlePath and bundlePaths");
         } else if (args.entrypoint == null) {
-          throw new AssertionError("An entrypoint must be specified");
+            throw new AssertionError("An entrypoint must be specified");
         }
-      runFromBundleInternal(args.bundlePath, args.entrypoint, args.libraryPath, args.defaultPath);
+        if (hasBundlePaths) {
+            runFromBundleInternal(args.bundlePaths, args.entrypoint, args.libraryPath);
+        } else {
+            runFromBundleInternal(new String[] {args.bundlePath, args.defaultPath},
+                    args.entrypoint, args.libraryPath);
+        }
     }
 
     /**
@@ -95,18 +104,17 @@ public class FlutterNativeView implements BinaryMessenger {
     @Deprecated
     public void runFromBundle(String bundlePath, String defaultPath, String entrypoint,
             boolean reuseRuntimeController) {
-        runFromBundleInternal(bundlePath, entrypoint, null, defaultPath);
+        runFromBundleInternal(new String[] {bundlePath, defaultPath}, entrypoint, null);
     }
 
-    private void runFromBundleInternal(String bundlePath, String entrypoint,
-        String libraryPath, String defaultPath) {
+    private void runFromBundleInternal(String[] bundlePaths, String entrypoint,
+        String libraryPath) {
         assertAttached();
         if (applicationIsRunning)
             throw new AssertionError(
                     "This Flutter engine instance is already running an application");
         mFlutterJNI.runBundleAndSnapshotFromLibrary(
-            bundlePath,
-            defaultPath,
+            bundlePaths,
             entrypoint,
             libraryPath,
             mContext.getResources().getAssets()

@@ -459,6 +459,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourceCleaner.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourceExtractor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourcePaths.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/TextureRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/VsyncWaiter.java
 FILE: ../../../flutter/shell/platform/android/library_loader.cc
@@ -599,8 +600,6 @@ FILE: ../../../flutter/vulkan/vulkan_native_surface.cc
 FILE: ../../../flutter/vulkan/vulkan_native_surface.h
 FILE: ../../../flutter/vulkan/vulkan_native_surface_android.cc
 FILE: ../../../flutter/vulkan/vulkan_native_surface_android.h
-FILE: ../../../flutter/vulkan/vulkan_native_surface_magma.cc
-FILE: ../../../flutter/vulkan/vulkan_native_surface_magma.h
 FILE: ../../../flutter/vulkan/vulkan_proc_table.cc
 FILE: ../../../flutter/vulkan/vulkan_proc_table.h
 FILE: ../../../flutter/vulkan/vulkan_provider.cc
@@ -609,6 +608,7 @@ FILE: ../../../flutter/vulkan/vulkan_surface.cc
 FILE: ../../../flutter/vulkan/vulkan_surface.h
 FILE: ../../../flutter/vulkan/vulkan_swapchain.cc
 FILE: ../../../flutter/vulkan/vulkan_swapchain.h
+FILE: ../../../flutter/vulkan/vulkan_swapchain_stub.cc
 FILE: ../../../flutter/vulkan/vulkan_utilities.cc
 FILE: ../../../flutter/vulkan/vulkan_utilities.h
 FILE: ../../../flutter/vulkan/vulkan_window.cc
