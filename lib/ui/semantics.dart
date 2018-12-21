@@ -607,6 +607,14 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The `transform` is a matrix that maps this node's coordinate system into
   /// its parent's coordinate system.
+  ///
+  /// The `elevation` describes the distance in z-direction between this node
+  /// and the `elevation` of the parent.
+  ///
+  /// The `thickness` describes how much space this node occupies in the
+  /// z-direction starting at `elevation`. Basically, in the z-direction the
+  /// node starts at `elevation` above the parent and ends at `elevation` +
+  /// `thickness` above the parent.
   void updateNode({
     int id,
     int flags,
