@@ -374,11 +374,11 @@ MultiFrameCodec::MultiFrameCodec(std::unique_ptr<SkCodec> codec,
   nextFrameIndex_ = 0;
   // Go through our frame information and mark which frames are required in
   // order to decode subsequent ones.
-  requiredFrameInfos_.clear();
+  requiredFrames_.clear();
   for (size_t frameIndex = 0; frameIndex < frameInfos_.size(); frameIndex++) {
     const int requiredFrame = frameInfos_[frameIndex].fRequiredFrame;
     if (requiredFrame != SkCodec::kNoFrame) {
-      requiredFrameInfos_[requiredFrame] = true;
+      requiredFrames_[requiredFrame] = true;
     }
   }
 }
@@ -438,7 +438,7 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
   }
 
   // Hold onto this if we need it to decode future frames.
-  if (requiredFrameInfos_[nextFrameIndex_]) {
+  if (requiredFrames_[nextFrameIndex_]) {
     lastRequiredFrame_ = frameAlreadyCached
                              ? frameBitmaps_[nextFrameIndex_]
                              : std::make_shared<SkBitmap>(bitmap);

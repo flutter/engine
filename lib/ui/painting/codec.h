@@ -65,7 +65,7 @@ class MultiFrameCodec : public Codec {
   size_t decodedCacheSize_;
 
   std::vector<SkCodec::FrameInfo> frameInfos_;
-  std::map<int, bool> requiredFrameInfos_;
+  std::map<int, bool> requiredFrames_;
 
   // A cache of previously loaded bitmaps, indexed by the frame they belong to.
   // Caches all frames until [decodedCacheSize_] : [compressedSize_] exceeds
