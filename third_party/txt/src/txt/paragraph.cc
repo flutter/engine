@@ -658,7 +658,6 @@ void Paragraph::Layout(double width, bool force) {
                                        grapheme_advance,
                                        run.start() + glyph_code_units.start,
                                        grapheme_code_unit_counts[0]);
-
           // Compute positions for the additional graphemes in the ligature.
           for (size_t i = 1; i < grapheme_code_unit_counts.size(); ++i) {
             glyph_positions.emplace_back(
@@ -923,6 +922,13 @@ sk_sp<SkTypeface> Paragraph::GetDefaultSkiaTypeface(const TextStyle& style) {
 void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
   SkPoint base_offset = SkPoint::Make(x, y);
   SkPaint paint;
+  // Paint the background and shadows first before painting any text to prevent
+  // potential overlap.
+  for (const PaintRecord& record : records_) {
+    SkPoint offset = base_offset + record.offset();
+    PaintBackground(canvas, record, base_offset);
+    PaintShadow(canvas, record, offset);
+  }
   for (const PaintRecord& record : records_) {
     if (record.style().has_foreground) {
       paint = record.style().foreground;
@@ -931,8 +937,6 @@ void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
       paint.setColor(record.style().color);
     }
     SkPoint offset = base_offset + record.offset();
-    PaintBackground(canvas, record, base_offset);
-    PaintShadow(canvas, record, offset);
     canvas->drawTextBlob(record.text(), offset.x(), offset.y(), paint);
     PaintDecorations(canvas, record, base_offset);
   }
