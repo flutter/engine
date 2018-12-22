@@ -926,7 +926,6 @@ void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
   // Paint the background first before painting any text to prevent
   // potential overlap.
   for (const PaintRecord& record : records_) {
-    SkPoint offset = base_offset + record.offset();
     PaintBackground(canvas, record, base_offset);
   }
   for (const PaintRecord& record : records_) {
