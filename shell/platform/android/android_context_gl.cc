@@ -65,6 +65,12 @@ static EGLResult<EGLSurface> CreateContext(EGLDisplay display,
   EGLint attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
 
   EGLContext context = eglCreateContext(display, config, share, attributes);
+  if (context == EGL_NO_CONTEXT) {
+    EGLint last_error = eglGetError();
+    if (last_error == EGL_BAD_MATCH && share != EGL_NO_CONTEXT) {
+      context = eglCreateContext(display, config, EGL_NO_CONTEXT, attributes);
+    }
+  }
 
   return {context != EGL_NO_CONTEXT, context};
 }
