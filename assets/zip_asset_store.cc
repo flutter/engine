@@ -23,8 +23,7 @@ void UniqueUnzipperTraits::Free(void* file) {
 }
 
 ZipAssetStore::ZipAssetStore(std::string file_path, std::string directory)
-    : file_path_(std::move(file_path)),
-      directory_(std::move(directory)) {
+    : file_path_(std::move(file_path)), directory_(std::move(directory)) {
   BuildStatCache();
 }
 
