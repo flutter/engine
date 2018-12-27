@@ -356,7 +356,7 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   if (self) {
     self.delaysTouchesBegan = YES;
     self.delegate = self;
-    _forwardingRecognizer.reset(forwardingRecognizer);
+    _forwardingRecognizer.reset([forwardingRecognizer retain]);
   }
   return self;
 }
@@ -373,12 +373,8 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   return otherGestureRecognizer == self;
 }
 
-- (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  self.state = UIGestureRecognizerStateBegan;
-}
-
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  self.state = UIGestureRecognizerStateCancelled;
+  self.state = UIGestureRecognizerStateFailed;
 }
 @end
 
@@ -415,7 +411,7 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
   [_flutterView touchesCancelled:touches withEvent:event];
-  self.state = UIGestureRecognizerStateCancelled;
+  self.state = UIGestureRecognizerStateFailed;
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
