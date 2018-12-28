@@ -1,4 +1,4 @@
-Signature: a6eed529dc82a8bd4ae675ccf1dcfc7b
+Signature: c66bfe207912eaaeb3952f7cd95a1e7f
 
 UNUSED LICENSES:
 
@@ -5234,13 +5234,12 @@ ORIGIN: ../../../third_party/dart/runtime/bin/crashpad.h + ../../../third_party/
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/bin/crashpad.h
 FILE: ../../../third_party/dart/runtime/bin/dart_embedder_api_impl.cc
-FILE: ../../../third_party/dart/runtime/bin/kernel_isolate.cc
-FILE: ../../../third_party/dart/runtime/bin/kernel_isolate.h
 FILE: ../../../third_party/dart/runtime/bin/typed_data_utils.cc
 FILE: ../../../third_party/dart/runtime/bin/typed_data_utils.h
 FILE: ../../../third_party/dart/runtime/include/dart_embedder_api.h
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz.dart
 FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz_test.dart
+FILE: ../../../third_party/dart/runtime/tools/dartfuzz/dartfuzz_values.dart
 FILE: ../../../third_party/dart/runtime/vm/base64.cc
 FILE: ../../../third_party/dart/runtime/vm/base64.h
 FILE: ../../../third_party/dart/runtime/vm/base64_test.cc
@@ -5273,6 +5272,8 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_translation_
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_translation_helper.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/scope_builder.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/scope_builder.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/relocation.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/relocation.h
 FILE: ../../../third_party/dart/runtime/vm/constants.h
 FILE: ../../../third_party/dart/runtime/vm/constants_kbc.h
 FILE: ../../../third_party/dart/runtime/vm/datastream.cc
@@ -5284,6 +5285,8 @@ FILE: ../../../third_party/dart/runtime/vm/interpreter.cc
 FILE: ../../../third_party/dart/runtime/vm/interpreter.h
 FILE: ../../../third_party/dart/runtime/vm/raw_object_fields.cc
 FILE: ../../../third_party/dart/runtime/vm/raw_object_fields.h
+FILE: ../../../third_party/dart/runtime/vm/reverse_pc_lookup_cache.cc
+FILE: ../../../third_party/dart/runtime/vm/reverse_pc_lookup_cache.h
 FILE: ../../../third_party/dart/runtime/vm/stack_frame_kbc.h
 FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs.cc
 FILE: ../../../third_party/dart/runtime/vm/type_testing_stubs.h
@@ -5520,6 +5523,7 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/backend/il_dbc.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/redundancy_elimination.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/redundancy_elimination.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_binary_flowgraph.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_to_il.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/frontend/kernel_to_il.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/intrinsifier_dbc.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_dbc.h
