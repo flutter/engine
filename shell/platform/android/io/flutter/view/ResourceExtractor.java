@@ -33,6 +33,8 @@ class ResourceExtractor {
     private static final String TAG = "ResourceExtractor";
     private static final String TIMESTAMP_PREFIX = "res_timestamp-";
 
+    private static final int BUFFER_SIZE = 16 * 1024;
+
     @SuppressWarnings("deprecation")
     static long getVersionCode(PackageInfo packageInfo) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -43,11 +45,10 @@ class ResourceExtractor {
     }
 
     private class ExtractTask extends AsyncTask<Void, Void, Void> {
-        private static final int BUFFER_SIZE = 16 * 1024;
-
         ExtractTask() { }
 
-        private void extractResources() {
+        @Override
+        protected Void doInBackground(Void... unused) {
             final File dataDir = new File(PathUtils.getDataDirectory(mContext));
 
             JSONObject updateManifest = readUpdateManifest();
@@ -57,19 +58,19 @@ class ResourceExtractor {
 
             final String timestamp = checkTimestamp(dataDir, updateManifest);
             if (timestamp == null) {
-                return;
+                return null;
             }
 
             deleteFiles();
 
             if (updateManifest != null) {
                 if (!extractUpdate(dataDir)) {
-                    return;
+                    return null;
                 }
             }
 
             if (!extractAPK(dataDir)) {
-                return;
+                return null;
             }
 
             if (timestamp != null) {
@@ -79,7 +80,10 @@ class ResourceExtractor {
                     Log.w(TAG, "Failed to write resource timestamp");
                 }
             }
+
+            return null;
         }
+    }
 
         /// Returns true if successfully unpacked APK resources,
         /// otherwise deletes all resources and returns false.
@@ -324,13 +328,6 @@ class ResourceExtractor {
                 return null;
             }
         }
-
-        @Override
-        protected Void doInBackground(Void... unused) {
-            extractResources();
-            return null;
-        }
-    }
 
     private final Context mContext;
     private final HashSet<String> mResources;
