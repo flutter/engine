@@ -5,8 +5,11 @@
 package io.flutter.view;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -266,8 +269,17 @@ public class FlutterMain {
 
         if (metaData != null && metaData.getBoolean("DynamicPatching")) {
             sResourceUpdater = new ResourceUpdater(context);
-            sResourceUpdater.startUpdateDownloadOnce();
-            sResourceUpdater.waitForDownloadCompletion();
+            // Also checking for ON_RESUME here since it's more efficient than waiting for actual
+            // onResume. Even though actual onResume is imminent when the app has just restarted,
+            // it's better to start downloading now, in parallel with the rest of initialization,
+            // and avoid a second application restart a bit later when actual onResume happens.
+            if (sResourceUpdater.getDownloadMode() == ResourceUpdater.DownloadMode.ON_RESTART ||
+                sResourceUpdater.getDownloadMode() == ResourceUpdater.DownloadMode.ON_RESUME) {
+                sResourceUpdater.startUpdateDownloadOnce();
+                if (sResourceUpdater.getInstallMode() == ResourceUpdater.InstallMode.IMMEDIATE) {
+                    sResourceUpdater.waitForDownloadCompletion();
+                }
+            }
         }
 
         sResourceExtractor = new ResourceExtractor(context);
@@ -293,7 +305,31 @@ public class FlutterMain {
             .addResource(sAotIsolateSnapshotData)
             .addResource(sAotIsolateSnapshotInstr);
         }
+
         sResourceExtractor.start();
+    }
+
+    public static void onResume(Context context) {
+        if (sResourceUpdater != null) {
+            if (sResourceUpdater.getInstallMode() == ResourceUpdater.InstallMode.ON_NEXT_RESUME) {
+                sResourceExtractor.waitForCompletion();
+                if (!sResourceExtractor.filesMatch()) {
+                    restartApplication(context);
+                }
+            }
+            if (sResourceUpdater.getDownloadMode() == ResourceUpdater.DownloadMode.ON_RESUME) {
+                // If patch installation is already in progress, it's important to wait for it to
+                // finish before checking for a new download in order to avoid multiple downloads.
+                sResourceExtractor.waitForCompletion();
+                sResourceUpdater.startUpdateDownloadOnce();
+                if (sResourceUpdater.getInstallMode() == ResourceUpdater.InstallMode.IMMEDIATE) {
+                    sResourceUpdater.waitForDownloadCompletion();
+                    if (!sResourceExtractor.filesMatch()) {
+                        restartApplication(context);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -339,6 +375,17 @@ public class FlutterMain {
 
     public static String getUpdateInstallationPath() {
         return sResourceUpdater == null ? null : sResourceUpdater.getUpdateInstallationPath();
+    }
+
+    private static void restartApplication(Context context) {
+        Log.i(TAG, "Restarting application...");
+        Intent restartIntent = context.getPackageManager()
+                .getLaunchIntentForPackage(context.getPackageName());
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                context, 0, restartIntent, Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        alarmManager.set(AlarmManager.RTC, System.currentTimeMillis() + 100, pendingIntent);
+        System.exit(0);
     }
 
     /**

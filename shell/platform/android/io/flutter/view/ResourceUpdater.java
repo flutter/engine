@@ -26,6 +26,17 @@ import java.util.concurrent.ExecutionException;
 public final class ResourceUpdater {
     private static final String TAG = "ResourceUpdater";
 
+    enum DownloadMode {
+        ON_RESTART,
+        ON_RESUME
+    }
+
+    enum InstallMode {
+        ON_NEXT_RESTART,
+        ON_NEXT_RESUME,
+        IMMEDIATE
+    }
+
     private static class DownloadTask extends AsyncTask<String, String, Void> {
         @Override
         protected Void doInBackground(String... args) {
@@ -136,15 +147,63 @@ public final class ResourceUpdater {
         return uri.normalize().toString();
     }
 
+    public DownloadMode getDownloadMode() {
+        Bundle metaData;
+        try {
+            metaData = context.getPackageManager().getApplicationInfo(
+                    context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+
+        } catch (PackageManager.NameNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (metaData == null || metaData.getString("PatchDownloadMode") == null) {
+            return DownloadMode.ON_RESTART;
+        }
+
+        try {
+            return DownloadMode.valueOf(metaData.getString("PatchDownloadMode"));
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Invalid PatchDownloadMode " + metaData.getString("PatchDownloadMode"));
+            return DownloadMode.ON_RESTART;
+        }
+    }
+
+    public InstallMode getInstallMode() {
+        Bundle metaData;
+        try {
+            metaData = context.getPackageManager().getApplicationInfo(
+                    context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+
+        } catch (PackageManager.NameNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (metaData == null || metaData.getString("PatchInstallMode") == null) {
+            return InstallMode.ON_NEXT_RESTART;
+        }
+
+        try {
+            return InstallMode.valueOf(metaData.getString("PatchInstallMode"));
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Invalid PatchInstallMode " + metaData.getString("PatchInstallMode"));
+            return InstallMode.ON_NEXT_RESTART;
+        }
+    }
+
     public void startUpdateDownloadOnce() {
-        assert downloadTask == null;
+        if (downloadTask != null ) {
+            return;
+        }
         downloadTask = new DownloadTask();
         downloadTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
                 buildUpdateDownloadURL(), getUpdateInstallationPath());
     }
 
     public void waitForDownloadCompletion() {
-        assert downloadTask != null;
+        if (downloadTask == null) {
+            return;
+        }
         try {
             downloadTask.get();
         } catch (CancellationException e) {
