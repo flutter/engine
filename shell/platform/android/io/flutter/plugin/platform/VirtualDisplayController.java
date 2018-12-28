@@ -61,6 +61,7 @@ class VirtualDisplayController {
     private VirtualDisplay virtualDisplay;
     private SingleViewPresentation presentation;
     private Surface surface;
+    private int presentationThemeId;
 
 
     private VirtualDisplayController(
@@ -81,6 +82,7 @@ class VirtualDisplayController {
         this.surface = surface;
         this.virtualDisplay = virtualDisplay;
         densityDpi = context.getResources().getDisplayMetrics().densityDpi;
+        presentationThemeId = viewFactory.getPresentationTheme();
         presentation = new SingleViewPresentation(
                 context,
                 this.virtualDisplay.getDisplay(),
@@ -145,7 +147,8 @@ class VirtualDisplayController {
                 accessibilityEventsDelegate,
                 presentationState,
                 focusChangeListener,
-                isFocused);
+                isFocused,
+                presentationThemeId);
         presentation.show();
     }
 

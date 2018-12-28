@@ -96,7 +96,7 @@ class SingleViewPresentation extends Presentation {
             Object createParams,
             OnFocusChangeListener focusChangeListener
     ) {
-        super(outerContext, display);
+        super(outerContext, display, viewFactory.getPresentationTheme());
         this.viewFactory = viewFactory;
         this.accessibilityEventsDelegate = accessibilityEventsDelegate;
         this.viewId = viewId;
@@ -122,9 +122,10 @@ class SingleViewPresentation extends Presentation {
             AccessibilityEventsDelegate accessibilityEventsDelegate,
             PresentationState state,
             OnFocusChangeListener focusChangeListener,
-            boolean startFocused
+            boolean startFocused,
+            int themeId
     ) {
-        super(outerContext, display);
+        super(outerContext, display, themeId);
         this.accessibilityEventsDelegate = accessibilityEventsDelegate;
         viewFactory = null;
         this.state = state;

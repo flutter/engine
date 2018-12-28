@@ -5,6 +5,8 @@
 package io.flutter.plugin.platform;
 
 import android.content.Context;
+import android.support.annotation.StyleRes;
+
 import io.flutter.plugin.common.MessageCodec;
 
 public abstract class PlatformViewFactory {
@@ -28,6 +30,16 @@ public abstract class PlatformViewFactory {
      *             sent from the Flutter app.
      */
     public abstract PlatformView create(Context context, int viewId, Object args);
+
+    /**
+     * Used to customize the Theme of Presentation. This is useful when need a translucent AndroidView.
+     * Return 0 by default, will use the theme defined by com.android.internal.R.attr.presentationTheme attribute.
+     * @return A style resource describing the theme to use for the window.
+     */
+    @StyleRes
+    protected int getPresentationTheme() {
+        return 0;
+    }
 
     /**
      * Returns the codec to be used for decoding the args parameter of {@link #create}.
