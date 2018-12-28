@@ -295,9 +295,11 @@ public class FlutterMain {
             .addResource(fromFlutterAssets(sAotIsolateSnapshotData))
             .addResource(fromFlutterAssets(sAotIsolateSnapshotInstr))
             .addResource(fromFlutterAssets(DEFAULT_KERNEL_BLOB));
+
         if (sIsPrecompiledAsSharedLibrary) {
           sResourceExtractor
             .addResource(sAotSharedLibraryPath);
+
         } else {
           sResourceExtractor
             .addResource(sAotVmSnapshotData)
@@ -319,7 +321,7 @@ public class FlutterMain {
             }
             if (sResourceUpdater.getDownloadMode() == ResourceUpdater.DownloadMode.ON_RESUME) {
                 // If patch installation is already in progress, it's important to wait for it to
-                // finish before checking for a new download in order to avoid multiple downloads.
+                // finish before checking for new download, in order to avoid multiple downloads.
                 sResourceExtractor.waitForCompletion();
                 sResourceUpdater.startUpdateDownloadOnce();
                 if (sResourceUpdater.getInstallMode() == ResourceUpdater.InstallMode.IMMEDIATE) {

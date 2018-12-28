@@ -26,14 +26,36 @@ import java.util.concurrent.ExecutionException;
 public final class ResourceUpdater {
     private static final String TAG = "ResourceUpdater";
 
+    // Controls when to check if a new patch is available for download, and to start download.
+    // Note that by default the application will not block to wait for the download to finish.
+    // Patches get downloaded in the background, but the developer can also use [InstallMode]
+    // to control whether to block on download completion in order to install patches sooner.
     enum DownloadMode {
+        // Check for and download patch on application restart (but not necessarily apply it).
+        // This is the default setting which will also check for new patches least frequently.
         ON_RESTART,
+
+        // Check for and download patch on application resume (but not necessarily apply it).
+        // By definition, this setting will also check for new patches on application restart.
         ON_RESUME
     }
 
+    // Controls when to check that a new patch has been downloaded and needs to be applied.
     enum InstallMode {
+        // Wait for next application restart before applying downloaded patch. With this
+        // setting, the application will not block to wait for patch download to finish.
+        // Application can be restarted either by the user, or the system, for any reason.
+        // This is the default setting, and is the least urgent way to install patches.
         ON_NEXT_RESTART,
+
+        // Wait for next application resume before applying downloaded patch. With this
+        // setting, the application will force restart on next resume if there was new
+        // patch downloaded. This is a more urgent way to install patches, but can be
+        // more disruptive to the end user.
         ON_NEXT_RESUME,
+
+        // Apply patch as soon as it's downloaded. This will block to wait for new patch
+        // download to finish, and will immediately apply it.
         IMMEDIATE
     }
 
@@ -157,14 +179,19 @@ public final class ResourceUpdater {
             throw new RuntimeException(e);
         }
 
-        if (metaData == null || metaData.getString("PatchDownloadMode") == null) {
+        if (metaData == null) {
+            return DownloadMode.ON_RESTART;
+        }
+
+        String patchDownloadMode = metaData.getString("PatchDownloadMode");
+        if (patchDownloadMode == null) {
             return DownloadMode.ON_RESTART;
         }
 
         try {
-            return DownloadMode.valueOf(metaData.getString("PatchDownloadMode"));
+            return DownloadMode.valueOf(patchDownloadMode);
         } catch (IllegalArgumentException e) {
-            Log.e(TAG, "Invalid PatchDownloadMode " + metaData.getString("PatchDownloadMode"));
+            Log.e(TAG, "Invalid PatchDownloadMode " + patchDownloadMode);
             return DownloadMode.ON_RESTART;
         }
     }
@@ -179,14 +206,19 @@ public final class ResourceUpdater {
             throw new RuntimeException(e);
         }
 
-        if (metaData == null || metaData.getString("PatchInstallMode") == null) {
+        if (metaData == null) {
+            return InstallMode.ON_NEXT_RESTART;
+        }
+
+        String patchInstallMode = metaData.getString("PatchInstallMode");
+        if (patchInstallMode == null) {
             return InstallMode.ON_NEXT_RESTART;
         }
 
         try {
-            return InstallMode.valueOf(metaData.getString("PatchInstallMode"));
+            return InstallMode.valueOf(patchInstallMode);
         } catch (IllegalArgumentException e) {
-            Log.e(TAG, "Invalid PatchInstallMode " + metaData.getString("PatchInstallMode"));
+            Log.e(TAG, "Invalid PatchInstallMode " + patchInstallMode);
             return InstallMode.ON_NEXT_RESTART;
         }
     }
