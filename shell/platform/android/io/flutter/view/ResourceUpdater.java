@@ -46,7 +46,7 @@ public final class ResourceUpdater {
         // setting, the application will not block to wait for patch download to finish.
         // The application can be restarted later either by the user, or by the system,
         // for any reason, at which point the newly downloaded patch will get applied.
-        // This is the default setting, and is the least urgent way to install patches.
+        // This is the default setting, and is the least disruptive way to apply patches.
         ON_NEXT_RESTART,
 
         // Apply patch as soon as it's downloaded. This will block to wait for new patch
