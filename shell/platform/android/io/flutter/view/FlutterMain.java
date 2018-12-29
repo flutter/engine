@@ -313,23 +313,8 @@ public class FlutterMain {
 
     public static void onResume(Context context) {
         if (sResourceUpdater != null) {
-            if (sResourceUpdater.getInstallMode() == ResourceUpdater.InstallMode.ON_NEXT_RESUME) {
-                sResourceExtractor.waitForCompletion();
-                if (!sResourceExtractor.filesMatch()) {
-                    restartApplication(context);
-                }
-            }
             if (sResourceUpdater.getDownloadMode() == ResourceUpdater.DownloadMode.ON_RESUME) {
-                // If patch installation is already in progress, it's important to wait for it to
-                // finish before checking for new download, in order to avoid multiple downloads.
-                sResourceExtractor.waitForCompletion();
                 sResourceUpdater.startUpdateDownloadOnce();
-                if (sResourceUpdater.getInstallMode() == ResourceUpdater.InstallMode.IMMEDIATE) {
-                    sResourceUpdater.waitForDownloadCompletion();
-                    if (!sResourceExtractor.filesMatch()) {
-                        restartApplication(context);
-                    }
-                }
             }
         }
     }
@@ -377,17 +362,6 @@ public class FlutterMain {
 
     public static String getUpdateInstallationPath() {
         return sResourceUpdater == null ? null : sResourceUpdater.getUpdateInstallationPath();
-    }
-
-    private static void restartApplication(Context context) {
-        Log.i(TAG, "Restarting application...");
-        Intent restartIntent = context.getPackageManager()
-                .getLaunchIntentForPackage(context.getPackageName());
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                context, 0, restartIntent, Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.RTC, System.currentTimeMillis() + 100, pendingIntent);
-        System.exit(0);
     }
 
     /**

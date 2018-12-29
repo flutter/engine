@@ -48,14 +48,11 @@ public final class ResourceUpdater {
         // This is the default setting, and is the least urgent way to install patches.
         ON_NEXT_RESTART,
 
-        // Wait for next application resume before applying downloaded patch. With this
-        // setting, the application will force restart on next resume if there was new
-        // patch downloaded. This is a more urgent way to install patches, but can be
-        // more disruptive to the end user.
-        ON_NEXT_RESUME,
-
         // Apply patch as soon as it's downloaded. This will block to wait for new patch
-        // download to finish, and will immediately apply it.
+        // download to finish, and will immediately apply it. For now this setting is only
+        // effective when download happens during application restart. For now, patches
+        // downloaded during resume will not get installed immediately as that requires
+        // forcibly restarting the app (which might be implemented in the future).
         IMMEDIATE
     }
 
