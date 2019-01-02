@@ -62,7 +62,7 @@ float FontSkia::GetHorizontalAdvance(uint32_t glyph_id,
   uint16_t glyph16 = glyph_id;
   SkScalar skWidth;
   FontSkia_SetSkiaFont(typeface_, &skFont, paint);
-  skFont.getWidths(&glyph16, sizeof(glyph16), &skWidth);
+  skFont.getWidths(&glyph16, 1, &skWidth);
   return skWidth;
 }
 
@@ -73,7 +73,7 @@ void FontSkia::GetBounds(minikin::MinikinRect* bounds,
   uint16_t glyph16 = glyph_id;
   SkRect skBounds;
   FontSkia_SetSkiaFont(typeface_, &skFont, paint);
-  skFont.getWidths(&glyph16, sizeof(glyph16), NULL, &skBounds);
+  skFont.getWidths(&glyph16, 1, NULL, &skBounds);
   bounds->mLeft = skBounds.fLeft;
   bounds->mTop = skBounds.fTop;
   bounds->mRight = skBounds.fRight;
