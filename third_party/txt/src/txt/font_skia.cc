@@ -49,8 +49,8 @@ FontSkia::FontSkia(sk_sp<SkTypeface> typeface)
 FontSkia::~FontSkia() = default;
 
 static void FontSkia_SetSkiaFont(sk_sp<SkTypeface> typeface,
-                                  SkFont* skFont,
-                                  const minikin::MinikinPaint& paint) {
+                                 SkFont* skFont,
+                                 const minikin::MinikinPaint& paint) {
   skFont->setTypeface(std::move(typeface));
   // TODO: set more paint parameters from Minikin
   skFont->setSize(paint.size);
