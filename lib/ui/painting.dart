@@ -1497,10 +1497,10 @@ class _ImageInfo {
 /// [Canvas.drawImage].
 @pragma('vm:entry-point')
 class Image extends NativeFieldWrapperClass2 {
-  /// This class is created by the engine, and should not be instantiated
-  /// or extended directly.
-  ///
-  /// To obtain an [Image] object, use [instantiateImageCodec].
+  // This class is created by the engine, and should not be instantiated
+  // or extended directly.
+  //
+  // To obtain an [Image] object, use [instantiateImageCodec].
   @pragma('vm:entry-point')
   Image._();
 
@@ -1562,13 +1562,20 @@ class FrameInfo extends NativeFieldWrapperClass2 {
 }
 
 /// A handle to an image codec.
+///
+/// This class is created by the engine, and should not be instantiated
+/// or extended directly.
+///
+/// To obtain an instance of the [Codec] interface, see
+/// [instantiateImageCodec].
 @pragma('vm:entry-point')
 class Codec extends NativeFieldWrapperClass2 {
-  /// This class is created by the engine, and should not be instantiated
-  /// or extended directly.
-  ///
-  /// To obtain an instance of the [Codec] interface, see
-  /// [instantiateImageCodec].
+  //
+  // This class is created by the engine, and should not be instantiated
+  // or extended directly.
+  //
+  // To obtain an instance of the [Codec] interface, see
+  // [instantiateImageCodec].
   @pragma('vm:entry-point')
   Codec._();
 
@@ -1631,8 +1638,8 @@ String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageI
 
 /// Loads a single image frame from a byte array into an [Image] object.
 ///
-/// This is a convenience wrapper around [instantiateImageCodec].
-/// Prefer using [instantiateImageCodec] which also supports multi frame images.
+/// This is a convenience wrapper around [instantiateImageCodec]. Prefer using
+/// [instantiateImageCodec] which also supports multi frame images.
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);
 }
