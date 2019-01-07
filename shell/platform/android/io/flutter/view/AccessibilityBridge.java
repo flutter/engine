@@ -127,21 +127,6 @@ class AccessibilityBridge
     }
 
     private boolean shouldSetCollectionInfo(final SemanticsObject object) {
-        // TODO(dnfield): make these lambdas when Java 1.8 support lands.
-        Predicate<SemanticsObject> parentMatcher = new Predicate<SemanticsObject>() {
-            @Override
-            public boolean test(SemanticsObject o) {
-                return o == object;
-            }
-        };
-
-        Predicate<SemanticsObject> flagMatcher = new Predicate<SemanticsObject>() {
-            @Override
-            public boolean test(SemanticsObject o) {
-                return o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING);
-            }
-        };
-
         // TalkBack expects a number of rows and/or columns greater than 0 to announce
         // in list and out of list.  For an infinite or growing list, you have to
         // specify something > 0 to get "in list" announcements.
@@ -152,8 +137,8 @@ class AccessibilityBridge
         // to set it if we're exiting a list to a non-list, so that we can get the "out of list"
         // announcement when A11y focus moves out of a list and not into another list.
         return object.scrollChildren > 0
-                && (hasSemanticsObjectAncestor(mA11yFocusedObject, parentMatcher)
-                    || !hasSemanticsObjectAncestor(mA11yFocusedObject, flagMatcher));
+                && (hasSemanticsObjectAncestor(mA11yFocusedObject, o -> o == object)
+                    || !hasSemanticsObjectAncestor(mA11yFocusedObject, o -> o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)));
     }
 
     @Override
