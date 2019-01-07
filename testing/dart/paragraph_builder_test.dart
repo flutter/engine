@@ -18,7 +18,7 @@ void main() {
     expect(paragraph.height, isNonZero);
   });
 
-  test('PushStyle should not segfault', () {
+  test('PushStyle should not segfault after build()', () {
     final ParagraphBuilder paragraphBuilder =
         ParagraphBuilder(ParagraphStyle());
     paragraphBuilder.build();
