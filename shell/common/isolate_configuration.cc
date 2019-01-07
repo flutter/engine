@@ -153,6 +153,13 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
     return nullptr;
   }
 
+  if (settings.application_kernel_asset.empty() &&
+      settings.application_kernel_list_asset.empty()) {
+    FML_DLOG(ERROR) << "application_kernel_asset or "
+                       "application_kernel_list_asset must be set";
+    return nullptr;
+  }
+
   // Running from kernel snapshot.
   {
     std::unique_ptr<fml::Mapping> kernel =
@@ -166,12 +173,14 @@ std::unique_ptr<IsolateConfiguration> IsolateConfiguration::InferFromSettings(
   {
     std::unique_ptr<fml::Mapping> kernel_list =
         asset_manager->GetAsMapping(settings.application_kernel_list_asset);
-    if (kernel_list) {
-      auto kernel_pieces_paths = ParseKernelListPaths(std::move(kernel_list));
-      auto kernel_mappings = PrepareKernelMappings(
-          std::move(kernel_pieces_paths), asset_manager, io_worker);
-      return CreateForKernelList(std::move(kernel_mappings));
+    if (!kernel_list) {
+      FML_LOG(ERROR) << "Failed to load: " << settings.application_kernel_asset;
+      return nullptr;
     }
+    auto kernel_pieces_paths = ParseKernelListPaths(std::move(kernel_list));
+    auto kernel_mappings = PrepareKernelMappings(std::move(kernel_pieces_paths),
+                                                 asset_manager, io_worker);
+    return CreateForKernelList(std::move(kernel_mappings));
   }
 
   return nullptr;

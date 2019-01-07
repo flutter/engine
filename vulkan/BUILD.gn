@@ -35,7 +35,6 @@ source_set("vulkan") {
     "vulkan_proc_table.h",
     "vulkan_surface.cc",
     "vulkan_surface.h",
-    "vulkan_swapchain.cc",
     "vulkan_swapchain.h",
     "vulkan_utilities.cc",
     "vulkan_utilities.h",
@@ -47,14 +46,11 @@ source_set("vulkan") {
     sources += [
       "vulkan_native_surface_android.cc",
       "vulkan_native_surface_android.h",
+      "vulkan_swapchain.cc",
     ]
   }
-
   if (is_fuchsia) {
-    sources += [
-      "vulkan_native_surface_magma.cc",
-      "vulkan_native_surface_magma.h",
-    ]
+    sources += [ "vulkan_swapchain_stub.cc" ]
   }
 
   deps = [

@@ -179,6 +179,8 @@ class Shell final : public PlatformView::Delegate,
   void OnEngineHandlePlatformMessage(
       fml::RefPtr<blink::PlatformMessage> message) override;
 
+  void HandleEngineSkiaMessage(fml::RefPtr<blink::PlatformMessage> message);
+
   // |shell::Engine::Delegate|
   void OnPreEngineRestart() override;
 
@@ -222,6 +224,11 @@ class Shell final : public PlatformView::Delegate,
 
   // Service protocol handler
   bool OnServiceProtocolSetAssetBundlePath(
+      const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document& response);
+
+  // Service protocol handler
+  bool OnServiceProtocolGetDisplayRefreshRate(
       const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document& response);
 

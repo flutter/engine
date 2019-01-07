@@ -33,6 +33,8 @@
 
 namespace shell {
 
+constexpr char kSkiaChannel[] = "flutter/skia";
+
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     blink::TaskRunners task_runners,
     blink::Settings settings,
@@ -293,6 +295,11 @@ Shell::Shell(blink::TaskRunners task_runners, blink::Settings settings)
           task_runners_.GetUITaskRunner(),
           std::bind(&Shell::OnServiceProtocolSetAssetBundlePath, this,
                     std::placeholders::_1, std::placeholders::_2)};
+  service_protocol_handlers_
+      [blink::ServiceProtocol::kGetDisplayRefreshRateExtensionName.ToString()] =
+          {task_runners_.GetUITaskRunner(),
+           std::bind(&Shell::OnServiceProtocolGetDisplayRefreshRate, this,
+                     std::placeholders::_1, std::placeholders::_2)};
 }
 
 Shell::~Shell() {
@@ -722,10 +729,40 @@ void Shell::OnEngineHandlePlatformMessage(
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
+  if (message->channel() == kSkiaChannel) {
+    HandleEngineSkiaMessage(std::move(message));
+    return;
+  }
+
   task_runners_.GetPlatformTaskRunner()->PostTask(
       [view = platform_view_->GetWeakPtr(), message = std::move(message)]() {
         if (view) {
           view->HandlePlatformMessage(std::move(message));
+        }
+      });
+}
+
+void Shell::HandleEngineSkiaMessage(
+    fml::RefPtr<blink::PlatformMessage> message) {
+  const auto& data = message->data();
+
+  rapidjson::Document document;
+  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+  if (document.HasParseError() || !document.IsObject())
+    return;
+  auto root = document.GetObject();
+  auto method = root.FindMember("method");
+  if (method->value != "Skia.setResourceCacheMaxBytes")
+    return;
+  auto args = root.FindMember("args");
+  if (args == root.MemberEnd() || !args->value.IsInt())
+    return;
+
+  task_runners_.GetGPUTaskRunner()->PostTask(
+      [rasterizer = rasterizer_->GetWeakPtr(),
+       max_bytes = args->value.GetInt()] {
+        if (rasterizer) {
+          rasterizer->SetResourceCacheMaxBytes(max_bytes);
         }
       });
 }
@@ -936,6 +973,16 @@ bool Shell::OnServiceProtocolFlushUIThreadTasks(
   // tasks are processed.
   response.SetObject();
   response.AddMember("type", "Success", response.GetAllocator());
+  return true;
+}
+
+bool Shell::OnServiceProtocolGetDisplayRefreshRate(
+    const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
+    rapidjson::Document& response) {
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+  response.SetObject();
+  response.AddMember("fps", engine_->GetDisplayRefreshRate(),
+                     response.GetAllocator());
   return true;
 }
 

@@ -5,8 +5,11 @@
 package io.flutter.view;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -77,6 +80,7 @@ public class FlutterMain {
     private static String sFlutterAssetsDir = DEFAULT_FLUTTER_ASSETS_DIR;
 
     private static boolean sInitialized = false;
+    private static ResourceUpdater sResourceUpdater;
     private static ResourceExtractor sResourceExtractor;
     private static boolean sIsPrecompiledAsBlobs;
     private static boolean sIsPrecompiledAsSharedLibrary;
@@ -254,6 +258,30 @@ public class FlutterMain {
         Context context = applicationContext;
         new ResourceCleaner(context).start();
 
+        Bundle metaData = null;
+        try {
+            metaData = context.getPackageManager().getApplicationInfo(
+                    context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(TAG, "Unable to read application info", e);
+        }
+
+        if (metaData != null && metaData.getBoolean("DynamicPatching")) {
+            sResourceUpdater = new ResourceUpdater(context);
+            // Also checking for ON_RESUME here since it's more efficient than waiting for actual
+            // onResume. Even though actual onResume is imminent when the app has just restarted,
+            // it's better to start downloading now, in parallel with the rest of initialization,
+            // and avoid a second application restart a bit later when actual onResume happens.
+            if (sResourceUpdater.getDownloadMode() == ResourceUpdater.DownloadMode.ON_RESTART ||
+                sResourceUpdater.getDownloadMode() == ResourceUpdater.DownloadMode.ON_RESUME) {
+                sResourceUpdater.startUpdateDownloadOnce();
+                if (sResourceUpdater.getInstallMode() == ResourceUpdater.InstallMode.IMMEDIATE) {
+                    sResourceUpdater.waitForDownloadCompletion();
+                }
+            }
+        }
+
         sResourceExtractor = new ResourceExtractor(context);
 
         String icuAssetPath = SHARED_ASSET_DIR + File.separator + SHARED_ASSET_ICU_DATA;
@@ -267,9 +295,11 @@ public class FlutterMain {
             .addResource(fromFlutterAssets(sAotIsolateSnapshotData))
             .addResource(fromFlutterAssets(sAotIsolateSnapshotInstr))
             .addResource(fromFlutterAssets(DEFAULT_KERNEL_BLOB));
+
         if (sIsPrecompiledAsSharedLibrary) {
           sResourceExtractor
             .addResource(sAotSharedLibraryPath);
+
         } else {
           sResourceExtractor
             .addResource(sAotVmSnapshotData)
@@ -277,7 +307,16 @@ public class FlutterMain {
             .addResource(sAotIsolateSnapshotData)
             .addResource(sAotIsolateSnapshotInstr);
         }
+
         sResourceExtractor.start();
+    }
+
+    public static void onResume(Context context) {
+        if (sResourceUpdater != null) {
+            if (sResourceUpdater.getDownloadMode() == ResourceUpdater.DownloadMode.ON_RESUME) {
+                sResourceUpdater.startUpdateDownloadOnce();
+            }
+        }
     }
 
     /**
@@ -321,13 +360,17 @@ public class FlutterMain {
         return appBundle.exists() ? appBundle.getPath() : null;
     }
 
+    public static String getUpdateInstallationPath() {
+        return sResourceUpdater == null ? null : sResourceUpdater.getUpdateInstallationPath();
+    }
+
     /**
      * Returns the file name for the given asset.
      * The returned file name can be used to access the asset in the APK
-     * through the {@link AssetManager} API.
+     * through the {@link android.content.res.AssetManager} API.
      *
      * @param asset the name of the asset. The name can be hierarchical
-     * @return      the filename to be used with {@link AssetManager}
+     * @return      the filename to be used with {@link android.content.res.AssetManager}
      */
     public static String getLookupKeyForAsset(String asset) {
         return fromFlutterAssets(asset);
@@ -336,11 +379,11 @@ public class FlutterMain {
     /**
      * Returns the file name for the given asset which originates from the
      * specified packageName. The returned file name can be used to access
-     * the asset in the APK through the {@link AssetManager} API.
+     * the asset in the APK through the {@link android.content.res.AssetManager} API.
      *
      * @param asset       the name of the asset. The name can be hierarchical
      * @param packageName the name of the package from which the asset originates
-     * @return            the file name to be used with {@link AssetManager}
+     * @return            the file name to be used with {@link android.content.res.AssetManager}
      */
     public static String getLookupKeyForAsset(String asset, String packageName) {
         return getLookupKeyForAsset(
