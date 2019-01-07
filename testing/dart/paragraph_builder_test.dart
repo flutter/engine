@@ -17,4 +17,11 @@ void main() {
     expect(paragraph.width, isNonZero);
     expect(paragraph.height, isNonZero);
   });
+
+  test('PushStyle should not segfault', () {
+    final ParagraphBuilder paragraphBuilder =
+        ParagraphBuilder(ParagraphStyle());
+    paragraphBuilder.build();
+    paragraphBuilder.pushStyle(TextStyle());
+  });
 }
