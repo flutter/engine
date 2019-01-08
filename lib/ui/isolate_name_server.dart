@@ -35,9 +35,9 @@ abstract class IsolateNameServer {
   }
 
   static SendPort _lookupPortByName(String name)
-      native 'IsolateNameServerNatives_LookupPortByName'; // ignore: native_function_body_in_non_sdk_code
+      native 'IsolateNameServerNatives_LookupPortByName';
   static bool _registerPortWithName(SendPort port, String name)
-      native 'IsolateNameServerNatives_RegisterPortWithName'; // ignore: native_function_body_in_non_sdk_code
+      native 'IsolateNameServerNatives_RegisterPortWithName';
   static bool _removePortNameMapping(String name)
-      native 'IsolateNameServerNatives_RemovePortNameMapping'; // ignore: native_function_body_in_non_sdk_code
+      native 'IsolateNameServerNatives_RemovePortNameMapping';
 }

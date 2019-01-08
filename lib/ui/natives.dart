@@ -12,7 +12,7 @@ void _print(dynamic arg) {
 }
 
 class _Logger {
-  static void _printString(String s) native 'Logger_PrintString'; // ignore: native_function_body_in_non_sdk_code
+  static void _printString(String s) native 'Logger_PrintString';
 }
 
 // A service protocol extension to schedule a frame to be rendered into the
@@ -61,12 +61,12 @@ List<int> saveCompilationTrace() {
   return result;
 }
 
-dynamic _saveCompilationTrace() native 'SaveCompilationTrace'; // ignore: native_function_body_in_non_sdk_code
+dynamic _saveCompilationTrace() native 'SaveCompilationTrace';
 
-void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask'; // ignore: native_function_body_in_non_sdk_code
+void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
 
-int _getCallbackHandle(Function closure) native 'GetCallbackHandle'; // ignore: native_function_body_in_non_sdk_code
-Function _getCallbackFromHandle(int handle) native 'GetCallbackFromHandle'; // ignore: native_function_body_in_non_sdk_code
+int _getCallbackHandle(Function closure) native 'GetCallbackHandle';
+Function _getCallbackFromHandle(int handle) native 'GetCallbackFromHandle';
 
 // Required for gen_snapshot to work correctly.
 int _isolateId; // ignore: unused_element
