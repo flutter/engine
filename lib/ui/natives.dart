@@ -74,12 +74,4 @@ int _isolateId; // ignore: unused_element
 @pragma('vm:entry-point')
 Function _getPrintClosure() => _print;  // ignore: unused_element
 @pragma('vm:entry-point')
-Function _getScheduleMicrotaskClosure() => _scheduleMicrotask; // ignore: unused_element
-
-// Though the "main" symbol is not included in any of the libraries imported
-// above, the builtin library will be included manually during VM setup. This
-// symbol is only necessary for precompilation. It is marked as a stanalone
-// entry point into the VM. This prevents the precompiler from tree shaking
-// away "main".
-@pragma('vm:entry-point')
-Function _getMainClosure() => main; // ignore: unused_element, undefined_identifier
+Function _getScheduleMicrotaskClosure() => _scheduleMicrotask;
