@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// TODO(dnfield): move this to somewhere with a pubspec
+// ignore_for_file: uri_does_not_exist,undefined_function,undefined_identifier
+
 import 'package:test/test.dart';
 
 void main() {

@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// TODO(dnfield): Remove this when https://github.com/dart-lang/sdk/issues/35164 is resolved.
+// ignore_for_file: unused_element
+
 part of dart.ui;
 
 String _decodeUTF8(ByteData message) {

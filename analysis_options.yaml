@@ -10,9 +10,6 @@
 #    private fields, especially on the Window object):
 
 analyzer:
-  language:
-    enableStrictCallChecks: true
-    enableSuperMixins: true
   strong-mode:
     implicit-dynamic: false
   errors:
@@ -94,7 +91,6 @@ linter:
     # - parameter_assignments # we do this commonly
     - prefer_adjacent_string_concatenation
     - prefer_asserts_in_initializer_lists
-    - prefer_bool_in_asserts
     - prefer_collection_literals
     - prefer_conditional_assignment
     - prefer_const_constructors

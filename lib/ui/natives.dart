@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// TODO(dnfield): remove unused_element when https://github.com/dart-lang/sdk/issues/35164 is resolved.
+// ignore_for_file: native_function_body_in_non_sdk_code,unused_element
+
 part of dart.ui;
 
 // Corelib 'print' implementation.
@@ -80,4 +83,4 @@ Function _getScheduleMicrotaskClosure() => _scheduleMicrotask;
 // entry point into the VM. This prevents the precompiler from tree shaking
 // away "main".
 @pragma('vm:entry-point')
-Function _getMainClosure() => main;
+Function _getMainClosure() => main; // ignore: undefined_identifier
