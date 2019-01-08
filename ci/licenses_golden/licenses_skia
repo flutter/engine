@@ -1,4 +1,4 @@
-Signature: 63e3c3af46a0674ac3fd7dcb674e70e6
+Signature: 0222c6392d38b4226f5a319107914b40
 
 UNUSED LICENSES:
 
@@ -1280,7 +1280,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: skcms
 LIBRARY: skia
 LIBRARY: vulkanmemoryallocator
-LIBRARY: wuffs
 ORIGIN: ../../../third_party/skia/bench/ClearBench.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/ClearBench.cpp
@@ -1665,7 +1664,6 @@ FILE: ../../../third_party/skia/third_party/skcms/skcms_internal.h
 FILE: ../../../third_party/skia/third_party/skcms/src/Transform_inl.h
 FILE: ../../../third_party/skia/third_party/vulkanmemoryallocator/GrVulkanMemoryAllocator.cpp
 FILE: ../../../third_party/skia/third_party/vulkanmemoryallocator/GrVulkanMemoryAllocator.h
-FILE: ../../../third_party/skia/third_party/wuffs/wuffs.c
 ----------------------------------------------------------------------------------------------------
 Copyright 2018 Google Inc.
 
@@ -4030,7 +4028,6 @@ FILE: ../../../third_party/skia/include/utils/SkLua.h
 FILE: ../../../third_party/skia/include/utils/SkLuaCanvas.h
 FILE: ../../../third_party/skia/samplecode/SampleChart.cpp
 FILE: ../../../third_party/skia/samplecode/SampleClock.cpp
-FILE: ../../../third_party/skia/samplecode/SampleFilterFuzz.cpp
 FILE: ../../../third_party/skia/samplecode/SampleLua.cpp
 FILE: ../../../third_party/skia/samplecode/SampleManyRects.cpp
 FILE: ../../../third_party/skia/samplecode/SamplePdfFileViewer.cpp
