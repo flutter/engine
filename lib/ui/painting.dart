@@ -1067,6 +1067,7 @@ class Paint {
   static const int _kMaskFilterBlurStyleIndex = 13;
   static const int _kMaskFilterSigmaIndex = 14;
   static const int _kInvertColorIndex = 15;
+  static const int _kAlphaIndex = 16;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
   static const int _kColorOffset = _kColorIndex << 2;
@@ -1084,8 +1085,9 @@ class Paint {
   static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
   static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
+  static const int _kAlphaOffset = _kAlphaIndex << 2;
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 75;
+  static const int _kDataByteCount = 80;
 
   // Binary format must match the deserialization code in paint.cc.
   List<dynamic> _objects;
@@ -1129,6 +1131,25 @@ class Paint {
     assert(value != null);
     final int encoded = value.value ^ _kColorDefault;
     _data.setInt32(_kColorOffset, encoded, _kFakeHostEndian);
+  }
+
+  /// The alpha channel value for the color
+  ///
+  /// Setting this field allows changing the alpha channel of [color] without
+  /// changing red, green And blue channels.
+  ///
+  /// See also:
+  ///
+  ///  * [color], which controls all four channels
+  ///  * [colorFilter], which overrides [color].
+  ///
+  int get alpha {
+    final int encoded = _data.getInt32(_kAlphaIndex, _kFakeHostEndian);
+    return encoded;
+  }
+  set alpha(int value) {
+    assert(value != null);
+    _data.setInt32(_kAlphaOffset, value, _kFakeHostEndian);
   }
 
   // Must be kept in sync with the default in paint.cc.

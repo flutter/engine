@@ -31,7 +31,8 @@ constexpr int kMaskFilterIndex = 12;
 constexpr int kMaskFilterBlurStyleIndex = 13;
 constexpr int kMaskFilterSigmaIndex = 14;
 constexpr int kInvertColorIndex = 15;
-constexpr size_t kDataByteCount = 75;  // 4 * (last index + 1)
+constexpr int kAlphaIndex = 16;
+constexpr size_t kDataByteCount = 80;  // 4 * (last index + 1)
 
 // Indices for objects.
 constexpr int kShaderIndex = 0;
@@ -95,6 +96,10 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   if (encoded_color) {
     SkColor color = encoded_color ^ kColorDefault;
     paint_.setColor(color);
+  }
+
+  if(uint_data[kAlphaIndex]){
+    paint_.setAlpha(uint_data[kAlphaIndex]);
   }
 
   uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
