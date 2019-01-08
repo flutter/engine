@@ -2,7 +2,10 @@
 echo "Analyzing dart:ui library..."
 RESULTS=`dartanalyzer                                                          \
   --options flutter/analysis_options.yaml                                      \
-  out/host_debug_unopt/gen/sky/bindings/dart_ui/ui.dart`
+  out/host_debug_unopt/gen/sky/bindings/dart_ui/ui.dart                        \
+  2>&1                                                                         \
+  | grep -Ev "No issues found!"                                          \
+  | grep -Ev "Analyzing.+out/host_debug_unopt/gen/sky/bindings/dart_ui/ui\.dart"`
 
 echo "$RESULTS"
 if [ -n "$RESULTS" ]; then
