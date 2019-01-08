@@ -98,7 +98,7 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
     paint_.setColor(color);
   }
 
-  if(uint_data[kAlphaIndex]){
+  if (uint_data[kAlphaIndex]) {
     paint_.setAlpha(uint_data[kAlphaIndex]);
   }
 
