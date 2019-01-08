@@ -74,4 +74,4 @@ int _isolateId; // ignore: unused_element
 @pragma('vm:entry-point')
 Function _getPrintClosure() => _print;  // ignore: unused_element
 @pragma('vm:entry-point')
-Function _getScheduleMicrotaskClosure() => _scheduleMicrotask;
+Function _getScheduleMicrotaskClosure() => _scheduleMicrotask; // ignore: unused_element
