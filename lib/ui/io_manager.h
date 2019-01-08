@@ -10,7 +10,7 @@
 #include "third_party/skia/include/gpu/GrContext.h"
 
 namespace blink {
-// Interface for methods that manage access to the resource GrConext and Skia
+// Interface for methods that manage access to the resource GrContext and Skia
 // unref queue.  Meant to be implemented by the owner of the resource GrContext,
 // i.e. the shell's IOManager.
 class IOManager {
