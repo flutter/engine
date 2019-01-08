@@ -17,6 +17,7 @@ analyzer:
     missing_required_param: warning
     # treat missing returns as a warning (not a hint)
     missing_return: warning
+    native_function_body_in_non_sdk_code: ignore
     # allow having TODOs in the code
     todo: ignore
   # `flutter analyze` (without `--watch`) just ignores directories

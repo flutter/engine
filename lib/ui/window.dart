@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: native_function_body_in_non_sdk_code
-
 part of dart.ui;
 
 /// Signature of callbacks that have no arguments and return no data.

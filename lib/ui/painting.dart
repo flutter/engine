@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: native_function_body_in_non_sdk_code
-
 part of dart.ui;
 
 // Some methods in this file assert that their arguments are not null. These

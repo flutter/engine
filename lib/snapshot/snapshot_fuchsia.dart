@@ -2,18 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: unused_import,uri_does_not_exist
-
-import 'dart:async';
-import 'dart:collection';
-import 'dart:convert';
+import 'dart:async'; // ignore: unused_import
+import 'dart:collection'; // ignore: unused_import
+import 'dart:convert'; // ignore: unused_import
 import 'dart:core';
-import 'dart:developer';
-import 'dart:fuchsia';
-import 'dart:io';
-import 'dart:isolate';
-import 'dart:math';
-import 'dart:mozart.internal';
-import 'dart:typed_data';
-import 'dart:ui';
-import 'dart:zircon';
+import 'dart:developer'; // ignore: unused_import
+import 'dart:fuchsia'; // ignore: uri_does_not_exist
+import 'dart:io'; // ignore: unused_import
+import 'dart:isolate'; // ignore: unused_import
+import 'dart:math'; // ignore: unused_import
+import 'dart:mozart.internal'; // ignore: uri_does_not_exist
+import 'dart:typed_data'; // ignore: unused_import
+import 'dart:ui'; // ignore: uri_does_not_exist
+import 'dart:zircon'; // ignore: uri_does_not_exist

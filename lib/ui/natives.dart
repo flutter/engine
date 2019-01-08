@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(dnfield): remove unused_element when https://github.com/dart-lang/sdk/issues/35164 is resolved.
-// ignore_for_file: native_function_body_in_non_sdk_code,unused_element
+// TODO(dnfield): remove unused_element ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
 
 part of dart.ui;
 
@@ -13,7 +12,7 @@ void _print(dynamic arg) {
 }
 
 class _Logger {
-  static void _printString(String s) native 'Logger_PrintString';
+  static void _printString(String s) native 'Logger_PrintString'; // ignore: native_function_body_in_non_sdk_code
 }
 
 // A service protocol extension to schedule a frame to be rendered into the
@@ -31,7 +30,7 @@ Future<developer.ServiceExtensionResponse> _scheduleFrame(
 }
 
 @pragma('vm:entry-point')
-void _setupHooks() {
+void _setupHooks() {  // ignore: unused_element
   assert(() {
     // In debug mode, register the schedule frame extension.
     developer.registerExtension('ext.ui.window.scheduleFrame', _scheduleFrame);
@@ -62,20 +61,20 @@ List<int> saveCompilationTrace() {
   return result;
 }
 
-dynamic _saveCompilationTrace() native 'SaveCompilationTrace';
+dynamic _saveCompilationTrace() native 'SaveCompilationTrace'; // ignore: native_function_body_in_non_sdk_code
 
-void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask';
+void _scheduleMicrotask(void callback()) native 'ScheduleMicrotask'; // ignore: native_function_body_in_non_sdk_code
 
-int _getCallbackHandle(Function closure) native 'GetCallbackHandle';
-Function _getCallbackFromHandle(int handle) native 'GetCallbackFromHandle';
+int _getCallbackHandle(Function closure) native 'GetCallbackHandle'; // ignore: native_function_body_in_non_sdk_code
+Function _getCallbackFromHandle(int handle) native 'GetCallbackFromHandle'; // ignore: native_function_body_in_non_sdk_code
 
 // Required for gen_snapshot to work correctly.
-int _isolateId;
+int _isolateId; // ignore: unused_element
 
 @pragma('vm:entry-point')
-Function _getPrintClosure() => _print;
+Function _getPrintClosure() => _print;  // ignore: unused_element
 @pragma('vm:entry-point')
-Function _getScheduleMicrotaskClosure() => _scheduleMicrotask;
+Function _getScheduleMicrotaskClosure() => _scheduleMicrotask; // ignore: unused_element
 
 // Though the "main" symbol is not included in any of the libraries imported
 // above, the builtin library will be included manually during VM setup. This
@@ -83,4 +82,4 @@ Function _getScheduleMicrotaskClosure() => _scheduleMicrotask;
 // entry point into the VM. This prevents the precompiler from tree shaking
 // away "main".
 @pragma('vm:entry-point')
-Function _getMainClosure() => main; // ignore: undefined_identifier
+Function _getMainClosure() => main; // ignore: unused_element, undefined_identifier

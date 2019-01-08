@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: empty_catches
-
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -14,7 +12,7 @@ typedef CanvasCallback = void Function(Canvas canvas);
 void testCanvas(CanvasCallback callback) {
   try {
     callback(Canvas(PictureRecorder(), Rect.fromLTRB(0.0, 0.0, 0.0, 0.0)));
-  } catch (error) { }
+  } catch (error) { } // ignore: empty_catches
 }
 
 void main() {
@@ -33,17 +31,17 @@ void main() {
     final Picture picture = recorder.endRecording();
     final Image image = picture.toImage(1, 1);
 
-    try { Canvas(null, null); } catch (error) { }
-    try { Canvas(null, rect); } catch (error) { }
-    try { Canvas(PictureRecorder(), null); } catch (error) { }
-    try { Canvas(PictureRecorder(), rect); } catch (error) { }
+    try { Canvas(null, null); } catch (error) { } // ignore: empty_catches
+    try { Canvas(null, rect); } catch (error) { } // ignore: empty_catches
+    try { Canvas(PictureRecorder(), null); } catch (error) { } // ignore: empty_catches
+    try { Canvas(PictureRecorder(), rect); } catch (error) { } // ignore: empty_catches
 
     try {
       PictureRecorder()
         ..endRecording()
         ..endRecording()
         ..endRecording();
-    } catch (error) { }
+    } catch (error) { } // ignore: empty_catches
 
     testCanvas((Canvas canvas) => canvas.clipPath(path));
     testCanvas((Canvas canvas) => canvas.clipRect(rect));

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: native_function_body_in_non_sdk_code
-
 part of dart.ui;
 
 /// Contains methods to allow for simple sharing of SendPorts across isolates.
@@ -37,9 +35,9 @@ abstract class IsolateNameServer {
   }
 
   static SendPort _lookupPortByName(String name)
-      native 'IsolateNameServerNatives_LookupPortByName';
+      native 'IsolateNameServerNatives_LookupPortByName'; // ignore: native_function_body_in_non_sdk_code
   static bool _registerPortWithName(SendPort port, String name)
-      native 'IsolateNameServerNatives_RegisterPortWithName';
+      native 'IsolateNameServerNatives_RegisterPortWithName'; // ignore: native_function_body_in_non_sdk_code
   static bool _removePortNameMapping(String name)
-      native 'IsolateNameServerNatives_RemovePortNameMapping';
+      native 'IsolateNameServerNatives_RemovePortNameMapping'; // ignore: native_function_body_in_non_sdk_code
 }

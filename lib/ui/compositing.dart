@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: native_function_body_in_non_sdk_code
-
 part of dart.ui;
 
 /// An opaque object representing a composited scene.
@@ -32,12 +30,12 @@ class Scene extends NativeFieldWrapperClass2 {
     );
   }
 
-  String _toImage(int width, int height, _Callback<Image> callback) native 'Scene_toImage';
+  String _toImage(int width, int height, _Callback<Image> callback) native 'Scene_toImage'; // ignore: native_function_body_in_non_sdk_code
 
   /// Releases the resources used by this scene.
   ///
   /// After calling this function, the scene is cannot be used further.
-  void dispose() native 'Scene_dispose';
+  void dispose() native 'Scene_dispose'; // ignore: native_function_body_in_non_sdk_code
 }
 
 /// Builds a [Scene] containing the given visuals.
@@ -51,7 +49,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Creates an empty [SceneBuilder] object.
   @pragma('vm:entry-point')
   SceneBuilder() { _constructor(); }
-  void _constructor() native 'SceneBuilder_constructor';
+  void _constructor() native 'SceneBuilder_constructor'; // ignore: native_function_body_in_non_sdk_code
 
   /// Pushes a transform operation onto the operation stack.
   ///
@@ -65,14 +63,14 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       throw new ArgumentError('"matrix4" must have 16 entries.');
     return _pushTransform(matrix4);
   }
-  EngineLayer _pushTransform(Float64List matrix4) native 'SceneBuilder_pushTransform';
+  EngineLayer _pushTransform(Float64List matrix4) native 'SceneBuilder_pushTransform'; // ignore: native_function_body_in_non_sdk_code
 
   /// Pushes an offset operation onto the operation stack.
   ///
   /// This is equivalent to [pushTransform] with a matrix with only translation.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushOffset(double dx, double dy) native 'SceneBuilder_pushOffset';
+  EngineLayer pushOffset(double dx, double dy) native 'SceneBuilder_pushOffset'; // ignore: native_function_body_in_non_sdk_code
 
   /// Pushes a rectangular clip operation onto the operation stack.
   ///
@@ -89,7 +87,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
                             double right,
                             double top,
                             double bottom,
-                            int clipBehavior) native 'SceneBuilder_pushClipRect';
+                            int clipBehavior) native 'SceneBuilder_pushClipRect'; // ignore: native_function_body_in_non_sdk_code
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
   ///
@@ -102,7 +100,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(clipBehavior != Clip.none);
     return _pushClipRRect(rrect._value, clipBehavior.index);
   }
-  EngineLayer _pushClipRRect(Float32List rrect, int clipBehavior) native 'SceneBuilder_pushClipRRect';
+  EngineLayer _pushClipRRect(Float32List rrect, int clipBehavior) native 'SceneBuilder_pushClipRRect'; // ignore: native_function_body_in_non_sdk_code
 
   /// Pushes a path clip operation onto the operation stack.
   ///
@@ -115,7 +113,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(clipBehavior != Clip.none);
     return _pushClipPath(path, clipBehavior.index);
   }
-  EngineLayer _pushClipPath(Path path, int clipBehavior) native 'SceneBuilder_pushClipPath';
+  EngineLayer _pushClipPath(Path path, int clipBehavior) native 'SceneBuilder_pushClipPath'; // ignore: native_function_body_in_non_sdk_code
 
   /// Pushes an opacity operation onto the operation stack.
   ///
@@ -128,7 +126,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   EngineLayer pushOpacity(int alpha, {Offset offset = Offset.zero}) {
     return _pushOpacity(alpha, offset.dx, offset.dy);
   }
-  EngineLayer _pushOpacity(int alpha, double dx, double dy) native 'SceneBuilder_pushOpacity';
+  EngineLayer _pushOpacity(int alpha, double dx, double dy) native 'SceneBuilder_pushOpacity'; // ignore: native_function_body_in_non_sdk_code
 
   /// Pushes a color filter operation onto the operation stack.
   ///
@@ -139,7 +137,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   EngineLayer pushColorFilter(Color color, BlendMode blendMode) {
     return _pushColorFilter(color.value, blendMode.index);
   }
-  EngineLayer _pushColorFilter(int color, int blendMode) native 'SceneBuilder_pushColorFilter';
+  EngineLayer _pushColorFilter(int color, int blendMode) native 'SceneBuilder_pushColorFilter'; // ignore: native_function_body_in_non_sdk_code
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
@@ -147,7 +145,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// rasterizing the given objects.
   ///
   /// See [pop] for details about the operation stack.
-  EngineLayer pushBackdropFilter(ImageFilter filter) native 'SceneBuilder_pushBackdropFilter';
+  EngineLayer pushBackdropFilter(ImageFilter filter) native 'SceneBuilder_pushBackdropFilter'; // ignore: native_function_body_in_non_sdk_code
 
   /// Pushes a shader mask operation onto the operation stack.
   ///
@@ -168,7 +166,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
                               double maskRectRight,
                               double maskRectTop,
                               double maskRectBottom,
-                              int blendMode) native 'SceneBuilder_pushShaderMask';
+                              int blendMode) native 'SceneBuilder_pushShaderMask'; // ignore: native_function_body_in_non_sdk_code
 
   /// Pushes a physical layer operation for an arbitrary shape onto the
   /// operation stack.
@@ -186,7 +184,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   EngineLayer pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clipBehavior = defaultClipBehavior}) {
     return _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipBehavior.index);
   }
-  EngineLayer _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipBehavior) native
+  EngineLayer _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipBehavior) native // ignore: native_function_body_in_non_sdk_code
     'SceneBuilder_pushPhysicalShape';
 
   /// Ends the effect of the most recently pushed operation.
@@ -195,7 +193,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// operations in the stack applies to each of the objects added to the scene.
   /// Calling this function removes the most recently added operation from the
   /// stack.
-  void pop() native 'SceneBuilder_pop';
+  void pop() native 'SceneBuilder_pop'; // ignore: native_function_body_in_non_sdk_code
 
   /// Add a retained engine layer subtree from previous frames.
   ///
@@ -205,7 +203,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Therefore, when implementing a subclass of the [Layer] concept defined in
   /// the rendering layer of Flutter's framework, once this is called, there's
   /// no need to call [addToScene] for its children layers.
-  EngineLayer addRetained(EngineLayer retainedLayer) native 'SceneBuilder_addRetained';
+  EngineLayer addRetained(EngineLayer retainedLayer) native 'SceneBuilder_addRetained'; // ignore: native_function_body_in_non_sdk_code
 
   /// Adds an object to the scene that displays performance statistics.
   ///
@@ -242,7 +240,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
                               double left,
                               double right,
                               double top,
-                              double bottom) native 'SceneBuilder_addPerformanceOverlay';
+                              double bottom) native 'SceneBuilder_addPerformanceOverlay'; // ignore: native_function_body_in_non_sdk_code
 
   /// Adds a [Picture] to the scene.
   ///
@@ -255,7 +253,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       hints |= 2;
     _addPicture(offset.dx, offset.dy, picture, hints);
   }
-  void _addPicture(double dx, double dy, Picture picture, int hints) native 'SceneBuilder_addPicture';
+  void _addPicture(double dx, double dy, Picture picture, int hints) native 'SceneBuilder_addPicture'; // ignore: native_function_body_in_non_sdk_code
 
   /// Adds a backend texture to the scene.
   ///
@@ -272,7 +270,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(offset != null, 'Offset argument was null');
     _addTexture(offset.dx, offset.dy, width, height, textureId, freeze);
   }
-  void _addTexture(double dx, double dy, double width, double height, int textureId, bool freeze) native 'SceneBuilder_addTexture';
+  void _addTexture(double dx, double dy, double width, double height, int textureId, bool freeze) native 'SceneBuilder_addTexture'; // ignore: native_function_body_in_non_sdk_code
 
   /// Adds a platform view (e.g an iOS UIView) to the scene.
   ///
@@ -294,7 +292,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(offset != null, 'Offset argument was null');
     _addPlatformView(offset.dx, offset.dy, width, height, viewId);
   }
-  void _addPlatformView(double dx, double dy, double width, double height, int viewId) native 'SceneBuilder_addPlatformView';
+  void _addPlatformView(double dx, double dy, double width, double height, int viewId) native 'SceneBuilder_addPlatformView'; // ignore: native_function_body_in_non_sdk_code
 
   /// (Fuchsia-only) Adds a scene rendered by another application to the scene
   /// for this application.
@@ -317,7 +315,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
                       double width,
                       double height,
                       SceneHost sceneHost,
-                      bool hitTestable) native 'SceneBuilder_addChildScene';
+                      bool hitTestable) native 'SceneBuilder_addChildScene'; // ignore: native_function_body_in_non_sdk_code
 
   /// Sets a threshold after which additional debugging information should be recorded.
   ///
@@ -325,7 +323,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
   /// We'll hopefully be able to figure out how to make this feature more useful
   /// to you.
-  void setRasterizerTracingThreshold(int frameInterval) native 'SceneBuilder_setRasterizerTracingThreshold';
+  void setRasterizerTracingThreshold(int frameInterval) native 'SceneBuilder_setRasterizerTracingThreshold'; // ignore: native_function_body_in_non_sdk_code
 
   /// Sets whether the raster cache should checkerboard cached entries. This is
   /// only useful for debugging purposes.
@@ -342,13 +340,13 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// Currently this interface is difficult to use by end-developers. If you're
   /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
-  void setCheckerboardRasterCacheImages(bool checkerboard) native 'SceneBuilder_setCheckerboardRasterCacheImages';
+  void setCheckerboardRasterCacheImages(bool checkerboard) native 'SceneBuilder_setCheckerboardRasterCacheImages'; // ignore: native_function_body_in_non_sdk_code
 
   /// Sets whether the compositor should checkerboard layers that are rendered
   /// to offscreen bitmaps.
   ///
   /// This is only useful for debugging purposes.
-  void setCheckerboardOffscreenLayers(bool checkerboard) native 'SceneBuilder_setCheckerboardOffscreenLayers';
+  void setCheckerboardOffscreenLayers(bool checkerboard) native 'SceneBuilder_setCheckerboardOffscreenLayers'; // ignore: native_function_body_in_non_sdk_code
 
   /// Finishes building the scene.
   ///
@@ -358,7 +356,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// After calling this function, the scene builder object is invalid and
   /// cannot be used further.
-  Scene build() native 'SceneBuilder_build';
+  Scene build() native 'SceneBuilder_build'; // ignore: native_function_body_in_non_sdk_code
 }
 
 /// (Fuchsia-only) Hosts content provided by another application.
@@ -378,10 +376,10 @@ class SceneHost extends NativeFieldWrapperClass2 {
   SceneHost(dynamic exportTokenHandle) {
     _constructor(exportTokenHandle);
   }
-  void _constructor(dynamic exportTokenHandle) native 'SceneHost_constructor';
+  void _constructor(dynamic exportTokenHandle) native 'SceneHost_constructor'; // ignore: native_function_body_in_non_sdk_code
 
   /// Releases the resources associated with the child scene host.
   ///
   /// After calling this function, the child scene host cannot be used further.
-  void dispose() native 'SceneHost_dispose';
+  void dispose() native 'SceneHost_dispose'; // ignore: native_function_body_in_non_sdk_code
 }
