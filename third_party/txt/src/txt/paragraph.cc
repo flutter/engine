@@ -429,13 +429,15 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   strut->leading = 0;
   strut->half_leading = 0;
   strut->line_height = 0;
-  bool non_zero_strut =
-      paragraph_style_.font_size > 0 &&
-      // Non-zero line_height or leading can result in valid struts.
-      (paragraph_style_.line_height > 0 || paragraph_style_.leading > 0);
+  // Minimally, a font size and either a line_height or leading must be defined
+  // to obtain a valid strut. Values not provided default to negative, which is
+  // not supported.
+  bool valid_strut =
+      paragraph_style_.font_size >= 0 &&
+      (paragraph_style_.line_height >= 0 || paragraph_style_.leading >= 0);
   // force_strut makes all lines have exactly the strut metrics, and ignores all
   // actual metrics. We only force the strut if the strut is non-zero and valid.
-  strut->force_strut = paragraph_style_.force_strut_height && non_zero_strut;
+  strut->force_strut = paragraph_style_.force_strut_height && valid_strut;
   if (non_zero_strut) {
     const FontSkia* font_skia =
         static_cast<const FontSkia*>(font_collection_->GetMinikinFontForFamily(
@@ -453,19 +455,23 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
       SkFontMetrics strut_metrics;
       font.getMetrics(&strut_metrics);
 
-      strut->ascent = paragraph_style_.line_height * -strut_metrics.fAscent;
-      strut->descent = paragraph_style_.line_height * strut_metrics.fDescent;
+      // Prevent values from being negative.
+      double canonicalized_line_height =
+          std::max(0, paragraph_style_.line_height);
+      // double canonicalized_leading = std::max(0, paragraph_style_.leading);
+
+      strut->ascent = canonicalized_line_height * -strut_metrics.fAscent;
+      strut->descent = canonicalized_line_height * strut_metrics.fDescent;
       strut->leading =
-          // Use font leading if there is no user specified strut leading.
-          paragraph_style_.leading < 0
-              ? strut_metrics.fLeading
-              : paragraph_style_.leading *
-                    (strut_metrics.fDescent - strut_metrics.fAscent);
+          // Use font's leading if there is no user specified strut leading.
+          (paragraph_style_.leading < 0 ? strut_metrics.fLeading
+                                        : paragraph_style_.leading) *
+          (strut_metrics.fDescent - strut_metrics.fAscent +
+           strut_metrics.fLeading);
       strut->half_leading = strut->leading / 2;
-      strut->line_height =
-          paragraph_style_.line_height *
-              (strut_metrics.fDescent - strut_metrics.fAscent) +
-          strut->leading;
+      strut->line_height = canonicalized_line_height * (strut_metrics.fDescent -
+                                                        strut_metrics.fAscent) +
+                           strut->leading;
     }
   }
 }

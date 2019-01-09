@@ -105,15 +105,6 @@ class Paragraph {
     TextBox(SkRect r, TextDirection d) : rect(r), direction(d) {}
   };
 
-  struct StrutMetrics {
-    double ascent = 0;  // Positive value to keep signs clear.
-    double descent = 0;
-    double leading = 0;
-    double half_leading = 0;
-    double line_height = 0;
-    bool force_strut = false;
-  };
-
   template <typename T>
   struct Range {
     Range() : start(), end() {}
@@ -358,6 +349,15 @@ class Paragraph {
 
     WaveCoordinates(double x_s, double y_s, double x_e, double y_e)
         : x_start(x_s), y_start(y_s), x_end(x_e), y_end(y_e) {}
+  };
+
+  struct StrutMetrics {
+    double ascent = 0;  // Positive value to keep signs clear.
+    double descent = 0;
+    double leading = 0;
+    double half_leading = 0;
+    double line_height = 0;
+    bool force_strut = false;
   };
 
   // Passes in the text and Styled Runs. text_ and runs_ will later be passed
