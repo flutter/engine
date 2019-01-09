@@ -105,6 +105,15 @@ class Paragraph {
     TextBox(SkRect r, TextDirection d) : rect(r), direction(d) {}
   };
 
+  struct StrutMetrics {
+    double ascent = 0;  // Positive value to keep signs clear.
+    double descent = 0;
+    double leading = 0;
+    double half_leading = 0;
+    double line_height = 0;
+    bool force_strut = false;
+  };
+
   template <typename T>
   struct Range {
     Range() : start(), end() {}
@@ -364,6 +373,9 @@ class Paragraph {
 
   // Break the text into runs based on LTR/RTL text direction.
   bool ComputeBidiRuns(std::vector<BidiRun>* result);
+
+  // Calculates and populates strut based on paragraph_style_ strut info.
+  void ComputeStrut(StrutMetrics* strut, SkFont& font);
 
   // Calculate the starting X offset of a line based on the line's width and
   // alignment.
