@@ -289,7 +289,7 @@ bool Paragraph::ComputeLineBreaks() {
       std::shared_ptr<minikin::FontCollection> collection =
           GetMinikinFontCollectionForStyle(run.style);
       if (collection == nullptr) {
-        FML_LOG(INFO) << "Could not find font collection for family \""
+        FML_LOG(INFO) << "Could not find font collection for families \""
                       << (run.style.font_families.empty()
                               ? ""
                               : run.style.font_families[0])
@@ -461,6 +461,53 @@ void Paragraph::Layout(double width, bool force) {
   double prev_max_descent = 0;
   double max_word_width = 0;
 
+  // Compute strut minimums according to paragraph_style_.
+  double strut_min_ascent = 0;  // Positive value to keep signs clear.
+  double strut_min_descent = 0;
+  double strut_min_leading = 0;
+  double strut_min_half_leading = 0;
+  double strut_min_line_height = 0;
+  bool non_zero_strut =
+      paragraph_style_.font_size > 0 &&
+      // Non-zero line_height or leading can result in valid struts.
+      (paragraph_style_.line_height > 0 || paragraph_style_.leading > 0);
+  // force_strut makes all lines have exactly the strut metrics, and ignores all
+  // actual metrics. We only force the strut if the strut is non-zero and valid.
+  bool force_strut = paragraph_style_.force_strut_height && non_zero_strut;
+  if (non_zero_strut) {
+    const FontSkia* font_skia =
+        static_cast<const FontSkia*>(font_collection_->GetMinikinFontForFamily(
+            paragraph_style_.font_family,
+            // TODO(garyq): The variant is currently set to 0 (default) as we do
+            // not have a property to set it with. We should eventually support
+            // default, compact, and elegant variants.
+            minikin::FontStyle(
+                0, GetWeight(paragraph_style_.font_weight),
+                paragraph_style_.font_style == FontStyle::italic)));
+
+    if (font_skia != nullptr) {
+      font.setTypeface(font_skia->GetSkTypeface());
+      font.setSize(paragraph_style_.font_size);
+      SkFontMetrics strut_metrics;
+      font.getMetrics(&strut_metrics);
+
+      strut_min_ascent = paragraph_style_.line_height * -strut_metrics.fAscent;
+      strut_min_descent = paragraph_style_.line_height * strut_metrics.fDescent;
+      strut_min_leading =
+          // Use font leading if there is no user specified strut leading.
+          paragraph_style_.leading < 0
+              ? strut_metrics.fLeading
+              : paragraph_style_.leading *
+                    (strut_metrics.fDescent - strut_metrics.fAscent);
+      strut_min_half_leading = strut_min_leading / 2;
+      strut_min_line_height =
+          paragraph_style_.line_height *
+              (strut_metrics.fDescent - strut_metrics.fAscent) +
+          strut_min_leading;
+    }
+  }
+
+  // Paragraph bounds tracking.
   size_t line_limit = std::min(paragraph_style_.max_lines, line_ranges_.size());
   did_exceed_max_lines_ = (line_ranges_.size() > paragraph_style_.max_lines);
 
@@ -756,36 +803,37 @@ void Paragraph::Layout(double width, bool force) {
           line_code_unit_runs.back().direction);
     }
 
-    double max_line_spacing = 0;
-    double max_descent = 0;
+    // Calculate the amount to advance in the y direction. This is done by
+    // computing the maximum ascent and descent with respect to the strut.
+    double max_descent = strut_min_descent + strut_min_half_leading;
+    double max_ascent = strut_min_ascent + strut_min_half_leading;
     SkScalar max_unscaled_ascent = 0;
     auto update_line_metrics = [&](const SkFontMetrics& metrics,
                                    const TextStyle& style) {
-      // TODO(garyq): Multipling in the style.height on the first line is
-      // probably wrong. Figure out how paragraph and line heights are supposed
-      // to work and fix it.
-      double line_spacing =
-          (line_number == 0)
-              ? -metrics.fAscent * style.height
-              : (-metrics.fAscent + metrics.fLeading) * style.height;
-      if (line_spacing > max_line_spacing) {
-        max_line_spacing = line_spacing;
-        if (line_number == 0) {
-          alphabetic_baseline_ = line_spacing;
-          ideographic_baseline_ =
-              (metrics.fDescent - metrics.fAscent) * style.height;
-        }
-      }
-      max_line_spacing = std::max(line_spacing, max_line_spacing);
+      if (!force_strut) {
+        double ascent =
+            (-metrics.fAscent + metrics.fLeading / 2) * style.height;
+        max_ascent = std::max(ascent, max_ascent);
 
-      double descent = metrics.fDescent * style.height;
-      max_descent = std::max(descent, max_descent);
+        double descent =
+            (metrics.fDescent + metrics.fLeading / 2) * style.height;
+        max_descent = std::max(descent, max_descent);
+      }
 
       max_unscaled_ascent = std::max(-metrics.fAscent, max_unscaled_ascent);
     };
     for (const PaintRecord& paint_record : paint_records) {
       update_line_metrics(paint_record.metrics(), paint_record.style());
     }
+
+    // Calculate the baselines. This is only done on the first line.
+    if (line_number == 0) {
+      alphabetic_baseline_ = max_ascent;
+      // TODO(garyq): Ideographic baseline is currently bottom of EM box,which
+      // is not correct. This should be obtained from metrics.
+      ideographic_baseline_ = max_ascent + max_descent;
+    }
+
     // If no fonts were actually rendered, then compute a baseline based on the
     // font of the paragraph style.
     if (paint_records.empty()) {
@@ -800,14 +848,15 @@ void Paragraph::Layout(double width, bool force) {
     // TODO(garyq): Remove rounding of line heights because it is irrelevant in
     // a world of high DPI devices.
     line_heights_.push_back((line_heights_.empty() ? 0 : line_heights_.back()) +
-                            round(max_line_spacing + max_descent));
+
+                            round(max_ascent + max_descent));
     line_baselines_.push_back(line_heights_.back() - max_descent);
-    y_offset += round(max_line_spacing + prev_max_descent);
+    y_offset += round(max_ascent + prev_max_descent);
     prev_max_descent = max_descent;
 
     // The max line spacing and ascent have been multiplied by -1 to make math
     // in GetRectsForRange more logical/readable.
-    line_max_spacings_.push_back(max_line_spacing);
+    line_max_spacings_.push_back(max_ascent);
     line_max_descent_.push_back(max_descent);
     line_max_ascent_.push_back(max_unscaled_ascent);
 

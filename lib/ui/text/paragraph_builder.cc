@@ -73,8 +73,10 @@ const int psMaxLinesIndex = 5;
 const int psFontFamilyIndex = 6;
 const int psFontSizeIndex = 7;
 const int psLineHeightIndex = 8;
-const int psEllipsisIndex = 9;
-const int psLocaleIndex = 10;
+const int psLeadingIndex = 9;
+const int psForceStrutHeightIndex = 10;
+const int psEllipsisIndex = 11;
+const int psLocaleIndex = 12;
 
 const int psTextAlignMask = 1 << psTextAlignIndex;
 const int psTextDirectionMask = 1 << psTextDirectionIndex;
@@ -84,6 +86,8 @@ const int psMaxLinesMask = 1 << psMaxLinesIndex;
 const int psFontFamilyMask = 1 << psFontFamilyIndex;
 const int psFontSizeMask = 1 << psFontSizeIndex;
 const int psLineHeightMask = 1 << psLineHeightIndex;
+const int psLeadingMask = 1 << psLeadingIndex;
+const int psForceStrutHeightMask = 1 << psForceStrutHeightIndex;
 const int psEllipsisMask = 1 << psEllipsisIndex;
 const int psLocaleMask = 1 << psLocaleIndex;
 
@@ -124,16 +128,21 @@ fml::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
     const std::string& fontFamily,
     double fontSize,
     double lineHeight,
+    double leading,
+    double forceStrutHeight,
     const std::u16string& ellipsis,
     const std::string& locale) {
-  return fml::MakeRefCounted<ParagraphBuilder>(encoded, fontFamily, fontSize,
-                                               lineHeight, ellipsis, locale);
+  return fml::MakeRefCounted<ParagraphBuilder>(
+      encoded, fontFamily, fontSize, lineHeight, leading, forceStrutHeight,
+      ellipsis, locale);
 }
 
 ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
                                    const std::string& fontFamily,
                                    double fontSize,
                                    double lineHeight,
+                                   double leading,
+                                   double forceStrutHeight,
                                    const std::u16string& ellipsis,
                                    const std::string& locale) {
   int32_t mask = encoded[0];
@@ -159,6 +168,12 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
 
   if (mask & psLineHeightMask)
     style.line_height = lineHeight;
+
+  if (mask & psLeadingMask)
+    style.leading = leading;
+
+  if (mask & psForceStrutHeightMask)
+    style.force_strut_height = forceStrutHeight;
 
   if (mask & psMaxLinesMask)
     style.max_lines = encoded[psMaxLinesIndex];

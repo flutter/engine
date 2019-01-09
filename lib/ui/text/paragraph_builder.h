@@ -29,6 +29,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                                               const std::string& fontFamily,
                                               double fontSize,
                                               double lineHeight,
+                                              double leading,
+                                              double forceStrutHeight,
                                               const std::u16string& ellipsis,
                                               const std::string& locale);
 
@@ -60,6 +62,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                             const std::string& fontFamily,
                             double fontSize,
                             double lineHeight,
+                            double leading,
+                            double forceStrutHeight,
                             const std::u16string& ellipsis,
                             const std::string& locale);
 

@@ -521,6 +521,8 @@ Int32List _encodeParagraphStyle(
   String fontFamily,
   double fontSize,
   double lineHeight,
+  double leading,
+  bool forceStrutHeight,
   String ellipsis,
   Locale locale,
 ) {
@@ -557,12 +559,20 @@ Int32List _encodeParagraphStyle(
     result[0] |= 1 << 8;
     // Passed separately to native.
   }
-  if (ellipsis != null) {
+  if (leading != null) {
     result[0] |= 1 << 9;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (forceStrutHeight != null) {
     result[0] |= 1 << 10;
+    // Passed separately to native.
+  }
+  if (ellipsis != null) {
+    result[0] |= 1 << 11;
+    // Passed separately to native.
+  }
+  if (locale != null) {
+    result[0] |= 1 << 12;
     // Passed separately to native.
   }
   return result;
@@ -572,6 +582,10 @@ Int32List _encodeParagraphStyle(
 /// [ParagraphBuilder] to position lines within a [Paragraph] of text.
 class ParagraphStyle {
   /// Creates a new ParagraphStyle object.
+  ///
+  /// Together, the `fontFamily`, `fontSize`, `lineHeight`, `fontStyle`,
+  /// `fontWeight`, `leading`, and `forceStrutHeight` properties define the
+  /// strut to be applied to the paragraph.
   ///
   /// * `textAlign`: The alignment of the text within the lines of the
   ///   paragraph. If the last line is ellipsized (see `ellipsis` below), the
@@ -604,7 +618,23 @@ class ParagraphStyle {
   ///   the text.
   ///
   /// * `lineHeight`: The minimum height of the line boxes, as a multiple of the
-  ///   font size.
+  ///   font size. The lines of the paragraph will be at least
+  ///   `(lineHeight + leading) * fontSize` tall when fontSize
+  ///   is not null. When fontSize is null, there is no minimum line height. Tall
+  ///   glyphs due to baseline alignment or large [TextStyle.fontSize] may cause
+  ///   the actual line height after layout to be taller than specified here.
+  ///   [fontSize] must be provided for this property to take effect.
+  ///
+  /// * `leading`: The minimum amount of leading between lines as a multiple of
+  ///   the font size. [fontSize] must be provided for this property to take effect.
+  ///
+  /// * `forceStrutHeight`: When true, the paragraph will force all lines to be exactly
+  ///   `(lineHeight + leading) * fontSize` tall from baseline to baseline.
+  ///   [TextStyle] is no longer able to influence the line height, and any tall
+  ///   glyphs may overlap with lines above. If a [fontFamily] is specified, the
+  ///   total ascent of the first line will be the min of the `Ascent + half-leading`
+  ///   of the [fontFamily] and `(lineHeight + leading) * fontSize`. Otherwise, it
+  ///   will be determined by the Ascent + half-leading of the first text.
   ///
   /// * `ellipsis`: String used to ellipsize overflowing text. If `maxLines` is
   ///   not null, then the `ellipsis`, if any, is applied to the last rendered
@@ -619,12 +649,14 @@ class ParagraphStyle {
   ParagraphStyle({
     TextAlign textAlign,
     TextDirection textDirection,
-    FontWeight fontWeight,
-    FontStyle fontStyle,
     int maxLines,
-    String fontFamily,
-    double fontSize,
-    double lineHeight,
+    FontWeight fontWeight, // Strut
+    FontStyle fontStyle, // Strut
+    String fontFamily, // Strut
+    double fontSize, // Strut
+    double lineHeight, // Strut
+    double leading, // Strut
+    bool forceStrutHeight, // Strut
     String ellipsis,
     Locale locale,
   }) : _encoded = _encodeParagraphStyle(
@@ -636,19 +668,25 @@ class ParagraphStyle {
          fontFamily,
          fontSize,
          lineHeight,
+         leading,
+         forceStrutHeight,
          ellipsis,
          locale,
        ),
        _fontFamily = fontFamily,
        _fontSize = fontSize,
        _lineHeight = lineHeight,
+       _leading = leading,
+       _forceStrutHeight = forceStrutHeight,
        _ellipsis = ellipsis,
        _locale = locale;
 
   final Int32List _encoded;
-  final String _fontFamily;
-  final double _fontSize;
-  final double _lineHeight;
+  final String _fontFamily; // Strut
+  final double _fontSize; // Strut
+  final double _lineHeight; // Strut
+  final double _leading; // Strut
+  final bool _forceStrutHeight; // Strut
   final String _ellipsis;
   final Locale _locale;
 
@@ -662,6 +700,8 @@ class ParagraphStyle {
     if (_fontFamily != typedOther._fontFamily ||
         _fontSize != typedOther._fontSize ||
         _lineHeight != typedOther._lineHeight ||
+        _leading != typedOther._leading ||
+        _forceStrutHeight != typedOther._forceStrutHeight ||
         _ellipsis != typedOther._ellipsis ||
         _locale != typedOther._locale)
      return false;
@@ -1203,8 +1243,8 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Creates a [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
   @pragma('vm:entry-point')
-  ParagraphBuilder(ParagraphStyle style) { _constructor(style._encoded, style._fontFamily, style._fontSize, style._lineHeight, style._ellipsis, _encodeLocale(style._locale)); }
-  void _constructor(Int32List encoded, String fontFamily, double fontSize, double lineHeight, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
+  ParagraphBuilder(ParagraphStyle style) { _constructor(style._encoded, style._fontFamily, style._fontSize, style._lineHeight, style._leading, style._forceStrutHeight, style._ellipsis, _encodeLocale(style._locale)); }
+  void _constructor(Int32List encoded, String fontFamily, double fontSize, double lineHeight, double leading, bool forceStrutHeight, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
 
   /// Applies the given style to the added text until [pop] is called.
   ///
