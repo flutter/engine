@@ -119,7 +119,7 @@ FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
 void ParagraphBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register(
-      {{"ParagraphBuilder_constructor", ParagraphBuilder_constructor, 7, true},
+      {{"ParagraphBuilder_constructor", ParagraphBuilder_constructor, 9, true},
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
@@ -129,7 +129,7 @@ fml::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
     double fontSize,
     double lineHeight,
     double leading,
-    double forceStrutHeight,
+    bool forceStrutHeight,
     const std::u16string& ellipsis,
     const std::string& locale) {
   return fml::MakeRefCounted<ParagraphBuilder>(
@@ -142,7 +142,7 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
                                    double fontSize,
                                    double lineHeight,
                                    double leading,
-                                   double forceStrutHeight,
+                                   bool forceStrutHeight,
                                    const std::u16string& ellipsis,
                                    const std::string& locale) {
   int32_t mask = encoded[0];

@@ -515,13 +515,13 @@ class TextStyle {
 Int32List _encodeParagraphStyle(
   TextAlign textAlign,
   TextDirection textDirection,
-  FontWeight fontWeight,
-  FontStyle fontStyle,
   int maxLines,
   String fontFamily,
   double fontSize,
   double lineHeight,
   double leading,
+  FontWeight fontWeight,
+  FontStyle fontStyle,
   bool forceStrutHeight,
   String ellipsis,
   Locale locale,
@@ -598,12 +598,6 @@ class ParagraphStyle {
   ///   directionality of the paragraph, as well as the meaning of
   ///   [TextAlign.start] and [TextAlign.end] in the `textAlign` field.
   ///
-  /// * `fontWeight`: The typeface thickness to use when painting the text
-  ///   (e.g., bold).
-  ///
-  /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g.,
-  ///   italics).
-  ///
   /// * `maxLines`: The maximum number of lines painted. Lines beyond this
   ///   number are silently dropped. For example, if `maxLines` is 1, then only
   ///   one line is rendered. If `maxLines` is null, but `ellipsis` is not null,
@@ -628,6 +622,12 @@ class ParagraphStyle {
   /// * `leading`: The minimum amount of leading between lines as a multiple of
   ///   the font size. [fontSize] must be provided for this property to take effect.
   ///
+  /// * `fontWeight`: The typeface thickness to use when painting the text
+  ///   (e.g., bold).
+  ///
+  /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g.,
+  ///   italics).
+  ///
   /// * `forceStrutHeight`: When true, the paragraph will force all lines to be exactly
   ///   `(lineHeight + leading) * fontSize` tall from baseline to baseline.
   ///   [TextStyle] is no longer able to influence the line height, and any tall
@@ -650,25 +650,25 @@ class ParagraphStyle {
     TextAlign textAlign,
     TextDirection textDirection,
     int maxLines,
-    FontWeight fontWeight, // Strut
-    FontStyle fontStyle, // Strut
     String fontFamily, // Strut
     double fontSize, // Strut
     double lineHeight, // Strut
     double leading, // Strut
+    FontWeight fontWeight, // Strut
+    FontStyle fontStyle, // Strut
     bool forceStrutHeight, // Strut
     String ellipsis,
     Locale locale,
   }) : _encoded = _encodeParagraphStyle(
          textAlign,
          textDirection,
-         fontWeight,
-         fontStyle,
          maxLines,
          fontFamily,
          fontSize,
          lineHeight,
          leading,
+         fontWeight,
+         fontStyle,
          forceStrutHeight,
          ellipsis,
          locale,

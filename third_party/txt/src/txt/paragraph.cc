@@ -438,7 +438,7 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   // force_strut makes all lines have exactly the strut metrics, and ignores all
   // actual metrics. We only force the strut if the strut is non-zero and valid.
   strut->force_strut = paragraph_style_.force_strut_height && valid_strut;
-  if (non_zero_strut) {
+  if (valid_strut) {
     const FontSkia* font_skia =
         static_cast<const FontSkia*>(font_collection_->GetMinikinFontForFamily(
             paragraph_style_.font_family,
@@ -457,7 +457,7 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
 
       // Prevent values from being negative.
       double canonicalized_line_height =
-          std::max(0, paragraph_style_.line_height);
+          std::max(0.0, paragraph_style_.line_height);
       // double canonicalized_leading = std::max(0, paragraph_style_.leading);
 
       strut->ascent = canonicalized_line_height * -strut_metrics.fAscent;
