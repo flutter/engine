@@ -454,20 +454,22 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
       font.setSize(paragraph_style_.font_size);
       SkFontMetrics strut_metrics;
       font.getMetrics(&strut_metrics);
+      FML_DLOG(ERROR) << "DUMPING: " << strut_metrics.fAscent
+                      << strut_metrics.fDescent << strut_metrics.fLeading;
 
       // Prevent values from being negative.
       double canonicalized_line_height =
           std::max(0.0, paragraph_style_.line_height);
-      // double canonicalized_leading = std::max(0, paragraph_style_.leading);
 
       strut->ascent = canonicalized_line_height * -strut_metrics.fAscent;
       strut->descent = canonicalized_line_height * strut_metrics.fDescent;
       strut->leading =
           // Use font's leading if there is no user specified strut leading.
-          (paragraph_style_.leading < 0 ? strut_metrics.fLeading
-                                        : paragraph_style_.leading) *
-          (strut_metrics.fDescent - strut_metrics.fAscent +
-           strut_metrics.fLeading);
+          paragraph_style_.leading < 0
+              ? strut_metrics.fLeading
+              : (paragraph_style_.leading *
+                 (strut_metrics.fDescent - strut_metrics.fAscent +
+                  strut_metrics.fLeading));
       strut->half_leading = strut->leading / 2;
       strut->line_height = canonicalized_line_height * (strut_metrics.fDescent -
                                                         strut_metrics.fAscent) +
