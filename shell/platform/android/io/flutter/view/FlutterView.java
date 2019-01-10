@@ -41,7 +41,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * An Android view containing a Flutter app.
  */
 public class FlutterView extends SurfaceView
-        implements BinaryMessenger, TextureRegistry, AccessibilityManager.AccessibilityStateChangeListener {
+        implements BinaryMessenger, TextureRegistry, AccessibilityManager.AccessibilityStateChangeListener,
+        AccessibilityBridge.SemanticHandler,
+        FlutterNativeView.NativeViewHelper {
     /**
      * Interface for those objects that maintain and expose a reference to a
      * {@code FlutterView} (such as a full-screen Flutter activity).
@@ -817,11 +819,11 @@ public class FlutterView extends SurfaceView
     private int mAccessibilityFeatureFlags = 0;
     private TouchExplorationListener mTouchExplorationListener;
 
-    protected void dispatchSemanticsAction(int id, AccessibilityBridge.Action action) {
+    public void dispatchSemanticsAction(int id, AccessibilityBridge.Action action) {
         dispatchSemanticsAction(id, action, null);
     }
 
-    protected void dispatchSemanticsAction(int id, AccessibilityBridge.Action action, Object args) {
+    public void dispatchSemanticsAction(int id, AccessibilityBridge.Action action, Object args) {
         if (!isAttached())
             return;
         ByteBuffer encodedArgs = null;
@@ -989,7 +991,7 @@ public class FlutterView extends SurfaceView
         mAccessibilityNodeProvider.setAccessibilityEnabled(true);
     }
 
-    void resetAccessibilityTree() {
+    public void resetAccessibilityTree() {
         if (mAccessibilityNodeProvider != null) {
             mAccessibilityNodeProvider.reset();
         }

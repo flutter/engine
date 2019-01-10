@@ -30,10 +30,12 @@ public class FlutterPluginRegistry
              PluginRegistry.ViewDestroyListener {
     private static final String TAG = "FlutterPluginRegistry";
 
+    public interface ViewRegistry extends BinaryMessenger, TextureRegistry {}
+
     private Activity mActivity;
     private Context mAppContext;
     private FlutterNativeView mNativeView;
-    private FlutterView mFlutterView;
+    private ViewRegistry mViewRegistry;
 
     private final PlatformViewsController mPlatformViewsController;
     private final Map<String, Object> mPluginMap = new LinkedHashMap<>(0);
@@ -69,16 +71,16 @@ public class FlutterPluginRegistry
         return new FlutterRegistrar(pluginKey);
     }
 
-    public void attach(FlutterView flutterView, Activity activity) {
-        mFlutterView = flutterView;
+    public void attach(ViewRegistry viewRegistry, Activity activity) {
+        mViewRegistry = viewRegistry;
         mActivity = activity;
-        mPlatformViewsController.attach(activity, flutterView, flutterView);
+        mPlatformViewsController.attach(activity, viewRegistry, viewRegistry);
     }
 
     public void detach() {
         mPlatformViewsController.detach();
         mPlatformViewsController.onFlutterViewDestroyed();
-        mFlutterView = null;
+        mViewRegistry = null;
         mActivity = null;
     }
 
@@ -115,7 +117,7 @@ public class FlutterPluginRegistry
 
         @Override
         public TextureRegistry textures() {
-            return mFlutterView;
+            return mViewRegistry;
         }
 
         @Override
@@ -125,7 +127,8 @@ public class FlutterPluginRegistry
 
         @Override
         public FlutterView view() {
-            return mFlutterView;
+            assert mViewRegistry instanceof FlutterView;
+            return (FlutterView) mViewRegistry;
         }
 
         @Override

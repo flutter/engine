@@ -8,16 +8,17 @@ import android.content.Context;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Selection;
+import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.view.FlutterView;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,7 +27,7 @@ import org.json.JSONObject;
  * Android implementation of the text input plugin.
  */
 public class TextInputPlugin implements MethodCallHandler {
-    private final FlutterView mView;
+    private final View mView;
     private final InputMethodManager mImm;
     private final MethodChannel mFlutterChannel;
     private int mClient = 0;
@@ -34,11 +35,12 @@ public class TextInputPlugin implements MethodCallHandler {
     private Editable mEditable;
     private boolean mRestartInputPending;
 
-    public TextInputPlugin(FlutterView view) {
+    public TextInputPlugin(View view) {
+        assert view instanceof BinaryMessenger;
         mView = view;
         mImm = (InputMethodManager) view.getContext().getSystemService(
                 Context.INPUT_METHOD_SERVICE);
-        mFlutterChannel = new MethodChannel(view, "flutter/textinput", JSONMethodCodec.INSTANCE);
+        mFlutterChannel = new MethodChannel((BinaryMessenger) view, "flutter/textinput", JSONMethodCodec.INSTANCE);
         mFlutterChannel.setMethodCallHandler(this);
     }
 
@@ -133,7 +135,7 @@ public class TextInputPlugin implements MethodCallHandler {
         }
     }
 
-    public InputConnection createInputConnection(FlutterView view, EditorInfo outAttrs)
+    public InputConnection createInputConnection(View view, EditorInfo outAttrs)
             throws JSONException {
         if (mClient == 0) return null;
 
@@ -166,16 +168,16 @@ public class TextInputPlugin implements MethodCallHandler {
         return connection;
     }
 
-    private void showTextInput(FlutterView view) {
+    private void showTextInput(View view) {
         view.requestFocus();
         mImm.showSoftInput(view, 0);
     }
 
-    private void hideTextInput(FlutterView view) {
+    private void hideTextInput(View view) {
         mImm.hideSoftInputFromWindow(view.getApplicationWindowToken(), 0);
     }
 
-    private void setTextInputClient(FlutterView view, int client, JSONObject configuration) {
+    private void setTextInputClient(View view, int client, JSONObject configuration) {
         mClient = client;
         mConfiguration = configuration;
         mEditable = Editable.Factory.getInstance().newEditable("");
@@ -196,7 +198,7 @@ public class TextInputPlugin implements MethodCallHandler {
         }
     }
 
-    private void setTextInputEditingState(FlutterView view, JSONObject state) throws JSONException {
+    private void setTextInputEditingState(View view, JSONObject state) throws JSONException {
         if (!mRestartInputPending && state.getString("text").equals(mEditable.toString())) {
             applyStateToSelection(state);
             mImm.updateSelection(mView, Math.max(Selection.getSelectionStart(mEditable), 0),
