@@ -8,27 +8,26 @@ import android.content.Context;
 import android.text.Editable;
 import android.text.Selection;
 import android.view.KeyEvent;
+import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.view.FlutterView;
 
 import java.util.Arrays;
 import java.util.HashMap;
 
 class InputConnectionAdaptor extends BaseInputConnection {
-    private final FlutterView mFlutterView;
+    private final View mView;
     private final int mClient;
     private final MethodChannel mFlutterChannel;
     private final Editable mEditable;
     private int mBatchCount;
     private InputMethodManager mImm;
 
-    public InputConnectionAdaptor(FlutterView view, int client,
-        MethodChannel flutterChannel, Editable editable) {
+    public InputConnectionAdaptor(View view, int client, MethodChannel flutterChannel, Editable editable) {
         super(view, true);
-        mFlutterView = view;
+        mView = view;
         mClient = client;
         mFlutterChannel = flutterChannel;
         mEditable = editable;
@@ -47,7 +46,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
         int composingStart = BaseInputConnection.getComposingSpanStart(mEditable);
         int composingEnd = BaseInputConnection.getComposingSpanEnd(mEditable);
 
-        mImm.updateSelection(mFlutterView,
+        mImm.updateSelection(mView,
                              selectionStart, selectionEnd,
                              composingStart, composingEnd);
 

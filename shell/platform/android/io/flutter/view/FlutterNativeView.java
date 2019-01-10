@@ -20,6 +20,13 @@ import java.util.Map;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 
 public class FlutterNativeView implements BinaryMessenger {
+
+    interface NativeViewHelper extends FlutterPluginRegistry.ViewRegistry {
+      void resetAccessibilityTree();
+      void updateSemantics(ByteBuffer buffer, String[] strings);
+      void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings);
+      void onFirstFrame();
+    }
     private static final String TAG = "FlutterNativeView";
 
     private final Map<String, BinaryMessageHandler> mMessageHandlers;
@@ -27,7 +34,7 @@ public class FlutterNativeView implements BinaryMessenger {
     private final Map<Integer, BinaryReply> mPendingReplies = new HashMap<>();
 
     private final FlutterPluginRegistry mPluginRegistry;
-    private FlutterView mFlutterView;
+    private NativeViewHelper mNativeViewHelper;
     private FlutterJNI mFlutterJNI;
     private final Context mContext;
     private boolean applicationIsRunning;
@@ -50,13 +57,13 @@ public class FlutterNativeView implements BinaryMessenger {
 
     public void detach() {
         mPluginRegistry.detach();
-        mFlutterView = null;
+        mNativeViewHelper = null;
         mFlutterJNI.detachFromNativeButKeepNativeResources();
     }
 
     public void destroy() {
         mPluginRegistry.destroy();
-        mFlutterView = null;
+        mNativeViewHelper = null;
         mFlutterJNI.detachFromNativeAndReleaseResources();
         applicationIsRunning = false;
     }
@@ -65,9 +72,9 @@ public class FlutterNativeView implements BinaryMessenger {
         return mPluginRegistry;
     }
 
-    public void attachViewAndActivity(FlutterView flutterView, Activity activity) {
-        mFlutterView = flutterView;
-        mPluginRegistry.attach(flutterView, activity);
+    public void attachViewAndActivity(NativeViewHelper nativeViewHelper, Activity activity) {
+        mNativeViewHelper = nativeViewHelper;
+        mPluginRegistry.attach(nativeViewHelper, activity);
     }
 
     public boolean isAttached() {
@@ -228,26 +235,26 @@ public class FlutterNativeView implements BinaryMessenger {
     private final class RenderSurfaceImpl implements RenderSurface {
         // Called by native to update the semantics/accessibility tree.
         public void updateSemantics(ByteBuffer buffer, String[] strings) {
-            if (mFlutterView == null) {
+            if (mNativeViewHelper == null) {
                 return;
             }
-            mFlutterView.updateSemantics(buffer, strings);
+            mNativeViewHelper.updateSemantics(buffer, strings);
         }
 
         // Called by native to update the custom accessibility actions.
         public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
-            if (mFlutterView == null) {
+            if (mNativeViewHelper == null) {
                 return;
             }
-            mFlutterView.updateCustomAccessibilityActions(buffer, strings);
+            mNativeViewHelper.updateCustomAccessibilityActions(buffer, strings);
         }
 
         // Called by native to notify first Flutter frame rendered.
         public void onFirstFrameRendered() {
-            if (mFlutterView == null) {
+            if (mNativeViewHelper == null) {
                 return;
             }
-            mFlutterView.onFirstFrame();
+            mNativeViewHelper.onFirstFrame();
         }
     }
 
@@ -255,8 +262,8 @@ public class FlutterNativeView implements BinaryMessenger {
         // Called by native to notify when the engine is restarted (cold reload).
         @SuppressWarnings("unused")
         public void onPreEngineRestart() {
-            if (mFlutterView != null) {
-                mFlutterView.resetAccessibilityTree();
+            if (mNativeViewHelper != null) {
+                mNativeViewHelper.resetAccessibilityTree();
             }
             if (mPluginRegistry == null) {
                 return;

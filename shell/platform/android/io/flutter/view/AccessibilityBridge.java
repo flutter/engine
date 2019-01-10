@@ -15,6 +15,7 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 import io.flutter.plugin.common.BasicMessageChannel;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.util.Predicate;
 
@@ -23,6 +24,12 @@ import java.util.*;
 
 class AccessibilityBridge
         extends AccessibilityNodeProvider implements BasicMessageChannel.MessageHandler<Object> {
+
+    interface SemanticHandler {
+      void dispatchSemanticsAction(int id, AccessibilityBridge.Action action);
+      void dispatchSemanticsAction(int id, AccessibilityBridge.Action action, Object args);
+    }
+
     private static final String TAG = "FlutterView";
 
     // Constants from higher API levels.
@@ -36,7 +43,8 @@ class AccessibilityBridge
 
     private Map<Integer, SemanticsObject> mObjects;
     private Map<Integer, CustomAccessibilityAction> mCustomAccessibilityActions;
-    private final FlutterView mOwner;
+    private final View mView;
+    private final SemanticHandler mSemanticHandler;
     private boolean mAccessibilityEnabled = false;
     private SemanticsObject mA11yFocusedObject;
     private SemanticsObject mInputFocusedObject;
@@ -106,14 +114,16 @@ class AccessibilityBridge
         final int value;
     }
 
-    AccessibilityBridge(FlutterView owner) {
+    AccessibilityBridge(View owner) {
         assert owner != null;
-        mOwner = owner;
+        assert owner instanceof SemanticHandler;
+        assert owner instanceof BinaryMessenger;
+        mView = owner;
+        mSemanticHandler = (SemanticHandler) owner;
         mObjects = new HashMap<>();
         mCustomAccessibilityActions = new HashMap<>();
         previousRoutes = new ArrayList<>();
-        mFlutterAccessibilityChannel = new BasicMessageChannel<>(
-                owner, "flutter/accessibility", StandardMessageCodec.INSTANCE);
+        mFlutterAccessibilityChannel = new BasicMessageChannel<>((BinaryMessenger) owner, "flutter/accessibility", StandardMessageCodec.INSTANCE);
         mDecorView = ((Activity) owner.getContext()).getWindow().getDecorView();
     }
 
@@ -145,10 +155,10 @@ class AccessibilityBridge
     @SuppressWarnings("deprecation")
     public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
         if (virtualViewId == View.NO_ID) {
-            AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner);
-            mOwner.onInitializeAccessibilityNodeInfo(result);
+            AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mView);
+            mView.onInitializeAccessibilityNodeInfo(result);
             if (mObjects.containsKey(ROOT_NODE_ID)) {
-                result.addChild(mOwner, ROOT_NODE_ID);
+                result.addChild(mView, ROOT_NODE_ID);
             }
             return result;
         }
@@ -158,14 +168,14 @@ class AccessibilityBridge
             return null;
         }
 
-        AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mOwner, virtualViewId);
+        AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(mView, virtualViewId);
         // Work around for https://github.com/flutter/flutter/issues/2101
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             result.setViewIdResourceName("");
         }
-        result.setPackageName(mOwner.getContext().getPackageName());
+        result.setPackageName(mView.getContext().getPackageName());
         result.setClassName("android.view.View");
-        result.setSource(mOwner, virtualViewId);
+        result.setSource(mView, virtualViewId);
         result.setFocusable(object.isFocusable());
         if (mInputFocusedObject != null) {
             result.setFocused(mInputFocusedObject.id == virtualViewId);
@@ -239,10 +249,10 @@ class AccessibilityBridge
 
         if (object.parent != null) {
             assert object.id > ROOT_NODE_ID;
-            result.setParent(mOwner, object.parent.id);
+            result.setParent(mView, object.parent.id);
         } else {
             assert object.id == ROOT_NODE_ID;
-            result.setParent(mOwner);
+            result.setParent(mView);
         }
 
         Rect bounds = object.getGlobalRect();
@@ -381,7 +391,7 @@ class AccessibilityBridge
         if (object.childrenInTraversalOrder != null) {
             for (SemanticsObject child : object.childrenInTraversalOrder) {
                 if (!child.hasFlag(Flag.IS_HIDDEN)) {
-                    result.addChild(mOwner, child.id);
+                    result.addChild(mView, child.id);
                 }
             }
         }
@@ -400,27 +410,27 @@ class AccessibilityBridge
                 // Note: TalkBack prior to Oreo doesn't use this handler and instead simulates a
                 //     click event at the center of the SemanticsNode. Other a11y services might go
                 //     through this handler though.
-                mOwner.dispatchSemanticsAction(virtualViewId, Action.TAP);
+                mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.TAP);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_LONG_CLICK: {
                 // Note: TalkBack doesn't use this handler and instead simulates a long click event
                 //     at the center of the SemanticsNode. Other a11y services might go through this
                 //     handler though.
-                mOwner.dispatchSemanticsAction(virtualViewId, Action.LONG_PRESS);
+                mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.LONG_PRESS);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_SCROLL_FORWARD: {
                 if (object.hasAction(Action.SCROLL_UP)) {
-                    mOwner.dispatchSemanticsAction(virtualViewId, Action.SCROLL_UP);
+                    mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.SCROLL_UP);
                 } else if (object.hasAction(Action.SCROLL_LEFT)) {
                     // TODO(ianh): bidi support using textDirection
-                    mOwner.dispatchSemanticsAction(virtualViewId, Action.SCROLL_LEFT);
+                    mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.SCROLL_LEFT);
                 } else if (object.hasAction(Action.INCREASE)) {
                     object.value = object.increasedValue;
                     // Event causes Android to read out the updated value.
                     sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_SELECTED);
-                    mOwner.dispatchSemanticsAction(virtualViewId, Action.INCREASE);
+                    mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.INCREASE);
                 } else {
                     return false;
                 }
@@ -428,15 +438,15 @@ class AccessibilityBridge
             }
             case AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD: {
                 if (object.hasAction(Action.SCROLL_DOWN)) {
-                    mOwner.dispatchSemanticsAction(virtualViewId, Action.SCROLL_DOWN);
+                    mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.SCROLL_DOWN);
                 } else if (object.hasAction(Action.SCROLL_RIGHT)) {
                     // TODO(ianh): bidi support using textDirection
-                    mOwner.dispatchSemanticsAction(virtualViewId, Action.SCROLL_RIGHT);
+                    mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.SCROLL_RIGHT);
                 } else if (object.hasAction(Action.DECREASE)) {
                     object.value = object.decreasedValue;
                     // Event causes Android to read out the updated value.
                     sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_SELECTED);
-                    mOwner.dispatchSemanticsAction(virtualViewId, Action.DECREASE);
+                    mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.DECREASE);
                 } else {
                     return false;
                 }
@@ -449,14 +459,14 @@ class AccessibilityBridge
                 return performCursorMoveAction(object, virtualViewId, arguments, true);
             }
             case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS: {
-                mOwner.dispatchSemanticsAction(virtualViewId, Action.DID_LOSE_ACCESSIBILITY_FOCUS);
+                mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.DID_LOSE_ACCESSIBILITY_FOCUS);
                 sendAccessibilityEvent(
                         virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
                 mA11yFocusedObject = null;
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS: {
-                mOwner.dispatchSemanticsAction(virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
+                mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
                 sendAccessibilityEvent(
                         virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
 
@@ -464,7 +474,7 @@ class AccessibilityBridge
                     // When Android focuses a node, it doesn't invalidate the view.
                     // (It does when it sends ACTION_CLEAR_ACCESSIBILITY_FOCUS, so
                     // we only have to worry about this when the focused node is null.)
-                    mOwner.invalidate();
+                    mView.invalidate();
                 }
                 mA11yFocusedObject = object;
 
@@ -476,7 +486,7 @@ class AccessibilityBridge
                 return true;
             }
             case ACTION_SHOW_ON_SCREEN: {
-                mOwner.dispatchSemanticsAction(virtualViewId, Action.SHOW_ON_SCREEN);
+                mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.SHOW_ON_SCREEN);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_SET_SELECTION: {
@@ -498,23 +508,23 @@ class AccessibilityBridge
                     selection.put("base", object.textSelectionExtent);
                     selection.put("extent", object.textSelectionExtent);
                 }
-                mOwner.dispatchSemanticsAction(virtualViewId, Action.SET_SELECTION, selection);
+                mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.SET_SELECTION, selection);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_COPY: {
-                mOwner.dispatchSemanticsAction(virtualViewId, Action.COPY);
+                mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.COPY);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_CUT: {
-                mOwner.dispatchSemanticsAction(virtualViewId, Action.CUT);
+                mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.CUT);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_PASTE: {
-                mOwner.dispatchSemanticsAction(virtualViewId, Action.PASTE);
+                mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.PASTE);
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_DISMISS: {
-                mOwner.dispatchSemanticsAction(virtualViewId, Action.DISMISS);
+                mSemanticHandler.dispatchSemanticsAction(virtualViewId, Action.DISMISS);
                 return true;
             }
             default:
@@ -523,7 +533,7 @@ class AccessibilityBridge
                 CustomAccessibilityAction contextAction =
                         mCustomAccessibilityActions.get(flutterId);
                 if (contextAction != null) {
-                    mOwner.dispatchSemanticsAction(
+                    mSemanticHandler.dispatchSemanticsAction(
                             virtualViewId, Action.CUSTOM_ACTION, contextAction.id);
                     return true;
                 }
@@ -540,12 +550,12 @@ class AccessibilityBridge
         switch (granularity) {
             case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER: {
                 if (forward && object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_CHARACTER)) {
-                    mOwner.dispatchSemanticsAction(virtualViewId,
+                    mSemanticHandler.dispatchSemanticsAction(virtualViewId,
                             Action.MOVE_CURSOR_FORWARD_BY_CHARACTER, extendSelection);
                     return true;
                 }
                 if (!forward && object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_CHARACTER)) {
-                    mOwner.dispatchSemanticsAction(virtualViewId,
+                    mSemanticHandler.dispatchSemanticsAction(virtualViewId,
                             Action.MOVE_CURSOR_BACKWARD_BY_CHARACTER, extendSelection);
                     return true;
                 }
@@ -553,12 +563,12 @@ class AccessibilityBridge
             }
             case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_WORD:
                 if (forward && object.hasAction(Action.MOVE_CURSOR_FORWARD_BY_WORD)) {
-                    mOwner.dispatchSemanticsAction(virtualViewId,
+                    mSemanticHandler.dispatchSemanticsAction(virtualViewId,
                             Action.MOVE_CURSOR_FORWARD_BY_WORD, extendSelection);
                     return true;
                 }
                 if (!forward && object.hasAction(Action.MOVE_CURSOR_BACKWARD_BY_WORD)) {
-                    mOwner.dispatchSemanticsAction(virtualViewId,
+                    mSemanticHandler.dispatchSemanticsAction(virtualViewId,
                             Action.MOVE_CURSOR_BACKWARD_BY_WORD, extendSelection);
                     return true;
                 }
@@ -863,8 +873,8 @@ class AccessibilityBridge
     private AccessibilityEvent obtainAccessibilityEvent(int virtualViewId, int eventType) {
         assert virtualViewId != ROOT_NODE_ID;
         AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
-        event.setPackageName(mOwner.getContext().getPackageName());
-        event.setSource(mOwner, virtualViewId);
+        event.setPackageName(mView.getContext().getPackageName());
+        event.setSource(mView, virtualViewId);
         return event;
     }
 
@@ -873,7 +883,7 @@ class AccessibilityBridge
             return;
         }
         if (virtualViewId == ROOT_NODE_ID) {
-            mOwner.sendAccessibilityEvent(eventType);
+            mView.sendAccessibilityEvent(eventType);
         } else {
             sendAccessibilityEvent(obtainAccessibilityEvent(virtualViewId, eventType));
         }
@@ -883,7 +893,7 @@ class AccessibilityBridge
         if (!mAccessibilityEnabled) {
             return;
         }
-        mOwner.getParent().requestSendAccessibilityEvent(mOwner, event);
+        mView.getParent().requestSendAccessibilityEvent(mView, event);
     }
 
     // Message Handler for [mFlutterAccessibilityChannel].
@@ -896,7 +906,7 @@ class AccessibilityBridge
 
         switch (type) {
             case "announce":
-                mOwner.announceForAccessibility((String) data.get("message"));
+                mView.announceForAccessibility((String) data.get("message"));
                 break;
             case "longPress": {
                 Integer nodeId = (Integer) annotatedEvent.get("nodeId");
