@@ -23,7 +23,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 /**
@@ -118,24 +117,9 @@ class ResourceExtractor {
 
         try {
             mExtractTask.get();
-        } catch (CancellationException e) {
-            deleteFiles();
-        } catch (ExecutionException e2) {
-            deleteFiles();
-        } catch (InterruptedException e3) {
+        } catch (CancellationException | ExecutionException | InterruptedException e) {
             deleteFiles();
         }
-    }
-
-    boolean filesMatch() {
-        JSONObject updateManifest = readUpdateManifest();
-        if (!validateUpdateManifest(updateManifest)) {
-            updateManifest = null;
-        }
-
-        final File dataDir = new File(PathUtils.getDataDirectory(mContext));
-        final String timestamp = checkTimestamp(dataDir, updateManifest);
-        return (timestamp == null);
     }
 
     private String[] getExistingTimestamps(File dataDir) {
@@ -163,7 +147,6 @@ class ResourceExtractor {
             new File(dataDir, timestamp).delete();
         }
     }
-
 
     /// Returns true if successfully unpacked APK resources,
     /// otherwise deletes all resources and returns false.
@@ -212,11 +195,12 @@ class ResourceExtractor {
     /// Returns true if successfully unpacked update resources or if there is no update,
     /// otherwise deletes all resources and returns false.
     private boolean extractUpdate(File dataDir) {
-        if (FlutterMain.getUpdateInstallationPath() == null) {
+        ResourceUpdater resourceUpdater = FlutterMain.getResourceUpdater();
+        if (resourceUpdater == null) {
             return true;
         }
 
-        final File updateFile = new File(FlutterMain.getUpdateInstallationPath());
+        File updateFile = resourceUpdater.getPatch();
         if (!updateFile.exists()) {
             return true;
         }
@@ -224,11 +208,6 @@ class ResourceExtractor {
         ZipFile zipFile;
         try {
             zipFile = new ZipFile(updateFile);
-
-        } catch (ZipException e) {
-            Log.w(TAG, "Exception unpacking resources: " + e.getMessage());
-            deleteFiles();
-            return false;
 
         } catch (IOException e) {
             Log.w(TAG, "Exception unpacking resources: " + e.getMessage());
@@ -307,11 +286,14 @@ class ResourceExtractor {
                 if (!buildNumber.equals(Long.toString(getVersionCode(packageInfo)))) {
                     Log.w(TAG, "Outdated update file for " + getVersionCode(packageInfo));
                 } else {
-                    final File updateFile = new File(FlutterMain.getUpdateInstallationPath());
+                    ResourceUpdater resourceUpdater = FlutterMain.getResourceUpdater();
+                    assert resourceUpdater != null;
+                    File patchFile = resourceUpdater.getPatch();
+                    assert patchFile.exists();
                     if (patchNumber != null) {
-                        expectedTimestamp += "-" + patchNumber + "-" + updateFile.lastModified();
+                        expectedTimestamp += "-" + patchNumber + "-" + patchFile.lastModified();
                     } else {
-                        expectedTimestamp += "-" + updateFile.lastModified();
+                        expectedTimestamp += "-" + patchFile.lastModified();
                     }
                 }
             }
@@ -374,11 +356,12 @@ class ResourceExtractor {
 
     /// Returns null if no update manifest is found.
     private JSONObject readUpdateManifest() {
-        if (FlutterMain.getUpdateInstallationPath() == null) {
+        ResourceUpdater resourceUpdater = FlutterMain.getResourceUpdater();
+        if (resourceUpdater == null) {
             return null;
         }
 
-        File updateFile = new File(FlutterMain.getUpdateInstallationPath());
+        File updateFile = resourceUpdater.getPatch();
         if (!updateFile.exists()) {
             return null;
         }
@@ -395,17 +378,10 @@ class ResourceExtractor {
             Scanner scanner = new Scanner(zipFile.getInputStream(entry));
             return new JSONObject(scanner.useDelimiter("\\A").next());
 
-        } catch (ZipException e) {
+        } catch (IOException | JSONException e) {
             Log.w(TAG, "Invalid update file: " + e);
             return null;
 
-        } catch (IOException e) {
-            Log.w(TAG, "Invalid update file: " + e);
-            return null;
-
-        } catch (JSONException e) {
-            Log.w(TAG, "Invalid update file: " + e);
-            return null;
         }
     }
 }
