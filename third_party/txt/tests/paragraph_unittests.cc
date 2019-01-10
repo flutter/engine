@@ -2703,7 +2703,12 @@ TEST_F(ParagraphTest, FontFallbackParagraph) {
               0);
 }
 
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
+// Disabled due to Skia depending on platform to get metrics, which
+// results in presubmit runs to have different values.
+//
+// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
+// consolidate skia font metric behavior.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
   // The chinese extra height should be absorbed by the strut.
   const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
@@ -2826,7 +2831,12 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   ASSERT_TRUE(Snapshot());
 }
 
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
+// Disabled due to Skia depending on platform to get metrics, which
+// results in presubmit runs to have different values.
+//
+// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
+// consolidate skia font metric behavior.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph2)) {
   // This string is all one size and smaller than the strut metrics.
   const char* text = "01234ABCDEFGH\nabcd\nABCDEFGH";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
@@ -2949,7 +2959,12 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
   ASSERT_TRUE(Snapshot());
 }
 
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
+// Disabled due to Skia depending on platform to get metrics, which
+// results in presubmit runs to have different values.
+//
+// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
+// consolidate skia font metric behavior.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph3)) {
   // The strut is too small to absorb the extra chinese height, but the english
   // second line height is increased due to strut.
   const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
@@ -3073,7 +3088,12 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
   ASSERT_TRUE(Snapshot());
 }
 
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
+// Disabled due to Skia depending on platform to get metrics, which
+// results in presubmit runs to have different values.
+//
+// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
+// consolidate skia font metric behavior.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutForceParagraph)) {
   // The strut is too small to absorb the extra chinese height, but the english
   // second line height is increased due to strut.
   const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";

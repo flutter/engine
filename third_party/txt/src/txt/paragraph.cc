@@ -454,8 +454,6 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
       font.setSize(paragraph_style_.font_size);
       SkFontMetrics strut_metrics;
       font.getMetrics(&strut_metrics);
-      FML_DLOG(ERROR) << "DUMPING: " << strut_metrics.fAscent
-                      << strut_metrics.fDescent << strut_metrics.fLeading;
 
       // Prevent values from being negative.
       double canonicalized_line_height =
