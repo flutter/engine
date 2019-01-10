@@ -25,6 +25,10 @@ import java.util.*;
 class AccessibilityBridge
         extends AccessibilityNodeProvider implements BasicMessageChannel.MessageHandler<Object> {
 
+    /**
+     * Temporary interface to capture the APIs used in this class.
+     * Defined for replacing the explicit reference to FlutterView.
+     */
     interface SemanticHandler {
       void dispatchSemanticsAction(int id, AccessibilityBridge.Action action);
       void dispatchSemanticsAction(int id, AccessibilityBridge.Action action, Object args);

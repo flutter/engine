@@ -21,6 +21,10 @@ import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 
 public class FlutterNativeView implements BinaryMessenger {
 
+    /**
+     * Temporary interface to capture the APIs used in this class.
+     * Defined for replacing the explicit reference to FlutterView.
+     */
     interface NativeViewHelper extends FlutterPluginRegistry.ViewRegistry {
       void resetAccessibilityTree();
       void updateSemantics(ByteBuffer buffer, String[] strings);
