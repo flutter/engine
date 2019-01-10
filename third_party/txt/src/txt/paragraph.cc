@@ -466,12 +466,9 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
           paragraph_style_.leading < 0
               ? strut_metrics.fLeading
               : (paragraph_style_.leading *
-                 (strut_metrics.fDescent - strut_metrics.fAscent +
-                  strut_metrics.fLeading));
+                 (strut_metrics.fDescent - strut_metrics.fAscent));
       strut->half_leading = strut->leading / 2;
-      strut->line_height = canonicalized_line_height * (strut_metrics.fDescent -
-                                                        strut_metrics.fAscent) +
-                           strut->leading;
+      strut->line_height = strut->ascent + strut->descent + strut->leading;
     }
   }
 }
