@@ -742,7 +742,8 @@ float Layout::doLayoutWord(const uint16_t* buf,
   return advance;
 }
 
-static void addFeatures(const std::string& str, std::vector<hb_feature_t>* features) {
+static void addFeatures(const std::string& str,
+                        std::vector<hb_feature_t>* features) {
   if (!str.size())
     return;
 
