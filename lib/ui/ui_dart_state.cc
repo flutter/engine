@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -16,6 +16,7 @@ namespace blink {
 UIDartState::UIDartState(TaskRunners task_runners,
                          TaskObserverAdd add_callback,
                          TaskObserverRemove remove_callback,
+                         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
                          fml::WeakPtr<GrContext> resource_context,
                          fml::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue,
                          std::string advisory_script_uri,
@@ -25,6 +26,7 @@ UIDartState::UIDartState(TaskRunners task_runners,
     : task_runners_(std::move(task_runners)),
       add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),
+      snapshot_delegate_(std::move(snapshot_delegate)),
       resource_context_(std::move(resource_context)),
       advisory_script_uri_(std::move(advisory_script_uri)),
       advisory_script_entrypoint_(std::move(advisory_script_entrypoint)),
@@ -52,7 +54,13 @@ void UIDartState::DidSetIsolate() {
   // main.dart$main-1234
   debug_name << advisory_script_uri_ << "$" << advisory_script_entrypoint_
              << "-" << main_port_;
-  debug_name_ = debug_name.str();
+  SetDebugName(debug_name.str());
+}
+
+void UIDartState::SetDebugName(const std::string debug_name) {
+  debug_name_ = debug_name;
+  if (window_)
+    window_->client()->UpdateIsolateDescription(debug_name_, main_port_);
 }
 
 UIDartState* UIDartState::Current() {
@@ -61,6 +69,8 @@ UIDartState* UIDartState::Current() {
 
 void UIDartState::SetWindow(std::unique_ptr<Window> window) {
   window_ = std::move(window);
+  if (window_)
+    window_->client()->UpdateIsolateDescription(debug_name_, main_port_);
 }
 
 const TaskRunners& UIDartState::GetTaskRunners() const {
@@ -97,6 +107,10 @@ void UIDartState::AddOrRemoveTaskObserver(bool add) {
   } else {
     remove_callback_(reinterpret_cast<intptr_t>(this));
   }
+}
+
+fml::WeakPtr<SnapshotDelegate> UIDartState::GetSnapshotDelegate() const {
+  return snapshot_delegate_;
 }
 
 fml::WeakPtr<GrContext> UIDartState::GetResourceContext() const {

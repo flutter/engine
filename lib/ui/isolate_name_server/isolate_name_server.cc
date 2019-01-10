@@ -1,10 +1,14 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
 
 namespace blink {
+
+IsolateNameServer::IsolateNameServer() {}
+
+IsolateNameServer::~IsolateNameServer() = default;
 
 Dart_Port IsolateNameServer::LookupIsolatePortByName(const std::string& name) {
   std::lock_guard<std::mutex> lock(mutex_);

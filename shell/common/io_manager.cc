@@ -1,10 +1,11 @@
-// Copyright 2017 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/shell/common/io_manager.h"
 
 #include "flutter/fml/message_loop.h"
+#include "flutter/shell/common/persistent_cache.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
 namespace shell {
@@ -17,10 +18,13 @@ sk_sp<GrContext> IOManager::CreateCompatibleResourceLoadingContext(
 
   GrContextOptions options = {};
 
+  options.fPersistentCache = PersistentCache::GetCacheForProcess();
+
   // There is currently a bug with doing GPU YUV to RGB conversions on the IO
   // thread. The necessary work isn't being flushed or synchronized with the
   // other threads correctly, so the textures end up blank.  For now, suppress
   // that feature, which will cause texture uploads to do CPU YUV conversion.
+  // A similar work-around is also used in shell/gpu/gpu_surface_gl.cc.
   options.fDisableGpuYUVConversion = true;
 
   // To get video playback on the widest range of devices, we limit Skia to

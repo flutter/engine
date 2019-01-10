@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -14,6 +14,8 @@
 
 namespace shell {
 
+constexpr float kUnknownRefreshRateFPS = 0.0;
+
 class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
  public:
   using Callback = std::function<void(fml::TimePoint frame_start_time,
@@ -25,6 +27,10 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
 
   void FireCallback(fml::TimePoint frame_start_time,
                     fml::TimePoint frame_target_time);
+
+  // Get the display's maximum refresh rate in the unit of frame per second.
+  // Return 0.0 if the refresh rate is unkonwn.
+  virtual float GetDisplayRefreshRate() const { return 0.0; }
 
  protected:
   const blink::TaskRunners task_runners_;

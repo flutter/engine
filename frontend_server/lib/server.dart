@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -20,9 +20,11 @@ import 'package:vm/frontend_server.dart' as frontend show FrontendCompiler,
 class _FlutterFrontendCompiler implements frontend.CompilerInterface{
   final frontend.CompilerInterface _compiler;
 
-  _FlutterFrontendCompiler(StringSink output, {bool trackWidgetCreation: false}):
-      _compiler = new frontend.FrontendCompiler(output,
-          transformer: trackWidgetCreation ? new WidgetCreatorTracker() : null);
+  _FlutterFrontendCompiler(StringSink output,
+      {bool trackWidgetCreation: false, bool unsafePackageSerialization}) :
+          _compiler = new frontend.FrontendCompiler(output,
+          transformer: trackWidgetCreation ? new WidgetCreatorTracker() : null,
+          unsafePackageSerialization: unsafePackageSerialization);
 
   @override
   Future<bool> compile(String filename, ArgResults options, {IncrementalCompiler generator}) async {
@@ -40,7 +42,7 @@ class _FlutterFrontendCompiler implements frontend.CompilerInterface{
   }
 
   @override
-  Future<Null> rejectLastDelta() async {
+  Future<void> rejectLastDelta() async {
     return _compiler.rejectLastDelta();
   }
 
@@ -123,7 +125,9 @@ Future<int> starter(
     }
   }
 
-  compiler ??= new _FlutterFrontendCompiler(output, trackWidgetCreation: options['track-widget-creation']);
+  compiler ??= new _FlutterFrontendCompiler(output,
+      trackWidgetCreation: options['track-widget-creation'],
+      unsafePackageSerialization: options['unsafe-package-serialization']);
 
   if (options.rest.isNotEmpty) {
     return await compiler.compile(options.rest[0], options) ? 0 : 254;

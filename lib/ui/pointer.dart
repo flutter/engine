@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -84,12 +84,14 @@ class PointerData {
     this.pressureMax: 0.0,
     this.distance: 0.0,
     this.distanceMax: 0.0,
+    this.size: 0.0,
     this.radiusMajor: 0.0,
     this.radiusMinor: 0.0,
     this.radiusMin: 0.0,
     this.radiusMax: 0.0,
     this.orientation: 0.0,
     this.tilt: 0.0,
+    this.platformData: 0,
     this.scrollDeltaX: 0.0,
     this.scrollDeltaY: 0.0,
   });
@@ -155,6 +157,14 @@ class PointerData {
   /// 0.0.
   final double distanceMax;
 
+  /// The area of the screen being pressed, scaled to a value between 0 and 1.
+  /// The value of size can be used to determine fat touch events. This value
+  /// is only set on Android, and is a device specific approximation within
+  /// the range of detectable values. So, for example, the value of 0.1 could
+  /// mean a touch with the tip of the finger, 0.2 a touch with full finger,
+  /// and 0.3 the full palm.
+  final double size;
+
   /// The radius of the contact ellipse along the major axis, in logical pixels.
   final double radiusMajor;
 
@@ -208,6 +218,9 @@ class PointerData {
   /// the stylus is flat on that surface).
   final double tilt;
 
+  /// Opaque platform-specific data associated with the event.
+  final int platformData;
+
   /// For PointerDeviceKind.gesture with PointerGestureKind.scroll:
   ///
   /// The amount to scroll in the x direction, in physical pixels.
@@ -237,12 +250,14 @@ class PointerData {
              'pressureMax: $pressureMax, '
              'distance: $distance, '
              'distanceMax: $distanceMax, '
+             'size: $size, '
              'radiusMajor: $radiusMajor, '
              'radiusMinor: $radiusMinor, '
              'radiusMin: $radiusMin, '
              'radiusMax: $radiusMax, '
              'orientation: $orientation, '
              'tilt: $tilt, '
+             'platformData: $platformData'
              'scrollDeltaX: $scrollDeltaX, '
              'scrollDeltaY: $scrollDeltaY'
            ')';

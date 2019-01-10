@@ -1,4 +1,4 @@
-// Copyright 2017 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -43,7 +43,9 @@ static const char* kIsolateInstructionsSymbolSo =
 std::unique_ptr<DartSnapshotBuffer> ResolveVMData(const Settings& settings) {
   if (settings.vm_snapshot_data_path.size() > 0) {
     if (auto source = DartSnapshotBuffer::CreateWithContentsOfFile(
-            settings.vm_snapshot_data_path.c_str(), false /* executable */)) {
+            fml::OpenFile(settings.vm_snapshot_data_path.c_str(), false,
+                          fml::FilePermission::kRead),
+            {fml::FileMapping::Protection::kRead})) {
       return source;
     }
   }
@@ -66,7 +68,9 @@ std::unique_ptr<DartSnapshotBuffer> ResolveVMInstructions(
     const Settings& settings) {
   if (settings.vm_snapshot_instr_path.size() > 0) {
     if (auto source = DartSnapshotBuffer::CreateWithContentsOfFile(
-            settings.vm_snapshot_instr_path.c_str(), true /* executable */)) {
+            fml::OpenFile(settings.vm_snapshot_instr_path.c_str(), false,
+                          fml::FilePermission::kRead),
+            {fml::FileMapping::Protection::kExecute})) {
       return source;
     }
   }
@@ -89,8 +93,9 @@ std::unique_ptr<DartSnapshotBuffer> ResolveIsolateData(
     const Settings& settings) {
   if (settings.isolate_snapshot_data_path.size() > 0) {
     if (auto source = DartSnapshotBuffer::CreateWithContentsOfFile(
-            settings.isolate_snapshot_data_path.c_str(),
-            false /* executable */)) {
+            fml::OpenFile(settings.isolate_snapshot_data_path.c_str(), false,
+                          fml::FilePermission::kRead),
+            {fml::FileMapping::Protection::kRead})) {
       return source;
     }
   }
@@ -113,8 +118,9 @@ std::unique_ptr<DartSnapshotBuffer> ResolveIsolateInstructions(
     const Settings& settings) {
   if (settings.isolate_snapshot_instr_path.size() > 0) {
     if (auto source = DartSnapshotBuffer::CreateWithContentsOfFile(
-            settings.isolate_snapshot_instr_path.c_str(),
-            true /* executable */)) {
+            fml::OpenFile(settings.isolate_snapshot_instr_path.c_str(), false,
+                          fml::FilePermission::kRead),
+            {fml::FileMapping::Protection::kExecute})) {
       return source;
     }
   }

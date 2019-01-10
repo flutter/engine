@@ -1,4 +1,4 @@
-// Copyright 2017 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -15,9 +15,12 @@
 
 namespace blink {
 
-class AssetManager final : public AssetResolver,
-                           public fml::RefCountedThreadSafe<AssetManager> {
+class AssetManager final : public AssetResolver {
  public:
+  AssetManager();
+
+  ~AssetManager() override;
+
   void PushFront(std::unique_ptr<AssetResolver> resolver);
 
   void PushBack(std::unique_ptr<AssetResolver> resolver);
@@ -32,13 +35,7 @@ class AssetManager final : public AssetResolver,
  private:
   std::deque<std::unique_ptr<AssetResolver>> resolvers_;
 
-  AssetManager();
-
-  ~AssetManager();
-
   FML_DISALLOW_COPY_AND_ASSIGN(AssetManager);
-  FML_FRIEND_MAKE_REF_COUNTED(AssetManager);
-  FML_FRIEND_REF_COUNTED_THREAD_SAFE(AssetManager);
 };
 
 }  // namespace blink

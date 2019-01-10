@@ -1,10 +1,11 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SURFACE_SOFTWARE_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_SURFACE_SOFTWARE_H_
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
@@ -15,9 +16,11 @@
 namespace shell {
 
 class IOSSurfaceSoftware final : public IOSSurface,
-                                 public GPUSurfaceSoftwareDelegate {
+                                 public GPUSurfaceSoftwareDelegate,
+                                 public flow::ExternalViewEmbedder {
  public:
-  IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer);
+  IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
+                     FlutterPlatformViewsController* platform_views_controller);
 
   ~IOSSurfaceSoftware() override;
 
@@ -38,6 +41,24 @@ class IOSSurfaceSoftware final : public IOSSurface,
 
   // |shell::GPUSurfaceSoftwareDelegate|
   bool PresentBackingStore(sk_sp<SkSurface> backing_store) override;
+
+  // |shell::GPUSurfaceSoftwareDelegate|
+  flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+
+  // |flow::ExternalViewEmbedder|
+  void BeginFrame(SkISize frame_size) override;
+
+  // |flow::ExternalViewEmbedder|
+  void PrerollCompositeEmbeddedView(int view_id) override;
+
+  // |flow::ExternalViewEmbedder|
+  std::vector<SkCanvas*> GetCurrentCanvases() override;
+
+  // |flow::ExternalViewEmbedder|
+  SkCanvas* CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params) override;
+
+  // |flow::ExternalViewEmbedder|
+  bool SubmitFrame(GrContext* context) override;
 
  private:
   fml::scoped_nsobject<CALayer> layer_;

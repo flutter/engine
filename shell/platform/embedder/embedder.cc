@@ -1,10 +1,11 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #define FML_USED_ON_EMBEDDER
 
 #include "flutter/fml/build_config.h"
+#include "flutter/fml/native_library.h"
 
 #if OS_WIN
 #define FLUTTER_EXPORT __declspec(dllexport)
@@ -88,6 +89,19 @@ static bool IsRendererValid(const FlutterRendererConfig* config) {
   return false;
 }
 
+#if OS_LINUX || OS_WIN
+static void* DefaultGLProcResolver(const char* name) {
+  static fml::RefPtr<fml::NativeLibrary> proc_library =
+#if OS_LINUX
+      fml::NativeLibrary::CreateForCurrentProcess();
+#elif OS_WIN  // OS_LINUX
+      fml::NativeLibrary::Create("opengl32.dll");
+#endif        // OS_WIN
+  return static_cast<void*>(
+      const_cast<uint8_t*>(proc_library->ResolveSymbol(name)));
+}
+#endif  // OS_LINUX || OS_WIN
+
 static shell::Shell::CreateCallback<shell::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
@@ -144,6 +158,10 @@ InferOpenGLPlatformViewCreationCallback(
                         user_data](const char* gl_proc_name) {
       return ptr(user_data, gl_proc_name);
     };
+  } else {
+#if OS_LINUX || OS_WIN
+    gl_proc_resolver = DefaultGLProcResolver;
+#endif
   }
 
   bool fbo_reset_after_present =
@@ -248,9 +266,7 @@ FlutterResult FlutterEngineRun(size_t version,
     return kInvalidArguments;
   }
 
-  if (SAFE_ACCESS(args, assets_path, nullptr) == nullptr ||
-      SAFE_ACCESS(args, main_path, nullptr) == nullptr ||
-      SAFE_ACCESS(args, packages_path, nullptr) == nullptr) {
+  if (SAFE_ACCESS(args, assets_path, nullptr) == nullptr) {
     return kInvalidArguments;
   }
 
@@ -275,18 +291,14 @@ FlutterResult FlutterEngineRun(size_t version,
   settings.icu_data_path = icu_data_path;
   settings.assets_path = args->assets_path;
 
-  // Check whether the assets path contains Dart 2 kernel assets.
+  // Verify the assets path contains Dart 2 kernel assets.
   const std::string kApplicationKernelSnapshotFileName = "kernel_blob.bin";
   std::string application_kernel_path = fml::paths::JoinPaths(
       {settings.assets_path, kApplicationKernelSnapshotFileName});
-  if (fml::IsFile(application_kernel_path)) {
-    // Run from a kernel snapshot.
-    settings.application_kernel_asset = kApplicationKernelSnapshotFileName;
-  } else {
-    // Run from a main Dart file.
-    settings.main_dart_file_path = args->main_path;
-    settings.packages_file_path = args->packages_path;
+  if (!fml::IsFile(application_kernel_path)) {
+    return kInvalidArguments;
   }
+  settings.application_kernel_asset = kApplicationKernelSnapshotFileName;
 
   settings.task_observer_add = [](intptr_t key, fml::closure callback) {
     fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));
@@ -370,8 +382,11 @@ FlutterResult FlutterEngineRun(size_t version,
           fml::Duplicate(settings.assets_dir)));
 
   run_configuration.AddAssetResolver(
-      std::make_unique<blink::DirectoryAssetBundle>(fml::OpenFile(
-          settings.assets_path.c_str(), fml::OpenPermission::kRead, true)));
+      std::make_unique<blink::DirectoryAssetBundle>(fml::OpenDirectory(
+          settings.assets_path.c_str(), false, fml::FilePermission::kRead)));
+  if (!run_configuration.IsValid()) {
+    return kInvalidArguments;
+  }
 
   if (!embedder_engine->Run(std::move(run_configuration))) {
     return kInvalidArguments;

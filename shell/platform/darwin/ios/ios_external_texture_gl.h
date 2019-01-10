@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -13,21 +13,18 @@ namespace shell {
 
 class IOSExternalTextureGL : public flow::Texture {
  public:
-  IOSExternalTextureGL(int64_t textureId,
-                       NSObject<FlutterTexture>* externalTexture);
+  IOSExternalTextureGL(int64_t textureId, NSObject<FlutterTexture>* externalTexture);
 
   ~IOSExternalTextureGL() override;
 
   // Called from GPU thread.
-  virtual void Paint(SkCanvas& canvas,
-                     const SkRect& bounds,
-                     bool freeze) override;
+  void Paint(SkCanvas& canvas, const SkRect& bounds, bool freeze) override;
 
-  virtual void OnGrContextCreated() override;
+  void OnGrContextCreated() override;
 
-  virtual void OnGrContextDestroyed() override;
+  void OnGrContextDestroyed() override;
 
-  virtual void MarkNewFrameAvailable() override;
+  void MarkNewFrameAvailable() override;
 
  private:
   NSObject<FlutterTexture>* external_texture_;

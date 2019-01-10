@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -38,6 +38,10 @@ Animator::Animator(Delegate& delegate,
       weak_factory_(this) {}
 
 Animator::~Animator() = default;
+
+float Animator::GetDisplayRefreshRate() const {
+  return waiter_->GetDisplayRefreshRate();
+}
 
 void Animator::Stop() {
   paused_ = true;

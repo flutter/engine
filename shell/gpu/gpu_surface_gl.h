@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,6 +8,7 @@
 #include <functional>
 #include <memory>
 
+#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/surface.h"
@@ -25,24 +26,25 @@ class GPUSurfaceGLDelegate {
 
   virtual intptr_t GLContextFBO() const = 0;
 
-  virtual bool GLContextFBOResetAfterPresent() const { return false; }
+  virtual bool GLContextFBOResetAfterPresent() const;
 
-  virtual bool UseOffscreenSurface() const { return false; }
+  virtual bool UseOffscreenSurface() const;
 
-  virtual SkMatrix GLContextSurfaceTransformation() const {
-    SkMatrix matrix;
-    matrix.setIdentity();
-    return matrix;
-  }
+  virtual SkMatrix GLContextSurfaceTransformation() const;
+
+  virtual flow::ExternalViewEmbedder* GetExternalViewEmbedder();
 
   using GLProcResolver =
       std::function<void* /* proc name */ (const char* /* proc address */)>;
-  virtual GLProcResolver GetGLProcResolver() const { return nullptr; }
+  virtual GLProcResolver GetGLProcResolver() const;
 };
 
 class GPUSurfaceGL : public Surface {
  public:
   GPUSurfaceGL(GPUSurfaceGLDelegate* delegate);
+
+  // Creates a new GL surface reusing an existing GrContext.
+  GPUSurfaceGL(sk_sp<GrContext> gr_context, GPUSurfaceGLDelegate* delegate);
 
   ~GPUSurfaceGL() override;
 
@@ -58,6 +60,12 @@ class GPUSurfaceGL : public Surface {
   // |shell::Surface|
   GrContext* GetContext() override;
 
+  // |shell::Surface|
+  flow::ExternalViewEmbedder* GetExternalViewEmbedder() override;
+
+  // |shell::Surface|
+  bool MakeRenderContextCurrent() override;
+
  private:
   GPUSurfaceGLDelegate* delegate_;
   GPUSurfaceGLDelegate::GLProcResolver proc_resolver_;
@@ -66,6 +74,7 @@ class GPUSurfaceGL : public Surface {
   sk_sp<SkSurface> offscreen_surface_;
   bool valid_ = false;
   fml::WeakPtrFactory<GPUSurfaceGL> weak_factory_;
+  bool context_owner_;
 
   bool CreateOrUpdateSurfaces(const SkISize& size);
 
@@ -74,6 +83,8 @@ class GPUSurfaceGL : public Surface {
       const SkMatrix& root_surface_transformation);
 
   bool PresentSurface(SkCanvas* canvas);
+
+  bool IsProcResolverOpenGLES();
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
 };

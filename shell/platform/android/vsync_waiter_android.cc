@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -81,10 +81,26 @@ bool VsyncWaiterAndroid::Register(JNIEnv* env) {
   return env->RegisterNatives(clazz, methods, arraysize(methods)) == 0;
 }
 
+float VsyncWaiterAndroid::GetDisplayRefreshRate() const {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+  if (g_vsync_waiter_class == nullptr) {
+    return kUnknownRefreshRateFPS;
+  }
+  jclass clazz = g_vsync_waiter_class->obj();
+  if (clazz == nullptr) {
+    return kUnknownRefreshRateFPS;
+  }
+  jfieldID fid = env->GetStaticFieldID(clazz, "refreshRateFPS", "F");
+  // We can safely read this 32-bit float from Java in any thread because
+  // 32-bits read and write are guaranteed to be atomic:
+  // https://stackoverflow.com/questions/11459543/should-getters-and-setters-be-synchronized/11459616#11459616
+  return env->GetStaticFloatField(clazz, fid);
+}
+
 static void ConsumePendingCallback(jlong java_baton,
                                    fml::TimePoint frame_start_time,
                                    fml::TimePoint frame_target_time) {
-  auto weak_this = reinterpret_cast<std::weak_ptr<VsyncWaiter>*>(java_baton);
+  auto* weak_this = reinterpret_cast<std::weak_ptr<VsyncWaiter>*>(java_baton);
   auto shared_this = weak_this->lock();
   delete weak_this;
 

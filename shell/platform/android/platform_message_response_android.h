@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -25,6 +25,8 @@ class PlatformMessageResponseAndroid : public blink::PlatformMessageResponse {
       int response_id,
       fml::jni::JavaObjectWeakGlobalRef weak_java_object,
       fml::RefPtr<fml::TaskRunner> platform_task_runner);
+
+  ~PlatformMessageResponseAndroid() override;
 
   int response_id_;
   fml::jni::JavaObjectWeakGlobalRef weak_java_object_;

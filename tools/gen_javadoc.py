@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2017 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -25,8 +25,8 @@ def main():
 
   classpath = [
     ANDROID_SRC_ROOT,
-    'third_party/android_tools/sdk/extras/android/support/v4/android-support-v4.jar',
-    'third_party/android_tools/sdk/platforms/android-22/android.jar',
+    'third_party/android_tools/sdk/extras/android/support/v13/android-support-v13.jar',
+    'third_party/android_tools/sdk/platforms/android-28/android.jar',
     'base/android/java/src',
     'third_party/jsr-305/src/ri/src/main/java',
   ]

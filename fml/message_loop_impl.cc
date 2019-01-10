@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -144,5 +144,14 @@ void MessageLoopImpl::RunExpiredTasks() {
     }
   }
 }
+
+MessageLoopImpl::DelayedTask::DelayedTask(size_t p_order,
+                                          fml::closure p_task,
+                                          fml::TimePoint p_target_time)
+    : order(p_order), task(std::move(p_task)), target_time(p_target_time) {}
+
+MessageLoopImpl::DelayedTask::DelayedTask(const DelayedTask& other) = default;
+
+MessageLoopImpl::DelayedTask::~DelayedTask() = default;
 
 }  // namespace fml

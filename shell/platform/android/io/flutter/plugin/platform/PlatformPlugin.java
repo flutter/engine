@@ -1,10 +1,11 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 package io.flutter.plugin.platform;
 
 import android.app.Activity;
+import android.app.ActivityManager.TaskDescription;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -57,6 +58,9 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
                 result.success(null);
             } else if (method.equals("SystemChrome.setEnabledSystemUIOverlays")) {
                 setSystemChromeEnabledSystemUIOverlays((JSONArray) arguments);
+                result.success(null);
+            } else if (method.equals("SystemChrome.restoreSystemUIOverlays")) {
+                restoreSystemChromeSystemUIOverlays();
                 result.success(null);
             } else if (method.equals("SystemChrome.setSystemUIOverlayStyle")) {
                 setSystemChromeSystemUIOverlayStyle((JSONObject) arguments);
@@ -182,13 +186,14 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
             color = color | 0xFF000000; // color must be opaque if set
         }
 
-        mActivity.setTaskDescription(
-            new android.app.ActivityManager.TaskDescription(
-                description.getString("label"),
-                null,
-                color
-            )
-        );
+        String label = description.getString("label");
+
+        @SuppressWarnings("deprecation")
+        TaskDescription taskDescription = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            ? new TaskDescription(label, 0, color)
+            : new TaskDescription(label, null, color);
+
+        mActivity.setTaskDescription(taskDescription);
     }
 
     private int mEnabledOverlays;
@@ -222,6 +227,10 @@ public class PlatformPlugin implements MethodCallHandler, ActivityLifecycleListe
         if (mCurrentTheme != null) {
             setSystemChromeSystemUIOverlayStyle(mCurrentTheme);
         }
+    }
+
+    private void restoreSystemChromeSystemUIOverlays() {
+        updateSystemUiOverlays();
     }
 
     private void setSystemChromeSystemUIOverlayStyle(JSONObject message) {

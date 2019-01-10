@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -61,6 +61,7 @@ class VulkanSwapchain {
 
   SkISize GetSize() const;
 
+#if OS_ANDROID
  private:
   const VulkanProcTable& vk;
   const VulkanDevice& device_;
@@ -88,6 +89,7 @@ class VulkanSwapchain {
                                      sk_sp<SkColorSpace> color_space) const;
 
   VulkanBackbuffer* GetNextBackbuffer();
+#endif  // OS_ANDROID
 
   FML_DISALLOW_COPY_AND_ASSIGN(VulkanSwapchain);
 };

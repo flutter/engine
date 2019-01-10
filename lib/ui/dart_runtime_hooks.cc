@@ -1,4 +1,4 @@
-// Copyright 2014 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -16,7 +16,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/lib/ui/ui_dart_state.h"
-#include "third_party/dart/runtime/bin/embedded_dart_io.h"
+#include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -323,7 +323,11 @@ void GetCallbackHandle(Dart_NativeArguments args) {
   std::string class_name = GetFunctionClassName(func);
   std::string library_path = GetFunctionLibraryUrl(func);
 
-  if (name.empty()) {
+  // `name` is empty if `func` can't be used as a callback. This is the case
+  // when `func` is not a function object or is not a static function. Anonymous
+  // closures (e.g. `(int a, int b) => a + b;`) also cannot be used as
+  // callbacks, so `func` must be a tear-off of a named static function.
+  if (!Dart_IsTearOff(func) || name.empty()) {
     Dart_SetReturnValue(args, Dart_Null());
     return;
   }

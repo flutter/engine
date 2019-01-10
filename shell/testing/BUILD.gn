@@ -1,4 +1,4 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -20,7 +20,7 @@ executable("testing") {
     "$flutter_root/lib/snapshot",
     "$flutter_root/shell/common",
     "//third_party/dart/runtime:libdart_jit",
-    "//third_party/dart/runtime/bin:embedded_dart_io",
+    "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
     "//third_party/tonic",
   ]
@@ -28,6 +28,7 @@ executable("testing") {
   if (is_fuchsia) {
     deps += [
       "//garnet/public/lib/ui/scenic:client",
+      "//zircon/public/lib/trace",
       "//zircon/public/lib/trace-provider",
     ]
   }

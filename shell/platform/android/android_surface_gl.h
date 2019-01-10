@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -61,7 +61,6 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
  private:
   fml::RefPtr<AndroidContextGL> onscreen_context_;
   fml::RefPtr<AndroidContextGL> offscreen_context_;
-  sk_sp<GrContext> gr_context_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGL);
 };

@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -129,11 +129,12 @@ class AccessibilityBridge final {
 
   fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
 
+  void clearState();
+
  private:
   SemanticsObject* GetOrCreateObject(int32_t id, blink::SemanticsNodeUpdates& updates);
   void VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                         NSMutableArray<NSNumber*>* doomed_uids);
-  void ReleaseObjects(std::unordered_map<int, SemanticsObject*>& objects);
   void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);
 
   UIView* view_;

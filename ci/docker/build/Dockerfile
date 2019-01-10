@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
 ENV DEPOT_TOOLS_PATH $HOME/depot_tools
 ENV ENGINE_PATH $HOME/engine
@@ -19,7 +19,7 @@ RUN ./build/install-build-deps.sh --no-prompt
 RUN ./build/install-build-deps-android.sh --no-prompt
 
 WORKDIR $HOME/dart
-RUN wget https://storage.googleapis.com/dart-archive/channels/dev/release/2.0.0-dev.63.0/sdk/dartsdk-linux-x64-release.zip
+RUN wget https://storage.googleapis.com/dart-archive/channels/dev/release/2.1.0-dev.7.1/sdk/dartsdk-linux-x64-release.zip
 RUN unzip dartsdk-linux-x64-release.zip
 ENV PATH $PATH:$HOME/dart/dart-sdk/bin
 

@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -216,6 +216,14 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
     [self.text setString:newText];
   }
 
+  NSInteger composingBase = [state[@"composingBase"] intValue];
+  NSInteger composingExtent = [state[@"composingExtent"] intValue];
+  NSRange composingRange = [self clampSelection:NSMakeRange(MIN(composingBase, composingExtent),
+                                                            ABS(composingBase - composingExtent))
+                                        forText:self.text];
+  self.markedTextRange =
+      composingRange.length > 0 ? [FlutterTextRange rangeWithNSRange:composingRange] : nil;
+
   NSInteger selectionBase = [state[@"selectionBase"] intValue];
   NSInteger selectionExtent = [state[@"selectionExtent"] intValue];
   NSRange selectedRange = [self clampSelection:NSMakeRange(MIN(selectionBase, selectionExtent),
@@ -232,14 +240,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
       _selectionAffinity = _kTextAffinityUpstream;
     [self.inputDelegate selectionDidChange:self];
   }
-
-  NSInteger composingBase = [state[@"composingBase"] intValue];
-  NSInteger composingExtent = [state[@"composingExtent"] intValue];
-  NSRange composingRange = [self clampSelection:NSMakeRange(MIN(composingBase, composingExtent),
-                                                            ABS(composingBase - composingExtent))
-                                        forText:self.text];
-  self.markedTextRange =
-      composingRange.length > 0 ? [FlutterTextRange rangeWithNSRange:composingRange] : nil;
 
   if (textChanged) {
     [self.inputDelegate textDidChange:self];
@@ -289,6 +289,13 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   }
 }
 
+- (id)insertDictationResultPlaceholder {
+  return @"";
+}
+
+- (void)removeDictationResultPlaceholder:(id)placeholder willInsertResult:(BOOL)willInsertResult {
+}
+
 - (NSString*)textInRange:(UITextRange*)range {
   NSRange textRange = ((FlutterTextRange*)range).range;
   return [self.text substringWithRange:textRange];
@@ -297,7 +304,6 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
   NSRange replaceRange = ((FlutterTextRange*)range).range;
   NSRange selectedRange = _selectedTextRange.range;
-
   // Adjust the text selection:
   // * reduce the length by the intersection length
   // * adjust the location by newLength - oldLength + intersectionLength
@@ -558,6 +564,24 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   // TODO(cbracken) Implement.
   NSUInteger currentIndex = ((FlutterTextPosition*)_selectedTextRange.start).index;
   return [FlutterTextRange rangeWithNSRange:[self rangeForCharacterAtIndex:currentIndex]];
+}
+
+- (void)beginFloatingCursorAtPoint:(CGPoint)point {
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateStart
+                                withClient:_textInputClient
+                              withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
+}
+
+- (void)updateFloatingCursorAtPoint:(CGPoint)point {
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
+                                withClient:_textInputClient
+                              withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
+}
+
+- (void)endFloatingCursor {
+  [_textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateEnd
+                                withClient:_textInputClient
+                              withPosition:@{@"X" : @(0), @"Y" : @(0)}];
 }
 
 #pragma mark - UIKeyInput Overrides

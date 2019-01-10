@@ -1,4 +1,4 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -61,7 +61,6 @@ shared_library("flutter_shell_native") {
     "$flutter_root/runtime",
     "$flutter_root/shell/common",
     "//third_party/skia",
-    "//third_party/skia:gpu",
   ]
   if (flutter_runtime_mode == "debug" ||
       flutter_runtime_mode == "dynamic_profile" ||
@@ -103,6 +102,11 @@ java_library("flutter_shell_java") {
     "io/flutter/app/FlutterApplication.java",
     "io/flutter/app/FlutterFragmentActivity.java",
     "io/flutter/app/FlutterPluginRegistry.java",
+    "io/flutter/embedding/engine/FlutterEngine.java",
+    "io/flutter/embedding/engine/FlutterJNI.java",
+    "io/flutter/embedding/engine/dart/PlatformMessageHandler.java",
+    "io/flutter/embedding/engine/renderer/FlutterRenderer.java",
+    "io/flutter/embedding/engine/renderer/OnFirstFrameRenderedListener.java",
     "io/flutter/plugin/common/ActivityLifecycleListener.java",
     "io/flutter/plugin/common/BasicMessageChannel.java",
     "io/flutter/plugin/common/BinaryCodec.java",
@@ -141,21 +145,22 @@ java_library("flutter_shell_java") {
     "io/flutter/view/ResourceCleaner.java",
     "io/flutter/view/ResourceExtractor.java",
     "io/flutter/view/ResourcePaths.java",
+    "io/flutter/view/ResourceUpdater.java",
     "io/flutter/view/TextureRegistry.java",
     "io/flutter/view/VsyncWaiter.java",
   ]
 
   deps = [
-    ":android_support_v4",
+    ":android_support_v13",
   ]
 
   jar_path = "$root_out_dir/flutter_java.jar"
 }
 
-java_prebuilt("android_support_v4") {
+java_prebuilt("android_support_v13") {
   supports_android = true
 
-  jar_path = "//third_party/android_tools/sdk/extras/android/support/v4/android-support-v4.jar"
+  jar_path = "//third_party/android_tools/sdk/extras/android/support/v13/android-support-v13.jar"
 }
 
 copy("flutter_shell_assets") {

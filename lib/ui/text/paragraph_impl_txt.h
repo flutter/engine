@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,7 +8,6 @@
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/text/paragraph_impl.h"
 #include "flutter/lib/ui/text/text_box.h"
-#include "flutter/third_party/txt/src/txt/paragraph.h"
 
 namespace blink {
 
@@ -29,7 +28,11 @@ class ParagraphImplTxt : public ParagraphImpl {
   void layout(double width) override;
   void paint(Canvas* canvas, double x, double y) override;
 
-  std::vector<TextBox> getRectsForRange(unsigned start, unsigned end) override;
+  std::vector<TextBox> getRectsForRange(
+      unsigned start,
+      unsigned end,
+      txt::Paragraph::RectHeightStyle rect_height_style,
+      txt::Paragraph::RectWidthStyle rect_width_style) override;
   Dart_Handle getPositionForOffset(double dx, double dy) override;
   Dart_Handle getWordBoundary(unsigned offset) override;
 

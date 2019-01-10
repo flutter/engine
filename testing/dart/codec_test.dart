@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -37,6 +37,29 @@ void main() {
   test('nextFrame', () async {
     Uint8List data = await _getSkiaResource('test640x479.gif').readAsBytes();
     ui.Codec codec = await ui.instantiateImageCodec(data);
+    List<List<int>> decodedFrameInfos = [];
+    for (int i = 0; i < 5; i++) {
+      ui.FrameInfo frameInfo = await codec.getNextFrame();
+      decodedFrameInfos.add([
+        frameInfo.duration.inMilliseconds,
+        frameInfo.image.width,
+        frameInfo.image.height,
+      ]);
+    }
+    expect(decodedFrameInfos, equals([
+      [200, 640, 479],
+      [200, 640, 479],
+      [200, 640, 479],
+      [200, 640, 479],
+      [200, 640, 479],
+    ]));
+  });
+
+  test('decodedCacheRatioCap', () async {
+    // No real way to test the native layer, but a smoke test here to at least
+    // verify that animation is still consistent with caching disabled.
+    Uint8List data = await _getSkiaResource('test640x479.gif').readAsBytes();
+    ui.Codec codec = await ui.instantiateImageCodec(data, decodedCacheRatioCap: 1.0);
     List<List<int>> decodedFrameInfos = [];
     for (int i = 0; i < 5; i++) {
       ui.FrameInfo frameInfo = await codec.getNextFrame();
