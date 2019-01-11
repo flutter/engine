@@ -432,40 +432,42 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   // Minimally, a font size and either a line_height or leading must be defined
   // to obtain a valid strut. Values not provided default to negative, which is
   // not supported.
-  bool valid_strut =
-      paragraph_style_.font_size >= 0 &&
-      (paragraph_style_.line_height >= 0 || paragraph_style_.leading >= 0);
+  bool valid_strut = paragraph_style_.strut_font_size >= 0 &&
+                     (paragraph_style_.strut_line_height >= 0 ||
+                      paragraph_style_.strut_leading >= 0);
   // force_strut makes all lines have exactly the strut metrics, and ignores all
   // actual metrics. We only force the strut if the strut is non-zero and valid.
   strut->force_strut = paragraph_style_.force_strut_height && valid_strut;
+  // FML_DLOG(ERROR) << strut->force_strut << " " <<
+  // paragraph_style_.line_height;
   if (valid_strut) {
     const FontSkia* font_skia =
         static_cast<const FontSkia*>(font_collection_->GetMinikinFontForFamily(
-            paragraph_style_.font_family,
+            paragraph_style_.strut_font_family,
             // TODO(garyq): The variant is currently set to 0 (default) as we do
             // not have a property to set it with. We should eventually support
             // default, compact, and elegant variants.
             minikin::FontStyle(
-                0, GetWeight(paragraph_style_.font_weight),
-                paragraph_style_.font_style == FontStyle::italic)));
+                0, GetWeight(paragraph_style_.strut_font_weight),
+                paragraph_style_.strut_font_style == FontStyle::italic)));
 
     if (font_skia != nullptr) {
       font.setTypeface(font_skia->GetSkTypeface());
-      font.setSize(paragraph_style_.font_size);
+      font.setSize(paragraph_style_.strut_font_size);
       SkFontMetrics strut_metrics;
       font.getMetrics(&strut_metrics);
 
       // Prevent values from being negative.
       double canonicalized_line_height =
-          std::max(0.0, paragraph_style_.line_height);
+          std::max(0.0, paragraph_style_.strut_line_height);
 
       strut->ascent = canonicalized_line_height * -strut_metrics.fAscent;
       strut->descent = canonicalized_line_height * strut_metrics.fDescent;
       strut->leading =
           // Use font's leading if there is no user specified strut leading.
-          paragraph_style_.leading < 0
+          paragraph_style_.strut_leading < 0
               ? strut_metrics.fLeading
-              : (paragraph_style_.leading *
+              : (paragraph_style_.strut_leading *
                  (strut_metrics.fDescent - strut_metrics.fAscent));
       strut->half_leading = strut->leading / 2;
       strut->line_height = strut->ascent + strut->descent + strut->leading;
@@ -819,13 +821,18 @@ void Paragraph::Layout(double width, bool force) {
     auto update_line_metrics = [&](const SkFontMetrics& metrics,
                                    const TextStyle& style) {
       if (!strut.force_strut) {
+        // FML_DLOG(ERROR) << "CALCING METRICS " << max_ascent;
         double ascent =
             (-metrics.fAscent + metrics.fLeading / 2) * style.height;
         max_ascent = std::max(ascent, max_ascent);
+        // FML_DLOG(ERROR) << "CALCING METRICS AFTER " << ascent << " "
+        // << max_ascent;
 
         double descent =
             (metrics.fDescent + metrics.fLeading / 2) * style.height;
         max_descent = std::max(descent, max_descent);
+      } else {
+        FML_DLOG(ERROR) << "SKIPPING CALC METRICS";
       }
 
       max_unscaled_ascent = std::max(-metrics.fAscent, max_unscaled_ascent);
@@ -845,6 +852,7 @@ void Paragraph::Layout(double width, bool force) {
     // If no fonts were actually rendered, then compute a baseline based on the
     // font of the paragraph style.
     if (paint_records.empty()) {
+      FML_DLOG(ERROR) << "EMPTY";
       SkFontMetrics metrics;
       TextStyle style(paragraph_style_.GetTextStyle());
       font.setTypeface(GetDefaultSkiaTypeface(style));
@@ -852,6 +860,9 @@ void Paragraph::Layout(double width, bool force) {
       font.getMetrics(&metrics);
       update_line_metrics(metrics, style);
     }
+    // FML_DLOG(ERROR) << "Final Metrics: " << (strut.ascent +
+    // strut.half_leading)
+    //                 << " Calced: " << max_ascent;
 
     // TODO(garyq): Remove rounding of line heights because it is irrelevant in
     // a world of high DPI devices.

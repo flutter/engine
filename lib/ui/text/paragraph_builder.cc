@@ -73,10 +73,9 @@ const int psMaxLinesIndex = 5;
 const int psFontFamilyIndex = 6;
 const int psFontSizeIndex = 7;
 const int psLineHeightIndex = 8;
-const int psLeadingIndex = 9;
-const int psForceStrutHeightIndex = 10;
-const int psEllipsisIndex = 11;
-const int psLocaleIndex = 12;
+const int psStrutStyleIndex = 9;
+const int psEllipsisIndex = 10;
+const int psLocaleIndex = 11;
 
 const int psTextAlignMask = 1 << psTextAlignIndex;
 const int psTextDirectionMask = 1 << psTextDirectionIndex;
@@ -86,8 +85,7 @@ const int psMaxLinesMask = 1 << psMaxLinesIndex;
 const int psFontFamilyMask = 1 << psFontFamilyIndex;
 const int psFontSizeMask = 1 << psFontSizeIndex;
 const int psLineHeightMask = 1 << psLineHeightIndex;
-const int psLeadingMask = 1 << psLeadingIndex;
-const int psForceStrutHeightMask = 1 << psForceStrutHeightIndex;
+const int psStrutStyleMask = 1 << psStrutStyleIndex;
 const int psEllipsisMask = 1 << psEllipsisIndex;
 const int psLocaleMask = 1 << psLocaleIndex;
 
@@ -125,28 +123,88 @@ void ParagraphBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
 
 fml::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
     tonic::Int32List& encoded,
+    Dart_Handle strutData,
     const std::string& fontFamily,
+    const std::string& strutFontFamily,
     double fontSize,
     double lineHeight,
-    double leading,
-    bool forceStrutHeight,
     const std::u16string& ellipsis,
     const std::string& locale) {
-  return fml::MakeRefCounted<ParagraphBuilder>(
-      encoded, fontFamily, fontSize, lineHeight, leading, forceStrutHeight,
-      ellipsis, locale);
+  return fml::MakeRefCounted<ParagraphBuilder>(encoded, strutData, fontFamily,
+                                               strutFontFamily, fontSize,
+                                               lineHeight, ellipsis, locale);
+}
+
+// returns true if there is a font family defined.
+bool decodeStrut(Dart_Handle strut_data, txt::ParagraphStyle& paragraph_style) {
+  tonic::DartByteData byte_data(strut_data);
+  if (byte_data.length_in_bytes() == 0) {
+    return;
+  }
+  FML_DLOG(ERROR) << "decoding1";
+
+  uint16_t* uint16_data = static_cast<uint16_t*>(byte_data.data());
+  const uint8_t* uint8_data = static_cast<const uint8_t*>(byte_data.data());
+  FML_DLOG(ERROR) << "decoding2";
+
+  uint16_t mask = uint16_data[0];
+  int byte_count = 2;
+  if (mask & 1 << 1) {
+    paragraph_style.strut_font_weight =
+        static_cast<txt::FontWeight>(uint8_data[byte_count]);
+    byte_count += 1;
+  }
+  if (mask & 1 << 2) {
+    paragraph_style.strut_font_style =
+        static_cast<txt::FontStyle>(uint8_data[byte_count]);
+    byte_count += 1;
+  }
+  FML_DLOG(ERROR) << "decoding3";
+  if (mask & 1 << 2) {
+    paragraph_style.strut_font_style =
+        static_cast<txt::FontStyle>(uint8_data[byte_count]);
+    byte_count += 1;
+  }
+  FML_DLOG(ERROR) << "decoding4";
+  const float* float_data =
+      static_cast<const float*>((float*)((char*)byte_data.data() + byte_count));
+  FML_DLOG(ERROR) << "decoding5";
+  byte_count = 0;
+  if (mask & 1 << 4) {
+    paragraph_style.strut_font_size = float_data[byte_count];
+    byte_count += 4;
+  }
+  if (mask & 1 << 5) {
+    paragraph_style.strut_line_height = float_data[byte_count];
+    byte_count += 4;
+  }
+  FML_DLOG(ERROR) << "decoding6";
+  if (mask & 1 << 6) {
+    paragraph_style.strut_leading = float_data[byte_count];
+    byte_count += 4;
+  }
+  if (mask & 1 << 7) {
+    paragraph_style.strut_leading = mask & 1 << 8;
+  }
+
+  if (mask & 1 << 3) {
+    return true;
+  }
+  return false;
 }
 
 ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
+                                   Dart_Handle strutData,
                                    const std::string& fontFamily,
+                                   const std::string& strutFontFamily,
                                    double fontSize,
                                    double lineHeight,
-                                   double leading,
-                                   bool forceStrutHeight,
+
                                    const std::u16string& ellipsis,
                                    const std::string& locale) {
   int32_t mask = encoded[0];
   txt::ParagraphStyle style;
+
   if (mask & psTextAlignMask)
     style.text_align = txt::TextAlign(encoded[psTextAlignIndex]);
 
@@ -154,26 +212,27 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
     style.text_direction = txt::TextDirection(encoded[psTextDirectionIndex]);
 
   if (mask & psFontWeightMask)
-    style.font_weight =
+    style.strut_font_weight =
         static_cast<txt::FontWeight>(encoded[psFontWeightIndex]);
 
   if (mask & psFontStyleMask)
-    style.font_style = static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
+    style.strut_font_style =
+        static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
 
   if (mask & psFontFamilyMask)
-    style.font_family = fontFamily;
+    style.strut_font_family = fontFamily;
 
   if (mask & psFontSizeMask)
-    style.font_size = fontSize;
+    style.strut_font_size = fontSize;
 
   if (mask & psLineHeightMask)
-    style.line_height = lineHeight;
-
-  if (mask & psLeadingMask)
-    style.leading = leading;
-
-  if (mask & psForceStrutHeightMask)
-    style.force_strut_height = forceStrutHeight;
+    style.strut_line_height = lineHeight;
+  FML_DLOG(ERROR) << "GOT HERE1";
+  if (mask & psStrutStyleMask) {
+    style.strut_font_family = strutFontFamily;
+    decodeStrut(strutData, style);
+  }
+  FML_DLOG(ERROR) << "SUCCESS!";
 
   if (mask & psMaxLinesMask)
     style.max_lines = encoded[psMaxLinesIndex];

@@ -43,16 +43,25 @@ enum class TextDirection {
 
 class ParagraphStyle {
  public:
+  // Default TextStyle
   FontWeight font_weight = FontWeight::w400;
   FontStyle font_style = FontStyle::normal;
   std::string font_family = "";
-  double font_size = -1;  // Negative to disable strut.
+  double font_size = -1;    // Negative to disable strut.
+  double line_height = -1;  // Negative to disable strut.
+
+  // Struts
+  FontWeight strut_font_weight = FontWeight::w400;
+  FontStyle strut_font_style = FontStyle::normal;
+  std::string strut_font_family = "";
+  double strut_font_size = -1;    // Negative to disable strut.
+  double strut_line_height = -1;  // Negative to disable strut.
+  double strut_leading = -1;      // Negative to disable strut.
+  bool force_strut_height = false;
+
   TextAlign text_align = TextAlign::start;
   TextDirection text_direction = TextDirection::ltr;
   size_t max_lines = std::numeric_limits<size_t>::max();
-  double line_height = -1;  // Negative to disable strut.
-  double leading = -1;      // Negative to disable strut.
-  bool force_strut_height = false;
   std::u16string ellipsis;
   std::string locale;
 

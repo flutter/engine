@@ -497,7 +497,7 @@ class TextStyle {
 
 // This encoding must match the C++ version ParagraphBuilder::build.
 //
-// The encoded array buffer has 5 elements.
+// The encoded array buffer has 6 elements.
 //
 //  - Element 0: A bit mask indicating which fields are non-null.
 //    Bit 0 is unused. Bits 1-n are set if the corresponding index in the
@@ -506,11 +506,13 @@ class TextStyle {
 //
 //  - Element 1: The enum index of the |textAlign|.
 //
-//  - Element 2: The index of the |fontWeight|.
+//  - Element 2: The enum index of the |textDirection|.
 //
-//  - Element 3: The enum index of the |fontStyle|.
+//  - Element 3: The index of the |fontWeight|.
 //
-//  - Element 4: The value of |maxLines|.
+//  - Element 4: The enum index of the |fontStyle|.
+//
+//  - Element 5: The value of |maxLines|.
 //
 Int32List _encodeParagraphStyle(
   TextAlign textAlign,
@@ -519,10 +521,9 @@ Int32List _encodeParagraphStyle(
   String fontFamily,
   double fontSize,
   double lineHeight,
-  double leading,
   FontWeight fontWeight,
   FontStyle fontStyle,
-  bool forceStrutHeight,
+  StrutStyle strutStyle,
   String ellipsis,
   Locale locale,
 ) {
@@ -559,20 +560,16 @@ Int32List _encodeParagraphStyle(
     result[0] |= 1 << 8;
     // Passed separately to native.
   }
-  if (leading != null) {
+  if (strutStyle != null) {
     result[0] |= 1 << 9;
     // Passed separately to native.
   }
-  if (forceStrutHeight != null) {
+  if (ellipsis != null) {
     result[0] |= 1 << 10;
     // Passed separately to native.
   }
-  if (ellipsis != null) {
-    result[0] |= 1 << 11;
-    // Passed separately to native.
-  }
   if (locale != null) {
-    result[0] |= 1 << 12;
+    result[0] |= 1 << 11;
     // Passed separately to native.
   }
   return result;
@@ -628,13 +625,9 @@ class ParagraphStyle {
   /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g.,
   ///   italics).
   ///
-  /// * `forceStrutHeight`: When true, the paragraph will force all lines to be exactly
-  ///   `(lineHeight + leading) * fontSize` tall from baseline to baseline.
-  ///   [TextStyle] is no longer able to influence the line height, and any tall
-  ///   glyphs may overlap with lines above. If a [fontFamily] is specified, the
-  ///   total ascent of the first line will be the min of the `Ascent + half-leading`
-  ///   of the [fontFamily] and `(lineHeight + leading) * fontSize`. Otherwise, it
-  ///   will be determined by the Ascent + half-leading of the first text.
+  /// * `strutStyle`: The properties of the strut. Strut defines a set of minimum
+  ///   vertical line height related metrics and can be used to obtain more
+  ///   advanced line spacing behavior.
   ///
   /// * `ellipsis`: String used to ellipsize overflowing text. If `maxLines` is
   ///   not null, then the `ellipsis`, if any, is applied to the last rendered
@@ -650,13 +643,12 @@ class ParagraphStyle {
     TextAlign textAlign,
     TextDirection textDirection,
     int maxLines,
-    String fontFamily, // Strut
-    double fontSize, // Strut
-    double lineHeight, // Strut
-    double leading, // Strut
-    FontWeight fontWeight, // Strut
-    FontStyle fontStyle, // Strut
-    bool forceStrutHeight, // Strut
+    String fontFamily,
+    double fontSize,
+    double lineHeight,
+    FontWeight fontWeight,
+    FontStyle fontStyle,
+    StrutStyle strutStyle,
     String ellipsis,
     Locale locale,
   }) : _encoded = _encodeParagraphStyle(
@@ -666,27 +658,24 @@ class ParagraphStyle {
          fontFamily,
          fontSize,
          lineHeight,
-         leading,
          fontWeight,
          fontStyle,
-         forceStrutHeight,
+         strutStyle,
          ellipsis,
          locale,
        ),
        _fontFamily = fontFamily,
        _fontSize = fontSize,
        _lineHeight = lineHeight,
-       _leading = leading,
-       _forceStrutHeight = forceStrutHeight,
+       _strutStyle = strutStyle,
        _ellipsis = ellipsis,
        _locale = locale;
 
   final Int32List _encoded;
-  final String _fontFamily; // Strut
-  final double _fontSize; // Strut
-  final double _lineHeight; // Strut
-  final double _leading; // Strut
-  final bool _forceStrutHeight; // Strut
+  final String _fontFamily;
+  final double _fontSize;
+  final double _lineHeight;
+  final StrutStyle _strutStyle;
   final String _ellipsis;
   final Locale _locale;
 
@@ -700,8 +689,7 @@ class ParagraphStyle {
     if (_fontFamily != typedOther._fontFamily ||
         _fontSize != typedOther._fontSize ||
         _lineHeight != typedOther._lineHeight ||
-        _leading != typedOther._leading ||
-        _forceStrutHeight != typedOther._forceStrutHeight ||
+        _strutStyle != typedOther._strutStyle ||
         _ellipsis != typedOther._ellipsis ||
         _locale != typedOther._locale)
      return false;
@@ -730,6 +718,174 @@ class ParagraphStyle {
              'locale: ${        _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}'
            ')';
   }
+}
+
+// Serialize [shadows] into ByteData. This encoding errs towards
+// compactness. The first 16bits is a bitmask that records which properties
+// are null. The rest of the values are encoded in the same order encountered
+// in the bitmask. The final returned value truncates any unused bytes
+// at the end.
+//
+// We serialize this more thoroughly than ParagraphStyle because it is
+// much more likely that the strut is empty/null and sending individual properties
+// has higher overhead.
+ByteData _encodeStrut(
+  String fontFamily,
+  double fontSize,
+  double lineHeight,
+  double leading,
+  FontWeight fontWeight,
+  FontStyle fontStyle,
+  bool forceStrutHeight) {
+  if (fontFamily == null &&
+    fontSize == null &&
+    lineHeight == null &&
+    leading == null &&
+    fontWeight == null &&
+    fontStyle == null &&
+    forceStrutHeight == null)
+    return ByteData(0);
+
+  final ByteData data = ByteData(128); // Max size is 128
+  int bitmask = 0; // 16bit bitmask
+  int byteCount = 2;
+  if (fontWeight != null) {
+    bitmask |= 1 << 1;
+    data.setInt8(byteCount, fontWeight.index);
+    byteCount += 1;
+  }
+  if (fontStyle != null) {
+    bitmask |= 1 << 2;
+    data.setInt8(byteCount, fontStyle.index);
+    byteCount += 1;
+  }
+  if (fontFamily != null) {
+    bitmask |= 1 << 3;
+    // passed separately to native
+  }
+  if (fontSize != null) {
+    bitmask |= 1 << 4;
+    data.setFloat32(byteCount, fontSize, _kFakeHostEndian);
+    byteCount += 4;
+  }
+  if (lineHeight != null) {
+    bitmask |= 1 << 5;
+    data.setFloat32(byteCount, lineHeight, _kFakeHostEndian);
+    byteCount += 4;
+  }
+  if (leading != null) {
+    bitmask |= 1 << 6;
+    data.setFloat32(byteCount, leading, _kFakeHostEndian);
+    byteCount += 4;
+  }
+  if (forceStrutHeight != null) {
+    bitmask |= 1 << 7;
+    // We store this boolean directly in the bitmask since there is
+    // extra space in the 16 bit int.
+    bitmask |= (forceStrutHeight ? 1 : 0) << 8;
+  }
+
+  data.setInt16(0, bitmask, _kFakeHostEndian);
+
+  return ByteData.view(data.buffer, 0,  byteCount);
+}
+
+class StrutStyle {
+  /// Creates a new StrutStyle object.
+  ///
+  /// Together, the `fontFamily`, `fontSize`, `lineHeight`, `fontStyle`,
+  /// `fontWeight`, `leading`, and `forceStrutHeight` properties define the
+  /// strut to be applied to the paragraph.
+  ///
+  /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
+  ///   Roboto).
+  ///
+  /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting
+  ///   the text.
+  ///
+  /// * `lineHeight`: The minimum height of the line boxes, as a multiple of the
+  ///   font size. The lines of the paragraph will be at least
+  ///   `(lineHeight + leading) * fontSize` tall when fontSize
+  ///   is not null. When fontSize is null, there is no minimum line height. Tall
+  ///   glyphs due to baseline alignment or large [TextStyle.fontSize] may cause
+  ///   the actual line height after layout to be taller than specified here.
+  ///   [fontSize] must be provided for this property to take effect.
+  ///
+  /// * `leading`: The minimum amount of leading between lines as a multiple of
+  ///   the font size. [fontSize] must be provided for this property to take effect.
+  ///
+  /// * `fontWeight`: The typeface thickness to use when painting the text
+  ///   (e.g., bold).
+  ///
+  /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g.,
+  ///   italics).
+  ///
+  /// * `forceStrutHeight`: When true, the paragraph will force all lines to be exactly
+  ///   `(lineHeight + leading) * fontSize` tall from baseline to baseline.
+  ///   [TextStyle] is no longer able to influence the line height, and any tall
+  ///   glyphs may overlap with lines above. If a [fontFamily] is specified, the
+  ///   total ascent of the first line will be the min of the `Ascent + half-leading`
+  ///   of the [fontFamily] and `(lineHeight + leading) * fontSize`. Otherwise, it
+  ///   will be determined by the Ascent + half-leading of the first text.
+  StrutStyle({
+    String fontFamily,
+    double fontSize,
+    double lineHeight,
+    double leading,
+    FontWeight fontWeight,
+    FontStyle fontStyle,
+    bool forceStrutHeight,
+  }) : _encoded = _encodeStrut(
+         fontFamily,
+         fontSize,
+         lineHeight,
+         leading,
+         fontWeight,
+         fontStyle,
+         forceStrutHeight,
+       ),
+       _fontFamily = fontFamily;
+
+  final ByteData _encoded; // Most of the data for strut is encoded.
+  final String _fontFamily;
+
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other))
+      return true;
+    if (other.runtimeType != runtimeType)
+      return false;
+    final StrutStyle typedOther = other;
+    if (_fontFamily != typedOther._fontFamily)
+     return false;
+    if (_encoded.toString() == typedOther._encoded.toString())
+      return false;
+    // for (int index = 0; index < _encoded.lengthInBytes; index += 1) {
+    //   if (_encoded[index] != typedOther._encoded[index])
+    //     return false;
+    // }
+    return true;
+  }
+
+  @override
+  int get hashCode => hashValues(hashList(_encoded.buffer.asInt8List()), _fontFamily);
+
+  // @override
+  // String toString() {
+  //   return '$runtimeType('
+  //            'textAlign: ${     _encoded[0] & 0x002 == 0x002 ? TextAlign.values[_encoded[1]]     : "unspecified"}, '
+  //            'textDirection: ${ _encoded[0] & 0x004 == 0x004 ? TextDirection.values[_encoded[2]] : "unspecified"}, '
+  //            'fontWeight: ${    _encoded[0] & 0x008 == 0x008 ? FontWeight.values[_encoded[3]]    : "unspecified"}, '
+  //            'fontStyle: ${     _encoded[0] & 0x010 == 0x010 ? FontStyle.values[_encoded[4]]     : "unspecified"}, '
+  //            'maxLines: ${      _encoded[0] & 0x020 == 0x020 ? _encoded[5]                       : "unspecified"}, '
+  //            'fontFamily: ${    _encoded[0] & 0x040 == 0x040 ? _fontFamily                       : "unspecified"}, '
+  //            'fontSize: ${      _encoded[0] & 0x080 == 0x080 ? _fontSize                         : "unspecified"}, '
+  //            'lineHeight: ${    _encoded[0] & 0x100 == 0x100 ? "${_lineHeight}x"                 : "unspecified"}, '
+  //            'ellipsis: ${      _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""                  : "unspecified"}, '
+  //            'locale: ${        _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}'
+  //          ')';
+  // }
 }
 
 /// A direction in which text flows.
@@ -1247,8 +1403,8 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Creates a [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
   @pragma('vm:entry-point')
-  ParagraphBuilder(ParagraphStyle style) { _constructor(style._encoded, style._fontFamily, style._fontSize, style._lineHeight, style._leading, style._forceStrutHeight, style._ellipsis, _encodeLocale(style._locale)); }
-  void _constructor(Int32List encoded, String fontFamily, double fontSize, double lineHeight, double leading, bool forceStrutHeight, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
+  ParagraphBuilder(ParagraphStyle style) { _constructor(style._encoded, style._strutStyle != null ? style._strutStyle._encoded : ByteData(0), style._fontFamily, style._strutStyle != null ? style._strutStyle._fontFamily : null, style._fontSize, style._lineHeight, style._ellipsis, _encodeLocale(style._locale)); }
+  void _constructor(Int32List encoded, ByteData strutData, String fontFamily, String strutFontFamily, double fontSize, double lineHeight, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
 
   /// Applies the given style to the added text until [pop] is called.
   ///
