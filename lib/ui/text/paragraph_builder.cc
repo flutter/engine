@@ -160,10 +160,8 @@ bool decodeStrut(Dart_Handle strut_data, txt::ParagraphStyle& paragraph_style) {
     return false;
   }
 
-  // uint8_t mask = static_cast<const uint8_t*>(byte_data.data())[0];
   const uint8_t* uint8_data = static_cast<const uint8_t*>(byte_data.data());
   uint8_t mask = uint8_data[0];
-  // FML_DLOG(ERROR) << byte_data.length_in_bytes();
 
   size_t byte_count = 1;
   if (mask & sFontWeightMask) {
@@ -210,7 +208,6 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
                                    const std::string& strutFontFamily,
                                    double fontSize,
                                    double lineHeight,
-
                                    const std::u16string& ellipsis,
                                    const std::string& locale) {
   int32_t mask = encoded[0];

@@ -859,8 +859,8 @@ class StrutStyle {
     final StrutStyle typedOther = other;
     if (_fontFamily != typedOther._fontFamily)
      return false;
-    Int8List encodedList = _encoded.buffer.asInt8List();
-    Int8List otherEncodedList = typedOther._encoded.buffer.asInt8List();
+    final Int8List encodedList = _encoded.buffer.asInt8List();
+    final Int8List otherEncodedList = typedOther._encoded.buffer.asInt8List();
     for (int index = 0; index < _encoded.lengthInBytes; index += 1) {
       if (encodedList[index] != otherEncodedList[index])
         return false;
