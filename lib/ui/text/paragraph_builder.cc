@@ -99,6 +99,23 @@ constexpr uint32_t kXOffset = 1;
 constexpr uint32_t kYOffset = 2;
 constexpr uint32_t kBlurOffset = 3;
 
+// Strut decoding
+const int sFontWeightIndex = 0;
+const int sFontStyleIndex = 1;
+const int sFontFamilyIndex = 2;
+const int sFontSizeIndex = 3;
+const int sLineHeightIndex = 4;
+const int sLeadingIndex = 5;
+const int sForceStrutHeightIndex = 6;
+
+const int sFontWeightMask = 1 << sFontWeightIndex;
+const int sFontStyleMask = 1 << sFontStyleIndex;
+const int sFontFamilyMask = 1 << sFontFamilyIndex;
+const int sFontSizeMask = 1 << sFontSizeIndex;
+const int sLineHeightMask = 1 << sLineHeightIndex;
+const int sLeadingMask = 1 << sLeadingIndex;
+const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
+
 }  // namespace
 
 static void ParagraphBuilder_constructor(Dart_NativeArguments args) {
@@ -135,59 +152,53 @@ fml::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
                                                lineHeight, ellipsis, locale);
 }
 
-// returns true if there is a font family defined.
+// returns true if there is a font family defined. Font family is the only
+// parameter passed directly.
 bool decodeStrut(Dart_Handle strut_data, txt::ParagraphStyle& paragraph_style) {
   tonic::DartByteData byte_data(strut_data);
   if (byte_data.length_in_bytes() == 0) {
-    return;
+    return false;
   }
-  FML_DLOG(ERROR) << "decoding1";
 
-  uint16_t* uint16_data = static_cast<uint16_t*>(byte_data.data());
+  // uint8_t mask = static_cast<const uint8_t*>(byte_data.data())[0];
   const uint8_t* uint8_data = static_cast<const uint8_t*>(byte_data.data());
-  FML_DLOG(ERROR) << "decoding2";
+  uint8_t mask = uint8_data[0];
+  // FML_DLOG(ERROR) << byte_data.length_in_bytes();
 
-  uint16_t mask = uint16_data[0];
-  int byte_count = 2;
-  if (mask & 1 << 1) {
+  size_t byte_count = 1;
+  if (mask & sFontWeightMask) {
     paragraph_style.strut_font_weight =
         static_cast<txt::FontWeight>(uint8_data[byte_count]);
     byte_count += 1;
   }
-  if (mask & 1 << 2) {
+  if (mask & sFontStyleMask) {
     paragraph_style.strut_font_style =
         static_cast<txt::FontStyle>(uint8_data[byte_count]);
     byte_count += 1;
-  }
-  FML_DLOG(ERROR) << "decoding3";
-  if (mask & 1 << 2) {
-    paragraph_style.strut_font_style =
-        static_cast<txt::FontStyle>(uint8_data[byte_count]);
-    byte_count += 1;
-  }
-  FML_DLOG(ERROR) << "decoding4";
-  const float* float_data =
-      static_cast<const float*>((float*)((char*)byte_data.data() + byte_count));
-  FML_DLOG(ERROR) << "decoding5";
-  byte_count = 0;
-  if (mask & 1 << 4) {
-    paragraph_style.strut_font_size = float_data[byte_count];
-    byte_count += 4;
-  }
-  if (mask & 1 << 5) {
-    paragraph_style.strut_line_height = float_data[byte_count];
-    byte_count += 4;
-  }
-  FML_DLOG(ERROR) << "decoding6";
-  if (mask & 1 << 6) {
-    paragraph_style.strut_leading = float_data[byte_count];
-    byte_count += 4;
-  }
-  if (mask & 1 << 7) {
-    paragraph_style.strut_leading = mask & 1 << 8;
   }
 
-  if (mask & 1 << 3) {
+  float float_data[byte_data.length_in_bytes() - byte_count / 4];
+  memcpy(float_data, static_cast<const char*>(byte_data.data()) + byte_count,
+         byte_data.length_in_bytes() - byte_count);
+  size_t float_count = 0;
+  if (mask & sFontSizeMask) {
+    paragraph_style.strut_font_size = float_data[0];
+    float_count += 1;
+  }
+  if (mask & sLineHeightMask) {
+    paragraph_style.strut_line_height = float_data[float_count];
+    float_count += 1;
+  }
+  if (mask & sLeadingMask) {
+    paragraph_style.strut_leading = float_data[float_count];
+    float_count += 1;
+  }
+  if (mask & sForceStrutHeightMask) {
+    // The boolean is stored as the last bit in the bitmask.
+    paragraph_style.force_strut_height = (mask & 1 << 7) != 0;
+  }
+
+  if (mask & sFontFamilyMask) {
     return true;
   }
   return false;
@@ -211,29 +222,41 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
   if (mask & psTextDirectionMask)
     style.text_direction = txt::TextDirection(encoded[psTextDirectionIndex]);
 
-  if (mask & psFontWeightMask)
+  if (mask & psFontWeightMask) {
+    style.font_weight =
+        static_cast<txt::FontWeight>(encoded[psFontWeightIndex]);
     style.strut_font_weight =
         static_cast<txt::FontWeight>(encoded[psFontWeightIndex]);
+  }
 
-  if (mask & psFontStyleMask)
+  if (mask & psFontStyleMask) {
+    style.font_style = static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
     style.strut_font_style =
         static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
-
-  if (mask & psFontFamilyMask)
-    style.strut_font_family = fontFamily;
-
-  if (mask & psFontSizeMask)
-    style.strut_font_size = fontSize;
-
-  if (mask & psLineHeightMask)
-    style.strut_line_height = lineHeight;
-  FML_DLOG(ERROR) << "GOT HERE1";
-  if (mask & psStrutStyleMask) {
-    style.strut_font_family = strutFontFamily;
-    decodeStrut(strutData, style);
   }
-  FML_DLOG(ERROR) << "SUCCESS!";
 
+  if (mask & psFontFamilyMask) {
+    style.font_family = fontFamily;
+    style.strut_font_family = fontFamily;
+  }
+
+  if (mask & psFontSizeMask) {
+    style.font_size = fontSize;
+    style.strut_font_size = fontSize;
+  }
+
+  if (mask & psLineHeightMask) {
+    style.line_height = lineHeight;
+    style.strut_line_height = lineHeight;
+  }
+
+  if (mask & psStrutStyleMask) {
+    style.strut_enabled = true;
+    // Decode strut returns true if there is a font family string available.
+    if (decodeStrut(strutData, style)) {
+      style.strut_font_family = strutFontFamily;
+    }
+  }
   if (mask & psMaxLinesMask)
     style.max_lines = encoded[psMaxLinesIndex];
 

@@ -727,8 +727,8 @@ class ParagraphStyle {
 // at the end.
 //
 // We serialize this more thoroughly than ParagraphStyle because it is
-// much more likely that the strut is empty/null and sending individual properties
-// has higher overhead.
+// much more likely that the strut is empty/null and we wish to add
+// minimal overhead for non-strut cases.
 ByteData _encodeStrut(
   String fontFamily,
   double fontSize,
@@ -746,46 +746,46 @@ ByteData _encodeStrut(
     forceStrutHeight == null)
     return ByteData(0);
 
-  final ByteData data = ByteData(128); // Max size is 128
-  int bitmask = 0; // 16bit bitmask
-  int byteCount = 2;
+  final ByteData data = ByteData(15); // Max size is 15 bytes
+  int bitmask = 0; // 8 bit mask
+  int byteCount = 1;
   if (fontWeight != null) {
-    bitmask |= 1 << 1;
+    bitmask |= 1 << 0;
     data.setInt8(byteCount, fontWeight.index);
     byteCount += 1;
   }
   if (fontStyle != null) {
-    bitmask |= 1 << 2;
+    bitmask |= 1 << 1;
     data.setInt8(byteCount, fontStyle.index);
     byteCount += 1;
   }
   if (fontFamily != null) {
-    bitmask |= 1 << 3;
+    bitmask |= 1 << 2;
     // passed separately to native
   }
   if (fontSize != null) {
-    bitmask |= 1 << 4;
+    bitmask |= 1 << 3;
     data.setFloat32(byteCount, fontSize, _kFakeHostEndian);
     byteCount += 4;
   }
   if (lineHeight != null) {
-    bitmask |= 1 << 5;
+    bitmask |= 1 << 4;
     data.setFloat32(byteCount, lineHeight, _kFakeHostEndian);
     byteCount += 4;
   }
   if (leading != null) {
-    bitmask |= 1 << 6;
+    bitmask |= 1 << 5;
     data.setFloat32(byteCount, leading, _kFakeHostEndian);
     byteCount += 4;
   }
   if (forceStrutHeight != null) {
-    bitmask |= 1 << 7;
+    bitmask |= 1 << 6;
     // We store this boolean directly in the bitmask since there is
     // extra space in the 16 bit int.
-    bitmask |= (forceStrutHeight ? 1 : 0) << 8;
+    bitmask |= (forceStrutHeight ? 1 : 0) << 7;
   }
 
-  data.setInt16(0, bitmask, _kFakeHostEndian);
+  data.setInt8(0, bitmask);
 
   return ByteData.view(data.buffer, 0,  byteCount);
 }
@@ -859,33 +859,17 @@ class StrutStyle {
     final StrutStyle typedOther = other;
     if (_fontFamily != typedOther._fontFamily)
      return false;
-    if (_encoded.toString() == typedOther._encoded.toString())
-      return false;
-    // for (int index = 0; index < _encoded.lengthInBytes; index += 1) {
-    //   if (_encoded[index] != typedOther._encoded[index])
-    //     return false;
-    // }
+    Int8List encodedList = _encoded.buffer.asInt8List();
+    Int8List otherEncodedList = typedOther._encoded.buffer.asInt8List();
+    for (int index = 0; index < _encoded.lengthInBytes; index += 1) {
+      if (encodedList[index] != otherEncodedList[index])
+        return false;
+    }
     return true;
   }
 
   @override
   int get hashCode => hashValues(hashList(_encoded.buffer.asInt8List()), _fontFamily);
-
-  // @override
-  // String toString() {
-  //   return '$runtimeType('
-  //            'textAlign: ${     _encoded[0] & 0x002 == 0x002 ? TextAlign.values[_encoded[1]]     : "unspecified"}, '
-  //            'textDirection: ${ _encoded[0] & 0x004 == 0x004 ? TextDirection.values[_encoded[2]] : "unspecified"}, '
-  //            'fontWeight: ${    _encoded[0] & 0x008 == 0x008 ? FontWeight.values[_encoded[3]]    : "unspecified"}, '
-  //            'fontStyle: ${     _encoded[0] & 0x010 == 0x010 ? FontStyle.values[_encoded[4]]     : "unspecified"}, '
-  //            'maxLines: ${      _encoded[0] & 0x020 == 0x020 ? _encoded[5]                       : "unspecified"}, '
-  //            'fontFamily: ${    _encoded[0] & 0x040 == 0x040 ? _fontFamily                       : "unspecified"}, '
-  //            'fontSize: ${      _encoded[0] & 0x080 == 0x080 ? _fontSize                         : "unspecified"}, '
-  //            'lineHeight: ${    _encoded[0] & 0x100 == 0x100 ? "${_lineHeight}x"                 : "unspecified"}, '
-  //            'ellipsis: ${      _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""                  : "unspecified"}, '
-  //            'locale: ${        _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}'
-  //          ')';
-  // }
 }
 
 /// A direction in which text flows.

@@ -351,6 +351,7 @@ class Paragraph {
         : x_start(x_s), y_start(y_s), x_end(x_e), y_end(y_e) {}
   };
 
+  // Strut metrics of zero will have no effect on the layout.
   struct StrutMetrics {
     double ascent = 0;  // Positive value to keep signs clear.
     double descent = 0;

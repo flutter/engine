@@ -2717,9 +2717,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  paragraph_style.font_family = "Roboto";
-  paragraph_style.font_size = 50;
-  paragraph_style.line_height = 1.3;
+  paragraph_style.strut_font_family = "Roboto";
+  paragraph_style.strut_font_size = 50;
+  paragraph_style.strut_line_height = 1.3;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
@@ -2845,9 +2845,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph2)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  paragraph_style.font_family = "Roboto";
-  paragraph_style.font_size = 50;
-  paragraph_style.line_height = 1.3;
+  paragraph_style.strut_font_family = "Roboto";
+  paragraph_style.strut_font_size = 50;
+  paragraph_style.strut_line_height = 1.3;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
@@ -2974,9 +2974,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph3)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  paragraph_style.font_family = "Roboto";
-  paragraph_style.font_size = 50;
-  paragraph_style.line_height = 1.1;
+  paragraph_style.strut_font_family = "Roboto";
+  paragraph_style.strut_font_size = 50;
+  paragraph_style.strut_line_height = 1.1;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
@@ -3103,9 +3103,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutForceParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  paragraph_style.font_family = "Roboto";
-  paragraph_style.font_size = 50;
-  paragraph_style.line_height = 1;
+  paragraph_style.strut_font_family = "Roboto";
+  paragraph_style.strut_font_size = 50;
+  paragraph_style.strut_line_height = 1;
   paragraph_style.force_strut_height = true;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
