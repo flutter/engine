@@ -64,14 +64,22 @@ constexpr SkScalar invert_colors[20] = {
 enum MaskFilterType { Null, Blur };
 
 // Must be kept in sync with the ColorFilter private constants in painting.dart.
-enum ColorFilterType { None, Mode, Matrix, LinearToSRGBGamma, SRGBToLinearGamma };
+enum ColorFilterType {
+  None,
+  Mode,
+  Matrix,
+  LinearToSRGBGamma,
+  SRGBToLinearGamma
+};
 
-sk_sp<SkColorFilter> extract_color_filter(const uint32_t *uint_data, Dart_Handle values[]) {
+sk_sp<SkColorFilter> extract_color_filter(const uint32_t* uint_data,
+                                          Dart_Handle values[]) {
   switch (uint_data[kColorFilterIndex]) {
     case Mode: {
       SkColor color = uint_data[kColorFilterColorIndex];
       SkBlendMode blend_mode =
           static_cast<SkBlendMode>(uint_data[kColorFilterBlendModeIndex]);
+
       return SkColorFilter::MakeModeFilter(color, blend_mode);
     }
     case Matrix: {
