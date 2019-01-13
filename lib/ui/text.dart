@@ -223,7 +223,7 @@ enum TextDecorationStyle {
 /// Returns true if the lists are both null, or if they are both non-null, have
 /// the same length, and contain the same elements in the same order. Returns
 /// false otherwise.
-bool _listEquals<T>(List<T> a, List<T> b) {
+bool listEquals<T>(List<T> a, List<T> b) {
   if (a == null)
     return b == null;
   if (b == null || a.length != b.length)
@@ -458,9 +458,9 @@ class TextStyle {
       if (_encoded[index] != typedOther._encoded[index])
         return false;
     }
-    if (!_listEquals<Shadow>(_shadows, typedOther._shadows))
+    if (!listEquals<Shadow>(_shadows, typedOther._shadows))
       return false;
-    if (!_listEquals<String>(_fontFamilyFallback, typedOther._fontFamilyFallback))
+    if (!listEquals<String>(_fontFamilyFallback, typedOther._fontFamilyFallback))
       return false;
     return true;
   }
