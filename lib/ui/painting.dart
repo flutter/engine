@@ -2448,11 +2448,17 @@ class ColorFilter {
 
   @override
   bool operator ==(dynamic other) {
-    if (other is! ColorFilter) return false;
+    if (other is! ColorFilter) {
+      return false;
+    }
     final ColorFilter typedOther = other;
 
-    if (_type != typedOther._type) return false;
-    if(!listEquals<double>(_matrix, typedOther._matrix)) return false;
+    if (_type != typedOther._type) {
+      return false;
+    }
+    if (!listEquals<double>(_matrix, typedOther._matrix)) {
+      return false;
+    }
 
     return _color == typedOther._color && _blendMode == typedOther._blendMode;
   }
