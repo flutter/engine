@@ -2456,7 +2456,6 @@ class ColorFilter {
     if (_type != typedOther._type) {
       return false;
     }
-    
     if (!_listEquals<double>(_matrix, typedOther._matrix)) {
       return false;
     }
