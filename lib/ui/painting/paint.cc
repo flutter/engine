@@ -72,8 +72,8 @@ enum ColorFilterType {
   SRGBToLinearGamma
 };
 
-sk_sp<SkColorFilter> extract_color_filter(const uint32_t* uint_data,
-                                          Dart_Handle values[]) {
+sk_sp<SkColorFilter> ExtractColorFilter(const uint32_t *uint_data,
+                                        Dart_Handle *values) {
   switch (uint_data[kColorFilterIndex]) {
     case Mode: {
       SkColor color = uint_data[kColorFilterColorIndex];
@@ -175,7 +175,7 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
     paint_.setFilterQuality(static_cast<SkFilterQuality>(filter_quality));
 
   if (uint_data[kColorFilterIndex] && uint_data[kInvertColorIndex]) {
-    sk_sp<SkColorFilter> color_filter = extract_color_filter(uint_data, values);
+    sk_sp<SkColorFilter> color_filter = ExtractColorFilter(uint_data, values);
     if (color_filter) {
       sk_sp<SkColorFilter> invert_filter =
           SkColorFilter::MakeMatrixFilterRowMajor255(invert_colors);
@@ -185,7 +185,7 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
     paint_.setColorFilter(
         SkColorFilter::MakeMatrixFilterRowMajor255(invert_colors));
   } else if (uint_data[kColorFilterIndex]) {
-    sk_sp<SkColorFilter> color_filter = extract_color_filter(uint_data, values);
+    sk_sp<SkColorFilter> color_filter = ExtractColorFilter(uint_data, values);
     if (color_filter) {
       paint_.setColorFilter(color_filter);
     }
