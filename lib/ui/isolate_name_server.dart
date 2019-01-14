@@ -4,7 +4,7 @@
 
 part of dart.ui;
 
-/// Static methods to allow for simple sharing of [SendPort]s across [Isolates].
+/// Static methods to allow for simple sharing of [SendPort]s across [Isolate]s.
 ///
 /// All isolates share a global mapping of names to ports. An isolate can
 /// register a [SendPort] with a given name using [registerPortWithName];
