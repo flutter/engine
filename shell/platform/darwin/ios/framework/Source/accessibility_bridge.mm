@@ -82,14 +82,13 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
  */
 @interface SemanticsObjectContainer : NSObject
 - (instancetype)init __attribute__((unavailable("Use initWithSemanticsObject instead")));
-- (instancetype)initWithSemanticsObject:(fml::WeakPtr<SemanticsObject>)semanticsObject
+- (instancetype)initWithSemanticsObject:(std::weak_ptr<SemanticsObject>)semanticsObject
                                  bridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge
     NS_DESIGNATED_INITIALIZER;
 @end
 
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
-  std::unique_ptr<fml::WeakPtrFactory<SemanticsObject>> _weakFactory;
 }
 
 #pragma mark - Override base class designated initializers
@@ -112,7 +111,6 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     _bridge = bridge;
     _uid = uid;
     _children = [[NSMutableArray alloc] init];
-    _weakFactory = std::make_unique<fml::WeakPtrFactory<SemanticsObject>>(self);
   }
 
   return self;
@@ -396,7 +394,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 @end
 
 @implementation SemanticsObjectContainer {
-  fml::WeakPtr<SemanticsObject> _semanticsObject;
+  std::weak_ptr<SemanticsObject> _semanticsObject;
   fml::WeakPtr<shell::AccessibilityBridge> _bridge;
 }
 
@@ -409,7 +407,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   return nil;
 }
 
-- (instancetype)initWithSemanticsObject:(fml::WeakPtr<SemanticsObject>)semanticsObject
+- (instancetype)initWithSemanticsObject:(std::weak_ptr<SemanticsObject>)semanticsObject
                                  bridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge {
   FML_DCHECK(semanticsObject.get() != nil) << "semanticsObject must be set";
   self = [super init];
