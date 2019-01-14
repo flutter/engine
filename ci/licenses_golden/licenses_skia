@@ -1,4 +1,4 @@
-Signature: 89a65004440dc662ffac9f000a27bf56
+Signature: e091b2e6f712f996e1ce55585803c428
 
 UNUSED LICENSES:
 
@@ -3857,8 +3857,6 @@ FILE: ../../../third_party/skia/src/pdf/SkJpegInfo.cpp
 FILE: ../../../third_party/skia/src/pdf/SkJpegInfo.h
 FILE: ../../../third_party/skia/src/pdf/SkPDFBitmap.cpp
 FILE: ../../../third_party/skia/src/pdf/SkPDFBitmap.h
-FILE: ../../../third_party/skia/src/pdf/SkPDFCanon.cpp
-FILE: ../../../third_party/skia/src/pdf/SkPDFCanon.h
 FILE: ../../../third_party/skia/src/pdf/SkPDFMetadata.cpp
 FILE: ../../../third_party/skia/src/pdf/SkPDFMetadata.h
 FILE: ../../../third_party/skia/src/ports/SkFontMgr_android_factory.cpp
