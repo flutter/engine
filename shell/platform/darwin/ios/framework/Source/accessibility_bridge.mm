@@ -82,14 +82,13 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
  */
 @interface SemanticsObjectContainer : NSObject
 - (instancetype)init __attribute__((unavailable("Use initWithSemanticsObject instead")));
-- (instancetype)initWithSemanticsObject:(fml::WeakPtr<SemanticsObject>)semanticsObject
+- (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge
     NS_DESIGNATED_INITIALIZER;
 @end
 
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
-  std::unique_ptr<fml::WeakPtrFactory<SemanticsObject>> _weakFactory;
 }
 
 #pragma mark - Override base class designated initializers
@@ -111,8 +110,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   if (self) {
     _bridge = bridge;
     _uid = uid;
-    self.children = [[[NSMutableArray alloc] init] autorelease];
-    _weakFactory = std::make_unique<fml::WeakPtrFactory<SemanticsObject>>(self);
+    _children = [[NSMutableArray alloc] init];
   }
 
   return self;
@@ -123,7 +121,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     child.parent = nil;
   }
   [_children removeAllObjects];
-  [_children dealloc];
+  [_children release];
   _parent = nil;
   [super dealloc];
 }
@@ -268,9 +266,8 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 - (id)accessibilityContainer {
   if ([self hasChildren] || [self uid] == kRootNodeId) {
     if (_container == nil)
-      _container.reset([[SemanticsObjectContainer alloc]
-          initWithSemanticsObject:_weakFactory->GetWeakPtr()
-                           bridge:[self bridge]]);
+      _container.reset([[SemanticsObjectContainer alloc] initWithSemanticsObject:self
+                                                                          bridge:[self bridge]]);
     return _container.get();
   }
   if ([self parent] == nil) {
@@ -396,7 +393,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 @end
 
 @implementation SemanticsObjectContainer {
-  fml::WeakPtr<SemanticsObject> _semanticsObject;
+  fml::scoped_nsobject<SemanticsObject> _semanticsObject;
   fml::WeakPtr<shell::AccessibilityBridge> _bridge;
 }
 
@@ -409,13 +406,13 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   return nil;
 }
 
-- (instancetype)initWithSemanticsObject:(fml::WeakPtr<SemanticsObject>)semanticsObject
+- (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge {
-  FML_DCHECK(semanticsObject.get() != nil) << "semanticsObject must be set";
+  FML_DCHECK(semanticsObject) << "semanticsObject must be set";
   self = [super init];
 
   if (self) {
-    _semanticsObject = semanticsObject;
+    _semanticsObject.reset([semanticsObject retain]);
     _bridge = bridge;
   }
 
@@ -431,8 +428,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 - (nullable id)accessibilityElementAtIndex:(NSInteger)index {
   if (index < 0 || index >= [self accessibilityElementCount])
     return nil;
-  if (index == 0)
+  if (index == 0) {
     return _semanticsObject.get();
+  }
   SemanticsObject* child = [_semanticsObject.get() children][index - 1];
   if ([child hasChildren])
     return [child accessibilityContainer];
