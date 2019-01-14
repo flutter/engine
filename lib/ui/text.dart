@@ -724,6 +724,7 @@ class ParagraphStyle {
 // minimal overhead for non-strut cases.
 ByteData _encodeStrut(
   String fontFamily,
+  List<String> fontFamilyFallback,
   double fontSize,
   double lineHeight,
   double leading,
@@ -752,7 +753,7 @@ ByteData _encodeStrut(
     data.setInt8(byteCount, fontStyle.index);
     byteCount += 1;
   }
-  if (fontFamily != null) {
+  if (fontFamily != null || (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty)){
     bitmask |= 1 << 2;
     // passed separately to native
   }
@@ -788,6 +789,9 @@ class StrutStyle {
   ///
   /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
   ///   Roboto).
+  /// 
+  /// * `fontFamilyFallback`: An ordered list of font family names that will be searched for when
+  ///    the font in `fontFamily` cannot be found.
   ///
   /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting
   ///   the text.
@@ -818,6 +822,7 @@ class StrutStyle {
   ///   will be determined by the Ascent + half-leading of the first text.
   StrutStyle({
     String fontFamily,
+    List<String> fontFamilyFallback,
     double fontSize,
     double lineHeight,
     double leading,
@@ -826,6 +831,7 @@ class StrutStyle {
     bool forceStrutHeight,
   }) : _encoded = _encodeStrut(
          fontFamily,
+         fontFamilyFallback,
          fontSize,
          lineHeight,
          leading,
@@ -833,10 +839,12 @@ class StrutStyle {
          fontStyle,
          forceStrutHeight,
        ),
-       _fontFamily = fontFamily;
+       _fontFamily = fontFamily,
+       _fontFamilyFallback = fontFamilyFallback;
 
   final ByteData _encoded; // Most of the data for strut is encoded.
   final String _fontFamily;
+  final List<String> _fontFamilyFallback;
 
 
   @override
@@ -854,6 +862,8 @@ class StrutStyle {
       if (encodedList[index] != otherEncodedList[index])
         return false;
     }
+    if (!_listEquals<String>(_fontFamilyFallback, typedOther._fontFamilyFallback))
+      return false;
     return true;
   }
 
@@ -1376,8 +1386,18 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Creates a [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
   @pragma('vm:entry-point')
-  ParagraphBuilder(ParagraphStyle style) { _constructor(style._encoded, style._strutStyle != null ? style._strutStyle._encoded : ByteData(0), style._fontFamily, style._strutStyle != null ? style._strutStyle._fontFamily : null, style._fontSize, style._lineHeight, style._ellipsis, _encodeLocale(style._locale)); }
-  void _constructor(Int32List encoded, ByteData strutData, String fontFamily, String strutFontFamily, double fontSize, double lineHeight, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
+  ParagraphBuilder(ParagraphStyle style) {
+    List<String> fullFontFamilies;
+    if (style._strutStyle != null) {
+      fullFontFamilies = <String>[];
+      if (style._strutStyle._fontFamily != null)
+        fullFontFamilies.add(style._strutStyle._fontFamily);
+      if (style._strutStyle._fontFamilyFallback != null)
+        fullFontFamilies.addAll(style._strutStyle._fontFamilyFallback);
+    }
+    _constructor(style._encoded, style._strutStyle != null ? style._strutStyle._encoded : ByteData(0), style._fontFamily, fullFontFamilies, style._fontSize, style._lineHeight, style._ellipsis, _encodeLocale(style._locale));
+  }
+  void _constructor(Int32List encoded, ByteData strutData, String fontFamily, List<dynamic> strutFontFamily, double fontSize, double lineHeight, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
 
   /// Applies the given style to the added text until [pop] is called.
   ///

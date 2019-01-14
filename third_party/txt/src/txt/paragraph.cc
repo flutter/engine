@@ -442,8 +442,8 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   // actual metrics. We only force the strut if the strut is non-zero and valid.
   strut->force_strut = paragraph_style_.force_strut_height && valid_strut;
   const FontSkia* font_skia =
-      static_cast<const FontSkia*>(font_collection_->GetMinikinFontForFamily(
-          paragraph_style_.strut_font_family,
+      static_cast<const FontSkia*>(font_collection_->GetMinikinFontForFamilies(
+          paragraph_style_.strut_font_families,
           // TODO(garyq): The variant is currently set to 0 (default) as we do
           // not have a property to set it with. We should eventually support
           // default, compact, and elegant variants.

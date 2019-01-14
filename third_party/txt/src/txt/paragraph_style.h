@@ -54,10 +54,10 @@ class ParagraphStyle {
   bool strut_enabled = false;
   FontWeight strut_font_weight = FontWeight::w400;
   FontStyle strut_font_style = FontStyle::normal;
-  std::string strut_font_family = "";
+  std::vector<std::string> strut_font_families;
   double strut_font_size = 14;
   double strut_line_height = 1;
-  double strut_leading = -1;  // Negative to disable strut.
+  double strut_leading = -1;  // Negative to use font leading.
   bool force_strut_height = false;
 
   TextAlign text_align = TextAlign::start;

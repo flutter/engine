@@ -142,13 +142,13 @@ fml::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
     tonic::Int32List& encoded,
     Dart_Handle strutData,
     const std::string& fontFamily,
-    const std::string& strutFontFamily,
+    const std::vector<std::string>& strutFontFamilies,
     double fontSize,
     double lineHeight,
     const std::u16string& ellipsis,
     const std::string& locale) {
   return fml::MakeRefCounted<ParagraphBuilder>(encoded, strutData, fontFamily,
-                                               strutFontFamily, fontSize,
+                                               strutFontFamilies, fontSize,
                                                lineHeight, ellipsis, locale);
 }
 
@@ -197,14 +197,15 @@ bool decodeStrut(Dart_Handle strut_data, txt::ParagraphStyle& paragraph_style) {
   return false;
 }
 
-ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
-                                   Dart_Handle strutData,
-                                   const std::string& fontFamily,
-                                   const std::string& strutFontFamily,
-                                   double fontSize,
-                                   double lineHeight,
-                                   const std::u16string& ellipsis,
-                                   const std::string& locale) {
+ParagraphBuilder::ParagraphBuilder(
+    tonic::Int32List& encoded,
+    Dart_Handle strutData,
+    const std::string& fontFamily,
+    const std::vector<std::string>& strutFontFamilies,
+    double fontSize,
+    double lineHeight,
+    const std::u16string& ellipsis,
+    const std::string& locale) {
   int32_t mask = encoded[0];
   txt::ParagraphStyle style;
 
@@ -229,7 +230,7 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
 
   if (mask & psFontFamilyMask) {
     style.font_family = fontFamily;
-    style.strut_font_family = fontFamily;
+    style.strut_font_families = strutFontFamilies;
   }
 
   if (mask & psFontSizeMask) {
@@ -246,7 +247,11 @@ ParagraphBuilder::ParagraphBuilder(tonic::Int32List& encoded,
     style.strut_enabled = true;
     // Decode strut returns true if there is a font family string available.
     if (decodeStrut(strutData, style)) {
-      style.strut_font_family = strutFontFamily;
+      style.strut_font_families = strutFontFamilies;
+    } else {
+      // Provide an empty font name so that the platform default font will be
+      // used.
+      style.strut_font_families.push_back("");
     }
   }
   if (mask & psMaxLinesMask)
