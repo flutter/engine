@@ -218,6 +218,23 @@ enum TextDecorationStyle {
   wavy
 }
 
+/// Determines if lists [a] and [b] are deep equivalent.
+///
+/// Returns true if the lists are both null, or if they are both non-null, have
+/// the same length, and contain the same elements in the same order. Returns
+/// false otherwise.
+bool _listEquals<T>(List<T> a, List<T> b) {
+  if (a == null)
+    return b == null;
+  if (b == null || a.length != b.length)
+    return false;
+  for (int index = 0; index < a.length; index += 1) {
+    if (a[index] != b[index])
+      return false;
+  }
+  return true;
+}
+
 // This encoding must match the C++ version of ParagraphBuilder::pushStyle.
 //
 // The encoded array buffer has 8 elements.
@@ -252,6 +269,7 @@ Int32List _encodeTextStyle(
   FontStyle fontStyle,
   TextBaseline textBaseline,
   String fontFamily,
+  List<String> fontFamilyFallback,
   double fontSize,
   double letterSpacing,
   double wordSpacing,
@@ -290,7 +308,7 @@ Int32List _encodeTextStyle(
     result[0] |= 1 << 7;
     result[7] = textBaseline.index;
   }
-  if (fontFamily != null) {
+  if (fontFamily != null || (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty)) {
     result[0] |= 1 << 8;
     // Passed separately to native.
   }
@@ -339,7 +357,15 @@ class TextStyle {
   /// * `decorationStyle`: The style in which to paint the text decorations (e.g., dashed).
   /// * `fontWeight`: The typeface thickness to use when painting the text (e.g., bold).
   /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g., italics).
-  /// * `fontFamily`: The name of the font to use when painting the text (e.g., Roboto).
+  /// * `fontFamily`: The name of the font to use when painting the text (e.g., Roboto). If a `fontFamilyFallback` is
+  ///   provided and `fontFamily` is not, then the first font family in `fontFamilyFallback` will take the postion of
+  ///   the preferred font family. When a higher priority font cannot be found or does not contain a glyph, a lower
+  ///   priority font will be used.
+  /// * `fontFamilyFallback`: An ordered list of the names of the fonts to fallback on when a glyph cannot
+  ///   be found in a higher priority font. When the `fontFamily` is null, the first font family in this list
+  ///   is used as the preferred font. Internally, the 'fontFamily` is concatenated to the front of this list.
+  ///   When no font family is provided through 'fontFamilyFallback' (null or empty) or `fontFamily`, then the
+  ///   platform default font will be used.
   /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting the text.
   /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
   /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
@@ -357,6 +383,7 @@ class TextStyle {
     FontStyle fontStyle,
     TextBaseline textBaseline,
     String fontFamily,
+    List<String> fontFamilyFallback,
     double fontSize,
     double letterSpacing,
     double wordSpacing,
@@ -378,6 +405,7 @@ class TextStyle {
          fontStyle,
          textBaseline,
          fontFamily,
+         fontFamilyFallback,
          fontSize,
          letterSpacing,
          wordSpacing,
@@ -388,6 +416,7 @@ class TextStyle {
          shadows,
        ),
        _fontFamily = fontFamily ?? '',
+       _fontFamilyFallback = fontFamilyFallback,
        _fontSize = fontSize,
        _letterSpacing = letterSpacing,
        _wordSpacing = wordSpacing,
@@ -399,6 +428,7 @@ class TextStyle {
 
   final Int32List _encoded;
   final String _fontFamily;
+  final List<String> _fontFamilyFallback;
   final double _fontSize;
   final double _letterSpacing;
   final double _wordSpacing;
@@ -428,33 +458,39 @@ class TextStyle {
       if (_encoded[index] != typedOther._encoded[index])
         return false;
     }
-    if (!Shadow._shadowsListEquals(_shadows, typedOther._shadows))
+    if (!_listEquals<Shadow>(_shadows, typedOther._shadows))
+      return false;
+    if (!_listEquals<String>(_fontFamilyFallback, typedOther._fontFamilyFallback))
       return false;
     return true;
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground);
+  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, _shadows);
 
   @override
   String toString() {
     return 'TextStyle('
-             'color: ${          _encoded[0] & 0x00002 == 0x00002 ? new Color(_encoded[1])                  : "unspecified"}, '
-             'decoration: ${     _encoded[0] & 0x00004 == 0x00004 ? new TextDecoration._(_encoded[2])       : "unspecified"}, '
-             'decorationColor: ${_encoded[0] & 0x00008 == 0x00008 ? new Color(_encoded[3])                  : "unspecified"}, '
-             'decorationStyle: ${_encoded[0] & 0x00010 == 0x00010 ? TextDecorationStyle.values[_encoded[4]] : "unspecified"}, '
-             'fontWeight: ${     _encoded[0] & 0x00020 == 0x00020 ? FontWeight.values[_encoded[5]]          : "unspecified"}, '
-             'fontStyle: ${      _encoded[0] & 0x00040 == 0x00040 ? FontStyle.values[_encoded[6]]           : "unspecified"}, '
-             'textBaseline: ${   _encoded[0] & 0x00080 == 0x00080 ? TextBaseline.values[_encoded[7]]        : "unspecified"}, '
-             'fontFamily: ${     _encoded[0] & 0x00100 == 0x00100 ? _fontFamily                             : "unspecified"}, '
-             'fontSize: ${       _encoded[0] & 0x00200 == 0x00200 ? _fontSize                               : "unspecified"}, '
-             'letterSpacing: ${  _encoded[0] & 0x00400 == 0x00400 ? "${_letterSpacing}x"                    : "unspecified"}, '
-             'wordSpacing: ${    _encoded[0] & 0x00800 == 0x00800 ? "${_wordSpacing}x"                      : "unspecified"}, '
-             'height: ${         _encoded[0] & 0x01000 == 0x01000 ? "${_height}x"                           : "unspecified"}, '
-             'locale: ${         _encoded[0] & 0x02000 == 0x02000 ? _locale                                 : "unspecified"}, '
-             'background: ${     _encoded[0] & 0x04000 == 0x04000 ? _background                             : "unspecified"}, '
-             'foreground: ${     _encoded[0] & 0x08000 == 0x08000 ? _foreground                             : "unspecified"}, '
-             'shadows: ${        _encoded[0] & 0x10000 == 0x10000 ? _shadows                                : "unspecified"}'
+             'color: ${             _encoded[0] & 0x00002 == 0x00002  ? new Color(_encoded[1])                  : "unspecified"}, '
+             'decoration: ${        _encoded[0] & 0x00004 == 0x00004  ? new TextDecoration._(_encoded[2])       : "unspecified"}, '
+             'decorationColor: ${   _encoded[0] & 0x00008 == 0x00008  ? new Color(_encoded[3])                  : "unspecified"}, '
+             'decorationStyle: ${   _encoded[0] & 0x00010 == 0x00010  ? TextDecorationStyle.values[_encoded[4]] : "unspecified"}, '
+             'fontWeight: ${        _encoded[0] & 0x00020 == 0x00020  ? FontWeight.values[_encoded[5]]          : "unspecified"}, '
+             'fontStyle: ${         _encoded[0] & 0x00040 == 0x00040  ? FontStyle.values[_encoded[6]]           : "unspecified"}, '
+             'textBaseline: ${      _encoded[0] & 0x00080 == 0x00080  ? TextBaseline.values[_encoded[7]]        : "unspecified"}, '
+             'fontFamily: ${        _encoded[0] & 0x00100 == 0x00100
+                                    && _fontFamily != null            ? _fontFamily                             : "unspecified"}, '
+             'fontFamilyFallback: ${_encoded[0] & 0x00100 == 0x00100
+                                    && _fontFamilyFallback != null
+                                    && _fontFamilyFallback.isNotEmpty ? _fontFamilyFallback                     : "unspecified"}, '
+             'fontSize: ${          _encoded[0] & 0x00200 == 0x00200  ? _fontSize                               : "unspecified"}, '
+             'letterSpacing: ${     _encoded[0] & 0x00400 == 0x00400  ? "${_letterSpacing}x"                    : "unspecified"}, '
+             'wordSpacing: ${       _encoded[0] & 0x00800 == 0x00800  ? "${_wordSpacing}x"                      : "unspecified"}, '
+             'height: ${            _encoded[0] & 0x01000 == 0x01000  ? "${_height}x"                           : "unspecified"}, '
+             'locale: ${            _encoded[0] & 0x02000 == 0x02000  ? _locale                                 : "unspecified"}, '
+             'background: ${        _encoded[0] & 0x04000 == 0x04000  ? _background                             : "unspecified"}, '
+             'foreground: ${        _encoded[0] & 0x08000 == 0x08000  ? _foreground                             : "unspecified"}, '
+             'shadows: ${           _encoded[0] & 0x10000 == 0x10000  ? _shadows                                : "unspecified"}'
            ')';
   }
 }
@@ -833,28 +869,70 @@ class TextBox {
   String toString() => 'TextBox.fromLTRBD(${left.toStringAsFixed(1)}, ${top.toStringAsFixed(1)}, ${right.toStringAsFixed(1)}, ${bottom.toStringAsFixed(1)}, $direction)';
 }
 
-/// Whether a [TextPosition] is visually upstream or downstream of its offset.
+/// A way to disambiguate a [TextPosition] when its offset could match two
+/// different locations in the rendered string.
 ///
-/// For example, when a text position exists at a line break, a single offset has
-/// two visual positions, one prior to the line break (at the end of the first
-/// line) and one after the line break (at the start of the second line). A text
-/// affinity disambiguates between those cases. (Something similar happens with
-/// between runs of bidirectional text.)
+/// For example, at an offset where the rendered text wraps, there are two
+/// visual positions that the offset could represent: one prior to the line
+/// break (at the end of the first line) and one after the line break (at the
+/// start of the second line). A text affinity disambiguates between these two
+/// cases.
+///
+/// This affects only line breaks caused by wrapping, not explicit newline
+/// characters. For newline characters, the position is fully specified by the
+/// offset alone, and there is no ambiguity.
+///
+/// [TextAffinity] also affects bidirectional text at the interface between LTR
+/// and RTL text. Consider the following string, where the lowercase letters
+/// will be displayed as LTR and the uppercase letters RTL: "helloHELLO".  When
+/// rendered, the string would appear visually as "helloOLLEH".  An offset of 5
+/// would be ambiguous without a corresponding [TextAffinity].  Looking at the
+/// string in code, the offset represents the position just after the "o" and
+/// just before the "H".  When rendered, this offset could be either in the
+/// middle of the string to the right of the "o" or at the end of the string to
+/// the right of the "H".
 enum TextAffinity {
-  /// The position has affinity for the upstream side of the text position.
+  /// The position has affinity for the upstream side of the text position, i.e.
+  /// in the direction of the beginning of the string.
   ///
-  /// For example, if the offset of the text position is a line break, the
-  /// position represents the end of the first line.
+  /// In the example of an offset at the place where text is wrapping, upstream
+  /// indicates the end of the first line.
+  ///
+  /// In the bidirectional text example "helloHELLO", an offset of 5 with
+  /// [TextAffinity] upstream would appear in the middle of the rendered text,
+  /// just to the right of the "o". See the definition of [TextAffinity] for the
+  /// full example.
   upstream,
 
-  /// The position has affinity for the downstream side of the text position.
+  /// The position has affinity for the downstream side of the text position,
+  /// i.e. in the direction of the end of the string.
   ///
-  /// For example, if the offset of the text position is a line break, the
-  /// position represents the start of the second line.
+  /// In the example of an offset at the place where text is wrapping,
+  /// downstream indicates the beginning of the second line.
+  ///
+  /// In the bidirectional text example "helloHELLO", an offset of 5 with
+  /// [TextAffinity] downstream would appear at the end of the rendered text,
+  /// just to the right of the "H". See the definition of [TextAffinity] for the
+  /// full example.
   downstream,
 }
 
-/// A visual position in a string of text.
+/// A position in a string of text.
+///
+/// A TextPosition can be used to locate a position in a string in code (using
+/// the [offset] property), and it can also be used to locate the same position
+/// visually in a rendered string of text (using [offset] and, when needed to
+/// resolve ambiguity, [affinity]).
+///
+/// The location of an offset in a rendered string is ambiguous in two cases.
+/// One happens when rendered text is forced to wrap. In this case, the offset
+/// where the wrap occurs could visually appear either at the end of the first
+/// line or the beginning of the second line. The second way is with
+/// bidirectional text.  An offset at the interface between two different text
+/// directions could have one of two locations in the rendered text.
+///
+/// See the documentation for [TextAffinity] for more information on how
+/// TextAffinity disambiguates situations like these.
 class TextPosition {
   /// Creates an object representing a particular position in a string.
   ///
@@ -865,21 +943,21 @@ class TextPosition {
   }) : assert(offset != null),
        assert(affinity != null);
 
-  /// The index of the character that immediately follows the position.
+  /// The index of the character that immediately follows the position in the
+  /// string representation of the text.
   ///
   /// For example, given the string `'Hello'`, offset 0 represents the cursor
   /// being before the `H`, while offset 5 represents the cursor being just
   /// after the `o`.
   final int offset;
 
-  /// If the offset has more than one visual location (e.g., occurs at a line
-  /// break), which of the two locations is represented by this position.
+  /// Disambiguates cases where the position in the string given by [offset]
+  /// could represent two different visual positions in the rendered text. For
+  /// example, this can happen when text is forced to wrap, or when one string
+  /// of text is rendered with multiple text directions.
   ///
-  /// For example, if the text `'AB'` had a forced line break between the `A`
-  /// and the `B`, then the downstream affinity at offset 1 represents the
-  /// cursor being just after the `A` on the first line, while the upstream
-  /// affinity at offset 1 represents the cursor being just before the `B` on
-  /// the first line.
+  /// See the documentation for [TextAffinity] for more information on how
+  /// TextAffinity disambiguates situations like these.
   final TextAffinity affinity;
 
   @override
@@ -910,7 +988,7 @@ class ParagraphConstraints {
   /// Creates constraints for laying out a pargraph.
   ///
   /// The [width] argument must not be null.
-  ParagraphConstraints({
+  const ParagraphConstraints({
     this.width,
   }) : assert(width != null);
 
@@ -1135,8 +1213,15 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// Applies the given style to the added text until [pop] is called.
   ///
   /// See [pop] for details.
-  void pushStyle(TextStyle style) => _pushStyle(style._encoded, style._fontFamily, style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, Shadow._encodeShadows(style._shadows));
-  void _pushStyle(Int32List encoded, String fontFamily, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadowsData) native 'ParagraphBuilder_pushStyle';
+  void pushStyle(TextStyle style) {
+    final List<String> fullFontFamilies = <String>[];
+    if (style._fontFamily != null)
+      fullFontFamilies.add(style._fontFamily);
+    if (style._fontFamilyFallback != null)
+      fullFontFamilies.addAll(style._fontFamilyFallback);
+    _pushStyle(style._encoded, fullFontFamilies, style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, Shadow._encodeShadows(style._shadows));
+  }
+  void _pushStyle(Int32List encoded, List<dynamic> fontFamilies, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadowsData) native 'ParagraphBuilder_pushStyle';
 
   static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
 

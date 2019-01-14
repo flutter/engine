@@ -13,8 +13,15 @@ void main() {
     final Paragraph paragraph = builder.build();
     expect(paragraph, isNotNull);
 
-    paragraph.layout(ParagraphConstraints(width: 800.0));
+    paragraph.layout(const ParagraphConstraints(width: 800.0));
     expect(paragraph.width, isNonZero);
     expect(paragraph.height, isNonZero);
+  });
+
+  test('PushStyle should not segfault after build()', () {
+    final ParagraphBuilder paragraphBuilder =
+        ParagraphBuilder(ParagraphStyle());
+    paragraphBuilder.build();
+    paragraphBuilder.pushStyle(TextStyle());
   });
 }

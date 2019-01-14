@@ -290,7 +290,10 @@ bool Paragraph::ComputeLineBreaks() {
           GetMinikinFontCollectionForStyle(run.style);
       if (collection == nullptr) {
         FML_LOG(INFO) << "Could not find font collection for family \""
-                      << run.style.font_family << "\".";
+                      << (run.style.font_families.empty()
+                              ? ""
+                              : run.style.font_families[0])
+                      << "\".";
         return false;
       }
       size_t run_start = std::max(run.start, block_start) - block_start;
@@ -900,8 +903,8 @@ Paragraph::GetMinikinFontCollectionForStyle(const TextStyle& style) {
     }
   }
 
-  return font_collection_->GetMinikinFontCollectionForFamily(style.font_family,
-                                                             locale);
+  return font_collection_->GetMinikinFontCollectionForFamilies(
+      style.font_families, locale);
 }
 
 sk_sp<SkTypeface> Paragraph::GetDefaultSkiaTypeface(const TextStyle& style) {
@@ -920,6 +923,11 @@ sk_sp<SkTypeface> Paragraph::GetDefaultSkiaTypeface(const TextStyle& style) {
 void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
   SkPoint base_offset = SkPoint::Make(x, y);
   SkPaint paint;
+  // Paint the background first before painting any text to prevent
+  // potential overlap.
+  for (const PaintRecord& record : records_) {
+    PaintBackground(canvas, record, base_offset);
+  }
   for (const PaintRecord& record : records_) {
     if (record.style().has_foreground) {
       paint = record.style().foreground;
@@ -928,7 +936,6 @@ void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
       paint.setColor(record.style().color);
     }
     SkPoint offset = base_offset + record.offset();
-    PaintBackground(canvas, record, base_offset);
     PaintShadow(canvas, record, offset);
     canvas->drawTextBlob(record.text(), offset.x(), offset.y(), paint);
     PaintDecorations(canvas, record, base_offset);

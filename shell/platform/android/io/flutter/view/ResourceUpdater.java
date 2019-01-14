@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.Math;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,16 +23,71 @@ import java.net.URL;
 import java.util.Date;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public final class ResourceUpdater {
     private static final String TAG = "ResourceUpdater";
 
-    private static class DownloadTask extends AsyncTask<String, String, Void> {
+    // Controls when to check if a new patch is available for download, and start downloading.
+    // Note that by default the application will not block to wait for the download to finish.
+    // Patches are downloaded in the background, but the developer can also use [InstallMode]
+    // to control whether to block on download completion, in order to install patches sooner.
+    enum DownloadMode {
+        // Check for and download patch on application restart (but not necessarily apply it).
+        // This is the default setting which will also check for new patches least frequently.
+        ON_RESTART,
+
+        // Check for and download patch on application resume (but not necessarily apply it).
+        // By definition, this setting will check for new patches both on restart and resume.
+        ON_RESUME
+    }
+
+    // Controls when to check that a new patch has been downloaded and needs to be applied.
+    enum InstallMode {
+        // Wait for next application restart before applying downloaded patch. With this
+        // setting, the application will not block to wait for patch download to finish.
+        // The application can be restarted later either by the user, or by the system,
+        // for any reason, at which point the newly downloaded patch will get applied.
+        // This is the default setting, and is the least disruptive way to apply patches.
+        ON_NEXT_RESTART,
+
+        // Apply patch as soon as it's downloaded. This will block to wait for new patch
+        // download to finish, and will immediately apply it. This setting increases the
+        // urgency with which patches are installed, but may also affect startup latency.
+        // For now, this setting is only effective when download happens during restart.
+        // Patches downloaded during resume will not get installed immediately as that
+        // requires force restarting the app (which might be implemented in the future).
+        IMMEDIATE
+    }
+
+    /// Lock that prevents replacement of the install file by the downloader
+    /// while this file is being extracted, since these can happen in parallel.
+    Lock getInstallationLock() {
+        return installationLock;
+    }
+
+    // Patch file that's fully installed and is ready to serve assets.
+    // This file represents the final stage in the installation process.
+    public File getInstalledPatch() {
+        return new File(context.getFilesDir().toString() + "/patch.zip");
+    }
+
+    // Patch file that's finished downloading and is ready to be installed.
+    // This is a separate file in order to prevent serving assets from patch
+    // that failed installing for any reason, such as mismatched APK version.
+    File getDownloadedPatch() {
+        return new File(getInstalledPatch().getPath() + ".install");
+    }
+
+    private class DownloadTask extends AsyncTask<String, String, Void> {
         @Override
-        protected Void doInBackground(String... args) {
+        protected Void doInBackground(String... unused) {
             try {
-                URL unresolvedURL = new URL(args[0]);
-                File localFile = new File(args[1]);
+                URL unresolvedURL = new URL(buildUpdateDownloadURL());
+
+                // Download to transient file to avoid extracting incomplete download.
+                File localFile = new File(getInstalledPatch().getPath() + ".download");
 
                 long startMillis = new Date().getTime();
                 Log.i(TAG, "Checking for updates at " + unresolvedURL);
@@ -39,32 +95,32 @@ public final class ResourceUpdater {
                 HttpURLConnection connection =
                         (HttpURLConnection)unresolvedURL.openConnection();
 
-                long lastModified = localFile.lastModified();
-                if (lastModified != 0) {
-                    Log.i(TAG, "Active update timestamp " + lastModified);
-                    connection.setIfModifiedSince(lastModified);
+                long lastDownloadTime = Math.max(
+                        getDownloadedPatch().lastModified(),
+                        getInstalledPatch().lastModified());
+
+                if (lastDownloadTime != 0) {
+                    Log.i(TAG, "Active update timestamp " + lastDownloadTime);
+                    connection.setIfModifiedSince(lastDownloadTime);
+                }
+
+                URL resolvedURL = connection.getURL();
+                Log.i(TAG, "Resolved update URL " + resolvedURL);
+
+                int responseCode = connection.getResponseCode();
+                Log.i(TAG, "HTTP response code " + responseCode);
+
+                if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                    Log.i(TAG, "Latest update not found");
+                    return null;
+                }
+
+                if (responseCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
+                    Log.i(TAG, "Already have latest update");
+                    return null;
                 }
 
                 try (InputStream input = connection.getInputStream()) {
-                    URL resolvedURL = connection.getURL();
-                    Log.i(TAG, "Resolved update URL " + resolvedURL);
-
-                    if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
-                        if (resolvedURL.equals(unresolvedURL)) {
-                            Log.i(TAG, "Rolled back all updates");
-                            localFile.delete();
-                            return null;
-                        } else {
-                            Log.i(TAG, "Latest update not found");
-                            return null;
-                        }
-                    }
-
-                    if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_MODIFIED) {
-                        Log.i(TAG, "Already have latest update");
-                        return null;
-                    }
-
                     Log.i(TAG, "Downloading update " + unresolvedURL);
                     try (OutputStream output = new FileOutputStream(localFile)) {
                         int count;
@@ -75,10 +131,29 @@ public final class ResourceUpdater {
 
                         long totalMillis = new Date().getTime() - startMillis;
                         Log.i(TAG, "Update downloaded in " + totalMillis / 100 / 10. + "s");
+                    }
+                }
 
-                        output.flush();
+                // Wait renaming the file if extraction is in progress.
+                installationLock.lock();
+
+                try {
+                    File updateFile = getDownloadedPatch();
+
+                    // Graduate downloaded file as ready for installation.
+                    if (updateFile.exists() && !updateFile.delete()) {
+                        Log.w(TAG, "Could not delete file " + updateFile);
                         return null;
                     }
+                    if (!localFile.renameTo(updateFile)) {
+                        Log.w(TAG, "Could not create file " + updateFile);
+                        return null;
+                    }
+
+                    return null;
+
+                } finally {
+                    installationLock.unlock();
                 }
 
             } catch (IOException e) {
@@ -90,12 +165,13 @@ public final class ResourceUpdater {
 
     private final Context context;
     private DownloadTask downloadTask;
+    private final Lock installationLock = new ReentrantLock();
 
     public ResourceUpdater(Context context) {
         this.context = context;
     }
 
-    public String getAPKVersion() {
+    private String getAPKVersion() {
         try {
             PackageManager packageManager = context.getPackageManager();
             PackageInfo packageInfo = packageManager.getPackageInfo(context.getPackageName(), 0);
@@ -106,11 +182,7 @@ public final class ResourceUpdater {
         }
     }
 
-    public String getUpdateInstallationPath() {
-        return context.getFilesDir().toString() + "/update.zip";
-    }
-
-    public String buildUpdateDownloadURL() {
+    private String buildUpdateDownloadURL() {
         Bundle metaData;
         try {
             metaData = context.getPackageManager().getApplicationInfo(
@@ -120,33 +192,91 @@ public final class ResourceUpdater {
             throw new RuntimeException(e);
         }
 
-        if (metaData == null || metaData.getString("UpdateServerURL") == null) {
+        if (metaData == null || metaData.getString("PatchServerURL") == null) {
             return null;
         }
 
         URI uri;
         try {
-            uri = new URI(metaData.getString("UpdateServerURL") + "/" + getAPKVersion());
+            uri = new URI(metaData.getString("PatchServerURL") + "/" + getAPKVersion() + ".zip");
 
         } catch (URISyntaxException e) {
-            Log.w(TAG, "Invalid AndroidManifest.xml UpdateServerURL: " + e.getMessage());
+            Log.w(TAG, "Invalid AndroidManifest.xml PatchServerURL: " + e.getMessage());
             return null;
         }
 
         return uri.normalize().toString();
     }
 
-    public void startUpdateDownloadOnce() {
-        assert downloadTask == null;
-        downloadTask = new DownloadTask();
-        downloadTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
-                buildUpdateDownloadURL(), getUpdateInstallationPath());
+    DownloadMode getDownloadMode() {
+        Bundle metaData;
+        try {
+            metaData = context.getPackageManager().getApplicationInfo(
+                    context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+
+        } catch (PackageManager.NameNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (metaData == null) {
+            return DownloadMode.ON_RESTART;
+        }
+
+        String patchDownloadMode = metaData.getString("PatchDownloadMode");
+        if (patchDownloadMode == null) {
+            return DownloadMode.ON_RESTART;
+        }
+
+        try {
+            return DownloadMode.valueOf(patchDownloadMode);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Invalid PatchDownloadMode " + patchDownloadMode);
+            return DownloadMode.ON_RESTART;
+        }
     }
 
-    public void waitForDownloadCompletion() {
-        assert downloadTask != null;
+    InstallMode getInstallMode() {
+        Bundle metaData;
+        try {
+            metaData = context.getPackageManager().getApplicationInfo(
+                    context.getPackageName(), PackageManager.GET_META_DATA).metaData;
+
+        } catch (PackageManager.NameNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (metaData == null) {
+            return InstallMode.ON_NEXT_RESTART;
+        }
+
+        String patchInstallMode = metaData.getString("PatchInstallMode");
+        if (patchInstallMode == null) {
+            return InstallMode.ON_NEXT_RESTART;
+        }
+
+        try {
+            return InstallMode.valueOf(patchInstallMode);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Invalid PatchInstallMode " + patchInstallMode);
+            return InstallMode.ON_NEXT_RESTART;
+        }
+    }
+
+    void startUpdateDownloadOnce() {
+        if (downloadTask != null ) {
+            return;
+        }
+        downloadTask = new DownloadTask();
+        downloadTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+
+    void waitForDownloadCompletion() {
+        if (downloadTask == null) {
+            return;
+        }
         try {
             downloadTask.get();
+            downloadTask = null;
         } catch (CancellationException e) {
             Log.w(TAG, "Download cancelled: " + e.getMessage());
             return;

@@ -36,7 +36,8 @@ class RuntimeController final : public WindowClient {
                     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
                     fml::WeakPtr<IOManager> io_manager,
                     std::string advisory_script_uri,
-                    std::string advisory_script_entrypoint);
+                    std::string advisory_script_entrypoint,
+                    std::function<void(int64_t)> idle_notification_callback);
 
   ~RuntimeController() override;
 
@@ -124,6 +125,7 @@ class RuntimeController final : public WindowClient {
   fml::WeakPtr<IOManager> io_manager_;
   std::string advisory_script_uri_;
   std::string advisory_script_entrypoint_;
+  std::function<void(int64_t)> idle_notification_callback_;
   WindowData window_data_;
   std::weak_ptr<DartIsolate> root_isolate_;
   std::pair<bool, uint32_t> root_isolate_return_code_ = {false, 0};
@@ -137,6 +139,7 @@ class RuntimeController final : public WindowClient {
                     fml::WeakPtr<IOManager> io_manager,
                     std::string advisory_script_uri,
                     std::string advisory_script_entrypoint,
+                    std::function<void(int64_t)> idle_notification_callback,
                     WindowData data);
 
   Window* GetWindowIfAvailable();
