@@ -103,6 +103,7 @@ sk_sp<SkColorFilter> extract_color_filter(const uint32_t* uint_data,
       return SkColorFilter::MakeSRGBToLinearGamma();
     }
     default:
+      FML_DLOG(ERROR) << "Out of range value received for kColorFilterIndex.";
       return nullptr;
   }
 }

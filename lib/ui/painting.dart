@@ -2456,7 +2456,8 @@ class ColorFilter {
     if (_type != typedOther._type) {
       return false;
     }
-    if (!listEquals<double>(_matrix, typedOther._matrix)) {
+    
+    if (!_listEquals<double>(_matrix, typedOther._matrix)) {
       return false;
     }
 
@@ -2478,7 +2479,7 @@ class ColorFilter {
       case _TypeSrgbToLinearGamma:
         return 'ColorFilter.srgbToLinearGamma()';
       default:
-        throw StateError('ColorFilter should have one of its values not null.');
+        return 'Unknown ColorFilter type. This is an error. If you\'re seeing this, please file an issue at https://github.com/flutter/flutter/issues/new.';
     }
   }
 }
