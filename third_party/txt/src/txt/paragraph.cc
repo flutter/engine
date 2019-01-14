@@ -429,10 +429,12 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   strut->leading = 0;
   strut->half_leading = 0;
   strut->line_height = 0;
+
   // Minimally, a font size and either a line_height or leading must be defined
   // to obtain a valid strut. Values not provided default to negative, which is
   // not supported.
-  bool valid_strut = paragraph_style_.strut_font_size >= 0 &&
+  bool valid_strut = paragraph_style_.strut_enabled &&
+                     paragraph_style_.strut_font_size >= 0 &&
                      (paragraph_style_.strut_line_height >= 0 ||
                       paragraph_style_.strut_leading >= 0);
   if (!valid_strut) {

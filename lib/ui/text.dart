@@ -789,7 +789,7 @@ class StrutStyle {
   ///
   /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
   ///   Roboto).
-  /// 
+  ///
   /// * `fontFamilyFallback`: An ordered list of font family names that will be searched for when
   ///    the font in `fontFamily` cannot be found.
   ///
