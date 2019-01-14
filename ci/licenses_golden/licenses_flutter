@@ -214,9 +214,7 @@ FILE: ../../../flutter/fml/unique_object.h
 FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries.json
-FILE: ../../../flutter/lib/snapshot/snapshot.dart
 FILE: ../../../flutter/lib/snapshot/snapshot.h
-FILE: ../../../flutter/lib/snapshot/snapshot_fuchsia.dart
 FILE: ../../../flutter/lib/ui/compositing.dart
 FILE: ../../../flutter/lib/ui/compositing/scene.cc
 FILE: ../../../flutter/lib/ui/compositing/scene.h
@@ -232,6 +230,7 @@ FILE: ../../../flutter/lib/ui/dart_wrapper.h
 FILE: ../../../flutter/lib/ui/geometry.dart
 FILE: ../../../flutter/lib/ui/hash_codes.dart
 FILE: ../../../flutter/lib/ui/hooks.dart
+FILE: ../../../flutter/lib/ui/io_manager.h
 FILE: ../../../flutter/lib/ui/isolate_name_server.dart
 FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server.cc
 FILE: ../../../flutter/lib/ui/isolate_name_server/isolate_name_server.h
@@ -416,6 +415,11 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityEven
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterApplication.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterFragmentActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPluginRegistry.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngine.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterJNI.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/FlutterRenderer.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/OnFirstFrameRenderedListener.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/ActivityLifecycleListener.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BasicMessageChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BinaryCodec.java
@@ -445,6 +449,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleV
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/util/Preconditions.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/util/Predicate.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterCallbackInformation.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/view/FlutterMain.java
@@ -551,6 +556,8 @@ FILE: ../../../flutter/shell/platform/embedder/embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_engine.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_engine.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_include.c
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h

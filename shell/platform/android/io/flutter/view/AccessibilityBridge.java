@@ -16,6 +16,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.StandardMessageCodec;
+import io.flutter.util.Predicate;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -108,8 +109,8 @@ class AccessibilityBridge
     AccessibilityBridge(FlutterView owner) {
         assert owner != null;
         mOwner = owner;
-        mObjects = new HashMap<Integer, SemanticsObject>();
-        mCustomAccessibilityActions = new HashMap<Integer, CustomAccessibilityAction>();
+        mObjects = new HashMap<>();
+        mCustomAccessibilityActions = new HashMap<>();
         previousRoutes = new ArrayList<>();
         mFlutterAccessibilityChannel = new BasicMessageChannel<>(
                 owner, "flutter/accessibility", StandardMessageCodec.INSTANCE);
@@ -123,6 +124,21 @@ class AccessibilityBridge
         } else {
             mFlutterAccessibilityChannel.setMessageHandler(null);
         }
+    }
+
+    private boolean shouldSetCollectionInfo(final SemanticsObject object) {
+        // TalkBack expects a number of rows and/or columns greater than 0 to announce
+        // in list and out of list.  For an infinite or growing list, you have to
+        // specify something > 0 to get "in list" announcements.
+        // TalkBack will also only track one list at a time, so we only want to set this
+        // for a list that contains the current a11y focused object - otherwise, if there
+        // are two lists or nested lists, we may end up with announcements for only the last
+        // one that is currently available in the semantics tree.  However, we also want
+        // to set it if we're exiting a list to a non-list, so that we can get the "out of list"
+        // announcement when A11y focus moves out of a list and not into another list.
+        return object.scrollChildren > 0
+                && (hasSemanticsObjectAncestor(mA11yFocusedObject, o -> o == object)
+                    || !hasSemanticsObjectAncestor(mA11yFocusedObject, o -> o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)));
     }
 
     @Override
@@ -266,14 +282,35 @@ class AccessibilityBridge
         if (object.hasAction(Action.SCROLL_LEFT) || object.hasAction(Action.SCROLL_UP)
                 || object.hasAction(Action.SCROLL_RIGHT) || object.hasAction(Action.SCROLL_DOWN)) {
             result.setScrollable(true);
+
             // This tells Android's a11y to send scroll events when reaching the end of
             // the visible viewport of a scrollable, unless the node itself does not
             // allow implicit scrolling - then we leave the className as view.View.
+            //
+            // We should prefer setCollectionInfo to the class names, as this way we get "In List"
+            // and "Out of list" announcements.  But we don't always know the counts, so we
+            // can fallback to the generic scroll view class names.
+            // TODO(dnfield): We should add semantics properties for rows and columns in 2 dimensional lists, e.g.
+            // GridView.  Right now, we're only supporting ListViews and only if they have scroll children.
             if (object.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)) {
                 if (object.hasAction(Action.SCROLL_LEFT) || object.hasAction(Action.SCROLL_RIGHT)) {
-                    result.setClassName("android.widget.HorizontalScrollView");
+                    if (shouldSetCollectionInfo(object)) {
+                        result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(
+                            0, // rows
+                            object.scrollChildren, // columns
+                            false)); // hierarchical
+                    } else {
+                        result.setClassName("android.widget.HorizontalScrollView");
+                    }
                 } else {
-                    result.setClassName("android.widget.ScrollView");
+                    if (shouldSetCollectionInfo(object)) {
+                        result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(
+                            object.scrollChildren, // rows
+                            0, // columns
+                            false)); // hierarchical
+                    } else {
+                        result.setClassName("android.widget.ScrollView");
+                    }
                 }
             }
             // TODO(ianh): Once we're on SDK v23+, call addAction to
@@ -443,7 +480,7 @@ class AccessibilityBridge
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_SET_SELECTION: {
-                final Map<String, Integer> selection = new HashMap<String, Integer>();
+                final Map<String, Integer> selection = new HashMap<>();
                 final boolean hasSelection = arguments != null
                         && arguments.containsKey(
                                    AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT)
@@ -611,7 +648,7 @@ class AccessibilityBridge
     }
 
     void updateSemantics(ByteBuffer buffer, String[] strings) {
-        ArrayList<SemanticsObject> updated = new ArrayList<SemanticsObject>();
+        ArrayList<SemanticsObject> updated = new ArrayList<>();
         while (buffer.hasRemaining()) {
             int id = buffer.getInt();
             SemanticsObject object = getOrCreateObject(id);
@@ -627,7 +664,7 @@ class AccessibilityBridge
             }
         }
 
-        Set<SemanticsObject> visitedObjects = new HashSet<SemanticsObject>();
+        Set<SemanticsObject> visitedObjects = new HashSet<>();
         SemanticsObject rootObject = getRootObject();
         List<SemanticsObject> newRoutes = new ArrayList<>();
         if (rootObject != null) {
@@ -960,6 +997,11 @@ class AccessibilityBridge
     /// Value is derived from ACTION_TYPE_MASK in AccessibilityNodeInfo.java
     static int firstResourceId = 267386881;
 
+
+    static boolean hasSemanticsObjectAncestor(SemanticsObject target, Predicate<SemanticsObject> tester) {
+        return target != null && target.getAncestor(tester) != null;
+    }
+
     private class SemanticsObject {
         SemanticsObject() {}
 
@@ -1011,6 +1053,17 @@ class AccessibilityBridge
         private boolean globalGeometryDirty = true;
         private float[] globalTransform;
         private Rect globalRect;
+
+        SemanticsObject getAncestor(Predicate<SemanticsObject> tester) {
+            SemanticsObject nextAncestor = parent;
+            while (nextAncestor != null) {
+                if (tester.test(nextAncestor)) {
+                    return nextAncestor;
+                }
+                nextAncestor = nextAncestor.parent;
+            }
+            return null;
+        }
 
         boolean hasAction(Action action) {
             return (actions & action.value) != 0;
@@ -1115,7 +1168,7 @@ class AccessibilityBridge
                 childrenInHitTestOrder = null;
             } else {
                 if (childrenInTraversalOrder == null)
-                    childrenInTraversalOrder = new ArrayList<SemanticsObject>(childCount);
+                    childrenInTraversalOrder = new ArrayList<>(childCount);
                 else
                     childrenInTraversalOrder.clear();
 
@@ -1126,7 +1179,7 @@ class AccessibilityBridge
                 }
 
                 if (childrenInHitTestOrder == null)
-                    childrenInHitTestOrder = new ArrayList<SemanticsObject>(childCount);
+                    childrenInHitTestOrder = new ArrayList<>(childCount);
                 else
                     childrenInHitTestOrder.clear();
 
@@ -1141,8 +1194,7 @@ class AccessibilityBridge
                 customAccessibilityActions = null;
             } else {
                 if (customAccessibilityActions == null)
-                    customAccessibilityActions =
-                            new ArrayList<CustomAccessibilityAction>(actionCount);
+                    customAccessibilityActions = new ArrayList<>(actionCount);
                 else
                     customAccessibilityActions.clear();
 

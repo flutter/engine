@@ -33,6 +33,7 @@ import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterRunArguments;
 import io.flutter.view.FlutterView;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -167,19 +168,9 @@ public final class FlutterActivityDelegate
             return;
         }
 
-        if (!flutterView.getFlutterNativeView().isApplicationRunning()) {
-          String appBundlePath = FlutterMain.findAppBundlePath(activity.getApplicationContext());
-          if (appBundlePath != null) {
-            FlutterRunArguments arguments = new FlutterRunArguments();
-            ArrayList<String> bundlePaths = new ArrayList<String>();
-            if (FlutterMain.getUpdateInstallationPath() != null) {
-                bundlePaths.add(FlutterMain.getUpdateInstallationPath());
-            }
-            bundlePaths.add(appBundlePath);
-            arguments.bundlePaths = bundlePaths.toArray(new String[0]);
-            arguments.entrypoint = "main";
-            flutterView.runFromBundle(arguments);
-          }
+        String appBundlePath = FlutterMain.findAppBundlePath(activity.getApplicationContext());
+        if (appBundlePath != null) {
+            runBundle(appBundlePath);
         }
     }
 
@@ -220,6 +211,7 @@ public final class FlutterActivityDelegate
     @Override
     public void onResume() {
         Application app = (Application) activity.getApplicationContext();
+        FlutterMain.onResume(app);
         if (app instanceof FlutterApplication) {
             FlutterApplication flutterApp = (FlutterApplication) app;
             flutterApp.setCurrentActivity(activity);
@@ -296,7 +288,7 @@ public final class FlutterActivityDelegate
         // Before adding more entries to this list, consider that arbitrary
         // Android applications can generate intents with extra data and that
         // there are many security-sensitive args in the binary.
-        ArrayList<String> args = new ArrayList<String>();
+        ArrayList<String> args = new ArrayList<>();
         if (intent.getBooleanExtra("trace-startup", false)) {
             args.add("--trace-startup");
         }
@@ -334,28 +326,33 @@ public final class FlutterActivityDelegate
             String route = intent.getStringExtra("route");
             String appBundlePath = intent.getDataString();
             if (appBundlePath == null) {
-                // Fall back to the installation path if no bundle path
-                // was specified.
+                // Fall back to the installation path if no bundle path was specified.
                 appBundlePath = FlutterMain.findAppBundlePath(activity.getApplicationContext());
             }
             if (route != null) {
                 flutterView.setInitialRoute(route);
             }
-            if (!flutterView.getFlutterNativeView().isApplicationRunning()) {
-              FlutterRunArguments args = new FlutterRunArguments();
-              ArrayList<String> bundlePaths = new ArrayList<String>();
-              if (FlutterMain.getUpdateInstallationPath() != null) {
-                  bundlePaths.add(FlutterMain.getUpdateInstallationPath());
-              }
-              bundlePaths.add(appBundlePath);
-              args.bundlePaths = bundlePaths.toArray(new String[0]);
-              args.entrypoint = "main";
-              flutterView.runFromBundle(args);
-            }
+
+            runBundle(appBundlePath);
             return true;
         }
 
         return false;
+    }
+
+    private void runBundle(String appBundlePath) {
+        if (!flutterView.getFlutterNativeView().isApplicationRunning()) {
+            FlutterRunArguments args = new FlutterRunArguments();
+            ArrayList<String> bundlePaths = new ArrayList<>();
+            if (FlutterMain.getResourceUpdater() != null) {
+                File patchFile = FlutterMain.getResourceUpdater().getInstalledPatch();
+                bundlePaths.add(patchFile.getPath());
+            }
+            bundlePaths.add(appBundlePath);
+            args.bundlePaths = bundlePaths.toArray(new String[0]);
+            args.entrypoint = "main";
+            flutterView.runFromBundle(args);
+        }
     }
 
     /**
