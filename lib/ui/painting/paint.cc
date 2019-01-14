@@ -72,8 +72,8 @@ enum ColorFilterType {
   SRGBToLinearGamma
 };
 
-sk_sp<SkColorFilter> ExtractColorFilter(const uint32_t *uint_data,
-                                        Dart_Handle *values) {
+sk_sp<SkColorFilter> ExtractColorFilter(const uint32_t* uint_data,
+                                        Dart_Handle* values) {
   switch (uint_data[kColorFilterIndex]) {
     case Mode: {
       SkColor color = uint_data[kColorFilterColorIndex];
