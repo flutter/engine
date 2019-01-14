@@ -266,8 +266,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 - (id)accessibilityContainer {
   if ([self hasChildren] || [self uid] == kRootNodeId) {
     if (_container == nil)
-      _container.reset([[SemanticsObjectContainer alloc] initWithSemanticsObject:self
-                                                                          bridge:[self bridge]]);
+      _container.reset(
+          [[[SemanticsObjectContainer alloc] initWithSemanticsObject:self
+                                                              bridge:[self bridge]] autorelease]);
     return _container.get();
   }
   if ([self parent] == nil) {
