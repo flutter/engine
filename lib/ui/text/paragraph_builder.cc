@@ -166,13 +166,11 @@ bool decodeStrut(Dart_Handle strut_data, txt::ParagraphStyle& paragraph_style) {
   size_t byte_count = 1;
   if (mask & sFontWeightMask) {
     paragraph_style.strut_font_weight =
-        static_cast<txt::FontWeight>(uint8_data[byte_count]);
-    byte_count += 1;
+        static_cast<txt::FontWeight>(uint8_data[byte_count++]);
   }
   if (mask & sFontStyleMask) {
     paragraph_style.strut_font_style =
-        static_cast<txt::FontStyle>(uint8_data[byte_count]);
-    byte_count += 1;
+        static_cast<txt::FontStyle>(uint8_data[byte_count++]);
   }
 
   float float_data[byte_data.length_in_bytes() - byte_count / 4];
@@ -180,16 +178,13 @@ bool decodeStrut(Dart_Handle strut_data, txt::ParagraphStyle& paragraph_style) {
          byte_data.length_in_bytes() - byte_count);
   size_t float_count = 0;
   if (mask & sFontSizeMask) {
-    paragraph_style.strut_font_size = float_data[0];
-    float_count += 1;
+    paragraph_style.strut_font_size = float_data[float_count++];
   }
   if (mask & sLineHeightMask) {
-    paragraph_style.strut_line_height = float_data[float_count];
-    float_count += 1;
+    paragraph_style.strut_line_height = float_data[float_count++];
   }
   if (mask & sLeadingMask) {
-    paragraph_style.strut_leading = float_data[float_count];
-    float_count += 1;
+    paragraph_style.strut_leading = float_data[float_count++];
   }
   if (mask & sForceStrutHeightMask) {
     // The boolean is stored as the last bit in the bitmask.

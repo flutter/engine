@@ -580,10 +580,6 @@ Int32List _encodeParagraphStyle(
 class ParagraphStyle {
   /// Creates a new ParagraphStyle object.
   ///
-  /// Together, the `fontFamily`, `fontSize`, `lineHeight`, `fontStyle`,
-  /// `fontWeight`, `leading`, and `forceStrutHeight` properties define the
-  /// strut to be applied to the paragraph.
-  ///
   /// * `textAlign`: The alignment of the text within the lines of the
   ///   paragraph. If the last line is ellipsized (see `ellipsis` below), the
   ///   alignment is applied to that line after it has been truncated but before
@@ -615,9 +611,6 @@ class ParagraphStyle {
   ///   glyphs due to baseline alignment or large [TextStyle.fontSize] may cause
   ///   the actual line height after layout to be taller than specified here.
   ///   [fontSize] must be provided for this property to take effect.
-  ///
-  /// * `leading`: The minimum amount of leading between lines as a multiple of
-  ///   the font size. [fontSize] must be provided for this property to take effect.
   ///
   /// * `fontWeight`: The typeface thickness to use when painting the text
   ///   (e.g., bold).
@@ -720,7 +713,7 @@ class ParagraphStyle {
   }
 }
 
-// Serialize [shadows] into ByteData. This encoding errs towards
+// Serialize strut properties into ByteData. This encoding errs towards
 // compactness. The first 16bits is a bitmask that records which properties
 // are null. The rest of the values are encoded in the same order encountered
 // in the bitmask. The final returned value truncates any unused bytes
@@ -792,10 +785,6 @@ ByteData _encodeStrut(
 
 class StrutStyle {
   /// Creates a new StrutStyle object.
-  ///
-  /// Together, the `fontFamily`, `fontSize`, `lineHeight`, `fontStyle`,
-  /// `fontWeight`, `leading`, and `forceStrutHeight` properties define the
-  /// strut to be applied to the paragraph.
   ///
   /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
   ///   Roboto).
