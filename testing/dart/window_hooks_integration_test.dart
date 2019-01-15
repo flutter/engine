@@ -261,7 +261,7 @@ void main() {
       });
 
       window.onPlatformBrightnessChanged();
-      _updatePlatformBrightness(PlatformBrightness.dark);
+      _updatePlatformBrightness('dark');
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
       expect(platformBrightness, equals(PlatformBrightness.dark));
