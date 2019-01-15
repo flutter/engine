@@ -12,6 +12,8 @@
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
+#include "third_party/skia/include/effects/SkTrimPathEffect.h"
+#include "third_party/skia/include/core/SkStrokeRec.h"
 
 using tonic::ToDart;
 
@@ -54,6 +56,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Path);
   V(Path, setFillType)               \
   V(Path, shift)                     \
   V(Path, transform)                 \
+  V(Path, trim)                      \
   V(Path, getBounds)                 \
   V(Path, addPathWithMatrix)         \
   V(Path, op)                        \
@@ -275,6 +278,22 @@ fml::RefPtr<CanvasPath> CanvasPath::transform(tonic::Float64List& matrix4) {
   path_.transform(ToSkMatrix(matrix4), &path->path_);
   matrix4.Release();
   return path;
+}
+
+bool CanvasPath::trim(double startT, double stopT, bool isComplement) {
+  SkTrimPathEffect::Mode mode = isComplement ? 
+                                SkTrimPathEffect::Mode::kInverted : 
+                                SkTrimPathEffect::Mode::kNormal;
+  sk_sp<SkPathEffect> pathEffect = 
+      SkTrimPathEffect::Make(startT, stopT, mode);
+  if(!pathEffect) {
+    return false;
+  }
+  SkStrokeRec rec(SkStrokeRec::InitStyle::kHairline_InitStyle);
+  if (pathEffect->filterPath(&path_, path_, &rec, nullptr)) {
+        return true;
+    }
+  return false;
 }
 
 tonic::Float32List CanvasPath::getBounds() {
