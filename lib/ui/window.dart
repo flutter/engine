@@ -590,6 +590,27 @@ class Window {
     _onTextScaleFactorChangedZone = Zone.current;
   }
 
+  /// The setting indicating the current brightness mode of the host platform.
+  PlatformBrightness get platformBrightness => _platformBrightness;
+  PlatformBrightness _platformBrightness = PlatformBrightness.light;
+
+  /// A callback that is invoked whenever [platformBrightness] changes value.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this callback is invoked.
+  VoidCallback get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
+  VoidCallback _onPlatformBrightnessChanged;
+  Zone _onPlatformBrightnessChangedZone;
+  set onPlatformBrightnessChanged(VoidCallback callback) {
+    _onPlatformBrightnessChanged = callback;
+    _onPlatformBrightnessChangedZone = Zone.current;
+  }
+
   /// A callback that is invoked to notify the application that it is an
   /// appropriate time to provide a scene using the [SceneBuilder] API and the
   /// [render] method. When possible, this is driven by the hardware VSync
