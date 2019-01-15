@@ -126,6 +126,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   [_children removeAllObjects];
   [_children release];
   _parent = nil;
+  _container.get().semanticsObject = nil;
   [super dealloc];
 }
 
