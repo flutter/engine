@@ -462,8 +462,6 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
     double canonicalized_line_height =
         std::max(0.0, paragraph_style_.strut_line_height);
 
-    FML_DLOG(ERROR) << canonicalized_line_height;
-
     strut->ascent = canonicalized_line_height * -strut_metrics.fAscent;
     strut->descent = canonicalized_line_height * strut_metrics.fDescent;
     strut->leading =
@@ -854,6 +852,7 @@ void Paragraph::Layout(double width, bool force) {
       alphabetic_baseline_ = max_ascent;
       // TODO(garyq): Ideographic baseline is currently bottom of EM
       // box, which is not correct. This should be obtained from metrics.
+      // Skia currently does not support various baselines.
       ideographic_baseline_ = (max_ascent + max_descent);
     }
 

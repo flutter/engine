@@ -2710,7 +2710,7 @@ TEST_F(ParagraphTest, FontFallbackParagraph) {
 // consolidate skia font metric behavior.
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   // The chinese extra height should be absorbed by the strut.
-  const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
+  const char* text = "01234満毎冠p来É本可\nabcd\n満毎É行p昼本可";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
   std::u16string u16_text(icu_text.getBuffer(),
                           icu_text.getBuffer() + icu_text.length());
@@ -2720,8 +2720,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   paragraph_style.strut_font_families = std::vector<std::string>(1, "BlahFake");
   paragraph_style.strut_font_families.push_back("ahem");
   paragraph_style.strut_font_size = 50;
-  paragraph_style.strut_line_height = 1.3;
-  paragraph_style.strut_leading = 0;
+  paragraph_style.strut_line_height = 1.5;
+  paragraph_style.strut_leading = 0.1;
   paragraph_style.strut_enabled = true;
 
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
@@ -2774,9 +2774,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 30.313477);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 80.313477);
 
   boxes = paragraph->GetRectsForRange(0, 1, rect_height_max_style,
                                       rect_width_style);
@@ -2785,9 +2785,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 30.313477);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89);
 
   boxes =
       paragraph->GetRectsForRange(6, 10, rect_height_style, rect_width_style);
@@ -2796,9 +2796,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 30.313477);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 80.313477);
 
   boxes = paragraph->GetRectsForRange(6, 10, rect_height_max_style,
                                       rect_width_style);
@@ -2807,9 +2807,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 30.313477);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89);
 
   boxes = paragraph->GetRectsForRange(14, 16, rect_height_max_style,
                                       rect_width_style);
@@ -2818,9 +2818,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 208.31348);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 100);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 150);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 267);
 
   boxes = paragraph->GetRectsForRange(20, 25, rect_height_max_style,
                                       rect_width_style);
@@ -2829,9 +2829,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 50);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 150);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 297.31348);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 200);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 356);
 
   ASSERT_TRUE(Snapshot());
 }
@@ -2852,7 +2852,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
   paragraph_style.max_lines = 10;
   paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
   paragraph_style.strut_font_size = 50;
-  paragraph_style.strut_line_height = 1.3;
+  paragraph_style.strut_line_height = 1.6;
   paragraph_style.strut_enabled = true;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
@@ -2903,9 +2903,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.020996);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 71.614746);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 33.229004);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 83.229004);
 
   boxes = paragraph->GetRectsForRange(0, 1, rect_height_max_style,
                                       rect_width_style);
@@ -2914,9 +2914,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.020996);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 74);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 33.229004);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 91);
 
   boxes =
       paragraph->GetRectsForRange(6, 10, rect_height_style, rect_width_style);
@@ -2924,10 +2924,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 175.36328);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.020996);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300.48047);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 71.614746);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 33.229004);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 83.229004);
 
   boxes = paragraph->GetRectsForRange(6, 10, rect_height_max_style,
                                       rect_width_style);
@@ -2935,10 +2935,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 175.36328);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.020996);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300.48047);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 74);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 33.229004);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 91);
 
   boxes = paragraph->GetRectsForRange(14, 16, rect_height_max_style,
                                       rect_width_style);
@@ -2947,9 +2947,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 87.020996);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 55.199219);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 148);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 215.229);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 273);
 
   boxes = paragraph->GetRectsForRange(20, 25, rect_height_max_style,
                                       rect_width_style);
@@ -2957,10 +2957,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 33.273438);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 161.021);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 185.85547);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 222);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 306.229);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 364);
 
   ASSERT_TRUE(Snapshot());
 }
@@ -2973,7 +2973,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
   // The strut is too small to absorb the extra chinese height, but the english
   // second line height is increased due to strut.
-  const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
+  const char* text = "01234満毎p行来昼本可\nabcd\n満毎冠行来昼本可";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
   std::u16string u16_text(icu_text.getBuffer(),
                           icu_text.getBuffer() + icu_text.length());
@@ -3033,9 +3033,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 11.31328);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 69.907028);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 10.526855);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 60.526855);
 
   boxes = paragraph->GetRectsForRange(0, 1, rect_height_max_style,
                                       rect_width_style);
@@ -3044,9 +3044,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.1499958);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 72);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 10.526855);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 63);
 
   boxes =
       paragraph->GetRectsForRange(6, 10, rect_height_style, rect_width_style);
@@ -3054,10 +3054,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 192.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.1499958);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 392.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 72);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 10.526855);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 60.526855);
 
   boxes = paragraph->GetRectsForRange(6, 10, rect_height_max_style,
                                       rect_width_style);
@@ -3065,10 +3065,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 192.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.1499958);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 392.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 72);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 10.526855);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 63);
 
   boxes = paragraph->GetRectsForRange(14, 16, rect_height_max_style,
                                       rect_width_style);
@@ -3077,9 +3077,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 76.140137);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 55.199219);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 135);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 136.52686);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 189);
 
   boxes = paragraph->GetRectsForRange(20, 25, rect_height_max_style,
                                       rect_width_style);
@@ -3088,9 +3088,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 50);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 135.14999);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 199.52686);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 207);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 252);
 
   ASSERT_TRUE(Snapshot());
 }
@@ -3111,9 +3111,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
-  paragraph_style.strut_font_size = 15;
-  paragraph_style.strut_line_height = 1.12424;
-  paragraph_style.strut_leading = 1.12424;
+  paragraph_style.strut_font_size = 50;
+  paragraph_style.strut_line_height = 1.5;
+  paragraph_style.strut_leading = 0.1;
   paragraph_style.force_strut_height = true;
   paragraph_style.strut_enabled = true;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
@@ -3123,7 +3123,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   text_style.font_families.push_back("ahem");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
-  text_style.font_weight = FontWeight::w500;
+  // text_style.font_weight = FontWeight::w500;
   text_style.word_spacing = 0;
   text_style.color = SK_ColorBLACK;
   text_style.height = 1;
@@ -3165,9 +3165,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), -0.80029297);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 57.793457);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 30.313477);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 80.313477);
 
   boxes = paragraph->GetRectsForRange(0, 1, rect_height_max_style,
                                       rect_width_style);
@@ -3176,9 +3176,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), -11.963577);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 57);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 30.313477);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89);
 
   boxes =
       paragraph->GetRectsForRange(6, 10, rect_height_style, rect_width_style);
@@ -3186,10 +3186,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 192.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), -11.963577);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 392.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59.886429);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 30.313477);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 80.313477);
 
   boxes = paragraph->GetRectsForRange(6, 10, rect_height_max_style,
                                       rect_width_style);
@@ -3197,10 +3197,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 192.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), -11.963577);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 392.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 57);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 30.313477);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89);
 
   boxes = paragraph->GetRectsForRange(14, 16, rect_height_max_style,
                                       rect_width_style);
@@ -3209,9 +3209,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 208.31348);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 100);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 150);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 267);
 
   boxes = paragraph->GetRectsForRange(20, 25, rect_height_max_style,
                                       rect_width_style);
@@ -3220,9 +3220,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 50);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 150);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 297.31348);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 200);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 356);
 
   ASSERT_TRUE(Snapshot());
 }
