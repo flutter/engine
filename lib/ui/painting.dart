@@ -2079,10 +2079,10 @@ class Path extends NativeFieldWrapperClass2 {
   }
   Path _transform(Float64List matrix4) native 'Path_transform';
 
-  /// Cuts the path into a subset of itself leaving only the region between 
-  /// `startT` and `stopT` fraction values. Set `isComplement` to true to 
+  /// Cuts the path into a subset of itself leaving only the region between
+  /// `startT` and `stopT` fraction values. Set `isComplement` to true to
   /// invert the result by cutting out the region from `startT` to `stopT`.
-  /// 
+  ///
   /// Returns true when the cut is succesfully made, false if not.
   bool trim(double startT, double stopT, bool isComplement) {
     return _trim(startT, stopT, isComplement);
