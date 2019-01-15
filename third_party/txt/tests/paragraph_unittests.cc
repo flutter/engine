@@ -2708,7 +2708,7 @@ TEST_F(ParagraphTest, FontFallbackParagraph) {
 //
 // TODO(garyq): Re-enable strut tests, allow font metric fakery, or
 // consolidate skia font metric behavior.
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
   // The chinese extra height should be absorbed by the strut.
   const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
@@ -2718,15 +2718,18 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
   paragraph_style.strut_font_families = std::vector<std::string>(1, "BlahFake");
-  paragraph_style.strut_font_families.push_back("Roboto");
+  paragraph_style.strut_font_families.push_back("ahem");
   paragraph_style.strut_font_size = 50;
   paragraph_style.strut_line_height = 1.3;
   paragraph_style.strut_leading = 0;
+  paragraph_style.strut_enabled = true;
+
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_families = std::vector<std::string>(1, "Roboto");
-  text_style.font_families.push_back("Source Han Serif CN");
+  text_style.font_families = std::vector<std::string>(1, "ahem");
+  text_style.font_families.push_back("ahem");
+  // text_style.font_families.push_back("Source Han Serif CN");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -2771,9 +2774,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.020996);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 71.614746);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 50);
 
   boxes = paragraph->GetRectsForRange(0, 1, rect_height_max_style,
                                       rect_width_style);
@@ -2782,9 +2785,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 1.8577118);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 74);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 50);
 
   boxes =
       paragraph->GetRectsForRange(6, 10, rect_height_style, rect_width_style);
@@ -2792,10 +2795,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 192.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 1.8577118);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 392.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 73.707718);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 50);
 
   boxes = paragraph->GetRectsForRange(6, 10, rect_height_max_style,
                                       rect_width_style);
@@ -2803,10 +2806,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 192.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 1.8577118);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 392.08984);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 74);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 50);
 
   boxes = paragraph->GetRectsForRange(14, 16, rect_height_max_style,
                                       rect_width_style);
@@ -2815,9 +2818,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 87.020996);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 55.199219);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 148);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 150);
 
   boxes = paragraph->GetRectsForRange(20, 25, rect_height_max_style,
                                       rect_width_style);
@@ -2826,9 +2829,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 50);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 149.85771);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 150);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 222);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 200);
 
   ASSERT_TRUE(Snapshot());
 }
@@ -2838,7 +2841,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
 //
 // TODO(garyq): Re-enable strut tests, allow font metric fakery, or
 // consolidate skia font metric behavior.
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph2)) {
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
   // This string is all one size and smaller than the strut metrics.
   const char* text = "01234ABCDEFGH\nabcd\nABCDEFGH";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
@@ -2847,14 +2850,15 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph2)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  paragraph_style.strut_font_families = std::vector<std::string>(1, "Roboto");
+  paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
   paragraph_style.strut_font_size = 50;
   paragraph_style.strut_line_height = 1.3;
+  paragraph_style.strut_enabled = true;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_families = std::vector<std::string>(1, "Roboto");
-  text_style.font_families.push_back("Source Han Serif CN");
+  text_style.font_families = std::vector<std::string>(1, "ahem");
+  text_style.font_families.push_back("ahem");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -2966,7 +2970,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph2)) {
 //
 // TODO(garyq): Re-enable strut tests, allow font metric fakery, or
 // consolidate skia font metric behavior.
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph3)) {
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
   // The strut is too small to absorb the extra chinese height, but the english
   // second line height is increased due to strut.
   const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
@@ -2976,14 +2980,15 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph3)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  paragraph_style.strut_font_families = std::vector<std::string>(1, "Roboto");
+  paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
   paragraph_style.strut_font_size = 50;
   paragraph_style.strut_line_height = 1.1;
+  paragraph_style.strut_enabled = true;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_families = std::vector<std::string>(1, "Roboto");
-  text_style.font_families.push_back("Source Han Serif CN");
+  text_style.font_families = std::vector<std::string>(1, "ahem");
+  text_style.font_families.push_back("ahem");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -3095,7 +3100,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph3)) {
 //
 // TODO(garyq): Re-enable strut tests, allow font metric fakery, or
 // consolidate skia font metric behavior.
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutForceParagraph)) {
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
   // The strut is too small to absorb the extra chinese height, but the english
   // second line height is increased due to strut.
   const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
@@ -3105,15 +3110,17 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutForceParagraph)) {
 
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 10;
-  paragraph_style.strut_font_families = std::vector<std::string>(1, "Roboto");
-  paragraph_style.strut_font_size = 50;
-  paragraph_style.strut_line_height = 1;
+  paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
+  paragraph_style.strut_font_size = 15;
+  paragraph_style.strut_line_height = 1.12424;
+  paragraph_style.strut_leading = 1.12424;
   paragraph_style.force_strut_height = true;
+  paragraph_style.strut_enabled = true;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_families = std::vector<std::string>(1, "Roboto");
-  text_style.font_families.push_back("Source Han Serif CN");
+  text_style.font_families = std::vector<std::string>(1, "ahem");
+  text_style.font_families.push_back("ahem");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -3202,9 +3209,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutForceParagraph)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 56.199707);
-  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 55.199219);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 114);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 150);
 
   boxes = paragraph->GetRectsForRange(20, 25, rect_height_max_style,
                                       rect_width_style);
@@ -3213,9 +3220,9 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutForceParagraph)) {
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 50);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 102.03642);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 150);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300);
-  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 171);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 200);
 
   ASSERT_TRUE(Snapshot());
 }

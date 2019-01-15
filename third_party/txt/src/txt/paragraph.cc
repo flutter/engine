@@ -429,14 +429,13 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   strut->leading = 0;
   strut->half_leading = 0;
   strut->line_height = 0;
+  strut->force_strut = false;
 
   // Minimally, a font size and either a line_height or leading must be defined
   // to obtain a valid strut. Values not provided default to negative, which is
   // not supported.
-  bool valid_strut = paragraph_style_.strut_enabled &&
-                     paragraph_style_.strut_font_size >= 0 &&
-                     (paragraph_style_.strut_line_height >= 0 ||
-                      paragraph_style_.strut_leading >= 0);
+  bool valid_strut =
+      paragraph_style_.strut_enabled && paragraph_style_.strut_font_size >= 0;
   if (!valid_strut) {
     return;
   }
@@ -462,6 +461,8 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
     // Prevent values from being negative.
     double canonicalized_line_height =
         std::max(0.0, paragraph_style_.strut_line_height);
+
+    FML_DLOG(ERROR) << canonicalized_line_height;
 
     strut->ascent = canonicalized_line_height * -strut_metrics.fAscent;
     strut->descent = canonicalized_line_height * strut_metrics.fDescent;
@@ -516,9 +517,7 @@ void Paragraph::Layout(double width, bool force) {
 
   // Compute strut minimums according to paragraph_style_.
   StrutMetrics strut;
-  if (paragraph_style_.strut_enabled) {
-    ComputeStrut(&strut, font);
-  }
+  ComputeStrut(&strut, font);
 
   // Paragraph bounds tracking.
   size_t line_limit = std::min(paragraph_style_.max_lines, line_ranges_.size());
@@ -818,8 +817,8 @@ void Paragraph::Layout(double width, bool force) {
 
     // Calculate the amount to advance in the y direction. This is done by
     // computing the maximum ascent and descent with respect to the strut.
-    double max_descent = strut.descent + strut.half_leading;
     double max_ascent = strut.ascent + strut.half_leading;
+    double max_descent = strut.descent + strut.half_leading;
     SkScalar max_unscaled_ascent = 0;
     auto update_line_metrics = [&](const SkFontMetrics& metrics,
                                    const TextStyle& style) {
@@ -831,21 +830,12 @@ void Paragraph::Layout(double width, bool force) {
         double descent =
             (metrics.fDescent + metrics.fLeading / 2) * style.height;
         max_descent = std::max(descent, max_descent);
-      } else {
       }
 
       max_unscaled_ascent = std::max(-metrics.fAscent, max_unscaled_ascent);
     };
     for (const PaintRecord& paint_record : paint_records) {
       update_line_metrics(paint_record.metrics(), paint_record.style());
-    }
-
-    // Calculate the baselines. This is only done on the first line.
-    if (line_number == 0) {
-      alphabetic_baseline_ = max_ascent;
-      // TODO(garyq): Ideographic baseline is currently bottom of EM box,which
-      // is not correct. This should be obtained from metrics.
-      ideographic_baseline_ = max_ascent + max_descent;
     }
 
     // If no fonts were actually rendered, then compute a baseline based on the
@@ -859,10 +849,15 @@ void Paragraph::Layout(double width, bool force) {
       update_line_metrics(metrics, style);
     }
 
-    // TODO(garyq): Remove rounding of line heights because it is irrelevant in
-    // a world of high DPI devices.
-    line_heights_.push_back((line_heights_.empty() ? 0 : line_heights_.back()) +
+    // Calculate the baselines. This is only done on the first line.
+    if (line_number == 0) {
+      alphabetic_baseline_ = max_ascent;
+      // TODO(garyq): Ideographic baseline is currently bottom of EM
+      // box, which is not correct. This should be obtained from metrics.
+      ideographic_baseline_ = (max_ascent + max_descent);
+    }
 
+    line_heights_.push_back((line_heights_.empty() ? 0 : line_heights_.back()) +
                             round(max_ascent + max_descent));
     line_baselines_.push_back(line_heights_.back() - max_descent);
     y_offset += round(max_ascent + prev_max_descent);
