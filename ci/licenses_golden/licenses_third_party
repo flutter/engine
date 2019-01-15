@@ -17564,8 +17564,6 @@ FILE: ../../../third_party/tonic/dart_message_handler.cc
 FILE: ../../../third_party/tonic/dart_message_handler.h
 FILE: ../../../third_party/tonic/dart_microtask_queue.cc
 FILE: ../../../third_party/tonic/dart_microtask_queue.h
-FILE: ../../../third_party/tonic/dart_sticky_error.cc
-FILE: ../../../third_party/tonic/dart_sticky_error.h
 FILE: ../../../third_party/tonic/file_loader/file_loader.cc
 FILE: ../../../third_party/tonic/file_loader/file_loader.h
 FILE: ../../../third_party/tonic/filesystem/filesystem/eintr_wrapper.h
