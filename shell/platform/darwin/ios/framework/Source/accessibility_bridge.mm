@@ -85,6 +85,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge
     NS_DESIGNATED_INITIALIZER;
+
+@property(nonatomic, weak) SemanticsObject* semanticsObject;
+
 @end
 
 @implementation SemanticsObject {
@@ -266,9 +269,8 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 - (id)accessibilityContainer {
   if ([self hasChildren] || [self uid] == kRootNodeId) {
     if (_container == nil)
-      _container.reset(
-          [[[SemanticsObjectContainer alloc] initWithSemanticsObject:self
-                                                              bridge:[self bridge]] autorelease]);
+      _container.reset([[SemanticsObjectContainer alloc] initWithSemanticsObject:self
+                                                                          bridge:[self bridge]]);
     return _container.get();
   }
   if ([self parent] == nil) {
@@ -394,7 +396,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 @end
 
 @implementation SemanticsObjectContainer {
-  fml::scoped_nsobject<SemanticsObject> _semanticsObject;
+  SemanticsObject* _semanticsObject;
   fml::WeakPtr<shell::AccessibilityBridge> _bridge;
 }
 
@@ -413,7 +415,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   self = [super init];
 
   if (self) {
-    _semanticsObject.reset([semanticsObject retain]);
+    _semanticsObject = semanticsObject;
     _bridge = bridge;
   }
 
@@ -423,25 +425,25 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 #pragma mark - UIAccessibilityContainer overrides
 
 - (NSInteger)accessibilityElementCount {
-  return [[_semanticsObject.get() children] count] + 1;
+  return [[_semanticsObject children] count] + 1;
 }
 
 - (nullable id)accessibilityElementAtIndex:(NSInteger)index {
   if (index < 0 || index >= [self accessibilityElementCount])
     return nil;
   if (index == 0) {
-    return _semanticsObject.get();
+    return _semanticsObject;
   }
-  SemanticsObject* child = [_semanticsObject.get() children][index - 1];
+  SemanticsObject* child = [_semanticsObject children][index - 1];
   if ([child hasChildren])
     return [child accessibilityContainer];
   return child;
 }
 
 - (NSInteger)indexOfAccessibilityElement:(id)element {
-  if (element == _semanticsObject.get())
+  if (element == _semanticsObject)
     return 0;
-  NSMutableArray<SemanticsObject*>* children = [_semanticsObject.get() children];
+  NSMutableArray<SemanticsObject*>* children = [_semanticsObject children];
   for (size_t i = 0; i < [children count]; i++) {
     SemanticsObject* child = children[i];
     if ((![child hasChildren] && child == element) ||
@@ -458,22 +460,22 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (CGRect)accessibilityFrame {
-  return [_semanticsObject.get() accessibilityFrame];
+  return [_semanticsObject accessibilityFrame];
 }
 
 - (id)accessibilityContainer {
   if (!_bridge) {
     return nil;
   }
-  return ([_semanticsObject.get() uid] == kRootNodeId)
+  return ([_semanticsObject uid] == kRootNodeId)
              ? _bridge->view()
-             : [[_semanticsObject.get() parent] accessibilityContainer];
+             : [[_semanticsObject parent] accessibilityContainer];
 }
 
 #pragma mark - UIAccessibilityAction overrides
 
 - (BOOL)accessibilityScroll:(UIAccessibilityScrollDirection)direction {
-  return [_semanticsObject.get() accessibilityScroll:direction];
+  return [_semanticsObject accessibilityScroll:direction];
 }
 
 @end
