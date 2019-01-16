@@ -166,7 +166,7 @@ void _drawFrame() {
 // ignore: unused_element
 void _runMainZoned(Function startMainIsolateFunction, Function userMainFunction) {
   startMainIsolateFunction((){
-    runZoned<Future<void>>(() async {
+    runZoned<Future<void>>(() {
       userMainFunction();
     }, onError: (Object error, StackTrace stackTrace) {
       _reportUnhandledException(error.toString(), stackTrace.toString());
