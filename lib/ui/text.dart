@@ -714,7 +714,7 @@ class ParagraphStyle {
 }
 
 // Serialize strut properties into ByteData. This encoding errs towards
-// compactness. The first 16bits is a bitmask that records which properties
+// compactness. The first 8 bits is a bitmask that records which properties
 // are null. The rest of the values are encoded in the same order encountered
 // in the bitmask. The final returned value truncates any unused bytes
 // at the end.
@@ -1387,15 +1387,15 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// [Paragraph].
   @pragma('vm:entry-point')
   ParagraphBuilder(ParagraphStyle style) {
-    List<String> fullFontFamilies;
+    List<String> strutFontFamilies;
     if (style._strutStyle != null) {
-      fullFontFamilies = <String>[];
+      strutFontFamilies = <String>[];
       if (style._strutStyle._fontFamily != null)
-        fullFontFamilies.add(style._strutStyle._fontFamily);
+        strutFontFamilies.add(style._strutStyle._fontFamily);
       if (style._strutStyle._fontFamilyFallback != null)
-        fullFontFamilies.addAll(style._strutStyle._fontFamilyFallback);
+        strutFontFamilies.addAll(style._strutStyle._fontFamilyFallback);
     }
-    _constructor(style._encoded, style._strutStyle != null ? style._strutStyle._encoded : ByteData(0), style._fontFamily, fullFontFamilies, style._fontSize, style._lineHeight, style._ellipsis, _encodeLocale(style._locale));
+    _constructor(style._encoded, style._strutStyle?._encoded, style._fontFamily, strutFontFamilies, style._fontSize, style._lineHeight, style._ellipsis, _encodeLocale(style._locale));
   }
   void _constructor(Int32List encoded, ByteData strutData, String fontFamily, List<dynamic> strutFontFamily, double fontSize, double lineHeight, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
 

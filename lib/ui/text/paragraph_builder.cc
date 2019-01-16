@@ -154,11 +154,18 @@ fml::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
 
 // returns true if there is a font family defined. Font family is the only
 // parameter passed directly.
-bool decodeStrut(Dart_Handle strut_data, txt::ParagraphStyle& paragraph_style) {
+void decodeStrut(Dart_Handle strut_data,
+                 const std::vector<std::string>& strut_font_families,
+                 txt::ParagraphStyle& paragraph_style) {
+  if (strut_data == Dart_Null()) {
+    return;
+  }
+
   tonic::DartByteData byte_data(strut_data);
   if (byte_data.length_in_bytes() == 0) {
-    return false;
+    return;
   }
+  paragraph_style.strut_enabled = true;
 
   const uint8_t* uint8_data = static_cast<const uint8_t*>(byte_data.data());
   uint8_t mask = uint8_data[0];
@@ -192,9 +199,12 @@ bool decodeStrut(Dart_Handle strut_data, txt::ParagraphStyle& paragraph_style) {
   }
 
   if (mask & sFontFamilyMask) {
-    return true;
+    paragraph_style.strut_font_families = strut_font_families;
+  } else {
+    // Provide an empty font name so that the platform default font will be
+    // used.
+    paragraph_style.strut_font_families.push_back("");
   }
-  return false;
 }
 
 ParagraphBuilder::ParagraphBuilder(
@@ -244,16 +254,9 @@ ParagraphBuilder::ParagraphBuilder(
   }
 
   if (mask & psStrutStyleMask) {
-    style.strut_enabled = true;
-    // Decode strut returns true if there is a font family string available.
-    if (decodeStrut(strutData, style)) {
-      style.strut_font_families = strutFontFamilies;
-    } else {
-      // Provide an empty font name so that the platform default font will be
-      // used.
-      style.strut_font_families.push_back("");
-    }
+    decodeStrut(strutData, strutFontFamilies, style);
   }
+
   if (mask & psMaxLinesMask)
     style.max_lines = encoded[psMaxLinesIndex];
 

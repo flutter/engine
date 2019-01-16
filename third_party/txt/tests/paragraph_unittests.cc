@@ -2729,7 +2729,6 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
   txt::TextStyle text_style;
   text_style.font_families = std::vector<std::string>(1, "ahem");
   text_style.font_families.push_back("ahem");
-  // text_style.font_families.push_back("Source Han Serif CN");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -3123,7 +3122,6 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutForceParagraph)) {
   text_style.font_families.push_back("ahem");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
-  // text_style.font_weight = FontWeight::w500;
   text_style.word_spacing = 0;
   text_style.color = SK_ColorBLACK;
   text_style.height = 1;

@@ -424,16 +424,15 @@ bool Paragraph::ComputeBidiRuns(std::vector<BidiRun>* result) {
 }
 
 void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
-  strut->ascent = 0;  // Positive value to keep signs clear.
+  strut->ascent = 0;
   strut->descent = 0;
   strut->leading = 0;
   strut->half_leading = 0;
   strut->line_height = 0;
   strut->force_strut = false;
 
-  // Minimally, a font size and either a line_height or leading must be defined
-  // to obtain a valid strut. Values not provided default to negative, which is
-  // not supported.
+  // Font size must be positive. Negative values for leading mean the font's
+  // leading should be used.
   bool valid_strut =
       paragraph_style_.strut_enabled && paragraph_style_.strut_font_size >= 0;
   if (!valid_strut) {
