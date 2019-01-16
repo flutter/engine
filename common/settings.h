@@ -83,6 +83,10 @@ struct Settings {
   // as fast as possible in returning from this callback. Long running
   // operations in this callback do have the capability of introducing jank.
   std::function<void(int64_t)> idle_notification_callback;
+  // A callback given to the embedder to react to unhandled exceptions in the
+  // running Flutter application. This callback is made on an internal engine
+  // managed thread and embedders must thread as necessary. Performing blocking
+  // calls in this callback will cause applications to jank.
   UnhandledExceptionCallback unhandled_exception_callback;
   bool enable_software_rendering = false;
   bool skia_deterministic_rendering_on_cpu = false;
