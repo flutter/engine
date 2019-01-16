@@ -275,6 +275,11 @@ FlutterResult FlutterEngineRun(size_t version,
         << "FlutterProjectArgs.main_path is deprecated and should be set null.";
   }
 
+  if (SAFE_ACCESS(args, packages_path__unused__, nullptr) != nullptr) {
+    FML_LOG(WARNING) << "FlutterProjectArgs.packages_path is deprecated and "
+                        "should be set null.";
+  }
+
   if (!IsRendererValid(config)) {
     return kInvalidArguments;
   }
