@@ -5,6 +5,7 @@
 package io.flutter.embedding.engine.dart;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
@@ -38,7 +39,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   }
 
   @Override
-  public void setMessageHandler(String channel, BinaryMessenger.BinaryMessageHandler handler) {
+  public void setMessageHandler(@NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
     if (handler == null) {
       messageHandlers.remove(channel);
     } else {
@@ -47,12 +48,16 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   }
 
   @Override
-  public void send(String channel, ByteBuffer message) {
+  public void send(@NonNull String channel, @NonNull ByteBuffer message) {
     send(channel, message, null);
   }
 
   @Override
-  public void send(String channel, ByteBuffer message, BinaryMessenger.BinaryReply callback) {
+  public void send(
+      @NonNull String channel,
+      @Nullable ByteBuffer message,
+      @Nullable BinaryMessenger.BinaryReply callback
+  ) {
     int replyId = 0;
     if (callback != null) {
       replyId = mNextReplyId++;
@@ -66,7 +71,11 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   }
 
   @Override
-  public void handlePlatformMessage(final String channel, byte[] message, final int replyId) {
+  public void handlePlatformMessage(
+      @NonNull final String channel,
+      @Nullable byte[] message,
+      final int replyId
+  ) {
     BinaryMessenger.BinaryMessageHandler handler = messageHandlers.get(channel);
     if (handler != null) {
       try {
@@ -96,7 +105,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   }
 
   @Override
-  public void handlePlatformMessageResponse(int replyId, byte[] reply) {
+  public void handlePlatformMessageResponse(int replyId, @Nullable byte[] reply) {
     BinaryMessenger.BinaryReply callback = mPendingReplies.remove(replyId);
     if (callback != null) {
       try {
