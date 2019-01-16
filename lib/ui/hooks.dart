@@ -174,7 +174,7 @@ void _runMainZoned(Function startMainIsolateFunction, Function userMainFunction)
   }, null);
 }
 
-void _reportUnhandledException(String error, String stackTrace) native "Window_reportUnhandledException";
+void _reportUnhandledException(String error, String stackTrace) native 'Window_reportUnhandledException';
 
 /// Invokes [callback] inside the given [zone].
 void _invoke(void callback(), Zone zone) {
