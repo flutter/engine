@@ -22,6 +22,7 @@
 #include "third_party/tonic/dart_message_handler.h"
 #include "third_party/tonic/dart_state.h"
 #include "third_party/tonic/file_loader/file_loader.h"
+#include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
 
@@ -109,6 +110,7 @@ DartIsolate::DartIsolate(DartVM* vm,
                   advisory_script_uri,
                   advisory_script_entrypoint,
                   vm->GetSettings().log_tag,
+                  vm->GetSettings().unhandled_exception_callback,
                   vm->GetIsolateNameServer()),
       vm_(vm),
       isolate_snapshot_(std::move(isolate_snapshot)),
@@ -399,25 +401,35 @@ bool DartIsolate::Run(const std::string& entrypoint_name) {
 
   tonic::DartState::Scope scope(this);
 
-  Dart_Handle entrypoint =
+  Dart_Handle entrypoint_function =
       Dart_GetField(Dart_RootLibrary(), tonic::ToDart(entrypoint_name.c_str()));
-  if (tonic::LogIfError(entrypoint)) {
+  if (tonic::LogIfError(entrypoint_function)) {
+    FML_LOG(ERROR) << "Entrypoint named '" << entrypoint_name
+                   << "' was not present in the root library.";
     return false;
   }
 
-  Dart_Handle isolate_lib = Dart_LookupLibrary(tonic::ToDart("dart:isolate"));
-  if (tonic::LogIfError(isolate_lib)) {
+  Dart_Handle run_main_zoned_function =
+      Dart_GetField(Dart_LookupLibrary(tonic::ToDart("dart:ui")),
+                    tonic::ToDart("_runMainZoned"));
+  if (tonic::LogIfError(run_main_zoned_function)) {
+    FML_DLOG(ERROR) << "Could not obtain the _runMainZoned function.";
     return false;
   }
 
-  Dart_Handle isolate_args[] = {
-      entrypoint,
-      Dart_Null(),
-  };
+  Dart_Handle start_main_isolate_function =
+      Dart_GetField(Dart_LookupLibrary(tonic::ToDart("dart:isolate")),
+                    tonic::ToDart("_startMainIsolate"));
+  if (tonic::LogIfError(start_main_isolate_function)) {
+    FML_DLOG(ERROR) << "Could not obtain the _startMainIsolate function in the "
+                       "dart:isolate package.";
+    return false;
+  }
 
-  if (tonic::LogIfError(Dart_Invoke(
-          isolate_lib, tonic::ToDart("_startMainIsolate"),
-          sizeof(isolate_args) / sizeof(isolate_args[0]), isolate_args))) {
+  if (tonic::LogIfError(tonic::DartInvoke(
+          run_main_zoned_function,
+          {start_main_isolate_function, entrypoint_function}))) {
+    FML_LOG(ERROR) << "Could not invoke the main entrypoint.";
     return false;
   }
 

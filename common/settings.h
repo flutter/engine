@@ -20,6 +20,9 @@ namespace blink {
 using TaskObserverAdd =
     std::function<void(intptr_t /* key */, fml::closure /* callback */)>;
 using TaskObserverRemove = std::function<void(intptr_t /* key */)>;
+using UnhandledExceptionCallback =
+    std::function<bool(const std::string& /* error */,
+                       const std::string& /* stack trace */)>;
 
 struct Settings {
   Settings();
@@ -80,6 +83,7 @@ struct Settings {
   // as fast as possible in returning from this callback. Long running
   // operations in this callback do have the capability of introducing jank.
   std::function<void(int64_t)> idle_notification_callback;
+  UnhandledExceptionCallback unhandled_exception_callback;
   bool enable_software_rendering = false;
   bool skia_deterministic_rendering_on_cpu = false;
   bool verbose_logging = false;
