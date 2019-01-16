@@ -26,17 +26,17 @@ import io.flutter.plugin.common.BinaryMessenger;
  */
 class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   private static final String TAG = "DartMessenger";
-  
+
   private final FlutterJNI flutterJNI;
   private final Map<String, BinaryMessenger.BinaryMessageHandler> messageHandlers;
   private final Map<Integer, BinaryMessenger.BinaryReply> mPendingReplies = new HashMap<>();
   private int mNextReplyId = 1;
-  
+
   DartMessenger(@NonNull FlutterJNI flutterJNI) {
     this.flutterJNI = flutterJNI;
     this.messageHandlers = new HashMap<>();
   }
-  
+
   @Override
   public void setMessageHandler(String channel, BinaryMessenger.BinaryMessageHandler handler) {
     if (handler == null) {
@@ -45,12 +45,12 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       messageHandlers.put(channel, handler);
     }
   }
-  
+
   @Override
   public void send(String channel, ByteBuffer message) {
     send(channel, message, null);
   }
-  
+
   @Override
   public void send(String channel, ByteBuffer message, BinaryMessenger.BinaryReply callback) {
     int replyId = 0;
@@ -64,7 +64,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       flutterJNI.dispatchPlatformMessage(channel, message, message.position(), replyId);
     }
   }
-  
+
   @Override
   public void handlePlatformMessage(final String channel, byte[] message, final int replyId) {
     BinaryMessenger.BinaryMessageHandler handler = messageHandlers.get(channel);
@@ -73,7 +73,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
         final ByteBuffer buffer = (message == null ? null : ByteBuffer.wrap(message));
         handler.onMessage(buffer, new BinaryMessenger.BinaryReply() {
           private final AtomicBoolean done = new AtomicBoolean(false);
-          
+
           @Override
           public void reply(ByteBuffer reply) {
             if (done.getAndSet(true)) {
@@ -94,7 +94,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
     flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
   }
-  
+
   @Override
   public void handlePlatformMessageResponse(int replyId, byte[] reply) {
     BinaryMessenger.BinaryReply callback = mPendingReplies.remove(replyId);
