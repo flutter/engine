@@ -307,7 +307,7 @@ public final class ResourceUpdater {
             return false;
         }
 
-        if (!buildNumber.equals(Long.toString(getAPKVersion()))) {
+        if (!buildNumber.equals(getAPKVersion())) {
             Log.w(TAG, "Outdated update file for build " + getAPKVersion());
             return false;
         }
