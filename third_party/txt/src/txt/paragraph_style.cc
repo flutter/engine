@@ -29,9 +29,7 @@ TextStyle ParagraphStyle::GetTextStyle() const {
     result.font_size = font_size;
   }
   result.locale = locale;
-  if (line_height >= 0) {
-    result.height = line_height;
-  }
+  result.height = line_height;
   return result;
 }
 
