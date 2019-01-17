@@ -2080,7 +2080,7 @@ class Path extends NativeFieldWrapperClass2 {
   Path _transform(Float64List matrix4) native 'Path_transform';
 
   /// Cuts the path into a subset of itself leaving only the region between
-  /// `startT` and `stopT` fraction values in [0,1]. Set `isInverted` to true 
+  /// `startT` and `stopT` fraction values in [0,1]. Set `isInverted` to true
   /// to invert the result by cutting out the region from `startT` to `stopT`.
   ///
   /// Returns true when the cut is succesfully made, false if not.
