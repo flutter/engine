@@ -446,7 +446,7 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
                   platform_view = platform_view_->GetWeakPtr(),
                   ui_task_runner = task_runners_.GetUITaskRunner(), ui_task] {
     if (io_manager) {
-      io_manager->UpdateResourceContext(
+      io_manager->NotifyResourceContextAvailable(
           platform_view ? platform_view->CreateResourceContext() : nullptr);
     }
     // Step 1: Next, post a task on the UI thread to tell the engine that it has

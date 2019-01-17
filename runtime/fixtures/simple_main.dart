@@ -6,9 +6,9 @@ void main() {
 }
 
 void sayHi() {
-  print("Hi");
+  print('Hi');
 }
 
 void throwExceptionNow() {
-  throw("Hello");
+  throw 'Hello';
 }
