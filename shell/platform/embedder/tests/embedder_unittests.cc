@@ -29,6 +29,7 @@ TEST(EmbedderTest, CanLaunchAndShutdownWithValidProjectArgs) {
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
   args.assets_path = testing::GetFixturesPath();
+  args.kernel_snapshot_path = "kernel_out.bin";
 
   FlutterEngine engine = nullptr;
   FlutterResult result = FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config,
@@ -37,4 +38,26 @@ TEST(EmbedderTest, CanLaunchAndShutdownWithValidProjectArgs) {
 
   result = FlutterEngineShutdown(engine);
   ASSERT_EQ(result, FlutterResult::kSuccess);
+}
+
+TEST(EmbedderTest, FailsRunWithInvalidKernelBlob) {
+  FlutterSoftwareRendererConfig renderer;
+  renderer.struct_size = sizeof(FlutterSoftwareRendererConfig);
+  renderer.surface_present_callback = [](void*, const void*, size_t, size_t) {
+    return false;
+  };
+
+  FlutterRendererConfig config = {};
+  config.type = FlutterRendererType::kSoftware;
+  config.software = renderer;
+
+  FlutterProjectArgs args = {};
+  args.struct_size = sizeof(FlutterProjectArgs);
+  args.assets_path = testing::GetFixturesPath();
+  args.kernel_snapshot_path = "no_such_file";
+
+  FlutterEngine engine = nullptr;
+  FlutterResult result = FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config,
+                                          &args, nullptr, &engine);
+  ASSERT_NE(result, FlutterResult::kSuccess);
 }

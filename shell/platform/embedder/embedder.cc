@@ -302,13 +302,15 @@ FlutterResult FlutterEngineRun(size_t version,
   settings.assets_path = args->assets_path;
 
   // Verify the assets path contains Dart 2 kernel assets.
-  const std::string kApplicationKernelSnapshotFileName = "kernel_blob.bin";
-  std::string application_kernel_path = fml::paths::JoinPaths(
-      {settings.assets_path, kApplicationKernelSnapshotFileName});
+  std::string snapshotPath = "kernel_blob.bin";
+  if (SAFE_ACCESS(args, kernel_snapshot_path, nullptr) != nullptr)
+    snapshotPath = SAFE_ACCESS(args, kernel_snapshot_path, nullptr);
+  std::string application_kernel_path =
+      fml::paths::JoinPaths({settings.assets_path, snapshotPath});
   if (!fml::IsFile(application_kernel_path)) {
     return kInvalidArguments;
   }
-  settings.application_kernel_asset = kApplicationKernelSnapshotFileName;
+  settings.application_kernel_asset = snapshotPath;
 
   settings.task_observer_add = [](intptr_t key, fml::closure callback) {
     fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));

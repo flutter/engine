@@ -191,8 +191,8 @@ typedef struct {
   //
   // \deprecated As of Dart 2, running from Dart source is no longer supported.
   // Dart code should now be compiled to kernel form and will be loaded by from
-  // |kernel_blob.bin| in the assets directory. This struct member is retained
-  // for ABI stability.
+  // |kernel_snapshot_path| in the assets directory. This struct member is
+  // retained for ABI stability.
   const char* main_path__unused__;
   // The path to the |.packages| for the project. The string can be collected
   // after the call to |FlutterEngineRun| returns. The string must be NULL
@@ -200,8 +200,8 @@ typedef struct {
   //
   // \deprecated As of Dart 2, running from Dart source is no longer supported.
   // Dart code should now be compiled to kernel form and will be loaded by from
-  // |kernel_blob.bin| in the assets directory. This struct member is retained
-  // for ABI stability.
+  // |kernel_snapshot_path| in the assets directory. This struct member is
+  // retained for ABI stability.
   const char* packages_path__unused__;
   // The path to the icudtl.dat file for the project. The string can be
   // collected after the call to |FlutterEngineRun| returns. The string must
@@ -217,6 +217,11 @@ typedef struct {
   // to respond to platform messages from the Dart application. The callback
   // will be invoked on the thread on which the |FlutterEngineRun| call is made.
   FlutterPlatformMessageCallback platform_message_callback;
+  // The path within |assets_path| at which the compiled Dart kernel file
+  // containing the |main| entry point can be found. The string can be
+  // collected after the call to |FlutterEngineRun| returns. The string must be
+  // NULL terminated. Defaults to |kernel_blob.bin| if null.
+  const char* kernel_snapshot_path;
 } FlutterProjectArgs;
 
 FLUTTER_EXPORT

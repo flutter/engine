@@ -12,6 +12,10 @@ template("test_fixtures") {
   testonly = true
 
   assert(defined(invoker.fixtures), "Test fixtures must be specified.")
+  kernel_out = "kernel_blob.bin"
+  if (defined(invoker.kernel_out)) {
+    kernel_out = invoker.kernel_out
+  }
 
   fixtures_location = "$target_gen_dir/$target_name/assets"
   fixtures_location_file = "$target_gen_dir/$target_name/test_fixtures_location.cc"
@@ -54,12 +58,12 @@ template("test_fixtures") {
       fixture_paths += [ rebase_path(fixture) ]
     }
     inputs = fixture_paths
-    outputs = ["$fixtures_location/kernel_blob.bin"]
+    outputs = ["$fixtures_location/$kernel_out"]
 
     args = [
       "--sdk-root", rebase_path("$root_out_dir/flutter_patched_sdk"),
       "--target", "flutter",
-      "--output-dill", rebase_path("$fixtures_location/kernel_blob.bin"),
+      "--output-dill", rebase_path("$fixtures_location/$kernel_out"),
     ] + fixture_paths
     deps = [
       "//third_party/dart/utils/kernel-service:frontend_server"
