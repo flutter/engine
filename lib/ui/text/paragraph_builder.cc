@@ -170,6 +170,9 @@ void decodeStrut(Dart_Handle strut_data,
   const uint8_t* uint8_data = static_cast<const uint8_t*>(byte_data.data());
   uint8_t mask = uint8_data[0];
 
+  // Data is stored in order of increasing size, eg, 8 bit ints will be before
+  // any 32 bit ints. In addition, the order of decoding is the same order
+  // as it is encoded, and the order is used to maintain consistency.
   size_t byte_count = 1;
   if (mask & sFontWeightMask) {
     paragraph_style.strut_font_weight =

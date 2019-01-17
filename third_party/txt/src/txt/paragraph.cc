@@ -431,8 +431,7 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   strut->line_height = 0;
   strut->force_strut = false;
 
-  // Font size must be positive. Negative values for leading mean the font's
-  // leading should be used.
+  // Font size must be positive.
   bool valid_strut =
       paragraph_style_.strut_enabled && paragraph_style_.strut_font_size >= 0;
   if (!valid_strut) {

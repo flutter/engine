@@ -60,8 +60,8 @@ class ParagraphStyle {
   std::vector<std::string> strut_font_families;
   double strut_font_size = 14;
   double strut_line_height = 1;
-  double strut_leading = -1;  // Negative to use font leading. [0,inf) to use
-                              // custom leading as a ratio of font size.
+  double strut_leading = -1;  // Negative to use font's default leading. [0,inf)
+                              // to use custom leading as a ratio of font size.
   bool force_strut_height = false;
 
   // General paragraph properties.

@@ -869,6 +869,7 @@ class StrutStyle {
 
   @override
   int get hashCode => hashValues(hashList(_encoded.buffer.asInt8List()), _fontFamily);
+
 }
 
 /// A direction in which text flows.
