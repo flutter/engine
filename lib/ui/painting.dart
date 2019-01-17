@@ -2080,14 +2080,14 @@ class Path extends NativeFieldWrapperClass2 {
   Path _transform(Float64List matrix4) native 'Path_transform';
 
   /// Cuts the path into a subset of itself leaving only the region between
-  /// `startT` and `stopT` fraction values. Set `isComplement` to true to
-  /// invert the result by cutting out the region from `startT` to `stopT`.
+  /// `startT` and `stopT` fraction values in [0,1]. Set `isInverted` to true 
+  /// to invert the result by cutting out the region from `startT` to `stopT`.
   ///
   /// Returns true when the cut is succesfully made, false if not.
-  bool trim(double startT, double stopT, bool isComplement) {
-    return _trim(startT, stopT, isComplement);
+  bool trim(double startT, double stopT, bool isInverted) {
+    return _trim(startT.clamp(0.0, 1.0), stopT.clamp(0.0, 1.0), isInverted);
   }
-  bool _trim(double startT, double endT, bool isComplement) native 'Path_trim';
+  bool _trim(double startT, double endT, bool isInverted) native 'Path_trim';
 
   /// Computes the bounding rectangle for this path.
   ///

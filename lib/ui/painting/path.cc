@@ -280,8 +280,8 @@ fml::RefPtr<CanvasPath> CanvasPath::transform(tonic::Float64List& matrix4) {
   return path;
 }
 
-bool CanvasPath::trim(double startT, double stopT, bool isComplement) {
-  SkTrimPathEffect::Mode mode = isComplement ? SkTrimPathEffect::Mode::kInverted
+bool CanvasPath::trim(double startT, double stopT, bool isInverted) {
+  SkTrimPathEffect::Mode mode = isInverted ? SkTrimPathEffect::Mode::kInverted
                                              : SkTrimPathEffect::Mode::kNormal;
   sk_sp<SkPathEffect> pathEffect = SkTrimPathEffect::Make(startT, stopT, mode);
   if (!pathEffect) {
