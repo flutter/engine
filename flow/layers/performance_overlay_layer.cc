@@ -7,6 +7,7 @@
 #include <string>
 
 #include "flutter/flow/layers/performance_overlay_layer.h"
+#include "third_party/skia/include/core/SkFont.h"
 
 namespace flow {
 namespace {
@@ -15,11 +16,13 @@ void DrawStatisticsText(SkCanvas& canvas,
                         const std::string& string,
                         int x,
                         int y) {
+  SkFont font;
+  font.setSize(15);
+  font.setLinearMetrics(false);
   SkPaint paint;
-  paint.setTextSize(15);
-  paint.setLinearText(false);
   paint.setColor(SK_ColorGRAY);
-  canvas.drawText(string.c_str(), string.size(), x, y, paint);
+  canvas.drawSimpleText(string.c_str(), string.size(), kUTF8_SkTextEncoding, x,
+                        y, font, paint);
 }
 
 void VisualizeStopWatch(SkCanvas& canvas,
@@ -40,19 +43,14 @@ void VisualizeStopWatch(SkCanvas& canvas,
   }
 
   if (show_labels) {
-    double ms_per_frame = stopwatch.MaxDelta().ToMillisecondsF();
-    double fps;
-    if (ms_per_frame < kOneFrameMS) {
-      fps = 1e3 / kOneFrameMS;
-    } else {
-      fps = 1e3 / ms_per_frame;
-    }
-
+    double max_ms_per_frame = stopwatch.MaxDelta().ToMillisecondsF();
+    double average_ms_per_frame = stopwatch.AverageDelta().ToMillisecondsF();
     std::stringstream stream;
     stream.setf(std::ios::fixed | std::ios::showpoint);
     stream << std::setprecision(1);
-    stream << label_prefix << "  " << fps << " fps  " << ms_per_frame
-           << "ms/frame";
+    stream << label_prefix << "  "
+           << "max " << max_ms_per_frame << " ms/frame, "
+           << "avg " << average_ms_per_frame << " ms/frame";
     DrawStatisticsText(canvas, stream.str(), x + label_x, y + height + label_y);
   }
 }

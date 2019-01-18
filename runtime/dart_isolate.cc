@@ -21,7 +21,6 @@
 #include "third_party/tonic/dart_class_provider.h"
 #include "third_party/tonic/dart_message_handler.h"
 #include "third_party/tonic/dart_state.h"
-#include "third_party/tonic/dart_sticky_error.h"
 #include "third_party/tonic/file_loader/file_loader.h"
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
@@ -35,8 +34,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     TaskRunners task_runners,
     std::unique_ptr<Window> window,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-    fml::WeakPtr<GrContext> resource_context,
-    fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+    fml::WeakPtr<IOManager> io_manager,
     std::string advisory_script_uri,
     std::string advisory_script_entrypoint,
     Dart_IsolateFlags* flags) {
@@ -56,8 +54,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
           std::move(shared_snapshot),    // shared snapshot
           task_runners,                  // task runners
           std::move(snapshot_delegate),  // snapshot delegate
-          std::move(resource_context),   // resource context
-          std::move(unref_queue),        // skia unref queue
+          std::move(io_manager),         // IO manager
           advisory_script_uri,           // advisory URI
           advisory_script_entrypoint,    // advisory entrypoint
           nullptr  // child isolate preparer will be set when this isolate is
@@ -100,8 +97,7 @@ DartIsolate::DartIsolate(DartVM* vm,
                          fml::RefPtr<DartSnapshot> shared_snapshot,
                          TaskRunners task_runners,
                          fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                         fml::WeakPtr<GrContext> resource_context,
-                         fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+                         fml::WeakPtr<IOManager> io_manager,
                          std::string advisory_script_uri,
                          std::string advisory_script_entrypoint,
                          ChildIsolatePreparer child_isolate_preparer)
@@ -109,8 +105,7 @@ DartIsolate::DartIsolate(DartVM* vm,
                   vm->GetSettings().task_observer_add,
                   vm->GetSettings().task_observer_remove,
                   std::move(snapshot_delegate),
-                  std::move(resource_context),
-                  std::move(unref_queue),
+                  std::move(io_manager),
                   advisory_script_uri,
                   advisory_script_entrypoint,
                   vm->GetSettings().log_tag,
@@ -534,8 +529,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           null_task_runners,         // task runners
           nullptr,                   // window
           {},                        // snapshot delegate
-          {},                        // resource context
-          {},                        // unref queue
+          {},                        // IO Manager
           advisory_script_uri == nullptr ? ""
                                          : advisory_script_uri,  // script uri
           advisory_script_entrypoint == nullptr
@@ -645,8 +639,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
             (*raw_embedder_isolate)->GetSharedSnapshot(),   // shared_snapshot
             null_task_runners,                              // task_runners
             fml::WeakPtr<SnapshotDelegate>{},               // snapshot_delegate
-            fml::WeakPtr<GrContext>{},                      // resource_context
-            nullptr,                                        // unref_queue
+            fml::WeakPtr<IOManager>{},                      // io_manager
             advisory_script_uri,         // advisory_script_uri
             advisory_script_entrypoint,  // advisory_script_entrypoint
             (*raw_embedder_isolate)->child_isolate_preparer_));
@@ -706,19 +699,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
 
 // |Dart_IsolateShutdownCallback|
 void DartIsolate::DartIsolateShutdownCallback(
-    std::shared_ptr<DartIsolate>* embedder_isolate) {
-  if (!tonic::DartStickyError::IsSet()) {
-    return;
-  }
-
-  tonic::DartApiScope api_scope;
-  Dart_Handle sticky_error = Dart_GetStickyError();
-  if (!Dart_IsFatalError(sticky_error)) {
-    FML_LOG(ERROR) << "Isolate " << tonic::StdStringFromDart(Dart_DebugName())
-                   << " exited with an error";
-    FML_CHECK(tonic::LogIfError(sticky_error));
-  }
-}
+    std::shared_ptr<DartIsolate>* embedder_isolate) {}
 
 // |Dart_IsolateCleanupCallback|
 void DartIsolate::DartIsolateCleanupCallback(
