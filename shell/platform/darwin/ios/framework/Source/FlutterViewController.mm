@@ -500,6 +500,8 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 // touch is specified in the second argument.
 - (void)dispatchTouches:(NSSet*)touches
     pointerDataChangeOverride:(blink::PointerData::Change*)overridden_change {
+  if (!(self.isViewLoaded && self.view.window))
+    return;
   const CGFloat scale = [UIScreen mainScreen].scale;
   auto packet = std::make_unique<blink::PointerDataPacket>(touches.count);
 
