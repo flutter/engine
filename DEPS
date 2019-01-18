@@ -419,16 +419,20 @@ hooks = [
         'get'
     ],
   },
-  {
-    'name': 'prepare_android_downloader_win',
-    'pattern': '.',
-    'cwd': 'src\\tools\\android\\android_sdk_downloader',
-    'condition': 'host_os == "win"',
-    'action': [
-        '..\\..\\..\\third_party\\dart\\tools\\sdks\\dart-sdk\\bin\\pub.bat', # this hook _must_ be run _after_ the dart hook.
-        'get'
-    ],
-  },
+  # TODO(dnfield): This can be enabled when we actually support building
+  # the android engine on windows.  For now there's no sense in having
+  # windows clients download bits they don't need.
+  # see: https://github.com/flutter/flutter/issues/13841
+  # {
+  #   'name': 'prepare_android_downloader_win',
+  #   'pattern': '.',
+  #   'cwd': 'src\\tools\\android\\android_sdk_downloader',
+  #   'condition': 'host_os == "win"',
+  #   'action': [
+  #       '..\\..\\..\\third_party\\dart\\tools\\sdks\\dart-sdk\\bin\\pub.bat', # this hook _must_ be run _after_ the dart hook.
+  #       'get'
+  #   ],
+  # },
   {
     'name': 'download_android_tools',
     'pattern': '.',
@@ -447,24 +451,28 @@ hooks = [
         '--ndk-version=19.0.5232133'
     ],
   },
-  {
-    'name': 'download_android_tools_win',
-    'pattern': '.',
-    'condition': 'host_os == "win"',
-    'action': [
-        'src\\third_party\\dart\\tools\\sdks\\dart-sdk\\bin\\dart.exe', # this hook _must_ be run _after_ the dart hook.
-        '--enable-asserts',
-        'src\\tools\\android\\android_sdk_downloader\\lib\\main.dart',
-        '-y', # Accept licenses
-        '--out=src\\third_party\\android_tools',
-        '--platform=28',
-        '--platform-revision=6',
-        '--build-tools-version=28.0.3',
-        '--platform-tools-version=28.0.1',
-        '--tools-version=26.1.1',
-        '--ndk-version=19.0.5232133'
-    ],
-  },
+  # TODO(dnfield): This can be enabled when we actually support building
+  # the android engine on windows.  For now there's no sense in having
+  # windows clients download bits they don't need.
+  # see: https://github.com/flutter/flutter/issues/13841
+  # {
+  #   'name': 'download_android_tools_win',
+  #   'pattern': '.',
+  #   'condition': 'host_os == "win"',
+  #   'action': [
+  #       'src\\third_party\\dart\\tools\\sdks\\dart-sdk\\bin\\dart.exe', # this hook _must_ be run _after_ the dart hook.
+  #       '--enable-asserts',
+  #       'src\\tools\\android\\android_sdk_downloader\\lib\\main.dart',
+  #       '-y', # Accept licenses
+  #       '--out=src\\third_party\\android_tools',
+  #       '--platform=28',
+  #       '--platform-revision=6',
+  #       '--build-tools-version=28.0.3',
+  #       '--platform-tools-version=28.0.1',
+  #       '--tools-version=26.1.1',
+  #       '--ndk-version=19.0.5232133'
+  #   ],
+  # },
   {
     'name': 'download_android_support',
     'pattern': '.',
