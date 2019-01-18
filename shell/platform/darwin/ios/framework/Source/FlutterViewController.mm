@@ -36,7 +36,7 @@
   blink::ViewportMetrics _viewportMetrics;
   BOOL _initialized;
   BOOL _viewOpaque;
-  BOOL _engineNeedsLaunch;
+  BOOL _isEmbedEngine;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -49,7 +49,7 @@
   if (self) {
     _viewOpaque = YES;
     _engine.reset([engine retain]);
-    _engineNeedsLaunch = NO;
+    _isEmbedEngine = FALSE;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
 
@@ -70,9 +70,9 @@
     _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
                                               project:projectOrNil
                                allowHeadlessExecution:NO]);
+    _isEmbedEngine = TRUE;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
-    _engineNeedsLaunch = YES;
     [self loadDefaultSplashScreenView];
     [self performCommonViewControllerInitialization];
   }
@@ -388,10 +388,9 @@
 
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
-
-  if (_engineNeedsLaunch) {
+  if (_isEmbedEngine) {
+    [_engine.get() createShell:nil libraryURI:nil];
     [_engine.get() launchEngine:nil libraryURI:nil];
-    _engineNeedsLaunch = NO;
   }
   [_engine.get() setViewController:self];
 
