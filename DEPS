@@ -9,7 +9,7 @@
 # .gclient file (the parent of 'src').
 #
 # Then commit .DEPS.git locally (gclient doesn't like dirty trees) and run
-#   gclient sync
+#   gclient sync..
 # Verify the thing happened you wanted. Then revert your .DEPS.git change
 # DO NOT CHECK IN CHANGES TO .DEPS.git upstream. It will be automatically
 # updated by a bot when you modify this one.
@@ -413,20 +413,50 @@ hooks = [
     'name': 'prepare_android_downloader',
     'pattern': '.',
     'cwd': 'src/tools/android/android_sdk_downloader',
+    'condition': 'host_os == "linux" or host_os == "mac"',
     'action': [
         '../../../third_party/dart/tools/sdks/dart-sdk/bin/pub', # this hook _must_ be run _after_ the dart hook.
         'get'
     ],
   },
   {
+    'name': 'prepare_android_downloader_win',
+    'pattern': '.',
+    'cwd': 'src\\tools\\android\\android_sdk_downloader',
+    'condition': 'host_os == "win"',
+    'action': [
+        '..\\..\\..\\third_party\\dart\\tools\\sdks\\dart-sdk\\bin\\pub.bat', # this hook _must_ be run _after_ the dart hook.
+        'get'
+    ],
+  },
+  {
     'name': 'download_android_tools',
     'pattern': '.',
+    'condition': 'host_os == "mac" or host_os == "linux"',
     'action': [
         'src/third_party/dart/tools/sdks/dart-sdk/bin/dart', # this hook _must_ be run _after_ the dart hook.
         '--enable-asserts',
         'src/tools/android/android_sdk_downloader/lib/main.dart',
         '-y', # Accept licenses
         '--out=src/third_party/android_tools',
+        '--platform=28',
+        '--platform-revision=6',
+        '--build-tools-version=28.0.3',
+        '--platform-tools-version=28.0.1',
+        '--tools-version=26.1.1',
+        '--ndk-version=19.0.5232133'
+    ],
+  },
+  {
+    'name': 'download_android_tools_win',
+    'pattern': '.',
+    'condition': 'host_os == "win"',
+    'action': [
+        'src\\third_party\\dart\\tools\\sdks\\dart-sdk\\bin\\dart.exe', # this hook _must_ be run _after_ the dart hook.
+        '--enable-asserts',
+        'src\\tools\\android\\android_sdk_downloader\\lib\\main.dart',
+        '-y', # Accept licenses
+        '--out=src\\third_party\\android_tools',
         '--platform=28',
         '--platform-revision=6',
         '--build-tools-version=28.0.3',
