@@ -432,7 +432,7 @@ hooks = [
         '--build-tools-version=28.0.3',
         '--platform-tools-version=28.0.1',
         '--tools-version=26.1.1',
-        '--ndk-version=18.1.5063045'
+        '--ndk-version=19.0.5232133'
     ],
   },
   {
