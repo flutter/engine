@@ -62,7 +62,8 @@ sk_sp<SkSurface> EmbedderSurfaceSoftware::AcquireBackingStore(
   }
 
   SkImageInfo info =
-      SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType);
+      SkImageInfo::MakeN32(size.fWidth, size.fHeight, kPremul_SkAlphaType,
+                           SkColorSpace::MakeSRGB());
   sk_surface_ = SkSurface::MakeRaster(info, nullptr);
 
   if (sk_surface_ == nullptr) {

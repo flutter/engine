@@ -98,10 +98,13 @@ sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
   TRACE_EVENT0("flutter", __FUNCTION__);
 
   sk_sp<SkSurface> surface;
+  SkImageInfo image_info =
+      SkImageInfo::MakeN32Premul(picture_size.width(), picture_size.height(),
+                                 SkColorSpace::MakeSRGB());
   if (surface_ == nullptr || surface_->GetContext() == nullptr) {
     // Raster surface is fine if there is no on screen surface. This might
     // happen in case of software rendering.
-    surface = SkSurface::MakeRaster(SkImageInfo::MakeN32Premul(picture_size));
+    surface = SkSurface::MakeRaster(image_info);
   } else {
     if (!surface_->MakeRenderContextCurrent()) {
       return nullptr;
@@ -112,7 +115,7 @@ sk_sp<SkImage> Rasterizer::MakeRasterSnapshot(sk_sp<SkPicture> picture,
     surface = SkSurface::MakeRenderTarget(
         surface_->GetContext(),                   // context
         SkBudgeted::kNo,                          // budgeted
-        SkImageInfo::MakeN32Premul(picture_size)  // image info
+        image_info                                // image info
     );
   }
 
@@ -231,7 +234,9 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 
 static sk_sp<SkSurface> CreateSnapshotSurface(GrContext* surface_context,
                                               const SkISize& size) {
-  const auto image_info = SkImageInfo::MakeN32Premul(size);
+  const auto image_info =
+      SkImageInfo::MakeN32Premul(size.width(), size.height(),
+                                 SkColorSpace::MakeSRGB());
   if (surface_context) {
     // There is a rendering surface that may contain textures that are going to
     // be referenced in the layer tree about to be drawn.
