@@ -96,9 +96,8 @@ static RasterCacheResult Rasterize(
     std::function<void(SkCanvas*)> draw_function) {
   SkIRect cache_rect = RasterCache::GetDeviceBounds(logical_rect, ctm);
 
-  const SkImageInfo image_info =
-      SkImageInfo::MakeN32Premul(cache_rect.width(), cache_rect.height(),
-                                 sk_ref_sp(dst_color_space));
+  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(
+      cache_rect.width(), cache_rect.height(), sk_ref_sp(dst_color_space));
 
   sk_sp<SkSurface> surface =
       context

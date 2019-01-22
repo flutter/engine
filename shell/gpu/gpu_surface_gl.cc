@@ -199,9 +199,8 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrContext* context,
 
 static sk_sp<SkSurface> CreateOffscreenSurface(GrContext* context,
                                                const SkISize& size) {
-  const SkImageInfo image_info =
-      SkImageInfo::MakeN32(size.fWidth, size.fHeight, kOpaque_SkAlphaType,
-                           SkColorSpace::MakeSRGB());
+  const SkImageInfo image_info = SkImageInfo::MakeN32(
+      size.fWidth, size.fHeight, kOpaque_SkAlphaType, SkColorSpace::MakeSRGB());
 
   const SkSurfaceProps surface_props(
       SkSurfaceProps::InitType::kLegacyFontHost_InitType);
