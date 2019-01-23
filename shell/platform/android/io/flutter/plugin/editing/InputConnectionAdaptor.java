@@ -129,7 +129,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
 
     private void deleteLastCharacter(int selStart, int selEnd) {
         String str = mEditable.toString();
-        //calc emoji chatacter length (most is 2，and it's can't deal with charactors whick too long)
+        //calc emoji chatacter length (most is 2,and it's can't deal with charactors whick too long)
         int len = str.offsetByCodePoints(Math.min(selEnd, str.length()), -1);
         int finalStart = Math.max(len, 0);
         int finalEnd = Math.min(selEnd, str.length());
