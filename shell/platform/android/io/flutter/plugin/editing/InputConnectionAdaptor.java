@@ -127,6 +127,16 @@ class InputConnectionAdaptor extends BaseInputConnection {
         return result;
     }
 
+    private void deleteLastCharacter(int selStart, int selEnd) {
+        String str = mEditable.toString();
+        //calc emoji chatacter length (most is 2，and it's can't deal with charactors whick too long , such as 💏)
+        int len = str.offsetByCodePoints(Math.min(selEnd, str.length()), -1);
+        int finalStart = Math.max(len, 0);
+        int finalEnd = Math.min(selEnd, str.length());
+        Selection.setSelection(mEditable, finalStart);
+        mEditable.delete(finalStart, finalEnd);
+    }
+
     @Override
     public boolean sendKeyEvent(KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
@@ -135,15 +145,13 @@ class InputConnectionAdaptor extends BaseInputConnection {
                 int selEnd = Selection.getSelectionEnd(mEditable);
                 if (selEnd > selStart) {
                     // Delete the selection.
-                    Selection.setSelection(mEditable, selStart);
-                    mEditable.delete(selStart, selEnd);
+                    deleteLastCharacter(selStart, selEnd);
                     updateEditingState();
                     return true;
                 } else if (selStart > 0) {
                     // Delete to the left of the cursor.
                     int newSel = Math.max(selStart - 1, 0);
-                    Selection.setSelection(mEditable, newSel);
-                    mEditable.delete(newSel, selStart);
+                    deleteLastCharacter(newSel, selStart);
                     updateEditingState();
                     return true;
                 }
