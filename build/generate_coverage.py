@@ -14,7 +14,7 @@ import shutil
 def GetLLVMBinDirectory():
   buildtool_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../buildtools")
   platform_dir = ""
-  if sys.platform.startswith(('linux')):
+  if sys.platform.startswith('linux'):
     platform_dir = "linux-x64"
   elif sys.platform == 'darwin':
     platform_dir = "mac-x64"
