@@ -13,7 +13,7 @@ import json
 # Path constants. (All of these should be absolute paths.)
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 FLUTTER_DIR = os.path.abspath(os.path.join(THIS_DIR, '..', '..', '..'))
-INSTALL_DIR = os.path.join(FLUTTER_DIR, 'third_party', 'android_support')
+INSTALL_DIR = os.path.join(FLUTTER_DIR, 'third_party', 'androidx')
 
 def GetInstalledVersion(out_file_name):
   version_file = os.path.join(INSTALL_DIR, out_file_name + '.stamp')

@@ -7,10 +7,10 @@ package io.flutter.embedding.engine;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.UiThread;
 import android.view.Surface;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
@@ -92,7 +92,7 @@ public class FlutterJNI {
 
   @UiThread
   public static native String nativeGetObservatoryUri();
-  
+
   private Long nativePlatformViewId;
   private FlutterRenderer.RenderSurface renderSurface;
   private PlatformMessageHandler platformMessageHandler;

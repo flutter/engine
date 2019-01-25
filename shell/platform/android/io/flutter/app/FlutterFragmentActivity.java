@@ -8,7 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
+import androidx.fragment.app.FragmentActivity;
 import io.flutter.app.FlutterActivityDelegate.ViewFactory;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.view.FlutterNativeView;
@@ -101,7 +101,7 @@ public class FlutterFragmentActivity
             super.onBackPressed();
         }
     }
-        
+
     @Override
     protected void onStart() {
         super.onStart();

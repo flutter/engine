@@ -9,8 +9,8 @@ import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.view.Surface;
+import androidx.annotation.NonNull;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
