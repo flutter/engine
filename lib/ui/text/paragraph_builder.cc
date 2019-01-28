@@ -72,7 +72,7 @@ const int psFontStyleIndex = 4;
 const int psMaxLinesIndex = 5;
 const int psFontFamilyIndex = 6;
 const int psFontSizeIndex = 7;
-const int psLineHeightIndex = 8;
+const int psHeightIndex = 8;
 const int psStrutStyleIndex = 9;
 const int psEllipsisIndex = 10;
 const int psLocaleIndex = 11;
@@ -84,7 +84,7 @@ const int psFontStyleMask = 1 << psFontStyleIndex;
 const int psMaxLinesMask = 1 << psMaxLinesIndex;
 const int psFontFamilyMask = 1 << psFontFamilyIndex;
 const int psFontSizeMask = 1 << psFontSizeIndex;
-const int psLineHeightMask = 1 << psLineHeightIndex;
+const int psHeightMask = 1 << psHeightIndex;
 const int psStrutStyleMask = 1 << psStrutStyleIndex;
 const int psEllipsisMask = 1 << psEllipsisIndex;
 const int psLocaleMask = 1 << psLocaleIndex;
@@ -104,7 +104,7 @@ const int sFontWeightIndex = 0;
 const int sFontStyleIndex = 1;
 const int sFontFamilyIndex = 2;
 const int sFontSizeIndex = 3;
-const int sLineHeightIndex = 4;
+const int sHeightIndex = 4;
 const int sLeadingIndex = 5;
 const int sForceStrutHeightIndex = 6;
 
@@ -112,7 +112,7 @@ const int sFontWeightMask = 1 << sFontWeightIndex;
 const int sFontStyleMask = 1 << sFontStyleIndex;
 const int sFontFamilyMask = 1 << sFontFamilyIndex;
 const int sFontSizeMask = 1 << sFontSizeIndex;
-const int sLineHeightMask = 1 << sLineHeightIndex;
+const int sHeightMask = 1 << sHeightIndex;
 const int sLeadingMask = 1 << sLeadingIndex;
 const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
 
@@ -144,12 +144,12 @@ fml::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
     const std::string& fontFamily,
     const std::vector<std::string>& strutFontFamilies,
     double fontSize,
-    double lineHeight,
+    double height,
     const std::u16string& ellipsis,
     const std::string& locale) {
   return fml::MakeRefCounted<ParagraphBuilder>(encoded, strutData, fontFamily,
                                                strutFontFamilies, fontSize,
-                                               lineHeight, ellipsis, locale);
+                                               height, ellipsis, locale);
 }
 
 // returns true if there is a font family defined. Font family is the only
@@ -190,8 +190,8 @@ void decodeStrut(Dart_Handle strut_data,
   if (mask & sFontSizeMask) {
     paragraph_style.strut_font_size = float_data[float_count++];
   }
-  if (mask & sLineHeightMask) {
-    paragraph_style.strut_line_height = float_data[float_count++];
+  if (mask & sHeightMask) {
+    paragraph_style.strut_height = float_data[float_count++];
   }
   if (mask & sLeadingMask) {
     paragraph_style.strut_leading = float_data[float_count++];
@@ -216,7 +216,7 @@ ParagraphBuilder::ParagraphBuilder(
     const std::string& fontFamily,
     const std::vector<std::string>& strutFontFamilies,
     double fontSize,
-    double lineHeight,
+    double height,
     const std::u16string& ellipsis,
     const std::string& locale) {
   int32_t mask = encoded[0];
@@ -251,9 +251,9 @@ ParagraphBuilder::ParagraphBuilder(
     style.strut_font_size = fontSize;
   }
 
-  if (mask & psLineHeightMask) {
-    style.line_height = lineHeight;
-    style.strut_line_height = lineHeight;
+  if (mask & psHeightMask) {
+    style.height = height;
+    style.strut_height = height;
   }
 
   if (mask & psStrutStyleMask) {

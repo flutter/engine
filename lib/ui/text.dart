@@ -638,7 +638,7 @@ class ParagraphStyle {
     int maxLines,
     String fontFamily,
     double fontSize,
-    double lineHeight,
+    double height,
     FontWeight fontWeight,
     FontStyle fontStyle,
     StrutStyle strutStyle,
@@ -650,7 +650,7 @@ class ParagraphStyle {
          maxLines,
          fontFamily,
          fontSize,
-         lineHeight,
+         height,
          fontWeight,
          fontStyle,
          strutStyle,
@@ -659,7 +659,7 @@ class ParagraphStyle {
        ),
        _fontFamily = fontFamily,
        _fontSize = fontSize,
-       _lineHeight = lineHeight,
+       _height = height,
        _strutStyle = strutStyle,
        _ellipsis = ellipsis,
        _locale = locale;
@@ -667,7 +667,7 @@ class ParagraphStyle {
   final Int32List _encoded;
   final String _fontFamily;
   final double _fontSize;
-  final double _lineHeight;
+  final double _height;
   final StrutStyle _strutStyle;
   final String _ellipsis;
   final Locale _locale;
@@ -681,7 +681,7 @@ class ParagraphStyle {
     final ParagraphStyle typedOther = other;
     if (_fontFamily != typedOther._fontFamily ||
         _fontSize != typedOther._fontSize ||
-        _lineHeight != typedOther._lineHeight ||
+        _height != typedOther._height ||
         _strutStyle != typedOther._strutStyle ||
         _ellipsis != typedOther._ellipsis ||
         _locale != typedOther._locale)
@@ -694,7 +694,7 @@ class ParagraphStyle {
   }
 
   @override
-  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _lineHeight, _ellipsis, _locale);
+  int get hashCode => hashValues(hashList(_encoded), _fontFamily, _fontSize, _height, _ellipsis, _locale);
 
   @override
   String toString() {
@@ -706,7 +706,7 @@ class ParagraphStyle {
              'maxLines: ${      _encoded[0] & 0x020 == 0x020 ? _encoded[5]                       : "unspecified"}, '
              'fontFamily: ${    _encoded[0] & 0x040 == 0x040 ? _fontFamily                       : "unspecified"}, '
              'fontSize: ${      _encoded[0] & 0x080 == 0x080 ? _fontSize                         : "unspecified"}, '
-             'lineHeight: ${    _encoded[0] & 0x100 == 0x100 ? "${_lineHeight}x"                 : "unspecified"}, '
+             'height: ${        _encoded[0] & 0x100 == 0x100 ? "${_height}x"                 : "unspecified"}, '
              'ellipsis: ${      _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""                  : "unspecified"}, '
              'locale: ${        _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}'
            ')';
@@ -726,14 +726,14 @@ ByteData _encodeStrut(
   String fontFamily,
   List<String> fontFamilyFallback,
   double fontSize,
-  double lineHeight,
+  double height,
   double leading,
   FontWeight fontWeight,
   FontStyle fontStyle,
   bool forceStrutHeight) {
   if (fontFamily == null &&
     fontSize == null &&
-    lineHeight == null &&
+    height == null &&
     leading == null &&
     fontWeight == null &&
     fontStyle == null &&
@@ -762,9 +762,9 @@ ByteData _encodeStrut(
     data.setFloat32(byteCount, fontSize, _kFakeHostEndian);
     byteCount += 4;
   }
-  if (lineHeight != null) {
+  if (height != null) {
     bitmask |= 1 << 4;
-    data.setFloat32(byteCount, lineHeight, _kFakeHostEndian);
+    data.setFloat32(byteCount, height, _kFakeHostEndian);
     byteCount += 4;
   }
   if (leading != null) {
@@ -824,7 +824,7 @@ class StrutStyle {
     String fontFamily,
     List<String> fontFamilyFallback,
     double fontSize,
-    double lineHeight,
+    double height,
     double leading,
     FontWeight fontWeight,
     FontStyle fontStyle,
@@ -833,7 +833,7 @@ class StrutStyle {
          fontFamily,
          fontFamilyFallback,
          fontSize,
-         lineHeight,
+         height,
          leading,
          fontWeight,
          fontStyle,
@@ -1396,9 +1396,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
       if (style._strutStyle._fontFamilyFallback != null)
         strutFontFamilies.addAll(style._strutStyle._fontFamilyFallback);
     }
-    _constructor(style._encoded, style._strutStyle?._encoded, style._fontFamily, strutFontFamilies, style._fontSize, style._lineHeight, style._ellipsis, _encodeLocale(style._locale));
+    _constructor(style._encoded, style._strutStyle?._encoded, style._fontFamily, strutFontFamilies, style._fontSize, style._height, style._ellipsis, _encodeLocale(style._locale));
   }
-  void _constructor(Int32List encoded, ByteData strutData, String fontFamily, List<dynamic> strutFontFamily, double fontSize, double lineHeight, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
+  void _constructor(Int32List encoded, ByteData strutData, String fontFamily, List<dynamic> strutFontFamily, double fontSize, double height, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
 
   /// Applies the given style to the added text until [pop] is called.
   ///

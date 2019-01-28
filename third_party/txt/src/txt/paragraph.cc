@@ -456,9 +456,8 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
     SkFontMetrics strut_metrics;
     font.getMetrics(&strut_metrics);
 
-    strut->ascent = paragraph_style_.strut_line_height * -strut_metrics.fAscent;
-    strut->descent =
-        paragraph_style_.strut_line_height * strut_metrics.fDescent;
+    strut->ascent = paragraph_style_.strut_height * -strut_metrics.fAscent;
+    strut->descent = paragraph_style_.strut_height * strut_metrics.fDescent;
     strut->leading =
         // Use font's leading if there is no user specified strut leading.
         paragraph_style_.strut_leading < 0

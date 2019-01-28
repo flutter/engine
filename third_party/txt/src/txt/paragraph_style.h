@@ -49,7 +49,7 @@ class ParagraphStyle {
   FontStyle font_style = FontStyle::normal;
   std::string font_family = "";
   double font_size = 14;
-  double line_height = 1;
+  double height = 1;
 
   // Strut properties. strut_enabled must be set to true for the rest of the
   // properties to take effect.
@@ -59,7 +59,7 @@ class ParagraphStyle {
   FontStyle strut_font_style = FontStyle::normal;
   std::vector<std::string> strut_font_families;
   double strut_font_size = 14;
-  double strut_line_height = 1;
+  double strut_height = 1;
   double strut_leading = -1;  // Negative to use font's default leading. [0,inf)
                               // to use custom leading as a ratio of font size.
   bool force_strut_height = false;

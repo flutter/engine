@@ -2571,7 +2571,7 @@ TEST_F(ParagraphTest, BaselineParagraph) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::justify;
-  paragraph_style.line_height = 1.5;
+  paragraph_style.height = 1.5;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
@@ -2720,7 +2720,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph1)) {
   paragraph_style.strut_font_families = std::vector<std::string>(1, "BlahFake");
   paragraph_style.strut_font_families.push_back("ahem");
   paragraph_style.strut_font_size = 50;
-  paragraph_style.strut_line_height = 1.5;
+  paragraph_style.strut_height = 1.5;
   paragraph_style.strut_leading = 0.1;
   paragraph_style.strut_enabled = true;
 
@@ -2851,7 +2851,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph2)) {
   paragraph_style.max_lines = 10;
   paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
   paragraph_style.strut_font_size = 50;
-  paragraph_style.strut_line_height = 1.6;
+  paragraph_style.strut_height = 1.6;
   paragraph_style.strut_enabled = true;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
@@ -2981,7 +2981,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutParagraph3)) {
   paragraph_style.max_lines = 10;
   paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
   paragraph_style.strut_font_size = 50;
-  paragraph_style.strut_line_height = 1.1;
+  paragraph_style.strut_height = 1.1;
   paragraph_style.strut_enabled = true;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
@@ -3111,7 +3111,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(DISABLED_StrutForceParagraph)) {
   paragraph_style.max_lines = 10;
   paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
   paragraph_style.strut_font_size = 50;
-  paragraph_style.strut_line_height = 1.5;
+  paragraph_style.strut_height = 1.5;
   paragraph_style.strut_leading = 0.1;
   paragraph_style.force_strut_height = true;
   paragraph_style.strut_enabled = true;
