@@ -50,6 +50,8 @@ FLUTTER_EXPORT
  * A newly initialized engine will not run the `FlutterDartProject` until either
  * `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI:` is called.
  *
+ * FlutterEngine created with this method will have allowHeadlessExecution set to YES.
+ *
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  *   be unique across FlutterEngine instances, and is used in instrumentation to label
  *   the threads used by this FlutterEngine.
@@ -118,6 +120,15 @@ FLUTTER_EXPORT
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)uri;
+
+/**
+ * Destroy running context for an engine.
+ *
+ * If you create a FlutterEngine with allowHeadlessExecution set to YES,
+ * call destroyContext explicitly when you want to release the engine.
+ *
+ */
+- (void)destroyContext;
 
 /**
  * Sets the `FlutterViewController` for this instance.  The FlutterEngine must be
