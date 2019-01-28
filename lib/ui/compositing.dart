@@ -209,7 +209,9 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// Useful during development to assess the performance of the application.
   /// The enabledOptions controls which statistics are displayed. The bounds
-  /// controls where the statistics are displayed.
+  /// controls where the statistics are displayed. If mockData is non-empty, we
+  /// will display that as the frame time milliseconds instead of the real
+  /// statistics. The mockData is only for testing the performance overlay.
   ///
   /// enabledOptions is a bit field with the following bits defined:
   ///  - 0x01: displayRasterizerStatistics - show GPU thread frame time
@@ -229,18 +231,28 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// See also the [PerformanceOverlayOption] enum in the rendering library.
   /// for more details.
   // Values above must match constants in //engine/src/sky/compositor/performance_overlay_layer.h
-  void addPerformanceOverlay(int enabledOptions, Rect bounds) {
+  void addPerformanceOverlay(int enabledOptions, Rect bounds, {List<int> mockData = const <int>[]}) {
+    assert(enabledOptions != null);
+    assert(bounds != null);
+    assert(mockData != null);
+    Int32List encodedData = new Int32List(mockData.length);
+    for (int i = 0; i < mockData.length; i++) {
+      encodedData[i] = mockData[i];
+    }
     _addPerformanceOverlay(enabledOptions,
                            bounds.left,
                            bounds.right,
                            bounds.top,
-                           bounds.bottom);
+                           bounds.bottom,
+                           encodedData);
   }
   void _addPerformanceOverlay(int enabledOptions,
                               double left,
                               double right,
                               double top,
-                              double bottom) native 'SceneBuilder_addPerformanceOverlay';
+                              double bottom,
+                              Int32List mockData,
+                              ) native 'SceneBuilder_addPerformanceOverlay';
 
   /// Adds a [Picture] to the scene.
   ///

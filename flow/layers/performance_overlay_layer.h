@@ -5,6 +5,10 @@
 #ifndef FLUTTER_FLOW_LAYERS_PERFORMANCE_OVERLAY_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_PERFORMANCE_OVERLAY_LAYER_H_
 
+#include <vector>
+
+#include "third_party/tonic/typed_data/int32_list.h"
+
 #include "flutter/flow/layers/layer.h"
 #include "flutter/fml/macros.h"
 
@@ -14,7 +18,6 @@ const int kDisplayRasterizerStatistics = 1 << 0;
 const int kVisualizeRasterizerStatistics = 1 << 1;
 const int kDisplayEngineStatistics = 1 << 2;
 const int kVisualizeEngineStatistics = 1 << 3;
-const int kMockStatistics = 1 << 4;
 
 class PerformanceOverlayLayer : public Layer {
  public:
@@ -22,8 +25,12 @@ class PerformanceOverlayLayer : public Layer {
 
   void Paint(PaintContext& context) const override;
 
+  void SetMockData(const tonic::Int32List& data);
+
  private:
   int options_;
+
+  std::vector<int> mock_data_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PerformanceOverlayLayer);
 };

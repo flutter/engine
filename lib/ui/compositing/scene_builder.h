@@ -18,6 +18,7 @@
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/painting/rrect.h"
 #include "flutter/lib/ui/painting/shader.h"
+#include "third_party/tonic/typed_data/int32_list.h"
 #include "third_party/tonic/typed_data/float64_list.h"
 
 namespace blink {
@@ -66,7 +67,8 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                              double left,
                              double right,
                              double top,
-                             double bottom);
+                             double bottom,
+                             tonic::Int32List& mockData);
 
   void addPicture(double dx, double dy, Picture* picture, int hints);
 
