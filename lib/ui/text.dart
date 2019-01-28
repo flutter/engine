@@ -520,7 +520,7 @@ Int32List _encodeParagraphStyle(
   int maxLines,
   String fontFamily,
   double fontSize,
-  double lineHeight,
+  double height,
   FontWeight fontWeight,
   FontStyle fontStyle,
   StrutStyle strutStyle,
@@ -556,7 +556,7 @@ Int32List _encodeParagraphStyle(
     result[0] |= 1 << 7;
     // Passed separately to native.
   }
-  if (lineHeight != null) {
+  if (height != null) {
     result[0] |= 1 << 8;
     // Passed separately to native.
   }
@@ -604,9 +604,9 @@ class ParagraphStyle {
   /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting
   ///   the text.
   ///
-  /// * `lineHeight`: The minimum height of the line boxes, as a multiple of the
+  /// * `height`: The minimum height of the line boxes, as a multiple of the
   ///   font size. The lines of the paragraph will be at least
-  ///   `(lineHeight + leading) * fontSize` tall when fontSize
+  ///   `(height + leading) * fontSize` tall when fontSize
   ///   is not null. When fontSize is null, there is no minimum line height. Tall
   ///   glyphs due to baseline alignment or large [TextStyle.fontSize] may cause
   ///   the actual line height after layout to be taller than specified here.
