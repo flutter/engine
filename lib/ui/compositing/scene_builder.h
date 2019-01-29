@@ -18,8 +18,8 @@
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/painting/rrect.h"
 #include "flutter/lib/ui/painting/shader.h"
-#include "third_party/tonic/typed_data/int32_list.h"
 #include "third_party/tonic/typed_data/float64_list.h"
+#include "third_party/tonic/typed_data/int32_list.h"
 
 namespace blink {
 
