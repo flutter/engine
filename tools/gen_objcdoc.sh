@@ -17,6 +17,13 @@ if [ $# -eq 0 ]
       exit 1
 fi
 
+# If GEM_HOME is set, prefer using its copy of jazzy.
+# LUCI will put jazzy here instead of on the path.
+if ! [ -z "${GEM_HOME}" ]
+  then
+    PATH="${GEM_HOME}/bin":$PATH
+fi
+
 # Use iPhoneSimulator SDK
 # See: https://github.com/realm/jazzy/issues/791
 jazzy \
