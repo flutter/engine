@@ -157,7 +157,7 @@ class Engine final : public blink::RuntimeDelegate {
 
   bool HandleLifecyclePlatformMessage(blink::PlatformMessage* message);
 
-  bool HandleNavigationPlatformMessage(
+  bool HandleInitialRoutePlatformMessage(
       fml::RefPtr<blink::PlatformMessage> message);
 
   bool HandleLocalizationPlatformMessage(blink::PlatformMessage* message);

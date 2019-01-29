@@ -260,13 +260,19 @@ void Engine::DispatchPlatformMessage(
     HandleSettingsPlatformMessage(message.get());
     return;
   } else if (message->channel() == kNavigationChannel) {
-    HandleNavigationPlatformMessage(std::move(message));
-    return;
+    if (HandleInitialRoutePlatformMessage(std::move(message))) {
+      return;
+    }
   }
 
   if (runtime_controller_->IsRootIsolateRunning() &&
       runtime_controller_->DispatchPlatformMessage(std::move(message))) {
     return;
+  }
+
+  // TODO(kangwang1988): Do the job below when we need to deliver `platform to
+  // dart` navigation messages.
+  if (message->channel() == kNavigationChannel) {
   }
 }
 
@@ -292,7 +298,7 @@ bool Engine::HandleLifecyclePlatformMessage(blink::PlatformMessage* message) {
   return false;
 }
 
-bool Engine::HandleNavigationPlatformMessage(
+bool Engine::HandleInitialRoutePlatformMessage(
     fml::RefPtr<blink::PlatformMessage> message) {
   const auto& data = message->data();
 
