@@ -7,6 +7,7 @@
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_message_response_dart.h"
+#include "flutter/shell/version/version.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_library_natives.h"
@@ -333,6 +334,18 @@ void Window::CompletePlatformMessageResponse(int response_id,
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
+void GetFlutterEngineVersion(Dart_NativeArguments args) {
+  Dart_SetReturnValue(args, tonic::ToDart(shell::GetFlutterEngineVersion()));
+}
+
+void GetSkiaVersion(Dart_NativeArguments args) {
+  Dart_SetReturnValue(args, tonic::ToDart(shell::GetSkiaVersion()));
+}
+
+void GetDartVersion(Dart_NativeArguments args) {
+  Dart_SetReturnValue(args, tonic::ToDart(shell::GetDartVersion()));
+}
+
 void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
       {"Window_defaultRouteName", DefaultRouteName, 1, true},
@@ -343,6 +356,9 @@ void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
       {"Window_updateSemantics", UpdateSemantics, 2, true},
       {"Window_setIsolateDebugName", SetIsolateDebugName, 2, true},
       {"Window_reportUnhandledException", ReportUnhandledException, 2, true},
+      {"Window_GetFlutterEngineVersion", GetFlutterEngineVersion, 1, true},
+      {"Window_GetSkiaVersion", GetSkiaVersion, 1, true},
+      {"Window_GetDartVersion", GetDartVersion, 1, true},
   });
 }
 

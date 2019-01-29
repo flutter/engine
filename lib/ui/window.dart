@@ -841,6 +841,11 @@ class Window {
   void _respondToPlatformMessage(int responseId, ByteData data)
       native 'Window_respondToPlatformMessage';
 
+  /// Return the version information for the engine, skia and dart.
+  String getFlutterEngineVersion() native 'Window_GetFlutterEngineVersion';
+  String getSkiaVersion() native 'Window_GetSkiaVersion';
+  String getDartVersion() native 'Window_GetDartVersion';
+
   /// Wraps the given [callback] in another callback that ensures that the
   /// original callback is called in the zone it was registered in.
   static PlatformMessageResponseCallback _zonedPlatformMessageResponseCallback(PlatformMessageResponseCallback callback) {
