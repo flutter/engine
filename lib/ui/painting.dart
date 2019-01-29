@@ -2368,7 +2368,7 @@ class _PathMeasure extends NativeFieldWrapperClass2 {
   // iteration is done instead of before.
   bool _nextContour() {
     final bool next = _nativeNextContour();
-    if (next){
+    if (next) {
       currentContourIndex++;
     }
     return next;
