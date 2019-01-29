@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "flutter/fml/closure.h"
+#include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
 
 namespace blink {
@@ -20,6 +21,14 @@ namespace blink {
 using TaskObserverAdd =
     std::function<void(intptr_t /* key */, fml::closure /* callback */)>;
 using TaskObserverRemove = std::function<void(intptr_t /* key */)>;
+using UnhandledExceptionCallback =
+    std::function<bool(const std::string& /* error */,
+                       const std::string& /* stack trace */)>;
+
+// TODO(chinmaygarde): Deprecate all the "path" struct members in favor of the
+// callback that generates the mapping from these paths.
+// https://github.com/flutter/flutter/issues/26783
+using MappingCallback = std::function<std::unique_ptr<fml::Mapping>(void)>;
 
 struct Settings {
   Settings();
@@ -29,10 +38,15 @@ struct Settings {
   ~Settings();
 
   // VM settings
-  std::string vm_snapshot_data_path;
-  std::string vm_snapshot_instr_path;
-  std::string isolate_snapshot_data_path;
-  std::string isolate_snapshot_instr_path;
+  std::string vm_snapshot_data_path;  // deprecated
+  MappingCallback vm_snapshot_data;
+  std::string vm_snapshot_instr_path;  // deprecated
+  MappingCallback vm_snapshot_instr;
+
+  std::string isolate_snapshot_data_path;  // deprecated
+  MappingCallback isolate_snapshot_data;
+  std::string isolate_snapshot_instr_path;  // deprecated
+  MappingCallback isolate_snapshot_instr;
 
   std::string application_library_path;
   std::string application_kernel_asset;
@@ -45,6 +59,7 @@ struct Settings {
   bool start_paused = false;
   bool trace_skia = false;
   bool trace_startup = false;
+  bool trace_systrace = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
@@ -80,6 +95,11 @@ struct Settings {
   // as fast as possible in returning from this callback. Long running
   // operations in this callback do have the capability of introducing jank.
   std::function<void(int64_t)> idle_notification_callback;
+  // A callback given to the embedder to react to unhandled exceptions in the
+  // running Flutter application. This callback is made on an internal engine
+  // managed thread and embedders must thread as necessary. Performing blocking
+  // calls in this callback will cause applications to jank.
+  UnhandledExceptionCallback unhandled_exception_callback;
   bool enable_software_rendering = false;
   bool skia_deterministic_rendering_on_cpu = false;
   bool verbose_logging = false;

@@ -1,4 +1,4 @@
-Signature: 5f084aa16f4ecd2ee23584417b88c0fa
+Signature: 7abb53f852a78b364206cd2b1d81d0d9
 
 UNUSED LICENSES:
 
@@ -4519,7 +4519,6 @@ FILE: ../../../third_party/dart/sdk/lib/libraries.json
 FILE: ../../../third_party/dart/sdk/lib/vmservice_libraries.json
 FILE: ../../../third_party/dart/third_party/7zip.tar.gz.sha1
 FILE: ../../../third_party/dart/third_party/clang.tar.gz.sha1
-FILE: ../../../third_party/dart/third_party/gsutil.tar.gz.sha1
 ----------------------------------------------------------------------------------------------------
 Copyright 2012, the Dart project authors. All rights reserved.
 Redistribution and use in source and binary forms, with or without
@@ -4758,6 +4757,7 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_ia32_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/assembler_x64_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/disassembler_x86.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/assembler/object_pool_builder.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/constant_propagator.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/flow_graph.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/flow_graph_compiler.h
@@ -4891,9 +4891,7 @@ FILE: ../../../third_party/dart/runtime/vm/version.h
 FILE: ../../../third_party/dart/runtime/vm/version_in.cc
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory.cc
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory.h
-FILE: ../../../third_party/dart/runtime/vm/virtual_memory_android.cc
-FILE: ../../../third_party/dart/runtime/vm/virtual_memory_linux.cc
-FILE: ../../../third_party/dart/runtime/vm/virtual_memory_macos.cc
+FILE: ../../../third_party/dart/runtime/vm/virtual_memory_posix.cc
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_test.cc
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_win.cc
 FILE: ../../../third_party/dart/runtime/vm/zone.cc
@@ -5602,12 +5600,24 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: dart
-ORIGIN: ../../../third_party/dart/runtime/bin/namespace_fuchsia.h + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension.cc + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension.cc
+FILE: ../../../third_party/dart/runtime/bin/entrypoints_verification_test_extension_dllmain_win.cc
 FILE: ../../../third_party/dart/runtime/bin/namespace_fuchsia.h
+FILE: ../../../third_party/dart/runtime/vm/class_id.h
+FILE: ../../../third_party/dart/runtime/vm/code_entry_kind.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/flow_graph_checker.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/flow_graph_checker.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/backend/slot_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/relocation.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/runtime_api.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/runtime_api.h
+FILE: ../../../third_party/dart/runtime/vm/frame_layout.h
+FILE: ../../../third_party/dart/runtime/vm/intrusive_dlist.h
+FILE: ../../../third_party/dart/runtime/vm/intrusive_dlist_test.cc
 FILE: ../../../third_party/dart/runtime/vm/longjump.h
+FILE: ../../../third_party/dart/runtime/vm/pointer_tagging.h
 FILE: ../../../third_party/dart/runtime/vm/thread_stack_resource.cc
 FILE: ../../../third_party/dart/runtime/vm/thread_stack_resource.h
 FILE: ../../../third_party/dart/runtime/vm/thread_state.cc
@@ -5675,6 +5685,7 @@ FILE: ../../../third_party/dart/runtime/vm/double_conversion.cc
 FILE: ../../../third_party/dart/runtime/vm/double_conversion.h
 FILE: ../../../third_party/dart/runtime/vm/exceptions.cc
 FILE: ../../../third_party/dart/runtime/vm/exceptions.h
+FILE: ../../../third_party/dart/runtime/vm/handle_visitor.h
 FILE: ../../../third_party/dart/runtime/vm/handles.h
 FILE: ../../../third_party/dart/runtime/vm/heap/freelist.cc
 FILE: ../../../third_party/dart/runtime/vm/heap/marker.cc
@@ -5695,6 +5706,7 @@ FILE: ../../../third_party/dart/runtime/vm/native_entry.cc
 FILE: ../../../third_party/dart/runtime/vm/native_entry.h
 FILE: ../../../third_party/dart/runtime/vm/native_entry_test.cc
 FILE: ../../../third_party/dart/runtime/vm/native_entry_test.h
+FILE: ../../../third_party/dart/runtime/vm/native_function.h
 FILE: ../../../third_party/dart/runtime/vm/object_store_test.cc
 FILE: ../../../third_party/dart/runtime/vm/os.h
 FILE: ../../../third_party/dart/runtime/vm/port.h

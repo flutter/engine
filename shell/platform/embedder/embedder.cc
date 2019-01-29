@@ -248,11 +248,49 @@ struct _FlutterPlatformMessageResponseHandle {
   fml::RefPtr<blink::PlatformMessage> message;
 };
 
-FlutterResult FlutterEngineRun(size_t version,
-                               const FlutterRendererConfig* config,
-                               const FlutterProjectArgs* args,
-                               void* user_data,
-                               FlutterEngine* engine_out) {
+void PopulateSnapshotMappingCallbacks(const FlutterProjectArgs* args,
+                                      blink::Settings& settings) {
+  // There are no ownership concerns here as all mappings are owned by the
+  // embedder and not the engine.
+  auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
+    return [mapping, size]() {
+      return std::make_unique<fml::NonOwnedMapping>(mapping, size);
+    };
+  };
+
+  if (blink::DartVM::IsRunningPrecompiledCode()) {
+    if (SAFE_ACCESS(args, vm_snapshot_data_size, 0) != 0 &&
+        SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
+      settings.vm_snapshot_data = make_mapping_callback(
+          args->vm_snapshot_data, args->vm_snapshot_data_size);
+    }
+
+    if (SAFE_ACCESS(args, vm_snapshot_instructions_size, 0) != 0 &&
+        SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
+      settings.vm_snapshot_instr = make_mapping_callback(
+          args->vm_snapshot_instructions, args->vm_snapshot_instructions_size);
+    }
+
+    if (SAFE_ACCESS(args, isolate_snapshot_data_size, 0) != 0 &&
+        SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
+      settings.isolate_snapshot_data = make_mapping_callback(
+          args->isolate_snapshot_data, args->isolate_snapshot_data_size);
+    }
+
+    if (SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0) != 0 &&
+        SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
+      settings.isolate_snapshot_instr =
+          make_mapping_callback(args->isolate_snapshot_instructions,
+                                args->isolate_snapshot_instructions_size);
+    }
+  }
+}
+
+FlutterEngineResult FlutterEngineRun(size_t version,
+                                     const FlutterRendererConfig* config,
+                                     const FlutterProjectArgs* args,
+                                     void* user_data,
+                                     FlutterEngine* engine_out) {
   // Step 0: Figure out arguments for shell creation.
   if (version != FLUTTER_ENGINE_VERSION) {
     return kInvalidLibraryVersion;
@@ -298,17 +336,24 @@ FlutterResult FlutterEngineRun(size_t version,
   }
 
   blink::Settings settings = shell::SettingsFromCommandLine(command_line);
+
+  PopulateSnapshotMappingCallbacks(args, settings);
+
   settings.icu_data_path = icu_data_path;
   settings.assets_path = args->assets_path;
 
-  // Verify the assets path contains Dart 2 kernel assets.
-  const std::string kApplicationKernelSnapshotFileName = "kernel_blob.bin";
-  std::string application_kernel_path = fml::paths::JoinPaths(
-      {settings.assets_path, kApplicationKernelSnapshotFileName});
-  if (!fml::IsFile(application_kernel_path)) {
-    return kInvalidArguments;
+  if (!blink::DartVM::IsRunningPrecompiledCode()) {
+    // Verify the assets path contains Dart 2 kernel assets.
+    const std::string kApplicationKernelSnapshotFileName = "kernel_blob.bin";
+    std::string application_kernel_path = fml::paths::JoinPaths(
+        {settings.assets_path, kApplicationKernelSnapshotFileName});
+    if (!fml::IsFile(application_kernel_path)) {
+      FML_LOG(ERROR) << "Not running in AOT mode but could not resolve the "
+                        "kernel binary.";
+      return kInvalidArguments;
+    }
+    settings.application_kernel_asset = kApplicationKernelSnapshotFileName;
   }
-  settings.application_kernel_asset = kApplicationKernelSnapshotFileName;
 
   settings.task_observer_add = [](intptr_t key, fml::closure callback) {
     fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));
@@ -459,7 +504,7 @@ FlutterResult FlutterEngineRun(size_t version,
   return kSuccess;
 }
 
-FlutterResult FlutterEngineShutdown(FlutterEngine engine) {
+FlutterEngineResult FlutterEngineShutdown(FlutterEngine engine) {
   if (engine == nullptr) {
     return kInvalidArguments;
   }
@@ -469,7 +514,7 @@ FlutterResult FlutterEngineShutdown(FlutterEngine engine) {
   return kSuccess;
 }
 
-FlutterResult FlutterEngineSendWindowMetricsEvent(
+FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FlutterEngine engine,
     const FlutterWindowMetricsEvent* flutter_metrics) {
   if (engine == nullptr || flutter_metrics == nullptr) {
@@ -503,9 +548,10 @@ inline blink::PointerData::Change ToPointerDataChange(
   return blink::PointerData::Change::kCancel;
 }
 
-FlutterResult FlutterEngineSendPointerEvent(FlutterEngine engine,
-                                            const FlutterPointerEvent* pointers,
-                                            size_t events_count) {
+FlutterEngineResult FlutterEngineSendPointerEvent(
+    FlutterEngine engine,
+    const FlutterPointerEvent* pointers,
+    size_t events_count) {
   if (engine == nullptr || pointers == nullptr || events_count == 0) {
     return kInvalidArguments;
   }
@@ -534,7 +580,7 @@ FlutterResult FlutterEngineSendPointerEvent(FlutterEngine engine,
              : kInvalidArguments;
 }
 
-FlutterResult FlutterEngineSendPlatformMessage(
+FlutterEngineResult FlutterEngineSendPlatformMessage(
     FlutterEngine engine,
     const FlutterPlatformMessage* flutter_message) {
   if (engine == nullptr || flutter_message == nullptr) {
@@ -559,7 +605,7 @@ FlutterResult FlutterEngineSendPlatformMessage(
              : kInvalidArguments;
 }
 
-FlutterResult FlutterEngineSendPlatformMessageResponse(
+FlutterEngineResult FlutterEngineSendPlatformMessageResponse(
     FlutterEngine engine,
     const FlutterPlatformMessageResponseHandle* handle,
     const uint8_t* data,
@@ -582,13 +628,14 @@ FlutterResult FlutterEngineSendPlatformMessageResponse(
   return kSuccess;
 }
 
-FlutterResult __FlutterEngineFlushPendingTasksNow() {
+FlutterEngineResult __FlutterEngineFlushPendingTasksNow() {
   fml::MessageLoop::GetCurrent().RunExpiredTasksNow();
   return kSuccess;
 }
 
-FlutterResult FlutterEngineRegisterExternalTexture(FlutterEngine engine,
-                                                   int64_t texture_identifier) {
+FlutterEngineResult FlutterEngineRegisterExternalTexture(
+    FlutterEngine engine,
+    int64_t texture_identifier) {
   if (engine == nullptr || texture_identifier == 0) {
     return kInvalidArguments;
   }
@@ -599,7 +646,7 @@ FlutterResult FlutterEngineRegisterExternalTexture(FlutterEngine engine,
   return kSuccess;
 }
 
-FlutterResult FlutterEngineUnregisterExternalTexture(
+FlutterEngineResult FlutterEngineUnregisterExternalTexture(
     FlutterEngine engine,
     int64_t texture_identifier) {
   if (engine == nullptr || texture_identifier == 0) {
@@ -614,7 +661,7 @@ FlutterResult FlutterEngineUnregisterExternalTexture(
   return kSuccess;
 }
 
-FlutterResult FlutterEngineMarkExternalTextureFrameAvailable(
+FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
     FlutterEngine engine,
     int64_t texture_identifier) {
   if (engine == nullptr || texture_identifier == 0) {
