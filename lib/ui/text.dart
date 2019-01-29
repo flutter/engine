@@ -706,7 +706,7 @@ class ParagraphStyle {
              'maxLines: ${      _encoded[0] & 0x020 == 0x020 ? _encoded[5]                       : "unspecified"}, '
              'fontFamily: ${    _encoded[0] & 0x040 == 0x040 ? _fontFamily                       : "unspecified"}, '
              'fontSize: ${      _encoded[0] & 0x080 == 0x080 ? _fontSize                         : "unspecified"}, '
-             'height: ${        _encoded[0] & 0x100 == 0x100 ? "${_height}x"                 : "unspecified"}, '
+             'height: ${        _encoded[0] & 0x100 == 0x100 ? "${_height}x"                     : "unspecified"}, '
              'ellipsis: ${      _encoded[0] & 0x200 == 0x200 ? "\"$_ellipsis\""                  : "unspecified"}, '
              'locale: ${        _encoded[0] & 0x400 == 0x400 ? _locale                           : "unspecified"}'
            ')';

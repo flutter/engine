@@ -231,29 +231,22 @@ ParagraphBuilder::ParagraphBuilder(
   if (mask & psFontWeightMask) {
     style.font_weight =
         static_cast<txt::FontWeight>(encoded[psFontWeightIndex]);
-    style.strut_font_weight =
-        static_cast<txt::FontWeight>(encoded[psFontWeightIndex]);
   }
 
   if (mask & psFontStyleMask) {
     style.font_style = static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
-    style.strut_font_style =
-        static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
   }
 
   if (mask & psFontFamilyMask) {
     style.font_family = fontFamily;
-    style.strut_font_families = strutFontFamilies;
   }
 
   if (mask & psFontSizeMask) {
     style.font_size = fontSize;
-    style.strut_font_size = fontSize;
   }
 
   if (mask & psHeightMask) {
     style.height = height;
-    style.strut_height = height;
   }
 
   if (mask & psStrutStyleMask) {
