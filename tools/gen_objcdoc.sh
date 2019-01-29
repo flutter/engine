@@ -21,7 +21,7 @@ fi
 # LUCI will put jazzy here instead of on the path.
 if [[ -n "${GEM_HOME}" ]]
   then
-    PATH="${GEM_HOME}/bin":$PATH
+    PATH="${GEM_HOME}/bin:$PATH"
 fi
 
 # Use iPhoneSimulator SDK
@@ -35,8 +35,8 @@ jazzy \
   --github_url 'https://github.com/flutter'\
   --github-file-prefix 'http://github.com/flutter/engine/blob/master'\
   --module-version 1.0.0\
-  --xcodebuild-arguments --objc,shell/platform/darwin/ios/framework/Headers/Flutter.h,--,-x,objective-c,-isysroot,$(xcrun --show-sdk-path --sdk iphonesimulator),-I,$(pwd)\
+  --xcodebuild-arguments --objc,shell/platform/darwin/ios/framework/Headers/Flutter.h,--,-x,objective-c,-isysroot,"$(xcrun --show-sdk-path --sdk iphonesimulator)",-I,"$(pwd)"\
   --module Flutter\
   --root-url https://docs.flutter.io/objc/\
-  --output $1\
+  --output "$1"\
   --no-download-badge
