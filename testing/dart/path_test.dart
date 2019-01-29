@@ -207,6 +207,7 @@ void main() {
                             ..lineTo(10, 15);
     final List<PathMetric> metrics = path.computeMetrics().toList();
     expect(metrics.length, 2);
+    print(metrics);
     expect(metrics[0].length, 20);
     expect(metrics[0].isClosed, true);
     expect(() => metrics[0].getTangentForOffset(4.0), throwsStateError);

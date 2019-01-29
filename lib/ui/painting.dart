@@ -2228,7 +2228,6 @@ class PathMetricIterator implements Iterator<PathMetric> {
 
   PathMetric _pathMetric;
   _PathMeasure _pathMeasure;
-  bool _firstTime = true;
 
   @override
   PathMetric get current => _pathMetric;
@@ -2237,9 +2236,8 @@ class PathMetricIterator implements Iterator<PathMetric> {
   bool moveNext() {
     // PathMetric isn't a normal iterable - it's already initialized to its
     // first Path.  Should only call _moveNext when done with the first one.
-    _pathMetric?._dirty = true;
-    if (_firstTime) {
-      _firstTime = false;
+    if (_pathMeasure.currentContourIndex == -1) {
+      _pathMeasure.currentContourIndex++;
       _pathMetric = PathMetric._(_pathMeasure);
       return true;
     }
@@ -2268,7 +2266,7 @@ class PathMetric {
     : assert(_measure != null),
       length = _measure.length,
       isClosed = _measure.isClosed,
-      _dirty = false;
+      contourIndex = _measure.currentContourIndex;
 
   /// Return the total length of the current contour.
   final double length;
@@ -2281,14 +2279,19 @@ class PathMetric {
   /// otherwise.
   final bool isClosed;
 
-  /// Whether the methods on this object are safe to call.
+  /// The zero-based index of the contour.
   ///
-  /// The [getTangentForOffset] and [extractPath] methods are only safe to call
-  /// when this [PathMetric] corresponds to the current [PathMetric] of the
-  /// [PathMetricIterator]. Calling those methods when dirty == true will result
-  /// in a [StateError].
-  bool get dirty => _dirty;
-  bool _dirty;
+  /// [Path] objects are made up of zero or more contours. The first contour is
+  /// created once a drawing command (e.g. [Path.lineTo]) is issued. A
+  /// [Path.moveTo] command after a drawing command may create a new contour,
+  /// although it may not if optimizations are applied that determine the move
+  /// command did not actually result in moving the pen.
+  ///
+  /// This property is only valid with reference to its original iterator. If
+  /// [getTangetForOffset] or [extractPath] are called when this property does
+  /// not match the actual count of the iterator, those methods will throw a
+  /// [StateError].
+  final int contourIndex;
 
   final _PathMeasure _measure;
 
@@ -2304,7 +2307,7 @@ class PathMetric {
   ///
   /// The distance is clamped to the [length] of the current contour.
   Tangent getTangentForOffset(double distance) {
-    if (_dirty) {
+    if (contourIndex != _measure.currentContourIndex) {
       throw StateError('This method cannot be invoked once the underlying iterator has advanced.');
     }
     return _measure.getTangentForOffset(distance);
@@ -2316,18 +2319,21 @@ class PathMetric {
   /// Returns null if the segment is 0 length or `start` > `stop`.
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
   Path extractPath(double start, double end, {bool startWithMoveTo: true}) {
-    if (_dirty) {
+    if (contourIndex != _measure.currentContourIndex) {
       throw StateError('This method cannot be invoked once the underlying iterator has advanced.');
     }
     return _measure.extractPath(start, end, startWithMoveTo: startWithMoveTo);
   }
 
   @override
-  String toString() => '$runtimeType{length: $length, isClosed: $isClosed, dirty:$dirty}';
+  String toString() => '$runtimeType{length: $length, isClosed: $isClosed, contourIndex:$contourIndex}';
 }
 
 class _PathMeasure extends NativeFieldWrapperClass2 {
-  _PathMeasure(Path path, bool forceClosed) { _constructor(path, forceClosed); }
+  _PathMeasure(Path path, bool forceClosed) {
+    currentContourIndex = -1; // PathMetricIterator will increment this the first time.
+    _constructor(path, forceClosed);
+  }
   void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
 
   double get length native 'PathMeasure_getLength';
@@ -2360,7 +2366,16 @@ class _PathMeasure extends NativeFieldWrapperClass2 {
   // [Iterator.current]. In this case, the [PathMetric] is valid before
   // calling `_moveNext` - `_moveNext` should be called after the first
   // iteration is done instead of before.
-  bool _nextContour() native 'PathMeasure_nextContour';
+  bool _nextContour() {
+    final bool next = _nativeNextContour();
+    if (next){
+      currentContourIndex++;
+    }
+    return next;
+  }
+  bool _nativeNextContour() native 'PathMeasure_nextContour';
+
+  int currentContourIndex;
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
