@@ -32,7 +32,6 @@ TEST(PerformanceOverlayLayer, Gold) {
         fml::TimeDelta::FromMilliseconds(kMockedTimes[i]));
   }
 
-
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
   sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
 
@@ -41,21 +40,13 @@ TEST(PerformanceOverlayLayer, Gold) {
   flow::TextureRegistry unused_texture_registry;
 
   flow::Layer::PaintContext paintContext = {
-      nullptr,
-      surface->getCanvas(),
-      nullptr,
-      mock_stopwatch,
-      mock_stopwatch,
-      unused_texture_registry,
-      nullptr,
-      false};
+      nullptr,        surface->getCanvas(),    nullptr, mock_stopwatch,
+      mock_stopwatch, unused_texture_registry, nullptr, false};
 
-  flow::PerformanceOverlayLayer layer(
-    flow::kDisplayRasterizerStatistics |
-    flow::kVisualizeRasterizerStatistics |
-    flow::kDisplayEngineStatistics |
-    flow::kVisualizeEngineStatistics
-  );
+  flow::PerformanceOverlayLayer layer(flow::kDisplayRasterizerStatistics |
+                                      flow::kVisualizeRasterizerStatistics |
+                                      flow::kDisplayEngineStatistics |
+                                      flow::kVisualizeEngineStatistics);
   layer.set_paint_bounds(SkRect::MakeWH(1000, 400));
   surface->getCanvas()->clear(SK_ColorTRANSPARENT);
   layer.Paint(paintContext);
@@ -64,7 +55,8 @@ TEST(PerformanceOverlayLayer, Gold) {
   sk_sp<SkData> snapshot_data = snapshot->encodeToData();
 
   sk_sp<SkData> golden_data = SkData::MakeFromFileName(kGoldenFileName);
-  EXPECT_TRUE(golden_data != nullptr) << "Golden file not found: " << kGoldenFileName;
+  EXPECT_TRUE(golden_data != nullptr)
+      << "Golden file not found: " << kGoldenFileName;
 
   if (!golden_data->equals(snapshot_data.get())) {
     SkFILEWStream wstream(kNewGoldenFileName);
