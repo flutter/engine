@@ -15,11 +15,11 @@ using tonic::DartConverter;
 namespace blink {
 
 // returns a vector with 3 versions.
-// dart, skia and flutter engine versions in this order.
+// Dart, Skia and Flutter engine versions in this order.
 void GetVersions(Dart_NativeArguments args) {
   const std::vector<std::string> versions_list = {
       GetDartVersion(), GetSkiaVersion(), GetFlutterEngineVersion()};
-  const auto& dart_val =
+  Dart_Handle dart_val =
       DartConverter<std::vector<std::string>>::ToDart(versions_list);
   Dart_SetReturnValue(args, dart_val);
 }

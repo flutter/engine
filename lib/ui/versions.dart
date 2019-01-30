@@ -4,7 +4,7 @@
 
 part of dart.ui;
 
-/// Wraps version information for dart, skia and flutter.
+/// Wraps version information for Dart, Skia and Flutter.
 class Versions {
 
   /// Builds a versions object using the information
@@ -24,7 +24,7 @@ class Versions {
       assert(flutterEngineVersion != null);
 
   /// returns a vector with 3 versions.
-  /// dart, skia and flutter engine versions in this order.
+  /// Dart, Skia and Flutter engine versions in this order.
   static List<String> _getVersions() native 'Versions_getVersions';
 
   final String dartVersion;
@@ -32,6 +32,6 @@ class Versions {
   final String flutterEngineVersion;
 }
 
-/// [Versions] singleton. This object exposes dart, skia and
-/// flutter engine versions.
+/// [Versions] singleton. This object exposes Dart, Skia and
+/// Flutter engine versions.
 final Versions versions = Versions._internal();
