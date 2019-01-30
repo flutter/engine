@@ -18,20 +18,18 @@ bool _isNotEmpty(String s) {
 }
 
 void main() {
-
   test('dartVersion should not be empty', () {
-      final String dartVersion = versions.dartVersion;
-      expect(_isNotEmpty(dartVersion), equals(true));
-    });
+    final String dartVersion = versions.dartVersion;
+    expect(_isNotEmpty(dartVersion), equals(true));
+  });
 
-    test('skiaVersion should not be empty', () {
-      final String skiaVersion = versions.skiaVersion;
-      expect(_isNotEmpty(skiaVersion), equals(true));
-    });
+  test('skiaVersion should not be empty', () {
+    final String skiaVersion = versions.skiaVersion;
+    expect(_isNotEmpty(skiaVersion), equals(true));
+  });
 
-    test('flutterEngineVersion should not be empty', () {
-      final String flutterEngineVersion = versions.flutterEngineVersion;
-      expect(_isNotEmpty(flutterEngineVersion), equals(true));
-    });
-
+  test('flutterEngineVersion should not be empty', () {
+    final String flutterEngineVersion = versions.flutterEngineVersion;
+    expect(_isNotEmpty(flutterEngineVersion), equals(true));
+  });
 }

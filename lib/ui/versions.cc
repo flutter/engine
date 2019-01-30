@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/common/version/version.h"
 #include "flutter/lib/ui/versions.h"
+#include "flutter/common/version/version.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_library_natives.h"
 
@@ -19,14 +19,13 @@ namespace blink {
 void GetVersions(Dart_NativeArguments args) {
   const std::vector<std::string> versions_list = {
       GetDartVersion(), GetSkiaVersion(), GetFlutterEngineVersion()};
-  const auto& dart_val = DartConverter<std::vector<std::string>>::ToDart(versions_list);
+  const auto& dart_val =
+      DartConverter<std::vector<std::string>>::ToDart(versions_list);
   Dart_SetReturnValue(args, dart_val);
 }
 
 void Versions::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({
-    {"Versions_getVersions", GetVersions, 1, true}
-  });
+  natives->Register({{"Versions_getVersions", GetVersions, 1, true}});
 }
 
 }  // namespace blink

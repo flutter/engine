@@ -16,6 +16,6 @@ class Versions final {
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 };
 
-} // namespace blink
+}  // namespace blink
 
 #endif  // FLUTTER_LIB_UI_VERSIONS_H_
