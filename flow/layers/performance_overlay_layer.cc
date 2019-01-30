@@ -99,11 +99,4 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
                      options_ & kDisplayEngineStatistics, "UI");
 }
 
-void PerformanceOverlayLayer::SetMockData(const tonic::Int32List& data) {
-  mock_data_.clear();
-  for (int i = 0; i < data.num_elements(); ++i) {
-    mock_data_.push_back(data[i]);
-  }
-}
-
 }  // namespace flow

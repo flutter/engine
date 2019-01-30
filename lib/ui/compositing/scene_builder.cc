@@ -282,7 +282,6 @@ void SceneBuilder::addPerformanceOverlay(uint64_t enabledOptions,
   SkRect rect = SkRect::MakeLTRB(left, top, right, bottom);
   auto layer = std::make_unique<flow::PerformanceOverlayLayer>(enabledOptions);
   layer->set_paint_bounds(rect);
-  layer->SetMockData(mockData);
   current_layer_->Add(std::move(layer));
 }
 

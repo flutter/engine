@@ -7,8 +7,6 @@
 
 #include <vector>
 
-#include "third_party/tonic/typed_data/int32_list.h"
-
 #include "flutter/flow/layers/layer.h"
 #include "flutter/fml/macros.h"
 
@@ -24,8 +22,6 @@ class PerformanceOverlayLayer : public Layer {
   explicit PerformanceOverlayLayer(uint64_t options);
 
   void Paint(PaintContext& context) const override;
-
-  void SetMockData(const tonic::Int32List& data);
 
  private:
   int options_;
