@@ -68,8 +68,9 @@ void IOSExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds, bool fr
 void IOSExternalTextureGL::OnGrContextCreated() {}
 
 void IOSExternalTextureGL::OnGrContextDestroyed() {
-//Avoid video_player showing a black background when the app goes into the background and becomes active.
-//  texture_ref_.Reset(nullptr);
+  // Avoid video_player showing a black background when the app goes into the background and becomes
+  // active.
+  //  texture_ref_.Reset(nullptr);
   cache_ref_.Reset(nullptr);
 }
 
