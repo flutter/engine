@@ -66,19 +66,6 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
   if (!options_)
     return;
 
-  // Generage a mock stopwatch if mock_data_ is non-empty.
-  //
-  // We don't care too much about the efficiency of generating this mock
-  // stopwatch since it's only used in our golden test.
-  std::unique_ptr<Stopwatch> mock_stopwatch;
-  if (mock_data_.size() > 0) {
-    mock_stopwatch = std::make_unique<Stopwatch>();
-    for (unsigned int i = 0; i < mock_data_.size(); ++i) {
-      mock_stopwatch->SetLapTime(
-          fml::TimeDelta::FromMilliseconds(mock_data_[i]));
-    }
-  }
-
   TRACE_EVENT0("flutter", "PerformanceOverlayLayer::Paint");
   SkScalar x = paint_bounds().x() + padding;
   SkScalar y = paint_bounds().y() + padding;
@@ -86,14 +73,12 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
   SkScalar height = paint_bounds().height() / 2;
   SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
 
-  VisualizeStopWatch(*context.leaf_nodes_canvas,
-                     mock_stopwatch ? *mock_stopwatch : context.frame_time, x,
-                     y, width, height - padding,
+  VisualizeStopWatch(*context.leaf_nodes_canvas, context.frame_time, x, y,
+                     width, height - padding,
                      options_ & kVisualizeRasterizerStatistics,
                      options_ & kDisplayRasterizerStatistics, "GPU");
 
-  VisualizeStopWatch(*context.leaf_nodes_canvas,
-                     mock_stopwatch ? *mock_stopwatch : context.engine_time, x,
+  VisualizeStopWatch(*context.leaf_nodes_canvas, context.engine_time, x,
                      y + height, width, height - padding,
                      options_ & kVisualizeEngineStatistics,
                      options_ & kDisplayEngineStatistics, "UI");

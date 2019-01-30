@@ -5,8 +5,6 @@
 #ifndef FLUTTER_FLOW_LAYERS_PERFORMANCE_OVERLAY_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_PERFORMANCE_OVERLAY_LAYER_H_
 
-#include <vector>
-
 #include "flutter/flow/layers/layer.h"
 #include "flutter/fml/macros.h"
 
@@ -25,8 +23,6 @@ class PerformanceOverlayLayer : public Layer {
 
  private:
   int options_;
-
-  std::vector<int> mock_data_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PerformanceOverlayLayer);
 };

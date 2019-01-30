@@ -67,7 +67,6 @@ source_set("flow") {
     "$flutter_root/fml",
     "$flutter_root/synchronization",
     "//third_party/skia",
-    "//third_party/tonic",
   ]
 
   if (is_fuchsia) {
