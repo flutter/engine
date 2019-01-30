@@ -7,7 +7,6 @@
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_message_response_dart.h"
-#include "flutter/shell/version/version.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_library_natives.h"
@@ -335,15 +334,18 @@ void Window::CompletePlatformMessageResponse(int response_id,
 }
 
 void GetFlutterEngineVersion(Dart_NativeArguments args) {
-  Dart_SetReturnValue(args, tonic::ToDart(shell::GetFlutterEngineVersion()));
+  const WindowClient::Versions& versions = UIDartState::Current()->window()->client()->GetVersions();
+  Dart_SetReturnValue(args, tonic::ToDart(versions.flutter_engine_version));
 }
 
 void GetSkiaVersion(Dart_NativeArguments args) {
-  Dart_SetReturnValue(args, tonic::ToDart(shell::GetSkiaVersion()));
+  const WindowClient::Versions& versions = UIDartState::Current()->window()->client()->GetVersions();
+  Dart_SetReturnValue(args, tonic::ToDart(versions.skia_version));
 }
 
 void GetDartVersion(Dart_NativeArguments args) {
-  Dart_SetReturnValue(args, tonic::ToDart(shell::GetDartVersion()));
+  const WindowClient::Versions& versions = UIDartState::Current()->window()->client()->GetVersions();
+  Dart_SetReturnValue(args, tonic::ToDart(versions.dart_version));
 }
 
 void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {

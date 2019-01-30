@@ -24,7 +24,8 @@ RuntimeController::RuntimeController(
     fml::WeakPtr<IOManager> p_io_manager,
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint,
-    std::function<void(int64_t)> p_idle_notification_callback)
+    std::function<void(int64_t)> p_idle_notification_callback,
+    Versions versions)
     : RuntimeController(p_client,
                         p_vm,
                         std::move(p_isolate_snapshot),
@@ -35,7 +36,7 @@ RuntimeController::RuntimeController(
                         std::move(p_advisory_script_uri),
                         std::move(p_advisory_script_entrypoint),
                         p_idle_notification_callback,
-                        WindowData{/* default window data */}) {}
+                        WindowData(versions)) {}
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
@@ -283,6 +284,10 @@ void RuntimeController::UpdateIsolateDescription(const std::string isolate_name,
   client_.UpdateIsolateDescription(isolate_name, isolate_port);
 }
 
+WindowClient::Versions RuntimeController::GetVersions() {
+  return window_data_.versions;
+}
+
 Dart_Port RuntimeController::GetMainPort() {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   return root_isolate ? root_isolate->main_port() : ILLEGAL_PORT;
@@ -326,7 +331,18 @@ RuntimeController::Locale::Locale(std::string language_code_,
 
 RuntimeController::Locale::~Locale() = default;
 
-RuntimeController::WindowData::WindowData() = default;
+RuntimeController::Versions::Versions(const char * dart_version_,
+                                      const char * skia_version_,
+                                      const char * flutter_engine_version_)
+    : dart_version(dart_version_),
+      skia_version(skia_version_),
+      flutter_engine_version(flutter_engine_version_) {}
+
+RuntimeController::Versions::Versions(const Versions& other) = default;
+
+RuntimeController::Versions::~Versions() = default;
+
+RuntimeController::WindowData::WindowData(const Versions& versions_): versions(versions_) {};
 
 RuntimeController::WindowData::WindowData(const WindowData& other) = default;
 

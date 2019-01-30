@@ -21,6 +21,7 @@
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
+#include "flutter/shell/version/version.h"
 #include "rapidjson/document.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -62,7 +63,10 @@ Engine::Engine(Delegate& delegate,
       std::move(io_manager),                 // io manager
       settings_.advisory_script_uri,         // advisory script uri
       settings_.advisory_script_entrypoint,  // advisory script entrypoint
-      settings_.idle_notification_callback   // idle notification callback
+      settings_.idle_notification_callback,   // idle notification callback,
+      blink::RuntimeController::Versions(GetDartVersion(),
+                                         GetSkiaVersion(),
+                                         GetFlutterEngineVersion())
   );
 }
 

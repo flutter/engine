@@ -38,6 +38,20 @@ enum class AccessibilityFeatureFlag : int32_t {
 
 class WindowClient {
  public:
+  struct Versions {
+      Versions(const char * dart_version_,
+               const char * skia_version_,
+               const char * flutter_engine_version_);
+
+      ~Versions();
+
+      Versions(const Versions& other);
+
+      std::string dart_version;
+      std::string skia_version;
+      std::string flutter_engine_version;
+  };
+
   virtual std::string DefaultRouteName() = 0;
   virtual void ScheduleFrame() = 0;
   virtual void Render(Scene* scene) = 0;
@@ -46,6 +60,7 @@ class WindowClient {
   virtual FontCollection& GetFontCollection() = 0;
   virtual void UpdateIsolateDescription(const std::string isolate_name,
                                         int64_t isolate_port) = 0;
+  virtual Versions GetVersions() = 0;
 
  protected:
   virtual ~WindowClient();
