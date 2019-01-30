@@ -274,8 +274,7 @@ void SceneBuilder::addPerformanceOverlay(uint64_t enabledOptions,
                                          double left,
                                          double right,
                                          double top,
-                                         double bottom,
-                                         tonic::Int32List& mockData) {
+                                         double bottom) {
   if (!current_layer_) {
     return;
   }
