@@ -31,7 +31,7 @@ namespace blink {
     Dart_SetReturnValue(args, dart_val);
   }
 
-  static void RegisterNatives(tonic::DartLibraryNatives* natives) {
+  void Versions::RegisterNatives(tonic::DartLibraryNatives* natives) {
     natives->Register({
       {"Versions_getVersions", GetVersions, 1, true}
     });
