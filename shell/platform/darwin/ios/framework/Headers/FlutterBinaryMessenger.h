@@ -51,9 +51,6 @@ FLUTTER_EXPORT
  */
 - (void)sendOnChannel:(NSString*)channel message:(NSData* _Nullable)message;
 
-// TODO: Add macOS support for replies once
-// https://github.com/flutter/flutter/issues/18852 is fixed.
-#if TARGET_OS_IPHONE || defined(FLUTTER_TEST)
 /**
  * Sends a binary message to the Flutter side on the specified channel, expecting
  * an asynchronous reply.
@@ -64,8 +61,10 @@ FLUTTER_EXPORT
  */
 - (void)sendOnChannel:(NSString*)channel
               message:(NSData* _Nullable)message
-          binaryReply:(FlutterBinaryReply _Nullable)callback;
-#endif
+          binaryReply:(FlutterBinaryReply _Nullable)callback
+    // TODO: Add macOS support for replies once
+    // https://github.com/flutter/flutter/issues/18852 is fixed.
+    API_UNAVAILABLE(macos);
 
 /**
  * Registers a message handler for incoming binary messages from the Flutter side

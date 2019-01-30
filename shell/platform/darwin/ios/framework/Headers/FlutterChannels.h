@@ -96,9 +96,6 @@ FLUTTER_EXPORT
  */
 - (void)sendMessage:(id _Nullable)message;
 
-// TODO: Add macOS support for replies once
-// https://github.com/flutter/flutter/issues/18852 is fixed.
-#if TARGET_OS_IPHONE || defined(FLUTTER_TEST)
 /**
  * Sends the specified message to the Flutter side, expecting an asynchronous
  * reply.
@@ -106,8 +103,11 @@ FLUTTER_EXPORT
  * @param message The message. Must be supported by the codec of this channel.
  * @param callback A callback to be invoked with the message reply from Flutter.
  */
-- (void)sendMessage:(id _Nullable)message reply:(FlutterReply _Nullable)callback;
-#endif
+- (void)sendMessage:(id _Nullable)message
+              reply:(FlutterReply _Nullable)callback
+    // TODO: Add macOS support for replies once
+    // https://github.com/flutter/flutter/issues/18852 is fixed.
+    API_UNAVAILABLE(macos);
 
 /**
  * Registers a message handler with this channel.
@@ -223,9 +223,6 @@ FLUTTER_EXPORT
 // clang-format on
 - (void)invokeMethod:(NSString*)method arguments:(id _Nullable)arguments;
 
-// TODO: Add macOS support for replies once
-// https://github.com/flutter/flutter/issues/18852 is fixed.
-#if TARGET_OS_IPHONE || defined(FLUTTER_TEST)
 /**
  * Invokes the specified Flutter method with the specified arguments, expecting
  * an asynchronous result.
@@ -241,8 +238,10 @@ FLUTTER_EXPORT
  */
 - (void)invokeMethod:(NSString*)method
            arguments:(id _Nullable)arguments
-              result:(FlutterResult _Nullable)callback;
-#endif
+              result:(FlutterResult _Nullable)callback
+    // TODO: Add macOS support for replies once
+    // https://github.com/flutter/flutter/issues/18852 is fixed.
+    API_UNAVAILABLE(macos);
 
 /**
  * Registers a handler for method calls from the Flutter side.

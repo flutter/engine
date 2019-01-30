@@ -48,9 +48,6 @@
   [_messenger sendOnChannel:_name message:[_codec encode:message]];
 }
 
-// TODO: Add macOS support for replies once
-// https://github.com/flutter/flutter/issues/18852 is fixed.
-#if TARGET_OS_IPHONE || defined(FLUTTER_TEST)
 - (void)sendMessage:(id)message reply:(FlutterReply)callback {
   FlutterBinaryReply reply = ^(NSData* data) {
     if (callback)
@@ -58,7 +55,6 @@
   };
   [_messenger sendOnChannel:_name message:[_codec encode:message] binaryReply:reply];
 }
-#endif
 
 - (void)setMessageHandler:(FlutterMessageHandler)handler {
   if (!handler) {
@@ -195,9 +191,6 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
   [_messenger sendOnChannel:_name message:message];
 }
 
-// TODO: Add macOS support for replies once
-// https://github.com/flutter/flutter/issues/18852 is fixed.
-#if TARGET_OS_IPHONE || defined(FLUTTER_TEST)
 - (void)invokeMethod:(NSString*)method arguments:(id)arguments result:(FlutterResult)callback {
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:method
                                                                     arguments:arguments];
@@ -209,7 +202,6 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
   };
   [_messenger sendOnChannel:_name message:message binaryReply:reply];
 }
-#endif
 
 - (void)setMethodCallHandler:(FlutterMethodCallHandler)handler {
   if (!handler) {

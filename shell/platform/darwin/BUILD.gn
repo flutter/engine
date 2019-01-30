@@ -44,8 +44,6 @@ source_set("flutter_channels") {
     "//third_party/skia",
   ]
 
-  defines = [ "FLUTTER_TEST" ]
-
   public_configs = [ "$flutter_root:config" ]
 }
 
