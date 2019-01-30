@@ -250,7 +250,7 @@ void main() {
     test('onThemeBrightnessMode preserves callback zone', () {
       Zone innerZone;
       Zone runZone;
-      PlatformBrightness platformBrightness;
+      Brightness platformBrightness;
 
       runZoned(() {
         innerZone = Zone.current;
@@ -264,7 +264,7 @@ void main() {
       _updatePlatformBrightness('dark');
       expect(runZone, isNotNull);
       expect(runZone, same(innerZone));
-      expect(platformBrightness, equals(PlatformBrightness.dark));
+      expect(platformBrightness, equals(Brightness.dark));
     });
   });
 }

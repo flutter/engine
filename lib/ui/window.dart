@@ -591,8 +591,9 @@ class Window {
   }
 
   /// The setting indicating the current brightness mode of the host platform.
-  PlatformBrightness get platformBrightness => _platformBrightness;
-  PlatformBrightness _platformBrightness = PlatformBrightness.light;
+  /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
+  Brightness get platformBrightness => _platformBrightness;
+  Brightness _platformBrightness = Brightness.light;
 
   /// A callback that is invoked whenever [platformBrightness] changes value.
   ///
@@ -945,7 +946,11 @@ class AccessibilityFeatures {
   int get hashCode => _index.hashCode;
 }
 
+<<<<<<< HEAD
 /// Describes the contrast of a theme or color palette.
+=======
+/// Describes the contrast needs of a color.
+>>>>>>> Removed PlatformBrightness enum and replaced with existing Brightness enum.
 enum Brightness {
   /// The color is dark and will require a light text color to achieve readable
   /// contrast.

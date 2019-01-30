@@ -99,7 +99,7 @@ void _updateAlwaysUse24HourFormat(bool alwaysUse24HourFormat) {
 }
 
 void _updatePlatformBrightness(String brightnessName) {
-  window._platformBrightness = brightnessName == 'dark' ? PlatformBrightness.dark : PlatformBrightness.light;
+  window._platformBrightness = brightnessName == 'dark' ? Brightness.dark : Brightness.light;
   _invoke(window.onPlatformBrightnessChanged, window._onPlatformBrightnessChangedZone);
 }
 
