@@ -200,7 +200,7 @@ def to_gn_args(args):
     goma_dir = os.environ.get('GOMA_DIR')
     goma_home_dir = os.path.join(os.getenv('HOME', ''), 'goma')
 
-    # GOMA_DIR may not be set if goma is installed in the default path on gWindows.
+    # GOMA has a different default (home) path on gWindows.
     if not os.path.exists(goma_home_dir) and sys.platform.startswith(('cygwin', 'win')):
       goma_home_dir = os.path.join('c:\\', 'src', 'goma', 'goma-win64')
 
