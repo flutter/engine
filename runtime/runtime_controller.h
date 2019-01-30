@@ -37,8 +37,7 @@ class RuntimeController final : public WindowClient {
                     fml::WeakPtr<IOManager> io_manager,
                     std::string advisory_script_uri,
                     std::string advisory_script_entrypoint,
-                    std::function<void(int64_t)> idle_notification_callback,
-                    WindowClient::Versions versions);
+                    std::function<void(int64_t)> idle_notification_callback);
 
   ~RuntimeController() override;
 
@@ -99,7 +98,7 @@ class RuntimeController final : public WindowClient {
   // as well as on hot restarts. Data kept here will persist
   // after hot restart.
   struct WindowData {
-    WindowData(const Versions& versions_);
+    WindowData();
 
     WindowData(const WindowData& other);
 
@@ -115,7 +114,6 @@ class RuntimeController final : public WindowClient {
     bool semantics_enabled = false;
     bool assistive_technology_enabled = false;
     int32_t accessibility_feature_flags_ = 0;
-    Versions versions;
   };
 
   RuntimeDelegate& client_;
@@ -169,9 +167,6 @@ class RuntimeController final : public WindowClient {
   // |blink::WindowClient|
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
-
-  // |blink::WindowClient|
-  WindowClient::Versions GetVersions() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeController);
 };

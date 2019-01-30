@@ -17,6 +17,7 @@
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
+#include "flutter/lib/ui/versions.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/gpu/GrContext.h"
 #include "third_party/tonic/dart_microtask_queue.h"
@@ -57,6 +58,8 @@ class UIDartState : public tonic::DartState {
 
   tonic::DartErrorHandleType GetLastError();
 
+  Versions GetVersions();
+
   void ReportUnhandledException(const std::string& error,
                                 const std::string& stack_trace);
 
@@ -81,7 +84,8 @@ class UIDartState : public tonic::DartState {
               std::string advisory_script_entrypoint,
               std::string logger_prefix,
               UnhandledExceptionCallback unhandled_exception_callback,
-              IsolateNameServer* isolate_name_server);
+              IsolateNameServer* isolate_name_server,
+              Versions versions_);
 
   ~UIDartState() override;
 
@@ -108,6 +112,7 @@ class UIDartState : public tonic::DartState {
   tonic::DartMicrotaskQueue microtask_queue_;
   UnhandledExceptionCallback unhandled_exception_callback_;
   IsolateNameServer* isolate_name_server_;
+  Versions versions;
 
   void AddOrRemoveTaskObserver(bool add);
 };

@@ -12,8 +12,10 @@
 #include "flutter/lib/io/dart_io.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"
+#include "flutter/lib/ui/versions.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/version/version.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -111,7 +113,12 @@ DartIsolate::DartIsolate(DartVM* vm,
                   advisory_script_entrypoint,
                   vm->GetSettings().log_tag,
                   vm->GetSettings().unhandled_exception_callback,
-                  vm->GetIsolateNameServer()),
+                  vm->GetIsolateNameServer(),
+                  Versions(
+                    shell::GetDartVersion(),
+                    shell::GetSkiaVersion(),
+                    shell::GetFlutterEngineVersion()
+                  )),
       vm_(vm),
       isolate_snapshot_(std::move(isolate_snapshot)),
       shared_snapshot_(std::move(shared_snapshot)),

@@ -333,21 +333,6 @@ void Window::CompletePlatformMessageResponse(int response_id,
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
-void GetFlutterEngineVersion(Dart_NativeArguments args) {
-  const WindowClient::Versions& versions = UIDartState::Current()->window()->client()->GetVersions();
-  Dart_SetReturnValue(args, tonic::ToDart(versions.flutter_engine_version));
-}
-
-void GetSkiaVersion(Dart_NativeArguments args) {
-  const WindowClient::Versions& versions = UIDartState::Current()->window()->client()->GetVersions();
-  Dart_SetReturnValue(args, tonic::ToDart(versions.skia_version));
-}
-
-void GetDartVersion(Dart_NativeArguments args) {
-  const WindowClient::Versions& versions = UIDartState::Current()->window()->client()->GetVersions();
-  Dart_SetReturnValue(args, tonic::ToDart(versions.dart_version));
-}
-
 void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
       {"Window_defaultRouteName", DefaultRouteName, 1, true},
@@ -358,9 +343,6 @@ void Window::RegisterNatives(tonic::DartLibraryNatives* natives) {
       {"Window_updateSemantics", UpdateSemantics, 2, true},
       {"Window_setIsolateDebugName", SetIsolateDebugName, 2, true},
       {"Window_reportUnhandledException", ReportUnhandledException, 2, true},
-      {"Window_GetFlutterEngineVersion", GetFlutterEngineVersion, 1, true},
-      {"Window_GetSkiaVersion", GetSkiaVersion, 1, true},
-      {"Window_GetDartVersion", GetDartVersion, 1, true},
   });
 }
 

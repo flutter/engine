@@ -7,7 +7,7 @@ library dart.ui;
 
 import 'package:test/test.dart';
 
-part '../../lib/ui/window.dart';
+part '../../lib/ui/versions.dart';
 
 bool _isNotEmpty(String s) {
   if (s == null || s.isEmpty) {
@@ -20,17 +20,17 @@ bool _isNotEmpty(String s) {
 void main() {
 
   test('dartVersion should not be empty', () {
-      final String dartVersion = window.getDartVersion();
+      final String dartVersion = versions.dartVersion;
       expect(_isNotEmpty(dartVersion), equals(true));
     });
 
     test('skiaVersion should not be empty', () {
-      final String skiaVersion = window.getSkiaVersion();
+      final String skiaVersion = versions.skiaVersion;
       expect(_isNotEmpty(skiaVersion), equals(true));
     });
 
     test('flutterEngineVersion should not be empty', () {
-      final String flutterEngineVersion = window.getFlutterEngineVersion();
+      final String flutterEngineVersion = versions.flutterEngineVersion;
       expect(_isNotEmpty(flutterEngineVersion), equals(true));
     });
 
