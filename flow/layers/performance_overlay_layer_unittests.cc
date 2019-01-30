@@ -56,15 +56,19 @@ TEST(PerformanceOverlayLayer, Gold) {
 
   sk_sp<SkData> golden_data = SkData::MakeFromFileName(kGoldenFileName);
   EXPECT_TRUE(golden_data != nullptr)
-      << "Golden file not found: " << kGoldenFileName;
+      << "Golden file not found: " << kGoldenFileName << ".\n"
+      << "Please make sure that the unit test is run from the right directory "
+      << "(e.g., flutter/engine/src)";
 
-  if (!golden_data->equals(snapshot_data.get())) {
+  const bool golden_data_matches = golden_data->equals(snapshot_data.get());
+  if (!golden_data_matches) {
     SkFILEWStream wstream(kNewGoldenFileName);
     wstream.write(snapshot_data->data(), snapshot_data->size());
     wstream.flush();
-    EXPECT_TRUE(false) << "Golden file mismatch. Please check the difference "
-                       << "between " << kGoldenFileName << " and "
-                       << kNewGoldenFileName << ", and  replace the former "
-                       << "with the latter if the difference looks good.";
+    EXPECT_TRUE(golden_data_matches)
+        << "Golden file mismatch. Please check "
+        << "the difference between " << kGoldenFileName << " and "
+        << kNewGoldenFileName << ", and  replace the former "
+        << "with the latter if the difference looks good.";
   }
 }
