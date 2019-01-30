@@ -425,12 +425,6 @@ void Engine::UpdateIsolateDescription(const std::string isolate_name,
   delegate_.UpdateIsolateDescription(isolate_name, isolate_port);
 }
 
-blink::Versions Engine::GetVersions() {
-  return blink::Versions(blink::GetDartVersion(),
-                         blink::GetSkiaVersion(),
-                         blink::GetFlutterEngineVersion());
-}
-
 blink::FontCollection& Engine::GetFontCollection() {
   return font_collection_;
 }

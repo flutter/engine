@@ -5,9 +5,6 @@
 #ifndef FLUTTER_LIB_UI_VERSIONS_H_
 #define FLUTTER_LIB_UI_VERSIONS_H_
 
-#include <string>
-#include <vector>
-
 namespace tonic {
 class DartLibraryNatives;
 }  // namespace tonic
@@ -16,20 +13,7 @@ namespace blink {
 
 class Versions final {
  public:
-  Versions(const char* dart_version_,
-           const char* skia_version_,
-           const char* flutter_engine_version_);
-
-  Versions(const Versions& other);
-
-  ~Versions();
-
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
-private:
-  std::string dart_version;
-  std::string skia_version;
-  std::string flutter_engine_version;
 };
 
 } // namespace blink

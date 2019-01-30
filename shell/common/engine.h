@@ -151,9 +151,6 @@ class Engine final : public blink::RuntimeDelegate {
   void UpdateIsolateDescription(const std::string isolate_name,
                                 int64_t isolate_port) override;
 
-  // |blink::RuntimeDelegate|
-  blink::Versions GetVersions() override;
-
   void StopAnimator();
 
   void StartAnimatorIfPossible();
