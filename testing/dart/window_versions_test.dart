@@ -9,12 +9,29 @@ import 'package:test/test.dart';
 
 part '../../lib/ui/window.dart';
 
+bool _isNotEmpty(String s) {
+  if (s == null || s.isEmpty) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
 void main() {
 
-  test('updateUserSettings can handle an empty object', () {
-      // this should now throw.
-      print(window.getDartVersion());
-      expect(true, equals(true));
+  test('dartVersion should not be empty', () {
+      final String dartVersion = window.getDartVersion();
+      expect(_isNotEmpty(dartVersion), equals(true));
+    });
+
+    test('skiaVersion should not be empty', () {
+      final String skiaVersion = window.getSkiaVersion();
+      expect(_isNotEmpty(skiaVersion), equals(true));
+    });
+
+    test('flutterEngineVersion should not be empty', () {
+      final String flutterEngineVersion = window.getFlutterEngineVersion();
+      expect(_isNotEmpty(flutterEngineVersion), equals(true));
     });
 
 }
