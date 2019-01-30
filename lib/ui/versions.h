@@ -19,15 +19,11 @@ class Versions final {
   Versions(const char* dart_version_,
            const char* skia_version_,
            const char* flutter_engine_version_);
-  
+
   Versions(const Versions& other);
 
   ~Versions();
 
-  // returns a vector with 3 versions.
-  // dart, skia and flutter engine versions in this order.
-  std::vector<std::string> GetVersionsList();
-  
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
 private:

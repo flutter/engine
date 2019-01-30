@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/common/version/version.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/versions.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -21,12 +22,11 @@ namespace blink {
 
   Versions::~Versions() = default;
 
-  std::vector<std::string> Versions::GetVersionsList() {
-    return {dart_version, skia_version, flutter_engine_version};
-  }
-
+  // returns a vector with 3 versions.
+  // dart, skia and flutter engine versions in this order.
   void GetVersions(Dart_NativeArguments args) {
-    const auto& versions_list = UIDartState::Current()->GetVersions().GetVersionsList();
+    const std::vector<std::string> versions_list = {
+        GetDartVersion(), GetSkiaVersion(), GetFlutterEngineVersion()};
     const auto& dart_val = DartConverter<std::vector<std::string>>::ToDart(versions_list);
     Dart_SetReturnValue(args, dart_val);
   }

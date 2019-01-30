@@ -13,6 +13,7 @@
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/lib/ui/window/platform_message.h"
+#include "flutter/lib/ui/versions.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
 namespace blink {
@@ -35,6 +36,8 @@ class RuntimeDelegate {
 
   virtual void UpdateIsolateDescription(const std::string isolate_name,
                                         int64_t isolate_port) = 0;
+
+  virtual Versions GetVersions() = 0;
 
  protected:
   virtual ~RuntimeDelegate();

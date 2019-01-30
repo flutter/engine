@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "flutter/common/settings.h"
+#include "flutter/common/version/version.h"
 #include "flutter/fml/eintr_wrapper.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
@@ -422,6 +423,12 @@ void Engine::HandlePlatformMessage(
 void Engine::UpdateIsolateDescription(const std::string isolate_name,
                                       int64_t isolate_port) {
   delegate_.UpdateIsolateDescription(isolate_name, isolate_port);
+}
+
+blink::Versions Engine::GetVersions() {
+  return blink::Versions(blink::GetDartVersion(),
+                         blink::GetSkiaVersion(),
+                         blink::GetFlutterEngineVersion());
 }
 
 blink::FontCollection& Engine::GetFontCollection() {

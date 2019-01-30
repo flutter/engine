@@ -26,7 +26,7 @@ class Versions {
   /// returns a vector with 3 versions.
   /// dart, skia and flutter engine versions in this order.
   static List<String> _getVersions() native 'Versions_getVersions';
-  
+
   final String dartVersion;
   final String skiaVersion;
   final String flutterEngineVersion;
