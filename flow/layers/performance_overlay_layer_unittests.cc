@@ -82,9 +82,11 @@ TEST(PerformanceOverlayLayer, Gold) {
     // the golden images:
     //
     // 1. Install docker
-    // 2. `docker run -i -t gcr.io/flutter-cirrus/build-engine-image:latest`
-    // 3. `cd $ENGINE_PATH`
-    // 4. Do the golden image generation and compare.
+    // 2. `docker run -d -i -t gcr.io/flutter-cirrus/build-engine-image:latest`
+    // 3. `docker attach <the_id_returned_by_step_2>
+    // 4. `cd $ENGINE_PATH`
+    // 5. Do the golden image generation and compare.
+    // (To temporarily detach from the container, use ctrl + p + ctrl + q.)
     EXPECT_TRUE(golden_data_matches)
         << "Golden file mismatch. Please check "
         << "the difference between " << kGoldenFileName << " and "
