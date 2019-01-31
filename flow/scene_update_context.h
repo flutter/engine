@@ -63,7 +63,7 @@ class SceneUpdateContext {
     // rendering.
     virtual bool HasRetainedNode(const LayerRasterCacheKey& key) const = 0;
     virtual const scenic::EntityNode& GetRetainedNode(
-        const LayerRasterCacheKey& key) const = 0;
+        const LayerRasterCacheKey& key) = 0;
 
     virtual void SubmitSurface(
         std::unique_ptr<SurfaceProducerSurface> surface) = 0;
@@ -181,7 +181,7 @@ class SceneUpdateContext {
     return surface_producer_->HasRetainedNode(key);
   }
   const scenic::EntityNode& GetRetainedNode(
-      const LayerRasterCacheKey& key) const {
+      const LayerRasterCacheKey& key) {
     return surface_producer_->GetRetainedNode(key);
   }
 
