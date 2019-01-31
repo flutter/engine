@@ -184,6 +184,8 @@ typedef void (*FlutterPlatformMessageCallback)(
     const FlutterPlatformMessage* /* message*/,
     void* /* user data */);
 
+typedef void (*FlutterRootIsolateCreateCallback)();
+
 typedef struct {
   // The size of this struct. Must be sizeof(FlutterProjectArgs).
   size_t struct_size;
@@ -251,6 +253,9 @@ typedef struct {
   const uint8_t* isolate_snapshot_instructions;
   // The size of the isolate snapshot instructions buffer.
   size_t isolate_snapshot_instructions_size;
+  // The callback invoked by the engine in root isolate scope. Called
+  // immediately after the root isolate has been created and marked runnable.
+  FlutterRootIsolateCreateCallback root_isolate_create_callback;
 } FlutterProjectArgs;
 
 FLUTTER_EXPORT
