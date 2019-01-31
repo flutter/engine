@@ -6,6 +6,7 @@
 #include "flutter/flow/raster_cache.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/utils/SkBase64.h"
 
 #include "gtest/gtest.h"
 
@@ -65,10 +66,20 @@ TEST(PerformanceOverlayLayer, Gold) {
     SkFILEWStream wstream(kNewGoldenFileName);
     wstream.write(snapshot_data->data(), snapshot_data->size());
     wstream.flush();
+
+    size_t b64_size =
+        SkBase64::Encode(snapshot_data->data(), snapshot_data->size(), nullptr);
+    char* b64_data = new char[b64_size];
+    SkBase64::Encode(snapshot_data->data(), snapshot_data->size(), b64_data);
+
     EXPECT_TRUE(golden_data_matches)
         << "Golden file mismatch. Please check "
         << "the difference between " << kGoldenFileName << " and "
         << kNewGoldenFileName << ", and  replace the former "
-        << "with the latter if the difference looks good.";
+        << "with the latter if the difference looks good.\n\n"
+        << "See also the base64 encoded " << kNewGoldenFileName << ":\n"
+        << b64_data;
+
+    delete[] b64_data;
   }
 }
