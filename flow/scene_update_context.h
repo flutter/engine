@@ -180,8 +180,7 @@ class SceneUpdateContext {
   bool HasRetainedNode(const LayerRasterCacheKey& key) const {
     return surface_producer_->HasRetainedNode(key);
   }
-  const scenic::EntityNode& GetRetainedNode(
-      const LayerRasterCacheKey& key) {
+  const scenic::EntityNode& GetRetainedNode(const LayerRasterCacheKey& key) {
     return surface_producer_->GetRetainedNode(key);
   }
 
