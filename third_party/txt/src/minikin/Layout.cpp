@@ -23,6 +23,8 @@
 #include <fstream>
 #include <iostream>  // for debugging
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <log/log.h>
@@ -284,10 +286,20 @@ hb_font_funcs_t* getHbFontFuncs(bool forColorBitmapFont) {
   return *funcs;
 }
 
+// Stores the result of isColorBitmapFont to ensure lag-free emoji rendering
+static std::unordered_map<hb_face_t*, bool> sIsColorBitmapFontCache;
+
 static bool isColorBitmapFont(hb_font_t* font) {
   hb_face_t* face = hb_font_get_face(font);
+  std::unordered_map<hb_face_t*, bool>::const_iterator lookup =
+      sIsColorBitmapFontCache.find(face);
+  if (lookup != sIsColorBitmapFontCache.end()) {
+    return lookup->second;
+  }
   HbBlob cbdt(hb_face_reference_table(face, HB_TAG('C', 'B', 'D', 'T')));
-  return cbdt.size() > 0;
+  bool result = cbdt.size() > 0;
+  sIsColorBitmapFontCache.insert(std::make_pair(face, result));
+  return result;
 }
 
 static float HBFixedToFloat(hb_position_t v) {
