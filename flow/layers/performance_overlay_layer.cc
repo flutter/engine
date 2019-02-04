@@ -63,7 +63,8 @@ void VisualizeStopWatch(SkCanvas& canvas,
 
 }  // namespace
 
-PerformanceOverlayLayer::PerformanceOverlayLayer(uint64_t options, const char* font_path)
+PerformanceOverlayLayer::PerformanceOverlayLayer(uint64_t options,
+                                                 const char* font_path)
     : options_(options) {
   if (font_path != nullptr) {
     font_path_ = font_path;
@@ -83,17 +84,15 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
   SkScalar height = paint_bounds().height() / 2;
   SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
 
-  VisualizeStopWatch(*context.leaf_nodes_canvas, context.frame_time, x, y,
-                     width, height - padding,
-                     options_ & kVisualizeRasterizerStatistics,
-                     options_ & kDisplayRasterizerStatistics, "GPU",
-                     font_path_);
+  VisualizeStopWatch(
+      *context.leaf_nodes_canvas, context.frame_time, x, y, width,
+      height - padding, options_ & kVisualizeRasterizerStatistics,
+      options_ & kDisplayRasterizerStatistics, "GPU", font_path_);
 
   VisualizeStopWatch(*context.leaf_nodes_canvas, context.engine_time, x,
                      y + height, width, height - padding,
                      options_ & kVisualizeEngineStatistics,
-                     options_ & kDisplayEngineStatistics, "UI",
-                     font_path_);
+                     options_ & kDisplayEngineStatistics, "UI", font_path_);
 }
 
 }  // namespace flow

@@ -19,7 +19,8 @@ const int kVisualizeEngineStatistics = 1 << 3;
 
 class PerformanceOverlayLayer : public Layer {
  public:
-  explicit PerformanceOverlayLayer(uint64_t options, const char* font_path = nullptr);
+  explicit PerformanceOverlayLayer(uint64_t options,
+                                   const char* font_path = nullptr);
 
   void Paint(PaintContext& context) const override;
 
