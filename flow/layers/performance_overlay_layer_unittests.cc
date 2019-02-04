@@ -26,6 +26,10 @@ const char* kGoldenFileName =
 const char* kNewGoldenFileName =
     "flutter/testing/resources/performance_overlay_gold_new.png";
 
+// Ensure the same font across different operation systems.
+const char* kFontFilePath =
+    "flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf";
+
 TEST(PerformanceOverlayLayer, Gold) {
   flow::Stopwatch mock_stopwatch;
   for (int i = 0; i < size(kMockedTimes); ++i) {
@@ -45,9 +49,10 @@ TEST(PerformanceOverlayLayer, Gold) {
       mock_stopwatch, unused_texture_registry, nullptr, false};
 
   flow::PerformanceOverlayLayer layer(flow::kDisplayRasterizerStatistics |
-                                      flow::kVisualizeRasterizerStatistics |
-                                      flow::kDisplayEngineStatistics |
-                                      flow::kVisualizeEngineStatistics);
+                                          flow::kVisualizeRasterizerStatistics |
+                                          flow::kDisplayEngineStatistics |
+                                          flow::kVisualizeEngineStatistics,
+                                      kFontFilePath);
   layer.set_paint_bounds(SkRect::MakeWH(1000, 400));
   surface->getCanvas()->clear(SK_ColorTRANSPARENT);
   layer.Paint(paintContext);
