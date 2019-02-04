@@ -29,20 +29,30 @@
 
 namespace minikin {
 
-class HbFontCache : private android::OnEntryRemoved<int32_t, hb_font_t*> {
+struct HbFontCacheValue {
+  HbFontCacheValue(hb_font_t* f) : HbFontCacheValue(f, false) {}
+  HbFontCacheValue(hb_font_t* f, bool color)
+      : font(f), isColorBitmapFont(color) {}
+  hb_font_t* font;
+  bool isColorBitmapFont;
+};
+
+class HbFontCache : private android::OnEntryRemoved<int32_t, HbFontCacheValue> {
  public:
   HbFontCache() : mCache(kMaxEntries) {
     mCache.setOnEntryRemovedListener(this);
   }
 
   // callback for OnEntryRemoved
-  void operator()(int32_t& /* key */, hb_font_t*& value) {
-    hb_font_destroy(value);
+  void operator()(int32_t& /* key */, HbFontCacheValue& value) {
+    hb_font_destroy(value.font);
   }
 
-  hb_font_t* get(int32_t fontId) { return mCache.get(fontId); }
+  HbFontCacheValue get(int32_t fontId) { return mCache.get(fontId); }
 
-  void put(int32_t fontId, hb_font_t* font) { mCache.put(fontId, font); }
+  void put(int32_t fontId, hb_font_t* font, bool isColorBitmapFont) {
+    mCache.put(fontId, {font, isColorBitmapFont});
+  }
 
   void clear() { mCache.clear(); }
 
@@ -51,7 +61,7 @@ class HbFontCache : private android::OnEntryRemoved<int32_t, hb_font_t*> {
  private:
   static const size_t kMaxEntries = 100;
 
-  android::LruCache<int32_t, hb_font_t*> mCache;
+  android::LruCache<int32_t, HbFontCacheValue> mCache;
 };
 
 HbFontCache* getFontCacheLocked() {
@@ -76,7 +86,8 @@ void purgeHbFontLocked(const MinikinFont* minikinFont) {
 
 // Returns a new reference to a hb_font_t object, caller is
 // responsible for calling hb_font_destroy() on it.
-hb_font_t* getHbFontLocked(const MinikinFont* minikinFont) {
+hb_font_t* getHbFontLocked(const MinikinFont* minikinFont,
+                           bool* isColorBitmapFont) {
   assertMinikinLocked();
   // TODO: get rid of nullFaceFont
   static hb_font_t* nullFaceFont = nullptr;
@@ -84,13 +95,18 @@ hb_font_t* getHbFontLocked(const MinikinFont* minikinFont) {
     if (nullFaceFont == nullptr) {
       nullFaceFont = hb_font_create(nullptr);
     }
+    if (isColorBitmapFont)
+      *isColorBitmapFont = false;
     return hb_font_reference(nullFaceFont);
   }
 
   HbFontCache* fontCache = getFontCacheLocked();
   const int32_t fontId = minikinFont->GetUniqueId();
-  hb_font_t* font = fontCache->get(fontId);
+  HbFontCacheValue cacheValue = fontCache->get(fontId);
+  hb_font_t* font = cacheValue.font;
   if (font != nullptr) {
+    if (isColorBitmapFont)
+      *isColorBitmapFont = cacheValue.isColorBitmapFont;
     return hb_font_reference(font);
   }
 
@@ -105,12 +121,18 @@ hb_font_t* getHbFontLocked(const MinikinFont* minikinFont) {
   font = hb_font_create_sub_font(parent_font);
   std::vector<hb_variation_t> variations;
   for (const FontVariation& variation : minikinFont->GetAxes()) {
-      variations.push_back({variation.axisTag, variation.value});
+    variations.push_back({variation.axisTag, variation.value});
   }
   hb_font_set_variations(font, variations.data(), variations.size());
+
+  HbBlob cbdt(hb_face_reference_table(face, HB_TAG('C', 'B', 'D', 'T')));
+  bool isColorBitmap = cbdt.size() > 0;
+  if (isColorBitmapFont)
+    *isColorBitmapFont = isColorBitmap;
+
   hb_font_destroy(parent_font);
   hb_face_destroy(face);
-  fontCache->put(fontId, font);
+  fontCache->put(fontId, font, isColorBitmap);
   return hb_font_reference(font);
 }
 

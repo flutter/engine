@@ -48,12 +48,16 @@ const int kDirection_Mask = 0x1;
 struct LayoutContext {
   MinikinPaint paint;
   FontStyle style;
-  std::vector<hb_font_t*> hbFonts;  // parallel to mFaces
+  struct HbFontInfo {
+    hb_font_t* font;
+    bool isColorBitmapFont;
+  };
+  std::vector<HbFontInfo> hbFonts;  // parallel to mFaces
 
   void clearHbFonts() {
     for (size_t i = 0; i < hbFonts.size(); i++) {
-      hb_font_set_funcs(hbFonts[i], nullptr, nullptr, nullptr);
-      hb_font_destroy(hbFonts[i]);
+      hb_font_set_funcs(hbFonts[i].font, nullptr, nullptr, nullptr);
+      hb_font_destroy(hbFonts[i].font);
     }
     hbFonts.clear();
   }
@@ -284,12 +288,6 @@ hb_font_funcs_t* getHbFontFuncs(bool forColorBitmapFont) {
   return *funcs;
 }
 
-static bool isColorBitmapFont(hb_font_t* font) {
-  hb_face_t* face = hb_font_get_face(font);
-  HbBlob cbdt(hb_face_reference_table(face, HB_TAG('C', 'B', 'D', 'T')));
-  return cbdt.size() > 0;
-}
-
 static float HBFixedToFloat(hb_position_t v) {
   return scalbnf(v, -8);
 }
@@ -317,12 +315,13 @@ int Layout::findFace(const FakedFont& face, LayoutContext* ctx) {
   // Note: ctx == NULL means we're copying from the cache, no need to create
   // corresponding hb_font object.
   if (ctx != NULL) {
-    hb_font_t* font = getHbFontLocked(face.font);
+    bool isColorBitmapFont;
+    hb_font_t* font = getHbFontLocked(face.font, &isColorBitmapFont);
     // Temporarily removed to fix advance integer rounding.
     // This is likely due to very old versions of harfbuzz and ICU.
     // hb_font_set_funcs(font, getHbFontFuncs(isColorBitmapFont(font)),
     // &ctx->paint, 0);
-    ctx->hbFonts.push_back(font);
+    ctx->hbFonts.push_back({font, isColorBitmapFont});
   }
   return ix;
 }
@@ -957,7 +956,7 @@ void Layout::doLayoutRun(const uint16_t* buf,
     int font_ix = findFace(run.fakedFont, ctx);
     ctx->paint.font = mFaces[font_ix].font;
     ctx->paint.fakery = mFaces[font_ix].fakery;
-    hb_font_t* hbFont = ctx->hbFonts[font_ix];
+    hb_font_t* hbFont = ctx->hbFonts[font_ix].font;
 #ifdef VERBOSE_DEBUG
     ALOGD("Run %zu, font %d [%d:%d]", run_ix, font_ix, run.start, run.end);
 #endif
@@ -966,7 +965,7 @@ void Layout::doLayoutRun(const uint16_t* buf,
     hb_font_set_scale(hbFont, HBFloatToFixed(size * scaleX),
                       HBFloatToFixed(size));
 
-    const bool is_color_bitmap_font = isColorBitmapFont(hbFont);
+    const bool is_color_bitmap_font = ctx->hbFonts[font_ix].isColorBitmapFont;
 
     // TODO: if there are multiple scripts within a font in an RTL run,
     // we need to reorder those runs. This is unlikely with our current
