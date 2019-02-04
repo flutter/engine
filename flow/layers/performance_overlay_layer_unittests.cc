@@ -77,21 +77,6 @@ TEST(PerformanceOverlayLayer, Gold) {
     char* b64_data = new char[b64_size];
     SkBase64::Encode(snapshot_data->data(), snapshot_data->size(), b64_data);
 
-    // The golden file must be generated in the exact same environment to match
-    // every pixel. For example, the Debian Linux may have different system
-    // fonts than Ubuntu Linux so there will be mismatch if we compared images
-    // generated in those two Linux environments.
-    //
-    // To guarantee the identical environment, use our Linux Docker container
-    // image (also used in our Github presubmit checks) to generate and compare
-    // the golden images:
-    //
-    // 1. Install docker
-    // 2. `docker run -d -i -t gcr.io/flutter-cirrus/build-engine-image:latest`
-    // 3. `docker attach <the_id_returned_by_step_2>
-    // 4. `cd $ENGINE_PATH`
-    // 5. Do the golden image generation and compare.
-    // (To temporarily detach from the container, use ctrl + p + ctrl + q.)
     EXPECT_TRUE(golden_data_matches)
         << "Golden file mismatch. Please check "
         << "the difference between " << kGoldenFileName << " and "
