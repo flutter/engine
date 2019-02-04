@@ -44,10 +44,10 @@ PersistentCache::PersistentCache()
     : cache_directory_(std::make_shared<fml::UniqueFD>(
           CreateDirectory(fml::paths::GetCachesDirectory(),
                           {
-                              "flutter_engine",           //
-                              GetFlutterEngineVersion(),  //
-                              "skia",                     //
-                              GetSkiaVersion()            //
+                              "flutter_engine",                  //
+                              blink::GetFlutterEngineVersion(),  //
+                              "skia",                            //
+                              blink::GetSkiaVersion()            //
                           },
                           fml::FilePermission::kReadWrite))) {
   if (!IsValid()) {
