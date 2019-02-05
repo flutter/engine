@@ -90,7 +90,7 @@ template("bin_to_assembly") {
       "--input",
       rebase_path(invoker.input),
       "--output",
-      rebase_path(invoker.output),
+      rebase_path(output),
       "--symbol_name",
       invoker.symbol,
       "--target_os",
