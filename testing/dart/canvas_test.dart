@@ -76,6 +76,7 @@ void main() {
     testCanvas((Canvas canvas) => canvas.saveLayer(rect, paint));
     testCanvas((Canvas canvas) => canvas.saveLayer(null, null));
     testCanvas((Canvas canvas) => canvas.scale(double.nan, double.nan));
+    testCanvas((Canvas canvas) => canvas.setMatrix(null));
     testCanvas((Canvas canvas) => canvas.skew(double.nan, double.nan));
     testCanvas((Canvas canvas) => canvas.transform(null));
     testCanvas((Canvas canvas) => canvas.translate(double.nan, double.nan));

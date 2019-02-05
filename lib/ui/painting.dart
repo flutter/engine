@@ -3211,6 +3211,11 @@ class Canvas extends NativeFieldWrapperClass2 {
 
   /// Multiply the current transform by the specified 4⨉4 transformation matrix
   /// specified as a list of values in column-major order.
+  ///
+  /// See also:
+  ///
+  ///   * [setMatrix], which replaces the current matrix rather than multiplying
+  ///     it.
   void transform(Float64List matrix4) {
     assert(matrix4 != null);
     if (matrix4.length != 16)
@@ -3218,6 +3223,21 @@ class Canvas extends NativeFieldWrapperClass2 {
     _transform(matrix4);
   }
   void _transform(Float64List matrix4) native 'Canvas_transform';
+
+  /// Set the current transform to the specified 4x4 transformation matrix
+  /// specified as a list of values in column-major order.
+  ///
+  /// See also:
+  ///
+  ///   * [transform], which multiplies the current matrix rather than replacing
+  ///     it.
+  void setMatrix(Float64List matrix4) {
+    assert(matrix4 != null);
+    if (matrix4.length != 16)
+      throw new ArgumentError('"matrix4" must have 16 entries.');
+    _setMatrix(matrix4);
+  }
+  void _setMatrix(Float64List matrix4) native "Canvas_setMatrix";
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rectangle.
