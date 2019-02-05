@@ -3237,7 +3237,7 @@ class Canvas extends NativeFieldWrapperClass2 {
       throw new ArgumentError('"matrix4" must have 16 entries.');
     _setMatrix(matrix4);
   }
-  void _setMatrix(Float64List matrix4) native "Canvas_setMatrix";
+  void _setMatrix(Float64List matrix4) native 'Canvas_setMatrix';
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rectangle.
