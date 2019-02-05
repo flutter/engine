@@ -946,11 +946,7 @@ class AccessibilityFeatures {
   int get hashCode => _index.hashCode;
 }
 
-<<<<<<< HEAD
 /// Describes the contrast of a theme or color palette.
-=======
-/// Describes the contrast needs of a color.
->>>>>>> Removed PlatformBrightness enum and replaced with existing Brightness enum.
 enum Brightness {
   /// The color is dark and will require a light text color to achieve readable
   /// contrast.
