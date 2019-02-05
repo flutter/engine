@@ -25,7 +25,7 @@ group("flutter") {
         "//third_party/dart:create_sdk",
         "//third_party/dart:dart2js",
         "//third_party/dart/utils/bazel:kernel_worker",
-        "$flutter_root/dartdevc:flutter_dartdevc",
+        "$flutter_root/lib/stub_ui:stub_ui",
       ]
     }
   }
