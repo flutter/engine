@@ -1,4 +1,4 @@
-Signature: 5873488737afbf3a1ae693663cc32910
+Signature: 36c4a454b9ac0cbe7ed95735c8186d70
 
 UNUSED LICENSES:
 
@@ -1357,7 +1357,6 @@ FILE: ../../../third_party/skia/src/core/SkICCPriv.h
 FILE: ../../../third_party/skia/src/core/SkImageFilterCache.cpp
 FILE: ../../../third_party/skia/src/core/SkImageFilterCache.h
 FILE: ../../../third_party/skia/src/core/SkLRUCache.h
-FILE: ../../../third_party/skia/src/core/SkLights.cpp
 FILE: ../../../third_party/skia/src/core/SkLiteDL.cpp
 FILE: ../../../third_party/skia/src/core/SkLiteDL.h
 FILE: ../../../third_party/skia/src/core/SkLiteRecorder.cpp
@@ -1512,6 +1511,7 @@ FILE: ../../../third_party/skia/src/ports/SkImageGeneratorCG.cpp
 FILE: ../../../third_party/skia/src/ports/SkImageGeneratorWIC.cpp
 FILE: ../../../third_party/skia/src/shaders/SkColorFilterShader.h
 FILE: ../../../third_party/skia/src/shaders/SkColorShader.cpp
+FILE: ../../../third_party/skia/src/shaders/SkLights.cpp
 FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fGradientBase.cpp
 FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fGradientBase.h
 FILE: ../../../third_party/skia/src/shaders/gradients/Sk4fGradientPriv.h
@@ -1678,6 +1678,7 @@ FILE: ../../../third_party/skia/bench/JSONBench.cpp
 FILE: ../../../third_party/skia/bench/PathOpsBench.cpp
 FILE: ../../../third_party/skia/bench/PolyUtilsBench.cpp
 FILE: ../../../third_party/skia/bench/ShaderMaskFilterBench.cpp
+FILE: ../../../third_party/skia/bench/TypefaceBench.cpp
 FILE: ../../../third_party/skia/experimental/nima/NimaActor.cpp
 FILE: ../../../third_party/skia/experimental/nima/NimaActor.h
 FILE: ../../../third_party/skia/experimental/pvg/draw_msg.proto
@@ -3753,7 +3754,6 @@ FILE: ../../../third_party/skia/include/codec/SkAndroidCodec.h
 FILE: ../../../third_party/skia/include/codec/SkCodec.h
 FILE: ../../../third_party/skia/include/core/SkEncodedImageFormat.h
 FILE: ../../../third_party/skia/include/core/SkFilterQuality.h
-FILE: ../../../third_party/skia/include/core/SkLights.h
 FILE: ../../../third_party/skia/include/core/SkPixmap.h
 FILE: ../../../third_party/skia/include/core/SkPngChunkReader.h
 FILE: ../../../third_party/skia/include/core/SkPoint3.h
@@ -4040,6 +4040,7 @@ FILE: ../../../third_party/skia/src/shaders/SkImageShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkImageShader.h
 FILE: ../../../third_party/skia/src/shaders/SkLightingShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkLightingShader.h
+FILE: ../../../third_party/skia/src/shaders/SkLights.h
 FILE: ../../../third_party/skia/src/svg/SkSVGCanvas.cpp
 FILE: ../../../third_party/skia/src/svg/SkSVGDevice.cpp
 FILE: ../../../third_party/skia/src/svg/SkSVGDevice.h
