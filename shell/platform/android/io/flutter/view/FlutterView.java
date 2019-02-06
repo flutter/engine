@@ -173,7 +173,6 @@ public class FlutterView extends SurfaceView
         mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         mTextInputPlugin = new TextInputPlugin(this);
 
-
         setLocales(getResources().getConfiguration());
         sendUserPlatformSettingsToDart();
     }
