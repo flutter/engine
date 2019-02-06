@@ -178,7 +178,7 @@ typedef _BinaryFunction(Null args, Null message);
 void _runMainZoned(Function startMainIsolateFunction, Function userMainFunction) {
   startMainIsolateFunction((){
     runZoned<Future<void>>(() {
-      List<String> empty_args = [];
+      const List<String> empty_args = <String>[];
       if (userMainFunction is _BinaryFunction) {
         // This seems to be undocumented but supported by the command line VM.
         // Let's do the same in case old entry-points are ported to Flutter.
