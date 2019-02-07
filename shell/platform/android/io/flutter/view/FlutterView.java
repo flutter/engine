@@ -96,6 +96,7 @@ public class FlutterView extends SurfaceView
     private final SurfaceHolder.Callback mSurfaceCallback;
     private final ViewportMetrics mMetrics;
     private final AccessibilityManager mAccessibilityManager;
+    private final MethodChannel mFlutterLocalizationChannel;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private final List<FirstFrameListener> mFirstFrameListeners;
     private final AtomicLong nextTextureId = new AtomicLong(0L);
@@ -163,6 +164,7 @@ public class FlutterView extends SurfaceView
         lifecycleChannel = new LifecycleChannel(dartExecutor);
         systemChannel = new SystemChannel(dartExecutor);
         settingsChannel = new SettingsChannel(dartExecutor);
+        mFlutterLocalizationChannel = new MethodChannel(this, "flutter/localization", JSONMethodCodec.INSTANCE);
 
         PlatformPlugin platformPlugin = new PlatformPlugin(activity);
         MethodChannel flutterPlatformChannel = new MethodChannel(this, "flutter/platform", JSONMethodCodec.INSTANCE);
