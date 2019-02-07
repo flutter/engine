@@ -15,6 +15,7 @@ import android.graphics.SurfaceTexture;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.os.LocaleList;
 import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
@@ -37,9 +38,9 @@ import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.plugin.common.*;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
+
 import org.json.JSONException;
 
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
@@ -90,6 +91,7 @@ public class FlutterView extends SurfaceView
     private final NavigationChannel navigationChannel;
     private final KeyEventChannel keyEventChannel;
     private final LifecycleChannel lifecycleChannel;
+    private final LocalizationChannel localizationChannel;
     private final SettingsChannel settingsChannel;
     private final SystemChannel systemChannel;
     private final InputMethodManager mImm;
@@ -98,7 +100,6 @@ public class FlutterView extends SurfaceView
     private final SurfaceHolder.Callback mSurfaceCallback;
     private final ViewportMetrics mMetrics;
     private final AccessibilityManager mAccessibilityManager;
-    private final MethodChannel mFlutterLocalizationChannel;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private final List<FirstFrameListener> mFirstFrameListeners;
     private final AtomicLong nextTextureId = new AtomicLong(0L);
@@ -164,9 +165,9 @@ public class FlutterView extends SurfaceView
         navigationChannel = new NavigationChannel(dartExecutor);
         keyEventChannel = new KeyEventChannel(dartExecutor);
         lifecycleChannel = new LifecycleChannel(dartExecutor);
+        localizationChannel = new LocalizationChannel(dartExecutor);
         systemChannel = new SystemChannel(dartExecutor);
         settingsChannel = new SettingsChannel(dartExecutor);
-        mFlutterLocalizationChannel = new MethodChannel(this, "flutter/localization", JSONMethodCodec.INSTANCE);
 
         PlatformPlugin platformPlugin = new PlatformPlugin(activity);
         MethodChannel flutterPlatformChannel = new MethodChannel(this, "flutter/platform", JSONMethodCodec.INSTANCE);
@@ -176,7 +177,7 @@ public class FlutterView extends SurfaceView
         mTextInputPlugin = new TextInputPlugin(this);
         androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel);
 
-        setLocales(getResources().getConfiguration());
+        sendLocalesToDart(getResources().getConfiguration());
         sendUserPlatformSettingsToDart();
     }
 
@@ -311,39 +312,21 @@ public class FlutterView extends SurfaceView
             .send();
     }
 
-    private void setLocales(Configuration config) {
-        if (Build.VERSION.SDK_INT >= 24) {
-            try {
-                // Passes the full list of locales for android API >= 24 with reflection.
-                Object localeList = config.getClass().getDeclaredMethod("getLocales").invoke(config);
-                Method localeListGet = localeList.getClass().getDeclaredMethod("get", int.class);
-                Method localeListSize = localeList.getClass().getDeclaredMethod("size");
-                int localeCount = (int)localeListSize.invoke(localeList);
-                List<String> data = new ArrayList<>();
-                for (int index = 0; index < localeCount; ++index) {
-                    Locale locale = (Locale)localeListGet.invoke(localeList, index);
-                    data.add(locale.getLanguage());
-                    data.add(locale.getCountry());
-                    data.add(locale.getScript());
-                    data.add(locale.getVariant());
-                }
-                mFlutterLocalizationChannel.invokeMethod("setLocale", data);
-                return;
-            } catch (Exception exception) {
-                // Any exception is a failure. Resort to fallback of sending only one locale.
-            }
+    private void sendLocalesToDart(Configuration config) {
+        LocaleList localeList = config.getLocales();
+        int localeCount = localeList.size();
+        List<Locale> locales = new ArrayList<>();
+        for (int index = 0; index < localeCount; ++index) {
+            Locale locale = localeList.get(index);
+            locales.add(locale);
         }
-        // Fallback single locale passing for android API < 24. Should work always.
-        @SuppressWarnings("deprecation")
-        Locale locale = config.locale;
-        // getScript() is gated because it is added in API 21.
-        mFlutterLocalizationChannel.invokeMethod("setLocale", Arrays.asList(locale.getLanguage(), locale.getCountry(), Build.VERSION.SDK_INT >= 21 ? locale.getScript() : "", locale.getVariant()));
+        localizationChannel.sendLocales(locales);
     }
 
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        setLocales(newConfig);
+        sendLocalesToDart(newConfig);
         sendUserPlatformSettingsToDart();
     }
 
