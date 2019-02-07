@@ -91,3 +91,18 @@ foreach(snapshot, _flutter_sdk_snapshots) {
     ]
   }
 }
+
+copy("dart2js_platform_files") {
+  deps = [
+    "//third_party/dart/utils/compiler:compile_dart2js_platform"
+  ]
+
+  sources = [
+    "$root_out_dir/dart2js_outline.dill",
+    "$root_out_dir/dart2js_platform.dill",
+  ]
+
+  outputs = [
+    "$root_out_dir/flutter_patched_sdk/{{source_file_part}}",
+  ]
+}

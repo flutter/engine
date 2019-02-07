@@ -21,10 +21,6 @@ copy("stub_ui") {
     "window.dart",
   ]
 
-  deps = [
-    ":stub_libraries"
-  ]
-
   outputs = [
     "$root_out_dir/flutter_patched_sdk/stub_ui/{{source_file_part}}"
   ]
