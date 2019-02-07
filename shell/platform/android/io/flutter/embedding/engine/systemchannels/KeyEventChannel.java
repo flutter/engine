@@ -14,8 +14,12 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.JSONMessageCodec;
 
+/**
+ * TODO(mattcarroll): fill in javadoc for KeyEventChannel.
+ */
 public class KeyEventChannel {
 
+  @NonNull
   public final BasicMessageChannel<Object> channel;
 
   public KeyEventChannel(@NonNull DartExecutor dartExecutor) {
@@ -40,7 +44,7 @@ public class KeyEventChannel {
     channel.send(message);
   }
 
-  private void encodeKeyEvent(KeyEvent event, Map<String, Object> message) {
+  private void encodeKeyEvent(@NonNull KeyEvent event, @NonNull Map<String, Object> message) {
     message.put("flags", event.getFlags());
     message.put("codePoint", event.getUnicodeChar());
     message.put("keyCode", event.getKeyCode());

@@ -5,13 +5,18 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodChannel;
 
+/**
+ * TODO(mattcarroll): fill in javadoc for NavigationChannel.
+ */
 public class NavigationChannel {
 
+  @NonNull
   public final MethodChannel channel;
 
   public NavigationChannel(@NonNull DartExecutor dartExecutor) {
@@ -30,7 +35,7 @@ public class NavigationChannel {
     channel.invokeMethod("popRoute", null);
   }
 
-  public void setMethodCallHandler(MethodChannel.MethodCallHandler handler) {
+  public void setMethodCallHandler(@Nullable MethodChannel.MethodCallHandler handler) {
     channel.setMethodCallHandler(handler);
   }
 

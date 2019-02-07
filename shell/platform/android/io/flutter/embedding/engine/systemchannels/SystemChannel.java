@@ -13,8 +13,12 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.JSONMessageCodec;
 
+/**
+ * TODO(mattcarroll): fill in javadoc for SystemChannel.
+ */
 public class SystemChannel {
 
+  @NonNull
   public final BasicMessageChannel<Object> channel;
 
   public SystemChannel(@NonNull DartExecutor dartExecutor) {

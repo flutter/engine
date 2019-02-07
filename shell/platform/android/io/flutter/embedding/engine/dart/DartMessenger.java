@@ -23,19 +23,24 @@ import io.flutter.plugin.common.BinaryMessenger;
  * IF YOU USE IT, WE WILL BREAK YOU.
  * <p>
  * See {@link BinaryMessenger}, which sends messages from Android to Dart
+ * <p>
  * See {@link PlatformMessageHandler}, which handles messages to Android from Dart
  */
 class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   private static final String TAG = "DartMessenger";
 
+  @NonNull
   private final FlutterJNI flutterJNI;
+  @NonNull
   private final Map<String, BinaryMessenger.BinaryMessageHandler> messageHandlers;
-  private final Map<Integer, BinaryMessenger.BinaryReply> mPendingReplies = new HashMap<>();
-  private int mNextReplyId = 1;
+  @NonNull
+  private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies;
+  private int nextReplyId = 1;
 
   DartMessenger(@NonNull FlutterJNI flutterJNI) {
     this.flutterJNI = flutterJNI;
     this.messageHandlers = new HashMap<>();
+    this.pendingReplies = new HashMap<>();
   }
 
   @Override
@@ -60,8 +65,8 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   ) {
     int replyId = 0;
     if (callback != null) {
-      replyId = mNextReplyId++;
-      mPendingReplies.put(replyId, callback);
+      replyId = nextReplyId++;
+      pendingReplies.put(replyId, callback);
     }
     if (message == null) {
       flutterJNI.dispatchEmptyPlatformMessage(channel, replyId);
@@ -71,7 +76,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   }
 
   @Override
-  public void handlePlatformMessage(
+  public void handleMessageFromDart(
       @NonNull final String channel,
       @Nullable byte[] message,
       final int replyId
@@ -80,38 +85,48 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     if (handler != null) {
       try {
         final ByteBuffer buffer = (message == null ? null : ByteBuffer.wrap(message));
-        handler.onMessage(buffer, new BinaryMessenger.BinaryReply() {
-          private final AtomicBoolean done = new AtomicBoolean(false);
-
-          @Override
-          public void reply(ByteBuffer reply) {
-            if (done.getAndSet(true)) {
-              throw new IllegalStateException("Reply already submitted");
-            }
-            if (reply == null) {
-              flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
-            } else {
-              flutterJNI.invokePlatformMessageResponseCallback(replyId, reply, reply.position());
-            }
-          }
-        });
+        handler.onMessage(buffer, new Reply(flutterJNI, replyId));
       } catch (Exception ex) {
         Log.e(TAG, "Uncaught exception in binary message listener", ex);
         flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
       }
-      return;
+    } else {
+      flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
     }
-    flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
   }
 
   @Override
   public void handlePlatformMessageResponse(int replyId, @Nullable byte[] reply) {
-    BinaryMessenger.BinaryReply callback = mPendingReplies.remove(replyId);
+    BinaryMessenger.BinaryReply callback = pendingReplies.remove(replyId);
     if (callback != null) {
       try {
         callback.reply(reply == null ? null : ByteBuffer.wrap(reply));
       } catch (Exception ex) {
         Log.e(TAG, "Uncaught exception in binary message reply handler", ex);
+      }
+    }
+  }
+
+  private static class Reply implements BinaryMessenger.BinaryReply {
+    @NonNull
+    private final FlutterJNI flutterJNI;
+    private final int replyId;
+    private final AtomicBoolean done = new AtomicBoolean(false);
+
+    Reply(@NonNull FlutterJNI flutterJNI, int replyId) {
+      this.flutterJNI = flutterJNI;
+      this.replyId = replyId;
+    }
+
+    @Override
+    public void reply(ByteBuffer reply) {
+      if (done.getAndSet(true)) {
+        throw new IllegalStateException("Reply already submitted");
+      }
+      if (reply == null) {
+        flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
+      } else {
+        flutterJNI.invokePlatformMessageResponseCallback(replyId, reply, reply.position());
       }
     }
   }

@@ -10,8 +10,12 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.StringCodec;
 
+/**
+ * TODO(mattcarroll): fill in javadoc for LifecycleChannel.
+ */
 public class LifecycleChannel {
 
+  @NonNull
   public final BasicMessageChannel<String> channel;
 
   public LifecycleChannel(@NonNull DartExecutor dartExecutor) {

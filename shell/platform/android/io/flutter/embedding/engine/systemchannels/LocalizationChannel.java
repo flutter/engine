@@ -12,8 +12,12 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodChannel;
 
+/**
+ * TODO(mattcarroll): fill in javadoc for LocalizationChannel.
+ */
 public class LocalizationChannel {
 
+  @NonNull
   public final MethodChannel channel;
 
   public LocalizationChannel(@NonNull DartExecutor dartExecutor) {
