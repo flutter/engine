@@ -456,7 +456,17 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
     font.setSize(paragraph_style_.strut_font_size);
     SkFontMetrics strut_metrics;
     font.getMetrics(&strut_metrics);
-
+    SkString name;
+    // if (font_skia->GetSkTypeface() != nullptr) {
+    if (font.getTypefaceOrDefault() != nullptr) {
+      FML_DLOG(ERROR) << "Has typeface";
+      font.getTypefaceOrDefault()->getFamilyName(&name);
+    } else {
+      name.append("Null typeface");
+    }
+    std::string str(name.c_str());
+    str.append("HELLO");
+    FML_DLOG(ERROR) << strut_metrics.fAscent << " " << str;
     strut->ascent = paragraph_style_.strut_height * -strut_metrics.fAscent;
     strut->descent = paragraph_style_.strut_height * strut_metrics.fDescent;
     strut->leading =
