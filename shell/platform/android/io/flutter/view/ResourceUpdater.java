@@ -319,12 +319,12 @@ public final class ResourceUpdater {
         }
 
         CRC32 checksum = new CRC32();
-        String[] files = {
+        String[] checksumFiles = {
             "isolate_snapshot_data",
             "isolate_snapshot_instr",
             "flutter_assets/isolate_snapshot_data",
         };
-        for (String fn : files) {
+        for (String fn : checksumFiles) {
             AssetManager manager = context.getResources().getAssets();
             try (InputStream is = manager.open(fn)) {
                 int count = 0;
