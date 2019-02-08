@@ -29,7 +29,7 @@ class GPUSurfaceGLDelegate {
 
   // The rendering subsystem assumes that the ID of the main window bound
   // framebuffer remains constant throughout. If this assumption in incorrect,
-  // embedders are required to return false from this method. In such cases,
+  // embedders are required to return true from this method. In such cases,
   // GLContextFBO() will be called again to acquire the new FBO ID for rendering
   // subsequent frames.
   virtual bool GLContextFBOResetAfterPresent() const;
