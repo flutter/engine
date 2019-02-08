@@ -284,25 +284,24 @@ public class PlatformChannel {
 
   public interface PlatformMessageHandler {
     /**
-     * The Flutter application desires the given {@code soundType} to be played.
+     * The Flutter application would like to play the given {@code soundType}.
      */
     void playSystemSound(@NonNull SoundType soundType);
 
     /**
-     * The Flutter application desires the given {@code feedbackType} to be
-     * played via haptics.
+     * The Flutter application would like to play the given haptic {@code feedbackType}.
      */
     void vibrateHapticFeedback(@NonNull HapticFeedbackType feedbackType);
 
     /**
-     * The Flutter application desires the given {@code androidOrientation}.
+     * The Flutter application would like to display in the given {@code androidOrientation}.
      */
     // TODO(mattcarroll): add @ScreenOrientation annotation
     void setPreferredOrientations(int androidOrientation);
 
     /**
-     * The Flutter application desires the given visual appearance of this
-     * Android app when displayed in the app switcher.
+     * The Flutter application would like to be displayed in Android's app switcher with
+     * the visual representation described in the given {@code description}.
      * <p>
      * See the related Android documentation:
      * https://developer.android.com/guide/components/activities/recents
@@ -310,8 +309,8 @@ public class PlatformChannel {
     void setApplicationSwitcherDescription(@NonNull AppSwitcherDescription description);
 
     /**
-     * The Flutter application desires the given {@code overlays} to be shown by
-     * the system.
+     * The Flutter application would like the Android system to display the given
+     * {@code overlays}.
      * <p>
      * {@link SystemUiOverlay#TOP_OVERLAYS} refers to system overlays such as the
      * status bar, while {@link SystemUiOverlay#BOTTOM_OVERLAYS} refers to system
