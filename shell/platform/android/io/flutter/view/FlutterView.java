@@ -29,17 +29,17 @@ import android.view.inputmethod.InputMethodManager;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.android.AndroidKeyProcessor;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
+import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.plugin.common.*;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
-
-import org.json.JSONException;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -88,15 +88,18 @@ public class FlutterView extends SurfaceView
     }
 
     private final DartExecutor dartExecutor;
+    private final AccessibilityChannel accessibilityChannel;
     private final NavigationChannel navigationChannel;
     private final KeyEventChannel keyEventChannel;
     private final LifecycleChannel lifecycleChannel;
     private final LocalizationChannel localizationChannel;
+    private final PlatformChannel platformChannel;
     private final SettingsChannel settingsChannel;
     private final SystemChannel systemChannel;
     private final InputMethodManager mImm;
     private final TextInputPlugin mTextInputPlugin;
     private final AndroidKeyProcessor androidKeyProcessor;
+    private AccessibilityBridge mAccessibilityNodeProvider;
     private final SurfaceHolder.Callback mSurfaceCallback;
     private final ViewportMetrics mMetrics;
     private final AccessibilityManager mAccessibilityManager;
@@ -161,22 +164,24 @@ public class FlutterView extends SurfaceView
         mActivityLifecycleListeners = new ArrayList<>();
         mFirstFrameListeners = new ArrayList<>();
 
-        // Configure the platform plugins and flutter channels.
+        // Create all platform channels
+        accessibilityChannel = new AccessibilityChannel(dartExecutor);
         navigationChannel = new NavigationChannel(dartExecutor);
         keyEventChannel = new KeyEventChannel(dartExecutor);
         lifecycleChannel = new LifecycleChannel(dartExecutor);
         localizationChannel = new LocalizationChannel(dartExecutor);
+        platformChannel = new PlatformChannel(dartExecutor);
         systemChannel = new SystemChannel(dartExecutor);
         settingsChannel = new SettingsChannel(dartExecutor);
 
-        PlatformPlugin platformPlugin = new PlatformPlugin(activity);
-        MethodChannel flutterPlatformChannel = new MethodChannel(this, "flutter/platform", JSONMethodCodec.INSTANCE);
-        flutterPlatformChannel.setMethodCallHandler(platformPlugin);
+        // Create and setup plugins
+        PlatformPlugin platformPlugin = new PlatformPlugin(activity, platformChannel);
         addActivityLifecycleListener(platformPlugin);
         mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        mTextInputPlugin = new TextInputPlugin(this);
+        mTextInputPlugin = new TextInputPlugin(this, dartExecutor);
         androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel);
 
+        // Send initial platform information to Dart
         sendLocalesToDart(getResources().getConfiguration());
         sendUserPlatformSettingsToDart();
     }
@@ -357,13 +362,7 @@ public class FlutterView extends SurfaceView
 
     @Override
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-        try {
-            mLastInputConnection = mTextInputPlugin.createInputConnection(this, outAttrs);
-            return mLastInputConnection;
-        } catch (JSONException e) {
-            Log.e(TAG, "Failed to create input connection", e);
-            return null;
-        }
+        return mTextInputPlugin.createInputConnection(this, outAttrs);
     }
 
     // Must match the PointerChange enum in pointer.dart.
@@ -989,14 +988,12 @@ public class FlutterView extends SurfaceView
         return null;
     }
 
-    private AccessibilityBridge mAccessibilityNodeProvider;
-
     void ensureAccessibilityEnabled() {
         if (!isAttached())
             return;
         mAccessibilityEnabled = true;
         if (mAccessibilityNodeProvider == null) {
-            mAccessibilityNodeProvider = new AccessibilityBridge(this);
+            mAccessibilityNodeProvider = new AccessibilityBridge(this, accessibilityChannel);
         }
         mNativeView.getFlutterJNI().setSemanticsEnabled(true);
         mAccessibilityNodeProvider.setAccessibilityEnabled(true);
