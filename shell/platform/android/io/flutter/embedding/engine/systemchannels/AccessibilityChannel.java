@@ -59,7 +59,9 @@ public class AccessibilityChannel {
         }
         case "tooltip": {
           String tooltipMessage = (String) data.get("message");
-          handler.onTooltip(tooltipMessage == null ? "" : tooltipMessage);
+          if (tooltipMessage != null) {
+            handler.onTooltip(tooltipMessage);
+          }
           break;
         }
       }
