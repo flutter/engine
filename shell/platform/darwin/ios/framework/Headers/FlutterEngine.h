@@ -52,7 +52,7 @@ FLUTTER_EXPORT
  *
  * FlutterEngine created with this method will have allowHeadlessExecution set to `YES`.
  * This means that the engine will continue to run regardless of whether a `FlutterViewController`
- * is attached to it or not.
+ * is attached to it or not, until `-destroyContext:` is called or the process finishes.
  *
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  *   be unique across FlutterEngine instances, and is used in instrumentation to label
@@ -126,9 +126,9 @@ FLUTTER_EXPORT
 /**
  * Destroy running context for an engine.
  *
- * If you create a FlutterEngine with allowHeadlessExecution set to YES,
- * call destroyContext explicitly when you want to release the engine.
- *
+ * This method can be used to force the FlutterEngine object to release all resources.
+ * After sending this message, the object will be in an unusable state until it is deallocated.
+ * Accessing properties or sending messages to it will result in undefined behavior or runtime errors.
  */
 - (void)destroyContext;
 
