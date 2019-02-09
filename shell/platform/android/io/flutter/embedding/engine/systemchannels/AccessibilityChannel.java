@@ -39,7 +39,9 @@ public class AccessibilityChannel {
       switch (type) {
         case "announce":
           String announceMessage = (String) data.get("message");
-          handler.announce(announceMessage == null ? "" : announceMessage);
+          if (announceMessage != null) {
+            handler.announce(announceMessage);
+          }
           break;
         case "tap": {
           Integer nodeId = (Integer) annotatedEvent.get("nodeId");
@@ -75,28 +77,6 @@ public class AccessibilityChannel {
    */
   public void setAccessibilityMessageHandler(@Nullable AccessibilityMessageHandler handler) {
     this.handler = handler;
-  }
-
-  /**
-   * Overrides the standard parsing logic for the accessibility channel with the given
-   * {@code messageHandler}.
-   *
-   * Calling this method disconnects the standard channel message handler and as a result
-   * no methods will be invoked on a given {@link AccessibilityMessageHandler} until
-   * {@link #restoreDefaultMethodHandler()} is invoked.
-   */
-  public void overrideDefaultMethodHandler(@NonNull BasicMessageChannel.MessageHandler<Object> messageHandler) {
-    channel.setMessageHandler(messageHandler);
-  }
-
-  /**
-   * Replaces an overriding {@link io.flutter.plugin.common.BasicMessageChannel.MessageHandler}
-   * with the standard handler that forwards calls to {@link AccessibilityMessageHandler}.
-   *
-   * This method is the inverse of {@link #overrideDefaultMethodHandler(BasicMessageChannel.MessageHandler)}.
-   */
-  public void restoreDefaultMethodHandler() {
-    channel.setMessageHandler(parsingMessageHandler);
   }
 
   public interface AccessibilityMessageHandler {

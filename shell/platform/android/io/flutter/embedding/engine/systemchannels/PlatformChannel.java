@@ -122,28 +122,6 @@ public class PlatformChannel {
     this.mPlatformMessageHandler = platformMessageHandler;
   }
 
-  /**
-   * Overrides the standard parsing logic for the platform channel with the given
-   * {@code methodCallHandler}.
-   * <p>
-   * Calling this method disconnects the standard channel method handler and as a result
-   * no methods will be invoked on a given {@link PlatformMessageHandler} until
-   * {@link #restoreDefaultMethodHandler()} is invoked.
-   */
-  public void overrideDefaultMethodHandler(@NonNull MethodChannel.MethodCallHandler methodCallHandler) {
-    channel.setMethodCallHandler(methodCallHandler);
-  }
-
-  /**
-   * Replaces an overriding {@link io.flutter.plugin.common.MethodChannel.MethodCallHandler}
-   * with the standard handler that forwards calls to {@link PlatformMessageHandler}.
-   * <p>
-   * This method is the inverse of {@link #overrideDefaultMethodHandler(MethodChannel.MethodCallHandler)}.
-   */
-  public void restoreDefaultMethodHandler() {
-    channel.setMethodCallHandler(parsingMethodCallHandler);
-  }
-
   // TODO(mattcarroll): add support for IntDef annotations, then add @ScreenOrientation
   private int decodeOrientations(@NonNull JSONArray encodedOrientations) throws JSONException {
     int requestedOrientation = 0x00;
