@@ -29,14 +29,6 @@ import io.flutter.plugin.common.MethodChannel;
  * {@link TextInputChannel} comes with a default {@link io.flutter.plugin.common.MethodChannel.MethodCallHandler}
  * that parses incoming messages from Flutter. Register a {@link TextInputMethodHandler} to respond
  * to standard Flutter text input messages.
- * <p>
- * To handle all incoming text input messages in a custom manner, developers may override the
- * default {@code MethodCallHandler} by using {@link #overrideDefaultMethodHandler(MethodChannel.MethodCallHandler)}.
- * Overriding the default {@code MethodCallHandler} prevents {@link TextInputMethodHandler} from
- * being invoked. All incoming message parsing responsibilities must be handled by the
- * {@code MethodCallHandler} that overrode the default.
- * <p>
- * To restore the original default message handling responsibilities, call {@link #restoreDefaultMethodHandler()}.
  */
 public class TextInputChannel {
   @NonNull
@@ -199,28 +191,6 @@ public class TextInputChannel {
    */
   public void setTextInputMethodHandler(@Nullable TextInputMethodHandler textInputMethodHandler) {
     this.textInputMethodHandler = textInputMethodHandler;
-  }
-
-  /**
-   * Overrides the standard parsing logic for the platform channel with the given
-   * {@code methodCallHandler}.
-   * <p>
-   * Calling this method disconnects the standard channel method handler and as a result
-   * no methods will be invoked on a given {@link TextInputMethodHandler} until
-   * {@link #restoreDefaultMethodHandler()} is invoked.
-   */
-  public void overrideDefaultMethodHandler(@NonNull MethodChannel.MethodCallHandler methodCallHandler) {
-    channel.setMethodCallHandler(methodCallHandler);
-  }
-
-  /**
-   * Replaces an overriding {@link io.flutter.plugin.common.MethodChannel.MethodCallHandler}
-   * with the standard handler that forwards calls to {@link TextInputMethodHandler}.
-   * <p>
-   * This method is the inverse of {@link #overrideDefaultMethodHandler(MethodChannel.MethodCallHandler)}.
-   */
-  public void restoreDefaultMethodHandler() {
-    channel.setMethodCallHandler(parsingMethodHandler);
   }
 
   public interface TextInputMethodHandler {
