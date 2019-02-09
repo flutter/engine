@@ -128,7 +128,8 @@ FLUTTER_EXPORT
  *
  * This method can be used to force the FlutterEngine object to release all resources.
  * After sending this message, the object will be in an unusable state until it is deallocated.
- * Accessing properties or sending messages to it will result in undefined behavior or runtime errors.
+ * Accessing properties or sending messages to it will result in undefined behavior or runtime
+ * errors.
  */
 - (void)destroyContext;
 
