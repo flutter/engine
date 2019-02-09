@@ -47,6 +47,7 @@ public class KeyEventChannel {
 
   private void encodeKeyEvent(@NonNull FlutterKeyEvent event, @NonNull Map<String, Object> message) {
     message.put("flags", event.flags);
+    message.put("plainCodePoint", event.plainCodePoint);
     message.put("codePoint", event.codePoint);
     message.put("keyCode", event.keyCode);
     message.put("scanCode", event.scanCode);
@@ -61,6 +62,7 @@ public class KeyEventChannel {
    */
   public static class FlutterKeyEvent {
     public final int flags;
+    public final int plainCodePoint;
     public final int codePoint;
     public final int keyCode;
     @Nullable
@@ -80,6 +82,7 @@ public class KeyEventChannel {
     ) {
       this(
           androidKeyEvent.getFlags(),
+          androidKeyEvent.getUnicodeChar(0x0),
           androidKeyEvent.getUnicodeChar(),
           androidKeyEvent.getKeyCode(),
           complexCharacter,
@@ -90,6 +93,7 @@ public class KeyEventChannel {
 
     public FlutterKeyEvent(
         int flags,
+        int plainCodePoint,
         int codePoint,
         int keyCode,
         @Nullable Character complexCharacter,
@@ -97,6 +101,7 @@ public class KeyEventChannel {
         int metaState
     ) {
       this.flags = flags;
+      this.plainCodePoint = plainCodePoint;
       this.codePoint = codePoint;
       this.keyCode = keyCode;
       this.complexCharacter = complexCharacter;
