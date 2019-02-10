@@ -6,6 +6,7 @@ package io.flutter.view;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
@@ -116,7 +117,11 @@ public class FlutterView extends SurfaceView
     public FlutterView(Context context, AttributeSet attrs, FlutterNativeView nativeView) {
         super(context, attrs);
 
-        Activity activity = (Activity) getContext();
+        Activity activity = getActivity(getContext());
+        if (activity == null) {
+            throw new IllegalArgumentException("Bad context");
+        }
+
         if (nativeView == null) {
             mNativeView = new FlutterNativeView(activity.getApplicationContext());
         } else {
@@ -176,6 +181,20 @@ public class FlutterView extends SurfaceView
 
         setLocales(getResources().getConfiguration());
         sendUserPlatformSettingsToDart();
+    }
+    
+    private static Activity getActivity(Context context) {
+        if (context == null) {
+            return null;
+        }
+        if (context instanceof Activity) {
+            return (Activity) context;
+        }
+        if (context instanceof ContextWrapper) {
+            // Recurse up chain of base contexts until we find an Activity.
+            return getActivity(((ContextWrapper) context).getBaseContext());
+        }
+        return null;
     }
 
     @Override
