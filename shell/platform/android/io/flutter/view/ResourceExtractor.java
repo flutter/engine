@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -28,8 +29,6 @@ import java.util.zip.ZipFile;
 class ResourceExtractor {
     private static final String TAG = "ResourceExtractor";
     private static final String TIMESTAMP_PREFIX = "res_timestamp-";
-
-    private static final int BUFFER_SIZE = 16 * 1024;
 
     @SuppressWarnings("deprecation")
     static long getVersionCode(PackageInfo packageInfo) {
@@ -177,7 +176,6 @@ class ResourceExtractor {
     private boolean extractAPK(File dataDir) {
         final AssetManager manager = mContext.getResources().getAssets();
 
-        byte[] buffer = null;
         for (String asset : mResources) {
             try {
                 final File output = new File(dataDir, asset);
@@ -190,18 +188,10 @@ class ResourceExtractor {
 
                 try (InputStream is = manager.open(asset);
                      OutputStream os = new FileOutputStream(output)) {
-                    if (buffer == null) {
-                        buffer = new byte[BUFFER_SIZE];
-                    }
-
-                    int count = 0;
-                    while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
-                        os.write(buffer, 0, count);
-                    }
-
-                    os.flush();
-                    Log.i(TAG, "Extracted baseline resource " + asset);
+                    copy(is, os);
                 }
+
+                Log.i(TAG, "Extracted baseline resource " + asset);
 
             } catch (FileNotFoundException fnfe) {
                 continue;
@@ -219,6 +209,8 @@ class ResourceExtractor {
     /// Returns true if successfully unpacked update resources or if there is no update,
     /// otherwise deletes all resources and returns false.
     private boolean extractUpdate(File dataDir) {
+        final AssetManager manager = mContext.getResources().getAssets();
+
         ResourceUpdater resourceUpdater = FlutterMain.getResourceUpdater();
         if (resourceUpdater == null) {
             return true;
@@ -245,11 +237,15 @@ class ResourceExtractor {
             return false;
         }
 
-        byte[] buffer = null;
         for (String asset : mResources) {
+            boolean useDiff = false;
             ZipEntry entry = zipFile.getEntry(asset);
             if (entry == null) {
-                continue;
+                useDiff = true;
+                entry = zipFile.getEntry(asset + ".bzdiff40");
+                if (entry == null) {
+                    continue;
+                }
             }
 
             final File output = new File(dataDir, asset);
@@ -260,18 +256,29 @@ class ResourceExtractor {
                 output.getParentFile().mkdirs();
             }
 
-            try (InputStream is = zipFile.getInputStream(entry);
-                 OutputStream os = new FileOutputStream(output)) {
-                if (buffer == null) {
-                    buffer = new byte[BUFFER_SIZE];
+            try {
+                if (useDiff) {
+                    ByteArrayOutputStream diff = new ByteArrayOutputStream();
+                    try (InputStream is = zipFile.getInputStream(entry)) {
+                        copy(is, diff);
+                    }
+
+                    ByteArrayOutputStream orig = new ByteArrayOutputStream();
+                    try (InputStream is = manager.open(asset)) {
+                        copy(is, orig);
+                    }
+
+                    try (OutputStream os = new FileOutputStream(output)) {
+                        os.write(bspatch(orig.toByteArray(), diff.toByteArray()));
+                    }
+
+                } else {
+                    try (InputStream is = zipFile.getInputStream(entry);
+                         OutputStream os = new FileOutputStream(output)) {
+                        copy(is, os);
+                    }
                 }
 
-                int count = 0;
-                while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
-                    os.write(buffer, 0, count);
-                }
-
-                os.flush();
                 Log.i(TAG, "Extracted override resource " + asset);
 
             } catch (FileNotFoundException fnfe) {
@@ -338,5 +345,115 @@ class ResourceExtractor {
         }
 
         return null;
+    }
+
+    private static void copy(InputStream in, OutputStream out) throws IOException {
+        byte[] buf = new byte[16 * 1024];
+        for (int i; (i = in.read(buf)) >= 0; ) {
+            out.write(buf, 0, i);
+        }
+    }
+
+    private static void read(InputStream in, byte[] buf, int off, int len) throws IOException {
+        for (int i, n = 0; n < len; n += i) {
+            if ((i = in.read(buf, off+n, len-n)) < 0) {
+                throw new IOException("Unexpected EOF");
+            }
+        }
+    }
+
+    // This is a Java port of algorithm from Flutter framework bsdiff.dart.
+    // Note that this port uses 32-bit ints, which limits data size to 2GB.
+    //
+    // Copyright 2003-2005 Colin Percival. All rights reserved.
+    // Use of this source code is governed by a BSD-style license that can be
+    // found in the LICENSE file.
+    // Redistribution and use in source and binary forms, with or without
+    // modification, are permitted providing that the following conditions 
+    // are met:
+    // 1. Redistributions of source code must retain the above copyright
+    //    notice, this list of conditions and the following disclaimer.
+    // 2. Redistributions in binary form must reproduce the above copyright
+    //    notice, this list of conditions and the following disclaimer in the
+    //    documentation and/or other materials provided with the distribution.
+    //
+    // THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+    // IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+    // ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+    // DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    // DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+    // OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+    // HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+    // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+    // IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+    // POSSIBILITY OF SUCH DAMAGE.
+    private static byte[] bspatch(byte[] olddata, byte[] diffdata) throws IOException {
+        InputStream in = new ByteArrayInputStream(diffdata, 0, diffdata.length);
+        DataInputStream header = new DataInputStream(in);
+
+        byte[] magic = new byte[8];
+        header.read(magic);
+        if (!new String(magic).equals("BZDIFF40")) {
+            throw new IOException("Invalid magic");
+        }
+
+        int ctrllen = (int) header.readLong();
+        int datalen = (int) header.readLong();
+        int newsize = (int) header.readLong();
+        header.close();
+
+        in = new ByteArrayInputStream(diffdata, 0, diffdata.length);
+        in.skip(32);
+        DataInputStream cpf = new DataInputStream(new GZIPInputStream(in));
+
+        in = new ByteArrayInputStream(diffdata, 0, diffdata.length);
+        in.skip(32 + ctrllen);
+        InputStream dpf = new GZIPInputStream(in);
+
+        in = new ByteArrayInputStream(diffdata, 0, diffdata.length);
+        in.skip(32 + ctrllen + datalen);
+        InputStream epf = new GZIPInputStream(in);
+
+        byte[] newdata = new byte[newsize];
+
+	int oldpos = 0;
+        int newpos = 0;
+
+        while (newpos < newsize) {
+            int[] ctrl = new int[3];
+            for (int i = 0; i <= 2; i++) {
+                ctrl[i] = (int) cpf.readLong();
+            }
+            if (newpos + ctrl[0] > newsize) {
+                throw new IOException("Invalid ctrl[0]");
+            }
+
+            read(dpf, newdata, newpos, ctrl[0]);
+
+            for (int i = 0; i < ctrl[0]; i++) {
+                if ((oldpos + i >= 0) && (oldpos + i < olddata.length)) {
+                    newdata[newpos + i] += olddata[oldpos + i];
+                }
+            }
+
+            newpos += ctrl[0];
+            oldpos += ctrl[0];
+
+            if (newpos + ctrl[1] > newsize) {
+                throw new IOException("Invalid ctrl[0]");
+            }
+
+            read(epf, newdata, newpos, ctrl[1]);
+
+            newpos += ctrl[1];
+            oldpos += ctrl[2];
+        }
+
+        cpf.close();
+        dpf.close();
+        epf.close();
+
+        return newdata;
     }
 }
