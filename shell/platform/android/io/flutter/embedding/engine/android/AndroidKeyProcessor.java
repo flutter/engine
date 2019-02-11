@@ -39,7 +39,7 @@ public class AndroidKeyProcessor {
    * One of the following things happens in this method:
    * <ul>
    *   <li>If no previous {@link #combiningCharacter} exists and the {@code newCharacterCodePoint}
-   *   is not a combining character, then nothing happens and null is returned.</li>
+   *   is not a combining character, then nothing happens and {@code newCharacterCodePoint} is returned.</li>
    *   <li>If no previous {@link #combiningCharacter} exists and the {@code newCharacterCodePoint}
    *   is a combining character, then {@code newCharacterCodePoint} is saved as the
    *   {@link #combiningCharacter} and null is returned.</li>
@@ -61,7 +61,7 @@ public class AndroidKeyProcessor {
       return null;
     }
 
-    Character complexCharacter = null;
+    Character complexCharacter = (char) newCharacterCodePoint;
     boolean isNewCodePointACombiningCharacter = (newCharacterCodePoint & KeyCharacterMap.COMBINING_ACCENT) != 0;
     if (isNewCodePointACombiningCharacter) {
       // If a combining character was entered before, combine this one with that one.
