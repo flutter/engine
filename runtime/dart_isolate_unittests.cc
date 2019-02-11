@@ -131,11 +131,11 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
   if (!vm) {
     return {};
   }
-  TaskRunners task_runners(CURRENT_TEST_NAME,  //
-                           task_runner,        //
-                           task_runner,        //
-                           task_runner,        //
-                           task_runner         //
+  TaskRunners task_runners(testing::GetCurrentTestName(),  //
+                           task_runner,                    //
+                           task_runner,                    //
+                           task_runner,                    //
+                           task_runner                     //
   );
 
   auto weak_isolate = DartIsolate::CreateRootIsolate(

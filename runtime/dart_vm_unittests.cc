@@ -82,8 +82,7 @@ TEST_F(DartVMThreadTest, CanRunIsolatesInANewVM) {
         std::move(task_runners),   // task runners
         nullptr,                   // window
         {},                        // snapshot delegate
-        {},                        // resource context
-        nullptr,                   // unref qeueue
+        {},                        // io manager
         "main.dart",               // advisory uri
         "main"                     // advisory entrypoint
     );
