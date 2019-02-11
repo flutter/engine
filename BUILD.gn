@@ -4,6 +4,18 @@
 
 import("$flutter_root/common/config.gni")
 
+# Temporary snapshot copy rules until we can use the full SDK.
+_flutter_sdk_snapshots = [
+  [
+    "dart2js",
+    "//third_party/dart/utils/compiler:dart2js",
+  ],
+  [
+    "kernel_worker",
+    "//third_party/dart/utils/bazel:kernel_worker",
+  ],
+]
+
 group("flutter") {
   testonly = true
 
@@ -23,7 +35,12 @@ group("flutter") {
       public_deps += [
         "$flutter_root/frontend_server",
         "//third_party/dart:create_sdk",
+        "$flutter_root/lib/stub_ui:stub_ui",
+        ":dart2js_platform_files"
       ]
+      foreach(snapshot, _flutter_sdk_snapshots) {
+        public_deps += [ ":copy_flutter_${snapshot[0]}_snapshot" ]
+      }
     }
   }
 
@@ -59,5 +76,34 @@ group("dist") {
 
   deps = [
     "$flutter_root/sky/dist",
+  ]
+}
+
+foreach(snapshot, _flutter_sdk_snapshots) {
+  copy("copy_flutter_${snapshot[0]}_snapshot") {
+    deps = [
+      snapshot[1],
+    ]
+    sources = [
+      "$root_gen_dir/${snapshot[0]}.dart.snapshot",
+    ]
+    outputs = [
+      "$root_out_dir/dart-sdk/bin/snapshots/flutter_{{source_file_part}}",
+    ]
+  }
+}
+
+copy("dart2js_platform_files") {
+  deps = [
+    "//third_party/dart/utils/compiler:compile_dart2js_platform"
+  ]
+
+  sources = [
+    "$root_out_dir/dart2js_outline.dill",
+    "$root_out_dir/dart2js_platform.dill",
+  ]
+
+  outputs = [
+    "$root_out_dir/flutter_patched_sdk/{{source_file_part}}",
   ]
 }

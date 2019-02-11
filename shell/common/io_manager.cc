@@ -53,9 +53,11 @@ IOManager::IOManager(sk_sp<GrContext> resource_context,
           fml::TimeDelta::FromMilliseconds(250))),
       weak_factory_(this) {
   if (!resource_context_) {
+#ifndef OS_FUCHSIA
     FML_DLOG(WARNING) << "The IO manager was initialized without a resource "
                          "context. Async texture uploads will be disabled. "
                          "Expect performance degradation.";
+#endif  // OS_FUCHSIA
   }
 }
 
@@ -71,8 +73,29 @@ fml::WeakPtr<GrContext> IOManager::GetResourceContext() const {
              : fml::WeakPtr<GrContext>();
 }
 
+void IOManager::NotifyResourceContextAvailable(
+    sk_sp<GrContext> resource_context) {
+  // The resource context needs to survive as long as we have Dart objects
+  // referencing. We shouldn't ever need to replace it if we have one - unless
+  // we've somehow shut down the Dart VM and started a new one fresh.
+  if (!resource_context_) {
+    UpdateResourceContext(std::move(resource_context));
+  }
+}
+
+void IOManager::UpdateResourceContext(sk_sp<GrContext> resource_context) {
+  resource_context_ = std::move(resource_context);
+  resource_context_weak_factory_ =
+      resource_context_ ? std::make_unique<fml::WeakPtrFactory<GrContext>>(
+                              resource_context_.get())
+                        : nullptr;
+}
+
 fml::RefPtr<flow::SkiaUnrefQueue> IOManager::GetSkiaUnrefQueue() const {
   return unref_queue_;
 }
 
+fml::WeakPtr<IOManager> IOManager::GetWeakPtr() {
+  return weak_factory_.GetWeakPtr();
+}
 }  // namespace shell

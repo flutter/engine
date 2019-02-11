@@ -26,6 +26,13 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import io.flutter.app.FlutterPluginRegistry;
+import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
+import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
+import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
+import io.flutter.embedding.engine.systemchannels.NavigationChannel;
+import io.flutter.embedding.engine.systemchannels.SettingsChannel;
+import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.plugin.common.*;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
@@ -78,17 +85,18 @@ public class FlutterView extends SurfaceView
         int physicalViewInsetLeft = 0;
     }
 
+    private final DartExecutor dartExecutor;
+    private final NavigationChannel navigationChannel;
+    private final KeyEventChannel keyEventChannel;
+    private final LifecycleChannel lifecycleChannel;
+    private final SettingsChannel settingsChannel;
+    private final SystemChannel systemChannel;
     private final InputMethodManager mImm;
     private final TextInputPlugin mTextInputPlugin;
     private final SurfaceHolder.Callback mSurfaceCallback;
     private final ViewportMetrics mMetrics;
     private final AccessibilityManager mAccessibilityManager;
     private final MethodChannel mFlutterLocalizationChannel;
-    private final MethodChannel mFlutterNavigationChannel;
-    private final BasicMessageChannel<Object> mFlutterKeyEventChannel;
-    private final BasicMessageChannel<String> mFlutterLifecycleChannel;
-    private final BasicMessageChannel<Object> mFlutterSystemChannel;
-    private final BasicMessageChannel<Object> mFlutterSettingsChannel;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private final List<FirstFrameListener> mFirstFrameListeners;
     private final AtomicLong nextTextureId = new AtomicLong(0L);
@@ -114,6 +122,7 @@ public class FlutterView extends SurfaceView
         } else {
             mNativeView = nativeView;
         }
+        dartExecutor = new DartExecutor(mNativeView.getFlutterJNI());
         mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().nativeGetIsSoftwareRenderingEnabled();
         mAnimationScaleObserver = new AnimationScaleObserver(new Handler());
         mMetrics = new ViewportMetrics();
@@ -150,12 +159,12 @@ public class FlutterView extends SurfaceView
         mFirstFrameListeners = new ArrayList<>();
 
         // Configure the platform plugins and flutter channels.
+        navigationChannel = new NavigationChannel(dartExecutor);
+        keyEventChannel = new KeyEventChannel(dartExecutor);
+        lifecycleChannel = new LifecycleChannel(dartExecutor);
+        systemChannel = new SystemChannel(dartExecutor);
+        settingsChannel = new SettingsChannel(dartExecutor);
         mFlutterLocalizationChannel = new MethodChannel(this, "flutter/localization", JSONMethodCodec.INSTANCE);
-        mFlutterNavigationChannel = new MethodChannel(this, "flutter/navigation", JSONMethodCodec.INSTANCE);
-        mFlutterKeyEventChannel = new BasicMessageChannel<>(this, "flutter/keyevent", JSONMessageCodec.INSTANCE);
-        mFlutterLifecycleChannel = new BasicMessageChannel<>(this, "flutter/lifecycle", StringCodec.INSTANCE);
-        mFlutterSystemChannel = new BasicMessageChannel<>(this, "flutter/system", JSONMessageCodec.INSTANCE);
-        mFlutterSettingsChannel = new BasicMessageChannel<>(this, "flutter/settings", JSONMessageCodec.INSTANCE);
 
         PlatformPlugin platformPlugin = new PlatformPlugin(activity);
         MethodChannel flutterPlatformChannel = new MethodChannel(this, "flutter/platform", JSONMethodCodec.INSTANCE);
@@ -166,15 +175,7 @@ public class FlutterView extends SurfaceView
 
 
         setLocales(getResources().getConfiguration());
-        setUserSettings();
-    }
-
-    private void encodeKeyEvent(KeyEvent event, Map<String, Object> message) {
-        message.put("flags", event.getFlags());
-        message.put("codePoint", event.getUnicodeChar());
-        message.put("keyCode", event.getKeyCode());
-        message.put("scanCode", event.getScanCode());
-        message.put("metaState", event.getMetaState());
+        sendUserPlatformSettingsToDart();
     }
 
     @Override
@@ -182,12 +183,7 @@ public class FlutterView extends SurfaceView
         if (!isAttached()) {
             return super.onKeyUp(keyCode, event);
         }
-
-        Map<String, Object> message = new HashMap<>();
-        message.put("type", "keyup");
-        message.put("keymap", "android");
-        encodeKeyEvent(event, message);
-        mFlutterKeyEventChannel.send(message);
+        keyEventChannel.keyUp(event);
         return super.onKeyUp(keyCode, event);
     }
 
@@ -203,11 +199,7 @@ public class FlutterView extends SurfaceView
             }
         }
 
-        Map<String, Object> message = new HashMap<>();
-        message.put("type", "keydown");
-        message.put("keymap", "android");
-        encodeKeyEvent(event, message);
-        mFlutterKeyEventChannel.send(message);
+        keyEventChannel.keyDown(event);
         return super.onKeyDown(keyCode, event);
     }
 
@@ -232,11 +224,11 @@ public class FlutterView extends SurfaceView
     }
 
     public void onStart() {
-        mFlutterLifecycleChannel.send("AppLifecycleState.inactive");
+        lifecycleChannel.appIsInactive();
     }
 
     public void onPause() {
-        mFlutterLifecycleChannel.send("AppLifecycleState.inactive");
+        lifecycleChannel.appIsInactive();
     }
 
     public void onPostResume() {
@@ -244,17 +236,15 @@ public class FlutterView extends SurfaceView
         for (ActivityLifecycleListener listener : mActivityLifecycleListeners) {
             listener.onPostResume();
         }
-        mFlutterLifecycleChannel.send("AppLifecycleState.resumed");
+        lifecycleChannel.appIsResumed();
     }
 
     public void onStop() {
-        mFlutterLifecycleChannel.send("AppLifecycleState.paused");
+        lifecycleChannel.appIsPaused();
     }
 
     public void onMemoryPressure() {
-        Map<String, Object> message = new HashMap<>(1);
-        message.put("type", "memoryPressure");
-        mFlutterSystemChannel.send(message);
+        systemChannel.sendMemoryPressureWarning();
     }
 
     /**
@@ -293,22 +283,30 @@ public class FlutterView extends SurfaceView
     }
 
     public void setInitialRoute(String route) {
-        mFlutterNavigationChannel.invokeMethod("setInitialRoute", route);
+        navigationChannel.setInitialRoute(route);
     }
 
     public void pushRoute(String route) {
-        mFlutterNavigationChannel.invokeMethod("pushRoute", route);
+        navigationChannel.pushRoute(route);
     }
 
     public void popRoute() {
-        mFlutterNavigationChannel.invokeMethod("popRoute", null);
+        navigationChannel.popRoute();
     }
 
-    private void setUserSettings() {
-        Map<String, Object> message = new HashMap<>();
-        message.put("textScaleFactor", getResources().getConfiguration().fontScale);
-        message.put("alwaysUse24HourFormat", DateFormat.is24HourFormat(getContext()));
-        mFlutterSettingsChannel.send(message);
+    private void sendUserPlatformSettingsToDart() {
+        // Lookup the current brightness of the Android OS.
+        boolean isNightModeOn = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        SettingsChannel.PlatformBrightness brightness = isNightModeOn
+            ? SettingsChannel.PlatformBrightness.dark
+            : SettingsChannel.PlatformBrightness.light;
+
+        settingsChannel
+            .startMessage()
+            .setTextScaleFactor(getResources().getConfiguration().fontScale)
+            .setUse24HourFormat(DateFormat.is24HourFormat(getContext()))
+            .setPlatformBrightness(brightness)
+            .send();
     }
 
     private void setLocales(Configuration config) {
@@ -338,14 +336,13 @@ public class FlutterView extends SurfaceView
         Locale locale = config.locale;
         // getScript() is gated because it is added in API 21.
         mFlutterLocalizationChannel.invokeMethod("setLocale", Arrays.asList(locale.getLanguage(), locale.getCountry(), Build.VERSION.SDK_INT >= 21 ? locale.getScript() : "", locale.getVariant()));
-
     }
 
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         setLocales(newConfig);
-        setUserSettings();
+        sendUserPlatformSettingsToDart();
     }
 
     float getDevicePixelRatio() {
@@ -405,6 +402,10 @@ public class FlutterView extends SurfaceView
     private static final int kPointerGestureKindScroll = 0;
     private static final int kPointerGestureKindUnknown = 1;
 
+    // These values must match the unpacking code in hooks.dart.
+    private static final int kPointerDataFieldCount = 24;
+    private static final int kPointerBytesPerField = 8;
+
     private int getPointerChangeForAction(int maskedAction) {
         // Primary pointer:
         if (maskedAction == MotionEvent.ACTION_DOWN) {
@@ -423,6 +424,9 @@ public class FlutterView extends SurfaceView
         // All pointers:
         if (maskedAction == MotionEvent.ACTION_MOVE) {
             return kPointerChangeMove;
+        }
+        if (maskedAction == MotionEvent.ACTION_HOVER_MOVE) {
+            return kPointerChangeHover;
         }
         if (maskedAction == MotionEvent.ACTION_CANCEL) {
             return kPointerChangeCancel;
@@ -477,11 +481,10 @@ public class FlutterView extends SurfaceView
 
         packet.putLong(0); // obscured
 
-        // TODO(eseidel): Could get the calibrated range if necessary:
-        // event.getDevice().getMotionRange(MotionEvent.AXIS_PRESSURE)
+        InputDevice.MotionRange pressureRange = event.getDevice().getMotionRange(MotionEvent.AXIS_PRESSURE);
         packet.putDouble(event.getPressure(pointerIndex)); // pressure
-        packet.putDouble(0.0); // pressure_min
-        packet.putDouble(1.0); // pressure_max
+        packet.putDouble(pressureRange.getMin()); // pressure_min
+        packet.putDouble(pressureRange.getMax()); // pressure_max
 
         if (pointerKind == kPointerDeviceKindStylus) {
             packet.putDouble(event.getAxisValue(MotionEvent.AXIS_DISTANCE, pointerIndex)); // distance
@@ -528,17 +531,13 @@ public class FlutterView extends SurfaceView
             requestUnbufferedDispatch(event);
         }
 
-        // These values must match the unpacking code in hooks.dart.
-        final int kPointerDataFieldCount = 24;
-        final int kBytePerField = 8;
-
         // This value must match the value in framework's platform_view.dart.
         // This flag indicates whether the original Android pointer events were batched together.
         final int kPointerDataFlagBatched = 1;
 
         int pointerCount = event.getPointerCount();
 
-        ByteBuffer packet = ByteBuffer.allocateDirect(pointerCount * kPointerDataFieldCount * kBytePerField);
+        ByteBuffer packet = ByteBuffer.allocateDirect(pointerCount * kPointerDataFieldCount * kPointerBytesPerField);
         packet.order(ByteOrder.LITTLE_ENDIAN);
 
         int maskedAction = event.getActionMasked();
@@ -570,7 +569,9 @@ public class FlutterView extends SurfaceView
             }
         }
 
-        assert packet.position() % (kPointerDataFieldCount * kBytePerField) == 0;
+        if (packet.position() % (kPointerDataFieldCount * kPointerBytesPerField) != 0) {
+          throw new AssertionError("Packet position is not on field boundary");
+        }
         mNativeView.getFlutterJNI().dispatchPointerDataPacket(packet, packet.position());
         return true;
     }
@@ -587,6 +588,28 @@ public class FlutterView extends SurfaceView
             // implementing ADD, REMOVE, etc.
         }
         return handled;
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (!event.isFromSource(InputDevice.SOURCE_CLASS_POINTER) ||
+            event.getActionMasked() != MotionEvent.ACTION_HOVER_MOVE ||
+            !isAttached()) {
+            return super.onGenericMotionEvent(event);
+        }
+
+        int pointerChange = getPointerChangeForAction(event.getActionMasked());
+        ByteBuffer packet = ByteBuffer.allocateDirect(
+            event.getPointerCount() * kPointerDataFieldCount * kPointerBytesPerField);
+        packet.order(ByteOrder.LITTLE_ENDIAN);
+
+        // ACTION_HOVER_MOVE always applies to a single pointer only.
+        addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, packet);
+        if (packet.position() % (kPointerDataFieldCount * kPointerBytesPerField) != 0) {
+          throw new AssertionError("Packet position is not on field boundary");
+        }
+        mNativeView.getFlutterJNI().dispatchPointerDataPacket(packet, packet.position());
+        return true;
     }
 
     @Override

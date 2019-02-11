@@ -67,7 +67,9 @@
   if (self) {
     _viewOpaque = YES;
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
-    _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter" project:projectOrNil]);
+    _engine.reset([[FlutterEngine alloc] initWithName:@"io.flutter"
+                                              project:projectOrNil
+                               allowHeadlessExecution:NO]);
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
     _engineNeedsLaunch = YES;
@@ -116,8 +118,8 @@
   [self setupNotificationCenterObservers];
 }
 
-- (fml::scoped_nsobject<FlutterEngine>)engine {
-  return _engine;
+- (FlutterEngine*)engine {
+  return _engine.get();
 }
 
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr {
@@ -423,11 +425,11 @@
   TRACE_EVENT0("flutter", "viewDidDisappear");
   [self surfaceUpdated:NO];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
-
   [super viewDidDisappear:animated];
 }
 
 - (void)dealloc {
+  [_engine.get() notifyViewControllerDeallocated];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [super dealloc];
 }
@@ -436,24 +438,24 @@
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
+  if (_viewportMetrics.physical_width)
+    [self surfaceUpdated:YES];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
+  [self surfaceUpdated:NO];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
-  [self surfaceUpdated:NO];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
 }
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
-  if (_viewportMetrics.physical_width)
-    [self surfaceUpdated:YES];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 }
 

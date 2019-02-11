@@ -7,6 +7,7 @@ package io.flutter.view;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,16 +16,27 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.Math;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Date;
+import java.util.Scanner;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.zip.CRC32;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public final class ResourceUpdater {
     private static final String TAG = "ResourceUpdater";
+
+    private static final int BUFFER_SIZE = 16 * 1024;
 
     // Controls when to check if a new patch is available for download, and start downloading.
     // Note that by default the application will not block to wait for the download to finish.
@@ -58,12 +70,33 @@ public final class ResourceUpdater {
         IMMEDIATE
     }
 
-    private static class DownloadTask extends AsyncTask<String, String, Void> {
+    /// Lock that prevents replacement of the install file by the downloader
+    /// while this file is being extracted, since these can happen in parallel.
+    Lock getInstallationLock() {
+        return installationLock;
+    }
+
+    // Patch file that's fully installed and is ready to serve assets.
+    // This file represents the final stage in the installation process.
+    public File getInstalledPatch() {
+        return new File(context.getFilesDir().toString() + "/patch.zip");
+    }
+
+    // Patch file that's finished downloading and is ready to be installed.
+    // This is a separate file in order to prevent serving assets from patch
+    // that failed installing for any reason, such as mismatched APK version.
+    File getDownloadedPatch() {
+        return new File(getInstalledPatch().getPath() + ".install");
+    }
+
+    private class DownloadTask extends AsyncTask<String, String, Void> {
         @Override
-        protected Void doInBackground(String... args) {
+        protected Void doInBackground(String... unused) {
             try {
-                URL unresolvedURL = new URL(args[0]);
-                File localFile = new File(args[1]);
+                URL unresolvedURL = new URL(buildUpdateDownloadURL());
+
+                // Download to transient file to avoid extracting incomplete download.
+                File localFile = new File(getInstalledPatch().getPath() + ".download");
 
                 long startMillis = new Date().getTime();
                 Log.i(TAG, "Checking for updates at " + unresolvedURL);
@@ -71,32 +104,32 @@ public final class ResourceUpdater {
                 HttpURLConnection connection =
                         (HttpURLConnection)unresolvedURL.openConnection();
 
-                long lastModified = localFile.lastModified();
-                if (lastModified != 0) {
-                    Log.i(TAG, "Active update timestamp " + lastModified);
-                    connection.setIfModifiedSince(lastModified);
+                long lastDownloadTime = Math.max(
+                        getDownloadedPatch().lastModified(),
+                        getInstalledPatch().lastModified());
+
+                if (lastDownloadTime != 0) {
+                    Log.i(TAG, "Active update timestamp " + lastDownloadTime);
+                    connection.setIfModifiedSince(lastDownloadTime);
+                }
+
+                URL resolvedURL = connection.getURL();
+                Log.i(TAG, "Resolved update URL " + resolvedURL);
+
+                int responseCode = connection.getResponseCode();
+                Log.i(TAG, "HTTP response code " + responseCode);
+
+                if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                    Log.i(TAG, "Latest update not found on server");
+                    return null;
+                }
+
+                if (responseCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
+                    Log.i(TAG, "Already have latest update");
+                    return null;
                 }
 
                 try (InputStream input = connection.getInputStream()) {
-                    URL resolvedURL = connection.getURL();
-                    Log.i(TAG, "Resolved update URL " + resolvedURL);
-
-                    if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) {
-                        if (resolvedURL.equals(unresolvedURL)) {
-                            Log.i(TAG, "Rolled back all updates");
-                            localFile.delete();
-                            return null;
-                        } else {
-                            Log.i(TAG, "Latest update not found");
-                            return null;
-                        }
-                    }
-
-                    if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_MODIFIED) {
-                        Log.i(TAG, "Already have latest update");
-                        return null;
-                    }
-
                     Log.i(TAG, "Downloading update " + unresolvedURL);
                     try (OutputStream output = new FileOutputStream(localFile)) {
                         int count;
@@ -107,10 +140,29 @@ public final class ResourceUpdater {
 
                         long totalMillis = new Date().getTime() - startMillis;
                         Log.i(TAG, "Update downloaded in " + totalMillis / 100 / 10. + "s");
+                    }
+                }
 
-                        output.flush();
+                // Wait renaming the file if extraction is in progress.
+                installationLock.lock();
+
+                try {
+                    File updateFile = getDownloadedPatch();
+
+                    // Graduate downloaded file as ready for installation.
+                    if (updateFile.exists() && !updateFile.delete()) {
+                        Log.w(TAG, "Could not delete file " + updateFile);
                         return null;
                     }
+                    if (!localFile.renameTo(updateFile)) {
+                        Log.w(TAG, "Could not create file " + updateFile);
+                        return null;
+                    }
+
+                    return null;
+
+                } finally {
+                    installationLock.unlock();
                 }
 
             } catch (IOException e) {
@@ -122,12 +174,13 @@ public final class ResourceUpdater {
 
     private final Context context;
     private DownloadTask downloadTask;
+    private final Lock installationLock = new ReentrantLock();
 
     public ResourceUpdater(Context context) {
         this.context = context;
     }
 
-    public String getAPKVersion() {
+    private String getAPKVersion() {
         try {
             PackageManager packageManager = context.getPackageManager();
             PackageInfo packageInfo = packageManager.getPackageInfo(context.getPackageName(), 0);
@@ -138,11 +191,7 @@ public final class ResourceUpdater {
         }
     }
 
-    public String getUpdateInstallationPath() {
-        return context.getFilesDir().toString() + "/patch.zip";
-    }
-
-    public String buildUpdateDownloadURL() {
+    private String buildUpdateDownloadURL() {
         Bundle metaData;
         try {
             metaData = context.getPackageManager().getApplicationInfo(
@@ -168,7 +217,7 @@ public final class ResourceUpdater {
         return uri.normalize().toString();
     }
 
-    public DownloadMode getDownloadMode() {
+    DownloadMode getDownloadMode() {
         Bundle metaData;
         try {
             metaData = context.getPackageManager().getApplicationInfo(
@@ -195,7 +244,7 @@ public final class ResourceUpdater {
         }
     }
 
-    public InstallMode getInstallMode() {
+    InstallMode getInstallMode() {
         Bundle metaData;
         try {
             metaData = context.getPackageManager().getApplicationInfo(
@@ -222,21 +271,95 @@ public final class ResourceUpdater {
         }
     }
 
-    public void startUpdateDownloadOnce() {
-        if (downloadTask != null ) {
+    /// Returns manifest JSON from ZIP file, or null if not found.
+    public JSONObject readManifest(File updateFile) {
+        if (!updateFile.exists()) {
+            return null;
+        }
+
+        try {
+            ZipFile zipFile = new ZipFile(updateFile);
+            ZipEntry entry = zipFile.getEntry("manifest.json");
+            if (entry == null) {
+                Log.w(TAG, "Invalid update file: " + updateFile);
+                return null;
+            }
+
+            // Read and parse the entire JSON file as single operation.
+            Scanner scanner = new Scanner(zipFile.getInputStream(entry));
+            return new JSONObject(scanner.useDelimiter("\\A").next());
+
+        } catch (IOException | JSONException e) {
+            Log.w(TAG, "Invalid update file: " + e);
+            return null;
+        }
+    }
+
+    /// Returns true if the patch file was indeed built for this APK.
+    public boolean validateManifest(JSONObject manifest) {
+        if (manifest == null) {
+            return false;
+        }
+
+        String buildNumber = manifest.optString("buildNumber", null);
+        if (buildNumber == null) {
+            Log.w(TAG, "Invalid update manifest: missing buildNumber");
+            return false;
+        }
+
+        if (!buildNumber.equals(getAPKVersion())) {
+            Log.w(TAG, "Outdated update file for build " + getAPKVersion());
+            return false;
+        }
+
+        String baselineChecksum = manifest.optString("baselineChecksum", null);
+        if (baselineChecksum == null) {
+            Log.w(TAG, "Invalid update manifest: missing baselineChecksum");
+            return false;
+        }
+
+        CRC32 checksum = new CRC32();
+        String[] checksumFiles = {
+            "isolate_snapshot_data",
+            "isolate_snapshot_instr",
+            "flutter_assets/isolate_snapshot_data",
+        };
+        for (String fn : checksumFiles) {
+            AssetManager manager = context.getResources().getAssets();
+            try (InputStream is = manager.open(fn)) {
+                int count = 0;
+                byte[] buffer = new byte[BUFFER_SIZE];
+                while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
+                    checksum.update(buffer, 0, count);
+                }
+            } catch (IOException e) {
+                // Skip missing files.
+            }
+        }
+
+        if (!baselineChecksum.equals(String.valueOf(checksum.getValue()))) {
+            Log.w(TAG, "Mismatched update file for APK");
+            return false;
+        }
+
+        return true;
+    }
+
+    void startUpdateDownloadOnce() {
+        if (downloadTask != null) {
             return;
         }
         downloadTask = new DownloadTask();
-        downloadTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,
-                buildUpdateDownloadURL(), getUpdateInstallationPath());
+        downloadTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
-    public void waitForDownloadCompletion() {
+    void waitForDownloadCompletion() {
         if (downloadTask == null) {
             return;
         }
         try {
             downloadTask.get();
+            downloadTask = null;
         } catch (CancellationException e) {
             Log.w(TAG, "Download cancelled: " + e.getMessage());
             return;

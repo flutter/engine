@@ -50,19 +50,45 @@ FLUTTER_EXPORT
  * A newly initialized engine will not run the `FlutterDartProject` until either
  * `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI:` is called.
  *
+ * FlutterEngine created with this method will have allowHeadlessExecution set to `YES`.
+ * This means that the engine will continue to run regardless of whether a `FlutterViewController`
+ * is attached to it or not, until `-destroyContext:` is called or the process finishes.
+ *
  * @param labelPrefix The label prefix used to identify threads for this instance. Should
  *   be unique across FlutterEngine instances, and is used in instrumentation to label
  *   the threads used by this FlutterEngine.
  * @param projectOrNil The `FlutterDartProject` to run.
  */
+- (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil;
+
+/**
+ * Initialize this FlutterEngine with a `FlutterDartProject`.
+ *
+ * If the FlutterDartProject is not specified, the FlutterEngine will attempt to locate
+ * the project in a default location (the flutter_assets folder in the iOS application
+ * bundle).
+ *
+ * A newly initialized engine will not run the `FlutterDartProject` until either
+ * `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI:` is called.
+ *
+ * @param labelPrefix The label prefix used to identify threads for this instance. Should
+ *   be unique across FlutterEngine instances, and is used in instrumentation to label
+ *   the threads used by this FlutterEngine.
+ * @param projectOrNil The `FlutterDartProject` to run.
+ * @param allowHeadlessExecution Whether or not to allow this instance to continue
+ *   running after passing a nil `FlutterViewController` to `-setViewController:`.
+ */
 - (instancetype)initWithName:(NSString*)labelPrefix
-                     project:(FlutterDartProject*)projectOrNil NS_DESIGNATED_INITIALIZER;
+                     project:(FlutterDartProject*)projectOrNil
+      allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
 
 /**
  * The default initializer is not available for this object.
  * Callers must use `-[FlutterEngine initWithName:project:]`.
  */
 - (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  * Runs a Dart program on an Isolate from the main Dart library (i.e. the library that
@@ -96,6 +122,16 @@ FLUTTER_EXPORT
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint libraryURI:(NSString*)uri;
+
+/**
+ * Destroy running context for an engine.
+ *
+ * This method can be used to force the FlutterEngine object to release all resources.
+ * After sending this message, the object will be in an unusable state until it is deallocated.
+ * Accessing properties or sending messages to it will result in undefined behavior or runtime
+ * errors.
+ */
+- (void)destroyContext;
 
 /**
  * Sets the `FlutterViewController` for this instance.  The FlutterEngine must be
