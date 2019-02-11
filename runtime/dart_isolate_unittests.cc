@@ -127,6 +127,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
     fml::RefPtr<fml::TaskRunner> task_runner,
     std::string entrypoint) {
   Settings settings = {};
+  settings.enable_observatory = true;
   settings.task_observer_add = [](intptr_t, fml::closure) {};
   settings.task_observer_remove = [](intptr_t) {};
 
