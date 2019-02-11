@@ -81,8 +81,11 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
 
 class AutoIsolateShutdown {
  public:
-  AutoIsolateShutdown(std::shared_ptr<blink::DartIsolate> isolate)
-      : isolate_(std::move(isolate)) {}
+  AutoIsolateShutdown(std::shared_ptr<blink::DartVM> vm,
+                      std::shared_ptr<blink::DartIsolate> isolate)
+      : vm_(std::move(vm)), isolate_(std::move(isolate)) {
+    FML_CHECK(vm_);
+  }
 
   ~AutoIsolateShutdown() {
     if (isolate_) {
@@ -114,6 +117,7 @@ class AutoIsolateShutdown {
   }
 
  private:
+  std::shared_ptr<blink::DartVM> vm_;
   std::shared_ptr<blink::DartIsolate> isolate_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AutoIsolateShutdown);
@@ -151,7 +155,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
   );
 
   auto root_isolate =
-      std::make_unique<AutoIsolateShutdown>(weak_isolate.lock());
+      std::make_unique<AutoIsolateShutdown>(vm, weak_isolate.lock());
 
   if (!root_isolate->IsValid()) {
     FML_LOG(ERROR) << "Could not create isolate.";

@@ -459,11 +459,10 @@ DartVM::~DartVM() {
 
   dart::bin::CleanupDartIo();
 
-  if (result != nullptr) {
-    FML_LOG(ERROR) << "Could not cleanly shut down the Dart VM. Message: \""
-                   << result << "\".";
-    free(result);
-  }
+  FML_CHECK(result == nullptr)
+      << "Could not cleanly shut down the Dart VM. Error: \"" << result
+      << "\".";
+  free(result);
 }
 
 const Settings& DartVM::GetSettings() const {
