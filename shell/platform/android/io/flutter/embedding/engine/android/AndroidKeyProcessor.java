@@ -39,7 +39,7 @@ public class AndroidKeyProcessor {
    * One of the following things happens in this method:
    * <ul>
    *   <li>If no previous {@link #combiningCharacter} exists and the {@code newCharacterCodePoint}
-   *   is not a combining character, then nothing happens and {@code newCharacterCodePoint} is returned.</li>
+   *   is not a combining character, then {@code newCharacterCodePoint} is returned.</li>
    *   <li>If no previous {@link #combiningCharacter} exists and the {@code newCharacterCodePoint}
    *   is a combining character, then {@code newCharacterCodePoint} is saved as the
    *   {@link #combiningCharacter} and null is returned.</li>
