@@ -240,27 +240,11 @@ static void EmbedderInformationCallback(Dart_EmbedderInformation* info) {
   info->name = "Flutter";
 }
 
-std::shared_ptr<DartVM> DartVM::ForProcess(Settings settings) {
-  return ForProcess(settings, nullptr, nullptr, nullptr);
-}
-
-static std::mutex gVMMutex;
-static std::weak_ptr<DartVM> gVM;
-
-std::shared_ptr<DartVM> DartVM::ForProcess(
+std::shared_ptr<DartVM> DartVM::Create(
     Settings settings,
     fml::RefPtr<DartSnapshot> vm_snapshot,
     fml::RefPtr<DartSnapshot> isolate_snapshot,
     fml::RefPtr<DartSnapshot> shared_snapshot) {
-  std::lock_guard<std::mutex> lock(gVMMutex);
-
-  // TODO(chinmaygarde): Make this an assertion instead so that callers are
-  // notified that the new settings might not hold because an exiting VM was
-  // being reused.
-  if (auto vm = gVM.lock()) {
-    return vm;
-  }
-
   if (!vm_snapshot) {
     vm_snapshot = DartSnapshot::VMSnapshotFromSettings(settings);
   }
@@ -284,19 +268,11 @@ std::shared_ptr<DartVM> DartVM::ForProcess(
   }
 
   // Note: std::make_shared unviable due to hidden constructor.
-  auto vm = std::shared_ptr<DartVM>(new DartVM(settings,                     //
-                                               std::move(vm_snapshot),       //
-                                               std::move(isolate_snapshot),  //
-                                               std::move(shared_snapshot)    //
-                                               ));
-
-  gVM = vm;
-
-  return vm;
-}
-
-std::shared_ptr<DartVM> DartVM::ForProcessIfInitialized() {
-  return gVM.lock();
+  return std::shared_ptr<DartVM>(new DartVM(settings,                     //
+                                            std::move(vm_snapshot),       //
+                                            std::move(isolate_snapshot),  //
+                                            std::move(shared_snapshot)    //
+                                            ));
 }
 
 static std::atomic_size_t gVMLaunchCount;
@@ -457,7 +433,6 @@ DartVM::DartVM(const Settings& settings,
 }
 
 DartVM::~DartVM() {
-  std::lock_guard<std::mutex> lock(gVMMutex);
   if (Dart_CurrentIsolate() != nullptr) {
     Dart_ExitIsolate();
   }

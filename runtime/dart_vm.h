@@ -29,16 +29,6 @@ class DartVM {
  public:
   ~DartVM();
 
-  static std::shared_ptr<DartVM> ForProcess(Settings settings);
-
-  static std::shared_ptr<DartVM> ForProcess(
-      Settings settings,
-      fml::RefPtr<DartSnapshot> vm_snapshot,
-      fml::RefPtr<DartSnapshot> isolate_snapshot,
-      fml::RefPtr<DartSnapshot> shared_snapshot);
-
-  static std::shared_ptr<DartVM> ForProcessIfInitialized();
-
   static bool IsRunningPrecompiledCode();
 
   static bool IsKernelMapping(const fml::FileMapping* mapping);
@@ -64,7 +54,14 @@ class DartVM {
   const fml::RefPtr<DartSnapshot> isolate_snapshot_;
   const fml::RefPtr<DartSnapshot> shared_snapshot_;
   ServiceProtocol service_protocol_;
-  std::mutex vm_thread_mutex_;
+
+  friend class DartVMLifecycleReference;
+
+  static std::shared_ptr<DartVM> Create(
+      Settings settings,
+      fml::RefPtr<DartSnapshot> vm_snapshot,
+      fml::RefPtr<DartSnapshot> isolate_snapshot,
+      fml::RefPtr<DartSnapshot> shared_snapshot);
 
   DartVM(const Settings& settings,
          fml::RefPtr<DartSnapshot> vm_snapshot,

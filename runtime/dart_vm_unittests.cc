@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/testing.h"
 #include "flutter/testing/thread_test.h"
@@ -12,20 +13,26 @@ namespace blink {
 
 static Settings GetTestSettings() {
   Settings settings;
+  settings.verbose_logging = true;
   settings.task_observer_add = [](intptr_t, fml::closure) {};
   settings.task_observer_remove = [](intptr_t) {};
   return settings;
 }
 
 TEST(DartVM, SimpleInitialization) {
-  auto vm = DartVM::ForProcess(GetTestSettings());
-  ASSERT_TRUE(vm);
-  ASSERT_EQ(vm, DartVM::ForProcess(GetTestSettings()));
+  auto vm1 = DartVMLifecycleReference::Create(GetTestSettings());
+  ASSERT_TRUE(vm1);
+
+  // Multiple initializations should return the same VM.
+  auto vm2 = DartVMLifecycleReference::Create(GetTestSettings());
+  ASSERT_TRUE(vm2);
+
+  ASSERT_EQ(&vm1, &vm2);
   ASSERT_FALSE(DartVM::IsRunningPrecompiledCode());
 }
 
 TEST(DartVM, SimpleIsolateNameServer) {
-  auto vm = DartVM::ForProcess(GetTestSettings());
+  auto vm = DartVMLifecycleReference::Create(GetTestSettings());
   auto ns = vm->GetIsolateNameServer();
   ASSERT_EQ(ns->LookupIsolatePortByName("foobar"), ILLEGAL_PORT);
   ASSERT_FALSE(ns->RemoveIsolateNameMapping("foobar"));
@@ -39,27 +46,46 @@ TEST(DartVM, CanReinitializeVMOverAndOver) {
   size_t vm_launch_count = DartVM::GetVMLaunchCount();
   for (size_t i = 0; i < 1000; ++i) {
     FML_LOG(INFO) << "Run " << i + 1;
-    // VM should not already be running.
-    ASSERT_FALSE(DartVM::ForProcessIfInitialized());
-    auto vm = DartVM::ForProcess(GetTestSettings());
+    {
+      // VM should not already be running.
+      auto access = DartVMAccessReference::Create();
+      ASSERT_FALSE(access);
+    }
+    auto vm = DartVMLifecycleReference::Create(GetTestSettings());
     ASSERT_TRUE(vm);
     size_t new_vm_launch_count = DartVM::GetVMLaunchCount();
     ASSERT_EQ(vm_launch_count + 1, new_vm_launch_count);
     vm_launch_count = new_vm_launch_count;
-    ASSERT_TRUE(DartVM::ForProcessIfInitialized());
+
+    {
+      // VM should now be running
+      auto access = DartVMAccessReference::Create();
+      ASSERT_TRUE(access);
+    }
   }
 }
 
 using DartVMThreadTest = ::testing::ThreadTest;
 
 TEST_F(DartVMThreadTest, CanRunIsolatesInANewVM) {
+  size_t vm_launch_count = DartVM::GetVMLaunchCount();
   for (size_t i = 0; i < 1000; ++i) {
     FML_LOG(INFO) << "Run " << i + 1;
-    // VM should not already be running.
-    ASSERT_FALSE(DartVM::ForProcessIfInitialized());
-    auto vm = DartVM::ForProcess(GetTestSettings());
+    {
+      // VM should not already be running.
+    }
+
+    auto vm = DartVMLifecycleReference::Create(GetTestSettings());
     ASSERT_TRUE(vm);
-    ASSERT_TRUE(DartVM::ForProcessIfInitialized());
+
+    {
+      // VM should now be running.
+      auto access = DartVMAccessReference::Create();
+      ASSERT_TRUE(access);
+    }
+
+    size_t new_vm_launch_count = DartVM::GetVMLaunchCount();
+    ASSERT_EQ(vm_launch_count + 1, new_vm_launch_count);
 
     Settings settings = {};
 
@@ -80,7 +106,7 @@ TEST_F(DartVMThreadTest, CanRunIsolatesInANewVM) {
     );
 
     auto weak_isolate = DartIsolate::CreateRootIsolate(
-        vm.get(),                  // vm
+        &vm,                       // vm
         vm->GetIsolateSnapshot(),  // isolate snapshot
         vm->GetSharedSnapshot(),   // shared snapshot
         std::move(task_runners),   // task runners

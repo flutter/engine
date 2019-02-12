@@ -23,6 +23,7 @@
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/window/platform_message.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/service_protocol.h"
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/engine.h"
@@ -57,7 +58,8 @@ class Shell final : public PlatformView::Delegate,
       fml::RefPtr<blink::DartSnapshot> isolate_snapshot,
       fml::RefPtr<blink::DartSnapshot> shared_snapshot,
       CreateCallback<PlatformView> on_create_platform_view,
-      CreateCallback<Rasterizer> on_create_rasterizer);
+      CreateCallback<Rasterizer> on_create_rasterizer,
+      blink::DartVMLifecycleReference vm);
 
   ~Shell();
 
@@ -71,7 +73,7 @@ class Shell final : public PlatformView::Delegate,
 
   fml::WeakPtr<PlatformView> GetPlatformView();
 
-  blink::DartVM& GetDartVM() const;
+  blink::DartVM* GetDartVM();
 
   bool IsSetup() const;
 
@@ -85,7 +87,7 @@ class Shell final : public PlatformView::Delegate,
 
   const blink::TaskRunners task_runners_;
   const blink::Settings settings_;
-  std::shared_ptr<blink::DartVM> vm_;
+  blink::DartVMLifecycleReference vm_;
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
   std::unique_ptr<Engine> engine_;               // on UI task runner
   std::unique_ptr<Rasterizer> rasterizer_;       // on GPU task runner
@@ -99,9 +101,12 @@ class Shell final : public PlatformView::Delegate,
       service_protocol_handlers_;
   bool is_setup_ = false;
 
-  Shell(blink::TaskRunners task_runners, blink::Settings settings);
+  Shell(blink::DartVMLifecycleReference vm,
+        blink::TaskRunners task_runners,
+        blink::Settings settings);
 
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
+      blink::DartVMLifecycleReference vm,
       blink::TaskRunners task_runners,
       blink::Settings settings,
       fml::RefPtr<blink::DartSnapshot> isolate_snapshot,

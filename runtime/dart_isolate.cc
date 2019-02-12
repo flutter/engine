@@ -14,6 +14,7 @@
 #include "flutter/lib/ui/dart_ui.h"
 #include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -493,7 +494,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
     const char* package_config,
     Dart_IsolateFlags* flags,
     char** error) {
-  auto vm = DartVM::ForProcessIfInitialized();
+  auto vm = DartVMAccessReference::Create();
 
   if (!vm) {
     *error = strdup(
@@ -517,7 +518,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
 
   std::weak_ptr<DartIsolate> weak_service_isolate =
       DartIsolate::CreateRootIsolate(
-          vm.get(),                  // vm
+          &vm,                       // vm
           vm->GetIsolateSnapshot(),  // isolate snapshot
           vm->GetSharedSnapshot(),   // shared snapshot
           null_task_runners,         // task runners
@@ -566,6 +567,9 @@ Dart_Isolate DartIsolate::DartIsolateCreateCallback(
     Dart_IsolateFlags* flags,
     std::shared_ptr<DartIsolate>* parent_embedder_isolate,
     char** error) {
+  // We are on a VM managed thread. Hold the access lock.
+  auto vm_access = DartVMAccessReference::Create();
+
   if (parent_embedder_isolate == nullptr &&
       strcmp(advisory_script_uri, DART_VM_SERVICE_ISOLATE_NAME) == 0) {
     // The VM attempts to start the VM service for us on |Dart_Initialize|. In

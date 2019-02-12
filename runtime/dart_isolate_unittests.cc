@@ -7,6 +7,7 @@
 #include "flutter/fml/thread.h"
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/testing/testing.h"
 #include "flutter/testing/thread_test.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
@@ -19,7 +20,7 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
   Settings settings = {};
   settings.task_observer_add = [](intptr_t, fml::closure) {};
   settings.task_observer_remove = [](intptr_t) {};
-  auto vm = DartVM::ForProcess(settings);
+  auto vm = DartVMLifecycleReference::Create(settings);
   ASSERT_TRUE(vm);
   TaskRunners task_runners(testing::GetCurrentTestName(),  //
                            GetCurrentTaskRunner(),         //
@@ -28,7 +29,7 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
                            GetCurrentTaskRunner()          //
   );
   auto weak_isolate = DartIsolate::CreateRootIsolate(
-      vm.get(),                  // vm
+      &vm,                       // vm
       vm->GetIsolateSnapshot(),  // isolate snapshot
       vm->GetSharedSnapshot(),   // shared snapshot
       std::move(task_runners),   // task runners
@@ -48,7 +49,7 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
   Settings settings = {};
   settings.task_observer_add = [](intptr_t, fml::closure) {};
   settings.task_observer_remove = [](intptr_t) {};
-  auto vm = DartVM::ForProcess(settings);
+  auto vm = DartVMLifecycleReference::Create(settings);
   ASSERT_TRUE(vm);
   TaskRunners task_runners(testing::GetCurrentTestName(),  //
                            GetCurrentTaskRunner(),         //
@@ -57,7 +58,7 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
                            GetCurrentTaskRunner()          //
   );
   auto weak_isolate = DartIsolate::CreateRootIsolate(
-      vm.get(),                  // vm
+      &vm,                       // vm
       vm->GetIsolateSnapshot(),  // isolate snapshot
       vm->GetSharedSnapshot(),   // shared snapshot
       std::move(task_runners),   // task runners
@@ -81,7 +82,7 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
 
 class AutoIsolateShutdown {
  public:
-  AutoIsolateShutdown(std::shared_ptr<blink::DartVM> vm,
+  AutoIsolateShutdown(blink::DartVMLifecycleReference vm,
                       std::shared_ptr<blink::DartIsolate> isolate)
       : vm_(std::move(vm)), isolate_(std::move(isolate)) {
     FML_CHECK(vm_);
@@ -117,7 +118,7 @@ class AutoIsolateShutdown {
   }
 
  private:
-  std::shared_ptr<blink::DartVM> vm_;
+  blink::DartVMLifecycleReference vm_;
   std::shared_ptr<blink::DartIsolate> isolate_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AutoIsolateShutdown);
@@ -131,7 +132,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
   settings.task_observer_add = [](intptr_t, fml::closure) {};
   settings.task_observer_remove = [](intptr_t) {};
 
-  auto vm = DartVM::ForProcess(settings);
+  auto vm = DartVMLifecycleReference::Create(settings);
 
   if (!vm) {
     return {};
@@ -144,7 +145,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
   );
 
   auto weak_isolate = DartIsolate::CreateRootIsolate(
-      vm.get(),                  // vm
+      &vm,                       // vm
       vm->GetIsolateSnapshot(),  // isolate snapshot
       vm->GetSharedSnapshot(),   // shared snapshot
       std::move(task_runners),   // task runners
@@ -156,7 +157,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
   );
 
   auto root_isolate =
-      std::make_unique<AutoIsolateShutdown>(vm, weak_isolate.lock());
+      std::make_unique<AutoIsolateShutdown>(std::move(vm), weak_isolate.lock());
 
   if (!root_isolate->IsValid()) {
     FML_LOG(ERROR) << "Could not create isolate.";
