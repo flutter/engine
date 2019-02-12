@@ -45,44 +45,58 @@ public class TextInputChannel {
         return;
       }
 
-      try {
-        String method = call.method;
-        Object args = call.arguments;
-        switch (method) {
-          case "TextInput.show":
-            textInputMethodHandler.show();
-            result.success(null);
-            break;
-          case "TextInput.hide":
-            textInputMethodHandler.hide();
-            result.success(null);
-            break;
-          case "TextInput.setClient":
+      String method = call.method;
+      Object args = call.arguments;
+      switch (method) {
+        case "TextInput.show":
+          textInputMethodHandler.show();
+          result.success(null);
+          break;
+        case "TextInput.hide":
+          textInputMethodHandler.hide();
+          result.success(null);
+          break;
+        case "TextInput.setClient":
+          try {
             final JSONArray argumentList = (JSONArray) args;
             final int textInputClientId = argumentList.getInt(0);
             final JSONObject jsonConfiguration = argumentList.getJSONObject(1);
             textInputMethodHandler.setClient(textInputClientId, Configuration.fromJson(jsonConfiguration));
             result.success(null);
-            break;
-          case "TextInput.setEditingState":
+          } catch (JSONException | NoSuchFieldException exception) {
+            // JSONException: missing keys or bad value types.
+            // NoSuchFieldException: one or more values were invalid.
+            result.error("error", exception.getMessage(), null);
+          }
+          break;
+        case "TextInput.setEditingState":
+          try {
             final JSONObject editingState = (JSONObject) args;
             textInputMethodHandler.setEditingState(TextEditState.fromJson(editingState));
             result.success(null);
-            break;
-          case "TextInput.clearClient":
-            textInputMethodHandler.clearClient();
-            result.success(null);
-            break;
-          default:
-            result.notImplemented();
-            break;
-        }
-      } catch (Exception exception) {
-        result.error("error", "JSON error: " + exception.getMessage(), null);
+          } catch (JSONException exception) {
+            result.error("error", exception.getMessage(), null);
+          }
+          break;
+        case "TextInput.clearClient":
+          textInputMethodHandler.clearClient();
+          result.success(null);
+          break;
+        default:
+          result.notImplemented();
+          break;
       }
     }
   };
 
+  /**
+   * Constructs a {@code TextInputChannel} that connects Android to the Dart code
+   * running in {@code dartExecutor}.
+   *
+   * The given {@code dartExecutor} is permitted to be idle or executing code.
+   *
+   * See {@link DartExecutor}.
+   */
   public TextInputChannel(@NonNull DartExecutor dartExecutor) {
     this.channel = new MethodChannel(dartExecutor, "flutter/textinput", JSONMethodCodec.INSTANCE);
     channel.setMethodCallHandler(parsingMethodHandler);
@@ -214,8 +228,13 @@ public class TextInputChannel {
    * A text editing configuration.
    */
   public static class Configuration {
-    public static Configuration fromJson(@NonNull JSONObject json) throws JSONException {
-      final Integer inputAction = inputActionFromTextInputAction(json.getString("inputAction"));
+    public static Configuration fromJson(@NonNull JSONObject json) throws JSONException, NoSuchFieldException {
+      final String inputActionName = json.getString("inputAction");
+      if (inputActionName == null) {
+        throw new JSONException("Configuration JSON missing 'inputAction' property.");
+      }
+
+      final Integer inputAction = inputActionFromTextInputAction(inputActionName);
       return new Configuration(
           json.optBoolean("obscureText"),
           json.optBoolean("autocorrect", true),
@@ -226,11 +245,7 @@ public class TextInputChannel {
       );
     }
 
-    private static Integer inputActionFromTextInputAction(@Nullable String inputAction) {
-      if (inputAction == null) {
-        return null;
-      }
-
+    private static Integer inputActionFromTextInputAction(@NonNull String inputAction) {
       switch (inputAction) {
         case "TextInputAction.newline":
           return EditorInfo.IME_ACTION_NONE;
@@ -292,7 +307,7 @@ public class TextInputChannel {
    */
   public static class InputType {
     @NonNull
-    public static InputType fromJson(@NonNull JSONObject json) throws JSONException {
+    public static InputType fromJson(@NonNull JSONObject json) throws JSONException, NoSuchFieldException {
       return new InputType(
           TextInputType.fromValue(json.getString("name")),
           json.optBoolean("signed", false),
@@ -323,13 +338,13 @@ public class TextInputChannel {
     EMAIL_ADDRESS("TextInputType.emailAddress"),
     URL("TextInputType.url");
 
-    static TextInputType fromValue(@NonNull String encodedName) {
+    static TextInputType fromValue(@NonNull String encodedName) throws NoSuchFieldException {
       for (TextInputType textInputType : TextInputType.values()) {
         if (textInputType.encodedName.equals(encodedName)) {
           return textInputType;
         }
       }
-      throw new RuntimeException("No such TextInputType: " + encodedName);
+      throw new NoSuchFieldException("No such TextInputType: " + encodedName);
     }
 
     @NonNull
@@ -348,13 +363,13 @@ public class TextInputChannel {
     WORDS("TextCapitalization.words"),
     SENTENCES("TextCapitalization.sentences");
 
-    static TextCapitalization fromValue(@NonNull String encodedName) {
+    static TextCapitalization fromValue(@NonNull String encodedName) throws NoSuchFieldException {
       for (TextCapitalization textCapitalization : TextCapitalization.values()) {
         if (textCapitalization.encodedName.equals(encodedName)) {
           return textCapitalization;
         }
       }
-      throw new RuntimeException("No such TextCapitalization: " + encodedName);
+      throw new NoSuchFieldException("No such TextCapitalization: " + encodedName);
     }
 
     @NonNull

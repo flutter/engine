@@ -68,6 +68,14 @@ public class AccessibilityChannel {
     }
   };
 
+  /**
+   * Constructs an {@code AccessibilityChannel} that connects Android to the Dart code
+   * running in {@code dartExecutor}.
+   *
+   * The given {@code dartExecutor} is permitted to be idle or executing code.
+   *
+   * See {@link DartExecutor}.
+   */
   public AccessibilityChannel(@NonNull DartExecutor dartExecutor) {
     channel = new BasicMessageChannel<>(dartExecutor, "flutter/accessibility", StandardMessageCodec.INSTANCE);
     channel.setMessageHandler(parsingMessageHandler);
@@ -81,6 +89,13 @@ public class AccessibilityChannel {
     this.handler = handler;
   }
 
+  /**
+   * Handler that receives accessibility messages sent from Flutter to Android
+   * through a given {@link AccessibilityChannel}.
+   *
+   * To register an {@code AccessibilityMessageHandler} with a {@link AccessibilityChannel},
+   * see {@link AccessibilityChannel#setAccessibilityMessageHandler(AccessibilityMessageHandler)}.
+   */
   public interface AccessibilityMessageHandler {
     /**
      * The Dart application would like the given {@code message} to be announced.
