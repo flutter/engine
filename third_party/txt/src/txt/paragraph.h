@@ -271,9 +271,11 @@ class Paragraph {
 
   class BidiRun {
    public:
+    // Constructs a BidiRun with is_ghost defaulted to false.
     BidiRun(size_t s, size_t e, TextDirection d, const TextStyle& st)
         : start_(s), end_(e), direction_(d), style_(&st), is_ghost_(false) {}
 
+    // Constructs a BidiRun with a custom is_ghost flag.
     BidiRun(size_t s,
             size_t e,
             TextDirection d,
@@ -286,6 +288,7 @@ class Paragraph {
     TextDirection direction() const { return direction_; }
     const TextStyle& style() const { return *style_; }
     bool is_rtl() const { return direction_ == TextDirection::rtl; }
+    // Tracks if the run represents trailing whitespace.
     bool is_ghost() const { return is_ghost_; }
 
    private:
