@@ -152,10 +152,6 @@ FontCollection::GetMinikinFontCollectionForFamilies(
       minikin_families.push_back(minikin_family);
     }
   }
-  // Default font family also not found. We fail to get a FontCollection.
-  if (minikin_families.empty()) {
-    return nullptr;
-  }
   if (enable_font_fallback_) {
     for (std::string fallback_family : fallback_fonts_for_locale_[locale]) {
       auto it = fallback_fonts_.find(fallback_family);
@@ -163,6 +159,10 @@ FontCollection::GetMinikinFontCollectionForFamilies(
         minikin_families.push_back(it->second);
       }
     }
+  }
+  // Default font family also not found. We fail to get a FontCollection.
+  if (minikin_families.empty()) {
+    return nullptr;
   }
   // Create the minikin font collection.
   auto font_collection =
