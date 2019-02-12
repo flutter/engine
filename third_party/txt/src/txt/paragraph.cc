@@ -542,13 +542,17 @@ void Paragraph::Layout(double width, bool force) {
             ? line_range.end_excluding_whitespace
             : line_range.end;
 
-    // Find the runs comprising this line.
-    std::vector<BidiRun> line_runs;
     // A "ghost" run is a run that does not impact the layout, breaking,
     // alignment, width, etc but is still "visible" though getRectsForRange.
     // For example, trailing whitespace on centered text can be scrolled through
-    // with the caret but will not wrap the line.
+    // with the caret but will not wrap the line. Since these runs will always
+    // be at the end (trailing whitespace is only at the end), we can simply
+    // count them to identify if the run we are iterating on is a ghost run or
+    // not.
     size_t ghost_run_count = 0;
+
+    // Find the runs comprising this line.
+    std::vector<BidiRun> line_runs;
     for (const BidiRun& bidi_run : bidi_runs) {
       if (bidi_run.start() < line_end_index &&
           bidi_run.end() > line_range.start) {
@@ -557,10 +561,12 @@ void Paragraph::Layout(double width, bool force) {
                                bidi_run.direction(), bidi_run.style());
       }
       // Add an additional run for the whitespace, but dont let it impact
-      // metrics.
+      // metrics. We store it into the same run to reuse code. After layout
+      // of the whitespace run, we do not add its width into the x-offset
+      // adjustment, effectively nullifying its impact on the layout.
       if (line_range.end_excluding_whitespace < line_range.end &&
-          bidi_run.start() > line_range.start &&
-          bidi_run.end() > line_end_index && bidi_run.end() < line_range.end) {
+          bidi_run.start() <= line_range.end &&
+          bidi_run.end() > line_end_index) {
         ghost_run_count++;
         line_runs.emplace_back(std::max(bidi_run.start(), line_end_index),
                                std::min(bidi_run.end(), line_range.end),
@@ -582,7 +588,7 @@ void Paragraph::Layout(double width, bool force) {
       // more details.
       run_index++;
       bool is_ghost_run = false;
-      if (run_index > line_runs.size() - ghost_run_count) {
+      if (run_index >= line_runs.size() - ghost_run_count) {
         is_ghost_run = true;
       }
 
@@ -771,7 +777,7 @@ void Paragraph::Layout(double width, bool force) {
         font.getMetrics(&metrics);
         paint_records.emplace_back(run.style(), SkPoint::Make(run_x_offset, 0),
                                    builder.make(), metrics, line_number,
-                                   layout.getAdvance());
+                                   layout.getAdvance(), is_ghost_run);
 
         line_glyph_positions.insert(line_glyph_positions.end(),
                                     glyph_positions.begin(),
@@ -794,7 +800,12 @@ void Paragraph::Layout(double width, bool force) {
         max_right_ = std::max(max_right_, glyph_positions.back().x_pos.end);
       }  // for each in glyph_blobs
 
-      run_x_offset += layout.getAdvance();
+      // Do not increase x offset for trailing ghost runs as it should not
+      // impact the layout of visible glyphs. We do keep the record though so
+      // GetRectsForRange() can find metrics for trailing spaces.
+      if (!is_ghost_run) {
+        run_x_offset += layout.getAdvance();
+      }
     }  // for each in line_runs
 
     // Adjust the glyph positions based on the alignment of the line.
@@ -815,23 +826,6 @@ void Paragraph::Layout(double width, bool force) {
                               next_line_start - line_range.start);
     code_unit_runs_.insert(code_unit_runs_.end(), line_code_unit_runs.begin(),
                            line_code_unit_runs.end());
-
-    // Add extra empty metrics for skipped whitespace at line end. This allows
-    // GetRectsForRange to properly draw empty rects at the ends of lines with
-    // truncated whitespace.
-    if (line_end_index < line_range.end && !line_code_unit_runs.empty()) {
-      std::vector<GlyphPosition> empty_glyph_positions;
-      double end_x = line_code_unit_runs.back().positions.back().x_pos.end;
-      for (size_t index = line_end_index; index < line_range.end; ++index) {
-        empty_glyph_positions.emplace_back(end_x, 0, index, 1);
-      }
-      code_unit_runs_.emplace_back(
-          std::move(empty_glyph_positions),
-          Range<size_t>(line_end_index, line_range.end),
-          Range<double>(end_x, end_x), line_code_unit_runs.back().line_number,
-          line_code_unit_runs.back().font_metrics,
-          line_code_unit_runs.back().direction);
-    }
 
     // Calculate the amount to advance in the y direction. This is done by
     // computing the maximum ascent and descent with respect to the strut.
@@ -1023,6 +1017,9 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
                                  const PaintRecord& record,
                                  SkPoint base_offset) {
   if (record.style().decoration == TextDecoration::kNone)
+    return;
+
+  if (record.isGhost())
     return;
 
   const SkFontMetrics& metrics = record.metrics();
