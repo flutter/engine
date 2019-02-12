@@ -81,7 +81,7 @@ public class PlatformPlugin implements ActivityLifecycleListener {
         }
 
         @Override
-        public void setClipboardData(String text) {
+        public void setClipboardData(@NonNull String text) {
             PlatformPlugin.this.setClipboardData(text);
         }
     };
