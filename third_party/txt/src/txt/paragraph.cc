@@ -542,15 +542,6 @@ void Paragraph::Layout(double width, bool force) {
             ? line_range.end_excluding_whitespace
             : line_range.end;
 
-    // A "ghost" run is a run that does not impact the layout, breaking,
-    // alignment, width, etc but is still "visible" though getRectsForRange.
-    // For example, trailing whitespace on centered text can be scrolled through
-    // with the caret but will not wrap the line. Since these runs will always
-    // be at the end (trailing whitespace is only at the end), we can simply
-    // count them to identify if the run we are iterating on is a ghost run or
-    // not.
-    size_t ghost_run_count = 0;
-
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
     for (const BidiRun& bidi_run : bidi_runs) {
@@ -560,17 +551,21 @@ void Paragraph::Layout(double width, bool force) {
                                std::min(bidi_run.end(), line_end_index),
                                bidi_run.direction(), bidi_run.style());
       }
-      // Add an additional run for the whitespace, but dont let it impact
-      // metrics. We store it into the same run to reuse code. After layout
-      // of the whitespace run, we do not add its width into the x-offset
-      // adjustment, effectively nullifying its impact on the layout.
+      // A "ghost" run is a run that does not impact the layout, breaking,
+      // alignment, width, etc but is still "visible" though getRectsForRange.
+      // For example, trailing whitespace on centered text can be scrolled
+      // through with the caret but will not wrap the line.
+      //
+      // Here, we add an additional run for the whitespace, but dont
+      // let it impact metrics. After layout of the whitespace run, we do not
+      // add its width into the x-offset adjustment, effectively nullifying its
+      // impact on the layout.
       if (line_range.end_excluding_whitespace < line_range.end &&
           bidi_run.start() <= line_range.end &&
           bidi_run.end() > line_end_index) {
-        ghost_run_count++;
         line_runs.emplace_back(std::max(bidi_run.start(), line_end_index),
                                std::min(bidi_run.end(), line_range.end),
-                               bidi_run.direction(), bidi_run.style());
+                               bidi_run.direction(), bidi_run.style(), true);
       }
     }
 
@@ -580,18 +575,8 @@ void Paragraph::Layout(double width, bool force) {
     double justify_x_offset = 0;
     std::vector<PaintRecord> paint_records;
 
-    size_t run_index = -1;
     for (auto line_run_it = line_runs.begin(); line_run_it != line_runs.end();
          ++line_run_it) {
-      // Determine if the current run is a "ghost run" (does not impact
-      // centering/layout/etc). See above declaration of 'ghost_run_count' for
-      // more details.
-      run_index++;
-      bool is_ghost_run = false;
-      if (run_index >= line_runs.size() - ghost_run_count) {
-        is_ghost_run = true;
-      }
-
       const BidiRun& run = *line_run_it;
       minikin::FontStyle minikin_font;
       minikin::MinikinPaint minikin_paint;
@@ -777,7 +762,7 @@ void Paragraph::Layout(double width, bool force) {
         font.getMetrics(&metrics);
         paint_records.emplace_back(run.style(), SkPoint::Make(run_x_offset, 0),
                                    builder.make(), metrics, line_number,
-                                   layout.getAdvance(), is_ghost_run);
+                                   layout.getAdvance(), run.is_ghost());
 
         line_glyph_positions.insert(line_glyph_positions.end(),
                                     glyph_positions.begin(),
@@ -803,7 +788,7 @@ void Paragraph::Layout(double width, bool force) {
       // Do not increase x offset for trailing ghost runs as it should not
       // impact the layout of visible glyphs. We do keep the record though so
       // GetRectsForRange() can find metrics for trailing spaces.
-      if (!is_ghost_run) {
+      if (!run.is_ghost()) {
         run_x_offset += layout.getAdvance();
       }
     }  // for each in line_runs
