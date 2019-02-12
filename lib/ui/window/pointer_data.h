@@ -28,18 +28,18 @@ struct alignas(8) PointerData {
     kMouse,
     kStylus,
     kInvertedStylus,
-    kGesture,
+    kSignal,
   };
 
-  // Must match the PointerGestureKind enum in pointer.dart.
-  enum class GestureKind : int64_t {
+  // Must match the PointerSignalKind enum in pointer.dart.
+  enum class SignalKind : int64_t {
     kScroll,
   };
 
   int64_t time_stamp;
   Change change;
   DeviceKind kind;
-  GestureKind gesture_kind;
+  SignalKind signal_kind;
   int64_t device;
   double physical_x;
   double physical_y;

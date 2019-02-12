@@ -146,7 +146,7 @@ typedef struct {
 // The kind of device generating a pointer event.
 typedef enum {
   kMouse,
-  kGesture,
+  kSignal,
 } FlutterPointerDeviceKind;
 
 // The phase of the pointer event.
@@ -160,10 +160,10 @@ typedef enum {
   kHover,
 } FlutterPointerPhase;
 
-// The type of a pointer gesture (e.g., trackpad event).
+// The type of a pointer signal.
 typedef enum {
   kScroll,
-} FlutterPointerGestureKind;
+} FlutterPointerSignalKind;
 
 typedef struct {
   // The size of this struct. Must be sizeof(FlutterPointerEvent).
@@ -173,7 +173,7 @@ typedef struct {
   double x;
   double y;
   FlutterPointerDeviceKind kind;
-  FlutterPointerGestureKind gesture_kind;  // ignored unless kind is kGesture.
+  FlutterPointerSignalKind signal_kind;  // ignored unless kind is kSignal.
   double scroll_delta_x;
   double scroll_delta_y;
 } FlutterPointerEvent;

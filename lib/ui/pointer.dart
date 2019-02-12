@@ -50,19 +50,20 @@ enum PointerDeviceKind {
   /// A pointer device with a stylus that has been inverted.
   invertedStylus,
 
-  /// A pointer that generates gestures at a point (e.g., a trackpad).
-  gesture,
+  /// A pointer that is generating signals at its location. Examples include
+  /// a mouse scroll wheel, or trackpad gestures such as scroll and pinch.
+  signal,
 
   /// An unknown pointer device.
   unknown
 }
 
-/// The kind of [PointerDeviceKind.gesture].
-enum PointerGestureKind {
+/// The kind of [PointerDeviceKind.signal].
+enum PointerSignalKind {
   /// A pointer-generated scroll (e.g., mouse wheel or trackpad scroll).
   scroll,
 
-  /// An unknown pointer gesture kind.
+  /// An unknown pointer signal kind.
   unknown
 }
 
@@ -73,7 +74,7 @@ class PointerData {
     this.timeStamp: Duration.zero,
     this.change: PointerChange.cancel,
     this.kind: PointerDeviceKind.touch,
-    this.gestureKind,
+    this.signalKind,
     this.device: 0,
     this.physicalX: 0.0,
     this.physicalY: 0.0,
@@ -105,8 +106,8 @@ class PointerData {
   /// The kind of input device for which the event was generated.
   final PointerDeviceKind kind;
 
-  /// The kind of gesture for a gesture pointer event.
-  final PointerGestureKind gestureKind;
+  /// The kind of signal for a pointer signal event.
+  final PointerSignalKind signalKind;
 
   /// Unique identifier for the pointing device, reused across interactions.
   final int device;
@@ -221,12 +222,12 @@ class PointerData {
   /// Opaque platform-specific data associated with the event.
   final int platformData;
 
-  /// For PointerDeviceKind.gesture with PointerGestureKind.scroll:
+  /// For PointerDeviceKind.signal with PointerSignalKind.scroll:
   ///
   /// The amount to scroll in the x direction, in physical pixels.
   final double scrollDeltaX;
 
-  /// For PointerDeviceKind.gesture with PointerGestureKind.scroll:
+  /// For PointerDeviceKind.signal with PointerSignalKind.scroll:
   ///
   /// The amount to scroll in the y direction, in physical pixels.
   final double scrollDeltaY;
@@ -240,7 +241,7 @@ class PointerData {
              'timeStamp: $timeStamp, '
              'change: $change, '
              'kind: $kind, '
-             'gestureKind: $gestureKind, '
+             'signalKind: $signalKind, '
              'device: $device, '
              'physicalX: $physicalX, '
              'physicalY: $physicalY, '
@@ -257,7 +258,7 @@ class PointerData {
              'radiusMax: $radiusMax, '
              'orientation: $orientation, '
              'tilt: $tilt, '
-             'platformData: $platformData'
+             'platformData: $platformData, '
              'scrollDeltaX: $scrollDeltaX, '
              'scrollDeltaY: $scrollDeltaY'
            ')';
