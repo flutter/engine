@@ -43,6 +43,8 @@ class DartVM {
 
   static bool IsKernelMapping(const fml::FileMapping* mapping);
 
+  static size_t GetVMLaunchCount();
+
   const Settings& GetSettings() const;
 
   const DartSnapshot& GetVMSnapshot() const;
@@ -62,6 +64,7 @@ class DartVM {
   const fml::RefPtr<DartSnapshot> isolate_snapshot_;
   const fml::RefPtr<DartSnapshot> shared_snapshot_;
   ServiceProtocol service_protocol_;
+  std::mutex vm_thread_mutex_;
 
   DartVM(const Settings& settings,
          fml::RefPtr<DartSnapshot> vm_snapshot,

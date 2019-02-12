@@ -36,12 +36,16 @@ TEST(DartVM, SimpleIsolateNameServer) {
 }
 
 TEST(DartVM, CanReinitializeVMOverAndOver) {
+  size_t vm_launch_count = DartVM::GetVMLaunchCount();
   for (size_t i = 0; i < 1000; ++i) {
     FML_LOG(INFO) << "Run " << i + 1;
     // VM should not already be running.
     ASSERT_FALSE(DartVM::ForProcessIfInitialized());
     auto vm = DartVM::ForProcess(GetTestSettings());
     ASSERT_TRUE(vm);
+    size_t new_vm_launch_count = DartVM::GetVMLaunchCount();
+    ASSERT_EQ(vm_launch_count + 1, new_vm_launch_count);
+    vm_launch_count = new_vm_launch_count;
     ASSERT_TRUE(DartVM::ForProcessIfInitialized());
   }
 }

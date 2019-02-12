@@ -299,6 +299,12 @@ std::shared_ptr<DartVM> DartVM::ForProcessIfInitialized() {
   return gVM.lock();
 }
 
+static std::atomic_size_t gVMLaunchCount;
+
+size_t DartVM::GetVMLaunchCount() {
+  return gVMLaunchCount;
+}
+
 DartVM::DartVM(const Settings& settings,
                fml::RefPtr<DartSnapshot> vm_snapshot,
                fml::RefPtr<DartSnapshot> isolate_snapshot,
@@ -308,6 +314,7 @@ DartVM::DartVM(const Settings& settings,
       isolate_snapshot_(std::move(isolate_snapshot)),
       shared_snapshot_(std::move(shared_snapshot)) {
   TRACE_EVENT0("flutter", "DartVMInitializer");
+  gVMLaunchCount++;
   FML_DLOG(INFO) << "Attempting Dart VM launch for mode: "
                  << (IsRunningPrecompiledCode() ? "AOT" : "Interpreter");
 
