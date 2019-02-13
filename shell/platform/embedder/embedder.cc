@@ -540,19 +540,6 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
              : kInvalidArguments;
 }
 
-// Returns the blink::PointerData::DeviceKind for the given
-// FlutterPointerDeviceKind.
-inline blink::PointerData::DeviceKind ToPointerDataDeviceKind(
-    FlutterPointerDeviceKind kind) {
-  switch (kind) {
-    case kMouse:
-      return blink::PointerData::DeviceKind::kMouse;
-    case kSignal:
-      return blink::PointerData::DeviceKind::kSignal;
-  }
-  return blink::PointerData::DeviceKind::kMouse;
-}
-
 // Returns the blink::PointerData::Change for the given FlutterPointerPhase.
 inline blink::PointerData::Change ToPointerDataChange(
     FlutterPointerPhase phase) {
@@ -580,10 +567,12 @@ inline blink::PointerData::Change ToPointerDataChange(
 inline blink::PointerData::SignalKind ToPointerDataSignalKind(
     FlutterPointerSignalKind kind) {
   switch (kind) {
-    case kScroll:
+    case kFlutterPointerSignalKindNone:
+      return blink::PointerData::SignalKind::kNone;
+    case kFlutterPointerSignalKindScroll:
       return blink::PointerData::SignalKind::kScroll;
   }
-  return blink::PointerData::SignalKind::kScroll;
+  return blink::PointerData::SignalKind::kNone;
 }
 
 FlutterEngineResult FlutterEngineSendPointerEvent(
@@ -607,10 +596,8 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     pointer_data.kind = blink::PointerData::DeviceKind::kMouse;
     pointer_data.physical_x = SAFE_ACCESS(current, x, 0.0);
     pointer_data.physical_y = SAFE_ACCESS(current, y, 0.0);
-    pointer_data.kind = ToPointerDataDeviceKind(
-        SAFE_ACCESS(current, kind, FlutterPointerDeviceKind::kMouse));
     pointer_data.signal_kind = ToPointerDataSignalKind(
-        SAFE_ACCESS(current, signal_kind, FlutterPointerSignalKind::kScroll));
+        SAFE_ACCESS(current, signal_kind, kFlutterPointerSignalKindNone));
     pointer_data.scroll_delta_x = SAFE_ACCESS(current, scroll_delta_x, 0.0);
     pointer_data.scroll_delta_y = SAFE_ACCESS(current, scroll_delta_y, 0.0);
     packet->SetPointerData(i, pointer_data);

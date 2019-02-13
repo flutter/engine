@@ -50,16 +50,15 @@ enum PointerDeviceKind {
   /// A pointer device with a stylus that has been inverted.
   invertedStylus,
 
-  /// A pointer that is generating signals at its location. Examples include
-  /// a mouse scroll wheel, or trackpad gestures such as scroll and pinch.
-  signal,
-
   /// An unknown pointer device.
   unknown
 }
 
 /// The kind of [PointerDeviceKind.signal].
 enum PointerSignalKind {
+  /// The event is not associated with a pointer signal.
+  none,
+
   /// A pointer-generated scroll (e.g., mouse wheel or trackpad scroll).
   scroll,
 
@@ -222,12 +221,12 @@ class PointerData {
   /// Opaque platform-specific data associated with the event.
   final int platformData;
 
-  /// For PointerDeviceKind.signal with PointerSignalKind.scroll:
+  /// For events with signalKind of PointerSignalKind.scroll:
   ///
   /// The amount to scroll in the x direction, in physical pixels.
   final double scrollDeltaX;
 
-  /// For PointerDeviceKind.signal with PointerSignalKind.scroll:
+  /// For events with signalKind of PointerSignalKind.scroll:
   ///
   /// The amount to scroll in the y direction, in physical pixels.
   final double scrollDeltaY;

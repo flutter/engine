@@ -399,8 +399,9 @@ public class FlutterView extends SurfaceView
     private static final int kPointerDeviceKindUnknown = 5;
 
     // Must match the PointerSignalKind enum in pointer.dart.
-    private static final int kPointerSignalKindScroll = 0;
-    private static final int kPointerSignalKindUnknown = 1;
+    private static final int kPointerSignalKindNone = 0;
+    private static final int kPointerSignalKindScroll = 1;
+    private static final int kPointerSignalKindUnknown = 2;
 
     // These values must match the unpacking code in hooks.dart.
     private static final int kPointerDataFieldCount = 24;
@@ -458,8 +459,7 @@ public class FlutterView extends SurfaceView
 
         int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
 
-        // This is ignored for non-signal device kinds.
-        int signalKind = kPointerSignalKindScroll;
+        int signalKind = kPointerSignalKindNone;
 
         long timeStamp = event.getEventTime() * 1000; // Convert from milliseconds to microseconds.
 
