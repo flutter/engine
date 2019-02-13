@@ -430,6 +430,9 @@ DartVM::DartVM(const Settings& settings,
                                  &ServiceStreamCancelCallback);
 
   Dart_SetEmbedderInformationCallback(&EmbedderInformationCallback);
+
+  FML_DLOG(INFO) << "New Dart VM instance created. Instance count: "
+                 << gVMLaunchCount;
 }
 
 DartVM::~DartVM() {
@@ -445,6 +448,9 @@ DartVM::~DartVM() {
       << "Could not cleanly shut down the Dart VM. Error: \"" << result
       << "\".";
   free(result);
+
+  FML_DLOG(INFO) << "Dart VM instance destroyed. Instance count: "
+                 << gVMLaunchCount;
 }
 
 const Settings& DartVM::GetSettings() const {

@@ -14,10 +14,9 @@
 namespace blink {
 
 static std::mutex gLifecycleMutex;
-// TODO: This needs to be a shared exclusive lock.
+// TODO: Make this a shared exclusive lock.
 static std::recursive_mutex gAccessMutex;
 std::weak_ptr<DartVM> gVM;
-// TODO: Move the VM launch count global here.
 
 DartVMLifecycleReference::DartVMLifecycleReference(std::shared_ptr<DartVM> vm)
     : vm_(vm) {}
