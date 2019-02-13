@@ -454,6 +454,11 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   minikin::FakedFont faked_font = collection->baseFontFaked(minikin_font_style);
 
   if (faked_font.font != nullptr) {
+    SkString str;
+    static_cast<FontSkia*>(faked_font.font)
+        ->GetSkTypeface()
+        ->getFamilyName(&str);
+    FML_DLOG(ERROR) << str.c_str();
     font.setTypeface(static_cast<FontSkia*>(faked_font.font)->GetSkTypeface());
     font.setSize(paragraph_style_.strut_font_size);
     SkFontMetrics strut_metrics;
