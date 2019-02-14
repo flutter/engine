@@ -23,6 +23,8 @@ FILE: ../../../flutter/common/settings.cc
 FILE: ../../../flutter/common/settings.h
 FILE: ../../../flutter/common/task_runners.cc
 FILE: ../../../flutter/common/task_runners.h
+FILE: ../../../flutter/common/version/version.cc
+FILE: ../../../flutter/common/version/version.h
 FILE: ../../../flutter/flow/compositor_context.cc
 FILE: ../../../flutter/flow/compositor_context.h
 FILE: ../../../flutter/flow/debug_print.cc
@@ -215,6 +217,22 @@ FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries.json
 FILE: ../../../flutter/lib/snapshot/snapshot.h
+FILE: ../../../flutter/lib/stub_ui/compositing.dart
+FILE: ../../../flutter/lib/stub_ui/geometry.dart
+FILE: ../../../flutter/lib/stub_ui/hash_codes.dart
+FILE: ../../../flutter/lib/stub_ui/hooks.dart
+FILE: ../../../flutter/lib/stub_ui/isolate_name_server.dart
+FILE: ../../../flutter/lib/stub_ui/lerp.dart
+FILE: ../../../flutter/lib/stub_ui/libraries.json
+FILE: ../../../flutter/lib/stub_ui/natives.dart
+FILE: ../../../flutter/lib/stub_ui/painting.dart
+FILE: ../../../flutter/lib/stub_ui/plugins.dart
+FILE: ../../../flutter/lib/stub_ui/pointer.dart
+FILE: ../../../flutter/lib/stub_ui/semantics.dart
+FILE: ../../../flutter/lib/stub_ui/text.dart
+FILE: ../../../flutter/lib/stub_ui/ui.dart
+FILE: ../../../flutter/lib/stub_ui/versions.dart
+FILE: ../../../flutter/lib/stub_ui/window.dart
 FILE: ../../../flutter/lib/ui/compositing.dart
 FILE: ../../../flutter/lib/ui/compositing/scene.cc
 FILE: ../../../flutter/lib/ui/compositing/scene.h
@@ -307,6 +325,9 @@ FILE: ../../../flutter/lib/ui/text/text_box.h
 FILE: ../../../flutter/lib/ui/ui.dart
 FILE: ../../../flutter/lib/ui/ui_dart_state.cc
 FILE: ../../../flutter/lib/ui/ui_dart_state.h
+FILE: ../../../flutter/lib/ui/versions.cc
+FILE: ../../../flutter/lib/ui/versions.dart
+FILE: ../../../flutter/lib/ui/versions.h
 FILE: ../../../flutter/lib/ui/window.dart
 FILE: ../../../flutter/lib/ui/window/platform_message.cc
 FILE: ../../../flutter/lib/ui/window/platform_message.h
@@ -382,6 +403,7 @@ FILE: ../../../flutter/shell/common/vsync_waiter_fallback.cc
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl.h
+FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_software.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan.cc
@@ -391,6 +413,7 @@ FILE: ../../../flutter/shell/platform/android/android_context_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_context_gl.h
 FILE: ../../../flutter/shell/platform/android/android_environment_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_environment_gl.h
+FILE: ../../../flutter/shell/platform/android/android_exports.lst
 FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.h
 FILE: ../../../flutter/shell/platform/android/android_native_window.cc
@@ -417,9 +440,19 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterFragmentActi
 FILE: ../../../flutter/shell/platform/android/io/flutter/app/FlutterPluginRegistry.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngine.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterJNI.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/android/AndroidKeyProcessor.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartExecutor.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/FlutterRenderer.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/OnFirstFrameRenderedListener.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyEventChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LifecycleChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LocalizationChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/NavigationChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SettingsChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SystemChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/ActivityLifecycleListener.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BasicMessageChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BinaryCodec.java
@@ -551,6 +584,22 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEOpenGLContextHandling.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEPlugin.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEPluginRegistrar.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEReshapeListener.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEView.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FLEViewController.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacOS.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputModel.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLETextInputPlugin.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEView.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEViewController.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FLEViewController_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/module.modulemap
 FILE: ../../../flutter/shell/platform/embedder/assets/EmbedderInfo.plist
 FILE: ../../../flutter/shell/platform/embedder/assets/embedder.modulemap
 FILE: ../../../flutter/shell/platform/embedder/embedder.cc
@@ -569,8 +618,6 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_surface_software.h
 FILE: ../../../flutter/shell/platform/embedder/fixtures/simple_main.dart
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.h
-FILE: ../../../flutter/shell/version/version.cc
-FILE: ../../../flutter/shell/version/version.h
 FILE: ../../../flutter/sky/packages/flutter_services/lib/empty.dart
 FILE: ../../../flutter/sky/tools/roll/patches/chromium/android_build.patch
 FILE: ../../../flutter/synchronization/pipeline.cc
@@ -617,6 +664,40 @@ FILE: ../../../flutter/vulkan/vulkan_utilities.h
 FILE: ../../../flutter/vulkan/vulkan_window.cc
 FILE: ../../../flutter/vulkan/vulkan_window.h
 ----------------------------------------------------------------------------------------------------
+Copyright 2013 The Flutter Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google Inc. nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: engine
+ORIGIN: ../../../flutter/shell/platform/android/io/flutter/util/BSDiff.java + ../../../flutter/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../flutter/shell/platform/android/io/flutter/util/BSDiff.java
+----------------------------------------------------------------------------------------------------
+Copyright 2003-2005 Colin Percival. All rights reserved.
 Copyright 2013 The Flutter Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -930,4 +1011,4 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ====================================================================================================
-Total license count: 2
+Total license count: 3

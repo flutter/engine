@@ -91,6 +91,12 @@ typedef struct {
   BoolCallback clear_current;
   BoolCallback present;
   UIntCallback fbo_callback;
+  // This is an optional callback. Flutter will ask the emebdder to create a GL
+  // context current on a background thread. If the embedder is able to do so,
+  // Flutter will assume that this context is in the same sharegroup as the main
+  // rendering context and use this context for asynchronous texture uploads.
+  // Though optional, it is recommended that all embedders set this callback as
+  // it will lead to better performance in texture handling.
   BoolCallback make_resource_current;
   // By default, the renderer config assumes that the FBO does not change for
   // the duration of the engine run. If this argument is true, the
@@ -103,7 +109,7 @@ typedef struct {
   ProcResolver gl_proc_resolver;
   // When the embedder specifies that a texture has a frame available, the
   // engine will call this method (on an internal engine managed thread) so that
-  // external texture details can be suppplied to the engine for subsequent
+  // external texture details can be supplied to the engine for subsequent
   // composition.
   TextureFrameCallback gl_external_texture_frame_callback;
 } FlutterOpenGLRendererConfig;
@@ -151,6 +157,9 @@ typedef struct {
   size_t timestamp;  // in microseconds.
   double x;
   double y;
+  // An optional device identifier. If this is not specified, it is assumed that
+  // the embedder has no multitouch capability.
+  int32_t device;
 } FlutterPointerEvent;
 
 struct _FlutterPlatformMessageResponseHandle;
@@ -212,6 +221,14 @@ typedef struct {
   // The command line arguments used to initialize the project. The strings can
   // be collected after the call to |FlutterEngineRun| returns. The strings must
   // be NULL terminated.
+  // Note: The first item in the command line (if specificed at all) is
+  // interpreted as the executable name. So if an engine flag needs to be passed
+  // into the same, it needs to not be the very first item in the list. The set
+  // of engine flags are only meant to control unstable features in the engine.
+  // Deployed applications should not pass any command line arguments at all as
+  // they may affect engine stability at runtime in the presence of unsanitized
+  // input. The list of currently recognized engine flags and their descriptions
+  // can be retrieved from the |switches.h| engine source file.
   const char* const* command_line_argv;
   // The callback invoked by the engine in order to give the embedder the chance
   // to respond to platform messages from the Dart application. The callback
@@ -243,8 +260,11 @@ typedef struct {
   // documentation on the Wiki at
   // https://github.com/flutter/flutter/wiki/Flutter-engine-operation-in-AOT-Mode
   const uint8_t* isolate_snapshot_instructions;
-  // The size of the isoalte snapshot instructions buffer.
+  // The size of the isolate snapshot instructions buffer.
   size_t isolate_snapshot_instructions_size;
+  // The callback invoked by the engine in root isolate scope. Called
+  // immediately after the root isolate has been created and marked runnable.
+  VoidCallback root_isolate_create_callback;
 } FlutterProjectArgs;
 
 FLUTTER_EXPORT

@@ -97,14 +97,15 @@ struct Settings {
   std::function<void(int64_t)> idle_notification_callback;
   // A callback given to the embedder to react to unhandled exceptions in the
   // running Flutter application. This callback is made on an internal engine
-  // managed thread and embedders must thread as necessary. Performing blocking
-  // calls in this callback will cause applications to jank.
+  // managed thread and embedders must re-thread as necessary. Performing
+  // blocking calls in this callback will cause applications to jank.
   UnhandledExceptionCallback unhandled_exception_callback;
   bool enable_software_rendering = false;
   bool skia_deterministic_rendering_on_cpu = false;
   bool verbose_logging = false;
   std::string log_tag = "flutter";
   std::string icu_data_path;
+  MappingCallback icu_mapper;
 
   // Assets settings
   fml::UniqueFD::element_type assets_dir =

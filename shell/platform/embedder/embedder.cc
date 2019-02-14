@@ -361,6 +361,13 @@ FlutterEngineResult FlutterEngineRun(size_t version,
   settings.task_observer_remove = [](intptr_t key) {
     fml::MessageLoop::GetCurrent().RemoveTaskObserver(key);
   };
+  if (SAFE_ACCESS(args, root_isolate_create_callback, nullptr) != nullptr) {
+    VoidCallback callback =
+        SAFE_ACCESS(args, root_isolate_create_callback, nullptr);
+    settings.root_isolate_create_callback = [callback, user_data]() {
+      callback(user_data);
+    };
+  }
 
   // Create a thread host with the current thread as the platform thread and all
   // other threads managed.
@@ -569,6 +576,7 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     pointer_data.kind = blink::PointerData::DeviceKind::kMouse;
     pointer_data.physical_x = SAFE_ACCESS(current, x, 0.0);
     pointer_data.physical_y = SAFE_ACCESS(current, y, 0.0);
+    pointer_data.device = SAFE_ACCESS(current, device, 0);
     packet->SetPointerData(i, pointer_data);
     current = reinterpret_cast<const FlutterPointerEvent*>(
         reinterpret_cast<const uint8_t*>(current) + current->struct_size);

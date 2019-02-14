@@ -7,13 +7,13 @@
 #include <memory>
 #include <string>
 
+#include "flutter/common/version/version.h"
 #include "flutter/fml/base32.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/shell/version/version.h"
 
 namespace shell {
 
@@ -40,8 +40,16 @@ PersistentCache* PersistentCache::GetCacheForProcess() {
   return gPersistentCache.get();
 }
 
-PersistentCache::PersistentCache() {
-  // TODO(chinmaygarde): Reenable caching, avoiding the windows crasher.
+PersistentCache::PersistentCache()
+    : cache_directory_(std::make_shared<fml::UniqueFD>(
+          CreateDirectory(fml::paths::GetCachesDirectory(),
+                          {
+                              "flutter_engine",                  //
+                              blink::GetFlutterEngineVersion(),  //
+                              "skia",                            //
+                              blink::GetSkiaVersion()            //
+                          },
+                          fml::FilePermission::kReadWrite))) {
   if (!IsValid()) {
     FML_LOG(WARNING) << "Could not acquire the persistent cache directory. "
                         "Caching of GPU resources on disk is disabled.";

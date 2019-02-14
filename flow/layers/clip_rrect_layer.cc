@@ -7,7 +7,9 @@
 namespace flow {
 
 ClipRRectLayer::ClipRRectLayer(Clip clip_behavior)
-    : clip_behavior_(clip_behavior) {}
+    : clip_behavior_(clip_behavior) {
+  FML_DCHECK(clip_behavior != Clip::none);
+}
 
 ClipRRectLayer::~ClipRRectLayer() = default;
 
@@ -30,7 +32,7 @@ void ClipRRectLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void ClipRRectLayer::UpdateScene(SceneUpdateContext& context) {
   FML_DCHECK(needs_system_composite());
 
-  // TODO(MZ-137): Need to be able to express the radii as vectors.
+  // TODO(SCN-137): Need to be able to express the radii as vectors.
   scenic::RoundedRectangle shape(
       context.session(),                                   // session
       clip_rrect_.width(),                                 //  width

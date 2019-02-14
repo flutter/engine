@@ -86,6 +86,7 @@ void _updateUserSettingsData(String jsonData) {
   }
   _updateTextScaleFactor(data['textScaleFactor'].toDouble());
   _updateAlwaysUse24HourFormat(data['alwaysUse24HourFormat']);
+  _updatePlatformBrightness(data['platformBrightness']);
 }
 
 void _updateTextScaleFactor(double textScaleFactor) {
@@ -95,6 +96,11 @@ void _updateTextScaleFactor(double textScaleFactor) {
 
 void _updateAlwaysUse24HourFormat(bool alwaysUse24HourFormat) {
   window._alwaysUse24HourFormat = alwaysUse24HourFormat;
+}
+
+void _updatePlatformBrightness(String brightnessName) {
+  window._platformBrightness = brightnessName == 'dark' ? Brightness.dark : Brightness.light;
+  _invoke(window.onPlatformBrightnessChanged, window._onPlatformBrightnessChangedZone);
 }
 
 @pragma('vm:entry-point')
@@ -162,12 +168,26 @@ void _drawFrame() {
   _invoke(window.onDrawFrame, window._onDrawFrameZone);
 }
 
+// ignore: always_declare_return_types, prefer_generic_function_type_aliases
+typedef _UnaryFunction(Null args);
+// ignore: always_declare_return_types, prefer_generic_function_type_aliases
+typedef _BinaryFunction(Null args, Null message);
+
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _runMainZoned(Function startMainIsolateFunction, Function userMainFunction) {
   startMainIsolateFunction((){
     runZoned<Future<void>>(() {
-      userMainFunction();
+      const List<String> empty_args = <String>[];
+      if (userMainFunction is _BinaryFunction) {
+        // This seems to be undocumented but supported by the command line VM.
+        // Let's do the same in case old entry-points are ported to Flutter.
+        (userMainFunction as dynamic)(empty_args, '');
+      } else if (userMainFunction is _UnaryFunction) {
+        (userMainFunction as dynamic)(empty_args);
+      } else {
+        userMainFunction();
+      }
     }, onError: (Object error, StackTrace stackTrace) {
       _reportUnhandledException(error.toString(), stackTrace.toString());
     });
