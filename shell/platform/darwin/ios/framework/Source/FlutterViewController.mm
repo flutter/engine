@@ -435,9 +435,25 @@
 }
 
 #pragma mark - Application lifecycle notifications
+- (BOOL)isCurrentDisplayViewController {
+  UIViewController *topVC = [[[UIApplication sharedApplication] keyWindow] rootViewController];
+  while (topVC.presentedViewController) {
+    topVC = topVC.presentedViewController;
+  }
+
+  if ([topVC isKindOfClass:[UINavigationController class]]) {
+    topVC = [(UINavigationController*)topVC topViewController];
+  }
+    
+  return topVC == self  || [topVC.childViewControllers indexOfObject:self] != NSNotFound;
+}
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
+  if ([self isCurrentDisplayViewController] == NO) {
+    return;
+  }
+
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
@@ -456,6 +472,10 @@
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
+  if ([self isCurrentDisplayViewController] == NO) {
+    return;
+  }
+
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 }
 
