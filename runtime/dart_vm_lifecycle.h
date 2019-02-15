@@ -20,7 +20,7 @@ namespace blink {
 // process, a strong reference to that VM is obtained and the arguments to the
 // |Create| call ignored. If there is no VM already running in the process, a VM
 // is initialized in a thread safe manner and returned to the caller. The VM
-// will shutdonwn only when all callers relinquish their references (by
+// will shutdown only when all callers relinquish their references (by
 // collecting their instances of this class).
 //
 // DartVMRef instances may be created on any thread.
