@@ -305,10 +305,10 @@ SceneUpdateContext::Transform::Transform(SceneUpdateContext& context,
     // are not handled correctly.
     MatrixDecomposition decomposition(transform);
     if (decomposition.IsValid()) {
-      entity_node().SetTranslationRH(decomposition.translation().x(), //
-                                     decomposition.translation().y(), //
-                                     decomposition.translation().z()  //
-                                     );
+      entity_node().SetTranslationRH(decomposition.translation().x(),  //
+                                     decomposition.translation().y(),  //
+                                     decomposition.translation().z()   //
+      );
 
       entity_node().SetScale(decomposition.scale().x(),  //
                              decomposition.scale().y(),  //
