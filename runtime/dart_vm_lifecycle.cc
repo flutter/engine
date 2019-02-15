@@ -36,7 +36,7 @@ DartVMRef::~DartVMRef() {
     // If there is no valid VM (possible via a move), there is no way that the
     // decrement on the shared pointer can cause a collection. Avoid acquiring
     // the lifecycle lock in this case. This is just working around a
-    // pessimization and is optinal.
+    // pessimization and not required for correctness.
     return;
   }
   std::lock_guard<std::mutex> lifecycle_lock(gVMMutex);
@@ -49,12 +49,12 @@ DartVMRef DartVMRef::Create(Settings settings,
                             fml::RefPtr<DartSnapshot> shared_snapshot) {
   std::lock_guard<std::mutex> lifecycle_lock(gVMMutex);
 
-  // If there is already a running VM in the process. Grab a strong reference to
+  // If there is already a running VM in the process, grab a strong reference to
   // it.
   if (auto vm = gVM.lock()) {
-    FML_LOG(INFO) << "Attempted to create a VM in a process where one was "
-                     "already running. Ignoring arguments for current VM "
-                     "create call and reusing the old VM.";
+    FML_LOG(WARNING) << "Attempted to create a VM in a process where one was "
+                        "already running. Ignoring arguments for current VM "
+                        "create call and reusing the old VM.";
     // There was already a running VM in the process,
     return DartVMRef{std::move(vm)};
   }
@@ -75,6 +75,12 @@ DartVMRef DartVMRef::Create(Settings settings,
                            std::move(shared_snapshot),   //
                            isolate_name_server           //
   );
+
+  if (!vm) {
+    FML_LOG(ERROR) << "Could not create Dart VM instance.";
+    return {nullptr};
+  }
+
   gVMData = vm->GetVMData();
   gVMServiceProtocol = vm->GetServiceProtocol();
   gVMIsolateNameServer = isolate_name_server;
