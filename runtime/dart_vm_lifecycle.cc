@@ -52,9 +52,9 @@ DartVMRef DartVMRef::Create(Settings settings,
   // If there is already a running VM in the process, grab a strong reference to
   // it.
   if (auto vm = gVM.lock()) {
-    FML_LOG(WARNING) << "Attempted to create a VM in a process where one was "
-                        "already running. Ignoring arguments for current VM "
-                        "create call and reusing the old VM.";
+    FML_DLOG(WARNING) << "Attempted to create a VM in a process where one was "
+                         "already running. Ignoring arguments for current VM "
+                         "create call and reusing the old VM.";
     // There was already a running VM in the process,
     return DartVMRef{std::move(vm)};
   }
