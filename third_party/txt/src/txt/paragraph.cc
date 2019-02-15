@@ -534,11 +534,12 @@ void Paragraph::Layout(double width, bool force) {
       }
     }
 
-    // Exclude trailing whitespace from right and center-justified lines so the
-    // last visible character in the line will be flush with the right margin.
+    // Exclude trailing whitespace from justified lines so the last visible
+    // character in the line will be flush with the right margin.
     size_t line_end_index =
         (paragraph_style_.effective_align() == TextAlign::right ||
-         paragraph_style_.effective_align() == TextAlign::center)
+         paragraph_style_.effective_align() == TextAlign::center ||
+         paragraph_style_.effective_align() == TextAlign::justify)
             ? line_range.end_excluding_whitespace
             : line_range.end;
 
@@ -551,6 +552,30 @@ void Paragraph::Layout(double width, bool force) {
                                std::min(bidi_run.end(), line_end_index),
                                bidi_run.direction(), bidi_run.style());
       }
+      // A "ghost" run is a run that does not impact the layout, breaking,
+      // alignment, width, etc but is still "visible" though getRectsForRange.
+      // For example, trailing whitespace on centered text can be scrolled
+      // through with the caret but will not wrap the line.
+      //
+      // Here, we add an additional run for the whitespace, but dont
+      // let it impact metrics. After layout of the whitespace run, we do not
+      // add its width into the x-offset adjustment, effectively nullifying its
+      // impact on the layout.
+      if (line_range.end_excluding_whitespace < line_range.end &&
+          bidi_run.start() <= line_range.end &&
+          bidi_run.end() > line_end_index) {
+        line_runs.emplace_back(std::max(bidi_run.start(), line_end_index),
+                               std::min(bidi_run.end(), line_range.end),
+                               bidi_run.direction(), bidi_run.style(), true);
+      }
+    }
+    bool line_runs_all_rtl =
+        line_runs.size() &&
+        std::accumulate(
+            line_runs.begin(), line_runs.end(), true,
+            [](const bool a, const BidiRun& b) { return a && b.is_rtl(); });
+    if (line_runs_all_rtl) {
+      std::reverse(words.begin(), words.end());
     }
 
     std::vector<GlyphPosition> line_glyph_positions;
@@ -720,15 +745,26 @@ void Paragraph::Layout(double width, bool force) {
                 grapheme_code_unit_counts[i]);
           }
 
-          if (word_index < words.size() &&
-              words[word_index].start == run.start() + glyph_code_units.start) {
+          bool at_word_start = false;
+          bool at_word_end = false;
+          if (word_index < words.size()) {
+            at_word_start =
+                words[word_index].start == run.start() + glyph_code_units.start;
+            at_word_end =
+                words[word_index].end == run.start() + glyph_code_units.end;
+            if (line_runs_all_rtl) {
+              std::swap(at_word_start, at_word_end);
+            }
+          }
+
+          if (at_word_start) {
             word_start_position = run_x_offset + glyph_x_offset;
           }
 
-          if (word_index < words.size() &&
-              words[word_index].end == run.start() + glyph_code_units.end) {
-            if (justify_line)
+          if (at_word_end) {
+            if (justify_line) {
               justify_x_offset += word_gap_width;
+            }
             word_index++;
 
             if (!isnan(word_start_position)) {
@@ -746,7 +782,7 @@ void Paragraph::Layout(double width, bool force) {
         font.getMetrics(&metrics);
         paint_records.emplace_back(run.style(), SkPoint::Make(run_x_offset, 0),
                                    builder.make(), metrics, line_number,
-                                   layout.getAdvance());
+                                   layout.getAdvance(), run.is_ghost());
 
         line_glyph_positions.insert(line_glyph_positions.end(),
                                     glyph_positions.begin(),
@@ -769,7 +805,12 @@ void Paragraph::Layout(double width, bool force) {
         max_right_ = std::max(max_right_, glyph_positions.back().x_pos.end);
       }  // for each in glyph_blobs
 
-      run_x_offset += layout.getAdvance();
+      // Do not increase x offset for trailing ghost runs as it should not
+      // impact the layout of visible glyphs. We do keep the record though so
+      // GetRectsForRange() can find metrics for trailing spaces.
+      if (!run.is_ghost()) {
+        run_x_offset += layout.getAdvance();
+      }
     }  // for each in line_runs
 
     // Adjust the glyph positions based on the alignment of the line.
@@ -790,23 +831,6 @@ void Paragraph::Layout(double width, bool force) {
                               next_line_start - line_range.start);
     code_unit_runs_.insert(code_unit_runs_.end(), line_code_unit_runs.begin(),
                            line_code_unit_runs.end());
-
-    // Add extra empty metrics for skipped whitespace at line end. This allows
-    // GetRectsForRange to properly draw empty rects at the ends of lines with
-    // truncated whitespace.
-    if (line_end_index < line_range.end && !line_code_unit_runs.empty()) {
-      std::vector<GlyphPosition> empty_glyph_positions;
-      double end_x = line_code_unit_runs.back().positions.back().x_pos.end;
-      for (size_t index = line_end_index; index < line_range.end; ++index) {
-        empty_glyph_positions.emplace_back(end_x, 0, index, 1);
-      }
-      code_unit_runs_.emplace_back(
-          std::move(empty_glyph_positions),
-          Range<size_t>(line_end_index, line_range.end),
-          Range<double>(end_x, end_x), line_code_unit_runs.back().line_number,
-          line_code_unit_runs.back().font_metrics,
-          line_code_unit_runs.back().direction);
-    }
 
     // Calculate the amount to advance in the y direction. This is done by
     // computing the maximum ascent and descent with respect to the strut.
@@ -998,6 +1022,9 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
                                  const PaintRecord& record,
                                  SkPoint base_offset) {
   if (record.style().decoration == TextDecoration::kNone)
+    return;
+
+  if (record.isGhost())
     return;
 
   const SkFontMetrics& metrics = record.metrics();

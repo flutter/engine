@@ -70,7 +70,7 @@ static sk_sp<SkImage> DecodeImage(fml::WeakPtr<GrContext> context,
     // This indicates that we do not want a "linear blending" decode.
     sk_sp<SkColorSpace> dstColorSpace = nullptr;
     return SkImage::MakeCrossContextFromEncoded(
-        context.get(), std::move(buffer), false, dstColorSpace.get(), true);
+        context.get(), std::move(buffer), true, dstColorSpace.get(), true);
   } else {
     // Defer decoding until time of draw later on the GPU thread. Can happen
     // when GL operations are currently forbidden such as in the background
@@ -131,7 +131,7 @@ fml::RefPtr<Codec> InitCodecUncompressed(
   sk_sp<SkImage> skImage;
   if (context) {
     SkPixmap pixmap(image_info.sk_info, buffer->data(), image_info.row_bytes);
-    skImage = SkImage::MakeCrossContextFromPixmap(context.get(), pixmap, false,
+    skImage = SkImage::MakeCrossContextFromPixmap(context.get(), pixmap, true,
                                                   nullptr, true);
   } else {
     skImage = SkImage::MakeRasterData(image_info.sk_info, std::move(buffer),
@@ -408,11 +408,15 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
     options.fFrameIndex = nextFrameIndex_;
     const int requiredFrameIndex = frameInfos_[nextFrameIndex_].fRequiredFrame;
     if (requiredFrameIndex != SkCodec::kNoFrame) {
-      if (lastRequiredFrame_ == nullptr ||
-          lastRequiredFrameIndex_ != requiredFrameIndex) {
+      if (lastRequiredFrame_ == nullptr) {
         FML_LOG(ERROR) << "Frame " << nextFrameIndex_ << " depends on frame "
-                       << requiredFrameIndex << " which has not been cached.";
+                       << requiredFrameIndex
+                       << " and no required frames are cached.";
         return NULL;
+      } else if (lastRequiredFrameIndex_ != requiredFrameIndex) {
+        FML_DLOG(INFO) << "Required frame " << requiredFrameIndex
+                       << " is not cached. Using " << lastRequiredFrameIndex_
+                       << " instead";
       }
 
       if (lastRequiredFrame_->getPixels() &&
@@ -451,7 +455,7 @@ sk_sp<SkImage> MultiFrameCodec::GetNextFrameImage(
     // This indicates that we do not want a "linear blending" decode.
     sk_sp<SkColorSpace> dstColorSpace = nullptr;
     return SkImage::MakeCrossContextFromPixmap(resourceContext.get(), pixmap,
-                                               false, dstColorSpace.get());
+                                               true, dstColorSpace.get());
   } else {
     // Defer decoding until time of draw later on the GPU thread. Can happen
     // when GL operations are currently forbidden such as in the background

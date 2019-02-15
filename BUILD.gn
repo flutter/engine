@@ -107,4 +107,8 @@ copy("dart2js_platform_files") {
   outputs = [
     "$root_out_dir/flutter_patched_sdk/{{source_file_part}}",
   ]
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 733739938bb4f841320e12e32a52c3ba7d69558c
