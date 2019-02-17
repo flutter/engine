@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/flow/flow_test_utils.h"
 #include "flutter/flow/layers/performance_overlay_layer.h"
 #include "flutter/flow/raster_cache.h"
 
@@ -20,17 +21,17 @@ constexpr int kMockedTimes[] = {17, 1,  4,  24, 4,  25, 30, 4,  13, 34,
                                 14, 0,  18, 9,  32, 36, 26, 23, 5,  8,
                                 32, 18, 29, 16, 29, 18, 0,  36, 33, 10};
 
-const char* kGoldenFileName =
-    "flutter/testing/resources/performance_overlay_gold.png";
+// Relative to the flutter/src/engine/flutter directory
+const char* kGoldenFileName = "performance_overlay_gold.png";
 
-const char* kNewGoldenFileName =
-    "flutter/testing/resources/performance_overlay_gold_new.png";
-
-// Ensure the same font across different operation systems.
-const char* kFontFilePath =
-    "flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf";
+// Relative to the flutter/src/engine/flutter directory
+const char* kNewGoldenFileName = "performance_overlay_gold_new.png";
 
 TEST(PerformanceOverlayLayer, Gold) {
+  const std::string& golden_dir = flow::GetGoldenDir();
+  std::string golden_file_path = golden_dir + "/" + kGoldenFileName;
+  std::string new_golden_file_path = golden_dir + "/" + kNewGoldenFileName;
+
   flow::Stopwatch mock_stopwatch;
   for (int i = 0; i < size(kMockedTimes); ++i) {
     mock_stopwatch.SetLapTime(
@@ -48,11 +49,13 @@ TEST(PerformanceOverlayLayer, Gold) {
       nullptr,        surface->getCanvas(),    nullptr, mock_stopwatch,
       mock_stopwatch, unused_texture_registry, nullptr, false};
 
+  // Specify font file to ensure the same font across different operation
+  // systems.
   flow::PerformanceOverlayLayer layer(flow::kDisplayRasterizerStatistics |
                                           flow::kVisualizeRasterizerStatistics |
                                           flow::kDisplayEngineStatistics |
                                           flow::kVisualizeEngineStatistics,
-                                      kFontFilePath);
+                                      flow::GetFontFile().c_str());
   layer.set_paint_bounds(SkRect::MakeWH(1000, 400));
   surface->getCanvas()->clear(SK_ColorTRANSPARENT);
   layer.Paint(paintContext);
@@ -60,15 +63,16 @@ TEST(PerformanceOverlayLayer, Gold) {
   sk_sp<SkImage> snapshot = surface->makeImageSnapshot();
   sk_sp<SkData> snapshot_data = snapshot->encodeToData();
 
-  sk_sp<SkData> golden_data = SkData::MakeFromFileName(kGoldenFileName);
+  sk_sp<SkData> golden_data =
+      SkData::MakeFromFileName(golden_file_path.c_str());
   EXPECT_TRUE(golden_data != nullptr)
-      << "Golden file not found: " << kGoldenFileName << ".\n"
-      << "Please make sure that the unit test is run from the right directory "
-      << "(e.g., flutter/engine/src)";
+      << "Golden file not found: " << golden_file_path << ".\n"
+      << "Please either set --golden-dir, or make sure that the unit test is "
+      << "run from the right directory (e.g., flutter/engine/src).";
 
   const bool golden_data_matches = golden_data->equals(snapshot_data.get());
   if (!golden_data_matches) {
-    SkFILEWStream wstream(kNewGoldenFileName);
+    SkFILEWStream wstream(new_golden_file_path.c_str());
     wstream.write(snapshot_data->data(), snapshot_data->size());
     wstream.flush();
 
