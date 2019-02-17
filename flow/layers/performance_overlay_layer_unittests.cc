@@ -29,6 +29,8 @@ const char* kNewGoldenFileName = "performance_overlay_gold_new.png";
 
 TEST(PerformanceOverlayLayer, Gold) {
   const std::string& golden_dir = flow::GetGoldenDir();
+  // This unit test should only be run on Linux (not even on Mac since it's a
+  // golden test). Hence we don't have to worry about the "/" vs. "\".
   std::string golden_file_path = golden_dir + "/" + kGoldenFileName;
   std::string new_golden_file_path = golden_dir + "/" + kNewGoldenFileName;
 
