@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '4037f7f5d8b465f50f28135bfe0e532e2154089f',
+  'skia_revision': '5ba2a8a5b24f6ad0e2f05b2c80e25b31b842d0e7',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -116,7 +116,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'c82412bcdcd593f1385a478ae2c4b8eb9814f3b8',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '7f64ff4928e7106cd8d81c6397fba4b7c1cdbb96',
 
    # Fuchsia compatibility
    #
@@ -451,7 +451,7 @@ hooks = [
         '--build-tools-version=28.0.3',
         '--platform-tools-version=28.0.1',
         '--tools-version=26.1.1',
-        '--ndk-version=19.0.5232133'
+        '--ndk-version=19.1.5304403'
     ],
   },
   # TODO(dnfield): This can be enabled when we actually support building

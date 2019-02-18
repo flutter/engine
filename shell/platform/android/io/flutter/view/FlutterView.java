@@ -26,11 +26,11 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import io.flutter.app.FlutterPluginRegistry;
+import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.android.AndroidKeyProcessor;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
-import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.embedding.engine.systemchannels.SystemChannel;
@@ -125,7 +125,7 @@ public class FlutterView extends SurfaceView
             mNativeView = nativeView;
         }
         dartExecutor = new DartExecutor(mNativeView.getFlutterJNI());
-        mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().nativeGetIsSoftwareRenderingEnabled();
+        mIsSoftwareRenderingEnabled = FlutterJNI.nativeGetIsSoftwareRenderingEnabled();
         mAnimationScaleObserver = new AnimationScaleObserver(new Handler());
         mMetrics = new ViewportMetrics();
         mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
@@ -1102,7 +1102,7 @@ public class FlutterView extends SurfaceView
         private SurfaceTexture.OnFrameAvailableListener onFrameListener = new SurfaceTexture.OnFrameAvailableListener() {
             @Override
             public void onFrameAvailable(SurfaceTexture texture) {
-                if (released) {
+                if (released || mNativeView == null) {
                     // Even though we make sure to unregister the callback before releasing, as of Android O
                     // SurfaceTexture has a data race when accessing the callback, so the callback may
                     // still be called by a stale reference after released==true and mNativeView==null.
@@ -1128,11 +1128,16 @@ public class FlutterView extends SurfaceView
                 return;
             }
             released = true;
-            mNativeView.getFlutterJNI().unregisterTexture(id);
+
+            // The ordering of the next 3 calls is important:
+            // First we remove the frame listener, then we release the SurfaceTexture, and only after we unregister
+            // the texture which actually deletes the GL texture.
+
             // Otherwise onFrameAvailableListener might be called after mNativeView==null
             // (https://github.com/flutter/flutter/issues/20951). See also the check in onFrameAvailable.
             surfaceTexture.setOnFrameAvailableListener(null);
             surfaceTexture.release();
+            mNativeView.getFlutterJNI().unregisterTexture(id);
         }
     }
 }
