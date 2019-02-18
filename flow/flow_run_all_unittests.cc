@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
   flow::SetGoldenDir(
       cmd.GetOptionValueWithDefault("golden-dir", "flutter/testing/resources"));
   flow::SetFontFile(cmd.GetOptionValueWithDefault(
-      "font-file", "flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf"));
+      "font-file",
+      "flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf"));
   return RUN_ALL_TESTS();
 }
