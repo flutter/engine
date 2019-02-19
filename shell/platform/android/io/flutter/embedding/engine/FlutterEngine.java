@@ -52,6 +52,22 @@ public class FlutterEngine {
     }
   };
 
+  /**
+   * Constructs a new {@code FlutterEngine}.
+   *
+   * A new {@code FlutterEngine} does not execute any Dart code automatically. See
+   * {@link #getDartExecutor()} and {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)}
+   * to begin executing Dart code within this {@code FlutterEngine}.
+   *
+   * A new {@code FlutterEngine} will not display any UI until a
+   * {@link io.flutter.embedding.engine.renderer.FlutterRenderer.RenderSurface} is registered. See
+   * {@link #getRenderer()} and {@link FlutterRenderer#attachToRenderSurface(FlutterRenderer.RenderSurface)}.
+   *
+   * A new {@code FlutterEngine} does not come with any Flutter plugins attached. To attach plugins,
+   * see {@link #getPluginRegistry()}.
+   *
+   * A new {@code FlutterEngine} does come with all default system channels attached.
+   */
   public FlutterEngine(Context context) {
     this.flutterJNI = new FlutterJNI();
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
@@ -80,6 +96,12 @@ public class FlutterEngine {
     return flutterJNI.isAttached();
   }
 
+  /**
+   * Detaches this {@code FlutterEngine} from Flutter's native implementation, but allows
+   * reattachment later.
+   *
+   * // TODO(mattcarroll): document use-cases for this behavior.
+   */
   public void detachFromJni() {
     pluginRegistry.detach();
     dartExecutor.onDetachedFromJNI();
@@ -88,6 +110,12 @@ public class FlutterEngine {
     flutterJNI.detachFromNativeButKeepNativeResources();
   }
 
+  /**
+   * Cleans up all components within this {@code FlutterEngine} and then detaches from Flutter's
+   * native implementation.
+   *
+   * A {@code FlutterEngine} instance should be discarded after invoking this method.
+   */
   public void destroy() {
     pluginRegistry.destroy();
     dartExecutor.onDetachedFromJNI();
@@ -95,11 +123,27 @@ public class FlutterEngine {
     flutterJNI.detachFromNativeAndReleaseResources();
   }
 
+  /**
+   * The Dart execution context associated with this {@code FlutterEngine}.
+   *
+   * The {@link DartExecutor} can be used to start executing Dart code from a given entrypoint.
+   * See {@link DartExecutor#executeDartEntrypoint(DartExecutor.DartEntrypoint)}.
+   *
+   * Use the {@link DartExecutor} to connect any desired message channels and method channels
+   * to facilitate communication between Android and Dart/Flutter.
+   */
   @NonNull
   public DartExecutor getDartExecutor() {
     return dartExecutor;
   }
 
+  /**
+   * The rendering system associated with this {@code FlutterEngine}.
+   *
+   * To render a Flutter UI that is produced by this {@code FlutterEngine}'s Dart code, attach
+   * a {@link io.flutter.embedding.engine.renderer.FlutterRenderer.RenderSurface} to this
+   * {@link FlutterRenderer}.
+   */
   @NonNull
   public FlutterRenderer getRenderer() {
     return renderer;
