@@ -56,8 +56,8 @@ class Engine final : public blink::RuntimeDelegate {
 
   Engine(Delegate& delegate,
          blink::DartVM& vm,
-         fml::RefPtr<blink::DartSnapshot> isolate_snapshot,
-         fml::RefPtr<blink::DartSnapshot> shared_snapshot,
+         fml::RefPtr<const blink::DartSnapshot> isolate_snapshot,
+         fml::RefPtr<const blink::DartSnapshot> shared_snapshot,
          blink::TaskRunners task_runners,
          blink::Settings settings,
          std::unique_ptr<Animator> animator,
@@ -104,7 +104,8 @@ class Engine final : public blink::RuntimeDelegate {
 
   void DispatchPlatformMessage(fml::RefPtr<blink::PlatformMessage> message);
 
-  void DispatchPointerDataPacket(const blink::PointerDataPacket& packet);
+  void DispatchPointerDataPacket(const blink::PointerDataPacket& packet,
+                                 uint64_t trace_flow_id);
 
   void DispatchSemanticsAction(int id,
                                blink::SemanticsAction action,

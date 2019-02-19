@@ -37,8 +37,8 @@ static constexpr char kSettingsChannel[] = "flutter/settings";
 
 Engine::Engine(Delegate& delegate,
                blink::DartVM& vm,
-               fml::RefPtr<blink::DartSnapshot> isolate_snapshot,
-               fml::RefPtr<blink::DartSnapshot> shared_snapshot,
+               fml::RefPtr<const blink::DartSnapshot> isolate_snapshot,
+               fml::RefPtr<const blink::DartSnapshot> shared_snapshot,
                blink::TaskRunners task_runners,
                blink::Settings settings,
                std::unique_ptr<Animator> animator,
@@ -355,7 +355,11 @@ void Engine::HandleSettingsPlatformMessage(blink::PlatformMessage* message) {
   }
 }
 
-void Engine::DispatchPointerDataPacket(const blink::PointerDataPacket& packet) {
+void Engine::DispatchPointerDataPacket(const blink::PointerDataPacket& packet,
+                                       uint64_t trace_flow_id) {
+  TRACE_EVENT0("flutter", "Engine::DispatchPointerDataPacket");
+  TRACE_FLOW_STEP("flutter", "PointerEvent", trace_flow_id);
+  animator_->EnqueueTraceFlowId(trace_flow_id);
   runtime_controller_->DispatchPointerDataPacket(packet);
 }
 

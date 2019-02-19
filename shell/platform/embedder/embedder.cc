@@ -596,6 +596,7 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     pointer_data.kind = blink::PointerData::DeviceKind::kMouse;
     pointer_data.physical_x = SAFE_ACCESS(current, x, 0.0);
     pointer_data.physical_y = SAFE_ACCESS(current, y, 0.0);
+    pointer_data.device = SAFE_ACCESS(current, device, 0);
     pointer_data.signal_kind = ToPointerDataSignalKind(
         SAFE_ACCESS(current, signal_kind, kFlutterPointerSignalKindNone));
     pointer_data.scroll_delta_x = SAFE_ACCESS(current, scroll_delta_x, 0.0);
