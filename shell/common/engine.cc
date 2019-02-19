@@ -291,6 +291,9 @@ bool Engine::HandleLifecyclePlatformMessage(blink::PlatformMessage* message) {
   if (state == "AppLifecycleState.resumed" && have_surface_) {
     ScheduleFrame();
   }
+
+  // Caches the state in WindowData so that dart has the state at startup.
+  runtime_controller_->SetLifecycleState(state);
   return false;
 }
 

@@ -121,6 +121,11 @@ void _updateAccessibilityFeatures(int values) {
 }
 
 @pragma('vm:entry-point')
+void _updateLifecycleState(String state) {
+  _invoke(window.onSemanticsEnabledChanged, window._onSemanticsEnabledChangedZone);
+}
+
+@pragma('vm:entry-point')
 void _dispatchPlatformMessage(String name, ByteData data, int responseId) {
   if (window.onPlatformMessage != null) {
     _invoke3<String, ByteData, PlatformMessageResponseCallback>(
