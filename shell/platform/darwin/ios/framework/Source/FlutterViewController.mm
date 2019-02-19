@@ -436,7 +436,7 @@
 
 #pragma mark - Application lifecycle notifications
 - (BOOL)isCurrentDisplayViewController {
-  UIViewController *topVC = [[[UIApplication sharedApplication] keyWindow] rootViewController];
+  UIViewController* topVC = [[[UIApplication sharedApplication] keyWindow] rootViewController];
   while (topVC.presentedViewController) {
     topVC = topVC.presentedViewController;
   }
@@ -444,8 +444,7 @@
   if ([topVC isKindOfClass:[UINavigationController class]]) {
     topVC = [(UINavigationController*)topVC topViewController];
   }
-    
-  return topVC == self  || [topVC.childViewControllers indexOfObject:self] != NSNotFound;
+  return topVC == self || [topVC.childViewControllers indexOfObject:self] != NSNotFound;
 }
 
 - (void)applicationBecameActive:(NSNotification*)notification {
