@@ -1848,7 +1848,6 @@ TEST_F(ParagraphTest,
   }
   EXPECT_EQ(boxes.size(), 1ull);
   EXPECT_FLOAT_EQ(boxes[0].rect.left(), 275);
-  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 59.130371);
   EXPECT_FLOAT_EQ(boxes[0].rect.right(), 275);
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(),
                   75);  // TODO(garyq): This value can be improved... Should be
