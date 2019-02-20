@@ -355,10 +355,6 @@ FILE: ../../../flutter/runtime/dart_snapshot_buffer.cc
 FILE: ../../../flutter/runtime/dart_snapshot_buffer.h
 FILE: ../../../flutter/runtime/dart_vm.cc
 FILE: ../../../flutter/runtime/dart_vm.h
-FILE: ../../../flutter/runtime/dart_vm_data.cc
-FILE: ../../../flutter/runtime/dart_vm_data.h
-FILE: ../../../flutter/runtime/dart_vm_lifecycle.cc
-FILE: ../../../flutter/runtime/dart_vm_lifecycle.h
 FILE: ../../../flutter/runtime/dart_vm_unittests.cc
 FILE: ../../../flutter/runtime/embedder_resources.cc
 FILE: ../../../flutter/runtime/embedder_resources.h
@@ -450,6 +446,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/D
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/FlutterRenderer.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/renderer/OnFirstFrameRenderedListener.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/KeyEventChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LifecycleChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/LocalizationChannel.java
@@ -457,6 +454,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/system
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SettingsChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/SystemChannel.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/TextInputChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/ActivityLifecycleListener.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BasicMessageChannel.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/common/BinaryCodec.java
