@@ -15,4 +15,5 @@ guide](https://github.com/flutter/flutter/blob/master/CONTRIBUTING.md).
 For specific instructions regarding building Flutter's engine, see
 [Setting up the Engine development
 environment](https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment)
-on our wiki. Those instructions are part of the broader onboarding instructions described in the contributing guide.
+on our wiki. Those instructions are part of the broader onboarding instructions
+described in the contributing guide.
