@@ -419,7 +419,7 @@ public class PlatformChannel {
    * Types of sounds the Android OS can play on behalf of an application.
    */
   public enum SoundType {
-    CLICK("SoundType.click");
+    CLICK("SystemSoundType.click");
 
     static SoundType fromValue(@NonNull String encodedName) throws NoSuchFieldException {
       for (SoundType soundType : SoundType.values()) {

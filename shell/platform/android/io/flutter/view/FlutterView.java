@@ -129,7 +129,8 @@ public class FlutterView extends SurfaceView
         } else {
             mNativeView = nativeView;
         }
-        dartExecutor = new DartExecutor(mNativeView.getFlutterJNI());
+
+        dartExecutor = mNativeView.getDartExecutor();
         mIsSoftwareRenderingEnabled = FlutterJNI.nativeGetIsSoftwareRenderingEnabled();
         mAnimationScaleObserver = new AnimationScaleObserver(new Handler());
         mMetrics = new ViewportMetrics();

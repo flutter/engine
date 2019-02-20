@@ -31,6 +31,7 @@ import io.flutter.plugin.common.MethodChannel;
  * to standard Flutter text input messages.
  */
 public class TextInputChannel {
+  private static final String TAG = "TextInputChannel";
   @NonNull
   public final MethodChannel channel;
   @Nullable
@@ -331,6 +332,7 @@ public class TextInputChannel {
    * Types of text input.
    */
   public enum TextInputType {
+    TEXT("TextInputType.text"),
     DATETIME("TextInputType.datetime"),
     NUMBER("TextInputType.number"),
     PHONE("TextInputType.phone"),
@@ -361,7 +363,8 @@ public class TextInputChannel {
   public enum TextCapitalization {
     CHARACTERS("TextCapitalization.characters"),
     WORDS("TextCapitalization.words"),
-    SENTENCES("TextCapitalization.sentences");
+    SENTENCES("TextCapitalization.sentences"),
+    NONE("TextCapitalization.none");
 
     static TextCapitalization fromValue(@NonNull String encodedName) throws NoSuchFieldException {
       for (TextCapitalization textCapitalization : TextCapitalization.values()) {
