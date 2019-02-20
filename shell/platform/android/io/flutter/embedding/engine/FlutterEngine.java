@@ -6,6 +6,7 @@ package io.flutter.embedding.engine;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -37,17 +38,19 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 public class FlutterEngine {
   private static final String TAG = "FlutterEngine";
 
+  @NonNull
   private final FlutterJNI flutterJNI;
+  @NonNull
   private final FlutterRenderer renderer;
+  @NonNull
   private final DartExecutor dartExecutor;
   // TODO(mattcarroll): integrate system channels with FlutterEngine
+  @NonNull
   private final FlutterPluginRegistry pluginRegistry;
 
   private final EngineLifecycleListener engineLifecycleListener = new EngineLifecycleListener() {
     @SuppressWarnings("unused")
     public void onPreEngineRestart() {
-      if (pluginRegistry == null)
-        return;
       pluginRegistry.onPreEngineRestart();
     }
   };
@@ -68,7 +71,7 @@ public class FlutterEngine {
    *
    * A new {@code FlutterEngine} does come with all default system channels attached.
    */
-  public FlutterEngine(Context context) {
+  public FlutterEngine(@NonNull Context context) {
     this.flutterJNI = new FlutterJNI();
     flutterJNI.addEngineLifecycleListener(engineLifecycleListener);
     attachToJni();
@@ -114,7 +117,7 @@ public class FlutterEngine {
    * Cleans up all components within this {@code FlutterEngine} and then detaches from Flutter's
    * native implementation.
    *
-   * A {@code FlutterEngine} instance should be discarded after invoking this method.
+   * This {@code FlutterEngine} instance should be discarded after invoking this method.
    */
   public void destroy() {
     pluginRegistry.destroy();
