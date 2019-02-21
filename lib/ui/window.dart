@@ -786,7 +786,7 @@ class Window {
   AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
   AccessibilityFeatures _accessibilityFeatures;
 
-  /// A callback that is invoked when the value of [accessibilityFlags] changes.
+  /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -883,6 +883,9 @@ class Window {
 /// It is not possible to enable these settings from Flutter, instead they are
 /// used by the platform to indicate that additional accessibility features are
 /// enabled.
+//
+// When changes are made to this class, the equivalent APIs in each of the
+// embedders *must* be updated.
 class AccessibilityFeatures {
   const AccessibilityFeatures._(this._index);
 

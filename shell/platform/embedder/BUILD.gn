@@ -38,7 +38,6 @@ source_set("embedder") {
     "$flutter_root/common",
     "$flutter_root/flow",
     "$flutter_root/fml",
-    "$flutter_root/lib/snapshot",
     "$flutter_root/shell/common",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
@@ -48,7 +47,10 @@ source_set("embedder") {
   if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release") {
     deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
   } else {
-    deps += [ "//third_party/dart/runtime:libdart_jit" ]
+    deps += [
+      "$flutter_root/lib/snapshot",
+      "//third_party/dart/runtime:libdart_jit",
+    ]
   }
 
   public_configs = [ "$flutter_root:config" ]
@@ -71,6 +73,34 @@ executable("embedder_unittests") {
     ":embedder",
     ":fixtures",
     "$flutter_root/testing",
+  ]
+
+  if (is_linux) {
+    ldflags = [ "-rdynamic" ]
+  }
+}
+
+test_fixtures("fixtures_a11y") {
+  fixtures = [ "fixtures/a11y_main.dart" ]
+}
+
+executable("embedder_a11y_unittests") {
+  testonly = true
+
+  include_dirs = [ "." ]
+
+  sources = [
+    "tests/embedder_a11y_unittests.cc",
+  ]
+
+  deps = [
+    ":embedder",
+    ":fixtures_a11y",
+    "$flutter_root/lib/ui:ui",
+    "$flutter_root/shell/common",
+    "$flutter_root/testing",
+    "//third_party/skia",
+    "//third_party/tonic",
   ]
 
   if (is_linux) {

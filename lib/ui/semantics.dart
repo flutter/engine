@@ -6,6 +6,9 @@ part of dart.ui;
 
 /// The possible actions that can be conveyed from the operating system
 /// accessibility APIs to a semantics node.
+//
+// When changes are made to this class, the equivalent APIs in each of the
+// embedders *must* be updated.
 class SemanticsAction {
   const SemanticsAction._(this.index);
 
@@ -124,7 +127,7 @@ class SemanticsAction {
   /// Paste the current content of the clipboard.
   static const SemanticsAction paste = const SemanticsAction._(_kPasteIndex);
 
-  /// Indicates that the nodes has gained accessibility focus.
+  /// Indicates that the node has gained accessibility focus.
   ///
   /// This handler is invoked when the node annotated with this handler gains
   /// the accessibility focus. The accessibility focus is the
@@ -137,7 +140,7 @@ class SemanticsAction {
   /// Accessibility focus and input focus can be held by two different nodes!
   static const SemanticsAction didGainAccessibilityFocus = const SemanticsAction._(_kDidGainAccessibilityFocusIndex);
 
-  /// Indicates that the nodes has lost accessibility focus.
+  /// Indicates that the node has lost accessibility focus.
   ///
   /// This handler is invoked when the node annotated with this handler
   /// loses the accessibility focus. The accessibility focus is
@@ -260,6 +263,9 @@ class SemanticsAction {
 }
 
 /// A Boolean value that can be associated with a semantics node.
+//
+// When changes are made to this class, the equivalent APIs in each of the
+// embedders *must* be updated.
 class SemanticsFlag {
   static const int _kHasCheckedStateIndex = 1 << 0;
   static const int _kIsCheckedIndex = 1 << 1;
