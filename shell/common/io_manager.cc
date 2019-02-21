@@ -11,8 +11,7 @@
 namespace shell {
 
 sk_sp<GrContext> IOManager::CreateCompatibleResourceLoadingContext(
-    GrBackend backend,
-    sk_sp<const GrGLInterface> gl_interface) {
+    GrBackend backend) {
   if (backend != GrBackend::kOpenGL_GrBackend) {
     return nullptr;
   }
@@ -32,7 +31,7 @@ sk_sp<GrContext> IOManager::CreateCompatibleResourceLoadingContext(
   // ES2 shading language when the ES3 external image extension is missing.
   options.fPreferExternalImagesOverES3 = true;
 
-  if (auto context = GrContext::MakeGL(gl_interface, options)) {
+  if (auto context = GrContext::MakeGL(GrGLMakeNativeInterface(), options)) {
     // Do not cache textures created by the image decoder.  These textures
     // should be deleted when they are no longer referenced by an SkImage.
     context->setResourceCacheLimits(0, 0);
