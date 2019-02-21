@@ -13,6 +13,10 @@ out/$HOST_DIR/shell_unittests
 out/$HOST_DIR/synchronization_unittests
 out/$HOST_DIR/txt_unittests  --font-directory=flutter/third_party/txt/third_party/fonts
 
+# pubspec.yaml points to these files
+./flutter/tools/gn --unoptimized
+ninja -C out/host_debug_unopt flutter/sky/packages
+
 pushd flutter/testing/dart
 pub get
 popd
