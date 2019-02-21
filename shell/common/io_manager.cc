@@ -11,7 +11,8 @@
 namespace shell {
 
 sk_sp<GrContext> IOManager::CreateCompatibleResourceLoadingContext(
-    GrBackend backend) {
+    GrBackend backend,
+    sk_sp<const GrGLInterface> gl_interface) {
   if (backend != GrBackend::kOpenGL_GrBackend) {
     return nullptr;
   }
