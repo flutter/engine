@@ -15,6 +15,12 @@ import android.view.TextureView;
 
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 
+/**
+ * Paints a Flutter UI on a {@link SurfaceTexture}.
+ *
+ * Consider using {@link FlutterView}, which utilizes a {@code FlutterTextureView}
+ * internally.
+ */
 public class FlutterTextureView extends TextureView {
   private static final String TAG = "FlutterTextureView";
 

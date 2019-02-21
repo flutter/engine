@@ -16,6 +16,12 @@ import java.nio.ByteBuffer;
 
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 
+/**
+ * Paints a Flutter UI on a {@link android.view.Surface}.
+ *
+ * Consider using a {@link FlutterView}, which utilizes a {@code FlutterSurfaceView}
+ * internally.
+ */
 public class FlutterSurfaceView extends SurfaceView {
   private static final String TAG = "FlutterSurfaceView";
 
@@ -123,28 +129,6 @@ public class FlutterSurfaceView extends SurfaceView {
       Log.w(TAG, "detachFromRenderer() invoked when no FlutterRenderer was attached.");
     }
   }
-
-//  private void onAttachedToWindowAndRenderer() {
-//    Log.d(TAG, "onAttachedToWindowAndRenderer()");
-//    if (flutterRenderer == null || surfaceHolder == null) {
-//      throw new IllegalStateException("onAttachedToWindowAndRenderer() invoked with a null FlutterRenderer or null SurfaceHolder.");
-//    }
-//
-//    if (isSurfaceAvailableForRendering) {
-//      Log.d(TAG, "Surface already exists. Connecting it to Flutter.");
-//      flutterRenderer.surfaceCreated(surfaceHolder.getSurface());
-//    }
-//  }
-//
-//  private void onDetachedFromWindowOrRenderer() {
-//    Log.d(TAG, "onDetachedFromWindowOrRenderer");
-//    if (surfaceHolder == null) {
-//      throw new IllegalStateException("onAttachedToWindowAndRenderer() invoked with a null SurfaceHolder.");
-//    }
-//
-//    // Stop forwarding messages from our underlying Surface to native Flutter code.
-//    surfaceHolder.removeCallback(surfaceCallback);
-//  }
 
   // FlutterRenderer and getSurfaceTexture() must both be non-null.
   private void connectSurfaceToRenderer() {
