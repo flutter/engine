@@ -56,7 +56,7 @@
   fml::scoped_nsobject<FlutterMethodChannel> _platformChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
-  fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
+  fml::scoped_nsobject<FlutterLifecycleChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
 
@@ -193,7 +193,7 @@
 - (FlutterMethodChannel*)textInputChannel {
   return _textInputChannel.get();
 }
-- (FlutterBasicMessageChannel*)lifecycleChannel {
+- (FlutterLifecycleChannel*)lifecycleChannel {
   return _lifecycleChannel.get();
 }
 - (FlutterBasicMessageChannel*)systemChannel {
@@ -212,6 +212,12 @@
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
+}
+
+- (void)onLifecycleMessage:(NSString*)message reply:(FlutterReply)reply {
+  if ([message isEqual:@"query AppLifecycleState"]) {
+    [_lifecycleChannel.get() sendCurrentState];
+  }
 }
 
 // If you add a channel, be sure to also update `resetChannels`.
@@ -243,10 +249,13 @@
       binaryMessenger:self
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
-  _lifecycleChannel.reset([[FlutterBasicMessageChannel alloc]
+  _lifecycleChannel.reset([[FlutterLifecycleChannel alloc]
          initWithName:@"flutter/lifecycle"
       binaryMessenger:self
                 codec:[FlutterStringCodec sharedInstance]]);
+  [_lifecycleChannel.get() setMessageHandler:^(id message, FlutterReply reply) {
+    [self onLifecycleMessage:(NSString*)message reply:reply];
+  }];
 
   _systemChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/system"

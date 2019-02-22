@@ -373,6 +373,28 @@ FLUTTER_EXPORT
  */
 - (void)setStreamHandler:(NSObject<FlutterStreamHandler>* _Nullable)handler;
 @end
+
+
+FLUTTER_EXPORT
+@interface FlutterLifecycleChannel : FlutterBasicMessageChannel
+
+typedef enum AppLifecycleState {
+  inactive,
+  resumed,
+  paused
+} AppLifecycleState;
+
++ (NSString*)lifecycleStateToString:(AppLifecycleState)state;
+
+- (void)appIsInactive;
+- (void)appIsResumed;
+- (void)appIsPaused;
+
+- (void)sendCurrentState;
+
+@end
+
+
 NS_ASSUME_NONNULL_END
 
 #endif  // FLUTTER_FLUTTERCHANNELS_H_

@@ -399,7 +399,7 @@
   // First time surface creation is done on viewDidLayoutSubviews.
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [[_engine.get() lifecycleChannel] appIsInactive];
 
   [super viewWillAppear:animated];
 }
@@ -409,14 +409,14 @@
   [self onLocaleUpdated:nil];
   [self onUserSettingsChanged:nil];
   [self onAccessibilityStatusChanged:nil];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+  [[_engine.get() lifecycleChannel] appIsResumed];
 
   [super viewDidAppear:animated];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillDisappear");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [[_engine.get() lifecycleChannel] appIsInactive];
 
   [super viewWillDisappear:animated];
 }
@@ -424,7 +424,7 @@
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
   [self surfaceUpdated:NO];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+  [[_engine.get() lifecycleChannel] appIsPaused];
   [super viewDidDisappear:animated];
 }
 
@@ -440,23 +440,23 @@
   TRACE_EVENT0("flutter", "applicationBecameActive");
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+  [[_engine.get() lifecycleChannel] appIsResumed];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
   [self surfaceUpdated:NO];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [[_engine.get() lifecycleChannel] appIsInactive];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+  [[_engine.get() lifecycleChannel] appIsPaused];
 }
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [[_engine.get() lifecycleChannel] appIsInactive];
 }
 
 #pragma mark - Touch event handling

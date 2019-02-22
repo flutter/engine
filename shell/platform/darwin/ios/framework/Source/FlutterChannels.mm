@@ -313,3 +313,37 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
   [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
 }
 @end
+
+#pragma mark - Lifecycle channel
+
+@implementation FlutterLifecycleChannel  {
+  AppLifecycleState state;
+}
+
++ (NSString*)lifecycleStateToString:(AppLifecycleState)state {
+  switch (state) {
+    case inactive: return @"AppLifecycleState.inactive";
+    case resumed: return @"AppLifecycleState.resumed";
+    case paused: return @"AppLifecycleState.paused";
+  }
+  return @"";
+}
+
+- (void)appIsInactive {
+  state = inactive;
+  [self sendCurrentState];
+}
+- (void)appIsResumed {
+  state = resumed;
+  [self sendCurrentState];
+}
+- (void)appIsPaused {
+  state = paused;
+  [self sendCurrentState];
+}
+
+- (void)sendCurrentState {
+  [self sendMessage:[[self class] lifecycleStateToString:state]];
+}
+
+@end

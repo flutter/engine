@@ -185,7 +185,7 @@ FLUTTER_EXPORT
  * @see [Lifecycle
  * Channel](https://docs.flutter.io/flutter/services/SystemChannels/lifecycle-constant.html)
  */
-@property(nonatomic, readonly) FlutterBasicMessageChannel* lifecycleChannel;
+@property(nonatomic, readonly) FlutterLifecycleChannel* lifecycleChannel;
 
 /**
  * The `FlutterBasicMessageChannel` used for communicating system events, such as
