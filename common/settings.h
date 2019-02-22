@@ -104,6 +104,12 @@ struct Settings {
   bool skia_deterministic_rendering_on_cpu = false;
   bool verbose_logging = false;
   std::string log_tag = "flutter";
+
+  // The load_icu setting does not have a corresponding switch because it is
+  // intended for build time behavior modification only. Some companies apply
+  // source modification here because their build system brings its own ICU data
+  // files.
+  bool load_icu = false;
   std::string icu_data_path;
   MappingCallback icu_mapper;
 
