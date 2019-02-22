@@ -63,6 +63,8 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 bool CompositorContext::ScopedFrame::Raster(flow::LayerTree& layer_tree,
                                             bool ignore_raster_cache) {
   layer_tree.Preroll(*this, ignore_raster_cache);
+  // Clearing canvas after preroll reduces one render target switch when preroll
+  // paints some raster cache.
   if (canvas()) {
     canvas()->clear(SK_ColorTRANSPARENT);
   }
