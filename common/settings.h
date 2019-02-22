@@ -109,7 +109,7 @@ struct Settings {
   // switch because it is intended to be decided during build time, not runtime.
   // Some companies apply source modification here because their build system
   // brings its own ICU data files.
-  bool icu_initialization_required = false;
+  bool icu_initialization_required = true;
   std::string icu_data_path;
   MappingCallback icu_mapper;
 
