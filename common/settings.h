@@ -105,11 +105,11 @@ struct Settings {
   bool verbose_logging = false;
   std::string log_tag = "flutter";
 
-  // The load_icu setting does not have a corresponding switch because it is
-  // intended for build time behavior modification only. Some companies apply
-  // source modification here because their build system brings its own ICU data
-  // files.
-  bool load_icu = false;
+  // The icu_initialization_required setting does not have a corresponding
+  // switch because it is intended to be decided during build time, not runtime.
+  // Some companies apply source modification here because their build system
+  // brings its own ICU data files.
+  bool icu_initialization_required = false;
   std::string icu_data_path;
   MappingCallback icu_mapper;
 

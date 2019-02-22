@@ -187,7 +187,7 @@ static void PerformInitializationTasks(const blink::Settings& settings) {
       FML_DLOG(INFO) << "Skia deterministic rendering is enabled.";
     }
 
-    if (settings.load_icu) {
+    if (settings.icu_initialization_required) {
       if (settings.icu_data_path.size() != 0) {
         fml::icu::InitializeICU(settings.icu_data_path);
       } else if (settings.icu_mapper) {

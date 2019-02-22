@@ -224,7 +224,7 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   command_line.GetOptionValue(FlagForSwitch(Switch::CacheDirPath),
                               &settings.temp_directory_path);
 
-  if (settings.load_icu) {
+  if (settings.icu_initialization_required) {
     command_line.GetOptionValue(FlagForSwitch(Switch::ICUDataFilePath),
                                 &settings.icu_data_path);
     if (command_line.HasOption(FlagForSwitch(Switch::ICUSymbolPrefix))) {
