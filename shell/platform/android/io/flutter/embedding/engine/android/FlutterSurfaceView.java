@@ -19,8 +19,8 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 /**
  * Paints a Flutter UI on a {@link android.view.Surface}.
  *
- * Consider using a {@link FlutterView}, which utilizes a {@code FlutterSurfaceView}
- * internally.
+ * If a full-featured Flutter UI is desired, consider using a {@link FlutterView}, which utilizes a
+ * {@code FlutterSurfaceView} internally.
  */
 public class FlutterSurfaceView extends SurfaceView {
   private static final String TAG = "FlutterSurfaceView";
