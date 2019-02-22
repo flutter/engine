@@ -4,6 +4,7 @@
 
 #include "flutter/runtime/runtime_controller.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"

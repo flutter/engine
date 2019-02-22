@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/window/window.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_message_response_dart.h"
@@ -86,7 +87,6 @@ Dart_Handle SendPlatformMessage(Dart_Handle window,
                                 Dart_Handle callback,
                                 const tonic::DartByteData& data) {
   UIDartState* dart_state = UIDartState::Current();
-
   if (!dart_state->window()) {
     // Must release the TypedData buffer before allocating other Dart objects.
     data.Release();

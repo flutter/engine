@@ -21,38 +21,34 @@ public class LifecycleChannel {
   @NonNull
   public final BasicMessageChannel<String> channel;
 
-  private final LifecycleQueryMessageHandler messageHandler;
-
   private AppLifecycleState state = AppLifecycleState.INACTIVE;
 
   public LifecycleChannel(@NonNull DartExecutor dartExecutor) {
     this.channel = new BasicMessageChannel<>(dartExecutor, "flutter/lifecycle", StringCodec.INSTANCE);
-    messageHandler = new LifecycleQueryMessageHandler(this);
-    // this.channel.setMessageHandler(new LifecycleQueryMessageHandler(this));
-    Log.e("flutter", "Created LifecycleQueryMessageHandler");
+    this.channel.setMessageHandler(new LifecycleQueryMessageHandler(this));
   }
 
   public AppLifecycleState getCurrentState() {
-    Log.e("flutter", "Got state externally");
     return state;
   }
 
-  public void appIsInactive() {
-    Log.e("flutter", "Inactive");
-    state = AppLifecycleState.INACTIVE;
+  public void sendCurrentState() {
     channel.send(LifecycleStateToString(state));
+  }
+
+  public void appIsInactive() {
+    state = AppLifecycleState.INACTIVE;
+    sendCurrentState();
   }
 
   public void appIsResumed() {
-    Log.e("flutter", "Resumed");
     state = AppLifecycleState.RESUMED;
-    channel.send(LifecycleStateToString(state));
+    sendCurrentState();
   }
 
   public void appIsPaused() {
-    Log.e("flutter", "Paused");
     state = AppLifecycleState.PAUSED;
-    channel.send(LifecycleStateToString(state));
+    sendCurrentState();
   }
 
   public static String LifecycleStateToString(AppLifecycleState state) {
@@ -64,23 +60,23 @@ public class LifecycleChannel {
     return null;
   }
 
-  public class LifecycleQueryMessageHandler implements BasicMessageChannel.MessageHandler<String> {
-      private final LifecycleChannel channel;
-                     
-      LifecycleQueryMessageHandler (LifecycleChannel channel) {
-        this.channel = channel;
-        this.channel.channel.setMessageHandler(this);
-      }
 
-      /**
-       * Replies to all messages on this channel with the current lifecycle state.
-       */
-      @Override
-      public void onMessage(String message, BasicMessageChannel.Reply<String> reply) {
-          Log.e("flutter", "Recieved Message... Handling");
-          channel.channel.send(LifecycleChannel.LifecycleStateToString(channel.getCurrentState()));
-          reply.reply("yoyoyo");
-          // reply.reply(LifecycleChannel.LifecycleStateToString(channel.getCurrentState()));
+  public class LifecycleQueryMessageHandler implements BasicMessageChannel.MessageHandler<String> {
+    private final LifecycleChannel channel;
+
+    LifecycleQueryMessageHandler (LifecycleChannel channel) {
+      this.channel = channel;
+    }
+
+    /**
+     * Replies to all messages on this channel with the current lifecycle state.
+     */
+    @Override
+    public void onMessage(String message, BasicMessageChannel.Reply<String> reply) {
+      if (message.equals("query AppLifecycleState")) {
+        channel.sendCurrentState();
+        reply.reply(LifecycleChannel.LifecycleStateToString(channel.getCurrentState()));
       }
+    }
   }
 }

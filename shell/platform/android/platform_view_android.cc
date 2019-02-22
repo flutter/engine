@@ -7,6 +7,7 @@
 #include <memory>
 #include <utility>
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/common/io_manager.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
