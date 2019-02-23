@@ -33,7 +33,7 @@ public class LifecycleChannel {
   }
 
   public void sendCurrentState() {
-    channel.send(LifecycleStateToString(state));
+    channel.send(lifecycleStateToString(state));
   }
 
   public void appIsInactive() {
@@ -51,7 +51,7 @@ public class LifecycleChannel {
     sendCurrentState();
   }
 
-  public static String LifecycleStateToString(AppLifecycleState state) {
+  public static String lifecycleStateToString(AppLifecycleState state) {
     switch (state) {
       case INACTIVE: return "AppLifecycleState.inactive";
       case RESUMED: return "AppLifecycleState.resumed";
@@ -75,7 +75,7 @@ public class LifecycleChannel {
     public void onMessage(String message, BasicMessageChannel.Reply<String> reply) {
       if (message.equals("query AppLifecycleState")) {
         channel.sendCurrentState();
-        reply.reply(LifecycleChannel.LifecycleStateToString(channel.getCurrentState()));
+        reply.reply(LifecycleChannel.lifecycleStateToString(channel.getCurrentState()));
       }
     }
   }
