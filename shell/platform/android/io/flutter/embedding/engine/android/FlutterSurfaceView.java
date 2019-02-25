@@ -19,8 +19,17 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 /**
  * Paints a Flutter UI on a {@link android.view.Surface}.
  *
- * If a full-featured Flutter UI is desired, consider using a {@link FlutterView}, which utilizes a
- * {@code FlutterSurfaceView} internally.
+ * To begin rendering a Flutter UI, the owner of this {@code FlutterSurfaceView} must invoke
+ * {@link #onAttachedToRenderer(FlutterRenderer)} with the desired {@link FlutterRenderer}.
+ *
+ * To stop rendering a Flutter UI, the owner of this {@code FlutterSurfaceView} must invoke
+ * {@link #onDetachedFromRenderer()}.
+ *
+ * A {@code FlutterSurfaceView} is intended for situations where a developer needs to render
+ * a Flutter UI, but does not require any keyboard input, gesture input, accessibility
+ * integrations or any other interactivity beyond rendering. If standard interactivity is
+ * desired, consider using a {@link FlutterView} which provides all of these behaviors and
+ * utilizes a {@code FlutterSurfaceView} internally.
  */
 public class FlutterSurfaceView extends SurfaceView {
   private static final String TAG = "FlutterSurfaceView";
@@ -85,8 +94,8 @@ public class FlutterSurfaceView extends SurfaceView {
   }
 
   /**
-   * Invoked when this {@code FlutterSurfaceView} is connected to a {@link FlutterRenderer} as
-   * a {@link FlutterRenderer.RenderSurface}.
+   * Invoked by the owner of this {@code FlutterSurfaceView} when it wants to begin rendering
+   * a Flutter UI to this {@code FlutterSurfaceView}.
    *
    * If an Android {@link android.view.Surface} is available, this method will begin rendering
    * {@link FlutterRenderer}'s Flutter UI to this {@code FlutterSurfaceView}.
@@ -110,8 +119,8 @@ public class FlutterSurfaceView extends SurfaceView {
   }
 
   /**
-   * Invoked when this {@code FlutterSurfaceView} is no longer connected to a {@link FlutterRenderer}
-   * as a {@link FlutterRenderer.RenderSurface}.
+   * Invoked by the owner of this {@code FlutterSurfaceView} when it no longer wants to render
+   * a Flutter UI to this {@code FlutterSurfaceView}.
    *
    * This method will cease any on-going rendering from Flutter to this {@code FlutterSurfaceView}.
    */
