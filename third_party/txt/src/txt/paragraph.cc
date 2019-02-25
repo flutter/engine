@@ -441,18 +441,25 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   // force_strut makes all lines have exactly the strut metrics, and ignores all
   // actual metrics. We only force the strut if the strut is non-zero and valid.
   strut->force_strut = paragraph_style_.force_strut_height && valid_strut;
-  const FontSkia* font_skia =
-      static_cast<const FontSkia*>(font_collection_->GetMinikinFontForFamilies(
-          paragraph_style_.strut_font_families,
-          // TODO(garyq): The variant is currently set to 0 (default) as we do
-          // not have a property to set it with. We should eventually support
-          // default, compact, and elegant variants.
-          minikin::FontStyle(
-              0, GetWeight(paragraph_style_.strut_font_weight),
-              paragraph_style_.strut_font_style == FontStyle::italic)));
+  minikin::FontStyle minikin_font_style(
+      0, GetWeight(paragraph_style_.strut_font_weight),
+      paragraph_style_.strut_font_style == FontStyle::italic);
 
-  if (font_skia != nullptr) {
-    font.setTypeface(font_skia->GetSkTypeface());
+  std::shared_ptr<minikin::FontCollection> collection =
+      font_collection_->GetMinikinFontCollectionForFamilies(
+          paragraph_style_.strut_font_families, "");
+  if (!collection) {
+    return;
+  }
+  minikin::FakedFont faked_font = collection->baseFontFaked(minikin_font_style);
+
+  if (faked_font.font != nullptr) {
+    SkString str;
+    static_cast<FontSkia*>(faked_font.font)
+        ->GetSkTypeface()
+        ->getFamilyName(&str);
+    FML_DLOG(ERROR) << str.c_str();
+    font.setTypeface(static_cast<FontSkia*>(faked_font.font)->GetSkTypeface());
     font.setSize(paragraph_style_.strut_font_size);
     SkFontMetrics strut_metrics;
     font.getMetrics(&strut_metrics);
@@ -561,7 +568,8 @@ void Paragraph::Layout(double width, bool force) {
       // let it impact metrics. After layout of the whitespace run, we do not
       // add its width into the x-offset adjustment, effectively nullifying its
       // impact on the layout.
-      if (line_range.end_excluding_whitespace < line_range.end &&
+      if (paragraph_style_.ellipsis.empty() &&
+          line_range.end_excluding_whitespace < line_range.end &&
           bidi_run.start() <= line_range.end &&
           bidi_run.end() > line_end_index) {
         line_runs.emplace_back(std::max(bidi_run.start(), line_end_index),
@@ -1302,6 +1310,11 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
       if (line.end != line.end_including_newline && line.end >= start &&
           line.end_including_newline <= end) {
         SkScalar x = line_widths_[line_number];
+        // Move empty box to center if center aligned and is an empty line.
+        if (x == 0 && !isinf(width_) &&
+            paragraph_style_.effective_align() == TextAlign::center) {
+          x = width_ / 2;
+        }
         SkScalar top = (line_number > 0) ? line_heights_[line_number - 1] : 0;
         SkScalar bottom = line_heights_[line_number];
         line_metrics[line_number].boxes.emplace_back(
