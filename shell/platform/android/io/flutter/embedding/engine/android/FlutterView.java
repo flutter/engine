@@ -49,7 +49,6 @@ public class FlutterView extends FrameLayout {
   // Flutter engine
   @Nullable
   private FlutterEngine flutterEngine;
-  private boolean isAttachedToFlutterEngine = false;
 
   /**
    * Constructs a {@code FlutterSurfaceView} programmatically, without any XML attributes.
@@ -116,7 +115,7 @@ public class FlutterView extends FrameLayout {
    * {@link FlutterEngine}.
    */
   public void attachToFlutterEngine(@NonNull FlutterEngine flutterEngine) {
-    if (isAttachedToFlutterEngine) {
+    if (isAttachedToFlutterEngine()) {
       if (flutterEngine == this.flutterEngine) {
         // We are already attached to this FlutterEngine
         return;
@@ -127,7 +126,6 @@ public class FlutterView extends FrameLayout {
     }
 
     this.flutterEngine = flutterEngine;
-    isAttachedToFlutterEngine = true;
 
     // Instruct our FlutterRenderer that we are now its designated RenderSurface.
     this.flutterEngine.getRenderer().attachToRenderSurface(renderSurface);
@@ -144,7 +142,7 @@ public class FlutterView extends FrameLayout {
    * {@link FlutterEngine}.
    */
   public void detachFromFlutterEngine() {
-    if (!isAttachedToFlutterEngine) {
+    if (!isAttachedToFlutterEngine()) {
       return;
     }
     Log.d(TAG, "Detaching from Flutter Engine");
@@ -153,14 +151,16 @@ public class FlutterView extends FrameLayout {
     flutterEngine.getRenderer().detachFromRenderSurface();
     flutterEngine = null;
 
-    isAttachedToFlutterEngine = false;
-
     // TODO(mattcarroll): clear the surface when JNI doesn't blow up
 //    if (isSurfaceAvailableForRendering) {
 //      Canvas canvas = surfaceHolder.lockCanvas();
 //      canvas.drawColor(Color.RED);
 //      surfaceHolder.unlockCanvasAndPost(canvas);
 //    }
+  }
+
+  private boolean isAttachedToFlutterEngine() {
+    return flutterEngine != null;
   }
 
   /**
