@@ -48,6 +48,8 @@ struct Settings {
   std::string isolate_snapshot_instr_path;  // deprecated
   MappingCallback isolate_snapshot_instr;
 
+  MappingCallback platform_strong_dill;
+
   std::string application_library_path;
   std::string application_kernel_asset;
   std::string application_kernel_list_asset;

@@ -32,13 +32,6 @@
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/typed_data/uint8_list.h"
 
-extern "C" {
-#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-extern const uint8_t kPlatformStrongDill[];
-extern const intptr_t kPlatformStrongDillSize;
-#endif
-}
-
 namespace dart {
 namespace observatory {
 
@@ -446,11 +439,13 @@ DartVM::DartVM(const Settings& settings,
 
   Dart_SetEmbedderInformationCallback(&EmbedderInformationCallback);
 
-#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-  // Set sources for dart:* libraries for debugging.
-  Dart_SetDartLibrarySourcesKernel(kPlatformStrongDill,
-                                   kPlatformStrongDillSize);
-#endif
+  if (settings.platform_strong_dill != nullptr) {
+    std::unique_ptr<fml::Mapping> platform_strong_dill =
+        settings.platform_strong_dill();
+    // Set sources for dart:* libraries for debugging.
+    Dart_SetDartLibrarySourcesKernel(platform_strong_dill->GetMapping(),
+                                     platform_strong_dill->GetSize());
+  }
 }
 
 DartVM::~DartVM() {
