@@ -31,13 +31,6 @@ public class LocalizationChannel {
    * Send the given {@code locales} to Dart.
    */
   public void sendLocales(List<String> data) {
-    // List<String> data = new ArrayList<>();
-    // for (Locale locale : locales) {
-    //   data.add(locale.getLanguage());
-    //   data.add(locale.getCountry());
-    //   data.add(locale.getScript());
-    //   data.add(locale.getVariant());
-    // }
     channel.invokeMethod("setLocale", data);
   }
 
