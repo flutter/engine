@@ -621,8 +621,19 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 - (void)deleteBackward {
   _selectionAffinity = _kTextAffinityDownstream;
-  if (!_selectedTextRange.isEmpty)
-    [self replaceRange:_selectedTextRange withText:@""];
+  if([self hasText]) {
+    if(!_selectedTextRange.isEmpty){
+      [self replaceRange:_selectedTextRange withText:@""];
+    }else{
+      NSRange oldRange = ((FlutterTextRange*) _selectedTextRange).range;
+      if(oldRange.location > 0){
+        [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(oldRange.location - 1, 1)] updateEditingState:false];
+      }else{
+        [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)] updateEditingState:false];
+      }
+      [self replaceRange:_selectedTextRange withText:@""];
+    }
+  }
 }
 
 @end
