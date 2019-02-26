@@ -110,7 +110,6 @@ public class FlutterView extends SurfaceView
     private FlutterNativeView mNativeView;
     private final AnimationScaleObserver mAnimationScaleObserver;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
-    private InputConnection mLastInputConnection;
 
     public FlutterView(Context context) {
         this(context, null);
@@ -129,7 +128,8 @@ public class FlutterView extends SurfaceView
         } else {
             mNativeView = nativeView;
         }
-        dartExecutor = new DartExecutor(mNativeView.getFlutterJNI());
+
+        dartExecutor = mNativeView.getDartExecutor();
         mIsSoftwareRenderingEnabled = FlutterJNI.nativeGetIsSoftwareRenderingEnabled();
         mAnimationScaleObserver = new AnimationScaleObserver(new Handler());
         mMetrics = new ViewportMetrics();
@@ -180,7 +180,7 @@ public class FlutterView extends SurfaceView
         addActivityLifecycleListener(platformPlugin);
         mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         mTextInputPlugin = new TextInputPlugin(this, dartExecutor);
-        androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel);
+        androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
 
         // Send initial platform information to Dart
         sendLocalesToDart(getResources().getConfiguration());
@@ -201,13 +201,6 @@ public class FlutterView extends SurfaceView
         if (!isAttached()) {
             return super.onKeyDown(keyCode, event);
         }
-
-        if (event.getDeviceId() != KeyCharacterMap.VIRTUAL_KEYBOARD) {
-            if (mLastInputConnection != null && mImm.isAcceptingText()) {
-                mLastInputConnection.sendKeyEvent(event);
-            }
-        }
-
         androidKeyProcessor.onKeyDown(event);
         return super.onKeyDown(keyCode, event);
     }
@@ -319,12 +312,16 @@ public class FlutterView extends SurfaceView
     }
 
     private void sendLocalesToDart(Configuration config) {
-        LocaleList localeList = config.getLocales();
-        int localeCount = localeList.size();
         List<Locale> locales = new ArrayList<>();
-        for (int index = 0; index < localeCount; ++index) {
-            Locale locale = localeList.get(index);
-            locales.add(locale);
+        if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            LocaleList localeList = config.getLocales();
+            int localeCount = localeList.size();
+            for (int index = 0; index < localeCount; ++index) {
+                Locale locale = localeList.get(index);
+                locales.add(locale);
+            }
+        } else {
+            locales.add(config.locale);
         }
         localizationChannel.sendLocales(locales);
     }

@@ -13,17 +13,26 @@
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 #include "flutter/shell/platform/embedder/embedder_surface_gl.h"
 #include "flutter/shell/platform/embedder/embedder_surface_software.h"
+#include "flutter/shell/platform/embedder/vsync_waiter_embedder.h"
 
 namespace shell {
 
 class PlatformViewEmbedder final : public PlatformView {
  public:
+  using UpdateSemanticsNodesCallback =
+      std::function<void(blink::SemanticsNodeUpdates update)>;
+  using UpdateSemanticsCustomActionsCallback =
+      std::function<void(blink::CustomAccessibilityActionUpdates actions)>;
   using PlatformMessageResponseCallback =
       std::function<void(fml::RefPtr<blink::PlatformMessage>)>;
 
   struct PlatformDispatchTable {
+    UpdateSemanticsNodesCallback update_semantics_nodes_callback;  // optional
+    UpdateSemanticsCustomActionsCallback
+        update_semantics_custom_actions_callback;  // optional
     PlatformMessageResponseCallback
-        platform_message_response_callback;  // optional
+        platform_message_response_callback;             // optional
+    VsyncWaiterEmbedder::VsyncCallback vsync_callback;  // optional
   };
 
   // Creates a platform view that sets up an OpenGL rasterizer.
@@ -43,6 +52,11 @@ class PlatformViewEmbedder final : public PlatformView {
   ~PlatformViewEmbedder() override;
 
   // |shell::PlatformView|
+  void UpdateSemantics(
+      blink::SemanticsNodeUpdates update,
+      blink::CustomAccessibilityActionUpdates actions) override;
+
+  // |shell::PlatformView|
   void HandlePlatformMessage(
       fml::RefPtr<blink::PlatformMessage> message) override;
 
@@ -55,6 +69,9 @@ class PlatformViewEmbedder final : public PlatformView {
 
   // |shell::PlatformView|
   sk_sp<GrContext> CreateResourceContext() const override;
+
+  // |shell::PlatformView|
+  std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewEmbedder);
 };
