@@ -439,12 +439,12 @@ DartVM::DartVM(const Settings& settings,
 
   Dart_SetEmbedderInformationCallback(&EmbedderInformationCallback);
 
-  if (settings.platform_strong_dill != nullptr) {
-    std::unique_ptr<fml::Mapping> platform_strong_dill =
-        settings.platform_strong_dill();
+  if (settings.dart_library_sources_kernel != nullptr) {
+    std::unique_ptr<fml::Mapping> dart_library_sources =
+        settings.dart_library_sources_kernel();
     // Set sources for dart:* libraries for debugging.
-    Dart_SetDartLibrarySourcesKernel(platform_strong_dill->GetMapping(),
-                                     platform_strong_dill->GetSize());
+    Dart_SetDartLibrarySourcesKernel(dart_library_sources->GetMapping(),
+                                     dart_library_sources->GetSize());
   }
 }
 

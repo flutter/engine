@@ -140,7 +140,7 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     };
   };
 
-  settings.platform_strong_dill =
+  settings.dart_library_sources_kernel =
       make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
 #endif // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
