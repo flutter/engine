@@ -227,7 +227,7 @@ dartdevc:
 
     math:
       uri: "../../../third_party/dart/sdk/lib/math/math.dart"
-      patches: "../../../third_party/dart/sdk/lib/pkg/dev_compiler/tool/input_sdk/patch/math_patch.dart"
+      patches: "../../../third_party/dart/pkg/dev_compiler/tool/input_sdk/patch/math_patch.dart"
 
     typed_data:
       uri: "../../../third_party/dart/sdk/lib/typed_data/typed_data.dart"
@@ -261,4 +261,4 @@ dartdevc:
       uri: "../../../third_party/dart/sdk/lib/web_sql/dart2js/web_sql_dart2js.dart"
 
     ui:
-      uri: "../../lib/stub_ui/ui.dart"
+      uri: "flutter/lib/stub_ui/ui.dart"
