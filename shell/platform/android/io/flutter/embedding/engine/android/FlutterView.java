@@ -38,15 +38,15 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
 public class FlutterView extends FrameLayout {
   private static final String TAG = "FlutterView";
 
-  // View configuration
+  // Behavior configuration of this FlutterView.
   @NonNull
   private RenderMode renderMode;
 
-  // View structure
+  // Internal view hierarchy references.
   @Nullable
   private FlutterRenderer.RenderSurface renderSurface;
 
-  // Flutter engine
+  // Connections to a Flutter execution context.
   @Nullable
   private FlutterEngine flutterEngine;
 
@@ -106,10 +106,10 @@ public class FlutterView extends FrameLayout {
   /**
    * Connects this {@code FlutterView} to the given {@link FlutterEngine}.
    *
-   * Once invoked, the Flutter UI painted by the given {@link FlutterEngine} will be
-   * displayed by this {@code FlutterView}. Additionally, user touch events, accessibility
-   * events, keyboard events, and more will be forwarded from this {@code FlutterView}
-   * to the attached {@link FlutterEngine}.
+   * This {@code FlutterView} will begin rendering the UI painted by the given {@link FlutterEngine}.
+   * This {@code FlutterView} will also begin forwarding interaction events from this
+   * {@code FlutterView} to the given {@link FlutterEngine}, e.g., user touch events, accessibility
+   * events, keyboard events, and others.
    *
    * See {@link #detachFromFlutterEngine()} for information on how to detach from a
    * {@link FlutterEngine}.
@@ -134,9 +134,9 @@ public class FlutterView extends FrameLayout {
   /**
    * Disconnects this {@code FlutterView} from a previously attached {@link FlutterEngine}.
    *
-   * Once invoked, the UI of this {@code FlutterView} will be cleared, and all touch events,
-   * accessibility events, keyboard events, etc. will no longer be forwarded to the previously
-   * attached {@link FlutterEngine}.
+   * This {@code FlutterView} will clear its UI and stop forwarding all events to the previously-attached
+   * {@link FlutterEngine}. This includes touch events, accessibility events, keyboard events,
+   * and others.
    *
    * See {@link #attachToFlutterEngine(FlutterEngine)} for information on how to attach a
    * {@link FlutterEngine}.
