@@ -179,6 +179,7 @@ class ResourceExtractor {
 
         for (String asset : mResources) {
             try {
+                final String resource = "assets/" + asset;
                 final File output = new File(dataDir, asset);
                 if (output.exists()) {
                     continue;
@@ -192,7 +193,7 @@ class ResourceExtractor {
                     copy(is, os);
                 }
 
-                Log.i(TAG, "Extracted baseline resource " + asset);
+                Log.i(TAG, "Extracted baseline resource " + resource);
 
             } catch (FileNotFoundException fnfe) {
                 continue;
@@ -239,13 +240,33 @@ class ResourceExtractor {
         }
 
         for (String asset : mResources) {
-            boolean useDiff = false;
-            ZipEntry entry = zipFile.getEntry(asset);
+            String resource = null;
+            ZipEntry entry = null;
+            if (asset.endsWith(".so")) {
+                // Replicate library lookup logic.
+                for (String abi : Build.SUPPORTED_ABIS) {
+                    resource = "lib/" + abi + "/" + asset;
+                    entry = zipFile.getEntry(resource);
+                    if (entry == null) {
+                        entry = zipFile.getEntry(resource + ".bzdiff40");
+                        if (entry == null) {
+                            continue;
+                        }
+                    }
+
+                    // Stop after the first match.
+                    break;
+                }
+            }
+
             if (entry == null) {
-                useDiff = true;
-                entry = zipFile.getEntry(asset + ".bzdiff40");
+                resource = "assets/" + asset;
+                entry = zipFile.getEntry(resource);
                 if (entry == null) {
-                    continue;
+                    entry = zipFile.getEntry(resource + ".bzdiff40");
+                    if (entry == null) {
+                        continue;
+                    }
                 }
             }
 
@@ -258,15 +279,34 @@ class ResourceExtractor {
             }
 
             try {
-                if (useDiff) {
+                if (entry.getName().endsWith(".bzdiff40")) {
                     ByteArrayOutputStream diff = new ByteArrayOutputStream();
                     try (InputStream is = zipFile.getInputStream(entry)) {
                         copy(is, diff);
                     }
 
                     ByteArrayOutputStream orig = new ByteArrayOutputStream();
-                    try (InputStream is = manager.open(asset)) {
-                        copy(is, orig);
+                    if (asset.endsWith(".so")) {
+                        ZipFile apkFile = new ZipFile(getAPKPath());
+                        if (apkFile == null) {
+                            throw new IOException("Could not find APK");
+                        }
+
+                        ZipEntry origEntry = apkFile.getEntry(resource);
+                        if (origEntry == null) {
+                            throw new IOException("Could not find APK resource " + resource);
+                        }
+
+                        try (InputStream is = apkFile.getInputStream(origEntry)) {
+                            copy(is, orig);
+                        }
+
+                    } else {
+                        try (InputStream is = manager.open(asset)) {
+                            copy(is, orig);
+                        } catch (FileNotFoundException e) {
+                            throw new IOException("Could not find APK resource " + resource);
+                        }
                     }
 
                     try (OutputStream os = new FileOutputStream(output)) {
@@ -280,7 +320,7 @@ class ResourceExtractor {
                     }
                 }
 
-                Log.i(TAG, "Extracted override resource " + asset);
+                Log.i(TAG, "Extracted override resource " + entry.getName());
 
             } catch (FileNotFoundException fnfe) {
                 continue;
@@ -352,6 +392,15 @@ class ResourceExtractor {
         byte[] buf = new byte[16 * 1024];
         for (int i; (i = in.read(buf)) >= 0; ) {
             out.write(buf, 0, i);
+        }
+    }
+
+    private String getAPKPath() {
+        try {
+            return mContext.getPackageManager().getApplicationInfo(
+                mContext.getPackageName(), 0).publicSourceDir;
+        } catch (Exception e) {
+            return null;
         }
     }
 }

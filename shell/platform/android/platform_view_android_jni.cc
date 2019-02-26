@@ -160,11 +160,6 @@ static jlong AttachJNI(JNIEnv* env,
   }
 }
 
-// TODO(mattcarroll): delete this method here and in FlutterJNI.java
-static void DetachJNI(JNIEnv* env, jobject jcaller, jlong shell_holder) {
-  // Nothing to do.
-}
-
 static void DestroyJNI(JNIEnv* env, jobject jcaller, jlong shell_holder) {
   delete ANDROID_SHELL_HOLDER;
 }
@@ -252,8 +247,9 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
     // bundle or a zip asset bundle.
     const auto file_ext_index = bundlepath.rfind(".");
     if (bundlepath.substr(file_ext_index) == ".zip") {
-      asset_manager->PushBack(
-          std::make_unique<blink::ZipAssetStore>(bundlepath, "flutter_assets"));
+      asset_manager->PushBack(std::make_unique<blink::ZipAssetStore>(
+          bundlepath, "assets/flutter_assets"));
+
     } else {
       asset_manager->PushBack(
           std::make_unique<blink::DirectoryAssetBundle>(fml::OpenDirectory(
@@ -545,11 +541,6 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeAttach",
           .signature = "(Lio/flutter/embedding/engine/FlutterJNI;Z)J",
           .fnPtr = reinterpret_cast<void*>(&shell::AttachJNI),
-      },
-      {
-          .name = "nativeDetach",
-          .signature = "(J)V",
-          .fnPtr = reinterpret_cast<void*>(&shell::DetachJNI),
       },
       {
           .name = "nativeDestroy",
