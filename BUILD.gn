@@ -142,6 +142,5 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
   args = [
     "--output=$output_path",
     "--libraries=$libraries_path",
-    # "--additional-libraries=dart:ui"
   ]
 }
