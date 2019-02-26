@@ -27,9 +27,9 @@ namespace shell {
 
 extern "C" {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-  // Used for debugging dart:* sources.
-  extern const uint8_t kPlatformStrongDill[];
-  extern const intptr_t kPlatformStrongDillSize;
+// Used for debugging dart:* sources.
+extern const uint8_t kPlatformStrongDill[];
+extern const intptr_t kPlatformStrongDillSize;
 #endif
 }
 
@@ -109,7 +109,7 @@ void FlutterMain::Init(JNIEnv* env,
 
   settings.dart_library_sources_kernel =
       make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
-#endif // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 
   // Not thread safe. Will be removed when FlutterMain is refactored to no
   // longer be a singleton.
