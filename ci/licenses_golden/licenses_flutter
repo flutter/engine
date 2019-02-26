@@ -5,6 +5,37 @@ UNUSED LICENSES:
 USED LICENSES:
 
 ====================================================================================================
+LIBRARY: bsdiff
+ORIGIN: ../../../flutter/third_party/bsdiff/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../flutter/third_party/bsdiff/io/flutter/util/BSDiff.java
+----------------------------------------------------------------------------------------------------
+Copyright 2003-2005 Colin Percival. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: engine
 LIBRARY: txt
 ORIGIN: ../../../flutter/LICENSE
@@ -97,7 +128,6 @@ FILE: ../../../flutter/fml/command_line.h
 FILE: ../../../flutter/fml/command_line_unittest.cc
 FILE: ../../../flutter/fml/compiler_specific.h
 FILE: ../../../flutter/fml/eintr_wrapper.h
-FILE: ../../../flutter/fml/export.h
 FILE: ../../../flutter/fml/file.cc
 FILE: ../../../flutter/fml/file.h
 FILE: ../../../flutter/fml/file_unittest.cc
@@ -445,6 +475,9 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/Flutte
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/android/AndroidKeyProcessor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/android/FlutterActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/android/FlutterFragment.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/android/FlutterSurfaceView.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/android/FlutterTextureView.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/android/FlutterView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartExecutor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java
@@ -625,6 +658,8 @@ FILE: ../../../flutter/shell/platform/embedder/fixtures/a11y_main.dart
 FILE: ../../../flutter/shell/platform/embedder/fixtures/simple_main.dart
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.h
+FILE: ../../../flutter/shell/platform/embedder/vsync_waiter_embedder.cc
+FILE: ../../../flutter/shell/platform/embedder/vsync_waiter_embedder.h
 FILE: ../../../flutter/sky/packages/flutter_services/lib/empty.dart
 FILE: ../../../flutter/sky/tools/roll/patches/chromium/android_build.patch
 FILE: ../../../flutter/synchronization/pipeline.cc
@@ -984,4 +1019,4 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ====================================================================================================
-Total license count: 2
+Total license count: 3

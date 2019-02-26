@@ -204,6 +204,7 @@ typedef bool (*TextureFrameCallback)(void* /* user data */,
                                      size_t /* width */,
                                      size_t /* height */,
                                      FlutterOpenGLTexture* /* texture out */);
+typedef void (*VsyncCallback)(void* /* user data */, intptr_t /* baton */);
 
 typedef struct {
   // The size of this struct. Must be sizeof(FlutterOpenGLRendererConfig).
@@ -334,19 +335,19 @@ typedef struct {
   // The set of semantics actions applicable to this node.
   FlutterSemanticsAction actions;
   // The position at which the text selection originates.
-  int32_t textSelectionBase;
+  int32_t text_selection_base;
   // The position at which the text selection terminates.
-  int32_t textSelectionExtent;
+  int32_t text_selection_extent;
   // The total number of scrollable children that contribute to semantics.
-  int32_t scrollChildren;
+  int32_t scroll_child_count;
   // The index of the first visible semantic child of a scroll node.
-  int32_t scrollIndex;
+  int32_t scroll_index;
   // The current scrolling position in logical pixels if the node is scrollable.
-  double scrollPosition;
+  double scroll_position;
   // The maximum in-range value for |scrollPosition| if the node is scrollable.
-  double scrollExtentMax;
+  double scroll_extent_max;
   // The minimum in-range value for |scrollPosition| if the node is scrollable.
-  double scrollExtentMin;
+  double scroll_extent_min;
   // The elevation along the z-axis at which the rect of this semantics node is
   // located above its parent.
   double elevation;
@@ -360,13 +361,13 @@ typedef struct {
   const char* value;
   // A value that |value| will have after a kFlutterSemanticsActionIncrease|
   // action has been performed.
-  const char* increasedValue;
+  const char* increased_value;
   // A value that |value| will have after a kFlutterSemanticsActionDecrease|
   // action has been performed.
-  const char* decreasedValue;
+  const char* decreased_value;
   // The reading direction for |label|, |value|, |hint|, |increasedValue|, and
   // |decreasedValue|.
-  FlutterTextDirection textDirection;
+  FlutterTextDirection text_direction;
   // The bounding box for this node in its coordinate system.
   FlutterRect rect;
   // The transform from this node's coordinate system to its parent's coordinate
@@ -505,6 +506,18 @@ typedef struct {
   // |FlutterEngineRun| call is made.
   FlutterUpdateSemanticsCustomActionCallback
       update_semantics_custom_action_callback;
+  // Path to a directory used to store data that is cached across runs of a
+  // Flutter application (such as compiled shader programs used by Skia).
+  // This is optional.  The string must be NULL terminated.
+  const char* persistent_cache_path;
+  // A callback that gets invoked by the engine when it attempts to wait for
+  // a platform vsync event. The engine will give the platform a baton that
+  // needs to be returned back to the engine via |FlutterEngineOnVsync|. All
+  // vsync operations must occur on the thread that made the call to
+  // |FlutterEngineRun|. All batons must be retured to the engine before
+  // initializing a |FlutterEngineShutdown|. Not doing the same will result in a
+  // memory leak.
+  VsyncCallback vsync_callback;
 } FlutterProjectArgs;
 
 FLUTTER_EXPORT
@@ -591,6 +604,36 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     FlutterSemanticsAction action,
     const uint8_t* data,
     size_t data_length);
+
+// Notify the engine that a vsync event occured. A baton passed to the platform
+// via the vsync callback must be returned.
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
+                                         intptr_t baton,
+                                         uint64_t frame_start_time_nanos,
+                                         uint64_t frame_target_time_nanos);
+
+// A profiling utility. Logs a trace duration begin event to the timeline. If
+// the timeline is unavailable or disabled, this has no effect. Must be
+// balanced with an duration end event (via
+// |FlutterEngineTraceEventDurationEnd|) with the same name on the same thread.
+// Can be called on any thread.
+FLUTTER_EXPORT
+void FlutterEngineTraceEventDurationBegin(const char* name);
+
+// A profiling utility. Logs a trace duration end event to the timeline. If
+// the timeline is unavailable or disabled, this has no effect. This call must
+// be preceeded by a trace duration begin call (via
+// |FlutterEngineTraceEventDurationBegin|) with the same name on the same
+// thread. Can be called on any thread.
+FLUTTER_EXPORT
+void FlutterEngineTraceEventDurationEnd(const char* name);
+
+// A profiling utility. Logs a trace duration instant event to the timeline. If
+// the timeline is unavailable or disabled, this has no effect. Can be called
+// on any thread.
+FLUTTER_EXPORT
+void FlutterEngineTraceEventInstant(const char* name);
 
 #if defined(__cplusplus)
 }  // extern "C"

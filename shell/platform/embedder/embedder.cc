@@ -24,6 +24,8 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/paths.h"
+#include "flutter/fml/trace_event.h"
+#include "flutter/shell/common/persistent_cache.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -327,6 +329,12 @@ FlutterEngineResult FlutterEngineRun(size_t version,
     icu_data_path = SAFE_ACCESS(args, icu_data_path, nullptr);
   }
 
+  if (SAFE_ACCESS(args, persistent_cache_path, nullptr) != nullptr) {
+    std::string persistent_cache_path =
+        SAFE_ACCESS(args, persistent_cache_path, nullptr);
+    shell::PersistentCache::SetCacheDirectoryPath(persistent_cache_path);
+  }
+
   fml::CommandLine command_line;
   if (SAFE_ACCESS(args, command_line_argc, 0) != 0 &&
       SAFE_ACCESS(args, command_line_argv, nullptr) != nullptr) {
@@ -470,9 +478,18 @@ FlutterEngineResult FlutterEngineRun(size_t version,
         };
   }
 
+  shell::VsyncWaiterEmbedder::VsyncCallback vsync_callback = nullptr;
+  if (SAFE_ACCESS(args, vsync_callback, nullptr) != nullptr) {
+    vsync_callback = [ptr = args->vsync_callback, user_data](intptr_t baton) {
+      return ptr(user_data, baton);
+    };
+  }
+
   shell::PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table = {
-      update_semantics_nodes_callback, update_semantics_custom_actions_callback,
-      platform_message_response_callback,  // platform_message_response_callback
+      update_semantics_nodes_callback,           //
+      update_semantics_custom_actions_callback,  //
+      platform_message_response_callback,        //
+      vsync_callback,                            //
   };
 
   auto on_create_platform_view = InferPlatformViewCreationCallback(
@@ -800,4 +817,38 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     return kInternalInconsistency;
   }
   return kSuccess;
+}
+
+FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
+                                         intptr_t baton,
+                                         uint64_t frame_start_time_nanos,
+                                         uint64_t frame_target_time_nanos) {
+  if (engine == nullptr) {
+    return kInvalidArguments;
+  }
+
+  auto start_time = fml::TimePoint::FromEpochDelta(
+      fml::TimeDelta::FromNanoseconds(frame_start_time_nanos));
+
+  auto target_time = fml::TimePoint::FromEpochDelta(
+      fml::TimeDelta::FromNanoseconds(frame_target_time_nanos));
+
+  if (!reinterpret_cast<shell::EmbedderEngine*>(engine)->OnVsyncEvent(
+          baton, start_time, target_time)) {
+    return kInternalInconsistency;
+  }
+
+  return kSuccess;
+}
+
+void FlutterEngineTraceEventDurationBegin(const char* name) {
+  fml::tracing::TraceEvent0("flutter", name);
+}
+
+void FlutterEngineTraceEventDurationEnd(const char* name) {
+  fml::tracing::TraceEventEnd(name);
+}
+
+void FlutterEngineTraceEventInstant(const char* name) {
+  fml::tracing::TraceEventInstant0("flutter", name);
 }
