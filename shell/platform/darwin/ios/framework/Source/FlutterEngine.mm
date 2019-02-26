@@ -254,6 +254,7 @@
       binaryMessenger:self
                 codec:[FlutterStringCodec sharedInstance]]);
   [_lifecycleChannel.get() setMessageHandler:^(id message, FlutterReply reply) {
+    [_lifecycleChannel.get() sendCurrentState];
     [self onLifecycleMessage:(NSString*)message reply:reply];
   }];
 
