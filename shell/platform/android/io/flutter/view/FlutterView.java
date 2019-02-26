@@ -42,6 +42,7 @@ import io.flutter.plugin.common.*;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
@@ -183,7 +184,7 @@ public class FlutterView extends SurfaceView
         androidKeyProcessor = new AndroidKeyProcessor(keyEventChannel, mTextInputPlugin);
 
         // Send initial platform information to Dart
-        sendLocalesToDart(getResources().getConfiguration());
+        setLocales(getResources().getConfiguration());
         sendUserPlatformSettingsToDart();
     }
 
@@ -311,27 +312,42 @@ public class FlutterView extends SurfaceView
             .send();
     }
 
-    private void sendLocalesToDart(Configuration config) {
-        List<Locale> locales = new ArrayList<>();
-        if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            LocaleList localeList = config.getLocales();
-            int localeCount = localeList.size();
-            for (int index = 0; index < localeCount; ++index) {
-                Locale locale = localeList.get(index);
-                locales.add(locale);
+    private void setLocales(Configuration config) {
+        if (Build.VERSION.SDK_INT >= 24) {
+            try {
+                // Passes the full list of locales for android API >= 24 with reflection.
+                Object localeList = config.getClass().getDeclaredMethod("getLocales").invoke(config);
+                Method localeListGet = localeList.getClass().getDeclaredMethod("get", int.class);
+                Method localeListSize = localeList.getClass().getDeclaredMethod("size");
+                int localeCount = (int)localeListSize.invoke(localeList);
+                List<String> data = new ArrayList<>();
+                for (int index = 0; index < localeCount; ++index) {
+                    Locale locale = (Locale)localeListGet.invoke(localeList, index);
+                    data.add(locale.getLanguage());
+                    data.add(locale.getCountry());
+                    data.add(locale.getScript());
+                    data.add(locale.getVariant());
+                }
+                localizationChannel.sendLocales(data);
+                return;
+            } catch (Exception exception) {
+                // Any exception is a failure. Resort to fallback of sending only one locale.
             }
-        } else {
-            locales.add(config.locale);
         }
-        localizationChannel.sendLocales(locales);
+        // Fallback single locale passing for android API < 24. Should work always.
+        @SuppressWarnings("deprecation")
+        Locale locale = config.locale;
+        // getScript() is gated because it is added in API 21.
+        localizationChannel.sendLocales(Arrays.asList(locale.getLanguage(), locale.getCountry(), Build.VERSION.SDK_INT >= 21 ? locale.getScript() : "", locale.getVariant()));
     }
 
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        sendLocalesToDart(newConfig);
+        setLocales(newConfig);
         sendUserPlatformSettingsToDart();
     }
+
 
     float getDevicePixelRatio() {
         return mMetrics.devicePixelRatio;
