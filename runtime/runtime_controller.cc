@@ -4,7 +4,6 @@
 
 #include "flutter/runtime/runtime_controller.h"
 
-#include "flutter/fml/logging.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
@@ -185,24 +184,6 @@ bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
   }
 
   return false;
-}
-
-bool RuntimeController::SetLifecycleState(const std::string& state) {
-  window_data_.latest_lifecycle_state = state;
-
-  if (auto* window = GetWindowIfAvailable()) {
-    window->UpdateLifecycleState(window_data_.latest_lifecycle_state);
-    return true;
-  }
-
-  return false;
-}
-
-bool RuntimeController::SetLifecycleMessage(
-    fml::RefPtr<PlatformMessage> message) {
-  window_data_.latest_lifecycle_message = &message;
-
-  return DispatchPlatformMessage(*window_data_.latest_lifecycle_message);
 }
 
 bool RuntimeController::BeginFrame(fml::TimePoint frame_time) {

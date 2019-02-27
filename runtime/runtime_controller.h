@@ -53,10 +53,6 @@ class RuntimeController final : public WindowClient {
 
   bool SetAccessibilityFeatures(int32_t flags);
 
-  bool SetLifecycleState(const std::string& state);
-
-  bool SetLifecycleMessage(fml::RefPtr<PlatformMessage> message);
-
   bool BeginFrame(fml::TimePoint frame_time);
 
   bool NotifyIdle(int64_t deadline);
@@ -118,8 +114,6 @@ class RuntimeController final : public WindowClient {
     bool semantics_enabled = false;
     bool assistive_technology_enabled = false;
     int32_t accessibility_feature_flags_ = 0;
-    std::string latest_lifecycle_state;
-    fml::RefPtr<PlatformMessage>* latest_lifecycle_message;
   };
 
   RuntimeDelegate& client_;

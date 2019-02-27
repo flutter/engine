@@ -4,7 +4,6 @@
 
 #include "flutter/lib/ui/window/window.h"
 
-#include "flutter/fml/logging.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_message_response_dart.h"
@@ -87,6 +86,7 @@ Dart_Handle SendPlatformMessage(Dart_Handle window,
                                 Dart_Handle callback,
                                 const tonic::DartByteData& data) {
   UIDartState* dart_state = UIDartState::Current();
+
   if (!dart_state->window()) {
     // Must release the TypedData buffer before allocating other Dart objects.
     data.Release();
@@ -236,19 +236,6 @@ void Window::UpdateAccessibilityFeatures(int32_t values) {
   tonic::LogIfError(tonic::DartInvokeField(library_.value(),
                                            "_updateAccessibilityFeatures",
                                            {tonic::ToDart(values)}));
-}
-
-void Window::UpdateLifecycleState(const std::string& data) {
-  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
-    return;
-  tonic::DartState::Scope scope(dart_state);
-
-  tonic::LogIfError(tonic::DartInvokeField(library_.value(),
-                                           "_updateLifecycleState",
-                                           {
-                                               tonic::StdStringToDart(data),
-                                           }));
 }
 
 void Window::DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message) {

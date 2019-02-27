@@ -11,7 +11,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.view.Surface;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
