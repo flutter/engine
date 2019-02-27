@@ -1278,8 +1278,9 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
         if (text_length > start) {
           text_length = start;
         }
-        if (gp.code_units.start >= (start - text_length) &&
-            gp.code_units.end <= end) {
+        if ((gp.code_units.start >= start && gp.code_units.end <= end) ||
+            (gp.code_units.start >= (start - text_length) &&
+             gp.code_units.end == end)) {
           left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
           right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
         }
