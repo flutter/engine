@@ -16,6 +16,8 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.view.FlutterMain;
 
+import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
+
 /**
  * {@code Fragment} which displays a Flutter UI that takes up all available {@code Fragment} space.
  * <p>
@@ -206,5 +208,103 @@ public class FlutterFragment extends Fragment {
    */
   protected void onFlutterEngineCreated(@NonNull FlutterEngine flutterEngine) {
     // no-op
+  }
+
+  public void onPostResume() {
+    Log.d(TAG, "onPostResume()");
+    // TODO(mattcarroll): call through to FlutterView
+    // TODO(mattcarroll): call through to FlutterEngine
+  }
+
+  /**
+   * The hardware back button was pressed.
+   *
+   * See {@link Activity#onBackPressed()}
+   */
+  public void onBackPressed() {
+    Log.d(TAG, "onBackPressed()");
+    // TODO(mattcarroll): call through to FlutterEngine.
+  }
+
+  /**
+   * The result of a permission request has been received.
+   *
+   * See {@link Activity#onRequestPermissionsResult(int, String[], int[])}
+   *
+   * @param requestCode identifier passed with the initial permission request
+   * @param permissions permissions that were requested
+   * @param grantResults permission grants or denials
+   */
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    flutterEngine.getPluginRegistry().onRequestPermissionsResult(requestCode, permissions, grantResults);
+  }
+
+  /**
+   * A new Intent was received by the {@link Activity} that currently owns this {@link Fragment}.
+   *
+   * See {@link Activity#onNewIntent(Intent)}
+   *
+   * @param intent new Intent
+   */
+  public void onNewIntent(@NonNull Intent intent) {
+    flutterEngine.getPluginRegistry().onNewIntent(intent);
+  }
+
+  /**
+   * A result has been returned after an invocation of {@link Fragment#startActivityForResult(Intent, int)}.
+   *
+   * @param requestCode request code sent with {@link Fragment#startActivityForResult(Intent, int)}
+   * @param resultCode code representing the result of the {@code Activity} that was launched
+   * @param data any corresponding return data, held within an {@code Intent}
+   */
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    flutterEngine.getPluginRegistry().onActivityResult(requestCode, resultCode, data);
+  }
+
+  /**
+   * The {@link Activity} that owns this {@link Fragment} is about to go to the background
+   * as the result of a user's choice/action, i.e., not as the result of an OS decision.
+   *
+   * See {@link Activity#onUserLeaveHint()}
+   */
+  public void onUserLeaveHint() {
+    flutterEngine.getPluginRegistry().onUserLeaveHint();
+  }
+
+  /**
+   * Callback invoked when memory is low.
+   *
+   * This implementation forwards a memory pressure warning to the running Flutter app.
+   *
+   * @param level level
+   */
+  public void onTrimMemory(int level) {
+    // Use a trim level delivered while the application is running so the
+    // framework has a chance to react to the notification.
+    if (level == TRIM_MEMORY_RUNNING_LOW) {
+      // TODO(mattcarroll): call through to FlutterEngine.
+    }
+  }
+
+  /**
+   * Callback invoked when memory is low.
+   *
+   * This implementation forwards a memory pressure warning to the running Flutter app.
+   */
+  @Override
+  public void onLowMemory() {
+    super.onLowMemory();
+    // TODO(mattcarroll): call through to FlutterEngine.
+  }
+
+  /**
+   * The {@link FlutterEngine} that backs the Flutter content presented by this {@code Fragment}.
+   *
+   * @return the {@link FlutterEngine} held by this {@code Fragment}
+   */
+  @Nullable
+  public FlutterEngine getFlutterEngine() {
+    return flutterEngine;
   }
 }
