@@ -71,6 +71,9 @@ shared_library("flutter_shell_native") {
   } else {
     deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
   }
+  if (flutter_runtime_mode == "debug") {
+    deps += [ "$flutter_root/lib/snapshot" ]
+  }
 
   public_configs = [ "$flutter_root:config" ]
 
@@ -108,7 +111,13 @@ java_library("flutter_shell_java") {
     "io/flutter/app/FlutterPluginRegistry.java",
     "io/flutter/embedding/engine/FlutterEngine.java",
     "io/flutter/embedding/engine/FlutterJNI.java",
+    "io/flutter/embedding/engine/FlutterShellArgs.java",
     "io/flutter/embedding/engine/android/AndroidKeyProcessor.java",
+    "io/flutter/embedding/engine/android/FlutterActivity.java",
+    "io/flutter/embedding/engine/android/FlutterFragment.java",
+    "io/flutter/embedding/engine/android/FlutterSurfaceView.java",
+    "io/flutter/embedding/engine/android/FlutterTextureView.java",
+    "io/flutter/embedding/engine/android/FlutterView.java",
     "io/flutter/embedding/engine/dart/DartExecutor.java",
     "io/flutter/embedding/engine/dart/DartMessenger.java",
     "io/flutter/embedding/engine/dart/PlatformMessageHandler.java",
@@ -166,6 +175,10 @@ java_library("flutter_shell_java") {
     "io/flutter/view/ResourceUpdater.java",
     "io/flutter/view/TextureRegistry.java",
     "io/flutter/view/VsyncWaiter.java",
+  ]
+
+  java_files += [
+    "$flutter_root/third_party/bsdiff/io/flutter/util/BSDiff.java",
   ]
 
   deps = [
