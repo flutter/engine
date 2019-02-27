@@ -1,0 +1,134 @@
+# Copyright 2019 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+_dart_sdk_libraries = [
+    "_chrome",
+    "async",
+    "core",
+    "html",
+    "isolate",
+    "math",
+    "typed_data",
+    "_http",
+    "cli",
+    #"dev_compiler",
+    "indexed_db",
+    "js",
+    "mirrors",
+    "web_audio",
+    #"_internal", Manually copy certain files from internal to avoid collisions.
+    "collection",
+    "developer",
+    "internal",
+    "js_util",
+    "profiler",
+    "web_gl",
+    "convert",
+    "ffi",
+    "io",
+    "svg",
+    "web_sql",
+]
+
+_dart_sdk_internal_libraries = [
+  #  "js_runtime",
+   # "sdk_library_metadata",
+]
+
+foreach(library, _dart_sdk_libraries) {
+  copy("copy_flutter_${library}") {
+    deps = [
+        "//third_party/dart:create_sdk"
+    ]
+    sources = exec_script("//third_party/dart/tools/list_dart_files.py",
+                             [
+                               "absolute",
+                               rebase_path("//third_party/dart/sdk/lib/${library}/"),
+                             ],
+                             "list lines")
+
+    outputs = [
+      "$root_out_dir/flutter_patched_sdk/lib/${library}/{{source_file_part}}",
+    ]
+  }
+}
+
+
+copy("web_engine") {
+  sources = [
+    "$flutter_root/lib/stub_ui/compositing.dart",
+    "$flutter_root/lib/stub_ui/geometry.dart",
+    "$flutter_root/lib/stub_ui/hash_codes.dart",
+    "$flutter_root/lib/stub_ui/hooks.dart",
+    "$flutter_root/lib/stub_ui/isolate_name_server.dart",
+    "$flutter_root/lib/stub_ui/lerp.dart",
+    "$flutter_root/lib/stub_ui/natives.dart",
+    "$flutter_root/lib/stub_ui/painting.dart",
+    "$flutter_root/lib/stub_ui/plugins.dart",
+    "$flutter_root/lib/stub_ui/pointer.dart",
+    "$flutter_root/lib/stub_ui/semantics.dart",
+    "$flutter_root/lib/stub_ui/text.dart",
+    "$flutter_root/lib/stub_ui/ui.dart",
+    "$flutter_root/lib/stub_ui/versions.dart",
+    "$flutter_root/lib/stub_ui/window.dart",
+  ]
+
+
+  sdk_copy_deps = []
+  foreach(library, _dart_sdk_libraries) {
+    sdk_copy_deps += [ ":copy_flutter_${library}" ]
+  }
+  foreach(library, _dart_sdk_internal_libraries) {
+    sdk_copy_deps += [ ":copy_flutter_${library}" ]
+  }
+
+  deps = [
+    ":web_libraries_json",
+    ":web_libraries_dart",
+    ":dart_sdk_internal",
+  ] + sdk_copy_deps
+
+  outputs = [
+    "$root_out_dir/flutter_patched_sdk/lib/ui/{{source_file_part}}"
+  ]
+}
+
+copy("web_libraries_json") {
+  sources = [
+    "libraries.json"
+  ]
+
+  outputs = [
+    "$root_out_dir/flutter_patched_sdk/lib/libraries.json"
+  ]
+}
+
+copy("web_libraries_dart") {
+  sources = [
+    "libraries.dart"
+  ]
+
+  outputs = [
+    "$root_out_dir/flutter_patched_sdk/lib/_internal/libraries.dart"
+  ]
+}
+
+copy("dart_sdk_internal") {
+    deps = [
+        "//third_party/dart:create_sdk"
+    ]
+
+    sources = [
+        "$root_out_dir/dart-sdk/lib/_internal/ddc_sdk.dill",
+        "$root_out_dir/dart-sdk/lib/_internal/dart2js_platform.dill",
+        "$root_out_dir/dart-sdk/lib/_internal/dart2js_server_platform.dill",
+        "$root_out_dir/dart-sdk/lib/_internal/ddc_sdk.sum",
+        "$root_out_dir/dart-sdk/lib/_internal/strong.sum",
+        "$root_out_dir/dart-sdk/lib/_internal/vm_platform_strong.dill",
+    ]
+
+    outputs = [
+        "$root_out_dir/flutter_patched_sdk/lib/_internal/{{source_file_part}}"
+    ]
+}
