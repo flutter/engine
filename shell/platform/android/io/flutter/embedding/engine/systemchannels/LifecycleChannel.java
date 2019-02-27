@@ -21,6 +21,9 @@ public class LifecycleChannel {
   @NonNull
   public final BasicMessageChannel<String> channel;
 
+  /**
+   * Cache the current state so that any queries for it may access it.
+   */
   private AppLifecycleState state = AppLifecycleState.INACTIVE;
 
   public LifecycleChannel(@NonNull DartExecutor dartExecutor) {
@@ -69,14 +72,13 @@ public class LifecycleChannel {
     }
 
     /**
-     * Replies to all messages on this channel with the current lifecycle state.
+     * Replies to all messages on this channel with the current lifecycle state. Also sends the
+     * the current lifecycle state through the event channels.
      */
     @Override
     public void onMessage(String message, BasicMessageChannel.Reply<String> reply) {
-      if (message.equals("query AppLifecycleState")) {
-        channel.sendCurrentState();
-        reply.reply(LifecycleChannel.lifecycleStateToString(channel.getCurrentState()));
-      }
+      channel.sendCurrentState();
+      reply.reply(LifecycleChannel.lifecycleStateToString(channel.getCurrentState()));
     }
   }
 }
