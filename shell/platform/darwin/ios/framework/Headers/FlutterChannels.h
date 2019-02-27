@@ -392,6 +392,16 @@ typedef enum AppLifecycleState {
 
 - (void)sendCurrentState;
 
+// *
+//  * Registers a message handler with this channel.
+//  *
+//  * Replaces any existing handler. Use a `nil` handler for unregistering the
+//  * existing handler.
+//  *
+//  * @param handler The message handler.
+ 
+// - (void)setMessageHandler:(FlutterMessageHandler _Nullable)handler;
+
 @end
 
 

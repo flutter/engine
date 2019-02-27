@@ -66,7 +66,9 @@
       callback([_codec encode:reply]);
     });
   };
+  NSLog(@"HELLO1");
   [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
+  NSLog(@"HELLO2");
 }
 @end
 
@@ -345,5 +347,19 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
 - (void)sendCurrentState {
   [self sendMessage:[[self class] lifecycleStateToString:state]];
 }
+
+// - (void)setMessageHandler:(FlutterMessageHandler)handler {
+//   // [self setMessageHandler:handler];
+//   // if (!handler) {
+//   //   [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
+//   //   return;
+//   // }
+//   // FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
+//   //   handler([_codec decode:message], ^(id reply) {
+//   //     callback([_codec encode:reply]);
+//   //   });
+//   // };
+//   // [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
+// }
 
 @end

@@ -217,6 +217,7 @@
 - (void)onLifecycleMessage:(NSString*)message reply:(FlutterReply)reply {
   if ([message isEqual:@"query AppLifecycleState"]) {
     [_lifecycleChannel.get() sendCurrentState];
+    reply(@"TESTING");
   }
 }
 
@@ -253,10 +254,6 @@
          initWithName:@"flutter/lifecycle"
       binaryMessenger:self
                 codec:[FlutterStringCodec sharedInstance]]);
-  [_lifecycleChannel.get() setMessageHandler:^(id message, FlutterReply reply) {
-    [_lifecycleChannel.get() sendCurrentState];
-    [self onLifecycleMessage:(NSString*)message reply:reply];
-  }];
 
   _systemChannel.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/system"
@@ -272,6 +269,17 @@
   _textInputPlugin.get().textInputDelegate = self;
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
+
+  if (_shell != nullptr) {
+    FML_DLOG(ERROR) << "About to init lifecycleChannel";
+    [_lifecycleChannel.get() setMessageHandler:^(id message, FlutterReply reply) {
+      // [_lifecycleChannel.get() sendCurrentState];
+      NSLog(@"HANDLING MESSAGE!!!");
+      [self onLifecycleMessage:(NSString*)message reply:reply];
+    }];
+    FML_DLOG(ERROR) << "Finished init lifecycleChannel";
+
+  }
 }
 
 - (void)maybeSetupPlatformViewChannels {
@@ -398,6 +406,12 @@
                    << entrypoint.UTF8String;
   } else {
     [self setupChannels];
+    // FML_DLOG(ERROR) << "About to init lifecycleChannel";
+    // [_lifecycleChannel.get() setMessageHandler:^(id message, FlutterReply reply) {
+    //   // [_lifecycleChannel.get() sendCurrentState];
+    //   // [self onLifecycleMessage:(NSString*)message reply:reply];
+    // }];
+    // FML_DLOG(ERROR) << "Finished init lifecycleChannel";
     if (!_platformViewsController) {
       _platformViewsController.reset(new shell::FlutterPlatformViewsController());
     }
@@ -526,8 +540,12 @@
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
+  // NSLog(@"Engine");
+  // NSLog(_shell == nullptr ? @"null" : @"SHELL EXISTS");
+  // NSLog(_shell->IsSetup() ? @"setup" : @"notsetup");
   NSAssert(channel, @"The channel must not be null");
   FML_DCHECK(_shell && _shell->IsSetup());
+  // NSLog(@"EngineFinished");
   self.iosPlatformView->GetPlatformMessageRouter().SetMessageHandler(channel.UTF8String, handler);
 }
 

@@ -950,6 +950,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
               binaryMessageHandler:(FlutterBinaryMessageHandler)handler {
+    NSLog(@"ViewCon");
   NSAssert(channel, @"The channel must not be null");
   [_engine.get() setMessageHandlerOnChannel:channel binaryMessageHandler:handler];
 }
