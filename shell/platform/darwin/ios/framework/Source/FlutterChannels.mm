@@ -66,9 +66,7 @@
       callback([_codec encode:reply]);
     });
   };
-  NSLog(@"HELLO1");
   [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
-  NSLog(@"HELLO2");
 }
 @end
 

@@ -475,7 +475,6 @@ static void CommonInit(FLEViewController* controller) {
 
 - (void)setMessageHandlerOnChannel:(nonnull NSString*)channel
               binaryMessageHandler:(nullable FlutterBinaryMessageHandler)handler {
-    NSLog(@"FLEView");
   _messageHandlers[channel] = [handler copy];
 }
 
