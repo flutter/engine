@@ -1674,7 +1674,7 @@ TEST_F(ParagraphTest,
 }
 
 TEST_F(ParagraphTest, GetRectsForRangeIncludeCombiningCharacter) {
-  const char* text = "สวัสดีชาวโลกที่น่ารัก";
+  const char* text = "ดีสวัสดีชาวโลกที่น่ารัก";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
   std::u16string u16_text(icu_text.getBuffer(),
                           icu_text.getBuffer() + icu_text.length());
@@ -1711,40 +1711,51 @@ TEST_F(ParagraphTest, GetRectsForRangeIncludeCombiningCharacter) {
       paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
   EXPECT_EQ(boxes.size(), 0ull);
 
+  // Case when the sentence starts with a combining character
+  // We should get 0 box for ด because it's already been combined to ดี
   boxes =
       paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
-  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_EQ(boxes.size(), 0ull);
 
-  // Case when combined 2 characters
-  // We should get 0 box for ว because it's already been combined to วั
   boxes =
       paragraph->GetRectsForRange(1, 2, rect_height_style, rect_width_style);
-  EXPECT_EQ(boxes.size(), 0ull);
-
-  boxes =
-      paragraph->GetRectsForRange(2, 3, rect_height_style, rect_width_style);
   EXPECT_EQ(boxes.size(), 1ull);
 
   boxes =
-      paragraph->GetRectsForRange(1, 3, rect_height_style, rect_width_style);
+      paragraph->GetRectsForRange(0, 2, rect_height_style, rect_width_style);
   EXPECT_EQ(boxes.size(), 1ull);
 
-  // Case when combined 3 characters
-  // We should get 0 box for ท and ที because it's already been combined to ที่
+  // Case when the sentence contains a combining character
+  // We should get 0 box for ว because it's already been combined to วั
   boxes =
-      paragraph->GetRectsForRange(12, 13, rect_height_style, rect_width_style);
+      paragraph->GetRectsForRange(3, 4, rect_height_style, rect_width_style);
   EXPECT_EQ(boxes.size(), 0ull);
 
   boxes =
-      paragraph->GetRectsForRange(13, 14, rect_height_style, rect_width_style);
-  EXPECT_EQ(boxes.size(), 0ull);
+      paragraph->GetRectsForRange(4, 5, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 1ull);
 
+  boxes =
+      paragraph->GetRectsForRange(3, 5, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 1ull);
+
+  // Case when the sentence contains a combining character that contain 3
+  // characters We should get 0 box for ท and ที because it's already been
+  // combined to ที่
   boxes =
       paragraph->GetRectsForRange(14, 15, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(15, 16, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(16, 17, rect_height_style, rect_width_style);
   EXPECT_EQ(boxes.size(), 1ull);
 
   boxes =
-      paragraph->GetRectsForRange(12, 15, rect_height_style, rect_width_style);
+      paragraph->GetRectsForRange(14, 17, rect_height_style, rect_width_style);
   EXPECT_EQ(boxes.size(), 1ull);
 }
 
