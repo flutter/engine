@@ -375,6 +375,10 @@ FLUTTER_EXPORT
 @end
 
 
+/**
+ * A channel that handles lifecycle events as well as a query system that allows
+ * requests from Dart to send the current lifecycle state.
+ */
 FLUTTER_EXPORT
 @interface FlutterLifecycleChannel : FlutterBasicMessageChannel
 
@@ -384,25 +388,37 @@ typedef enum AppLifecycleState {
   paused
 } AppLifecycleState;
 
+/**
+ * Converts an AppLifecycleState enum into a string.
+ *
+ * @param state The state to convert.
+ */
 + (NSString*)lifecycleStateToString:(AppLifecycleState)state;
 
+/**
+ * Marks the app as inactive and sends the state to dart.
+ */
 - (void)appIsInactive;
+
+/**
+ * Marks the app as resumed and sends the state to dart.
+ */
 - (void)appIsResumed;
+
+/**
+ * Marks the app as paused and sends the state to dart.
+ */
 - (void)appIsPaused;
 
+/**
+ * Converts the state to a string and sends it to dart.
+ */
 - (void)sendCurrentState;
+
+/**
+ * Provides a string representation of the current state.
+ */
 - (NSString*)getCurrentState;
-
-// *
-//  * Registers a message handler with this channel.
-//  *
-//  * Replaces any existing handler. Use a `nil` handler for unregistering the
-//  * existing handler.
-//  *
-//  * @param handler The message handler.
- 
-// - (void)setMessageHandler:(FlutterMessageHandler _Nullable)handler;
-
 @end
 
 
