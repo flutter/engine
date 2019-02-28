@@ -1248,7 +1248,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
   // Lines that are actually in the requested range.
   size_t max_line = 0;
   size_t min_line = INT_MAX;
-  size_t text_length_diff = 0;
+  size_t glyph_length = 0;
 
   // Generate initial boxes and calculate metrics.
   for (const CodeUnitRun& run : code_unit_runs_) {
@@ -1274,15 +1274,18 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
       left = SK_ScalarMax;
       right = SK_ScalarMin;
       for (const GlyphPosition& gp : run.positions) {
-        text_length_diff = (gp.code_units.end - gp.code_units.start) - 1;
-        if (text_length_diff > start) {
-          text_length_diff = start;
-        }
-        if ((gp.code_units.start >= start && gp.code_units.end <= end) ||
-            (gp.code_units.start >= (start - text_length_diff) &&
-             gp.code_units.end == end)) {
+        if ((gp.code_units.start >= start && gp.code_units.end <= end)) {
           left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
           right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
+        } else if (gp.code_units.end == end) {
+          // Calculate left and right when we are at
+          // the last position of a combining character.
+          glyph_length = (gp.code_units.end - gp.code_units.start) - 1;
+          if (gp.code_units.start ==
+              std::max<size_t>(0, (start - glyph_length))) {
+            left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
+            right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
+          }
         }
       }
       if (left == SK_ScalarMax || right == SK_ScalarMin)
