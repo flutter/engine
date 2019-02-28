@@ -348,18 +348,7 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
   [self sendMessage:[[self class] lifecycleStateToString:state]];
 }
 
-// - (void)setMessageHandler:(FlutterMessageHandler)handler {
-//   // [self setMessageHandler:handler];
-//   // if (!handler) {
-//   //   [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:nil];
-//   //   return;
-//   // }
-//   // FlutterBinaryMessageHandler messageHandler = ^(NSData* message, FlutterBinaryReply callback) {
-//   //   handler([_codec decode:message], ^(id reply) {
-//   //     callback([_codec encode:reply]);
-//   //   });
-//   // };
-//   // [_messenger setMessageHandlerOnChannel:_name binaryMessageHandler:messageHandler];
-// }
-
+- (NSString*)getCurrentState {
+  return [[self class] lifecycleStateToString:state];
+}
 @end

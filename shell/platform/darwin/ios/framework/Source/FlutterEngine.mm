@@ -215,10 +215,8 @@
 }
 
 - (void)onLifecycleMessage:(NSString*)message reply:(FlutterReply)reply {
-  if ([message isEqual:@"query AppLifecycleState"]) {
-    [_lifecycleChannel.get() sendCurrentState];
-    reply(@"TESTING");
-  }
+  [_lifecycleChannel.get() sendCurrentState];
+  reply([_lifecycleChannel.get() getCurrentState]);
 }
 
 // If you add a channel, be sure to also update `resetChannels`.

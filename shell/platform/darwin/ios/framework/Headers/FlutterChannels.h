@@ -391,6 +391,7 @@ typedef enum AppLifecycleState {
 - (void)appIsPaused;
 
 - (void)sendCurrentState;
+- (NSString*)getCurrentState;
 
 // *
 //  * Registers a message handler with this channel.
