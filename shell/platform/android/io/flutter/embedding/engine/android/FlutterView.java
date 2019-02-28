@@ -19,6 +19,8 @@ import android.view.MotionEvent;
 import android.view.WindowInsets;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethod;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
 import java.util.ArrayList;
@@ -336,6 +338,11 @@ public class FlutterView extends FrameLayout {
         textInputPlugin
     );
 
+    // Inform the Android framework that it should retrieve a new InputConnection
+    // now that an engine is attached.
+    // TODO(mattcarroll): once this is proven to work, move this line ot TextInputPlugin
+    textInputPlugin.getInputMethodManager().restartInput(this);
+
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();
     sendLocalesToFlutter(getResources().getConfiguration());
@@ -356,6 +363,12 @@ public class FlutterView extends FrameLayout {
       return;
     }
     Log.d(TAG, "Detaching from Flutter Engine");
+
+    // Inform the Android framework that it should retrieve a new InputConnection
+    // now that the engine is detached. The new InputConnection will be null, which
+    // signifies that this View does not process input (until a new engine is attached).
+    // TODO(mattcarroll): once this is proven to work, move this line ot TextInputPlugin
+    textInputPlugin.getInputMethodManager().restartInput(this);
 
     // Instruct our FlutterRenderer that we are no longer interested in being its RenderSurface.
     flutterEngine.getRenderer().detachFromRenderSurface();
