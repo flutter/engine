@@ -5,7 +5,6 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import android.support.annotation.NonNull;
-import android.util.*;
 
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.BasicMessageChannel;
