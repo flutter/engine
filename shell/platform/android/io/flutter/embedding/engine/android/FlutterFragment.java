@@ -160,6 +160,16 @@ public class FlutterFragment extends Fragment {
     setArguments(new Bundle());
   }
 
+  /**
+   * The {@link FlutterEngine} that backs the Flutter content presented by this {@code Fragment}.
+   *
+   * @return the {@link FlutterEngine} held by this {@code Fragment}
+   */
+  @Nullable
+  public FlutterEngine getFlutterEngine() {
+    return flutterEngine;
+  }
+
   @Override
   public void onAttach(Context context) {
     super.onAttach(context);
@@ -296,15 +306,5 @@ public class FlutterFragment extends Fragment {
   public void onLowMemory() {
     super.onLowMemory();
     // TODO(mattcarroll): call through to FlutterEngine.
-  }
-
-  /**
-   * The {@link FlutterEngine} that backs the Flutter content presented by this {@code Fragment}.
-   *
-   * @return the {@link FlutterEngine} held by this {@code Fragment}
-   */
-  @Nullable
-  public FlutterEngine getFlutterEngine() {
-    return flutterEngine;
   }
 }
