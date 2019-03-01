@@ -265,6 +265,7 @@ Int32List _encodeTextStyle(
   TextDecoration decoration,
   Color decorationColor,
   TextDecorationStyle decorationStyle,
+  double decorationThickness,
   FontWeight fontWeight,
   FontStyle fontStyle,
   TextBaseline textBaseline,
@@ -296,52 +297,55 @@ Int32List _encodeTextStyle(
     result[0] |= 1 << 4;
     result[4] = decorationStyle.index;
   }
-  if (fontWeight != null) {
+  if (decorationThickness != null) {
     result[0] |= 1 << 5;
+  }
+  if (fontWeight != null) {
+    result[0] |= 1 << 6;
     result[5] = fontWeight.index;
   }
   if (fontStyle != null) {
-    result[0] |= 1 << 6;
+    result[0] |= 1 << 7;
     result[6] = fontStyle.index;
   }
   if (textBaseline != null) {
-    result[0] |= 1 << 7;
+    result[0] |= 1 << 8;
     result[7] = textBaseline.index;
   }
   if (fontFamily != null || (fontFamilyFallback != null && fontFamilyFallback.isNotEmpty)) {
-    result[0] |= 1 << 8;
-    // Passed separately to native.
-  }
-  if (fontSize != null) {
     result[0] |= 1 << 9;
     // Passed separately to native.
   }
-  if (letterSpacing != null) {
+  if (fontSize != null) {
     result[0] |= 1 << 10;
     // Passed separately to native.
   }
-  if (wordSpacing != null) {
+  if (letterSpacing != null) {
     result[0] |= 1 << 11;
     // Passed separately to native.
   }
-  if (height != null) {
+  if (wordSpacing != null) {
     result[0] |= 1 << 12;
     // Passed separately to native.
   }
-  if (locale != null) {
+  if (height != null) {
     result[0] |= 1 << 13;
     // Passed separately to native.
   }
-  if (background != null) {
+  if (locale != null) {
     result[0] |= 1 << 14;
     // Passed separately to native.
   }
-  if (foreground != null) {
+  if (background != null) {
     result[0] |= 1 << 15;
     // Passed separately to native.
   }
-  if (shadows != null) {
+  if (foreground != null) {
     result[0] |= 1 << 16;
+    // Passed separately to native.
+  }
+  if (shadows != null) {
+    result[0] |= 1 << 17;
     // Passed separately to native.
   }
   return result;
@@ -379,6 +383,7 @@ class TextStyle {
     TextDecoration decoration,
     Color decorationColor,
     TextDecorationStyle decorationStyle,
+    double decorationThickness,
     FontWeight fontWeight,
     FontStyle fontStyle,
     TextBaseline textBaseline,
@@ -401,6 +406,7 @@ class TextStyle {
          decoration,
          decorationColor,
          decorationStyle,
+         decorationThickness,
          fontWeight,
          fontStyle,
          textBaseline,
@@ -421,6 +427,7 @@ class TextStyle {
        _letterSpacing = letterSpacing,
        _wordSpacing = wordSpacing,
        _height = height,
+       _decorationThickness = decorationThickness,
        _locale = locale,
        _background = background,
        _foreground = foreground,
@@ -433,6 +440,7 @@ class TextStyle {
   final double _letterSpacing;
   final double _wordSpacing;
   final double _height;
+  final double _decorationThickness;
   final Locale _locale;
   final Paint _background;
   final Paint _foreground;
@@ -450,6 +458,7 @@ class TextStyle {
         _letterSpacing != typedOther._letterSpacing ||
         _wordSpacing != typedOther._wordSpacing ||
         _height != typedOther._height ||
+        _decorationThickness != typedOther._decorationThickness ||
         _locale != typedOther._locale ||
         _background != typedOther._background ||
         _foreground != typedOther._foreground)
@@ -475,6 +484,7 @@ class TextStyle {
              'decoration: ${        _encoded[0] & 0x00004 == 0x00004  ? new TextDecoration._(_encoded[2])       : "unspecified"}, '
              'decorationColor: ${   _encoded[0] & 0x00008 == 0x00008  ? new Color(_encoded[3])                  : "unspecified"}, '
              'decorationStyle: ${   _encoded[0] & 0x00010 == 0x00010  ? TextDecorationStyle.values[_encoded[4]] : "unspecified"}, '
+             'decorationThickness:${_encoded[0] & 0x01000 == 0x01000  ? _decorationThickness                    : "unspecified"}, '
              'fontWeight: ${        _encoded[0] & 0x00020 == 0x00020  ? FontWeight.values[_encoded[5]]          : "unspecified"}, '
              'fontStyle: ${         _encoded[0] & 0x00040 == 0x00040  ? FontStyle.values[_encoded[6]]           : "unspecified"}, '
              'textBaseline: ${      _encoded[0] & 0x00080 == 0x00080  ? TextBaseline.values[_encoded[7]]        : "unspecified"}, '
@@ -1396,9 +1406,28 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
       if (style._strutStyle._fontFamilyFallback != null)
         strutFontFamilies.addAll(style._strutStyle._fontFamilyFallback);
     }
-    _constructor(style._encoded, style._strutStyle?._encoded, style._fontFamily, strutFontFamilies, style._fontSize, style._height, style._ellipsis, _encodeLocale(style._locale));
+    _constructor(
+      style._encoded,
+      style._strutStyle?._encoded,
+      style._fontFamily,
+      strutFontFamilies,
+      style._fontSize,
+      style._height,
+      style._ellipsis,
+      _encodeLocale(style._locale)
+    );
   }
-  void _constructor(Int32List encoded, ByteData strutData, String fontFamily, List<dynamic> strutFontFamily, double fontSize, double height, String ellipsis, String locale) native 'ParagraphBuilder_constructor';
+
+  void _constructor(
+    Int32List encoded,
+    ByteData strutData,
+    String fontFamily,
+    List<dynamic> strutFontFamily,
+    double fontSize,
+    double height,
+    String ellipsis,
+    String locale
+  ) native 'ParagraphBuilder_constructor';
 
   /// Applies the given style to the added text until [pop] is called.
   ///
@@ -1409,9 +1438,38 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
       fullFontFamilies.add(style._fontFamily);
     if (style._fontFamilyFallback != null)
       fullFontFamilies.addAll(style._fontFamilyFallback);
-    _pushStyle(style._encoded, fullFontFamilies, style._fontSize, style._letterSpacing, style._wordSpacing, style._height, _encodeLocale(style._locale), style._background?._objects, style._background?._data, style._foreground?._objects, style._foreground?._data, Shadow._encodeShadows(style._shadows));
+    _pushStyle(
+      style._encoded,
+      fullFontFamilies,
+      style._fontSize,
+      style._letterSpacing,
+      style._wordSpacing,
+      style._height,
+      style._decorationThickness,
+      _encodeLocale(style._locale),
+      style._background?._objects,
+      style._background?._data,
+      style._foreground?._objects,
+      style._foreground?._data,
+      Shadow._encodeShadows(style._shadows)
+    );
   }
-  void _pushStyle(Int32List encoded, List<dynamic> fontFamilies, double fontSize, double letterSpacing, double wordSpacing, double height, String locale, List<dynamic> backgroundObjects, ByteData backgroundData, List<dynamic> foregroundObjects, ByteData foregroundData, ByteData shadowsData) native 'ParagraphBuilder_pushStyle';
+
+  void _pushStyle(
+    Int32List encoded,
+    List<dynamic> fontFamilies,
+    double fontSize,
+    double letterSpacing,
+    double wordSpacing,
+    double height,
+    double decorationThickness,
+    String locale,
+    List<dynamic> backgroundObjects,
+    ByteData backgroundData,
+    List<dynamic> foregroundObjects,
+    ByteData foregroundData,
+    ByteData shadowsData
+  ) native 'ParagraphBuilder_pushStyle';
 
   static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
 
