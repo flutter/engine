@@ -31,11 +31,6 @@ _dart_sdk_libraries = [
     "web_sql",
 ]
 
-_dart_sdk_internal_libraries = [
-  #  "js_runtime",
-   # "sdk_library_metadata",
-]
-
 foreach(library, _dart_sdk_libraries) {
   copy("copy_flutter_${library}") {
     deps = [
@@ -55,7 +50,7 @@ foreach(library, _dart_sdk_libraries) {
 }
 
 
-copy("web_engine") {
+copy("web_sdk") {
   sources = [
     "$flutter_root/lib/stub_ui/compositing.dart",
     "$flutter_root/lib/stub_ui/geometry.dart",

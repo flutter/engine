@@ -23,7 +23,7 @@ group("flutter") {
       public_deps += [
         "$flutter_root/frontend_server",
         "//third_party/dart:create_sdk",
-        "$flutter_root/flutter_web:web_engine",
+        "$flutter_root/web_sdk",
       ]
     }
   }

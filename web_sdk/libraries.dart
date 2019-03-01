@@ -182,7 +182,7 @@ const Map<String, LibraryInfo> libraries = const {
   "_metadata": const LibraryInfo("html/html_common/metadata.dart",
       categories: "", documented: false, platforms: DART2JS_PLATFORM),
 
-  // Google3-specific: Flutter dart:ui library.
+  // Flutter dart:ui library.
   "ui": const LibraryInfo("dart_ui/ui.dart",
       categories: "Flutter"),
   // End Google3-specific
