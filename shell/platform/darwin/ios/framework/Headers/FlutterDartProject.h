@@ -66,7 +66,7 @@ FLUTTER_EXPORT
  * @return the file name to be used for lookup in the main bundle.
  */
 + (NSString*)lookupKeyForAsset:(NSString*)asset
-                   fromPackage:(NSString*)package fromBundle(NSBundle*)bundle;
+                   fromPackage:(NSString*)package fromBundle:(NSBundle*)bundle;
 
 /**
  * Returns the default identifier for the bundle where we expect to find the Flutter Dart

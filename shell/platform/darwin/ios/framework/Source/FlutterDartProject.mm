@@ -200,7 +200,7 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 
 + (NSString*)flutterAssetsName:(NSBundle*)bundle {
   if (bundle == nil) {
-    bundle = [NSBundle bundleWithIdnetifier:[FlutterDartProject defaultBundleIdentifier]];
+    bundle = [NSBundle bundleWithIdentifier:[FlutterDartProject defaultBundleIdentifier]];
   }
   if (bundle == nil) {
     bundle = [NSBundle mainBundle];
@@ -213,7 +213,7 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset {
-  return [self lookupKeyForAsset fromBundle:nil];
+  return [self lookupKeyForAsset:asset fromBundle:nil];
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset fromBundle:(NSBundle*)bundle {
@@ -222,7 +222,7 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-  return [self lookupKeyForAsset:asset fromPackage:package fromBundle:nil]];
+  return [self lookupKeyForAsset:asset fromPackage:package fromBundle:nil];
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset
