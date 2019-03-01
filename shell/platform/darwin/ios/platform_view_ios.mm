@@ -123,10 +123,7 @@ void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update,
 // |shell::PlatformView|
 bool PlatformViewIOS::RegisterSemanticsAvailableCallback(fml::closure closure) {
   semantics_available_callback_ = std::move(closure);
-  if (!semantics_available_callback_ || !accessibility_bridge_) {
-    return false;
-  }
-  return true;
+  return semantics_available_callback_ && accessibility_bridge_;
 }
 
 // |shell::PlatformView|
