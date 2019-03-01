@@ -92,9 +92,7 @@ void _updateUserSettingsData(String jsonData) {
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateLifecycleState(String state) {
-  if (window._initialLifecycleState == null) {
-    window._initialLifecycleState = state;
-  }
+  window._initialLifecycleState ??= state;
 }
 
 
