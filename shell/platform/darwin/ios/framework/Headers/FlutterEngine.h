@@ -151,13 +151,13 @@ FLUTTER_EXPORT
 /**
  * Registers a callback that will be called once when semantics are available.
  *
- * If the semantics tree has already been build at least once, this callback
- * will fire immediately. If semantics are disabled, this callback will never
- * fire; consider calling `-ensureSemanticsEnabled` first.
+ * If semantics are disabled, this callback will be stored but will not fire
+ * until they are enabled and the tree has been updated. Consider calling
+ * `-ensureSemanticsEnabled` first.
  *
  * Multiple calls to this method will replace the callback.
  *
- * @return `YES` if the callback is registered, `NO` otherwise.
+ * @return `YES` if the semantics are enabled, `NO` otherwise.
  */
 - (BOOL)registerSemanticsAvailableCallback:(void (^)(void))callback;
 

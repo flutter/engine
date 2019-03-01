@@ -367,10 +367,7 @@
 }
 
 - (void)setFlutterViewDidRenderCallback:(void (^)(void))callback {
-  auto platformView = [_engine.get() platformView];
-  if (platformView) {
-    platformView->SetNextFrameCallback(std::move(callback));
-  }
+  _flutterViewRenderedCallback.reset(callback, fml::OwnershipPolicy::Retain);
 }
 
 #pragma mark - Surface creation and teardown updates
