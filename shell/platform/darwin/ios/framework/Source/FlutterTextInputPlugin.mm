@@ -621,19 +621,20 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 
 - (void)deleteBackward {
   _selectionAffinity = _kTextAffinityDownstream;
-  if ([self hasText]) {
-    if (_selectedTextRange.isEmpty) {
-      // When delete a combining character, _selectedTextRange has location
-      // but does not have length, so we have to manually set it.
-      NSRange oldRange = ((FlutterTextRange*)_selectedTextRange).range;
-      if (oldRange.location > 0) {
-        NSRange newRange = NSMakeRange(oldRange.location - 1, 1);
-        [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:newRange]
-                updateEditingState:false];
-      }
+
+  // When delete a combining character, _selectedTextRange has location
+  // but does not have length, so we have to manually set it.
+  if (_selectedTextRange.isEmpty && [self hasText]) {
+    NSRange oldRange = ((FlutterTextRange*)_selectedTextRange).range;
+    if (oldRange.location > 0) {
+      NSRange newRange = NSMakeRange(oldRange.location - 1, 1);
+      [self setSelectedTextRange:[FlutterTextRange rangeWithNSRange:newRange]
+              updateEditingState:false];
     }
-    [self replaceRange:_selectedTextRange withText:@""];
   }
+
+  if (!_selectedTextRange.isEmpty)
+    [self replaceRange:_selectedTextRange withText:@""];
 }
 
 @end
