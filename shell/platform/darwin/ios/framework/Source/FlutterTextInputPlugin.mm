@@ -624,7 +624,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
   if ([self hasText]) {
     if (_selectedTextRange.isEmpty) {
       // When deleting combining characters,
-      // _selectedTextRange oftens empty, so we have to manually set it.
+      // _selectedTextRange is oftens empty, so we have to manually set it.
       NSRange oldRange = ((FlutterTextRange*)_selectedTextRange).range;
       NSUInteger newLocation = oldRange.location > 0 ? oldRange.location - 1 : 0;
       NSRange newRange = NSMakeRange(newLocation, 1);
