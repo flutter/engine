@@ -319,6 +319,10 @@ typedef struct {
   double bottom;
 } FlutterRect;
 
+// |FlutterSemanticsNode| ID used as a sentinel to signal the end of a batch of
+// semantics node updates.
+const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
+
 // A node that represents some semantic data.
 //
 // The semantics tree is maintained during the semantics phase of the pipeline
@@ -385,6 +389,10 @@ typedef struct {
   // Has length |custom_accessibility_actions_count|.
   const int32_t* custom_accessibility_actions;
 } FlutterSemanticsNode;
+
+// |FlutterSemanticsCustomAction| ID used as a sentinel to signal the end of a
+// batch of semantics custom action updates.
+const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
 // A custom semantics action, or action override.
 //
@@ -496,14 +504,23 @@ typedef struct {
   // immediately after the root isolate has been created and marked runnable.
   VoidCallback root_isolate_create_callback;
   // The callback invoked by the engine in order to give the embedder the
-  // chance to respond to semantics node updates from the Dart application. The
-  // callback will be invoked on the thread on which the |FlutterEngineRun|
+  // chance to respond to semantics node updates from the Dart application.
+  // Semantics node updates are sent in batches terminated by a 'batch end'
+  // callback that is passed a sentinel |FlutterSemanticsNode| whose |id| field
+  // has the value |kFlutterSemanticsNodeIdBatchEnd|.
+  //
+  // The callback will be invoked on the thread on which the |FlutterEngineRun|
   // call is made.
   FlutterUpdateSemanticsNodeCallback update_semantics_node_callback;
   // The callback invoked by the engine in order to give the embedder the
   // chance to respond to updates to semantics custom actions from the Dart
-  // application. The callback will be invoked on the thread on which the
-  // |FlutterEngineRun| call is made.
+  // application.  Custom action updates are sent in batches terminated by a
+  // 'batch end' callback that is passed a sentinel
+  // |FlutterSemanticsCustomAction| whose |id| field has the value
+  // |kFlutterSemanticsCustomActionIdBatchEnd|.
+  //
+  // The callback will be invoked on the thread on which the |FlutterEngineRun|
+  // call is made.
   FlutterUpdateSemanticsCustomActionCallback
       update_semantics_custom_action_callback;
   // Path to a directory used to store data that is cached across runs of a
@@ -605,8 +622,8 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     const uint8_t* data,
     size_t data_length);
 
-// Notify the engine that a vsync event occured. A baton passed to the platform
-// via the vsync callback must be returned.
+// Notify the engine that a vsync event occurred. A baton passed to the
+// platform via the vsync callback must be returned.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
                                          intptr_t baton,
@@ -621,9 +638,9 @@ FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
 FLUTTER_EXPORT
 void FlutterEngineTraceEventDurationBegin(const char* name);
 
-// A profiling utility. Logs a trace duration end event to the timeline. If
-// the timeline is unavailable or disabled, this has no effect. This call must
-// be preceeded by a trace duration begin call (via
+// A profiling utility. Logs a trace duration end event to the timeline. If the
+// timeline is unavailable or disabled, this has no effect. This call must be
+// preceded by a trace duration begin call (via
 // |FlutterEngineTraceEventDurationBegin|) with the same name on the same
 // thread. Can be called on any thread.
 FLUTTER_EXPORT
