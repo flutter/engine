@@ -199,6 +199,12 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 #pragma mark - Assets-related utilities
 
 + (NSString*)flutterAssetsName:(NSBundle*)bundle {
+  if (bundle == nil) {
+    bundle = [NSBundle bundleWithIdnetifier:[FlutterDartProject defaultBundleIdentifier]];
+  }
+  if (bundle == nil) {
+    bundle = [NSBundle mainBundle];
+  }
   NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
   if (flutterAssetsName == nil) {
     flutterAssetsName = @"Frameworks/App.framework/flutter_assets";
@@ -207,11 +213,7 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset {
-  NSBundle* bundle = [NSBundle bundleWithIdnetifier:[FlutterDartProject defaultBundleIdentifier]];
-  if (bundle == nil) {
-    bundle = [NSBundle mainBundle];
-  }
-  return [self lookupKeyForAsset fromBundle:bundle];
+  return [self lookupKeyForAsset fromBundle:nil];
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset fromBundle:(NSBundle*)bundle {
@@ -220,7 +222,7 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-  return [self lookupKeyForAsset:[NSString stringWithFormat:@"packages/%@/%@", package, asset]];
+  return [self lookupKeyForAsset:asset fromPackage:package fromBundle:nil]];
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset
