@@ -207,7 +207,11 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset {
-  return [self lookupKeyForAsset fromBundle:[NSBundle mainBundle]];
+  NSBundle* bundle = [NSBundle bundleWithIdnetifier:[FlutterDartProject defaultBundleIdentifier]];
+  if (bundle == nil) {
+    bundle = [NSBundle mainBundle];
+  }
+  return [self lookupKeyForAsset fromBundle:bundle];
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset fromBundle:(NSBundle*)bundle {

@@ -26,8 +26,10 @@ FLUTTER_EXPORT
 - (instancetype)initFromDefaultSourceForConfiguration FLUTTER_UNAVAILABLE("Use -init instead.");
 
 /**
- * Returns the file name for the given asset.
- * The returned file name can be used to access the asset in the application's main bundle.
+ * Returns the file name for the given asset. If the bundle with the identifier
+ * "io.flutter.flutter.app" exists, it will try use that bundle; otherwise, it
+ * will use the main bundle.  To specify a different bundle, use
+ * `-lookupKeyForAsset:asset:fromBundle`.
  *
  * @param asset The name of the asset. The name can be hierarchical.
  * @return the file name to be used for lookup in the main bundle.
