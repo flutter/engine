@@ -345,7 +345,7 @@ public class FlutterView extends FrameLayout {
 //      String transitionAnimationScale = Settings.Global.getString(getContext().getContentResolver(),
 //          Settings.Global.TRANSITION_ANIMATION_SCALE);
 //      if (transitionAnimationScale != null && transitionAnimationScale.equals("0")) {
-//        accessibilityFeatureFlags ^= AccessibilityFeature.DISABLE_ANIMATIONS.value;
+//        accessibilityFeatureFlags != AccessibilityFeature.DISABLE_ANIMATIONS.value;
 //      } else {
 //        accessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
 //      }
