@@ -78,6 +78,8 @@ class PlatformView {
 
   virtual void SetAccessibilityFeatures(int32_t flags);
 
+  virtual bool RegisterSemanticsAvailableCallback(fml::closure closure);
+
   void SetViewportMetrics(const blink::ViewportMetrics& metrics);
 
   void NotifyCreated();
