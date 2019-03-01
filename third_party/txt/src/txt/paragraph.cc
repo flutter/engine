@@ -1274,7 +1274,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
       left = SK_ScalarMax;
       right = SK_ScalarMin;
       for (const GlyphPosition& gp : run.positions) {
-        if ((gp.code_units.start >= start && gp.code_units.end <= end)) {
+        if (gp.code_units.start >= start && gp.code_units.end <= end) {
           left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
           right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
         } else if (gp.code_units.end == end) {
