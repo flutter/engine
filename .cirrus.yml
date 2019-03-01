@@ -45,6 +45,33 @@ task:
         mkdir javadoc_tmp
         ./flutter/tools/gen_javadoc.py --out-dir javadoc_tmp
 
+task:
+  use_compute_credits: $CIRRUS_USER_COLLABORATOR == 'true'
+  osx_instance:
+    image: high-sierra-xcode-9.4.1
+  env:
+    CIRRUS_WORKING_DIR: "/tmp/github_repo"
+    ENGINE_PATH: "/tmp/engine"
+    DEPOT_TOOLS: "/tmp/depot_tools"
+    PATH: "$DEPOT_TOOLS:$PATH"
+  depot_tools_cache:
+    folder: $DEPOT_TOOLS
+    populate_script: git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git /tmp/depot_tools
+  gclient_sync_script: |
+    mkdir -p $ENGINE_PATH/src
+    echo 'solutions = [{"managed": False,"name": "src/flutter","url": "git@github.com:dnfield/engine.git","custom_deps": {},"deps_file": "DEPS","safesync_url": "",},]' > $ENGINE_PATH/.gclient
+    cd $ENGINE_PATH/src
+    rm -r flutter
+    mv $CIRRUS_WORKING_DIR flutter
+    gclient sync
+  compile_host_script: |
+    cd $ENGINE_PATH/src
+    ./flutter/tools/gn --ios --unoptimized
+    ninja -C out/ios_debug_unopt
+    # mkdir objcdoc_tmp
+    # ./flutter/tools/gen_objcdoc.py --out-dir objcdoc_tmp
+
+
 format_and_dart_test_task:
   container:
     image: gcr.io/flutter-cirrus/build-engine-image:latest
