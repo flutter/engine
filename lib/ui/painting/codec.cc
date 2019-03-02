@@ -79,10 +79,82 @@ static sk_sp<SkImage> DecodeImage(fml::WeakPtr<GrContext> context,
   }
 }
 
+static sk_sp<SkImage> DownSampleImageToExactSize(
+    fml::WeakPtr<GrContext> context,
+    sk_sp<SkImage> image,
+    const int newWidth,
+    const int newHeight,
+    size_t trace_id) {
+  // TODO understand sk sp memory implications
+  sk_sp<SkColorSpace> dstColorSpace = nullptr;
+  SkImageInfo newInfo =
+      SkImageInfo::Make(newWidth, newHeight, image->colorType(),
+                        image->alphaType(), dstColorSpace);
+  size_t minRowBytes = newInfo.minRowBytes();
+  size_t totalBytes = newInfo.computeByteSize(minRowBytes);
+
+  void* buffer = sk_malloc_canfail(totalBytes);
+
+  if (nullptr == buffer) {
+    return nullptr;
+  }
+
+  auto skPixMap = SkPixmap();
+  skPixMap.reset(newInfo, buffer, minRowBytes);
+
+  if (skPixMap.addr() == nullptr) {
+    return nullptr;
+  }
+
+  if (skPixMap.rowBytes() < newInfo.minRowBytes()) {
+    return nullptr;
+  }
+
+  if (!image->scalePixels(skPixMap, kLow_SkFilterQuality)) {
+    return nullptr;
+  }
+
+  // TODO free memory wherever applicable!!!
+  return SkImage::MakeCrossContextFromPixmap(context.get(), skPixMap, true,
+                                             dstColorSpace.get(), true);
+}
+
+static sk_sp<SkImage> DownScaleImage(fml::WeakPtr<GrContext> context,
+                                     sk_sp<SkImage> image,
+                                     const int maxWidth,
+                                     const int maxHeight,
+                                     size_t trace_id) {
+  // TODO add tracing for profiling
+  if (!image || !image.get()) {
+    return image;
+  }
+
+  const int width = image->width();
+  const int height = image->height();
+
+  int newWidth = width;
+  int newHeight = height;
+
+  if (height > maxHeight || width > maxWidth) {
+    const double ratioX = (double)maxWidth / width;
+    const double ratioY = (double)maxHeight / height;
+    const double ratio = fmin(ratioX, ratioY);
+
+    newHeight = height * ratio;
+    newWidth = width * ratio;
+  } else {
+    return image;
+  }
+
+  return DownSampleImageToExactSize(context, image, width, height, trace_id);
+}
+
 fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
                              sk_sp<SkData> buffer,
                              fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
                              const float decodedCacheRatioCap,
+                             const int maxWidth,
+                             const int maxHeight,
                              size_t trace_id) {
   TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
   TRACE_EVENT0("blink", "InitCodec");
@@ -107,6 +179,13 @@ fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
     FML_LOG(ERROR) << "DecodeImage failed";
     return nullptr;
   }
+
+  skImage = DownScaleImage(context, skImage, maxWidth, maxHeight, trace_id);
+  if (!skImage) {
+    FML_LOG(ERROR) << "DownScaleImage failed";
+    return nullptr;
+  }
+
   auto image = CanvasImage::Create();
   image->set_image({skImage, unref_queue});
   auto frameInfo = fml::MakeRefCounted<FrameInfo>(std::move(image), 0);
@@ -152,15 +231,18 @@ void InitCodecAndInvokeCodecCallback(
     sk_sp<SkData> buffer,
     std::unique_ptr<ImageInfo> image_info,
     const float decodedCacheRatioCap,
+    const int maxWidth,
+    const int maxHeight,
     size_t trace_id) {
   fml::RefPtr<Codec> codec;
   if (image_info) {
+    // TODO (kaushikiska): think about the uncompressed case.
     codec = InitCodecUncompressed(context, std::move(buffer), *image_info,
                                   std::move(unref_queue), decodedCacheRatioCap,
                                   trace_id);
   } else {
     codec = InitCodec(context, std::move(buffer), std::move(unref_queue),
-                      decodedCacheRatioCap, trace_id);
+                      decodedCacheRatioCap, maxWidth, maxHeight, trace_id);
   }
   ui_task_runner->PostTask(
       fml::MakeCopyable([callback = std::move(callback),
@@ -281,6 +363,13 @@ void InstantiateImageCodec(Dart_NativeArguments args) {
   const float decodedCacheRatioCap =
       tonic::DartConverter<float>::FromDart(Dart_GetNativeArgument(args, 3));
 
+  // TODO(kaushikiska): pass these through.
+  const int maxWidth = 300;
+  // tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 4));
+
+  const int maxHeight = 300;
+  // tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 5));
+
   auto buffer = SkData::MakeWithCopy(list.data(), list.num_elements());
 
   auto* dart_state = UIDartState::Current();
@@ -297,7 +386,7 @@ void InstantiateImageCodec(Dart_NativeArguments args) {
         InitCodecAndInvokeCodecCallback(
             std::move(ui_task_runner), context, std::move(queue),
             std::move(callback), std::move(buffer), std::move(image_info),
-            decodedCacheRatioCap, trace_id);
+            decodedCacheRatioCap, maxWidth, maxHeight, trace_id);
       }));
 }
 
