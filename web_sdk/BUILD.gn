@@ -31,6 +31,20 @@ _dart_sdk_libraries = [
     "web_sql",
 ]
 
+group("web_sdk") {
+  sdk_copy_deps = []
+  foreach(library, _dart_sdk_libraries) {
+    sdk_copy_deps += [ ":copy_flutter_${library}" ]
+  }
+
+  deps = [
+    ":web_ui_sources",
+    ":web_libraries_json",
+    ":web_libraries_dart",
+    ":dart_sdk_internal",
+  ] + sdk_copy_deps
+}
+
 foreach(library, _dart_sdk_libraries) {
   copy("copy_flutter_${library}") {
     deps = [
@@ -50,7 +64,7 @@ foreach(library, _dart_sdk_libraries) {
 }
 
 
-copy("web_sdk") {
+copy("web_ui_sources") {
   sources = [
     "$flutter_root/lib/stub_ui/compositing.dart",
     "$flutter_root/lib/stub_ui/geometry.dart",
@@ -68,21 +82,6 @@ copy("web_sdk") {
     "$flutter_root/lib/stub_ui/versions.dart",
     "$flutter_root/lib/stub_ui/window.dart",
   ]
-
-
-  sdk_copy_deps = []
-  foreach(library, _dart_sdk_libraries) {
-    sdk_copy_deps += [ ":copy_flutter_${library}" ]
-  }
-  foreach(library, _dart_sdk_internal_libraries) {
-    sdk_copy_deps += [ ":copy_flutter_${library}" ]
-  }
-
-  deps = [
-    ":web_libraries_json",
-    ":web_libraries_dart",
-    ":dart_sdk_internal",
-  ] + sdk_copy_deps
 
   outputs = [
     "$root_out_dir/flutter_patched_sdk/lib/ui/{{source_file_part}}"

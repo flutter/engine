@@ -72,7 +72,7 @@ dartdevc:
 
     io:
       uri: "lib/io/io.dart"
-      patches: "../../../third_party/dart/pkg/dev_compiler/tool/input_sdk/patch/io_patch.dart"
+      patches: "io_patch.dart"
       supported: false
 
     isolate:
@@ -165,7 +165,7 @@ dart2js:
 
     io:
       uri: "lib/io/io.dart"
-      patches: "lib/_internal/js_runtime/lib/io_patch.dart"
+      patches: "io_patch.dart"
       supported: false
 
     isolate:

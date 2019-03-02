@@ -1,6 +1,6 @@
-// Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
+// Copyright 2019 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 library libraries;
 
@@ -86,7 +86,7 @@ const Map<String, LibraryInfo> libraries = const {
       const LibraryInfo("_http/http.dart", categories: "", documented: false),
   "io": const LibraryInfo("io/io.dart",
       categories: "Server",
-      dart2jsPatchPath: "_internal/js_runtime/lib/io_patch.dart"),
+      dart2jsPatchPath: "../../../flutter/web_sdk/io_patch.dart"),
   "isolate": const LibraryInfo("isolate/isolate.dart",
       categories: "Client,Server",
       maturity: Maturity.STABLE,

@@ -140,7 +140,7 @@
         "uri": "../../../third_party/dart/pkg/dev_compiler/tool/input_sdk/private/debugger.dart"
       },
       "io": {
-        "patches": "../../../third_party/dart/pkg/dev_compiler/tool/input_sdk/patch/io_patch.dart",
+        "patches": "io_patch.dart",
         "supported": false,
         "uri": "lib/io/io.dart"
       },
