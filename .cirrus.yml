@@ -1,49 +1,49 @@
-# gcp_credentials: ENCRYPTED[987a78af29b91ce8489594c9ab3fec21845bbe5ba68294b8f6def3cf0d380830f06687a89ea69c87344c5ade369700fe]
+gcp_credentials: ENCRYPTED[987a78af29b91ce8489594c9ab3fec21845bbe5ba68294b8f6def3cf0d380830f06687a89ea69c87344c5ade369700fe]
 
-# gke_container:
-#  image: gcr.io/flutter-cirrus/build-engine-image:latest
-#  cluster_name: build-32-cluster
-#  zone: us-central1-a
-#  namespace: default
-#  cpu: 30 # can't use all 30-cores; system pods needs cores too
-#  memory: 100Gb # similarly, can't use all 100Gb memory
+gke_container:
+ image: gcr.io/flutter-cirrus/build-engine-image:latest
+ cluster_name: build-32-cluster
+ zone: us-central1-a
+ namespace: default
+ cpu: 30 # can't use all 30-cores; system pods needs cores too
+ memory: 100Gb # similarly, can't use all 100Gb memory
 
-# task:
-#   env:
-#     CIRRUS_WORKING_DIR: "/tmp/github_repo"
+task:
+  env:
+    CIRRUS_WORKING_DIR: "/tmp/github_repo"
 
-#   replace_engine_script: |
-#     cd $ENGINE_PATH/src
-#     rm -r flutter
-#     mv $CIRRUS_WORKING_DIR flutter
-#     gclient sync
+  replace_engine_script: |
+    cd $ENGINE_PATH/src
+    rm -r flutter
+    mv $CIRRUS_WORKING_DIR flutter
+    gclient sync
 
-#   matrix:
-#     - name: build_and_test_host
-#       compile_host_script: |
-#         cd $ENGINE_PATH/src
-#         ./flutter/tools/gn --unoptimized
-#         ninja -C out/host_debug_unopt
-#       test_host_script: cd $ENGINE_PATH/src && ./flutter/testing/run_tests.sh host_debug_unopt
-#     - name: build_and_test_host_profile
-#       compile_host_script: |
-#         cd $ENGINE_PATH/src
-#         ./flutter/tools/gn --runtime-mode profile --no-lto
-#         ninja -C out/host_profile
-#       test_host_script: cd $ENGINE_PATH/src && ./flutter/testing/run_tests.sh host_profile
-#     - name: build_and_test_host_release
-#       compile_host_script: |
-#         cd $ENGINE_PATH/src
-#         ./flutter/tools/gn --runtime-mode release --no-lto
-#         ninja -C out/host_release
-#       test_host_script: cd $ENGINE_PATH/src && ./flutter/testing/run_tests.sh host_release
-#     - name: build_android
-#       compile_host_script: |
-#         cd $ENGINE_PATH/src
-#         ./flutter/tools/gn --android --unoptimized
-#         ninja -C out/android_debug_unopt
-#         mkdir javadoc_tmp
-#         ./flutter/tools/gen_javadoc.py --out-dir javadoc_tmp
+  matrix:
+    - name: build_and_test_host
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --unoptimized
+        ninja -C out/host_debug_unopt
+      test_host_script: cd $ENGINE_PATH/src && ./flutter/testing/run_tests.sh host_debug_unopt
+    - name: build_and_test_host_profile
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --runtime-mode profile --no-lto
+        ninja -C out/host_profile
+      test_host_script: cd $ENGINE_PATH/src && ./flutter/testing/run_tests.sh host_profile
+    - name: build_and_test_host_release
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --runtime-mode release --no-lto
+        ninja -C out/host_release
+      test_host_script: cd $ENGINE_PATH/src && ./flutter/testing/run_tests.sh host_release
+    - name: build_android
+      compile_host_script: |
+        cd $ENGINE_PATH/src
+        ./flutter/tools/gn --android --unoptimized
+        ninja -C out/android_debug_unopt
+        mkdir javadoc_tmp
+        ./flutter/tools/gen_javadoc.py --out-dir javadoc_tmp
 
 task:
   name: build_ios
@@ -55,9 +55,8 @@ task:
     ENGINE_PATH: "/tmp/engine"
     DEPOT_TOOLS: "/tmp/depot_tools"
     PATH: "$DEPOT_TOOLS:$PATH"
-  depot_tools_cache:
-    folder: $DEPOT_TOOLS
-    populate_script: git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git /tmp/depot_tools
+  depot_tools_script:
+    git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $DEPOT_TOOLS
   gclient_sync_script: |
     mkdir -p $ENGINE_PATH/src
     echo 'solutions = [{"managed": False,"name": "src/flutter","url": "git@github.com:dnfield/engine.git","custom_deps": {},"deps_file": "DEPS","safesync_url": "",},]' > $ENGINE_PATH/.gclient
@@ -73,19 +72,18 @@ task:
     # mkdir objcdoc_tmp
     # ./flutter/tools/gen_objcdoc.py --out-dir objcdoc_tmp
 
+format_and_dart_test_task:
+  container:
+    image: gcr.io/flutter-cirrus/build-engine-image:latest
 
-# format_and_dart_test_task:
-#   container:
-#     image: gcr.io/flutter-cirrus/build-engine-image:latest
+  env:
+    CIRRUS_WORKING_DIR: "/tmp/github_repo"
 
-#   env:
-#     CIRRUS_WORKING_DIR: "/tmp/github_repo"
+  replace_engine_script: |
+    cd $ENGINE_PATH/src
+    rm -r flutter
+    cp $CIRRUS_WORKING_DIR -r ./flutter
+    gclient sync
 
-#   replace_engine_script: |
-#     cd $ENGINE_PATH/src
-#     rm -r flutter
-#     cp $CIRRUS_WORKING_DIR -r ./flutter
-#     gclient sync
-
-#   format_script: cd $ENGINE_PATH/src/flutter && ./ci/format.sh
-#   build_script: cd $ENGINE_PATH/src/flutter && ./ci/build.sh
+  format_script: cd $ENGINE_PATH/src/flutter && ./ci/format.sh
+  build_script: cd $ENGINE_PATH/src/flutter && ./ci/build.sh
