@@ -223,7 +223,6 @@ public class FlutterView extends FrameLayout {
       return true;
     } else {
       return super.fitSystemWindows(insets);
-
     }
   }
   //------- End: Process View configuration that Flutter cares about. --------
@@ -463,6 +462,7 @@ public class FlutterView extends FrameLayout {
         .send();
   }
 
+  // TODO(mattcarroll): consider introducing a system channel for this communication instead of JNI
   private void sendViewportMetricsToFlutter() {
     Log.d(TAG, "sendViewportMetricsToFlutter()");
     if (!isAttachedToFlutterEngine()) {

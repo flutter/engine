@@ -57,8 +57,8 @@ public class FlutterRenderer implements TextureRegistry {
     // TODO(mattcarroll): determine desired behavior if we're asked to detach without first being attached
     if (this.renderSurface != null) {
       this.renderSurface.detachFromRenderer();
-      surfaceDestroyed();
       this.renderSurface = null;
+      surfaceDestroyed();
       this.flutterJNI.setRenderSurface(null);
     }
   }
