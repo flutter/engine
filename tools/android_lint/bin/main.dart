@@ -8,6 +8,16 @@ import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
 import 'package:process/process.dart';
 
+/// Runs the Android SDK Lint tool on flutter/shell/platform/android.
+///
+/// This script scans the flutter/shell/platform/android directory for Java
+/// files to build a `project.xml` file.  This file is then passed to the lint
+/// tool and HTML output is reqeusted in the directory for the `--out`
+/// parameter, which defaults to `lint_report`.
+///
+/// The `--in` parameter may be specified to to force this script to scan a
+/// specific location for the engine repository, and expects to be given the
+/// `src` directory that contains both `third_party` and `flutter`.
 Future<void> main(List<String> args) async {
   final ArgParser argParser = ArgParser();
   argParser.addOption(
