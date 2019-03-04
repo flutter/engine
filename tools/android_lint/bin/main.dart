@@ -8,6 +8,8 @@ import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
 import 'package:process/process.dart';
 
+const LocalProcessManager processManager = LocalProcessManager();
+
 /// Runs the Android SDK Lint tool on flutter/shell/platform/android.
 ///
 /// This script scans the flutter/shell/platform/android directory for Java
@@ -15,7 +17,7 @@ import 'package:process/process.dart';
 /// tool and HTML output is reqeusted in the directory for the `--out`
 /// parameter, which defaults to `lint_report`.
 ///
-/// The `--in` parameter may be specified to to force this script to scan a
+/// The `--in` parameter may be specified to force this script to scan a
 /// specific location for the engine repository, and expects to be given the
 /// `src` directory that contains both `third_party` and `flutter`.
 ///
@@ -23,54 +25,13 @@ import 'package:process/process.dart';
 /// Java > 1.8.  This script will print a warning if you are not running
 /// Java 1.8.
 Future<void> main(List<String> args) async {
-  final ArgParser argParser = ArgParser();
-  argParser.addOption(
-    'in',
-    help: 'The path to `engine/src`.',
-    defaultsTo: path.relative(
-      path.join(
-        path.dirname(
-          path.dirname(path.dirname(path.fromUri(Platform.script))),
-        ),
-        '..',
-        '..',
-      ),
-    ),
-  );
-  argParser.addOption(
-    'out',
-    help: 'The path to write the generated the HTML report to.',
-    defaultsTo: 'lint_report',
-  );
-  argParser.addFlag(
-    'help',
-    help: 'Print usage of the command.',
-    negatable: false,
-    defaultsTo: false,
-  );
+  final ArgParser argParser = setupOptions();
+  await checkJava1_8();
+  final int exitCode = await runLint(argParser, argParser.parse(args));
+  exit(exitCode);
+}
 
-  final ArgResults argResults = argParser.parse(args);
-  if (argResults['help']) {
-    print(argParser.usage);
-    exit(0);
-  }
-
-  print('Checking Java version...');
-  const LocalProcessManager processManager = LocalProcessManager();
-  final ProcessResult javaResult = await processManager.run(
-    <String>['java', '-version'],
-  );
-  if (javaResult.exitCode != 0) {
-    print('Could not run "java -version". '
-        'Ensure Java is installed and available on your path.');
-    print(javaResult.stderr);
-  }
-  final String javaVersionStdout = javaResult.stdout;
-  if (javaVersionStdout.contains('"1.8')) {
-    print('The Android SDK tools may not work properly with your Java version. '
-        'If this process fails, please retry using Java 1.8.');
-  }
-
+Future<int> runLint(ArgParser argParser, ArgResults argResults) async {
   final Directory androidDir = Directory(path.join(
     argResults['in'],
     'flutter',
@@ -82,7 +43,7 @@ Future<void> main(List<String> args) async {
     print('This command must be run from the engine/src directory, '
         'or be passed that directory as the --in parameter.\n');
     print(argParser.usage);
-    exit(-1);
+    return -1;
   }
 
   final Directory androidSdkDir = Directory(
@@ -93,7 +54,7 @@ Future<void> main(List<String> args) async {
     print('The Android SDK for this engine is missing from the '
         'third_party/android_tools directory. Have you run gclient sync?\n');
     print(argParser.usage);
-    exit(-1);
+    return -1;
   }
 
   final IOSink projectXml = File('./project.xml').openWrite();
@@ -136,6 +97,52 @@ Future<void> main(List<String> args) async {
     print(result.stderr);
   }
   print(result.stdout);
-  exit(result.exitCode);
-  return;
+  return result.exitCode;
+}
+
+ArgParser setupOptions() {
+  final ArgParser argParser = ArgParser();
+  argParser.addOption(
+    'in',
+    help: 'The path to `engine/src`.',
+    defaultsTo: path.relative(
+      path.join(
+        path.dirname(
+          path.dirname(path.dirname(path.fromUri(Platform.script))),
+        ),
+        '..',
+        '..',
+      ),
+    ),
+  );
+  argParser.addOption(
+    'out',
+    help: 'The path to write the generated the HTML report to.',
+    defaultsTo: 'lint_report',
+  );
+  argParser.addFlag(
+    'help',
+    help: 'Print usage of the command.',
+    negatable: false,
+    defaultsTo: false,
+  );
+
+  return argParser;
+}
+
+Future<void> checkJava1_8() async {
+  print('Checking Java version...');
+  final ProcessResult javaResult = await processManager.run(
+    <String>['java', '-version'],
+  );
+  if (javaResult.exitCode != 0) {
+    print('Could not run "java -version". '
+        'Ensure Java is installed and available on your path.');
+    print(javaResult.stderr);
+  }
+  final String javaVersionStdout = javaResult.stdout;
+  if (javaVersionStdout.contains('"1.8')) {
+    print('The Android SDK tools may not work properly with your Java version. '
+        'If this process fails, please retry using Java 1.8.');
+  }
 }
