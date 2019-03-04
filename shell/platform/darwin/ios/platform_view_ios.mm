@@ -111,19 +111,12 @@ void PlatformViewIOS::SetAccessibilityFeatures(int32_t flags) {
 // |shell::PlatformView|
 void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update,
                                       blink::CustomAccessibilityActionUpdates actions) {
+  FML_DCHECK(owner_controller_);
   if (accessibility_bridge_) {
     accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
-    if (semantics_available_callback_) {
-      semantics_available_callback_();
-      semantics_available_callback_ = nullptr;
-    }
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"FlutterSemanticsUpdate"
+                                                        object:owner_controller_.get()];
   }
-}
-
-// |shell::PlatformView|
-bool PlatformViewIOS::RegisterSemanticsAvailableCallback(fml::closure closure) {
-  semantics_available_callback_ = std::move(closure);
-  return semantics_available_callback_ && accessibility_bridge_;
 }
 
 // |shell::PlatformView|

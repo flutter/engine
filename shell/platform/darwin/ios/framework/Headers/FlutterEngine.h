@@ -149,19 +149,6 @@ FLUTTER_EXPORT
 - (void)ensureSemanticsEnabled;
 
 /**
- * Registers a callback that will be called once when semantics are available.
- *
- * If semantics are disabled, this callback will be stored but will not fire
- * until they are enabled and the tree has been updated. Consider calling
- * `-ensureSemanticsEnabled` first.
- *
- * Multiple calls to this method will replace the callback.
- *
- * @return `YES` if the semantics are enabled, `NO` otherwise.
- */
-- (BOOL)registerSemanticsAvailableCallback:(void (^)(void))callback;
-
-/**
  * Sets the `FlutterViewController` for this instance.  The FlutterEngine must be
  * running (e.g. a successful call to `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI`)
  * before calling this method. Callers may pass nil to remove the viewController

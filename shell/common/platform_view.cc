@@ -85,13 +85,6 @@ void PlatformView::UpdateSemantics(
     blink::SemanticsNodeUpdates update,
     blink::CustomAccessibilityActionUpdates actions) {}
 
-bool PlatformView::RegisterSemanticsAvailableCallback(fml::closure closure) {
-  FML_LOG(WARNING) << "The default implementation of "
-                      "PlatformView::RegisterSemanticsAvailableCallback will "
-                      "not register any callback and always returns false.";
-  return false;
-}
-
 void PlatformView::HandlePlatformMessage(
     fml::RefPtr<blink::PlatformMessage> message) {
   if (auto response = message->response())

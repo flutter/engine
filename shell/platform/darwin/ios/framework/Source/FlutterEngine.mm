@@ -147,13 +147,7 @@
 }
 
 - (void)ensureSemanticsEnabled {
-  FML_DCHECK(self.iosPlatformView);
   self.iosPlatformView->SetSemanticsEnabled(true);
-}
-
-- (BOOL)registerSemanticsAvailableCallback:(void (^)(void))callback {
-  FML_DCHECK(self.iosPlatformView);
-  return self.iosPlatformView->RegisterSemanticsAvailableCallback(std::move(callback));
 }
 
 - (void)setViewController:(FlutterViewController*)viewController {
