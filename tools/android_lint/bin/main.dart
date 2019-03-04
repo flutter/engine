@@ -18,6 +18,10 @@ import 'package:process/process.dart';
 /// The `--in` parameter may be specified to to force this script to scan a
 /// specific location for the engine repository, and expects to be given the
 /// `src` directory that contains both `third_party` and `flutter`.
+///
+/// At the time of this writing, the Android Lint tool doesn't work well with
+/// Java > 1.8.  This script will print a warning if you are not running
+/// Java 1.8.
 Future<void> main(List<String> args) async {
   final ArgParser argParser = ArgParser();
   argParser.addOption(
@@ -50,6 +54,23 @@ Future<void> main(List<String> args) async {
     print(argParser.usage);
     exit(0);
   }
+
+  print('Checking Java version...');
+  const LocalProcessManager processManager = LocalProcessManager();
+  final ProcessResult javaResult = await processManager.run(
+    <String>['java', '-version'],
+  );
+  if (javaResult.exitCode != 0) {
+    print('Could not run "java -version". '
+        'Ensure Java is installed and available on your path.');
+    print(javaResult.stderr);
+  }
+  final String javaVersionStdout = javaResult.stdout;
+  if (javaVersionStdout.contains('"1.8')) {
+    print('The Android SDK tools may not work properly with your Java version. '
+        'If this process fails, please retry using Java 1.8.');
+  }
+
   final Directory androidDir = Directory(path.join(
     argResults['in'],
     'flutter',
@@ -76,7 +97,8 @@ Future<void> main(List<String> args) async {
   }
 
   final IOSink projectXml = File('./project.xml').openWrite();
-  projectXml.write('''<!-- THIS FILE IS GENERATED. PLEASE USE THE INCLUDED DART PROGRAM  WHICH -->
+  projectXml.write(
+      '''<!-- THIS FILE IS GENERATED. PLEASE USE THE INCLUDED DART PROGRAM  WHICH -->
 <!-- WILL AUTOMATICALLY FIND ALL .java FILES AND INCLUDE THEM HERE       -->
 <project>
   <sdk dir="${androidSdkDir.path}" />
@@ -96,7 +118,6 @@ Future<void> main(List<String> args) async {
   await projectXml.close();
 
   print('Wrote project.xml, starting lint...');
-  const LocalProcessManager processManager = LocalProcessManager();
   final ProcessResult result = await processManager.run(
     <String>[
       path.join(androidSdkDir.path, 'tools', 'bin', 'lint'),
