@@ -292,7 +292,7 @@ bool Engine::HandleLifecyclePlatformMessage(blink::PlatformMessage* message) {
     ScheduleFrame();
   }
   runtime_controller_->SetLifecycleState(state);
-  // We always want pass the message forwards directly into the framework.
+  // Always forward these messages to the framework by returning false.
   return false;
 }
 
