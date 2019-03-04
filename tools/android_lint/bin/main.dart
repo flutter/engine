@@ -126,16 +126,16 @@ Future<void> main(List<String> args) async {
       '--html',
       argResults['out'],
       '--showall',
+      '--exitcode', // Set non-zero exit code on errors
+      '-Wall',
+      '-Werror',
     ],
   );
-  if (result.exitCode != 0) {
+  if (result.stderr != null) {
+    print('Lint tool had internal errors:');
     print(result.stderr);
-    exit(result.exitCode);
   }
   print(result.stdout);
-  // TODO(dnfield): once we know what a clean lint will look like for this
-  // project, we should detect it and set the exit code based on it.
-  // Android Lint does _not_ set the exit code to non-zero if it detects lint
-  // errors/warnings.
+  exit(result.exitCode);
   return;
 }
