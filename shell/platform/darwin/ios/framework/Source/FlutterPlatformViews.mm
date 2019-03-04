@@ -417,8 +417,8 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   self = [super initWithTarget:target action:nil];
   if (self) {
     self.delegate = self;
-    _flutterView = flutterView;ng how many touches have begun for one touch sequence.
-      _currentEventTouchCount = 0;
+    _flutterView = flutterView;
+    _currentEventTouchCount = 0;
   }
   return self;
 }
