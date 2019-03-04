@@ -441,18 +441,24 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   // force_strut makes all lines have exactly the strut metrics, and ignores all
   // actual metrics. We only force the strut if the strut is non-zero and valid.
   strut->force_strut = paragraph_style_.force_strut_height && valid_strut;
-  const FontSkia* font_skia =
-      static_cast<const FontSkia*>(font_collection_->GetMinikinFontForFamilies(
-          paragraph_style_.strut_font_families,
-          // TODO(garyq): The variant is currently set to 0 (default) as we do
-          // not have a property to set it with. We should eventually support
-          // default, compact, and elegant variants.
-          minikin::FontStyle(
-              0, GetWeight(paragraph_style_.strut_font_weight),
-              paragraph_style_.strut_font_style == FontStyle::italic)));
+  minikin::FontStyle minikin_font_style(
+      0, GetWeight(paragraph_style_.strut_font_weight),
+      paragraph_style_.strut_font_style == FontStyle::italic);
 
-  if (font_skia != nullptr) {
-    font.setTypeface(font_skia->GetSkTypeface());
+  std::shared_ptr<minikin::FontCollection> collection =
+      font_collection_->GetMinikinFontCollectionForFamilies(
+          paragraph_style_.strut_font_families, "");
+  if (!collection) {
+    return;
+  }
+  minikin::FakedFont faked_font = collection->baseFontFaked(minikin_font_style);
+
+  if (faked_font.font != nullptr) {
+    SkString str;
+    static_cast<FontSkia*>(faked_font.font)
+        ->GetSkTypeface()
+        ->getFamilyName(&str);
+    font.setTypeface(static_cast<FontSkia*>(faked_font.font)->GetSkTypeface());
     font.setSize(paragraph_style_.strut_font_size);
     SkFontMetrics strut_metrics;
     font.getMetrics(&strut_metrics);
@@ -551,6 +557,23 @@ void Paragraph::Layout(double width, bool force) {
         line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
                                std::min(bidi_run.end(), line_end_index),
                                bidi_run.direction(), bidi_run.style());
+      }
+      // A "ghost" run is a run that does not impact the layout, breaking,
+      // alignment, width, etc but is still "visible" though getRectsForRange.
+      // For example, trailing whitespace on centered text can be scrolled
+      // through with the caret but will not wrap the line.
+      //
+      // Here, we add an additional run for the whitespace, but dont
+      // let it impact metrics. After layout of the whitespace run, we do not
+      // add its width into the x-offset adjustment, effectively nullifying its
+      // impact on the layout.
+      if (paragraph_style_.ellipsis.empty() &&
+          line_range.end_excluding_whitespace < line_range.end &&
+          bidi_run.start() <= line_range.end &&
+          bidi_run.end() > line_end_index) {
+        line_runs.emplace_back(std::max(bidi_run.start(), line_end_index),
+                               std::min(bidi_run.end(), line_range.end),
+                               bidi_run.direction(), bidi_run.style(), true);
       }
     }
     bool line_runs_all_rtl =
@@ -766,7 +789,7 @@ void Paragraph::Layout(double width, bool force) {
         font.getMetrics(&metrics);
         paint_records.emplace_back(run.style(), SkPoint::Make(run_x_offset, 0),
                                    builder.make(), metrics, line_number,
-                                   layout.getAdvance());
+                                   layout.getAdvance(), run.is_ghost());
 
         line_glyph_positions.insert(line_glyph_positions.end(),
                                     glyph_positions.begin(),
@@ -789,7 +812,12 @@ void Paragraph::Layout(double width, bool force) {
         max_right_ = std::max(max_right_, glyph_positions.back().x_pos.end);
       }  // for each in glyph_blobs
 
-      run_x_offset += layout.getAdvance();
+      // Do not increase x offset for trailing ghost runs as it should not
+      // impact the layout of visible glyphs. We do keep the record though so
+      // GetRectsForRange() can find metrics for trailing spaces.
+      if (!run.is_ghost()) {
+        run_x_offset += layout.getAdvance();
+      }
     }  // for each in line_runs
 
     // Adjust the glyph positions based on the alignment of the line.
@@ -810,23 +838,6 @@ void Paragraph::Layout(double width, bool force) {
                               next_line_start - line_range.start);
     code_unit_runs_.insert(code_unit_runs_.end(), line_code_unit_runs.begin(),
                            line_code_unit_runs.end());
-
-    // Add extra empty metrics for skipped whitespace at line end. This allows
-    // GetRectsForRange to properly draw empty rects at the ends of lines with
-    // truncated whitespace.
-    if (line_end_index < line_range.end && !line_code_unit_runs.empty()) {
-      std::vector<GlyphPosition> empty_glyph_positions;
-      double end_x = line_code_unit_runs.back().positions.back().x_pos.end;
-      for (size_t index = line_end_index; index < line_range.end; ++index) {
-        empty_glyph_positions.emplace_back(end_x, 0, index, 1);
-      }
-      code_unit_runs_.emplace_back(
-          std::move(empty_glyph_positions),
-          Range<size_t>(line_end_index, line_range.end),
-          Range<double>(end_x, end_x), line_code_unit_runs.back().line_number,
-          line_code_unit_runs.back().font_metrics,
-          line_code_unit_runs.back().direction);
-    }
 
     // Calculate the amount to advance in the y direction. This is done by
     // computing the maximum ascent and descent with respect to the strut.
@@ -1018,6 +1029,9 @@ void Paragraph::PaintDecorations(SkCanvas* canvas,
                                  const PaintRecord& record,
                                  SkPoint base_offset) {
   if (record.style().decoration == TextDecoration::kNone)
+    return;
+
+  if (record.isGhost())
     return;
 
   const SkFontMetrics& metrics = record.metrics();
@@ -1234,6 +1248,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
   // Lines that are actually in the requested range.
   size_t max_line = 0;
   size_t min_line = INT_MAX;
+  size_t glyph_length = 0;
 
   // Generate initial boxes and calculate metrics.
   for (const CodeUnitRun& run : code_unit_runs_) {
@@ -1262,6 +1277,15 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
         if (gp.code_units.start >= start && gp.code_units.end <= end) {
           left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
           right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
+        } else if (gp.code_units.end == end) {
+          // Calculate left and right when we are at
+          // the last position of a combining character.
+          glyph_length = (gp.code_units.end - gp.code_units.start) - 1;
+          if (gp.code_units.start ==
+              std::max<size_t>(0, (start - glyph_length))) {
+            left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
+            right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
+          }
         }
       }
       if (left == SK_ScalarMax || right == SK_ScalarMin)
@@ -1295,6 +1319,11 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
       if (line.end != line.end_including_newline && line.end >= start &&
           line.end_including_newline <= end) {
         SkScalar x = line_widths_[line_number];
+        // Move empty box to center if center aligned and is an empty line.
+        if (x == 0 && !isinf(width_) &&
+            paragraph_style_.effective_align() == TextAlign::center) {
+          x = width_ / 2;
+        }
         SkScalar top = (line_number > 0) ? line_heights_[line_number - 1] : 0;
         SkScalar bottom = line_heights_[line_number];
         line_metrics[line_number].boxes.emplace_back(
