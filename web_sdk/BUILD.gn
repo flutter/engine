@@ -40,7 +40,6 @@ group("web_sdk") {
   deps = [
     ":web_ui_sources",
     ":web_libraries_json",
-    ":web_libraries_dart",
     ":dart_sdk_internal",
   ] + sdk_copy_deps
 }
@@ -98,15 +97,6 @@ copy("web_libraries_json") {
   ]
 }
 
-copy("web_libraries_dart") {
-  sources = [
-    "libraries.dart"
-  ]
-
-  outputs = [
-    "$root_out_dir/flutter_patched_sdk/lib/_internal/libraries.dart"
-  ]
-}
 
 copy("dart_sdk_internal") {
     deps = [
