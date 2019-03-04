@@ -410,6 +410,7 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   // So this is safe as when FlutterView is deallocated the reference to ForwardingGestureRecognizer
   // will go away.
   UIView* _flutterView;
+  // Counting the touches that has started in one touch sequence.
   NSInteger _currentEventTouchCount;
 }
 
