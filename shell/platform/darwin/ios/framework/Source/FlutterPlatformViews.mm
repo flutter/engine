@@ -353,6 +353,21 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   _delayingRecognizer.get().state = UIGestureRecognizerStateEnded;
 }
 
+// We want the intercepting view to consume the touches and not pass the touches up to the parent
+// view. Make the touch event method not call super will not pass the touches up to the parent view.
+// Hence we overide the touch event methods and do nothing.
+- (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+}
+
+- (void)touchesMoved:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+}
+
+- (void)touchesCancelled:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+}
+
+- (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
+}
+
 @end
 
 @implementation DelayingGestureRecognizer {
@@ -395,18 +410,22 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   // So this is safe as when FlutterView is deallocated the reference to ForwardingGestureRecognizer
   // will go away.
   UIView* _flutterView;
+  NSInteger _currentEventTouchCount;
 }
 
 - (instancetype)initWithTarget:(id)target flutterView:(UIView*)flutterView {
   self = [super initWithTarget:target action:nil];
   if (self) {
     self.delegate = self;
-    _flutterView = flutterView;
+    _flutterView = flutterView;ng how many touches have begun for one touch sequence.
+      _currentEventTouchCount = 0;
   }
   return self;
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
+  [_flutterView touchesBegan:touches withEvent:event];
+  _currentEventTouchCount += touches.count;
   [_flutterView touchesBegan:touches withEvent:event];
 }
 
@@ -416,11 +435,19 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
   [_flutterView touchesEnded:touches withEvent:event];
-  self.state = UIGestureRecognizerStateFailed;
+  _currentEventTouchCount -= touches.count;
+  // Touches in one touch sequence are sent to the touchesEnded method separately if different
+  // fingers stop touching the screen at different time. So one touchesEnded method triggering does
+  // not necessarially mean the touch sequence has ended. We Only set the state to
+  // UIGestureRecognizerStateFailed when all the touches in the current touch sequence is ended.
+  if (_currentEventTouchCount == 0) {
+    self.state = UIGestureRecognizerStateFailed;
+  }
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
   [_flutterView touchesCancelled:touches withEvent:event];
+  _currentEventTouchCount = 0;
   self.state = UIGestureRecognizerStateFailed;
 }
 
