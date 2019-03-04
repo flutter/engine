@@ -193,5 +193,6 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
   @Override
   public void onFirstFrameRendered() {
     // TODO(mattcarroll): decide where this method should live and what it needs to do.
+    Log.d(TAG, "onFirstFrameRendered()");
   }
 }
