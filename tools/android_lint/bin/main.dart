@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 import 'dart:io';
 
 import 'package:args/args.dart';
@@ -9,15 +13,33 @@ Future<void> main(List<String> args) async {
   argParser.addOption(
     'in',
     help: 'The path to `engine/src`.',
-    defaultsTo: path.join(path.current),
+    defaultsTo: path.relative(
+      path.join(
+        path.dirname(
+          path.dirname(path.dirname(path.fromUri(Platform.script))),
+        ),
+        '..',
+        '..',
+      ),
+    ),
   );
   argParser.addOption(
     'out',
     help: 'The path to write the generated the HTML report to.',
     defaultsTo: 'lint_report',
   );
+  argParser.addFlag(
+    'help',
+    help: 'Print usage of the command.',
+    negatable: false,
+    defaultsTo: false,
+  );
 
   final ArgResults argResults = argParser.parse(args);
+  if (argResults['help']) {
+    print(argParser.usage);
+    exit(0);
+  }
   final Directory androidDir = Directory(path.join(
     argResults['in'],
     'flutter',
