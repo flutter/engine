@@ -4,6 +4,7 @@
 
 package io.flutter.view;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -654,10 +655,8 @@ public class FlutterView extends SurfaceView
     // be padded. When the on-screen keyboard is detected, we want to include the full inset
     // but when the inset is just the hidden nav bar, we want to provide a zero inset so the space
     // can be used.
+    @TargetApi(20)
     int calculateBottomKeyboardInset(WindowInsets insets) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT_WATCH) {
-            return 0;
-        }
         int screenHeight = getRootView().getHeight();
         // Magic number due to this being a heuristic. This should be replaced, but we have not
         // found a clean way to do it yet (Sept. 2018)
@@ -675,10 +674,8 @@ public class FlutterView extends SurfaceView
     // This callback is not present in API < 20, which means lower API devices will see
     // the wider than expected padding when the status and navigation bars are hidden.
     @Override
+    @TargetApi(20)
     public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT_WATCH) {
-            return null;
-        }
         boolean statusBarHidden =
             (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
         boolean navigationBarHidden =
@@ -969,8 +966,9 @@ public class FlutterView extends SurfaceView
 
         @Override
         public void onChange(boolean selfChange, Uri uri) {
-            String value = Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT ? null : Settings.Global.getString(getContext().getContentResolver(),
-                    Settings.Global.TRANSITION_ANIMATION_SCALE);
+            String value = Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1 ? null
+                    : Settings.Global.getString(getContext().getContentResolver(),
+                            Settings.Global.TRANSITION_ANIMATION_SCALE);
             if (value != null && value.equals("0")) {
                 mAccessibilityFeatureFlags |= AccessibilityFeature.DISABLE_ANIMATIONS.value;
             } else {
@@ -981,7 +979,7 @@ public class FlutterView extends SurfaceView
     }
 
     // This is guarded at instantiation time.
-    @SuppressWarnings("NewApi")
+    @TargetApi(19)
     class TouchExplorationListener implements AccessibilityManager.TouchExplorationStateChangeListener {
         @Override
         public void onTouchExplorationStateChanged(boolean enabled) {

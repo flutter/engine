@@ -12,7 +12,6 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
-import android.support.v4.view.ViewCompat;
 
 import java.nio.ByteBuffer;
 
@@ -146,7 +145,7 @@ public class FlutterTextureView extends TextureView implements FlutterRenderer.R
     if (flutterRenderer != null) {
       // If we're attached to an Android window then we were rendering a Flutter UI. Now that
       // this FlutterTextureView is detached from the FlutterRenderer, we need to stop rendering.
-      if (ViewCompat.isAttachedToWindow(this)) {
+      if (getWindowToken() != null) {
         disconnectSurfaceFromRenderer();
       }
 

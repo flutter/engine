@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.engine.android;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Rect;
@@ -179,10 +180,8 @@ public class FlutterView extends FrameLayout {
    * the wider than expected padding when the status and navigation bars are hidden.
    */
   @Override
+  @TargetApi(20)
   public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT_WATCH) {
-      return null;
-    }
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
     // Status bar (top) and left/right system insets should partially obscure the content (padding).

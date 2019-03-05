@@ -33,7 +33,7 @@ class ResourceExtractor {
 
     @SuppressWarnings("deprecation")
     static long getVersionCode(PackageInfo packageInfo) {
-        // Linter needs 28 hardcoded
+        // Linter needs P (28) hardcoded or else it will fail these lines.
         if (Build.VERSION.SDK_INT >= 28) {
             return packageInfo.getLongVersionCode();
         } else {
