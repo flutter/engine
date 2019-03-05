@@ -63,14 +63,16 @@ task:
     git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git $DEPOT_TOOLS
   # jazzy_script:
   #   sudo gem install jazzy@0.9.4
-  gclient_sync_script: |
-    mkdir -p $ENGINE_PATH/src
-    echo 'solutions = [{"managed": False,"name": "src/flutter","url": "git@github.com:flutter/engine.git","custom_deps": {},"deps_file": "DEPS","safesync_url": "",},]' > $ENGINE_PATH/.gclient
-    cd $ENGINE_PATH/src
-    rm -rf flutter
-    rm -rf out
-    mv $CIRRUS_WORKING_DIR flutter
-    gclient sync
+  gclient_sync_cache:
+    folder: $ENGINE_PATH
+    populate_script: |
+      mkdir -p $ENGINE_PATH/src
+      echo 'solutions = [{"managed": False,"name": "src/flutter","url": "git@github.com:flutter/engine.git","custom_deps": {},"deps_file": "DEPS","safesync_url": "",},]' > $ENGINE_PATH/.gclient
+      cd $ENGINE_PATH/src
+      rm -rf flutter
+      rm -rf out
+      mv $CIRRUS_WORKING_DIR flutter
+      gclient sync
   compile_host_script: |
     cd $ENGINE_PATH/src
     ./flutter/tools/gn --ios --unoptimized
@@ -81,6 +83,9 @@ task:
     # pushd flutter
     # ./tools/gen_objcdoc.sh ../objcdoc_tmp
     # popd
+  cleanup_script: |
+    rm -rf $ENGINE_PATH/src/flutter
+    rm -rf $ENGINE_PATH/src/out
 
 format_and_dart_test_task:
   container:
