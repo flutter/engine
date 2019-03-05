@@ -181,7 +181,7 @@ public class FlutterView extends FrameLayout {
   public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
-    // Status bar, left/right system insets partially obscure content (padding).
+    // Status bar (top) and left/right system insets should partially obscure the content (padding).
     viewportMetrics.paddingTop = insets.getSystemWindowInsetTop();
     viewportMetrics.paddingRight = insets.getSystemWindowInsetRight();
     viewportMetrics.paddingBottom = 0;
