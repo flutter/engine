@@ -51,11 +51,11 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     set_needs_system_composite(true);
 #else
     // Add some margin to the paint bounds to leave space for the shadow.
-    // The margin is hardcoded to an arbitrary maximum for now because Skia
+    // The margin is set to a multiple of elevation_ for now because Skia
     // doesn't provide a way to calculate it.  We fill this whole region
     // and clip children to it so we don't need to join the child paint bounds.
     SkRect bounds(path_.getBounds());
-    bounds.outset(20.0, 20.0);
+    bounds.outset(elevation_ * 1.5, elevation_ * 1.5);
     set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
   }
