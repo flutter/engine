@@ -437,16 +437,35 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
     latch.Signal();
   });
 
+  // The normal flow exectued by this method is that the platform thread is
+  // starting the sequence and waiting on the latch. Later the UI thread posts
+  // gpu_task to the GPU thread which signals the latch. If the GPU the and
+  // platform threads are the same this results in a deadlock as the gpu_task
+  // will never be posted to the plaform/gpu thread that is blocked on a latch.
+  // To avoid the described deadlock, if the gpu and the platform threads are
+  // the same, should_post_gpu_task will be false, and then instead of posting a
+  // task to the gpu thread, the ui thread just signals the latch and he
+  // platform/gpu thread follows with executing gpu_task.
+  bool should_post_gpu_task =
+      task_runners_.GetGPUTaskRunner() != task_runners_.GetPlatformTaskRunner();
+
   auto ui_task = [engine = engine_->GetWeakPtr(),                      //
                   gpu_task_runner = task_runners_.GetGPUTaskRunner(),  //
-                  gpu_task                                             //
+                  gpu_task, should_post_gpu_task,
+                  &latch  //
   ] {
     if (engine) {
       engine->OnOutputSurfaceCreated();
     }
     // Step 2: Next, tell the GPU thread that it should create a surface for its
     // rasterizer.
-    fml::TaskRunner::RunNowOrPostTask(gpu_task_runner, gpu_task);
+    if (should_post_gpu_task) {
+      fml::TaskRunner::RunNowOrPostTask(gpu_task_runner, gpu_task);
+    } else {
+      // See comment on should_post_gpu_task, in this case we just unblock
+      // the platform thread.
+      latch.Signal();
+    }
   };
 
   // Threading: Capture platform view by raw pointer and not the weak pointer.
@@ -471,6 +490,12 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetIOTaskRunner(), io_task);
 
   latch.Wait();
+  if (!should_post_gpu_task) {
+    // See comment on should_post_gpu_task, in this case the gpu_task
+    // wasn't executed, and we just run it here as the platform thread
+    // is the GPU thread.
+    gpu_task();
+  }
 }
 
 // |shell::PlatformView::Delegate|
