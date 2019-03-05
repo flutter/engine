@@ -64,10 +64,7 @@ IOSGLRenderTarget::IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
 IOSGLRenderTarget::~IOSGLRenderTarget() {
   [EAGLContext setCurrentContext:context_];
   FML_DCHECK(glGetError() == GL_NO_ERROR);
-    
-    
-    
- //这里添加一句话--> 解决platform内存泄漏的问题
+ //fix platformview memory leak
   [EAGLContext setCurrentContext:context_.get()];
   // Deletes on GL_NONEs are ignored
   glDeleteFramebuffers(1, &framebuffer_);
