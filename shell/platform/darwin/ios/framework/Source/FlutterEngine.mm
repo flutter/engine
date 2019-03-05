@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/trace_event.h"
@@ -266,20 +267,30 @@
 
 - (void)maybeSetupPlatformViewChannels {
   if (_shell && self.shell.IsSetup()) {
+      
+    __block FlutterPlatformPlugin *blockmethochannel = (FlutterPlatformPlugin*)_platformPlugin.get();
     [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-      [_platformPlugin.get() handleMethodCall:call result:result];
+      [blockmethochannel handleMethodCall:call result:result];
     }];
+
+    __block __typeof(self)weakSelf = self;
 
     [_platformViewsChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-          _platformViewsController->OnMethodCall(call, result);
+            [weakSelf platformCall:call result:result];
         }];
 
+    __block FlutterTextInputPlugin *blockinputplugin = (FlutterTextInputPlugin*)_textInputPlugin.get();
     [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-      [_textInputPlugin.get() handleMethodCall:call result:result];
+        [blockinputplugin handleMethodCall:call result:result];
     }];
     self.iosPlatformView->SetTextInputPlugin(_textInputPlugin);
   }
+}
+-(void)platformCall:(FlutterMethodCall * )call result:(FlutterResult )result{
+    
+    _platformViewsController.get()->OnMethodCall(call, result);
+    
 }
 
 - (shell::Rasterizer::Screenshot)screenshot:(shell::Rasterizer::ScreenshotType)type
@@ -576,7 +587,7 @@
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   _pluginKey = [pluginKey retain];
-  _flutterEngine = [flutterEngine retain];
+  _flutterEngine = flutterEngine;//[flutterEngine retain];
   return self;
 }
 

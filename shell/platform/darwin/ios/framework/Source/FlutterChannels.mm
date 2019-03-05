@@ -32,14 +32,14 @@
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   _name = [name retain];
-  _messenger = [messenger retain];
+  _messenger = messenger;
   _codec = [codec retain];
   return self;
 }
 
 - (void)dealloc {
   [_name release];
-  [_messenger release];
+  //[_messenger release];
   [_codec release];
   [super dealloc];
 }
@@ -172,14 +172,14 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   _name = [name retain];
-  _messenger = [messenger retain];
+  _messenger = messenger;
   _codec = [codec retain];
   return self;
 }
 
 - (void)dealloc {
   [_name release];
-  [_messenger release];
+  //[_messenger release];
   [_codec release];
   [super dealloc];
 }
@@ -251,7 +251,7 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   _name = [name retain];
-  _messenger = [messenger retain];
+  _messenger = messenger;
   _codec = [codec retain];
   return self;
 }
@@ -259,7 +259,7 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
 - (void)dealloc {
   [_name release];
   [_codec release];
-  [_messenger release];
+  //[_messenger release];
   [super dealloc];
 }
 
