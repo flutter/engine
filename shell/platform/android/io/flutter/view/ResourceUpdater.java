@@ -129,9 +129,11 @@ public final class ResourceUpdater {
                     return null;
                 }
 
-                try (InputStream input = connection.getInputStream()) {
+                InputStream input = connection.getInputStream();
+                try {
                     Log.i(TAG, "Downloading update " + unresolvedURL);
-                    try (OutputStream output = new FileOutputStream(localFile)) {
+                    OutputStream output = new FileOutputStream(localFile);
+                    try {
                         int count;
                         byte[] data = new byte[1024];
                         while ((count = input.read(data)) != -1) {
@@ -140,6 +142,14 @@ public final class ResourceUpdater {
 
                         long totalMillis = new Date().getTime() - startMillis;
                         Log.i(TAG, "Update downloaded in " + totalMillis / 100 / 10. + "s");
+                    } finally {
+                        if (output != null) {
+                            output.close();
+                        }
+                    }
+                } finally {
+                    if (input != null) {
+                        input.close();
                     }
                 }
 
@@ -326,11 +336,19 @@ public final class ResourceUpdater {
         };
         for (String fn : checksumFiles) {
             AssetManager manager = context.getResources().getAssets();
-            try (InputStream is = manager.open(fn)) {
-                int count = 0;
-                byte[] buffer = new byte[BUFFER_SIZE];
-                while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
-                    checksum.update(buffer, 0, count);
+            InputStream is = null;
+            try {
+                try {
+                    is = manager.open(fn);
+                    int count = 0;
+                    byte[] buffer = new byte[BUFFER_SIZE];
+                    while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
+                        checksum.update(buffer, 0, count);
+                    }
+                } finally {
+                    if (is != null) {
+                        is.close();
+                    }
                 }
             } catch (IOException e) {
                 // Skip missing files.

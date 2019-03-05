@@ -33,7 +33,8 @@ class ResourceExtractor {
 
     @SuppressWarnings("deprecation")
     static long getVersionCode(PackageInfo packageInfo) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        // Linter needs 28 hardcoded
+        if (Build.VERSION.SDK_INT >= 28) {
             return packageInfo.getLongVersionCode();
         } else {
             return packageInfo.versionCode;
@@ -188,9 +189,17 @@ class ResourceExtractor {
                     output.getParentFile().mkdirs();
                 }
 
-                try (InputStream is = manager.open(asset);
-                     OutputStream os = new FileOutputStream(output)) {
+                InputStream is = manager.open(asset);
+                OutputStream os = new FileOutputStream(output);
+                try {
                     copy(is, os);
+                } finally {
+                    if (is != null) {
+                        is.close();
+                    }
+                    if (os != null) {
+                        os.close();
+                    }
                 }
 
                 Log.i(TAG, "Extracted baseline resource " + resource);
@@ -242,7 +251,7 @@ class ResourceExtractor {
         for (String asset : mResources) {
             String resource = null;
             ZipEntry entry = null;
-            if (asset.endsWith(".so")) {
+            if (asset.endsWith(".so") && Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
                 // Replicate library lookup logic.
                 for (String abi : Build.SUPPORTED_ABIS) {
                     resource = "lib/" + abi + "/" + asset;
@@ -281,8 +290,13 @@ class ResourceExtractor {
             try {
                 if (entry.getName().endsWith(".bzdiff40")) {
                     ByteArrayOutputStream diff = new ByteArrayOutputStream();
-                    try (InputStream is = zipFile.getInputStream(entry)) {
+                    InputStream is = zipFile.getInputStream(entry);
+                    try {
                         copy(is, diff);
+                    } finally {
+                        if (is != null) {
+                            is.close();
+                        }
                     }
 
                     ByteArrayOutputStream orig = new ByteArrayOutputStream();
@@ -297,26 +311,49 @@ class ResourceExtractor {
                             throw new IOException("Could not find APK resource " + resource);
                         }
 
-                        try (InputStream is = apkFile.getInputStream(origEntry)) {
-                            copy(is, orig);
+                        InputStream apkInputStream = apkFile.getInputStream(origEntry);
+                        try {
+                            copy(apkInputStream, orig);
+                        } finally {
+                            if (apkInputStream != null) {
+                                apkInputStream.close();
+                            }
                         }
 
                     } else {
-                        try (InputStream is = manager.open(asset)) {
-                            copy(is, orig);
+                        InputStream assetInputStream = manager.open(asset);
+                        try {
+                            copy(assetInputStream, orig);
                         } catch (FileNotFoundException e) {
                             throw new IOException("Could not find APK resource " + resource);
+                        } finally {
+                            if (assetInputStream != null) {
+                                assetInputStream.close();
+                            }
                         }
                     }
 
-                    try (OutputStream os = new FileOutputStream(output)) {
+                    OutputStream os = new FileOutputStream(output);
+                    try {
                         os.write(BSDiff.bspatch(orig.toByteArray(), diff.toByteArray()));
+                    } finally {
+                        if (os != null) {
+                            os.close();
+                        }
                     }
 
                 } else {
-                    try (InputStream is = zipFile.getInputStream(entry);
-                         OutputStream os = new FileOutputStream(output)) {
+                    InputStream is = zipFile.getInputStream(entry);
+                    OutputStream os = new FileOutputStream(output);
+                    try {
                         copy(is, os);
+                    } finally {
+                        if (is != null) {
+                            is.close();
+                        }
+                        if (os != null) {
+                            os.close();
+                        }
                     }
                 }
 

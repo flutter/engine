@@ -11,6 +11,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.support.v4.view.ViewCompat;
 
 import java.nio.ByteBuffer;
 
@@ -134,7 +135,7 @@ public class FlutterSurfaceView extends SurfaceView implements FlutterRenderer.R
     if (flutterRenderer != null) {
       // If we're attached to an Android window then we were rendering a Flutter UI. Now that
       // this FlutterSurfaceView is detached from the FlutterRenderer, we need to stop rendering.
-      if (isAttachedToWindow()) {
+      if (ViewCompat.isAttachedToWindow(this)) {
         disconnectSurfaceFromRenderer();
       }
 

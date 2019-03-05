@@ -233,17 +233,19 @@ class AccessibilityBridge
             }
             result.setMovementGranularities(granularities);
         }
-        if (object.hasAction(Action.SET_SELECTION)) {
-            result.addAction(AccessibilityNodeInfo.ACTION_SET_SELECTION);
-        }
-        if (object.hasAction(Action.COPY)) {
-            result.addAction(AccessibilityNodeInfo.ACTION_COPY);
-        }
-        if (object.hasAction(Action.CUT)) {
-            result.addAction(AccessibilityNodeInfo.ACTION_CUT);
-        }
-        if (object.hasAction(Action.PASTE)) {
-            result.addAction(AccessibilityNodeInfo.ACTION_PASTE);
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            if (object.hasAction(Action.SET_SELECTION)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_SET_SELECTION);
+            }
+            if (object.hasAction(Action.COPY)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_COPY);
+            }
+            if (object.hasAction(Action.CUT)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_CUT);
+            }
+            if (object.hasAction(Action.PASTE)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_PASTE);
+            }
         }
 
         if (object.hasFlag(Flag.IS_BUTTON)) {
@@ -316,7 +318,7 @@ class AccessibilityBridge
             // GridView.  Right now, we're only supporting ListViews and only if they have scroll children.
             if (object.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)) {
                 if (object.hasAction(Action.SCROLL_LEFT) || object.hasAction(Action.SCROLL_RIGHT)) {
-                    if (shouldSetCollectionInfo(object)) {
+                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT && shouldSetCollectionInfo(object)) {
                         result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(
                             0, // rows
                             object.scrollChildren, // columns
@@ -325,7 +327,7 @@ class AccessibilityBridge
                         result.setClassName("android.widget.HorizontalScrollView");
                     }
                 } else {
-                    if (shouldSetCollectionInfo(object)) {
+                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2 && shouldSetCollectionInfo(object)) {
                         result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(
                             object.scrollChildren, // rows
                             0, // columns
@@ -504,6 +506,7 @@ class AccessibilityBridge
             case AccessibilityNodeInfo.ACTION_SET_SELECTION: {
                 final Map<String, Integer> selection = new HashMap<>();
                 final boolean hasSelection = arguments != null
+                        && Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2
                         && arguments.containsKey(
                                    AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT)
                         && arguments.containsKey(
@@ -557,7 +560,7 @@ class AccessibilityBridge
             SemanticsObject object, int virtualViewId, Bundle arguments, boolean forward) {
         final int granularity =
                 arguments.getInt(AccessibilityNodeInfo.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT);
-        final boolean extendSelection = arguments.getBoolean(
+        final boolean extendSelection = Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2 && arguments.getBoolean(
                 AccessibilityNodeInfo.ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN);
         switch (granularity) {
             case AccessibilityNodeInfo.MOVEMENT_GRANULARITY_CHARACTER: {

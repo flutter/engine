@@ -180,6 +180,9 @@ public class FlutterView extends FrameLayout {
    */
   @Override
   public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT_WATCH) {
+      return null;
+    }
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
     // Status bar (top) and left/right system insets should partially obscure the content (padding).
