@@ -69,10 +69,13 @@ task:
       mkdir -p $ENGINE_PATH/src
       echo 'solutions = [{"managed": False,"name": "src/flutter","url": "git@github.com:flutter/engine.git","custom_deps": {},"deps_file": "DEPS","safesync_url": "",},]' > $ENGINE_PATH/.gclient
       cd $ENGINE_PATH/src
-      rm -rf flutter
-      rm -rf out
       mv $CIRRUS_WORKING_DIR flutter
       gclient sync
+  gclient_sync_script: |
+    cd $ENGINE_PATH/src
+    rm -rf flutter
+    rm -rf out
+    gclient sync
   compile_host_script: |
     cd $ENGINE_PATH/src
     ./flutter/tools/gn --ios --unoptimized
