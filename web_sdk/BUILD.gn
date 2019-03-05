@@ -41,6 +41,7 @@ group("web_sdk") {
     ":web_ui_sources",
     ":web_libraries_json",
     ":dart_sdk_internal",
+    ":web_compiler_snapshots",
   ] + sdk_copy_deps
 }
 
@@ -57,9 +58,24 @@ foreach(library, _dart_sdk_libraries) {
                              "list lines")
 
     outputs = [
-      "$root_out_dir/flutter_patched_sdk/lib/${library}/{{source_file_part}}",
+      "$root_out_dir/flutter_web_sdk/lib/${library}/{{source_file_part}}",
     ]
   }
+}
+
+copy("web_compiler_snapshots") {
+  sources= [
+    "$root_out_dir/dart-sdk/bin/snapshots/dart2js.dart.snapshot",
+    "$root_out_dir/dart-sdk/bin/snapshots/dartdevc.dart.snapshot",
+  ]
+
+  outputs = [
+    "$root_out_dir/flutter_web_sdk/bin/snapshots/{{source_file_part}}"
+  ]
+
+  deps = [
+    "//third_party/dart:create_sdk"
+  ]
 }
 
 
@@ -83,7 +99,7 @@ copy("web_ui_sources") {
   ]
 
   outputs = [
-    "$root_out_dir/flutter_patched_sdk/lib/ui/{{source_file_part}}"
+    "$root_out_dir/flutter_web_sdk/lib/ui/{{source_file_part}}"
   ]
 }
 
@@ -93,7 +109,7 @@ copy("web_libraries_json") {
   ]
 
   outputs = [
-    "$root_out_dir/flutter_patched_sdk/lib/libraries.json"
+    "$root_out_dir/flutter_web_sdk/lib/libraries.json"
   ]
 }
 
@@ -113,6 +129,6 @@ copy("dart_sdk_internal") {
     ]
 
     outputs = [
-        "$root_out_dir/flutter_patched_sdk/lib/_internal/{{source_file_part}}"
+        "$root_out_dir/flutter_web_sdk/lib/_internal/{{source_file_part}}"
     ]
 }
