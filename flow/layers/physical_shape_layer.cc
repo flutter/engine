@@ -71,6 +71,13 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     // E = lx        }           x = (r + w/2)/h
     //                } =>
     // r + w/2 = hx  }           E = (l/h)(r + w/2)
+    //
+    // Where: E = extent of shadow
+    //        l = elevation of layer
+    //        r = radius of the light source
+    //        w = width of the layer
+    //        h = light height
+    //        x = multiplier for elevation to extent
     SkRect bounds(path_.getBounds());
     double ex = (kLightRadius * device_pixel_ratio_ + bounds.width() * 0.5) /
                 kLightHeight;
