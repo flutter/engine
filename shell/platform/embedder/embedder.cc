@@ -13,6 +13,14 @@
 #define FLUTTER_EXPORT __attribute__((visibility("default")))
 #endif  // OS_WIN
 
+extern "C" {
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+// Used for debugging dart:* sources.
+extern const uint8_t kPlatformStrongDill[];
+extern const intptr_t kPlatformStrongDillSize;
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+}
+
 #include "flutter/shell/platform/embedder/embedder.h"
 
 #include <type_traits>
@@ -286,6 +294,11 @@ void PopulateSnapshotMappingCallbacks(const FlutterProjectArgs* args,
                                 args->isolate_snapshot_instructions_size);
     }
   }
+
+#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+  settings.dart_library_sources_kernel =
+      make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
+#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 }
 
 FlutterEngineResult FlutterEngineRun(size_t version,
@@ -399,12 +412,18 @@ FlutterEngineResult FlutterEngineRun(size_t version,
          user_data](blink::SemanticsNodeUpdates update) {
           for (const auto& value : update) {
             const auto& node = value.second;
-            const auto& transform = node.transform;
-            auto flutter_transform = FlutterTransformation{
-                transform.get(0, 0), transform.get(0, 1), transform.get(0, 2),
-                transform.get(1, 0), transform.get(1, 1), transform.get(1, 2),
-                transform.get(2, 0), transform.get(2, 1), transform.get(2, 2)};
-            const FlutterSemanticsNode embedder_node = {
+            SkMatrix transform = static_cast<SkMatrix>(node.transform);
+            FlutterTransformation flutter_transform{
+                transform.get(SkMatrix::kMScaleX),
+                transform.get(SkMatrix::kMSkewX),
+                transform.get(SkMatrix::kMTransX),
+                transform.get(SkMatrix::kMSkewY),
+                transform.get(SkMatrix::kMScaleY),
+                transform.get(SkMatrix::kMTransY),
+                transform.get(SkMatrix::kMPersp0),
+                transform.get(SkMatrix::kMPersp1),
+                transform.get(SkMatrix::kMPersp2)};
+            const FlutterSemanticsNode embedder_node{
                 sizeof(FlutterSemanticsNode),
                 node.id,
                 static_cast<FlutterSemanticsFlag>(node.flags),
@@ -435,6 +454,11 @@ FlutterEngineResult FlutterEngineRun(size_t version,
             };
             ptr(&embedder_node, user_data);
           }
+          const FlutterSemanticsNode batch_end_sentinel = {
+              sizeof(FlutterSemanticsNode),
+              kFlutterSemanticsNodeIdBatchEnd,
+          };
+          ptr(&batch_end_sentinel, user_data);
         };
   }
 
@@ -456,6 +480,11 @@ FlutterEngineResult FlutterEngineRun(size_t version,
             };
             ptr(&embedder_action, user_data);
           }
+          const FlutterSemanticsCustomAction batch_end_sentinel = {
+              sizeof(FlutterSemanticsCustomAction),
+              kFlutterSemanticsCustomActionIdBatchEnd,
+          };
+          ptr(&batch_end_sentinel, user_data);
         };
   }
 

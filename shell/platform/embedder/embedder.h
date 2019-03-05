@@ -97,6 +97,10 @@ typedef enum {
   kFlutterSemanticsActionCustomAction = 1 << 17,
   // A request that the node should be dismissed.
   kFlutterSemanticsActionDismiss = 1 << 18,
+  // Move the cursor forward by one word.
+  kFlutterSemanticsActionMoveCursorForwardByWordIndex = 1 << 19,
+  // Move the cursor backward by one word.
+  kFlutterSemanticsActionMoveCursorBackwardByWordIndex = 1 << 20,
 } FlutterSemanticsAction;
 
 // The set of properties that may be associated with a semantics node.
@@ -141,6 +145,14 @@ typedef enum {
   kFlutterSemanticsFlagHasToggledState = 1 << 16,
   // If true, the semantics node is "on". If false, the semantics node is "off".
   kFlutterSemanticsFlagIsToggled = 1 << 17,
+  // Whether the platform can scroll the semantics node when the user attempts
+  // to move the accessibility focus to an offscreen child.
+  //
+  // For example, a |ListView| widget has implicit scrolling so that users can
+  // easily move the accessibility focus to the next set of children. A
+  // |PageView| widget does not have implicit scrolling, so that users don't
+  // navigate to the next page when reaching the end of the current one.
+  kFlutterSemanticsFlagHasImplicitScrolling = 1 << 18,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -329,6 +341,10 @@ typedef struct {
   double bottom;
 } FlutterRect;
 
+// |FlutterSemanticsNode| ID used as a sentinel to signal the end of a batch of
+// semantics node updates.
+const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
+
 // A node that represents some semantic data.
 //
 // The semantics tree is maintained during the semantics phase of the pipeline
@@ -345,19 +361,19 @@ typedef struct {
   // The set of semantics actions applicable to this node.
   FlutterSemanticsAction actions;
   // The position at which the text selection originates.
-  int32_t textSelectionBase;
+  int32_t text_selection_base;
   // The position at which the text selection terminates.
-  int32_t textSelectionExtent;
+  int32_t text_selection_extent;
   // The total number of scrollable children that contribute to semantics.
-  int32_t scrollChildren;
+  int32_t scroll_child_count;
   // The index of the first visible semantic child of a scroll node.
-  int32_t scrollIndex;
+  int32_t scroll_index;
   // The current scrolling position in logical pixels if the node is scrollable.
-  double scrollPosition;
+  double scroll_position;
   // The maximum in-range value for |scrollPosition| if the node is scrollable.
-  double scrollExtentMax;
+  double scroll_extent_max;
   // The minimum in-range value for |scrollPosition| if the node is scrollable.
-  double scrollExtentMin;
+  double scroll_extent_min;
   // The elevation along the z-axis at which the rect of this semantics node is
   // located above its parent.
   double elevation;
@@ -371,13 +387,13 @@ typedef struct {
   const char* value;
   // A value that |value| will have after a kFlutterSemanticsActionIncrease|
   // action has been performed.
-  const char* increasedValue;
+  const char* increased_value;
   // A value that |value| will have after a kFlutterSemanticsActionDecrease|
   // action has been performed.
-  const char* decreasedValue;
+  const char* decreased_value;
   // The reading direction for |label|, |value|, |hint|, |increasedValue|, and
   // |decreasedValue|.
-  FlutterTextDirection textDirection;
+  FlutterTextDirection text_direction;
   // The bounding box for this node in its coordinate system.
   FlutterRect rect;
   // The transform from this node's coordinate system to its parent's coordinate
@@ -395,6 +411,10 @@ typedef struct {
   // Has length |custom_accessibility_actions_count|.
   const int32_t* custom_accessibility_actions;
 } FlutterSemanticsNode;
+
+// |FlutterSemanticsCustomAction| ID used as a sentinel to signal the end of a
+// batch of semantics custom action updates.
+const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
 // A custom semantics action, or action override.
 //
@@ -506,14 +526,23 @@ typedef struct {
   // immediately after the root isolate has been created and marked runnable.
   VoidCallback root_isolate_create_callback;
   // The callback invoked by the engine in order to give the embedder the
-  // chance to respond to semantics node updates from the Dart application. The
-  // callback will be invoked on the thread on which the |FlutterEngineRun|
+  // chance to respond to semantics node updates from the Dart application.
+  // Semantics node updates are sent in batches terminated by a 'batch end'
+  // callback that is passed a sentinel |FlutterSemanticsNode| whose |id| field
+  // has the value |kFlutterSemanticsNodeIdBatchEnd|.
+  //
+  // The callback will be invoked on the thread on which the |FlutterEngineRun|
   // call is made.
   FlutterUpdateSemanticsNodeCallback update_semantics_node_callback;
   // The callback invoked by the engine in order to give the embedder the
   // chance to respond to updates to semantics custom actions from the Dart
-  // application. The callback will be invoked on the thread on which the
-  // |FlutterEngineRun| call is made.
+  // application.  Custom action updates are sent in batches terminated by a
+  // 'batch end' callback that is passed a sentinel
+  // |FlutterSemanticsCustomAction| whose |id| field has the value
+  // |kFlutterSemanticsCustomActionIdBatchEnd|.
+  //
+  // The callback will be invoked on the thread on which the |FlutterEngineRun|
+  // call is made.
   FlutterUpdateSemanticsCustomActionCallback
       update_semantics_custom_action_callback;
   // Path to a directory used to store data that is cached across runs of a
@@ -615,8 +644,8 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     const uint8_t* data,
     size_t data_length);
 
-// Notify the engine that a vsync event occured. A baton passed to the platform
-// via the vsync callback must be returned.
+// Notify the engine that a vsync event occurred. A baton passed to the
+// platform via the vsync callback must be returned.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
                                          intptr_t baton,
@@ -631,9 +660,9 @@ FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
 FLUTTER_EXPORT
 void FlutterEngineTraceEventDurationBegin(const char* name);
 
-// A profiling utility. Logs a trace duration end event to the timeline. If
-// the timeline is unavailable or disabled, this has no effect. This call must
-// be preceeded by a trace duration begin call (via
+// A profiling utility. Logs a trace duration end event to the timeline. If the
+// timeline is unavailable or disabled, this has no effect. This call must be
+// preceded by a trace duration begin call (via
 // |FlutterEngineTraceEventDurationBegin|) with the same name on the same
 // thread. Can be called on any thread.
 FLUTTER_EXPORT

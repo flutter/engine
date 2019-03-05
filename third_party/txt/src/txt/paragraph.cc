@@ -458,7 +458,6 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
     static_cast<FontSkia*>(faked_font.font)
         ->GetSkTypeface()
         ->getFamilyName(&str);
-    FML_DLOG(ERROR) << str.c_str();
     font.setTypeface(static_cast<FontSkia*>(faked_font.font)->GetSkTypeface());
     font.setSize(paragraph_style_.strut_font_size);
     SkFontMetrics strut_metrics;
@@ -1249,6 +1248,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
   // Lines that are actually in the requested range.
   size_t max_line = 0;
   size_t min_line = INT_MAX;
+  size_t glyph_length = 0;
 
   // Generate initial boxes and calculate metrics.
   for (const CodeUnitRun& run : code_unit_runs_) {
@@ -1277,6 +1277,15 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
         if (gp.code_units.start >= start && gp.code_units.end <= end) {
           left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
           right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
+        } else if (gp.code_units.end == end) {
+          // Calculate left and right when we are at
+          // the last position of a combining character.
+          glyph_length = (gp.code_units.end - gp.code_units.start) - 1;
+          if (gp.code_units.start ==
+              std::max<size_t>(0, (start - glyph_length))) {
+            left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
+            right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
+          }
         }
       }
       if (left == SK_ScalarMax || right == SK_ScalarMin)

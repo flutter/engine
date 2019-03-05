@@ -13,16 +13,18 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
 
+import java.nio.ByteBuffer;
+
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 
 /**
  * Paints a Flutter UI on a {@link SurfaceTexture}.
  *
  * To begin rendering a Flutter UI, the owner of this {@code FlutterTextureView} must invoke
- * {@link #onAttachedToRenderer(FlutterRenderer)} with the desired {@link FlutterRenderer}.
+ * {@link #attachToRenderer(FlutterRenderer)} with the desired {@link FlutterRenderer}.
  *
  * To stop rendering a Flutter UI, the owner of this {@code FlutterTextureView} must invoke
- * {@link #onDetachedFromRenderer()}.
+ * {@link #detachFromRenderer()}.
  *
  * A {@code FlutterTextureView} is intended for situations where a developer needs to render
  * a Flutter UI, but does not require any keyboard input, gesture input, accessibility
@@ -30,7 +32,7 @@ import io.flutter.embedding.engine.renderer.FlutterRenderer;
  * desired, consider using a {@link FlutterView} which provides all of these behaviors and
  * utilizes a {@code FlutterTextureView} internally.
  */
-public class FlutterTextureView extends TextureView {
+public class FlutterTextureView extends TextureView implements FlutterRenderer.RenderSurface {
   private static final String TAG = "FlutterTextureView";
 
   private boolean isSurfaceAvailableForRendering = false;
@@ -109,13 +111,16 @@ public class FlutterTextureView extends TextureView {
    * Invoked by the owner of this {@code FlutterTextureView} when it wants to begin rendering
    * a Flutter UI to this {@code FlutterTextureView}.
    *
-   * If an Android {@link SurfaceTexture} is available, this method will begin rendering
-   * {@link FlutterRenderer}'s Flutter UI to this {@code FlutterTextureView}.
+   * If an Android {@link SurfaceTexture} is available, this method will give that
+   * {@link SurfaceTexture} to the given {@link FlutterRenderer} to begin rendering
+   * Flutter's UI to this {@code FlutterTextureView}.
    *
-   * If no Android {@link SurfaceTexture} is available yet, this {@code FlutterSurfaceView}
-   * will wait until a {@link SurfaceTexture} becomes available and then begin rendering.
+   * If no Android {@link SurfaceTexture} is available yet, this {@code FlutterTextureView}
+   * will wait until a {@link SurfaceTexture} becomes available and then give that
+   * {@link SurfaceTexture} to the given {@link FlutterRenderer} to begin rendering
+   * Flutter's UI to this {@code FlutterTextureView}.
    */
-  public void onAttachedToRenderer(@NonNull FlutterRenderer flutterRenderer) {
+  public void attachToRenderer(@NonNull FlutterRenderer flutterRenderer) {
     if (this.flutterRenderer != null) {
       this.flutterRenderer.detachFromRenderSurface();
     }
@@ -136,7 +141,7 @@ public class FlutterTextureView extends TextureView {
    *
    * This method will cease any on-going rendering from Flutter to this {@code FlutterTextureView}.
    */
-  public void onDetachedFromRenderer() {
+  public void detachFromRenderer() {
     if (flutterRenderer != null) {
       // If we're attached to an Android window then we were rendering a Flutter UI. Now that
       // this FlutterTextureView is detached from the FlutterRenderer, we need to stop rendering.
@@ -176,5 +181,21 @@ public class FlutterTextureView extends TextureView {
     }
 
     flutterRenderer.surfaceDestroyed();
+  }
+
+  @Override
+  public void updateCustomAccessibilityActions(ByteBuffer buffer, String[] strings) {
+    // TODO(mattcarroll): refactor RenderSurface to move this method somewhere else.
+  }
+
+  @Override
+  public void updateSemantics(ByteBuffer buffer, String[] strings) {
+    // TODO(mattcarroll): refactor RenderSurface to move this method somewhere else.
+  }
+
+  @Override
+  public void onFirstFrameRendered() {
+    // TODO(mattcarroll): decide where this method should live and what it needs to do.
+    Log.d(TAG, "onFirstFrameRendered()");
   }
 }
