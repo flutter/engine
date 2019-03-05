@@ -336,23 +336,11 @@ public class FlutterView extends FrameLayout {
   //-------- End: Process UI I/O that Flutter cares about. ---------
 
   //-------- Start: Accessibility -------
+  /**
+   * No-op. Placeholder so that the containing Fragment can call through, but not yet implemented.
+   */
   public void updateAccessibilityFeatures() {
-    // TODO(mattcarroll): get the following accessibility code working. This method is added now to
-    //                    avoid forgetting its invocation in FlutterFragment, but I want to think
-    //                    more deeply about how much accessibility logic should truly live in
-    //                    FlutterView vs AccessibilityBridge.
-//    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-//      String transitionAnimationScale = Settings.Global.getString(getContext().getContentResolver(),
-//          Settings.Global.TRANSITION_ANIMATION_SCALE);
-//      if (transitionAnimationScale != null && transitionAnimationScale.equals("0")) {
-//        accessibilityFeatureFlags != AccessibilityFeature.DISABLE_ANIMATIONS.value;
-//      } else {
-//        accessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
-//      }
-//    } else {
-//      // TODO(mattcarroll): we need to do something here for API 16
-//    }
-//    flutterEngine.getRenderer().setAccessibilityFeatures(accessibilityFeatureFlags);
+    // TODO(mattcarroll): bring in accessibility code from old FlutterView.
   }
   //-------- End: Accessibility ---------
 
