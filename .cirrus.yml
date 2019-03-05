@@ -71,7 +71,7 @@ task:
       cd $ENGINE_PATH/src
       mv $CIRRUS_WORKING_DIR flutter
       gclient sync
-  gclient_sync_script: |
+  update_deps_script: |
     cd $ENGINE_PATH/src
     rm -rf flutter
     rm -rf out
