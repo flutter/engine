@@ -64,8 +64,6 @@ IOSGLRenderTarget::IOSGLRenderTarget(fml::scoped_nsobject<CAEAGLLayer> layer,
 IOSGLRenderTarget::~IOSGLRenderTarget() {
   [EAGLContext setCurrentContext:context_];
   FML_DCHECK(glGetError() == GL_NO_ERROR);
- //fix platformview memory leak https://github.com/flutter/flutter/issues/24714
-  [EAGLContext setCurrentContext:context_.get()];
   // Deletes on GL_NONEs are ignored
   glDeleteFramebuffers(1, &framebuffer_);
   glDeleteRenderbuffers(1, &colorbuffer_);
