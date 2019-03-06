@@ -275,10 +275,18 @@
       }];
 }
 
-- (void)installSplashScreenViewCallback {
+- (void)onFlutterViewCallback {
   if (!_splashScreenView) {
-    return;
+    if (_flutterViewRenderedCallback != nil) {
+      _flutterViewRenderedCallback.get()();
+      _flutterViewRenderedCallback.reset();
+    }
+  } else {
+    [self removeSplashScreenViewIfPresent];
   }
+}
+
+- (void)installFlutterViewCallback {
   auto weak_platform_view = [_engine.get() platformView];
   if (!weak_platform_view) {
     return;
@@ -294,7 +302,7 @@
       // association. Thus, we are not convinced that the unsafe unretained weak object is in
       // fact alive.
       if (weak_platform_view) {
-        [weak_flutter_view_controller removeSplashScreenViewIfPresent];
+        [weak_flutter_view_controller onFlutterViewCallback];
       }
     });
   });
@@ -375,7 +383,7 @@
 - (void)surfaceUpdated:(BOOL)appeared {
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
   if (appeared) {
-    [self installSplashScreenViewCallback];
+    [self installFlutterViewCallback];
     [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
     [_engine.get() platformView] -> NotifyCreated();
   } else {
