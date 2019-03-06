@@ -846,22 +846,6 @@ public class FlutterView extends SurfaceView
     private int mAccessibilityFeatureFlags = 0;
     private TouchExplorationListener mTouchExplorationListener;
 
-    protected void dispatchSemanticsAction(int id, AccessibilityBridge.Action action) {
-        dispatchSemanticsAction(id, action, null);
-    }
-
-    protected void dispatchSemanticsAction(int id, AccessibilityBridge.Action action, Object args) {
-        if (!isAttached())
-            return;
-        ByteBuffer encodedArgs = null;
-        int position = 0;
-        if (args != null) {
-            encodedArgs = StandardMessageCodec.INSTANCE.encodeMessage(args);
-            position = encodedArgs.position();
-        }
-        mNativeView.getFlutterJNI().dispatchSemanticsAction(id, action.value, encodedArgs, position);
-    }
-
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
@@ -1010,7 +994,11 @@ public class FlutterView extends SurfaceView
             return;
         mAccessibilityEnabled = true;
         if (mAccessibilityNodeProvider == null) {
-            mAccessibilityNodeProvider = new AccessibilityBridge(this, accessibilityChannel);
+            mAccessibilityNodeProvider = new AccessibilityBridge(
+                this,
+                getFlutterNativeView().getFlutterJNI(),
+                accessibilityChannel
+            );
         }
         mNativeView.getFlutterJNI().setSemanticsEnabled(true);
         mAccessibilityNodeProvider.setAccessibilityEnabled(true);
