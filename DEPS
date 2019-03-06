@@ -409,9 +409,8 @@ hooks = [
     'action': ['python', 'src/build/vs_toolchain.py', 'update'],
   },
   {
-    # Pull dart sdk if needed this will be used by android_tools
+    # Pull prebuilt dart sdk.
     'name': 'dart',
-    'condition': 'download_android_deps',
     'pattern': '.',
     'action': ['python', 'src/tools/dart/update.py'],
   },
