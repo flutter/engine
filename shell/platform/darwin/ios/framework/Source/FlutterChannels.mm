@@ -39,7 +39,6 @@
 
 - (void)dealloc {
   [_name release];
-  //[_messenger release];
   [_codec release];
   [super dealloc];
 }
@@ -179,7 +178,6 @@ NSObject const* FlutterMethodNotImplemented = [NSObject new];
 
 - (void)dealloc {
   [_name release];
-  //[_messenger release];
   [_codec release];
   [super dealloc];
 }
@@ -259,7 +257,6 @@ NSObject const* FlutterEndOfEventStream = [NSObject new];
 - (void)dealloc {
   [_name release];
   [_codec release];
-  //[_messenger release];
   [super dealloc];
 }
 

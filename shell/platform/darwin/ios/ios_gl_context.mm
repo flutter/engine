@@ -22,7 +22,6 @@ IOSGLContext::IOSGLContext() {
     resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
                                                   sharegroup:context_.get().sharegroup]);
   }
-  [[NSNotificationCenter defaultCenter] postNotificationName:@"EAGLContextsharegroup" object:context_.get().sharegroup];
 
   // TODO:
   // iOS displays are more variable than just P3 or sRGB.  Reading the display

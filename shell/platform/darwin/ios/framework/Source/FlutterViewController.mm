@@ -416,7 +416,6 @@
 
 - (void)viewWillDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillDisappear");
-  [[[UIApplication sharedApplication] keyWindow] endEditing:YES];
 
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
 

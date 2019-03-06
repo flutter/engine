@@ -274,7 +274,6 @@
     }];
 
     __block __typeof(self)weakSelf = self;
-
     [_platformViewsChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
             [weakSelf platformCall:call result:result];
@@ -587,7 +586,7 @@
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   _pluginKey = [pluginKey retain];
-  _flutterEngine = flutterEngine;//[flutterEngine retain];
+  _flutterEngine = flutterEngine;
   return self;
 }
 
