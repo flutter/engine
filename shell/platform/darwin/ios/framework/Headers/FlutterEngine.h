@@ -17,6 +17,14 @@
 @class FlutterViewController;
 
 /**
+ * The name used for semantic update nofications via `NSNotificationCenter`.
+ *
+ * The object passed as the sender is the `FlutterViewController` associated
+ * with the update.
+ */
+const NSNotificationName FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
+
+/**
  * The FlutterEngine class coordinates a single instance of execution for a
  * `FlutterDartProject`.  It may have zero or one `FlutterViewController` at a
  * time, which can be specified via `-setViewController:`.
@@ -147,8 +155,9 @@ FLUTTER_EXPORT
  * `-runWithEntrypoint:` or `-runWithEntryPoint:libraryURI`.
  *
  * You can subscribe to semantics updates via `NSNotificationCenter` by adding
- * an observer for the name "FlutterSemanticsUpdate".  The `object` parameter
- * will be the `FlutterViewController` associated with the semantics update.
+ * an observer for the name `FlutterSemanticsUpdateNotification`.  The `object`
+ * parameter will be the `FlutterViewController` associated with the semantics
+ * update.
  */
 - (void)ensureSemanticsEnabled;
 
