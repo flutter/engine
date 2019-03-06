@@ -423,12 +423,12 @@ static void CommonInit(FLEViewController* controller) {
   }
 }
 
-- (void)dispatchMouseEvent:(NSEvent *)event phase:(FlutterPointerPhase)phase {
+- (void)dispatchMouseEvent:(NSEvent*)event phase:(FlutterPointerPhase)phase {
   // If a pointer added event hasn't been sent, synthesize one using this event for the basic
   // information.
   if (!_mouseCurrentlyAdded && phase != kAdd) {
     // Only the values extracted for use in flutterEvent below matter, the rest are dummy values.
-    NSEvent *addEvent = [NSEvent enterExitEventWithType:NSEventTypeMouseEntered
+    NSEvent* addEvent = [NSEvent enterExitEventWithType:NSEventTypeMouseEntered
                                                location:event.locationInWindow
                                           modifierFlags:0
                                               timestamp:event.timestamp
@@ -585,7 +585,7 @@ static void CommonInit(FLEViewController* controller) {
   [self dispatchMouseEvent:event phase:kHover];
 }
 
-- (void)scrollWheel:(NSEvent *)event {
+- (void)scrollWheel:(NSEvent*)event {
   // TODO: Add gesture-based (trackpad) scroll support once it's supported by the engine rather
   // than always using kHover.
   [self dispatchMouseEvent:event phase:kHover];
