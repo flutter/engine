@@ -277,12 +277,12 @@
 
 - (void)onFlutterViewCallback {
     if (!_splashScreenView) {
-        if (_flutterViewRenderedCallback != nil) {
-            _flutterViewRenderedCallback.get()();
-            _flutterViewRenderedCallback.reset();
-        }
+      if (_flutterViewRenderedCallback != nil) {
+        _flutterViewRenderedCallback.get()();
+        _flutterViewRenderedCallback.reset();
+      }
     } else {
-        [self removeSplashScreenViewIfPresent];
+      [self removeSplashScreenViewIfPresent];
     }
 }
 
@@ -302,7 +302,7 @@
       // association. Thus, we are not convinced that the unsafe unretained weak object is in
       // fact alive.
       if (weak_platform_view) {
-          [weak_flutter_view_controller onFlutterViewCallback];
+        [weak_flutter_view_controller onFlutterViewCallback];
       }
     });
   });
