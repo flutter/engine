@@ -145,6 +145,10 @@ FLUTTER_EXPORT
  *
  * This method must only be called after launching the engine via
  * `-runWithEntrypoint:` or `-runWithEntryPoint:libraryURI`.
+ *
+ * You can subscribe to semantics updates via `NSNotificationCenter` by adding
+ * an observer for the name "FlutterSemanticsUpdate".  The `object` parameter
+ * will be the `FlutterViewController` associated with the semantics update.
  */
 - (void)ensureSemanticsEnabled;
 
