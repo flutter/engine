@@ -37,6 +37,7 @@
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
+  NSMutableDictionary *pointers;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -55,6 +56,8 @@
 
     [self performCommonViewControllerInitialization];
     [engine setViewController:self];
+
+    pointers = [[NSMutableDictionary alloc]init];
   }
 
   return self;
@@ -75,6 +78,8 @@
     _engineNeedsLaunch = YES;
     [self loadDefaultSplashScreenView];
     [self performCommonViewControllerInitialization];
+
+    pointers = [[NSMutableDictionary alloc]init];
   }
 
   return self;
@@ -495,91 +500,226 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
   return blink::PointerData::DeviceKind::kTouch;
 }
 
+- (blink::PointerData)CreatePointerData:(CGPoint)windowCoordinates 
+    andTouch:(UITouch*)touch 
+    andScale:(CGFloat)scale 
+    andChange:(blink::PointerData::Change)change {
+  blink::PointerData pointer_data;
+  pointer_data.Clear();
+
+  constexpr int kMicrosecondsPerSecond = 1000 * 1000;
+  pointer_data.time_stamp = touch.timestamp * kMicrosecondsPerSecond;
+
+  pointer_data.change = change;
+
+  pointer_data.kind = DeviceKindFromTouchType(touch);
+
+  pointer_data.device = reinterpret_cast<int64_t>(touch);
+
+  pointer_data.physical_x = windowCoordinates.x * scale;
+  pointer_data.physical_y = windowCoordinates.y * scale;
+
+  // pressure_min is always 0.0
+  if (@available(iOS 9, *)) {
+    // These properties were introduced in iOS 9.0.
+    pointer_data.pressure = touch.force;
+    pointer_data.pressure_max = touch.maximumPossibleForce;
+  } else {
+    pointer_data.pressure = 1.0;
+    pointer_data.pressure_max = 1.0;
+  }
+
+  // These properties were introduced in iOS 8.0
+  pointer_data.radius_major = touch.majorRadius;
+  pointer_data.radius_min = touch.majorRadius - touch.majorRadiusTolerance;
+  pointer_data.radius_max = touch.majorRadius + touch.majorRadiusTolerance;
+
+  // These properties were introduced in iOS 9.1
+  if (@available(iOS 9.1, *)) {
+    // iOS Documentation: altitudeAngle
+    // A value of 0 radians indicates that the stylus is parallel to the surface. The value of
+    // this property is Pi/2 when the stylus is perpendicular to the surface.
+    //
+    // PointerData Documentation: tilt
+    // The angle of the stylus, in radians in the range:
+    //    0 <= tilt <= pi/2
+    // giving the angle of the axis of the stylus, relative to the axis perpendicular to the input
+    // surface (thus 0.0 indicates the stylus is orthogonal to the plane of the input surface,
+    // while pi/2 indicates that the stylus is flat on that surface).
+    //
+    // Discussion:
+    // The ranges are the same. Origins are swapped.
+    pointer_data.tilt = M_PI_2 - touch.altitudeAngle;
+
+    // iOS Documentation: azimuthAngleInView:
+    // With the tip of the stylus touching the screen, the value of this property is 0 radians
+    // when the cap end of the stylus (that is, the end opposite of the tip) points along the
+    // positive x axis of the device's screen. The azimuth angle increases as the user swings the
+    // cap end of the stylus in a clockwise direction around the tip.
+    //
+    // PointerData Documentation: orientation
+    // The angle of the stylus, in radians in the range:
+    //    -pi < orientation <= pi
+    // giving the angle of the axis of the stylus projected onto the input surface, relative to
+    // the positive y-axis of that surface (thus 0.0 indicates the stylus, if projected onto that
+    // surface, would go from the contact point vertically up in the positive y-axis direction, pi
+    // would indicate that the stylus would go down in the negative y-axis direction; pi/4 would
+    // indicate that the stylus goes up and to the right, -pi/2 would indicate that the stylus
+    // goes to the left, etc).
+    //
+    // Discussion:
+    // Sweep direction is the same. Phase of M_PI_2.
+    pointer_data.orientation = [touch azimuthAngleInView:nil] - M_PI_2;
+  }
+
+  return pointer_data;
+}
+
 // Dispatches the UITouches to the engine. Usually, the type of change of the touch is determined
 // from the UITouch's phase. However, FlutterAppDelegate fakes touches to ensure that touch events
 // in the status bar area are available to framework code. The change type (optional) of the faked
 // touch is specified in the second argument.
 - (void)dispatchTouches:(NSSet*)touches
     pointerDataChangeOverride:(blink::PointerData::Change*)overridden_change {
-  const CGFloat scale = [UIScreen mainScreen].scale;
-  auto packet = std::make_unique<blink::PointerDataPacket>(touches.count);
 
+  const CGFloat scale = [UIScreen mainScreen].scale;
+  
   size_t pointer_index = 0;
+  NSMutableDictionary *preparedPointerData = [[NSMutableDictionary alloc] init];
 
   for (UITouch* touch in touches) {
     CGPoint windowCoordinates = [touch locationInView:self.view];
 
-    blink::PointerData pointer_data;
-    pointer_data.Clear();
+    blink::PointerData::Change change = overridden_change != nullptr
+                            ? *overridden_change
+                            : PointerDataChangeFromUITouchPhase(touch.phase);
 
-    constexpr int kMicrosecondsPerSecond = 1000 * 1000;
-    pointer_data.time_stamp = touch.timestamp * kMicrosecondsPerSecond;
+    // original pointer data
+    blink::PointerData pointer_data = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:change];
 
-    pointer_data.change = overridden_change != nullptr
-                              ? *overridden_change
-                              : PointerDataChangeFromUITouchPhase(touch.phase);
+    // state to be monitored created here
+    PointerState *currentPointerState = [[PointerState alloc] initWithDx:pointer_data.physical_x andDy:pointer_data.physical_y andDevice:pointer_data.device];
+    
+    NSString *device = [[NSString alloc] initWithFormat:@"%lld", pointer_data.device];
+    BOOL alreadyAdded = NO;
 
-    pointer_data.kind = DeviceKindFromTouchType(touch);
+    switch (pointer_data.change)
+    {
+      case blink::PointerData::Change::kDown: {
+        // add pointer to state if absent
+        if (pointers[device] == nil) {
+          [pointers setValue:currentPointerState forKey:device];
+        } 
+                  
+        // if state contained pointer prior to event
+        if (alreadyAdded) {
+          // send additional pointer added event
+          blink::PointerData::Change addEvent = blink::PointerData::Change::kAdd;
+          blink::PointerData add_pointer = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:addEvent];
+          
+          NSValue *cppPointer=[NSValue valueWithBytes:&add_pointer objCType:@encode(blink::PointerData)];
+          [preparedPointerData setObject:cppPointer forKey:[NSNumber numberWithInt:pointer_index++]];
+        }
 
-    pointer_data.device = reinterpret_cast<int64_t>(touch);
+        // if state position has changed
+        PointerState *existingPointer = [pointers objectForKey: device];
+        if (![existingPointer isLastLocationWithX:pointer_data.physical_x andY:pointer_data.physical_y]) {
+          // update last position to current position
+          [existingPointer setLastLocationWithX:pointer_data.physical_x andY:pointer_data.physical_y];
+          // send additional hover event
+          blink::PointerData::Change hoverEvent = blink::PointerData::Change::kHover;
+          blink::PointerData hover_pointer = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:hoverEvent];
+          
+          NSValue *cppPointer=[NSValue valueWithBytes:&hover_pointer objCType:@encode(blink::PointerData)];
+          [preparedPointerData setObject:cppPointer forKey:[NSNumber numberWithInt:pointer_index++]];          
+        }
 
-    pointer_data.physical_x = windowCoordinates.x * scale;
-    pointer_data.physical_y = windowCoordinates.y * scale;
+        // set state to down
+        [existingPointer setDown];
+        break;
+      }
+      case blink::PointerData::Change::kAdd: {
+        // add pointer to state if absent
+        if (pointers[device] == nil) {
+          [pointers setValue:currentPointerState forKey:device];
+        }   
+        break;
+      }
+      case blink::PointerData::Change::kHover: {
+        // add pointer to state if absent
+        if (pointers[device] == nil) {
+          [pointers setValue:currentPointerState forKey:device];
+        } 
 
-    // pressure_min is always 0.0
-    if (@available(iOS 9, *)) {
-      // These properties were introduced in iOS 9.0.
-      pointer_data.pressure = touch.force;
-      pointer_data.pressure_max = touch.maximumPossibleForce;
-    } else {
-      pointer_data.pressure = 1.0;
-      pointer_data.pressure_max = 1.0;
+        // if state contained pointer prior to event
+        if (alreadyAdded) {
+          // send additional add event
+          blink::PointerData::Change addEvent = blink::PointerData::Change::kAdd;
+          blink::PointerData add_pointer = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:addEvent];
+          
+          NSValue *cppPointer=[NSValue valueWithBytes:&add_pointer objCType:@encode(blink::PointerData)];
+          [preparedPointerData setObject:cppPointer forKey:[NSNumber numberWithInt:pointer_index++]];
+        }
+      }
+      case blink::PointerData::Change::kMove: {
+        // set state's last position to current position
+        PointerState *existingPointer = [pointers objectForKey: device];
+        [existingPointer setLastLocationWithX:pointer_data.physical_x andY:pointer_data.physical_y];
+        break;
+      }
+      case blink::PointerData::Change::kCancel: 
+      case blink::PointerData::Change::kUp: {
+        // if state position has changed
+        PointerState *existingPointer = [pointers objectForKey: device];
+        if (![existingPointer isLastLocationWithX:pointer_data.physical_x andY:pointer_data.physical_y]) {
+          // update last position to current position
+          [existingPointer setLastLocationWithX:pointer_data.physical_x andY:pointer_data.physical_y];
+          // add move event
+          blink::PointerData::Change moveEvent = blink::PointerData::Change::kMove;
+          blink::PointerData move_pointer = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:moveEvent];
+          
+          NSValue *cppPointer=[NSValue valueWithBytes:&move_pointer objCType:@encode(blink::PointerData)];
+          [preparedPointerData setObject:cppPointer forKey:[NSNumber numberWithInt:pointer_index++]];          
+        }
+        // set state for device to up
+        [existingPointer setUp];
+        break;
+      }
+      case blink::PointerData::Change::kRemove: {
+        PointerState *existingPointer = [pointers objectForKey: device];
+        // if existing pointer is pressed
+        if ([existingPointer isDown]) {
+          // yield a cancel event
+          blink::PointerData::Change removeEvent = blink::PointerData::Change::kRemove;
+          blink::PointerData cancel_pointer = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:removeEvent];
+          
+          NSValue *cppPointer=[NSValue valueWithBytes:&cancel_pointer objCType:@encode(blink::PointerData)];
+          [preparedPointerData setObject:cppPointer forKey:[NSNumber numberWithInt:pointer_index++]];
+        }
+
+        // remove pointer from state
+        [pointers removeObjectForKey: device];
+        break;      
+      }
     }
 
-    // These properties were introduced in iOS 8.0
-    pointer_data.radius_major = touch.majorRadius;
-    pointer_data.radius_min = touch.majorRadius - touch.majorRadiusTolerance;
-    pointer_data.radius_max = touch.majorRadius + touch.majorRadiusTolerance;
+    // all cases should send its original pointer event
+    NSValue *current_pointer=[NSValue valueWithBytes:&pointer_data objCType:@encode(blink::PointerData)];
+    [preparedPointerData setObject:current_pointer forKey:[NSNumber numberWithInt:pointer_index++]];  
+  }
 
-    // These properties were introduced in iOS 9.1
-    if (@available(iOS 9.1, *)) {
-      // iOS Documentation: altitudeAngle
-      // A value of 0 radians indicates that the stylus is parallel to the surface. The value of
-      // this property is Pi/2 when the stylus is perpendicular to the surface.
-      //
-      // PointerData Documentation: tilt
-      // The angle of the stylus, in radians in the range:
-      //    0 <= tilt <= pi/2
-      // giving the angle of the axis of the stylus, relative to the axis perpendicular to the input
-      // surface (thus 0.0 indicates the stylus is orthogonal to the plane of the input surface,
-      // while pi/2 indicates that the stylus is flat on that surface).
-      //
-      // Discussion:
-      // The ranges are the same. Origins are swapped.
-      pointer_data.tilt = M_PI_2 - touch.altitudeAngle;
+  // initialize packet with appropriate number of events
+  auto packet = std::make_unique<blink::PointerDataPacket>(pointer_index);
 
-      // iOS Documentation: azimuthAngleInView:
-      // With the tip of the stylus touching the screen, the value of this property is 0 radians
-      // when the cap end of the stylus (that is, the end opposite of the tip) points along the
-      // positive x axis of the device's screen. The azimuth angle increases as the user swings the
-      // cap end of the stylus in a clockwise direction around the tip.
-      //
-      // PointerData Documentation: orientation
-      // The angle of the stylus, in radians in the range:
-      //    -pi < orientation <= pi
-      // giving the angle of the axis of the stylus projected onto the input surface, relative to
-      // the positive y-axis of that surface (thus 0.0 indicates the stylus, if projected onto that
-      // surface, would go from the contact point vertically up in the positive y-axis direction, pi
-      // would indicate that the stylus would go down in the negative y-axis direction; pi/4 would
-      // indicate that the stylus goes up and to the right, -pi/2 would indicate that the stylus
-      // goes to the left, etc).
-      //
-      // Discussion:
-      // Sweep direction is the same. Phase of M_PI_2.
-      pointer_data.orientation = [touch azimuthAngleInView:nil] - M_PI_2;
-    }
-
-    packet->SetPointerData(pointer_index++, pointer_data);
+  // for every prepared pointer datum 
+  for (size_t currentPointerIndex = 0; currentPointerIndex < pointer_index; currentPointerIndex++) {
+    // retrieve datum
+    NSValue *value = [preparedPointerData objectForKey:[NSNumber numberWithInt: currentPointerIndex]];
+    blink::PointerData retrieved_pointer;
+    [value getValue:&retrieved_pointer];
+    
+    // set pointer data to packet
+    packet->SetPointerData(currentPointerIndex, retrieved_pointer);
   }
 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
@@ -993,5 +1133,67 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
   return [_engine.get() valuePublishedByPlugin:pluginKey];
 }
+
+@end
+
+@implementation PointerState
+
+- (instancetype)initWithDx:(double)newDx andDy:(double)newDy andDevice:(long)newDevice {
+  self = [super init];
+
+  if (self) {
+    [self setDx:newDx];
+    [self setDy:newDy];
+    [self setDevice:newDevice];
+    [self setUp];
+  }
+
+  return self;
+}
+
+- (void)setDx:(double)newDx {
+    dx = newDx;
+};
+
+- (double)getDx {
+    return dx;
+};
+
+- (void)setDy:(double)newDy {
+    dy = newDy;
+};
+
+- (double)getDy {
+    return dy;
+};
+
+- (void)setDevice:(long)newDevice {
+    device = newDevice;
+};
+
+- (long)getDevice {
+    return device;
+};
+
+- (BOOL)isDown {
+    return pressed;
+};
+
+- (void)setDown {
+    pressed = YES;
+};
+
+- (void)setUp {
+    pressed = NO;
+};
+
+- (BOOL)isLastLocationWithX:(double)otherDx andY: (double)otherDy {
+    return dx == otherDx && dy == otherDy;
+};
+
+- (void)setLastLocationWithX:(double)newDx andY:(double)newDy {
+    dx = newDx;
+    dy = newDy;
+};
 
 @end

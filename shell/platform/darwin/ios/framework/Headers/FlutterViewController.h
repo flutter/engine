@@ -158,4 +158,27 @@ FLUTTER_EXPORT
 
 @end
 
+@interface PointerState:NSObject {
+    double dx;
+    double dy;
+    long device;
+    BOOL pressed;
+};
+
+- (instancetype)initWithDx:(double)newDx andDy:(double)newDy andDevice:(long)newDevice;
+
+- (void)setDx:(double)newDx;
+- (double)getDx;
+- (void)setDy:(double)newDy;
+- (double)getDy;
+- (void)setDevice:(long)newDevice;
+- (long)getDevice;
+- (void)setDown;
+- (void)setUp;
+- (BOOL)isDown;
+- (void)setLastLocationWithX:(double)dx andY:(double)dy;
+- (BOOL)isLastLocationWithX:(double)dx andY: (double)dy;
+
+@end
+
 #endif  // FLUTTER_FLUTTERVIEWCONTROLLER_H_
