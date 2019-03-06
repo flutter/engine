@@ -276,14 +276,14 @@
 }
 
 - (void)onFlutterViewCallback {
-    if (!_splashScreenView) {
-      if (_flutterViewRenderedCallback != nil) {
-        _flutterViewRenderedCallback.get()();
-        _flutterViewRenderedCallback.reset();
-      }
-    } else {
-      [self removeSplashScreenViewIfPresent];
+  if (!_splashScreenView) {
+    if (_flutterViewRenderedCallback != nil) {
+      _flutterViewRenderedCallback.get()();
+      _flutterViewRenderedCallback.reset();
     }
+  } else {
+    [self removeSplashScreenViewIfPresent];
+  }
 }
 
 - (void)installFlutterViewCallback {
