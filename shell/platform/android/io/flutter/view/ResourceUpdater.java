@@ -129,11 +129,9 @@ public final class ResourceUpdater {
                     return null;
                 }
 
-                InputStream input = connection.getInputStream();
-                try {
+                try (InputStream input = connection.getInputStream()) {
                     Log.i(TAG, "Downloading update " + unresolvedURL);
-                    OutputStream output = new FileOutputStream(localFile);
-                    try {
+                    try (OutputStream output = new FileOutputStream(localFile)) {
                         int count;
                         byte[] data = new byte[1024];
                         while ((count = input.read(data)) != -1) {
@@ -142,14 +140,6 @@ public final class ResourceUpdater {
 
                         long totalMillis = new Date().getTime() - startMillis;
                         Log.i(TAG, "Update downloaded in " + totalMillis / 100 / 10. + "s");
-                    } finally {
-                        if (output != null) {
-                            output.close();
-                        }
-                    }
-                } finally {
-                    if (input != null) {
-                        input.close();
                     }
                 }
 
@@ -336,19 +326,11 @@ public final class ResourceUpdater {
         };
         for (String fn : checksumFiles) {
             AssetManager manager = context.getResources().getAssets();
-            InputStream is = null;
-            try {
-                try {
-                    is = manager.open(fn);
-                    int count = 0;
-                    byte[] buffer = new byte[BUFFER_SIZE];
-                    while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
-                        checksum.update(buffer, 0, count);
-                    }
-                } finally {
-                    if (is != null) {
-                        is.close();
-                    }
+            try (InputStream is = manager.open(fn)) {
+                int count = 0;
+                byte[] buffer = new byte[BUFFER_SIZE];
+                while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
+                    checksum.update(buffer, 0, count);
                 }
             } catch (IOException e) {
                 // Skip missing files.

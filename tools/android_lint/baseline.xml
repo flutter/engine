@@ -7,7 +7,7 @@
         errorLine1="            assert object.id > ROOT_NODE_ID;"
         errorLine2="            ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="265"
             column="13"/>
     </issue>
@@ -18,7 +18,7 @@
         errorLine1="            assert object.id == ROOT_NODE_ID;"
         errorLine2="            ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="268"
             column="13"/>
     </issue>
@@ -29,7 +29,7 @@
         errorLine1="        assert !(hasCheckedState &amp;&amp; hasToggledState);"
         errorLine2="        ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="367"
             column="9"/>
     </issue>
@@ -40,7 +40,7 @@
         errorLine1="        assert objects.containsKey(0);"
         errorLine2="        ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="614"
             column="9"/>
     </issue>
@@ -51,7 +51,7 @@
         errorLine1="                    assert(object.scrollIndex + visibleChildren &lt;= object.scrollChildren);"
         errorLine2="                    ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="794"
             column="21"/>
     </issue>
@@ -62,7 +62,7 @@
         errorLine1="                    assert(!object.childrenInHitTestOrder.get(object.scrollIndex).hasFlag(Flag.IS_HIDDEN));"
         errorLine2="                    ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="795"
             column="21"/>
     </issue>
@@ -73,7 +73,7 @@
         errorLine1="        assert virtualViewId != ROOT_NODE_ID;"
         errorLine2="        ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="889"
             column="9"/>
     </issue>
@@ -84,7 +84,7 @@
         errorLine1="        assert objects.containsKey(object.id);"
         errorLine2="        ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="923"
             column="9"/>
     </issue>
@@ -95,7 +95,7 @@
         errorLine1="        assert objects.get(object.id) == object;"
         errorLine2="        ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="924"
             column="9"/>
     </issue>
@@ -106,7 +106,7 @@
         errorLine1="            assert hadPreviousConfig;"
         errorLine2="            ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="1068"
             column="13"/>
     </issue>
@@ -117,7 +117,7 @@
         errorLine1="                        assert action.overrideId == -1;"
         errorLine2="                        ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="1197"
             column="25"/>
     </issue>
@@ -128,7 +128,7 @@
         errorLine1="            assert !globalGeometryDirty;"
         errorLine2="            ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="1219"
             column="13"/>
     </issue>
@@ -139,7 +139,7 @@
         errorLine1="    assert packet.position() % (POINTER_DATA_FIELD_COUNT * BYTE_PER_FIELD) == 0;"
         errorLine2="    ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/embedding/engine/android/AndroidTouchProcessor.java"
+            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/android/AndroidTouchProcessor.java"
             line="80"
             column="5"/>
     </issue>
@@ -150,7 +150,7 @@
         errorLine1="        assert 0 &lt;= value;"
         errorLine2="        ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/plugin/common/StandardMessageCodec.java"
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/common/StandardMessageCodec.java"
             line="112"
             column="9"/>
     </issue>
@@ -161,7 +161,7 @@
         errorLine1="                                    AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT));"
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="517"
             column="37"/>
     </issue>
@@ -172,7 +172,7 @@
         errorLine1="                                    AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT));"
         errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="520"
             column="37"/>
     </issue>
@@ -183,7 +183,7 @@
         errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT;"
         errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
+            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
             line="221"
             column="16"/>
     </issue>
@@ -194,7 +194,7 @@
         errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE;"
         errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
+            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
             line="225"
             column="16"/>
     </issue>
@@ -205,7 +205,7 @@
         errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_FULL_USER;"
         errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
+            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
             line="229"
             column="16"/>
     </issue>
@@ -216,7 +216,7 @@
         errorLine1="                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);"
         errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java"
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java"
             line="121"
             column="44"/>
     </issue>
@@ -227,7 +227,7 @@
         errorLine1="            enabledOverlays |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;"
         errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java"
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java"
             line="154"
             column="32"/>
     </issue>
@@ -238,7 +238,7 @@
         errorLine1="        return direction == View.LAYOUT_DIRECTION_LTR || direction == View.LAYOUT_DIRECTION_RTL;"
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
             line="336"
             column="29"/>
     </issue>
@@ -249,7 +249,7 @@
         errorLine1="        return direction == View.LAYOUT_DIRECTION_LTR || direction == View.LAYOUT_DIRECTION_RTL;"
         errorLine2="                                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
             line="336"
             column="71"/>
     </issue>
@@ -260,7 +260,7 @@
         errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;16&quot; android:targetSdkVersion=&quot;21&quot; />"
         errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/AndroidManifest.xml"
+            file="../../../flutter/shell/platform/android/AndroidManifest.xml"
             line="8"
             column="42"/>
     </issue>
@@ -271,7 +271,7 @@
         errorLine1="    &lt;application android:label=&quot;Flutter Shell&quot; android:name=&quot;FlutterApplication&quot; android:debuggable=&quot;true&quot;>"
         errorLine2="                                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/AndroidManifest.xml"
+            file="../../../flutter/shell/platform/android/AndroidManifest.xml"
             line="13"
             column="82"/>
     </issue>
@@ -282,7 +282,7 @@
         errorLine1="                System.load(lib.getAbsolutePath());"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/FlutterMain.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/FlutterMain.java"
             line="164"
             column="17"/>
     </issue>
@@ -293,7 +293,7 @@
         errorLine1="    private static ResourceUpdater sResourceUpdater;"
         errorLine2="            ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/FlutterMain.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/FlutterMain.java"
             line="80"
             column="13"/>
     </issue>
@@ -304,7 +304,7 @@
         errorLine1="    private static ResourceExtractor sResourceExtractor;"
         errorLine2="            ~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/FlutterMain.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/FlutterMain.java"
             line="81"
             column="13"/>
     </issue>
@@ -315,7 +315,7 @@
         errorLine1="    private class CleanTask extends AsyncTask&lt;Void, Void, Void> {"
         errorLine2="                  ~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/ResourceCleaner.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/ResourceCleaner.java"
             line="22"
             column="19"/>
     </issue>
@@ -326,7 +326,7 @@
         errorLine1="    private class ExtractTask extends AsyncTask&lt;Void, Void, Void> {"
         errorLine2="                  ~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/ResourceExtractor.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/ResourceExtractor.java"
             line="44"
             column="19"/>
     </issue>
@@ -337,7 +337,7 @@
         errorLine1="    private class DownloadTask extends AsyncTask&lt;String, String, Void> {"
         errorLine2="                  ~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
             line="92"
             column="19"/>
     </issue>
@@ -348,7 +348,7 @@
         errorLine1="            Log.i(TAG,"
         errorLine2="            ^">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="1085"
             column="13"/>
     </issue>
@@ -359,7 +359,7 @@
         errorLine1="        Log.println(level, tag, errorMessage + details);"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/plugin/common/ErrorLogResult.java"
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/common/ErrorLogResult.java"
             line="33"
             column="9"/>
     </issue>
@@ -370,7 +370,7 @@
         errorLine1="            Log.i(TAG, &quot;Cleaning &quot; + mFilesToDelete.length + &quot; resources.&quot;);"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/ResourceCleaner.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/ResourceCleaner.java"
             line="35"
             column="13"/>
     </issue>
@@ -381,8 +381,8 @@
         errorLine1="                Log.i(TAG, &quot;Extracted baseline resource &quot; + resource);"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/ResourceExtractor.java"
-            line="205"
+            file="../../../flutter/shell/platform/android/io/flutter/view/ResourceExtractor.java"
+            line="197"
             column="17"/>
     </issue>
 
@@ -392,8 +392,8 @@
         errorLine1="                Log.i(TAG, &quot;Extracted override resource &quot; + entry.getName());"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/ResourceExtractor.java"
-            line="360"
+            file="../../../flutter/shell/platform/android/io/flutter/view/ResourceExtractor.java"
+            line="324"
             column="17"/>
     </issue>
 
@@ -403,7 +403,7 @@
         errorLine1="                Log.i(TAG, &quot;Checking for updates at &quot; + unresolvedURL);"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
             line="102"
             column="17"/>
     </issue>
@@ -414,7 +414,7 @@
         errorLine1="                Log.i(TAG, &quot;Resolved update URL &quot; + resolvedURL);"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
             line="117"
             column="17"/>
     </issue>
@@ -425,7 +425,7 @@
         errorLine1="                Log.i(TAG, &quot;HTTP response code &quot; + responseCode);"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
             line="120"
             column="17"/>
     </issue>
@@ -436,8 +436,8 @@
         errorLine1="                    Log.i(TAG, &quot;Downloading update &quot; + unresolvedURL);"
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
-            line="134"
+            file="../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
+            line="133"
             column="21"/>
     </issue>
 
@@ -447,8 +447,8 @@
         errorLine1="                        Log.i(TAG, &quot;Update downloaded in &quot; + totalMillis / 100 / 10. + &quot;s&quot;);"
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
-            line="144"
+            file="../../../flutter/shell/platform/android/io/flutter/view/ResourceUpdater.java"
+            line="142"
             column="25"/>
     </issue>
 
@@ -458,7 +458,7 @@
         errorLine1="        objects = new HashMap&lt;>();"
         errorLine2="                  ~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="137"
             column="19"/>
     </issue>
@@ -469,7 +469,7 @@
         errorLine1="        customAccessibilityActions = new HashMap&lt;>();"
         errorLine2="                                     ~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
+            file="../../../flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java"
             line="138"
             column="38"/>
     </issue>
@@ -480,7 +480,7 @@
         errorLine1="    this.pendingReplies = new HashMap&lt;>();"
         errorLine2="                          ~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java"
+            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java"
             line="43"
             column="27"/>
     </issue>
@@ -491,7 +491,7 @@
         errorLine1="        vdControllers = new HashMap&lt;>();"
         errorLine2="                        ~~~~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
             line="57"
             column="25"/>
     </issue>
@@ -502,8 +502,8 @@
         errorLine1="  public boolean onTouchEvent(MotionEvent event) {"
         errorLine2="                 ~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/embedding/engine/android/FlutterView.java"
-            line="310"
+            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/android/FlutterView.java"
+            line="309"
             column="18"/>
     </issue>
 
@@ -513,8 +513,8 @@
         errorLine1="    public boolean onTouchEvent(MotionEvent event) {"
         errorLine2="                   ~~~~~~~~~~~~">
         <location
-            file="../../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java"
-            line="498"
+            file="../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java"
+            line="510"
             column="20"/>
     </issue>
 

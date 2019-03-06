@@ -189,17 +189,9 @@ class ResourceExtractor {
                     output.getParentFile().mkdirs();
                 }
 
-                InputStream is = manager.open(asset);
-                OutputStream os = new FileOutputStream(output);
-                try {
+                try (InputStream is = manager.open(asset);
+                     OutputStream os = new FileOutputStream(output)) {
                     copy(is, os);
-                } finally {
-                    if (is != null) {
-                        is.close();
-                    }
-                    if (os != null) {
-                        os.close();
-                    }
                 }
 
                 Log.i(TAG, "Extracted baseline resource " + resource);
@@ -290,13 +282,8 @@ class ResourceExtractor {
             try {
                 if (entry.getName().endsWith(".bzdiff40")) {
                     ByteArrayOutputStream diff = new ByteArrayOutputStream();
-                    InputStream is = zipFile.getInputStream(entry);
-                    try {
+                    try (InputStream is = zipFile.getInputStream(entry)) {
                         copy(is, diff);
-                    } finally {
-                        if (is != null) {
-                            is.close();
-                        }
                     }
 
                     ByteArrayOutputStream orig = new ByteArrayOutputStream();
@@ -311,49 +298,26 @@ class ResourceExtractor {
                             throw new IOException("Could not find APK resource " + resource);
                         }
 
-                        InputStream apkInputStream = apkFile.getInputStream(origEntry);
-                        try {
-                            copy(apkInputStream, orig);
-                        } finally {
-                            if (apkInputStream != null) {
-                                apkInputStream.close();
-                            }
+                        try (InputStream is = apkFile.getInputStream(origEntry)) {
+                            copy(is, orig);
                         }
 
                     } else {
-                        InputStream assetInputStream = manager.open(asset);
-                        try {
-                            copy(assetInputStream, orig);
+                        try (InputStream is = manager.open(asset)) {
+                            copy(is, orig);
                         } catch (FileNotFoundException e) {
                             throw new IOException("Could not find APK resource " + resource);
-                        } finally {
-                            if (assetInputStream != null) {
-                                assetInputStream.close();
-                            }
                         }
                     }
 
-                    OutputStream os = new FileOutputStream(output);
-                    try {
+                    try (OutputStream os = new FileOutputStream(output)) {
                         os.write(BSDiff.bspatch(orig.toByteArray(), diff.toByteArray()));
-                    } finally {
-                        if (os != null) {
-                            os.close();
-                        }
                     }
 
                 } else {
-                    InputStream is = zipFile.getInputStream(entry);
-                    OutputStream os = new FileOutputStream(output);
-                    try {
+                    try (InputStream is = zipFile.getInputStream(entry);
+                         OutputStream os = new FileOutputStream(output)) {
                         copy(is, os);
-                    } finally {
-                        if (is != null) {
-                            is.close();
-                        }
-                        if (os != null) {
-                            os.close();
-                        }
                     }
                 }
 
