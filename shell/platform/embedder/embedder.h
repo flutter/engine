@@ -97,6 +97,10 @@ typedef enum {
   kFlutterSemanticsActionCustomAction = 1 << 17,
   // A request that the node should be dismissed.
   kFlutterSemanticsActionDismiss = 1 << 18,
+  // Move the cursor forward by one word.
+  kFlutterSemanticsActionMoveCursorForwardByWordIndex = 1 << 19,
+  // Move the cursor backward by one word.
+  kFlutterSemanticsActionMoveCursorBackwardByWordIndex = 1 << 20,
 } FlutterSemanticsAction;
 
 // The set of properties that may be associated with a semantics node.
@@ -141,6 +145,14 @@ typedef enum {
   kFlutterSemanticsFlagHasToggledState = 1 << 16,
   // If true, the semantics node is "on". If false, the semantics node is "off".
   kFlutterSemanticsFlagIsToggled = 1 << 17,
+  // Whether the platform can scroll the semantics node when the user attempts
+  // to move the accessibility focus to an offscreen child.
+  //
+  // For example, a |ListView| widget has implicit scrolling so that users can
+  // easily move the accessibility focus to the next set of children. A
+  // |PageView| widget does not have implicit scrolling, so that users don't
+  // navigate to the next page when reaching the end of the current one.
+  kFlutterSemanticsFlagHasImplicitScrolling = 1 << 18,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -265,6 +277,7 @@ typedef struct {
   double pixel_ratio;
 } FlutterWindowMetricsEvent;
 
+// The phase of the pointer event.
 typedef enum {
   kCancel,
   kUp,
@@ -274,6 +287,12 @@ typedef enum {
   kRemove,
   kHover,
 } FlutterPointerPhase;
+
+// The type of a pointer signal.
+typedef enum {
+  kFlutterPointerSignalKindNone,
+  kFlutterPointerSignalKindScroll,
+} FlutterPointerSignalKind;
 
 typedef struct {
   // The size of this struct. Must be sizeof(FlutterPointerEvent).
@@ -285,6 +304,9 @@ typedef struct {
   // An optional device identifier. If this is not specified, it is assumed that
   // the embedder has no multitouch capability.
   int32_t device;
+  FlutterPointerSignalKind signal_kind;
+  double scroll_delta_x;
+  double scroll_delta_y;
 } FlutterPointerEvent;
 
 struct _FlutterPlatformMessageResponseHandle;

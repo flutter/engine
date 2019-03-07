@@ -9,6 +9,7 @@ import android.content.res.Configuration;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.LocaleList;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.format.DateFormat;
@@ -17,10 +18,9 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.WindowInsets;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
-import android.view.inputmethod.InputMethod;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
 import java.util.ArrayList;
@@ -30,6 +30,7 @@ import java.util.Locale;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.view.VsyncWaiter;
 
 /**
  * Displays a Flutter UI on an Android device.
@@ -76,6 +77,9 @@ public class FlutterView extends FrameLayout {
   private TextInputPlugin textInputPlugin;
   @Nullable
   private AndroidKeyProcessor androidKeyProcessor;
+
+  // Directly implemented View behavior that communicates with Flutter.
+  private final FlutterRenderer.ViewportMetrics viewportMetrics = new FlutterRenderer.ViewportMetrics();
 
   /**
    * Constructs a {@code FlutterSurfaceView} programmatically, without any XML attributes.
@@ -158,8 +162,10 @@ public class FlutterView extends FrameLayout {
    */
   @Override
   protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
-    // TODO(mattcarroll): hookup to viewport metrics.
     super.onSizeChanged(width, height, oldWidth, oldHeight);
+    viewportMetrics.width = width;
+    viewportMetrics.height = height;
+    sendViewportMetricsToFlutter();
   }
 
   /**
@@ -174,8 +180,22 @@ public class FlutterView extends FrameLayout {
    */
   @Override
   public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
-    // TODO(mattcarroll): hookup to Flutter metrics.
-    return insets;
+    WindowInsets newInsets = super.onApplyWindowInsets(insets);
+
+    // Status bar (top) and left/right system insets should partially obscure the content (padding).
+    viewportMetrics.paddingTop = insets.getSystemWindowInsetTop();
+    viewportMetrics.paddingRight = insets.getSystemWindowInsetRight();
+    viewportMetrics.paddingBottom = 0;
+    viewportMetrics.paddingLeft = insets.getSystemWindowInsetLeft();
+
+    // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
+    viewportMetrics.viewInsetTop = 0;
+    viewportMetrics.viewInsetRight = 0;
+    viewportMetrics.viewInsetBottom = insets.getSystemWindowInsetBottom();
+    viewportMetrics.viewInsetLeft = 0;
+    sendViewportMetricsToFlutter();
+
+    return newInsets;
   }
 
   /**
@@ -188,8 +208,23 @@ public class FlutterView extends FrameLayout {
   @Override
   @SuppressWarnings("deprecation")
   protected boolean fitSystemWindows(Rect insets) {
-    // TODO(mattcarroll): hookup to Flutter metrics.
-    return super.fitSystemWindows(insets);
+    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
+      // Status bar, left/right system insets partially obscure content (padding).
+      viewportMetrics.paddingTop = insets.top;
+      viewportMetrics.paddingRight = insets.right;
+      viewportMetrics.paddingBottom = 0;
+      viewportMetrics.paddingLeft = insets.left;
+
+      // Bottom system inset (keyboard) should adjust scrollable bottom edge (inset).
+      viewportMetrics.viewInsetTop = 0;
+      viewportMetrics.viewInsetRight = 0;
+      viewportMetrics.viewInsetBottom = insets.bottom;
+      viewportMetrics.viewInsetLeft = 0;
+      sendViewportMetricsToFlutter();
+      return true;
+    } else {
+      return super.fitSystemWindows(insets);
+    }
   }
   //------- End: Process View configuration that Flutter cares about. --------
 
@@ -300,6 +335,15 @@ public class FlutterView extends FrameLayout {
   }
   //-------- End: Process UI I/O that Flutter cares about. ---------
 
+  //-------- Start: Accessibility -------
+  /**
+   * No-op. Placeholder so that the containing Fragment can call through, but not yet implemented.
+   */
+  public void updateAccessibilityFeatures() {
+    // TODO(mattcarroll): bring in accessibility code from old FlutterView.
+  }
+  //-------- End: Accessibility ---------
+
   /**
    * Connects this {@code FlutterView} to the given {@link FlutterEngine}.
    *
@@ -312,13 +356,16 @@ public class FlutterView extends FrameLayout {
    * {@link FlutterEngine}.
    */
   public void attachToFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    Log.d(TAG, "attachToFlutterEngine()");
     if (isAttachedToFlutterEngine()) {
       if (flutterEngine == this.flutterEngine) {
         // We are already attached to this FlutterEngine
+        Log.d(TAG, "Already attached to this engine. Doing nothing.");
         return;
       }
 
       // Detach from a previous FlutterEngine so we can attach to this new one.
+      Log.d(TAG, "Currently attached to a different engine. Detaching.");
       detachFromFlutterEngine();
     }
 
@@ -346,6 +393,7 @@ public class FlutterView extends FrameLayout {
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();
     sendLocalesToFlutter(getResources().getConfiguration());
+    sendViewportMetricsToFlutter();
   }
 
   /**
@@ -359,7 +407,9 @@ public class FlutterView extends FrameLayout {
    * {@link FlutterEngine}.
    */
   public void detachFromFlutterEngine() {
+    Log.d(TAG, "detachFromFlutterEngine()");
     if (!isAttachedToFlutterEngine()) {
+      Log.d(TAG, "Not attached to an engine. Doing nothing.");
       return;
     }
     Log.d(TAG, "Detaching from Flutter Engine");
@@ -420,6 +470,18 @@ public class FlutterView extends FrameLayout {
         .setTextScaleFactor(getResources().getConfiguration().fontScale)
         .setUse24HourFormat(DateFormat.is24HourFormat(getContext()))
         .send();
+  }
+
+  // TODO(mattcarroll): consider introducing a system channel for this communication instead of JNI
+  private void sendViewportMetricsToFlutter() {
+    Log.d(TAG, "sendViewportMetricsToFlutter()");
+    if (!isAttachedToFlutterEngine()) {
+      Log.w(TAG, "Tried to send viewport metrics from Android to Flutter but this FlutterView was not attached to a FlutterEngine.");
+      return;
+    }
+
+    viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
+    flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
   }
 
   /**
