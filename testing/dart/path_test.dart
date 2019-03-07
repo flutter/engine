@@ -199,4 +199,22 @@ void main() {
     expect(multiContourMetric.iterator.moveNext(), isFalse);
     expect(multiContourMetric.iterator.current, isNull);
   });
+
+  test('PathMetrics can remember lengths and isClosed', () {
+    final Path path = Path()..lineTo(0, 10)
+                            ..close()
+                            ..moveTo(0, 15)
+                            ..lineTo(10, 15);
+    final List<PathMetric> metrics = path.computeMetrics().toList();
+    expect(metrics.length, 2);
+    print(metrics);
+    expect(metrics[0].length, 20);
+    expect(metrics[0].isClosed, true);
+    expect(() => metrics[0].getTangentForOffset(4.0), isNotNull);
+    expect(() => metrics[0].extractPath(4.0, 10.0), isNotNull);
+    expect(metrics[1].length, 10);
+    expect(metrics[1].isClosed, false);
+    expect(() => metrics[1].getTangentForOffset(4.0), isNotNull);
+    expect(() => metrics[1].extractPath(4.0, 10.0), isNotNull);
+  });
 }

@@ -30,9 +30,16 @@ struct alignas(8) PointerData {
     kInvertedStylus,
   };
 
+  // Must match the PointerSignalKind enum in pointer.dart.
+  enum class SignalKind : int64_t {
+    kNone,
+    kScroll,
+  };
+
   int64_t time_stamp;
   Change change;
   DeviceKind kind;
+  SignalKind signal_kind;
   int64_t device;
   double physical_x;
   double physical_y;
@@ -51,6 +58,8 @@ struct alignas(8) PointerData {
   double orientation;
   double tilt;
   int64_t platformData;
+  double scroll_delta_x;
+  double scroll_delta_y;
 
   void Clear();
 };

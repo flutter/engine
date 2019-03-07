@@ -59,12 +59,9 @@ public class FlutterMain {
     private static final String DEFAULT_AOT_ISOLATE_SNAPSHOT_DATA = "isolate_snapshot_data";
     private static final String DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR = "isolate_snapshot_instr";
     private static final String DEFAULT_FLX = "app.flx";
+    private static final String DEFAULT_LIBRARY = "libflutter.so";
     private static final String DEFAULT_KERNEL_BLOB = "kernel_blob.bin";
     private static final String DEFAULT_FLUTTER_ASSETS_DIR = "flutter_assets";
-
-    // Assets that are shared among all Flutter apps within an APK.
-    private static final String SHARED_ASSET_DIR = "flutter_shared";
-    private static final String SHARED_ASSET_ICU_DATA = "icudtl.dat";
 
     private static String fromFlutterAssets(String filePath) {
         return sFlutterAssetsDir + File.separator + filePath;
@@ -85,7 +82,6 @@ public class FlutterMain {
     private static boolean sIsPrecompiledAsBlobs;
     private static boolean sIsPrecompiledAsSharedLibrary;
     private static Settings sSettings;
-    private static String sIcuDataPath;
 
     private static final class ImmutableSetBuilder<T> {
         static <T> ImmutableSetBuilder<T> newInstance() {
@@ -158,7 +154,18 @@ public class FlutterMain {
         initConfig(applicationContext);
         initAot(applicationContext);
         initResources(applicationContext);
-        System.loadLibrary("flutter");
+
+        if (sResourceUpdater == null) {
+            System.loadLibrary("flutter");
+        } else {
+            sResourceExtractor.waitForCompletion();
+            File lib = new File(PathUtils.getDataDirectory(applicationContext), DEFAULT_LIBRARY);
+            if (lib.exists()) {
+                System.load(lib.getAbsolutePath());
+            } else {
+                System.loadLibrary("flutter");
+            }
+        }
 
         // We record the initialization time using SystemClock because at the start of the
         // initialization we have not yet loaded the native library to call into dart_tools_api.h.
@@ -188,7 +195,7 @@ public class FlutterMain {
             sResourceExtractor.waitForCompletion();
 
             List<String> shellArgs = new ArrayList<>();
-            shellArgs.add("--icu-data-file-path=" + sIcuDataPath);
+            shellArgs.add("--icu-symbol-prefix=_binary_icudtl_dat");
             if (args != null) {
                 Collections.addAll(shellArgs, args);
             }
@@ -284,10 +291,6 @@ public class FlutterMain {
 
         sResourceExtractor = new ResourceExtractor(context);
 
-        String icuAssetPath = SHARED_ASSET_DIR + File.separator + SHARED_ASSET_ICU_DATA;
-        sResourceExtractor.addResource(icuAssetPath);
-        sIcuDataPath = PathUtils.getDataDirectory(applicationContext) + File.separator + icuAssetPath;
-
         sResourceExtractor
             .addResource(fromFlutterAssets(sFlx))
             .addResource(fromFlutterAssets(sAotVmSnapshotData))
@@ -306,6 +309,11 @@ public class FlutterMain {
             .addResource(sAotVmSnapshotInstr)
             .addResource(sAotIsolateSnapshotData)
             .addResource(sAotIsolateSnapshotInstr);
+        }
+
+        if (sResourceUpdater != null) {
+          sResourceExtractor
+            .addResource(DEFAULT_LIBRARY);
         }
 
         sResourceExtractor.start();

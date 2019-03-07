@@ -6,14 +6,16 @@
 
 #if defined(OS_FUCHSIA)
 
-#include "lib/ui/scenic/fidl_helpers.h"  // nogncheck
+#include "lib/ui/scenic/cpp/commands.h"
 
 #endif  // defined(OS_FUCHSIA)
 
 namespace flow {
 
 ClipPathLayer::ClipPathLayer(Clip clip_behavior)
-    : clip_behavior_(clip_behavior) {}
+    : clip_behavior_(clip_behavior) {
+  FML_DCHECK(clip_behavior != Clip::none);
+}
 
 ClipPathLayer::~ClipPathLayer() = default;
 

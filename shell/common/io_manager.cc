@@ -11,7 +11,8 @@
 namespace shell {
 
 sk_sp<GrContext> IOManager::CreateCompatibleResourceLoadingContext(
-    GrBackend backend) {
+    GrBackend backend,
+    sk_sp<const GrGLInterface> gl_interface) {
   if (backend != GrBackend::kOpenGL_GrBackend) {
     return nullptr;
   }
@@ -31,7 +32,7 @@ sk_sp<GrContext> IOManager::CreateCompatibleResourceLoadingContext(
   // ES2 shading language when the ES3 external image extension is missing.
   options.fPreferExternalImagesOverES3 = true;
 
-  if (auto context = GrContext::MakeGL(GrGLMakeNativeInterface(), options)) {
+  if (auto context = GrContext::MakeGL(gl_interface, options)) {
     // Do not cache textures created by the image decoder.  These textures
     // should be deleted when they are no longer referenced by an SkImage.
     context->setResourceCacheLimits(0, 0);
@@ -53,9 +54,11 @@ IOManager::IOManager(sk_sp<GrContext> resource_context,
           fml::TimeDelta::FromMilliseconds(250))),
       weak_factory_(this) {
   if (!resource_context_) {
+#ifndef OS_FUCHSIA
     FML_DLOG(WARNING) << "The IO manager was initialized without a resource "
                          "context. Async texture uploads will be disabled. "
                          "Expect performance degradation.";
+#endif  // OS_FUCHSIA
   }
 }
 

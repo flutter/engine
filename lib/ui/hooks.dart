@@ -86,7 +86,15 @@ void _updateUserSettingsData(String jsonData) {
   }
   _updateTextScaleFactor(data['textScaleFactor'].toDouble());
   _updateAlwaysUse24HourFormat(data['alwaysUse24HourFormat']);
+  _updatePlatformBrightness(data['platformBrightness']);
 }
+
+@pragma('vm:entry-point')
+// ignore: unused_element
+void _updateLifecycleState(String state) {
+  window._initialLifecycleState ??= state;
+}
+
 
 void _updateTextScaleFactor(double textScaleFactor) {
   window._textScaleFactor = textScaleFactor;
@@ -95,6 +103,11 @@ void _updateTextScaleFactor(double textScaleFactor) {
 
 void _updateAlwaysUse24HourFormat(bool alwaysUse24HourFormat) {
   window._alwaysUse24HourFormat = alwaysUse24HourFormat;
+}
+
+void _updatePlatformBrightness(String brightnessName) {
+  window._platformBrightness = brightnessName == 'dark' ? Brightness.dark : Brightness.light;
+  _invoke(window.onPlatformBrightnessChanged, window._onPlatformBrightnessChangedZone);
 }
 
 @pragma('vm:entry-point')
@@ -162,12 +175,26 @@ void _drawFrame() {
   _invoke(window.onDrawFrame, window._onDrawFrameZone);
 }
 
+// ignore: always_declare_return_types, prefer_generic_function_type_aliases
+typedef _UnaryFunction(Null args);
+// ignore: always_declare_return_types, prefer_generic_function_type_aliases
+typedef _BinaryFunction(Null args, Null message);
+
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _runMainZoned(Function startMainIsolateFunction, Function userMainFunction) {
   startMainIsolateFunction((){
     runZoned<Future<void>>(() {
-      userMainFunction();
+      const List<String> empty_args = <String>[];
+      if (userMainFunction is _BinaryFunction) {
+        // This seems to be undocumented but supported by the command line VM.
+        // Let's do the same in case old entry-points are ported to Flutter.
+        (userMainFunction as dynamic)(empty_args, '');
+      } else if (userMainFunction is _UnaryFunction) {
+        (userMainFunction as dynamic)(empty_args);
+      } else {
+        userMainFunction();
+      }
     }, onError: (Object error, StackTrace stackTrace) {
       _reportUnhandledException(error.toString(), stackTrace.toString());
     });
@@ -239,7 +266,7 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1
 //
 //  * pointer_data.cc
 //  * FlutterView.java
-const int _kPointerDataFieldCount = 21;
+const int _kPointerDataFieldCount = 24;
 
 PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
@@ -253,6 +280,7 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
       timeStamp: new Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
       change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      signalKind: PointerSignalKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
       physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
@@ -271,6 +299,8 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
       orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       platformData: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian)
     );
     assert(offset == (i + 1) * _kPointerDataFieldCount);
   }

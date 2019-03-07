@@ -199,7 +199,7 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   private void handlePlatformMessage(final String channel, byte[] message, final int replyId) {
     if (platformMessageHandler != null) {
-      platformMessageHandler.handlePlatformMessage(channel, message, replyId);
+      platformMessageHandler.handleMessageFromDart(channel, message, replyId);
     }
     // TODO(mattcarroll): log dropped messages when in debug mode (https://github.com/flutter/flutter/issues/25391)
   }
@@ -391,15 +391,6 @@ public class FlutterJNI {
   }
 
   private native long nativeAttach(FlutterJNI flutterJNI, boolean isBackgroundView);
-
-  @UiThread
-  public void detachFromNativeButKeepNativeResources() {
-    ensureAttachedToNative();
-    nativeDetach(nativePlatformViewId);
-    nativePlatformViewId = null;
-  }
-
-  private native void nativeDetach(long nativePlatformViewId);
 
   @UiThread
   public void detachFromNativeAndReleaseResources() {

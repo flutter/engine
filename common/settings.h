@@ -48,6 +48,10 @@ struct Settings {
   std::string isolate_snapshot_instr_path;  // deprecated
   MappingCallback isolate_snapshot_instr;
 
+  // Returns the Mapping to a kernel buffer which contains sources for dart:*
+  // libraries.
+  MappingCallback dart_library_sources_kernel;
+
   std::string application_library_path;
   std::string application_kernel_asset;
   std::string application_kernel_list_asset;
@@ -59,6 +63,7 @@ struct Settings {
   bool start_paused = false;
   bool trace_skia = false;
   bool trace_startup = false;
+  bool trace_systrace = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
@@ -96,14 +101,21 @@ struct Settings {
   std::function<void(int64_t)> idle_notification_callback;
   // A callback given to the embedder to react to unhandled exceptions in the
   // running Flutter application. This callback is made on an internal engine
-  // managed thread and embedders must thread as necessary. Performing blocking
-  // calls in this callback will cause applications to jank.
+  // managed thread and embedders must re-thread as necessary. Performing
+  // blocking calls in this callback will cause applications to jank.
   UnhandledExceptionCallback unhandled_exception_callback;
   bool enable_software_rendering = false;
   bool skia_deterministic_rendering_on_cpu = false;
   bool verbose_logging = false;
   std::string log_tag = "flutter";
+
+  // The icu_initialization_required setting does not have a corresponding
+  // switch because it is intended to be decided during build time, not runtime.
+  // Some companies apply source modification here because their build system
+  // brings its own ICU data files.
+  bool icu_initialization_required = true;
   std::string icu_data_path;
+  MappingCallback icu_mapper;
 
   // Assets settings
   fml::UniqueFD::element_type assets_dir =

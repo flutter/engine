@@ -36,8 +36,11 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   canvas.drawImage(image_, bounds.fLeft, bounds.fTop, paint);
 }
 
-RasterCache::RasterCache(size_t threshold)
-    : threshold_(threshold), checkerboard_images_(false), weak_factory_(this) {}
+RasterCache::RasterCache(size_t threshold, size_t picture_cache_limit_per_frame)
+    : threshold_(threshold),
+      picture_cache_limit_per_frame_(picture_cache_limit_per_frame),
+      checkerboard_images_(false),
+      weak_factory_(this) {}
 
 RasterCache::~RasterCache() = default;
 
@@ -84,7 +87,7 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
 
   // TODO(abarth): We should find a better heuristic here that lets us avoid
   // wasting memory on trivial layers that are easy to re-rasterize every frame.
-  return picture->approximateOpCount() > 10;
+  return picture->approximateOpCount() > 5;
 }
 
 static RasterCacheResult Rasterize(
@@ -182,6 +185,9 @@ bool RasterCache::Prepare(GrContext* context,
                           SkColorSpace* dst_color_space,
                           bool is_complex,
                           bool will_change) {
+  if (picture_cached_this_frame_ >= picture_cache_limit_per_frame_) {
+    return false;
+  }
   if (!IsPictureWorthRasterizing(picture, will_change, is_complex)) {
     // We only deal with pictures that are worthy of rasterization.
     return false;
@@ -211,6 +217,7 @@ bool RasterCache::Prepare(GrContext* context,
     entry.image = RasterizePicture(picture, context, transformation_matrix,
                                    dst_color_space, checkerboard_images_);
   }
+  picture_cached_this_frame_++;
   return true;
 }
 
@@ -232,6 +239,7 @@ void RasterCache::SweepAfterFrame() {
   using LayerCache = LayerRasterCacheKey::Map<Entry>;
   SweepOneCacheAfterFrame<PictureCache, PictureCache::iterator>(picture_cache_);
   SweepOneCacheAfterFrame<LayerCache, LayerCache::iterator>(layer_cache_);
+  picture_cached_this_frame_ = 0;
 }
 
 void RasterCache::Clear() {

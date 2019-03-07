@@ -60,7 +60,20 @@ void PlatformView::SetViewportMetrics(const blink::ViewportMetrics& metrics) {
 }
 
 void PlatformView::NotifyCreated() {
-  delegate_.OnPlatformViewCreated(CreateRenderingSurface());
+  std::unique_ptr<Surface> surface;
+
+  // Threading: We want to use the platform view on the non-platform thread.
+  // Using the weak pointer is illegal. But, we are going to introduce a latch
+  // so that the platform view is not collected till the surface is obtained.
+  auto* platform_view = this;
+  fml::ManualResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetGPUTaskRunner(), [platform_view, &surface, &latch]() {
+        surface = platform_view->CreateRenderingSurface();
+        latch.Signal();
+      });
+  latch.Wait();
+  delegate_.OnPlatformViewCreated(std::move(surface));
 }
 
 void PlatformView::NotifyDestroyed() {
