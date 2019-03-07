@@ -622,8 +622,12 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 - (void)deleteBackward {
   _selectionAffinity = _kTextAffinityDownstream;
 
-  // When deleting a combining character, _selectedTextRange has location
+  // When deleting Thai vowel, _selectedTextRange has location
   // but does not have length, so we have to manually set it.
+  // In addition, we needed to delete only a part of grapheme cluster
+  // because it is the expected behavior of Thai input.
+  // https://github.com/flutter/flutter/issues/24203
+  // https://github.com/flutter/flutter/issues/21745
   //
   // This is needed for correct handling of the deletion of Thai vowel input.
   // TODO(cbracken): Get a good understanding of expected behaviour of Thai
