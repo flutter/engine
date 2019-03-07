@@ -370,7 +370,7 @@ class TextStyle {
   /// * `letterSpacing`: The amount of space (in logical pixels) to add between each letter.
   /// * `wordSpacing`: The amount of space (in logical pixels) to add at each sequence of white-space (i.e. between each word).
   /// * `textBaseline`: The common baseline that should be aligned between this text span and its parent text span, or, for the root text spans, with the line box.
-  /// * `height`: The height of this text span, as a multiple of the font size.
+  /// * `height`: The height of this text span, as a multiplier of the font size.
   /// * `locale`: The locale used to select region-specific glyphs.
   /// * `background`: The paint drawn as a background for the text.
   /// * `foreground`: The paint used to draw the text. If this is specified, `color` must be null.
@@ -604,7 +604,7 @@ class ParagraphStyle {
   /// * `fontSize`: The fallback size of glyphs (in logical pixels) to
   ///   use when painting the text. This is used when there is no [TextStyle].
   ///
-  /// * `height`: The height of the spans as a multiple of the font size. The
+  /// * `height`: The height of the spans as a multiplier of the font size. The
   ///   fallback height to use when no height is provided in through
   ///   [TextStyle.height].
   ///
@@ -792,13 +792,13 @@ class StrutStyle {
   /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting
   ///   the text.
   ///
-  /// * `height`: The minimum height of the line boxes, as a multiple of the
-  ///   font size. The lines of the paragraph will be at least
-  ///   `(height + leading) * fontSize` tall when fontSize
-  ///   is not null. When fontSize is null, there is no minimum line height. Tall
-  ///   glyphs due to baseline alignment or large [TextStyle.fontSize] may cause
-  ///   the actual line height after layout to be taller than specified here.
-  ///   [fontSize] must be provided for this property to take effect.
+  /// * `height`: The minimum height of the line boxes, as a multiplier of the
+  ///   font size. The lines of the paragraph will be at least `(height + leading)
+  ///   * fontSize` tall when fontSize is not null. When fontSize is null, there
+  ///   is no minimum line height. Tall glyphs due to baseline alignment or large
+  ///   [TextStyle.fontSize] may cause the actual line height after layout to be
+  ///   taller than specified here. [fontSize] must be provided for this property
+  ///   to take effect.
   ///
   /// * `leading`: The minimum amount of leading between lines as a multiple of
   ///   the font size. [fontSize] must be provided for this property to take effect.
