@@ -113,7 +113,7 @@ public class AccessibilityChannel {
     void onLongPress(int nodeId);
 
     /**
-     * The user has opened a popup window, menu, dialog, etc.
+     * The user has opened a tooltip.
      */
     void onTooltip(@NonNull String message);
   }
