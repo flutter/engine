@@ -79,63 +79,68 @@ static sk_sp<SkImage> DecodeImage(fml::WeakPtr<GrContext> context,
   }
 }
 
-static sk_sp<SkImage> DownSampleImageToExactSize(
+static sk_sp<SkImage> DownSampleAndDecodeImageToExactSize(
     fml::WeakPtr<GrContext> context,
-    sk_sp<SkImage> image,
+    SkImageInfo oldImageInfo,
+    sk_sp<SkData> buffer,
     const int newWidth,
     const int newHeight,
     size_t trace_id) {
   TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
-  TRACE_EVENT0("flutter", "DownSampleImageToExactSize");
+  TRACE_EVENT0("flutter", "DownSampleAndDecodeImageToExactSize");
 
-  // TODO understand sk_sp memory implications
-  SkImageInfo newInfo = SkImageInfo::Make(
-      newWidth, newHeight, image->colorType(), image->alphaType());
+  const SkImageInfo newInfo = oldImageInfo.makeWH(newWidth, newHeight);
 
   SkBitmap bitmap = SkBitmap();
   if (!bitmap.tryAllocPixels(newInfo)) {
-    FML_LOG(ERROR) << "Unable to allocate bitmap. Returning original image.";
-    return image;
+    FML_LOG(ERROR) << "Unable to allocate bitmap.";
+    return nullptr;
   }
 
-  // TODO(kaushikiska): Free bitmap if scalePixels fails.
-  if (!image->scalePixels(bitmap.pixmap(), kLow_SkFilterQuality)) {
-    FML_LOG(ERROR) << "Failed to scale pixels. Returning original image.";
-    return image;
+  // Do not create a cross context image here, since it can not be resized.
+  sk_sp<SkImage> lazyImage = SkImage::MakeFromEncoded(std::move(buffer));
+
+  if (lazyImage == nullptr || !lazyImage.get()) {
+    FML_LOG(ERROR) << "Failed to decode image.";
+    return nullptr;
   }
 
-  return SkImage::MakeFromBitmap(bitmap);
+  if (!lazyImage->scalePixels(bitmap.pixmap(), kLow_SkFilterQuality)) {
+    FML_LOG(ERROR) << "Failed to scale pixels. Returning un-scaled image.";
+    return DecodeImage(context, buffer, trace_id);
+  }
+
+  // This indicates that we do not want a "linear blending" decode.
+  sk_sp<SkColorSpace> dstColorSpace = nullptr;
+  return SkImage::MakeCrossContextFromPixmap(context.get(), bitmap.pixmap(),
+                                             true, dstColorSpace.get(), true);
 }
 
-static sk_sp<SkImage> DownSampleImagePreserveAspectRatio(
+static sk_sp<SkImage> DownSampleAndDecodeImagePreserveAspectRatio(
     fml::WeakPtr<GrContext> context,
-    sk_sp<SkImage> image,
+    std::unique_ptr<SkCodec>& skCodec,
+    sk_sp<SkData> buffer,
     const int maxWidth,
     const int maxHeight,
     size_t trace_id) {
-  if (!image || !image.get()) {
-    return image;
-  }
+  const SkImageInfo imageInfo = skCodec->getInfo();
 
-  const int width = image->width();
-  const int height = image->height();
-
-  int newWidth = width;
-  int newHeight = height;
+  const int width = imageInfo.width();
+  const int height = imageInfo.height();
 
   if (height > maxHeight || width > maxWidth) {
     const double ratioX = (double)maxWidth / width;
     const double ratioY = (double)maxHeight / height;
     const double ratio = fmin(ratioX, ratioY);
 
-    newHeight = height * ratio;
-    newWidth = width * ratio;
-  } else {
-    return image;
-  }
+    const int newHeight = height * ratio;
+    const int newWidth = width * ratio;
 
-  return DownSampleImageToExactSize(context, image, newWidth, newHeight,
-                                    trace_id);
+    return DownSampleAndDecodeImageToExactSize(context, imageInfo, buffer,
+                                               newWidth, newHeight, trace_id);
+  } else {
+    return DecodeImage(context, buffer, trace_id);
+  }
 }
 
 fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
@@ -163,14 +168,9 @@ fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
     return fml::MakeRefCounted<MultiFrameCodec>(std::move(skCodec),
                                                 decodedCacheRatioCap);
   }
-  auto skImage = DecodeImage(context, buffer, trace_id);
-  if (!skImage) {
-    FML_LOG(ERROR) << "DecodeImage failed";
-    return nullptr;
-  }
 
-  skImage = DownSampleImagePreserveAspectRatio(context, skImage, maxWidth,
-                                               maxHeight, trace_id);
+  sk_sp<SkImage> skImage = DownSampleAndDecodeImagePreserveAspectRatio(
+      context, skCodec, buffer, maxWidth, maxHeight, trace_id);
   if (!skImage) {
     FML_LOG(ERROR) << "DownSampleImagePreserveAspectRatio failed";
     return nullptr;
