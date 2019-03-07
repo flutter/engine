@@ -81,31 +81,27 @@ static sk_sp<SkImage> DecodeImage(fml::WeakPtr<GrContext> context,
 
 static sk_sp<SkImage> DownSampleAndDecodeImageToExactSize(
     fml::WeakPtr<GrContext> context,
-    SkImageInfo oldImageInfo,
+    SkImageInfo scaledImageInfo,
     sk_sp<SkData> buffer,
-    const int newWidth,
-    const int newHeight,
     size_t trace_id) {
   TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
   TRACE_EVENT0("flutter", "DownSampleAndDecodeImageToExactSize");
 
-  const SkImageInfo newInfo = oldImageInfo.makeWH(newWidth, newHeight);
-
   SkBitmap bitmap = SkBitmap();
-  if (!bitmap.tryAllocPixels(newInfo)) {
+  if (!bitmap.tryAllocPixels(scaledImageInfo)) {
     FML_LOG(ERROR) << "Unable to allocate bitmap.";
     return nullptr;
   }
 
   // Do not create a cross context image here, since it can not be resized.
-  sk_sp<SkImage> lazyImage = SkImage::MakeFromEncoded(std::move(buffer));
+  sk_sp<SkImage> image = SkImage::MakeFromEncoded(std::move(buffer));
 
-  if (lazyImage == nullptr || !lazyImage.get()) {
+  if (image == nullptr || !image.get()) {
     FML_LOG(ERROR) << "Failed to decode image.";
     return nullptr;
   }
 
-  if (!lazyImage->scalePixels(bitmap.pixmap(), kLow_SkFilterQuality)) {
+  if (!image->scalePixels(bitmap.pixmap(), kLow_SkFilterQuality)) {
     FML_LOG(ERROR) << "Failed to scale pixels. Returning un-scaled image.";
     return DecodeImage(context, buffer, trace_id);
   }
@@ -136,8 +132,8 @@ static sk_sp<SkImage> DownSampleAndDecodeImagePreserveAspectRatio(
     const int newHeight = height * ratio;
     const int newWidth = width * ratio;
 
-    return DownSampleAndDecodeImageToExactSize(context, imageInfo, buffer,
-                                               newWidth, newHeight, trace_id);
+    return DownSampleAndDecodeImageToExactSize(
+        context, imageInfo.makeWH(newWidth, newHeight), buffer, trace_id);
   } else {
     return DecodeImage(context, buffer, trace_id);
   }
