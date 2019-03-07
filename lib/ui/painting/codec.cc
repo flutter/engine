@@ -168,7 +168,7 @@ fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
   auto skImage = DownSampleAndDecodeImagePreserveAspectRatio(
       context, skCodec, buffer, maxWidth, maxHeight, trace_id);
   if (!skImage) {
-    FML_LOG(ERROR) << "DownSampleImagePreserveAspectRatio failed";
+    FML_LOG(ERROR) << "DownSampleAndDecodeImagePreserveAspectRatio failed";
     return nullptr;
   }
 
