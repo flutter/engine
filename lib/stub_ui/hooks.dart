@@ -84,6 +84,10 @@ void _updateUserSettingsData(String jsonData) {
   _updateAlwaysUse24HourFormat(data['alwaysUse24HourFormat']);
 }
 
+void _updateLifecycleState(String state) {
+  window._initialLifecycleState ??= state;
+}
+
 void _updateTextScaleFactor(double textScaleFactor) {
   window._textScaleFactor = textScaleFactor;
   _invoke(window.onTextScaleFactorChanged, window._onTextScaleFactorChangedZone);
@@ -213,7 +217,7 @@ void _invoke3<A1, A2, A3>(void callback(A1 a1, A2 a2, A3 a3), Zone zone, A1 arg1
 //
 //  * pointer_data.cc
 //  * FlutterView.java
-const int _kPointerDataFieldCount = 21;
+const int _kPointerDataFieldCount = 24;
 
 PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
   const int kStride = Int64List.bytesPerElement;
@@ -227,6 +231,7 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
       timeStamp: new Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
       change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       kind: PointerDeviceKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+      signalKind: PointerSignalKind.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       device: packet.getInt64(kStride * offset++, _kFakeHostEndian),
       physicalX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       physicalY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
@@ -245,6 +250,8 @@ PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
       orientation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       tilt: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
       platformData: packet.getInt64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaX: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+      scrollDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian)
     );
     assert(offset == (i + 1) * _kPointerDataFieldCount);
   }

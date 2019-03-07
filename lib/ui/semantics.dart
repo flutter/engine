@@ -7,8 +7,9 @@ part of dart.ui;
 /// The possible actions that can be conveyed from the operating system
 /// accessibility APIs to a semantics node.
 //
-// When changes are made to this class, the equivalent APIs in each of the
-// embedders *must* be updated.
+// When changes are made to this class, the equivalent APIs in
+// `lib/ui/semantics/semantics_node.h` and in each of the embedders *must* be
+// updated.
 class SemanticsAction {
   const SemanticsAction._(this.index);
 
@@ -164,7 +165,7 @@ class SemanticsAction {
   /// A [Snackbar], for example, may have a dismiss action to indicate to the
   /// user that it can be removed after it is no longer relevant. On Android,
   /// (with TalkBack) special hint text is spoken when focusing the node and
-  /// a custom action is availible in the local context menu. On iOS,
+  /// a custom action is available in the local context menu. On iOS,
   /// (with VoiceOver) users can perform a standard gesture to dismiss it.
   static const SemanticsAction dismiss = const SemanticsAction._(_kDismissIndex);
 
@@ -264,8 +265,9 @@ class SemanticsAction {
 
 /// A Boolean value that can be associated with a semantics node.
 //
-// When changes are made to this class, the equivalent APIs in each of the
-// embedders *must* be updated.
+// When changes are made to this class, the equivalent APIs in
+// `lib/ui/semantics/semantics_node.h` and in each of the embedders *must* be
+// updated.
 class SemanticsFlag {
   static const int _kHasCheckedStateIndex = 1 << 0;
   static const int _kIsCheckedIndex = 1 << 1;
@@ -476,9 +478,9 @@ class SemanticsFlag {
   /// to move focus to an offscreen child.
   ///
   /// For example, a [ListView] widget has implicit scrolling so that users can
-  /// easily move to the next visible set of children. A [TabBar] widget does
-  /// not have implicit scrolling, so that users can navigate into the tab
-  /// body when reaching the end of the tab bar.
+  /// easily move the accessibility focus to the next set of children. A
+  /// [PageView] widget does not have implicit scrolling, so that users don't
+  /// navigate to the next page when reaching the end of the current one.
   static const SemanticsFlag hasImplicitScrolling = const SemanticsFlag._(_kHasImplicitScrollingIndex);
 
   /// The possible semantics flags.
@@ -708,7 +710,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
 
   /// Update the custom semantics action associated with the given `id`.
   ///
-  /// The name of the action exposed to the user is the `label`. For overriden
+  /// The name of the action exposed to the user is the `label`. For overridden
   /// standard actions this value is ignored.
   ///
   /// The `hint` should describe what happens when an action occurs, not the
@@ -718,7 +720,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// The text direction of the `hint` and `label` is the same as the global
   /// window.
   ///
-  /// For overriden standard actions, `overrideId` corresponds with a
+  /// For overridden standard actions, `overrideId` corresponds with a
   /// [SemanticsAction.index] value. For custom actions this argument should not be
   /// provided.
   void updateCustomAction({int id, String label, String hint, int overrideId = -1}) {

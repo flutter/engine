@@ -311,6 +311,7 @@ public class FlutterView extends SurfaceView
             .send();
     }
 
+    @SuppressWarnings("deprecation")
     private void sendLocalesToDart(Configuration config) {
         List<Locale> locales = new ArrayList<>();
         if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
@@ -379,8 +380,13 @@ public class FlutterView extends SurfaceView
     private static final int kPointerDeviceKindInvertedStylus = 3;
     private static final int kPointerDeviceKindUnknown = 4;
 
+    // Must match the PointerSignalKind enum in pointer.dart.
+    private static final int kPointerSignalKindNone = 0;
+    private static final int kPointerSignalKindScroll = 1;
+    private static final int kPointerSignalKindUnknown = 2;
+
     // These values must match the unpacking code in hooks.dart.
-    private static final int kPointerDataFieldCount = 21;
+    private static final int kPointerDataFieldCount = 24;
     private static final int kPointerBytesPerField = 8;
 
     private int getPointerChangeForAction(int maskedAction) {
@@ -435,11 +441,14 @@ public class FlutterView extends SurfaceView
 
         int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
 
+        int signalKind = kPointerSignalKindNone;
+
         long timeStamp = event.getEventTime() * 1000; // Convert from milliseconds to microseconds.
 
         packet.putLong(timeStamp); // time_stamp
         packet.putLong(pointerChange); // change
         packet.putLong(pointerKind); // kind
+        packet.putLong(signalKind); // signal_kind
         packet.putLong(event.getPointerId(pointerIndex)); // device
         packet.putDouble(event.getX(pointerIndex)); // physical_x
         packet.putDouble(event.getY(pointerIndex)); // physical_y
@@ -455,14 +464,16 @@ public class FlutterView extends SurfaceView
         packet.putLong(0); // obscured
 
         packet.putDouble(event.getPressure(pointerIndex)); // pressure
+        double pressureMin = 0.0, pressureMax = 1.0;
         if (event.getDevice() != null) {
             InputDevice.MotionRange pressureRange = event.getDevice().getMotionRange(MotionEvent.AXIS_PRESSURE);
-            packet.putDouble(pressureRange.getMin()); // pressure_min
-            packet.putDouble(pressureRange.getMax()); // pressure_max
-        } else {
-            packet.putDouble(0.0); // pressure_min
-            packet.putDouble(1.0); // pressure_max
+            if (pressureRange != null) {
+                pressureMin = pressureRange.getMin();
+                pressureMax = pressureRange.getMax();
+            }
         }
+        packet.putDouble(pressureMin); // pressure_min
+        packet.putDouble(pressureMax); // pressure_max
 
         if (pointerKind == kPointerDeviceKindStylus) {
             packet.putDouble(event.getAxisValue(MotionEvent.AXIS_DISTANCE, pointerIndex)); // distance
@@ -489,6 +500,9 @@ public class FlutterView extends SurfaceView
         }
 
         packet.putLong(pointerData); // platformData
+
+        packet.putDouble(0.0); // scroll_delta_x
+        packet.putDouble(0.0); // scroll_delta_y
     }
 
     @Override
@@ -567,7 +581,11 @@ public class FlutterView extends SurfaceView
 
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
-        if (!event.isFromSource(InputDevice.SOURCE_CLASS_POINTER) ||
+        // Method isFromSource is only available in API 18+ (Jelly Bean MR2)
+        // Mouse hover support is not implemented for API < 18.
+        boolean isPointerEvent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2
+            && event.isFromSource(InputDevice.SOURCE_CLASS_POINTER);
+        if (!isPointerEvent ||
             event.getActionMasked() != MotionEvent.ACTION_HOVER_MOVE ||
             !isAttached()) {
             return super.onGenericMotionEvent(event);

@@ -32,7 +32,26 @@ static const int kAndroidMetaStateMeta = 1 << 16;
 /**
  * A list of additional responders to keyboard events. Keybord events are forwarded to all of them.
  */
-@property NSMutableOrderedSet<NSResponder*>* additionalKeyResponders;
+@property(nonatomic) NSMutableOrderedSet<NSResponder*>* additionalKeyResponders;
+
+/**
+ * The tracking area used to generate hover events, if enabled.
+ */
+@property(nonatomic) NSTrackingArea* trackingArea;
+
+/**
+ * Whether or not a kAdd event has been sent for the mouse (or sent again since
+ * the last kRemove was sent if tracking is enabled). Used to determine whether
+ * to send an Add event before sending an incoming mouse event, since Flutter
+ * expects a pointers to be added before events are sent for them.
+ */
+@property(nonatomic) BOOL mouseCurrentlyAdded;
+
+/**
+ * Updates |trackingArea| for the current tracking settings, creating it with
+ * the correct mode if tracking is enabled, or removing it if not.
+ */
+- (void)configureTrackingArea;
 
 /**
  * Creates and registers plugins used by this view controller.
@@ -202,11 +221,27 @@ static void CommonInit(FLEViewController* controller) {
   }
 }
 
+- (void)setView:(NSView*)view {
+  if (_trackingArea) {
+    [self.view removeTrackingArea:_trackingArea];
+  }
+  [super setView:view];
+  [self configureTrackingArea];
+}
+
 - (void)loadView {
   self.view = [[FLEView alloc] init];
 }
 
 #pragma mark - Public methods
+
+- (void)setMouseTrackingMode:(FlutterMouseTrackingMode)mode {
+  if (_mouseTrackingMode == mode) {
+    return;
+  }
+  _mouseTrackingMode = mode;
+  [self configureTrackingArea];
+}
 
 - (BOOL)launchEngineWithAssetsPath:(NSURL*)assets
               commandLineArguments:(NSArray<NSString*>*)arguments {
@@ -240,6 +275,35 @@ static void CommonInit(FLEViewController* controller) {
 }
 
 #pragma mark - Private methods
+
+- (void)configureTrackingArea {
+  if (_mouseTrackingMode != FlutterMouseTrackingModeNone && self.view) {
+    NSTrackingAreaOptions options =
+        NSTrackingMouseEnteredAndExited | NSTrackingMouseMoved | NSTrackingInVisibleRect;
+    switch (_mouseTrackingMode) {
+      case FlutterMouseTrackingModeInKeyWindow:
+        options |= NSTrackingActiveInKeyWindow;
+        break;
+      case FlutterMouseTrackingModeInActiveApp:
+        options |= NSTrackingActiveInActiveApp;
+        break;
+      case FlutterMouseTrackingModeAlways:
+        options |= NSTrackingActiveAlways;
+        break;
+      default:
+        NSLog(@"Error: Unrecognized mouse tracking mode: %ld", _mouseTrackingMode);
+        return;
+    }
+    _trackingArea = [[NSTrackingArea alloc] initWithRect:NSZeroRect
+                                                 options:options
+                                                   owner:self
+                                                userInfo:nil];
+    [self.view addTrackingArea:_trackingArea];
+  } else if (_trackingArea) {
+    [self.view removeTrackingArea:_trackingArea];
+    _trackingArea = nil;
+  }
+}
 
 - (void)addInternalPlugins {
   _textInputPlugin = [[FLETextInputPlugin alloc] initWithViewController:self];
@@ -360,16 +424,54 @@ static void CommonInit(FLEViewController* controller) {
 }
 
 - (void)dispatchMouseEvent:(NSEvent*)event phase:(FlutterPointerPhase)phase {
+  // If a pointer added event hasn't been sent, synthesize one using this event for the basic
+  // information.
+  if (!_mouseCurrentlyAdded && phase != kAdd) {
+    // Only the values extracted for use in flutterEvent below matter, the rest are dummy values.
+    NSEvent* addEvent = [NSEvent enterExitEventWithType:NSEventTypeMouseEntered
+                                               location:event.locationInWindow
+                                          modifierFlags:0
+                                              timestamp:event.timestamp
+                                           windowNumber:event.windowNumber
+                                                context:nil
+                                            eventNumber:0
+                                         trackingNumber:0
+                                               userData:NULL];
+    [self dispatchMouseEvent:addEvent phase:kAdd];
+  }
+
   NSPoint locationInView = [self.view convertPoint:event.locationInWindow fromView:nil];
   NSPoint locationInBackingCoordinates = [self.view convertPointToBacking:locationInView];
-  const FlutterPointerEvent flutterEvent = {
+  FlutterPointerEvent flutterEvent = {
       .struct_size = sizeof(flutterEvent),
       .phase = phase,
       .x = locationInBackingCoordinates.x,
       .y = -locationInBackingCoordinates.y,  // convertPointToBacking makes this negative.
       .timestamp = static_cast<size_t>(event.timestamp * NSEC_PER_MSEC),
   };
+
+  if (event.type == NSEventTypeScrollWheel) {
+    flutterEvent.signal_kind = kFlutterPointerSignalKindScroll;
+
+    double pixelsPerLine = 1.0;
+    if (!event.hasPreciseScrollingDeltas) {
+      CGEventSourceRef source = CGEventCreateSourceFromEvent(event.CGEvent);
+      pixelsPerLine = CGEventSourceGetPixelsPerLine(source);
+      if (source) {
+        CFRelease(source);
+      }
+    }
+    double scaleFactor = self.view.layer.contentsScale;
+    flutterEvent.scroll_delta_x = event.scrollingDeltaX * pixelsPerLine * scaleFactor;
+    flutterEvent.scroll_delta_y = -event.scrollingDeltaY * pixelsPerLine * scaleFactor;
+  }
   FlutterEngineSendPointerEvent(_engine, &flutterEvent, 1);
+
+  if (phase == kAdd) {
+    _mouseCurrentlyAdded = YES;
+  } else if (phase == kRemove) {
+    _mouseCurrentlyAdded = NO;
+  }
 }
 
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type {
@@ -469,6 +571,24 @@ static void CommonInit(FLEViewController* controller) {
 
 - (void)mouseDragged:(NSEvent*)event {
   [self dispatchMouseEvent:event phase:kMove];
+}
+
+- (void)mouseEntered:(NSEvent*)event {
+  [self dispatchMouseEvent:event phase:kAdd];
+}
+
+- (void)mouseExited:(NSEvent*)event {
+  [self dispatchMouseEvent:event phase:kRemove];
+}
+
+- (void)mouseMoved:(NSEvent*)event {
+  [self dispatchMouseEvent:event phase:kHover];
+}
+
+- (void)scrollWheel:(NSEvent*)event {
+  // TODO: Add gesture-based (trackpad) scroll support once it's supported by the engine rather
+  // than always using kHover.
+  [self dispatchMouseEvent:event phase:kHover];
 }
 
 @end
