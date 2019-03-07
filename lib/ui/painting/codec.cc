@@ -85,46 +85,34 @@ static sk_sp<SkImage> DownSampleImageToExactSize(
     const int newWidth,
     const int newHeight,
     size_t trace_id) {
-  // TODO understand sk sp memory implications
-  sk_sp<SkColorSpace> dstColorSpace = nullptr;
-  SkImageInfo newInfo =
-      SkImageInfo::Make(newWidth, newHeight, image->colorType(),
-                        image->alphaType(), dstColorSpace);
-  size_t minRowBytes = newInfo.minRowBytes();
-  size_t totalBytes = newInfo.computeByteSize(minRowBytes);
+  TRACE_FLOW_STEP("flutter", kInitCodecTraceTag, trace_id);
+  TRACE_EVENT0("flutter", "DownSampleImageToExactSize");
 
-  void* buffer = sk_malloc_canfail(totalBytes);
+  // TODO understand sk_sp memory implications
+  SkImageInfo newInfo = SkImageInfo::Make(
+      newWidth, newHeight, image->colorType(), image->alphaType());
 
-  if (nullptr == buffer) {
-    return nullptr;
+  SkBitmap bitmap = SkBitmap();
+  if (!bitmap.tryAllocPixels(newInfo)) {
+    FML_LOG(ERROR) << "Unable to allocate bitmap. Returning original image.";
+    return image;
   }
 
-  auto skPixMap = SkPixmap();
-  skPixMap.reset(newInfo, buffer, minRowBytes);
-
-  if (skPixMap.addr() == nullptr) {
-    return nullptr;
+  // TODO(kaushikiska): Free bitmap if scalePixels fails.
+  if (!image->scalePixels(bitmap.pixmap(), kLow_SkFilterQuality)) {
+    FML_LOG(ERROR) << "Failed to scale pixels. Returning original image.";
+    return image;
   }
 
-  if (skPixMap.rowBytes() < newInfo.minRowBytes()) {
-    return nullptr;
-  }
-
-  if (!image->scalePixels(skPixMap, kLow_SkFilterQuality)) {
-    return nullptr;
-  }
-
-  // TODO free memory wherever applicable!!!
-  return SkImage::MakeCrossContextFromPixmap(context.get(), skPixMap, true,
-                                             dstColorSpace.get(), true);
+  return SkImage::MakeFromBitmap(bitmap);
 }
 
-static sk_sp<SkImage> DownScaleImage(fml::WeakPtr<GrContext> context,
-                                     sk_sp<SkImage> image,
-                                     const int maxWidth,
-                                     const int maxHeight,
-                                     size_t trace_id) {
-  // TODO add tracing for profiling
+static sk_sp<SkImage> DownSampleImagePreserveAspectRatio(
+    fml::WeakPtr<GrContext> context,
+    sk_sp<SkImage> image,
+    const int maxWidth,
+    const int maxHeight,
+    size_t trace_id) {
   if (!image || !image.get()) {
     return image;
   }
@@ -146,7 +134,8 @@ static sk_sp<SkImage> DownScaleImage(fml::WeakPtr<GrContext> context,
     return image;
   }
 
-  return DownSampleImageToExactSize(context, image, width, height, trace_id);
+  return DownSampleImageToExactSize(context, image, newWidth, newHeight,
+                                    trace_id);
 }
 
 fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
@@ -180,9 +169,10 @@ fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
     return nullptr;
   }
 
-  skImage = DownScaleImage(context, skImage, maxWidth, maxHeight, trace_id);
+  skImage = DownSampleImagePreserveAspectRatio(context, skImage, maxWidth,
+                                               maxHeight, trace_id);
   if (!skImage) {
-    FML_LOG(ERROR) << "DownScaleImage failed";
+    FML_LOG(ERROR) << "DownSampleImagePreserveAspectRatio failed";
     return nullptr;
   }
 
