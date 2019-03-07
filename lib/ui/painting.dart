@@ -1649,16 +1649,21 @@ class Codec extends NativeFieldWrapperClass2 {
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
   double decodedCacheRatioCap = double.infinity,
+  int maxWidth = -1,
+  int maxHeight = -1,
 }) {
   return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, decodedCacheRatioCap),
+    (_Callback<Codec> callback) => _instantiateImageCodec(
+        list, callback, null, decodedCacheRatioCap, maxWidth, maxHeight),
   );
 }
 
 /// Instantiates a [Codec] object for an image binary data.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap)
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback,
+    _ImageInfo imageInfo, double decodedCacheRatioCap, int maxWidth,
+    int maxHeight)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1702,7 +1707,7 @@ void decodeImageFromPixels(
 ) {
   final _ImageInfo imageInfo = new _ImageInfo(width, height, format.index, rowBytes);
   final Future<Codec> codecFuture = _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap)
+    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, decodedCacheRatioCap, -1, -1)
   );
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));

@@ -1633,6 +1633,8 @@ class Codec {
 /// failed.
 Future<Codec> instantiateImageCodec(Uint8List list, {
   double decodedCacheRatioCap = double.infinity,
+  int maxWidth = -1,
+  int maxHeight = -1,
 }) {
   throw UnimplementedError();
 }

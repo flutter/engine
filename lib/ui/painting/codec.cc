@@ -169,7 +169,7 @@ fml::RefPtr<Codec> InitCodec(fml::WeakPtr<GrContext> context,
                                                 decodedCacheRatioCap);
   }
 
-  sk_sp<SkImage> skImage = DownSampleAndDecodeImagePreserveAspectRatio(
+  auto skImage = DownSampleAndDecodeImagePreserveAspectRatio(
       context, skCodec, buffer, maxWidth, maxHeight, trace_id);
   if (!skImage) {
     FML_LOG(ERROR) << "DownSampleImagePreserveAspectRatio failed";
@@ -353,12 +353,17 @@ void InstantiateImageCodec(Dart_NativeArguments args) {
   const float decodedCacheRatioCap =
       tonic::DartConverter<float>::FromDart(Dart_GetNativeArgument(args, 3));
 
-  // TODO(kaushikiska): pass these through.
-  const int maxWidth = 300;
-  // tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 4));
+  int maxWidth =
+      tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 4));
+  if (maxWidth < 0) {
+    maxWidth = INT32_MAX;
+  }
 
-  const int maxHeight = 300;
-  // tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 5));
+  int maxHeight =
+      tonic::DartConverter<int>::FromDart(Dart_GetNativeArgument(args, 5));
+  if (maxHeight < 0) {
+    maxHeight = INT32_MAX;
+  }
 
   auto buffer = SkData::MakeWithCopy(list.data(), list.num_elements());
 
@@ -372,7 +377,7 @@ void InstantiateImageCodec(Dart_NativeArguments args) {
        ui_task_runner = task_runners.GetUITaskRunner(),
        context = dart_state->GetResourceContext(),
        queue = UIDartState::Current()->GetSkiaUnrefQueue(),
-       decodedCacheRatioCap]() mutable {
+       decodedCacheRatioCap, maxWidth, maxHeight]() mutable {
         InitCodecAndInvokeCodecCallback(
             std::move(ui_task_runner), context, std::move(queue),
             std::move(callback), std::move(buffer), std::move(image_info),
@@ -627,7 +632,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
 
 void Codec::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
-      {"instantiateImageCodec", InstantiateImageCodec, 4, true},
+      {"instantiateImageCodec", InstantiateImageCodec, 6, true},
   });
   natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
