@@ -521,7 +521,10 @@
                        : fml::MakeRefCounted<blink::PlatformMessage>(
                              channel.UTF8String, shell::GetVectorFromNSData(message), response);
 
-  _shell->GetPlatformView()->DispatchPlatformMessage(platformMessage);
+    //avoid access zombies object and crash ,_shell maybe not reset or engine may be release but not nil ,use lifecyclechannel check if engine is gone
+    if(_lifecycleChannel.get()){
+        _shell->GetPlatformView()->DispatchPlatformMessage(platformMessage);
+    }
 }
 
 - (void)setMessageHandlerOnChannel:(NSString*)channel
