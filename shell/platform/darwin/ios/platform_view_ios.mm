@@ -114,7 +114,7 @@ void PlatformViewIOS::UpdateSemantics(blink::SemanticsNodeUpdates update,
   FML_DCHECK(owner_controller_);
   if (accessibility_bridge_) {
     accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"FlutterSemanticsUpdate"
+    [[NSNotificationCenter defaultCenter] postNotificationName:FlutterSemanticsUpdateNotification
                                                         object:owner_controller_.get()];
   }
 }
