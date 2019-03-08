@@ -16,6 +16,9 @@ declare_args() {
 
   # The runtime mode ("debug", "profile", "release", "dynamic_profile", or "dynamic_release")
   flutter_runtime_mode = "debug"
+
+  # Whether or not to use the GLFW desktop shell implementation.
+  use_glfw_desktop = is_linux || is_win
 }
 
 # feature_defines_list ---------------------------------------------------------
