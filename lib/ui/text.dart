@@ -810,11 +810,11 @@ class StrutStyle {
   ///   italics).
   ///
   /// * `forceStrutHeight`: When true, the paragraph will force all lines to be exactly
-  ///   `(lineHeight + leading) * fontSize` tall from baseline to baseline.
+  ///   `(height + leading) * fontSize` tall from baseline to baseline.
   ///   [TextStyle] is no longer able to influence the line height, and any tall
   ///   glyphs may overlap with lines above. If a [fontFamily] is specified, the
   ///   total ascent of the first line will be the min of the `Ascent + half-leading`
-  ///   of the [fontFamily] and `(lineHeight + leading) * fontSize`. Otherwise, it
+  ///   of the [fontFamily] and `(height + leading) * fontSize`. Otherwise, it
   ///   will be determined by the Ascent + half-leading of the first text.
   StrutStyle({
     String fontFamily,
