@@ -4,6 +4,7 @@
 
 package io.flutter.view;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.database.ContentObserver;
@@ -16,6 +17,8 @@ import android.os.Handler;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -260,6 +263,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     };
 
     // Listener that is notified when accessibility touch exploration is turned on/off.
+    // This is guarded at instantiation time.
+    @TargetApi(19)
+    @RequiresApi(19)
     private final AccessibilityManager.TouchExplorationStateChangeListener touchExplorationStateChangeListener = new AccessibilityManager.TouchExplorationStateChangeListener() {
         @Override
         public void onTouchExplorationStateChanged(boolean isTouchExplorationEnabled) {
@@ -291,10 +297,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         @Override
         public void onChange(boolean selfChange, Uri uri) {
             // Retrieve the current value of TRANSITION_ANIMATION_SCALE from the OS.
-            String value = Settings.Global.getString(
-                contentResolver,
-                Settings.Global.TRANSITION_ANIMATION_SCALE
-            );
+            String value = Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1 ? null
+                : Settings.Global.getString(
+                    contentResolver,
+                    Settings.Global.TRANSITION_ANIMATION_SCALE
+                );
 
             boolean shouldAnimationsBeDisabled = value != null && value.equals("0");
             if (shouldAnimationsBeDisabled) {
@@ -495,17 +502,22 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             }
             result.setMovementGranularities(granularities);
         }
-        if (semanticsNode.hasAction(Action.SET_SELECTION)) {
-            result.addAction(AccessibilityNodeInfo.ACTION_SET_SELECTION);
-        }
-        if (semanticsNode.hasAction(Action.COPY)) {
-            result.addAction(AccessibilityNodeInfo.ACTION_COPY);
-        }
-        if (semanticsNode.hasAction(Action.CUT)) {
-            result.addAction(AccessibilityNodeInfo.ACTION_CUT);
-        }
-        if (semanticsNode.hasAction(Action.PASTE)) {
-            result.addAction(AccessibilityNodeInfo.ACTION_PASTE);
+
+        // These are non-ops on older devices. Attempting to interact with the text will cause Talkback to read the
+        // contents of the text box instead.
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            if (semanticsNode.hasAction(Action.SET_SELECTION)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_SET_SELECTION);
+            }
+            if (semanticsNode.hasAction(Action.COPY)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_COPY);
+            }
+            if (semanticsNode.hasAction(Action.CUT)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_CUT);
+            }
+            if (semanticsNode.hasAction(Action.PASTE)) {
+                result.addAction(AccessibilityNodeInfo.ACTION_PASTE);
+            }
         }
 
         if (semanticsNode.hasFlag(Flag.IS_BUTTON)) {
@@ -579,11 +591,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             // We should prefer setCollectionInfo to the class names, as this way we get "In List"
             // and "Out of list" announcements.  But we don't always know the counts, so we
             // can fallback to the generic scroll view class names.
+            //
+            // On older APIs, we always fall back to the generic scroll view class names here.
+            //
             // TODO(dnfield): We should add semantics properties for rows and columns in 2 dimensional lists, e.g.
             // GridView.  Right now, we're only supporting ListViews and only if they have scroll children.
             if (semanticsNode.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)) {
                 if (semanticsNode.hasAction(Action.SCROLL_LEFT) || semanticsNode.hasAction(Action.SCROLL_RIGHT)) {
-                    if (shouldSetCollectionInfo(semanticsNode)) {
+                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT && shouldSetCollectionInfo(semanticsNode)) {
                         result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(
                             0, // rows
                             semanticsNode.scrollChildren, // columns
@@ -593,7 +608,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                         result.setClassName("android.widget.HorizontalScrollView");
                     }
                 } else {
-                    if (shouldSetCollectionInfo(semanticsNode)) {
+                    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2 && shouldSetCollectionInfo(semanticsNode)) {
                         result.setCollectionInfo(AccessibilityNodeInfo.CollectionInfo.obtain(
                             semanticsNode.scrollChildren, // rows
                             0, // columns
@@ -751,9 +766,21 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY: {
+                // Text selection APIs aren't available until API 18. We can't handle the case here so return false
+                // instead. It's extremely unlikely that this case would ever be triggered in the first place in API <
+                // 18.
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    return false;
+                }
                 return performCursorMoveAction(semanticsNode, virtualViewId, arguments, false);
             }
             case AccessibilityNodeInfo.ACTION_NEXT_AT_MOVEMENT_GRANULARITY: {
+                // Text selection APIs aren't available until API 18. We can't handle the case here so return false
+                // instead. It's extremely unlikely that this case would ever be triggered in the first place in API <
+                // 18.
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    return false;
+                }
                 return performCursorMoveAction(semanticsNode, virtualViewId, arguments, true);
             }
             case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS: {
@@ -798,6 +825,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 return true;
             }
             case AccessibilityNodeInfo.ACTION_SET_SELECTION: {
+                // Text selection APIs aren't available until API 18. We can't handle the case here so return false
+                // instead. It's extremely unlikely that this case would ever be triggered in the first place in API <
+                // 18.
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    return false;
+                }
                 final Map<String, Integer> selection = new HashMap<>();
                 final boolean hasSelection = arguments != null
                         && arguments.containsKey(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT)
@@ -855,6 +888,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      * Handles the responsibilities of {@link #performAction(int, int, Bundle)} for the specific
      * scenario of cursor movement.
      */
+    @TargetApi(18)
+    @RequiresApi(18)
     private boolean performCursorMoveAction(
         @NonNull SemanticsNode semanticsNode,
         int virtualViewId,

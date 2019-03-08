@@ -4,6 +4,7 @@
 
 package io.flutter.view;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -14,6 +15,8 @@ import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
 import android.os.LocaleList;
+import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -374,8 +377,7 @@ public class FlutterView extends SurfaceView
     private static final int kPointerDeviceKindMouse = 1;
     private static final int kPointerDeviceKindStylus = 2;
     private static final int kPointerDeviceKindInvertedStylus = 3;
-    private static final int kPointerDeviceKindSignal = 4;
-    private static final int kPointerDeviceKindUnknown = 5;
+    private static final int kPointerDeviceKindUnknown = 4;
 
     // Must match the PointerSignalKind enum in pointer.dart.
     private static final int kPointerSignalKindNone = 0;
@@ -651,6 +653,8 @@ public class FlutterView extends SurfaceView
     // be padded. When the on-screen keyboard is detected, we want to include the full inset
     // but when the inset is just the hidden nav bar, we want to provide a zero inset so the space
     // can be used.
+    @TargetApi(20)
+    @RequiresApi(20)
     int calculateBottomKeyboardInset(WindowInsets insets) {
         int screenHeight = getRootView().getHeight();
         // Magic number due to this being a heuristic. This should be replaced, but we have not
@@ -669,6 +673,8 @@ public class FlutterView extends SurfaceView
     // This callback is not present in API < 20, which means lower API devices will see
     // the wider than expected padding when the status and navigation bars are hidden.
     @Override
+    @TargetApi(20)
+    @RequiresApi(20)
     public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
         boolean statusBarHidden =
             (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;

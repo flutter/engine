@@ -23,7 +23,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
-  'skia_revision': '72542816cadbc3d18a19725f6f6aecf45ffc188c',
+  'skia_revision': 'bea1f94f341e8b0466ea2bfbda3f3ba44a2fda5c',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -418,7 +418,7 @@ hooks = [
     'name': 'prepare_android_downloader',
     'pattern': '.',
     'condition': 'download_android_deps',
-    'cwd': 'src/tools/android/android_sdk_downloader',
+    'cwd': 'src/flutter/tools/android_sdk_downloader',
     'action': [
         '../../../third_party/dart/tools/sdks/dart-sdk/bin/pub', # this hook _must_ be run _after_ the dart hook.
         'get'
@@ -431,7 +431,7 @@ hooks = [
     'action': [
         'src/third_party/dart/tools/sdks/dart-sdk/bin/dart', # this hook _must_ be run _after_ the dart hook.
         '--enable-asserts',
-        'src/tools/android/android_sdk_downloader/lib/main.dart',
+        'src/flutter/tools/android_sdk_downloader/lib/main.dart',
         '-y', # Accept licenses
         '--out=src/third_party/android_tools',
         '--platform=28',
