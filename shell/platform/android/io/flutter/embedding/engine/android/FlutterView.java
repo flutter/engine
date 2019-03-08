@@ -13,6 +13,7 @@ import android.os.LocaleList;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -181,6 +182,7 @@ public class FlutterView extends FrameLayout {
    */
   @Override
   @TargetApi(20)
+  @RequiresApi(20)
   public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 

@@ -30,6 +30,8 @@ import java.util.zip.ZipFile;
 class ResourceExtractor {
     private static final String TAG = "ResourceExtractor";
     private static final String TIMESTAMP_PREFIX = "res_timestamp-";
+    // Build.SUPPORTED_ABIS is only available in later Android API versions.
+    private static final String[] SUPPORTED_ABIS = Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP ? new String[0] : Build.SUPPORTED_ABIS;
 
     @SuppressWarnings("deprecation")
     static long getVersionCode(PackageInfo packageInfo) {
@@ -243,9 +245,9 @@ class ResourceExtractor {
         for (String asset : mResources) {
             String resource = null;
             ZipEntry entry = null;
-            if (asset.endsWith(".so") && Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT_WATCH) {
+            if (asset.endsWith(".so")) {
                 // Replicate library lookup logic.
-                for (String abi : Build.SUPPORTED_ABIS) {
+                for (String abi : SUPPORTED_ABIS) {
                     resource = "lib/" + abi + "/" + asset;
                     entry = zipFile.getEntry(resource);
                     if (entry == null) {

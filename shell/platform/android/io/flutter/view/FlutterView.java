@@ -18,6 +18,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.LocaleList;
 import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -656,6 +657,7 @@ public class FlutterView extends SurfaceView
     // but when the inset is just the hidden nav bar, we want to provide a zero inset so the space
     // can be used.
     @TargetApi(20)
+    @RequiresApi(20)
     int calculateBottomKeyboardInset(WindowInsets insets) {
         int screenHeight = getRootView().getHeight();
         // Magic number due to this being a heuristic. This should be replaced, but we have not
@@ -675,6 +677,7 @@ public class FlutterView extends SurfaceView
     // the wider than expected padding when the status and navigation bars are hidden.
     @Override
     @TargetApi(20)
+    @RequiresApi(20)
     public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
         boolean statusBarHidden =
             (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
@@ -980,6 +983,7 @@ public class FlutterView extends SurfaceView
 
     // This is guarded at instantiation time.
     @TargetApi(19)
+    @RequiresApi(19)
     class TouchExplorationListener implements AccessibilityManager.TouchExplorationStateChangeListener {
         @Override
         public void onTouchExplorationStateChanged(boolean enabled) {
