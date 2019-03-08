@@ -5,15 +5,22 @@
 package io.flutter.view;
 
 import android.app.Activity;
+import android.content.ContentResolver;
+import android.database.ContentObserver;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.opengl.Matrix;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 
@@ -27,18 +34,24 @@ import java.util.*;
 /**
  * Bridge between Android's OS accessibility system and Flutter's accessibility system.
  *
- * An {@code AccessibilityBridge} requires a real Android {@link View}, called the
- * {@link #rootAccessibilityView}, which contains a Flutter UI. The {@link #rootAccessibilityView}
- * is required at the time of {@code AccessibilityBridge}'s instantiation and is held
- * for the duration of {@code AccessibilityBridge}'s lifespan. {@code AccessibilityBridge}
- * invokes various accessibility methods on the {@link #rootAccessibilityView}, e.g.,
- * {@link View#onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo)}. The
- * {@link #rootAccessibilityView} is expected to notify the {@code AccessibilityBridge}
- * of relevant interactions: {@link #setAccessibilityEnabled(boolean)},
- * {@link #handleTouchExploration(float, float)}, {@link #handleTouchExplorationExit()},
- * and {@link #reset()}.
+ * An {@code AccessibilityBridge} requires:
+ * <ul>
+ *   <li>A real Android {@link View}, called the {@link #rootAccessibilityView}, which contains a
+ *   Flutter UI. The {@link #rootAccessibilityView} is required at the time of
+ *   {@code AccessibilityBridge}'s instantiation and is held for the duration of
+ *   {@code AccessibilityBridge}'s lifespan. {@code AccessibilityBridge} invokes various
+ *   accessibility methods on the {@link #rootAccessibilityView}, e.g.,
+ *   {@link View#onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo)}. The
+ *   {@link #rootAccessibilityView} is expected to notify the {@code AccessibilityBridge} of
+ *   relevant interactions: {@link #onAccessibilityHoverEvent(MotionEvent)}, {@link #reset()},
+ *   {@link #updateSemantics(ByteBuffer, String[])}, and {@link #updateCustomAccessibilityActions(ByteBuffer, String[])}</li>
+ *   <li>A {@link FlutterJNI} instance, corresponding to the running Flutter app.</li>
+ *   <li>An {@link AccessibilityChannel} that is connected to the running Flutter app.</li>
+ *   <li>Android's {@link AccessibilityManager} to query and listen for accessibility settings.</li>
+ *   <li>Android's {@link ContentResolver} to listen for changes to system animation settings.</li>
+ * </ul>
  *
- * The {@code AccessibilityBridge} tricks Android into treating Flutter widgets as if
+ * The {@code AccessibilityBridge} causes Android to treat Flutter {@code SemanticsNode}s as if
  * they were accessible Android {@link View}s. Accessibility requests may be sent from
  * a Flutter widget to the Android OS, as if it were an Android {@link View}, and
  * accessibility events may be consumed by a Flutter widget, as if it were an Android
@@ -49,7 +62,7 @@ import java.util.*;
  * system is achieved via the {@link AccessibilityChannel} system channel. However, some
  * information is exchanged directly between the Android embedding and Flutter framework
  * via {@link FlutterJNI}.
- * TODO(mattcarroll): why do we use both?
+ * TODO(mattcarroll): consider moving FlutterJNI calls over to AccessibilityChannel
  */
 public class AccessibilityBridge extends AccessibilityNodeProvider {
     private static final String TAG = "AccessibilityBridge";
@@ -79,6 +92,17 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     @NonNull
     private final AccessibilityChannel accessibilityChannel;
 
+    // Android's {@link AccessibilityManager}, which we can query to see if accessibility is
+    // turned on, as well as listen for changes to accessibility's activation.
+    @NonNull
+    private final AccessibilityManager accessibilityManager;
+
+    // Android's {@link ContentResolver}, which is used to observe the global TRANSITION_ANIMATION_SCALE,
+    // which determines whether Flutter's animations should be enabled or disabled for accessibility
+    // purposes.
+    @NonNull
+    private final ContentResolver contentResolver;
+
     // The top-level Android View within the containing Window.
     // TODO(mattcarroll): Move communication with the decorView out to FlutterView, or even FlutterActivity.
     //                    The reason this is here is because when the device is in reverse-landscape
@@ -105,7 +129,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // See the Flutter docs on SemanticsNode:
     // https://docs.flutter.io/flutter/semantics/SemanticsNode-class.html
     @NonNull
-    private final Map<Integer, SemanticsNode> flutterSemanticsTree;
+    private final Map<Integer, SemanticsNode> flutterSemanticsTree = new HashMap<>();
 
     // The set of all custom Flutter accessibility actions that are present in the running
     // Flutter app, stored as a Map from each action's ID to the definition of the custom accessibility
@@ -130,17 +154,16 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // See the Flutter documentation for the Semantics widget:
     // https://docs.flutter.io/flutter/widgets/Semantics-class.html
     @NonNull
-    private final Map<Integer, CustomAccessibilityAction> customAccessibilityActions;
-
-    // TODO(mattcarroll): what is the source of truth for this supposed to be? Is it
-    //                    whether or not the OS has accessibility enabled? Or do other
-    //                    factors influence this value?
-    private boolean accessibilityEnabled = false;
+    private final Map<Integer, CustomAccessibilityAction> customAccessibilityActions = new HashMap<>();
 
     // The {@code SemanticsNode} within Flutter that currently has the focus of Android's
     // accessibility system.
     @Nullable
     private SemanticsNode accessibilityFocusedSemanticsNode;
+
+    // The accessibility features that should currently be active within Flutter, represented as
+    // a bitmask whose values comes from {@link AccessibilityFeature}.
+    private int accessibilityFeatureFlags = 0;
 
     // The {@code SemanticsNode} within Flutter that currently has the focus of Android's input
     // system.
@@ -160,16 +183,23 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     @Nullable
     private SemanticsNode hoveredObject;
 
-    // TODO(mattcarroll): what is this? the term "route" sounds navigation oriented...
-    private int previousRouteId = ROOT_NODE_ID;
-
-    // TODO(mattcarroll): what is this? the term "route" sounds navigation oriented...
+    // A Java/Android cached representation of the Flutter app's navigation stack. The Flutter
+    // navigation stack is tracked so that accessibility announcements can be made during Flutter's
+    // navigation changes.
+    // TODO(mattcarroll): take this cache into account for new routing solution so accessibility does
+    //                    not get left behind.
     @NonNull
-    private final List<Integer> previousRoutes;
+    private final List<Integer> flutterNavigationStack = new ArrayList<>();
+
+    // TODO(mattcarroll): why do we need previouseRouteId if we have flutterNavigationStack
+    private int previousRouteId = ROOT_NODE_ID;
 
     // TODO(mattcarroll): is this for the decor view adjustment?
     @NonNull
     private Integer lastLeftFrameInset = 0;
+
+    @Nullable
+    private OnAccessibilityChangeListener onAccessibilityChangeListener;
 
     // Handler for all messages received from Flutter via the {@code accessibilityChannel}
     private final AccessibilityChannel.AccessibilityMessageHandler accessibilityMessageHandler = new AccessibilityChannel.AccessibilityMessageHandler() {
@@ -208,23 +238,153 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
     };
 
-    AccessibilityBridge(@NonNull View rootAccessibilityView, @NonNull FlutterJNI flutterJNI, @NonNull AccessibilityChannel accessibilityChannel) {
+    // Listener that is notified when accessibility is turned on/off.
+    private final AccessibilityManager.AccessibilityStateChangeListener accessibilityStateChangeListener = new AccessibilityManager.AccessibilityStateChangeListener() {
+        @Override
+        public void onAccessibilityStateChanged(boolean accessibilityEnabled) {
+            if (accessibilityEnabled) {
+                accessibilityChannel.setAccessibilityMessageHandler(accessibilityMessageHandler);
+                flutterJNI.setSemanticsEnabled(true);
+            } else {
+                accessibilityChannel.setAccessibilityMessageHandler(null);
+                flutterJNI.setSemanticsEnabled(false);
+            }
+
+            if (onAccessibilityChangeListener != null) {
+                onAccessibilityChangeListener.onAccessibilityChanged(
+                    accessibilityEnabled,
+                    accessibilityManager.isTouchExplorationEnabled()
+                );
+            }
+        }
+    };
+
+    // Listener that is notified when accessibility touch exploration is turned on/off.
+    private final AccessibilityManager.TouchExplorationStateChangeListener touchExplorationStateChangeListener = new AccessibilityManager.TouchExplorationStateChangeListener() {
+        @Override
+        public void onTouchExplorationStateChanged(boolean isTouchExplorationEnabled) {
+            if (isTouchExplorationEnabled) {
+                accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+            } else {
+                onTouchExplorationExit();
+                accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+            }
+            sendLatestAccessibilityFlagsToFlutter();
+
+            if (onAccessibilityChangeListener != null) {
+                onAccessibilityChangeListener.onAccessibilityChanged(
+                    accessibilityManager.isEnabled(),
+                    isTouchExplorationEnabled
+                );
+            }
+        }
+    };
+
+    // Listener that is notified when the global TRANSITION_ANIMATION_SCALE. When this scale goes
+    // to zero, we instruct Flutter to disable animations.
+    private final ContentObserver animationScaleObserver = new ContentObserver(new Handler()) {
+        @Override
+        public void onChange(boolean selfChange) {
+            this.onChange(selfChange, null);
+        }
+
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
+            // Retrieve the current value of TRANSITION_ANIMATION_SCALE from the OS.
+            String value = Settings.Global.getString(
+                contentResolver,
+                Settings.Global.TRANSITION_ANIMATION_SCALE
+            );
+
+            boolean shouldAnimationsBeDisabled = value != null && value.equals("0");
+            if (shouldAnimationsBeDisabled) {
+                accessibilityFeatureFlags |= AccessibilityFeature.DISABLE_ANIMATIONS.value;
+            } else {
+                accessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
+            }
+            sendLatestAccessibilityFlagsToFlutter();
+        }
+    };
+
+    AccessibilityBridge(
+        @NonNull View rootAccessibilityView,
+        @NonNull FlutterJNI flutterJNI,
+        @NonNull AccessibilityChannel accessibilityChannel,
+        @NonNull AccessibilityManager accessibilityManager,
+        @NonNull ContentResolver contentResolver
+    ) {
         this.rootAccessibilityView = rootAccessibilityView;
         this.flutterJNI = flutterJNI;
         this.accessibilityChannel = accessibilityChannel;
+        this.accessibilityManager = accessibilityManager;
+        this.contentResolver = contentResolver;
+
         decorView = ((Activity) rootAccessibilityView.getContext()).getWindow().getDecorView();
-        flutterSemanticsTree = new HashMap<>();
-        customAccessibilityActions = new HashMap<>();
-        previousRoutes = new ArrayList<>();
+
+        // Tell Flutter whether accessibility is initially active or not. Then register a listener
+        // to be notified of changes in the future.
+        accessibilityStateChangeListener.onAccessibilityStateChanged(accessibilityManager.isEnabled());
+        this.accessibilityManager.addAccessibilityStateChangeListener(accessibilityStateChangeListener);
+
+        // Tell Flutter whether touch exploration is initially active or not. Then register a listener
+        // to be notified of changes in the future.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            touchExplorationStateChangeListener.onTouchExplorationStateChanged(accessibilityManager.isTouchExplorationEnabled());
+            this.accessibilityManager.addTouchExplorationStateChangeListener(touchExplorationStateChangeListener);
+        }
+
+        // Tell Flutter whether animations should initially be enabled or disabled. Then register a
+        // listener to be notified of changes in the future.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            animationScaleObserver.onChange(false);
+            Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
+            this.contentResolver.registerContentObserver(transitionUri, false, animationScaleObserver);
+        }
     }
 
-    void setAccessibilityEnabled(boolean accessibilityEnabled) {
-        this.accessibilityEnabled = accessibilityEnabled;
-        if (accessibilityEnabled) {
-            this.accessibilityChannel.setAccessibilityMessageHandler(accessibilityMessageHandler);
-        } else {
-            this.accessibilityChannel.setAccessibilityMessageHandler(null);
+    /**
+     * Disconnects any listeners and/or delegates that were initialized in {@code AccessibilityBridge}'s
+     * constructor, or added after.
+     *
+     * Do not use this instance after invoking {@code release}.  The behavior of any method invoked
+     * on this {@code AccessibilityBridge} after invoking {@code release()} is undefined.
+     */
+    public void release() {
+        setOnAccessibilityChangeListener(null);
+        accessibilityManager.removeAccessibilityStateChangeListener(accessibilityStateChangeListener);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            accessibilityManager.removeTouchExplorationStateChangeListener(touchExplorationStateChangeListener);
         }
+        contentResolver.unregisterContentObserver(animationScaleObserver);
+    }
+
+    /**
+     * Returns true of the Android OS currently has accessibility enabled, false otherwise.
+     */
+    public boolean isAccessibilityEnabled() {
+        return accessibilityManager.isEnabled();
+    }
+
+    /**
+     * Returns true of the Android OS currently has touch exploration enabled, false otherwise.
+     */
+    public boolean isTouchExplorationEnabled() {
+        return accessibilityManager.isTouchExplorationEnabled();
+    }
+
+    /**
+     * Sets a listener on this {@code AccessibilityBridge}, which is notified whenever accessibility
+     * activation, or touch exploration activation changes.
+     */
+    public void setOnAccessibilityChangeListener(@Nullable OnAccessibilityChangeListener listener) {
+        this.onAccessibilityChangeListener = listener;
+    }
+
+    /**
+     * Sends the current value of {@link #accessibilityFeatureFlags} to Flutter via {@link FlutterJNI}.
+     */
+    private void sendLatestAccessibilityFlagsToFlutter() {
+        flutterJNI.setAccessibilityFeatures(accessibilityFeatureFlags);
     }
 
     private boolean shouldSetCollectionInfo(final SemanticsNode semanticsNode) {
@@ -832,34 +992,78 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         return action;
     }
 
-    void handleTouchExplorationExit() {
+    /**
+     * A hover {@link MotionEvent} has occurred in the {@code View} that corresponds to this
+     * {@code AccessibilityBridge}.
+     *
+     * This method returns true if Flutter's accessibility system handled the hover event, false
+     * otherwise.
+     *
+     * This method should be invoked from the corresponding {@code View}'s
+     * {@link View#onHoverEvent(MotionEvent)}.
+     */
+    public boolean onAccessibilityHoverEvent(MotionEvent event) {
+        if (!accessibilityManager.isTouchExplorationEnabled()) {
+            return false;
+        }
+
+        if (event.getAction() == MotionEvent.ACTION_HOVER_ENTER || event.getAction() == MotionEvent.ACTION_HOVER_MOVE) {
+            handleTouchExploration(event.getX(), event.getY());
+        } else if (event.getAction() == MotionEvent.ACTION_HOVER_EXIT) {
+            onTouchExplorationExit();
+        } else {
+            Log.d("flutter", "unexpected accessibility hover event: " + event);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * This method should be invoked when a hover interaction has the cursor move off of a
+     * {@code SemanticsNode}.
+     *
+     * This method informs the Android accessibility system that a {@link AccessibilityEvent#TYPE_VIEW_HOVER_EXIT}
+     * has occurred.
+     */
+    private void onTouchExplorationExit() {
         if (hoveredObject != null) {
             sendAccessibilityEvent(hoveredObject.id, AccessibilityEvent.TYPE_VIEW_HOVER_EXIT);
             hoveredObject = null;
         }
     }
 
-    void handleTouchExploration(float x, float y) {
+    /**
+     * This method should be invoked when a new hover interaction begins with a {@code SemanticsNode},
+     * or when an existing hover interaction sees a movement of the cursor.
+     *
+     * This method checks to see if the cursor has moved from one {@code SemanticsNode} to another.
+     * If it has, this method informs the Android accessibility system of the change by first sending
+     * a {@link AccessibilityEvent#TYPE_VIEW_HOVER_ENTER} event for the new hover node, followed by
+     * a {@link AccessibilityEvent#TYPE_VIEW_HOVER_EXIT} event for the old hover node.
+     */
+    private void handleTouchExploration(float x, float y) {
         if (flutterSemanticsTree.isEmpty()) {
             return;
         }
-        SemanticsNode newObject = getRootSemanticsNode().hitTest(new float[] {x, y, 0, 1});
-        if (newObject != hoveredObject) {
+        SemanticsNode semanticsNodeUnderCursor = getRootSemanticsNode().hitTest(new float[] {x, y, 0, 1});
+        if (semanticsNodeUnderCursor != hoveredObject) {
             // sending ENTER before EXIT is how Android wants it
-            if (newObject != null) {
-                sendAccessibilityEvent(newObject.id, AccessibilityEvent.TYPE_VIEW_HOVER_ENTER);
+            if (semanticsNodeUnderCursor != null) {
+                sendAccessibilityEvent(semanticsNodeUnderCursor.id, AccessibilityEvent.TYPE_VIEW_HOVER_ENTER);
             }
             if (hoveredObject != null) {
                 sendAccessibilityEvent(hoveredObject.id, AccessibilityEvent.TYPE_VIEW_HOVER_EXIT);
             }
-            hoveredObject = newObject;
+            hoveredObject = semanticsNodeUnderCursor;
         }
     }
 
     /**
      * Updates the Android cache of Flutter's currently registered custom accessibility actions.
      */
-    // TODO(mattcarroll): how are custom actions deleted? this appears to only add them...
+    // TODO(mattcarroll): Consider introducing ability to delete custom actions because they can
+    //                    probably come and go in Flutter, so we may want to reflect that here in
+    //                    the Android cache as well.
     // TODO(mattcarroll): where is the encoding code for reference?
     void updateCustomAccessibilityActions(@NonNull ByteBuffer buffer, @NonNull String[] strings) {
         while (buffer.hasRemaining()) {
@@ -923,7 +1127,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         // previously cached route id.
         SemanticsNode lastAdded = null;
         for (SemanticsNode semanticsNode : newRoutes) {
-            if (!previousRoutes.contains(semanticsNode.id)) {
+            if (!flutterNavigationStack.contains(semanticsNode.id)) {
                 lastAdded = semanticsNode;
             }
         }
@@ -932,11 +1136,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
         if (lastAdded != null && lastAdded.id != previousRouteId) {
             previousRouteId = lastAdded.id;
-            createWindowChangeEvent(lastAdded);
+            createAndSendWindowChangeEvent(lastAdded);
         }
-        previousRoutes.clear();
+        flutterNavigationStack.clear();
         for (SemanticsNode semanticsNode : newRoutes) {
-            previousRoutes.add(semanticsNode.id);
+            flutterNavigationStack.add(semanticsNode.id);
         }
 
         Iterator<Map.Entry<Integer, SemanticsNode>> it = flutterSemanticsTree.entrySet().iterator();
@@ -944,7 +1148,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             Map.Entry<Integer, SemanticsNode> entry = it.next();
             SemanticsNode object = entry.getValue();
             if (!visitedObjects.contains(object)) {
-                willRemoveSemanticsObject(object);
+                willRemoveSemanticsNode(object);
                 it.remove();
             }
         }
@@ -1092,6 +1296,64 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         return e;
     }
 
+    /**
+     * Sends an accessibility event of the given {@code eventType} to Android's accessibility
+     * system with the given {@code viewId} represented as the source of the event.
+     *
+     * The given {@code viewId} may either belong to {@link #rootAccessibilityView}, or any
+     * Flutter {@link SemanticsNode}.
+     */
+    private void sendAccessibilityEvent(int viewId, int eventType) {
+        if (!accessibilityManager.isEnabled()) {
+            return;
+        }
+        if (viewId == ROOT_NODE_ID) {
+            rootAccessibilityView.sendAccessibilityEvent(eventType);
+        } else {
+            sendAccessibilityEvent(obtainAccessibilityEvent(viewId, eventType));
+        }
+    }
+
+    /**
+     * Sends the given {@link AccessibilityEvent} to Android's accessibility system for a given
+     * Flutter {@link SemanticsNode}.
+     *
+     * This method should only be called for a Flutter {@link SemanticsNode}, not a traditional
+     * Android {@code View}, i.e., {@link #rootAccessibilityView}.
+     */
+    private void sendAccessibilityEvent(@NonNull AccessibilityEvent event) {
+        if (!accessibilityManager.isEnabled()) {
+            return;
+        }
+        // TODO(mattcarroll): why are we explicitly talking to the root view's parent?
+        rootAccessibilityView.getParent().requestSendAccessibilityEvent(rootAccessibilityView, event);
+    }
+
+    /**
+     * Factory method that creates a {@link AccessibilityEvent#TYPE_WINDOW_STATE_CHANGED} and sends
+     * the event to Android's accessibility system.
+     *
+     * The given {@code route} should be a {@link SemanticsNode} that represents a navigation route
+     * in the Flutter app.
+     */
+    private void createAndSendWindowChangeEvent(@NonNull SemanticsNode route) {
+        AccessibilityEvent event = obtainAccessibilityEvent(
+            route.id,
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+        );
+        String routeName = route.getRouteName();
+        event.getText().add(routeName);
+        sendAccessibilityEvent(event);
+    }
+
+    /**
+     * Factory method that creates a new {@link AccessibilityEvent} that is configured to represent
+     * the Flutter {@link SemanticsNode} represented by the given {@code virtualViewId}, categorized
+     * as the given {@code eventType}.
+     *
+     * This method should *only* be called for Flutter {@link SemanticsNode}s. It should *not* be
+     * invoked to create an {@link AccessibilityEvent} for the {@link #rootAccessibilityView}.
+     */
     private AccessibilityEvent obtainAccessibilityEvent(int virtualViewId, int eventType) {
         assert virtualViewId != ROOT_NODE_ID;
         AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
@@ -1100,49 +1362,29 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         return event;
     }
 
-    private void sendAccessibilityEvent(int virtualViewId, int eventType) {
-        if (!accessibilityEnabled) {
-            return;
-        }
-        if (virtualViewId == ROOT_NODE_ID) {
-            rootAccessibilityView.sendAccessibilityEvent(eventType);
-        } else {
-            sendAccessibilityEvent(obtainAccessibilityEvent(virtualViewId, eventType));
-        }
-    }
-
-    private void sendAccessibilityEvent(AccessibilityEvent event) {
-        if (!accessibilityEnabled) {
-            return;
-        }
-        rootAccessibilityView.getParent().requestSendAccessibilityEvent(rootAccessibilityView, event);
-    }
-
-    private void createWindowChangeEvent(SemanticsNode route) {
-        AccessibilityEvent e = obtainAccessibilityEvent(
-            route.id,
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
-        );
-        String routeName = route.getRouteName();
-        e.getText().add(routeName);
-        sendAccessibilityEvent(e);
-    }
-
-    private void willRemoveSemanticsObject(SemanticsNode object) {
-        assert flutterSemanticsTree.containsKey(object.id);
-        assert flutterSemanticsTree.get(object.id) == object;
-        object.parent = null;
-        if (accessibilityFocusedSemanticsNode == object) {
+    /**
+     * Hook called just before a {@link SemanticsNode} is removed from the Android cache of Flutter's
+     * semantics tree.
+     */
+    private void willRemoveSemanticsNode(SemanticsNode semanticsNodeToBeRemoved) {
+        assert flutterSemanticsTree.containsKey(semanticsNodeToBeRemoved.id);
+        assert flutterSemanticsTree.get(semanticsNodeToBeRemoved.id) == semanticsNodeToBeRemoved;
+        // TODO(mattcarroll): should parent be set to "null" here? Changing the parent seems like the
+        //                    behavior of a method called "removeSemanticsNode()". The same is true
+        //                    for null'ing accessibilityFocusedSemanticsNode, inputFocusedSemanticsNode,
+        //                    and hoveredObject.  Is this a hook method or a command?
+        semanticsNodeToBeRemoved.parent = null;
+        if (accessibilityFocusedSemanticsNode == semanticsNodeToBeRemoved) {
             sendAccessibilityEvent(
                 accessibilityFocusedSemanticsNode.id,
                 AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED
             );
             accessibilityFocusedSemanticsNode = null;
         }
-        if (inputFocusedSemanticsNode == object) {
+        if (inputFocusedSemanticsNode == semanticsNodeToBeRemoved) {
             inputFocusedSemanticsNode = null;
         }
-        if (hoveredObject == object) {
+        if (hoveredObject == semanticsNodeToBeRemoved) {
             hoveredObject = null;
         }
     }
@@ -1157,7 +1399,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      * </ul>
      */
     // TODO(mattcarroll): under what conditions is this method expected to be invoked?
-    void reset() {
+    public void reset() {
         flutterSemanticsTree.clear();
         if (accessibilityFocusedSemanticsNode != null) {
             sendAccessibilityEvent(
@@ -1170,7 +1412,16 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         sendAccessibilityEvent(0, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
     }
 
-    // TODO(mattcarroll): are these standard accessibility actions as defined by Flutter? If so, where are they defined in Dart?
+    /**
+     * Listener that can be set on a {@link AccessibilityBridge}, which is invoked any time
+     * accessibility is turned on/off, or touch exploration is turned on/off.
+     */
+    public interface OnAccessibilityChangeListener {
+        void onAccessibilityChanged(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled);
+    }
+
+    // Must match SemanticsActions in semantics.dart
+    // https://github.com/flutter/engine/blob/master/lib/ui/semantics.dart
     public enum Action {
         TAP(1 << 0),
         LONG_PRESS(1 << 1),
@@ -1201,7 +1452,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
     }
 
-    // TODO(mattcarroll): are these flags defined by Flutter? If so, where are they defined in Dart?
+    // Must match SemanticsFlag in semantics.dart
+    // https://github.com/flutter/engine/blob/master/lib/ui/semantics.dart
     private enum Flag {
         HAS_CHECKED_STATE(1 << 0),
         IS_CHECKED(1 << 1),
@@ -1226,6 +1478,19 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         final int value;
 
         Flag(int value) {
+            this.value = value;
+        }
+    }
+
+    // Must match the enum defined in window.dart.
+    private enum AccessibilityFeature {
+        ACCESSIBLE_NAVIGATION(1 << 0),
+        INVERT_COLORS(1 << 1), // NOT SUPPORTED
+        DISABLE_ANIMATIONS(1 << 2);
+
+        final int value;
+
+        AccessibilityFeature(int value) {
             this.value = value;
         }
     }
@@ -1377,8 +1642,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
         /**
          * Returns true if the given {@code action} is supported by this {@code SemanticsNode}.
+         *
+         * This method only applies to this {@code SemanticsNode} and does not implicitly search
+         * its children.
          */
-        // TODO(mattcarroll): does this.actions include child actions, too?
         private boolean hasAction(@NonNull Action action) {
             return (actions & action.value) != 0;
         }
