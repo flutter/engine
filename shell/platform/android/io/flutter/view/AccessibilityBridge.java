@@ -266,25 +266,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // This is guarded at instantiation time.
     @TargetApi(19)
     @RequiresApi(19)
-    private final AccessibilityManager.TouchExplorationStateChangeListener touchExplorationStateChangeListener = new AccessibilityManager.TouchExplorationStateChangeListener() {
-        @Override
-        public void onTouchExplorationStateChanged(boolean isTouchExplorationEnabled) {
-            if (isTouchExplorationEnabled) {
-                accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-            } else {
-                onTouchExplorationExit();
-                accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-            }
-            sendLatestAccessibilityFlagsToFlutter();
-
-            if (onAccessibilityChangeListener != null) {
-                onAccessibilityChangeListener.onAccessibilityChanged(
-                    accessibilityManager.isEnabled(),
-                    isTouchExplorationEnabled
-                );
-            }
-        }
-    };
+    private final AccessibilityManager.TouchExplorationStateChangeListener touchExplorationStateChangeListener;
 
     // Listener that is notified when the global TRANSITION_ANIMATION_SCALE. When this scale goes
     // to zero, we instruct Flutter to disable animations.
@@ -346,6 +328,28 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             animationScaleObserver.onChange(false);
             Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
             this.contentResolver.registerContentObserver(transitionUri, false, animationScaleObserver);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            touchExplorationStateChangeListener = new AccessibilityManager.TouchExplorationStateChangeListener() {
+                @Override
+                public void onTouchExplorationStateChanged(boolean isTouchExplorationEnabled) {
+                    if (isTouchExplorationEnabled) {
+                        accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+                    } else {
+                        onTouchExplorationExit();
+                        accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+                    }
+                    sendLatestAccessibilityFlagsToFlutter();
+
+                    if (onAccessibilityChangeListener != null) {
+                        onAccessibilityChangeListener.onAccessibilityChanged(
+                            accessibilityManager.isEnabled(),
+                            isTouchExplorationEnabled
+                        );
+                    }
+                }
+            };
         }
     }
 
