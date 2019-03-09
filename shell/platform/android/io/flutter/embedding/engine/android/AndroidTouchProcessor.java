@@ -54,6 +54,7 @@ public class AndroidTouchProcessor {
   }
 
   // Must match the unpacking code in hooks.dart.
+  // TODO(mattcarroll): Update with additional fields for scroll wheel support
   private static final int POINTER_DATA_FIELD_COUNT = 21;
   private static final int BYTES_PER_FIELD = 8;
   private static final int POINTER_DATA_FLAG_BATCHED = 1;
@@ -85,19 +86,19 @@ public class AndroidTouchProcessor {
 
     int maskedAction = event.getActionMasked();
     int pointerChange = getPointerChangeForAction(event.getActionMasked());
-    if (maskedAction == MotionEvent.ACTION_DOWN || maskedAction == MotionEvent.ACTION_POINTER_DOWN) {
+    boolean updateForSinglePointer = maskedAction == MotionEvent.ACTION_DOWN || maskedAction == MotionEvent.ACTION_POINTER_DOWN;
+    boolean updateForMultiplePointers = !updateForSinglePointer && (maskedAction == MotionEvent.ACTION_UP || maskedAction == MotionEvent.ACTION_POINTER_UP);
+    if (updateForSinglePointer) {
       // ACTION_DOWN and ACTION_POINTER_DOWN always apply to a single pointer only.
       addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, packet);
-    } else if (maskedAction == MotionEvent.ACTION_UP || maskedAction == MotionEvent.ACTION_POINTER_UP) {
+    } else if (updateForMultiplePointers) {
       // ACTION_UP and ACTION_POINTER_UP may contain position updates for other pointers.
       // We are converting these updates to move events here in order to preserve this data.
       // We also mark these events with a flag in order to help the framework reassemble
       // the original Android event later, should it need to forward it to a PlatformView.
       for (int p = 0; p < pointerCount; p++) {
-        if (p != event.getActionIndex()) {
-          if (event.getToolType(p) == MotionEvent.TOOL_TYPE_FINGER) {
-            addPointerForIndex(event, p, PointerChange.MOVE, POINTER_DATA_FLAG_BATCHED, packet);
-          }
+        if (p != event.getActionIndex() && event.getToolType(p) == MotionEvent.TOOL_TYPE_FINGER) {
+          addPointerForIndex(event, p, PointerChange.MOVE, POINTER_DATA_FLAG_BATCHED, packet);
         }
       }
       // It's important that we're sending the UP event last. This allows PlatformView
@@ -113,9 +114,7 @@ public class AndroidTouchProcessor {
     }
 
     // Verify that the packet is the expected size.
-    if (packet.position() % (POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD) != 0) {
-      throw new AssertionError("Packet position is not on field boundary");
-    }
+    assert packet.position() % (POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD) == 0;
 
     // Send the packet to Flutter.
     renderer.dispatchPointerDataPacket(packet, packet.position());
@@ -157,7 +156,8 @@ public class AndroidTouchProcessor {
     packet.putLong(0); // obscured
 
     packet.putDouble(event.getPressure(pointerIndex)); // pressure
-    double pressureMin = 0.0, pressureMax = 1.0;
+    double pressureMin = 0.0;
+    double pressureMax = 1.0;
     if (event.getDevice() != null) {
       InputDevice.MotionRange pressureRange = event.getDevice().getMotionRange(MotionEvent.AXIS_PRESSURE);
       if (pressureRange != null) {
