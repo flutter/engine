@@ -339,6 +339,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             };
             touchExplorationStateChangeListener.onTouchExplorationStateChanged(accessibilityManager.isTouchExplorationEnabled());
             this.accessibilityManager.addTouchExplorationStateChangeListener(touchExplorationStateChangeListener);
+        } else {
+            touchExplorationStateChangeListener = null;
         }
 
         // Tell Flutter whether animations should initially be enabled or disabled. Then register a
