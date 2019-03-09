@@ -102,7 +102,12 @@ Future<int> runLint(ArgParser argParser, ArgResults argResults) async {
   if (argResults['html']) {
     lintArgs.addAll(<String>['--html', argResults['out']]);
   }
-  final Process lintProcess = await processManager.start(lintArgs);
+  final Process lintProcess = await processManager.start(
+    lintArgs,
+    environment: <String, String>{
+      'JAVA_HOME': await getJavaHome(),
+    },
+  );
   lintProcess.stdout.pipe(stdout);
   lintProcess.stderr.pipe(stderr);
   return await lintProcess.exitCode;
@@ -154,11 +159,34 @@ ArgParser setupOptions() {
   return argParser;
 }
 
+/// On macOS, we can try to find Java 1.8.
+///
+/// Otherwise, default to whatever JAVA_HOME is already.
+Future<String> getJavaHome() async {
+  if (Platform.isMacOS) {
+    final ProcessResult result = await processManager.run(
+      <String>['/usr/libexec/java_home', '-v', '1.8'],
+    );
+    return result.stdout.trim();
+  }
+  return Platform.environment['JAVA_HOME'];
+}
+
 /// Checks that `java` points to Java 1.8.
 ///
 /// The SDK lint tool may not work with Java > 1.8.
 Future<void> checkJava1_8() async {
   print('Checking Java version...');
+
+  if (Platform.isMacOS) {
+    final ProcessResult result = await processManager.run(
+      <String>['/usr/libexec/java_home', '-v', '1.8', '-F'],
+    );
+    if (result.exitCode != 0) {
+      print('Java 1.8 not available - the linter may not work properly.');
+    }
+    return;
+  }
   final ProcessResult javaResult = await processManager.run(
     <String>['java', '-version'],
   );
@@ -167,7 +195,8 @@ Future<void> checkJava1_8() async {
         'Ensure Java is installed and available on your path.');
     print(javaResult.stderr);
   }
-  final String javaVersionStdout = javaResult.stdout;
+  // `java -version` writes to stderr.
+  final String javaVersionStdout = javaResult.stderr;
   if (javaVersionStdout.contains('"1.8')) {
     print('The Android SDK tools may not work properly with your Java version. '
         'If this process fails, please retry using Java 1.8.');
