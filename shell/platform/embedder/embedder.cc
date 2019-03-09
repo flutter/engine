@@ -348,6 +348,10 @@ FlutterEngineResult FlutterEngineRun(size_t version,
     shell::PersistentCache::SetCacheDirectoryPath(persistent_cache_path);
   }
 
+  if (SAFE_ACCESS(args, is_persistent_cache_read_only, false)) {
+    shell::PersistentCache::gIsReadOnly = true;
+  }
+
   fml::CommandLine command_line;
   if (SAFE_ACCESS(args, command_line_argc, 0) != 0 &&
       SAFE_ACCESS(args, command_line_argv, nullptr) != nullptr) {
@@ -897,4 +901,19 @@ void FlutterEngineTraceEventDurationEnd(const char* name) {
 
 void FlutterEngineTraceEventInstant(const char* name) {
   fml::tracing::TraceEventInstant0("flutter", name);
+}
+
+FlutterEngineResult FlutterEnginePostRenderThreadTask(FlutterEngine engine,
+                                                      VoidCallback callback,
+                                                      void* baton) {
+  if (engine == nullptr || callback == nullptr) {
+    return kInvalidArguments;
+  }
+
+  auto task = [callback, baton]() { callback(baton); };
+
+  return reinterpret_cast<shell::EmbedderEngine*>(engine)->PostRenderThreadTask(
+             task)
+             ? kSuccess
+             : kInternalInconsistency;
 }

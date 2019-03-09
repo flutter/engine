@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.engine.android;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Rect;
@@ -12,6 +13,7 @@ import android.os.LocaleList;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -77,6 +79,8 @@ public class FlutterView extends FrameLayout {
   private TextInputPlugin textInputPlugin;
   @Nullable
   private AndroidKeyProcessor androidKeyProcessor;
+  @Nullable
+  private AndroidTouchProcessor androidTouchProcessor;
 
   // Directly implemented View behavior that communicates with Flutter.
   private final FlutterRenderer.ViewportMetrics viewportMetrics = new FlutterRenderer.ViewportMetrics();
@@ -179,6 +183,8 @@ public class FlutterView extends FrameLayout {
    * the wider than expected padding when the status and navigation bars are hidden.
    */
   @Override
+  @TargetApi(20)
+  @RequiresApi(20)
   public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
@@ -309,8 +315,7 @@ public class FlutterView extends FrameLayout {
       return false;
     }
 
-    // TODO(mattcarroll): forward event to touch processore when it's merged in.
-    return false;
+    return androidTouchProcessor.onTouchEvent(event);
   }
 
   /**
@@ -384,6 +389,7 @@ public class FlutterView extends FrameLayout {
         this.flutterEngine.getKeyEventChannel(),
         textInputPlugin
     );
+    androidTouchProcessor = new AndroidTouchProcessor(this.flutterEngine.getRenderer());
 
     // Inform the Android framework that it should retrieve a new InputConnection
     // now that an engine is attached.

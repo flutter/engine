@@ -4,19 +4,19 @@
 
 package io.flutter.view;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.LocaleList;
 import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -50,8 +50,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * An Android view containing a Flutter app.
  */
-public class FlutterView extends SurfaceView
-        implements BinaryMessenger, TextureRegistry, AccessibilityManager.AccessibilityStateChangeListener {
+public class FlutterView extends SurfaceView implements BinaryMessenger, TextureRegistry {
     /**
      * Interface for those objects that maintain and expose a reference to a
      * {@code FlutterView} (such as a full-screen Flutter activity).
@@ -89,7 +88,6 @@ public class FlutterView extends SurfaceView
     }
 
     private final DartExecutor dartExecutor;
-    private final AccessibilityChannel accessibilityChannel;
     private final NavigationChannel navigationChannel;
     private final KeyEventChannel keyEventChannel;
     private final LifecycleChannel lifecycleChannel;
@@ -103,13 +101,18 @@ public class FlutterView extends SurfaceView
     private AccessibilityBridge mAccessibilityNodeProvider;
     private final SurfaceHolder.Callback mSurfaceCallback;
     private final ViewportMetrics mMetrics;
-    private final AccessibilityManager mAccessibilityManager;
     private final List<ActivityLifecycleListener> mActivityLifecycleListeners;
     private final List<FirstFrameListener> mFirstFrameListeners;
     private final AtomicLong nextTextureId = new AtomicLong(0L);
     private FlutterNativeView mNativeView;
-    private final AnimationScaleObserver mAnimationScaleObserver;
     private boolean mIsSoftwareRenderingEnabled = false; // using the software renderer or not
+
+    private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener = new AccessibilityBridge.OnAccessibilityChangeListener() {
+        @Override
+        public void onAccessibilityChanged(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
+            resetWillNotDraw(isAccessibilityEnabled, isTouchExplorationEnabled);
+        }
+    };
 
     public FlutterView(Context context) {
         this(context, null);
@@ -131,7 +134,6 @@ public class FlutterView extends SurfaceView
 
         dartExecutor = mNativeView.getDartExecutor();
         mIsSoftwareRenderingEnabled = FlutterJNI.nativeGetIsSoftwareRenderingEnabled();
-        mAnimationScaleObserver = new AnimationScaleObserver(new Handler());
         mMetrics = new ViewportMetrics();
         mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
         setFocusable(true);
@@ -160,13 +162,10 @@ public class FlutterView extends SurfaceView
         };
         getHolder().addCallback(mSurfaceCallback);
 
-        mAccessibilityManager = (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE);
-
         mActivityLifecycleListeners = new ArrayList<>();
         mFirstFrameListeners = new ArrayList<>();
 
         // Create all platform channels
-        accessibilityChannel = new AccessibilityChannel(dartExecutor);
         navigationChannel = new NavigationChannel(dartExecutor);
         keyEventChannel = new KeyEventChannel(dartExecutor);
         lifecycleChannel = new LifecycleChannel(dartExecutor);
@@ -234,7 +233,6 @@ public class FlutterView extends SurfaceView
     }
 
     public void onPostResume() {
-        updateAccessibilityFeatures();
         for (ActivityLifecycleListener listener : mActivityLifecycleListeners) {
             listener.onPostResume();
         }
@@ -571,7 +569,7 @@ public class FlutterView extends SurfaceView
             return false;
         }
 
-        boolean handled = handleAccessibilityHoverEvent(event);
+        boolean handled = mAccessibilityNodeProvider.onAccessibilityHoverEvent(event);
         if (!handled) {
             // TODO(ianh): Expose hover events to the platform,
             // implementing ADD, REMOVE, etc.
@@ -654,6 +652,8 @@ public class FlutterView extends SurfaceView
     // be padded. When the on-screen keyboard is detected, we want to include the full inset
     // but when the inset is just the hidden nav bar, we want to provide a zero inset so the space
     // can be used.
+    @TargetApi(20)
+    @RequiresApi(20)
     int calculateBottomKeyboardInset(WindowInsets insets) {
         int screenHeight = getRootView().getHeight();
         // Magic number due to this being a heuristic. This should be replaced, but we have not
@@ -672,6 +672,8 @@ public class FlutterView extends SurfaceView
     // This callback is not present in API < 20, which means lower API devices will see
     // the wider than expected padding when the status and navigation bars are hidden.
     @Override
+    @TargetApi(20)
+    @RequiresApi(20)
     public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
         boolean statusBarHidden =
             (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) != 0;
@@ -738,6 +740,12 @@ public class FlutterView extends SurfaceView
 
     private void preRun() {
         resetAccessibilityTree();
+    }
+
+    void resetAccessibilityTree() {
+        if (mAccessibilityNodeProvider != null) {
+            mAccessibilityNodeProvider.reset();
+        }
     }
 
     private void postRun() {
@@ -838,202 +846,52 @@ public class FlutterView extends SurfaceView
         }
     }
 
-    // ACCESSIBILITY
-
-    private boolean mAccessibilityEnabled = false;
-    private boolean mTouchExplorationEnabled = false;
-    private int mAccessibilityFeatureFlags = 0;
-    private TouchExplorationListener mTouchExplorationListener;
-
-    protected void dispatchSemanticsAction(int id, AccessibilityBridge.Action action) {
-        dispatchSemanticsAction(id, action, null);
-    }
-
-    protected void dispatchSemanticsAction(int id, AccessibilityBridge.Action action, Object args) {
-        if (!isAttached())
-            return;
-        ByteBuffer encodedArgs = null;
-        int position = 0;
-        if (args != null) {
-            encodedArgs = StandardMessageCodec.INSTANCE.encodeMessage(args);
-            position = encodedArgs.position();
-        }
-        mNativeView.getFlutterJNI().dispatchSemanticsAction(id, action.value, encodedArgs, position);
-    }
-
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        mAccessibilityEnabled = mAccessibilityManager.isEnabled();
-        mTouchExplorationEnabled = mAccessibilityManager.isTouchExplorationEnabled();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
-            getContext().getContentResolver().registerContentObserver(transitionUri, false, mAnimationScaleObserver);
-        }
 
-        if (mAccessibilityEnabled || mTouchExplorationEnabled) {
-            ensureAccessibilityEnabled();
-        }
-        if (mTouchExplorationEnabled) {
-            mAccessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-        } else {
-            mAccessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-        }
-        // Apply additional accessibility settings
-        updateAccessibilityFeatures();
-        resetWillNotDraw();
-        mAccessibilityManager.addAccessibilityStateChangeListener(this);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            if (mTouchExplorationListener == null) {
-                mTouchExplorationListener = new TouchExplorationListener();
-            }
-            mAccessibilityManager.addTouchExplorationStateChangeListener(mTouchExplorationListener);
-        }
-    }
+        mAccessibilityNodeProvider = new AccessibilityBridge(
+            this,
+            getFlutterNativeView().getFlutterJNI(),
+            new AccessibilityChannel(dartExecutor),
+            (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE),
+            getContext().getContentResolver()
+        );
+        mAccessibilityNodeProvider.setOnAccessibilityChangeListener(onAccessibilityChangeListener);
 
-    private void updateAccessibilityFeatures() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            String transitionAnimationScale = Settings.Global.getString(getContext().getContentResolver(),
-                Settings.Global.TRANSITION_ANIMATION_SCALE);
-            if (transitionAnimationScale != null && transitionAnimationScale.equals("0")) {
-                mAccessibilityFeatureFlags |= AccessibilityFeature.DISABLE_ANIMATIONS.value;
-            } else {
-                mAccessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
-            }
-        }
-        mNativeView.getFlutterJNI().setAccessibilityFeatures(mAccessibilityFeatureFlags);
+        resetWillNotDraw(
+            mAccessibilityNodeProvider.isAccessibilityEnabled(),
+            mAccessibilityNodeProvider.isTouchExplorationEnabled()
+        );
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        getContext().getContentResolver().unregisterContentObserver(mAnimationScaleObserver);
-        mAccessibilityManager.removeAccessibilityStateChangeListener(this);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            mAccessibilityManager.removeTouchExplorationStateChangeListener(mTouchExplorationListener);
-        }
+
+        mAccessibilityNodeProvider.release();
+        mAccessibilityNodeProvider = null;
     }
 
-    private void resetWillNotDraw() {
+    // TODO(mattcarroll): Confer with Ian as to why we need this method. Delete if possible, otherwise add comments.
+    private void resetWillNotDraw(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
         if (!mIsSoftwareRenderingEnabled) {
-            setWillNotDraw(!(mAccessibilityEnabled || mTouchExplorationEnabled));
+            setWillNotDraw(!(isAccessibilityEnabled || isTouchExplorationEnabled));
         } else {
             setWillNotDraw(false);
         }
     }
 
     @Override
-    public void onAccessibilityStateChanged(boolean enabled) {
-        if (enabled) {
-            ensureAccessibilityEnabled();
-        } else {
-            mAccessibilityEnabled = false;
-            if (mAccessibilityNodeProvider != null) {
-                mAccessibilityNodeProvider.setAccessibilityEnabled(false);
-            }
-            mNativeView.getFlutterJNI().setSemanticsEnabled(false);
-        }
-        resetWillNotDraw();
-    }
-
-    /// Must match the enum defined in window.dart.
-    private enum AccessibilityFeature {
-        ACCESSIBLE_NAVIGATION(1 << 0),
-        INVERT_COLORS(1 << 1), // NOT SUPPORTED
-        DISABLE_ANIMATIONS(1 << 2);
-
-        AccessibilityFeature(int value) {
-            this.value = value;
-        }
-
-        final int value;
-    }
-
-    // Listens to the global TRANSITION_ANIMATION_SCALE property and notifies us so
-    // that we can disable animations in Flutter.
-    private class AnimationScaleObserver extends ContentObserver {
-        public AnimationScaleObserver(Handler handler) {
-            super(handler);
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            this.onChange(selfChange, null);
-        }
-
-        @Override
-        public void onChange(boolean selfChange, Uri uri) {
-            String value = Settings.Global.getString(getContext().getContentResolver(),
-                    Settings.Global.TRANSITION_ANIMATION_SCALE);
-            if (value != null && value.equals("0")) {
-                mAccessibilityFeatureFlags |= AccessibilityFeature.DISABLE_ANIMATIONS.value;
-            } else {
-                mAccessibilityFeatureFlags &= ~AccessibilityFeature.DISABLE_ANIMATIONS.value;
-            }
-            mNativeView.getFlutterJNI().setAccessibilityFeatures(mAccessibilityFeatureFlags);
-        }
-    }
-
-    class TouchExplorationListener implements AccessibilityManager.TouchExplorationStateChangeListener {
-        @Override
-        public void onTouchExplorationStateChanged(boolean enabled) {
-            if (enabled) {
-                mTouchExplorationEnabled = true;
-                ensureAccessibilityEnabled();
-                mAccessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-                mNativeView.getFlutterJNI().setAccessibilityFeatures(mAccessibilityFeatureFlags);
-            } else {
-                mTouchExplorationEnabled = false;
-                if (mAccessibilityNodeProvider != null) {
-                    mAccessibilityNodeProvider.handleTouchExplorationExit();
-                }
-                mAccessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-                mNativeView.getFlutterJNI().setAccessibilityFeatures(mAccessibilityFeatureFlags);
-            }
-            resetWillNotDraw();
-        }
-    }
-
-    @Override
     public AccessibilityNodeProvider getAccessibilityNodeProvider() {
-        if (mAccessibilityEnabled)
+        if (mAccessibilityNodeProvider.isAccessibilityEnabled()) {
             return mAccessibilityNodeProvider;
-        // TODO(goderbauer): when a11y is off this should return a one-off snapshot of
-        // the a11y
-        // tree.
-        return null;
-    }
-
-    void ensureAccessibilityEnabled() {
-        if (!isAttached())
-            return;
-        mAccessibilityEnabled = true;
-        if (mAccessibilityNodeProvider == null) {
-            mAccessibilityNodeProvider = new AccessibilityBridge(this, accessibilityChannel);
-        }
-        mNativeView.getFlutterJNI().setSemanticsEnabled(true);
-        mAccessibilityNodeProvider.setAccessibilityEnabled(true);
-    }
-
-    void resetAccessibilityTree() {
-        if (mAccessibilityNodeProvider != null) {
-            mAccessibilityNodeProvider.reset();
-        }
-    }
-
-    private boolean handleAccessibilityHoverEvent(MotionEvent event) {
-        if (!mTouchExplorationEnabled) {
-            return false;
-        }
-        if (event.getAction() == MotionEvent.ACTION_HOVER_ENTER || event.getAction() == MotionEvent.ACTION_HOVER_MOVE) {
-            mAccessibilityNodeProvider.handleTouchExploration(event.getX(), event.getY());
-        } else if (event.getAction() == MotionEvent.ACTION_HOVER_EXIT) {
-            mAccessibilityNodeProvider.handleTouchExplorationExit();
         } else {
-            Log.d("flutter", "unexpected accessibility hover event: " + event);
-            return false;
+            // TODO(goderbauer): when a11y is off this should return a one-off snapshot of
+            // the a11y
+            // tree.
+            return null;
         }
-        return true;
     }
 
     @Override

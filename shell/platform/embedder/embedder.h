@@ -549,6 +549,10 @@ typedef struct {
   // Flutter application (such as compiled shader programs used by Skia).
   // This is optional.  The string must be NULL terminated.
   const char* persistent_cache_path;
+
+  // If true, we'll only read the existing cache, but not write new ones.
+  bool is_persistent_cache_read_only;
+
   // A callback that gets invoked by the engine when it attempts to wait for a
   // platform vsync event. The engine will give the platform a baton that needs
   // to be returned back to the engine via |FlutterEngineOnVsync|. All batons
@@ -650,12 +654,16 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
 // platform via the vsync callback must be returned. This call must be made on
 // the thread on which the call to |FlutterEngineRun| was made.
 //
-// |frame_start_time_nanos| is the point at which the vsync event occurred.
+// |frame_start_time_nanos| is the point at which the vsync event occurred or
+// will occur. If the time point is in the future, the engine will wait till
+// that point to begin its frame workload. The system monotonic clock is used as
+// the timebase.
+//
 // |frame_target_time_nanos| is the point at which the embedder anticipates the
 // next vsync to occur. This is a hint the engine uses to schedule Dart VM
 // garbage collection in periods in which the various threads are most likely to
 // be idle. For example, for a 60Hz display, embedders should add 16.6 * 1e6 to
-// the frame time field.
+// the frame time field. The system monotonic clock is used as the timebase.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
                                          intptr_t baton,
@@ -683,6 +691,14 @@ void FlutterEngineTraceEventDurationEnd(const char* name);
 // on any thread.
 FLUTTER_EXPORT
 void FlutterEngineTraceEventInstant(const char* name);
+
+// Posts a task onto the Flutter render thread. Typically, this may be called
+// from any thread as long as a |FlutterEngineShutdown| on the specific engine
+// has not already been initiated.
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEnginePostRenderThreadTask(FlutterEngine engine,
+                                                      VoidCallback callback,
+                                                      void* callback_data);
 
 #if defined(__cplusplus)
 }  // extern "C"
