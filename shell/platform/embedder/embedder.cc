@@ -588,22 +588,37 @@ FlutterEngineResult FlutterEngineRun(size_t version,
     }
   }
 
-  // Step 1: Create the engine.
-  auto embedder_engine =
-      std::make_unique<shell::EmbedderEngine>(std::move(thread_host),    //
-                                              std::move(task_runners),   //
-                                              settings,                  //
-                                              on_create_platform_view,   //
-                                              on_create_rasterizer,      //
-                                              external_texture_callback  //
-      );
+  shell::EmbedderEngine* engine_ptr = nullptr;
 
-  if (!embedder_engine->IsValid()) {
+  {
+    // Step 1: Create the engine.
+    auto embedder_engine =
+        std::make_unique<shell::EmbedderEngine>(std::move(thread_host),    //
+                                                std::move(task_runners),   //
+                                                settings,                  //
+                                                on_create_platform_view,   //
+                                                on_create_rasterizer,      //
+                                                external_texture_callback  //
+        );
+
+    // Give the engine back to the caller as soon as possible. This way, callers
+    // have a reference to the engine before this function returns. This might
+    // be necessary in cases where secondary threads schedule frames and such
+    // and the caller needs the engine to post the baton back on vsync.
+    engine_ptr = embedder_engine.release();
+    *engine_out = reinterpret_cast<FlutterEngine>(engine_ptr);
+  }
+
+  if (!engine_ptr->IsValid()) {
+    delete engine_ptr;
+    *engine_out = nullptr;
     return kInvalidArguments;
   }
 
   // Step 2: Setup the rendering surface.
-  if (!embedder_engine->NotifyCreated()) {
+  if (!engine_ptr->NotifyCreated()) {
+    delete engine_ptr;
+    *engine_out = nullptr;
     return kInvalidArguments;
   }
 
@@ -617,16 +632,19 @@ FlutterEngineResult FlutterEngineRun(size_t version,
   run_configuration.AddAssetResolver(
       std::make_unique<blink::DirectoryAssetBundle>(fml::OpenDirectory(
           settings.assets_path.c_str(), false, fml::FilePermission::kRead)));
+
   if (!run_configuration.IsValid()) {
+    delete engine_ptr;
+    *engine_out = nullptr;
     return kInvalidArguments;
   }
 
-  if (!embedder_engine->Run(std::move(run_configuration))) {
+  if (!engine_ptr->Run(std::move(run_configuration))) {
+    delete engine_ptr;
+    *engine_out = nullptr;
     return kInvalidArguments;
   }
 
-  // Finally! Release the ownership of the embedder engine to the caller.
-  *engine_out = reinterpret_cast<FlutterEngine>(embedder_engine.release());
   return kSuccess;
 }
 
