@@ -28,11 +28,16 @@ if [[ ! -d "$2" ]]; then
   exit 1
 fi
 
-if [[ $3 != "linux-amd64" && $3 != "mac-amd64" && $3 != "windows-amd64" ]]; then
+if [[ $1 != "platforms" && $3 != "linux-amd64" && $3 != "mac-amd64" && $3 != "windows-amd64" ]]; then
   echo "Unsupported platform $3."
   echo "Valid options are linux-amd64, mac-amd64, windows-amd64."
   print_usage
   exit 1
 fi
 
-cipd create -in $2 -name flutter/android/sdk/$1/$3 -install-mode copy -tag version:$4
+if [[ $1 == "platforms" ]]; then
+  echo "Ignoring PLATFORM_NAME - this package is cross-platform."
+  cipd create -in $2 -name flutter/android/sdk/$1 -install-mode copy -tag version:$4
+else
+  cipd create -in $2 -name flutter/android/sdk/$1/$3 -install-mode copy -tag version:$4
+fi

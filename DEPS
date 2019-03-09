@@ -424,7 +424,7 @@ deps = {
   'src/third_party/android_tools/sdk/platforms': {
      'packages': [
        {
-        'package': 'flutter/android/sdk/platforms/${{platform}}',
+        'package': 'flutter/android/sdk/platforms',
         'version': 'version:28r6'
        }
      ],
