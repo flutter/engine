@@ -102,11 +102,14 @@ Future<int> runLint(ArgParser argParser, ArgResults argResults) async {
   if (argResults['html']) {
     lintArgs.addAll(<String>['--html', argResults['out']]);
   }
+  final String javaHome = await getJavaHome();
   final Process lintProcess = await processManager.start(
     lintArgs,
-    environment: <String, String>{
-      'JAVA_HOME': await getJavaHome(),
-    },
+    environment: javaHome != null
+        ? <String, String>{
+            'JAVA_HOME': javaHome,
+          }
+        : null,
   );
   lintProcess.stdout.pipe(stdout);
   lintProcess.stderr.pipe(stderr);
@@ -165,9 +168,11 @@ ArgParser setupOptions() {
 Future<String> getJavaHome() async {
   if (Platform.isMacOS) {
     final ProcessResult result = await processManager.run(
-      <String>['/usr/libexec/java_home', '-v', '1.8'],
+      <String>['/usr/libexec/java_home', '-v', '1.8', '-F'],
     );
-    return result.stdout.trim();
+    if (result.exitCode == 0) {
+      return result.stdout.trim();
+    }
   }
   return Platform.environment['JAVA_HOME'];
 }
