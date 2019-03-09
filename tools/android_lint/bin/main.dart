@@ -202,7 +202,7 @@ Future<void> checkJava1_8() async {
   }
   // `java -version` writes to stderr.
   final String javaVersionStdout = javaResult.stderr;
-  if (javaVersionStdout.contains('"1.8')) {
+  if (!javaVersionStdout.contains('"1.8')) {
     print('The Android SDK tools may not work properly with your Java version. '
         'If this process fails, please retry using Java 1.8.');
   }
