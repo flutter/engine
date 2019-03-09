@@ -37,7 +37,7 @@
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
-  NSMutableDictionary *pointers;
+  NSMutableDictionary* pointers;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -57,7 +57,7 @@
     [self performCommonViewControllerInitialization];
     [engine setViewController:self];
 
-    pointers = [[NSMutableDictionary alloc]init];
+    pointers = [[NSMutableDictionary alloc] init];
   }
 
   return self;
@@ -79,7 +79,7 @@
     [self loadDefaultSplashScreenView];
     [self performCommonViewControllerInitialization];
 
-    pointers = [[NSMutableDictionary alloc]init];
+    pointers = [[NSMutableDictionary alloc] init];
   }
 
   return self;
@@ -500,10 +500,10 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
   return blink::PointerData::DeviceKind::kTouch;
 }
 
-- (blink::PointerData)CreatePointerData:(CGPoint)windowCoordinates 
-    andTouch:(UITouch*)touch 
-    andScale:(CGFloat)scale 
-    andChange:(blink::PointerData::Change)change {
+- (blink::PointerData)CreatePointerData:(CGPoint)windowCoordinates
+                               andTouch:(UITouch*)touch
+                               andScale:(CGFloat)scale
+                              andChange:(blink::PointerData::Change)change {
   blink::PointerData pointer_data;
   pointer_data.Clear();
 
@@ -581,57 +581,71 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 // touch is specified in the second argument.
 - (void)dispatchTouches:(NSSet*)touches
     pointerDataChangeOverride:(blink::PointerData::Change*)overridden_change {
-
   const CGFloat scale = [UIScreen mainScreen].scale;
-  
   size_t pointer_index = 0;
-  NSMutableDictionary *preparedPointerData = [[NSMutableDictionary alloc] init];
+  NSMutableDictionary* preparedPointerData = [[NSMutableDictionary alloc] init];
 
   for (UITouch* touch in touches) {
     CGPoint windowCoordinates = [touch locationInView:self.view];
 
     blink::PointerData::Change change = overridden_change != nullptr
-                            ? *overridden_change
-                            : PointerDataChangeFromUITouchPhase(touch.phase);
+                                            ? *overridden_change
+                                            : PointerDataChangeFromUITouchPhase(touch.phase);
 
     // original pointer data
-    blink::PointerData pointer_data = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:change];
+    blink::PointerData pointer_data = [self CreatePointerData:windowCoordinates
+                                                     andTouch:touch
+                                                     andScale:scale
+                                                    andChange:change];
 
     // state to be monitored created here
-    PointerState *currentPointerState = [[PointerState alloc] initWithDx:pointer_data.physical_x andDy:pointer_data.physical_y andDevice:pointer_data.device];
-    
-    NSString *device = [[NSString alloc] initWithFormat:@"%lld", pointer_data.device];
+    PointerState* currentPointerState = [[PointerState alloc] initWithDx:pointer_data.physical_x
+                                                                   andDy:pointer_data.physical_y
+                                                               andDevice:pointer_data.device];
+
+    NSString* device = [[NSString alloc] initWithFormat:@"%lld", pointer_data.device];
     BOOL alreadyAdded = NO;
 
-    switch (pointer_data.change)
-    {
+    switch (pointer_data.change) {
       case blink::PointerData::Change::kDown: {
         // add pointer to state if absent
         if (pointers[device] == nil) {
           [pointers setValue:currentPointerState forKey:device];
-        } 
-                  
+        }
+
         // if state contained pointer prior to event
         if (alreadyAdded) {
           // send additional pointer added event
           blink::PointerData::Change addEvent = blink::PointerData::Change::kAdd;
-          blink::PointerData add_pointer = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:addEvent];
-          
-          NSValue *cppPointer=[NSValue valueWithBytes:&add_pointer objCType:@encode(blink::PointerData)];
-          [preparedPointerData setObject:cppPointer forKey:[NSNumber numberWithInt:pointer_index++]];
+          blink::PointerData add_pointer = [self CreatePointerData:windowCoordinates
+                                                          andTouch:touch
+                                                          andScale:scale
+                                                         andChange:addEvent];
+
+          NSValue* cppPointer = [NSValue valueWithBytes:&add_pointer
+                                               objCType:@encode(blink::PointerData)];
+          [preparedPointerData setObject:cppPointer
+                                  forKey:[NSNumber numberWithInt:pointer_index++]];
         }
 
         // if state position has changed
-        PointerState *existingPointer = [pointers objectForKey: device];
-        if (![existingPointer isLastLocationWithX:pointer_data.physical_x andY:pointer_data.physical_y]) {
+        PointerState* existingPointer = [pointers objectForKey:device];
+        if (![existingPointer isLastLocationWithX:pointer_data.physical_x
+                                             andY:pointer_data.physical_y]) {
           // update last position to current position
-          [existingPointer setLastLocationWithX:pointer_data.physical_x andY:pointer_data.physical_y];
+          [existingPointer setLastLocationWithX:pointer_data.physical_x
+                                           andY:pointer_data.physical_y];
           // send additional hover event
           blink::PointerData::Change hoverEvent = blink::PointerData::Change::kHover;
-          blink::PointerData hover_pointer = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:hoverEvent];
-          
-          NSValue *cppPointer=[NSValue valueWithBytes:&hover_pointer objCType:@encode(blink::PointerData)];
-          [preparedPointerData setObject:cppPointer forKey:[NSNumber numberWithInt:pointer_index++]];          
+          blink::PointerData hover_pointer = [self CreatePointerData:windowCoordinates
+                                                            andTouch:touch
+                                                            andScale:scale
+                                                           andChange:hoverEvent];
+
+          NSValue* cppPointer = [NSValue valueWithBytes:&hover_pointer
+                                               objCType:@encode(blink::PointerData)];
+          [preparedPointerData setObject:cppPointer
+                                  forKey:[NSNumber numberWithInt:pointer_index++]];
         }
 
         // set state to down
@@ -642,82 +656,98 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
         // add pointer to state if absent
         if (pointers[device] == nil) {
           [pointers setValue:currentPointerState forKey:device];
-        }   
+        }
         break;
       }
       case blink::PointerData::Change::kHover: {
         // add pointer to state if absent
         if (pointers[device] == nil) {
           [pointers setValue:currentPointerState forKey:device];
-        } 
+        }
 
         // if state contained pointer prior to event
         if (alreadyAdded) {
           // send additional add event
           blink::PointerData::Change addEvent = blink::PointerData::Change::kAdd;
-          blink::PointerData add_pointer = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:addEvent];
-          
-          NSValue *cppPointer=[NSValue valueWithBytes:&add_pointer objCType:@encode(blink::PointerData)];
-          [preparedPointerData setObject:cppPointer forKey:[NSNumber numberWithInt:pointer_index++]];
+          blink::PointerData add_pointer = [self CreatePointerData:windowCoordinates
+                                                          andTouch:touch
+                                                          andScale:scale
+                                                         andChange:addEvent];
+
+          NSValue* cppPointer = [NSValue valueWithBytes:&add_pointer
+                                               objCType:@encode(blink::PointerData)];
+          [preparedPointerData setObject:cppPointer
+                                  forKey:[NSNumber numberWithInt:pointer_index++]];
         }
       }
       case blink::PointerData::Change::kMove: {
         // set state's last position to current position
-        PointerState *existingPointer = [pointers objectForKey: device];
+        PointerState* existingPointer = [pointers objectForKey:device];
         [existingPointer setLastLocationWithX:pointer_data.physical_x andY:pointer_data.physical_y];
         break;
       }
-      case blink::PointerData::Change::kCancel: 
+      case blink::PointerData::Change::kCancel:
       case blink::PointerData::Change::kUp: {
         // if state position has changed
-        PointerState *existingPointer = [pointers objectForKey: device];
-        if (![existingPointer isLastLocationWithX:pointer_data.physical_x andY:pointer_data.physical_y]) {
+        PointerState* existingPointer = [pointers objectForKey:device];
+        if (![existingPointer isLastLocationWithX:pointer_data.physical_x
+                                             andY:pointer_data.physical_y]) {
           // update last position to current position
-          [existingPointer setLastLocationWithX:pointer_data.physical_x andY:pointer_data.physical_y];
+          [existingPointer setLastLocationWithX:pointer_data.physical_x
+                                           andY:pointer_data.physical_y];
           // add move event
           blink::PointerData::Change moveEvent = blink::PointerData::Change::kMove;
-          blink::PointerData move_pointer = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:moveEvent];
-          
-          NSValue *cppPointer=[NSValue valueWithBytes:&move_pointer objCType:@encode(blink::PointerData)];
-          [preparedPointerData setObject:cppPointer forKey:[NSNumber numberWithInt:pointer_index++]];          
+          blink::PointerData move_pointer = [self CreatePointerData:windowCoordinates
+                                                           andTouch:touch
+                                                           andScale:scale
+                                                          andChange:moveEvent];
+
+          NSValue* cppPointer = [NSValue valueWithBytes:&move_pointer
+                                               objCType:@encode(blink::PointerData)];
+          [preparedPointerData setObject:cppPointer
+                                  forKey:[NSNumber numberWithInt:pointer_index++]];
         }
         // set state for device to up
         [existingPointer setUp];
         break;
       }
       case blink::PointerData::Change::kRemove: {
-        PointerState *existingPointer = [pointers objectForKey: device];
+        PointerState* existingPointer = [pointers objectForKey:device];
         // if existing pointer is pressed
         if ([existingPointer isDown]) {
           // yield a cancel event
           blink::PointerData::Change removeEvent = blink::PointerData::Change::kRemove;
-          blink::PointerData cancel_pointer = [self CreatePointerData:windowCoordinates andTouch:touch andScale:scale andChange:removeEvent];
-          
-          NSValue *cppPointer=[NSValue valueWithBytes:&cancel_pointer objCType:@encode(blink::PointerData)];
-          [preparedPointerData setObject:cppPointer forKey:[NSNumber numberWithInt:pointer_index++]];
+          blink::PointerData cancel_pointer = [self CreatePointerData:windowCoordinates
+                                                             andTouch:touch
+                                                             andScale:scale
+                                                            andChange:removeEvent];
+
+          NSValue* cppPointer = [NSValue valueWithBytes:&cancel_pointer
+                                               objCType:@encode(blink::PointerData)];
+          [preparedPointerData setObject:cppPointer
+                                  forKey:[NSNumber numberWithInt:pointer_index++]];
         }
 
         // remove pointer from state
-        [pointers removeObjectForKey: device];
-        break;      
+        [pointers removeObjectForKey:device];
+        break;
       }
     }
 
     // all cases should send its original pointer event
-    NSValue *current_pointer=[NSValue valueWithBytes:&pointer_data objCType:@encode(blink::PointerData)];
-    [preparedPointerData setObject:current_pointer forKey:[NSNumber numberWithInt:pointer_index++]];  
+    NSValue* current_pointer = [NSValue valueWithBytes:&pointer_data
+                                              objCType:@encode(blink::PointerData)];
+    [preparedPointerData setObject:current_pointer forKey:[NSNumber numberWithInt:pointer_index++]];
   }
 
   // initialize packet with appropriate number of events
   auto packet = std::make_unique<blink::PointerDataPacket>(pointer_index);
 
-  // for every prepared pointer datum 
   for (size_t currentPointerIndex = 0; currentPointerIndex < pointer_index; currentPointerIndex++) {
-    // retrieve datum
-    NSValue *value = [preparedPointerData objectForKey:[NSNumber numberWithInt: currentPointerIndex]];
+    NSValue* value =
+        [preparedPointerData objectForKey:[NSNumber numberWithInt:currentPointerIndex]];
     blink::PointerData retrieved_pointer;
     [value getValue:&retrieved_pointer];
-    
     // set pointer data to packet
     packet->SetPointerData(currentPointerIndex, retrieved_pointer);
   }
@@ -1152,48 +1182,48 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 }
 
 - (void)setDx:(double)newDx {
-    dx = newDx;
+  dx = newDx;
 };
 
 - (double)getDx {
-    return dx;
+  return dx;
 };
 
 - (void)setDy:(double)newDy {
-    dy = newDy;
+  dy = newDy;
 };
 
 - (double)getDy {
-    return dy;
+  return dy;
 };
 
 - (void)setDevice:(long)newDevice {
-    device = newDevice;
+  device = newDevice;
 };
 
 - (long)getDevice {
-    return device;
+  return device;
 };
 
 - (BOOL)isDown {
-    return pressed;
+  return pressed;
 };
 
 - (void)setDown {
-    pressed = YES;
+  pressed = YES;
 };
 
 - (void)setUp {
-    pressed = NO;
+  pressed = NO;
 };
 
-- (BOOL)isLastLocationWithX:(double)otherDx andY: (double)otherDy {
-    return dx == otherDx && dy == otherDy;
+- (BOOL)isLastLocationWithX:(double)otherDx andY:(double)otherDy {
+  return dx == otherDx && dy == otherDy;
 };
 
 - (void)setLastLocationWithX:(double)newDx andY:(double)newDy {
-    dx = newDx;
-    dy = newDy;
+  dx = newDx;
+  dy = newDy;
 };
 
 @end

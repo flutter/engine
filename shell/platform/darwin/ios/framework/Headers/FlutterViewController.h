@@ -158,11 +158,11 @@ FLUTTER_EXPORT
 
 @end
 
-@interface PointerState:NSObject {
-    double dx;
-    double dy;
-    long device;
-    BOOL pressed;
+@interface PointerState : NSObject {
+  double dx;
+  double dy;
+  long device;
+  BOOL pressed;
 };
 
 - (instancetype)initWithDx:(double)newDx andDy:(double)newDy andDevice:(long)newDevice;
@@ -177,7 +177,7 @@ FLUTTER_EXPORT
 - (void)setUp;
 - (BOOL)isDown;
 - (void)setLastLocationWithX:(double)dx andY:(double)dy;
-- (BOOL)isLastLocationWithX:(double)dx andY: (double)dy;
+- (BOOL)isLastLocationWithX:(double)dx andY:(double)dy;
 
 @end
 
