@@ -50,8 +50,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * An Android view containing a Flutter app.
  */
-public class FlutterView extends SurfaceView
-        implements BinaryMessenger, TextureRegistry {
+public class FlutterView extends SurfaceView implements BinaryMessenger, TextureRegistry {
     /**
      * Interface for those objects that maintain and expose a reference to a
      * {@code FlutterView} (such as a full-screen Flutter activity).

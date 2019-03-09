@@ -330,7 +330,7 @@ public class FlutterJNI {
   }
 
   public void dispatchSemanticsAction(int id, @NonNull AccessibilityBridge.Action action, @Nullable Object args) {
-    ensureNotAttachedToNative();
+    ensureAttachedToNative();
 
     ByteBuffer encodedArgs = null;
     int position = 0;

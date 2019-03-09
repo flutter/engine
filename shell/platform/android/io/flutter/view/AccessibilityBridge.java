@@ -366,14 +366,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     /**
-     * Returns true of the Android OS currently has accessibility enabled, false otherwise.
+     * Returns true if the Android OS currently has accessibility enabled, false otherwise.
      */
     public boolean isAccessibilityEnabled() {
         return accessibilityManager.isEnabled();
     }
 
     /**
-     * Returns true of the Android OS currently has touch exploration enabled, false otherwise.
+     * Returns true if the Android OS currently has touch exploration enabled, false otherwise.
      */
     public boolean isTouchExplorationEnabled() {
         return accessibilityManager.isTouchExplorationEnabled();
