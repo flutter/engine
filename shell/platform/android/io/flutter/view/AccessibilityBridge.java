@@ -318,19 +318,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         // Tell Flutter whether touch exploration is initially active or not. Then register a listener
         // to be notified of changes in the future.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            touchExplorationStateChangeListener.onTouchExplorationStateChanged(accessibilityManager.isTouchExplorationEnabled());
-            this.accessibilityManager.addTouchExplorationStateChangeListener(touchExplorationStateChangeListener);
-        }
-
-        // Tell Flutter whether animations should initially be enabled or disabled. Then register a
-        // listener to be notified of changes in the future.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            animationScaleObserver.onChange(false);
-            Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
-            this.contentResolver.registerContentObserver(transitionUri, false, animationScaleObserver);
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             touchExplorationStateChangeListener = new AccessibilityManager.TouchExplorationStateChangeListener() {
                 @Override
                 public void onTouchExplorationStateChanged(boolean isTouchExplorationEnabled) {
@@ -350,6 +337,16 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                     }
                 }
             };
+            touchExplorationStateChangeListener.onTouchExplorationStateChanged(accessibilityManager.isTouchExplorationEnabled());
+            this.accessibilityManager.addTouchExplorationStateChangeListener(touchExplorationStateChangeListener);
+        }
+
+        // Tell Flutter whether animations should initially be enabled or disabled. Then register a
+        // listener to be notified of changes in the future.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            animationScaleObserver.onChange(false);
+            Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
+            this.contentResolver.registerContentObserver(transitionUri, false, animationScaleObserver);
         }
     }
 
