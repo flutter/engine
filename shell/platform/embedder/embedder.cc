@@ -51,14 +51,14 @@ extern const intptr_t kPlatformStrongDillSize;
   })()
 
 #define LOG_EMBEDDER_ERROR(code)                                      \
-  ({                                                                  \
+  ([=]() {                                                            \
     do {                                                              \
       FML_LOG(ERROR) << "Returning error '" << #code << "' (" << code \
                      << ") from Flutter Embedder API call to '"       \
                      << __FUNCTION__ << "'.";                         \
     } while (0);                                                      \
-    (code);                                                           \
-  })
+    return code;                                                      \
+  })()
 
 static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
   if (config->type != kOpenGL) {
