@@ -87,11 +87,13 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context,
     //        h = light height
     //        t = tangent of AOB, i.e., multiplier for elevation to extent
     SkRect bounds(path_.getBounds());
-    double ex = (kLightRadius * device_pixel_ratio_ + bounds.width() * 0.5) /
+    // tangent for x
+    double tx = (kLightRadius * device_pixel_ratio_ + bounds.width() * 0.5) /
                 kLightHeight;
-    double ey = (kLightRadius * device_pixel_ratio_ + bounds.height() * 0.5) /
+    // tangent for y
+    double ty = (kLightRadius * device_pixel_ratio_ + bounds.height() * 0.5) /
                 kLightHeight;
-    bounds.outset(elevation_ * ex, elevation_ * ey);
+    bounds.outset(elevation_ * tx, elevation_ * ty);
     set_paint_bounds(bounds);
 #endif  // defined(OS_FUCHSIA)
   }
