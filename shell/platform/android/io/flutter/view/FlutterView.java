@@ -371,7 +371,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (!isAttached()) {
-            return false;
+            return super.onTouchEvent(event);
         }
 
         // TODO(abarth): This version check might not be effective in some
@@ -389,7 +389,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     @Override
     public boolean onHoverEvent(MotionEvent event) {
         if (!isAttached()) {
-            return false;
+            return super.onHoverEvent(event);
         }
 
         boolean handled = mAccessibilityNodeProvider.onAccessibilityHoverEvent(event);
@@ -410,11 +410,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
         boolean handled = isAttached() && androidTouchProcessor.onGenericMotionEvent(event);
-        if (handled) {
-            return true;
-        } else {
-            return super.onGenericMotionEvent(event);
-        }
+        return handled ? true : super.onGenericMotionEvent(event);
     }
 
     @Override

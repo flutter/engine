@@ -312,7 +312,7 @@ public class FlutterView extends FrameLayout {
   @Override
   public boolean onTouchEvent(MotionEvent event) {
     if (!isAttachedToFlutterEngine()) {
-      return false;
+      return super.onTouchEvent(event);
     }
 
     // TODO(abarth): This version check might not be effective in some
@@ -337,12 +337,7 @@ public class FlutterView extends FrameLayout {
   @Override
   public boolean onGenericMotionEvent(MotionEvent event) {
     boolean handled = isAttachedToFlutterEngine() && androidTouchProcessor.onGenericMotionEvent(event);
-    if (handled) {
-      return true;
-    } else {
-      // TODO(mattcarroll): why are we returning the super value here but not in onTouchEvent and onHoverEvent?
-      return super.onGenericMotionEvent(event);
-    }
+    return handled ? true : super.onGenericMotionEvent(event);
   }
 
   /**
@@ -359,7 +354,7 @@ public class FlutterView extends FrameLayout {
   @Override
   public boolean onHoverEvent(MotionEvent event) {
     if (!isAttachedToFlutterEngine()) {
-      return false;
+      return super.onHoverEvent(event);
     }
 
     // TODO(mattcarroll): hook up to accessibility.

@@ -66,7 +66,6 @@ public class AndroidTouchProcessor {
   }
 
   // Must match the unpacking code in hooks.dart.
-  // TODO(mattcarroll): Update with additional fields for scroll wheel support
   private static final int POINTER_DATA_FIELD_COUNT = 24;
   private static final int BYTES_PER_FIELD = 8;
 
