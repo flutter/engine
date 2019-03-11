@@ -233,7 +233,8 @@ def to_gn_args(args):
       gn_args['arm_float_abi'] = args.arm_float_abi
 
     # Whether to build all dart snapshots.
-    gn_args['dart_platform_sdk'] = !args.full_dart_sdk;
+    if args.full_dart_sdk:
+        gn_args['dart_platform_sdk'] = False
 
     return gn_args
 
