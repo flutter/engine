@@ -28,14 +28,28 @@ static constexpr char kTextInputTypeName[] = "name";
 
 namespace shell {
 
-TextInputModel::TextInputModel(int client_id, const Json::Value& config)
+TextInputModel::TextInputModel(int client_id, const rapidjson::Value& config)
     : text_(""),
       client_id_(client_id),
       selection_base_(text_.begin()),
       selection_extent_(text_.begin()) {
-  input_action_ = config[kTextInputAction].asString();
-  Json::Value input_type_info = config[kTextInputType];
-  input_type_ = input_type_info[kTextInputTypeName].asString();
+  // TODO: Improve error handling during refactoring; this is just minimal
+  // checking to avoid asserts since RapidJSON is stricter than jsoncpp.
+  if (config.IsObject()) {
+    auto input_action = config.FindMember(kTextInputAction);
+    if (input_action != config.MemberEnd() && input_action->value.IsString()) {
+      input_action_ = input_action->value.GetString();
+    }
+    auto input_type_info = config.FindMember(kTextInputType);
+    if (input_type_info != config.MemberEnd() &&
+        input_type_info->value.IsObject()) {
+      auto input_type = input_type_info->value.FindMember(kTextInputTypeName);
+      if (input_type != input_type_info->value.MemberEnd() &&
+          input_type->value.IsString()) {
+        input_type_ = input_type->value.GetString();
+      }
+    }
+  }
 }
 
 TextInputModel::~TextInputModel() {}
@@ -138,24 +152,29 @@ bool TextInputModel::MoveCursorBack() {
   return false;
 }
 
-Json::Value TextInputModel::GetState() const {
-  // TODO(awdavies): Most of these are hard-coded for now.
-  Json::Value editing_state;
-  editing_state[kComposingBaseKey] = -1;
-  editing_state[kComposingExtentKey] = -1;
-  editing_state[kSelectionAffinityKey] = kAffinityDownstream;
-  editing_state[kSelectionBaseKey] =
-      static_cast<int>(selection_base_ - text_.begin());
-  editing_state[kSelectionExtentKey] =
-      static_cast<int>(selection_extent_ - text_.begin());
-  editing_state[kSelectionIsDirectionalKey] = false;
-  editing_state[kTextKey] = text_;
-
+std::unique_ptr<rapidjson::Document> TextInputModel::GetState() const {
   // TODO(stuartmorgan): Move client_id out up to the plugin so that this
   // function just returns the editing state.
-  Json::Value args = Json::arrayValue;
-  args.append(client_id_);
-  args.append(editing_state);
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
+  auto& allocator = args->GetAllocator();
+  args->PushBack(client_id_, allocator);
+
+  rapidjson::Value editing_state(rapidjson::kObjectType);
+  // TODO(awdavies): Most of these are hard-coded for now.
+  editing_state.AddMember(kComposingBaseKey, -1, allocator);
+  editing_state.AddMember(kComposingExtentKey, -1, allocator);
+  editing_state.AddMember(kSelectionAffinityKey, kAffinityDownstream,
+                          allocator);
+  editing_state.AddMember(kSelectionBaseKey,
+                          static_cast<int>(selection_base_ - text_.begin()),
+                          allocator);
+  editing_state.AddMember(kSelectionExtentKey,
+                          static_cast<int>(selection_extent_ - text_.begin()),
+                          allocator);
+  editing_state.AddMember(kSelectionIsDirectionalKey, false, allocator);
+  editing_state.AddMember(kTextKey, rapidjson::Value(text_, allocator).Move(),
+                          allocator);
+  args->PushBack(editing_state, allocator);
   return args;
 }
 

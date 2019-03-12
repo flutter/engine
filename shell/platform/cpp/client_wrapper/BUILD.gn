@@ -10,6 +10,7 @@ _core_wrapper_includes = [
   "include/flutter/engine_method_result.h",
   "include/flutter/json_message_codec.h",
   "include/flutter/json_method_codec.h",
+  "include/flutter/json_type.h",
   "include/flutter/message_codec.h",
   "include/flutter/method_call.h",
   "include/flutter/method_channel.h",
@@ -35,18 +36,14 @@ source_set("client_wrapper") {
   sources = _core_wrapper_sources
   public = _core_wrapper_includes
 
-  if (is_linux) {
-    configs += [
-      "$flutter_root/shell/platform/linux/config:jsoncpp",
-    ]
-  }
-
   deps = [
     "$flutter_root/shell/platform/cpp:common_cpp_library_headers",
+    "//third_party/rapidjson",
   ]
 
   defines = [
-    "FLUTTER_DESKTOP_LIBRARY"
+    "FLUTTER_DESKTOP_LIBRARY",
+    "USE_RAPID_JSON",
   ]
 }
 

@@ -38,7 +38,7 @@ source_set("common_cpp") {
     "text_input_model.cc",
   ]
 
-  defines = _common_defines
+  defines = _common_defines + [ "USE_RAPID_JSON" ]
 
   deps = [
     ":common_cpp_library_headers",
@@ -57,6 +57,7 @@ source_set("common_cpp") {
 
     deps += [
       "client_wrapper:client_wrapper",
+      "//third_party/rapidjson",
     ]
 
     if (is_linux) {
@@ -66,8 +67,6 @@ source_set("common_cpp") {
         "$flutter_root/shell/platform/linux/config:epoxy",
         "$flutter_root/shell/platform/linux/config:glfw3",
         "$flutter_root/shell/platform/linux/config:gtk3",
-        # TODO: Consider building jsoncpp from source and linking it statically.
-        "$flutter_root/shell/platform/linux/config:jsoncpp",
         "$flutter_root/shell/platform/linux/config:x11",
       ]
     }

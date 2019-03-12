@@ -7,11 +7,10 @@
 
 #include <memory>
 
-#include <json/json.h>
-
 #include "flutter/shell/platform/cpp/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/cpp/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/cpp/glfw/keyboard_hook_handler.h"
+#include "rapidjson/document.h"
 
 namespace shell {
 
@@ -33,7 +32,7 @@ class KeyEventHandler : public KeyboardHookHandler {
 
  private:
   // The Flutter system channel for key event messages.
-  std::unique_ptr<flutter::BasicMessageChannel<Json::Value>> channel_;
+  std::unique_ptr<flutter::BasicMessageChannel<rapidjson::Document>> channel_;
 };
 
 }  // namespace shell

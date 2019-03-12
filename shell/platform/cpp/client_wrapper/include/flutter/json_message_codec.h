@@ -5,34 +5,34 @@
 #ifndef FLUTTER_SHELL_PLATFORM_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_JSON_MESSAGE_CODEC_H_
 #define FLUTTER_SHELL_PLATFORM_CPP_CLIENT_WRAPPER_INCLUDE_FLUTTER_JSON_MESSAGE_CODEC_H_
 
-#include <json/json.h>
-
+#include "json_type.h"
 #include "message_codec.h"
 
 namespace flutter {
 
 // A message encoding/decoding mechanism for communications to/from the
 // Flutter engine via JSON channels.
-class JsonMessageCodec : public MessageCodec<Json::Value> {
+class JsonMessageCodec : public MessageCodec<JsonValueType> {
  public:
   // Returns the shared instance of the codec.
-  static const JsonMessageCodec &GetInstance();
+  static const JsonMessageCodec& GetInstance();
 
   ~JsonMessageCodec() = default;
 
   // Prevent copying.
-  JsonMessageCodec(JsonMessageCodec const &) = delete;
-  JsonMessageCodec &operator=(JsonMessageCodec const &) = delete;
+  JsonMessageCodec(JsonMessageCodec const&) = delete;
+  JsonMessageCodec& operator=(JsonMessageCodec const&) = delete;
 
  protected:
   // Instances should be obtained via GetInstance.
   JsonMessageCodec() = default;
 
   // MessageCodec:
-  std::unique_ptr<Json::Value> DecodeMessageInternal(
-      const uint8_t *binary_message, const size_t message_size) const override;
+  std::unique_ptr<JsonValueType> DecodeMessageInternal(
+      const uint8_t* binary_message,
+      const size_t message_size) const override;
   std::unique_ptr<std::vector<uint8_t>> EncodeMessageInternal(
-      const Json::Value &message) const override;
+      const JsonValueType& message) const override;
 };
 
 }  // namespace flutter

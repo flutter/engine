@@ -5,10 +5,6 @@
 import("$flutter_root/common/config.gni")
 import("//build/config/linux/pkg_config.gni")
 
-pkg_config("jsoncpp") {
-  packages = [ "jsoncpp" ]
-}
-
 if (use_glfw_desktop) {
   pkg_config("epoxy") {
     packages = [ "epoxy" ]

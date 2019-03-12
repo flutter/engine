@@ -40,11 +40,11 @@ class TextInputPlugin : public KeyboardHookHandler {
 
   // Called when a method is called on |channel_|;
   void HandleMethodCall(
-      const flutter::MethodCall<Json::Value>& method_call,
-      std::unique_ptr<flutter::MethodResult<Json::Value>> result);
+      const flutter::MethodCall<rapidjson::Document>& method_call,
+      std::unique_ptr<flutter::MethodResult<rapidjson::Document>> result);
 
   // The MethodChannel used for communication with the Flutter engine.
-  std::unique_ptr<flutter::MethodChannel<Json::Value>> channel_;
+  std::unique_ptr<flutter::MethodChannel<rapidjson::Document>> channel_;
 
   // Mapping of client IDs to text input models.
   std::map<int, std::unique_ptr<TextInputModel>> input_models_;

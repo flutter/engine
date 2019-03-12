@@ -4,7 +4,6 @@
 
 #include "flutter/shell/platform/cpp/glfw/key_event_handler.h"
 
-#include <json/json.h>
 #include <iostream>
 
 #include "flutter/shell/platform/cpp/client_wrapper/include/flutter/json_message_codec.h"
@@ -22,10 +21,11 @@ static constexpr char kKeyDown[] = "keydown";
 namespace shell {
 
 KeyEventHandler::KeyEventHandler(flutter::BinaryMessenger* messenger)
-    : channel_(std::make_unique<flutter::BasicMessageChannel<Json::Value>>(
-          messenger,
-          kChannelName,
-          &flutter::JsonMessageCodec::GetInstance())) {}
+    : channel_(
+          std::make_unique<flutter::BasicMessageChannel<rapidjson::Document>>(
+              messenger,
+              kChannelName,
+              &flutter::JsonMessageCodec::GetInstance())) {}
 
 KeyEventHandler::~KeyEventHandler() {}
 
@@ -38,16 +38,17 @@ void KeyEventHandler::KeyboardHook(GLFWwindow* window,
                                    int mods) {
   // TODO: Translate to a cross-platform key code system rather than passing
   // the native key code.
-  Json::Value event;
-  event[kKeyCodeKey] = key;
-  event[kKeyMapKey] = kAndroidKeyMap;
+  rapidjson::Document event(rapidjson::kObjectType);
+  auto& allocator = event.GetAllocator();
+  event.AddMember(kKeyCodeKey, key, allocator);
+  event.AddMember(kKeyMapKey, kAndroidKeyMap, allocator);
 
   switch (action) {
     case GLFW_PRESS:
-      event[kTypeKey] = kKeyDown;
+      event.AddMember(kTypeKey, kKeyDown, allocator);
       break;
     case GLFW_RELEASE:
-      event[kTypeKey] = kKeyUp;
+      event.AddMember(kTypeKey, kKeyUp, allocator);
       break;
     default:
       std::cerr << "Unknown key event action: " << action << std::endl;

@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include <json/json.h>
+#include "rapidjson/document.h"
 
 namespace shell {
 // Handles underlying text input state, using a simple ASCII model.
@@ -15,7 +15,7 @@ namespace shell {
 // Ignores special states like "insert mode" for now.
 class TextInputModel {
  public:
-  TextInputModel(int client_id, const Json::Value& config);
+  TextInputModel(int client_id, const rapidjson::Value& config);
   virtual ~TextInputModel();
 
   // Attempts to set the text state.
@@ -72,7 +72,7 @@ class TextInputModel {
   void MoveCursorToEnd();
 
   // Returns the state in the form of a platform message.
-  Json::Value GetState() const;
+  std::unique_ptr<rapidjson::Document> GetState() const;
 
   // Id of the text input client.
   int client_id() const { return client_id_; }

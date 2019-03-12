@@ -8,13 +8,13 @@ import("$flutter_root/common/config.gni")
 
 group("linux") {
   deps = [
-    ":flutter_library_linux",
+    ":flutter_linux",
     "$flutter_root/shell/platform/cpp/client_wrapper:publish_wrapper",
     "$flutter_root/shell/platform/cpp:publish_headers",
   ]
 }
 
-shared_library("flutter_library_linux") {
+shared_library("flutter_linux") {
   deps = [
     "$flutter_root/shell/platform/cpp:common_cpp",
   ]
