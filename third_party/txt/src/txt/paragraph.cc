@@ -236,21 +236,30 @@ void Paragraph::SetText(std::vector<uint16_t> text, StyledRuns runs) {
   runs_ = std::move(runs);
 }
 
+void Paragraph::SetInlineWidgets(std::vector<WidgetSpan> inline_widgets) {
+  needs_layout_ = true;
+  inline_widgets_ = std::move(inline_widgets);
+}
+
 bool Paragraph::ComputeLineBreaks() {
   line_ranges_.clear();
   line_widths_.clear();
   max_intrinsic_width_ = 0;
 
   std::vector<size_t> newline_positions;
+  // Discover and add all hard breaks.
   for (size_t i = 0; i < text_.size(); ++i) {
     ULineBreak ulb = static_cast<ULineBreak>(
         u_getIntPropertyValue(text_[i], UCHAR_LINE_BREAK));
     if (ulb == U_LB_LINE_FEED || ulb == U_LB_MANDATORY_BREAK)
       newline_positions.push_back(i);
   }
+  // Break at the end of the paragraph.
   newline_positions.push_back(text_.size());
 
+  // Calculate and add any breaks due to a line being too long.
   size_t run_index = 0;
+  size_t inline_widget_index = 0;
   for (size_t newline_index = 0; newline_index < newline_positions.size();
        ++newline_index) {
     size_t block_start =
@@ -265,6 +274,9 @@ bool Paragraph::ComputeLineBreaks() {
       continue;
     }
 
+    // Setup breaker. We wait to set the line width in order to account for the
+    // widths of the inline widgets, which are calcualted in the loop over the
+    // runs.
     breaker_.setLineWidths(0.0f, 0, width_);
     breaker_.setJustified(paragraph_style_.text_align == TextAlign::justify);
     breaker_.setStrategy(paragraph_style_.break_strategy);
@@ -275,6 +287,7 @@ bool Paragraph::ComputeLineBreaks() {
 
     // Add the runs that include this line to the LineBreaker.
     double block_total_width = 0;
+    double widget_adjusted_line_width = width_;
     while (run_index < runs_.size()) {
       StyledRuns::Run run = runs_.GetRun(run_index);
       if (run.start >= block_end)
@@ -300,14 +313,36 @@ bool Paragraph::ComputeLineBreaks() {
       size_t run_start = std::max(run.start, block_start) - block_start;
       size_t run_end = std::min(run.end, block_end) - block_start;
       bool isRtl = (paragraph_style_.text_direction == TextDirection::rtl);
-      double run_width = breaker_.addStyleRun(&paint, collection, font,
-                                              run_start, run_end, isRtl);
-      block_total_width += run_width;
+
+      if (run.start - run.end == 1 && text_[run.start] == 0xFFFC &&
+          inline_widgets.size() > inline_widget_index) {
+        // Is an object replacement character-only run. We should leave space
+        // for inline widget and break around it if appropriate.
+        WidgetSpan widget_span = inline_widgets_[inline_widget_index];
+        widget_adjusted_line_width -= widget_span.width;
+        block_total_width += widget_span.width;
+
+        breaker_.addStyleRun(&paint, collection, font, run_start, run_end,
+                             isRtl);
+        // Inject custom breakpoints into minikin breaker. (Uses LibTxt-minikin
+        // patch).
+        if (widget_span.break_left)
+          breaker_.addCustomBreak(run.start, widget_span.width, 0);
+        if (widget_span.break_right)
+          breaker_.addCustomBreak(run.end, 0, 0);
+        inline_widget_index++;
+      } else {
+        // Is a regular text run.
+        double run_width = breaker_.addStyleRun(&paint, collection, font,
+                                                run_start, run_end, isRtl);
+        block_total_width += run_width;
+      }
 
       if (run.end > block_end)
         break;
       run_index++;
     }
+    // breaker_.setLineWidths(0.0f, 0, widget_adjusted_line_width);
 
     max_intrinsic_width_ = std::max(max_intrinsic_width_, block_total_width);
 

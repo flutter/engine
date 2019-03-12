@@ -1433,6 +1433,14 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   }
   String _addText(String text) native 'ParagraphBuilder_addText';
 
+  /// Adds a space for a widget to the paragraph.
+  ///
+  /// The paragraph will contain a space with no text the size of the provided metrics.
+  String addWidget(double width, double height, double baseline, bool breakLeft, bool breakRight) {
+    _addWidget(width, height, baseline, breakLeft, breakRight);
+  }
+  String _addWidget(double width, double height, double baseline, bool breakLeft, bool breakRight) native 'ParagraphBuilder_addWidget';
+
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.
   ///

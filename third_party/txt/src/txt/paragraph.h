@@ -32,6 +32,7 @@
 #include "third_party/skia/include/core/SkFontMetrics.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "utils/WindowsUtils.h"
+#include "widget_span.h"
 
 class SkCanvas;
 
@@ -232,6 +233,12 @@ class Paragraph {
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
+  // A vector of WidgetSpans, which detail the sizes, positioning and break
+  // behavior of the empty spaces to leave. Each widget span corresponds to a
+  // 0xFFFC (object replacement character) in text_, which indicates the
+  // position in the text where the widget will occur. There should be an equal
+  // number of 0xFFFC characters and elements in this vector.
+  std::vector<WidgetSpan> inline_widgets_;
   StyledRuns runs_;
   ParagraphStyle paragraph_style_;
   std::shared_ptr<FontCollection> font_collection_;
@@ -382,6 +389,8 @@ class Paragraph {
   void SetParagraphStyle(const ParagraphStyle& style);
 
   void SetFontCollection(std::shared_ptr<FontCollection> font_collection);
+
+  void SetInlineWidgets(std::vector<WidgetSpan> inline_widgets);
 
   // Break the text into lines.
   bool ComputeLineBreaks();

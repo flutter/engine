@@ -363,6 +363,12 @@ void LineBreaker::pushBreak(int offset, float width, uint8_t hyphenEdit) {
   mFirstTabIndex = INT_MAX;
 }
 
+// libtxt: Add ability to push custom break points. This calls pushBreak()
+// with the custom break values. Used for properly breaking inline widgets.
+void LineBreaker::addCustomBreak(int offset, float width, uint8_t hyphenEdit) {
+  pushBreak(offset, width, hyphenEdit);
+}
+
 void LineBreaker::addReplacement(size_t start, size_t end, float width) {
   mCharWidths[start] = width;
   std::fill(&mCharWidths[start + 1], &mCharWidths[end], 0.0f);
