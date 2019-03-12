@@ -598,8 +598,8 @@ class ParagraphStyle {
   ///   dropped. The width constraints are those set in the
   ///   [ParagraphConstraints] object passed to the [Paragraph.layout] method.
   ///
-  /// * `fontFamily`: The fallback name of the font to use when painting the text
-  ///   (e.g., Roboto). This is used when there is no [TextStyle].
+  /// * `fontFamily`: The name of the font family to apply when painting the text,
+  ///   in the absence of a `textStyle` being attached to the span.
   ///
   /// * `fontSize`: The fallback size of glyphs (in logical pixels) to
   ///   use when painting the text. This is used when there is no [TextStyle].
