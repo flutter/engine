@@ -94,7 +94,7 @@ void _updateUserSettingsData(String jsonData) {
 void _updateLifecycleState(String state) {
   // We do not update the state if the state has already been used to initialize
   // the lifecycleState.
-  if (window._initialLifecycleStateAccessed)
+  if (!window._initialLifecycleStateAccessed)
     window._initialLifecycleState = state;
 }
 
