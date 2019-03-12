@@ -167,7 +167,6 @@ bool RuntimeController::SetUserSettingsData(const std::string& data) {
 
 bool RuntimeController::SetLifecycleState(const std::string& data) {
   window_data_.lifecycle_state = data;
-  // FML_DLOG(ERROR) << data;
 
   if (auto* window = GetWindowIfAvailable()) {
     window->UpdateLifecycleState(window_data_.lifecycle_state);
