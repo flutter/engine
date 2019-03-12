@@ -4,6 +4,8 @@
 
 #include "flutter/shell/common/rasterizer.h"
 
+#include "flutter/shell/common/persistent_cache.h"
+
 #include <utility>
 
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
@@ -150,9 +152,20 @@ void Rasterizer::DoDraw(std::unique_ptr<flow::LayerTree> layer_tree) {
     return;
   }
 
+  PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
+  persistent_cache->ResetIsAccessed();
+
   if (DrawToSurface(*layer_tree)) {
     last_layer_tree_ = std::move(layer_tree);
   }
+
+#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+  if (persistent_cache->IsDumpingSkp() && persistent_cache->IsAccessed()) {
+    auto screenshot =
+        ScreenshotLastLayerTree(ScreenshotType::SkiaPicture, false);
+    persistent_cache->DumpSkp(*screenshot.data);
+  }
+#endif
 }
 
 bool Rasterizer::DrawToSurface(flow::LayerTree& layer_tree) {

@@ -69,6 +69,7 @@ bool CompositorContext::ScopedFrame::Raster(flow::LayerTree& layer_tree,
     canvas()->clear(SK_ColorTRANSPARENT);
   }
   layer_tree.Paint(*this, ignore_raster_cache);
+
   return true;
 }
 

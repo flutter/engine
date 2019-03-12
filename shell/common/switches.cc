@@ -258,6 +258,11 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
 #endif
 
+#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+  settings.dump_shader_skp =
+      command_line.HasOption(FlagForSwitch(Switch::DumpShaderSkp));
+#endif
+
   return settings;
 }
 

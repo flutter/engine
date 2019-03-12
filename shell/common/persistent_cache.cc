@@ -81,6 +81,7 @@ bool PersistentCache::IsValid() const {
 // |GrContextOptions::PersistentCache|
 sk_sp<SkData> PersistentCache::load(const SkData& key) {
   TRACE_EVENT0("flutter", "PersistentCacheLoad");
+  is_accessed_ = true;
   if (!IsValid()) {
     return nullptr;
   }
@@ -158,6 +159,27 @@ void PersistentCache::store(const SkData& key, const SkData& data) {
   PersistentCacheStore(GetWorkerTaskRunner(), cache_directory_,
                        std::move(file_name), std::move(mapping));
 }
+
+#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+void PersistentCache::DumpSkp(const SkData& data) {
+  if (is_read_only_ || !IsValid()) {
+    FML_LOG(ERROR) << "Could not dump SKP from read-only or invalid persistent "
+                      "cache.";
+    return;
+  }
+
+  std::stringstream name_stream;
+  int current_index = skp_index_++;
+  skp_index_ %= kMaxSkpIndex;
+  name_stream << "shader_dump_" << current_index << ".skp";
+  std::string file_name = name_stream.str();
+  FML_LOG(INFO) << "Dumping " << file_name;
+  auto mapping = std::make_unique<fml::DataMapping>(
+      std::vector<uint8_t>{data.bytes(), data.bytes() + data.size()});
+  PersistentCacheStore(GetWorkerTaskRunner(), cache_directory_,
+                       std::move(file_name), std::move(mapping));
+}
+#endif
 
 void PersistentCache::AddWorkerTaskRunner(
     fml::RefPtr<fml::TaskRunner> task_runner) {
