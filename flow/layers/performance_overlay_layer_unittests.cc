@@ -80,8 +80,10 @@ TEST(PerformanceOverlayLayer, Gold) {
 
     size_t b64_size =
         SkBase64::Encode(snapshot_data->data(), snapshot_data->size(), nullptr);
-    char* b64_data = new char[b64_size];
-    SkBase64::Encode(snapshot_data->data(), snapshot_data->size(), b64_data);
+    sk_sp<SkData> b64_data = SkData::MakeUninitialized(b64_size + 1);
+    char* b64_char = static_cast<char*>(b64_data->writable_data());
+    SkBase64::Encode(snapshot_data->data(), snapshot_data->size(), b64_char);
+    b64_char[b64_size] = 0;  // make it null terminated for printing
 
     EXPECT_TRUE(golden_data_matches)
         << "Golden file mismatch. Please check "
@@ -89,8 +91,6 @@ TEST(PerformanceOverlayLayer, Gold) {
         << kNewGoldenFileName << ", and  replace the former "
         << "with the latter if the difference looks good.\n\n"
         << "See also the base64 encoded " << kNewGoldenFileName << ":\n"
-        << b64_data;
-
-    delete[] b64_data;
+        << b64_char;
   }
 }
