@@ -113,7 +113,9 @@ class PlatformViewIOS;
 
 class AccessibilityBridge final {
  public:
-  AccessibilityBridge(UIView* view, PlatformViewIOS* platform_view);
+  AccessibilityBridge(UIView* view,
+                      PlatformViewIOS* platform_view,
+                      FlutterPlatformViewsController* platform_views_controller);
   ~AccessibilityBridge();
 
   void UpdateSemantics(blink::SemanticsNodeUpdates nodes,
@@ -129,6 +131,10 @@ class AccessibilityBridge final {
 
   fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
 
+  FlutterPlatformViewsController* flutter_platform_views_controller() const {
+    return flutter_platform_views_controller_;
+  };
+
   void clearState();
 
  private:
@@ -139,6 +145,7 @@ class AccessibilityBridge final {
 
   UIView* view_;
   PlatformViewIOS* platform_view_;
+  FlutterPlatformViewsController* flutter_platform_views_controller_;
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
   fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;

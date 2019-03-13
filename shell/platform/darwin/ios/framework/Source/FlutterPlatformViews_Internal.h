@@ -58,6 +58,8 @@ class FlutterPlatformViewsController {
 
   void PrerollCompositeEmbeddedView(int view_id);
 
+  NSObject<FlutterPlatformView>* GetPlatformViewByID(int view_id);
+
   std::vector<SkCanvas*> GetCurrentCanvases();
 
   SkCanvas* CompositeEmbeddedView(int view_id, const flow::EmbeddedViewParams& params);
