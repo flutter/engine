@@ -153,13 +153,14 @@ void Rasterizer::DoDraw(std::unique_ptr<flow::LayerTree> layer_tree) {
   }
 
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
-  persistent_cache->ResetIsAccessed();
+  persistent_cache->ResetStoredNewShaders();
 
   if (DrawToSurface(*layer_tree)) {
     last_layer_tree_ = std::move(layer_tree);
   }
 
-  if (persistent_cache->IsDumpingSkp() && persistent_cache->IsAccessed()) {
+  if (persistent_cache->IsDumpingSkp() &&
+      persistent_cache->StoredNewShaders()) {
     auto screenshot =
         ScreenshotLastLayerTree(ScreenshotType::SkiaPicture, false);
     persistent_cache->DumpSkp(*screenshot.data);

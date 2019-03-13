@@ -81,7 +81,6 @@ bool PersistentCache::IsValid() const {
 // |GrContextOptions::PersistentCache|
 sk_sp<SkData> PersistentCache::load(const SkData& key) {
   TRACE_EVENT0("flutter", "PersistentCacheLoad");
-  is_accessed_ = true;
   if (!IsValid()) {
     return nullptr;
   }
@@ -135,6 +134,8 @@ static void PersistentCacheStore(fml::RefPtr<fml::TaskRunner> worker,
 
 // |GrContextOptions::PersistentCache|
 void PersistentCache::store(const SkData& key, const SkData& data) {
+  stored_new_shaders_ = true;
+
   if (is_read_only_) {
     return;
   }
@@ -168,11 +169,10 @@ void PersistentCache::DumpSkp(const SkData& data) {
   }
 
   std::stringstream name_stream;
-  int current_index = skp_index_++;
-  skp_index_ %= kMaxSkpIndex;
-  name_stream << "shader_dump_" << current_index << ".skp";
+  auto ticks = fml::TimePoint::Now().ToEpochDelta().ToNanoseconds();
+  name_stream << "shader_dump_" << std::to_string(ticks) << ".skp";
   std::string file_name = name_stream.str();
-  FML_LOG(INFO) << "Dumping " << file_name;
+  FML_LOG(ERROR) << "Dumping " << file_name;
   auto mapping = std::make_unique<fml::DataMapping>(
       std::vector<uint8_t>{data.bytes(), data.bytes() + data.size()});
   PersistentCacheStore(GetWorkerTaskRunner(), cache_directory_,

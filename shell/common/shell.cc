@@ -383,7 +383,7 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
       task_runners_.GetIOTaskRunner());
 
   PersistentCache::GetCacheForProcess()->SetIsDumpingSkp(
-      settings_.dump_shader_skp);
+      settings_.dump_skp_on_shader_compilation);
 
   return true;
 }

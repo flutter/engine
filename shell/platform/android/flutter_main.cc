@@ -62,7 +62,6 @@ void FlutterMain::Init(JNIEnv* env,
   for (auto& arg : fml::jni::StringArrayToVector(env, jargs)) {
     args.push_back(std::move(arg));
   }
-
   auto command_line = fml::CommandLineFromIterators(args.begin(), args.end());
 
   auto settings = SettingsFromCommandLine(command_line);

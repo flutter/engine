@@ -36,11 +36,11 @@ class PersistentCache : public GrContextOptions::PersistentCache {
 
   void RemoveWorkerTaskRunner(fml::RefPtr<fml::TaskRunner> task_runner);
 
-  // Whether Skia tries to load any shader from this persistent cache after
-  // |ResetIsAccessed| is called. This flag is usually reset before each frame
-  // so we can know if Skia tries to compile or load some shaders in that frame.
-  bool IsAccessed() const { return is_accessed_; }
-  void ResetIsAccessed() { is_accessed_ = false; }
+  // Whether Skia tries to store any shader into this persistent cache after
+  // |ResetStoredNewShaders| is called. This flag is usually reset before each
+  // frame so we can know if Skia tries to compile new shaders in that frame.
+  bool StoredNewShaders() const { return stored_new_shaders_; }
+  void ResetStoredNewShaders() { stored_new_shaders_ = false; }
   void DumpSkp(const SkData& data);
   bool IsDumpingSkp() const { return is_dumping_skp_; }
   void SetIsDumpingSkp(bool value) { is_dumping_skp_ = value; }
@@ -54,12 +54,7 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   std::multiset<fml::RefPtr<fml::TaskRunner>> worker_task_runners_
       FML_GUARDED_BY(worker_task_runners_mutex_);
 
-  bool is_accessed_ = false;
-
-  // We'll dump the skp with an index from 0 to kMaxSkpIndex - 1.
-  static constexpr int kMaxSkpIndex = 1024;
-  int skp_index_ = 0;
-
+  bool stored_new_shaders_ = false;
   bool is_dumping_skp_ = false;
 
   bool IsValid() const;
