@@ -84,7 +84,8 @@ void ReportUnhandledException(Dart_NativeArguments args) {
 Dart_Handle SendPlatformMessage(Dart_Handle window,
                                 const std::string& name,
                                 Dart_Handle callback,
-                                const tonic::DartByteData& data) {
+                                Dart_Handle data_handle) {
+  tonic::DartByteData data(data_handle);
   UIDartState* dart_state = UIDartState::Current();
 
   if (!dart_state->window()) {
