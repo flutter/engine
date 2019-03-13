@@ -438,7 +438,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   }
   SemanticsObject* child = [_semanticsObject children][index - 1];
     
-    // This if block handles the embedded platform view accessibility.
+    // This 'if' block handles adding accessibility support for the embedded platform view.
     // We first check if the child is a semantic node for a platform view.
     // If so, we add the platform view as accessibilityElements of the child.
     shell::FlutterPlatformViewsController *flutterPlatformViewsController = _bridge.get()->flutter_platform_views_controller();
