@@ -16,12 +16,11 @@ extern "C" {
 #endif
 
 // Opaque reference to a plugin registrar.
-typedef struct FlutterEmbedderPluginRegistrar*
-    FlutterEmbedderPluginRegistrarRef;
+typedef struct FlutterDesktopPluginRegistrar* FlutterDesktopPluginRegistrarRef;
 
 // Returns the engine messenger associated with this registrar.
-FLUTTER_EXPORT FlutterEmbedderMessengerRef FlutterEmbedderRegistrarGetMessenger(
-    FlutterEmbedderPluginRegistrarRef registrar);
+FLUTTER_EXPORT FlutterDesktopMessengerRef
+FlutterDesktopRegistrarGetMessenger(FlutterDesktopPluginRegistrarRef registrar);
 
 // Enables input blocking on the given channel.
 //
@@ -29,11 +28,11 @@ FLUTTER_EXPORT FlutterEmbedderMessengerRef FlutterEmbedderRegistrarGetMessenger(
 // while waiting for the handler for messages on that channel to run. This is
 // useful if handling the message involves showing a modal window, for instance.
 //
-// This must be called after FlutterEmbedderSetMessageHandler, as setting a
+// This must be called after FlutterDesktopSetMessageHandler, as setting a
 // handler on a channel will reset the input blocking state back to the
 // default of disabled.
-FLUTTER_EXPORT void FlutterEmbedderRegistrarEnableInputBlocking(
-    FlutterEmbedderPluginRegistrarRef registrar,
+FLUTTER_EXPORT void FlutterDesktopRegistrarEnableInputBlocking(
+    FlutterDesktopPluginRegistrarRef registrar,
     const char* channel);
 
 #if defined(__cplusplus)

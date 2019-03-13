@@ -15,12 +15,12 @@ namespace flutter {
 
 FlutterWindowController::FlutterWindowController(std::string& icu_data_path)
     : icu_data_path_(icu_data_path) {
-  init_succeeded_ = FlutterEmbedderInit();
+  init_succeeded_ = FlutterDesktopInit();
 }
 
 FlutterWindowController::~FlutterWindowController() {
   if (init_succeeded_) {
-    FlutterEmbedderTerminate();
+    FlutterDesktopTerminate();
   }
 }
 
@@ -30,7 +30,7 @@ bool FlutterWindowController::CreateWindow(
     const std::string& assets_path,
     const std::vector<std::string>& arguments) {
   if (!init_succeeded_) {
-    std::cerr << "Could not create window; FlutterEmbedderInit failed."
+    std::cerr << "Could not create window; FlutterDesktopInit failed."
               << std::endl;
     return false;
   }
@@ -46,7 +46,7 @@ bool FlutterWindowController::CreateWindow(
       [](const std::string& arg) -> const char* { return arg.c_str(); });
   size_t arg_count = engine_arguments.size();
 
-  window_ = FlutterEmbedderCreateWindow(
+  window_ = FlutterDesktopCreateWindow(
       width, height, assets_path.c_str(), icu_data_path_.c_str(),
       arg_count > 0 ? &engine_arguments[0] : nullptr, arg_count);
   if (!window_) {
@@ -56,24 +56,24 @@ bool FlutterWindowController::CreateWindow(
   return true;
 }
 
-FlutterEmbedderPluginRegistrarRef
-FlutterWindowController::GetRegistrarForPlugin(const std::string& plugin_name) {
+FlutterDesktopPluginRegistrarRef FlutterWindowController::GetRegistrarForPlugin(
+    const std::string& plugin_name) {
   if (!window_) {
     std::cerr << "Cannot get plugin registrar without a window; call "
                  "CreateWindow first."
               << std::endl;
     return nullptr;
   }
-  return FlutterEmbedderGetPluginRegistrar(window_, plugin_name.c_str());
+  return FlutterDesktopGetPluginRegistrar(window_, plugin_name.c_str());
 }
 
 void FlutterWindowController::SetHoverEnabled(bool enabled) {
-  FlutterEmbedderSetHoverEnabled(window_, enabled);
+  FlutterDesktopSetHoverEnabled(window_, enabled);
 }
 
 void FlutterWindowController::RunEventLoop() {
   if (window_) {
-    FlutterEmbedderRunWindowLoop(window_);
+    FlutterDesktopRunWindowLoop(window_);
   }
 }
 

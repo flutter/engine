@@ -15,11 +15,11 @@ extern "C" {
 #endif
 
 // Opaque reference to a Flutter engine messenger.
-typedef struct FlutterEmbedderMessenger* FlutterEmbedderMessengerRef;
+typedef struct FlutterDesktopMessenger* FlutterDesktopMessengerRef;
 
 // Opaque handle for tracking responses to messages.
 typedef struct _FlutterPlatformMessageResponseHandle
-    FlutterEmbedderMessageResponseHandle;
+    FlutterDesktopMessageResponseHandle;
 
 // A message received from Flutter.
 typedef struct {
@@ -32,32 +32,32 @@ typedef struct {
   // The length of |message|.
   size_t message_size;
   // The response handle. If non-null, the receiver of this message must call
-  // FlutterEmbedderSendMessageResponse exactly once with this handle.
-  const FlutterEmbedderMessageResponseHandle* response_handle;
-} FlutterEmbedderMessage;
+  // FlutterDesktopSendMessageResponse exactly once with this handle.
+  const FlutterDesktopMessageResponseHandle* response_handle;
+} FlutterDesktopMessage;
 
 // Function pointer type for message handler callback registration.
 //
-// The user data will be whatever was passed to FlutterEmbedderSetMessageHandler
+// The user data will be whatever was passed to FlutterDesktopSetMessageHandler
 // for the channel the message is received on.
-typedef void (*FlutterEmbedderMessageCallback)(
-    FlutterEmbedderMessengerRef /* messenger */,
-    const FlutterEmbedderMessage* /* message*/,
+typedef void (*FlutterDesktopMessageCallback)(
+    FlutterDesktopMessengerRef /* messenger */,
+    const FlutterDesktopMessage* /* message*/,
     void* /* user data */);
 
 // Sends a binary message to the Flutter side on the specified channel.
-FLUTTER_EXPORT void FlutterEmbedderMessengerSend(
-    FlutterEmbedderMessengerRef messenger,
+FLUTTER_EXPORT void FlutterDesktopMessengerSend(
+    FlutterDesktopMessengerRef messenger,
     const char* channel,
     const uint8_t* message,
     const size_t message_size);
 
-// Sends a reply to a FlutterEmbedderMessage for the given response handle.
+// Sends a reply to a FlutterDesktopMessage for the given response handle.
 //
 // Once this has been called, |handle| is invalid and must not be used again.
-FLUTTER_EXPORT void FlutterEmbedderMessengerSendResponse(
-    FlutterEmbedderMessengerRef messenger,
-    const FlutterEmbedderMessageResponseHandle* handle,
+FLUTTER_EXPORT void FlutterDesktopMessengerSendResponse(
+    FlutterDesktopMessengerRef messenger,
+    const FlutterDesktopMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length);
 
@@ -68,10 +68,10 @@ FLUTTER_EXPORT void FlutterEmbedderMessengerSendResponse(
 // existing callback.
 //
 // If |user_data| is provided, it will be passed in |callback| calls.
-FLUTTER_EXPORT void FlutterEmbedderMessengerSetCallback(
-    FlutterEmbedderMessengerRef messenger,
+FLUTTER_EXPORT void FlutterDesktopMessengerSetCallback(
+    FlutterDesktopMessengerRef messenger,
     const char* channel,
-    FlutterEmbedderMessageCallback callback,
+    FlutterDesktopMessageCallback callback,
     void* user_data);
 
 #if defined(__cplusplus)

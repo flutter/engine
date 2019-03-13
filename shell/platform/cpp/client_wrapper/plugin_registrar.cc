@@ -18,10 +18,10 @@ namespace {
 // with a BinaryReply that will send a response on |message|'s response handle.
 //
 // This serves as an adaptor between the function-pointer-based message callback
-// interface provided by embedder.h and the std::function-based message handler
+// interface provided by the C API and the std::function-based message handler
 // interface of BinaryMessenger.
-void ForwardToHandler(FlutterEmbedderMessengerRef messenger,
-                      const FlutterEmbedderMessage* message,
+void ForwardToHandler(FlutterDesktopMessengerRef messenger,
+                      const FlutterDesktopMessage* message,
                       void* user_data) {
   auto* response_handle = message->response_handle;
   BinaryReply reply_handler = [messenger, response_handle](
@@ -33,10 +33,10 @@ void ForwardToHandler(FlutterEmbedderMessengerRef messenger,
                 << std::endl;
       return;
     }
-    FlutterEmbedderMessengerSendResponse(messenger, response_handle, reply,
-                                         reply_size);
+    FlutterDesktopMessengerSendResponse(messenger, response_handle, reply,
+                                        reply_size);
     // The engine frees the response handle once
-    // FlutterEmbedderSendMessageResponse is called.
+    // FlutterDesktopSendMessageResponse is called.
     response_handle = nullptr;
   };
 
@@ -49,11 +49,11 @@ void ForwardToHandler(FlutterEmbedderMessengerRef messenger,
 
 }  // namespace
 
-// Wrapper around a FlutterEmbedderMessengerRef that implements the
+// Wrapper around a FlutterDesktopMessengerRef that implements the
 // BinaryMessenger API.
 class BinaryMessengerImpl : public BinaryMessenger {
  public:
-  explicit BinaryMessengerImpl(FlutterEmbedderMessengerRef core_messenger)
+  explicit BinaryMessengerImpl(FlutterDesktopMessengerRef core_messenger)
       : messenger_(core_messenger) {}
   virtual ~BinaryMessengerImpl() {}
 
@@ -69,8 +69,8 @@ class BinaryMessengerImpl : public BinaryMessenger {
                          BinaryMessageHandler handler) override;
 
  private:
-  // Handle for interacting with the core embedding API.
-  FlutterEmbedderMessengerRef messenger_;
+  // Handle for interacting with the C API.
+  FlutterDesktopMessengerRef messenger_;
 
   // A map from channel names to the BinaryMessageHandler that should be called
   // for incoming messages on that channel.
@@ -80,31 +80,31 @@ class BinaryMessengerImpl : public BinaryMessenger {
 void BinaryMessengerImpl::Send(const std::string& channel,
                                const uint8_t* message,
                                const size_t message_size) const {
-  FlutterEmbedderMessengerSend(messenger_, channel.c_str(), message,
-                               message_size);
+  FlutterDesktopMessengerSend(messenger_, channel.c_str(), message,
+                              message_size);
 }
 
 void BinaryMessengerImpl::SetMessageHandler(const std::string& channel,
                                             BinaryMessageHandler handler) {
   if (!handler) {
     handlers_.erase(channel);
-    FlutterEmbedderMessengerSetCallback(messenger_, channel.c_str(), nullptr,
-                                        nullptr);
+    FlutterDesktopMessengerSetCallback(messenger_, channel.c_str(), nullptr,
+                                       nullptr);
     return;
   }
   // Save the handler, to keep it alive.
   handlers_[channel] = std::move(handler);
   BinaryMessageHandler* message_handler = &handlers_[channel];
   // Set an adaptor callback that will invoke the handler.
-  FlutterEmbedderMessengerSetCallback(messenger_, channel.c_str(),
-                                      ForwardToHandler, message_handler);
+  FlutterDesktopMessengerSetCallback(messenger_, channel.c_str(),
+                                     ForwardToHandler, message_handler);
 }
 
 // PluginRegistrar:
 
-PluginRegistrar::PluginRegistrar(FlutterEmbedderPluginRegistrarRef registrar)
+PluginRegistrar::PluginRegistrar(FlutterDesktopPluginRegistrarRef registrar)
     : registrar_(registrar) {
-  auto core_messenger = FlutterEmbedderRegistrarGetMessenger(registrar_);
+  auto core_messenger = FlutterDesktopRegistrarGetMessenger(registrar_);
   messenger_ = std::make_unique<BinaryMessengerImpl>(core_messenger);
 }
 
@@ -116,7 +116,7 @@ void PluginRegistrar::AddPlugin(std::unique_ptr<Plugin> plugin) {
 
 void PluginRegistrar::EnableInputBlockingForChannel(
     const std::string& channel) {
-  FlutterEmbedderRegistrarEnableInputBlocking(registrar_, channel.c_str());
+  FlutterDesktopRegistrarEnableInputBlocking(registrar_, channel.c_str());
 }
 
 }  // namespace flutter

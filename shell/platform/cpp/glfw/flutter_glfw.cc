@@ -44,7 +44,7 @@ static_assert(FLUTTER_ENGINE_VERSION == 1, "");
 static constexpr double kDpPerInch = 160.0;
 
 // Struct for storing state within an instance of the GLFW Window.
-struct FlutterEmbedderState {
+struct FlutterDesktopWindowState {
   // The GLFW window that owns this state object.
   GLFWwindow* window;
 
@@ -52,7 +52,7 @@ struct FlutterEmbedderState {
   FlutterEngine engine;
 
   // The plugin registrar handle given to API clients.
-  std::unique_ptr<FlutterEmbedderPluginRegistrar> plugin_registrar;
+  std::unique_ptr<FlutterDesktopPluginRegistrar> plugin_registrar;
 
   // Message dispatch manager for messages from the Flutter engine.
   std::unique_ptr<shell::IncomingMessageDispatcher> message_dispatcher;
@@ -79,19 +79,19 @@ struct FlutterEmbedderState {
 };
 
 // Struct for storing state of a Flutter engine instance.
-struct FlutterEngineState {
+struct FlutterDesktopEngineState {
   // The handle to the Flutter engine instance.
   FlutterEngine engine;
 };
 
 // State associated with the plugin registrar.
-struct FlutterEmbedderPluginRegistrar {
+struct FlutterDesktopPluginRegistrar {
   // The plugin messenger handle given to API clients.
-  std::unique_ptr<FlutterEmbedderMessenger> messenger;
+  std::unique_ptr<FlutterDesktopMessenger> messenger;
 };
 
 // State associated with the messenger used to communicate with the engine.
-struct FlutterEmbedderMessenger {
+struct FlutterDesktopMessenger {
   // The Flutter engine this messenger sends outgoing messages to.
   FlutterEngine engine;
 
@@ -102,21 +102,21 @@ struct FlutterEmbedderMessenger {
 static constexpr char kDefaultWindowTitle[] = "Flutter";
 
 // Retrieves state bag for the window in question from the GLFWWindow.
-static FlutterEmbedderState* GetSavedEmbedderState(GLFWwindow* window) {
-  return reinterpret_cast<FlutterEmbedderState*>(
+static FlutterDesktopWindowState* GetSavedWindowState(GLFWwindow* window) {
+  return reinterpret_cast<FlutterDesktopWindowState*>(
       glfwGetWindowUserPointer(window));
 }
 
-// Converts a FlutterPlatformMessage to an equivalent FlutterEmbedderMessage.
-static FlutterEmbedderMessage ConvertToEmbedderMessage(
+// Converts a FlutterPlatformMessage to an equivalent FlutterDesktopMessage.
+static FlutterDesktopMessage ConvertToDesktopMessage(
     const FlutterPlatformMessage& engine_message) {
-  FlutterEmbedderMessage embedder_message = {};
-  embedder_message.struct_size = sizeof(embedder_message);
-  embedder_message.channel = engine_message.channel;
-  embedder_message.message = engine_message.message;
-  embedder_message.message_size = engine_message.message_size;
-  embedder_message.response_handle = engine_message.response_handle;
-  return embedder_message;
+  FlutterDesktopMessage message = {};
+  message.struct_size = sizeof(message);
+  message.channel = engine_message.channel;
+  message.message = engine_message.message;
+  message.message_size = engine_message.message_size;
+  message.response_handle = engine_message.response_handle;
+  return message;
 }
 
 // Returns the number of screen coordinates per inch for the main monitor.
@@ -143,7 +143,7 @@ static void GLFWFramebufferSizeCallback(GLFWwindow* window,
   int width;
   glfwGetWindowSize(window, &width, nullptr);
 
-  auto state = GetSavedEmbedderState(window);
+  auto state = GetSavedWindowState(window);
   state->window_pixels_per_screen_coordinate = width_px / width;
 
   double dpi = state->window_pixels_per_screen_coordinate *
@@ -165,7 +165,7 @@ static void SendPointerEventWithPhase(GLFWwindow* window,
                                       FlutterPointerPhase phase,
                                       double x,
                                       double y) {
-  auto state = GetSavedEmbedderState(window);
+  auto state = GetSavedWindowState(window);
   // If sending anything other than an add, and the pointer isn't already added,
   // synthesize an add to satisfy Flutter's expectations about events.
   if (!state->pointer_currently_added && phase != FlutterPointerPhase::kAdd) {
@@ -233,7 +233,7 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
 
   // If mouse tracking isn't already enabled, turn it on for the duration of
   // the drag to generate kMove events.
-  bool hover_enabled = GetSavedEmbedderState(window)->hover_tracking_enabled;
+  bool hover_enabled = GetSavedWindowState(window)->hover_tracking_enabled;
   if (!hover_enabled) {
     glfwSetCursorPosCallback(
         window, (action == GLFW_PRESS) ? GLFWCursorPositionCallback : nullptr);
@@ -250,7 +250,7 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
 // Passes character input events to registered handlers.
 static void GLFWCharCallback(GLFWwindow* window, unsigned int code_point) {
   for (const auto& handler :
-       GetSavedEmbedderState(window)->keyboard_hook_handlers) {
+       GetSavedWindowState(window)->keyboard_hook_handlers) {
     handler->CharHook(window, code_point);
   }
 }
@@ -262,7 +262,7 @@ static void GLFWKeyCallback(GLFWwindow* window,
                             int action,
                             int mods) {
   for (const auto& handler :
-       GetSavedEmbedderState(window)->keyboard_hook_handlers) {
+       GetSavedWindowState(window)->keyboard_hook_handlers) {
     handler->KeyboardHook(window, key, scancode, action, mods);
   }
 }
@@ -281,7 +281,7 @@ static void GLFWAssignEventCallbacks(GLFWwindow* window) {
   glfwSetKeyCallback(window, GLFWKeyCallback);
   glfwSetCharCallback(window, GLFWCharCallback);
   glfwSetMouseButtonCallback(window, GLFWMouseButtonCallback);
-  if (GetSavedEmbedderState(window)->hover_tracking_enabled) {
+  if (GetSavedWindowState(window)->hover_tracking_enabled) {
     SetHoverCallbacksEnabled(window, true);
   }
 }
@@ -296,21 +296,22 @@ static void GLFWClearEventCallbacks(GLFWwindow* window) {
 
 // The Flutter Engine calls out to this function when new platform messages are
 // available
-static void GLFWOnFlutterPlatformMessage(const FlutterPlatformMessage* message,
-                                         void* user_data) {
-  if (message->struct_size != sizeof(FlutterPlatformMessage)) {
+static void GLFWOnFlutterPlatformMessage(
+    const FlutterPlatformMessage* engine_message,
+    void* user_data) {
+  if (engine_message->struct_size != sizeof(FlutterPlatformMessage)) {
     std::cerr << "Invalid message size received. Expected: "
               << sizeof(FlutterPlatformMessage) << " but received "
-              << message->struct_size << std::endl;
+              << engine_message->struct_size << std::endl;
     return;
   }
 
   GLFWwindow* window = reinterpret_cast<GLFWwindow*>(user_data);
-  auto state = GetSavedEmbedderState(window);
+  auto state = GetSavedWindowState(window);
 
-  auto embedder_message = ConvertToEmbedderMessage(*message);
+  auto message = ConvertToDesktopMessage(*engine_message);
   state->message_dispatcher->HandleMessage(
-      embedder_message, [window] { GLFWClearEventCallbacks(window); },
+      message, [window] { GLFWClearEventCallbacks(window); },
       [window] { GLFWAssignEventCallbacks(window); });
 }
 
@@ -419,22 +420,22 @@ static FlutterEngine RunFlutterEngine(GLFWwindow* window,
   return engine;
 }
 
-bool FlutterEmbedderInit() {
+bool FlutterDesktopInit() {
   // Before making any GLFW calls, set up a logging error handler.
   glfwSetErrorCallback(GLFWErrorCallback);
   return glfwInit();
 }
 
-void FlutterEmbedderTerminate() {
+void FlutterDesktopTerminate() {
   glfwTerminate();
 }
 
-FlutterWindowRef FlutterEmbedderCreateWindow(int initial_width,
-                                             int initial_height,
-                                             const char* assets_path,
-                                             const char* icu_data_path,
-                                             const char** arguments,
-                                             size_t argument_count) {
+FlutterDesktopWindowRef FlutterDesktopCreateWindow(int initial_width,
+                                                   int initial_height,
+                                                   const char* assets_path,
+                                                   const char* icu_data_path,
+                                                   const char** arguments,
+                                                   size_t argument_count) {
 #ifdef __linux__
   gtk_init(0, nullptr);
 #endif
@@ -454,21 +455,21 @@ FlutterWindowRef FlutterEmbedderCreateWindow(int initial_width,
     return nullptr;
   }
 
-  // Create an embedder state object attached to the window.
-  FlutterEmbedderState* state = new FlutterEmbedderState();
+  // Create a state object attached to the window.
+  FlutterDesktopWindowState* state = new FlutterDesktopWindowState();
   state->window = window;
   glfwSetWindowUserPointer(window, state);
   state->engine = engine;
 
-  // TODO: Restructure the embedder internals to follow the structure of the
-  // C++ API, so that this isn't a tangle of references.
-  auto messenger = std::make_unique<FlutterEmbedderMessenger>();
+  // TODO: Restructure the internals to follow the structure of the C++ API, so
+  // that this isn't a tangle of references.
+  auto messenger = std::make_unique<FlutterDesktopMessenger>();
   state->message_dispatcher =
       std::make_unique<shell::IncomingMessageDispatcher>(messenger.get());
   messenger->engine = engine;
   messenger->dispatcher = state->message_dispatcher.get();
 
-  state->plugin_registrar = std::make_unique<FlutterEmbedderPluginRegistrar>();
+  state->plugin_registrar = std::make_unique<FlutterDesktopPluginRegistrar>();
   state->plugin_registrar->messenger = std::move(messenger);
 
   state->internal_plugin_registrar =
@@ -495,34 +496,13 @@ FlutterWindowRef FlutterEmbedderCreateWindow(int initial_width,
   return state;
 }
 
-bool FlutterEmbedderShutDownEngine(FlutterEngineRef engine_ref) {
-  std::cout << "Shutting down flutter engine process." << std::endl;
-  auto result = FlutterEngineShutdown(engine_ref->engine);
-  delete engine_ref;
-  return (result == kSuccess);
-}
-
-FlutterEngineRef FlutterEmbedderRunEngine(const char* assets_path,
-                                          const char* icu_data_path,
-                                          const char** arguments,
-                                          size_t argument_count) {
-  auto engine = RunFlutterEngine(nullptr, assets_path, icu_data_path, arguments,
-                                 argument_count);
-  if (engine == nullptr) {
-    return nullptr;
-  }
-  auto engine_state = new FlutterEngineState();
-  engine_state->engine = engine;
-  return engine_state;
-}
-
-void FlutterEmbedderSetHoverEnabled(FlutterWindowRef flutter_window,
-                                    bool enabled) {
+void FlutterDesktopSetHoverEnabled(FlutterDesktopWindowRef flutter_window,
+                                   bool enabled) {
   flutter_window->hover_tracking_enabled = enabled;
   SetHoverCallbacksEnabled(flutter_window->window, enabled);
 }
 
-void FlutterEmbedderRunWindowLoop(FlutterWindowRef flutter_window) {
+void FlutterDesktopRunWindowLoop(FlutterDesktopWindowRef flutter_window) {
   GLFWwindow* window = flutter_window->window;
 #ifdef __linux__
   // Necessary for GTK thread safety.
@@ -545,8 +525,29 @@ void FlutterEmbedderRunWindowLoop(FlutterWindowRef flutter_window) {
   glfwDestroyWindow(window);
 }
 
-FlutterEmbedderPluginRegistrarRef FlutterEmbedderGetPluginRegistrar(
-    FlutterWindowRef flutter_window,
+FlutterDesktopEngineRef FlutterDesktopRunEngine(const char* assets_path,
+                                                const char* icu_data_path,
+                                                const char** arguments,
+                                                size_t argument_count) {
+  auto engine = RunFlutterEngine(nullptr, assets_path, icu_data_path, arguments,
+                                 argument_count);
+  if (engine == nullptr) {
+    return nullptr;
+  }
+  auto engine_state = new FlutterDesktopEngineState();
+  engine_state->engine = engine;
+  return engine_state;
+}
+
+bool FlutterDesktopShutDownEngine(FlutterDesktopEngineRef engine_ref) {
+  std::cout << "Shutting down flutter engine process." << std::endl;
+  auto result = FlutterEngineShutdown(engine_ref->engine);
+  delete engine_ref;
+  return (result == kSuccess);
+}
+
+FlutterDesktopPluginRegistrarRef FlutterDesktopGetPluginRegistrar(
+    FlutterDesktopWindowRef flutter_window,
     const char* plugin_name) {
   // Currently, one registrar acts as the registrar for all plugins, so the
   // name is ignored. It is part of the API to reduce churn in the future when
@@ -554,21 +555,21 @@ FlutterEmbedderPluginRegistrarRef FlutterEmbedderGetPluginRegistrar(
   return flutter_window->plugin_registrar.get();
 }
 
-void FlutterEmbedderRegistrarEnableInputBlocking(
-    FlutterEmbedderPluginRegistrarRef registrar,
+void FlutterDesktopRegistrarEnableInputBlocking(
+    FlutterDesktopPluginRegistrarRef registrar,
     const char* channel) {
   registrar->messenger->dispatcher->EnableInputBlockingForChannel(channel);
 }
 
-FlutterEmbedderMessengerRef FlutterEmbedderRegistrarGetMessenger(
-    FlutterEmbedderPluginRegistrarRef registrar) {
+FlutterDesktopMessengerRef FlutterDesktopRegistrarGetMessenger(
+    FlutterDesktopPluginRegistrarRef registrar) {
   return registrar->messenger.get();
 }
 
-void FlutterEmbedderMessengerSend(FlutterEmbedderMessengerRef messenger,
-                                  const char* channel,
-                                  const uint8_t* message,
-                                  const size_t message_size) {
+void FlutterDesktopMessengerSend(FlutterDesktopMessengerRef messenger,
+                                 const char* channel,
+                                 const uint8_t* message,
+                                 const size_t message_size) {
   FlutterPlatformMessage platform_message = {
       sizeof(FlutterPlatformMessage),
       channel,
@@ -579,19 +580,18 @@ void FlutterEmbedderMessengerSend(FlutterEmbedderMessengerRef messenger,
   FlutterEngineSendPlatformMessage(messenger->engine, &platform_message);
 }
 
-void FlutterEmbedderMessengerSendResponse(
-    FlutterEmbedderMessengerRef messenger,
-    const FlutterEmbedderMessageResponseHandle* handle,
+void FlutterDesktopMessengerSendResponse(
+    FlutterDesktopMessengerRef messenger,
+    const FlutterDesktopMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length) {
   FlutterEngineSendPlatformMessageResponse(messenger->engine, handle, data,
                                            data_length);
 }
 
-void FlutterEmbedderMessengerSetCallback(
-    FlutterEmbedderMessengerRef messenger,
-    const char* channel,
-    FlutterEmbedderMessageCallback callback,
-    void* user_data) {
+void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
+                                        const char* channel,
+                                        FlutterDesktopMessageCallback callback,
+                                        void* user_data) {
   messenger->dispatcher->SetMessageCallback(channel, callback, user_data);
 }

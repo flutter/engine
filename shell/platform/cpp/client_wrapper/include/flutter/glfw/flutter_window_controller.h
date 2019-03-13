@@ -24,9 +24,9 @@ namespace flutter {
 
 // A controller for a window displaying Flutter content.
 //
-// This is the primary wrapper class for the desktop embedding C API.
+// This is the primary wrapper class for the desktop C API.
 // If you use this class, you should not call any of the setup or teardown
-// methods in embedder.h directly, as this class will do that internally.
+// methods in the C API directly, as this class will do that internally.
 //
 // Note: This is an early implementation (using GLFW internally) which
 // requires control of the application's event loop, and is thus useful
@@ -49,7 +49,7 @@ class FlutterWindowController {
   //
   // The |arguments| are passed to the Flutter engine. See:
   // https://github.com/flutter/engine/blob/master/shell/common/switches.h for
-  // for details. Not all arguments will apply to embedding mode.
+  // for details. Not all arguments will apply to desktop.
   //
   // Only one Flutter window can exist at a time; see constructor comment.
   bool CreateWindow(int width,
@@ -57,11 +57,11 @@ class FlutterWindowController {
                     const std::string& assets_path,
                     const std::vector<std::string>& arguments);
 
-  // Returns the FlutterEmbedderPluginRegistrarRef to register a plugin with the
+  // Returns the FlutterDesktopPluginRegistrarRef to register a plugin with the
   // given name.
   //
   // The name must be unique across the application.
-  FlutterEmbedderPluginRegistrarRef GetRegistrarForPlugin(
+  FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
       const std::string& plugin_name);
 
   // Enables or disables hover tracking.
@@ -79,11 +79,11 @@ class FlutterWindowController {
   // for any window created.
   std::string icu_data_path_;
 
-  // Whether or not FlutterEmbedderInit succeeded at creation time.
+  // Whether or not FlutterDesktopInit succeeded at creation time.
   bool init_succeeded_ = false;
 
   // The curent Flutter window, if any.
-  FlutterWindowRef window_ = nullptr;
+  FlutterDesktopWindowRef window_ = nullptr;
 };
 
 }  // namespace flutter

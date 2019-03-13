@@ -30,7 +30,7 @@ class PluginRegistrar {
  public:
   // Creates a new PluginRegistrar. |core_registrar| and the messenger it
   // provides must remain valid as long as this object exists.
-  explicit PluginRegistrar(FlutterEmbedderPluginRegistrarRef core_registrar);
+  explicit PluginRegistrar(FlutterDesktopPluginRegistrarRef core_registrar);
   ~PluginRegistrar();
 
   // Prevent copying.
@@ -57,8 +57,8 @@ class PluginRegistrar {
   void EnableInputBlockingForChannel(const std::string& channel);
 
  private:
-  // Handle for interacting with the embedding API's registrar.
-  FlutterEmbedderPluginRegistrarRef registrar_;
+  // Handle for interacting with the C API's registrar.
+  FlutterDesktopPluginRegistrarRef registrar_;
 
   std::unique_ptr<BinaryMessenger> messenger_;
 

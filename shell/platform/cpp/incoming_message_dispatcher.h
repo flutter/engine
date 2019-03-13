@@ -21,7 +21,7 @@ class IncomingMessageDispatcher {
  public:
   // Creates a new IncomingMessageDispatcher. |messenger| must remain valid as
   // long as this object exists.
-  explicit IncomingMessageDispatcher(FlutterEmbedderMessengerRef messenger);
+  explicit IncomingMessageDispatcher(FlutterDesktopMessengerRef messenger);
   virtual ~IncomingMessageDispatcher();
 
   // Prevent copying.
@@ -36,7 +36,7 @@ class IncomingMessageDispatcher {
   //
   // If no handler is registered for the message's channel, sends a
   // NotImplemented response to the engine.
-  void HandleMessage(const FlutterEmbedderMessage& message,
+  void HandleMessage(const FlutterDesktopMessage& message,
                      std::function<void(void)> input_block_cb = [] {},
                      std::function<void(void)> input_unblock_cb = [] {});
 
@@ -47,7 +47,7 @@ class IncomingMessageDispatcher {
   // Replaces any existing callback. Pass a null callback to unregister the
   // existing callback.
   void SetMessageCallback(const std::string& channel,
-                          FlutterEmbedderMessageCallback callback,
+                          FlutterDesktopMessageCallback callback,
                           void* user_data);
 
   // Enables input blocking on the given channel name.
@@ -57,13 +57,13 @@ class IncomingMessageDispatcher {
   void EnableInputBlockingForChannel(const std::string& channel);
 
  private:
-  // Handle for interacting with the embedding messaging API.
-  FlutterEmbedderMessengerRef messenger_;
+  // Handle for interacting with the C messaging API.
+  FlutterDesktopMessengerRef messenger_;
 
-  // A map from channel names to the FlutterEmbedderMessageCallback that should
+  // A map from channel names to the FlutterDesktopMessageCallback that should
   // be called for incoming messages on that channel, along with the void* user
   // data to pass to it.
-  std::map<std::string, std::pair<FlutterEmbedderMessageCallback, void*>>
+  std::map<std::string, std::pair<FlutterDesktopMessageCallback, void*>>
       callbacks_;
 
   // Channel names for which input blocking should be enabled during the call to
