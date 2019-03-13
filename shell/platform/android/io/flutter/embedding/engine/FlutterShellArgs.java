@@ -71,6 +71,9 @@ public class FlutterShellArgs {
     if (intent.getBooleanExtra(ARG_KEY_TRACE_SKIA, false)) {
       args.add(ARG_TRACE_SKIA);
     }
+    if (intent.getBooleanExtra(ARG_KEY_DUMP_SHADER_SKP, false)) {
+      args.add(ARG_TRACE_SKIA);
+    }
     if (intent.getBooleanExtra(ARG_KEY_VERBOSE_LOGGING, false)) {
       args.add(ARG_VERBOSE_LOGGING);
     }
