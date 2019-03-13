@@ -11,8 +11,8 @@
 #import <UIKit/UIKit.h>
 
 #include "flutter/fml/logging.h"
-#include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 namespace {
 
@@ -166,6 +166,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   //  We enforce in the framework that no other useful semantics are merged with these nodes.
   if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute))
     return false;
+  NSLog(@"%@", @([self node].flags));
   return ([self node].flags != 0 &&
           [self node].flags != static_cast<int32_t>(blink::SemanticsFlags::kIsHidden)) ||
          ![self node].label.empty() || ![self node].value.empty() || ![self node].hint.empty() ||
@@ -437,20 +438,22 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     return _semanticsObject;
   }
   SemanticsObject* child = [_semanticsObject children][index - 1];
-    
-    // This 'if' block handles adding accessibility support for the embedded platform view.
-    // We first check if the child is a semantic node for a platform view.
-    // If so, we add the platform view as accessibilityElements of the child.
-    shell::FlutterPlatformViewsController *flutterPlatformViewsController = _bridge.get()->flutter_platform_views_controller();
-    if (child.node.platformViewId > -1 && flutterPlatformViewsController) {
-        NSObject<FlutterPlatformView> *platformViewProtocolObject = flutterPlatformViewsController->GetPlatformViewByID(child.node.platformViewId);
-        UIView *platformView = [platformViewProtocolObject view];
-        child.accessibilityElements = @[platformView];
-        return child;
-    }
-    
-    if ([child hasChildren])
-        return [child accessibilityContainer];
+
+  // This 'if' block handles adding accessibility support for the embedded platform view.
+  // We first check if the child is a semantic node for a platform view.
+  // If so, we add the platform view as accessibilityElements of the child.
+  shell::FlutterPlatformViewsController* flutterPlatformViewsController =
+      _bridge.get()->flutter_platform_views_controller();
+  if (child.node.platformViewId > -1 && flutterPlatformViewsController) {
+    NSObject<FlutterPlatformView>* platformViewProtocolObject =
+        flutterPlatformViewsController->GetPlatformViewByID(child.node.platformViewId);
+    UIView* platformView = [platformViewProtocolObject view];
+    child.accessibilityElements = @[ platformView ];
+    return child;
+  }
+
+  if ([child hasChildren])
+    return [child accessibilityContainer];
   return child;
 }
 
@@ -498,10 +501,12 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
 namespace shell {
 
-    AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform_view, FlutterPlatformViewsController *platform_views_controller)
+AccessibilityBridge::AccessibilityBridge(UIView* view,
+                                         PlatformViewIOS* platform_view,
+                                         FlutterPlatformViewsController* platform_views_controller)
     : view_(view),
       platform_view_(platform_view),
-    flutter_platform_views_controller_(platform_views_controller),
+      flutter_platform_views_controller_(platform_views_controller),
       objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_id_(0),
