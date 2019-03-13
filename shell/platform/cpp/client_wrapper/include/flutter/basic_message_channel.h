@@ -17,7 +17,7 @@ namespace flutter {
 //
 // Used for submitting a reply back to a Flutter message sender.
 template <typename T>
-using MessageReply = std::function<void(const T &reply)>;
+using MessageReply = std::function<void(const T& reply)>;
 
 // A handler for receiving a message from the Flutter engine.
 //
@@ -25,7 +25,7 @@ using MessageReply = std::function<void(const T &reply)>;
 // to the message.
 template <typename T>
 using MessageHandler =
-    std::function<void(const T &message, MessageReply<T> reply)>;
+    std::function<void(const T& message, MessageReply<T> reply)>;
 
 // A channel for communicating with the Flutter engine by sending asynchronous
 // messages.
@@ -36,17 +36,18 @@ class BasicMessageChannel {
   // named |name|, encoded with |codec| and dispatched via |messenger|.
   //
   // TODO: Make codec optional once the standard codec is supported (Issue #67).
-  BasicMessageChannel(BinaryMessenger *messenger, const std::string &name,
-                      const MessageCodec<T> *codec)
+  BasicMessageChannel(BinaryMessenger* messenger,
+                      const std::string& name,
+                      const MessageCodec<T>* codec)
       : messenger_(messenger), name_(name), codec_(codec) {}
   ~BasicMessageChannel() {}
 
   // Prevent copying.
-  BasicMessageChannel(BasicMessageChannel const &) = delete;
-  BasicMessageChannel &operator=(BasicMessageChannel const &) = delete;
+  BasicMessageChannel(BasicMessageChannel const&) = delete;
+  BasicMessageChannel& operator=(BasicMessageChannel const&) = delete;
 
   // Sends a message to the Flutter engine on this channel.
-  void Send(const T &message) {
+  void Send(const T& message) {
     std::unique_ptr<std::vector<uint8_t>> raw_message =
         codec_->EncodeMessage(message);
     messenger_->Send(name_, raw_message->data(), raw_message->size());
@@ -58,10 +59,10 @@ class BasicMessageChannel {
   // Registers a handler that should be called any time a message is
   // received on this channel.
   void SetMessageHandler(MessageHandler<T> handler) const {
-    const auto *codec = codec_;
+    const auto* codec = codec_;
     std::string channel_name = name_;
     BinaryMessageHandler binary_handler = [handler, codec, channel_name](
-                                              const uint8_t *binary_message,
+                                              const uint8_t* binary_message,
                                               const size_t binary_message_size,
                                               BinaryReply binary_reply) {
       // Use this channel's codec to decode the message and build a reply
@@ -76,7 +77,7 @@ class BasicMessageChannel {
       }
 
       MessageReply<T> unencoded_reply = [binary_reply,
-                                         codec](const T &unencoded_response) {
+                                         codec](const T& unencoded_response) {
         auto binary_response = codec->EncodeMessage(unencoded_response);
         binary_reply(binary_response->data(), binary_response->size());
       };
@@ -86,9 +87,9 @@ class BasicMessageChannel {
   }
 
  private:
-  BinaryMessenger *messenger_;
+  BinaryMessenger* messenger_;
   std::string name_;
-  const MessageCodec<T> *codec_;
+  const MessageCodec<T>* codec_;
 };
 
 }  // namespace flutter

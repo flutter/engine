@@ -18,20 +18,20 @@ class MethodResult {
   virtual ~MethodResult() = default;
 
   // Prevent copying.
-  MethodResult(MethodResult const &) = delete;
-  MethodResult &operator=(MethodResult const &) = delete;
+  MethodResult(MethodResult const&) = delete;
+  MethodResult& operator=(MethodResult const&) = delete;
 
   // Sends a success response, indicating that the call completed successfully.
   // An optional value can be provided as part of the success message.
-  void Success(const T *result = nullptr) { SuccessInternal(result); }
+  void Success(const T* result = nullptr) { SuccessInternal(result); }
 
   // Sends an error response, indicating that the call was understood but
   // handling failed in some way. A string error code must be provided, and in
   // addition an optional user-readable error_message and/or details object can
   // be included.
-  void Error(const std::string &error_code,
-             const std::string &error_message = "",
-             const T *error_details = nullptr) {
+  void Error(const std::string& error_code,
+             const std::string& error_message = "",
+             const T* error_details = nullptr) {
     ErrorInternal(error_code, error_message, error_details);
   }
 
@@ -42,10 +42,10 @@ class MethodResult {
  protected:
   // Internal implementation of the interface methods above, to be implemented
   // in subclasses.
-  virtual void SuccessInternal(const T *result) = 0;
-  virtual void ErrorInternal(const std::string &error_code,
-                             const std::string &error_message,
-                             const T *error_details) = 0;
+  virtual void SuccessInternal(const T* result) = 0;
+  virtual void ErrorInternal(const std::string& error_code,
+                             const std::string& error_message,
+                             const T* error_details) = 0;
   virtual void NotImplementedInternal() = 0;
 };
 

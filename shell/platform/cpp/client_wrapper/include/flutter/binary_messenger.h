@@ -15,14 +15,14 @@ namespace flutter {
 // A binary message reply callback.
 //
 // Used for submitting a binary reply back to a Flutter message sender.
-typedef std::function<void(const uint8_t *reply, const size_t reply_size)>
+typedef std::function<void(const uint8_t* reply, const size_t reply_size)>
     BinaryReply;
 
 // A message handler callback.
 //
 // Used for receiving messages from Flutter and providing an asynchronous reply.
-typedef std::function<void(const uint8_t *message, const size_t message_size,
-                           BinaryReply reply)>
+typedef std::function<
+    void(const uint8_t* message, const size_t message_size, BinaryReply reply)>
     BinaryMessageHandler;
 
 // A protocol for a class that handles communication of binary data on named
@@ -35,7 +35,8 @@ class BinaryMessenger {
   // expecting no reply.
   //
   // TODO: Consider adding absl as a dependency and using absl::Span.
-  virtual void Send(const std::string &channel, const uint8_t *message,
+  virtual void Send(const std::string& channel,
+                    const uint8_t* message,
                     const size_t message_size) const = 0;
 
   // TODO: Add support for a version of Send expecting a reply once
@@ -46,7 +47,7 @@ class BinaryMessenger {
   //
   // Replaces any existing handler. Provide a null handler to unregister the
   // existing handler.
-  virtual void SetMessageHandler(const std::string &channel,
+  virtual void SetMessageHandler(const std::string& channel,
                                  BinaryMessageHandler handler) = 0;
 };
 

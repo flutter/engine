@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("$flutter_root/common/config.gni")
 import("//build/config/linux/pkg_config.gni")
+import("$flutter_root/common/config.gni")
 
 if (use_glfw_desktop) {
   pkg_config("epoxy") {

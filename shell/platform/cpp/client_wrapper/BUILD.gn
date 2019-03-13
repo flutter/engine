@@ -50,8 +50,7 @@ source_set("client_wrapper") {
 copy("_publish_includes") {
   sources = _core_wrapper_includes
   if (use_glfw_desktop) {
-    sources +=
-        [ "include/flutter/glfw/flutter_window_controller.h" ]
+    sources += [ "include/flutter/glfw/flutter_window_controller.h" ]
   }
   output_dir = "$_wrapper_publish_dir/include/flutter"
   outputs = [

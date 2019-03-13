@@ -16,20 +16,20 @@ template <typename T>
 class MethodCall {
  public:
   // Creates a MethodCall with the given name and arguments.
-  explicit MethodCall(const std::string &method_name,
+  explicit MethodCall(const std::string& method_name,
                       std::unique_ptr<T> arguments)
       : method_name_(method_name), arguments_(std::move(arguments)) {}
   virtual ~MethodCall() = default;
 
   // Prevent copying.
-  MethodCall(MethodCall<T> const &) = delete;
-  MethodCall &operator=(MethodCall<T> const &) = delete;
+  MethodCall(MethodCall<T> const&) = delete;
+  MethodCall& operator=(MethodCall<T> const&) = delete;
 
   // The name of the method being called.
-  const std::string &method_name() const { return method_name_; }
+  const std::string& method_name() const { return method_name_; }
 
   // The arguments to the method call, or NULL if there are none.
-  const T *arguments() const { return arguments_.get(); }
+  const T* arguments() const { return arguments_.get(); }
 
  private:
   std::string method_name_;

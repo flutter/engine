@@ -9,8 +9,8 @@ import("$flutter_root/common/config.gni")
 group("linux") {
   deps = [
     ":flutter_linux",
-    "$flutter_root/shell/platform/cpp/client_wrapper:publish_wrapper",
     "$flutter_root/shell/platform/cpp:publish_headers",
+    "$flutter_root/shell/platform/cpp/client_wrapper:publish_wrapper",
   ]
 }
 

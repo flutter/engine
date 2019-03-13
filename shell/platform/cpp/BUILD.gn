@@ -4,9 +4,7 @@
 
 import("$flutter_root/common/config.gni")
 
-_common_defines = [
-  "FLUTTER_DESKTOP_LIBRARY",
-]
+_common_defines = [ "FLUTTER_DESKTOP_LIBRARY" ]
 
 _public_headers = [
   "public/flutter_export.h",
@@ -14,9 +12,7 @@ _public_headers = [
   "public/flutter_plugin_registrar.h",
 ]
 if (use_glfw_desktop) {
-  _public_headers += [
-    "public/flutter_glfw.h",
-  ]
+  _public_headers += [ "public/flutter_glfw.h" ]
 }
 
 # The headers are a separate source set since the client wrapper is allowed

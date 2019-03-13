@@ -27,7 +27,7 @@ ReplyManager::~ReplyManager() {
   }
 }
 
-void ReplyManager::SendResponseData(const std::vector<uint8_t> *data) {
+void ReplyManager::SendResponseData(const std::vector<uint8_t>* data) {
   if (!reply_handler_) {
     std::cerr
         << "Error: Only one of Success, Error, or NotImplemented can be "
@@ -37,7 +37,7 @@ void ReplyManager::SendResponseData(const std::vector<uint8_t> *data) {
     return;
   }
 
-  const uint8_t *message = data && !data->empty() ? data->data() : nullptr;
+  const uint8_t* message = data && !data->empty() ? data->data() : nullptr;
   size_t message_size = data ? data->size() : 0;
   reply_handler_(message, message_size);
   reply_handler_ = nullptr;

@@ -20,29 +20,30 @@ class MessageCodec {
   virtual ~MessageCodec() = default;
 
   // Prevent copying.
-  MessageCodec(MessageCodec<T> const &) = delete;
-  MessageCodec &operator=(MessageCodec<T> const &) = delete;
+  MessageCodec(MessageCodec<T> const&) = delete;
+  MessageCodec& operator=(MessageCodec<T> const&) = delete;
 
   // Returns the message encoded in |binary_message|, or nullptr if it cannot be
   // decoded by this codec.
   // TODO: Consider adding absl as a dependency and using absl::Span.
-  std::unique_ptr<T> DecodeMessage(const uint8_t *binary_message,
+  std::unique_ptr<T> DecodeMessage(const uint8_t* binary_message,
                                    const size_t message_size) const {
     return std::move(DecodeMessageInternal(binary_message, message_size));
   }
 
   // Returns a binary encoding of the given |message|, or nullptr if the
   // message cannot be serialized by this codec.
-  std::unique_ptr<std::vector<uint8_t>> EncodeMessage(const T &message) const {
+  std::unique_ptr<std::vector<uint8_t>> EncodeMessage(const T& message) const {
     return std::move(EncodeMessageInternal(message));
   }
 
  protected:
   // Implementations of the public interface, to be provided by subclasses.
   virtual std::unique_ptr<T> DecodeMessageInternal(
-      const uint8_t *binary_message, const size_t message_size) const = 0;
+      const uint8_t* binary_message,
+      const size_t message_size) const = 0;
   virtual std::unique_ptr<std::vector<uint8_t>> EncodeMessageInternal(
-      const T &message) const = 0;
+      const T& message) const = 0;
 };
 
 }  // namespace flutter

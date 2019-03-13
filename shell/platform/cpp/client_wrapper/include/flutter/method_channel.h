@@ -21,8 +21,9 @@ namespace flutter {
 // Implementations must asynchronously call exactly one of the methods on
 // |result| to indicate the result of the method call.
 template <typename T>
-using MethodCallHandler = std::function<void(
-    const MethodCall<T> &call, std::unique_ptr<MethodResult<T>> result)>;
+using MethodCallHandler =
+    std::function<void(const MethodCall<T>& call,
+                       std::unique_ptr<MethodResult<T>> result)>;
 
 // A channel for communicating with the Flutter engine using invocation of
 // asynchronous methods.
@@ -33,17 +34,18 @@ class MethodChannel {
   // named |name|, encoded with |codec| and dispatched via |messenger|.
   //
   // TODO: Make codec optional once the standard codec is supported (Issue #67).
-  MethodChannel(BinaryMessenger *messenger, const std::string &name,
-                const MethodCodec<T> *codec)
+  MethodChannel(BinaryMessenger* messenger,
+                const std::string& name,
+                const MethodCodec<T>* codec)
       : messenger_(messenger), name_(name), codec_(codec) {}
   ~MethodChannel() {}
 
   // Prevent copying.
-  MethodChannel(MethodChannel const &) = delete;
-  MethodChannel &operator=(MethodChannel const &) = delete;
+  MethodChannel(MethodChannel const&) = delete;
+  MethodChannel& operator=(MethodChannel const&) = delete;
 
   // Sends a message to the Flutter engine on this channel.
-  void InvokeMethod(const std::string &method, std::unique_ptr<T> arguments) {
+  void InvokeMethod(const std::string& method, std::unique_ptr<T> arguments) {
     MethodCall<T> method_call(method, std::move(arguments));
     std::unique_ptr<std::vector<uint8_t>> message =
         codec_->EncodeMethodCall(method_call);
@@ -56,10 +58,10 @@ class MethodChannel {
   // Registers a handler that should be called any time a method call is
   // received on this channel.
   void SetMethodCallHandler(MethodCallHandler<T> handler) const {
-    const auto *codec = codec_;
+    const auto* codec = codec_;
     std::string channel_name = name_;
     BinaryMessageHandler binary_handler = [handler, codec, channel_name](
-                                              const uint8_t *message,
+                                              const uint8_t* message,
                                               const size_t message_size,
                                               BinaryReply reply) {
       // Use this channel's codec to decode the call and build a result handler.
@@ -79,9 +81,9 @@ class MethodChannel {
   }
 
  private:
-  BinaryMessenger *messenger_;
+  BinaryMessenger* messenger_;
   std::string name_;
-  const MethodCodec<T> *codec_;
+  const MethodCodec<T>* codec_;
 };
 
 }  // namespace flutter
