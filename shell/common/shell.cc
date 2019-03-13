@@ -382,10 +382,8 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   PersistentCache::GetCacheForProcess()->AddWorkerTaskRunner(
       task_runners_.GetIOTaskRunner());
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
   PersistentCache::GetCacheForProcess()->SetIsDumpingSkp(
       settings_.dump_shader_skp);
-#endif
 
   return true;
 }

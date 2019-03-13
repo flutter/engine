@@ -112,8 +112,7 @@ DEF_SWITCH(DumpShaderSkp,
            "dump-shader-skp",
            "Automatically dump the skp that triggers new shader compilations. "
            "This is useful for writing custom ShaderWarmUp to reduce jank. "
-           "By default, this is not enabled to reduce the overhead. "
-           "This is only available in profile or debug build. ")
+           "By default, this is not enabled to reduce the overhead. ")
 DEF_SWITCH(
     TraceSystrace,
     "trace-systrace",

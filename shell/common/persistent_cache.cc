@@ -160,7 +160,6 @@ void PersistentCache::store(const SkData& key, const SkData& data) {
                        std::move(file_name), std::move(mapping));
 }
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
 void PersistentCache::DumpSkp(const SkData& data) {
   if (is_read_only_ || !IsValid()) {
     FML_LOG(ERROR) << "Could not dump SKP from read-only or invalid persistent "
@@ -179,7 +178,6 @@ void PersistentCache::DumpSkp(const SkData& data) {
   PersistentCacheStore(GetWorkerTaskRunner(), cache_directory_,
                        std::move(file_name), std::move(mapping));
 }
-#endif
 
 void PersistentCache::AddWorkerTaskRunner(
     fml::RefPtr<fml::TaskRunner> task_runner) {

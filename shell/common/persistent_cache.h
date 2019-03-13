@@ -36,7 +36,6 @@ class PersistentCache : public GrContextOptions::PersistentCache {
 
   void RemoveWorkerTaskRunner(fml::RefPtr<fml::TaskRunner> task_runner);
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
   // Whether Skia tries to load any shader from this persistent cache after
   // |ResetIsAccessed| is called. This flag is usually reset before each frame
   // so we can know if Skia tries to compile or load some shaders in that frame.
@@ -45,7 +44,6 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   void DumpSkp(const SkData& data);
   bool IsDumpingSkp() const { return is_dumping_skp_; }
   void SetIsDumpingSkp(bool value) { is_dumping_skp_ = value; }
-#endif
 
  private:
   static std::string cache_base_path_;
@@ -56,7 +54,6 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   std::multiset<fml::RefPtr<fml::TaskRunner>> worker_task_runners_
       FML_GUARDED_BY(worker_task_runners_mutex_);
 
-#if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
   bool is_accessed_ = false;
 
   // We'll dump the skp with an index from 0 to kMaxSkpIndex - 1.
@@ -64,7 +61,6 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   int skp_index_ = 0;
 
   bool is_dumping_skp_ = false;
-#endif
 
   bool IsValid() const;
 
