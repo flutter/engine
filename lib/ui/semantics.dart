@@ -604,7 +604,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// The field `platformViewId` references the platform view, whose semantics
   /// nodes will be added as children to this node. If a platform view is
   /// specified, `childrenInHitTestOrder` and `childrenInTraversalOrder` must be
-  /// empty.
+  /// empty, and other semantic configurations will be ignored.
   ///
   /// For scrollable nodes `scrollPosition` describes the current scroll
   /// position in logical pixel. `scrollExtentMax` and `scrollExtentMin`
