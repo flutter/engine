@@ -509,13 +509,11 @@ void FlutterDesktopRunWindowLoop(FlutterDesktopWindowRef flutter_window) {
   XInitThreads();
 #endif
   while (!glfwWindowShouldClose(window)) {
-#ifdef __linux__
     glfwPollEvents();
+#ifdef __linux__
     if (gtk_events_pending()) {
       gtk_main_iteration();
     }
-#else
-    glfwWaitEvents();
 #endif
     // TODO(awdavies): This will be deprecated soon.
     __FlutterEngineFlushPendingTasksNow();
