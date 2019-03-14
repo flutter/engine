@@ -26,7 +26,7 @@
 #include "paragraph_style.h"
 #include "styled_runs.h"
 #include "text_style.h"
-#include "widget_span.h"
+#include "widget_run.h"
 
 namespace txt {
 
@@ -67,7 +67,7 @@ class ParagraphBuilder {
   // Converts to u16string before adding.
   void AddText(const char* text);
 
-  void AddWidget(WidgetSpan& span);
+  void AddWidget(WidgetRun& span);
 
   void SetParagraphStyle(const ParagraphStyle& style);
 
@@ -77,12 +77,12 @@ class ParagraphBuilder {
 
  private:
   std::vector<uint16_t> text_;
-  // A vector of WidgetSpans, which detail the sizes, positioning and break
+  // A vector of WidgetRuns, which detail the sizes, positioning and break
   // behavior of the empty spaces to leave. Each widget span corresponds to a
   // 0xFFFC (object replacement character) in text_, which indicates the
   // position in the text where the widget will occur. There should be an equal
   // number of 0xFFFC characters and elements in this vector.
-  std::vector<WidgetSpan> inline_widgets_;
+  std::vector<WidgetRun> inline_widgets_;
   std::vector<size_t> style_stack_;
   std::shared_ptr<FontCollection> font_collection_;
   StyledRuns runs_;

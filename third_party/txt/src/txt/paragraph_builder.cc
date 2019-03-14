@@ -77,9 +77,10 @@ void ParagraphBuilder::AddText(const char* text) {
   AddText(u16_text);
 }
 
-void ParagraphBuilder::AddWidget(WidgetSpan& span) {
+void ParagraphBuilder::AddWidget(WidgetRun& span) {
   runs_.StartRun(PeekStyleIndex(), text_.size());
   AddText(std::u16string(1ull, 0xFFFC));
+  runs_.StartRun(PeekStyleIndex(), text_.size());
   inline_widgets_.push_back(span);
 }
 

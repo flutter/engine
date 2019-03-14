@@ -32,7 +32,7 @@
 #include "third_party/skia/include/core/SkFontMetrics.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "utils/WindowsUtils.h"
-#include "widget_span.h"
+#include "widget_run.h"
 
 class SkCanvas;
 
@@ -233,12 +233,12 @@ class Paragraph {
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
-  // A vector of WidgetSpans, which detail the sizes, positioning and break
+  // A vector of WidgetRuns, which detail the sizes, positioning and break
   // behavior of the empty spaces to leave. Each widget span corresponds to a
   // 0xFFFC (object replacement character) in text_, which indicates the
   // position in the text where the widget will occur. There should be an equal
   // number of 0xFFFC characters and elements in this vector.
-  std::vector<WidgetSpan> inline_widgets_;
+  std::vector<WidgetRun> inline_widgets_;
   StyledRuns runs_;
   ParagraphStyle paragraph_style_;
   std::shared_ptr<FontCollection> font_collection_;
@@ -281,7 +281,12 @@ class Paragraph {
    public:
     // Constructs a BidiRun with is_ghost defaulted to false.
     BidiRun(size_t s, size_t e, TextDirection d, const TextStyle& st)
-        : start_(s), end_(e), direction_(d), style_(&st), is_ghost_(false) {}
+        : start_(s),
+          end_(e),
+          direction_(d),
+          style_(&st),
+          is_ghost_(false),
+          is_widget_run_(false) {}
 
     // Constructs a BidiRun with a custom is_ghost flag.
     BidiRun(size_t s,
@@ -289,21 +294,44 @@ class Paragraph {
             TextDirection d,
             const TextStyle& st,
             bool is_ghost)
-        : start_(s), end_(e), direction_(d), style_(&st), is_ghost_(is_ghost) {}
+        : start_(s),
+          end_(e),
+          direction_(d),
+          style_(&st),
+          is_ghost_(is_ghost),
+          is_widget_run_(false) {}
+
+    // Constructs a widget bidi run.
+    BidiRun(size_t s,
+            size_t e,
+            TextDirection d,
+            const TextStyle& st,
+            const WidgetRun& widget)
+        : start_(s),
+          end_(e),
+          direction_(d),
+          style_(&st),
+          is_widget_run_(true),
+          widget_run_(&widget) {}
 
     size_t start() const { return start_; }
     size_t end() const { return end_; }
+    size_t size() const { return end_ - start_; }
     TextDirection direction() const { return direction_; }
     const TextStyle& style() const { return *style_; }
+    const WidgetRun& widget_run() const { return *widget_run_; }
     bool is_rtl() const { return direction_ == TextDirection::rtl; }
     // Tracks if the run represents trailing whitespace.
     bool is_ghost() const { return is_ghost_; }
+    bool is_widget_run() const { return is_widget_run_; }
 
    private:
     size_t start_, end_;
     TextDirection direction_;
     const TextStyle* style_;
     bool is_ghost_;
+    bool is_widget_run_;
+    const WidgetRun* widget_run_;
   };
 
   struct GlyphPosition {
@@ -390,7 +418,7 @@ class Paragraph {
 
   void SetFontCollection(std::shared_ptr<FontCollection> font_collection);
 
-  void SetInlineWidgets(std::vector<WidgetSpan> inline_widgets);
+  void SetInlineWidgets(std::vector<WidgetRun> inline_widgets);
 
   // Break the text into lines.
   bool ComputeLineBreaks();

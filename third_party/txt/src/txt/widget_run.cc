@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Google Inc.
+ * Copyright 2019 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,21 @@
  * limitations under the License.
  */
 
-#ifndef LIB_TXT_SRC_WIDGET_SPAN_H_
-#define LIB_TXT_SRC_WIDGET_SPAN_H_
+#include "widget_run.h"
 
 namespace txt {
 
-// This holds the size
-class WidgetSpan {
- public:
-  double width = 0;
-  double height = 0;
-  double baseline = 0;
-  bool break_left = true;
-  bool break_right = true;
+WidgetRun::WidgetRun() {}
 
-  WidgetSpan();
-
-  WidgetSpan(double width,
-             double height,
-             double baseline,
-             double break_left,
-             bool break_right);
-};
+WidgetRun::WidgetRun(double width,
+                     double height,
+                     double baseline,
+                     bool break_left,
+                     bool break_right)
+    : width(width),
+      height(height),
+      baseline(baseline),
+      break_left(break_left),
+      break_right(break_right) {}
 
 }  // namespace txt
-
-#endif  // LIB_TXT_SRC_WIDGET_SPAN_H_

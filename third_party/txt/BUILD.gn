@@ -94,6 +94,8 @@ source_set("txt") {
     "src/txt/text_shadow.h",
     "src/txt/text_style.cc",
     "src/txt/text_style.h",
+    "src/txt/widget_run.cc",
+    "src/txt/widget_run.h",
     "src/txt/typeface_font_asset_provider.cc",
     "src/txt/typeface_font_asset_provider.h",
     "src/utils/JenkinsHash.cpp",

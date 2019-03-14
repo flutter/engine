@@ -14,4 +14,29 @@
  * limitations under the License.
  */
 
-WidgetSpan();
+#ifndef LIB_TXT_SRC_WIDGET_RUN_H_
+#define LIB_TXT_SRC_WIDGET_RUN_H_
+
+namespace txt {
+
+// This holds the size
+class WidgetRun {
+ public:
+  double width = 0;
+  double height = 0;
+  double baseline = 0;
+  bool break_left = true;
+  bool break_right = true;
+
+  WidgetRun();
+
+  WidgetRun(double width,
+            double height,
+            double baseline,
+            bool break_left,
+            bool break_right);
+};
+
+}  // namespace txt
+
+#endif  // LIB_TXT_SRC_WIDGET_RUN_H_
