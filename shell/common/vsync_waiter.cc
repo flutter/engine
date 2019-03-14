@@ -14,14 +14,14 @@ namespace shell {
 // Because of this, emitting a "VSYNC" event per flutter process is
 // undesirable, as the events will collide with each other.  We
 // instead let another area of the system emit them.
-static const char* kVsyncTraceName = "vsync callback";
+static constexpr const char* kVsyncTraceName = "vsync callback";
 #else   // defined(OS_FUCHSIA)
 // Note: The tag name must be "VSYNC" (it is special) so that the
 // "Highlight Vsync" checkbox in the timeline can be enabled.
-static const char* kVsyncTraceName = "VSYNC";
+static constexpr const char* kVsyncTraceName = "VSYNC";
 #endif  // defined(OS_FUCHSIA)
 
-static const char* kVsyncFlowName = "VsyncFlow";
+static constexpr const char* kVsyncFlowName = "VsyncFlow";
 
 VsyncWaiter::VsyncWaiter(blink::TaskRunners task_runners)
     : task_runners_(std::move(task_runners)) {}
