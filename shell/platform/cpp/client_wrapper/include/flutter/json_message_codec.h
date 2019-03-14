@@ -27,10 +27,12 @@ class JsonMessageCodec : public MessageCodec<JsonValueType> {
   // Instances should be obtained via GetInstance.
   JsonMessageCodec() = default;
 
-  // MessageCodec:
+  // |flutter::MessageCodec|
   std::unique_ptr<JsonValueType> DecodeMessageInternal(
       const uint8_t* binary_message,
       const size_t message_size) const override;
+
+  // |flutter::MessageCodec|
   std::unique_ptr<std::vector<uint8_t>> EncodeMessageInternal(
       const JsonValueType& message) const override;
 };

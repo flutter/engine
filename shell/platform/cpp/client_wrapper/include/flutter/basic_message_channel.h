@@ -40,7 +40,8 @@ class BasicMessageChannel {
                       const std::string& name,
                       const MessageCodec<T>* codec)
       : messenger_(messenger), name_(name), codec_(codec) {}
-  ~BasicMessageChannel() {}
+
+  ~BasicMessageChannel() = default;
 
   // Prevent copying.
   BasicMessageChannel(BasicMessageChannel const&) = delete;

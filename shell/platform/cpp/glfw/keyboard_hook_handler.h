@@ -12,7 +12,7 @@ namespace shell {
 // Abstract class for handling keyboard input events.
 class KeyboardHookHandler {
  public:
-  virtual ~KeyboardHookHandler() {}
+  virtual ~KeyboardHookHandler() = default;
 
   // A function for hooking into keyboard input.
   virtual void KeyboardHook(GLFWwindow* window,

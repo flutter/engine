@@ -16,9 +16,9 @@ template <typename T>
 class MethodCall {
  public:
   // Creates a MethodCall with the given name and arguments.
-  explicit MethodCall(const std::string& method_name,
-                      std::unique_ptr<T> arguments)
+  MethodCall(const std::string& method_name, std::unique_ptr<T> arguments)
       : method_name_(method_name), arguments_(std::move(arguments)) {}
+
   virtual ~MethodCall() = default;
 
   // Prevent copying.

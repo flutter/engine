@@ -52,7 +52,7 @@ TextInputModel::TextInputModel(int client_id, const rapidjson::Value& config)
   }
 }
 
-TextInputModel::~TextInputModel() {}
+TextInputModel::~TextInputModel() = default;
 
 bool TextInputModel::SetEditingState(size_t selection_base,
                                      size_t selection_extent,

@@ -22,6 +22,7 @@ class IncomingMessageDispatcher {
   // Creates a new IncomingMessageDispatcher. |messenger| must remain valid as
   // long as this object exists.
   explicit IncomingMessageDispatcher(FlutterDesktopMessengerRef messenger);
+
   virtual ~IncomingMessageDispatcher();
 
   // Prevent copying.
@@ -36,10 +37,9 @@ class IncomingMessageDispatcher {
   //
   // If no handler is registered for the message's channel, sends a
   // NotImplemented response to the engine.
-  void HandleMessage(
-      const FlutterDesktopMessage& message,
-      std::function<void(void)> input_block_cb = [] {},
-      std::function<void(void)> input_unblock_cb = [] {});
+  void HandleMessage(const FlutterDesktopMessage& message,
+                     std::function<void(void)> input_block_cb = [] {},
+                     std::function<void(void)> input_unblock_cb = [] {});
 
   // Registers a message callback for incoming messages from the Flutter
   // side on the specified channel. |callback| will be called with the message

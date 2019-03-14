@@ -27,14 +27,20 @@ class JsonMethodCodec : public MethodCodec<JsonValueType> {
   // Instances should be obtained via GetInstance.
   JsonMethodCodec() = default;
 
-  // MethodCodec:
+  // |flutter::MethodCodec|
   std::unique_ptr<MethodCall<JsonValueType>> DecodeMethodCallInternal(
       const uint8_t* message,
       const size_t message_size) const override;
+
+  // |flutter::MethodCodec|
   std::unique_ptr<std::vector<uint8_t>> EncodeMethodCallInternal(
       const MethodCall<JsonValueType>& method_call) const override;
+
+  // |flutter::MethodCodec|
   std::unique_ptr<std::vector<uint8_t>> EncodeSuccessEnvelopeInternal(
       const JsonValueType* result) const override;
+
+  // |flutter::MethodCodec|
   std::unique_ptr<std::vector<uint8_t>> EncodeErrorEnvelopeInternal(
       const std::string& error_code,
       const std::string& error_message,

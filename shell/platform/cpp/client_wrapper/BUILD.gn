@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("$flutter_root/common/config.gni")
+import("$flutter_root/shell/platform/cpp/config.gni")
 
 _core_wrapper_includes = [
   "include/flutter/basic_message_channel.h",
@@ -31,6 +31,12 @@ _core_wrapper_sources = [
 
 _wrapper_publish_dir = "$root_out_dir/cpp_client_wrapper"
 
+# Since the client wrapper is intended for out-of-tree use, it expects those
+# headers to be in the search path rather than using full project paths.
+config("relative_library_headers") {
+  include_dirs = [ "$flutter_root/shell/platform/cpp/public"]
+}
+
 # Client library build for internal use by the shell implementation.
 source_set("client_wrapper") {
   sources = _core_wrapper_sources
@@ -45,9 +51,13 @@ source_set("client_wrapper") {
     "FLUTTER_DESKTOP_LIBRARY",
     "USE_RAPID_JSON",
   ]
+
+  public_configs = [":relative_library_headers"]
 }
 
-copy("_publish_includes") {
+copy("publish_includes") {
+  visibility = [ ":*" ]
+
   sources = _core_wrapper_includes
   if (use_glfw_desktop) {
     sources += [ "include/flutter/glfw/flutter_window_controller.h" ]
@@ -58,7 +68,9 @@ copy("_publish_includes") {
   ]
 }
 
-copy("_publish_sources") {
+copy("publish_sources") {
+  visibility = [ ":*" ]
+
   sources = _core_wrapper_sources + [ "README" ]
 
   if (use_glfw_desktop) {
@@ -73,7 +85,7 @@ copy("_publish_sources") {
 # Copies the client wrapper code to the output directory.
 group("publish_wrapper") {
   deps = [
-    ":_publish_includes",
-    ":_publish_sources",
+    ":publish_includes",
+    ":publish_sources",
   ]
 }

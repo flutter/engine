@@ -29,7 +29,7 @@ typedef std::function<
 // channels to and from the Flutter engine.
 class BinaryMessenger {
  public:
-  virtual ~BinaryMessenger() {}
+  virtual ~BinaryMessenger() = default;
 
   // Sends a binary message to the Flutter side on the specified channel,
   // expecting no reply.

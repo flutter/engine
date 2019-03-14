@@ -106,7 +106,7 @@ TextInputPlugin::TextInputPlugin(flutter::BinaryMessenger* messenger)
       });
 }
 
-TextInputPlugin::~TextInputPlugin() {}
+TextInputPlugin::~TextInputPlugin() = default;
 
 void TextInputPlugin::HandleMethodCall(
     const flutter::MethodCall<rapidjson::Document>& method_call,

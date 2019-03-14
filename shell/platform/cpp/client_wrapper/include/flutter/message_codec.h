@@ -17,6 +17,7 @@ template <typename T>
 class MessageCodec {
  public:
   MessageCodec() = default;
+
   virtual ~MessageCodec() = default;
 
   // Prevent copying.
@@ -38,10 +39,12 @@ class MessageCodec {
   }
 
  protected:
-  // Implementations of the public interface, to be provided by subclasses.
+  // Implementation of the public interface, to be provided by subclasses.
   virtual std::unique_ptr<T> DecodeMessageInternal(
       const uint8_t* binary_message,
       const size_t message_size) const = 0;
+
+  // Implementation of the public interface, to be provided by subclasses.
   virtual std::unique_ptr<std::vector<uint8_t>> EncodeMessageInternal(
       const T& message) const = 0;
 };

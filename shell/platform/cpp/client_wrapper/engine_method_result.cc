@@ -4,6 +4,7 @@
 
 #include "include/flutter/engine_method_result.h"
 
+#include <assert.h>
 #include <iostream>
 
 namespace flutter {
@@ -11,10 +12,7 @@ namespace internal {
 
 ReplyManager::ReplyManager(BinaryReply reply_handler)
     : reply_handler_(std::move(reply_handler)) {
-  if (!reply_handler_) {
-    std::cerr << "Error: Reply handler must be provided for a response."
-              << std::endl;
-  }
+  assert(reply_handler_);
 }
 
 ReplyManager::~ReplyManager() {

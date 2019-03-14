@@ -19,6 +19,7 @@ template <typename T>
 class MethodCodec {
  public:
   MethodCodec() = default;
+
   virtual ~MethodCodec() = default;
 
   // Prevent copying.
@@ -59,14 +60,20 @@ class MethodCodec {
   }
 
  protected:
-  // Implementations of the public interface, to be provided by subclasses.
+  // Implementation of the public interface, to be provided by subclasses.
   virtual std::unique_ptr<MethodCall<T>> DecodeMethodCallInternal(
       const uint8_t* message,
       const size_t message_size) const = 0;
+
+  // Implementation of the public interface, to be provided by subclasses.
   virtual std::unique_ptr<std::vector<uint8_t>> EncodeMethodCallInternal(
       const MethodCall<T>& method_call) const = 0;
+
+  // Implementation of the public interface, to be provided by subclasses.
   virtual std::unique_ptr<std::vector<uint8_t>> EncodeSuccessEnvelopeInternal(
       const T* result) const = 0;
+
+  // Implementation of the public interface, to be provided by subclasses.
   virtual std::unique_ptr<std::vector<uint8_t>> EncodeErrorEnvelopeInternal(
       const std::string& error_code,
       const std::string& error_message,

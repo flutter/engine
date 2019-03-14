@@ -50,15 +50,18 @@ class EngineMethodResult : public MethodResult<T> {
       : reply_manager_(
             std::make_unique<internal::ReplyManager>(std::move(reply_handler))),
         codec_(codec) {}
+
   ~EngineMethodResult() = default;
 
  protected:
-  // MethodResult:
+  // |flutter::MethodResult|
   void SuccessInternal(const T* result) override {
     std::unique_ptr<std::vector<uint8_t>> data =
         codec_->EncodeSuccessEnvelope(result);
     reply_manager_->SendResponseData(data.get());
   }
+
+  // |flutter::MethodResult|
   void ErrorInternal(const std::string& error_code,
                      const std::string& error_message,
                      const T* error_details) override {
@@ -66,6 +69,8 @@ class EngineMethodResult : public MethodResult<T> {
         codec_->EncodeErrorEnvelope(error_code, error_message, error_details);
     reply_manager_->SendResponseData(data.get());
   }
+
+  // |flutter::MethodResult|
   void NotImplementedInternal() override {
     reply_manager_->SendResponseData(nullptr);
   }

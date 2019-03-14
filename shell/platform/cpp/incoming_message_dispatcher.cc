@@ -10,7 +10,7 @@ IncomingMessageDispatcher::IncomingMessageDispatcher(
     FlutterDesktopMessengerRef messenger)
     : messenger_(messenger) {}
 
-IncomingMessageDispatcher::~IncomingMessageDispatcher() {}
+IncomingMessageDispatcher::~IncomingMessageDispatcher() = default;
 
 void IncomingMessageDispatcher::HandleMessage(
     const FlutterDesktopMessage& message,

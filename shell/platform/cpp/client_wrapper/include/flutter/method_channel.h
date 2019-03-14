@@ -38,7 +38,8 @@ class MethodChannel {
                 const std::string& name,
                 const MethodCodec<T>* codec)
       : messenger_(messenger), name_(name), codec_(codec) {}
-  ~MethodChannel() {}
+
+  ~MethodChannel() = default;
 
   // Prevent copying.
   MethodChannel(MethodChannel const&) = delete;

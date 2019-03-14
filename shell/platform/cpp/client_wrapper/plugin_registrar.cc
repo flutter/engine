@@ -55,16 +55,19 @@ class BinaryMessengerImpl : public BinaryMessenger {
  public:
   explicit BinaryMessengerImpl(FlutterDesktopMessengerRef core_messenger)
       : messenger_(core_messenger) {}
-  virtual ~BinaryMessengerImpl() {}
+
+  virtual ~BinaryMessengerImpl() = default;
 
   // Prevent copying.
   BinaryMessengerImpl(BinaryMessengerImpl const&) = delete;
   BinaryMessengerImpl& operator=(BinaryMessengerImpl const&) = delete;
 
-  // BinaryMessenger implementation:
+  // |flutter::BinaryMessenger|
   void Send(const std::string& channel,
             const uint8_t* message,
             const size_t message_size) const override;
+
+  // |flutter::BinaryMessenger|
   void SetMessageHandler(const std::string& channel,
                          BinaryMessageHandler handler) override;
 

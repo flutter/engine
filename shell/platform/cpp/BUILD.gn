@@ -2,9 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("$flutter_root/common/config.gni")
+import("$flutter_root/shell/platform/cpp/config.gni")
 
-_common_defines = [ "FLUTTER_DESKTOP_LIBRARY" ]
+config("desktop_library_implementation") {
+  visibility = [ ":*" ]
+  defines = [ "FLUTTER_DESKTOP_LIBRARY" ]
+}
 
 _public_headers = [
   "public/flutter_export.h",
@@ -20,7 +23,7 @@ if (use_glfw_desktop) {
 source_set("common_cpp_library_headers") {
   public = _public_headers
 
-  defines = _common_defines
+  configs += [ ":desktop_library_implementation" ]
 }
 
 source_set("common_cpp") {
@@ -34,7 +37,9 @@ source_set("common_cpp") {
     "text_input_model.cc",
   ]
 
-  defines = _common_defines + [ "USE_RAPID_JSON" ]
+  defines = [ "USE_RAPID_JSON" ]
+
+  configs += [ ":desktop_library_implementation" ]
 
   deps = [
     ":common_cpp_library_headers",

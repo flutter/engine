@@ -27,7 +27,7 @@ KeyEventHandler::KeyEventHandler(flutter::BinaryMessenger* messenger)
               kChannelName,
               &flutter::JsonMessageCodec::GetInstance())) {}
 
-KeyEventHandler::~KeyEventHandler() {}
+KeyEventHandler::~KeyEventHandler() = default;
 
 void KeyEventHandler::CharHook(GLFWwindow* window, unsigned int code_point) {}
 

@@ -9,11 +9,7 @@
 #include <set>
 #include <string>
 
-#ifdef FLUTTER_DESKTOP_LIBRARY
-#include "flutter/shell/platform/cpp/public/flutter_plugin_registrar.h"
-#else
 #include <flutter_plugin_registrar.h>
-#endif
 
 #include "binary_messenger.h"
 
@@ -31,6 +27,7 @@ class PluginRegistrar {
   // Creates a new PluginRegistrar. |core_registrar| and the messenger it
   // provides must remain valid as long as this object exists.
   explicit PluginRegistrar(FlutterDesktopPluginRegistrarRef core_registrar);
+
   ~PluginRegistrar();
 
   // Prevent copying.
@@ -69,7 +66,7 @@ class PluginRegistrar {
 // A plugin that can be registered for ownership by a PluginRegistrar.
 class Plugin {
  public:
-  virtual ~Plugin() {}
+  virtual ~Plugin() = default;
 };
 
 }  // namespace flutter

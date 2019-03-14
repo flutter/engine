@@ -15,6 +15,7 @@ template <typename T>
 class MethodResult {
  public:
   MethodResult() = default;
+
   virtual ~MethodResult() = default;
 
   // Prevent copying.
@@ -40,12 +41,15 @@ class MethodResult {
   void NotImplemented() { NotImplementedInternal(); }
 
  protected:
-  // Internal implementation of the interface methods above, to be implemented
-  // in subclasses.
+  // Implementation of the public interface, to be provided by subclasses.
   virtual void SuccessInternal(const T* result) = 0;
+
+  // Implementation of the public interface, to be provided by subclasses.
   virtual void ErrorInternal(const std::string& error_code,
                              const std::string& error_message,
                              const T* error_details) = 0;
+
+  // Implementation of the public interface, to be provided by subclasses.
   virtual void NotImplementedInternal() = 0;
 };
 

@@ -20,14 +20,17 @@ namespace shell {
 class KeyEventHandler : public KeyboardHookHandler {
  public:
   explicit KeyEventHandler(flutter::BinaryMessenger* messenger);
+
   virtual ~KeyEventHandler();
 
-  // KeyboardHookHandler.
+  // |shell::KeyboardHookHandler|
   void KeyboardHook(GLFWwindow* window,
                     int key,
                     int scancode,
                     int action,
                     int mods) override;
+
+  // |shell::KeyboardHookHandler|
   void CharHook(GLFWwindow* window, unsigned int code_point) override;
 
  private:

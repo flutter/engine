@@ -21,14 +21,17 @@ namespace shell {
 class TextInputPlugin : public KeyboardHookHandler {
  public:
   explicit TextInputPlugin(flutter::BinaryMessenger* messenger);
+
   virtual ~TextInputPlugin();
 
-  // KeyboardHookHandler:
+  // |shell::KeyboardHookHandler|
   void KeyboardHook(GLFWwindow* window,
                     int key,
                     int scancode,
                     int action,
                     int mods) override;
+
+  // |shell::KeyboardHookHandler|
   void CharHook(GLFWwindow* window, unsigned int code_point) override;
 
  private:
