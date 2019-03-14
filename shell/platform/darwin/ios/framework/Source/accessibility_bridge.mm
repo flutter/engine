@@ -164,12 +164,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   // entire element tree looking for such a hit.
 
   //  We enforce in the framework that no other useful semantics are merged with these nodes.
-  if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute))
+  if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute) || [self node].platformViewId > -1)
     return false;
-  // If the node is the placeholder for a platform view. We know it should be a container.
-  if ([self node].platformViewId > -1) {
-    return false;
-  }
+
   return ([self node].flags != 0 &&
           [self node].flags != static_cast<int32_t>(blink::SemanticsFlags::kIsHidden)) ||
          ![self node].label.empty() || ![self node].value.empty() || ![self node].hint.empty() ||
