@@ -59,7 +59,7 @@ Color _scaleAlpha(Color a, double factor) {
 ///
 /// Consider the light teal of the Flutter logo. It is fully opaque, with a red
 /// channel value of 0x42 (66), a green channel value of 0xA5 (165), and a blue
-/// channel value of 0xF5 (245). In the common "hash syntax" for colour values,
+/// channel value of 0xF5 (245). In the common "hash syntax" for color values,
 /// it would be described as `#42A5F5`.
 ///
 /// Here are some ways it could be constructed:
@@ -803,7 +803,7 @@ enum FilterQuality {
 
   /// Fastest possible filtering, albeit also the lowest quality.
   ///
-  /// Typically this implies nearest-neighbour filtering.
+  /// Typically this implies nearest-neighbor filtering.
   none,
 
   /// Better quality than [none], faster than [medium].
@@ -814,7 +814,7 @@ enum FilterQuality {
   /// Better quality than [low], faster than [high].
   ///
   /// Typically this implies a combination of bilinear interpolation and
-  /// pyramidal parametric prefiltering (mipmaps).
+  /// pyramidal parametric pre-filtering (mipmaps).
   medium,
 
   /// Best possible quality filtering, albeit also the slowest.
@@ -1018,14 +1018,6 @@ enum Clip {
   antiAliasWithSaveLayer,
 }
 
-/// The global default value of whether and how to clip a widget. This is only for
-/// temporary migration from default-to-clip to default-to-NOT-clip.
-///
-// TODO(liyuqian): Set it to Clip.none. (https://github.com/flutter/flutter/issues/18057)
-// We currently have Clip.antiAlias to preserve our old behaviors.
-@Deprecated("Do not use this as it'll soon be removed after we set the default behavior to Clip.none.")
-const Clip defaultClipBehavior = Clip.antiAlias;
-
 // If we actually run on big endian machines, we'll need to do something smarter
 // here. We don't use [Endian.Host] because it's not a compile-time
 // constant and can't propagate into the set/get calls.
@@ -1090,7 +1082,8 @@ class Paint {
   // Binary format must match the deserialization code in paint.cc.
   List<dynamic> _objects;
   static const int _kShaderIndex = 0;
-  static const int _kObjectCount = 1; // Must be one larger than the largest index.
+  static const int _kColorFilterMatrixIndex = 1;
+  static const int _kObjectCount = 2; // Must be one larger than the largest index.
 
   /// Whether to apply anti-aliasing to lines and images drawn on the
   /// canvas.
@@ -1344,25 +1337,49 @@ class Paint {
   ///
   /// When a shape is being drawn, [colorFilter] overrides [color] and [shader].
   ColorFilter get colorFilter {
-    final bool isNull = _data.getInt32(_kColorFilterOffset, _kFakeHostEndian) == 0;
-    if (isNull)
-      return null;
-    return new ColorFilter.mode(
-      new Color(_data.getInt32(_kColorFilterColorOffset, _kFakeHostEndian)),
-      BlendMode.values[_data.getInt32(_kColorFilterBlendModeOffset, _kFakeHostEndian)]
-    );
+    switch (_data.getInt32(_kColorFilterOffset, _kFakeHostEndian)) {
+      case ColorFilter._TypeNone:
+        return null;
+      case ColorFilter._TypeMode:
+        return new ColorFilter.mode(
+          new Color(_data.getInt32(_kColorFilterColorOffset, _kFakeHostEndian)),
+          BlendMode.values[_data.getInt32(_kColorFilterBlendModeOffset, _kFakeHostEndian)],
+        );
+      case ColorFilter._TypeMatrix:
+        return new ColorFilter.matrix(_objects[_kColorFilterMatrixIndex]);
+      case ColorFilter._TypeLinearToSrgbGamma:
+        return const ColorFilter.linearToSrgbGamma();
+      case ColorFilter._TypeSrgbToLinearGamma:
+        return const ColorFilter.srgbToLinearGamma();
+    }
+
+    return null;
   }
+
   set colorFilter(ColorFilter value) {
     if (value == null) {
-      _data.setInt32(_kColorFilterOffset, 0, _kFakeHostEndian);
+      _data.setInt32(_kColorFilterOffset, ColorFilter._TypeNone, _kFakeHostEndian);
       _data.setInt32(_kColorFilterColorOffset, 0, _kFakeHostEndian);
       _data.setInt32(_kColorFilterBlendModeOffset, 0, _kFakeHostEndian);
+
+      if (_objects != null) {
+        _objects[_kColorFilterMatrixIndex] = null;
+      }
     } else {
-      assert(value._color != null);
-      assert(value._blendMode != null);
-      _data.setInt32(_kColorFilterOffset, 1, _kFakeHostEndian);
-      _data.setInt32(_kColorFilterColorOffset, value._color.value, _kFakeHostEndian);
-      _data.setInt32(_kColorFilterBlendModeOffset, value._blendMode.index, _kFakeHostEndian);
+      _data.setInt32(_kColorFilterOffset, value._type, _kFakeHostEndian);
+
+      if (value._type == ColorFilter._TypeMode) {
+        assert(value._color != null);
+        assert(value._blendMode != null);
+
+        _data.setInt32(_kColorFilterColorOffset, value._color.value, _kFakeHostEndian);
+        _data.setInt32(_kColorFilterBlendModeOffset, value._blendMode.index, _kFakeHostEndian);
+      } else if (value._type == ColorFilter._TypeMatrix) {
+        assert(value._matrix != null);
+
+        _objects ??= new List<dynamic>(_kObjectCount);
+        _objects[_kColorFilterMatrixIndex] = Float32List.fromList(value._matrix);
+      }
     }
   }
 
@@ -1505,10 +1522,10 @@ class _ImageInfo {
 /// [Canvas.drawImage].
 @pragma('vm:entry-point')
 class Image extends NativeFieldWrapperClass2 {
-  /// This class is created by the engine, and should not be instantiated
-  /// or extended directly.
-  ///
-  /// To obtain an [Image] object, use [instantiateImageCodec].
+  // This class is created by the engine, and should not be instantiated
+  // or extended directly.
+  //
+  // To obtain an [Image] object, use [instantiateImageCodec].
   @pragma('vm:entry-point')
   Image._();
 
@@ -1570,13 +1587,20 @@ class FrameInfo extends NativeFieldWrapperClass2 {
 }
 
 /// A handle to an image codec.
+///
+/// This class is created by the engine, and should not be instantiated
+/// or extended directly.
+///
+/// To obtain an instance of the [Codec] interface, see
+/// [instantiateImageCodec].
 @pragma('vm:entry-point')
 class Codec extends NativeFieldWrapperClass2 {
-  /// This class is created by the engine, and should not be instantiated
-  /// or extended directly.
-  ///
-  /// To obtain an instance of the [Codec] interface, see
-  /// [instantiateImageCodec].
+  //
+  // This class is created by the engine, and should not be instantiated
+  // or extended directly.
+  //
+  // To obtain an instance of the [Codec] interface, see
+  // [instantiateImageCodec].
   @pragma('vm:entry-point')
   Codec._();
 
@@ -1639,8 +1663,8 @@ String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageI
 
 /// Loads a single image frame from a byte array into an [Image] object.
 ///
-/// This is a convenience wrapper around [instantiateImageCodec].
-/// Prefer using [instantiateImageCodec] which also supports multi frame images.
+/// This is a convenience wrapper around [instantiateImageCodec]. Prefer using
+/// [instantiateImageCodec] which also supports multi frame images.
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);
 }
@@ -1657,7 +1681,7 @@ Future<Null> _decodeImageFromListAsync(Uint8List list,
 /// [pixels] is the pixel data in the encoding described by [format].
 ///
 /// [rowBytes] is the number of bytes consumed by each row of pixels in the
-/// data buffer.  If unspecified, it defaults to [width] multipled by the
+/// data buffer.  If unspecified, it defaults to [width] multiplied by the
 /// number of bytes per pixel in the provided [format].
 ///
 /// The [decodedCacheRatioCap] is the default maximum multiple of the compressed
@@ -1775,17 +1799,17 @@ class EngineLayer extends NativeFieldWrapperClass2 {
 
 /// A complex, one-dimensional subset of a plane.
 ///
-/// A path consists of a number of subpaths, and a _current point_.
+/// A path consists of a number of sub-paths, and a _current point_.
 ///
-/// Subpaths consist of segments of various types, such as lines,
-/// arcs, or beziers. Subpaths can be open or closed, and can
+/// Sub-paths consist of segments of various types, such as lines,
+/// arcs, or beziers. Sub-paths can be open or closed, and can
 /// self-intersect.
 ///
-/// Closed subpaths enclose a (possibly discontiguous) region of the
+/// Closed sub-paths enclose a (possibly discontiguous) region of the
 /// plane based on the current [fillType].
 ///
 /// The _current point_ is initially at the origin. After each
-/// operation adding a segment to a subpath, the current point is
+/// operation adding a segment to a sub-path, the current point is
 /// updated to the end of that segment.
 ///
 /// Paths can be drawn on canvases using [Canvas.drawPath], and can
@@ -1815,10 +1839,10 @@ class Path extends NativeFieldWrapperClass2 {
   int _getFillType() native 'Path_getFillType';
   void _setFillType(int fillType) native 'Path_setFillType';
 
-  /// Starts a new subpath at the given coordinate.
+  /// Starts a new sub-path at the given coordinate.
   void moveTo(double x, double y) native 'Path_moveTo';
 
-  /// Starts a new subpath at the given offset from the current point.
+  /// Starts a new sub-path at the given offset from the current point.
   void relativeMoveTo(double dx, double dy) native 'Path_relativeMoveTo';
 
   /// Adds a straight line segment from the current point to the given
@@ -1869,7 +1893,7 @@ class Path extends NativeFieldWrapperClass2 {
   /// If the `forceMoveTo` argument is false, adds a straight line
   /// segment and an arc segment.
   ///
-  /// If the `forceMoveTo` argument is true, starts a new subpath
+  /// If the `forceMoveTo` argument is true, starts a new sub-path
   /// consisting of an arc segment.
   ///
   /// In either case, the arc segment consists of the arc that follows
@@ -1947,7 +1971,7 @@ class Path extends NativeFieldWrapperClass2 {
                            bool largeArc, bool clockwise)
                            native 'Path_relativeArcToPoint';
 
-  /// Adds a new subpath that consists of four lines that outline the
+  /// Adds a new sub-path that consists of four lines that outline the
   /// given rectangle.
   void addRect(Rect rect) {
     assert(_rectIsValid(rect));
@@ -1955,7 +1979,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addRect(double left, double top, double right, double bottom) native 'Path_addRect';
 
-  /// Adds a new subpath that consists of a curve that forms the
+  /// Adds a new sub-path that consists of a curve that forms the
   /// ellipse that fills the given rectangle.
   ///
   /// To add a circle, pass an appropriate rectangle as `oval`. [Rect.fromCircle]
@@ -1966,7 +1990,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addOval(double left, double top, double right, double bottom) native 'Path_addOval';
 
-  /// Adds a new subpath with one arc segment that consists of the arc
+  /// Adds a new sub-path with one arc segment that consists of the arc
   /// that follows the edge of the oval bounded by the given
   /// rectangle, from startAngle radians around the oval up to
   /// startAngle + sweepAngle radians around the oval, with zero
@@ -1981,7 +2005,7 @@ class Path extends NativeFieldWrapperClass2 {
   void _addArc(double left, double top, double right, double bottom,
                double startAngle, double sweepAngle) native 'Path_addArc';
 
-  /// Adds a new subpath with a sequence of line segments that connect the given
+  /// Adds a new sub-path with a sequence of line segments that connect the given
   /// points.
   ///
   /// If `close` is true, a final line segment will be added that connects the
@@ -1994,7 +2018,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addPolygon(Float32List points, bool close) native 'Path_addPolygon';
 
-  /// Adds a new subpath that consists of the straight lines and
+  /// Adds a new sub-path that consists of the straight lines and
   /// curves needed to form the rounded rectangle described by the
   /// argument.
   void addRRect(RRect rrect) {
@@ -2003,7 +2027,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addRRect(Float32List rrect) native 'Path_addRRect';
 
-  /// Adds a new subpath that consists of the given `path` offset by the given
+  /// Adds a new sub-path that consists of the given `path` offset by the given
   /// `offset`.
   ///
   /// If `matrix4` is specified, the path will be transformed by this matrix
@@ -2041,11 +2065,11 @@ class Path extends NativeFieldWrapperClass2 {
   void _extendWithPath(Path path, double dx, double dy) native 'Path_extendWithPath';
   void _extendWithPathAndMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_extendWithPathAndMatrix';
 
-  /// Closes the last subpath, as if a straight line had been drawn
-  /// from the current point to the first point of the subpath.
+  /// Closes the last sub-path, as if a straight line had been drawn
+  /// from the current point to the first point of the sub-path.
   void close() native 'Path_close';
 
-  /// Clears the [Path] object of all subpaths, returning it to the
+  /// Clears the [Path] object of all sub-paths, returning it to the
   /// same state it had when it was created. The _current point_ is
   /// reset to the origin.
   void reset() native 'Path_reset';
@@ -2064,7 +2088,7 @@ class Path extends NativeFieldWrapperClass2 {
   bool _contains(double x, double y) native 'Path_contains';
 
   /// Returns a copy of the path with all the segments of every
-  /// subpath translated by the given offset.
+  /// sub-path translated by the given offset.
   Path shift(Offset offset) {
     assert(_offsetIsValid(offset));
     return _shift(offset.dx, offset.dy);
@@ -2072,7 +2096,7 @@ class Path extends NativeFieldWrapperClass2 {
   Path _shift(double dx, double dy) native 'Path_shift';
 
   /// Returns a copy of the path with all the segments of every
-  /// subpath transformed by the given matrix.
+  /// sub-path transformed by the given matrix.
   Path transform(Float64List matrix4) {
     assert(_matrix4IsValid(matrix4));
     return _transform(matrix4);
@@ -2190,7 +2214,7 @@ class Tangent {
 /// valid until the next one is obtained.
 class PathMetrics extends collection.IterableBase<PathMetric> {
   PathMetrics._(Path path, bool forceClosed) :
-    _iterator = new PathMetricIterator._(new PathMetric._(path, forceClosed));
+    _iterator = new PathMetricIterator._(new _PathMeasure(path, forceClosed));
 
   final Iterator<PathMetric> _iterator;
 
@@ -2200,22 +2224,18 @@ class PathMetrics extends collection.IterableBase<PathMetric> {
 
 /// Tracks iteration from one segment of a path to the next for measurement.
 class PathMetricIterator implements Iterator<PathMetric> {
-  PathMetricIterator._(this._pathMetric);
+  PathMetricIterator._(this._pathMeasure) : assert(_pathMeasure != null);
 
   PathMetric _pathMetric;
-  bool _firstTime = true;
+  _PathMeasure _pathMeasure;
 
   @override
-  PathMetric get current => _firstTime ? null : _pathMetric;
+  PathMetric get current => _pathMetric;
 
   @override
   bool moveNext() {
-    // PathMetric isn't a normal iterable - it's already initialized to its
-    // first Path.  Should only call _moveNext when done with the first one.
-    if (_firstTime == true) {
-      _firstTime = false;
-      return true;
-    } else if (_pathMetric?._moveNext() == true) {
+    if (_pathMeasure._nextContour()) {
+      _pathMetric = PathMetric._(_pathMeasure);
       return true;
     }
     _pathMetric = null;
@@ -2223,23 +2243,52 @@ class PathMetricIterator implements Iterator<PathMetric> {
   }
 }
 
-/// Utilities for measuring a [Path] and extracting subpaths.
+/// Utilities for measuring a [Path] and extracting sub-paths.
 ///
 /// Iterate over the object returned by [Path.computeMetrics] to obtain
 /// [PathMetric] objects.
 ///
-/// Once created, metrics will only be valid while the iterator is at the given
-/// contour. When the next contour's [PathMetric] is obtained, this object
-/// becomes invalid.
-class PathMetric extends NativeFieldWrapperClass2 {
-  /// Create a new empty [Path] object.
-  PathMetric._(Path path, bool forceClosed) { _constructor(path, forceClosed); }
-  void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
+/// Once created, the methods on this class will only be valid while the
+/// iterator is at the contour for which they were created. It will also only be
+/// valid for the path as it was specified when [Path.computeMetrics] was called.
+/// If additional contours are added or any contours are updated, the metrics
+/// need to be recomputed.
+class PathMetric {
+  PathMetric._(this._measure)
+    : assert(_measure != null),
+      length = _measure.length(_measure.currentContourIndex),
+      isClosed = _measure.isClosed(_measure.currentContourIndex),
+      contourIndex = _measure.currentContourIndex;
 
   /// Return the total length of the current contour.
-  double get length native 'PathMeasure_getLength';
+  final double length;
 
-  /// Computes the position of hte current contour at the given offset, and the
+  /// Whether the contour is closed.
+  ///
+  /// Returns true if the contour ends with a call to [Path.close] (which may
+  /// have been implied when using [Path.addRect]) or if `forceClosed` was
+  /// specified as true in the call to [Path.computeMetrics].  Returns false
+  /// otherwise.
+  final bool isClosed;
+
+  /// The zero-based index of the contour.
+  ///
+  /// [Path] objects are made up of zero or more contours. The first contour is
+  /// created once a drawing command (e.g. [Path.lineTo]) is issued. A
+  /// [Path.moveTo] command after a drawing command may create a new contour,
+  /// although it may not if optimizations are applied that determine the move
+  /// command did not actually result in moving the pen.
+  ///
+  /// This property is only valid with reference to its original iterator and
+  /// the contours of the path at the time the path's metrics were computed. If
+  /// additional contours were added or existing contours updated, this metric
+  /// will be invalid for the current state of the path.
+  final int contourIndex;
+
+  final _PathMeasure _measure;
+
+
+  /// Computes the position of the current contour at the given offset, and the
   /// angle of the path at that point.
   ///
   /// For example, calling this method with a distance of 1.41 for a line from
@@ -2250,7 +2299,38 @@ class PathMetric extends NativeFieldWrapperClass2 {
   ///
   /// The distance is clamped to the [length] of the current contour.
   Tangent getTangentForOffset(double distance) {
-    final Float32List posTan = _getPosTan(distance);
+    return _measure.getTangentForOffset(contourIndex, distance);
+  }
+
+  /// Given a start and stop distance, return the intervening segment(s).
+  ///
+  /// `start` and `end` are pinned to legal values (0..[length])
+  /// Returns null if the segment is 0 length or `start` > `stop`.
+  /// Begin the segment with a moveTo if `startWithMoveTo` is true.
+  Path extractPath(double start, double end, {bool startWithMoveTo: true}) {
+    return _measure.extractPath(contourIndex, start, end, startWithMoveTo: startWithMoveTo);
+  }
+
+  @override
+  String toString() => '$runtimeType{length: $length, isClosed: $isClosed, contourIndex:$contourIndex}';
+}
+
+class _PathMeasure extends NativeFieldWrapperClass2 {
+  _PathMeasure(Path path, bool forceClosed) {
+    currentContourIndex = -1; // nextContour will increment this to the zero based index.
+    _constructor(path, forceClosed);
+  }
+  void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
+
+  double length(int contourIndex) {
+    assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
+    return _length(contourIndex);
+  }
+  double _length(int contourIndex) native 'PathMeasure_getLength';
+
+  Tangent getTangentForOffset(int contourIndex, double distance) {
+    assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
+    final Float32List posTan = _getPosTan(contourIndex, distance);
     // first entry == 0 indicates that Skia returned false
     if (posTan[0] == 0.0) {
       return null;
@@ -2261,34 +2341,37 @@ class PathMetric extends NativeFieldWrapperClass2 {
       );
     }
   }
-  Float32List _getPosTan(double distance) native 'PathMeasure_getPosTan';
+  Float32List _getPosTan(int contourIndex, double distance) native 'PathMeasure_getPosTan';
 
-  /// Given a start and stop distance, return the intervening segment(s).
-  ///
-  /// `start` and `end` are pinned to legal values (0..[length])
-  /// Returns null if the segment is 0 length or `start` > `stop`.
-  /// Begin the segment with a moveTo if `startWithMoveTo` is true.
-  Path extractPath(double start, double end, {bool startWithMoveTo: true}) native 'PathMeasure_getSegment';
+  Path extractPath(int contourIndex, double start, double end, {bool startWithMoveTo: true}) {
+    assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
+    return _extractPath(contourIndex, start, end, startWithMoveTo: startWithMoveTo);
+  }
+  Path _extractPath(int contourIndex, double start, double end, {bool startWithMoveTo: true}) native 'PathMeasure_getSegment';
 
-  /// Whether the contour is closed.
-  ///
-  /// Returns true if the contour ends with a call to [Path.close] (which may
-  /// have been implied when using [Path.addRect]) or if `forceClosed` was
-  /// specified as true in the call to [Path.computeMetrics].  Returns false
-  /// otherwise.
-  bool get isClosed native 'PathMeasure_isClosed';
+  bool isClosed(int contourIndex) {
+    assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
+    return _isClosed(contourIndex);
+  }
+  bool _isClosed(int contourIndex) native 'PathMeasure_isClosed';
 
   // Move to the next contour in the path.
   //
   // A path can have a next contour if [Path.moveTo] was called after drawing began.
   // Return true if one exists, or false.
   //
-  // This is not exactly congruent with a regular [Iterator.moveNext].
-  // Typically, [Iterator.moveNext] should be called before accessing the
-  // [Iterator.current]. In this case, the [PathMetric] is valid before
-  // calling `_moveNext` - `_moveNext` should be called after the first
-  // iteration is done instead of before.
-  bool _moveNext() native 'PathMeasure_nextContour';
+  // Before Skia introduced an SkPathContourMeasureIter, this didn't work like
+  // a normal iterator.  Now it does.
+  bool _nextContour() {
+    final bool next = _nativeNextContour();
+    if (next) {
+      currentContourIndex++;
+    }
+    return next;
+  }
+  bool _nativeNextContour() native 'PathMeasure_nextContour';
+
+  int currentContourIndex;
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
@@ -2386,25 +2469,84 @@ class ColorFilter {
   /// to the [Paint.blendMode], using the output of this filter as the source
   /// and the background as the destination.
   const ColorFilter.mode(Color color, BlendMode blendMode)
-    : _color = color, _blendMode = blendMode;
+      : _color = color,
+        _blendMode = blendMode,
+        _matrix = null,
+        _type = _TypeMode;
+
+  /// Construct a color filter that transforms a color by a 4x5 matrix. The
+  /// matrix is in row-major order and the translation column is specified in
+  /// unnormalized, 0...255, space.
+  const ColorFilter.matrix(List<double> matrix)
+      : _color = null,
+        _blendMode = null,
+        _matrix = matrix,
+        _type = _TypeMatrix;
+
+  /// Construct a color filter that applies the sRGB gamma curve to the RGB
+  /// channels.
+  const ColorFilter.linearToSrgbGamma()
+      : _color = null,
+        _blendMode = null,
+        _matrix = null,
+        _type = _TypeLinearToSrgbGamma;
+
+  /// Creates a color filter that applies the inverse of the sRGB gamma curve
+  /// to the RGB channels.
+  const ColorFilter.srgbToLinearGamma()
+      : _color = null,
+        _blendMode = null,
+        _matrix = null,
+        _type = _TypeSrgbToLinearGamma;
 
   final Color _color;
   final BlendMode _blendMode;
+  final List<double> _matrix;
+  final int _type;
+
+  // The type of SkColorFilter class to create for Skia.
+  // These constants must be kept in sync with ColorFilterType in paint.cc.
+  static const int _TypeNone = 0; // null
+  static const int _TypeMode = 1; // MakeModeFilter
+  static const int _TypeMatrix = 2; // MakeMatrixFilterRowMajor255
+  static const int _TypeLinearToSrgbGamma = 3; // MakeLinearToSRGBGamma
+  static const int _TypeSrgbToLinearGamma = 4; // MakeSRGBToLinearGamma
 
   @override
   bool operator ==(dynamic other) {
-    if (other is! ColorFilter)
+    if (other is! ColorFilter) {
       return false;
+    }
     final ColorFilter typedOther = other;
-    return _color == typedOther._color &&
-           _blendMode == typedOther._blendMode;
+
+    if (_type != typedOther._type) {
+      return false;
+    }
+    if (!_listEquals<double>(_matrix, typedOther._matrix)) {
+      return false;
+    }
+
+    return _color == typedOther._color && _blendMode == typedOther._blendMode;
   }
 
   @override
-  int get hashCode => hashValues(_color, _blendMode);
+  int get hashCode => hashValues(_color, _blendMode, hashList(_matrix), _type);
 
   @override
-  String toString() => 'ColorFilter($_color, $_blendMode)';
+  String toString() {
+    switch (_type) {
+      case _TypeMode:
+        return 'ColorFilter.mode($_color, $_blendMode)';
+      case _TypeMatrix:
+        return 'ColorFilter.matrix($_matrix)';
+      case _TypeLinearToSrgbGamma:
+        return 'ColorFilter.linearToSrgbGamma()';
+      case _TypeSrgbToLinearGamma:
+        return 'ColorFilter.srgbToLinearGamma()';
+      default:
+        return 'Unknown ColorFilter type. This is an error. If you\'re seeing this, please file an issue at https://github.com/flutter/flutter/issues/new.';
+    }
+  }
 }
 
 /// A filter operation to apply to a raster image.
@@ -2913,8 +3055,8 @@ class Canvas extends NativeFieldWrapperClass2 {
   /// ## Using saveLayer with clips
   ///
   /// When a rectangular clip operation (from [clipRect]) is not axis-aligned
-  /// with the raster buffer, or when the clip operation is not rectalinear (e.g.
-  /// because it is a rounded rectangle clip created by [clipRRect] or an
+  /// with the raster buffer, or when the clip operation is not rectilinear
+  /// (e.g. because it is a rounded rectangle clip created by [clipRRect] or an
   /// arbitrarily complicated path clip created by [clipPath]), the edge of the
   /// clip needs to be anti-aliased.
   ///
@@ -3266,7 +3408,7 @@ class Canvas extends NativeFieldWrapperClass2 {
 
   /// Draws the given [Path] with the given [Paint]. Whether this shape is
   /// filled or stroked (or both) is controlled by [Paint.style]. If the path is
-  /// filled, then subpaths within it are implicitly closed (see [Path.close]).
+  /// filled, then sub-paths within it are implicitly closed (see [Path.close]).
   void drawPath(Path path, Paint paint) {
     assert(path != null); // path is checked on the engine side
     assert(paint != null);
@@ -3601,7 +3743,15 @@ class Picture extends NativeFieldWrapperClass2 {
   ///
   /// Although the image is returned synchronously, the picture is actually
   /// rasterized the first time the image is drawn and then cached.
-  Image toImage(int width, int height) native 'Picture_toImage';
+  Future<Image> toImage(int width, int height) {
+    if (width <= 0 || height <= 0)
+      throw new Exception('Invalid image dimensions.');
+    return _futurize(
+      (_Callback<Image> callback) => _toImage(width, height, callback)
+    );
+  }
+
+  String _toImage(int width, int height, _Callback<Image> callback) native 'Picture_toImage';
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -3653,7 +3803,7 @@ class Shadow {
   ///
   /// The default shadow is a black shadow with zero offset and zero blur.
   /// Default shadows should be completely covered by the casting element,
-  /// and not be visble.
+  /// and not be visible.
   ///
   /// Transparency should be adjusted through the [color] alpha.
   ///
@@ -3712,9 +3862,10 @@ class Shadow {
   /// To honor this as well, the shape should be translated by [offset] before
   /// being filled using this [Paint].
   ///
-  /// This class does not provide a way to disable shadows to avoid inconsistencies
-  /// in shadow blur rendering, primarily as a method of reducing test flakiness.
-  /// [toPaint] should be overriden in subclasses to provide this functionality.
+  /// This class does not provide a way to disable shadows to avoid
+  /// inconsistencies in shadow blur rendering, primarily as a method of
+  /// reducing test flakiness. [toPaint] should be overridden in subclasses to
+  /// provide this functionality.
   Paint toPaint() {
     return Paint()
       ..color = color
@@ -3801,23 +3952,6 @@ class Shadow {
 
   @override
   int get hashCode => hashValues(color, offset, blurRadius);
-
-  /// Determines if lists [a] and [b] are deep equivalent.
-  ///
-  /// Returns true if the lists are both null, or if they are both non-null, have
-  /// the same length, and contain the same Shadows in the same order. Returns
-  /// false otherwise.
-  static bool _shadowsListEquals(List<Shadow> a, List<Shadow> b) {
-    // Compare _shadows
-    if (a == null)
-      return b == null;
-    if (b == null || a.length != b.length)
-      return false;
-    for (int index = 0; index < a.length; ++index)
-      if (a[index] != b[index])
-        return false;
-    return true;
-  }
 
   // Serialize [shadows] into ByteData. The format is a single uint_32_t at
   // the beginning indicating the number of shadows, followed by _kBytesPerShadow

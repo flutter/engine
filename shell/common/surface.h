@@ -15,7 +15,7 @@
 namespace shell {
 
 /// Represents a Frame that has been fully configured for the underlying client
-/// rendering API. A frame may only be sumitted once.
+/// rendering API. A frame may only be submitted once.
 class SurfaceFrame {
  public:
   using SubmitCallback =
@@ -34,7 +34,6 @@ class SurfaceFrame {
  private:
   bool submitted_;
   sk_sp<SkSurface> surface_;
-  std::unique_ptr<SkCanvas> xform_canvas_;
   SubmitCallback submit_callback_;
 
   bool PerformSubmit();

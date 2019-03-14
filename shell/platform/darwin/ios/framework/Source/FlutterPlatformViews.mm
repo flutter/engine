@@ -29,6 +29,8 @@ void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, Flutt
     OnDispose(call, result);
   } else if ([[call method] isEqualToString:@"acceptGesture"]) {
     OnAcceptGesture(call, result);
+  } else if ([[call method] isEqualToString:@"rejectGesture"]) {
+    OnRejectGesture(call, result);
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -125,6 +127,24 @@ void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
   result(nil);
 }
 
+void FlutterPlatformViewsController::OnRejectGesture(FlutterMethodCall* call,
+                                                     FlutterResult& result) {
+  NSDictionary<NSString*, id>* args = [call arguments];
+  int64_t viewId = [args[@"id"] longLongValue];
+
+  if (views_.count(viewId) == 0) {
+    result([FlutterError errorWithCode:@"unknown_view"
+                               message:@"trying to set gesture state for an unknown view"
+                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
+    return;
+  }
+
+  FlutterTouchInterceptingView* view = touch_interceptors_[viewId].get();
+  [view blockGesture];
+
+  result(nil);
+}
+
 void FlutterPlatformViewsController::RegisterViewFactory(
     NSObject<FlutterPlatformViewFactory>* factory,
     NSString* factoryId) {
@@ -190,7 +210,8 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
     if (gl_rendering) {
-      EnsureGLOverlayInitialized(view_id, gl_context, gr_context);
+      EnsureGLOverlayInitialized(view_id, gl_context, gr_context,
+                                 gr_context != overlays_gr_context_);
     } else {
       EnsureOverlayInitialized(view_id);
     }
@@ -200,6 +221,7 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     canvas->flush();
     did_submit &= frame->Submit();
   }
+  overlays_gr_context_ = gr_context;
   picture_recorders_.clear();
   if (composition_order_ == active_composition_order_) {
     composition_order_.clear();
@@ -245,8 +267,16 @@ void FlutterPlatformViewsController::EnsureOverlayInitialized(int64_t overlay_id
 void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
     int64_t overlay_id,
     std::shared_ptr<IOSGLContext> gl_context,
-    GrContext* gr_context) {
+    GrContext* gr_context,
+    bool update_gr_context) {
   if (overlays_.count(overlay_id) != 0) {
+    if (update_gr_context) {
+      // The overlay already exists, but the GrContext was changed so we need to recreate
+      // the rendering surface with the new GrContext.
+      IOSSurfaceGL* ios_surface_gl = (IOSSurfaceGL*)overlays_[overlay_id]->ios_surface.get();
+      std::unique_ptr<Surface> surface = ios_surface_gl->CreateSecondaryGPUSurface(gr_context);
+      overlays_[overlay_id]->surface = std::move(surface);
+    }
     return;
   }
   FlutterOverlayView* overlay_view = [[FlutterOverlayView alloc] init];
@@ -269,6 +299,9 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 // invoking an acceptGesture method on the platform_views channel). And this is how we allow the
 // Flutter framework to delay or prevent the embedded view from getting a touch sequence.
 @interface DelayingGestureRecognizer : UIGestureRecognizer <UIGestureRecognizerDelegate>
+- (instancetype)initWithTarget:(id)target
+                        action:(SEL)action
+          forwardingRecognizer:(UIGestureRecognizer*)forwardingRecognizer;
 @end
 
 // While the DelayingGestureRecognizer is preventing touches from hitting the responder chain
@@ -301,7 +334,10 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
         [[[ForwardingGestureRecognizer alloc] initWithTarget:self
                                                  flutterView:flutterView] autorelease];
 
-    _delayingRecognizer.reset([[DelayingGestureRecognizer alloc] initWithTarget:self action:nil]);
+    _delayingRecognizer.reset([[DelayingGestureRecognizer alloc]
+              initWithTarget:self
+                      action:nil
+        forwardingRecognizer:forwardingRecognizer]);
 
     [self addGestureRecognizer:_delayingRecognizer.get()];
     [self addGestureRecognizer:forwardingRecognizer];
@@ -312,21 +348,49 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 - (void)releaseGesture {
   _delayingRecognizer.get().state = UIGestureRecognizerStateFailed;
 }
+
+- (void)blockGesture {
+  _delayingRecognizer.get().state = UIGestureRecognizerStateEnded;
+}
+
+// We want the intercepting view to consume the touches and not pass the touches up to the parent
+// view. Make the touch event method not call super will not pass the touches up to the parent view.
+// Hence we overide the touch event methods and do nothing.
+- (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+}
+
+- (void)touchesMoved:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+}
+
+- (void)touchesCancelled:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+}
+
+- (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
+}
+
 @end
 
-@implementation DelayingGestureRecognizer
-- (instancetype)initWithTarget:(id)target action:(SEL)action {
+@implementation DelayingGestureRecognizer {
+  fml::scoped_nsobject<UIGestureRecognizer> _forwardingRecognizer;
+}
+
+- (instancetype)initWithTarget:(id)target
+                        action:(SEL)action
+          forwardingRecognizer:(UIGestureRecognizer*)forwardingRecognizer {
   self = [super initWithTarget:target action:action];
   if (self) {
     self.delaysTouchesBegan = YES;
     self.delegate = self;
+    _forwardingRecognizer.reset([forwardingRecognizer retain]);
   }
   return self;
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
     shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer*)otherGestureRecognizer {
-  return otherGestureRecognizer != self;
+  // The forwarding gesture recognizer should always get all touch events, so it should not be
+  // required to fail by any other gesture recognizer.
+  return otherGestureRecognizer != _forwardingRecognizer.get() && otherGestureRecognizer != self;
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
@@ -334,21 +398,8 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   return otherGestureRecognizer == self;
 }
 
-- (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  // The gesture has ended, and the delaying gesture recognizer was not failed, we recognize
-  // the gesture to prevent the touches from being dispatched to the embedded view.
-  //
-  // This doesn't work well with gestures that are recognized by the Flutter framework after
-  // all pointers are up.
-  //
-  // TODO(amirh): explore if we can instead set this to recognized when the next touch sequence
-  //  begins, or we can use a framework signal for restarting the recognizers (e.g when the
-  //  gesture arena is resolved).
-  self.state = UIGestureRecognizerStateRecognized;
-}
-
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  self.state = UIGestureRecognizerStateRecognized;
+  self.state = UIGestureRecognizerStateFailed;
 }
 @end
 
@@ -359,6 +410,8 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   // So this is safe as when FlutterView is deallocated the reference to ForwardingGestureRecognizer
   // will go away.
   UIView* _flutterView;
+  // Counting the pointers that has started in one touch sequence.
+  NSInteger _currentTouchPointersCount;
 }
 
 - (instancetype)initWithTarget:(id)target flutterView:(UIView*)flutterView {
@@ -366,12 +419,14 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
   if (self) {
     self.delegate = self;
     _flutterView = flutterView;
+    _currentTouchPointersCount = 0;
   }
   return self;
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
   [_flutterView touchesBegan:touches withEvent:event];
+  _currentTouchPointersCount += touches.count;
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
@@ -380,12 +435,20 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
   [_flutterView touchesEnded:touches withEvent:event];
-  self.state = UIGestureRecognizerStateRecognized;
+  _currentTouchPointersCount -= touches.count;
+  // Touches in one touch sequence are sent to the touchesEnded method separately if different
+  // fingers stop touching the screen at different time. So one touchesEnded method triggering does
+  // not necessarially mean the touch sequence has ended. We Only set the state to
+  // UIGestureRecognizerStateFailed when all the touches in the current touch sequence is ended.
+  if (_currentTouchPointersCount == 0) {
+    self.state = UIGestureRecognizerStateFailed;
+  }
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
   [_flutterView touchesCancelled:touches withEvent:event];
-  self.state = UIGestureRecognizerStateRecognized;
+  _currentTouchPointersCount = 0;
+  self.state = UIGestureRecognizerStateFailed;
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer

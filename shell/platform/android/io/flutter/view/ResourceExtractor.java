@@ -4,25 +4,27 @@
 
 package io.flutter.view;
 
+import static java.util.Arrays.asList;
+
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Log;
+import io.flutter.util.BSDiff;
 import io.flutter.util.PathUtils;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Scanner;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
-import java.util.zip.CRC32;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 /**
@@ -31,298 +33,83 @@ import java.util.zip.ZipFile;
 class ResourceExtractor {
     private static final String TAG = "ResourceExtractor";
     private static final String TIMESTAMP_PREFIX = "res_timestamp-";
+    private static final String[] SUPPORTED_ABIS = getSupportedAbis();
+
+    @SuppressWarnings("deprecation")
+    static long getVersionCode(PackageInfo packageInfo) {
+        // Linter needs P (28) hardcoded or else it will fail these lines.
+        if (Build.VERSION.SDK_INT >= 28) {
+            return packageInfo.getLongVersionCode();
+        } else {
+            return packageInfo.versionCode;
+        }
+    }
 
     private class ExtractTask extends AsyncTask<Void, Void, Void> {
-        private static final int BUFFER_SIZE = 16 * 1024;
-
         ExtractTask() { }
-
-        private void extractResources() {
-            final File dataDir = new File(PathUtils.getDataDirectory(mContext));
-
-            JSONObject updateManifest = readUpdateManifest();
-            if (!validateUpdateManifest(updateManifest)) {
-                updateManifest = null;
-            }
-
-            final String timestamp = checkTimestamp(dataDir, updateManifest);
-            if (timestamp == null) {
-                return;
-            }
-
-            deleteFiles();
-
-            if (updateManifest != null) {
-                if (!extractUpdate(dataDir)) {
-                    return;
-                }
-            }
-
-            if (!extractAPK(dataDir)) {
-                return;
-            }
-
-            if (timestamp != null) {
-                try {
-                    new File(dataDir, timestamp).createNewFile();
-                } catch (IOException e) {
-                    Log.w(TAG, "Failed to write resource timestamp");
-                }
-            }
-        }
-
-        /// Returns true if successfully unpacked APK resources,
-        /// otherwise deletes all resources and returns false.
-        private boolean extractAPK(File dataDir) {
-            final AssetManager manager = mContext.getResources().getAssets();
-
-            byte[] buffer = null;
-            for (String asset : mResources) {
-                try {
-                    final File output = new File(dataDir, asset);
-                    if (output.exists()) {
-                        continue;
-                    }
-                    if (output.getParentFile() != null) {
-                        output.getParentFile().mkdirs();
-                    }
-
-                    try (InputStream is = manager.open(asset)) {
-                        try (OutputStream os = new FileOutputStream(output)) {
-                            if (buffer == null) {
-                                buffer = new byte[BUFFER_SIZE];
-                            }
-
-                            int count = 0;
-                            while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
-                                os.write(buffer, 0, count);
-                            }
-
-                            os.flush();
-                            Log.i(TAG, "Extracted baseline resource " + asset);
-                        }
-                    }
-
-                } catch (FileNotFoundException fnfe) {
-                    continue;
-
-                } catch (IOException ioe) {
-                    Log.w(TAG, "Exception unpacking resources: " + ioe.getMessage());
-                    deleteFiles();
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// Returns true if successfully unpacked update resources or if there is no update,
-        /// otherwise deletes all resources and returns false.
-        private boolean extractUpdate(File dataDir) {
-            if (FlutterMain.getUpdateInstallationPath() == null) {
-                return true;
-            }
-
-            final File updateFile = new File(FlutterMain.getUpdateInstallationPath());
-            if (!updateFile.exists()) {
-                return true;
-            }
-
-            ZipFile zipFile;
-            try {
-                zipFile = new ZipFile(updateFile);
-
-            } catch (ZipException e) {
-                Log.w(TAG, "Exception unpacking resources: " + e.getMessage());
-                deleteFiles();
-                return false;
-
-            } catch (IOException e) {
-                Log.w(TAG, "Exception unpacking resources: " + e.getMessage());
-                deleteFiles();
-                return false;
-            }
-
-            byte[] buffer = null;
-            for (String asset : mResources) {
-                ZipEntry entry = zipFile.getEntry(asset);
-                if (entry == null) {
-                    continue;
-                }
-
-                final File output = new File(dataDir, asset);
-                if (output.exists()) {
-                    continue;
-                }
-                if (output.getParentFile() != null) {
-                    output.getParentFile().mkdirs();
-                }
-
-                try (InputStream is = zipFile.getInputStream(entry)) {
-                    try (OutputStream os = new FileOutputStream(output)) {
-                        if (buffer == null) {
-                            buffer = new byte[BUFFER_SIZE];
-                        }
-
-                        int count = 0;
-                        while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
-                            os.write(buffer, 0, count);
-                        }
-
-                        os.flush();
-                        Log.i(TAG, "Extracted override resource " + asset);
-                    }
-
-                } catch (FileNotFoundException fnfe) {
-                    continue;
-
-                } catch (IOException ioe) {
-                    Log.w(TAG, "Exception unpacking resources: " + ioe.getMessage());
-                    deleteFiles();
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        // Returns null if extracted resources are found and match the current APK version
-        // and update version if any, otherwise returns the current APK and update version.
-        private String checkTimestamp(File dataDir, JSONObject updateManifest) {
-
-            PackageManager packageManager = mContext.getPackageManager();
-            PackageInfo packageInfo = null;
-
-            try {
-                packageInfo = packageManager.getPackageInfo(mContext.getPackageName(), 0);
-            } catch (PackageManager.NameNotFoundException e) {
-                return TIMESTAMP_PREFIX;
-            }
-
-            if (packageInfo == null) {
-                return TIMESTAMP_PREFIX;
-            }
-
-            String expectedTimestamp =
-                    TIMESTAMP_PREFIX + packageInfo.versionCode + "-" + packageInfo.lastUpdateTime;
-
-            if (updateManifest != null) {
-                String baselineVersion = updateManifest.optString("baselineVersion", null);
-                if (baselineVersion == null) {
-                    Log.w(TAG, "Invalid update manifest: baselineVersion");
-                }
-
-                String updateVersion = updateManifest.optString("updateVersion", null);
-                if (updateVersion == null) {
-                    Log.w(TAG, "Invalid update manifest: updateVersion");
-                }
-
-                if (baselineVersion != null && updateVersion != null) {
-                    if (!baselineVersion.equals(Integer.toString(packageInfo.versionCode))) {
-                        Log.w(TAG, "Outdated update file for " + packageInfo.versionCode);
-                    } else {
-                        final File updateFile = new File(FlutterMain.getUpdateInstallationPath());
-                        expectedTimestamp += "-" + updateVersion + "-" + updateFile.lastModified();
-                    }
-                }
-            }
-
-            final String[] existingTimestamps = getExistingTimestamps(dataDir);
-
-            if (existingTimestamps == null) {
-                Log.i(TAG, "No extracted resources found");
-                return expectedTimestamp;
-            }
-
-            if (existingTimestamps.length == 1) {
-                Log.i(TAG, "Found extracted resources " + existingTimestamps[0]);
-            }
-
-            if (existingTimestamps.length != 1
-                    || !expectedTimestamp.equals(existingTimestamps[0])) {
-                Log.i(TAG, "Resource version mismatch " + expectedTimestamp);
-                return expectedTimestamp;
-            }
-
-            return null;
-        }
-
-        /// Returns true if the downloaded update file was indeed built for this APK.
-        private boolean validateUpdateManifest(JSONObject updateManifest) {
-            if (updateManifest == null) {
-                return false;
-            }
-
-            String baselineChecksum = updateManifest.optString("baselineChecksum", null);
-            if (baselineChecksum == null) {
-                Log.w(TAG, "Invalid update manifest: baselineChecksum");
-                return false;
-            }
-
-            final AssetManager manager = mContext.getResources().getAssets();
-            try (InputStream is = manager.open("flutter_assets/isolate_snapshot_data")) {
-                CRC32 checksum = new CRC32();
-
-                int count = 0;
-                byte[] buffer = new byte[BUFFER_SIZE];
-                while ((count = is.read(buffer, 0, BUFFER_SIZE)) != -1) {
-                    checksum.update(buffer, 0, count);
-                }
-
-                if (!baselineChecksum.equals(String.valueOf(checksum.getValue()))) {
-                    Log.w(TAG, "Mismatched update file for APK");
-                    return false;
-                }
-
-                return true;
-
-            } catch (IOException e) {
-                Log.w(TAG, "Could not read APK: " + e);
-                return false;
-            }
-        }
-
-        /// Returns null if no update manifest is found.
-        private JSONObject readUpdateManifest() {
-            if (FlutterMain.getUpdateInstallationPath() == null) {
-                return null;
-            }
-
-            File updateFile = new File(FlutterMain.getUpdateInstallationPath());
-            if (!updateFile.exists()) {
-                return null;
-            }
-
-            try {
-                ZipFile zipFile = new ZipFile(updateFile);
-                ZipEntry entry = zipFile.getEntry("manifest.json");
-                if (entry == null) {
-                    Log.w(TAG, "Invalid update file: " + updateFile);
-                    return null;
-                }
-
-                // Read and parse the entire JSON file as single operation.
-                Scanner scanner = new Scanner(zipFile.getInputStream(entry));
-                return new JSONObject(scanner.useDelimiter("\\A").next());
-
-            } catch (ZipException e) {
-                Log.w(TAG, "Invalid update file: " + e);
-                return null;
-
-            } catch (IOException e) {
-                Log.w(TAG, "Invalid update file: " + e);
-                return null;
-
-            } catch (JSONException e) {
-                Log.w(TAG, "Invalid update file: " + e);
-                return null;
-            }
-        }
 
         @Override
         protected Void doInBackground(Void... unused) {
-            extractResources();
-            return null;
+            final File dataDir = new File(PathUtils.getDataDirectory(mContext));
+
+            ResourceUpdater resourceUpdater = FlutterMain.getResourceUpdater();
+            if (resourceUpdater != null) {
+                // Protect patch file from being overwritten by downloader while
+                // it's being extracted since downloading happens asynchronously.
+                resourceUpdater.getInstallationLock().lock();
+            }
+
+            try {
+                if (resourceUpdater != null) {
+                    File updateFile = resourceUpdater.getDownloadedPatch();
+                    File activeFile = resourceUpdater.getInstalledPatch();
+
+                    if (updateFile.exists()) {
+                        JSONObject manifest = resourceUpdater.readManifest(updateFile);
+                        if (resourceUpdater.validateManifest(manifest)) {
+                            // Graduate patch file as active for asset manager.
+                            if (activeFile.exists() && !activeFile.delete()) {
+                                Log.w(TAG, "Could not delete file " + activeFile);
+                                return null;
+                            }
+                            if (!updateFile.renameTo(activeFile)) {
+                                Log.w(TAG, "Could not create file " + activeFile);
+                                return null;
+                            }
+                        }
+                    }
+                }
+
+                final String timestamp = checkTimestamp(dataDir);
+                if (timestamp == null) {
+                    return null;
+                }
+
+                deleteFiles();
+
+                if (!extractUpdate(dataDir)) {
+                    return null;
+                }
+
+                if (!extractAPK(dataDir)) {
+                    return null;
+                }
+
+                if (timestamp != null) {
+                    try {
+                        new File(dataDir, timestamp).createNewFile();
+                    } catch (IOException e) {
+                        Log.w(TAG, "Failed to write resource timestamp");
+                    }
+                }
+
+                return null;
+
+            } finally {
+              if (resourceUpdater != null) {
+                  resourceUpdater.getInstallationLock().unlock();
+              }
+          }
         }
     }
 
@@ -332,7 +119,7 @@ class ResourceExtractor {
 
     ResourceExtractor(Context context) {
         mContext = context;
-        mResources = new HashSet<String>();
+        mResources = new HashSet<>();
     }
 
     ResourceExtractor addResource(String resource) {
@@ -353,15 +140,13 @@ class ResourceExtractor {
     }
 
     void waitForCompletion() {
-        assert mExtractTask != null;
+        if (mExtractTask == null) {
+            return;
+        }
 
         try {
             mExtractTask.get();
-        } catch (CancellationException e) {
-            deleteFiles();
-        } catch (ExecutionException e2) {
-            deleteFiles();
-        } catch (InterruptedException e3) {
+        } catch (CancellationException | ExecutionException | InterruptedException e) {
             deleteFiles();
         }
     }
@@ -389,6 +174,249 @@ class ResourceExtractor {
         }
         for (String timestamp : existingTimestamps) {
             new File(dataDir, timestamp).delete();
+        }
+    }
+
+    /// Returns true if successfully unpacked APK resources,
+    /// otherwise deletes all resources and returns false.
+    private boolean extractAPK(File dataDir) {
+        final AssetManager manager = mContext.getResources().getAssets();
+
+        for (String asset : mResources) {
+            try {
+                final String resource = "assets/" + asset;
+                final File output = new File(dataDir, asset);
+                if (output.exists()) {
+                    continue;
+                }
+                if (output.getParentFile() != null) {
+                    output.getParentFile().mkdirs();
+                }
+
+                try (InputStream is = manager.open(asset);
+                     OutputStream os = new FileOutputStream(output)) {
+                    copy(is, os);
+                }
+
+                Log.i(TAG, "Extracted baseline resource " + resource);
+
+            } catch (FileNotFoundException fnfe) {
+                continue;
+
+            } catch (IOException ioe) {
+                Log.w(TAG, "Exception unpacking resources: " + ioe.getMessage());
+                deleteFiles();
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// Returns true if successfully unpacked update resources or if there is no update,
+    /// otherwise deletes all resources and returns false.
+    private boolean extractUpdate(File dataDir) {
+        final AssetManager manager = mContext.getResources().getAssets();
+
+        ResourceUpdater resourceUpdater = FlutterMain.getResourceUpdater();
+        if (resourceUpdater == null) {
+            return true;
+        }
+
+        File updateFile = resourceUpdater.getInstalledPatch();
+        if (!updateFile.exists()) {
+            return true;
+        }
+
+        JSONObject manifest = resourceUpdater.readManifest(updateFile);
+        if (!resourceUpdater.validateManifest(manifest)) {
+            // Obsolete patch file, nothing to install.
+            return true;
+        }
+
+        ZipFile zipFile;
+        try {
+            zipFile = new ZipFile(updateFile);
+
+        } catch (IOException e) {
+            Log.w(TAG, "Exception unpacking resources: " + e.getMessage());
+            deleteFiles();
+            return false;
+        }
+
+        for (String asset : mResources) {
+            String resource = null;
+            ZipEntry entry = null;
+            if (asset.endsWith(".so")) {
+                // Replicate library lookup logic.
+                for (String abi : SUPPORTED_ABIS) {
+                    resource = "lib/" + abi + "/" + asset;
+                    entry = zipFile.getEntry(resource);
+                    if (entry == null) {
+                        entry = zipFile.getEntry(resource + ".bzdiff40");
+                        if (entry == null) {
+                            continue;
+                        }
+                    }
+
+                    // Stop after the first match.
+                    break;
+                }
+            }
+
+            if (entry == null) {
+                resource = "assets/" + asset;
+                entry = zipFile.getEntry(resource);
+                if (entry == null) {
+                    entry = zipFile.getEntry(resource + ".bzdiff40");
+                    if (entry == null) {
+                        continue;
+                    }
+                }
+            }
+
+            final File output = new File(dataDir, asset);
+            if (output.exists()) {
+                continue;
+            }
+            if (output.getParentFile() != null) {
+                output.getParentFile().mkdirs();
+            }
+
+            try {
+                if (entry.getName().endsWith(".bzdiff40")) {
+                    ByteArrayOutputStream diff = new ByteArrayOutputStream();
+                    try (InputStream is = zipFile.getInputStream(entry)) {
+                        copy(is, diff);
+                    }
+
+                    ByteArrayOutputStream orig = new ByteArrayOutputStream();
+                    if (asset.endsWith(".so")) {
+                        ZipFile apkFile = new ZipFile(getAPKPath());
+                        if (apkFile == null) {
+                            throw new IOException("Could not find APK");
+                        }
+
+                        ZipEntry origEntry = apkFile.getEntry(resource);
+                        if (origEntry == null) {
+                            throw new IOException("Could not find APK resource " + resource);
+                        }
+
+                        try (InputStream is = apkFile.getInputStream(origEntry)) {
+                            copy(is, orig);
+                        }
+
+                    } else {
+                        try (InputStream is = manager.open(asset)) {
+                            copy(is, orig);
+                        } catch (FileNotFoundException e) {
+                            throw new IOException("Could not find APK resource " + resource);
+                        }
+                    }
+
+                    try (OutputStream os = new FileOutputStream(output)) {
+                        os.write(BSDiff.bspatch(orig.toByteArray(), diff.toByteArray()));
+                    }
+
+                } else {
+                    try (InputStream is = zipFile.getInputStream(entry);
+                         OutputStream os = new FileOutputStream(output)) {
+                        copy(is, os);
+                    }
+                }
+
+                Log.i(TAG, "Extracted override resource " + entry.getName());
+
+            } catch (FileNotFoundException fnfe) {
+                continue;
+
+            } catch (IOException ioe) {
+                Log.w(TAG, "Exception unpacking resources: " + ioe.getMessage());
+                deleteFiles();
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Returns null if extracted resources are found and match the current APK version
+    // and update version if any, otherwise returns the current APK and update version.
+    private String checkTimestamp(File dataDir) {
+        PackageManager packageManager = mContext.getPackageManager();
+        PackageInfo packageInfo = null;
+
+        try {
+            packageInfo = packageManager.getPackageInfo(mContext.getPackageName(), 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            return TIMESTAMP_PREFIX;
+        }
+
+        if (packageInfo == null) {
+            return TIMESTAMP_PREFIX;
+        }
+
+        String expectedTimestamp =
+                TIMESTAMP_PREFIX + getVersionCode(packageInfo) + "-" + packageInfo.lastUpdateTime;
+
+        ResourceUpdater resourceUpdater = FlutterMain.getResourceUpdater();
+        if (resourceUpdater != null) {
+            File patchFile = resourceUpdater.getInstalledPatch();
+            JSONObject manifest = resourceUpdater.readManifest(patchFile);
+            if (resourceUpdater.validateManifest(manifest)) {
+                String patchNumber = manifest.optString("patchNumber", null);
+                if (patchNumber != null) {
+                    expectedTimestamp += "-" + patchNumber + "-" + patchFile.lastModified();
+                } else {
+                    expectedTimestamp += "-" + patchFile.lastModified();
+                }
+            }
+        }
+
+        final String[] existingTimestamps = getExistingTimestamps(dataDir);
+
+        if (existingTimestamps == null) {
+            Log.i(TAG, "No extracted resources found");
+            return expectedTimestamp;
+        }
+
+        if (existingTimestamps.length == 1) {
+            Log.i(TAG, "Found extracted resources " + existingTimestamps[0]);
+        }
+
+        if (existingTimestamps.length != 1
+                || !expectedTimestamp.equals(existingTimestamps[0])) {
+            Log.i(TAG, "Resource version mismatch " + expectedTimestamp);
+            return expectedTimestamp;
+        }
+
+        return null;
+    }
+
+    private static void copy(InputStream in, OutputStream out) throws IOException {
+        byte[] buf = new byte[16 * 1024];
+        for (int i; (i = in.read(buf)) >= 0; ) {
+            out.write(buf, 0, i);
+        }
+    }
+
+    private String getAPKPath() {
+        try {
+            return mContext.getPackageManager().getApplicationInfo(
+                mContext.getPackageName(), 0).publicSourceDir;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static String[] getSupportedAbis() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            return Build.SUPPORTED_ABIS;
+        } else {
+            ArrayList<String> cpuAbis = new ArrayList<String>(asList(Build.CPU_ABI, Build.CPU_ABI2));
+            cpuAbis.removeAll(asList(null, ""));
+            return cpuAbis.toArray(new String[0]);
         }
     }
 }

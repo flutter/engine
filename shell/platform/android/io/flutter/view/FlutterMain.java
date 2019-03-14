@@ -5,8 +5,12 @@
 package io.flutter.view;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -56,12 +60,9 @@ public class FlutterMain {
     private static final String DEFAULT_AOT_ISOLATE_SNAPSHOT_DATA = "isolate_snapshot_data";
     private static final String DEFAULT_AOT_ISOLATE_SNAPSHOT_INSTR = "isolate_snapshot_instr";
     private static final String DEFAULT_FLX = "app.flx";
+    private static final String DEFAULT_LIBRARY = "libflutter.so";
     private static final String DEFAULT_KERNEL_BLOB = "kernel_blob.bin";
     private static final String DEFAULT_FLUTTER_ASSETS_DIR = "flutter_assets";
-
-    // Assets that are shared among all Flutter apps within an APK.
-    private static final String SHARED_ASSET_DIR = "flutter_shared";
-    private static final String SHARED_ASSET_ICU_DATA = "icudtl.dat";
 
     private static String fromFlutterAssets(String filePath) {
         return sFlutterAssetsDir + File.separator + filePath;
@@ -82,7 +83,6 @@ public class FlutterMain {
     private static boolean sIsPrecompiledAsBlobs;
     private static boolean sIsPrecompiledAsSharedLibrary;
     private static Settings sSettings;
-    private static String sIcuDataPath;
 
     private static final class ImmutableSetBuilder<T> {
         static <T> ImmutableSetBuilder<T> newInstance() {
@@ -155,7 +155,18 @@ public class FlutterMain {
         initConfig(applicationContext);
         initAot(applicationContext);
         initResources(applicationContext);
-        System.loadLibrary("flutter");
+
+        if (sResourceUpdater == null) {
+            System.loadLibrary("flutter");
+        } else {
+            sResourceExtractor.waitForCompletion();
+            File lib = new File(PathUtils.getDataDirectory(applicationContext), DEFAULT_LIBRARY);
+            if (lib.exists()) {
+                System.load(lib.getAbsolutePath());
+            } else {
+                System.loadLibrary("flutter");
+            }
+        }
 
         // We record the initialization time using SystemClock because at the start of the
         // initialization we have not yet loaded the native library to call into dart_tools_api.h.
@@ -185,7 +196,12 @@ public class FlutterMain {
             sResourceExtractor.waitForCompletion();
 
             List<String> shellArgs = new ArrayList<>();
-            shellArgs.add("--icu-data-file-path=" + sIcuDataPath);
+
+            shellArgs.add("--icu-symbol-prefix=_binary_icudtl_dat");
+            ApplicationInfo applicationInfo = applicationContext.getPackageManager().getApplicationInfo(
+                applicationContext.getPackageName(), PackageManager.GET_META_DATA);
+            shellArgs.add("--icu-native-lib-path=" + applicationInfo.nativeLibraryDir + File.separator + DEFAULT_LIBRARY);
+
             if (args != null) {
                 Collections.addAll(shellArgs, args);
             }
@@ -264,17 +280,22 @@ public class FlutterMain {
             Log.e(TAG, "Unable to read application info", e);
         }
 
-        if (metaData != null && metaData.getBoolean("DynamicUpdates")) {
+        if (metaData != null && metaData.getBoolean("DynamicPatching")) {
             sResourceUpdater = new ResourceUpdater(context);
-            sResourceUpdater.startUpdateDownloadOnce();
-            sResourceUpdater.waitForDownloadCompletion();
+            // Also checking for ON_RESUME here since it's more efficient than waiting for actual
+            // onResume. Even though actual onResume is imminent when the app has just restarted,
+            // it's better to start downloading now, in parallel with the rest of initialization,
+            // and avoid a second application restart a bit later when actual onResume happens.
+            if (sResourceUpdater.getDownloadMode() == ResourceUpdater.DownloadMode.ON_RESTART ||
+                sResourceUpdater.getDownloadMode() == ResourceUpdater.DownloadMode.ON_RESUME) {
+                sResourceUpdater.startUpdateDownloadOnce();
+                if (sResourceUpdater.getInstallMode() == ResourceUpdater.InstallMode.IMMEDIATE) {
+                    sResourceUpdater.waitForDownloadCompletion();
+                }
+            }
         }
 
         sResourceExtractor = new ResourceExtractor(context);
-
-        String icuAssetPath = SHARED_ASSET_DIR + File.separator + SHARED_ASSET_ICU_DATA;
-        sResourceExtractor.addResource(icuAssetPath);
-        sIcuDataPath = PathUtils.getDataDirectory(applicationContext) + File.separator + icuAssetPath;
 
         sResourceExtractor
             .addResource(fromFlutterAssets(sFlx))
@@ -283,9 +304,11 @@ public class FlutterMain {
             .addResource(fromFlutterAssets(sAotIsolateSnapshotData))
             .addResource(fromFlutterAssets(sAotIsolateSnapshotInstr))
             .addResource(fromFlutterAssets(DEFAULT_KERNEL_BLOB));
+
         if (sIsPrecompiledAsSharedLibrary) {
           sResourceExtractor
             .addResource(sAotSharedLibraryPath);
+
         } else {
           sResourceExtractor
             .addResource(sAotVmSnapshotData)
@@ -293,7 +316,21 @@ public class FlutterMain {
             .addResource(sAotIsolateSnapshotData)
             .addResource(sAotIsolateSnapshotInstr);
         }
+
+        if (sResourceUpdater != null) {
+          sResourceExtractor
+            .addResource(DEFAULT_LIBRARY);
+        }
+
         sResourceExtractor.start();
+    }
+
+    public static void onResume(Context context) {
+        if (sResourceUpdater != null) {
+            if (sResourceUpdater.getDownloadMode() == ResourceUpdater.DownloadMode.ON_RESUME) {
+                sResourceUpdater.startUpdateDownloadOnce();
+            }
+        }
     }
 
     /**
@@ -337,17 +374,22 @@ public class FlutterMain {
         return appBundle.exists() ? appBundle.getPath() : null;
     }
 
-    public static String getUpdateInstallationPath() {
-        return sResourceUpdater == null ? null : sResourceUpdater.getUpdateInstallationPath();
+    /**
+     * Returns the main internal interface for the dynamic patching subsystem.
+     *
+     * If this is null, it means that dynamic patching is disabled in this app.
+     */
+    public static ResourceUpdater getResourceUpdater() {
+        return sResourceUpdater;
     }
 
     /**
      * Returns the file name for the given asset.
      * The returned file name can be used to access the asset in the APK
-     * through the {@link AssetManager} API.
+     * through the {@link android.content.res.AssetManager} API.
      *
      * @param asset the name of the asset. The name can be hierarchical
-     * @return      the filename to be used with {@link AssetManager}
+     * @return      the filename to be used with {@link android.content.res.AssetManager}
      */
     public static String getLookupKeyForAsset(String asset) {
         return fromFlutterAssets(asset);
@@ -356,11 +398,11 @@ public class FlutterMain {
     /**
      * Returns the file name for the given asset which originates from the
      * specified packageName. The returned file name can be used to access
-     * the asset in the APK through the {@link AssetManager} API.
+     * the asset in the APK through the {@link android.content.res.AssetManager} API.
      *
      * @param asset       the name of the asset. The name can be hierarchical
      * @param packageName the name of the package from which the asset originates
-     * @return            the file name to be used with {@link AssetManager}
+     * @return            the file name to be used with {@link android.content.res.AssetManager}
      */
     public static String getLookupKeyForAsset(String asset, String packageName) {
         return getLookupKeyForAsset(

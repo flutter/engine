@@ -6,24 +6,31 @@
 
 #if defined(OS_FUCHSIA)
 
-#include "lib/ui/scenic/fidl_helpers.h"  // nogncheck
+#include "lib/ui/scenic/cpp/commands.h"
 
 #endif  // defined(OS_FUCHSIA)
 
 namespace flow {
 
 ClipPathLayer::ClipPathLayer(Clip clip_behavior)
-    : clip_behavior_(clip_behavior) {}
+    : clip_behavior_(clip_behavior) {
+  FML_DCHECK(clip_behavior != Clip::none);
+}
 
 ClipPathLayer::~ClipPathLayer() = default;
 
 void ClipPathLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, matrix, &child_paint_bounds);
+  SkRect previous_cull_rect = context->cull_rect;
+  SkRect clip_path_bounds = clip_path_.getBounds();
+  if (context->cull_rect.intersect(clip_path_bounds)) {
+    SkRect child_paint_bounds = SkRect::MakeEmpty();
+    PrerollChildren(context, matrix, &child_paint_bounds);
 
-  if (child_paint_bounds.intersect(clip_path_.getBounds())) {
-    set_paint_bounds(child_paint_bounds);
+    if (child_paint_bounds.intersect(clip_path_bounds)) {
+      set_paint_bounds(child_paint_bounds);
+    }
   }
+  context->cull_rect = previous_cull_rect;
 }
 
 #if defined(OS_FUCHSIA)

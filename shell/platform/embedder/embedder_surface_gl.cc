@@ -80,9 +80,22 @@ std::unique_ptr<Surface> EmbedderSurfaceGL::CreateGPUSurface() {
 sk_sp<GrContext> EmbedderSurfaceGL::CreateResourceContext() const {
   auto callback = gl_dispatch_table_.gl_make_resource_current_callback;
   if (callback && callback()) {
-    return IOManager::CreateCompatibleResourceLoadingContext(
-        GrBackend::kOpenGL_GrBackend);
+    if (auto context = IOManager::CreateCompatibleResourceLoadingContext(
+            GrBackend::kOpenGL_GrBackend, GetGLInterface())) {
+      return context;
+    } else {
+      FML_LOG(ERROR)
+          << "Internal error: Resource context available but could not create "
+             "a compatible Skia context.";
+      return nullptr;
+    }
   }
+
+  // The callback was not available or failed.
+  FML_LOG(ERROR)
+      << "Could not create a resource context for async texture uploads. "
+         "Expect degraded performance. Set a valid make_resource_current "
+         "callback on FlutterOpenGLRendererConfig.";
   return nullptr;
 }
 

@@ -2,9 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("$flutter_root/testing/testing.gni")
+import("$flutter_root/common/config.gni")
 import("$flutter_root/shell/gpu/gpu.gni")
 import("$flutter_root/shell/platform/embedder/embedder.gni")
+import("$flutter_root/testing/testing.gni")
 
 shell_gpu_configuration("embedder_gpu_configuration") {
   enable_software = true
@@ -18,6 +19,8 @@ source_set("embedder") {
     "embedder.h",
     "embedder_engine.cc",
     "embedder_engine.h",
+    "embedder_external_texture_gl.cc",
+    "embedder_external_texture_gl.h",
     "embedder_include.c",
     "embedder_surface.cc",
     "embedder_surface.h",
@@ -27,20 +30,30 @@ source_set("embedder") {
     "embedder_surface_software.h",
     "platform_view_embedder.cc",
     "platform_view_embedder.h",
+    "vsync_waiter_embedder.cc",
+    "vsync_waiter_embedder.h",
   ]
 
   deps = [
     ":embedder_gpu_configuration",
     "$flutter_root/assets",
     "$flutter_root/common",
+    "$flutter_root/flow",
     "$flutter_root/fml",
-    "$flutter_root/lib/snapshot",
     "$flutter_root/shell/common",
-    "//third_party/dart/runtime:libdart_jit",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
     "//third_party/tonic",
   ]
+
+  if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release") {
+    deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
+  } else {
+    deps += [
+      "$flutter_root/lib/snapshot",
+      "//third_party/dart/runtime:libdart_jit",
+    ]
+  }
 
   public_configs = [ "$flutter_root:config" ]
 }
@@ -62,6 +75,34 @@ executable("embedder_unittests") {
     ":embedder",
     ":fixtures",
     "$flutter_root/testing",
+  ]
+
+  if (is_linux) {
+    ldflags = [ "-rdynamic" ]
+  }
+}
+
+test_fixtures("fixtures_a11y") {
+  fixtures = [ "fixtures/a11y_main.dart" ]
+}
+
+executable("embedder_a11y_unittests") {
+  testonly = true
+
+  include_dirs = [ "." ]
+
+  sources = [
+    "tests/embedder_a11y_unittests.cc",
+  ]
+
+  deps = [
+    ":embedder",
+    ":fixtures_a11y",
+    "$flutter_root/lib/ui:ui",
+    "$flutter_root/shell/common",
+    "$flutter_root/testing",
+    "//third_party/skia",
+    "//third_party/tonic",
   ]
 
   if (is_linux) {

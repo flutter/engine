@@ -181,7 +181,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   ///
   /// See [pop] for details about the operation stack, and [Clip] for different clip modes.
   // ignore: deprecated_member_use
-  EngineLayer pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clipBehavior = defaultClipBehavior}) {
+  EngineLayer pushPhysicalShape({ Path path, double elevation, Color color, Color shadowColor, Clip clipBehavior = Clip.none}) {
     return _pushPhysicalShape(path, elevation, color.value, shadowColor?.value ?? 0xFF000000, clipBehavior.index);
   }
   EngineLayer _pushPhysicalShape(Path path, double elevation, int color, int shadowColor, int clipBehavior) native
@@ -200,7 +200,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// All the engine layers that are in the subtree of the retained layer will
   /// be automatically appended to the current engine layer tree.
   ///
-  /// Therefore, when implementing a subclas of the [Layer] concept defined in
+  /// Therefore, when implementing a subclass of the [Layer] concept defined in
   /// the rendering layer of Flutter's framework, once this is called, there's
   /// no need to call [addToScene] for its children layers.
   EngineLayer addRetained(EngineLayer retainedLayer) native 'SceneBuilder_addRetained';
@@ -264,7 +264,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   /// Android view: When resizing an Android view there is a short period during
   /// which the framework cannot tell if the newest texture frame has the
   /// previous or new size, to workaround this the framework "freezes" the
-  /// texture just before resizing the Android view and unfreezes it when it is
+  /// texture just before resizing the Android view and un-freezes it when it is
   /// certain that a frame with the new size is ready.
   void addTexture(int textureId, { Offset offset: Offset.zero, double width: 0.0, double height: 0.0 , bool freeze: false}) {
     assert(offset != null, 'Offset argument was null');

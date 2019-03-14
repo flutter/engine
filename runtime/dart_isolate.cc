@@ -21,8 +21,8 @@
 #include "third_party/tonic/dart_class_provider.h"
 #include "third_party/tonic/dart_message_handler.h"
 #include "third_party/tonic/dart_state.h"
-#include "third_party/tonic/dart_sticky_error.h"
 #include "third_party/tonic/file_loader/file_loader.h"
+#include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
 
@@ -35,8 +35,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     TaskRunners task_runners,
     std::unique_ptr<Window> window,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-    fml::WeakPtr<GrContext> resource_context,
-    fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+    fml::WeakPtr<IOManager> io_manager,
     std::string advisory_script_uri,
     std::string advisory_script_entrypoint,
     Dart_IsolateFlags* flags) {
@@ -56,8 +55,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
           std::move(shared_snapshot),    // shared snapshot
           task_runners,                  // task runners
           std::move(snapshot_delegate),  // snapshot delegate
-          std::move(resource_context),   // resource context
-          std::move(unref_queue),        // skia unref queue
+          std::move(io_manager),         // IO manager
           advisory_script_uri,           // advisory URI
           advisory_script_entrypoint,    // advisory entrypoint
           nullptr  // child isolate preparer will be set when this isolate is
@@ -100,8 +98,7 @@ DartIsolate::DartIsolate(DartVM* vm,
                          fml::RefPtr<DartSnapshot> shared_snapshot,
                          TaskRunners task_runners,
                          fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-                         fml::WeakPtr<GrContext> resource_context,
-                         fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+                         fml::WeakPtr<IOManager> io_manager,
                          std::string advisory_script_uri,
                          std::string advisory_script_entrypoint,
                          ChildIsolatePreparer child_isolate_preparer)
@@ -109,11 +106,11 @@ DartIsolate::DartIsolate(DartVM* vm,
                   vm->GetSettings().task_observer_add,
                   vm->GetSettings().task_observer_remove,
                   std::move(snapshot_delegate),
-                  std::move(resource_context),
-                  std::move(unref_queue),
+                  std::move(io_manager),
                   advisory_script_uri,
                   advisory_script_entrypoint,
                   vm->GetSettings().log_tag,
+                  vm->GetSettings().unhandled_exception_callback,
                   vm->GetIsolateNameServer()),
       vm_(vm),
       isolate_snapshot_(std::move(isolate_snapshot)),
@@ -396,6 +393,32 @@ bool DartIsolate::MarkIsolateRunnable() {
 }
 
 FML_WARN_UNUSED_RESULT
+static bool InvokeMainEntrypoint(Dart_Handle user_entrypoint_function) {
+  if (tonic::LogIfError(user_entrypoint_function)) {
+    FML_LOG(ERROR) << "Could not resolve main entrypoint function.";
+    return false;
+  }
+
+  Dart_Handle start_main_isolate_function =
+      tonic::DartInvokeField(Dart_LookupLibrary(tonic::ToDart("dart:isolate")),
+                             "_getStartMainIsolateFunction", {});
+
+  if (tonic::LogIfError(start_main_isolate_function)) {
+    FML_LOG(ERROR) << "Could not resolve main entrypoint trampoline.";
+    return false;
+  }
+
+  if (tonic::LogIfError(tonic::DartInvokeField(
+          Dart_LookupLibrary(tonic::ToDart("dart:ui")), "_runMainZoned",
+          {start_main_isolate_function, user_entrypoint_function}))) {
+    FML_LOG(ERROR) << "Could not invoke the main entrypoint.";
+    return false;
+  }
+
+  return true;
+}
+
+FML_WARN_UNUSED_RESULT
 bool DartIsolate::Run(const std::string& entrypoint_name) {
   TRACE_EVENT0("flutter", "DartIsolate::Run");
   if (phase_ != Phase::Ready) {
@@ -404,25 +427,10 @@ bool DartIsolate::Run(const std::string& entrypoint_name) {
 
   tonic::DartState::Scope scope(this);
 
-  Dart_Handle entrypoint =
+  auto user_entrypoint_function =
       Dart_GetField(Dart_RootLibrary(), tonic::ToDart(entrypoint_name.c_str()));
-  if (tonic::LogIfError(entrypoint)) {
-    return false;
-  }
 
-  Dart_Handle isolate_lib = Dart_LookupLibrary(tonic::ToDart("dart:isolate"));
-  if (tonic::LogIfError(isolate_lib)) {
-    return false;
-  }
-
-  Dart_Handle isolate_args[] = {
-      entrypoint,
-      Dart_Null(),
-  };
-
-  if (tonic::LogIfError(Dart_Invoke(
-          isolate_lib, tonic::ToDart("_startMainIsolate"),
-          sizeof(isolate_args) / sizeof(isolate_args[0]), isolate_args))) {
+  if (!InvokeMainEntrypoint(user_entrypoint_function)) {
     return false;
   }
 
@@ -441,30 +449,11 @@ bool DartIsolate::RunFromLibrary(const std::string& library_name,
 
   tonic::DartState::Scope scope(this);
 
-  Dart_Handle library = Dart_LookupLibrary(tonic::ToDart(library_name.c_str()));
-  if (tonic::LogIfError(library)) {
-    return false;
-  }
+  auto user_entrypoint_function =
+      Dart_GetField(Dart_LookupLibrary(tonic::ToDart(library_name.c_str())),
+                    tonic::ToDart(entrypoint_name.c_str()));
 
-  Dart_Handle entrypoint =
-      Dart_GetField(library, tonic::ToDart(entrypoint_name.c_str()));
-  if (tonic::LogIfError(entrypoint)) {
-    return false;
-  }
-
-  Dart_Handle isolate_lib = Dart_LookupLibrary(tonic::ToDart("dart:isolate"));
-  if (tonic::LogIfError(isolate_lib)) {
-    return false;
-  }
-
-  Dart_Handle isolate_args[] = {
-      entrypoint,
-      Dart_Null(),
-  };
-
-  if (tonic::LogIfError(Dart_Invoke(
-          isolate_lib, tonic::ToDart("_startMainIsolate"),
-          sizeof(isolate_args) / sizeof(isolate_args[0]), isolate_args))) {
+  if (!InvokeMainEntrypoint(user_entrypoint_function)) {
     return false;
   }
 
@@ -534,8 +523,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
           null_task_runners,         // task runners
           nullptr,                   // window
           {},                        // snapshot delegate
-          {},                        // resource context
-          {},                        // unref queue
+          {},                        // IO Manager
           advisory_script_uri == nullptr ? ""
                                          : advisory_script_uri,  // script uri
           advisory_script_entrypoint == nullptr
@@ -645,8 +633,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
             (*raw_embedder_isolate)->GetSharedSnapshot(),   // shared_snapshot
             null_task_runners,                              // task_runners
             fml::WeakPtr<SnapshotDelegate>{},               // snapshot_delegate
-            fml::WeakPtr<GrContext>{},                      // resource_context
-            nullptr,                                        // unref_queue
+            fml::WeakPtr<IOManager>{},                      // io_manager
             advisory_script_uri,         // advisory_script_uri
             advisory_script_entrypoint,  // advisory_script_entrypoint
             (*raw_embedder_isolate)->child_isolate_preparer_));
@@ -706,19 +693,7 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
 
 // |Dart_IsolateShutdownCallback|
 void DartIsolate::DartIsolateShutdownCallback(
-    std::shared_ptr<DartIsolate>* embedder_isolate) {
-  if (!tonic::DartStickyError::IsSet()) {
-    return;
-  }
-
-  tonic::DartApiScope api_scope;
-  Dart_Handle sticky_error = Dart_GetStickyError();
-  if (!Dart_IsFatalError(sticky_error)) {
-    FML_LOG(ERROR) << "Isolate " << tonic::StdStringFromDart(Dart_DebugName())
-                   << " exited with an error";
-    FML_CHECK(tonic::LogIfError(sticky_error));
-  }
-}
+    std::shared_ptr<DartIsolate>* embedder_isolate) {}
 
 // |Dart_IsolateCleanupCallback|
 void DartIsolate::DartIsolateCleanupCallback(

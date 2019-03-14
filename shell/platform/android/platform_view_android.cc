@@ -9,6 +9,7 @@
 
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/common/io_manager.h"
+#include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
 #include "flutter/shell/platform/android/android_surface_gl.h"
 #include "flutter/shell/platform/android/platform_message_response_android.h"
@@ -207,7 +208,7 @@ void PlatformViewAndroid::DispatchSemanticsAction(JNIEnv* env,
 void PlatformViewAndroid::UpdateSemantics(
     blink::SemanticsNodeUpdates update,
     blink::CustomAccessibilityActionUpdates actions) {
-  constexpr size_t kBytesPerNode = 38 * sizeof(int32_t);
+  constexpr size_t kBytesPerNode = 39 * sizeof(int32_t);
   constexpr size_t kBytesPerChild = sizeof(int32_t);
   constexpr size_t kBytesPerAction = 4 * sizeof(int32_t);
 
@@ -243,6 +244,7 @@ void PlatformViewAndroid::UpdateSemantics(
       buffer_int32[position++] = node.actions;
       buffer_int32[position++] = node.textSelectionBase;
       buffer_int32[position++] = node.textSelectionExtent;
+      buffer_int32[position++] = node.platformViewId;
       buffer_int32[position++] = node.scrollChildren;
       buffer_int32[position++] = node.scrollIndex;
       buffer_float32[position++] = (float)node.scrollPosition;
@@ -379,7 +381,8 @@ sk_sp<GrContext> PlatformViewAndroid::CreateResourceContext() const {
     // the OpenGL surface will be able to make a resource context current. If
     // this changes, this assumption breaks. Handle the same.
     resource_context = IOManager::CreateCompatibleResourceLoadingContext(
-        GrBackend::kOpenGL_GrBackend);
+        GrBackend::kOpenGL_GrBackend,
+        GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface());
   } else {
     FML_DLOG(ERROR) << "Could not make the resource context current.";
   }

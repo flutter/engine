@@ -10,6 +10,7 @@
 
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
+#include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
@@ -60,12 +61,24 @@
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
 
   int64_t _nextTextureId;
+
+  uint64_t _nextPointerFlowId;
+
+  BOOL _allowHeadlessExecution;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)projectOrNil {
+  return [self initWithName:labelPrefix project:projectOrNil allowHeadlessExecution:YES];
+}
+
+- (instancetype)initWithName:(NSString*)labelPrefix
+                     project:(FlutterDartProject*)projectOrNil
+      allowHeadlessExecution:(BOOL)allowHeadlessExecution {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
   NSAssert(labelPrefix, @"labelPrefix is required");
+
+  _allowHeadlessExecution = allowHeadlessExecution;
   _labelPrefix = [labelPrefix copy];
 
   _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(self);
@@ -76,7 +89,6 @@
     _dartProject.reset([projectOrNil retain]);
 
   _pluginPublications = [NSMutableDictionary new];
-  _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
   _platformViewsController.reset(new shell::FlutterPlatformViewsController());
 
   [self setupChannels];
@@ -108,12 +120,15 @@
 }
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<blink::PointerDataPacket>)packet {
-  self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = self.shell.GetEngine(), packet = std::move(packet)] {
+  TRACE_EVENT0("flutter", "dispatchPointerDataPacket");
+  TRACE_FLOW_BEGIN("flutter", "PointerEvent", _nextPointerFlowId);
+  self.shell.GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable(
+      [engine = self.shell.GetEngine(), packet = std::move(packet), flow_id = _nextPointerFlowId] {
         if (engine) {
-          engine->DispatchPointerDataPacket(*packet);
+          engine->DispatchPointerDataPacket(*packet, flow_id);
         }
       }));
+  _nextPointerFlowId++;
 }
 
 - (fml::WeakPtr<shell::PlatformView>)platformView {
@@ -131,11 +146,27 @@
   return _shell->GetTaskRunners().GetPlatformTaskRunner();
 }
 
+- (void)ensureSemanticsEnabled {
+  self.iosPlatformView->SetSemanticsEnabled(true);
+}
+
 - (void)setViewController:(FlutterViewController*)viewController {
   FML_DCHECK(self.iosPlatformView);
   _viewController = [viewController getWeakPtr];
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
+}
+
+- (void)notifyViewControllerDeallocated {
+  if (!_allowHeadlessExecution) {
+    [self destroyContext];
+  }
+}
+
+- (void)destroyContext {
+  [self resetChannels];
+  _shell.reset();
+  _threadHost.Reset();
 }
 
 - (FlutterViewController*)viewController {
@@ -176,6 +207,20 @@
   return _settingsChannel.get();
 }
 
+- (void)resetChannels {
+  _localizationChannel.reset();
+  _navigationChannel.reset();
+  _platformChannel.reset();
+  _platformViewsChannel.reset();
+  _textInputChannel.reset();
+  _lifecycleChannel.reset();
+  _systemChannel.reset();
+  _settingsChannel.reset();
+}
+
+// If you add a channel, be sure to also update `resetChannels`.
+// Channels get a reference to the engine, and therefore need manual
+// cleanup for proper collection.
 - (void)setupChannels {
   _localizationChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/localization"
@@ -221,8 +266,6 @@
   _textInputPlugin.get().textInputDelegate = self;
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
-
-  [self maybeSetupPlatformViewChannels];
 }
 
 - (void)maybeSetupPlatformViewChannels {
@@ -280,10 +323,10 @@
     settings.advisory_script_uri = libraryURI.UTF8String;
   } else if (entrypoint) {
     settings.advisory_script_entrypoint = entrypoint.UTF8String;
-    settings.advisory_script_entrypoint = std::string("main.dart");
+    settings.advisory_script_uri = std::string("main.dart");
   } else {
     settings.advisory_script_entrypoint = std::string("main");
-    settings.advisory_script_entrypoint = std::string("main.dart");
+    settings.advisory_script_uri = std::string("main.dart");
   }
 
   const auto threadLabel = [NSString stringWithFormat:@"%@.%zu", _labelPrefix, shellCount++];
@@ -348,6 +391,11 @@
     FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
                    << entrypoint.UTF8String;
   } else {
+    [self setupChannels];
+    if (!_platformViewsController) {
+      _platformViewsController.reset(new shell::FlutterPlatformViewsController());
+    }
+    _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
     [self maybeSetupPlatformViewChannels];
   }
 

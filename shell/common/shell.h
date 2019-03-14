@@ -99,6 +99,8 @@ class Shell final : public PlatformView::Delegate,
       service_protocol_handlers_;
   bool is_setup_ = false;
 
+  uint64_t next_pointer_flow_id_ = 0;
+
   Shell(blink::TaskRunners task_runners, blink::Settings settings);
 
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
@@ -178,6 +180,8 @@ class Shell final : public PlatformView::Delegate,
   // |shell::Engine::Delegate|
   void OnEngineHandlePlatformMessage(
       fml::RefPtr<blink::PlatformMessage> message) override;
+
+  void HandleEngineSkiaMessage(fml::RefPtr<blink::PlatformMessage> message);
 
   // |shell::Engine::Delegate|
   void OnPreEngineRestart() override;

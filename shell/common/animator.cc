@@ -62,6 +62,17 @@ void Animator::SetDimensionChangePending() {
   dimension_change_pending_ = true;
 }
 
+void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      [self = weak_factory_.GetWeakPtr(), trace_flow_id] {
+        if (!self) {
+          return;
+        }
+        self->trace_flow_ids_.push_back(trace_flow_id);
+      });
+}
+
 // This Parity is used by the timeline component to correctly align
 // GPU Workloads events with their respective Framework Workload.
 const char* Animator::FrameParity() {
@@ -77,6 +88,13 @@ static int64_t FxlToDartOrEarlier(fml::TimePoint time) {
 void Animator::BeginFrame(fml::TimePoint frame_start_time,
                           fml::TimePoint frame_target_time) {
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending", frame_number_++);
+
+  TRACE_EVENT0("flutter", "Animator::BeginFrame");
+  while (!trace_flow_ids_.empty()) {
+    uint64_t trace_flow_id = trace_flow_ids_.front();
+    TRACE_FLOW_END("flutter", "DispatchPointerDataPacket", trace_flow_id);
+    trace_flow_ids_.pop_front();
+  }
 
   frame_scheduled_ = false;
   notify_idle_task_id_++;
@@ -124,10 +142,13 @@ void Animator::BeginFrame(fml::TimePoint frame_start_time,
           if (!self.get()) {
             return;
           }
-          // If our (this task's) task id is the same as the current one, then
-          // no further frames were produced, and it is safe (w.r.t. jank) to
-          // notify the engine we are idle.
-          if (notify_idle_task_id == self->notify_idle_task_id_) {
+          // If our (this task's) task id is the same as the current one
+          // (meaning there were no follow up frames to the |BeginFrame| call
+          // that posted this task) and no frame is currently scheduled, then
+          // assume that we are idle, and notify the engine of this.
+          if (notify_idle_task_id == self->notify_idle_task_id_ &&
+              !self->frame_scheduled_) {
+            TRACE_EVENT0("flutter", "BeginFrame idle callback");
             self->delegate_.OnAnimatorNotifyIdle(Dart_TimelineGetMicros() +
                                                  100000);
           }

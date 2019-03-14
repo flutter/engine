@@ -49,10 +49,12 @@ shared_library("flutter_shell_native") {
     "platform_view_android_jni.h",
     "vsync_waiter_android.cc",
     "vsync_waiter_android.h",
+    "$root_build_dir/flutter_icu/icudtl.o",
   ]
 
   deps = [
     ":android_gpu_configuration",
+    ":icudtl_object",
     "$flutter_root/assets",
     "$flutter_root/common",
     "$flutter_root/flow",
@@ -68,6 +70,9 @@ shared_library("flutter_shell_native") {
     deps += [ "//third_party/dart/runtime:libdart_jit" ]
   } else {
     deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
+  }
+  if (flutter_runtime_mode == "debug") {
+    deps += [ "$flutter_root/lib/snapshot" ]
   }
 
   public_configs = [ "$flutter_root:config" ]
@@ -90,6 +95,8 @@ shared_library("flutter_shell_native") {
     "EGL",
     "GLESv2",
   ]
+
+  ldflags = ["-Wl,--version-script=" + rebase_path("android_exports.lst")]
 }
 
 java_library("flutter_shell_java") {
@@ -102,10 +109,35 @@ java_library("flutter_shell_java") {
     "io/flutter/app/FlutterApplication.java",
     "io/flutter/app/FlutterFragmentActivity.java",
     "io/flutter/app/FlutterPluginRegistry.java",
+    "io/flutter/embedding/engine/FlutterEngine.java",
+    "io/flutter/embedding/engine/FlutterJNI.java",
+    "io/flutter/embedding/engine/FlutterShellArgs.java",
+    "io/flutter/embedding/engine/android/AndroidKeyProcessor.java",
+    "io/flutter/embedding/engine/android/AndroidTouchProcessor.java",
+    "io/flutter/embedding/engine/android/FlutterActivity.java",
+    "io/flutter/embedding/engine/android/FlutterFragment.java",
+    "io/flutter/embedding/engine/android/FlutterSurfaceView.java",
+    "io/flutter/embedding/engine/android/FlutterTextureView.java",
+    "io/flutter/embedding/engine/android/FlutterView.java",
+    "io/flutter/embedding/engine/dart/DartExecutor.java",
+    "io/flutter/embedding/engine/dart/DartMessenger.java",
+    "io/flutter/embedding/engine/dart/PlatformMessageHandler.java",
+    "io/flutter/embedding/engine/renderer/FlutterRenderer.java",
+    "io/flutter/embedding/engine/renderer/OnFirstFrameRenderedListener.java",
+    "io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java",
+    "io/flutter/embedding/engine/systemchannels/KeyEventChannel.java",
+    "io/flutter/embedding/engine/systemchannels/LifecycleChannel.java",
+    "io/flutter/embedding/engine/systemchannels/LocalizationChannel.java",
+    "io/flutter/embedding/engine/systemchannels/NavigationChannel.java",
+    "io/flutter/embedding/engine/systemchannels/PlatformChannel.java",
+    "io/flutter/embedding/engine/systemchannels/SettingsChannel.java",
+    "io/flutter/embedding/engine/systemchannels/SystemChannel.java",
+    "io/flutter/embedding/engine/systemchannels/TextInputChannel.java",
     "io/flutter/plugin/common/ActivityLifecycleListener.java",
     "io/flutter/plugin/common/BasicMessageChannel.java",
     "io/flutter/plugin/common/BinaryCodec.java",
     "io/flutter/plugin/common/BinaryMessenger.java",
+    "io/flutter/plugin/common/ErrorLogResult.java",
     "io/flutter/plugin/common/EventChannel.java",
     "io/flutter/plugin/common/FlutterException.java",
     "io/flutter/plugin/common/JSONMessageCodec.java",
@@ -131,6 +163,7 @@ java_library("flutter_shell_java") {
     "io/flutter/plugin/platform/VirtualDisplayController.java",
     "io/flutter/util/PathUtils.java",
     "io/flutter/util/Preconditions.java",
+    "io/flutter/util/Predicate.java",
     "io/flutter/view/AccessibilityBridge.java",
     "io/flutter/view/FlutterCallbackInformation.java",
     "io/flutter/view/FlutterMain.java",
@@ -145,32 +178,77 @@ java_library("flutter_shell_java") {
     "io/flutter/view/VsyncWaiter.java",
   ]
 
+  java_files += [
+    "$flutter_root/third_party/bsdiff/io/flutter/util/BSDiff.java",
+  ]
+
   deps = [
-    ":android_support_v4",
+    ":android_support_v13",
+    ":android_support_annotations",
+    ":android_support_compat",
+    ":android_support_fragment",
+    ":android_arch_lifecycle_common",
+    ":android_arch_lifecycle_viewmodel",
   ]
 
   jar_path = "$root_out_dir/flutter_java.jar"
 }
 
-java_prebuilt("android_support_v4") {
+java_prebuilt("android_support_v13") {
   supports_android = true
 
-  jar_path = "//third_party/android_tools/sdk/extras/android/support/v4/android-support-v4.jar"
+  jar_path = "//third_party/android_support/android_support_v13.jar"
 }
 
-copy("flutter_shell_assets") {
-  visibility = [ ":*" ]
+java_prebuilt("android_support_compat") {
+  supports_android = true
 
-  sources = [
-    "//third_party/icu/flutter/icudtl.dat",
+  jar_path = "//third_party/android_support/android_support_compat.jar"
+}
+
+java_prebuilt("android_support_annotations") {
+  supports_android = true
+
+  jar_path = "//third_party/android_support/android_support_annotations.jar"
+}
+
+java_prebuilt("android_support_fragment") {
+  supports_android = true
+
+  jar_path = "//third_party/android_support/android_support_fragment.jar"
+}
+
+java_prebuilt("android_arch_lifecycle_common") {
+  supports_android = true
+
+  jar_path = "//third_party/android_support/android_arch_lifecycle_common.jar"
+}
+
+java_prebuilt("android_arch_lifecycle_viewmodel") {
+  supports_android = true
+
+  jar_path = "//third_party/android_support/android_arch_lifecycle_viewmodel.jar"
+}
+
+action("icudtl_object") {
+  script = "$flutter_root/sky/tools/objcopy.py"
+
+  icudtl_input = "//third_party/icu/flutter/icudtl.dat"
+  icudtl_output = "$root_build_dir/flutter_icu/icudtl.o"
+
+  inputs = [
+    "$icudtl_input",
   ]
 
   outputs = [
-    "$root_build_dir/flutter_shell_assets/{{source_file_part}}",
+    "$icudtl_output",
   ]
 
-  deps = [
-    "//third_party/icu:icudata",
+  args = [
+    "--objcopy", rebase_path(android_objcopy),
+    "--input", rebase_path(icudtl_input),
+    "--output", rebase_path(icudtl_output),
+    "--arch", current_cpu,
   ]
 }
 
@@ -180,7 +258,6 @@ action("android") {
   inputs = [
     "$root_build_dir/flutter_java.jar",
     "$root_build_dir/lib.stripped/libflutter.so",
-    "$root_build_dir/flutter_shell_assets/icudtl.dat",
   ]
 
   outputs = [
@@ -192,8 +269,6 @@ action("android") {
     rebase_path("flutter.jar", root_build_dir, root_build_dir),
     "--dist_jar",
     rebase_path("flutter_java.jar", root_build_dir, root_build_dir),
-    "--asset_dir",
-    rebase_path("flutter_shell_assets", root_build_dir, root_build_dir),
     "--native_lib",
     rebase_path("lib.stripped/libflutter.so", root_build_dir, root_build_dir),
     "--android_abi",
@@ -201,7 +276,6 @@ action("android") {
   ]
 
   deps = [
-    ":flutter_shell_assets",
     ":flutter_shell_java",
     ":flutter_shell_native",
   ]
