@@ -450,6 +450,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     UIView* platformView = [platformViewProtocolObject view];
     child.accessibilityElements = @[ platformView ];
     return child;
+  } else if (child.accessibilityElements.count > 0 &&
+             [child.accessibilityElements.firstObject isKindOfClass:[UIView class]]) {
+    child.accessibilityElements = nil;
   }
 
   if ([child hasChildren])
@@ -678,6 +681,14 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
         }
         [object.parent.children replaceObjectAtIndex:positionInChildlist withObject:object];
         objects_.get()[@(node.id)] = object;
+      }
+
+      BOOL isPlatformViewNode = node.platformViewId > -1;
+      BOOL wasPlatformViewNode = object.node.platformViewId > -1;
+      if (wasPlatformViewNode && !isPlatformViewNode) {
+        // The node changed its type from platform view node to something else. In this
+        // case, we need to clean up the accessibility element that we previously.
+        object.accessibilityElements = nil;
       }
     }
   }
