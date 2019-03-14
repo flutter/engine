@@ -58,6 +58,7 @@ done
 if [[ $FAILED_CHECKS -ne 0 ]]; then
   echo ""
   echo "ERROR: Some files are formatted incorrectly. To fix, apply diffs above via patch -p0."
+  echo "       For example, \`./ci/format.sh | patch -p0\` or \`./ci/format.sh | tee >(patch -p0)\`."
   exit 1
 fi
 
