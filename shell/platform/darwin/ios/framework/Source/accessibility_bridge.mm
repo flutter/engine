@@ -450,9 +450,6 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     UIView* platformView = [platformViewProtocolObject view];
     child.accessibilityElements = @[ platformView ];
     return child;
-  } else if (child.accessibilityElements.count > 0 &&
-             [child.accessibilityElements.firstObject isKindOfClass:[UIView class]]) {
-    child.accessibilityElements = nil;
   }
 
   if ([child hasChildren])
