@@ -4,19 +4,18 @@
 
 assert(is_linux)
 
-import("$flutter_root/common/config.gni")
-
 group("linux") {
   deps = [
     ":flutter_linux",
-    "$flutter_root/shell/platform/cpp:publish_headers",
-    "$flutter_root/shell/platform/cpp/client_wrapper:publish_wrapper",
+    "$flutter_root/shell/platform/glfw:publish_headers_glfw",
+    "$flutter_root/shell/platform/common/cpp/client_wrapper:publish_wrapper",
+    "$flutter_root/shell/platform/glfw/client_wrapper:publish_wrapper_glfw",
   ]
 }
 
 shared_library("flutter_linux") {
   deps = [
-    "$flutter_root/shell/platform/cpp:common_cpp",
+    "$flutter_root/shell/platform/glfw:flutter_glfw",
   ]
 
   public_configs = [ "$flutter_root:config" ]
