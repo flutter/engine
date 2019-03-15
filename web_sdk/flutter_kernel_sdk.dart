@@ -45,8 +45,6 @@ Future main(List<String> args) async {
   var outputDir = path.dirname(outputPath);
   await Directory(outputDir).create(recursive: true);
   await writeComponentToBinary(component, outputPath);
-  File(librarySpecPath).copySync(
-      path.join(path.dirname(outputDir), path.basename(librarySpecPath)));
 
   var jsModule = ProgramCompiler(
       component,
