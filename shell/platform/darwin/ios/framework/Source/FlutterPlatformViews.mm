@@ -232,10 +232,13 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     for (size_t i: composition_order_) {
       composition_order_set.insert(composition_order_[i]);
     }
+    NSLog(@"%@", @(active_composition_order_.size()));
+    NSLog(@"%@", @(composition_order_set.size()));
 
   for (size_t i: active_composition_order_) {
     int64_t view_id = active_composition_order_[i];
     if (composition_order_set.find(view_id) == composition_order_set.end()) {
+        NSLog(@"not find");
       [touch_interceptors_[view_id].get() removeFromSuperview];
       [overlays_[view_id]->overlay_view.get() removeFromSuperview];
     }
