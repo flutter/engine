@@ -684,7 +684,7 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
       BOOL wasPlatformViewNode = object.node.platformViewId > -1;
       if (wasPlatformViewNode && !isPlatformViewNode) {
         // The node changed its type from platform view node to something else. In this
-        // case, we need to clean up the accessibility element that we previously.
+        // case, we need to clean up the accessibility elements that we previously added.
         object.accessibilityElements = nil;
       }
     }
