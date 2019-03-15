@@ -447,6 +447,48 @@ typedef void (*FlutterUpdateSemanticsCustomActionCallback)(
     const FlutterSemanticsCustomAction* /* semantics custom action */,
     void* /* user data */);
 
+typedef struct _FlutterTaskRunner* FlutterTaskRunner;
+
+typedef struct {
+  FlutterTaskRunner runner;
+  uint64_t task;
+} FlutterTask;
+
+typedef void (*FlutterTaskRunnerPostTaskCallback)(
+    FlutterTask /* task */,
+    uint64_t /* target time nanos */,
+    void* /* user data */);
+
+// An interface used by the Flutter engine to execute tasks at the target time
+// on a specified thread. There should be a 1-1 relationship between a thread
+// and a task runner. It is undefined behavior to run a task on a thread that is
+// not associated with its task runner.
+typedef struct {
+  // The size of this struct. Must be sizeof(FlutterTaskRunnerDescription).
+  size_t struct_size;
+  void* user_data;
+  // May be called from any thread. Should return true if tasks posted on the
+  // calling thread will be run on that same thread.
+  //
+  // This field is required.
+  BoolCallback runs_task_on_current_thread_callback;
+  // May be called from any thread. The given task should be executed by the
+  // embedder on the thread associated with that task runner by calling
+  // FlutterEngineRunTask at the given target time. The system monotonic clock
+  // should be used for the target time.
+  //
+  // This field is required.
+  FlutterTaskRunnerPostTaskCallback post_task_callback;
+} FlutterTaskRunnerDescription;
+
+typedef struct {
+  // The size of this struct. Must be sizeof(FlutterCustomTaskRunners).
+  size_t struct_size;
+  // Sepcify the task runner for the thread on which the |FluterEngineRun| call
+  // is made.
+  const FlutterTaskRunnerDescription* platform_task_runner;
+} FlutterCustomTaskRunners;
+
 typedef struct {
   // The size of this struct. Must be sizeof(FlutterProjectArgs).
   size_t struct_size;
@@ -572,6 +614,11 @@ typedef struct {
   // away. Usually, this is done using the `@pragma('vm:entry-point')`
   // decoration.
   const char* custom_dart_entrypoint;
+
+  // Typically the Flutter engine create and manages its internal threads. This
+  // optional argument allows for the specification of task runner interfaces to
+  // event loops managed by the embedder on threads it creates.
+  const FlutterCustomTaskRunners* custom_task_runners;
 } FlutterProjectArgs;
 
 FLUTTER_EXPORT
@@ -714,6 +761,14 @@ FLUTTER_EXPORT
 FlutterEngineResult FlutterEnginePostRenderThreadTask(FlutterEngine engine,
                                                       VoidCallback callback,
                                                       void* callback_data);
+
+// Inform the engine to run the specified task. This task has been given to
+// the engine via the |FlutterTaskRunnerDescription.post_task_callback|. This
+// call must only be made at the target time specified in that callback. Running
+// the task before that time is undefined behavior.
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineRunTask(FlutterEngine engine,
+                                         const FlutterTask* task);
 
 #if defined(__cplusplus)
 }  // extern "C"
