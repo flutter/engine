@@ -131,7 +131,7 @@ class AccessibilityBridge final {
 
   fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
 
-  FlutterPlatformViewsController* GetFlutterPlatformViewsController() const {
+  FlutterPlatformViewsController* GetPlatformViewsController() const {
     return platform_views_controller_;
   };
 
