@@ -1,4 +1,4 @@
-Signature: aeb3ef2d086ef58fb819d6902a51acb5
+Signature: c9257a9b2c77469fbf18cd1859ef65ba
 
 UNUSED LICENSES:
 
@@ -5708,6 +5708,7 @@ FILE: ../../../third_party/dart/runtime/lib/ffi_native_type_patch.dart
 FILE: ../../../third_party/dart/runtime/lib/ffi_patch.dart
 FILE: ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.html
 FILE: ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.js
+FILE: ../../../third_party/dart/runtime/vm/catch_entry_moves_test.cc
 FILE: ../../../third_party/dart/runtime/vm/class_id.h
 FILE: ../../../third_party/dart/runtime/vm/code_entry_kind.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier.cc
