@@ -164,7 +164,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   // entire element tree looking for such a hit.
 
   //  We enforce in the framework that no other useful semantics are merged with these nodes.
-  if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute) || [self node].platformViewId > -1)
+  if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute) || [self node].IsPlatformViewNode())
     return false;
 
   return ([self node].flags != 0 &&
@@ -439,17 +439,18 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   }
   SemanticsObject* child = [_semanticsObject children][index - 1];
 
-  // This 'if' block handles adding accessibility support for the embedded platform view.
-  // We first check if the child is a semantic node for a platform view.
-  // If so, we add the platform view as accessibilityElements of the child.
-  shell::FlutterPlatformViewsController* flutterPlatformViewsController =
-      _bridge.get()->flutter_platform_views_controller();
-  if (child.node.platformViewId > -1 && flutterPlatformViewsController) {
-    NSObject<FlutterPlatformView>* platformViewProtocolObject =
-        flutterPlatformViewsController->GetPlatformViewByID(child.node.platformViewId);
-    UIView* platformView = [platformViewProtocolObject view];
-    child.accessibilityElements = @[ platformView ];
-    return child;
+  // If the child is a semantic node for a platform view,
+  // inject the platform view into the iOS accessibility tree.
+  shell::FlutterPlatformViewsController* controller =
+      _bridge.get()->GetFlutterPlatformViewsController();
+  if (child.node.IsPlatformViewNode() && controller) {
+    NSObject<FlutterPlatformView>* platformViewContainer =
+        controller->GetPlatformViewByID(child.node.platformViewId);
+    UIView* platformView = [platformViewContainer view];
+    if (platformView) {
+      child.accessibilityElements = @[ platformView ];
+      return child;
+    }
   }
 
   if ([child hasChildren])
@@ -506,7 +507,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
                                          FlutterPlatformViewsController* platform_views_controller)
     : view_(view),
       platform_view_(platform_view),
-      flutter_platform_views_controller_(platform_views_controller),
+      platform_views_controller_(platform_views_controller),
       objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_id_(0),
@@ -680,8 +681,8 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
         objects_.get()[@(node.id)] = object;
       }
 
-      BOOL isPlatformViewNode = node.platformViewId > -1;
-      BOOL wasPlatformViewNode = object.node.platformViewId > -1;
+      BOOL isPlatformViewNode = node.IsPlatformViewNode();
+      BOOL wasPlatformViewNode = object.node.IsPlatformViewNode();
       if (wasPlatformViewNode && !isPlatformViewNode) {
         // The node changed its type from platform view node to something else. In this
         // case, we need to clean up the accessibility elements that we previously added.

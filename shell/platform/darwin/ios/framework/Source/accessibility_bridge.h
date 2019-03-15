@@ -131,8 +131,8 @@ class AccessibilityBridge final {
 
   fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
 
-  FlutterPlatformViewsController* flutter_platform_views_controller() const {
-    return flutter_platform_views_controller_;
+  FlutterPlatformViewsController* GetFlutterPlatformViewsController() const {
+    return platform_views_controller_;
   };
 
   void clearState();
@@ -145,7 +145,7 @@ class AccessibilityBridge final {
 
   UIView* view_;
   PlatformViewIOS* platform_view_;
-  FlutterPlatformViewsController* flutter_platform_views_controller_;
+  FlutterPlatformViewsController* platform_views_controller_;
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
   fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;

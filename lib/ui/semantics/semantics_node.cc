@@ -7,6 +7,8 @@
 #include <string.h>
 
 namespace blink {
+    
+constexpr int32_t kMinPlatfromViewId = -1;
 
 SemanticsNode::SemanticsNode() = default;
 
@@ -21,5 +23,9 @@ bool SemanticsNode::HasAction(SemanticsAction action) {
 bool SemanticsNode::HasFlag(SemanticsFlags flag) {
   return (flags & static_cast<int32_t>(flag)) != 0;
 }
+    
+    bool SemanticsNode::IsPlatformViewNode() {
+        return platformViewId > kMinPlatfromViewId;
+    }
 
 }  // namespace blink

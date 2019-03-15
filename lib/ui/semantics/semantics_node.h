@@ -80,6 +80,9 @@ struct SemanticsNode {
 
   bool HasAction(SemanticsAction action);
   bool HasFlag(SemanticsFlags flag);
+    
+  // Weather this node is for embeded platform views.
+  bool IsPlatformViewNode();
 
   int32_t id = 0;
   int32_t flags = 0;
