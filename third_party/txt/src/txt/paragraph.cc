@@ -208,13 +208,15 @@ Paragraph::CodeUnitRun::CodeUnitRun(std::vector<GlyphPosition>&& p,
                                     Range<double> x,
                                     size_t line,
                                     const SkFontMetrics& metrics,
-                                    TextDirection dir)
+                                    TextDirection dir,
+                                    const WidgetRun* widget)
     : positions(std::move(p)),
       code_units(cu),
       x_pos(x),
       line_number(line),
       font_metrics(metrics),
-      direction(dir) {}
+      direction(dir),
+      widget_run(widget) {}
 
 void Paragraph::CodeUnitRun::Shift(double delta) {
   x_pos.Shift(delta);
@@ -315,7 +317,7 @@ bool Paragraph::ComputeLineBreaks() {
       bool isRtl = (paragraph_style_.text_direction == TextDirection::rtl);
 
       if (run.start - run.end == 1 && text_[run.start] == 0xFFFC &&
-          inline_widgets_.size() > inline_widget_index) {
+          inline_widget_index < inline_widgets_.size()) {
         // Is an object replacement character-only run. We should leave space
         // for inline widget and break around it if appropriate.
         WidgetRun widget_span = inline_widgets_[inline_widget_index];
@@ -712,8 +714,10 @@ void Paragraph::Layout(double width, bool force) {
         }
       }
 
+      FML_DLOG(ERROR) << "LAYING...";
       layout.doLayout(text_ptr, text_start, text_count, text_size, run.is_rtl(),
                       minikin_font, minikin_paint, minikin_font_collection);
+      FML_DLOG(ERROR) << "LAID OUT";
 
       if (layout.nGlyphs() == 0)
         continue;
@@ -847,24 +851,19 @@ void Paragraph::Layout(double width, bool force) {
         font.getMetrics(&metrics);
         FML_DLOG(ERROR) << run.is_widget_run() << " | " << run.start() << " "
                         << run.end() << " | "
-                        << (run.is_widget_run() ? run.widget_run().width
+                        << (run.is_widget_run() ? run.widget_run()->width
                                                 : layout.getAdvance());
         if (run.is_widget_run()) {
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset, 0), builder.make(),
-              metrics, line_number, run.widget_run().width, run.is_ghost(),
-              &run.widget_run());
-          FML_DLOG(ERROR) << &run.widget_run();
-          run_x_offset += run.widget_run().width;
+              metrics, line_number, run.widget_run()->width, run.is_ghost(),
+              run.widget_run());
+          run_x_offset += run.widget_run()->width;
+          FML_DLOG(ERROR) << run.widget_run();
         } else {
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset, 0), builder.make(),
               metrics, line_number, layout.getAdvance(), run.is_ghost());
-        }
-        for (const PaintRecord& paint_record : paint_records) {
-          FML_DLOG(ERROR) << (paint_record.GetWidgetRun() == nullptr);
-          // update_line_metrics(paint_record.metrics(), paint_record.style(),
-          //                     paint_record.GetWidgetRun());
         }
 
         line_glyph_positions.insert(line_glyph_positions.end(),
@@ -881,8 +880,11 @@ void Paragraph::Layout(double width, bool force) {
             std::move(code_unit_positions),
             Range<size_t>(run.start(), run.end()),
             Range<double>(glyph_positions.front().x_pos.start,
-                          glyph_positions.back().x_pos.end),
-            line_number, metrics, run.direction());
+                          run.is_widget_run()
+                              ? glyph_positions.front().x_pos.start +
+                                    run.widget_run()->width
+                              : glyph_positions.front().x_pos.end),
+            line_number, metrics, run.direction(), run.widget_run());
 
         min_left_ = std::min(min_left_, glyph_positions.front().x_pos.start);
         max_right_ = std::max(max_right_, glyph_positions.back().x_pos.end);
@@ -892,7 +894,7 @@ void Paragraph::Layout(double width, bool force) {
       // Do not increase x offset for trailing ghost runs as it should not
       // impact the layout of visible glyphs. We do keep the record though so
       // GetRectsForRange() can find metrics for trailing spaces.
-      if (!run.is_ghost()) {
+      if (!run.is_ghost() && !run.is_widget_run()) {
         run_x_offset += layout.getAdvance();
       }
     }  // for each in line_runs
@@ -1110,8 +1112,8 @@ void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
     if (record.GetWidgetRun() == nullptr) {
       PaintShadow(canvas, record, offset);
       canvas->drawTextBlob(record.text(), offset.x(), offset.y(), paint);
+      PaintDecorations(canvas, record, base_offset);
     }
-    PaintDecorations(canvas, record, base_offset);
   }
 }
 
@@ -1352,6 +1354,13 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
     SkScalar top = baseline + run.font_metrics.fAscent;
     SkScalar bottom = baseline + run.font_metrics.fDescent;
 
+    if (run.widget_run != nullptr) {  // Use inline widget size as height.
+      FML_DLOG(ERROR) << "Adjusting heights" << top << " " << bottom << " "
+                      << baseline;
+      top = baseline - run.widget_run->baseline;
+      bottom = baseline + run.widget_run->height - run.widget_run->baseline;
+    }
+
     max_line = std::max(run.line_number, max_line);
     min_line = std::min(run.line_number, min_line);
 
@@ -1392,6 +1401,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
         first_line_dir = run.direction;
       }
     }
+    FML_DLOG(ERROR) << "Adding heights" << top << " " << bottom;
     line_metrics[run.line_number].boxes.emplace_back(
         SkRect::MakeLTRB(left, top, right, bottom), run.direction);
   }
@@ -1453,8 +1463,22 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
     // Handle rect_height_styles. The height metrics used are all positive to
     // make the signage clear here.
     if (rect_height_style == RectHeightStyle::kTight) {
+      // if (run.widget_run == nullptr) {  // Is a regular text run
       // Ignore line max height and width and generate tight bounds.
       boxes.insert(boxes.end(), kv.second.boxes.begin(), kv.second.boxes.end());
+      //   } else {  // is a inline widget run
+      //     // for (const Paragraph::TextBox& box : kv.second.boxes) {
+      //     //   boxes.emplace_back(
+      //     //       SkRect::MakeLTRB(
+      //     //           box.rect.fLeft,
+      //     //           line_baselines_[kv.first] -
+      //     line_max_ascent_[kv.first],
+      //     //           box.rect.fRight,
+      //     //           line_baselines_[kv.first] +
+      //     line_max_descent_[kv.first]),
+      //     //       box.direction);
+      //     // }
+      //   }
     } else if (rect_height_style == RectHeightStyle::kMax) {
       for (const Paragraph::TextBox& box : kv.second.boxes) {
         boxes.emplace_back(
@@ -1514,7 +1538,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
     }
   }
   return boxes;
-}
+}  // namespace txt
 
 Paragraph::PositionWithAffinity Paragraph::GetGlyphPositionAtCoordinate(
     double dx,

@@ -71,7 +71,7 @@ TEST_F(ParagraphTest, SimpleParagraph) {
 }
 
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
-  const char* text = "testtext";
+  const char* text = "01234";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
   std::u16string u16_text(icu_text.getBuffer(),
                           icu_text.getBuffer() + icu_text.length());
@@ -93,19 +93,75 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
 
   builder.AddText(u16_text);
 
-  txt::WidgetRun widget_run(50, 50, 45, true, true);
+  txt::WidgetRun widget_run(50, 50, 0, true, true);
   builder.AddWidget(widget_run);
 
+  builder.AddText(u16_text);
+
+  // widget_run = txt::WidgetRun(50, 50, 45, true, true);
+  builder.AddWidget(widget_run);
+  // widget_run = txt::WidgetRun(25, 25, 25, true, true);
+  txt::WidgetRun widget_run2(5, 50, 50, true, true);
+  builder.AddWidget(widget_run2);
+
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
   builder.AddText(u16_text);
 
   builder.Pop();
 
   auto paragraph = builder.Build();
-  paragraph->Layout(GetTestCanvasWidth() - 100);
+  paragraph->Layout(GetTestCanvasWidth() - 300);
 
   paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 3, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  // ASSERT_TRUE(Snapshot());
+  EXPECT_EQ(boxes.size(), 1ull);
+
+  paint.setColor(SK_ColorGREEN);
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(3, 14, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  // EXPECT_EQ(boxes.size(), 1ull);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.left(), 56.835938);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.right(), 177.97266);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
   ASSERT_TRUE(Snapshot());
-  ASSERT_TRUE(false);
 }
 
 TEST_F(ParagraphTest, SimpleRedParagraph) {

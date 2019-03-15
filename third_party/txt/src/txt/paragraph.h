@@ -118,7 +118,7 @@ class Paragraph {
       return start == other.start && end == other.end;
     }
 
-    T width() { return end - start; }
+    T width() const { return end - start; }
 
     void Shift(T delta) {
       start += delta;
@@ -319,7 +319,7 @@ class Paragraph {
     size_t size() const { return end_ - start_; }
     TextDirection direction() const { return direction_; }
     const TextStyle& style() const { return *style_; }
-    const WidgetRun& widget_run() const { return *widget_run_; }
+    const WidgetRun* widget_run() const { return widget_run_; }
     bool is_rtl() const { return direction_ == TextDirection::rtl; }
     // Tracks if the run represents trailing whitespace.
     bool is_ghost() const { return is_ghost_; }
@@ -331,7 +331,7 @@ class Paragraph {
     const TextStyle* style_;
     bool is_ghost_;
     bool is_widget_run_;
-    const WidgetRun* widget_run_;
+    const WidgetRun* widget_run_ = nullptr;
   };
 
   struct GlyphPosition {
@@ -362,13 +362,15 @@ class Paragraph {
     size_t line_number;
     SkFontMetrics font_metrics;
     TextDirection direction;
+    const WidgetRun* widget_run;
 
     CodeUnitRun(std::vector<GlyphPosition>&& p,
                 Range<size_t> cu,
                 Range<double> x,
                 size_t line,
                 const SkFontMetrics& metrics,
-                TextDirection dir);
+                TextDirection dir,
+                const WidgetRun* widget);
 
     void Shift(double delta);
   };
