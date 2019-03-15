@@ -27,7 +27,7 @@ group("flutter") {
     }
   }
 
-  if (full_dart_sdk) {
+  if (dart_platform_sdk) {
     public_deps += [
       "$flutter_root/web_sdk",
     ]
