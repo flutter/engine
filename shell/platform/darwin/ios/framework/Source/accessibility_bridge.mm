@@ -441,8 +441,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
   // If the child is a semantic node for a platform view,
   // inject the platform view into the iOS accessibility tree.
-  shell::FlutterPlatformViewsController* controller =
-      _bridge.get()->GetPlatformViewsController();
+  shell::FlutterPlatformViewsController* controller = _bridge.get()->GetPlatformViewsController();
   if (child.node.IsPlatformViewNode() && controller) {
     NSObject<FlutterPlatformView>* platformViewContainer =
         controller->GetPlatformViewByID(child.node.platformViewId);
