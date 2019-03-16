@@ -29,6 +29,7 @@ import android.view.accessibility.AccessibilityNodeProvider;
 
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
+import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.util.Predicate;
 
 import java.nio.ByteBuffer;
@@ -89,6 +90,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // turned on, as well as listen for changes to accessibility's activation.
     @NonNull
     private final AccessibilityManager accessibilityManager;
+
+    // The controller for the embedded platform views. Used to embed accessibility data for an embedded
+    // view in the accessibility tree.
+    @NonNull
+    private final PlatformViewsController platformViewsController;
 
     // Android's {@link ContentResolver}, which is used to observe the global TRANSITION_ANIMATION_SCALE,
     // which determines whether Flutter's animations should be enabled or disabled for accessibility
@@ -307,12 +313,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         @NonNull View rootAccessibilityView,
         @NonNull AccessibilityChannel accessibilityChannel,
         @NonNull AccessibilityManager accessibilityManager,
-        @NonNull ContentResolver contentResolver
+        @NonNull ContentResolver contentResolver,
+        @NonNull PlatformViewsController platformViewsController
     ) {
         this.rootAccessibilityView = rootAccessibilityView;
         this.accessibilityChannel = accessibilityChannel;
         this.accessibilityManager = accessibilityManager;
         this.contentResolver = contentResolver;
+        this.platformViewsController = platformViewsController;
 
         decorView = ((Activity) rootAccessibilityView.getContext()).getWindow().getDecorView();
 

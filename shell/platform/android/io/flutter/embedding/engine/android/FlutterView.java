@@ -35,6 +35,7 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.VsyncWaiter;
 
@@ -443,12 +444,15 @@ public class FlutterView extends FrameLayout {
         textInputPlugin
     );
     androidTouchProcessor = new AndroidTouchProcessor(this.flutterEngine.getRenderer());
+    PlatformViewsController platformViewsController = flutterEngine.getPluginRegistry().getPlatformViewsController();
     accessibilityBridge = new AccessibilityBridge(
         this,
         flutterEngine.getAccessibilityChannel(),
         (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE),
-        getContext().getContentResolver()
+        getContext().getContentResolver(),
+        platformViewsController
     );
+    platformViewsController.attachAccessibilityBridge(accessibilityBridge);
     accessibilityBridge.setOnAccessibilityChangeListener(onAccessibilityChangeListener);
     resetWillNotDraw(
         accessibilityBridge.isAccessibilityEnabled(),
