@@ -4,6 +4,10 @@
 
 import("$flutter_root/common/config.gni")
 
+declare_args() {
+  dart_platform_sdk = false 
+}
+
 group("flutter") {
   testonly = true
 
@@ -27,7 +31,7 @@ group("flutter") {
     }
   }
 
-  if (dart_platform_sdk) {
+  if (!dart_platform_sdk) {
     public_deps += [
       "$flutter_root/web_sdk",
     ]
