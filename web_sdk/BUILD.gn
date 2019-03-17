@@ -71,6 +71,7 @@ prebuilt_dart_action("flutter_dartdevc_kernel_sdk") {
   ]
 
   script = "flutter_kernel_sdk.dart"
+  packages = "//third_party/dart/.packages"
 
   output_path = rebase_path(sdk_dill)
   libraries_path = rebase_path(sdk_libraries_json)
