@@ -3,10 +3,7 @@
 # found in the LICENSE file.
 
 import("$flutter_root/common/config.gni")
-
-declare_args() {
-  dart_platform_sdk = false 
-}
+import("//third_party/dart/sdk/BUILD.gn")
 
 group("flutter") {
   testonly = true
