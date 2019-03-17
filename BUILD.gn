@@ -28,12 +28,12 @@ group("flutter") {
         "$flutter_root/frontend_server",
         "//third_party/dart:create_sdk",
       ]
-    }
 
-    if (full_dart_sdk) {
-      public_deps += [
-        "$flutter_root/web_sdk",
-      ]
+      if (full_dart_sdk) {
+        public_deps += [
+          "$flutter_root/web_sdk",
+        ]
+      }
     }
   }
 
