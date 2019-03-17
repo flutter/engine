@@ -3,7 +3,10 @@
 # found in the LICENSE file.
 
 import("$flutter_root/common/config.gni")
-import("//third_party/dart/sdk/BUILD.gn")
+
+declare_args() {
+  full_dart_sdk = false  
+}
 
 group("flutter") {
   testonly = true
@@ -28,7 +31,7 @@ group("flutter") {
     }
   }
 
-  if (!dart_platform_sdk) {
+  if (full_dart_sdk) {
     public_deps += [
       "$flutter_root/web_sdk",
     ]
