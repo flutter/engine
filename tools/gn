@@ -237,6 +237,7 @@ def to_gn_args(args):
     # Whether to build all dart snapshots.
     if args.full_dart_sdk:
         gn_args['dart_platform_sdk'] = False
+        gn_args['full_dart_sdk'] = True
 
     return gn_args
 
