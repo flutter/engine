@@ -29,12 +29,12 @@ group("flutter") {
         "//third_party/dart:create_sdk",
       ]
     }
-  }
 
-  if (full_dart_sdk) {
-    public_deps += [
-      "$flutter_root/web_sdk",
-    ]
+    if (full_dart_sdk) {
+      public_deps += [
+        "$flutter_root/web_sdk",
+      ]
+    }
   }
 
   # If on the host, compile all unittests targets.
