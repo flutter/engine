@@ -4,6 +4,8 @@
 
 import("$flutter_root/common/config.gni")
 
+# Whether to build the dartdevc sdk, libraries, and source files
+# required for the flutter web sdk.
 declare_args() {
   full_dart_sdk = false  
 }
