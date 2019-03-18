@@ -225,9 +225,30 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     composition_order_.clear();
     return did_submit;
   }
+  DetachUnusedLayers();
+  active_composition_order_.clear();
   UIView* flutter_view = flutter_view_.get();
 
+  for (size_t i = 0; i < composition_order_.size(); i++) {
+    int view_id = composition_order_[i];
+    if (touch_interceptors_[view_id].get().superview == flutter_view) {
+      [flutter_view bringSubviewToFront:touch_interceptors_[view_id].get()];
+      [flutter_view bringSubviewToFront:overlays_[view_id]->overlay_view.get()];
+    } else {
+      [flutter_view addSubview:touch_interceptors_[view_id].get()];
+      [flutter_view addSubview:overlays_[view_id]->overlay_view.get()];
+    }
+
+    active_composition_order_.push_back(view_id);
+  }
+
+  composition_order_.clear();
+  return did_submit;
+}
+
+void FlutterPlatformViewsController::DetachUnusedLayers() {
   std::unordered_set<int64_t> composition_order_set;
+
   for (int64_t view_id : composition_order_) {
     composition_order_set.insert(view_id);
   }
@@ -240,26 +261,6 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
   }
 
   composition_order_set.clear();
-  active_composition_order_.clear();
-
-  for (size_t i = 0; i < composition_order_.size(); i++) {
-    int view_id = composition_order_[i];
-    if (touch_interceptors_[view_id].get().superview == flutter_view) {
-      [flutter_view bringSubviewToFront:touch_interceptors_[view_id].get()];
-    } else {
-      [flutter_view addSubview:touch_interceptors_[view_id].get()];
-    }
-    if (overlays_[view_id]->overlay_view.get().superview == flutter_view) {
-      [flutter_view bringSubviewToFront:overlays_[view_id]->overlay_view.get()];
-    } else {
-      [flutter_view addSubview:overlays_[view_id]->overlay_view.get()];
-    }
-
-    active_composition_order_.push_back(view_id);
-  }
-
-  composition_order_.clear();
-  return did_submit;
 }
 
 void FlutterPlatformViewsController::EnsureOverlayInitialized(int64_t overlay_id) {
@@ -443,7 +444,6 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
   [_flutterView touchesMoved:touches withEvent:event];
-  self.state = UIGestureRecognizerStateChanged;
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
