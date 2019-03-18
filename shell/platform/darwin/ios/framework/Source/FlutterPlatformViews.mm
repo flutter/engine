@@ -11,7 +11,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <assert.h>
 
 #include "FlutterPlatformViews_Internal.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -232,9 +231,9 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
 
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int view_id = composition_order_[i];
-      UIView *intercepter = touch_interceptors_[view_id].get();
-      UIView *overlay = overlays_[view_id]->overlay_view;
-      assert(intercepter.superview  == overlay.superview);
+    UIView* intercepter = touch_interceptors_[view_id].get();
+    UIView* overlay = overlays_[view_id]->overlay_view;
+    FML_CHECK(intercepter.superview == overlay.superview);
 
     if (intercepter.superview == flutter_view) {
       [flutter_view bringSubviewToFront:intercepter];
