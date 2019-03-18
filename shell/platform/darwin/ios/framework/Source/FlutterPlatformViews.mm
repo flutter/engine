@@ -227,18 +227,13 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
   }
   UIView* flutter_view = flutter_view_.get();
     
-   NSLog(@"-------");
   std::unordered_set<int64_t> composition_order_set;
-    for (size_t i: composition_order_) {
-      composition_order_set.insert(composition_order_[i]);
+    for (int64_t view_id : composition_order_) {
+      composition_order_set.insert(view_id);
     }
-    NSLog(@"%@", @(active_composition_order_.size()));
-    NSLog(@"%@", @(composition_order_set.size()));
 
-  for (size_t i: active_composition_order_) {
-    int64_t view_id = active_composition_order_[i];
+  for (int64_t view_id: active_composition_order_) {
     if (composition_order_set.find(view_id) == composition_order_set.end()) {
-        NSLog(@"not find");
       [touch_interceptors_[view_id].get() removeFromSuperview];
       [overlays_[view_id]->overlay_view.get() removeFromSuperview];
     }
@@ -247,7 +242,6 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
   composition_order_set.clear();
   active_composition_order_.clear();
     
-  NSLog(@"=======");
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int view_id = composition_order_[i];
     if (touch_interceptors_[view_id].get().superview == flutter_view) {
