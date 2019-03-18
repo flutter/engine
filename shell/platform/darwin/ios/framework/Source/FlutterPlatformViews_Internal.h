@@ -64,10 +64,8 @@ class FlutterPlatformViewsController {
 
   // Discards all platform views instances and auxiliary resources.
   void Reset();
-
-    void extracted();
     
-    bool SubmitFrame(bool gl_rendering,
+  bool SubmitFrame(bool gl_rendering,
                    GrContext* gr_context,
                    std::shared_ptr<IOSGLContext> gl_context);
 
@@ -100,7 +98,7 @@ class FlutterPlatformViewsController {
   void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
   void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
     
-    void DetachUnusedLayers();
+  void DetachUnusedLayers();
   void EnsureOverlayInitialized(int64_t overlay_id);
   void EnsureGLOverlayInitialized(int64_t overlay_id,
                                   std::shared_ptr<IOSGLContext> gl_context,

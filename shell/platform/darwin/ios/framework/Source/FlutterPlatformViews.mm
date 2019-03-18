@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <assert.h>
 
 #include "FlutterPlatformViews_Internal.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -231,12 +232,16 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
 
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int view_id = composition_order_[i];
-    if (touch_interceptors_[view_id].get().superview == flutter_view) {
-      [flutter_view bringSubviewToFront:touch_interceptors_[view_id].get()];
-      [flutter_view bringSubviewToFront:overlays_[view_id]->overlay_view.get()];
+      UIView *intercepter = touch_interceptors_[view_id].get();
+      UIView *overlay = overlays_[view_id]->overlay_view;
+      assert(intercepter.superview  == overlay.superview);
+
+    if (intercepter.superview == flutter_view) {
+      [flutter_view bringSubviewToFront:intercepter];
+      [flutter_view bringSubviewToFront:overlay];
     } else {
-      [flutter_view addSubview:touch_interceptors_[view_id].get()];
-      [flutter_view addSubview:overlays_[view_id]->overlay_view.get()];
+      [flutter_view addSubview:intercepter];
+      [flutter_view addSubview:overlay];
     }
 
     active_composition_order_.push_back(view_id);
@@ -259,8 +264,6 @@ void FlutterPlatformViewsController::DetachUnusedLayers() {
       [overlays_[view_id]->overlay_view.get() removeFromSuperview];
     }
   }
-
-  composition_order_set.clear();
 }
 
 void FlutterPlatformViewsController::EnsureOverlayInitialized(int64_t overlay_id) {
