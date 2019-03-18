@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <utility>
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
@@ -131,9 +132,7 @@ void TraceEventAsyncComplete(TraceArg category_group,
   auto identifier = TraceNonce();
 
   if (begin > end) {
-    auto temp = end;
-    end = begin;
-    begin = temp;
+    std::swap(begin, end);
   }
 
   Dart_TimelineEvent(DCHECK_LITERAL(name),                   // label
