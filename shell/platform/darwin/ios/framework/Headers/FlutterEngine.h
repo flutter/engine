@@ -146,10 +146,16 @@ FLUTTER_EXPORT
  * This method must only be called after launching the engine via
  * `-runWithEntrypoint:` or `-runWithEntryPoint:libraryURI`.
  *
+ * Although this method returns synchronously, it does not guarantee that a
+ * semantics tree is actually available; it only tells the Flutter framework to
+ * build a semantics tree the next it has a good reason to, such as when a frame
+ * is pumped.
+ *
  * You can subscribe to semantics updates via `NSNotificationCenter` by adding
  * an observer for the name `FlutterSemanticsUpdateNotification`.  The `object`
  * parameter will be the `FlutterViewController` associated with the semantics
- * update.
+ * update.  This will asynchronously fire after a semantics tree has actually
+ * built (which may be some time after the frame has been rendered).
  */
 - (void)ensureSemanticsEnabled;
 
