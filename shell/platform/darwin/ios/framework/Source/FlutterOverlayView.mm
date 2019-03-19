@@ -21,13 +21,13 @@
 @implementation FlutterOverlayView
 
 - (instancetype)initWithFrame:(CGRect)frame {
-  @throw([NSException exceptionWithName:@"FlutterOverlayView must init or initForGLWithContentsScale"
+  @throw([NSException exceptionWithName:@"FlutterOverlayView must init or initWithContentsScale"
                                  reason:nil
                                userInfo:nil]);
 }
 
 - (instancetype)initWithCoder:(NSCoder*)aDecoder {
-  @throw([NSException exceptionWithName:@"FlutterOverlayView must init or initForGLWithContentsScale"
+  @throw([NSException exceptionWithName:@"FlutterOverlayView must init or initWithContentsScale"
                                  reason:nil
                                userInfo:nil]);
 }
@@ -43,10 +43,10 @@
   return self;
 }
 
-- (instancetype)initForGLWithContentsScale:(CGFloat)contentsScale {
+- (instancetype)initWithContentsScale:(CGFloat)contentsScale {
   self = [self init];
 
-  if (self) {
+  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
     CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
     layer.allowsGroupOpacity = NO;
     layer.contentsScale = contentsScale;
