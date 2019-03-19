@@ -547,13 +547,21 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
     layoutChanged = layoutChanged || [object nodeWillCauseLayoutChange:&node];
     scrollOccured = scrollOccured || [object nodeWillCauseScroll:&node];
     [object setSemanticsNode:&node];
-    const NSUInteger newChildCount = node.childrenInTraversalOrder.size();
+    NSUInteger newChildCount = node.childrenInTraversalOrder.size();
+    if (node.IsPlatformViewNode()) {
+      // If this node is a platform view node, we need to create an addtional child
+      // that acts as a container for the platform view's accessibility.
+      newChildCount++;
+    }
     NSMutableArray* newChildren =
         [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
     for (NSUInteger i = 0; i < newChildCount; ++i) {
       SemanticsObject* child;
       if (node.IsPlatformViewNode() && i == node.childrenInTraversalOrder.size()) {
-        int32_t uid = node.id * 1000 + node.platformViewId;
+        // If this node is a platform view node, we create a child acts as a container for
+        // the platform view's accessibility. We generate the UID using the below formula to avoid
+        // collision with other UIDs.
+        int32_t uid = node.id * 10000 + node.platformViewId;
         child = [[SemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid];
         child.isPlatformViewSemanticPlaceholder = YES;
       } else {
