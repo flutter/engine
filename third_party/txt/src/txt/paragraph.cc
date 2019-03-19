@@ -316,10 +316,11 @@ bool Paragraph::ComputeLineBreaks() {
       size_t run_end = std::min(run.end, block_end) - block_start;
       bool isRtl = (paragraph_style_.text_direction == TextDirection::rtl);
 
+      // Check if the run is an object replacement character-only run. We should
+      // leave space for inline widget and break around it if appropriate.
       if (run.start - run.end == 1 && text_[run.start] == 0xFFFC &&
           inline_widget_index < inline_widgets_.size()) {
-        // Is an object replacement character-only run. We should leave space
-        // for inline widget and break around it if appropriate.
+        // Is a inline widget run.
         WidgetRun widget_span = inline_widgets_[inline_widget_index];
         widget_adjusted_line_width -= widget_span.width;
         block_total_width += widget_span.width;
@@ -513,6 +514,22 @@ void Paragraph::ComputeStrut(StrutMetrics* strut, SkFont& font) {
   }
 }
 
+// Implementation outline:
+//
+// -For each line:
+//   -Compute Bidi runs, convert into line_runs (keeps in-line-range runs, adds
+//   special runs)
+//   -For each line_run (runs in the line):
+//     -Calculate ellipsis
+//     -Obtain font
+//     -layout.doLayout(...), genereates glyph blobs
+//     -For each glyph blob:
+//       -Convert glyph blobs into pixel metrics/advances
+//     -Store as paint records (for painting) and code unit runs (for metrics
+//     and boxes).
+//   -Apply letter spacing, alignment, justification, etc
+//   -Calculate line vertical layout (ascent, descent, etc)
+//   -Store per-line metrics
 void Paragraph::Layout(double width, bool force) {
   // Do not allow calling layout multiple times without changing anything.
   if (!needs_layout_ && width == width_ && !force) {
@@ -561,6 +578,7 @@ void Paragraph::Layout(double width, bool force) {
 
   for (size_t line_number = 0; line_number < line_limit; ++line_number) {
     const LineRange& line_range = line_ranges_[line_number];
+    FML_DLOG(ERROR) << "Line " << line_number;
 
     // Break the line into words if justification should be applied.
     std::vector<Range<size_t>> words;
@@ -589,32 +607,31 @@ void Paragraph::Layout(double width, bool force) {
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
     size_t widget_run_index = 0;
-    FML_DLOG(ERROR) << "Number of widgets: " << inline_widgets_.size();
+    // FML_DLOG(ERROR) << "Number of widgets: " << inline_widgets_.size();
+    // FML_DLOG(ERROR) << "Line Start/end: " << line_range.start << " "
+    //                 << line_end_index;
     for (const BidiRun& bidi_run : bidi_runs) {
-      // The run is a widget run.
-      FML_DLOG(ERROR) << "Bools: " << bidi_run.start() << " | "
-                      << bidi_run.end() << " | " << text_[bidi_run.start()];
-      FML_DLOG(ERROR) << "Bools(mod): "
-                      << std::max(bidi_run.start(), line_range.start) << " | "
-                      << std::min(bidi_run.end(), line_range.end) << " | "
-                      << text_[bidi_run.start()];
-      if (bidi_run.size() == 1 && text_[bidi_run.start()] == 0xFFFC &&
-          widget_run_index < inline_widgets_.size()) {
-        line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
-                               std::min(bidi_run.end(), line_range.end),
-                               bidi_run.direction(), bidi_run.style(),
-                               inline_widgets_[widget_run_index]);
-        widget_run_index++;
-        FML_DLOG(ERROR) << "WIDGET RUN!!!!!!!!!!!";
-        continue;
-      }
-
-      // The run is text run.
+      // The run is within the range of the current line
       if (bidi_run.start() < line_end_index &&
           bidi_run.end() > line_range.start) {
-        line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
-                               std::min(bidi_run.end(), line_end_index),
-                               bidi_run.direction(), bidi_run.style());
+        // The run is a widget run.
+        if (bidi_run.size() == 1 && text_[bidi_run.start()] == 0xFFFC &&
+            widget_run_index < inline_widgets_.size()) {
+          line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
+                                 std::min(bidi_run.end(), line_end_index),
+                                 bidi_run.direction(), bidi_run.style(),
+                                 inline_widgets_[widget_run_index]);
+          widget_run_index++;
+          // FML_DLOG(ERROR) << "WIDGET RUN!!!!!!!!!!!" << bidi_run.start() << "
+          // "
+          //                 << bidi_run.end();
+        } else {
+          line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
+                                 std::min(bidi_run.end(), line_end_index),
+                                 bidi_run.direction(), bidi_run.style());
+          // FML_DLOG(ERROR) << "REG RUN!!!!!!!!!!!" << bidi_run.start() << " "
+          //                 << bidi_run.end();
+        }
       }
       // A "ghost" run is a run that does not impact the layout, breaking,
       // alignment, width, etc but is still "visible" though getRectsForRange.
@@ -714,10 +731,10 @@ void Paragraph::Layout(double width, bool force) {
         }
       }
 
-      FML_DLOG(ERROR) << "LAYING...";
+      FML_DLOG(ERROR) << "LAYING..." << text_count << " " << run.start() << " "
+                      << run.end();
       layout.doLayout(text_ptr, text_start, text_count, text_size, run.is_rtl(),
                       minikin_font, minikin_paint, minikin_font_collection);
-      FML_DLOG(ERROR) << "LAID OUT";
 
       if (layout.nGlyphs() == 0)
         continue;
@@ -849,17 +866,12 @@ void Paragraph::Layout(double width, bool force) {
 
         SkFontMetrics metrics;
         font.getMetrics(&metrics);
-        FML_DLOG(ERROR) << run.is_widget_run() << " | " << run.start() << " "
-                        << run.end() << " | "
-                        << (run.is_widget_run() ? run.widget_run()->width
-                                                : layout.getAdvance());
         if (run.is_widget_run()) {
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset, 0), builder.make(),
               metrics, line_number, run.widget_run()->width, run.is_ghost(),
               run.widget_run());
           run_x_offset += run.widget_run()->width;
-          FML_DLOG(ERROR) << run.widget_run();
         } else {
           paint_records.emplace_back(
               run.style(), SkPoint::Make(run_x_offset, 0), builder.make(),
@@ -889,7 +901,6 @@ void Paragraph::Layout(double width, bool force) {
         min_left_ = std::min(min_left_, glyph_positions.front().x_pos.start);
         max_right_ = std::max(max_right_, glyph_positions.back().x_pos.end);
       }  // for each in glyph_blobs
-      // FML_DLOG(ERROR) << "1";
 
       // Do not increase x offset for trailing ghost runs as it should not
       // impact the layout of visible glyphs. We do keep the record though so
@@ -927,22 +938,17 @@ void Paragraph::Layout(double width, bool force) {
                                    const TextStyle& style,
                                    const WidgetRun* widget_run) {
       if (!strut.force_strut) {
-        FML_DLOG(ERROR) << " WidgetRun: " << (widget_run == nullptr);
-        // FML_DLOG(ERROR) << "CHeck" << widget_run->baseline;
         double ascent =
             widget_run == nullptr
                 ? (-metrics.fAscent + metrics.fLeading / 2) * style.height
                 : widget_run->baseline;
         max_ascent = std::max(ascent, max_ascent);
-        FML_DLOG(ERROR) << "asc: " << ascent;
 
         double descent =
             widget_run == nullptr
                 ? (metrics.fDescent + metrics.fLeading / 2) * style.height
                 : widget_run->height - widget_run->baseline;
         max_descent = std::max(descent, max_descent);
-        FML_DLOG(ERROR) << "desc: " << descent;
-        FML_DLOG(ERROR) << "Finised update_line_metrics";
       }
 
       max_unscaled_ascent = std::max(-metrics.fAscent, max_unscaled_ascent);
@@ -1342,6 +1348,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
   size_t min_line = INT_MAX;
   size_t glyph_length = 0;
 
+  FML_DLOG(ERROR) << "GET RECTS!!!";
   // Generate initial boxes and calculate metrics.
   for (const CodeUnitRun& run : code_unit_runs_) {
     // Check to see if we are finished.
@@ -1349,14 +1356,16 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
       break;
     if (run.code_units.end <= start)
       continue;
+    FML_DLOG(ERROR) << "CODE UNIT RANGE: " << run.code_units.start << " "
+                    << run.code_units.end;
 
     double baseline = line_baselines_[run.line_number];
     SkScalar top = baseline + run.font_metrics.fAscent;
     SkScalar bottom = baseline + run.font_metrics.fDescent;
 
     if (run.widget_run != nullptr) {  // Use inline widget size as height.
-      FML_DLOG(ERROR) << "Adjusting heights" << top << " " << bottom << " "
-                      << baseline;
+      // FML_DLOG(ERROR) << "Adjusting heights" << top << " " << bottom << " "
+      //                 << baseline;
       top = baseline - run.widget_run->baseline;
       bottom = baseline + run.widget_run->height - run.widget_run->baseline;
     }
@@ -1401,7 +1410,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
         first_line_dir = run.direction;
       }
     }
-    FML_DLOG(ERROR) << "Adding heights" << top << " " << bottom;
+    // FML_DLOG(ERROR) << "Adding heights" << top << " " << bottom;
     line_metrics[run.line_number].boxes.emplace_back(
         SkRect::MakeLTRB(left, top, right, bottom), run.direction);
   }

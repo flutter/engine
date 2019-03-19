@@ -71,7 +71,7 @@ TEST_F(ParagraphTest, SimpleParagraph) {
 }
 
 TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
-  const char* text = "01234";
+  const char* text = "012 34";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
   std::u16string u16_text(icu_text.getBuffer(),
                           icu_text.getBuffer() + icu_text.length());
@@ -98,9 +98,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
 
   builder.AddText(u16_text);
 
-  // widget_run = txt::WidgetRun(50, 50, 45, true, true);
   builder.AddWidget(widget_run);
-  // widget_run = txt::WidgetRun(25, 25, 25, true, true);
   txt::WidgetRun widget_run2(5, 50, 50, true, true);
   builder.AddWidget(widget_run2);
 
@@ -111,6 +109,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  // builder.AddText(u16_text);
+  // builder.AddText(u16_text);
 
   builder.Pop();
 
@@ -151,7 +153,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
 
   paint.setColor(SK_ColorBLUE);
   boxes =
-      paragraph->GetRectsForRange(3, 14, rect_height_style, rect_width_style);
+      paragraph->GetRectsForRange(0, 17, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
