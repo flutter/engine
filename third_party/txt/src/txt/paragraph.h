@@ -184,6 +184,8 @@ class Paragraph {
   // with the top left corner as the origin, and +y direction as down.
   PositionWithAffinity GetGlyphPositionAtCoordinate(double dx, double dy) const;
 
+  std::vector<Paragraph::TextBox> GetRectsForWidgets() const;
+
   // Finds the first and last glyphs that define a word containing the glyph at
   // index offset.
   Range<size_t> GetWordBoundary(size_t offset) const;
@@ -239,6 +241,7 @@ class Paragraph {
   // position in the text where the widget will occur. There should be an equal
   // number of 0xFFFC characters and elements in this vector.
   std::vector<WidgetRun> inline_widgets_;
+  std::vector<size_t> inline_widget_boxes_;
   StyledRuns runs_;
   ParagraphStyle paragraph_style_;
   std::shared_ptr<FontCollection> font_collection_;
@@ -381,6 +384,8 @@ class Paragraph {
   // Holds the positions of each range of code units in the text.
   // Sorted in code unit index order.
   std::vector<CodeUnitRun> code_unit_runs_;
+  // Holds the positions of the inline widgets.
+  std::vector<CodeUnitRun> inline_widget_code_unit_runs_;
 
   // The max width of the paragraph as provided in the most recent Layout()
   // call.

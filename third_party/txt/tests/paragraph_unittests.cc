@@ -278,6 +278,88 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   ASSERT_TRUE(Snapshot());
 }
 
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
+  const char* text = "012 34";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 14;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 26;
+  text_style.letter_spacing = 1;
+  text_style.word_spacing = 5;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  text_style.decoration = TextDecoration::kUnderline;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  txt::WidgetRun widget_run(50, 50, 50, true, true);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+
+  builder.AddText(u16_text);
+
+  builder.AddWidget(widget_run);
+  txt::WidgetRun widget_run2(5, 50, 50, true, true);
+  builder.AddWidget(widget_run2);
+
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  // builder.AddText(u16_text);
+  // builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth() - 300);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes = paragraph->GetRectsForWidgets();
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  // ASSERT_TRUE(Snapshot());
+  // EXPECT_EQ(boxes.size(), 1ull);
+
+  ASSERT_TRUE(Snapshot());
+}
+
 TEST_F(ParagraphTest, SimpleRedParagraph) {
   const char* text = "I am RED";
   auto icu_text = icu::UnicodeString::fromUTF8(text);

@@ -556,6 +556,7 @@ void Paragraph::Layout(double width, bool force) {
   line_baselines_.clear();
   glyph_lines_.clear();
   code_unit_runs_.clear();
+  inline_widget_code_unit_runs_.clear();
   line_max_spacings_.clear();
   line_max_descent_.clear();
   line_max_ascent_.clear();
@@ -654,6 +655,7 @@ void Paragraph::Layout(double width, bool force) {
 
     std::vector<GlyphPosition> line_glyph_positions;
     std::vector<CodeUnitRun> line_code_unit_runs;
+    std::vector<CodeUnitRun> line_inline_widget_code_unit_runs;
     double run_x_offset = 0;
     double justify_x_offset = 0;
     std::vector<PaintRecord> paint_records;
@@ -886,6 +888,11 @@ void Paragraph::Layout(double width, bool force) {
                                     run.widget_run()->width
                               : glyph_positions.back().x_pos.end),
             line_number, metrics, run.direction(), run.widget_run());
+        if (run.is_widget_run()) {
+          line_inline_widget_code_unit_runs.insert(
+              line_inline_widget_code_unit_runs.end(),
+              line_code_unit_runs.end() - 1, line_code_unit_runs.end());
+        }
 
         min_left_ = std::min(min_left_, glyph_positions.front().x_pos.start);
         max_right_ = std::max(max_right_, glyph_positions.back().x_pos.end);
@@ -905,6 +912,9 @@ void Paragraph::Layout(double width, bool force) {
       for (CodeUnitRun& code_unit_run : line_code_unit_runs) {
         code_unit_run.Shift(line_x_offset);
       }
+      for (CodeUnitRun& code_unit_run : line_inline_widget_code_unit_runs) {
+        code_unit_run.Shift(line_x_offset);
+      }
       for (GlyphPosition& position : line_glyph_positions) {
         position.Shift(line_x_offset);
       }
@@ -917,7 +927,10 @@ void Paragraph::Layout(double width, bool force) {
                               next_line_start - line_range.start);
     code_unit_runs_.insert(code_unit_runs_.end(), line_code_unit_runs.begin(),
                            line_code_unit_runs.end());
-
+    inline_widget_code_unit_runs_.insert(
+        inline_widget_code_unit_runs_.end(),
+        line_inline_widget_code_unit_runs.begin(),
+        line_inline_widget_code_unit_runs.end());
     // Calculate the amount to advance in the y direction. This is done by
     // computing the maximum ascent and descent with respect to the strut.
     double max_ascent = strut.ascent + strut.half_leading;
@@ -1455,22 +1468,8 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
     // Handle rect_height_styles. The height metrics used are all positive to
     // make the signage clear here.
     if (rect_height_style == RectHeightStyle::kTight) {
-      // if (run.widget_run == nullptr) {  // Is a regular text run
       // Ignore line max height and width and generate tight bounds.
       boxes.insert(boxes.end(), kv.second.boxes.begin(), kv.second.boxes.end());
-      //   } else {  // is a inline widget run
-      //     // for (const Paragraph::TextBox& box : kv.second.boxes) {
-      //     //   boxes.emplace_back(
-      //     //       SkRect::MakeLTRB(
-      //     //           box.rect.fLeft,
-      //     //           line_baselines_[kv.first] -
-      //     line_max_ascent_[kv.first],
-      //     //           box.rect.fRight,
-      //     //           line_baselines_[kv.first] +
-      //     line_max_descent_[kv.first]),
-      //     //       box.direction);
-      //     // }
-      //   }
     } else if (rect_height_style == RectHeightStyle::kMax) {
       for (const Paragraph::TextBox& box : kv.second.boxes) {
         boxes.emplace_back(
@@ -1530,7 +1529,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForRange(
     }
   }
   return boxes;
-}  // namespace txt
+}
 
 Paragraph::PositionWithAffinity Paragraph::GetGlyphPositionAtCoordinate(
     double dx,
@@ -1589,6 +1588,84 @@ Paragraph::PositionWithAffinity Paragraph::GetGlyphPositionAtCoordinate(
   } else {
     return PositionWithAffinity(gp->code_units.end, UPSTREAM);
   }
+}
+
+// We don't cache this because since this returns all boxes, it is usually
+// unnecessary to call this multiple times in succession.
+std::vector<Paragraph::TextBox> Paragraph::GetRectsForWidgets() const {
+  // Struct that holds calculated metrics for each line.
+  struct LineBoxMetrics {
+    std::vector<Paragraph::TextBox> boxes;
+    // Per-line metrics for max and min coordinates for left and right boxes.
+    // These metrics cannot be calculated in layout generically because of
+    // selections that do not cover the whole line.
+    SkScalar max_right = FLT_MIN;
+    SkScalar min_left = FLT_MAX;
+  };
+
+  std::map<size_t, LineBoxMetrics> line_metrics;
+  // Text direction of the first line so we can extend the correct side for
+  // RectWidthStyle::kMax.
+  // TextDirection first_line_dir = TextDirection::ltr;
+
+  // Lines that are actually in the requested range.
+  // size_t max_line = 0;
+  // size_t min_line = INT_MAX;
+  // size_t glyph_length = 0;
+
+  // Generate initial boxes and calculate metrics.
+  for (const CodeUnitRun& run : inline_widget_code_unit_runs_) {
+    // Check to see if we are finished.
+    double baseline = line_baselines_[run.line_number];
+    SkScalar top = baseline + run.font_metrics.fAscent;
+    SkScalar bottom = baseline + run.font_metrics.fDescent;
+
+    if (run.widget_run != nullptr) {  // Use inline widget size as height.
+      top = baseline - run.widget_run->baseline;
+      bottom = baseline + run.widget_run->height - run.widget_run->baseline;
+    }
+
+    // max_line = std::max(run.line_number, max_line);
+    // min_line = std::min(run.line_number, min_line);
+
+    // Calculate left and right.
+    SkScalar left, right;
+    left = run.x_pos.start;
+    right = run.x_pos.end;
+    // if (run.code_units.start >= start && run.code_units.end <= end) {
+    //   left = run.x_pos.start;
+    //   right = run.x_pos.end;
+    // } else {
+    //   left = SK_ScalarMax;
+    //   right = SK_ScalarMin;
+    //   for (const GlyphPosition& gp : run.positions) {
+    //     if (gp.code_units.start >= start && gp.code_units.end <= end) {
+    //       left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
+    //       right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
+    //     } else if (gp.code_units.end == end) {
+    //       // Calculate left and right when we are at
+    //       // the last position of a combining character.
+    //       glyph_length = (gp.code_units.end - gp.code_units.start) - 1;
+    //       if (gp.code_units.start ==
+    //           std::max<size_t>(0, (start - glyph_length))) {
+    //         left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
+    //         right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
+    //       }
+    //     }
+    //   }
+    //   if (left == SK_ScalarMax || right == SK_ScalarMin)
+    //     continue;
+    line_metrics[run.line_number].boxes.emplace_back(
+        SkRect::MakeLTRB(left, top, right, bottom), run.direction);
+  }
+
+  // "Post-process" metrics and aggregate final rects to return.
+  std::vector<Paragraph::TextBox> boxes;
+  for (const auto& kv : line_metrics) {
+    // Always use tight bounds. To obtain other bounds, use GetRectsForRange.
+    boxes.insert(boxes.end(), kv.second.boxes.begin(), kv.second.boxes.end());
+  }
+  return boxes;
 }
 
 Paragraph::Range<size_t> Paragraph::GetWordBoundary(size_t offset) const {
