@@ -71,6 +71,16 @@ class AccessibilityBridge;
  */
 @property(nonatomic, strong) NSMutableArray<SemanticsObject*>* children;
 
+/**
+ * Whether this object is a placeholder node for platform views.
+ *
+ * If set to YES, this object will not contain a SemanticsNode,
+ * instead the accessibilityElements of this object will be the
+ * platform view. And the platform view
+ * will handle the accessibility of itself.
+ */
+@property(nonatomic, assign) BOOL isPlatformViewSemanticPlaceholder;
+
 - (BOOL)nodeWillCauseLayoutChange:(const blink::SemanticsNode*)node;
 
 #pragma mark - Designated initializers

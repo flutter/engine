@@ -164,7 +164,8 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   // entire element tree looking for such a hit.
 
   //  We enforce in the framework that no other useful semantics are merged with these nodes.
-  if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute) || [self node].IsPlatformViewNode())
+  if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute) ||
+      self.isPlatformViewSemanticPlaceholder)
     return false;
 
   return ([self node].flags != 0 &&
@@ -439,16 +440,18 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   }
   SemanticsObject* child = [_semanticsObject children][index - 1];
 
-  // If the child is a semantic node for a platform view,
+  // If the child is a semantic place holder for a platform view,
   // inject the platform view into the iOS accessibility tree.
-  shell::FlutterPlatformViewsController* controller = _bridge.get()->GetPlatformViewsController();
-  if (child.node.IsPlatformViewNode() && controller) {
-    NSObject<FlutterPlatformView>* platformViewContainer =
-        controller->GetPlatformViewByID(child.node.platformViewId);
-    UIView* platformView = [platformViewContainer view];
-    if (platformView) {
-      child.accessibilityElements = @[ platformView ];
-      return child;
+  if (child.isPlatformViewSemanticPlaceholder) {
+    shell::FlutterPlatformViewsController* controller = _bridge.get()->GetPlatformViewsController();
+    if (controller) {
+      NSObject<FlutterPlatformView>* platformViewContainer =
+          controller->GetPlatformViewByID(_semanticsObject.node.platformViewId);
+      UIView* platformView = [platformViewContainer view];
+      if (platformView) {
+        child.accessibilityElements = @[ platformView ];
+        return child;
+      }
     }
   }
 
@@ -548,7 +551,14 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
     NSMutableArray* newChildren =
         [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
     for (NSUInteger i = 0; i < newChildCount; ++i) {
-      SemanticsObject* child = GetOrCreateObject(node.childrenInTraversalOrder[i], nodes);
+      SemanticsObject* child;
+      if (node.IsPlatformViewNode() && i == node.childrenInTraversalOrder.size()) {
+        int32_t uid = node.id * 1000 + node.platformViewId;
+        child = [[SemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid];
+        child.isPlatformViewSemanticPlaceholder = YES;
+      } else {
+        child = GetOrCreateObject(node.childrenInTraversalOrder[i], nodes);
+      }
       child.parent = object;
       [newChildren addObject:child];
     }
@@ -678,14 +688,6 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
         }
         [object.parent.children replaceObjectAtIndex:positionInChildlist withObject:object];
         objects_.get()[@(node.id)] = object;
-      }
-
-      BOOL isPlatformViewNode = node.IsPlatformViewNode();
-      BOOL wasPlatformViewNode = object.node.IsPlatformViewNode();
-      if (wasPlatformViewNode && !isPlatformViewNode) {
-        // The node changed its type from platform view node to something else. In this
-        // case, we need to clean up the accessibility elements that we previously added.
-        object.accessibilityElements = nil;
       }
     }
   }
