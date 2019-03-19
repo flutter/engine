@@ -153,7 +153,119 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
 
   paint.setColor(SK_ColorBLUE);
   boxes =
-      paragraph->GetRectsForRange(0, 17, rect_height_style, rect_width_style);
+      paragraph->GetRectsForRange(4, 17, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  // EXPECT_EQ(boxes.size(), 1ull);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.left(), 56.835938);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.right(), 177.97266);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
+  const char* text = "012 34";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 14;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 26;
+  text_style.letter_spacing = 1;
+  text_style.word_spacing = 5;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  text_style.decoration = TextDecoration::kUnderline;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  txt::WidgetRun widget_run(50, 50, 50, true, true);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+
+  // builder.AddText(u16_text);
+
+  // builder.AddWidget(widget_run);
+  // txt::WidgetRun widget_run2(5, 50, 50, true, true);
+  // builder.AddWidget(widget_run2);
+
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  // builder.AddText(u16_text);
+  // builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth() - 300);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 3, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  // ASSERT_TRUE(Snapshot());
+  EXPECT_EQ(boxes.size(), 1ull);
+
+  paint.setColor(SK_ColorGREEN);
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
+  // EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(4, 25, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
