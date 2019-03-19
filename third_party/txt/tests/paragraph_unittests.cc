@@ -117,7 +117,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
   builder.Pop();
 
   auto paragraph = builder.Build();
-  paragraph->Layout(GetTestCanvasWidth() - 300);
+  paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
 
@@ -197,6 +197,13 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
+  builder.AddText(u16_text);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
@@ -229,7 +236,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   builder.Pop();
 
   auto paragraph = builder.Build();
-  paragraph->Layout(GetTestCanvasWidth() - 300);
+  paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
 
@@ -265,7 +272,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
 
   paint.setColor(SK_ColorBLUE);
   boxes =
-      paragraph->GetRectsForRange(4, 25, rect_height_style, rect_width_style);
+      paragraph->GetRectsForRange(4, 35, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -319,6 +326,10 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
 
   builder.AddText(u16_text);
 
@@ -341,7 +352,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   builder.Pop();
 
   auto paragraph = builder.Build();
-  paragraph->Layout(GetTestCanvasWidth() - 300);
+  paragraph->Layout(GetTestCanvasWidth());
 
   paragraph->Paint(GetCanvas(), 0, 0);
 

@@ -318,21 +318,24 @@ bool Paragraph::ComputeLineBreaks() {
 
       // Check if the run is an object replacement character-only run. We should
       // leave space for inline widget and break around it if appropriate.
-      if (run.start - run.end == 1 && text_[run.start] == 0xFFFC &&
+      if (run.end - run.start == 1 && text_[run.start] == 0xFFFC &&
           inline_widget_index < inline_widgets_.size()) {
         // Is a inline widget run.
-        WidgetRun widget_span = inline_widgets_[inline_widget_index];
-        widget_adjusted_line_width -= widget_span.width;
-        block_total_width += widget_span.width;
+        WidgetRun widget_run = inline_widgets_[inline_widget_index];
+        widget_adjusted_line_width -= widget_run.width;
 
-        breaker_.addStyleRun(&paint, collection, font, run_start, run_end,
-                             isRtl);
         // Inject custom breakpoints into minikin breaker. (Uses LibTxt-minikin
         // patch).
-        if (widget_span.break_upstream)
-          breaker_.addCustomBreak(run.start, widget_span.width, 0);
-        if (widget_span.break_downstream)
-          breaker_.addCustomBreak(run.end, 0, 0);
+        if (widget_run.break_upstream)
+          breaker_.addCustomBreak(run.start, widget_run.width,
+                                  block_total_width, 0);
+        // breaker_.addCustomBreak(run.start, widget_run.width, 0);
+        if (widget_run.break_downstream)
+          breaker_.addCustomBreak(run.end, 0, block_total_width, 0);
+        // breaker_.addCustomBreak(run.end, 0, 0);
+        breaker_.addStyleRun(&paint, collection, font, run_start, run_end,
+                             isRtl);
+        block_total_width += widget_run.width;
         inline_widget_index++;
       } else {
         // Is a regular text run.

@@ -179,7 +179,10 @@ class LineBreaker {
 
   // libtxt: Add ability to push custom break points. This calls pushBreak()
   // with the custom break values. Used for properly breaking inline widgets.
-  void addCustomBreak(int offset, float width, uint8_t hyphenEdit);
+  void addCustomBreak(int offset,
+                      float width,
+                      float paragraphWidth,
+                      uint8_t hyphenEdit);
 
   const int* getBreaks() const { return mBreaks.data(); }
 
