@@ -1,4 +1,4 @@
-Signature: 9107ca6e7b9595ef1a2eff8ea828c5c4
+Signature: c3be07455b3622a7b69ee4ec3797c619
 
 UNUSED LICENSES:
 
@@ -1717,6 +1717,8 @@ FILE: ../../../third_party/skia/src/effects/SkTrimPE.h
 FILE: ../../../third_party/skia/src/effects/SkTrimPathEffect.cpp
 FILE: ../../../third_party/skia/src/gpu/GrContextThreadSafeProxyPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrDDLContext.cpp
+FILE: ../../../third_party/skia/src/gpu/GrDeinstantiateProxyTracker.cpp
+FILE: ../../../third_party/skia/src/gpu/GrDeinstantiateProxyTracker.h
 FILE: ../../../third_party/skia/src/gpu/GrDriverBugWorkarounds.cpp
 FILE: ../../../third_party/skia/src/gpu/GrFPArgs.h
 FILE: ../../../third_party/skia/src/gpu/GrLegacyDirectContext.cpp
@@ -2060,46 +2062,6 @@ FILE: ../../../third_party/skia/docs/overview.bmh
 FILE: ../../../third_party/skia/docs/status.json
 FILE: ../../../third_party/skia/docs/undocumented.bmh
 FILE: ../../../third_party/skia/docs/usingBookmaker.bmh
-FILE: ../../../third_party/skia/experimental/canvaskit/canvaskit/NotoSerif-Regular.ttf
-FILE: ../../../third_party/skia/experimental/canvaskit/canvaskit/Roboto-Regular.ttf
-FILE: ../../../third_party/skia/experimental/canvaskit/canvaskit/Roboto-Regular.woff
-FILE: ../../../third_party/skia/experimental/canvaskit/canvaskit/example.html
-FILE: ../../../third_party/skia/experimental/canvaskit/canvaskit/node.example.js
-FILE: ../../../third_party/skia/experimental/canvaskit/canvaskit/package.json
-FILE: ../../../third_party/skia/experimental/canvaskit/canvaskit/test.png
-FILE: ../../../third_party/skia/experimental/canvaskit/cpu.js
-FILE: ../../../third_party/skia/experimental/canvaskit/debug.js
-FILE: ../../../third_party/skia/experimental/canvaskit/externs.js
-FILE: ../../../third_party/skia/experimental/canvaskit/fonts/NotoMono-Regular.ttf
-FILE: ../../../third_party/skia/experimental/canvaskit/gpu.js
-FILE: ../../../third_party/skia/experimental/canvaskit/helper.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/_namedcolors.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/canvas2dcontext.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/color.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/font.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/htmlcanvas.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/imagedata.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/lineargradient.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/path2d.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/pattern.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/postamble.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/preamble.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/radialgradient.js
-FILE: ../../../third_party/skia/experimental/canvaskit/htmlcanvas/util.js
-FILE: ../../../third_party/skia/experimental/canvaskit/interface.js
-FILE: ../../../third_party/skia/experimental/canvaskit/karma.bench.conf.js
-FILE: ../../../third_party/skia/experimental/canvaskit/karma.conf.js
-FILE: ../../../third_party/skia/experimental/canvaskit/package.json
-FILE: ../../../third_party/skia/experimental/canvaskit/perf/animation.bench.js
-FILE: ../../../third_party/skia/experimental/canvaskit/perf/assets/confetti.json
-FILE: ../../../third_party/skia/experimental/canvaskit/perf/assets/drinks.json
-FILE: ../../../third_party/skia/experimental/canvaskit/perf/assets/lego_loader.json
-FILE: ../../../third_party/skia/experimental/canvaskit/perf/assets/onboarding.json
-FILE: ../../../third_party/skia/experimental/canvaskit/postamble.js
-FILE: ../../../third_party/skia/experimental/canvaskit/preamble.js
-FILE: ../../../third_party/skia/experimental/canvaskit/ready.js
-FILE: ../../../third_party/skia/experimental/canvaskit/release.js
-FILE: ../../../third_party/skia/experimental/canvaskit/skottie.js
 FILE: ../../../third_party/skia/experimental/docs/animationCommon.js
 FILE: ../../../third_party/skia/experimental/docs/backend.js
 FILE: ../../../third_party/skia/experimental/docs/canvasBackend.js
@@ -2114,6 +2076,7 @@ FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger/index.ht
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger/sample.skp
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/externs.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/fonts/NotoMono-Regular.ttf
+FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/gpu.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/karma.conf.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/package.json
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/ready.js
@@ -2414,6 +2377,47 @@ FILE: ../../../third_party/skia/infra/project-config/cr-buildbucket.cfg
 FILE: ../../../third_party/skia/infra/project-config/project.cfg
 FILE: ../../../third_party/skia/infra/project-config/refs.cfg
 FILE: ../../../third_party/skia/infra/skqp/docker/android-skqp/Dockerfile
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/NotoSerif-Regular.ttf
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/Roboto-Regular.ttf
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/Roboto-Regular.woff
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/example.html
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/extra.html
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/node.example.js
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/package.json
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit/test.png
+FILE: ../../../third_party/skia/modules/canvaskit/cpu.js
+FILE: ../../../third_party/skia/modules/canvaskit/debug.js
+FILE: ../../../third_party/skia/modules/canvaskit/externs.js
+FILE: ../../../third_party/skia/modules/canvaskit/fonts/NotoMono-Regular.ttf
+FILE: ../../../third_party/skia/modules/canvaskit/gpu.js
+FILE: ../../../third_party/skia/modules/canvaskit/helper.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/_namedcolors.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/canvas2dcontext.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/color.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/font.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/htmlcanvas.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/imagedata.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/lineargradient.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/path2d.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/pattern.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/postamble.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/preamble.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/radialgradient.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/util.js
+FILE: ../../../third_party/skia/modules/canvaskit/interface.js
+FILE: ../../../third_party/skia/modules/canvaskit/karma.bench.conf.js
+FILE: ../../../third_party/skia/modules/canvaskit/karma.conf.js
+FILE: ../../../third_party/skia/modules/canvaskit/package.json
+FILE: ../../../third_party/skia/modules/canvaskit/perf/animation.bench.js
+FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/confetti.json
+FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/drinks.json
+FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/lego_loader.json
+FILE: ../../../third_party/skia/modules/canvaskit/perf/assets/onboarding.json
+FILE: ../../../third_party/skia/modules/canvaskit/postamble.js
+FILE: ../../../third_party/skia/modules/canvaskit/preamble.js
+FILE: ../../../third_party/skia/modules/canvaskit/ready.js
+FILE: ../../../third_party/skia/modules/canvaskit/release.js
+FILE: ../../../third_party/skia/modules/canvaskit/skottie.js
 FILE: ../../../third_party/skia/modules/pathkit/chaining.js
 FILE: ../../../third_party/skia/modules/pathkit/externs.js
 FILE: ../../../third_party/skia/modules/pathkit/helper.js
@@ -4230,7 +4234,6 @@ FILE: ../../../third_party/skia/gm/srgb.cpp
 FILE: ../../../third_party/skia/gm/testgradient.cpp
 FILE: ../../../third_party/skia/gm/text_scale_skew.cpp
 FILE: ../../../third_party/skia/gm/thinconcavepaths.cpp
-FILE: ../../../third_party/skia/gm/tosrgb_colorfilter.cpp
 FILE: ../../../third_party/skia/include/android/SkAndroidFrameworkUtils.h
 FILE: ../../../third_party/skia/include/atlastext/SkAtlasTextContext.h
 FILE: ../../../third_party/skia/include/atlastext/SkAtlasTextFont.h
@@ -4247,7 +4250,6 @@ FILE: ../../../third_party/skia/include/core/SkSurfaceCharacterization.h
 FILE: ../../../third_party/skia/include/core/SkVertices.h
 FILE: ../../../third_party/skia/include/docs/SkXPSDocument.h
 FILE: ../../../third_party/skia/include/effects/SkHighContrastFilter.h
-FILE: ../../../third_party/skia/include/effects/SkToSRGBColorFilter.h
 FILE: ../../../third_party/skia/include/encode/SkEncoder.h
 FILE: ../../../third_party/skia/include/encode/SkJpegEncoder.h
 FILE: ../../../third_party/skia/include/encode/SkPngEncoder.h
@@ -4419,7 +4421,6 @@ FILE: ../../../third_party/skia/src/core/SkVptr.h
 FILE: ../../../third_party/skia/src/core/SkWritePixelsRec.h
 FILE: ../../../third_party/skia/src/effects/SkDashImpl.h
 FILE: ../../../third_party/skia/src/effects/SkHighContrastFilter.cpp
-FILE: ../../../third_party/skia/src/effects/SkToSRGBColorFilter.cpp
 FILE: ../../../third_party/skia/src/gpu/GrAHardwareBufferImageGenerator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrAHardwareBufferImageGenerator.h
 FILE: ../../../third_party/skia/src/gpu/GrBackendSurface.cpp
@@ -4597,6 +4598,90 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
+ORIGIN: ../../../third_party/skia/bench/MixerBench.cpp + ../../../third_party/skia/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/bench/MixerBench.cpp
+FILE: ../../../third_party/skia/gm/backdrop.cpp
+FILE: ../../../third_party/skia/gm/compositor_quads.cpp
+FILE: ../../../third_party/skia/gm/crbug_938592.cpp
+FILE: ../../../third_party/skia/gm/mac_aa_explorer.cpp
+FILE: ../../../third_party/skia/gm/mixercolorfilter.cpp
+FILE: ../../../third_party/skia/gm/samplelocations.cpp
+FILE: ../../../third_party/skia/gm/skbug_8664.cpp
+FILE: ../../../third_party/skia/include/core/SkMixer.h
+FILE: ../../../third_party/skia/include/gpu/GrContextThreadSafeProxy.h
+FILE: ../../../third_party/skia/include/private/GrContext_Base.h
+FILE: ../../../third_party/skia/include/private/GrImageContext.h
+FILE: ../../../third_party/skia/include/private/GrRecordingContext.h
+FILE: ../../../third_party/skia/include/private/SkVx.h
+FILE: ../../../third_party/skia/modules/sksg/include/SkSGRenderEffect.h
+FILE: ../../../third_party/skia/modules/sksg/src/SkSGRenderEffect.cpp
+FILE: ../../../third_party/skia/modules/sksg/src/SkSGTransformPriv.h
+FILE: ../../../third_party/skia/samplecode/SampleDegenerateQuads.cpp
+FILE: ../../../third_party/skia/samplecode/SampleSG.cpp
+FILE: ../../../third_party/skia/samplecode/SampleThinAA.cpp
+FILE: ../../../third_party/skia/src/core/SkDescriptor.cpp
+FILE: ../../../third_party/skia/src/core/SkEffectPriv.h
+FILE: ../../../third_party/skia/src/core/SkMixer.cpp
+FILE: ../../../third_party/skia/src/core/SkMixerBase.h
+FILE: ../../../third_party/skia/src/core/SkStrikeInterface.h
+FILE: ../../../third_party/skia/src/gpu/GrAHardwareBufferUtils.cpp
+FILE: ../../../third_party/skia/src/gpu/GrAHardwareBufferUtils.h
+FILE: ../../../third_party/skia/src/gpu/GrBaseContextPriv.h
+FILE: ../../../third_party/skia/src/gpu/GrBuffer.h
+FILE: ../../../third_party/skia/src/gpu/GrContextPriv.cpp
+FILE: ../../../third_party/skia/src/gpu/GrContextThreadSafeProxy.cpp
+FILE: ../../../third_party/skia/src/gpu/GrContext_Base.cpp
+FILE: ../../../third_party/skia/src/gpu/GrCpuBuffer.h
+FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.cpp
+FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.h
+FILE: ../../../third_party/skia/src/gpu/GrImageContext.cpp
+FILE: ../../../third_party/skia/src/gpu/GrImageContextPriv.h
+FILE: ../../../third_party/skia/src/gpu/GrRecordingContext.cpp
+FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.h
+FILE: ../../../third_party/skia/src/gpu/GrSamplePatternDictionary.cpp
+FILE: ../../../third_party/skia/src/gpu/GrSamplePatternDictionary.h
+FILE: ../../../third_party/skia/src/gpu/effects/GrMixerEffect.cpp
+FILE: ../../../third_party/skia/src/gpu/effects/GrMixerEffect.fp
+FILE: ../../../third_party/skia/src/gpu/effects/GrMixerEffect.h
+FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.cpp
+FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.h
+FILE: ../../../third_party/skia/src/shaders/SkMixerShader.cpp
+FILE: ../../../third_party/skia/src/shaders/SkMixerShader.h
+FILE: ../../../third_party/skia/src/sksl/SkSLDefines.h
+FILE: ../../../third_party/skia/src/sksl/SkSLOutputStream.cpp
+----------------------------------------------------------------------------------------------------
+Copyright 2019 Google Inc.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
 ORIGIN: ../../../third_party/skia/bench/ReadPixBench.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/ReadPixBench.cpp
@@ -4650,28 +4735,1094 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/experimental/canvaskit/WasmAliases.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/docs/examples/AutoCanvasRestore_000.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/experimental/canvaskit/WasmAliases.h
-FILE: ../../../third_party/skia/experimental/canvaskit/particles_bindings.cpp
-FILE: ../../../third_party/skia/experimental/canvaskit/skottie_bindings.cpp
-FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger_bindings.cpp
-FILE: ../../../third_party/skia/gm/runtimecolorfilter.cpp
-FILE: ../../../third_party/skia/modules/particles/include/SkCurve.h
-FILE: ../../../third_party/skia/modules/particles/include/SkParticleAffector.h
-FILE: ../../../third_party/skia/modules/particles/include/SkParticleData.h
-FILE: ../../../third_party/skia/modules/particles/include/SkParticleDrawable.h
-FILE: ../../../third_party/skia/modules/particles/include/SkParticleEffect.h
-FILE: ../../../third_party/skia/modules/particles/include/SkParticleSerialization.h
-FILE: ../../../third_party/skia/modules/particles/include/SkReflected.h
-FILE: ../../../third_party/skia/modules/particles/src/SkCurve.cpp
-FILE: ../../../third_party/skia/modules/particles/src/SkParticleAffector.cpp
-FILE: ../../../third_party/skia/modules/particles/src/SkParticleDrawable.cpp
-FILE: ../../../third_party/skia/modules/particles/src/SkParticleEffect.cpp
-FILE: ../../../third_party/skia/modules/particles/src/SkReflected.cpp
-FILE: ../../../third_party/skia/src/core/SkColorFilterPriv.h
+FILE: ../../../third_party/skia/docs/examples/AutoCanvasRestore_000.cpp
+FILE: ../../../third_party/skia/docs/examples/AutoCanvasRestore_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_014.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_019.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_020.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_021.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_022.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_023.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_024.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_025.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_026.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_027.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_028.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_029.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_030.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_031.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_032.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_033.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_034.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_035.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_036.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_037.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_038.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_039.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_040.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_041.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_042.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_043.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_044.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_045.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_046.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_047.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_048.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_049.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_050.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_051.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_052.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_053.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_054.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_055.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_056.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_057.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_058.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_059.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_060.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_061.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_062.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_063.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_064.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_065.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_066.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_067.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_068.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_069.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_070.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_071.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_072.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_073.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_074.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_075.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_076.cpp
+FILE: ../../../third_party/skia/docs/examples/Bitmap_077.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_000.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_001.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_002.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_003.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_004.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_005.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_006.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_007.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_008.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_009.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_010.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_011.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_012.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_013.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_014.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_015.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_016.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_017.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_018.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_019.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_020.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_021.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_022.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_023.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_024.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_025.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_026.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_027.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_028.cpp
+FILE: ../../../third_party/skia/docs/examples/BlendMode_029.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_014.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_019.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_020.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_021.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_022.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_023.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_024.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_025.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_026.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_027.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_028.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_029.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_030.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_031.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_032.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_033.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_034.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_035.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_036.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_037.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_038.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_039.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_040.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_041.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_042.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_043.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_044.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_045.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_046.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_047.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_048.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_049.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_050.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_051.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_052.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_053.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_054.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_055.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_056.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_057.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_058.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_059.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_060.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_061.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_062.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_063.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_064.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_065.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_066.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_067.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_068.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_069.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_070.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_071.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_072.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_073.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_074.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_075.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_076.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_077.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_078.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_079.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_080.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_081.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_082.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_083.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_084.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_085.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_086.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_087.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_088.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_089.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_090.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_091.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_092.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_093.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_094.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_095.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_097.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_098.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_099.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_100.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_101.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_102.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_103.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_104.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_105.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_106.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_107.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_108.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_109.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_110.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_111.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_112.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_114.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_115.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_116.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_117.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_118.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_119.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_120.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_121.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_122.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_123.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_124.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_125.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_126.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_127.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_128.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_129.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_130.cpp
+FILE: ../../../third_party/skia/docs/examples/Canvas_131.cpp
+FILE: ../../../third_party/skia/docs/examples/Color4f_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Color4f_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Color4f_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Color4f_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Color4f_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Color4f_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_014.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Color_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Font_033.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_000.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_001.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_002.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_003.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_004.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_005.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_006.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_007.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_008.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_009.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_010.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_011.cpp
+FILE: ../../../third_party/skia/docs/examples/IPoint_012.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_000.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_001.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_002.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_003.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_004.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_005.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_006.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_007.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_008.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_009.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_010.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_011.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_012.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_013.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_014.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_015.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_016.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_017.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_018.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_019.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_020.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_021.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_022.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_023.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_024.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_025.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_026.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_027.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_028.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_029.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_030.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_031.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_032.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_033.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_034.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_035.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_036.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_037.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_038.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_039.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_040.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_041.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_042.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_043.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_044.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_045.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_046.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_047.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_048.cpp
+FILE: ../../../third_party/skia/docs/examples/IRect_049.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_000.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_001.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_002.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_003.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_004.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_005.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_006.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_007.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_008.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_009.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_010.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_011.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_012.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_013.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_014.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_015.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_016.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_017.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_018.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_019.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_020.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_021.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_022.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_023.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_024.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_025.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_026.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_027.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_028.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_029.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_030.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_031.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_032.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_033.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_034.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_035.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_036.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_037.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_038.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_039.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_040.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_041.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_042.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_043.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_044.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_045.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_046.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_047.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_048.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_049.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_050.cpp
+FILE: ../../../third_party/skia/docs/examples/ImageInfo_051.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_014.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_019.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_020.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_021.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_022.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_023.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_024.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_025.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_026.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_027.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_028.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_029.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_030.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_031.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_032.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_033.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_034.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_035.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_036.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_037.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_038.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_039.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_040.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_041.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_042.cpp
+FILE: ../../../third_party/skia/docs/examples/Image_043.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_014.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_019.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_020.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_021.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_022.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_023.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_024.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_026.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_027.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_028.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_029.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_030.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_031.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_032.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_033.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_034.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_035.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_036.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_037.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_038.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_039.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_040.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_041.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_042.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_043.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_044.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_045.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_046.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_047.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_048.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_049.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_050.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_051.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_052.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_053.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_054.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_055.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_056.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_057.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_058.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_059.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_060.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_061.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_062.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_063.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_064.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_065.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_066.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_067.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_068.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_069.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_070.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_071.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_072.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_073.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_074.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_075.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_076.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_077.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_078.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_079.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_080.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_081.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_082.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_083.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_084.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_085.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_086.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_087.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_088.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_089.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_090.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_091.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_092.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_093.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_094.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_095.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_096.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_097.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_098.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_099.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_100.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_101.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_102.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_103.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_104.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_105.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_106.cpp
+FILE: ../../../third_party/skia/docs/examples/Matrix_107.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_014.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_019.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_020.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_021.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_022.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_023.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_024.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_025.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_026.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_027.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_028.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_029.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_030.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_031.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_032.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_033.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_034.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_035.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_036.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_037.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_038.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_039.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_040.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_041.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_042.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_043.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_044.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_045.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_046.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_047.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_048.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_049.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_050.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_051.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_052.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_053.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_054.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_055.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_056.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_057.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_058.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_059.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_060.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_061.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_062.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_063.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_064.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_065.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_066.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_067.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_068.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_069.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_070.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_071.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_072.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_074.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_075.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_076.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_077.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_078.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_079.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_080.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_081.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_082.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_083.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_084.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_085.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_086.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_087.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_088.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_089.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_090.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_091.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_092.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_093.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_094.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_095.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_096.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_097.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_098.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_099.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_100.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_101.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_102.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_103.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_104.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_105.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_106.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_107.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_108.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_109.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_110.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_111.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_112.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_113.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_114.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_115.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_116.cpp
+FILE: ../../../third_party/skia/docs/examples/Paint_117.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_014.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_019.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_020.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_021.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_022.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_023.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_024.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_025.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_026.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_027.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_028.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_029.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_030.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_031.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_032.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_033.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_034.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_035.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_036.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_037.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_038.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_039.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_040.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_041.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_042.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_043.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_044.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_045.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_046.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_047.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_048.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_049.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_050.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_051.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_052.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_053.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_054.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_055.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_056.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_057.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_058.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_059.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_060.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_061.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_062.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_063.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_064.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_065.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_066.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_067.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_068.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_069.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_070.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_071.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_072.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_073.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_074.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_076.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_077.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_078.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_079.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_080.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_081.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_082.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_083.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_084.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_085.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_086.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_087.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_088.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_089.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_090.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_091.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_092.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_093.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_094.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_095.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_096.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_097.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_098.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_099.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_100.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_101.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_102.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_103.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_104.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_105.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_106.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_107.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_108.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_109.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_110.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_111.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_112.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_113.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_114.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_115.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_116.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_117.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_118.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_119.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_120.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_121.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_122.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_123.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_124.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_125.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_126.cpp
+FILE: ../../../third_party/skia/docs/examples/Path_127.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Picture_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_014.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_019.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_020.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_021.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_022.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_023.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_024.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_025.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_026.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_027.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_028.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_029.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_030.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_031.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_032.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_033.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_034.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_035.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_036.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_037.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_038.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_039.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_040.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_041.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_042.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_043.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_044.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_045.cpp
+FILE: ../../../third_party/skia/docs/examples/Pixmap_046.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_014.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_019.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_020.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_021.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_022.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_023.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_024.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_025.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_026.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_027.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_028.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_029.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_030.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_031.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_032.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_033.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_034.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_035.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_036.cpp
+FILE: ../../../third_party/skia/docs/examples/Point_037.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_000.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_001.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_002.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_003.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_004.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_005.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_006.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_007.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_008.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_009.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_010.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_011.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_012.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_013.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_014.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_015.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_016.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_017.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_018.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_019.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_020.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_021.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_022.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_023.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_024.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_025.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_026.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_027.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_028.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_029.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_030.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_031.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_032.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_033.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_034.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_035.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_036.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_037.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_038.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_039.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_040.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_041.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_042.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_043.cpp
+FILE: ../../../third_party/skia/docs/examples/RRect_044.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_014.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_019.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_020.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_021.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_022.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_023.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_024.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_025.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_026.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_027.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_028.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_029.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_030.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_031.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_032.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_033.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_034.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_035.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_036.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_037.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_038.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_039.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_040.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_041.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_042.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_043.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_044.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_045.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_046.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_047.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_048.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_049.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_050.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_051.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_052.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_053.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_054.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_055.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_056.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_057.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_058.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_059.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_060.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_061.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_062.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_063.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_064.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_065.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_066.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_067.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_068.cpp
+FILE: ../../../third_party/skia/docs/examples/Rect_069.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_014.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_019.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_020.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_021.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_022.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_023.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_024.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_025.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_026.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_027.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_028.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_029.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_030.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_031.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_032.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_033.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_034.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_035.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_036.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_037.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_038.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_039.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_040.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_041.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_042.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_043.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_044.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_045.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_046.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_047.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_048.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_049.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_050.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_051.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_052.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_053.cpp
+FILE: ../../../third_party/skia/docs/examples/Region_054.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_000.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_001.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_002.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_003.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_004.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_005.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_006.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_007.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_008.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_009.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_010.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_011.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_012.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_013.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_015.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_016.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_017.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_018.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_019.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_020.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_021.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_022.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_023.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_024.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_025.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_026.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_027.cpp
+FILE: ../../../third_party/skia/docs/examples/Surface_028.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlobBuilder_000.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlobBuilder_001.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlobBuilder_002.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlobBuilder_003.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlobBuilder_004.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlob_000.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlob_001.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlob_002.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlob_003.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlob_004.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlob_005.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlob_006.cpp
+FILE: ../../../third_party/skia/docs/examples/TextBlob_007.cpp
+FILE: ../../../third_party/skia/gm/crbug_918512.cpp
 ----------------------------------------------------------------------------------------------------
-Copyright 2019 Google LLC
+Copyright 2019 Google LLC.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -4702,17 +5853,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/experimental/canvaskit/canvaskit_bindings.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger_bindings.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/experimental/canvaskit/canvaskit_bindings.cpp
-FILE: ../../../third_party/skia/fuzz/FuzzEncoders.cpp
-FILE: ../../../third_party/skia/fuzz/FuzzPolyUtils.cpp
-FILE: ../../../third_party/skia/include/private/GrSkSLFPFactoryCache.h
-FILE: ../../../third_party/skia/modules/pathkit/pathkit_wasm_bindings.cpp
-FILE: ../../../third_party/skia/src/core/SkPicture_none.cpp
-FILE: ../../../third_party/skia/src/gpu/ccpr/GrCoverageCountingPathRenderer_none.cpp
+FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/debugger_bindings.cpp
+FILE: ../../../third_party/skia/gm/runtimecolorfilter.cpp
+FILE: ../../../third_party/skia/include/gpu/gl/GrGLAssembleHelpers.h
+FILE: ../../../third_party/skia/modules/canvaskit/WasmAliases.h
+FILE: ../../../third_party/skia/modules/canvaskit/particles_bindings.cpp
+FILE: ../../../third_party/skia/modules/canvaskit/skottie_bindings.cpp
+FILE: ../../../third_party/skia/modules/particles/include/SkCurve.h
+FILE: ../../../third_party/skia/modules/particles/include/SkParticleAffector.h
+FILE: ../../../third_party/skia/modules/particles/include/SkParticleData.h
+FILE: ../../../third_party/skia/modules/particles/include/SkParticleDrawable.h
+FILE: ../../../third_party/skia/modules/particles/include/SkParticleEffect.h
+FILE: ../../../third_party/skia/modules/particles/include/SkParticleSerialization.h
+FILE: ../../../third_party/skia/modules/particles/include/SkReflected.h
+FILE: ../../../third_party/skia/modules/particles/src/SkCurve.cpp
+FILE: ../../../third_party/skia/modules/particles/src/SkParticleAffector.cpp
+FILE: ../../../third_party/skia/modules/particles/src/SkParticleDrawable.cpp
+FILE: ../../../third_party/skia/modules/particles/src/SkParticleEffect.cpp
+FILE: ../../../third_party/skia/modules/particles/src/SkReflected.cpp
+FILE: ../../../third_party/skia/src/core/SkColorFilterPriv.h
+FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleHelpers.cpp
+FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleInterface_gl.cpp
+FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleInterface_gles.cpp
 ----------------------------------------------------------------------------------------------------
-Copyright 2018 Google LLC
+Copyright 2019 Google LLC
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -4748,6 +5914,47 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/fuzz/FuzzDrawFunctions.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2016 Mozilla Foundation
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
+ORIGIN: ../../../third_party/skia/fuzz/FuzzEncoders.cpp + ../../../third_party/skia/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/fuzz/FuzzEncoders.cpp
+FILE: ../../../third_party/skia/fuzz/FuzzPolyUtils.cpp
+FILE: ../../../third_party/skia/include/private/GrSkSLFPFactoryCache.h
+FILE: ../../../third_party/skia/modules/canvaskit/canvaskit_bindings.cpp
+FILE: ../../../third_party/skia/modules/pathkit/pathkit_wasm_bindings.cpp
+FILE: ../../../third_party/skia/src/core/SkPicture_none.cpp
+FILE: ../../../third_party/skia/src/gpu/ccpr/GrCoverageCountingPathRenderer_none.cpp
+----------------------------------------------------------------------------------------------------
+Copyright 2018 Google LLC
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -4832,51 +6039,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/gm/backdrop.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2GLSL.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/gm/backdrop.cpp
-FILE: ../../../third_party/skia/gm/compositor_quads.cpp
-FILE: ../../../third_party/skia/gm/mac_aa_explorer.cpp
-FILE: ../../../third_party/skia/gm/mixercolorfilter.cpp
-FILE: ../../../third_party/skia/gm/samplelocations.cpp
-FILE: ../../../third_party/skia/gm/skbug_8664.cpp
-FILE: ../../../third_party/skia/include/gpu/GrContextThreadSafeProxy.h
-FILE: ../../../third_party/skia/include/private/GrContext_Base.h
-FILE: ../../../third_party/skia/include/private/GrImageContext.h
-FILE: ../../../third_party/skia/include/private/GrRecordingContext.h
-FILE: ../../../third_party/skia/include/private/SkVx.h
-FILE: ../../../third_party/skia/modules/sksg/include/SkSGRenderEffect.h
-FILE: ../../../third_party/skia/modules/sksg/src/SkSGRenderEffect.cpp
-FILE: ../../../third_party/skia/modules/sksg/src/SkSGTransformPriv.h
-FILE: ../../../third_party/skia/samplecode/SampleSG.cpp
-FILE: ../../../third_party/skia/samplecode/SampleThinAA.cpp
-FILE: ../../../third_party/skia/src/core/SkDescriptor.cpp
-FILE: ../../../third_party/skia/src/core/SkStrikeInterface.h
-FILE: ../../../third_party/skia/src/gpu/GrAHardwareBufferUtils.cpp
-FILE: ../../../third_party/skia/src/gpu/GrAHardwareBufferUtils.h
-FILE: ../../../third_party/skia/src/gpu/GrBaseContextPriv.h
-FILE: ../../../third_party/skia/src/gpu/GrBuffer.h
-FILE: ../../../third_party/skia/src/gpu/GrContextPriv.cpp
-FILE: ../../../third_party/skia/src/gpu/GrContextThreadSafeProxy.cpp
-FILE: ../../../third_party/skia/src/gpu/GrContext_Base.cpp
-FILE: ../../../third_party/skia/src/gpu/GrCpuBuffer.h
-FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.cpp
-FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.h
-FILE: ../../../third_party/skia/src/gpu/GrImageContext.cpp
-FILE: ../../../third_party/skia/src/gpu/GrImageContextPriv.h
-FILE: ../../../third_party/skia/src/gpu/GrRecordingContext.cpp
-FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.h
-FILE: ../../../third_party/skia/src/gpu/GrSamplePatternDictionary.cpp
-FILE: ../../../third_party/skia/src/gpu/GrSamplePatternDictionary.h
-FILE: ../../../third_party/skia/src/gpu/effects/GrMixerEffect.cpp
-FILE: ../../../third_party/skia/src/gpu/effects/GrMixerEffect.fp
-FILE: ../../../third_party/skia/src/gpu/effects/GrMixerEffect.h
-FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.cpp
-FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.h
-FILE: ../../../third_party/skia/src/sksl/SkSLDefines.h
-FILE: ../../../third_party/skia/src/sksl/SkSLOutputStream.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2GLSL.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2Metal.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2Pipeline.cpp
+FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2SPIRV.cpp
 ----------------------------------------------------------------------------------------------------
-Copyright 2019 Google Inc.
+Copyright 2019 Google, LLC
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -4912,41 +6082,6 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/circles.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2012 Intel Inc.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: skia
-ORIGIN: ../../../third_party/skia/gm/crbug_918512.cpp + ../../../third_party/skia/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/gm/crbug_918512.cpp
-----------------------------------------------------------------------------------------------------
-Copyright 2019 Google LLC.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -6180,4 +7315,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ====================================================================================================
-Total license count: 52
+Total license count: 53

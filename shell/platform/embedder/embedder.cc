@@ -50,6 +50,17 @@ extern const intptr_t kPlatformStrongDillSize;
     return static_cast<decltype(pointer->member)>((default_value));      \
   })()
 
+static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
+                                            const char* name,
+                                            const char* function) {
+  FML_LOG(ERROR) << "Returning error '" << name << "' (" << code
+                 << ") from Flutter Embedder API call to '" << __FUNCTION__
+                 << "'.";
+  return code;
+}
+
+#define LOG_EMBEDDER_ERROR(code) LogEmbedderError(code, #code, __FUNCTION__)
+
 static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
   if (config->type != kOpenGL) {
     return false;
@@ -308,19 +319,19 @@ FlutterEngineResult FlutterEngineRun(size_t version,
                                      FlutterEngine* engine_out) {
   // Step 0: Figure out arguments for shell creation.
   if (version != FLUTTER_ENGINE_VERSION) {
-    return kInvalidLibraryVersion;
+    return LOG_EMBEDDER_ERROR(kInvalidLibraryVersion);
   }
 
   if (engine_out == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   if (args == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   if (SAFE_ACCESS(args, assets_path, nullptr) == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   if (SAFE_ACCESS(args, main_path__unused__, nullptr) != nullptr) {
@@ -334,7 +345,7 @@ FlutterEngineResult FlutterEngineRun(size_t version,
   }
 
   if (!IsRendererValid(config)) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   std::string icu_data_path;
@@ -375,7 +386,7 @@ FlutterEngineResult FlutterEngineRun(size_t version,
     if (!fml::IsFile(application_kernel_path)) {
       FML_LOG(ERROR) << "Not running in AOT mode but could not resolve the "
                         "kernel binary.";
-      return kInvalidArguments;
+      return LOG_EMBEDDER_ERROR(kInvalidArguments);
     }
     settings.application_kernel_asset = kApplicationKernelSnapshotFileName;
   }
@@ -529,7 +540,7 @@ FlutterEngineResult FlutterEngineRun(size_t version,
       config, user_data, platform_dispatch_table);
 
   if (!on_create_platform_view) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   shell::Shell::CreateCallback<shell::Rasterizer> on_create_rasterizer =
@@ -599,12 +610,12 @@ FlutterEngineResult FlutterEngineRun(size_t version,
       );
 
   if (!embedder_engine->IsValid()) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   // Step 2: Setup the rendering surface.
   if (!embedder_engine->NotifyCreated()) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   // Step 3: Run the engine.
@@ -618,11 +629,11 @@ FlutterEngineResult FlutterEngineRun(size_t version,
       std::make_unique<blink::DirectoryAssetBundle>(fml::OpenDirectory(
           settings.assets_path.c_str(), false, fml::FilePermission::kRead)));
   if (!run_configuration.IsValid()) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   if (!embedder_engine->Run(std::move(run_configuration))) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   // Finally! Release the ownership of the embedder engine to the caller.
@@ -632,7 +643,7 @@ FlutterEngineResult FlutterEngineRun(size_t version,
 
 FlutterEngineResult FlutterEngineShutdown(FlutterEngine engine) {
   if (engine == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
   auto embedder_engine = reinterpret_cast<shell::EmbedderEngine*>(engine);
   embedder_engine->NotifyDestroyed();
@@ -644,7 +655,7 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FlutterEngine engine,
     const FlutterWindowMetricsEvent* flutter_metrics) {
   if (engine == nullptr || flutter_metrics == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   blink::ViewportMetrics metrics;
@@ -656,7 +667,7 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
   return reinterpret_cast<shell::EmbedderEngine*>(engine)->SetViewportMetrics(
              std::move(metrics))
              ? kSuccess
-             : kInvalidArguments;
+             : LOG_EMBEDDER_ERROR(kInvalidArguments);
 }
 
 // Returns the blink::PointerData::Change for the given FlutterPointerPhase.
@@ -699,7 +710,7 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     const FlutterPointerEvent* pointers,
     size_t events_count) {
   if (engine == nullptr || pointers == nullptr || events_count == 0) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   auto packet = std::make_unique<blink::PointerDataPacket>(events_count);
@@ -728,19 +739,19 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
   return reinterpret_cast<shell::EmbedderEngine*>(engine)
                  ->DispatchPointerDataPacket(std::move(packet))
              ? kSuccess
-             : kInvalidArguments;
+             : LOG_EMBEDDER_ERROR(kInvalidArguments);
 }
 
 FlutterEngineResult FlutterEngineSendPlatformMessage(
     FlutterEngine engine,
     const FlutterPlatformMessage* flutter_message) {
   if (engine == nullptr || flutter_message == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   if (SAFE_ACCESS(flutter_message, channel, nullptr) == nullptr ||
       SAFE_ACCESS(flutter_message, message, nullptr) == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   auto message = fml::MakeRefCounted<blink::PlatformMessage>(
@@ -753,7 +764,7 @@ FlutterEngineResult FlutterEngineSendPlatformMessage(
   return reinterpret_cast<shell::EmbedderEngine*>(engine)->SendPlatformMessage(
              std::move(message))
              ? kSuccess
-             : kInvalidArguments;
+             : LOG_EMBEDDER_ERROR(kInvalidArguments);
 }
 
 FlutterEngineResult FlutterEngineSendPlatformMessageResponse(
@@ -762,7 +773,7 @@ FlutterEngineResult FlutterEngineSendPlatformMessageResponse(
     const uint8_t* data,
     size_t data_length) {
   if (data_length != 0 && data == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
 
   auto response = handle->message->response();
@@ -788,11 +799,11 @@ FlutterEngineResult FlutterEngineRegisterExternalTexture(
     FlutterEngine engine,
     int64_t texture_identifier) {
   if (engine == nullptr || texture_identifier == 0) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
   if (!reinterpret_cast<shell::EmbedderEngine*>(engine)->RegisterTexture(
           texture_identifier)) {
-    return kInternalInconsistency;
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency);
   }
   return kSuccess;
 }
@@ -806,7 +817,7 @@ FlutterEngineResult FlutterEngineUnregisterExternalTexture(
 
   if (!reinterpret_cast<shell::EmbedderEngine*>(engine)->UnregisterTexture(
           texture_identifier)) {
-    return kInternalInconsistency;
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency);
   }
 
   return kSuccess;
@@ -816,11 +827,11 @@ FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
     FlutterEngine engine,
     int64_t texture_identifier) {
   if (engine == nullptr || texture_identifier == 0) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
   if (!reinterpret_cast<shell::EmbedderEngine*>(engine)
            ->MarkTextureFrameAvailable(texture_identifier)) {
-    return kInternalInconsistency;
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency);
   }
   return kSuccess;
 }
@@ -828,11 +839,11 @@ FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
 FlutterEngineResult FlutterEngineUpdateSemanticsEnabled(FlutterEngine engine,
                                                         bool enabled) {
   if (engine == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
   if (!reinterpret_cast<shell::EmbedderEngine*>(engine)->SetSemanticsEnabled(
           enabled)) {
-    return kInternalInconsistency;
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency);
   }
   return kSuccess;
 }
@@ -841,11 +852,11 @@ FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
     FlutterEngine engine,
     FlutterAccessibilityFeature flags) {
   if (engine == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
   if (!reinterpret_cast<shell::EmbedderEngine*>(engine)
            ->SetAccessibilityFeatures(flags)) {
-    return kInternalInconsistency;
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency);
   }
   return kSuccess;
 }
@@ -857,14 +868,14 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     const uint8_t* data,
     size_t data_length) {
   if (engine == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
   auto engine_action = static_cast<blink::SemanticsAction>(action);
   if (!reinterpret_cast<shell::EmbedderEngine*>(engine)
            ->DispatchSemanticsAction(
                id, engine_action,
                std::vector<uint8_t>({data, data + data_length}))) {
-    return kInternalInconsistency;
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency);
   }
   return kSuccess;
 }
@@ -874,8 +885,10 @@ FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
                                          uint64_t frame_start_time_nanos,
                                          uint64_t frame_target_time_nanos) {
   if (engine == nullptr) {
-    return kInvalidArguments;
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
   }
+
+  TRACE_EVENT0("flutter", "FlutterEngineOnVsync");
 
   auto start_time = fml::TimePoint::FromEpochDelta(
       fml::TimeDelta::FromNanoseconds(frame_start_time_nanos));
@@ -885,7 +898,7 @@ FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
 
   if (!reinterpret_cast<shell::EmbedderEngine*>(engine)->OnVsyncEvent(
           baton, start_time, target_time)) {
-    return kInternalInconsistency;
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency);
   }
 
   return kSuccess;
@@ -901,4 +914,19 @@ void FlutterEngineTraceEventDurationEnd(const char* name) {
 
 void FlutterEngineTraceEventInstant(const char* name) {
   fml::tracing::TraceEventInstant0("flutter", name);
+}
+
+FlutterEngineResult FlutterEnginePostRenderThreadTask(FlutterEngine engine,
+                                                      VoidCallback callback,
+                                                      void* baton) {
+  if (engine == nullptr || callback == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments);
+  }
+
+  auto task = [callback, baton]() { callback(baton); };
+
+  return reinterpret_cast<shell::EmbedderEngine*>(engine)->PostRenderThreadTask(
+             task)
+             ? kSuccess
+             : LOG_EMBEDDER_ERROR(kInternalInconsistency);
 }

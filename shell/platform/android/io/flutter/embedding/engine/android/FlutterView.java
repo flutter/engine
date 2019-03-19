@@ -21,6 +21,8 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.view.accessibility.AccessibilityManager;
+import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.FrameLayout;
@@ -31,7 +33,9 @@ import java.util.Locale;
 
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
+import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
 import io.flutter.plugin.editing.TextInputPlugin;
+import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.VsyncWaiter;
 
 /**
@@ -79,9 +83,20 @@ public class FlutterView extends FrameLayout {
   private TextInputPlugin textInputPlugin;
   @Nullable
   private AndroidKeyProcessor androidKeyProcessor;
+  @Nullable
+  private AndroidTouchProcessor androidTouchProcessor;
+  @Nullable
+  private AccessibilityBridge accessibilityBridge;
 
   // Directly implemented View behavior that communicates with Flutter.
   private final FlutterRenderer.ViewportMetrics viewportMetrics = new FlutterRenderer.ViewportMetrics();
+
+  private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener = new AccessibilityBridge.OnAccessibilityChangeListener() {
+    @Override
+    public void onAccessibilityChanged(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
+      resetWillNotDraw(isAccessibilityEnabled, isTouchExplorationEnabled);
+    }
+  };
 
   /**
    * Constructs a {@code FlutterSurfaceView} programmatically, without any XML attributes.
@@ -310,11 +325,32 @@ public class FlutterView extends FrameLayout {
   @Override
   public boolean onTouchEvent(MotionEvent event) {
     if (!isAttachedToFlutterEngine()) {
-      return false;
+      return super.onTouchEvent(event);
     }
 
-    // TODO(mattcarroll): forward event to touch processore when it's merged in.
-    return false;
+    // TODO(abarth): This version check might not be effective in some
+    // versions of Android that statically compile code and will be upset
+    // at the lack of |requestUnbufferedDispatch|. Instead, we should factor
+    // version-dependent code into separate classes for each supported
+    // version and dispatch dynamically.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      requestUnbufferedDispatch(event);
+    }
+
+    return androidTouchProcessor.onTouchEvent(event);
+  }
+
+  /**
+   * Invoked by Android when a generic motion event occurs, e.g., joystick movement, mouse hover,
+   * track pad touches, scroll wheel movements, etc.
+   *
+   * Flutter handles all of its own gesture detection and processing, therefore this
+   * method forwards all {@link MotionEvent} data from Android to Flutter.
+   */
+  @Override
+  public boolean onGenericMotionEvent(MotionEvent event) {
+    boolean handled = isAttachedToFlutterEngine() && androidTouchProcessor.onGenericMotionEvent(event);
+    return handled ? true : super.onGenericMotionEvent(event);
   }
 
   /**
@@ -331,20 +367,38 @@ public class FlutterView extends FrameLayout {
   @Override
   public boolean onHoverEvent(MotionEvent event) {
     if (!isAttachedToFlutterEngine()) {
-      return false;
+      return super.onHoverEvent(event);
     }
 
-    // TODO(mattcarroll): hook up to accessibility.
-    return false;
+    boolean handled = accessibilityBridge.onAccessibilityHoverEvent(event);
+    if (!handled) {
+      // TODO(ianh): Expose hover events to the platform,
+      // implementing ADD, REMOVE, etc.
+    }
+    return handled;
   }
   //-------- End: Process UI I/O that Flutter cares about. ---------
 
   //-------- Start: Accessibility -------
-  /**
-   * No-op. Placeholder so that the containing Fragment can call through, but not yet implemented.
-   */
-  public void updateAccessibilityFeatures() {
-    // TODO(mattcarroll): bring in accessibility code from old FlutterView.
+  @Override
+  public AccessibilityNodeProvider getAccessibilityNodeProvider() {
+    if (accessibilityBridge != null && accessibilityBridge.isAccessibilityEnabled()) {
+      return accessibilityBridge;
+    } else {
+      // TODO(goderbauer): when a11y is off this should return a one-off snapshot of
+      // the a11y
+      // tree.
+      return null;
+    }
+  }
+
+  // TODO(mattcarroll): Confer with Ian as to why we need this method. Delete if possible, otherwise add comments.
+  private void resetWillNotDraw(boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
+    if (!flutterEngine.getRenderer().isSoftwareRenderingEnabled()) {
+      setWillNotDraw(!(isAccessibilityEnabled || isTouchExplorationEnabled));
+    } else {
+      setWillNotDraw(false);
+    }
   }
   //-------- End: Accessibility ---------
 
@@ -387,6 +441,18 @@ public class FlutterView extends FrameLayout {
     androidKeyProcessor = new AndroidKeyProcessor(
         this.flutterEngine.getKeyEventChannel(),
         textInputPlugin
+    );
+    androidTouchProcessor = new AndroidTouchProcessor(this.flutterEngine.getRenderer());
+    accessibilityBridge = new AccessibilityBridge(
+        this,
+        flutterEngine.getAccessibilityChannel(),
+        (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE),
+        getContext().getContentResolver()
+    );
+    accessibilityBridge.setOnAccessibilityChangeListener(onAccessibilityChangeListener);
+    resetWillNotDraw(
+        accessibilityBridge.isAccessibilityEnabled(),
+        accessibilityBridge.isTouchExplorationEnabled()
     );
 
     // Inform the Android framework that it should retrieve a new InputConnection

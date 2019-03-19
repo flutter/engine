@@ -654,12 +654,18 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
 // platform via the vsync callback must be returned. This call must be made on
 // the thread on which the call to |FlutterEngineRun| was made.
 //
-// |frame_start_time_nanos| is the point at which the vsync event occurred.
+// |frame_start_time_nanos| is the point at which the vsync event occurred or
+// will occur. If the time point is in the future, the engine will wait till
+// that point to begin its frame workload. The system monotonic clock is used as
+// the timebase.
+//
 // |frame_target_time_nanos| is the point at which the embedder anticipates the
 // next vsync to occur. This is a hint the engine uses to schedule Dart VM
 // garbage collection in periods in which the various threads are most likely to
 // be idle. For example, for a 60Hz display, embedders should add 16.6 * 1e6 to
-// the frame time field.
+// the frame time field. The system monotonic clock is used as the timebase.
+//
+// That frame timepoints are in nanoseconds.
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
                                          intptr_t baton,
@@ -670,7 +676,8 @@ FlutterEngineResult FlutterEngineOnVsync(FlutterEngine engine,
 // the timeline is unavailable or disabled, this has no effect. Must be
 // balanced with an duration end event (via
 // |FlutterEngineTraceEventDurationEnd|) with the same name on the same thread.
-// Can be called on any thread.
+// Can be called on any thread. Strings passed into the function will NOT be
+// copied when added to the timeline. Only string literals may be passed in.
 FLUTTER_EXPORT
 void FlutterEngineTraceEventDurationBegin(const char* name);
 
@@ -678,15 +685,26 @@ void FlutterEngineTraceEventDurationBegin(const char* name);
 // timeline is unavailable or disabled, this has no effect. This call must be
 // preceded by a trace duration begin call (via
 // |FlutterEngineTraceEventDurationBegin|) with the same name on the same
-// thread. Can be called on any thread.
+// thread. Can be called on any thread. Strings passed into the function will
+// NOT be copied when added to the timeline. Only string literals may be passed
+// in.
 FLUTTER_EXPORT
 void FlutterEngineTraceEventDurationEnd(const char* name);
 
 // A profiling utility. Logs a trace duration instant event to the timeline. If
 // the timeline is unavailable or disabled, this has no effect. Can be called
-// on any thread.
+// on any thread. Strings passed into the function will NOT be copied when added
+// to the timeline. Only string literals may be passed in.
 FLUTTER_EXPORT
 void FlutterEngineTraceEventInstant(const char* name);
+
+// Posts a task onto the Flutter render thread. Typically, this may be called
+// from any thread as long as a |FlutterEngineShutdown| on the specific engine
+// has not already been initiated.
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEnginePostRenderThreadTask(FlutterEngine engine,
+                                                      VoidCallback callback,
+                                                      void* callback_data);
 
 #if defined(__cplusplus)
 }  // extern "C"
