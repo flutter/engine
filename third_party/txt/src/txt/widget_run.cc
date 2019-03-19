@@ -23,12 +23,12 @@ WidgetRun::WidgetRun() {}
 WidgetRun::WidgetRun(double width,
                      double height,
                      double baseline,
-                     bool break_left,
-                     bool break_right)
+                     bool break_upstream,
+                     bool break_downstream)
     : width(width),
       height(height),
       baseline(baseline),
-      break_left(break_left),
-      break_right(break_right) {}
+      break_upstream(break_upstream),
+      break_downstream(break_downstream) {}
 
 }  // namespace txt

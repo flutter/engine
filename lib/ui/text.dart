@@ -1345,8 +1345,9 @@ class Paragraph extends NativeFieldWrapperClass2 {
     assert(boxWidthStyle != null);
     return _getBoxesForRange(start, end, boxHeightStyle.index, boxWidthStyle.index);
   }
-
   List<TextBox> _getBoxesForRange(int start, int end, int boxHeightStyle, int boxWidthStyle) native 'Paragraph_getRectsForRange';
+
+  List<TextBox> getBoxesForWidgets() native 'Paragraph_getRectsForWidgets';
 
   /// Returns the text position closest to the given offset.
   TextPosition getPositionForOffset(Offset offset) {

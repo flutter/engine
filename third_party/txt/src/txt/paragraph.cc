@@ -329,9 +329,9 @@ bool Paragraph::ComputeLineBreaks() {
                              isRtl);
         // Inject custom breakpoints into minikin breaker. (Uses LibTxt-minikin
         // patch).
-        if (widget_span.break_left)
+        if (widget_span.break_upstream)
           breaker_.addCustomBreak(run.start, widget_span.width, 0);
-        if (widget_span.break_right)
+        if (widget_span.break_downstream)
           breaker_.addCustomBreak(run.end, 0, 0);
         inline_widget_index++;
       } else {
