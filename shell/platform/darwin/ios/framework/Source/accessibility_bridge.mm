@@ -440,7 +440,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   }
   SemanticsObject* child = [_semanticsObject children][index - 1];
 
-  // If the child is a semantic place holder for a platform view,
+  // If the child is a semanticsObject that acts as a place holder for a platform view,
   // inject the platform view into the iOS accessibility tree.
   if (child.isPlatformViewSemanticPlaceholder) {
     shell::FlutterPlatformViewsController* controller = _bridge.get()->GetPlatformViewsController();
