@@ -469,7 +469,6 @@ static void CommonInit(FLEViewController* controller) {
 }
 
 - (void)dispatchKeyEvent:(NSEvent*)event ofType:(NSString*)type {
-  NSLog(@"Sending message")
   [_keyEventChannel sendMessage:@{
     @"keymap" : @"macos",
     @"type" : type,
