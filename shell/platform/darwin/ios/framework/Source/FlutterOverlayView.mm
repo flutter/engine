@@ -56,10 +56,6 @@
   return self;
 }
 
-- (void)layoutSubviews {
-  [super layoutSubviews];
-}
-
 + (Class)layerClass {
 #if TARGET_IPHONE_SIMULATOR
   return [CALayer class];
