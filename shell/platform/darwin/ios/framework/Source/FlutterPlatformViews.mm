@@ -214,8 +214,7 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
     } else {
       EnsureOverlayInitialized(view_id);
     }
-    auto& ios_surface = overlays_[view_id]->surface;
-    auto frame = ios_surface->AcquireFrame(frame_size_);
+    auto frame = overlays_[view_id]->surface->AcquireFrame(frame_size_);
     SkCanvas* canvas = frame->SkiaCanvas();
     canvas->drawPicture(picture_recorders_[view_id]->finishRecordingAsPicture());
     canvas->flush();
