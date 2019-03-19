@@ -43,15 +43,20 @@
   return self;
 }
 
-- (void)layoutSubviews {
-  if ([self.layer isKindOfClass:[CAEAGLLayer class]]) {
+- (instancetype)initForGLWithContentsScale:(CGFloat)contentsScale {
+  self = [self init];
+
+  if (self) {
     CAEAGLLayer* layer = reinterpret_cast<CAEAGLLayer*>(self.layer);
     layer.allowsGroupOpacity = NO;
-    CGFloat screenScale = [UIScreen mainScreen].scale;
-    layer.contentsScale = screenScale;
-    layer.rasterizationScale = screenScale;
+    layer.contentsScale = contentsScale;
+    layer.rasterizationScale = contentsScale;
   }
 
+  return self;
+}
+
+- (void)layoutSubviews {
   [super layoutSubviews];
 }
 
