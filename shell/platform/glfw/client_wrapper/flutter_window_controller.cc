@@ -9,7 +9,8 @@
 
 namespace flutter {
 
-FlutterWindowController::FlutterWindowController(std::string& icu_data_path)
+FlutterWindowController::FlutterWindowController(
+    const std::string& icu_data_path)
     : icu_data_path_(icu_data_path) {
   init_succeeded_ = FlutterDesktopInit();
 }

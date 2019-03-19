@@ -55,3 +55,34 @@ publish_client_wrapper("publish_wrapper") {
   public = _wrapper_includes
   sources = _wrapper_sources + [ "README" ]
 }
+
+source_set("client_wrapper_library_stubs") {
+  sources = [
+    "testing/stub_flutter_api.cc",
+    "testing/stub_flutter_api.h",
+  ]
+
+  public_deps = [
+    "$flutter_root/shell/platform/common/cpp:common_cpp_library_headers",
+  ]
+}
+
+executable("client_wrapper_unittests") {
+  testonly = true
+
+  # TODO: Add more unit tests.
+  sources = [
+    "method_call_unittests.cc",
+    "plugin_registrar_unittests.cc",
+  ]
+
+  deps = [
+    ":client_wrapper",
+    ":client_wrapper_library_stubs",
+    "$flutter_root/testing",
+
+    # TODO: Consider refactoring flutter_root/testing so that there's a testing
+    # target that doesn't require a Dart runtime to be linked in.
+    "//third_party/dart/runtime:libdart_jit",
+  ]
+}

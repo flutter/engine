@@ -29,7 +29,7 @@ class FlutterWindowController {
   // There must be only one instance of this class in an application at any
   // given time, as Flutter does not support multiple engines in one process,
   // or multiple views in one engine.
-  explicit FlutterWindowController(std::string& icu_data_path);
+  explicit FlutterWindowController(const std::string& icu_data_path);
 
   ~FlutterWindowController();
 
