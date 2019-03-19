@@ -71,16 +71,6 @@ class AccessibilityBridge;
  */
 @property(nonatomic, strong) NSMutableArray<SemanticsObject*>* children;
 
-/**
- * Whether this object is a placeholder node for platform views.
- *
- * If set to YES, this object will not contain a SemanticsNode,
- * instead the accessibilityElements of this object will be the
- * platform view. And the platform view
- * will handle the accessibility of itself.
- */
-@property(nonatomic, assign) BOOL isPlatformViewSemanticPlaceholder;
-
 - (BOOL)nodeWillCauseLayoutChange:(const blink::SemanticsNode*)node;
 
 #pragma mark - Designated initializers
@@ -116,6 +106,23 @@ class AccessibilityBridge;
  *    editable text widgets to a11y.
  */
 @interface FlutterSemanticsObject : SemanticsObject
+@end
+
+/**
+ * Designated to act as an accessibility container of a platform view.
+ *
+ * This object does not take any accessibility actions on its own, nor has any accessibility
+ * label/value/trait/hint... on its own. The accessibility data will be handled by the platform
+ * view.
+ *
+ * See also:
+ * * SemanticsObject for the other type of semantics objects.
+ * * FlutterSemanticsObject for default implementation of `SemanticsObject`.
+ */
+@interface FlutterPlatformViewSemanticsContainer : UIAccessibilityElement
+
+- (instancetype)init __attribute__((unavailable("Use initWithAccessibilityContainer: instead")));
+
 @end
 
 namespace shell {

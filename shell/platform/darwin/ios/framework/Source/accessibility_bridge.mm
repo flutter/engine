@@ -153,6 +153,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (BOOL)hasChildren {
+  if (_node.IsPlatformViewNode()) {
+    return YES;
+  }
   return [self.children count] != 0;
 }
 
@@ -164,8 +167,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   // entire element tree looking for such a hit.
 
   //  We enforce in the framework that no other useful semantics are merged with these nodes.
-  if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute) ||
-      self.isPlatformViewSemanticPlaceholder)
+  if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute))
     return false;
 
   return ([self node].flags != 0 &&
@@ -399,6 +401,25 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
 @end
 
+@implementation FlutterPlatformViewSemanticsContainer
+
+// Method declared as unavailable in the interface
+- (instancetype)init {
+  [self release];
+  [super doesNotRecognizeSelector:_cmd];
+  return nil;
+}
+
+- (instancetype)initWithAccessibilityContainer:(id)container {
+  FML_CHECK(container);
+  if (self = [super initWithAccessibilityContainer:container]) {
+    self.isAccessibilityElement = NO;
+  }
+  return self;
+}
+
+@end
+
 @implementation SemanticsObjectContainer {
   SemanticsObject* _semanticsObject;
   fml::WeakPtr<shell::AccessibilityBridge> _bridge;
@@ -429,7 +450,12 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 #pragma mark - UIAccessibilityContainer overrides
 
 - (NSInteger)accessibilityElementCount {
-  return [[_semanticsObject children] count] + 1;
+  NSInteger count = [[_semanticsObject children] count] + 1;
+  // Need to create an additional child that acts as accessibility container for the platform view.
+  if (_semanticsObject.node.IsPlatformViewNode()) {
+    count++;
+  }
+  return count;
 }
 
 - (nullable id)accessibilityElementAtIndex:(NSInteger)index {
@@ -438,22 +464,24 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   if (index == 0) {
     return _semanticsObject;
   }
-  SemanticsObject* child = [_semanticsObject children][index - 1];
 
-  // If the child is a semanticsObject that acts as a place holder for a platform view,
-  // inject the platform view into the iOS accessibility tree.
-  if (child.isPlatformViewSemanticPlaceholder) {
+  // Create an addtional child to act as the accessibility container for the platform view.
+  if (_semanticsObject.node.IsPlatformViewNode() && index == [self accessibilityElementCount] - 1) {
     shell::FlutterPlatformViewsController* controller = _bridge.get()->GetPlatformViewsController();
     if (controller) {
+      FlutterPlatformViewSemanticsContainer* child = [[FlutterPlatformViewSemanticsContainer alloc]
+          initWithAccessibilityContainer:[_semanticsObject accessibilityContainer]];
       NSObject<FlutterPlatformView>* platformViewContainer =
           controller->GetPlatformViewByID(_semanticsObject.node.platformViewId);
       UIView* platformView = [platformViewContainer view];
       if (platformView) {
         child.accessibilityElements = @[ platformView ];
-        return child;
       }
+      return child;
     }
   }
+
+  SemanticsObject* child = [_semanticsObject children][index - 1];
 
   if ([child hasChildren])
     return [child accessibilityContainer];
@@ -463,6 +491,12 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 - (NSInteger)indexOfAccessibilityElement:(id)element {
   if (element == _semanticsObject)
     return 0;
+
+  // FlutterPlatformViewSemanticsContainer is always the last element of its parent.
+  if ([element isKindOfClass:[FlutterPlatformViewSemanticsContainer class]]) {
+    return [self accessibilityElementCount] - 1;
+  }
+
   NSMutableArray<SemanticsObject*>* children = [_semanticsObject children];
   for (size_t i = 0; i < [children count]; i++) {
     SemanticsObject* child = children[i];
@@ -548,25 +582,10 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
     scrollOccured = scrollOccured || [object nodeWillCauseScroll:&node];
     [object setSemanticsNode:&node];
     NSUInteger newChildCount = node.childrenInTraversalOrder.size();
-    if (node.IsPlatformViewNode()) {
-      // If this node is a platform view node, we need to create an addtional child
-      // that acts as a container for the platform view's accessibility.
-      newChildCount++;
-    }
     NSMutableArray* newChildren =
         [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
     for (NSUInteger i = 0; i < newChildCount; ++i) {
-      SemanticsObject* child;
-      if (node.IsPlatformViewNode() && i == node.childrenInTraversalOrder.size()) {
-        // If this node is a platform view node, we create a child acts as a container for
-        // the platform view's accessibility. We generate the UID using the below formula to avoid
-        // collision with other UIDs.
-        int32_t uid = node.id * 10000 + node.platformViewId;
-        child = [[SemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid];
-        child.isPlatformViewSemanticPlaceholder = YES;
-      } else {
-        child = GetOrCreateObject(node.childrenInTraversalOrder[i], nodes);
-      }
+      SemanticsObject* child = GetOrCreateObject(node.childrenInTraversalOrder[i], nodes);
       child.parent = object;
       [newChildren addObject:child];
     }
