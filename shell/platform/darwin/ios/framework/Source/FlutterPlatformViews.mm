@@ -277,7 +277,8 @@ void FlutterPlatformViewsController::EnsureGLOverlayInitialized(
     return;
   }
   auto contentsScale = flutter_view_.get().layer.contentsScale;
-  FlutterOverlayView* overlay_view = [[FlutterOverlayView alloc] initForGLWithContentsScale:contentsScale];
+  FlutterOverlayView* overlay_view =
+      [[FlutterOverlayView alloc] initForGLWithContentsScale:contentsScale];
   overlay_view.frame = flutter_view_.get().bounds;
   overlay_view.autoresizingMask =
       (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);

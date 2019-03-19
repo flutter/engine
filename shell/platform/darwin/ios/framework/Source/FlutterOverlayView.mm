@@ -21,13 +21,13 @@
 @implementation FlutterOverlayView
 
 - (instancetype)initWithFrame:(CGRect)frame {
-  @throw([NSException exceptionWithName:@"FlutterOverlayView must initWithDelegate"
+  @throw([NSException exceptionWithName:@"FlutterOverlayView must init or initForGLWithContentsScale"
                                  reason:nil
                                userInfo:nil]);
 }
 
 - (instancetype)initWithCoder:(NSCoder*)aDecoder {
-  @throw([NSException exceptionWithName:@"FlutterOverlayView must initWithDelegate"
+  @throw([NSException exceptionWithName:@"FlutterOverlayView must init or initForGLWithContentsScale"
                                  reason:nil
                                userInfo:nil]);
 }
