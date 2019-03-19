@@ -8,4 +8,6 @@ package io.flutter.plugin.platform;
  * Facilitates interaction between the accessibility bridge and embedded platform views.
  */
 public interface PlatformViewsAccessibilityDelegate {
+    // TODO(amirh): add a View getViewById(int id) here.
+    // not filing a tracking issue as this is going to be done in the next PR.
 }
