@@ -32,7 +32,7 @@ import static android.view.MotionEvent.PointerProperties;
  * Each {@link io.flutter.app.FlutterPluginRegistry} has a single platform views controller.
  * A platform views controller can be attached to at most one Flutter view.
  */
-public class PlatformViewsController implements MethodChannel.MethodCallHandler {
+public class PlatformViewsController implements MethodChannel.MethodCallHandler, PlatformViewsAccessibilityDelegate {
     private static final String TAG = "PlatformViewsController";
 
     private static final String CHANNEL_NAME = "flutter/platform_views";
