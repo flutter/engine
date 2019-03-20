@@ -852,6 +852,8 @@ FILE: ../../../flutter/third_party/txt/src/txt/text_style.cc
 FILE: ../../../flutter/third_party/txt/src/txt/text_style.h
 FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.cc
 FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.h
+FILE: ../../../flutter/third_party/txt/src/txt/widget_run.cc
+FILE: ../../../flutter/third_party/txt/src/txt/widget_run.h
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.cpp
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.h
 FILE: ../../../flutter/third_party/txt/src/utils/LruCache.h
