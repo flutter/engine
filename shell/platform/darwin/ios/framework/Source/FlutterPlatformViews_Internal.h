@@ -98,11 +98,11 @@ class FlutterPlatformViewsController {
   void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
   void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
 
+  void DetachUnusedLayers();
   void EnsureOverlayInitialized(int64_t overlay_id);
   void EnsureGLOverlayInitialized(int64_t overlay_id,
                                   std::shared_ptr<IOSGLContext> gl_context,
-                                  GrContext* gr_context,
-                                  bool update_gr_context);
+                                  GrContext* gr_context);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };

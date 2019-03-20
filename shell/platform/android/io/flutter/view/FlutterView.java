@@ -43,6 +43,7 @@ import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.plugin.common.*;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
+import io.flutter.plugin.platform.PlatformViewsController;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -660,13 +661,15 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
 
+        PlatformViewsController platformViewsController = getPluginRegistry().getPlatformViewsController();
         mAccessibilityNodeProvider = new AccessibilityBridge(
             this,
-            getFlutterNativeView().getFlutterJNI(),
-            new AccessibilityChannel(dartExecutor),
+            new AccessibilityChannel(dartExecutor, getFlutterNativeView().getFlutterJNI()),
             (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE),
-            getContext().getContentResolver()
+            getContext().getContentResolver(),
+            platformViewsController
         );
+        platformViewsController.attachAccessibilityBridge(mAccessibilityNodeProvider);
         mAccessibilityNodeProvider.setOnAccessibilityChangeListener(onAccessibilityChangeListener);
 
         resetWillNotDraw(
@@ -679,6 +682,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
 
+        getPluginRegistry().getPlatformViewsController().detachAccessibiltyBridge();
         mAccessibilityNodeProvider.release();
         mAccessibilityNodeProvider = null;
     }
@@ -694,7 +698,7 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
 
     @Override
     public AccessibilityNodeProvider getAccessibilityNodeProvider() {
-        if (mAccessibilityNodeProvider.isAccessibilityEnabled()) {
+        if (mAccessibilityNodeProvider != null && mAccessibilityNodeProvider.isAccessibilityEnabled()) {
             return mAccessibilityNodeProvider;
         } else {
             // TODO(goderbauer): when a11y is off this should return a one-off snapshot of
