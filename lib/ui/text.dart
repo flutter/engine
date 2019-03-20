@@ -1502,7 +1502,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   ///
   /// For example, to make a 50x50 rectangle that sits completely on top of the
   /// alphabetic baseline, pass in `addWidget(50, 50, 50)`. For a box that is
-  /// vertically centered on the alphabetic baseline, pass in `addWidget(50, 50, 25);`.  
+  /// vertically centered on the alphabetic baseline, pass in `addWidget(50, 50, 25);`.
   void addWidget(double width, double height, double baseline) {
     _addWidget(width, height, baseline);
   }
