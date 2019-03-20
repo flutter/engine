@@ -935,7 +935,7 @@ void Paragraph::Layout(double width, bool force) {
     // computing the maximum ascent and descent with respect to the strut.
     double max_ascent = strut.ascent + strut.half_leading;
     double max_descent = strut.descent + strut.half_leading;
-    SkScalar max_unscaled_ascent = 0;
+    double max_unscaled_ascent = 0;
     auto update_line_metrics = [&](const SkFontMetrics& metrics,
                                    const TextStyle& style,
                                    const WidgetRun* widget_run) {
@@ -953,7 +953,9 @@ void Paragraph::Layout(double width, bool force) {
         max_descent = std::max(descent, max_descent);
       }
 
-      max_unscaled_ascent = std::max(-metrics.fAscent, max_unscaled_ascent);
+      max_unscaled_ascent = std::max(
+          widget_run == nullptr ? -metrics.fAscent : widget_run->baseline,
+          max_unscaled_ascent);
     };
     for (const PaintRecord& paint_record : paint_records) {
       update_line_metrics(paint_record.metrics(), paint_record.style(),

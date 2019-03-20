@@ -301,7 +301,6 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
-  // ASSERT_TRUE(Snapshot());
   EXPECT_EQ(boxes.size(), 1ull);
 
   paint.setColor(SK_ColorGREEN);
@@ -454,6 +453,33 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   EXPECT_FLOAT_EQ(boxes[33].rect.top(), 160);
   EXPECT_FLOAT_EQ(boxes[33].rect.right(), 508.38281);
   EXPECT_FLOAT_EQ(boxes[33].rect.bottom(), 180);
+
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(30, 50, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 8ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 216.09766);
+  // Top should be taller than "tight"
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 60);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 290.92188);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 120);
+
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 290.92188);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 60);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 340.92188);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 120);
+
+  EXPECT_FLOAT_EQ(boxes[2].rect.left(), 340.92188);
+  EXPECT_FLOAT_EQ(boxes[2].rect.top(), 60);
+  EXPECT_FLOAT_EQ(boxes[2].rect.right(), 345.92188);
+  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 120);
 
   ASSERT_TRUE(Snapshot());
 }
