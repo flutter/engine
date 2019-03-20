@@ -25,16 +25,10 @@ class WidgetRun {
   double width = 0;
   double height = 0;
   double baseline = 0;
-  bool break_upstream = true;
-  bool break_downstream = true;
 
   WidgetRun();
 
-  WidgetRun(double width,
-            double height,
-            double baseline,
-            bool break_upstream,
-            bool break_downstream);
+  WidgetRun(double width, double height, double baseline);
 };
 
 }  // namespace txt

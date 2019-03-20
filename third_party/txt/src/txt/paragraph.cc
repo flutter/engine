@@ -289,7 +289,6 @@ bool Paragraph::ComputeLineBreaks() {
 
     // Add the runs that include this line to the LineBreaker.
     double block_total_width = 0;
-    // double widget_adjusted_line_width = width_;
     while (run_index < runs_.size()) {
       StyledRuns::Run run = runs_.GetRun(run_index);
       if (run.start >= block_end)
@@ -323,12 +322,10 @@ bool Paragraph::ComputeLineBreaks() {
         // Is a inline widget run.
         WidgetRun widget_run = inline_widgets_[inline_widget_index];
         block_total_width += widget_run.width;
-        // widget_adjusted_line_width -= widget_run.width;
 
         // Inject custom width into minikin breaker. (Uses LibTxt-minikin
         // patch).
-        if (widget_run.break_upstream)
-          breaker_.setCustomCharWidth(run.start, widget_run.width);
+        breaker_.setCustomCharWidth(run.start, widget_run.width);
 
         // Called with nullptr as paint in order to use the custom widths passed
         // above.
@@ -576,9 +573,9 @@ void Paragraph::Layout(double width, bool force) {
   size_t line_limit = std::min(paragraph_style_.max_lines, line_ranges_.size());
   did_exceed_max_lines_ = (line_ranges_.size() > paragraph_style_.max_lines);
 
+  size_t widget_run_index = 0;
   for (size_t line_number = 0; line_number < line_limit; ++line_number) {
     const LineRange& line_range = line_ranges_[line_number];
-    // FML_DLOG(ERROR) << "Line " << line_number;
 
     // Break the line into words if justification should be applied.
     std::vector<Range<size_t>> words;
@@ -606,7 +603,6 @@ void Paragraph::Layout(double width, bool force) {
 
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
-    size_t widget_run_index = 0;
     for (const BidiRun& bidi_run : bidi_runs) {
       // The run is within the range of the current line
       if (bidi_run.start() < line_end_index &&
@@ -1602,14 +1598,6 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForWidgets() const {
   };
 
   std::map<size_t, LineBoxMetrics> line_metrics;
-  // Text direction of the first line so we can extend the correct side for
-  // RectWidthStyle::kMax.
-  // TextDirection first_line_dir = TextDirection::ltr;
-
-  // Lines that are actually in the requested range.
-  // size_t max_line = 0;
-  // size_t min_line = INT_MAX;
-  // size_t glyph_length = 0;
 
   // Generate initial boxes and calculate metrics.
   for (const CodeUnitRun& run : inline_widget_code_unit_runs_) {
@@ -1623,36 +1611,11 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForWidgets() const {
       bottom = baseline + run.widget_run->height - run.widget_run->baseline;
     }
 
-    // max_line = std::max(run.line_number, max_line);
-    // min_line = std::min(run.line_number, min_line);
-
     // Calculate left and right.
     SkScalar left, right;
     left = run.x_pos.start;
     right = run.x_pos.end;
-    // if (run.code_units.start >= start && run.code_units.end <= end) {
-    //   left = run.x_pos.start;
-    //   right = run.x_pos.end;
-    // } else {
-    //   left = SK_ScalarMax;
-    //   right = SK_ScalarMin;
-    //   for (const GlyphPosition& gp : run.positions) {
-    //     if (gp.code_units.start >= start && gp.code_units.end <= end) {
-    //       left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
-    //       right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
-    //     } else if (gp.code_units.end == end) {
-    //       // Calculate left and right when we are at
-    //       // the last position of a combining character.
-    //       glyph_length = (gp.code_units.end - gp.code_units.start) - 1;
-    //       if (gp.code_units.start ==
-    //           std::max<size_t>(0, (start - glyph_length))) {
-    //         left = std::min(left, static_cast<SkScalar>(gp.x_pos.start));
-    //         right = std::max(right, static_cast<SkScalar>(gp.x_pos.end));
-    //       }
-    //     }
-    //   }
-    //   if (left == SK_ScalarMax || right == SK_ScalarMin)
-    //     continue;
+
     line_metrics[run.line_number].boxes.emplace_back(
         SkRect::MakeLTRB(left, top, right, bottom), run.direction);
   }

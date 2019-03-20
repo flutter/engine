@@ -55,6 +55,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
 
   Dart_Handle addText(const std::u16string& text);
 
+  Dart_Handle addWidget(double width, double height, double baseline);
+
   fml::RefPtr<Paragraph> build();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);

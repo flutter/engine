@@ -430,6 +430,16 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
   return Dart_Null();
 }
 
+Dart_Handle ParagraphBuilder::addWidget(double width,
+                                        double height,
+                                        double baseline) {
+  txt::WidgetRun widget_run(width, height, baseline);
+
+  m_paragraphBuilder->AddWidget(widget_run);
+
+  return Dart_Null();
+}
+
 fml::RefPtr<Paragraph> ParagraphBuilder::build() {
   return Paragraph::Create(m_paragraphBuilder->Build());
 }

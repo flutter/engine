@@ -20,15 +20,7 @@ namespace txt {
 
 WidgetRun::WidgetRun() {}
 
-WidgetRun::WidgetRun(double width,
-                     double height,
-                     double baseline,
-                     bool break_upstream,
-                     bool break_downstream)
-    : width(width),
-      height(height),
-      baseline(baseline),
-      break_upstream(break_upstream),
-      break_downstream(break_downstream) {}
+WidgetRun::WidgetRun(double width, double height, double baseline)
+    : width(width), height(height), baseline(baseline) {}
 
 }  // namespace txt

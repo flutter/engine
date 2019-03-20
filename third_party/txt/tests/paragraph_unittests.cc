@@ -93,13 +93,13 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
 
   builder.AddText(u16_text);
 
-  txt::WidgetRun widget_run(50, 50, 0, true, true);
+  txt::WidgetRun widget_run(50, 50, 0);
   builder.AddWidget(widget_run);
 
   builder.AddText(u16_text);
 
   builder.AddWidget(widget_run);
-  txt::WidgetRun widget_run2(5, 50, 50, true, true);
+  txt::WidgetRun widget_run2(5, 50, 50);
   builder.AddWidget(widget_run2);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run2);
@@ -201,7 +201,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
 
   builder.AddText(u16_text);
 
-  txt::WidgetRun widget_run(50, 50, 50, true, true);
+  txt::WidgetRun widget_run(50, 50, 50);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
@@ -325,7 +325,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
 
   builder.AddText(u16_text);
 
-  txt::WidgetRun widget_run(50, 50, 50, true, true);
+  txt::WidgetRun widget_run(50, 50, 50);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
@@ -352,7 +352,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   builder.AddText(u16_text);
 
   builder.AddWidget(widget_run);
-  txt::WidgetRun widget_run2(5, 20, 10, true, true);
+  txt::WidgetRun widget_run2(5, 20, 10);
   builder.AddWidget(widget_run2);
   builder.AddWidget(widget_run2);
   builder.AddWidget(widget_run2);
