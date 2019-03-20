@@ -336,12 +336,6 @@ public class FlutterView extends FrameLayout {
     return androidTouchProcessor.onTouchEvent(event);
   }
 
-  // Overridden to make linter happy.
-  @Override
-  public boolean performClick() {
-    return super.performClick();
-  }
-
   /**
    * Invoked by Android when a generic motion event occurs, e.g., joystick movement, mouse hover,
    * track pad touches, scroll wheel movements, etc.
