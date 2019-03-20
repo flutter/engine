@@ -164,7 +164,9 @@ public class AndroidTouchProcessor {
 
     // ACTION_HOVER_MOVE always applies to a single pointer only.
     addPointerForIndex(event, event.getActionIndex(), pointerChange, 0, packet);
-    assert(packet.position() % (POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD) != 0);
+    if (packet.position() % (POINTER_DATA_FIELD_COUNT * BYTES_PER_FIELD) != 0) {
+      throw new AssertionError("Packet position is not on field boundary.");
+    }
     renderer.dispatchPointerDataPacket(packet, packet.position());
     return true;
   }
