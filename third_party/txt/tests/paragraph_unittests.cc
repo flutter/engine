@@ -101,14 +101,26 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
   builder.AddWidget(widget_run);
   txt::WidgetRun widget_run2(5, 50, 50, true, true);
   builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run2);
+  builder.AddText(u16_text);
+  builder.AddWidget(widget_run2);
 
   builder.AddText(u16_text);
   builder.AddText(u16_text);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   // builder.AddText(u16_text);
@@ -195,9 +207,12 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
   builder.AddText(u16_text);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
@@ -225,18 +240,20 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
+  builder.AddWidget(widget_run);
   builder.AddText(u16_text);
-  builder.AddText(u16_text);
-  builder.AddText(u16_text);
-  builder.AddText(u16_text);
-  builder.AddText(u16_text);
+  // builder.AddText(u16_text);
+  // builder.AddText(u16_text);
+  // builder.AddText(u16_text);
+  // builder.AddText(u16_text);
+  // builder.AddText(u16_text);
   // builder.AddText(u16_text);
   // builder.AddText(u16_text);
 
   builder.Pop();
 
   auto paragraph = builder.Build();
-  paragraph->Layout(GetTestCanvasWidth());
+  paragraph->Layout(GetTestCanvasWidth() - 100);
 
   paragraph->Paint(GetCanvas(), 0, 0);
 
@@ -272,7 +289,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
 
   paint.setColor(SK_ColorBLUE);
   boxes =
-      paragraph->GetRectsForRange(4, 35, rect_height_style, rect_width_style);
+      paragraph->GetRectsForRange(4, 45, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -330,11 +347,17 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
 
   builder.AddText(u16_text);
 
   builder.AddWidget(widget_run);
-  txt::WidgetRun widget_run2(5, 50, 50, true, true);
+  txt::WidgetRun widget_run2(5, 20, 10, true, true);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run2);
   builder.AddWidget(widget_run2);
 
   builder.AddText(u16_text);
@@ -345,6 +368,12 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddWidget(widget_run);
   builder.AddText(u16_text);
   // builder.AddText(u16_text);
   // builder.AddText(u16_text);

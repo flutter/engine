@@ -289,7 +289,7 @@ bool Paragraph::ComputeLineBreaks() {
 
     // Add the runs that include this line to the LineBreaker.
     double block_total_width = 0;
-    double widget_adjusted_line_width = width_;
+    // double widget_adjusted_line_width = width_;
     while (run_index < runs_.size()) {
       StyledRuns::Run run = runs_.GetRun(run_index);
       if (run.start >= block_end)
@@ -322,20 +322,18 @@ bool Paragraph::ComputeLineBreaks() {
           inline_widget_index < inline_widgets_.size()) {
         // Is a inline widget run.
         WidgetRun widget_run = inline_widgets_[inline_widget_index];
-        widget_adjusted_line_width -= widget_run.width;
+        block_total_width += widget_run.width;
+        // widget_adjusted_line_width -= widget_run.width;
 
-        // Inject custom breakpoints into minikin breaker. (Uses LibTxt-minikin
+        // Inject custom width into minikin breaker. (Uses LibTxt-minikin
         // patch).
         if (widget_run.break_upstream)
-          breaker_.addCustomBreak(run.start, widget_run.width,
-                                  block_total_width, 0);
-        // breaker_.addCustomBreak(run.start, widget_run.width, 0);
-        if (widget_run.break_downstream)
-          breaker_.addCustomBreak(run.end, 0, block_total_width, 0);
-        // breaker_.addCustomBreak(run.end, 0, 0);
-        breaker_.addStyleRun(&paint, collection, font, run_start, run_end,
+          breaker_.setCustomCharWidth(run.start, widget_run.width);
+
+        // Called with nullptr as paint in order to use the custom widths passed
+        // above.
+        breaker_.addStyleRun(nullptr, collection, font, run_start, run_end,
                              isRtl);
-        block_total_width += widget_run.width;
         inline_widget_index++;
       } else {
         // Is a regular text run.
@@ -348,8 +346,6 @@ bool Paragraph::ComputeLineBreaks() {
         break;
       run_index++;
     }
-    // breaker_.setLineWidths(0.0f, 0, widget_adjusted_line_width);
-
     max_intrinsic_width_ = std::max(max_intrinsic_width_, block_total_width);
 
     size_t breaks_count = breaker_.computeBreaks();

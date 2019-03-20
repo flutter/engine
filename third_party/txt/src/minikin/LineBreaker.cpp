@@ -363,36 +363,12 @@ void LineBreaker::pushBreak(int offset, float width, uint8_t hyphenEdit) {
   mFirstTabIndex = INT_MAX;
 }
 
-// libtxt: Add ability to push custom break points. This calls pushBreak()
-// with the custom break values. Used for properly breaking inline widgets.
-void LineBreaker::addCustomBreak(int offset,
-                                 float width,
-                                 float paragraphPreWidth,
-                                 uint8_t hyphenEdit) {
-  // size_t offset;        // offset to text buffer, in code units
-  //   size_t prev;          // index to previous break
-  //   ParaWidth preBreak;   // width of text until this point, if we decide to
-  //   not
-  //                         // break here
-  //   ParaWidth postBreak;  // width of text until this point, if we decide to
-  //                         // break here
-  //   float penalty;        // penalty of this break (for example, hyphen
-  //   penalty) float score;          // best score found for this break size_t
-  //   lineNumber;    // only updated for non-constant line widths size_t
-  //   preSpaceCount;   // preceding space count before breaking size_t
-  //   postSpaceCount;  // preceding space count after breaking HyphenationType
-  //   hyphenType;
-  Candidate cand;
-  cand.offset = offset;
-  cand.preBreak = paragraphPreWidth;
-  cand.postBreak = paragraphPreWidth + width;
-  cand.penalty = 0;
-  cand.score = 0;
-  cand.lineNumber = 0;
-  cand.preSpaceCount = 0;
-  cand.postSpaceCount = 0;
-  addCandidate(cand);
-  // pushBreak(offset, width, hyphenEdit);
+// libtxt: Add ability to set custom char widths. This allows manual definition
+// of the widths of arbitrary glyphs. To linebreak properly, call addStyleRun
+// with nullptr as the paint property, which will lead it to assume the width
+// has already been calculated. Used for properly breaking inline widgets.
+void LineBreaker::setCustomCharWidth(size_t offset, float width) {
+  mCharWidths[offset] = (width);
 }
 
 void LineBreaker::addReplacement(size_t start, size_t end, float width) {

@@ -177,12 +177,12 @@ class LineBreaker {
 
   size_t computeBreaks();
 
-  // libtxt: Add ability to push custom break points. This calls pushBreak()
-  // with the custom break values. Used for properly breaking inline widgets.
-  void addCustomBreak(int offset,
-                      float width,
-                      float paragraphWidth,
-                      uint8_t hyphenEdit);
+  // libtxt: Add ability to set custom char widths. This allows manual
+  // definition of the widths of arbitrary glyphs. To linebreak properly, call
+  // addStyleRun with nullptr as the paint property, which will lead it to
+  // assume the width has already been calculated. Used for properly breaking
+  // inline widgets.
+  void setCustomCharWidth(size_t offset, float width);
 
   const int* getBreaks() const { return mBreaks.data(); }
 
