@@ -1492,7 +1492,17 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
 
   /// Adds a space for a widget to the paragraph.
   ///
-  /// The paragraph will contain a space with no text the size of the provided metrics.
+  /// The paragraph will contain a rectangular space with no text of the size
+  /// specified.
+  ///
+  /// The [width] and [height] parameters specify the size of the rectangle, and
+  /// [baseline] indicates the distance of the alphabetic baseline from the top of
+  /// of the rectangle. This determines how the rectangle is aligned to the
+  /// surrounding text.
+  ///
+  /// For example, to make a 50x50 rectangle that sits completely on top of the
+  /// alphabetic baseline, pass in `addWidget(50, 50, 50)`. For a box that is
+  /// vertically centered on the alphabetic baseline, pass in `addWidget(50, 50, 25);`.  
   String addWidget(double width, double height, double baseline) {
     _addWidget(width, height, baseline);
   }

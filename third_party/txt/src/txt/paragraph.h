@@ -184,6 +184,15 @@ class Paragraph {
   // with the top left corner as the origin, and +y direction as down.
   PositionWithAffinity GetGlyphPositionAtCoordinate(double dx, double dy) const;
 
+  // Returns a vector of bounding boxes that bound all inline widgets in the
+  // paragraph.
+  //
+  // There will be one box for each inline widget. The boxes will be in the same
+  // order as they were added to the paragraph. The bounds will always be tight
+  // and should fully enclose the area where the widget should be.
+  //
+  // More granular boxes may be obtained through GetRectsForRange, which will
+  // return bounds on both text as well as inline widgets.
   std::vector<Paragraph::TextBox> GetRectsForWidgets() const;
 
   // Finds the first and last glyphs that define a word containing the glyph at

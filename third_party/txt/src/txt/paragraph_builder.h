@@ -67,6 +67,11 @@ class ParagraphBuilder {
   // Converts to u16string before adding.
   void AddText(const char* text);
 
+  // Pushes the information requried to leave an open space, where Flutter may
+  // draw a custom widget into.
+  //
+  // Internally, this method adds a single object replacement character (0xFFFC)
+  // and emplaces a new WidgetRun instance to the vector of inline widgets.
   void AddWidget(WidgetRun& span);
 
   void SetParagraphStyle(const ParagraphStyle& style);
