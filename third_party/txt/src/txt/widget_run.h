@@ -19,11 +19,24 @@
 
 namespace txt {
 
-// This holds the size
+// Represents the metrics required to fully define a rect that will fit a
+// widget.
+//
+// LibTxt will leave an empty space in the layout of the text of the size
+// defined by this class. After layout, the framework will draw widgets into the
+// reserved space.
 class WidgetRun {
  public:
   double width = 0;
   double height = 0;
+  // Distance from the top edge of the rect to the baseline position. This
+  // baseline will be aligned against the alphabetic baseline of the surrounding
+  // text.
+  //
+  // Positive values drop the baseline lower (positions the rect higher) and
+  // small or negative values will cause the rect to be positioned underneath
+  // the line. When baseline == height, the bottom edge of the rect will rest on
+  // the alphabetic baseline.
   double baseline = 0;
 
   WidgetRun();

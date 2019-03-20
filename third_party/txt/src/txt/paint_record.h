@@ -96,6 +96,9 @@ class PaintRecord {
   // 'Ghost' runs represent trailing whitespace. 'Ghost' runs should not have
   // decorations painted on them and do not impact layout of visible glyphs.
   bool is_ghost_ = false;
+  // Stores the corresponding WidgetRun that the record corresponds to. When
+  // this is nullptr, then the record is of normal text and does not represent
+  // an inline widget.
   const WidgetRun* widget_run_ = nullptr;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PaintRecord);
