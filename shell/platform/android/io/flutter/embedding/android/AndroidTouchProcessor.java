@@ -1,4 +1,4 @@
-package io.flutter.embedding.engine.android;
+package io.flutter.embedding.android;
 
 import android.os.Build;
 import android.support.annotation.IntDef;
