@@ -7,6 +7,7 @@ package io.flutter.view;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.database.ContentObserver;
 import android.graphics.Rect;
 import android.net.Uri;
@@ -15,20 +16,21 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowInsets;
+import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 
-import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
+import io.flutter.plugin.platform.PlatformViewsAccessibilityDelegate;
 import io.flutter.util.Predicate;
 
 import java.nio.ByteBuffer;
@@ -90,24 +92,16 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     @NonNull
     private final AccessibilityManager accessibilityManager;
 
+    // The delegate for interacting with embedded platform views. Used to embed accessibility data for an embedded
+    // view in the accessibility tree.
+    @NonNull
+    private final PlatformViewsAccessibilityDelegate platformViewsAccessibilityDelegate;
+
     // Android's {@link ContentResolver}, which is used to observe the global TRANSITION_ANIMATION_SCALE,
     // which determines whether Flutter's animations should be enabled or disabled for accessibility
     // purposes.
     @NonNull
     private final ContentResolver contentResolver;
-
-    // The top-level Android View within the containing Window.
-    // TODO(mattcarroll): Move communication with the decorView out to FlutterView, or even FlutterActivity.
-    //                    The reason this is here is because when the device is in reverse-landscape
-    //                    orientation, Android has a bug where it assumes the OS nav bar is on the
-    //                    right side of the screen, not the left. As a result, accessibility borders
-    //                    are drawn too far to the left. The AccessibilityBridge directly adjusts
-    //                    for this Android bug. We still need to adjust, but this is the wrong place
-    //                    to access a decorView. What if the FlutterView is only part of the UI
-    //                    hierarchy, like a list item? We shouldn't touch the decor view.
-    //                    https://github.com/flutter/flutter/issues/19967
-    @NonNull
-    private final View decorView;
 
     // The entire Flutter semantics tree of the running Flutter app, stored as a Map
     // from each SemanticsNode's ID to a Java representation of a Flutter SemanticsNode.
@@ -187,7 +181,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // TODO(mattcarroll): why do we need previouseRouteId if we have flutterNavigationStack
     private int previousRouteId = ROOT_NODE_ID;
 
-    // TODO(mattcarroll): is this for the decor view adjustment?
+    // Tracks the left system inset of the screen because Flutter needs to manually adjust
+    // accessibility positioning when in reverse-landscape. This is an Android bug that Flutter
+    // is solving for itself.
     @NonNull
     private Integer lastLeftFrameInset = 0;
 
@@ -307,14 +303,17 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         @NonNull View rootAccessibilityView,
         @NonNull AccessibilityChannel accessibilityChannel,
         @NonNull AccessibilityManager accessibilityManager,
-        @NonNull ContentResolver contentResolver
+        @NonNull ContentResolver contentResolver,
+        // This should be @NonNull once the plumbing for io.flutter.embedding.engine.android.FlutterView is done.
+        // TODO(mattcarrol): Add the annotation once the plumbing is done.
+        // https://github.com/flutter/flutter/issues/29618
+        PlatformViewsAccessibilityDelegate platformViewsAccessibilityDelegate
     ) {
         this.rootAccessibilityView = rootAccessibilityView;
         this.accessibilityChannel = accessibilityChannel;
         this.accessibilityManager = accessibilityManager;
         this.contentResolver = contentResolver;
-
-        decorView = ((Activity) rootAccessibilityView.getContext()).getWindow().getDecorView();
+        this.platformViewsAccessibilityDelegate = platformViewsAccessibilityDelegate;
 
         // Tell Flutter whether accessibility is initially active or not. Then register a listener
         // to be notified of changes in the future.
@@ -356,6 +355,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
             this.contentResolver.registerContentObserver(transitionUri, false, animationScaleObserver);
         }
+
+        // platformViewsAccessibilityDelegate should be @NonNull once the plumbing
+        // for io.flutter.embedding.engine.android.FlutterView is done.
+        // TODO(mattcarrol): Remove the null check once the plumbing is done.
+        // https://github.com/flutter/flutter/issues/29618
+        if (platformViewsAccessibilityDelegate != null) {
+            platformViewsAccessibilityDelegate.attachAccessibilityBridge(this);
+        }
     }
 
     /**
@@ -366,6 +373,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
      * on this {@code AccessibilityBridge} after invoking {@code release()} is undefined.
      */
     public void release() {
+        // platformViewsAccessibilityDelegate should be @NonNull once the plumbing
+        // for io.flutter.embedding.engine.android.FlutterView is done.
+        // TODO(mattcarrol): Remove the null check once the plumbing is done.
+        // https://github.com/flutter/flutter/issues/29618
+        if (platformViewsAccessibilityDelegate != null) {
+            platformViewsAccessibilityDelegate.detachAccessibiltyBridge();
+        }
         setOnAccessibilityChangeListener(null);
         accessibilityManager.removeAccessibilityStateChangeListener(accessibilityStateChangeListener);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -1153,14 +1167,15 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
             // of the screen in landscape mode. We must handle the translation ourselves for the
             // a11y nodes.
             if (Build.VERSION.SDK_INT >= 23) {
-                Rect visibleFrame = new Rect();
-                decorView.getWindowVisibleDisplayFrame(visibleFrame);
-                if (!lastLeftFrameInset.equals(visibleFrame.left)) {
+                WindowInsets insets = rootAccessibilityView.getRootWindowInsets();
+                if (insets != null) {
+                  if (!lastLeftFrameInset.equals(insets.getSystemWindowInsetLeft())) {
                     rootObject.globalGeometryDirty = true;
                     rootObject.inverseTransformDirty = true;
+                  }
+                  lastLeftFrameInset = insets.getSystemWindowInsetLeft();
+                  Matrix.translateM(identity, 0, lastLeftFrameInset, 0, 0);
                 }
-                lastLeftFrameInset = visibleFrame.left;
-                Matrix.translateM(identity, 0, visibleFrame.left, 0, 0);
             }
             rootObject.updateRecursively(identity, visitedObjects, false);
             rootObject.collectRoutes(newRoutes);

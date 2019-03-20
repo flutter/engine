@@ -15,7 +15,6 @@ import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
 import android.os.LocaleList;
-import android.provider.Settings;
 import android.support.annotation.RequiresApi;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
@@ -28,8 +27,8 @@ import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.embedding.engine.android.AndroidKeyProcessor;
-import io.flutter.embedding.engine.android.AndroidTouchProcessor;
+import io.flutter.embedding.android.AndroidKeyProcessor;
+import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
@@ -43,6 +42,7 @@ import io.flutter.embedding.engine.systemchannels.SystemChannel;
 import io.flutter.plugin.common.*;
 import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
+import io.flutter.plugin.platform.PlatformViewsController;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -660,11 +660,13 @@ public class FlutterView extends SurfaceView implements BinaryMessenger, Texture
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
 
+        PlatformViewsController platformViewsController = getPluginRegistry().getPlatformViewsController();
         mAccessibilityNodeProvider = new AccessibilityBridge(
             this,
             new AccessibilityChannel(dartExecutor, getFlutterNativeView().getFlutterJNI()),
             (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE),
-            getContext().getContentResolver()
+            getContext().getContentResolver(),
+            platformViewsController
         );
         mAccessibilityNodeProvider.setOnAccessibilityChangeListener(onAccessibilityChangeListener);
 
