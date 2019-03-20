@@ -123,8 +123,6 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
   builder.AddWidget(widget_run);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
-  // builder.AddText(u16_text);
-  // builder.AddText(u16_text);
 
   builder.Pop();
 
@@ -158,10 +156,12 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorRED);
+  boxes = paragraph->GetRectsForWidgets();
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
 
   paint.setColor(SK_ColorBLUE);
   boxes =
@@ -169,11 +169,26 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
-  // EXPECT_EQ(boxes.size(), 1ull);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.left(), 56.835938);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.right(), 177.97266);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+  EXPECT_EQ(boxes.size(), 7ull);
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 90.921875);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 50);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 140.92188);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 100);
+
+  EXPECT_FLOAT_EQ(boxes[3].rect.left(), 231.34375);
+  EXPECT_FLOAT_EQ(boxes[3].rect.top(), 50);
+  EXPECT_FLOAT_EQ(boxes[3].rect.right(), 231.34375 + 50);
+  EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 100);
+
+  EXPECT_FLOAT_EQ(boxes[4].rect.left(), 281.34375);
+  EXPECT_FLOAT_EQ(boxes[4].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[4].rect.right(), 281.34375 + 5);
+  EXPECT_FLOAT_EQ(boxes[4].rect.bottom(), 50);
+
+  EXPECT_FLOAT_EQ(boxes[6].rect.left(), 336.34375);
+  EXPECT_FLOAT_EQ(boxes[6].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[6].rect.right(), 336.34375 + 5);
+  EXPECT_FLOAT_EQ(boxes[6].rect.bottom(), 50);
 
   ASSERT_TRUE(Snapshot());
 }
@@ -202,16 +217,25 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   builder.AddText(u16_text);
 
   txt::WidgetRun widget_run(50, 50, 50);
+  txt::WidgetRun widget_run2(25, 25, 12.5);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run2);
   builder.AddWidget(widget_run);
   builder.AddText(u16_text);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run2);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
@@ -219,36 +243,41 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
   builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run2);
   builder.AddWidget(widget_run);
 
-  // builder.AddText(u16_text);
+  builder.AddText(u16_text);
 
-  // builder.AddWidget(widget_run);
-  // txt::WidgetRun widget_run2(5, 50, 50, true, true);
-  // builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run2);
 
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
+  builder.AddWidget(widget_run2);
   builder.AddWidget(widget_run);
   builder.AddText(u16_text);
-  // builder.AddText(u16_text);
-  // builder.AddText(u16_text);
-  // builder.AddText(u16_text);
-  // builder.AddText(u16_text);
-  // builder.AddText(u16_text);
-  // builder.AddText(u16_text);
-  // builder.AddText(u16_text);
+  builder.AddWidget(widget_run2);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
+  builder.AddText(u16_text);
 
   builder.Pop();
 
@@ -276,16 +305,22 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   EXPECT_EQ(boxes.size(), 1ull);
 
   paint.setColor(SK_ColorGREEN);
-  boxes =
-      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  boxes = paragraph->GetRectsForRange(175, 176, rect_height_style,
+                                      rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 1ull);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.right(), 28.417969);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 31.695312);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 218.53125);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 47.292969);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 249);
+
+  paint.setColor(SK_ColorRED);
+  boxes = paragraph->GetRectsForWidgets();
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
 
   paint.setColor(SK_ColorBLUE);
   boxes =
@@ -293,11 +328,21 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
-  // EXPECT_EQ(boxes.size(), 1ull);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.left(), 56.835938);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.right(), 177.97266);
-  // EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+  EXPECT_EQ(boxes.size(), 30ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 59.726562);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 26.378906);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 90.921875);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 56.847656);
+
+  EXPECT_FLOAT_EQ(boxes[11].rect.left(), 606.34375);
+  EXPECT_FLOAT_EQ(boxes[11].rect.top(), 38);
+  EXPECT_FLOAT_EQ(boxes[11].rect.right(), 631.34375);
+  EXPECT_FLOAT_EQ(boxes[11].rect.bottom(), 63);
+
+  EXPECT_FLOAT_EQ(boxes[17].rect.left(), 0.5);
+  EXPECT_FLOAT_EQ(boxes[17].rect.top(), 63.5);
+  EXPECT_FLOAT_EQ(boxes[17].rect.right(), 50.5);
+  EXPECT_FLOAT_EQ(boxes[17].rect.bottom(), 113.5);
 
   ASSERT_TRUE(Snapshot());
 }
@@ -326,37 +371,37 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   builder.AddText(u16_text);
 
   txt::WidgetRun widget_run(50, 50, 50);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-
-  builder.AddText(u16_text);
-
-  builder.AddWidget(widget_run);
   txt::WidgetRun widget_run2(5, 20, 10);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run);
+
+  builder.AddText(u16_text);
+
+  builder.AddWidget(widget_run);
   builder.AddWidget(widget_run2);
   builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run);
   builder.AddWidget(widget_run2);
   builder.AddWidget(widget_run2);
 
@@ -371,12 +416,12 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
-  builder.AddText(u16_text);
-  builder.AddText(u16_text);
+  builder.AddWidget(widget_run2);
   builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run2);
+  builder.AddWidget(widget_run);
+  builder.AddWidget(widget_run2);
   builder.AddText(u16_text);
-  // builder.AddText(u16_text);
-  // builder.AddText(u16_text);
 
   builder.Pop();
 
@@ -394,8 +439,21 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
-  // ASSERT_TRUE(Snapshot());
-  // EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_EQ(boxes.size(), 34ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 90.921875);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 140.92188);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 50);
+
+  EXPECT_FLOAT_EQ(boxes[16].rect.left(), 800.92188);
+  EXPECT_FLOAT_EQ(boxes[16].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[16].rect.right(), 850.92188);
+  EXPECT_FLOAT_EQ(boxes[16].rect.bottom(), 50);
+
+  EXPECT_FLOAT_EQ(boxes[33].rect.left(), 503.38281);
+  EXPECT_FLOAT_EQ(boxes[33].rect.top(), 160);
+  EXPECT_FLOAT_EQ(boxes[33].rect.right(), 508.38281);
+  EXPECT_FLOAT_EQ(boxes[33].rect.bottom(), 180);
 
   ASSERT_TRUE(Snapshot());
 }
