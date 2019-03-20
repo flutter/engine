@@ -50,6 +50,8 @@
 namespace txt {
 namespace {
 
+const int objReplacementChar = 0xFFFC;
+
 class GlyphTypeface {
  public:
   GlyphTypeface(sk_sp<SkTypeface> typeface, minikin::FontFakery fakery)
@@ -317,7 +319,7 @@ bool Paragraph::ComputeLineBreaks() {
 
       // Check if the run is an object replacement character-only run. We should
       // leave space for inline widget and break around it if appropriate.
-      if (run.end - run.start == 1 && text_[run.start] == 0xFFFC &&
+      if (run.end - run.start == 1 && text_[run.start] == objReplacementChar &&
           inline_widget_index < inline_widgets_.size()) {
         // Is a inline widget run.
         WidgetRun widget_run = inline_widgets_[inline_widget_index];
@@ -608,7 +610,8 @@ void Paragraph::Layout(double width, bool force) {
       if (bidi_run.start() < line_end_index &&
           bidi_run.end() > line_range.start) {
         // The run is a widget run.
-        if (bidi_run.size() == 1 && text_[bidi_run.start()] == 0xFFFC &&
+        if (bidi_run.size() == 1 &&
+            text_[bidi_run.start()] == objReplacementChar &&
             widget_run_index < inline_widgets_.size()) {
           line_runs.emplace_back(std::max(bidi_run.start(), line_range.start),
                                  std::min(bidi_run.end(), line_end_index),
