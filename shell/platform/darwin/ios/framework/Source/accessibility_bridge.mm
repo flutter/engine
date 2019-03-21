@@ -466,7 +466,8 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     return _semanticsObject;
   }
 
-  // Create an addtional child to act as the accessibility container for the platform view.
+  // Return the additional child acts as a container of platform view. The
+  // platformViewSemanticsContainer was created and cached in the updateSemantics path.
   if (_semanticsObject.node.IsPlatformViewNode() && index == [self accessibilityElementCount] - 1) {
     FML_CHECK(_semanticsObject.platformViewSemanticsContainer != nil);
     return _semanticsObject.platformViewSemanticsContainer;
@@ -602,6 +603,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
       }
       object.accessibilityCustomActions = accessibilityCustomActions;
     }
+
     if (object.node.IsPlatformViewNode()) {
       shell::FlutterPlatformViewsController* controller = GetPlatformViewsController();
       if (controller) {
