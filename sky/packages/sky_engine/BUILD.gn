@@ -170,7 +170,7 @@ dart_pkg("sky_engine") {
   ]
 }
 
-if (is_fuchsia) {
+if (is_fuchsia && !is_fuchsia_sdk) {
   import("//build/dart/dart_library.gni")
 
   dart_library("sky_engine_dart") {

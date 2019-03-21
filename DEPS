@@ -109,6 +109,9 @@ vars = {
 
   # Checkout Windows dependencies only if we are building on Windows.
   'download_windows_deps' : 'host_os == "win"',
+
+  'fuchsia_toolchain_version' : 'foo',
+  'fuchsia_sdk_version' : 'bar',
 }
 
 # Only these hosts are allowed for dependencies in this DEPS file.

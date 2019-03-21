@@ -68,7 +68,7 @@ source_set("flow") {
     "//third_party/skia",
   ]
 
-  if (is_fuchsia) {
+  if (is_fuchsia && !is_fuchsia_sdk) {
     sources += [
       "export_node.cc",
       "export_node.h",
@@ -81,9 +81,8 @@ source_set("flow") {
     ]
 
     public_deps += [
+      "//garnet/public/lib/ui/scenic/cpp",
       "//sdk/fidl/fuchsia.ui.scenic",
-      "//sdk/fidl/fuchsia.ui.views",
-      "//sdk/lib/ui/scenic/cpp",
       "//topaz/public/dart-pkg/zircon",
       "//zircon/public/lib/zx",
     ]
@@ -98,7 +97,6 @@ executable("flow_unittests") {
     "flow_test_utils.cc",
     "flow_test_utils.h",
     "layers/performance_overlay_layer_unittests.cc",
-    "layers/physical_shape_layer_unittests.cc",
     "matrix_decomposition_unittests.cc",
     "raster_cache_unittests.cc",
   ]

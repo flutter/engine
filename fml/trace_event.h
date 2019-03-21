@@ -7,7 +7,7 @@
 
 #include "flutter/fml/build_config.h"
 
-#if defined(OS_FUCHSIA)
+#if defined(OS_FUCHSIA) && !defined(FUCHSIA_SDK)
 
 // Forward to the system tracing mechanism on Fuchsia.
 
