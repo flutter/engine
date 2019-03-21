@@ -128,6 +128,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   [_children release];
   _parent = nil;
   _container.get().semanticsObject = nil;
+  [_platformViewSemanticsContainer release];
   [super dealloc];
 }
 
@@ -423,9 +424,6 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 @implementation SemanticsObjectContainer {
   SemanticsObject* _semanticsObject;
   fml::WeakPtr<shell::AccessibilityBridge> _bridge;
-
-  // Used if the semantics object of this container is a semantics object for a platform view.
-  FlutterPlatformViewSemanticsContainer* _platformViewSemanticsContainer;
 }
 
 #pragma mark - initializers
@@ -450,11 +448,6 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   return self;
 }
 
-- (void)dealloc {
-  [_platformViewSemanticsContainer release];
-  [super dealloc];
-}
-
 #pragma mark - UIAccessibilityContainer overrides
 
 - (NSInteger)accessibilityElementCount {
@@ -475,21 +468,8 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
   // Create an addtional child to act as the accessibility container for the platform view.
   if (_semanticsObject.node.IsPlatformViewNode() && index == [self accessibilityElementCount] - 1) {
-    if (_platformViewSemanticsContainer) {
-      return _platformViewSemanticsContainer;
-    }
-    shell::FlutterPlatformViewsController* controller = _bridge.get()->GetPlatformViewsController();
-    if (controller) {
-      _platformViewSemanticsContainer = [[FlutterPlatformViewSemanticsContainer alloc]
-          initWithAccessibilityContainer:[_semanticsObject accessibilityContainer]];
-      NSObject<FlutterPlatformView>* platformViewContainer =
-          controller->GetPlatformViewByID(_semanticsObject.node.platformViewId);
-      UIView* platformView = [platformViewContainer view];
-      if (platformView) {
-        _platformViewSemanticsContainer.accessibilityElements = @[ platformView ];
-      }
-      return _platformViewSemanticsContainer;
-    }
+    FML_CHECK(_semanticsObject.platformViewSemanticsContainer != nil);
+    return _semanticsObject.platformViewSemanticsContainer;
   }
 
   SemanticsObject* child = [_semanticsObject children][index - 1];
@@ -621,6 +601,19 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
         [accessibilityCustomActions addObject:customAction];
       }
       object.accessibilityCustomActions = accessibilityCustomActions;
+    }
+    if (object.node.IsPlatformViewNode()) {
+      shell::FlutterPlatformViewsController* controller = GetPlatformViewsController();
+      if (controller) {
+        object.platformViewSemanticsContainer = [[FlutterPlatformViewSemanticsContainer alloc]
+            initWithAccessibilityContainer:[object accessibilityContainer]];
+        UIView* platformView = [controller->GetPlatformViewByID(object.node.platformViewId) view];
+        if (platformView) {
+          object.platformViewSemanticsContainer.accessibilityElements = @[ platformView ];
+        }
+      }
+    } else if (object.platformViewSemanticsContainer) {
+      [object.platformViewSemanticsContainer release];
     }
   }
 

@@ -27,6 +27,8 @@ namespace shell {
 class AccessibilityBridge;
 }  // namespace shell
 
+@class FlutterPlatformViewSemanticsContainer;
+
 /**
  * A node in the iOS semantics tree.
  */
@@ -70,6 +72,11 @@ class AccessibilityBridge;
  * be equal to this object.
  */
 @property(nonatomic, strong) NSMutableArray<SemanticsObject*>* children;
+
+/**
+ * Used if this SemanticsObject is for a platform view.
+ */
+@property(strong, nonatomic) FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer;
 
 - (BOOL)nodeWillCauseLayoutChange:(const blink::SemanticsNode*)node;
 
