@@ -303,6 +303,9 @@ class AccessibilityViewEmbedder {
         }
 
         private Long getParentNodeId(AccessibilityNodeInfo node) {
+            if (getParentNodeId == null) {
+                return null;
+            }
             try {
                 return (long) getParentNodeId.invoke(node);
             } catch (IllegalAccessException e) {
