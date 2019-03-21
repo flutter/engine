@@ -3777,7 +3777,7 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   PictureRecorder() { _constructor(); }
   void _constructor() native 'PictureRecorder_constructor';
 
-  // Reference to the Canvas this picture recorder uses.
+  // ignore: unused_field
   Canvas _canvas;
 
   /// Whether this object is currently recording commands.
