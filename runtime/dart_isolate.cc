@@ -574,7 +574,7 @@ Dart_Isolate DartIsolate::DartIsolateCreateCallback(
     // isolate like normal but dont hold a reference to it at all. We also start
     // this isolate since we will never again reference it from the engine.
     return DartCreateAndStartServiceIsolate(advisory_script_uri,         //
-                                            advisory_script_entrypoint,  //
+                                            advisory_script_uri,         //
                                             package_root,                //
                                             package_config,              //
                                             flags,                       //
