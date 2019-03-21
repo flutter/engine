@@ -69,16 +69,18 @@ class AccessibilityViewEmbedder {
      * @param displayBounds the display bounds for the node in screen coordinates
      */
     public AccessibilityNodeInfo getRootNode(View embeddedView, int flutterId, Rect displayBounds) {
-        AccessibilityNodeInfo originNode = embeddedView.createAccessibilityNodeInfo();
-        Long originPackedId = reflectionAccessors.getSourceNodeId(originNode);
-        if (originPackedId == null) {
-            return null;
-        }
-        int originId = ReflectionAccessors.getVirtualNodeId(originPackedId);
-        flutterIdToOrigin.put(flutterId, new ViewAndId(embeddedView, originId));
-        flutterIdToDisplayBounds.put(flutterId, displayBounds);
-        originToFlutterId.put(new ViewAndId(embeddedView, originId), flutterId);
-        return convertToFlutterNode(originNode, flutterId, embeddedView);
+        return null;
+        // TODO(amirh): uncomment this once a11y events and actions are wired.
+        // AccessibilityNodeInfo originNode = embeddedView.createAccessibilityNodeInfo();
+        // Long originPackedId = reflectionAccessors.getSourceNodeId(originNode);
+        // if (originPackedId == null) {
+        //     return null;
+        // }
+        // int originId = ReflectionAccessors.getVirtualNodeId(originPackedId);
+        // flutterIdToOrigin.put(flutterId, new ViewAndId(embeddedView, originId));
+        // flutterIdToDisplayBounds.put(flutterId, displayBounds);
+        // originToFlutterId.put(new ViewAndId(embeddedView, originId), flutterId);
+        // return convertToFlutterNode(originNode, flutterId, embeddedView);
     }
 
     /**
