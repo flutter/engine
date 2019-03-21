@@ -138,7 +138,7 @@ class AccessibilityViewEmbedder {
             int originId = ReflectionAccessors.getVirtualNodeId(originPackedId);
             ViewAndId origin = new ViewAndId(embeddedView, originId);
             int childFlutterId;
-            if(originToFlutterId.containsKey(origin)) {
+            if (originToFlutterId.containsKey(origin)) {
                 childFlutterId = originToFlutterId.get(origin);
             } else {
                 childFlutterId = nextFlutterId++;
