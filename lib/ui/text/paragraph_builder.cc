@@ -130,6 +130,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, ParagraphBuilder);
   V(ParagraphBuilder, pushStyle) \
   V(ParagraphBuilder, pop)       \
   V(ParagraphBuilder, addText)   \
+  V(ParagraphBuilder, addWidget) \
   V(ParagraphBuilder, build)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
