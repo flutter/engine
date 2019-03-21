@@ -130,8 +130,10 @@ class AccessibilityViewEmbedder {
             return;
         }
         int parentOriginId = ReflectionAccessors.getVirtualNodeId(parentOriginPackedId);
-        int parentFlutterId = originToFlutterId.get(new ViewAndId(embeddedView, parentOriginId));
-        result.setParent(rootAccessibilityView, parentFlutterId);
+        Integer parentFlutterId = originToFlutterId.get(new ViewAndId(embeddedView, parentOriginId));
+        if (parentFlutterId != null) {
+            result.setParent(rootAccessibilityView, parentFlutterId);
+        }
     }
 
 
