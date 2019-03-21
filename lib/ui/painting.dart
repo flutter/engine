@@ -3019,6 +3019,7 @@ class Canvas extends NativeFieldWrapperClass2 {
     if (recorder.isRecording)
       throw new ArgumentError('"recorder" must not already be associated with another Canvas.');
     cullRect ??= Rect.largest;
+    recorder._canvas = this;
     _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
   }
   void _constructor(PictureRecorder recorder,
@@ -3775,6 +3776,9 @@ class PictureRecorder extends NativeFieldWrapperClass2 {
   @pragma('vm:entry-point')
   PictureRecorder() { _constructor(); }
   void _constructor() native 'PictureRecorder_constructor';
+
+  // Reference to the Canvas this picture recorder uses.
+  Canvas _canvas;
 
   /// Whether this object is currently recording commands.
   ///
