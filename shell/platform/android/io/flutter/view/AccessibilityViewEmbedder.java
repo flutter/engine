@@ -7,6 +7,7 @@ package io.flutter.view;
 import android.graphics.Rect;
 import android.os.Build;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
@@ -39,7 +40,7 @@ class AccessibilityViewEmbedder {
     private final View rootAccessibilityView;
 
     // Maps a flutterId to the corresponding platform view and originId.
-    private final Map<Integer, ViewAndId> flutterIdToOrigin;
+    private final SparseArray<ViewAndId> flutterIdToOrigin;
 
     // Maps a platform view and originId to a corresponding flutterID.
     private final Map<ViewAndId, Integer> originToFlutterId;
@@ -48,19 +49,25 @@ class AccessibilityViewEmbedder {
     // the root semantic node for the embedded view.
     // This is used to translate the coordinates of the accessibility node subtree to the main display's coordinate
     // system.
-    private final Map<Integer, Rect> flutterIdToDisplayBounds;
+    private final SparseArray<Rect> flutterIdToDisplayBounds;
 
     private int nextFlutterId;
 
     AccessibilityViewEmbedder(View rootAccessibiiltyView, int firstVirtualNodeId) {
         reflectionAccessors = new ReflectionAccessors();
-        flutterIdToOrigin = new HashMap<>();
+        flutterIdToOrigin = new SparseArray<>();
         this.rootAccessibilityView = rootAccessibiiltyView;
         nextFlutterId = firstVirtualNodeId;
-        flutterIdToDisplayBounds = new HashMap<>();
+        flutterIdToDisplayBounds = new SparseArray<>();
         originToFlutterId = new HashMap<>();
     }
 
+    /**
+     * Returns the root accessibility node for an embedded platform view.
+     *
+     * @param flutterId the virtual accessibility ID for the node in flutter accessibility tree
+     * @param displayBounds the display bounds for the node in screen coordinates
+     */
     public AccessibilityNodeInfo getRootNode(View embeddedView, int flutterId, Rect displayBounds) {
         AccessibilityNodeInfo originNode = embeddedView.createAccessibilityNodeInfo();
         Long originPackedId = reflectionAccessors.getSourceNodeId(originNode);
@@ -74,6 +81,9 @@ class AccessibilityViewEmbedder {
         return convertToFlutterNode(originNode, flutterId, embeddedView);
     }
 
+    /**
+     * Returns the accessibility node info for the node identified with `flutterId`.
+     */
     public AccessibilityNodeInfo createAccessibilityNodeInfo(int flutterId) {
         ViewAndId origin = flutterIdToOrigin.get(flutterId);
         if (origin == null) {
@@ -199,12 +209,6 @@ class AccessibilityViewEmbedder {
             output.setAvailableExtraData(input.getAvailableExtraData());
             output.setHintText(input.getHintText());
             output.setShowingHintText(input.isShowingHintText());
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { // 28
-            output.setHeading(input.isHeading());
-            output.setPaneTitle(input.getPaneTitle());
-            output.setScreenReaderFocusable(input.isScreenReaderFocusable());
-            output.setTooltipText(input.getTooltipText());
         }
     }
 
