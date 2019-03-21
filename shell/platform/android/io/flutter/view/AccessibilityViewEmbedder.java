@@ -82,7 +82,7 @@ class AccessibilityViewEmbedder {
     }
 
     /**
-     * Returns the accessibility node info for the node identified with `flutterId`.
+     * Creates the accessibility node info for the node identified with `flutterId`.
      */
     public AccessibilityNodeInfo createAccessibilityNodeInfo(int flutterId) {
         ViewAndId origin = flutterIdToOrigin.get(flutterId);
@@ -102,6 +102,10 @@ class AccessibilityViewEmbedder {
         return convertToFlutterNode(originNode, flutterId, origin.view);
     }
 
+    /*
+     * Creates an AccessibilityNodeInfo that can be attached to the Flutter accessibility tree and is equivalent to
+     * originNode(which belongs to embeddedView). The virtual ID for the created node will be flutterId.
+     */
     private AccessibilityNodeInfo convertToFlutterNode(AccessibilityNodeInfo originNode, int flutterId, View embeddedView) {
         AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(rootAccessibilityView, flutterId);
         result.setPackageName(rootAccessibilityView.getContext().getPackageName());
@@ -111,14 +115,14 @@ class AccessibilityViewEmbedder {
         Rect displayBounds = flutterIdToDisplayBounds.get(flutterId);
 
         copyAccessibilityFields(originNode, result);
-        translateBounds(originNode, displayBounds, result);
-        addChildren(originNode, embeddedView, displayBounds, result);
-        setParent(originNode, embeddedView, result);
+        setFlutterNodesTranslateBounds(originNode, displayBounds, result);
+        addChildrenToFlutterNode(originNode, embeddedView, displayBounds, result);
+        setFlutterNodeParent(originNode, embeddedView, result);
 
         return result;
     }
 
-    private void setParent(AccessibilityNodeInfo originNode, View embeddedView, AccessibilityNodeInfo result) {
+    private void setFlutterNodeParent(AccessibilityNodeInfo originNode, View embeddedView, AccessibilityNodeInfo result) {
         Long parentOriginPackedId = reflectionAccessors.getParentNodeId(originNode);
         if (parentOriginPackedId == null) {
             return;
@@ -129,7 +133,7 @@ class AccessibilityViewEmbedder {
     }
 
 
-    private void addChildren(AccessibilityNodeInfo originNode, View embeddedView, Rect displayBounds, AccessibilityNodeInfo resultNode) {
+    private void addChildrenToFlutterNode(AccessibilityNodeInfo originNode, View embeddedView, Rect displayBounds, AccessibilityNodeInfo resultNode) {
         for (int i = 0; i < originNode.getChildCount(); i++) {
             Long originPackedId = reflectionAccessors.getChildId(originNode, i);
             if (originPackedId == null) {
@@ -150,7 +154,7 @@ class AccessibilityViewEmbedder {
         }
     }
 
-    private void translateBounds(AccessibilityNodeInfo originNode, Rect displayBounds, AccessibilityNodeInfo resultNode) {
+    private void setFlutterNodesTranslateBounds(AccessibilityNodeInfo originNode, Rect displayBounds, AccessibilityNodeInfo resultNode) {
         Rect boundsInParent = new Rect();
         originNode.getBoundsInParent(boundsInParent);
         resultNode.setBoundsInParent(boundsInParent);
