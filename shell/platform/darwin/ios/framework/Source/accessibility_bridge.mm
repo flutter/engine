@@ -423,6 +423,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 @implementation SemanticsObjectContainer {
   SemanticsObject* _semanticsObject;
   fml::WeakPtr<shell::AccessibilityBridge> _bridge;
+
+  // Used if the semantics object of this container is a semantics object for a platform view.
+  FlutterPlatformViewSemanticsContainer* _platformViewSemanticsContainer;
 }
 
 #pragma mark - initializers
@@ -447,6 +450,11 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   return self;
 }
 
+- (void)dealloc {
+  [_platformViewSemanticsContainer release];
+  [super dealloc];
+}
+
 #pragma mark - UIAccessibilityContainer overrides
 
 - (NSInteger)accessibilityElementCount {
@@ -467,17 +475,20 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
   // Create an addtional child to act as the accessibility container for the platform view.
   if (_semanticsObject.node.IsPlatformViewNode() && index == [self accessibilityElementCount] - 1) {
+    if (_platformViewSemanticsContainer) {
+      return _platformViewSemanticsContainer;
+    }
     shell::FlutterPlatformViewsController* controller = _bridge.get()->GetPlatformViewsController();
     if (controller) {
-      FlutterPlatformViewSemanticsContainer* child = [[FlutterPlatformViewSemanticsContainer alloc]
+      _platformViewSemanticsContainer = [[FlutterPlatformViewSemanticsContainer alloc]
           initWithAccessibilityContainer:[_semanticsObject accessibilityContainer]];
       NSObject<FlutterPlatformView>* platformViewContainer =
           controller->GetPlatformViewByID(_semanticsObject.node.platformViewId);
       UIView* platformView = [platformViewContainer view];
       if (platformView) {
-        child.accessibilityElements = @[ platformView ];
+        _platformViewSemanticsContainer.accessibilityElements = @[ platformView ];
       }
-      return child;
+      return _platformViewSemanticsContainer;
     }
   }
 
