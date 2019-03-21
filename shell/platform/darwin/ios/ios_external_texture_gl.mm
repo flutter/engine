@@ -22,7 +22,10 @@ IOSExternalTextureGL::IOSExternalTextureGL(int64_t textureId,
 
 IOSExternalTextureGL::~IOSExternalTextureGL() = default;
 
-void IOSExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds, bool freeze) {
+void IOSExternalTextureGL::Paint(SkCanvas& canvas,
+                                 const SkRect& bounds,
+                                 bool freeze,
+                                 GrContext* context) {
   if (!cache_ref_) {
     CVOpenGLESTextureCacheRef cache;
     CVReturn err = CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL,
@@ -57,9 +60,9 @@ void IOSExternalTextureGL::Paint(SkCanvas& canvas, const SkRect& bounds, bool fr
   GrGLTextureInfo textureInfo = {CVOpenGLESTextureGetTarget(texture_ref_),
                                  CVOpenGLESTextureGetName(texture_ref_), GL_RGBA8_OES};
   GrBackendTexture backendTexture(bounds.width(), bounds.height(), GrMipMapped::kNo, textureInfo);
-  sk_sp<SkImage> image =
-      SkImage::MakeFromTexture(canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
-                               kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
+  sk_sp<SkImage> image = SkImage::MakeFromTexture(
+      context == nullptr ? canvas.getGrContext() : context, backendTexture,
+      kTopLeft_GrSurfaceOrigin, kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
   if (image) {
     canvas.drawImage(image, bounds.x(), bounds.y());
   }
