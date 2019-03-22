@@ -1127,8 +1127,8 @@ void Paragraph::Paint(SkCanvas* canvas, double x, double y) {
     if (record.GetPlaceholderRun() == nullptr) {
       PaintShadow(canvas, record, offset);
       canvas->drawTextBlob(record.text(), offset.x(), offset.y(), paint);
-      PaintDecorations(canvas, record, base_offset);
     }
+    PaintDecorations(canvas, record, base_offset);
   }
 }
 
