@@ -1,0 +1,9 @@
+name: web_sdk_tests
+version: 0.1.1-dev
+description: Communication pipe to Dart Frontend
+homepage: http://flutter.io
+author: Flutter Authors <flutter-dev@googlegroups.com>
+
+dev_dependencies:
+  analyzer: any
+  test: any
