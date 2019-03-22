@@ -19,7 +19,7 @@ int main() {
   _collectPublicClasses(webUnit, webClasses, 'lib/stub_ui/');
 
   if (uiClasses.isEmpty || webClasses.isEmpty) {
-    print('Warning: did not resolve all Classes');
+    print('Warning: did not resolve any classes.');
   }
 
   bool failed = false;
@@ -31,8 +31,8 @@ int main() {
     // warning and move along.
     if (webClass == null) {
       failed = true;
-      print('Warning: io/dart:ui contained public class $className, but '
-          'this was missing from web/dart:ui.');
+      print('Warning: lib/ui/ui.dart contained public class $className, but '
+          'this was missing from lib/stub_ui/ui.dart.');
       continue;
     }
     // Next will check that the public methods exposed in each library are
@@ -48,7 +48,7 @@ int main() {
       if (webMethod == null) {
         failed = true;
         print(
-          'Warning: io/dart:ui $className.$methodName is missing from web/dart:ui',
+          'Warning: lib/ui/ui.dart $className.$methodName is missing from lib/stub_ui/ui.dart.',
         );
         continue;
       }
@@ -58,8 +58,8 @@ int main() {
       if (uiMethod.parameters.parameters.length != webMethod.parameters.parameters.length) {
         failed = true;
         print(
-            'Warning: io/dart:ui $className.$methodName has a different parameter '
-            'length than in web/dart:ui');
+            'Warning: lib/ui/ui.dart $className.$methodName has a different parameter '
+            'length than in lib/stub_ui/ui.dart.');
       }
       // Technically you could re-order named parameters and still be valid,
       // but we enforce that they are identical.
@@ -68,18 +68,18 @@ int main() {
         final FormalParameter webParam = webMethod.parameters.parameters[i];
         if (webParam.identifier.name != uiParam.identifier.name) {
           failed = true;
-          print('Warning: io/dart:ui $className.$methodName parameter $i'
-              ' ${uiParam.identifier.name} has a different name in web/dart:ui');
+          print('Warning: lib/ui/ui.dart $className.$methodName parameter $i'
+              ' ${uiParam.identifier.name} has a different name in lib/stub_ui/ui.dart.');
         }
         if (uiParam.isPositional && !webParam.isPositional) {
           failed = true;
-          print('Warning: io/dart:ui $className.$methodName parameter $i'
-              '${uiParam.identifier.name} is positional, but not in web/dart:ui');
+          print('Warning: lib/ui/ui.dart $className.$methodName parameter $i'
+              '${uiParam.identifier.name} is positional, but not in lib/stub_ui/ui.dart.');
         }
         if (uiParam.isNamed && !webParam.isNamed) {
           failed = true;
-          print('Warning: io/dart:ui $className.$methodName parameter $i'
-              '${uiParam.identifier.name} is named, but not in web/dart:ui');
+          print('Warning: lib/ui/ui.dart $className.$methodName parameter $i'
+              '${uiParam.identifier.name} is named, but not in lib/stub_ui/ui.dart.');
         }
       }
     }
