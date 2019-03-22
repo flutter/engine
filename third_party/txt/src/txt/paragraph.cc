@@ -238,12 +238,9 @@ void Paragraph::SetText(std::vector<uint16_t> text, StyledRuns runs) {
   runs_ = std::move(runs);
 }
 
-void Paragraph::SetInlineWidgets(
-    std::vector<WidgetRun> inline_widgets,
-    std::vector<size_t> obj_replacement_char_indexes) {
+void Paragraph::SetInlineWidgets(std::vector<WidgetRun> inline_widgets) {
   needs_layout_ = true;
   inline_widgets_ = std::move(inline_widgets);
-  obj_replacement_char_indexes_ = std::move(obj_replacement_char_indexes);
 }
 
 bool Paragraph::ComputeLineBreaks() {

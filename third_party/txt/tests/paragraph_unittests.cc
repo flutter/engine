@@ -484,6 +484,81 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   ASSERT_TRUE(Snapshot());
 }
 
+// Tests if manually inserted 0xFFFC characters are replaced to 0xFFFD in order
+// to not interfere with the placeholder box layout.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidget0xFFFCParagraph)) {
+  const char* text = "ab\uFFFCcd";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  // Used to generate the replaced version.
+  const char* text2 = "ab\uFFFDcd";
+  auto icu_text2 = icu::UnicodeString::fromUTF8(text2);
+  std::u16string u16_text2(icu_text2.getBuffer(),
+                           icu_text2.getBuffer() + icu_text2.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 14;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 26;
+  text_style.letter_spacing = 1;
+  text_style.word_spacing = 5;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  text_style.decoration = TextDecoration::kUnderline;
+  text_style.decoration_color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+
+  std::vector<uint16_t> truth_text;
+
+  builder.AddText(u16_text);
+  truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
+  builder.AddText(u16_text);
+  truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
+
+  txt::WidgetRun widget_run(50, 50, 0);
+  builder.AddWidget(widget_run);
+  truth_text.push_back(0xFFFC);
+
+  builder.AddText(u16_text);
+  truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
+  builder.AddText(u16_text);
+  truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
+
+  builder.AddWidget(widget_run);
+  truth_text.push_back(0xFFFC);
+  builder.AddWidget(widget_run);
+  truth_text.push_back(0xFFFC);
+  builder.AddText(u16_text);
+  truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
+  builder.AddText(u16_text);
+  truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
+  builder.AddWidget(widget_run);
+  truth_text.push_back(0xFFFC);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  for (size_t i = 0; i < truth_text.size(); ++i) {
+    EXPECT_EQ(paragraph->text_[i], truth_text[i]);
+  }
+
+  ASSERT_TRUE(Snapshot());
+}
+
 TEST_F(ParagraphTest, SimpleRedParagraph) {
   const char* text = "I am RED";
   auto icu_text = icu::UnicodeString::fromUTF8(text);

@@ -43,6 +43,10 @@ using GlyphID = uint32_t;
 // Constant with the unicode codepoint for the "Object replacement character".
 // Used as a stand-in character for Placeholder boxes.
 const int objReplacementChar = 0xFFFC;
+// Constant with the unicode codepoint for the "Replacement character". This is
+// the character that commonly renders as a black diamond with a white question
+// mark. Used to replace non-placeholder instances of 0xFFFC in the text buffer.
+const int replacementChar = 0xFFFD;
 
 // Paragraph provides Layout, metrics, and painting capabilites for text. Once a
 // Paragraph is constructed with ParagraphBuilder::Build(), an example basic
@@ -245,6 +249,7 @@ class Paragraph {
   FRIEND_TEST(ParagraphTest, SimpleShadow);
   FRIEND_TEST(ParagraphTest, ComplexShadow);
   FRIEND_TEST(ParagraphTest, FontFallbackParagraph);
+  FRIEND_TEST(ParagraphTest, InlineWidget0xFFFCParagraph);
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
@@ -254,10 +259,6 @@ class Paragraph {
   // position in the text where the widget will occur. There should be an equal
   // number of 0xFFFC characters and elements in this vector.
   std::vector<WidgetRun> inline_widgets_;
-  // The indexes of the obj replacement characters added through
-  // ParagraphBuilder::addWidget(). The obj replacement characters at these
-  // indexes are exempt from conversion into 0xFFFD.
-  std::vector<size_t> obj_replacement_char_indexes_;
   // The indexes of the boxes that correspond to an inline widget.
   std::vector<size_t> inline_widget_boxes_;
   StyledRuns runs_;
@@ -431,8 +432,7 @@ class Paragraph {
 
   void SetFontCollection(std::shared_ptr<FontCollection> font_collection);
 
-  void SetInlineWidgets(std::vector<WidgetRun> inline_widgets,
-                        std::vector<size_t> obj_replacement_char_indexes);
+  void SetInlineWidgets(std::vector<WidgetRun> inline_widgets);
 
   // Break the text into lines.
   bool ComputeLineBreaks();
