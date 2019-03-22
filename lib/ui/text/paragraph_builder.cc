@@ -126,11 +126,11 @@ static void ParagraphBuilder_constructor(Dart_NativeArguments args) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ParagraphBuilder);
 
-#define FOR_EACH_BINDING(V)      \
-  V(ParagraphBuilder, pushStyle) \
-  V(ParagraphBuilder, pop)       \
-  V(ParagraphBuilder, addText)   \
-  V(ParagraphBuilder, addWidget) \
+#define FOR_EACH_BINDING(V)           \
+  V(ParagraphBuilder, pushStyle)      \
+  V(ParagraphBuilder, pop)            \
+  V(ParagraphBuilder, addText)        \
+  V(ParagraphBuilder, addPlaceholder) \
   V(ParagraphBuilder, build)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
@@ -431,12 +431,12 @@ Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
   return Dart_Null();
 }
 
-Dart_Handle ParagraphBuilder::addWidget(double width,
-                                        double height,
-                                        double baseline) {
-  txt::WidgetRun widget_run(width, height, baseline);
+Dart_Handle ParagraphBuilder::addPlaceholder(double width,
+                                             double height,
+                                             double baseline) {
+  txt::PlaceholderRun placeholder_run(width, height, baseline);
 
-  m_paragraphBuilder->AddWidget(widget_run);
+  m_paragraphBuilder->AddPlaceholder(placeholder_run);
 
   return Dart_Null();
 }

@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef LIB_TXT_SRC_WIDGET_RUN_H_
-#define LIB_TXT_SRC_WIDGET_RUN_H_
+#ifndef LIB_TXT_SRC_PLACEHOLDER_RUN_H_
+#define LIB_TXT_SRC_PLACEHOLDER_RUN_H_
 
 namespace txt {
 
 // Represents the metrics required to fully define a rect that will fit a
-// widget.
+// placeholder.
 //
 // LibTxt will leave an empty space in the layout of the text of the size
-// defined by this class. After layout, the framework will draw widgets into the
-// reserved space.
-class WidgetRun {
+// defined by this class. After layout, the framework will draw placeholders
+// into the reserved space.
+class PlaceholderRun {
  public:
   double width = 0;
   double height = 0;
@@ -39,11 +39,11 @@ class WidgetRun {
   // the alphabetic baseline.
   double baseline = 0;
 
-  WidgetRun();
+  PlaceholderRun();
 
-  WidgetRun(double width, double height, double baseline);
+  PlaceholderRun(double width, double height, double baseline);
 };
 
 }  // namespace txt
 
-#endif  // LIB_TXT_SRC_WIDGET_RUN_H_
+#endif  // LIB_TXT_SRC_PLACEHOLDER_RUN_H_

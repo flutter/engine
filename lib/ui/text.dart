@@ -1355,7 +1355,10 @@ class Paragraph extends NativeFieldWrapperClass2 {
   }
   List<TextBox> _getBoxesForRange(int start, int end, int boxHeightStyle, int boxWidthStyle) native 'Paragraph_getRectsForRange';
 
-  List<TextBox> getBoxesForWidgets() native 'Paragraph_getRectsForWidgets';
+  /// Returns a list of text boxes that enclose all placeholders in the paragraph.
+  /// 
+  /// The order of the boxes are in the same order as passed in through [addPlaceholder].
+  List<TextBox> getBoxesForPlaceholders() native 'Paragraph_getRectsForPlaceholders';
 
   /// Returns the text position closest to the given offset.
   TextPosition getPositionForOffset(Offset offset) {
@@ -1490,7 +1493,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   }
   String _addText(String text) native 'ParagraphBuilder_addText';
 
-  /// Adds a space for a widget to the paragraph.
+  /// Adds an inline placeholder space to the paragraph.
   ///
   /// The paragraph will contain a rectangular space with no text of the size
   /// specified.
@@ -1500,13 +1503,14 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// of the rectangle. This determines how the rectangle is aligned to the
   /// surrounding text.
   ///
-  /// For example, to make a 50x50 rectangle that sits completely on top of the
-  /// alphabetic baseline, pass in `addWidget(50, 50, 50)`. For a box that is
-  /// vertically centered on the alphabetic baseline, pass in `addWidget(50, 50, 25);`.
-  void addWidget(double width, double height, double baseline) {
-    _addWidget(width, height, baseline);
+  /// For example, to make a 50x50 empty rectangle 'hole' that sits completely on
+  /// top of the alphabetic baseline, pass in `addPlaceholder(50, 50, 50)`. For
+  /// a box that is vertically centered on the alphabetic baseline, pass in
+  /// `addPlaceholder(50, 50, 25);`.
+  void addPlaceholder(double width, double height, double baseline) {
+    _addPlaceholder(width, height, baseline);
   }
-  String _addWidget(double width, double height, double baseline) native 'ParagraphBuilder_addWidget';
+  String _addPlaceholder(double width, double height, double baseline) native 'ParagraphBuilder_addPlaceholder';
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.

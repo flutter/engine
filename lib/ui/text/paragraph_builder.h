@@ -56,11 +56,12 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
   Dart_Handle addText(const std::u16string& text);
 
   // Pushes the information requried to leave an open space, where Flutter may
-  // draw a custom widget into.
+  // draw a custom placeholder into.
   //
   // Internally, this method adds a single object replacement character (0xFFFC)
-  // and emplaces a new WidgetRun instance to the vector of inline widgets.
-  Dart_Handle addWidget(double width, double height, double baseline);
+  // and emplaces a new PlaceholderRun instance to the vector of inline
+  // placeholders.
+  Dart_Handle addPlaceholder(double width, double height, double baseline);
 
   fml::RefPtr<Paragraph> build();
 

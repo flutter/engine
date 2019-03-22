@@ -24,7 +24,7 @@
 #include "txt/font_weight.h"
 #include "txt/paragraph.h"
 #include "txt/paragraph_builder.h"
-#include "txt/widget_run.h"
+#include "txt/placeholder_run.h"
 #include "txt_test_utils.h"
 
 #define DISABLE_ON_WINDOWS(TEST) DISABLE_TEST_WINDOWS(TEST)
@@ -70,7 +70,7 @@ TEST_F(ParagraphTest, SimpleParagraph) {
   ASSERT_TRUE(Snapshot());
 }
 
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderParagraph)) {
   const char* text = "012 34";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
   std::u16string u16_text(icu_text.getBuffer(),
@@ -93,34 +93,34 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
 
   builder.AddText(u16_text);
 
-  txt::WidgetRun widget_run(50, 50, 0);
-  builder.AddWidget(widget_run);
+  txt::PlaceholderRun placeholder_run(50, 50, 0);
+  builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
 
-  builder.AddWidget(widget_run);
-  txt::WidgetRun widget_run2(5, 50, 50);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
+  builder.AddPlaceholder(placeholder_run);
+  txt::PlaceholderRun placeholder_run2(5, 50, 50);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
   builder.AddText(u16_text);
-  builder.AddWidget(widget_run2);
+  builder.AddPlaceholder(placeholder_run2);
 
   builder.AddText(u16_text);
   builder.AddText(u16_text);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
 
@@ -158,7 +158,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
   EXPECT_EQ(boxes.size(), 1ull);
 
   paint.setColor(SK_ColorRED);
-  boxes = paragraph->GetRectsForWidgets();
+  boxes = paragraph->GetRectsForPlaceholders();
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -193,7 +193,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetParagraph)) {
   ASSERT_TRUE(Snapshot());
 }
 
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderBreakParagraph)) {
   const char* text = "012 34";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
   std::u16string u16_text(icu_text.getBuffer(),
@@ -216,49 +216,49 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
 
   builder.AddText(u16_text);
 
-  txt::WidgetRun widget_run(50, 50, 50);
-  txt::WidgetRun widget_run2(25, 25, 12.5);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
+  txt::PlaceholderRun placeholder_run(50, 50, 50);
+  txt::PlaceholderRun placeholder_run2(25, 25, 12.5);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
   builder.AddText(u16_text);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
 
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
 
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
   builder.AddText(u16_text);
-  builder.AddWidget(widget_run2);
+  builder.AddPlaceholder(placeholder_run2);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
@@ -316,7 +316,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 249);
 
   paint.setColor(SK_ColorRED);
-  boxes = paragraph->GetRectsForWidgets();
+  boxes = paragraph->GetRectsForPlaceholders();
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -346,7 +346,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetBreakParagraph)) {
   ASSERT_TRUE(Snapshot());
 }
 
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholderGetRectsParagraph)) {
   const char* text = "012 34";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
   std::u16string u16_text(icu_text.getBuffer(),
@@ -369,40 +369,40 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
 
   builder.AddText(u16_text);
 
-  txt::WidgetRun widget_run(50, 50, 50);
-  txt::WidgetRun widget_run2(5, 20, 10);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run);
+  txt::PlaceholderRun placeholder_run(50, 50, 50);
+  txt::PlaceholderRun placeholder_run2(5, 20, 10);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run);
 
   builder.AddText(u16_text);
 
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run2);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run2);
 
   builder.AddText(u16_text);
   builder.AddText(u16_text);
@@ -415,11 +415,11 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   builder.AddText(u16_text);
   builder.AddText(u16_text);
   builder.AddText(u16_text);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
-  builder.AddWidget(widget_run);
-  builder.AddWidget(widget_run2);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
+  builder.AddPlaceholder(placeholder_run);
+  builder.AddPlaceholder(placeholder_run2);
   builder.AddText(u16_text);
 
   builder.Pop();
@@ -434,7 +434,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
   paint.setAntiAlias(true);
   paint.setStrokeWidth(1);
   paint.setColor(SK_ColorRED);
-  std::vector<txt::Paragraph::TextBox> boxes = paragraph->GetRectsForWidgets();
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForPlaceholders();
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -486,7 +487,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidgetGetRectsParagraph)) {
 
 // Tests if manually inserted 0xFFFC characters are replaced to 0xFFFD in order
 // to not interfere with the placeholder box layout.
-TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidget0xFFFCParagraph)) {
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholder0xFFFCParagraph)) {
   const char* text = "ab\uFFFCcd";
   auto icu_text = icu::UnicodeString::fromUTF8(text);
   std::u16string u16_text(icu_text.getBuffer(),
@@ -520,8 +521,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidget0xFFFCParagraph)) {
   builder.AddText(u16_text);
   truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
 
-  txt::WidgetRun widget_run(50, 50, 0);
-  builder.AddWidget(widget_run);
+  txt::PlaceholderRun placeholder_run(50, 50, 0);
+  builder.AddPlaceholder(placeholder_run);
   truth_text.push_back(0xFFFC);
 
   builder.AddText(u16_text);
@@ -529,15 +530,15 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlineWidget0xFFFCParagraph)) {
   builder.AddText(u16_text);
   truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
 
-  builder.AddWidget(widget_run);
+  builder.AddPlaceholder(placeholder_run);
   truth_text.push_back(0xFFFC);
-  builder.AddWidget(widget_run);
+  builder.AddPlaceholder(placeholder_run);
   truth_text.push_back(0xFFFC);
   builder.AddText(u16_text);
   truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
   builder.AddText(u16_text);
   truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
-  builder.AddWidget(widget_run);
+  builder.AddPlaceholder(placeholder_run);
   truth_text.push_back(0xFFFC);
 
   builder.Pop();

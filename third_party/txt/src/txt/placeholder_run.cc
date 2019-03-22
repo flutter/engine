@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "widget_run.h"
+#include "placeholder_run.h"
 
 namespace txt {
 
-WidgetRun::WidgetRun() {}
+PlaceholderRun::PlaceholderRun() {}
 
-WidgetRun::WidgetRun(double width, double height, double baseline)
+PlaceholderRun::PlaceholderRun(double width, double height, double baseline)
     : width(width), height(height), baseline(baseline) {}
 
 }  // namespace txt

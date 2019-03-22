@@ -24,9 +24,9 @@
 #include "font_collection.h"
 #include "paragraph.h"
 #include "paragraph_style.h"
+#include "placeholder_run.h"
 #include "styled_runs.h"
 #include "text_style.h"
-#include "widget_run.h"
 
 namespace txt {
 
@@ -68,11 +68,12 @@ class ParagraphBuilder {
   void AddText(const char* text);
 
   // Pushes the information requried to leave an open space, where Flutter may
-  // draw a custom widget into.
+  // draw a custom placeholder into.
   //
   // Internally, this method adds a single object replacement character (0xFFFC)
-  // and emplaces a new WidgetRun instance to the vector of inline widgets.
-  void AddWidget(WidgetRun& span);
+  // and emplaces a new PlaceholderRun instance to the vector of inline
+  // placeholders.
+  void AddPlaceholder(PlaceholderRun& span);
 
   void SetParagraphStyle(const ParagraphStyle& style);
 
@@ -82,14 +83,14 @@ class ParagraphBuilder {
 
  private:
   std::vector<uint16_t> text_;
-  // A vector of WidgetRuns, which detail the sizes, positioning and break
-  // behavior of the empty spaces to leave. Each widget span corresponds to a
-  // 0xFFFC (object replacement character) in text_, which indicates the
-  // position in the text where the widget will occur. There should be an equal
-  // number of 0xFFFC characters and elements in this vector.
-  std::vector<WidgetRun> inline_widgets_;
+  // A vector of PlaceholderRuns, which detail the sizes, positioning and break
+  // behavior of the empty spaces to leave. Each placeholder span corresponds to
+  // a 0xFFFC (object replacement character) in text_, which indicates the
+  // position in the text where the placeholder will occur. There should be an
+  // equal number of 0xFFFC characters and elements in this vector.
+  std::vector<PlaceholderRun> inline_placeholders_;
   // The indexes of the obj replacement characters added through
-  // ParagraphBuilder::addWidget(). The obj replacement characters at these
+  // ParagraphBuilder::addPlaceholder(). The obj replacement characters at these
   // indexes are exempt from conversion into 0xFFFD.
   std::unordered_set<size_t> obj_replacement_char_indexes_;
   std::vector<size_t> style_stack_;

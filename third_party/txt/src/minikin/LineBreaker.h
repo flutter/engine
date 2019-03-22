@@ -181,7 +181,7 @@ class LineBreaker {
   // definition of the widths of arbitrary glyphs. To linebreak properly, call
   // addStyleRun with nullptr as the paint property, which will lead it to
   // assume the width has already been calculated. Used for properly breaking
-  // inline widgets.
+  // inline placeholders.
   void setCustomCharWidth(size_t offset, float width);
 
   const int* getBreaks() const { return mBreaks.data(); }

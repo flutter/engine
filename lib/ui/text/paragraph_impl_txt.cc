@@ -76,10 +76,10 @@ std::vector<TextBox> ParagraphImplTxt::getRectsForRange(
   return result;
 }
 
-std::vector<TextBox> ParagraphImplTxt::getRectsForWidgets() {
+std::vector<TextBox> ParagraphImplTxt::getRectsForPlaceholders() {
   std::vector<TextBox> result;
   std::vector<txt::Paragraph::TextBox> boxes =
-      m_paragraph->GetRectsForWidgets();
+      m_paragraph->GetRectsForPlaceholders();
   for (const txt::Paragraph::TextBox& box : boxes) {
     result.emplace_back(box.rect,
                         static_cast<blink::TextDirection>(box.direction));

@@ -43,7 +43,7 @@ PaintRecord::PaintRecord(TextStyle style,
                          size_t line,
                          double run_width,
                          bool is_ghost,
-                         const WidgetRun* widget_run)
+                         const PlaceholderRun* placeholder_run)
     : style_(style),
       offset_(offset),
       text_(std::move(text)),
@@ -51,7 +51,7 @@ PaintRecord::PaintRecord(TextStyle style,
       line_(line),
       run_width_(run_width),
       is_ghost_(is_ghost),
-      widget_run_(widget_run) {}
+      placeholder_run_(placeholder_run) {}
 
 PaintRecord::PaintRecord(TextStyle style,
                          sk_sp<SkTextBlob> text,
@@ -73,7 +73,7 @@ PaintRecord::PaintRecord(PaintRecord&& other) {
   metrics_ = other.metrics_;
   line_ = other.line_;
   run_width_ = other.run_width_, is_ghost_ = other.is_ghost_;
-  widget_run_ = other.widget_run_;
+  placeholder_run_ = other.placeholder_run_;
 }
 
 PaintRecord& PaintRecord::operator=(PaintRecord&& other) {
@@ -84,7 +84,7 @@ PaintRecord& PaintRecord::operator=(PaintRecord&& other) {
   line_ = other.line_;
   run_width_ = other.run_width_;
   is_ghost_ = other.is_ghost_;
-  widget_run_ = other.widget_run_;
+  placeholder_run_ = other.placeholder_run_;
   return *this;
 }
 

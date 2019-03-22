@@ -839,6 +839,8 @@ FILE: ../../../flutter/third_party/txt/src/txt/paragraph_builder.cc
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_builder.h
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_style.cc
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_style.h
+FILE: ../../../flutter/third_party/txt/src/txt/placeholder_run.cc
+FILE: ../../../flutter/third_party/txt/src/txt/placeholder_run.h
 FILE: ../../../flutter/third_party/txt/src/txt/styled_runs.cc
 FILE: ../../../flutter/third_party/txt/src/txt/styled_runs.h
 FILE: ../../../flutter/third_party/txt/src/txt/test_font_manager.cc
@@ -852,8 +854,6 @@ FILE: ../../../flutter/third_party/txt/src/txt/text_style.cc
 FILE: ../../../flutter/third_party/txt/src/txt/text_style.h
 FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.cc
 FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.h
-FILE: ../../../flutter/third_party/txt/src/txt/widget_run.cc
-FILE: ../../../flutter/third_party/txt/src/txt/widget_run.h
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.cpp
 FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.h
 FILE: ../../../flutter/third_party/txt/src/utils/LruCache.h
