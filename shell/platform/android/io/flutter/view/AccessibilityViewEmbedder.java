@@ -7,6 +7,8 @@ package io.flutter.view;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.MotionEvent;
@@ -57,7 +59,7 @@ class AccessibilityViewEmbedder {
 
     private int nextFlutterId;
 
-    AccessibilityViewEmbedder(View rootAccessibiiltyView, int firstVirtualNodeId) {
+    AccessibilityViewEmbedder(@NonNull View rootAccessibiiltyView, int firstVirtualNodeId) {
         reflectionAccessors = new ReflectionAccessors();
         flutterIdToOrigin = new SparseArray<>();
         this.rootAccessibilityView = rootAccessibiiltyView;
@@ -72,7 +74,7 @@ class AccessibilityViewEmbedder {
      * @param flutterId the virtual accessibility ID for the node in flutter accessibility tree
      * @param displayBounds the display bounds for the node in screen coordinates
      */
-    public AccessibilityNodeInfo getRootNode(View embeddedView, int flutterId, Rect displayBounds) {
+    public AccessibilityNodeInfo getRootNode(@NonNull View embeddedView, int flutterId, @NonNull Rect displayBounds) {
         AccessibilityNodeInfo originNode = embeddedView.createAccessibilityNodeInfo();
         Long originPackedId = reflectionAccessors.getSourceNodeId(originNode);
         if (originPackedId == null) {
@@ -88,6 +90,7 @@ class AccessibilityViewEmbedder {
     /**
      * Creates the accessibility node info for the node identified with `flutterId`.
      */
+    @Nullable
     public AccessibilityNodeInfo createAccessibilityNodeInfo(int flutterId) {
         ViewAndId origin = flutterIdToOrigin.get(flutterId);
         if (origin == null) {
@@ -113,7 +116,12 @@ class AccessibilityViewEmbedder {
      * Creates an AccessibilityNodeInfo that can be attached to the Flutter accessibility tree and is equivalent to
      * originNode(which belongs to embeddedView). The virtual ID for the created node will be flutterId.
      */
-    private AccessibilityNodeInfo convertToFlutterNode(AccessibilityNodeInfo originNode, int flutterId, View embeddedView) {
+    @NonNull
+    private AccessibilityNodeInfo convertToFlutterNode(
+            @NonNull AccessibilityNodeInfo originNode,
+            int flutterId,
+            @NonNull View embeddedView
+    ) {
         AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(rootAccessibilityView, flutterId);
         result.setPackageName(rootAccessibilityView.getContext().getPackageName());
         result.setSource(rootAccessibilityView, flutterId);
@@ -129,7 +137,11 @@ class AccessibilityViewEmbedder {
         return result;
     }
 
-    private void setFlutterNodeParent(AccessibilityNodeInfo originNode, View embeddedView, AccessibilityNodeInfo result) {
+    private void setFlutterNodeParent(
+            @NonNull AccessibilityNodeInfo originNode,
+            @NonNull View embeddedView,
+            @NonNull AccessibilityNodeInfo result
+    ) {
         Long parentOriginPackedId = reflectionAccessors.getParentNodeId(originNode);
         if (parentOriginPackedId == null) {
             return;
@@ -142,7 +154,12 @@ class AccessibilityViewEmbedder {
     }
 
 
-    private void addChildrenToFlutterNode(AccessibilityNodeInfo originNode, View embeddedView, Rect displayBounds, AccessibilityNodeInfo resultNode) {
+    private void addChildrenToFlutterNode(
+            @NonNull AccessibilityNodeInfo originNode,
+            @NonNull View embeddedView,
+            @NonNull Rect displayBounds,
+            @NonNull AccessibilityNodeInfo resultNode
+    ) {
         for (int i = 0; i < originNode.getChildCount(); i++) {
             Long originPackedId = reflectionAccessors.getChildId(originNode, i);
             if (originPackedId == null) {
@@ -163,7 +180,11 @@ class AccessibilityViewEmbedder {
         }
     }
 
-    private void setFlutterNodesTranslateBounds(AccessibilityNodeInfo originNode, Rect displayBounds, AccessibilityNodeInfo resultNode) {
+    private void setFlutterNodesTranslateBounds(
+            @NonNull AccessibilityNodeInfo originNode,
+            @NonNull Rect displayBounds,
+            @NonNull AccessibilityNodeInfo resultNode
+    ) {
         Rect boundsInParent = new Rect();
         originNode.getBoundsInParent(boundsInParent);
         resultNode.setBoundsInParent(boundsInParent);
@@ -174,7 +195,7 @@ class AccessibilityViewEmbedder {
         resultNode.setBoundsInScreen(boundsInScreen);
     }
 
-    private void copyAccessibilityFields(AccessibilityNodeInfo input, AccessibilityNodeInfo output) {
+    private void copyAccessibilityFields(@NonNull AccessibilityNodeInfo input, @NonNull AccessibilityNodeInfo output) {
         output.setAccessibilityFocused(input.isAccessibilityFocused());
         output.setCheckable(input.isCheckable());
         output.setChecked(input.isChecked());
@@ -231,7 +252,11 @@ class AccessibilityViewEmbedder {
      *
      * @return True if the event was sent.
      */
-    public boolean requestSendAccessibilityEvent(View embeddedView, View eventOrigin, AccessibilityEvent event) {
+    public boolean requestSendAccessibilityEvent(
+            @NonNull View embeddedView,
+            @NonNull View eventOrigin,
+            @NonNull AccessibilityEvent event
+    ) {
         AccessibilityEvent translatedEvent = AccessibilityEvent.obtain(event);
         Long originPackedId = reflectionAccessors.getRecordSourceNodeId(event);
         if (originPackedId == null) {
@@ -253,10 +278,11 @@ class AccessibilityViewEmbedder {
                 return false;
             }
             int recordOriginVirtualID = ReflectionAccessors.getVirtualNodeId(recordOriginPackedId);
-            Integer recordFlutterId = originToFlutterId.get(new ViewAndId(embeddedView, recordOriginVirtualID));
-            if (recordFlutterId == null) {
+            ViewAndId originViewAndId = new ViewAndId(embeddedView, recordOriginVirtualID);
+            if (!originToFlutterId.containsKey(originViewAndId)) {
                 return false;
             }
+            int recordFlutterId = originToFlutterId.get(originViewAndId);
             record.setSource(rootAccessibilityView, recordFlutterId);
         }
 
@@ -269,7 +295,7 @@ class AccessibilityViewEmbedder {
      *
      * @return True if the action was performed.
      */
-    public boolean performAction(int flutterId, int accessibilityAction, Bundle arguments) {
+    public boolean performAction(int flutterId, int accessibilityAction, @Nullable Bundle arguments) {
         ViewAndId origin  = flutterIdToOrigin.get(flutterId);
         if (origin == null) {
             return false;
@@ -287,7 +313,8 @@ class AccessibilityViewEmbedder {
      *
      * @param embeddedView the embedded view that the record is associated with.
      */
-    public Integer getRecordFlutterId(View embeddedView, AccessibilityRecord record) {
+    @Nullable
+    public Integer getRecordFlutterId(@NonNull View embeddedView, @NonNull AccessibilityRecord record) {
         Long originPackedId = reflectionAccessors.getRecordSourceNodeId(record);
         if (originPackedId == null) {
             return null;
@@ -301,7 +328,7 @@ class AccessibilityViewEmbedder {
      *
      * The pointer coordinates are translated to the embedded view's coordinate system.
      */
-    public boolean onAccessibilityHoverEvent(int rootFlutterId, MotionEvent event) {
+    public boolean onAccessibilityHoverEvent(int rootFlutterId, @NonNull MotionEvent event) {
         ViewAndId origin = flutterIdToOrigin.get(rootFlutterId);
         if (origin == null) {
             return false;
@@ -411,7 +438,8 @@ class AccessibilityViewEmbedder {
             return (int) (nodeId >> 32);
         }
 
-        private Long getSourceNodeId(AccessibilityNodeInfo node) {
+        @Nullable
+        private Long getSourceNodeId(@NonNull AccessibilityNodeInfo node) {
             if (getSourceNodeId == null) {
                 return null;
             }
@@ -425,7 +453,8 @@ class AccessibilityViewEmbedder {
             return null;
         }
 
-        private Long getChildId(AccessibilityNodeInfo node, int child) {
+        @Nullable
+        private Long getChildId(@NonNull AccessibilityNodeInfo node, int child) {
             if (getChildId == null) {
                 return null;
             }
@@ -439,7 +468,8 @@ class AccessibilityViewEmbedder {
             return null;
         }
 
-        private Long getParentNodeId(AccessibilityNodeInfo node) {
+        @Nullable
+        private Long getParentNodeId(@NonNull AccessibilityNodeInfo node) {
             if (getParentNodeId == null) {
                 return null;
             }
@@ -453,7 +483,8 @@ class AccessibilityViewEmbedder {
             return null;
         }
 
-        private Long getRecordSourceNodeId(AccessibilityRecord node) {
+        @Nullable
+        private Long getRecordSourceNodeId(@NonNull AccessibilityRecord node) {
             if (getRecordSourceNodeId == null) {
                 return null;
             }

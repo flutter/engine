@@ -52,14 +52,14 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
     private BinaryMessenger mMessenger;
 
     // The accessibility bridge to which accessibility events form the platform views will be dispatched.
-    private final CurrentAccessibilityBridge mCurrentAccessibilityBridge;
+    private final AccessibilityEventsDelegate mAccessibilityEventsDelegate;
 
     private final HashMap<Integer, VirtualDisplayController> vdControllers;
 
     public PlatformViewsController() {
         mRegistry = new PlatformViewRegistryImpl();
         vdControllers = new HashMap<>();
-        mCurrentAccessibilityBridge = new CurrentAccessibilityBridge();
+        mAccessibilityEventsDelegate = new AccessibilityEventsDelegate();
     }
 
     /**
@@ -101,12 +101,12 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
 
     @Override
     public void attachAccessibilityBridge(AccessibilityBridge accessibilityBridge) {
-        mCurrentAccessibilityBridge.setCurrentAccessibilityBridge(accessibilityBridge);
+        mAccessibilityEventsDelegate.setAccessibilityBridge(accessibilityBridge);
     }
 
     @Override
     public void detachAccessibiltyBridge() {
-        mCurrentAccessibilityBridge.setCurrentAccessibilityBridge(null);
+        mAccessibilityEventsDelegate.setAccessibilityBridge(null);
     }
 
     public PlatformViewRegistry getRegistry() {
@@ -202,7 +202,7 @@ public class PlatformViewsController implements MethodChannel.MethodCallHandler,
         TextureRegistry.SurfaceTextureEntry textureEntry = mTextureRegistry.createSurfaceTexture();
         VirtualDisplayController vdController = VirtualDisplayController.create(
                 mContext,
-                mCurrentAccessibilityBridge,
+                mAccessibilityEventsDelegate,
                 viewFactory,
                 textureEntry,
                 toPhysicalPixels(logicalWidth),

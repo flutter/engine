@@ -59,7 +59,7 @@ class SingleViewPresentation extends Presentation {
     private final PlatformViewFactory mViewFactory;
 
     // A reference to the current accessibility bridge to which accessibility events will be delegated.
-    private final CurrentAccessibilityBridge mCurrentAccessibilityBridge;
+    private final AccessibilityEventsDelegate mAccessibilityEventsDelegate;
 
     // This is the view id assigned by the Flutter framework to the embedded view, we keep it here
     // so when we create the platform view we can tell it its view id.
@@ -86,13 +86,13 @@ class SingleViewPresentation extends Presentation {
             Context outerContext,
             Display display,
             PlatformViewFactory viewFactory,
-            CurrentAccessibilityBridge currentAccessibilityBridge,
+            AccessibilityEventsDelegate accessibilityEventsDelegate,
             int viewId,
             Object createParams
     ) {
         super(outerContext, display);
         mViewFactory = viewFactory;
-        mCurrentAccessibilityBridge = currentAccessibilityBridge;
+        mAccessibilityEventsDelegate = accessibilityEventsDelegate;
         mViewId = viewId;
         mCreateParams = createParams;
         mState = new PresentationState();
@@ -112,11 +112,11 @@ class SingleViewPresentation extends Presentation {
     public SingleViewPresentation(
             Context outerContext,
             Display display,
-            CurrentAccessibilityBridge currentAccessibilityBridge,
+            AccessibilityEventsDelegate accessibilityEventsDelegate,
             PresentationState state
     ) {
         super(outerContext, display);
-        mCurrentAccessibilityBridge = currentAccessibilityBridge;
+        mAccessibilityEventsDelegate = accessibilityEventsDelegate;
         mViewFactory = null;
         mState = state;
         getWindow().setFlags(
@@ -145,7 +145,7 @@ class SingleViewPresentation extends Presentation {
 
         View embeddedView = mState.mView.getView();
         mContainer.addView(embeddedView);
-        mRootView = new AccessibilityDelegatingFrameLayout(getContext(), mCurrentAccessibilityBridge, embeddedView);
+        mRootView = new AccessibilityDelegatingFrameLayout(getContext(), mAccessibilityEventsDelegate, embeddedView);
         mRootView.addView(mContainer);
         mRootView.addView(mState.mFakeWindowRootView);
         setContentView(mRootView);
@@ -336,25 +336,22 @@ class SingleViewPresentation extends Presentation {
     }
 
     private static class AccessibilityDelegatingFrameLayout extends FrameLayout {
-        private final CurrentAccessibilityBridge mCurrentAccessibilityBridge;
+        private final AccessibilityEventsDelegate mAccessibilityEventsDelegate;
         private final View mEmbeddedView;
 
         public AccessibilityDelegatingFrameLayout(
                 Context context,
-                CurrentAccessibilityBridge currentAccessibilityBridge,
+                AccessibilityEventsDelegate accessibilityEventsDelegate,
                 View ebeddedView
         ) {
             super(context);
-            mCurrentAccessibilityBridge = currentAccessibilityBridge;
+            mAccessibilityEventsDelegate = accessibilityEventsDelegate;
             mEmbeddedView = ebeddedView;
         }
 
         @Override
         public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
-            if (mCurrentAccessibilityBridge.getCurrentAccessibilityBridge() == null) {
-                return false;
-            }
-            return mCurrentAccessibilityBridge.getCurrentAccessibilityBridge().externalViewRequestSendAccessibilityEvent(mEmbeddedView, child, event);
+            return mAccessibilityEventsDelegate.requestSendAccessibilityEvent(mEmbeddedView, child, event);
         }
     }
 }
