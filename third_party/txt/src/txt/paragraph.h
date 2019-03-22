@@ -40,6 +40,10 @@ namespace txt {
 
 using GlyphID = uint32_t;
 
+// Constant with the unicode codepoint for the "Object replacement character".
+// Used as a stand-in character for Placeholder boxes.
+const int objReplacementChar = 0xFFFC;
+
 // Paragraph provides Layout, metrics, and painting capabilites for text. Once a
 // Paragraph is constructed with ParagraphBuilder::Build(), an example basic
 // workflow can be this:
@@ -250,6 +254,11 @@ class Paragraph {
   // position in the text where the widget will occur. There should be an equal
   // number of 0xFFFC characters and elements in this vector.
   std::vector<WidgetRun> inline_widgets_;
+  // The indexes of the obj replacement characters added through
+  // ParagraphBuilder::addWidget(). The obj replacement characters at these
+  // indexes are exempt from conversion into 0xFFFD.
+  std::vector<size_t> obj_replacement_char_indexes_;
+  // The indexes of the boxes that correspond to an inline widget.
   std::vector<size_t> inline_widget_boxes_;
   StyledRuns runs_;
   ParagraphStyle paragraph_style_;
@@ -293,12 +302,7 @@ class Paragraph {
    public:
     // Constructs a BidiRun with is_ghost defaulted to false.
     BidiRun(size_t s, size_t e, TextDirection d, const TextStyle& st)
-        : start_(s),
-          end_(e),
-          direction_(d),
-          style_(&st),
-          is_ghost_(false),
-          is_widget_run_(false) {}
+        : start_(s), end_(e), direction_(d), style_(&st), is_ghost_(false) {}
 
     // Constructs a BidiRun with a custom is_ghost flag.
     BidiRun(size_t s,
@@ -306,12 +310,7 @@ class Paragraph {
             TextDirection d,
             const TextStyle& st,
             bool is_ghost)
-        : start_(s),
-          end_(e),
-          direction_(d),
-          style_(&st),
-          is_ghost_(is_ghost),
-          is_widget_run_(false) {}
+        : start_(s), end_(e), direction_(d), style_(&st), is_ghost_(is_ghost) {}
 
     // Constructs a widget bidi run.
     BidiRun(size_t s,
@@ -323,7 +322,6 @@ class Paragraph {
           end_(e),
           direction_(d),
           style_(&st),
-          is_widget_run_(true),
           widget_run_(&widget) {}
 
     size_t start() const { return start_; }
@@ -335,14 +333,13 @@ class Paragraph {
     bool is_rtl() const { return direction_ == TextDirection::rtl; }
     // Tracks if the run represents trailing whitespace.
     bool is_ghost() const { return is_ghost_; }
-    bool is_widget_run() const { return is_widget_run_; }
+    bool is_widget_run() const { return widget_run_ != nullptr; }
 
    private:
     size_t start_, end_;
     TextDirection direction_;
     const TextStyle* style_;
     bool is_ghost_;
-    bool is_widget_run_;
     const WidgetRun* widget_run_ = nullptr;
   };
 
@@ -434,7 +431,8 @@ class Paragraph {
 
   void SetFontCollection(std::shared_ptr<FontCollection> font_collection);
 
-  void SetInlineWidgets(std::vector<WidgetRun> inline_widgets);
+  void SetInlineWidgets(std::vector<WidgetRun> inline_widgets,
+                        std::vector<size_t> obj_replacement_char_indexes);
 
   // Break the text into lines.
   bool ComputeLineBreaks();

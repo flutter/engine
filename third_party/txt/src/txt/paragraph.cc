@@ -50,8 +50,6 @@
 namespace txt {
 namespace {
 
-const int objReplacementChar = 0xFFFC;
-
 class GlyphTypeface {
  public:
   GlyphTypeface(sk_sp<SkTypeface> typeface, minikin::FontFakery fakery)
@@ -240,9 +238,12 @@ void Paragraph::SetText(std::vector<uint16_t> text, StyledRuns runs) {
   runs_ = std::move(runs);
 }
 
-void Paragraph::SetInlineWidgets(std::vector<WidgetRun> inline_widgets) {
+void Paragraph::SetInlineWidgets(
+    std::vector<WidgetRun> inline_widgets,
+    std::vector<size_t> obj_replacement_char_indexes) {
   needs_layout_ = true;
   inline_widgets_ = std::move(inline_widgets);
+  obj_replacement_char_indexes_ = std::move(obj_replacement_char_indexes);
 }
 
 bool Paragraph::ComputeLineBreaks() {
@@ -1602,7 +1603,7 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForWidgets() const {
     SkScalar min_left = FLT_MAX;
   };
 
-  std::map<size_t, LineBoxMetrics> line_metrics;
+  std::vector<Paragraph::TextBox> boxes;
 
   // Generate initial boxes and calculate metrics.
   for (const CodeUnitRun& run : inline_widget_code_unit_runs_) {
@@ -1621,15 +1622,8 @@ std::vector<Paragraph::TextBox> Paragraph::GetRectsForWidgets() const {
     left = run.x_pos.start;
     right = run.x_pos.end;
 
-    line_metrics[run.line_number].boxes.emplace_back(
-        SkRect::MakeLTRB(left, top, right, bottom), run.direction);
-  }
-
-  // "Post-process" metrics and aggregate final rects to return.
-  std::vector<Paragraph::TextBox> boxes;
-  for (const auto& kv : line_metrics) {
-    // Always use tight bounds. To obtain other bounds, use GetRectsForRange.
-    boxes.insert(boxes.end(), kv.second.boxes.begin(), kv.second.boxes.end());
+    boxes.emplace_back(SkRect::MakeLTRB(left, top, right, bottom),
+                       run.direction);
   }
   return boxes;
 }

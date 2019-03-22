@@ -88,6 +88,10 @@ class ParagraphBuilder {
   // position in the text where the widget will occur. There should be an equal
   // number of 0xFFFC characters and elements in this vector.
   std::vector<WidgetRun> inline_widgets_;
+  // The indexes of the obj replacement characters added through
+  // ParagraphBuilder::addWidget(). The obj replacement characters at these
+  // indexes are exempt from conversion into 0xFFFD.
+  std::vector<size_t> obj_replacement_char_indexes_;
   std::vector<size_t> style_stack_;
   std::shared_ptr<FontCollection> font_collection_;
   StyledRuns runs_;

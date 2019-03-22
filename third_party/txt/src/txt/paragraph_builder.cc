@@ -78,8 +78,9 @@ void ParagraphBuilder::AddText(const char* text) {
 }
 
 void ParagraphBuilder::AddWidget(WidgetRun& span) {
+  obj_replacement_char_indexes_.push_back(text_.size());
   runs_.StartRun(PeekStyleIndex(), text_.size());
-  AddText(std::u16string(1ull, 0xFFFC));
+  AddText(std::u16string(1ull, objReplacementChar));
   runs_.StartRun(PeekStyleIndex(), text_.size());
   inline_widgets_.push_back(span);
 }
@@ -89,7 +90,8 @@ std::unique_ptr<Paragraph> ParagraphBuilder::Build() {
 
   std::unique_ptr<Paragraph> paragraph = std::make_unique<Paragraph>();
   paragraph->SetText(std::move(text_), std::move(runs_));
-  paragraph->SetInlineWidgets(std::move(inline_widgets_));
+  paragraph->SetInlineWidgets(std::move(inline_widgets_),
+                              std::move(obj_replacement_char_indexes_));
   paragraph->SetParagraphStyle(paragraph_style_);
   paragraph->SetFontCollection(font_collection_);
   SetParagraphStyle(paragraph_style_);
