@@ -16,4 +16,5 @@ flutter/ci/licenses.sh
 # Check that dart libraries conform
 cd flutter/web_sdk
 pub get
+cd ..
 dart test/api_conform_test.dart
