@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/compiled_action.gni")
+import("//third_party/dart/runtime/runtime_args.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 import("$flutter_root/lib/ui/dart_ui.gni")
 
@@ -54,7 +55,7 @@ compiled_action("generate_snapshot_bin") {
         rebase_path(isolate_snapshot_instructions),
   ]
 
-  if (is_debug) {
+  if (dart_debug) {
     args += [
       "--enable_asserts",
     ]
