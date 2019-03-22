@@ -228,6 +228,8 @@ class AccessibilityViewEmbedder {
     /**
      * Delegates an AccessibilityNodeProvider#requestSendAccessibilityEvent from the AccessibilityBridge to the embedded
      * view.
+     *
+     * @return True if the event was sent.
      */
     public boolean requestSendAccessibilityEvent(View embeddedView, View eventOrigin, AccessibilityEvent event) {
         AccessibilityEvent translatedEvent = AccessibilityEvent.obtain(event);
@@ -262,8 +264,10 @@ class AccessibilityViewEmbedder {
     }
 
     /**
-     * Delegates an AccessibilityNodeProvider#performAction from the AccessibilityBridge to the embedded view's
+     * Delegates an @{link AccessibilityNodeProvider#performAction} from the AccessibilityBridge to the embedded view's
      * accessibility node provider.
+     *
+     * @return True if the action was performed.
      */
     public boolean performAction(int flutterId, int accessibilityAction, Bundle arguments) {
         ViewAndId origin  = flutterIdToOrigin.get(flutterId);
@@ -278,8 +282,13 @@ class AccessibilityViewEmbedder {
         return provider.performAction(origin.id, accessibilityAction, arguments);
     }
 
-    public Integer getRecordFlutterId(View embeddedView, AccessibilityRecord event) {
-        Long originPackedId = reflectionAccessors.getRecordSourceNodeId(event);
+    /**
+     * Returns a flutterID for an accessibility record, or null if no mapping exists.
+     *
+     * @param embeddedView the embedded view that the record is associated with.
+     */
+    public Integer getRecordFlutterId(View embeddedView, AccessibilityRecord record) {
+        Long originPackedId = reflectionAccessors.getRecordSourceNodeId(record);
         if (originPackedId == null) {
             return null;
         }
