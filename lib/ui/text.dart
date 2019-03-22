@@ -1344,6 +1344,9 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// of how the boxes are bound vertically and horizontally. Both style
   /// parameters default to the tight option, which will provide close-fitting
   /// boxes and will not account for any line spacing.
+  /// 
+  /// Coordinates of the TextBox are relative to the upper-left corner of the paragraph,
+  /// where positive y values indicate down.
   ///
   /// The [boxHeightStyle] and [boxWidthStyle] parameters must not be null.
   ///
@@ -1358,6 +1361,9 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// Returns a list of text boxes that enclose all placeholders in the paragraph.
   ///
   /// The order of the boxes are in the same order as passed in through [addPlaceholder].
+  ///
+  /// Coordinates of the TextBox are relative to the upper-left corner of the paragraph,
+  /// where positive y values indicate down.
   List<TextBox> getBoxesForPlaceholders() native 'Paragraph_getRectsForPlaceholders';
 
   /// Returns the text position closest to the given offset.
