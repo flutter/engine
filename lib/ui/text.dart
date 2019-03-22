@@ -796,6 +796,7 @@ ByteData _encodeStrut(
 
   return ByteData.view(data.buffer, 0,  byteCount);
 }
+///
 /// See also:
 ///
 ///  * [StrutStyle], the class in the [painting] library that encapsulates this class.
