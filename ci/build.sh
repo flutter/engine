@@ -17,4 +17,4 @@ flutter/ci/licenses.sh
 cd flutter/web_sdk
 pub get
 cd ..
-dart test/api_conform_test.dart
+dart web_sdk/test/api_conform_test.dart
