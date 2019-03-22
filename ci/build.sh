@@ -12,3 +12,6 @@ ninja -C out/host_debug_unopt generate_dart_ui
 # Analyze the dart UI
 flutter/ci/analyze.sh
 flutter/ci/licenses.sh
+
+# Check that dart libraries conform
+dart test/web_sdk/test/api_conform_test.dart
