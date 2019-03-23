@@ -1362,6 +1362,16 @@ class Paragraph {
     throw UnimplementedError();
   }
 
+  /// Returns a list of text boxes that enclose all placeholders in the paragraph.
+  ///
+  /// The order of the boxes are in the same order as passed in through [addPlaceholder].
+  ///
+  /// Coordinates of the TextBox are relative to the upper-left corner of the paragraph,
+  /// where positive y values indicate down.
+  List<TextBox> getBoxesForPlaceholders() {
+    throw UnimplementedError();
+  }
+
   /// Returns the text position closest to the given offset.
   TextPosition getPositionForOffset(Offset offset) {
     throw UnimplementedError();
@@ -1418,6 +1428,38 @@ class ParagraphBuilder {
   ///
   /// The text will be styled according to the current stack of text styles.
   void addText(String text) {
+    throw UnimplementedError();
+  }
+
+  /// Adds an inline placeholder space to the paragraph.
+  ///
+  /// The paragraph will contain a rectangular space with no text of the dimensions
+  /// specified.
+  ///
+  /// The [width] and [height] parameters specify the size of the rectangle, and
+  /// [baseline] indicates the distance of the alphabetic baseline from the top of
+  /// of the rectangle. This determines how the rectangle is aligned to the
+  /// surrounding text.
+  ///
+  /// For example, to make a 50x50 empty rectangle 'hole' that sits completely on
+  /// top of the alphabetic baseline, pass in `addPlaceholder(50, 50, 50)`. For
+  /// a box that is vertically centered on the alphabetic baseline, pass in
+  /// `addPlaceholder(50, 50, 25);`.
+  ///
+  /// Lines are permitted to break around each placeholder.
+  ///
+  /// Decorations will be drawn based on the font defined in the most recently
+  /// pushed TextStyle. Since placeholders are sized completely separately from
+  /// the rest of the text, the positions of the decorations are unlikely to
+  /// line up as expected. To hide or manually adjust decorations to fit, a text
+  /// style with the desired decoration behavior should be pushed before adding a
+  /// placeholder.
+  ///
+  /// Any decorations drawn through a placeholder will exist on the same canvas/layer
+  /// as the text. This means any content drawn on top of the space reserved by
+  /// the placeholder will be drawn over the decoration, possibly obscuring the
+  /// decoration.
+  void addPlaceholder(double width, double height, double baseline) {
     throw UnimplementedError();
   }
 
