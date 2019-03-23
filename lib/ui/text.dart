@@ -1353,7 +1353,7 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// of how the boxes are bound vertically and horizontally. Both style
   /// parameters default to the tight option, which will provide close-fitting
   /// boxes and will not account for any line spacing.
-  /// 
+  ///
   /// Coordinates of the TextBox are relative to the upper-left corner of the paragraph,
   /// where positive y values indicate down.
   ///
