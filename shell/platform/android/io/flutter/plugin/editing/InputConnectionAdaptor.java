@@ -68,6 +68,14 @@ class InputConnectionAdaptor extends BaseInputConnection {
         );
     }
 
+    private void forwardKey(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_DEL:
+            textInputChannel.forwardDeleteKey(mClient);
+            default:
+        }
+    }
+
     @Override
     public Editable getEditable() {
         return mEditable;
@@ -141,6 +149,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
                     Selection.setSelection(mEditable, selStart);
                     mEditable.delete(selStart, selEnd);
                     updateEditingState();
+                    forwardKey(KeyEvent.KEYCODE_DEL);
                     return true;
                 } else if (selStart > 0) {
                     // Delete to the left of the cursor.
@@ -148,6 +157,7 @@ class InputConnectionAdaptor extends BaseInputConnection {
                     Selection.setSelection(mEditable, newSel);
                     mEditable.delete(newSel, selStart);
                     updateEditingState();
+                    forwardKey(KeyEvent.KEYCODE_DEL);
                     return true;
                 }
             } else if (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {

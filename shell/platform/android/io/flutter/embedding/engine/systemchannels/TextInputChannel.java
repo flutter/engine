@@ -200,6 +200,13 @@ public class TextInputChannel {
     );
   }
 
+  public void forwardDeleteKey(int inputClientId) {
+    channel.invokeMethod(
+        "TextInputClient.forwardKey",
+        Arrays.asList(inputClientId, "TextInputKey.delete")
+    );
+  }
+
   /**
    * Sets the {@link TextInputMethodHandler} which receives all events and requests
    * that are parsed from the underlying platform channel.

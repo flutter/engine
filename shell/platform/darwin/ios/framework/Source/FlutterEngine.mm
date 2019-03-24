@@ -489,8 +489,8 @@
   NSString* keyString;
   switch (key) {
     case FlutterTextInputKeyDelete:
-        keyString = @"TextInputKey.delete";
-        break;
+      keyString = @"TextInputKey.delete";
+      break;
   }
   [_textInputChannel.get() invokeMethod:@"TextInputClient.forwardKey"
                               arguments:@[ @(client), keyString]];
