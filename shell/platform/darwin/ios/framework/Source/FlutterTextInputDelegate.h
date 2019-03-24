@@ -27,6 +27,10 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
   FlutterFloatingCursorDragStateEnd,
 };
 
+typedef NS_ENUM(NSInteger, FlutterTextInputKey) {
+    FlutterTextInputKeyDelete,
+};
+
 @protocol FlutterTextInputDelegate <NSObject>
 
 - (void)updateEditingClient:(int)client withState:(NSDictionary*)state;
@@ -34,6 +38,7 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
 - (void)updateFloatingCursor:(FlutterFloatingCursorDragState)state
                   withClient:(int)client
                 withPosition:(NSDictionary*)point;
+- (void)forwardKey:(FlutterTextInputKey)key withClient:(int)client;
 
 @end
 

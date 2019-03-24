@@ -485,6 +485,17 @@
                               arguments:@[ @(client), actionString ]];
 }
 
+- (void)forwardKey:(FlutterTextInputKey)key withClient:(int)client {
+  NSString* keyString;
+  switch (key) {
+    case FlutterTextInputKeyDelete:
+        keyString = @"TextInputKey.delete";
+        break;
+  }
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.forwardKey"
+                              arguments:@[ @(client), keyString]];
+}
+
 #pragma mark - Screenshot Delegate
 
 - (shell::Rasterizer::Screenshot)takeScreenshot:(shell::Rasterizer::ScreenshotType)type
