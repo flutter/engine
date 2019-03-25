@@ -521,7 +521,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholder0xFFFCParagraph)) {
   builder.AddText(u16_text);
   truth_text.insert(truth_text.end(), u16_text2.begin(), u16_text2.end());
 
-  txt::PlaceholderRun placeholder_run(50, 50, 0);
+  txt::PlaceholderRun placeholder_run(50, 50, 25);
   builder.AddPlaceholder(placeholder_run);
   truth_text.push_back(0xFFFC);
 
@@ -548,14 +548,34 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(InlinePlaceholder0xFFFCParagraph)) {
 
   paragraph->Paint(GetCanvas(), 0, 0);
 
+  for (size_t i = 0; i < truth_text.size(); ++i) {
+    EXPECT_EQ(paragraph->text_[i], truth_text[i]);
+  }
+
   SkPaint paint;
   paint.setStyle(SkPaint::kStroke_Style);
   paint.setAntiAlias(true);
   paint.setStrokeWidth(1);
 
-  for (size_t i = 0; i < truth_text.size(); ++i) {
-    EXPECT_EQ(paragraph->text_[i], truth_text[i]);
+  paint.setColor(SK_ColorRED);
+
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForPlaceholders();
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
   }
+  EXPECT_EQ(boxes.size(), 4ull);
+
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 177.83594);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 227.83594);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 50);
+
+  EXPECT_FLOAT_EQ(boxes[3].rect.left(), 682.50781);
+  EXPECT_FLOAT_EQ(boxes[3].rect.top(), 0);
+  EXPECT_FLOAT_EQ(boxes[3].rect.right(), 732.50781);
+  EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 50);
 
   ASSERT_TRUE(Snapshot());
 }
