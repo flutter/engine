@@ -232,6 +232,10 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
 
 - (void)loadView {
   self.view = _flutterView.get();
+}
+
+- (void)viewDidLoad {
+  [super viewDidLoad];
   self.view.multipleTouchEnabled = YES;
   self.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
