@@ -65,6 +65,12 @@ source_set("flutter_glfw") {
       "$flutter_root/shell/platform/linux/config:x11",
     ]
   }
+
+  if (is_win) {
+    deps += [
+      "//build/secondary/third_party/glfw",
+    ]
+  }
 }
 
 copy("publish_headers_glfw") {
