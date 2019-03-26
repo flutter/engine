@@ -1,16 +1,21 @@
 #!/bin/bash
 
-# Reference script for creating patched sdk locally.
-# Copy normal dart sources into flutter_patched sdk
-mkdir -p out/host_debug_unopt/flutter_patched_sdk/lib
-cp -RL out/host_debug_unopt/dart-sdk/lib/ out/host_debug_unopt/flutter_patched_sdk/lib
+# Reference script for creating flutter analyzer summmary locally.
 
-# Copy stub ui dart sources into flutter_patched sdk
-mkdir -p out/host_debug_unopt/flutter_patched_sdk/lib/ui
-cp -RL flutter/lib/stub_ui/ out/host_debug_unopt/flutter_patched_sdk/lib/ui
+# Copy dartdevc patched sources into temp_dart_sdk.
+mkdir -p temp_dart_sdk/lib
+cp -RL gen/third_party/dart/utils/dartdevc/patched_sdk/lib temp_dart_sdk/
 
-# Copy libraries.json into flutter patched sdk.
-cp -RL flutter/flutter_web/libraries.json out/host_debug_unopt/flutter_patched_sdk/lib/libraries.json
+# Copy stub ui dart sources into temp_dart_sdk.
+mkdir -p temp_dart_sdk/lib/ui
+cp -RL flutter_web_sdk/lib/ui/ temp_dart_sdk/lib/ui
 
-# Copy libraries.dart into flutter patched sdk
-cp -RL flutter/flutter_web/libraries.dart out/host_debug_unopt/flutter_patched_sdk/lib/_internal/libraries.dart
+# Copy libraries.dart into temp_dart_sdk.
+# NOTE: THERE ARE TWO?
+mkdir -p temp_dart_sdk/lib/_internal
+cp -RL ../../flutter/web_sdk/libraries.dart temp_dart_sdk/lib/_internal/libraries.dart
+cp -RL ../../flutter/web_sdk/libraries.dart temp_dart_sdk/lib/_internal/sdk_library_metadata/lib/libraries.dart
+
+# Build summary file.
+# third_party/dart/pkg/analyzer/tool/summary/build_sdk_summaries.dart
+./dart "$BUILD_SDK_SUMMARY_TOOL" build-strong temp_dart_sdk/lib/_internal/strong.sum temp_dart_sdk/
