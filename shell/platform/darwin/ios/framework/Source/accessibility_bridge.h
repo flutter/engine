@@ -123,8 +123,8 @@ class AccessibilityBridge;
  * view.
  *
  * See also:
- * * SemanticsObject for the other type of semantics objects.
- * * FlutterSemanticsObject for default implementation of `SemanticsObject`.
+ * * `SemanticsObject` for the other type of semantics objects.
+ * * `FlutterSemanticsObject` for default implementation of `SemanticsObject`.
  */
 @interface FlutterPlatformViewSemanticsContainer : UIAccessibilityElement
 
