@@ -488,7 +488,7 @@ typedef struct {
 typedef struct {
   // The size of this struct. Must be sizeof(FlutterCustomTaskRunners).
   size_t struct_size;
-  // Sepcify the task runner for the thread on which the |FluterEngineRun| call
+  // Specify the task runner for the thread on which the |FlutterEngineRun| call
   // is made.
   const FlutterTaskRunnerDescription* platform_task_runner;
 } FlutterCustomTaskRunners;
