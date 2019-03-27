@@ -933,6 +933,10 @@ FlutterEngineResult FlutterEnginePostRenderThreadTask(FlutterEngine engine,
              : LOG_EMBEDDER_ERROR(kInternalInconsistency);
 }
 
+uint64_t FlutterEngineGetCurrentTime() {
+  return fml::TimePoint::Now().ToEpochDelta().ToNanoseconds();
+}
+
 FlutterEngineResult FlutterEngineRunTask(FlutterEngine engine,
                                          const FlutterTask* task) {
   if (engine == nullptr) {

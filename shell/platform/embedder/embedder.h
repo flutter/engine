@@ -474,9 +474,12 @@ typedef struct {
   BoolCallback runs_task_on_current_thread_callback;
   // May be called from any thread. The given task should be executed by the
   // embedder on the thread associated with that task runner by calling
-  // FlutterEngineRunTask at the given target time. The system monotonic clock
-  // should be used for the target time. The target time is the absolute time at
-  // which the task must be returned back to the engine on the correct thread.
+  // |FlutterEngineRunTask| at the given target time. The system monotonic clock
+  // should be used for the target time. The target time is the absolute time
+  // from epoch (NOT a delta) at which the task must be returned back to the
+  // engine on the correct thread. If the embedder needs to calculate a delta,
+  // |FlutterEngineGetCurrentTime| may be called and the difference used as the
+  // delta.
   //
   // This field is required.
   FlutterTaskRunnerPostTaskCallback post_task_callback;
@@ -762,6 +765,11 @@ FLUTTER_EXPORT
 FlutterEngineResult FlutterEnginePostRenderThreadTask(FlutterEngine engine,
                                                       VoidCallback callback,
                                                       void* callback_data);
+
+// Get the current time in nanoseconds from the clock used by the flutter
+// engine. This is the system monotonic clock.
+FLUTTER_EXPORT
+uint64_t FlutterEngineGetCurrentTime();
 
 // Inform the engine to run the specified task. This task has been given to
 // the engine via the |FlutterTaskRunnerDescription.post_task_callback|. This

@@ -202,5 +202,13 @@ TEST_F(EmbedderTest, CanSpecifyCustomTaskRunner) {
   ASSERT_TRUE(signalled);
 }
 
+TEST(EmbedderTestNoFixture, CanGetCurrentTimeInNanoseconds) {
+  auto point1 = fml::TimePoint::FromEpochDelta(
+      fml::TimeDelta::FromNanoseconds(FlutterEngineGetCurrentTime()));
+  auto point2 = fml::TimePoint::Now();
+
+  ASSERT_LT((point2 - point1), fml::TimeDelta::FromMilliseconds(1));
+}
+
 }  // namespace testing
 }  // namespace shell
