@@ -475,7 +475,8 @@ typedef struct {
   // May be called from any thread. The given task should be executed by the
   // embedder on the thread associated with that task runner by calling
   // FlutterEngineRunTask at the given target time. The system monotonic clock
-  // should be used for the target time.
+  // should be used for the target time. The target time is the absolute time at
+  // which the task must be returned back to the engine on the correct thread.
   //
   // This field is required.
   FlutterTaskRunnerPostTaskCallback post_task_callback;
