@@ -52,14 +52,17 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
                                             const char* name,
-                                            const char* function) {
+                                            const char* function,
+                                            const char* file,
+                                            int line) {
   FML_LOG(ERROR) << "Returning error '" << name << "' (" << code
                  << ") from Flutter Embedder API call to '" << __FUNCTION__
-                 << "'.";
+                 << "'. Origin: " << file << ":" << line;
   return code;
 }
 
-#define LOG_EMBEDDER_ERROR(code) LogEmbedderError(code, #code, __FUNCTION__)
+#define LOG_EMBEDDER_ERROR(code) \
+  LogEmbedderError(code, #code, __FUNCTION__, __FILE__, __LINE__)
 
 static bool IsOpenGLRendererConfigValid(const FlutterRendererConfig* config) {
   if (config->type != kOpenGL) {
@@ -620,6 +623,13 @@ FlutterEngineResult FlutterEngineRun(size_t version,
 
   // Step 3: Run the engine.
   auto run_configuration = shell::RunConfiguration::InferFromSettings(settings);
+
+  if (SAFE_ACCESS(args, custom_dart_entrypoint, nullptr) != nullptr) {
+    auto dart_entrypoint = std::string{args->custom_dart_entrypoint};
+    if (dart_entrypoint.size() != 0) {
+      run_configuration.SetEntrypoint(std::move(dart_entrypoint));
+    }
+  }
 
   run_configuration.AddAssetResolver(
       std::make_unique<blink::DirectoryAssetBundle>(
