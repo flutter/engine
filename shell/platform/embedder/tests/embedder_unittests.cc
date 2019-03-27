@@ -188,7 +188,7 @@ TEST_F(EmbedderTest, CanSpecifyCustomTaskRunner) {
   FML_LOG(INFO) << "Assertions checked. Killing engine.";
   ASSERT_TRUE(engine.is_valid());
 
-  // Since the engine was started on its own thread. It must be killed there as
+  // Since the engine was started on its own thread, it must be killed there as
   // well.
   fml::AutoResetWaitableEvent kill_latch;
   thread.GetTaskRunner()->PostTask(
