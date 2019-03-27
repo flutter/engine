@@ -1407,6 +1407,11 @@ class ParagraphBuilder {
   /// [Paragraph].
   ParagraphBuilder(ParagraphStyle style);
 
+  /// The number of placeholders currently in the paragraph.
+  int get placeholderCount {
+    throw UnimplementedError();
+  }
+
   /// Applies the given style to the added text until [pop] is called.
   ///
   /// See [pop] for details.

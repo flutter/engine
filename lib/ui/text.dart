@@ -1446,6 +1446,10 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
     String locale
   ) native 'ParagraphBuilder_constructor';
 
+  int _placeholderCount;
+  /// The number of placeholders currently in the paragraph.
+  int get placeholderCount => _placeholderCount;
+
   /// Applies the given style to the added text until [pop] is called.
   ///
   /// See [pop] for details.
@@ -1538,6 +1542,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass2 {
   /// decoration.
   void addPlaceholder(double width, double height, double baseline) {
     _addPlaceholder(width, height, baseline);
+    _placeholderCount++;
   }
   String _addPlaceholder(double width, double height, double baseline) native 'ParagraphBuilder_addPlaceholder';
 
