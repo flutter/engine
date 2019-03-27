@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -16,10 +17,13 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
+import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.view.FlutterMain;
 
 /**
@@ -73,11 +77,46 @@ public class FlutterActivity extends FragmentActivity {
   private static final int FRAGMENT_CONTAINER_ID = 609893468; // random number
   private FlutterFragment flutterFragment;
 
+  /**
+   * Creates and returns an {@link Intent} that will launch a {@code FlutterActivity}, which will
+   * execute {@code main()} as the Dart entrypoint and navigate to {@code /} as the initial route.
+   */
+  @NonNull
+  public static Intent newIntent(@NonNull Context context) {
+    return newIntent(context, "main", "/");
+  }
+
+  /**
+   * Creates and returns an {@link Intent} that will launch a {@code FlutterActivity}, which will
+   * execute {@code entrypoint} as the Dart entrypoint and navigate to {@code initialRoute} as the
+   * initial route.
+   */
+  @NonNull
+  public static Intent newIntent(
+      @NonNull Context context,
+      @NonNull String entrypoint,
+      @NonNull String initialRoute
+  ) {
+    return new Intent(context, FlutterActivity.class)
+        .putExtra(EXTRA_DART_ENTRYPOINT, entrypoint)
+        .putExtra(EXTRA_INITIAL_ROUTE, initialRoute);
+  }
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(createFragmentContainer());
+    configureStatusBarForFullscreenFlutterExperience();
     ensureFlutterFragmentCreated();
+  }
+
+  private void configureStatusBarForFullscreenFlutterExperience() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      Window window = getWindow();
+      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+      window.setStatusBarColor(0x40000000);
+      window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
+    }
   }
 
   /**
@@ -129,7 +168,8 @@ public class FlutterActivity extends FragmentActivity {
         getDartEntrypoint(),
         getInitialRoute(),
         getAppBundlePath(),
-        FlutterShellArgs.fromIntent(getIntent())
+        FlutterShellArgs.fromIntent(getIntent()),
+        FlutterView.RenderMode.surface
     );
   }
 

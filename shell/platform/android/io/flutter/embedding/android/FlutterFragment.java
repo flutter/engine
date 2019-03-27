@@ -61,6 +61,7 @@ public class FlutterFragment extends Fragment {
   private static final String ARG_INITIAL_ROUTE = "initial_route";
   private static final String ARG_APP_BUNDLE_PATH = "app_bundle_path";
   private static final String ARG_FLUTTER_INITIALIZATION_ARGS = "initialization_args";
+  private static final String ARG_FLUTTERVIEW_RENDER_MODE = "flutterview_render_mode";
 
   /**
    * Factory method that creates a new {@link FlutterFragment} with a default configuration.
@@ -69,11 +70,13 @@ public class FlutterFragment extends Fragment {
    *   <li>initial route of "/"</li>
    *   <li>default app bundle location</li>
    *   <li>no special engine arguments</li>
+   *   <li>{@code SurfaceView} for {@code FlutterView} rendering, rather than a {@code TextureView}</li>
    * </ul>
    * @return new {@link FlutterFragment}
    */
   public static FlutterFragment newInstance() {
     return newInstance(
+        null,
         null,
         null,
         null,
@@ -90,20 +93,26 @@ public class FlutterFragment extends Fragment {
    * @param appBundlePath the path to the app bundle which contains the Dart app to execute, defaults
    *                      to {@link FlutterMain#findAppBundlePath(Context)}
    * @param flutterShellArgs any special configuration arguments for the Flutter engine
+   * @param renderMode render Flutter either as a {@link FlutterView.RenderMode#surface} or a
+   *                   {@link FlutterView.RenderMode#texture}. Use {@code texture} for situations
+   *                   where this {@code FlutterFragment} might have content on top of it, such as
+   *                   a drawer.
    *
    * @return a new {@link FlutterFragment}
    */
   public static FlutterFragment newInstance(@Nullable String dartEntrypoint,
                                             @Nullable String initialRoute,
                                             @Nullable String appBundlePath,
-                                            @Nullable FlutterShellArgs flutterShellArgs) {
+                                            @Nullable FlutterShellArgs flutterShellArgs,
+                                            @Nullable FlutterView.RenderMode renderMode) {
     FlutterFragment frag = new FlutterFragment();
 
     Bundle args = createArgsBundle(
         dartEntrypoint,
         initialRoute,
         appBundlePath,
-        flutterShellArgs
+        flutterShellArgs,
+        renderMode
     );
     frag.setArguments(args);
 
@@ -139,13 +148,18 @@ public class FlutterFragment extends Fragment {
    * @param initialRoute the first route that a Flutter app will render in this {@link FlutterFragment}, defaults to "/"
    * @param appBundlePath the path to the app bundle which contains the Dart app to execute
    * @param flutterShellArgs any special configuration arguments for the Flutter engine
+   * @param renderMode render Flutter either as a {@link FlutterView.RenderMode#surface} or a
+   *                   {@link FlutterView.RenderMode#texture}. Use {@code texture} for situations
+   *                   where this {@code FlutterFragment} might have content on top of it, such as
+   *                   a drawer.
    *
    * @return Bundle of arguments that configure a {@link FlutterFragment}
    */
   protected static Bundle createArgsBundle(@Nullable String dartEntrypoint,
                                            @Nullable String initialRoute,
                                            @Nullable String appBundlePath,
-                                           @Nullable FlutterShellArgs flutterShellArgs) {
+                                           @Nullable FlutterShellArgs flutterShellArgs,
+                                           @Nullable FlutterView.RenderMode renderMode) {
     Bundle args = new Bundle();
     args.putString(ARG_INITIAL_ROUTE, initialRoute);
     args.putString(ARG_APP_BUNDLE_PATH, appBundlePath);
@@ -154,6 +168,7 @@ public class FlutterFragment extends Fragment {
     if (null != flutterShellArgs) {
       args.putStringArray(ARG_FLUTTER_INITIALIZATION_ARGS, flutterShellArgs.toArray());
     }
+    args.putString(ARG_FLUTTERVIEW_RENDER_MODE, renderMode != null ? renderMode.name() : FlutterView.RenderMode.surface.name());
     return args;
   }
 
@@ -252,7 +267,7 @@ public class FlutterFragment extends Fragment {
   @Nullable
   @Override
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-    flutterView = new FlutterView(getContext());
+    flutterView = new FlutterView(getContext(), getRenderMode());
     flutterView.attachToFlutterEngine(flutterEngine);
 
     // TODO(mattcarroll): the following call should exist here, but the plugin system needs to be revamped.
@@ -324,6 +339,18 @@ public class FlutterFragment extends Fragment {
   @NonNull
   protected String getDartEntrypointFunctionName() {
     return getArguments().getString(ARG_DART_ENTRYPOINT, "main");
+  }
+
+  /**
+   * Returns the desired {@link FlutterView.RenderMode} for the {@link FlutterView} displayed in
+   * this {@code FlutterFragment}.
+   *
+   * Defaults to {@link FlutterView.RenderMode#surface}.
+   */
+  @NonNull
+  protected FlutterView.RenderMode getRenderMode() {
+    String renderModeName = getArguments().getString(ARG_FLUTTERVIEW_RENDER_MODE, null);
+    return renderModeName != null ? FlutterView.RenderMode.valueOf(renderModeName) : FlutterView.RenderMode.surface;
   }
 
   // TODO(mattcarroll): determine why this can't be in onResume(). Comment reason, or move if possible.
