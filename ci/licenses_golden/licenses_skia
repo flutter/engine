@@ -1,4 +1,4 @@
-Signature: 926700fd3fd884d5cf2c01a64c43cad6
+Signature: 027ae28920b252dbcb5370cc65bef8cb
 
 UNUSED LICENSES:
 
@@ -2025,43 +2025,6 @@ FILE: ../../../third_party/skia/docker/skia-release/Dockerfile
 FILE: ../../../third_party/skia/docker/skia-wasm-release/Dockerfile
 FILE: ../../../third_party/skia/docker/skia-with-swift-shader-base/Dockerfile
 FILE: ../../../third_party/skia/docker/skia-with-swift-shader-base/build-with-swift-shader-and-run
-FILE: ../../../third_party/skia/docs/SkAutoCanvasRestore_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkBitmap_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkBlendMode_Overview.bmh
-FILE: ../../../third_party/skia/docs/SkBlendMode_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkCanvas_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkColor4f_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkColor_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkDynamicMemoryWStream_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkFILEStream_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkFILEWStream_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkFont_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkIPoint_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkIRect_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkImageInfo_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkImage_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkMatrix_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkMemoryStream_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkPaint_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkPath_Overview.bmh
-FILE: ../../../third_party/skia/docs/SkPath_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkPicture_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkPixmap_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkPoint_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkRRect_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkRect_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkRegion_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkStream_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkSurface_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkTextBlobBuilder_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkTextBlob_Reference.bmh
-FILE: ../../../third_party/skia/docs/SkWStream_Reference.bmh
-FILE: ../../../third_party/skia/docs/illustrations.bmh
-FILE: ../../../third_party/skia/docs/markup.bmh
-FILE: ../../../third_party/skia/docs/overview.bmh
-FILE: ../../../third_party/skia/docs/status.json
-FILE: ../../../third_party/skia/docs/undocumented.bmh
-FILE: ../../../third_party/skia/docs/usingBookmaker.bmh
 FILE: ../../../third_party/skia/experimental/docs/animationCommon.js
 FILE: ../../../third_party/skia/experimental/docs/backend.js
 FILE: ../../../third_party/skia/experimental/docs/canvasBackend.js
@@ -2267,6 +2230,7 @@ FILE: ../../../third_party/skia/infra/bots/recipes/perf_pathkit.expected/Perf-De
 FILE: ../../../third_party/skia/infra/bots/recipes/perf_pathkit.expected/Perf-Debian9-EMCC-GCE-CPU-AVX2-wasm-Release-All-PathKit.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf_pathkit.expected/pathkit_trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf_skottietrace.expected/Perf-Android-Clang-AndroidOne-GPU-Mali400MP2-arm-Release-All-Android_SkottieTracing.json
+FILE: ../../../third_party/skia/infra/bots/recipes/perf_skottietrace.expected/Perf-Debian9-Clang-GCE-CPU-AVX2-x86_64-Release-All-SkottieTracing.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf_skottietrace.expected/skottietracing_parse_trace_error.json
 FILE: ../../../third_party/skia/infra/bots/recipes/perf_skottietrace.expected/skottietracing_trybot.json
 FILE: ../../../third_party/skia/infra/bots/recipes/recreate_skps.expected/Housekeeper-Nightly-RecreateSKPs_Canary.json
@@ -2966,7 +2930,7 @@ FILE: ../../../third_party/skia/src/gpu/gl/GrGLGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLGpu.h
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLGpuProgramCache.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLIRect.h
-FILE: ../../../third_party/skia/src/gpu/gl/GrGLInterface.cpp
+FILE: ../../../third_party/skia/src/gpu/gl/GrGLInterfaceAutogen.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLMakeNativeInterface_none.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLProgram.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLProgram.h
@@ -4608,6 +4572,8 @@ FILE: ../../../third_party/skia/include/private/GrContext_Base.h
 FILE: ../../../third_party/skia/include/private/GrImageContext.h
 FILE: ../../../third_party/skia/include/private/GrRecordingContext.h
 FILE: ../../../third_party/skia/include/private/SkVx.h
+FILE: ../../../third_party/skia/modules/skottie/src/SkottieShaper.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/SkottieShaper.h
 FILE: ../../../third_party/skia/modules/sksg/include/SkSGRenderEffect.h
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGRenderEffect.cpp
 FILE: ../../../third_party/skia/modules/sksg/src/SkSGTransformPriv.h
@@ -5868,9 +5834,9 @@ FILE: ../../../third_party/skia/modules/particles/src/SkParticleDrawable.cpp
 FILE: ../../../third_party/skia/modules/particles/src/SkParticleEffect.cpp
 FILE: ../../../third_party/skia/modules/particles/src/SkReflected.cpp
 FILE: ../../../third_party/skia/src/core/SkColorFilterPriv.h
+FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleGLESInterfaceAutogen.cpp
+FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleGLInterfaceAutogen.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleHelpers.cpp
-FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleInterface_gl.cpp
-FILE: ../../../third_party/skia/src/gpu/gl/GrGLAssembleInterface_gles.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLByteCode.h
 FILE: ../../../third_party/skia/src/sksl/SkSLByteCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLByteCodeGenerator.h
