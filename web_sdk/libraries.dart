@@ -1,7 +1,6 @@
-// Copyright (c) 2017, the Dart project authors.  Please see the AUTHORS file
-// for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE file.
-
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 library libraries;
 
 /**
@@ -23,10 +22,7 @@ enum Category {
   server,
 
   /// Indicates that a library can be used from embedded devices.
-  embedded,
-
-  /// Google3-specific: Indicates that a library can be used in a Flutter context.
-  flutter
+  embedded
 }
 
 Category parseCategory(String name) {
@@ -37,8 +33,6 @@ Category parseCategory(String name) {
       return Category.server;
     case "Embedded":
       return Category.embedded;
-    case "Flutter":
-      return Category.flutter; // Google3-specific.
   }
   return null;
 }
@@ -50,8 +44,6 @@ const Map<String, LibraryInfo> libraries = const {
       categories: "Client,Server",
       maturity: Maturity.STABLE,
       dart2jsPatchPath: "_internal/js_runtime/lib/async_patch.dart"),
-  "_chrome": const LibraryInfo("_chrome/dart2js/chrome_dart2js.dart",
-      categories: "Client", documented: false),
   "collection": const LibraryInfo("collection/collection.dart",
       categories: "Client,Server,Embedded",
       maturity: Maturity.STABLE,
@@ -95,11 +87,6 @@ const Map<String, LibraryInfo> libraries = const {
       categories: "Client",
       maturity: Maturity.STABLE,
       platforms: DART2JS_PLATFORM),
-  "_js": const LibraryInfo("js/_js.dart",
-      categories: "Client",
-      dart2jsPatchPath: "js/_js_client.dart",
-      documented: false,
-      platforms: DART2JS_PLATFORM),
   "js_util": const LibraryInfo("js_util/dart2js/js_util_dart2js.dart",
       categories: "Client",
       maturity: Maturity.STABLE,
@@ -116,7 +103,7 @@ const Map<String, LibraryInfo> libraries = const {
       categories: "Client",
       implementation: true,
       documented: false,
-      platforms: VM_PLATFORM),
+      platforms: DART2JS_PLATFORM),
   "typed_data": const LibraryInfo("typed_data/typed_data.dart",
       categories: "Client,Server,Embedded",
       maturity: Maturity.STABLE,
@@ -162,30 +149,28 @@ const Map<String, LibraryInfo> libraries = const {
       categories: "",
       documented: false,
       platforms: DART2JS_PLATFORM),
-  "_js_names": const LibraryInfo("_internal/js_runtime/lib/js_names.dart",
+  "_isolate_helper": const LibraryInfo(
+      "_internal/js_runtime/lib/isolate_helper.dart",
+      categories: "",
+      documented: false,
+      platforms: DART2JS_PLATFORM),
+  "_js_mirrors": const LibraryInfo("_internal/js_runtime/lib/js_mirrors.dart",
       categories: "", documented: false, platforms: DART2JS_PLATFORM),
   "_js_primitives": const LibraryInfo(
       "_internal/js_runtime/lib/js_primitives.dart",
       categories: "",
       documented: false,
       platforms: DART2JS_PLATFORM),
-  "_js_embedded_names": const LibraryInfo(
-      "_internal/js_runtime/lib/shared/embedded_names.dart",
-      categories: "",
-      documented: false,
-      platforms: DART2JS_PLATFORM),
-  "_async_await_error_codes": const LibraryInfo(
-      "_internal/js_runtime/lib/shared/async_await_error_codes.dart",
-      categories: "",
-      documented: false,
-      platforms: DART2JS_PLATFORM),
   "_metadata": const LibraryInfo("html/html_common/metadata.dart",
       categories: "", documented: false, platforms: DART2JS_PLATFORM),
-
-  // Flutter dart:ui library.
-  "ui": const LibraryInfo("ui/ui.dart",
-      categories: "Flutter"),
-  // End Google3-Flutter
+  "_debugger": const LibraryInfo("_internal/js_runtime/lib/debugger.dart",
+      category: "", documented: false, platforms: DART2JS_PLATFORM),
+  "_runtime": const LibraryInfo(
+      "_internal/js_runtime/lib/ddc_runtime/runtime.dart",
+      category: "",
+      documented: false,
+      platforms: DART2JS_PLATFORM),
+  "ui": const LibraryInfo("ui/ui.dart", documented: true, platforms:DART2JS_PLATFORM),
 };
 
 /**
