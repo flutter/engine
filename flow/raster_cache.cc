@@ -36,7 +36,8 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   canvas.drawImage(image_, bounds.fLeft, bounds.fTop, paint);
 }
 
-RasterCache::RasterCache(size_t access_threshold, size_t picture_cache_limit_per_frame)
+RasterCache::RasterCache(size_t access_threshold,
+                         size_t picture_cache_limit_per_frame)
     : access_threshold_(access_threshold),
       picture_cache_limit_per_frame_(picture_cache_limit_per_frame),
       checkerboard_images_(false),
