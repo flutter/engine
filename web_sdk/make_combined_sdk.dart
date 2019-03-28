@@ -61,7 +61,7 @@ Future<void> main() async {
     jsSdkMap.deleteSync();
   }
 
-  // Execute the analyzer summary generation.
+  // Execute the analyzer summary and sdk generation.
   final List<String> args = <String>['--no-source-map', '--no-emit-metadata'];
   args.addAll(<String>[
     '--dart-sdk=temp_dart_sdk',
