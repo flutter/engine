@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 library libraries;
 
+// Branched from https://github.com/dart-lang/sdk/blob/master/pkg/dev_compiler/tool/input_sdk/libraries.dart
+// with handling for dart:ui added.
+
 /**
  * A bit flag used by [LibraryInfo] indicating that a library is used by dart2js
  */
