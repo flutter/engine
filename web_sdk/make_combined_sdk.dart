@@ -7,7 +7,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:dev_compiler/src/analyzer/command.dart' as command; // ignore: uri_does_not_exist
 
-// Script for creating flutter analyzer summmary and precompiled SDK.
+// Creates flutter precompiled web sdk and analyzer summary.
 Future<void> main() async {
   // create a temporary dart-sdk directory.
   final Directory tempDartSdk = Directory(path.join('temp_dart_sdk', 'lib'))
@@ -108,7 +108,7 @@ Future<void> main() async {
   ]);
   final int result = (await command.compile(args)).exitCode;
   if (result != 0) {
-    throw 'SDK generation failed';
+    throw 'SDK generation failed with exit code $result';
   }
 
   // Copy generated sdk and summary back to flutter web sdk.
