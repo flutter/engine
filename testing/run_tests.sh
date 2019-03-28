@@ -15,6 +15,12 @@ echo "Using build root: $BUILDROOT_DIR"
 OUT_DIR="$BUILDROOT_DIR/out"
 HOST_DIR="$OUT_DIR/${1:-host_debug_unopt}"
 
+# Check a Dart SDK has been built.
+if [[ ! -d "$HOST_DIR/dart-sdk" ]]; then
+  echo "Built Dart SDK not found at $HOST_DIR/dart-sdk. Exiting."
+  exit 1
+fi
+
 # Switch to buildroot dir. Some tests assume paths relative to buildroot.
 cd "$BUILDROOT_DIR"
 
@@ -38,15 +44,14 @@ echo "Running synchronization_unittests..."
 echo "Running txt_unittests..."
 "$HOST_DIR/txt_unittests" --font-directory="$BUILDROOT_DIR/flutter/third_party/txt/third_party/fonts"
 
-# pubspec.yaml points to these files
+# Build flutter/sky/packages.
+#
+# flutter/testing/dart/pubspec.yaml contains harcoded path deps to
+# host_debug_unopt packages.
 "$BUILDROOT_DIR/flutter/tools/gn" --unoptimized
 ninja -C $OUT_DIR/host_debug_unopt flutter/sky/packages
 
 # Fetch Dart test dependencies.
-if [[ ! -x "$HOST_DIR/dart-sdk/bin/pub" ]]; then
-  echo "Pub executable not found. Ensure Dart SDK has been built."
-  exit 1
-fi
 pushd "$BUILDROOT_DIR/flutter/testing/dart"
 "$HOST_DIR/dart-sdk/bin/pub" get
 popd
