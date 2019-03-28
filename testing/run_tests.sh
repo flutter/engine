@@ -2,35 +2,76 @@
 
 set -o pipefail -e;
 
-HOST_DIR=${1:-host_debug_unopt}
+BUILDROOT_DIR="$(pwd)"
+if [[ "$BUILDROOT_DIR" != */src ]]; then
+  if [[ "$BUILDROOT_DIR" != */src/* ]]; then
+    echo "Unable to determine build root. Exiting."
+    exit 1
+  fi
+  BUILDROOT_DIR="${BUILDROOT_DIR%/src/*}/src"
+fi
+echo "Using build root: $BUILDROOT_DIR"
+
+OUT_DIR="$BUILDROOT_DIR/out"
+HOST_DIR="$OUT_DIR/${1:-host_debug_unopt}"
+
+# Switch to buildroot dir. Some tests assume paths relative to buildroot.
+cd "$BUILDROOT_DIR"
 
 # TODO(dnfield): Re-enable this when the upstream Dart changes that make it not be flaky land.
-# out/$HOST_DIR/embedder_unittests
-out/$HOST_DIR/flow_unittests
-out/$HOST_DIR/fml_unittests --gtest_filter="-*TimeSensitiveTest*"
-out/$HOST_DIR/runtime_unittests
-out/$HOST_DIR/shell_unittests
-out/$HOST_DIR/synchronization_unittests
-out/$HOST_DIR/txt_unittests  --font-directory=flutter/third_party/txt/third_party/fonts
+# $HOST_DIR/embedder_unittests
+echo "Running flow_unittests..."
+"$HOST_DIR/flow_unittests"
+
+echo "Running fml_unittests..."
+"$HOST_DIR/fml_unittests" --gtest_filter="-*TimeSensitiveTest*"
+
+echo "Running runtime_unittests..."
+"$HOST_DIR/runtime_unittests"
+
+echo "Running shell_unittests..."
+"$HOST_DIR/shell_unittests"
+
+echo "Running synchronization_unittests..."
+"$HOST_DIR/synchronization_unittests"
+
+echo "Running txt_unittests..."
+"$HOST_DIR/txt_unittests" --font-directory="$BUILDROOT_DIR/flutter/third_party/txt/third_party/fonts"
 
 # pubspec.yaml points to these files
-./flutter/tools/gn --unoptimized
-ninja -C out/host_debug_unopt flutter/sky/packages
+"$BUILDROOT_DIR/flutter/tools/gn" --unoptimized
+ninja -C $OUT_DIR/host_debug_unopt flutter/sky/packages
 
-pushd flutter/testing/dart
-pub get
+# Fetch Dart test dependencies.
+if [[ ! -x "$HOST_DIR/dart-sdk/bin/pub" ]]; then
+  echo "Pub executable not found. Ensure Dart SDK has been built."
+  exit 1
+fi
+pushd "$BUILDROOT_DIR/flutter/testing/dart"
+"$HOST_DIR/dart-sdk/bin/pub" get
 popd
 
 run_test () {
-  out/$HOST_DIR/dart out/$HOST_DIR/gen/frontend_server.dart.snapshot --sdk-root out/$HOST_DIR/flutter_patched_sdk --incremental --strong --target=flutter --packages flutter/testing/dart/.packages --output-dill out/$HOST_DIR/engine_test.dill $1
-  out/$HOST_DIR/flutter_tester --disable-observatory --use-test-fonts out/$HOST_DIR/engine_test.dill
+  "$HOST_DIR/dart" $HOST_DIR/gen/frontend_server.dart.snapshot \
+      --sdk-root $HOST_DIR/flutter_patched_sdk \
+      --incremental \
+      --strong \
+      --target=flutter \
+      --packages flutter/testing/dart/.packages \
+      --output-dill $HOST_DIR/engine_test.dill \
+      $1
+
+  "$HOST_DIR/flutter_tester" \
+      --disable-observatory \
+      --use-test-fonts \
+      "$HOST_DIR/engine_test.dill"
 }
 
 # Verify that a failing test returns a failure code.
-! run_test flutter/testing/smoke_test_failure/fail_test.dart
+! run_test "$BUILDROOT_DIR/flutter/testing/smoke_test_failure/fail_test.dart"
 
-for TEST_SCRIPT in flutter/testing/dart/*.dart; do
-  run_test $TEST_SCRIPT
+for TEST_SCRIPT in "$BUILDROOT_DIR"/flutter/testing/dart/*.dart; do
+  run_test "$TEST_SCRIPT"
 done
 
 pushd flutter
