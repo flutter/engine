@@ -20,7 +20,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "text_style.h"
-#include "third_party/skia/include/core/SkPaint.h"
+#include "third_party/skia/include/core/SkFontMetrics.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace txt {
@@ -37,15 +37,17 @@ class PaintRecord {
   PaintRecord(TextStyle style,
               SkPoint offset,
               sk_sp<SkTextBlob> text,
-              SkPaint::FontMetrics metrics,
+              SkFontMetrics metrics,
               size_t line,
-              double run_width);
+              double run_width,
+              bool is_ghost);
 
   PaintRecord(TextStyle style,
               sk_sp<SkTextBlob> text,
-              SkPaint::FontMetrics metrics,
+              SkFontMetrics metrics,
               size_t line,
-              double run_width);
+              double run_width,
+              bool is_ghost);
 
   PaintRecord(PaintRecord&& other);
 
@@ -57,13 +59,15 @@ class PaintRecord {
 
   SkTextBlob* text() const { return text_.get(); }
 
-  const SkPaint::FontMetrics& metrics() const { return metrics_; }
+  const SkFontMetrics& metrics() const { return metrics_; }
 
   const TextStyle& style() const { return style_; }
 
   size_t line() const { return line_; }
 
   double GetRunWidth() const { return run_width_; }
+
+  bool isGhost() const { return is_ghost_; }
 
  private:
   TextStyle style_;
@@ -72,9 +76,12 @@ class PaintRecord {
   // SkTextBlob stores the glyphs and coordinates to draw them.
   sk_sp<SkTextBlob> text_;
   // FontMetrics stores the measurements of the font used.
-  SkPaint::FontMetrics metrics_;
+  SkFontMetrics metrics_;
   size_t line_;
   double run_width_ = 0.0f;
+  // 'Ghost' runs represent trailing whitespace. 'Ghost' runs should not have
+  // decorations painted on them and do not impact layout of visible glyphs.
+  bool is_ghost_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PaintRecord);
 };

@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -144,7 +144,7 @@ class _WidgetCallSiteTransformer extends Transformer {
   /// locations of the parameters passed in from the source location of the
   /// constructor call but it is convenient to bundle the location and names
   /// of the parameters passed in so that tools can show parameter locations
-  /// without reparsing the source code.
+  /// without re-parsing the source code.
   ConstructorInvocation _constructLocation(
     Location location, {
     String name,
@@ -399,7 +399,7 @@ class WidgetCreatorTracker implements ProgramTransformer {
           new VariableGet(variable),
         ));
         // TODO(jacobr): add an assert verifying the locationField is not
-        // null. Curently we cannot safely add this assert because we do not
+        // null. Currently, we cannot safely add this assert because we do not
         // handle Widget classes with optional positional arguments. There are
         // no Widget classes in the flutter repo with optional positional
         // arguments but it is possible users could add classes with optional

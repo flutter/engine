@@ -1,4 +1,4 @@
-// Copyright 2017 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -18,6 +18,8 @@ TaskRunners::TaskRunners(std::string label,
       gpu_(std::move(gpu)),
       ui_(std::move(ui)),
       io_(std::move(io)) {}
+
+TaskRunners::TaskRunners(const TaskRunners& other) = default;
 
 TaskRunners::~TaskRunners() = default;
 

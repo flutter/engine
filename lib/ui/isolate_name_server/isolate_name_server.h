@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -17,7 +17,9 @@ namespace blink {
 
 class IsolateNameServer {
  public:
-  IsolateNameServer() {}
+  IsolateNameServer();
+
+  ~IsolateNameServer();
 
   // Looks up the Dart_Port associated with a given name. Returns ILLEGAL_PORT
   // if the name does not exist.

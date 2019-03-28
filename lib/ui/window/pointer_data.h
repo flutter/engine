@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -30,9 +30,16 @@ struct alignas(8) PointerData {
     kInvertedStylus,
   };
 
+  // Must match the PointerSignalKind enum in pointer.dart.
+  enum class SignalKind : int64_t {
+    kNone,
+    kScroll,
+  };
+
   int64_t time_stamp;
   Change change;
   DeviceKind kind;
+  SignalKind signal_kind;
   int64_t device;
   double physical_x;
   double physical_y;
@@ -43,12 +50,16 @@ struct alignas(8) PointerData {
   double pressure_max;
   double distance;
   double distance_max;
+  double size;
   double radius_major;
   double radius_minor;
   double radius_min;
   double radius_max;
   double orientation;
   double tilt;
+  int64_t platformData;
+  double scroll_delta_x;
+  double scroll_delta_y;
 
   void Clear();
 };

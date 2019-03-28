@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -61,6 +61,14 @@ fml::TimeDelta Stopwatch::MaxDelta() const {
       max_delta = laps_[i];
   }
   return max_delta;
+}
+
+fml::TimeDelta Stopwatch::AverageDelta() const {
+  fml::TimeDelta sum;  // default to 0
+  for (size_t i = 0; i < kMaxSamples; i++) {
+    sum = sum + laps_[i];
+  }
+  return sum / kMaxSamples;
 }
 
 // Initialize the SkSurface for drawing into. Draws the base background and any

@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -158,6 +158,8 @@ static BOOL isPowerOfTwo(NSUInteger x) {
   }
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
     didRegisterUserNotificationSettings:(UIUserNotificationSettings*)notificationSettings {
   for (id<FlutterPlugin> plugin in _pluginDelegates) {
@@ -169,6 +171,7 @@ static BOOL isPowerOfTwo(NSUInteger x) {
     }
   }
 }
+#pragma GCC diagnostic pop
 
 - (void)application:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
@@ -194,6 +197,36 @@ static BOOL isPowerOfTwo(NSUInteger x) {
               didReceiveRemoteNotification:userInfo
                     fetchCompletionHandler:completionHandler]) {
         return;
+      }
+    }
+  }
+}
+
+- (void)application:(UIApplication*)application
+    didReceiveLocalNotification:(UILocalNotification*)notification {
+  for (id<FlutterPlugin> plugin in _pluginDelegates) {
+    if (!plugin) {
+      continue;
+    }
+    if ([plugin respondsToSelector:_cmd]) {
+      [plugin application:application didReceiveLocalNotification:notification];
+    }
+  }
+}
+
+- (void)userNotificationCenter:(UNUserNotificationCenter*)center
+       willPresentNotification:(UNNotification*)notification
+         withCompletionHandler:
+             (void (^)(UNNotificationPresentationOptions options))completionHandler {
+  if (@available(iOS 10.0, *)) {
+    for (id<FlutterPlugin> plugin in _pluginDelegates) {
+      if (!plugin) {
+        continue;
+      }
+      if ([plugin respondsToSelector:_cmd]) {
+        [plugin userNotificationCenter:center
+               willPresentNotification:notification
+                 withCompletionHandler:completionHandler];
       }
     }
   }

@@ -1,4 +1,4 @@
-# Copyright 2015 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -8,6 +8,8 @@ source_set("flow") {
     "compositor_context.h",
     "debug_print.cc",
     "debug_print.h",
+    "embedded_views.cc",
+    "embedded_views.h",
     "instrumentation.cc",
     "instrumentation.h",
     "layers/backdrop_filter_layer.cc",
@@ -65,7 +67,6 @@ source_set("flow") {
     "$flutter_root/fml",
     "$flutter_root/synchronization",
     "//third_party/skia",
-    "//third_party/skia:gpu",
   ]
 
   if (is_fuchsia) {
@@ -79,7 +80,7 @@ source_set("flow") {
     ]
 
     public_deps += [
-      "//garnet/public/fidl/fuchsia.ui.scenic",
+      "//sdk/fidl/fuchsia.ui.scenic",
       "//garnet/public/lib/ui/scenic/cpp",
       "//topaz/public/dart-pkg/zircon",
     ]
@@ -92,13 +93,18 @@ executable("flow_unittests") {
   testonly = true
 
   sources = [
+    "flow_run_all_unittests.cc",
+    "flow_test_utils.h",
+    "flow_test_utils.cc",
     "matrix_decomposition_unittests.cc",
     "raster_cache_unittests.cc",
+    "layers/performance_overlay_layer_unittests.cc",
   ]
 
   deps = [
     ":flow",
-    "$flutter_root/testing",
+    "$flutter_root/fml",
+    "//third_party/googletest:gtest",
     "//third_party/dart/runtime:libdart_jit",  # for tracing
     "//third_party/skia",
   ]

@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -41,6 +41,21 @@ fml::UniqueFD CreateDirectory(const fml::UniqueFD& base_directory,
   }
 
   return CreateDirectory(base_directory, components, permission, 0);
+}
+
+ScopedTemporaryDirectory::ScopedTemporaryDirectory() {
+  path_ = CreateTemporaryDirectory();
+  if (path_ != "") {
+    dir_fd_ = OpenDirectory(path_.c_str(), false, FilePermission::kRead);
+  }
+}
+
+ScopedTemporaryDirectory::~ScopedTemporaryDirectory() {
+  if (path_ != "") {
+    if (!UnlinkDirectory(path_.c_str())) {
+      FML_LOG(ERROR) << "Could not remove directory: " << path_;
+    }
+  }
 }
 
 }  // namespace fml

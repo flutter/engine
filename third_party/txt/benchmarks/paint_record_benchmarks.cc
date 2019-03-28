@@ -28,18 +28,17 @@ static void BM_PaintRecordInit(benchmark::State& state) {
   TextStyle style;
   style.font_family = "Roboto";
 
-  SkPaint paint;
-  paint.setAntiAlias(true);
-  paint.setTextEncoding(SkPaint::kGlyphID_TextEncoding);
-  paint.setTextSize(14);
-  paint.setFakeBoldText(false);
+  SkFont font;
+  font.setEdging(SkFont::Edging::kAntiAlias);
+  font.setSize(14);
+  font.setEmbolden(false);
 
   SkTextBlobBuilder builder;
-  builder.allocRunPos(paint, 100);
+  builder.allocRunPos(font, 100);
   auto text_blob = builder.make();
 
   while (state.KeepRunning()) {
-    PaintRecord PaintRecord(style, text_blob, SkPaint::FontMetrics(), 0, 0);
+    PaintRecord PaintRecord(style, text_blob, SkFontMetrics(), 0, 0);
   }
 }
 BENCHMARK(BM_PaintRecordInit);

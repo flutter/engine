@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -93,7 +93,7 @@ void main() {
   test('transformation tests', () {
     final Rect bounds = new Rect.fromLTRB(0.0, 0.0, 10.0, 10.0);
     final Path p = new Path()..addRect(bounds);
-    final Float64List scaleMatrix = new Float64List.fromList([
+    final Float64List scaleMatrix = Float64List.fromList(<double>[
       2.5, 0.0, 0.0, 0.0, // first col
       0.0, 0.5, 0.0, 0.0, // second col
       0.0, 0.0, 1.0, 0.0, // third col
@@ -178,7 +178,7 @@ void main() {
     final double midPoint = simpleMetricsDiagonal.iterator.current.length / 2;
     final Tangent posTanDiagonal =
         simpleMetricsDiagonal.iterator.current.getTangentForOffset(midPoint);
-    expect(posTanDiagonal.position, equals(new Offset(5.0, 5.0)));
+    expect(posTanDiagonal.position, equals(const Offset(5.0, 5.0)));
     expect(posTanDiagonal.angle,
         closeTo(-0.7853981633974483, .00001)); // ~45 degrees
 
@@ -198,5 +198,23 @@ void main() {
     expect(multiContourMetric.iterator.current.length, equals(5.0));
     expect(multiContourMetric.iterator.moveNext(), isFalse);
     expect(multiContourMetric.iterator.current, isNull);
+  });
+
+  test('PathMetrics can remember lengths and isClosed', () {
+    final Path path = Path()..lineTo(0, 10)
+                            ..close()
+                            ..moveTo(0, 15)
+                            ..lineTo(10, 15);
+    final List<PathMetric> metrics = path.computeMetrics().toList();
+    expect(metrics.length, 2);
+    print(metrics);
+    expect(metrics[0].length, 20);
+    expect(metrics[0].isClosed, true);
+    expect(() => metrics[0].getTangentForOffset(4.0), isNotNull);
+    expect(() => metrics[0].extractPath(4.0, 10.0), isNotNull);
+    expect(metrics[1].length, 10);
+    expect(metrics[1].isClosed, false);
+    expect(() => metrics[1].getTangentForOffset(4.0), isNotNull);
+    expect(() => metrics[1].extractPath(4.0, 10.0), isNotNull);
   });
 }

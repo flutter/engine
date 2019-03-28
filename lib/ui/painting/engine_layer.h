@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -22,6 +22,9 @@ class EngineLayer : public RefCountedDartWrappable<EngineLayer> {
 
  public:
   ~EngineLayer() override;
+
+  size_t GetAllocationSize() override;
+
   static fml::RefPtr<EngineLayer> MakeRetained(
       std::shared_ptr<flow::ContainerLayer> layer) {
     return fml::MakeRefCounted<EngineLayer>(layer);
@@ -32,8 +35,7 @@ class EngineLayer : public RefCountedDartWrappable<EngineLayer> {
   std::shared_ptr<flow::ContainerLayer> Layer() const { return layer_; }
 
  private:
-  explicit EngineLayer(std::shared_ptr<flow::ContainerLayer> layer)
-      : layer_(layer) {}
+  explicit EngineLayer(std::shared_ptr<flow::ContainerLayer> layer);
   std::shared_ptr<flow::ContainerLayer> layer_;
 
   FML_FRIEND_MAKE_REF_COUNTED(EngineLayer);

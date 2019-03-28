@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,15 +7,17 @@
 #include <memory>
 #include <string>
 
+#include "flutter/common/version/version.h"
 #include "flutter/fml/base32.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/shell/version/version.h"
 
 namespace shell {
+
+std::string PersistentCache::cache_base_path_;
 
 static std::string SkKeyToFilePath(const SkData& data) {
   if (data.data() == nullptr || data.size() == 0) {
@@ -33,23 +35,37 @@ static std::string SkKeyToFilePath(const SkData& data) {
   return encode_result.second;
 }
 
+bool PersistentCache::gIsReadOnly = false;
+
 PersistentCache* PersistentCache::GetCacheForProcess() {
   static std::unique_ptr<PersistentCache> gPersistentCache;
   static std::once_flag once = {};
-  std::call_once(once, []() { gPersistentCache.reset(new PersistentCache()); });
+  std::call_once(
+      once, []() { gPersistentCache.reset(new PersistentCache(gIsReadOnly)); });
   return gPersistentCache.get();
 }
 
-PersistentCache::PersistentCache()
-    : cache_directory_(std::make_shared<fml::UniqueFD>(
-          CreateDirectory(fml::paths::GetCachesDirectory(),
-                          {
-                              "flutter_engine",           //
-                              GetFlutterEngineVersion(),  //
-                              "skia",                     //
-                              GetSkiaVersion()            //
-                          },
-                          fml::FilePermission::kReadWrite))) {
+void PersistentCache::SetCacheDirectoryPath(std::string path) {
+  cache_base_path_ = path;
+}
+
+PersistentCache::PersistentCache(bool read_only) : is_read_only_(read_only) {
+  fml::UniqueFD cache_base_dir;
+  if (cache_base_path_.length()) {
+    cache_base_dir = fml::OpenDirectory(cache_base_path_.c_str(), false,
+                                        fml::FilePermission::kRead);
+  } else {
+    cache_base_dir = fml::paths::GetCachesDirectory();
+  }
+
+  if (cache_base_dir.is_valid()) {
+    cache_directory_ = std::make_shared<fml::UniqueFD>(
+        CreateDirectory(cache_base_dir,
+                        {"flutter_engine", blink::GetFlutterEngineVersion(),
+                         "skia", blink::GetSkiaVersion()},
+                        read_only ? fml::FilePermission::kRead
+                                  : fml::FilePermission::kReadWrite));
+  }
   if (!IsValid()) {
     FML_LOG(WARNING) << "Could not acquire the persistent cache directory. "
                         "Caching of GPU resources on disk is disabled.";
@@ -118,6 +134,12 @@ static void PersistentCacheStore(fml::RefPtr<fml::TaskRunner> worker,
 
 // |GrContextOptions::PersistentCache|
 void PersistentCache::store(const SkData& key, const SkData& data) {
+  stored_new_shaders_ = true;
+
+  if (is_read_only_) {
+    return;
+  }
+
   if (!IsValid()) {
     return;
   }
@@ -135,6 +157,24 @@ void PersistentCache::store(const SkData& key, const SkData& data) {
     return;
   }
 
+  PersistentCacheStore(GetWorkerTaskRunner(), cache_directory_,
+                       std::move(file_name), std::move(mapping));
+}
+
+void PersistentCache::DumpSkp(const SkData& data) {
+  if (is_read_only_ || !IsValid()) {
+    FML_LOG(ERROR) << "Could not dump SKP from read-only or invalid persistent "
+                      "cache.";
+    return;
+  }
+
+  std::stringstream name_stream;
+  auto ticks = fml::TimePoint::Now().ToEpochDelta().ToNanoseconds();
+  name_stream << "shader_dump_" << std::to_string(ticks) << ".skp";
+  std::string file_name = name_stream.str();
+  FML_LOG(INFO) << "Dumping " << file_name;
+  auto mapping = std::make_unique<fml::DataMapping>(
+      std::vector<uint8_t>{data.bytes(), data.bytes() + data.size()});
   PersistentCacheStore(GetWorkerTaskRunner(), cache_directory_,
                        std::move(file_name), std::move(mapping));
 }

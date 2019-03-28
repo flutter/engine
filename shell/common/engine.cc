@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,8 +7,10 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "flutter/common/settings.h"
+#include "flutter/common/version/version.h"
 #include "flutter/fml/eintr_wrapper.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
@@ -25,10 +27,6 @@
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
-#ifdef ERROR
-#undef ERROR
-#endif
-
 namespace shell {
 
 static constexpr char kAssetChannel[] = "flutter/assets";
@@ -44,8 +42,8 @@ Engine::Engine(Delegate& delegate,
                blink::TaskRunners task_runners,
                blink::Settings settings,
                std::unique_ptr<Animator> animator,
-               fml::WeakPtr<GrContext> resource_context,
-               fml::RefPtr<flow::SkiaUnrefQueue> unref_queue)
+               fml::WeakPtr<blink::SnapshotDelegate> snapshot_delegate,
+               fml::WeakPtr<blink::IOManager> io_manager)
     : delegate_(delegate),
       settings_(std::move(settings)),
       animator_(std::move(animator)),
@@ -56,26 +54,31 @@ Engine::Engine(Delegate& delegate,
   // object as its delegate. The delegate may be called in the constructor and
   // we want to be fully initilazed by that point.
   runtime_controller_ = std::make_unique<blink::RuntimeController>(
-      *this,                                // runtime delegate
-      &vm,                                  // VM
-      std::move(isolate_snapshot),          // isolate snapshot
-      std::move(shared_snapshot),           // shared snapshot
-      std::move(task_runners),              // task runners
-      std::move(resource_context),          // resource context
-      std::move(unref_queue),               // skia unref queue
-      settings_.advisory_script_uri,        // advisory script uri
-      settings_.advisory_script_entrypoint  // advisory script entrypoint
+      *this,                                 // runtime delegate
+      &vm,                                   // VM
+      std::move(isolate_snapshot),           // isolate snapshot
+      std::move(shared_snapshot),            // shared snapshot
+      std::move(task_runners),               // task runners
+      std::move(snapshot_delegate),          // snapshot delegate
+      std::move(io_manager),                 // io manager
+      settings_.advisory_script_uri,         // advisory script uri
+      settings_.advisory_script_entrypoint,  // advisory script entrypoint
+      settings_.idle_notification_callback   // idle notification callback
   );
 }
 
 Engine::~Engine() = default;
+
+float Engine::GetDisplayRefreshRate() const {
+  return animator_->GetDisplayRefreshRate();
+}
 
 fml::WeakPtr<Engine> Engine::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }
 
 bool Engine::UpdateAssetManager(
-    fml::RefPtr<blink::AssetManager> new_asset_manager) {
+    std::shared_ptr<blink::AssetManager> new_asset_manager) {
   if (asset_manager_ == new_asset_manager) {
     return false;
   }
@@ -87,10 +90,10 @@ bool Engine::UpdateAssetManager(
   }
 
   // Using libTXT as the text engine.
+  font_collection_.RegisterFonts(asset_manager_);
+
   if (settings_.use_test_fonts) {
     font_collection_.RegisterTestFonts();
-  } else {
-    font_collection_.RegisterFonts(asset_manager_);
   }
 
   return true;
@@ -288,6 +291,8 @@ bool Engine::HandleLifecyclePlatformMessage(blink::PlatformMessage* message) {
   if (state == "AppLifecycleState.resumed" && have_surface_) {
     ScheduleFrame();
   }
+  runtime_controller_->SetLifecycleState(state);
+  // Always forward these messages to the framework by returning false.
   return false;
 }
 
@@ -325,17 +330,22 @@ bool Engine::HandleLocalizationPlatformMessage(
   if (args == root.MemberEnd() || !args->value.IsArray())
     return false;
 
-  const auto& language = args->value[0];
-  const auto& country = args->value[1];
-  const auto& script = args->value[2];
-  const auto& variant = args->value[3];
-
-  if (!language.IsString() || !country.IsString())
+  const size_t strings_per_locale = 4;
+  if (args->value.Size() % strings_per_locale != 0)
     return false;
+  std::vector<std::string> locale_data;
+  for (size_t locale_index = 0; locale_index < args->value.Size();
+       locale_index += strings_per_locale) {
+    if (!args->value[locale_index].IsString() ||
+        !args->value[locale_index + 1].IsString())
+      return false;
+    locale_data.push_back(args->value[locale_index].GetString());
+    locale_data.push_back(args->value[locale_index + 1].GetString());
+    locale_data.push_back(args->value[locale_index + 2].GetString());
+    locale_data.push_back(args->value[locale_index + 3].GetString());
+  }
 
-  return runtime_controller_->SetLocale(language.GetString(),
-                                        country.GetString(), script.GetString(),
-                                        variant.GetString());
+  return runtime_controller_->SetLocales(locale_data);
 }
 
 void Engine::HandleSettingsPlatformMessage(blink::PlatformMessage* message) {
@@ -347,7 +357,11 @@ void Engine::HandleSettingsPlatformMessage(blink::PlatformMessage* message) {
   }
 }
 
-void Engine::DispatchPointerDataPacket(const blink::PointerDataPacket& packet) {
+void Engine::DispatchPointerDataPacket(const blink::PointerDataPacket& packet,
+                                       uint64_t trace_flow_id) {
+  TRACE_EVENT0("flutter", "Engine::DispatchPointerDataPacket");
+  TRACE_FLOW_STEP("flutter", "PointerEvent", trace_flow_id);
+  animator_->EnqueueTraceFlowId(trace_flow_id);
   runtime_controller_->DispatchPointerDataPacket(packet);
 }
 
@@ -410,6 +424,11 @@ void Engine::HandlePlatformMessage(
   } else {
     delegate_.OnEngineHandlePlatformMessage(std::move(message));
   }
+}
+
+void Engine::UpdateIsolateDescription(const std::string isolate_name,
+                                      int64_t isolate_port) {
+  delegate_.UpdateIsolateDescription(isolate_name, isolate_port);
 }
 
 blink::FontCollection& Engine::GetFontCollection() {

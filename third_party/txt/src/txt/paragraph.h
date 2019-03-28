@@ -29,6 +29,7 @@
 #include "paragraph_style.h"
 #include "styled_runs.h"
 #include "third_party/googletest/googletest/include/gtest/gtest_prod.h"  // nogncheck
+#include "third_party/skia/include/core/SkFontMetrics.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "utils/WindowsUtils.h"
 
@@ -59,19 +60,36 @@ class Paragraph {
 
   // Options for various types of bounding boxes provided by
   // GetRectsForRange(...).
-  // These options can be individually enabled, for example:
-  //
-  //   (RectStyle::kTight | RectStyle::kExtendEndOfLine)
-  //
-  // provides tight bounding boxes and extends the last box per line to the end
-  // of the layout area.
-  enum RectStyle {
-    kNone = 0x0,  // kNone cannot be combined with |.
+  enum class RectHeightStyle {
+    // Provide tight bounding boxes that fit heights per run.
+    kTight,
 
-    // Provide tight bounding boxes that fit heights per span. Otherwise, the
-    // heights of spans are the max of the heights of the line the span belongs
-    // in.
-    kTight = 0x1
+    // The height of the boxes will be the maximum height of all runs in the
+    // line. All rects in the same line will be the same height.
+    kMax,
+
+    // Extends the top and/or bottom edge of the bounds to fully cover any line
+    // spacing. The top edge of each line should be the same as the bottom edge
+    // of the line above. There should be no gaps in vertical coverage given any
+    // ParagraphStyle line_height.
+    //
+    // The top and bottom of each rect will cover half of the
+    // space above and half of the space below the line.
+    kIncludeLineSpacingMiddle,
+    // The line spacing will be added to the top of the rect.
+    kIncludeLineSpacingTop,
+    // The line spacing will be added to the bottom of the rect.
+    kIncludeLineSpacingBottom
+  };
+
+  enum class RectWidthStyle {
+    // Provide tight bounding boxes that fit widths to the runs of each line
+    // independently.
+    kTight,
+
+    // Extends the width of the last rect of each line to match the position of
+    // the widest rect over all the lines.
+    kMax
   };
 
   struct PositionWithAffinity {
@@ -158,7 +176,8 @@ class Paragraph {
   // end glyph indexes, including start and excluding end.
   std::vector<TextBox> GetRectsForRange(size_t start,
                                         size_t end,
-                                        RectStyle rect_style) const;
+                                        RectHeightStyle rect_height_style,
+                                        RectWidthStyle rect_width_style) const;
 
   // Returns the index of the glyph that corresponds to the provided coordinate,
   // with the top left corner as the origin, and +y direction as down.
@@ -193,6 +212,7 @@ class Paragraph {
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, RightAlignParagraph);
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, CenterAlignParagraph);
   FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, JustifyAlignParagraph);
+  FRIEND_TEST_WINDOWS_DISABLED(ParagraphTest, JustifyRTL);
   FRIEND_TEST(ParagraphTest, DecorationsParagraph);
   FRIEND_TEST(ParagraphTest, ItalicsParagraph);
   FRIEND_TEST(ParagraphTest, ChineseParagraph);
@@ -208,6 +228,7 @@ class Paragraph {
   FRIEND_TEST(ParagraphTest, UnderlineShiftParagraph);
   FRIEND_TEST(ParagraphTest, SimpleShadow);
   FRIEND_TEST(ParagraphTest, ComplexShadow);
+  FRIEND_TEST(ParagraphTest, FontFallbackParagraph);
 
   // Starting data to layout.
   std::vector<uint16_t> text_;
@@ -240,21 +261,42 @@ class Paragraph {
   std::vector<double> line_baselines_;
   bool did_exceed_max_lines_;
 
+  // Metrics for use in GetRectsForRange(...);
+  // Per-line max metrics over all runs in a given line.
+  std::vector<SkScalar> line_max_spacings_;
+  std::vector<SkScalar> line_max_descent_;
+  std::vector<SkScalar> line_max_ascent_;
+  // Overall left and right extremes over all lines.
+  double max_right_;
+  double min_left_;
+
   class BidiRun {
    public:
+    // Constructs a BidiRun with is_ghost defaulted to false.
     BidiRun(size_t s, size_t e, TextDirection d, const TextStyle& st)
-        : start_(s), end_(e), direction_(d), style_(&st) {}
+        : start_(s), end_(e), direction_(d), style_(&st), is_ghost_(false) {}
+
+    // Constructs a BidiRun with a custom is_ghost flag.
+    BidiRun(size_t s,
+            size_t e,
+            TextDirection d,
+            const TextStyle& st,
+            bool is_ghost)
+        : start_(s), end_(e), direction_(d), style_(&st), is_ghost_(is_ghost) {}
 
     size_t start() const { return start_; }
     size_t end() const { return end_; }
     TextDirection direction() const { return direction_; }
     const TextStyle& style() const { return *style_; }
     bool is_rtl() const { return direction_ == TextDirection::rtl; }
+    // Tracks if the run represents trailing whitespace.
+    bool is_ghost() const { return is_ghost_; }
 
    private:
     size_t start_, end_;
     TextDirection direction_;
     const TextStyle* style_;
+    bool is_ghost_;
   };
 
   struct GlyphPosition {
@@ -283,14 +325,14 @@ class Paragraph {
     Range<size_t> code_units;
     Range<double> x_pos;
     size_t line_number;
-    SkPaint::FontMetrics font_metrics;
+    SkFontMetrics font_metrics;
     TextDirection direction;
 
     CodeUnitRun(std::vector<GlyphPosition>&& p,
                 Range<size_t> cu,
                 Range<double> x,
                 size_t line,
-                const SkPaint::FontMetrics& metrics,
+                const SkFontMetrics& metrics,
                 TextDirection dir);
 
     void Shift(double delta);
@@ -323,6 +365,16 @@ class Paragraph {
         : x_start(x_s), y_start(y_s), x_end(x_e), y_end(y_e) {}
   };
 
+  // Strut metrics of zero will have no effect on the layout.
+  struct StrutMetrics {
+    double ascent = 0;  // Positive value to keep signs clear.
+    double descent = 0;
+    double leading = 0;
+    double half_leading = 0;
+    double line_height = 0;
+    bool force_strut = false;
+  };
+
   // Passes in the text and Styled Runs. text_ and runs_ will later be passed
   // into breaker_ in InitBreaker(), which is called in Layout().
   void SetText(std::vector<uint16_t> text, StyledRuns runs);
@@ -336,6 +388,9 @@ class Paragraph {
 
   // Break the text into runs based on LTR/RTL text direction.
   bool ComputeBidiRuns(std::vector<BidiRun>* result);
+
+  // Calculates and populates strut based on paragraph_style_ strut info.
+  void ComputeStrut(StrutMetrics* strut, SkFont& font);
 
   // Calculate the starting X offset of a line based on the line's width and
   // alignment.

@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -19,16 +19,23 @@ namespace flow {
 
 class RasterCacheResult {
  public:
-  RasterCacheResult() {}
+  RasterCacheResult();
 
-  RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect)
-      : image_(std::move(image)), logical_rect_(logical_rect) {}
+  RasterCacheResult(const RasterCacheResult& other);
+
+  ~RasterCacheResult();
+
+  RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect);
 
   operator bool() const { return static_cast<bool>(image_); }
 
   bool is_valid() const { return static_cast<bool>(image_); };
 
   void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const;
+
+  SkISize image_dimensions() const {
+    return image_ ? image_->dimensions() : SkISize::Make(0, 0);
+  };
 
  private:
   sk_sp<SkImage> image_;
@@ -39,7 +46,15 @@ struct PrerollContext;
 
 class RasterCache {
  public:
-  explicit RasterCache(size_t threshold = 3);
+  // The default max number of picture raster caches to be generated per frame.
+  // Generating too many caches in one frame may cause jank on that frame. This
+  // limit allows us to throttle the cache and distribute the work across
+  // multiple frames.
+  static constexpr int kDefaultPictureCacheLimitPerFrame = 3;
+
+  explicit RasterCache(
+      size_t threshold = 3,
+      size_t picture_cache_limit_per_frame = kDefaultPictureCacheLimitPerFrame);
 
   ~RasterCache();
 
@@ -64,6 +79,8 @@ class RasterCache {
   // 1. The picture is not worth rasterizing
   // 2. The matrix is singular
   // 3. The picture is accessed too few times
+  // 4. There are too many pictures to be cached in the current frame.
+  //    (See also kDefaultPictureCacheLimitPerFrame.)
   bool Prepare(GrContext* context,
                SkPicture* picture,
                const SkMatrix& transformation_matrix,
@@ -74,6 +91,7 @@ class RasterCache {
   void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
 
   RasterCacheResult Get(const SkPicture& picture, const SkMatrix& ctm) const;
+
   RasterCacheResult Get(Layer* layer, const SkMatrix& ctm) const;
 
   void SweepAfterFrame();
@@ -107,10 +125,14 @@ class RasterCache {
   }
 
   const size_t threshold_;
+  const size_t picture_cache_limit_per_frame_;
+  size_t picture_cached_this_frame_ = 0;
   PictureRasterCacheKey::Map<Entry> picture_cache_;
   LayerRasterCacheKey::Map<Entry> layer_cache_;
   bool checkerboard_images_;
   fml::WeakPtrFactory<RasterCache> weak_factory_;
+
+  void TraceStatsToTimeline() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RasterCache);
 };

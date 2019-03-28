@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,6 +7,10 @@
 #include "flutter/fml/logging.h"
 
 namespace fml {
+
+size_t MessageSerializable::GetSerializableTag() const {
+  return 0;
+};
 
 Message::Message() = default;
 
@@ -96,7 +100,7 @@ uint8_t* Message::PrepareDecode(size_t size) {
   if ((size + size_read_) > buffer_length_) {
     return nullptr;
   }
-  auto buffer = buffer_ + size_read_;
+  auto* buffer = buffer_ + size_read_;
   size_read_ += size;
   return buffer;
 }

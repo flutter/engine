@@ -1,4 +1,4 @@
-// Copyright 2016 The Fuchsia Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -84,7 +84,7 @@ size_t StringView::find(StringView s, size_t pos) const {
   if (s.empty())
     return pos;
 
-  auto result = std::search(begin() + pos, end(), s.begin(), s.end());
+  auto* result = std::search(begin() + pos, end(), s.begin(), s.end());
   if (result == end())
     return npos;
   return result - begin();
@@ -94,7 +94,7 @@ size_t StringView::find(char c, size_t pos) const {
   if (pos > size_)
     return npos;
 
-  auto result = std::find(begin() + pos, end(), c);
+  auto* result = std::find(begin() + pos, end(), c);
   if (result == end())
     return npos;
   return result - begin();
@@ -106,8 +106,8 @@ size_t StringView::rfind(StringView s, size_t pos) const {
   if (s.empty())
     return std::min(pos, size_);
 
-  auto last = begin() + std::min(size_ - s.size(), pos) + s.size();
-  auto result = std::find_end(begin(), last, s.begin(), s.end());
+  auto* last = begin() + std::min(size_ - s.size(), pos) + s.size();
+  auto* result = std::find_end(begin(), last, s.begin(), s.end());
   if (result == last)
     return npos;
   return result - begin();

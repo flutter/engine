@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,6 +7,7 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "third_party/skia/include/utils/SkNWayCanvas.h"
 
 namespace flow {
 
@@ -28,8 +29,9 @@ void LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   PrerollContext context = {
       ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
       frame.gr_context(),
+      frame.view_embedder(),
       color_space,
-      SkRect::MakeEmpty(),
+      kGiantRect,
       frame.context().frame_time(),
       frame.context().engine_time(),
       frame.context().texture_registry(),
@@ -57,7 +59,7 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
     root_layer_->UpdateScene(context);
   }
   if (root_layer_->needs_painting()) {
-    frame.AddPaintedLayer(root_layer_.get());
+    frame.AddPaintLayer(root_layer_.get());
   }
   container.AddChild(transform.entity_node());
 }
@@ -66,8 +68,20 @@ void LayerTree::UpdateScene(SceneUpdateContext& context,
 void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
                       bool ignore_raster_cache) const {
   TRACE_EVENT0("flutter", "LayerTree::Paint");
+  SkISize canvas_size = frame.canvas()->getBaseLayerSize();
+  SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
+  internal_nodes_canvas.addCanvas(frame.canvas());
+  if (frame.view_embedder() != nullptr) {
+    auto overlay_canvases = frame.view_embedder()->GetCurrentCanvases();
+    for (size_t i = 0; i < overlay_canvases.size(); i++) {
+      internal_nodes_canvas.addCanvas(overlay_canvases[i]);
+    }
+  }
+
   Layer::PaintContext context = {
-      *frame.canvas(),
+      (SkCanvas*)&internal_nodes_canvas,
+      frame.canvas(),
+      frame.view_embedder(),
       frame.context().frame_time(),
       frame.context().engine_time(),
       frame.context().texture_registry(),
@@ -82,7 +96,7 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   TRACE_EVENT0("flutter", "LayerTree::Flatten");
 
   SkPictureRecorder recorder;
-  auto canvas = recorder.beginRecording(bounds);
+  auto* canvas = recorder.beginRecording(bounds);
 
   if (!canvas) {
     return nullptr;
@@ -97,16 +111,23 @@ sk_sp<SkPicture> LayerTree::Flatten(const SkRect& bounds) {
   PrerollContext preroll_context{
       nullptr,                  // raster_cache (don't consult the cache)
       nullptr,                  // gr_context  (used for the raster cache)
+      nullptr,                  // external view embedder
       nullptr,                  // SkColorSpace* dst_color_space
-      SkRect::MakeEmpty(),      // SkRect child_paint_bounds
+      kGiantRect,               // SkRect cull_rect
       unused_stopwatch,         // frame time (dont care)
       unused_stopwatch,         // engine time (dont care)
       unused_texture_registry,  // texture registry (not supported)
       false,                    // checkerboard_offscreen_layers
   };
 
+  SkISize canvas_size = canvas->getBaseLayerSize();
+  SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
+  internal_nodes_canvas.addCanvas(canvas);
+
   Layer::PaintContext paint_context = {
-      *canvas,                  // canvas
+      (SkCanvas*)&internal_nodes_canvas,
+      canvas,  // canvas
+      nullptr,
       unused_stopwatch,         // frame time (dont care)
       unused_stopwatch,         // engine time (dont care)
       unused_texture_registry,  // texture registry (not supported)

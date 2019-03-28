@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -19,7 +19,7 @@ class APKAssetProvider final : public AssetResolver {
   explicit APKAssetProvider(JNIEnv* env,
                             jobject assetManager,
                             std::string directory);
-  virtual ~APKAssetProvider();
+  ~APKAssetProvider() override;
 
  private:
   fml::jni::ScopedJavaGlobalRef<jobject> java_asset_manager_;

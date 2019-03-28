@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -11,6 +11,7 @@
 #import <UIKit/UIKit.h>
 
 #include "flutter/fml/logging.h"
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 namespace {
@@ -85,10 +86,13 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge
     NS_DESIGNATED_INITIALIZER;
+
+@property(nonatomic, weak) SemanticsObject* semanticsObject;
+
 @end
 
 @implementation SemanticsObject {
-  SemanticsObjectContainer* _container;
+  fml::scoped_nsobject<SemanticsObjectContainer> _container;
 }
 
 #pragma mark - Override base class designated initializers
@@ -110,7 +114,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   if (self) {
     _bridge = bridge;
     _uid = uid;
-    self.children = [[[NSMutableArray alloc] init] autorelease];
+    _children = [[NSMutableArray alloc] init];
   }
 
   return self;
@@ -121,10 +125,10 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
     child.parent = nil;
   }
   [_children removeAllObjects];
-  [_children dealloc];
+  [_children release];
   _parent = nil;
-  [_container release];
-  _container = nil;
+  _container.get().semanticsObject = nil;
+  [_platformViewSemanticsContainer release];
   [super dealloc];
 }
 
@@ -150,6 +154,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 }
 
 - (BOOL)hasChildren {
+  if (_node.IsPlatformViewNode()) {
+    return YES;
+  }
   return [self.children count] != 0;
 }
 
@@ -163,6 +170,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   //  We enforce in the framework that no other useful semantics are merged with these nodes.
   if ([self node].HasFlag(blink::SemanticsFlags::kScopesRoute))
     return false;
+
   return ([self node].flags != 0 &&
           [self node].flags != static_cast<int32_t>(blink::SemanticsFlags::kIsHidden)) ||
          ![self node].label.empty() || ![self node].value.empty() || ![self node].hint.empty() ||
@@ -257,7 +265,7 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
-  CGFloat scale = [[[self bridge] -> view() window] screen].scale;
+  CGFloat scale = [[[self bridge]->view() window] screen].scale;
   auto result =
       CGRectMake(rect.x() / scale, rect.y() / scale, rect.width() / scale, rect.height() / scale);
   return UIAccessibilityConvertFrameToScreenCoordinates(result, [self bridge] -> view());
@@ -268,9 +276,9 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 - (id)accessibilityContainer {
   if ([self hasChildren] || [self uid] == kRootNodeId) {
     if (_container == nil)
-      _container =
-          [[SemanticsObjectContainer alloc] initWithSemanticsObject:self bridge:[self bridge]];
-    return _container;
+      _container.reset([[SemanticsObjectContainer alloc] initWithSemanticsObject:self
+                                                                          bridge:[self bridge]]);
+    return _container.get();
   }
   if ([self parent] == nil) {
     // This can happen when we have released the accessibility tree but iOS is
@@ -394,6 +402,25 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
 @end
 
+@implementation FlutterPlatformViewSemanticsContainer
+
+// Method declared as unavailable in the interface
+- (instancetype)init {
+  [self release];
+  [super doesNotRecognizeSelector:_cmd];
+  return nil;
+}
+
+- (instancetype)initWithAccessibilityContainer:(id)container {
+  FML_CHECK(container);
+  if (self = [super initWithAccessibilityContainer:container]) {
+    self.isAccessibilityElement = NO;
+  }
+  return self;
+}
+
+@end
+
 @implementation SemanticsObjectContainer {
   SemanticsObject* _semanticsObject;
   fml::WeakPtr<shell::AccessibilityBridge> _bridge;
@@ -410,36 +437,44 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<shell::AccessibilityBridge>)bridge {
-  FML_DCHECK(semanticsObject != nil) << "semanticsObject must be set";
+  FML_DCHECK(semanticsObject) << "semanticsObject must be set";
   self = [super init];
 
   if (self) {
     _semanticsObject = semanticsObject;
-    // The pointer is managed manually.
-    [_semanticsObject retain];
     _bridge = bridge;
   }
 
   return self;
 }
 
-- (void)dealloc {
-  [_semanticsObject release];
-  [super dealloc];
-}
-
 #pragma mark - UIAccessibilityContainer overrides
 
 - (NSInteger)accessibilityElementCount {
-  return [[_semanticsObject children] count] + 1;
+  NSInteger count = [[_semanticsObject children] count] + 1;
+  // Need to create an additional child that acts as accessibility container for the platform view.
+  if (_semanticsObject.node.IsPlatformViewNode()) {
+    count++;
+  }
+  return count;
 }
 
 - (nullable id)accessibilityElementAtIndex:(NSInteger)index {
   if (index < 0 || index >= [self accessibilityElementCount])
     return nil;
-  if (index == 0)
+  if (index == 0) {
     return _semanticsObject;
+  }
+
+  // Return the additional child acts as a container of platform view. The
+  // platformViewSemanticsContainer was created and cached in the updateSemantics path.
+  if (_semanticsObject.node.IsPlatformViewNode() && index == [self accessibilityElementCount] - 1) {
+    FML_CHECK(_semanticsObject.platformViewSemanticsContainer != nil);
+    return _semanticsObject.platformViewSemanticsContainer;
+  }
+
   SemanticsObject* child = [_semanticsObject children][index - 1];
+
   if ([child hasChildren])
     return [child accessibilityContainer];
   return child;
@@ -448,6 +483,12 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 - (NSInteger)indexOfAccessibilityElement:(id)element {
   if (element == _semanticsObject)
     return 0;
+
+  // FlutterPlatformViewSemanticsContainer is always the last element of its parent.
+  if ([element isKindOfClass:[FlutterPlatformViewSemanticsContainer class]]) {
+    return [self accessibilityElementCount] - 1;
+  }
+
   NSMutableArray<SemanticsObject*>* children = [_semanticsObject children];
   for (size_t i = 0; i < [children count]; i++) {
     SemanticsObject* child = children[i];
@@ -489,16 +530,19 @@ blink::SemanticsAction GetSemanticsActionForScrollDirection(
 
 namespace shell {
 
-AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform_view)
+AccessibilityBridge::AccessibilityBridge(UIView* view,
+                                         PlatformViewIOS* platform_view,
+                                         FlutterPlatformViewsController* platform_views_controller)
     : view_(view),
       platform_view_(platform_view),
+      platform_views_controller_(platform_views_controller),
       objects_([[NSMutableDictionary alloc] init]),
       weak_factory_(this),
       previous_route_id_(0),
       previous_routes_({}) {
   accessibility_channel_.reset([[FlutterBasicMessageChannel alloc]
          initWithName:@"flutter/accessibility"
-      binaryMessenger:platform_view->GetOwnerViewController()
+      binaryMessenger:platform_view->GetOwnerViewController().get()
                 codec:[FlutterStandardMessageCodec sharedInstance]]);
   [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
@@ -506,6 +550,7 @@ AccessibilityBridge::AccessibilityBridge(UIView* view, PlatformViewIOS* platform
 }
 
 AccessibilityBridge::~AccessibilityBridge() {
+  clearState();
   view_.accessibilityElements = nil;
   [accessibility_channel_.get() setMessageHandler:nil];
 }
@@ -528,7 +573,7 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
     layoutChanged = layoutChanged || [object nodeWillCauseLayoutChange:&node];
     scrollOccured = scrollOccured || [object nodeWillCauseScroll:&node];
     [object setSemanticsNode:&node];
-    const NSUInteger newChildCount = node.childrenInTraversalOrder.size();
+    NSUInteger newChildCount = node.childrenInTraversalOrder.size();
     NSMutableArray* newChildren =
         [[[NSMutableArray alloc] initWithCapacity:newChildCount] autorelease];
     for (NSUInteger i = 0; i < newChildCount; ++i) {
@@ -557,6 +602,20 @@ void AccessibilityBridge::UpdateSemantics(blink::SemanticsNodeUpdates nodes,
         [accessibilityCustomActions addObject:customAction];
       }
       object.accessibilityCustomActions = accessibilityCustomActions;
+    }
+
+    if (object.node.IsPlatformViewNode()) {
+      shell::FlutterPlatformViewsController* controller = GetPlatformViewsController();
+      if (controller) {
+        object.platformViewSemanticsContainer = [[FlutterPlatformViewSemanticsContainer alloc]
+            initWithAccessibilityContainer:[object accessibilityContainer]];
+        UIView* platformView = [controller->GetPlatformViewByID(object.node.platformViewId) view];
+        if (platformView) {
+          object.platformViewSemanticsContainer.accessibilityElements = @[ platformView ];
+        }
+      }
+    } else if (object.platformViewSemanticsContainer) {
+      [object.platformViewSemanticsContainer release];
     }
   }
 
@@ -654,11 +713,11 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
         [objects_ removeObjectForKey:@(node.id)];
         if (isTextField) {
           // Text fields are backed by objects that implement UITextInput.
-          object =
-              [[[TextInputSemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid] autorelease];
+          object = [[[TextInputSemanticsObject alloc] initWithBridge:GetWeakPtr()
+                                                                 uid:uid] autorelease];
         } else {
-          object =
-              [[[FlutterSemanticsObject alloc] initWithBridge:GetWeakPtr() uid:uid] autorelease];
+          object = [[[FlutterSemanticsObject alloc] initWithBridge:GetWeakPtr()
+                                                               uid:uid] autorelease];
         }
         [object.parent.children replaceObjectAtIndex:positionInChildlist withObject:object];
         objects_.get()[@(node.id)] = object;
@@ -685,6 +744,12 @@ void AccessibilityBridge::HandleEvent(NSDictionary<NSString*, id>* annotatedEven
 
 fml::WeakPtr<AccessibilityBridge> AccessibilityBridge::GetWeakPtr() {
   return weak_factory_.GetWeakPtr();
+}
+
+void AccessibilityBridge::clearState() {
+  [objects_ removeAllObjects];
+  previous_route_id_ = 0;
+  previous_routes_.clear();
 }
 
 }  // namespace shell

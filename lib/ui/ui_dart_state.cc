@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -13,23 +13,26 @@ using tonic::ToDart;
 
 namespace blink {
 
-UIDartState::UIDartState(TaskRunners task_runners,
-                         TaskObserverAdd add_callback,
-                         TaskObserverRemove remove_callback,
-                         fml::WeakPtr<GrContext> resource_context,
-                         fml::RefPtr<flow::SkiaUnrefQueue> skia_unref_queue,
-                         std::string advisory_script_uri,
-                         std::string advisory_script_entrypoint,
-                         std::string logger_prefix,
-                         IsolateNameServer* isolate_name_server)
+UIDartState::UIDartState(
+    TaskRunners task_runners,
+    TaskObserverAdd add_callback,
+    TaskObserverRemove remove_callback,
+    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::WeakPtr<IOManager> io_manager,
+    std::string advisory_script_uri,
+    std::string advisory_script_entrypoint,
+    std::string logger_prefix,
+    UnhandledExceptionCallback unhandled_exception_callback,
+    IsolateNameServer* isolate_name_server)
     : task_runners_(std::move(task_runners)),
       add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),
-      resource_context_(std::move(resource_context)),
+      snapshot_delegate_(std::move(snapshot_delegate)),
+      io_manager_(std::move(io_manager)),
       advisory_script_uri_(std::move(advisory_script_uri)),
       advisory_script_entrypoint_(std::move(advisory_script_entrypoint)),
       logger_prefix_(std::move(logger_prefix)),
-      skia_unref_queue_(std::move(skia_unref_queue)),
+      unhandled_exception_callback_(unhandled_exception_callback),
       isolate_name_server_(isolate_name_server) {
   AddOrRemoveTaskObserver(true /* add */);
 }
@@ -52,7 +55,13 @@ void UIDartState::DidSetIsolate() {
   // main.dart$main-1234
   debug_name << advisory_script_uri_ << "$" << advisory_script_entrypoint_
              << "-" << main_port_;
-  debug_name_ = debug_name.str();
+  SetDebugName(debug_name.str());
+}
+
+void UIDartState::SetDebugName(const std::string debug_name) {
+  debug_name_ = debug_name;
+  if (window_)
+    window_->client()->UpdateIsolateDescription(debug_name_, main_port_);
 }
 
 UIDartState* UIDartState::Current() {
@@ -61,6 +70,8 @@ UIDartState* UIDartState::Current() {
 
 void UIDartState::SetWindow(std::unique_ptr<Window> window) {
   window_ = std::move(window);
+  if (window_)
+    window_->client()->UpdateIsolateDescription(debug_name_, main_port_);
 }
 
 const TaskRunners& UIDartState::GetTaskRunners() const {
@@ -68,7 +79,10 @@ const TaskRunners& UIDartState::GetTaskRunners() const {
 }
 
 fml::RefPtr<flow::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
-  return skia_unref_queue_;
+  if (!io_manager_) {
+    return nullptr;
+  }
+  return io_manager_->GetSkiaUnrefQueue();
 }
 
 void UIDartState::ScheduleMicrotask(Dart_Handle closure) {
@@ -99,8 +113,15 @@ void UIDartState::AddOrRemoveTaskObserver(bool add) {
   }
 }
 
+fml::WeakPtr<SnapshotDelegate> UIDartState::GetSnapshotDelegate() const {
+  return snapshot_delegate_;
+}
+
 fml::WeakPtr<GrContext> UIDartState::GetResourceContext() const {
-  return resource_context_;
+  if (!io_manager_) {
+    return {};
+  }
+  return io_manager_->GetResourceContext();
 }
 
 IsolateNameServer* UIDartState::GetIsolateNameServer() {
@@ -113,6 +134,19 @@ tonic::DartErrorHandleType UIDartState::GetLastError() {
     error = microtask_queue_.GetLastError();
   }
   return error;
+}
+
+void UIDartState::ReportUnhandledException(const std::string& error,
+                                           const std::string& stack_trace) {
+  if (unhandled_exception_callback_ &&
+      unhandled_exception_callback_(error, stack_trace)) {
+    return;
+  }
+
+  // Either the exception handler was not set or it could not handle the error,
+  // just log the exception.
+  FML_LOG(ERROR) << "Unhandled Exception: " << error << std::endl
+                 << stack_trace;
 }
 
 }  // namespace blink

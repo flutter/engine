@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -12,10 +12,6 @@
 #include "flutter/runtime/runtime_delegate.h"
 #include "third_party/tonic/dart_message_handler.h"
 
-#ifdef ERROR
-#undef ERROR
-#endif
-
 namespace blink {
 
 RuntimeController::RuntimeController(
@@ -24,19 +20,21 @@ RuntimeController::RuntimeController(
     fml::RefPtr<DartSnapshot> p_isolate_snapshot,
     fml::RefPtr<DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
-    fml::WeakPtr<GrContext> p_resource_context,
-    fml::RefPtr<flow::SkiaUnrefQueue> p_unref_queue,
+    fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
+    fml::WeakPtr<IOManager> p_io_manager,
     std::string p_advisory_script_uri,
-    std::string p_advisory_script_entrypoint)
+    std::string p_advisory_script_entrypoint,
+    std::function<void(int64_t)> p_idle_notification_callback)
     : RuntimeController(p_client,
                         p_vm,
                         std::move(p_isolate_snapshot),
                         std::move(p_shared_snapshot),
                         std::move(p_task_runners),
-                        std::move(p_resource_context),
-                        std::move(p_unref_queue),
+                        std::move(p_snapshot_delegate),
+                        std::move(p_io_manager),
                         std::move(p_advisory_script_uri),
                         std::move(p_advisory_script_entrypoint),
+                        p_idle_notification_callback,
                         WindowData{/* default window data */}) {}
 
 RuntimeController::RuntimeController(
@@ -45,20 +43,22 @@ RuntimeController::RuntimeController(
     fml::RefPtr<DartSnapshot> p_isolate_snapshot,
     fml::RefPtr<DartSnapshot> p_shared_snapshot,
     TaskRunners p_task_runners,
-    fml::WeakPtr<GrContext> p_resource_context,
-    fml::RefPtr<flow::SkiaUnrefQueue> p_unref_queue,
+    fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
+    fml::WeakPtr<IOManager> p_io_manager,
     std::string p_advisory_script_uri,
     std::string p_advisory_script_entrypoint,
+    std::function<void(int64_t)> idle_notification_callback,
     WindowData p_window_data)
     : client_(p_client),
       vm_(p_vm),
       isolate_snapshot_(std::move(p_isolate_snapshot)),
       shared_snapshot_(std::move(p_shared_snapshot)),
       task_runners_(p_task_runners),
-      resource_context_(p_resource_context),
-      unref_queue_(p_unref_queue),
+      snapshot_delegate_(p_snapshot_delegate),
+      io_manager_(p_io_manager),
       advisory_script_uri_(p_advisory_script_uri),
       advisory_script_entrypoint_(p_advisory_script_entrypoint),
+      idle_notification_callback_(idle_notification_callback),
       window_data_(std::move(p_window_data)),
       root_isolate_(
           DartIsolate::CreateRootIsolate(vm_,
@@ -66,15 +66,15 @@ RuntimeController::RuntimeController(
                                          shared_snapshot_,
                                          task_runners_,
                                          std::make_unique<Window>(this),
-                                         resource_context_,
-                                         unref_queue_,
+                                         snapshot_delegate_,
+                                         io_manager_,
                                          p_advisory_script_uri,
                                          p_advisory_script_entrypoint)) {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   root_isolate->SetReturnCodeCallback([this](uint32_t code) {
     root_isolate_return_code_ = {true, code};
   });
-  if (auto window = GetWindowIfAvailable()) {
+  if (auto* window = GetWindowIfAvailable()) {
     tonic::DartState::Scope scope(root_isolate);
     window->DidCreateIsolate();
     if (!FlushRuntimeStateToIsolate()) {
@@ -114,44 +114,40 @@ std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
       isolate_snapshot_,            //
       shared_snapshot_,             //
       task_runners_,                //
-      resource_context_,            //
-      unref_queue_,                 //
+      snapshot_delegate_,           //
+      io_manager_,                  //
       advisory_script_uri_,         //
       advisory_script_entrypoint_,  //
+      idle_notification_callback_,  //
       window_data_                  //
       ));
 }
 
 bool RuntimeController::FlushRuntimeStateToIsolate() {
   return SetViewportMetrics(window_data_.viewport_metrics) &&
-         SetLocale(window_data_.language_code, window_data_.country_code,
-                   window_data_.script_code, window_data_.variant_code) &&
+         SetLocales(window_data_.locale_data) &&
          SetSemanticsEnabled(window_data_.semantics_enabled) &&
-         SetAccessibilityFeatures(window_data_.accessibility_feature_flags_);
+         SetAccessibilityFeatures(window_data_.accessibility_feature_flags_) &&
+         SetUserSettingsData(window_data_.user_settings_data) &&
+         SetLifecycleState(window_data_.lifecycle_state);
 }
 
 bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
   window_data_.viewport_metrics = metrics;
 
-  if (auto window = GetWindowIfAvailable()) {
+  if (auto* window = GetWindowIfAvailable()) {
     window->UpdateWindowMetrics(metrics);
     return true;
   }
   return false;
 }
 
-bool RuntimeController::SetLocale(const std::string& language_code,
-                                  const std::string& country_code,
-                                  const std::string& script_code,
-                                  const std::string& variant_code) {
-  window_data_.language_code = language_code;
-  window_data_.country_code = country_code;
-  window_data_.script_code = script_code;
-  window_data_.variant_code = variant_code;
+bool RuntimeController::SetLocales(
+    const std::vector<std::string>& locale_data) {
+  window_data_.locale_data = locale_data;
 
-  if (auto window = GetWindowIfAvailable()) {
-    window->UpdateLocale(window_data_.language_code, window_data_.country_code,
-                         window_data_.script_code, window_data_.variant_code);
+  if (auto* window = GetWindowIfAvailable()) {
+    window->UpdateLocales(locale_data);
     return true;
   }
 
@@ -161,8 +157,19 @@ bool RuntimeController::SetLocale(const std::string& language_code,
 bool RuntimeController::SetUserSettingsData(const std::string& data) {
   window_data_.user_settings_data = data;
 
-  if (auto window = GetWindowIfAvailable()) {
+  if (auto* window = GetWindowIfAvailable()) {
     window->UpdateUserSettingsData(window_data_.user_settings_data);
+    return true;
+  }
+
+  return false;
+}
+
+bool RuntimeController::SetLifecycleState(const std::string& data) {
+  window_data_.lifecycle_state = data;
+
+  if (auto* window = GetWindowIfAvailable()) {
+    window->UpdateLifecycleState(window_data_.lifecycle_state);
     return true;
   }
 
@@ -172,7 +179,7 @@ bool RuntimeController::SetUserSettingsData(const std::string& data) {
 bool RuntimeController::SetSemanticsEnabled(bool enabled) {
   window_data_.semantics_enabled = enabled;
 
-  if (auto window = GetWindowIfAvailable()) {
+  if (auto* window = GetWindowIfAvailable()) {
     window->UpdateSemanticsEnabled(window_data_.semantics_enabled);
     return true;
   }
@@ -182,7 +189,7 @@ bool RuntimeController::SetSemanticsEnabled(bool enabled) {
 
 bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
   window_data_.accessibility_feature_flags_ = flags;
-  if (auto window = GetWindowIfAvailable()) {
+  if (auto* window = GetWindowIfAvailable()) {
     window->UpdateAccessibilityFeatures(
         window_data_.accessibility_feature_flags_);
     return true;
@@ -192,7 +199,7 @@ bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
 }
 
 bool RuntimeController::BeginFrame(fml::TimePoint frame_time) {
-  if (auto window = GetWindowIfAvailable()) {
+  if (auto* window = GetWindowIfAvailable()) {
     window->BeginFrame(frame_time);
     return true;
   }
@@ -206,13 +213,20 @@ bool RuntimeController::NotifyIdle(int64_t deadline) {
   }
 
   tonic::DartState::Scope scope(root_isolate);
+
   Dart_NotifyIdle(deadline);
+
+  // Idle notifications being in isolate scope are part of the contract.
+  if (idle_notification_callback_) {
+    TRACE_EVENT0("flutter", "EmbedderIdleNotification");
+    idle_notification_callback_(deadline);
+  }
   return true;
 }
 
 bool RuntimeController::DispatchPlatformMessage(
     fml::RefPtr<PlatformMessage> message) {
-  if (auto window = GetWindowIfAvailable()) {
+  if (auto* window = GetWindowIfAvailable()) {
     TRACE_EVENT1("flutter", "RuntimeController::DispatchPlatformMessage",
                  "mode", "basic");
     window->DispatchPlatformMessage(std::move(message));
@@ -223,7 +237,7 @@ bool RuntimeController::DispatchPlatformMessage(
 
 bool RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
-  if (auto window = GetWindowIfAvailable()) {
+  if (auto* window = GetWindowIfAvailable()) {
     TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
                  "mode", "basic");
     window->DispatchPointerDataPacket(packet);
@@ -237,7 +251,7 @@ bool RuntimeController::DispatchSemanticsAction(int32_t id,
                                                 std::vector<uint8_t> args) {
   TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction", "mode",
                "basic");
-  if (auto window = GetWindowIfAvailable()) {
+  if (auto* window = GetWindowIfAvailable()) {
     window->DispatchSemanticsAction(id, action, std::move(args));
     return true;
   }
@@ -276,6 +290,11 @@ FontCollection& RuntimeController::GetFontCollection() {
   return client_.GetFontCollection();
 }
 
+void RuntimeController::UpdateIsolateDescription(const std::string isolate_name,
+                                                 int64_t isolate_port) {
+  client_.UpdateIsolateDescription(isolate_name, isolate_port);
+}
+
 Dart_Port RuntimeController::GetMainPort() {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   return root_isolate ? root_isolate->main_port() : ILLEGAL_PORT;
@@ -307,5 +326,22 @@ std::weak_ptr<DartIsolate> RuntimeController::GetRootIsolate() {
 std::pair<bool, uint32_t> RuntimeController::GetRootIsolateReturnCode() {
   return root_isolate_return_code_;
 }
+
+RuntimeController::Locale::Locale(std::string language_code_,
+                                  std::string country_code_,
+                                  std::string script_code_,
+                                  std::string variant_code_)
+    : language_code(language_code_),
+      country_code(country_code_),
+      script_code(script_code_),
+      variant_code(variant_code_) {}
+
+RuntimeController::Locale::~Locale() = default;
+
+RuntimeController::WindowData::WindowData() = default;
+
+RuntimeController::WindowData::WindowData(const WindowData& other) = default;
+
+RuntimeController::WindowData::~WindowData() = default;
 
 }  // namespace blink

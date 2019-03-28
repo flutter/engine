@@ -1,8 +1,7 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data' show Float64List;
 import 'dart:ui';
 
 import 'package:test/test.dart';
@@ -66,7 +65,7 @@ void main() {
             Offset.zero,
             1.0,
           ),
-      throwsA(const isInstanceOf<AssertionError>()),
+      throwsA(const TypeMatcher<AssertionError>()),
     );
   });
 }

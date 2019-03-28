@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -116,9 +116,11 @@ class WindowPadding {
   }
 }
 
-/// An identifier used to select a user's language and formatting preferences,
-/// consisting of a language and a country. This is a subset of locale
-/// identifiers as defined by BCP 47.
+/// An identifier used to select a user's language and formatting preferences.
+///
+/// This represents a [Unicode Language
+/// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier)
+/// (i.e. without Locale extensions), except variants are not supported.
 ///
 /// Locales are canonicalized according to the "preferred value" entries in the
 /// [IANA Language Subtag
@@ -133,7 +135,8 @@ class WindowPadding {
 ///    [Locale].
 class Locale {
   /// Creates a new Locale object. The first argument is the
-  /// primary language subtag, the second is the region subtag.
+  /// primary language subtag, the second is the region (also
+  /// referred to as 'country') subtag.
   ///
   /// For example:
   ///
@@ -143,18 +146,63 @@ class Locale {
   /// ```
   ///
   /// The primary language subtag must not be null. The region subtag is
-  /// optional.
+  /// optional. When there is no region/country subtag, the parameter should
+  /// be omitted or passed `null` instead of an empty-string.
   ///
-  /// The values are _case sensitive_, and should match the case of the relevant
-  /// subtags in the [IANA Language Subtag
-  /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
-  /// Typically this means the primary language subtag should be lowercase and
-  /// the region subtag should be uppercase.
-  const Locale(this._languageCode, [ this._countryCode ]) : assert(_languageCode != null);
+  /// The subtag values are _case sensitive_ and must be one of the valid
+  /// subtags according to CLDR supplemental data:
+  /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
+  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml). The
+  /// primary language subtag must be at least two and at most eight lowercase
+  /// letters, but not four letters. The region region subtag must be two
+  /// uppercase letters or three digits. See the [Unicode Language
+  /// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier)
+  /// specification.
+  ///
+  /// Validity is not checked by default, but some methods may throw away
+  /// invalid data.
+  ///
+  /// See also:
+  ///
+  ///  * [new Locale.fromSubtags], which also allows a [scriptCode] to be
+  ///    specified.
+  const Locale(
+    this._languageCode, [
+    this._countryCode,
+  ]) : assert(_languageCode != null),
+       assert(_languageCode != ''),
+       scriptCode = null;
+
+  /// Creates a new Locale object.
+  ///
+  /// The keyword arguments specify the subtags of the Locale.
+  ///
+  /// The subtag values are _case sensitive_ and must be valid subtags according
+  /// to CLDR supplemental data:
+  /// [language](http://unicode.org/cldr/latest/common/validity/language.xml),
+  /// [script](http://unicode.org/cldr/latest/common/validity/script.xml) and
+  /// [region](http://unicode.org/cldr/latest/common/validity/region.xml) for
+  /// each of languageCode, scriptCode and countryCode respectively.
+  ///
+  /// The [countryCode] subtag is optional. When there is no country subtag,
+  /// the parameter should be omitted or passed `null` instead of an empty-string.
+  ///
+  /// Validity is not checked by default, but some methods may throw away
+  /// invalid data.
+  const Locale.fromSubtags({
+    String languageCode = 'und',
+    this.scriptCode,
+    String countryCode,
+  }) : assert(languageCode != null),
+       assert(languageCode != ''),
+       _languageCode = languageCode,
+       assert(scriptCode != ''),
+       assert(countryCode != ''),
+       _countryCode = countryCode;
 
   /// The primary language subtag for the locale.
   ///
-  /// This must not be null.
+  /// This must not be null. It may be 'und', representing 'undefined'.
   ///
   /// This is expected to be string registered in the [IANA Language Subtag
   /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry)
@@ -166,98 +214,118 @@ class Locale {
   /// Locale('he')` and `const Locale('iw')` are equal, and both have the
   /// [languageCode] `he`, because `iw` is a deprecated language subtag that was
   /// replaced by the subtag `he`.
-  String get languageCode => _canonicalizeLanguageCode(_languageCode);
+  ///
+  /// This must be a valid Unicode Language subtag as listed in [Unicode CLDR
+  /// supplemental
+  /// data](http://unicode.org/cldr/latest/common/validity/language.xml).
+  ///
+  /// See also:
+  ///
+  ///  * [new Locale.fromSubtags], which describes the conventions for creating
+  ///    [Locale] objects.
+  String get languageCode => _deprecatedLanguageSubtagMap[_languageCode] ?? _languageCode;
   final String _languageCode;
 
-  static String _canonicalizeLanguageCode(String languageCode) {
-    // This switch statement is generated by //flutter/tools/gen_locale.dart
-    // Mappings generated for language subtag registry as of 2018-08-08.
-    switch (languageCode) {
-      case 'in': return 'id'; // Indonesian; deprecated 1989-01-01
-      case 'iw': return 'he'; // Hebrew; deprecated 1989-01-01
-      case 'ji': return 'yi'; // Yiddish; deprecated 1989-01-01
-      case 'jw': return 'jv'; // Javanese; deprecated 2001-08-13
-      case 'mo': return 'ro'; // Moldavian, Moldovan; deprecated 2008-11-22
-      case 'aam': return 'aas'; // Aramanik; deprecated 2015-02-12
-      case 'adp': return 'dz'; // Adap; deprecated 2015-02-12
-      case 'aue': return 'ktz'; // =/Kx'au//'ein; deprecated 2015-02-12
-      case 'ayx': return 'nun'; // Ayi (China); deprecated 2011-08-16
-      case 'bgm': return 'bcg'; // Baga Mboteni; deprecated 2016-05-30
-      case 'bjd': return 'drl'; // Bandjigali; deprecated 2012-08-12
-      case 'ccq': return 'rki'; // Chaungtha; deprecated 2012-08-12
-      case 'cjr': return 'mom'; // Chorotega; deprecated 2010-03-11
-      case 'cka': return 'cmr'; // Khumi Awa Chin; deprecated 2012-08-12
-      case 'cmk': return 'xch'; // Chimakum; deprecated 2010-03-11
-      case 'coy': return 'pij'; // Coyaima; deprecated 2016-05-30
-      case 'cqu': return 'quh'; // Chilean Quechua; deprecated 2016-05-30
-      case 'drh': return 'khk'; // Darkhat; deprecated 2010-03-11
-      case 'drw': return 'prs'; // Darwazi; deprecated 2010-03-11
-      case 'gav': return 'dev'; // Gabutamon; deprecated 2010-03-11
-      case 'gfx': return 'vaj'; // Mangetti Dune !Xung; deprecated 2015-02-12
-      case 'ggn': return 'gvr'; // Eastern Gurung; deprecated 2016-05-30
-      case 'gti': return 'nyc'; // Gbati-ri; deprecated 2015-02-12
-      case 'guv': return 'duz'; // Gey; deprecated 2016-05-30
-      case 'hrr': return 'jal'; // Horuru; deprecated 2012-08-12
-      case 'ibi': return 'opa'; // Ibilo; deprecated 2012-08-12
-      case 'ilw': return 'gal'; // Talur; deprecated 2013-09-10
-      case 'jeg': return 'oyb'; // Jeng; deprecated 2017-02-23
-      case 'kgc': return 'tdf'; // Kasseng; deprecated 2016-05-30
-      case 'kgh': return 'kml'; // Upper Tanudan Kalinga; deprecated 2012-08-12
-      case 'koj': return 'kwv'; // Sara Dunjo; deprecated 2015-02-12
-      case 'krm': return 'bmf'; // Krim; deprecated 2017-02-23
-      case 'ktr': return 'dtp'; // Kota Marudu Tinagas; deprecated 2016-05-30
-      case 'kvs': return 'gdj'; // Kunggara; deprecated 2016-05-30
-      case 'kwq': return 'yam'; // Kwak; deprecated 2015-02-12
-      case 'kxe': return 'tvd'; // Kakihum; deprecated 2015-02-12
-      case 'kzj': return 'dtp'; // Coastal Kadazan; deprecated 2016-05-30
-      case 'kzt': return 'dtp'; // Tambunan Dusun; deprecated 2016-05-30
-      case 'lii': return 'raq'; // Lingkhim; deprecated 2015-02-12
-      case 'lmm': return 'rmx'; // Lamam; deprecated 2014-02-28
-      case 'meg': return 'cir'; // Mea; deprecated 2013-09-10
-      case 'mst': return 'mry'; // Cataelano Mandaya; deprecated 2010-03-11
-      case 'mwj': return 'vaj'; // Maligo; deprecated 2015-02-12
-      case 'myt': return 'mry'; // Sangab Mandaya; deprecated 2010-03-11
-      case 'nad': return 'xny'; // Nijadali; deprecated 2016-05-30
-      case 'ncp': return 'kdz'; // Ndaktup; deprecated 2018-03-08
-      case 'nnx': return 'ngv'; // Ngong; deprecated 2015-02-12
-      case 'nts': return 'pij'; // Natagaimas; deprecated 2016-05-30
-      case 'oun': return 'vaj'; // !O!ung; deprecated 2015-02-12
-      case 'pcr': return 'adx'; // Panang; deprecated 2013-09-10
-      case 'pmc': return 'huw'; // Palumata; deprecated 2016-05-30
-      case 'pmu': return 'phr'; // Mirpur Panjabi; deprecated 2015-02-12
-      case 'ppa': return 'bfy'; // Pao; deprecated 2016-05-30
-      case 'ppr': return 'lcq'; // Piru; deprecated 2013-09-10
-      case 'pry': return 'prt'; // Pray 3; deprecated 2016-05-30
-      case 'puz': return 'pub'; // Purum Naga; deprecated 2014-02-28
-      case 'sca': return 'hle'; // Sansu; deprecated 2012-08-12
-      case 'skk': return 'oyb'; // Sok; deprecated 2017-02-23
-      case 'tdu': return 'dtp'; // Tempasuk Dusun; deprecated 2016-05-30
-      case 'thc': return 'tpo'; // Tai Hang Tong; deprecated 2016-05-30
-      case 'thx': return 'oyb'; // The; deprecated 2015-02-12
-      case 'tie': return 'ras'; // Tingal; deprecated 2011-08-16
-      case 'tkk': return 'twm'; // Takpa; deprecated 2011-08-16
-      case 'tlw': return 'weo'; // South Wemale; deprecated 2012-08-12
-      case 'tmp': return 'tyj'; // Tai Mène; deprecated 2016-05-30
-      case 'tne': return 'kak'; // Tinoc Kallahan; deprecated 2016-05-30
-      case 'tnf': return 'prs'; // Tangshewi; deprecated 2010-03-11
-      case 'tsf': return 'taj'; // Southwestern Tamang; deprecated 2015-02-12
-      case 'uok': return 'ema'; // Uokha; deprecated 2015-02-12
-      case 'xba': return 'cax'; // Kamba (Brazil); deprecated 2016-05-30
-      case 'xia': return 'acn'; // Xiandao; deprecated 2013-09-10
-      case 'xkh': return 'waw'; // Karahawyana; deprecated 2016-05-30
-      case 'xsj': return 'suj'; // Subi; deprecated 2015-02-12
-      case 'ybd': return 'rki'; // Yangbye; deprecated 2012-08-12
-      case 'yma': return 'lrr'; // Yamphe; deprecated 2012-08-12
-      case 'ymt': return 'mtm'; // Mator-Taygi-Karagas; deprecated 2015-02-12
-      case 'yos': return 'zom'; // Yos; deprecated 2013-09-10
-      case 'yuu': return 'yug'; // Yugh; deprecated 2014-02-28
-      default: return languageCode;
-    }
-  }
+  // This map is generated by //flutter/tools/gen_locale.dart
+  // Mappings generated for language subtag registry as of 2019-02-27.
+  static const Map<String, String> _deprecatedLanguageSubtagMap = const <String, String>{
+    'in': 'id', // Indonesian; deprecated 1989-01-01
+    'iw': 'he', // Hebrew; deprecated 1989-01-01
+    'ji': 'yi', // Yiddish; deprecated 1989-01-01
+    'jw': 'jv', // Javanese; deprecated 2001-08-13
+    'mo': 'ro', // Moldavian, Moldovan; deprecated 2008-11-22
+    'aam': 'aas', // Aramanik; deprecated 2015-02-12
+    'adp': 'dz', // Adap; deprecated 2015-02-12
+    'aue': 'ktz', // ǂKxʼauǁʼein; deprecated 2015-02-12
+    'ayx': 'nun', // Ayi (China); deprecated 2011-08-16
+    'bgm': 'bcg', // Baga Mboteni; deprecated 2016-05-30
+    'bjd': 'drl', // Bandjigali; deprecated 2012-08-12
+    'ccq': 'rki', // Chaungtha; deprecated 2012-08-12
+    'cjr': 'mom', // Chorotega; deprecated 2010-03-11
+    'cka': 'cmr', // Khumi Awa Chin; deprecated 2012-08-12
+    'cmk': 'xch', // Chimakum; deprecated 2010-03-11
+    'coy': 'pij', // Coyaima; deprecated 2016-05-30
+    'cqu': 'quh', // Chilean Quechua; deprecated 2016-05-30
+    'drh': 'khk', // Darkhat; deprecated 2010-03-11
+    'drw': 'prs', // Darwazi; deprecated 2010-03-11
+    'gav': 'dev', // Gabutamon; deprecated 2010-03-11
+    'gfx': 'vaj', // Mangetti Dune ǃXung; deprecated 2015-02-12
+    'ggn': 'gvr', // Eastern Gurung; deprecated 2016-05-30
+    'gti': 'nyc', // Gbati-ri; deprecated 2015-02-12
+    'guv': 'duz', // Gey; deprecated 2016-05-30
+    'hrr': 'jal', // Horuru; deprecated 2012-08-12
+    'ibi': 'opa', // Ibilo; deprecated 2012-08-12
+    'ilw': 'gal', // Talur; deprecated 2013-09-10
+    'jeg': 'oyb', // Jeng; deprecated 2017-02-23
+    'kgc': 'tdf', // Kasseng; deprecated 2016-05-30
+    'kgh': 'kml', // Upper Tanudan Kalinga; deprecated 2012-08-12
+    'koj': 'kwv', // Sara Dunjo; deprecated 2015-02-12
+    'krm': 'bmf', // Krim; deprecated 2017-02-23
+    'ktr': 'dtp', // Kota Marudu Tinagas; deprecated 2016-05-30
+    'kvs': 'gdj', // Kunggara; deprecated 2016-05-30
+    'kwq': 'yam', // Kwak; deprecated 2015-02-12
+    'kxe': 'tvd', // Kakihum; deprecated 2015-02-12
+    'kzj': 'dtp', // Coastal Kadazan; deprecated 2016-05-30
+    'kzt': 'dtp', // Tambunan Dusun; deprecated 2016-05-30
+    'lii': 'raq', // Lingkhim; deprecated 2015-02-12
+    'lmm': 'rmx', // Lamam; deprecated 2014-02-28
+    'meg': 'cir', // Mea; deprecated 2013-09-10
+    'mst': 'mry', // Cataelano Mandaya; deprecated 2010-03-11
+    'mwj': 'vaj', // Maligo; deprecated 2015-02-12
+    'myt': 'mry', // Sangab Mandaya; deprecated 2010-03-11
+    'nad': 'xny', // Nijadali; deprecated 2016-05-30
+    'ncp': 'kdz', // Ndaktup; deprecated 2018-03-08
+    'nnx': 'ngv', // Ngong; deprecated 2015-02-12
+    'nts': 'pij', // Natagaimas; deprecated 2016-05-30
+    'oun': 'vaj', // ǃOǃung; deprecated 2015-02-12
+    'pcr': 'adx', // Panang; deprecated 2013-09-10
+    'pmc': 'huw', // Palumata; deprecated 2016-05-30
+    'pmu': 'phr', // Mirpur Panjabi; deprecated 2015-02-12
+    'ppa': 'bfy', // Pao; deprecated 2016-05-30
+    'ppr': 'lcq', // Piru; deprecated 2013-09-10
+    'pry': 'prt', // Pray 3; deprecated 2016-05-30
+    'puz': 'pub', // Purum Naga; deprecated 2014-02-28
+    'sca': 'hle', // Sansu; deprecated 2012-08-12
+    'skk': 'oyb', // Sok; deprecated 2017-02-23
+    'tdu': 'dtp', // Tempasuk Dusun; deprecated 2016-05-30
+    'thc': 'tpo', // Tai Hang Tong; deprecated 2016-05-30
+    'thx': 'oyb', // The; deprecated 2015-02-12
+    'tie': 'ras', // Tingal; deprecated 2011-08-16
+    'tkk': 'twm', // Takpa; deprecated 2011-08-16
+    'tlw': 'weo', // South Wemale; deprecated 2012-08-12
+    'tmp': 'tyj', // Tai Mène; deprecated 2016-05-30
+    'tne': 'kak', // Tinoc Kallahan; deprecated 2016-05-30
+    'tnf': 'prs', // Tangshewi; deprecated 2010-03-11
+    'tsf': 'taj', // Southwestern Tamang; deprecated 2015-02-12
+    'uok': 'ema', // Uokha; deprecated 2015-02-12
+    'xba': 'cax', // Kamba (Brazil); deprecated 2016-05-30
+    'xia': 'acn', // Xiandao; deprecated 2013-09-10
+    'xkh': 'waw', // Karahawyana; deprecated 2016-05-30
+    'xsj': 'suj', // Subi; deprecated 2015-02-12
+    'ybd': 'rki', // Yangbye; deprecated 2012-08-12
+    'yma': 'lrr', // Yamphe; deprecated 2012-08-12
+    'ymt': 'mtm', // Mator-Taygi-Karagas; deprecated 2015-02-12
+    'yos': 'zom', // Yos; deprecated 2013-09-10
+    'yuu': 'yug', // Yugh; deprecated 2014-02-28
+  };
+
+  /// The script subtag for the locale.
+  ///
+  /// This may be null, indicating that there is no specified script subtag.
+  ///
+  /// This must be a valid Unicode Language Identifier script subtag as listed
+  /// in [Unicode CLDR supplemental
+  /// data](http://unicode.org/cldr/latest/common/validity/script.xml).
+  ///
+  /// See also:
+  ///
+  ///  * [new Locale.fromSubtags], which describes the conventions for creating
+  ///    [Locale] objects.
+  final String scriptCode;
 
   /// The region subtag for the locale.
   ///
-  /// This can be null.
+  /// This may be null, indicating that there is no specified region subtag.
   ///
   /// This is expected to be string registered in the [IANA Language Subtag
   /// Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry)
@@ -269,22 +337,24 @@ class Locale {
   /// 'DE')` and `const Locale('de', 'DD')` are equal, and both have the
   /// [countryCode] `DE`, because `DD` is a deprecated language subtag that was
   /// replaced by the subtag `DE`.
-  String get countryCode => _canonicalizeRegionCode(_countryCode);
+  ///
+  /// See also:
+  ///
+  ///  * [new Locale.fromSubtags], which describes the conventions for creating
+  ///    [Locale] objects.
+  String get countryCode => _deprecatedRegionSubtagMap[_countryCode] ?? _countryCode;
   final String _countryCode;
 
-  static String _canonicalizeRegionCode(String regionCode) {
-    // This switch statement is generated by //flutter/tools/gen_locale.dart
-    // Mappings generated for language subtag registry as of 2018-08-08.
-    switch (regionCode) {
-      case 'BU': return 'MM'; // Burma; deprecated 1989-12-05
-      case 'DD': return 'DE'; // German Democratic Republic; deprecated 1990-10-30
-      case 'FX': return 'FR'; // Metropolitan France; deprecated 1997-07-14
-      case 'TP': return 'TL'; // East Timor; deprecated 2002-05-20
-      case 'YD': return 'YE'; // Democratic Yemen; deprecated 1990-08-14
-      case 'ZR': return 'CD'; // Zaire; deprecated 1997-07-14
-      default: return regionCode;
-    }
-  }
+  // This map is generated by //flutter/tools/gen_locale.dart
+  // Mappings generated for language subtag registry as of 2019-02-27.
+  static const Map<String, String> _deprecatedRegionSubtagMap = const <String, String>{
+    'BU': 'MM', // Burma; deprecated 1989-12-05
+    'DD': 'DE', // German Democratic Republic; deprecated 1990-10-30
+    'FX': 'FR', // Metropolitan France; deprecated 1997-07-14
+    'TP': 'TL', // East Timor; deprecated 2002-05-20
+    'YD': 'YE', // Democratic Yemen; deprecated 1990-08-14
+    'ZR': 'CD', // Zaire; deprecated 1997-07-14
+  };
 
   @override
   bool operator ==(dynamic other) {
@@ -294,23 +364,32 @@ class Locale {
       return false;
     final Locale typedOther = other;
     return languageCode == typedOther.languageCode
+        && scriptCode == typedOther.scriptCode
         && countryCode == typedOther.countryCode;
   }
 
   @override
-  int get hashCode {
-    int result = 373;
-    result = 37 * result + languageCode.hashCode;
-    if (_countryCode != null)
-      result = 37 * result + countryCode.hashCode;
-    return result;
-  }
+  int get hashCode => hashValues(languageCode, scriptCode, countryCode);
+
+  static Locale cachedLocale;
+  static String cachedLocaleString;
 
   @override
   String toString() {
-    if (_countryCode == null)
-      return languageCode;
-    return '${languageCode}_$countryCode';
+    if (!identical(cachedLocale, this)) {
+      cachedLocale = this;
+      cachedLocaleString = _rawToString();
+    }
+    return cachedLocaleString;
+  }
+
+  String _rawToString() {
+    final StringBuffer out = StringBuffer(languageCode);
+    if (scriptCode != null)
+      out.write('_$scriptCode');
+    if (_countryCode != null)
+      out.write('_$countryCode');
+    return out.toString();
   }
 }
 
@@ -426,10 +505,30 @@ class Window {
     _onMetricsChangedZone = Zone.current;
   }
 
-  /// The system-reported locale.
+  /// The system-reported default locale of the device.
   ///
   /// This establishes the language and formatting conventions that application
   /// should, if possible, use to render their user interface.
+  ///
+  /// This is the first locale selected by the user and is the user's
+  /// primary locale (the locale the device UI is displayed in)
+  ///
+  /// This is equivalent to `locales.first` and will provide an empty non-null locale
+  /// if the [locales] list has not been set or is empty.
+  Locale get locale {
+    if (_locales != null && _locales.isNotEmpty) {
+      return _locales.first;
+    }
+    return null;
+  }
+
+  /// The full system-reported supported locales of the device.
+  ///
+  /// This establishes the language and formatting conventions that application
+  /// should, if possible, use to render their user interface.
+  ///
+  /// The list is ordered in order of priority, with lower-indexed locales being
+  /// preferred over higher-indexed ones. The first element is the primary [locale].
   ///
   /// The [onLocaleChanged] callback is called whenever this value changes.
   ///
@@ -437,8 +536,8 @@ class Window {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  Locale get locale => _locale;
-  Locale _locale;
+  List<Locale> get locales => _locales;
+  List<Locale> _locales;
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -456,6 +555,22 @@ class Window {
     _onLocaleChanged = callback;
     _onLocaleChangedZone = Zone.current;
   }
+
+  /// The lifecycle state immediately after dart isolate initialization.
+  ///
+  /// This property will not be updated as the lifecycle changes.
+  ///
+  /// It is used to initialize [SchedulerBinding.lifecycleState] at startup
+  /// with any buffered lifecycle state events.
+  String get initialLifecycleState {
+    _initialLifecycleStateAccessed = true;
+    return _initialLifecycleState;
+  }
+  String _initialLifecycleState;
+  /// Tracks if the initial state has been accessed. Once accessed, we
+  /// will stop updating the [initialLifecycleState], as it is not the
+  /// preferred way to access the state.
+  bool _initialLifecycleStateAccessed = false;
 
   /// The system-reported text scale.
   ///
@@ -494,6 +609,28 @@ class Window {
   set onTextScaleFactorChanged(VoidCallback callback) {
     _onTextScaleFactorChanged = callback;
     _onTextScaleFactorChangedZone = Zone.current;
+  }
+
+  /// The setting indicating the current brightness mode of the host platform.
+  /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
+  Brightness get platformBrightness => _platformBrightness;
+  Brightness _platformBrightness = Brightness.light;
+
+  /// A callback that is invoked whenever [platformBrightness] changes value.
+  ///
+  /// The framework invokes this callback in the same zone in which the
+  /// callback was set.
+  ///
+  /// See also:
+  ///
+  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
+  ///    observe when this callback is invoked.
+  VoidCallback get onPlatformBrightnessChanged => _onPlatformBrightnessChanged;
+  VoidCallback _onPlatformBrightnessChanged;
+  Zone _onPlatformBrightnessChangedZone;
+  set onPlatformBrightnessChanged(VoidCallback callback) {
+    _onPlatformBrightnessChanged = callback;
+    _onPlatformBrightnessChangedZone = Zone.current;
   }
 
   /// A callback that is invoked to notify the application that it is an
@@ -670,7 +807,7 @@ class Window {
   AccessibilityFeatures get accessibilityFeatures => _accessibilityFeatures;
   AccessibilityFeatures _accessibilityFeatures;
 
-  /// A callback that is invoked when the value of [accessibilityFlags] changes.
+  /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -684,12 +821,22 @@ class Window {
 
   /// Change the retained semantics data about this window.
   ///
-  /// If [semanticsEnabled] is true, the user has requested that this funciton
+  /// If [semanticsEnabled] is true, the user has requested that this function
   /// be called whenever the semantic content of this window changes.
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
   void updateSemantics(SemanticsUpdate update) native 'Window_updateSemantics';
+
+  /// Set the debug name associated with this window's root isolate.
+  ///
+  /// Normally debug names are automatically generated from the Dart port, entry
+  /// point, and source file. For example: `main.dart$main-1234`.
+  ///
+  /// This can be combined with flutter tools `--isolate-filter` flag to debug
+  /// specific root isolates. For example: `flutter attach --isolate-filter=[name]`.
+  /// Note that this does not rename any child isolates of the root.
+  void setIsolateDebugName(String name) native 'Window_setIsolateDebugName';
 
   /// Sends a message to a platform-specific plugin.
   ///
@@ -757,6 +904,9 @@ class Window {
 /// It is not possible to enable these settings from Flutter, instead they are
 /// used by the platform to indicate that additional accessibility features are
 /// enabled.
+//
+// When changes are made to this class, the equivalent APIs in each of the
+// embedders *must* be updated.
 class AccessibilityFeatures {
   const AccessibilityFeatures._(this._index);
 
@@ -818,6 +968,21 @@ class AccessibilityFeatures {
 
   @override
   int get hashCode => _index.hashCode;
+}
+
+/// Describes the contrast of a theme or color palette.
+enum Brightness {
+  /// The color is dark and will require a light text color to achieve readable
+  /// contrast.
+  ///
+  /// For example, the color might be dark grey, requiring white text.
+  dark,
+
+  /// The color is light and will require a dark text color to achieve readable
+  /// contrast.
+  ///
+  /// For example, the color might be bright white, requiring black text.
+  light,
 }
 
 /// The [Window] singleton. This object exposes the size of the display, the

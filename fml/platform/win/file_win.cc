@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -314,6 +314,10 @@ bool TruncateFile(const fml::UniqueFD& file, size_t size) {
     return false;
   }
   return true;
+}
+
+bool FileExists(const fml::UniqueFD& base_directory, const char* path) {
+  return IsFile(GetAbsolutePath(base_directory, path).c_str());
 }
 
 bool WriteAtomically(const fml::UniqueFD& base_directory,

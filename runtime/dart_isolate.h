@@ -1,4 +1,4 @@
-// Copyright 2017 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -12,6 +12,8 @@
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/lib/ui/io_manager.h"
+#include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/window.h"
 #include "flutter/runtime/dart_snapshot.h"
@@ -44,8 +46,8 @@ class DartIsolate : public UIDartState {
       fml::RefPtr<DartSnapshot> shared_snapshot,
       TaskRunners task_runners,
       std::unique_ptr<Window> window,
-      fml::WeakPtr<GrContext> resource_context,
-      fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+      fml::WeakPtr<IOManager> io_manager,
       std::string advisory_script_uri,
       std::string advisory_script_entrypoint,
       Dart_IsolateFlags* flags = nullptr);
@@ -54,8 +56,8 @@ class DartIsolate : public UIDartState {
               fml::RefPtr<DartSnapshot> isolate_snapshot,
               fml::RefPtr<DartSnapshot> shared_snapshot,
               TaskRunners task_runners,
-              fml::WeakPtr<GrContext> resource_context,
-              fml::RefPtr<flow::SkiaUnrefQueue> unref_queue,
+              fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+              fml::WeakPtr<IOManager> io_manager,
               std::string advisory_script_uri,
               std::string advisory_script_entrypoint,
               ChildIsolatePreparer child_isolate_preparer);
@@ -86,6 +88,7 @@ class DartIsolate : public UIDartState {
   DartVM* GetDartVM() const;
 
   fml::RefPtr<DartSnapshot> GetIsolateSnapshot() const;
+
   fml::RefPtr<DartSnapshot> GetSharedSnapshot() const;
 
   std::weak_ptr<DartIsolate> GetWeakIsolatePtr();
@@ -95,12 +98,9 @@ class DartIsolate : public UIDartState {
 
   class AutoFireClosure {
    public:
-    AutoFireClosure(fml::closure closure) : closure_(std::move(closure)) {}
-    ~AutoFireClosure() {
-      if (closure_) {
-        closure_();
-      }
-    }
+    AutoFireClosure(fml::closure closure);
+
+    ~AutoFireClosure();
 
    private:
     fml::closure closure_;
@@ -114,7 +114,7 @@ class DartIsolate : public UIDartState {
   const fml::RefPtr<DartSnapshot> shared_snapshot_;
   std::vector<std::shared_ptr<const fml::Mapping>> kernel_buffers_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
-  ChildIsolatePreparer child_isolate_preparer_;
+  ChildIsolatePreparer child_isolate_preparer_ = nullptr;
 
   FML_WARN_UNUSED_RESULT
   bool Initialize(Dart_Isolate isolate, bool is_root_isolate);
@@ -138,8 +138,6 @@ class DartIsolate : public UIDartState {
       char** error);
 
   static Dart_Isolate DartCreateAndStartServiceIsolate(
-      const char* advisory_script_uri,
-      const char* advisory_script_entrypoint,
       const char* package_root,
       const char* package_config,
       Dart_IsolateFlags* flags,

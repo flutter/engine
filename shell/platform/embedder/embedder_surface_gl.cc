@@ -1,14 +1,10 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/embedder/embedder_surface_gl.h"
 
 #include "flutter/shell/common/io_manager.h"
-
-#ifdef ERROR
-#undef ERROR
-#endif
 
 namespace shell {
 
@@ -84,9 +80,22 @@ std::unique_ptr<Surface> EmbedderSurfaceGL::CreateGPUSurface() {
 sk_sp<GrContext> EmbedderSurfaceGL::CreateResourceContext() const {
   auto callback = gl_dispatch_table_.gl_make_resource_current_callback;
   if (callback && callback()) {
-    return IOManager::CreateCompatibleResourceLoadingContext(
-        GrBackend::kOpenGL_GrBackend);
+    if (auto context = IOManager::CreateCompatibleResourceLoadingContext(
+            GrBackend::kOpenGL_GrBackend, GetGLInterface())) {
+      return context;
+    } else {
+      FML_LOG(ERROR)
+          << "Internal error: Resource context available but could not create "
+             "a compatible Skia context.";
+      return nullptr;
+    }
   }
+
+  // The callback was not available or failed.
+  FML_LOG(ERROR)
+      << "Could not create a resource context for async texture uploads. "
+         "Expect degraded performance. Set a valid make_resource_current "
+         "callback on FlutterOpenGLRendererConfig.";
   return nullptr;
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -14,6 +14,14 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/platform/darwin/common/command_line.h"
 #include "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+
+extern "C" {
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+// Used for debugging dart:* sources.
+extern const uint8_t kPlatformStrongDill[];
+extern const intptr_t kPlatformStrongDillSize;
+#endif
+}
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
@@ -123,6 +131,17 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
     }
   }
 
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  // There are no ownership concerns here as all mappings are owned by the
+  // embedder and not the engine.
+  auto make_mapping_callback = [](const uint8_t* mapping, size_t size) {
+    return [mapping, size]() { return std::make_unique<fml::NonOwnedMapping>(mapping, size); };
+  };
+
+  settings.dart_library_sources_kernel =
+      make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
+#endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+
   return settings;
 }
 
@@ -134,7 +153,7 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 #pragma mark - Override base class designated initializers
 
 - (instancetype)init {
-  return [self initWithFlutterAssets:nil dartMain:nil packages:nil];
+  return [self initWithPrecompiledDartBundle:nil];
 }
 
 #pragma mark - Designated initializers
@@ -150,42 +169,6 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
   return self;
 }
 
-- (instancetype)initWithFlutterAssets:(NSURL*)flutterAssetsURL
-                             dartMain:(NSURL*)dartMainURL
-                             packages:(NSURL*)dartPackages {
-  self = [super init];
-
-  if (self) {
-    _settings = DefaultSettingsForProcess();
-
-    if (dartMainURL != nil && [[NSFileManager defaultManager] fileExistsAtPath:dartMainURL.path]) {
-      _settings.main_dart_file_path = dartMainURL.path.UTF8String;
-    }
-
-    if (dartPackages.path != nil &&
-        [[NSFileManager defaultManager] fileExistsAtPath:dartPackages.path]) {
-      _settings.packages_file_path = dartPackages.path.UTF8String;
-    }
-  }
-
-  return self;
-}
-
-- (instancetype)initWithFlutterAssetsWithScriptSnapshot:(NSURL*)flutterAssetsURL {
-  self = [super init];
-
-  if (self) {
-    _settings = DefaultSettingsForProcess();
-
-    if (flutterAssetsURL != nil &&
-        [[NSFileManager defaultManager] fileExistsAtPath:flutterAssetsURL.path]) {
-      _settings.assets_path = flutterAssetsURL.path.UTF8String;
-    }
-  }
-
-  return self;
-}
-
 #pragma mark - Settings accessors
 
 - (const blink::Settings&)settings {
@@ -193,27 +176,60 @@ static blink::Settings DefaultSettingsForProcess(NSBundle* bundle = nil) {
 }
 
 - (shell::RunConfiguration)runConfiguration {
-  return shell::RunConfiguration::InferFromSettings(_settings);
+  return [self runConfigurationForEntrypoint:nil];
+}
+
+- (shell::RunConfiguration)runConfigurationForEntrypoint:(NSString*)entrypointOrNil {
+  return [self runConfigurationForEntrypoint:entrypointOrNil libraryOrNil:nil];
+}
+
+- (shell::RunConfiguration)runConfigurationForEntrypoint:(NSString*)entrypointOrNil
+                                            libraryOrNil:(NSString*)dartLibraryOrNil {
+  shell::RunConfiguration config = shell::RunConfiguration::InferFromSettings(_settings);
+  if (dartLibraryOrNil && entrypointOrNil) {
+    config.SetEntrypointAndLibrary(std::string([entrypointOrNil UTF8String]),
+                                   std::string([dartLibraryOrNil UTF8String]));
+
+  } else if (entrypointOrNil) {
+    config.SetEntrypoint(std::string([entrypointOrNil UTF8String]));
+  }
+  return config;
 }
 
 #pragma mark - Assets-related utilities
 
 + (NSString*)flutterAssetsName:(NSBundle*)bundle {
+  if (bundle == nil) {
+    bundle = [NSBundle bundleWithIdentifier:[FlutterDartProject defaultBundleIdentifier]];
+  }
+  if (bundle == nil) {
+    bundle = [NSBundle mainBundle];
+  }
   NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
   if (flutterAssetsName == nil) {
-    // Default to "flutter_assets"
-    flutterAssetsName = @"flutter_assets";
+    flutterAssetsName = @"Frameworks/App.framework/flutter_assets";
   }
   return flutterAssetsName;
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset {
-  NSString* flutterAssetsName = [FlutterDartProject flutterAssetsName:[NSBundle mainBundle]];
+  return [self lookupKeyForAsset:asset fromBundle:nil];
+}
+
++ (NSString*)lookupKeyForAsset:(NSString*)asset fromBundle:(NSBundle*)bundle {
+  NSString* flutterAssetsName = [FlutterDartProject flutterAssetsName:bundle];
   return [NSString stringWithFormat:@"%@/%@", flutterAssetsName, asset];
 }
 
 + (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-  return [self lookupKeyForAsset:[NSString stringWithFormat:@"packages/%@/%@", package, asset]];
+  return [self lookupKeyForAsset:asset fromPackage:package fromBundle:nil];
+}
+
++ (NSString*)lookupKeyForAsset:(NSString*)asset
+                   fromPackage:(NSString*)package
+                    fromBundle:(NSBundle*)bundle {
+  return [self lookupKeyForAsset:[NSString stringWithFormat:@"packages/%@/%@", package, asset]
+                      fromBundle:bundle];
 }
 
 + (NSString*)defaultBundleIdentifier {

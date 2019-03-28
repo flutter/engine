@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -11,12 +11,12 @@
 /// text, layout, and rendering subsystems.
 library dart.ui;
 
-import 'dart:_internal' hide Symbol;
+import 'dart:_internal' hide Symbol; // ignore: import_internal_library, unused_import
 import 'dart:async';
 import 'dart:collection' as collection;
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'dart:io';
+import 'dart:io'; // ignore: unused_import
 import 'dart:isolate' show SendPort;
 import 'dart:math' as math;
 import 'dart:nativewrappers';
@@ -34,4 +34,5 @@ part 'plugins.dart';
 part 'pointer.dart';
 part 'semantics.dart';
 part 'text.dart';
+part 'versions.dart';
 part 'window.dart';

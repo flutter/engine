@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -99,6 +99,8 @@ class Shell final : public PlatformView::Delegate,
       service_protocol_handlers_;
   bool is_setup_ = false;
 
+  uint64_t next_pointer_flow_id_ = 0;
+
   Shell(blink::TaskRunners task_runners, blink::Settings settings);
 
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
@@ -179,8 +181,14 @@ class Shell final : public PlatformView::Delegate,
   void OnEngineHandlePlatformMessage(
       fml::RefPtr<blink::PlatformMessage> message) override;
 
+  void HandleEngineSkiaMessage(fml::RefPtr<blink::PlatformMessage> message);
+
   // |shell::Engine::Delegate|
   void OnPreEngineRestart() override;
+
+  // |shell::Engine::Delegate|
+  void UpdateIsolateDescription(const std::string isolate_name,
+                                int64_t isolate_port) override;
 
   // |blink::ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(
@@ -218,6 +226,11 @@ class Shell final : public PlatformView::Delegate,
 
   // Service protocol handler
   bool OnServiceProtocolSetAssetBundlePath(
+      const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
+      rapidjson::Document& response);
+
+  // Service protocol handler
+  bool OnServiceProtocolGetDisplayRefreshRate(
       const blink::ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document& response);
 

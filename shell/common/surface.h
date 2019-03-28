@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -8,13 +8,14 @@
 #include <memory>
 
 #include "flutter/flow/compositor_context.h"
+#include "flutter/flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
 namespace shell {
 
 /// Represents a Frame that has been fully configured for the underlying client
-/// rendering API. A frame may only be sumitted once.
+/// rendering API. A frame may only be submitted once.
 class SurfaceFrame {
  public:
   using SubmitCallback =
@@ -33,7 +34,6 @@ class SurfaceFrame {
  private:
   bool submitted_;
   sk_sp<SkSurface> surface_;
-  std::unique_ptr<SkCanvas> xform_canvas_;
   SubmitCallback submit_callback_;
 
   bool PerformSubmit();
@@ -54,6 +54,10 @@ class Surface {
   virtual SkMatrix GetRootTransformation() const = 0;
 
   virtual GrContext* GetContext() = 0;
+
+  virtual flow::ExternalViewEmbedder* GetExternalViewEmbedder();
+
+  virtual bool MakeRenderContextCurrent();
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <iostream>
+
 #include "flutter/fml/logging.h"
 #include "render_test.h"
 #include "third_party/icu/source/common/unicode/unistr.h"
@@ -40,7 +42,11 @@ TEST_F(ParagraphTest, SimpleParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  // We must supply a font here, as the default is Arial, and we do not
+  // include Arial in our test fonts as it is proprietary. We want it to
+  // be Arial default though as it is one of the most common fonts on host
+  // platforms. On real devices/apps, Arial should be able to be resolved.
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorBLACK;
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
@@ -73,7 +79,7 @@ TEST_F(ParagraphTest, SimpleRedParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorRED;
   builder.PushStyle(text_style);
 
@@ -127,8 +133,9 @@ TEST_F(ParagraphTest, RainbowParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style1;
+  text_style1.font_families = std::vector<std::string>(1, "Roboto");
   text_style1.color = SK_ColorRED;
-  text_style1.font_family = "Roboto";
+
   builder.PushStyle(text_style1);
 
   builder.AddText(u16_text1);
@@ -139,7 +146,7 @@ TEST_F(ParagraphTest, RainbowParagraph) {
   text_style2.word_spacing = 30;
   text_style2.font_weight = txt::FontWeight::w600;
   text_style2.color = SK_ColorGREEN;
-  text_style2.font_family = "Roboto";
+  text_style2.font_families = std::vector<std::string>(1, "Roboto");
   text_style2.decoration = TextDecoration::kUnderline |
                            TextDecoration::kOverline |
                            TextDecoration::kLineThrough;
@@ -149,7 +156,7 @@ TEST_F(ParagraphTest, RainbowParagraph) {
   builder.AddText(u16_text2);
 
   txt::TextStyle text_style3;
-  text_style3.font_family = "Homemade Apple";
+  text_style3.font_families = std::vector<std::string>(1, "Homemade Apple");
   builder.PushStyle(text_style3);
 
   builder.AddText(u16_text3);
@@ -157,7 +164,7 @@ TEST_F(ParagraphTest, RainbowParagraph) {
   txt::TextStyle text_style4;
   text_style4.font_size = 14;
   text_style4.color = SK_ColorBLUE;
-  text_style4.font_family = "Roboto";
+  text_style4.font_families = std::vector<std::string>(1, "Roboto");
   text_style4.decoration = TextDecoration::kUnderline |
                            TextDecoration::kOverline |
                            TextDecoration::kLineThrough;
@@ -174,7 +181,6 @@ TEST_F(ParagraphTest, RainbowParagraph) {
 
   auto paragraph = builder.Build();
   paragraph->Layout(GetTestCanvasWidth());
-
   paragraph->Paint(GetCanvas(), 0, 0);
 
   u16_text1 += u16_text2 + u16_text3 + u16_text4;
@@ -233,7 +239,7 @@ TEST_F(ParagraphTest, BoldParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 60;
   text_style.letter_spacing = 0;
   text_style.font_weight = txt::FontWeight::w900;
@@ -289,7 +295,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(LeftAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 26;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
@@ -386,7 +392,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(RightAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 26;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
@@ -413,7 +419,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(RightAlignParagraph)) {
   ASSERT_EQ(paragraph->runs_.runs_.size(), 1ull);
   ASSERT_EQ(paragraph->runs_.styles_.size(), 2ull);
   ASSERT_TRUE(paragraph->runs_.styles_[1].equals(text_style));
-  ASSERT_EQ(paragraph->records_.size(), paragraph_style.max_lines);
+  // Two records for each due to 'ghost' trailing whitespace run.
+  ASSERT_EQ(paragraph->records_.size(), paragraph_style.max_lines * 2);
   double expected_y = 24;
 
   ASSERT_TRUE(paragraph->records_[0].style().equals(text_style));
@@ -425,15 +432,6 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(RightAlignParagraph)) {
           paragraph->breaker_.getWidths()[paragraph->records_[0].line()],
       2.0);
 
-  ASSERT_TRUE(paragraph->records_[1].style().equals(text_style));
-  ASSERT_DOUBLE_EQ(paragraph->records_[1].offset().y(), expected_y);
-  expected_y += 30;
-  ASSERT_NEAR(
-      paragraph->records_[1].offset().x(),
-      paragraph->width_ -
-          paragraph->breaker_.getWidths()[paragraph->records_[1].line()],
-      2.0);
-
   ASSERT_TRUE(paragraph->records_[2].style().equals(text_style));
   ASSERT_DOUBLE_EQ(paragraph->records_[2].offset().y(), expected_y);
   expected_y += 30;
@@ -443,21 +441,30 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(RightAlignParagraph)) {
           paragraph->breaker_.getWidths()[paragraph->records_[2].line()],
       2.0);
 
-  ASSERT_TRUE(paragraph->records_[3].style().equals(text_style));
-  ASSERT_DOUBLE_EQ(paragraph->records_[3].offset().y(), expected_y);
-  expected_y += 30 * 10;
+  ASSERT_TRUE(paragraph->records_[4].style().equals(text_style));
+  ASSERT_DOUBLE_EQ(paragraph->records_[4].offset().y(), expected_y);
+  expected_y += 30;
   ASSERT_NEAR(
-      paragraph->records_[3].offset().x(),
+      paragraph->records_[4].offset().x(),
       paragraph->width_ -
-          paragraph->breaker_.getWidths()[paragraph->records_[3].line()],
+          paragraph->breaker_.getWidths()[paragraph->records_[4].line()],
       2.0);
 
-  ASSERT_TRUE(paragraph->records_[13].style().equals(text_style));
-  ASSERT_DOUBLE_EQ(paragraph->records_[13].offset().y(), expected_y);
+  ASSERT_TRUE(paragraph->records_[6].style().equals(text_style));
+  ASSERT_DOUBLE_EQ(paragraph->records_[6].offset().y(), expected_y);
+  expected_y += 30 * 10;
   ASSERT_NEAR(
-      paragraph->records_[13].offset().x(),
+      paragraph->records_[6].offset().x(),
       paragraph->width_ -
-          paragraph->breaker_.getWidths()[paragraph->records_[13].line()],
+          paragraph->breaker_.getWidths()[paragraph->records_[6].line()],
+      2.0);
+
+  ASSERT_TRUE(paragraph->records_[26].style().equals(text_style));
+  ASSERT_DOUBLE_EQ(paragraph->records_[26].offset().y(), expected_y);
+  ASSERT_NEAR(
+      paragraph->records_[26].offset().x(),
+      paragraph->width_ -
+          paragraph->breaker_.getWidths()[paragraph->records_[26].line()],
       2.0);
 
   ASSERT_EQ(paragraph_style.text_align,
@@ -495,7 +502,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(CenterAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 26;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
@@ -522,7 +529,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(CenterAlignParagraph)) {
   ASSERT_EQ(paragraph->runs_.runs_.size(), 1ull);
   ASSERT_EQ(paragraph->runs_.styles_.size(), 2ull);
   ASSERT_TRUE(paragraph->runs_.styles_[1].equals(text_style));
-  ASSERT_EQ(paragraph->records_.size(), paragraph_style.max_lines);
+  // Two records for each due to 'ghost' trailing whitespace run.
+  ASSERT_EQ(paragraph->records_.size(), paragraph_style.max_lines * 2);
   double expected_y = 24;
 
   ASSERT_TRUE(paragraph->records_[0].style().equals(text_style));
@@ -531,15 +539,6 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(CenterAlignParagraph)) {
   ASSERT_NEAR(paragraph->records_[0].offset().x(),
               (paragraph->width_ -
                paragraph->breaker_.getWidths()[paragraph->records_[0].line()]) /
-                  2,
-              2.0);
-
-  ASSERT_TRUE(paragraph->records_[1].style().equals(text_style));
-  ASSERT_DOUBLE_EQ(paragraph->records_[1].offset().y(), expected_y);
-  expected_y += 30;
-  ASSERT_NEAR(paragraph->records_[1].offset().x(),
-              (paragraph->width_ -
-               paragraph->breaker_.getWidths()[paragraph->records_[1].line()]) /
                   2,
               2.0);
 
@@ -552,21 +551,30 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(CenterAlignParagraph)) {
                   2,
               2.0);
 
-  ASSERT_TRUE(paragraph->records_[3].style().equals(text_style));
-  ASSERT_DOUBLE_EQ(paragraph->records_[3].offset().y(), expected_y);
-  expected_y += 30 * 10;
-  ASSERT_NEAR(paragraph->records_[3].offset().x(),
+  ASSERT_TRUE(paragraph->records_[4].style().equals(text_style));
+  ASSERT_DOUBLE_EQ(paragraph->records_[4].offset().y(), expected_y);
+  expected_y += 30;
+  ASSERT_NEAR(paragraph->records_[4].offset().x(),
               (paragraph->width_ -
-               paragraph->breaker_.getWidths()[paragraph->records_[3].line()]) /
+               paragraph->breaker_.getWidths()[paragraph->records_[4].line()]) /
                   2,
               2.0);
 
-  ASSERT_TRUE(paragraph->records_[13].style().equals(text_style));
-  ASSERT_DOUBLE_EQ(paragraph->records_[13].offset().y(), expected_y);
+  ASSERT_TRUE(paragraph->records_[6].style().equals(text_style));
+  ASSERT_DOUBLE_EQ(paragraph->records_[6].offset().y(), expected_y);
+  expected_y += 30 * 10;
+  ASSERT_NEAR(paragraph->records_[6].offset().x(),
+              (paragraph->width_ -
+               paragraph->breaker_.getWidths()[paragraph->records_[6].line()]) /
+                  2,
+              2.0);
+
+  ASSERT_TRUE(paragraph->records_[26].style().equals(text_style));
+  ASSERT_DOUBLE_EQ(paragraph->records_[26].offset().y(), expected_y);
   ASSERT_NEAR(
-      paragraph->records_[13].offset().x(),
+      paragraph->records_[26].offset().x(),
       (paragraph->width_ -
-       paragraph->breaker_.getWidths()[paragraph->records_[13].line()]) /
+       paragraph->breaker_.getWidths()[paragraph->records_[26].line()]) /
           2,
       2.0);
 
@@ -603,7 +611,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyAlignParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 26;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 5;
@@ -630,7 +638,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyAlignParagraph)) {
   ASSERT_EQ(paragraph->runs_.runs_.size(), 1ull);
   ASSERT_EQ(paragraph->runs_.styles_.size(), 2ull);
   ASSERT_TRUE(paragraph->runs_.styles_[1].equals(text_style));
-  ASSERT_EQ(paragraph->records_.size(), paragraph_style.max_lines);
+  ASSERT_EQ(paragraph->records_.size(), 27ull);
   double expected_y = 24;
 
   ASSERT_TRUE(paragraph->records_[0].style().equals(text_style));
@@ -638,29 +646,80 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyAlignParagraph)) {
   expected_y += 30;
   ASSERT_DOUBLE_EQ(paragraph->records_[0].offset().x(), 0);
 
-  ASSERT_TRUE(paragraph->records_[1].style().equals(text_style));
-  ASSERT_DOUBLE_EQ(paragraph->records_[1].offset().y(), expected_y);
-  expected_y += 30;
-  ASSERT_DOUBLE_EQ(paragraph->records_[1].offset().x(), 0);
-
   ASSERT_TRUE(paragraph->records_[2].style().equals(text_style));
   ASSERT_DOUBLE_EQ(paragraph->records_[2].offset().y(), expected_y);
   expected_y += 30;
   ASSERT_DOUBLE_EQ(paragraph->records_[2].offset().x(), 0);
 
-  ASSERT_TRUE(paragraph->records_[3].style().equals(text_style));
-  ASSERT_DOUBLE_EQ(paragraph->records_[3].offset().y(), expected_y);
-  expected_y += 30 * 10;
-  ASSERT_DOUBLE_EQ(paragraph->records_[3].offset().x(), 0);
+  ASSERT_TRUE(paragraph->records_[4].style().equals(text_style));
+  ASSERT_DOUBLE_EQ(paragraph->records_[4].offset().y(), expected_y);
+  expected_y += 30;
+  ASSERT_DOUBLE_EQ(paragraph->records_[4].offset().x(), 0);
 
-  ASSERT_TRUE(paragraph->records_[13].style().equals(text_style));
-  ASSERT_DOUBLE_EQ(paragraph->records_[13].offset().y(), expected_y);
-  ASSERT_DOUBLE_EQ(paragraph->records_[13].offset().x(), 0);
+  ASSERT_TRUE(paragraph->records_[6].style().equals(text_style));
+  ASSERT_DOUBLE_EQ(paragraph->records_[6].offset().y(), expected_y);
+  expected_y += 30 * 10;
+  ASSERT_DOUBLE_EQ(paragraph->records_[6].offset().x(), 0);
+
+  ASSERT_TRUE(paragraph->records_[26].style().equals(text_style));
+  ASSERT_DOUBLE_EQ(paragraph->records_[26].offset().y(), expected_y);
+  ASSERT_DOUBLE_EQ(paragraph->records_[26].offset().x(), 0);
 
   ASSERT_EQ(paragraph_style.text_align,
             paragraph->GetParagraphStyle().text_align);
 
   ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(JustifyRTL)) {
+  const char* text =
+      "אאא בּבּבּבּ אאאא בּבּ אאא בּבּבּ אאאאא בּבּבּבּ אאאא בּבּבּבּבּ "
+      "אאאאא בּבּבּבּבּ אאאבּבּבּבּבּבּאאאאא בּבּבּבּבּבּאאאאאבּבּבּבּבּבּ אאאאא בּבּבּבּבּ "
+      "אאאאא בּבּבּבּבּבּ אאאאא בּבּבּבּבּבּ אאאאא בּבּבּבּבּבּ אאאאא בּבּבּבּבּבּ אאאאא בּבּבּבּבּבּ";
+
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 14;
+  paragraph_style.text_align = TextAlign::justify;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Ahem");
+  text_style.font_size = 26;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  size_t paragraph_width = GetTestCanvasWidth() - 100;
+  paragraph->Layout(paragraph_width);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  ASSERT_TRUE(Snapshot());
+
+  auto glyph_line_width = [&paragraph](int index) {
+    size_t second_to_last_position_index =
+        paragraph->glyph_lines_[index].positions.size() - 2;
+    return paragraph->glyph_lines_[index]
+        .positions[second_to_last_position_index]
+        .x_pos.end;
+  };
+
+  // All lines except the last should be justified to the width of the
+  // paragraph.
+  for (size_t i = 0; i < paragraph->glyph_lines_.size() - 1; ++i) {
+    ASSERT_EQ(glyph_line_width(i), paragraph_width);
+  }
+  ASSERT_NE(glyph_line_width(paragraph->glyph_lines_.size() - 1),
+            paragraph_width);
 }
 
 TEST_F(ParagraphTest, DecorationsParagraph) {
@@ -670,7 +729,7 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 26;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 5;
@@ -681,11 +740,13 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
                           TextDecoration::kLineThrough;
   text_style.decoration_style = txt::TextDecorationStyle::kSolid;
   text_style.decoration_color = SK_ColorBLACK;
+  text_style.decoration_thickness_multiplier = 2.0;
   builder.PushStyle(text_style);
   builder.AddText("This text should be");
 
   text_style.decoration_style = txt::TextDecorationStyle::kDouble;
   text_style.decoration_color = SK_ColorBLUE;
+  text_style.decoration_thickness_multiplier = 1.0;
   builder.PushStyle(text_style);
   builder.AddText(" decorated even when");
 
@@ -696,11 +757,13 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
 
   text_style.decoration_style = txt::TextDecorationStyle::kDashed;
   text_style.decoration_color = SK_ColorBLACK;
+  text_style.decoration_thickness_multiplier = 3.0;
   builder.PushStyle(text_style);
   builder.AddText(" the next line.");
 
   text_style.decoration_style = txt::TextDecorationStyle::kWavy;
   text_style.decoration_color = SK_ColorRED;
+  text_style.decoration_thickness_multiplier = 1.0;
   builder.PushStyle(text_style);
 
   builder.AddText(" Otherwise, bad things happen.");
@@ -741,6 +804,19 @@ TEST_F(ParagraphTest, DecorationsParagraph) {
   ASSERT_EQ(paragraph->records_[3].style().decoration_color, SK_ColorBLACK);
   ASSERT_EQ(paragraph->records_[4].style().decoration_color, SK_ColorBLACK);
   ASSERT_EQ(paragraph->records_[5].style().decoration_color, SK_ColorRED);
+
+  ASSERT_EQ(paragraph->records_[0].style().decoration_thickness_multiplier,
+            2.0);
+  ASSERT_EQ(paragraph->records_[1].style().decoration_thickness_multiplier,
+            1.0);
+  ASSERT_EQ(paragraph->records_[2].style().decoration_thickness_multiplier,
+            1.0);
+  ASSERT_EQ(paragraph->records_[3].style().decoration_thickness_multiplier,
+            3.0);
+  ASSERT_EQ(paragraph->records_[4].style().decoration_thickness_multiplier,
+            3.0);
+  ASSERT_EQ(paragraph->records_[5].style().decoration_thickness_multiplier,
+            1.0);
 }
 
 TEST_F(ParagraphTest, ItalicsParagraph) {
@@ -748,7 +824,7 @@ TEST_F(ParagraphTest, ItalicsParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorRED;
   text_style.font_size = 10;
   builder.PushStyle(text_style);
@@ -795,7 +871,7 @@ TEST_F(ParagraphTest, ChineseParagraph) {
   text_style.color = SK_ColorBLACK;
   text_style.font_size = 35;
   text_style.letter_spacing = 2;
-  text_style.font_family = "Source Han Serif CN";
+  text_style.font_families = std::vector<std::string>(1, "Source Han Serif CN");
   text_style.decoration = TextDecoration::kUnderline |
                           TextDecoration::kOverline |
                           TextDecoration::kLineThrough;
@@ -840,7 +916,7 @@ TEST_F(ParagraphTest, DISABLED_ArabicParagraph) {
   text_style.color = SK_ColorBLACK;
   text_style.font_size = 35;
   text_style.letter_spacing = 2;
-  text_style.font_family = "Katibeh";
+  text_style.font_families = std::vector<std::string>(1, "Katibeh");
   text_style.decoration = TextDecoration::kUnderline |
                           TextDecoration::kOverline |
                           TextDecoration::kLineThrough;
@@ -887,12 +963,12 @@ TEST_F(ParagraphTest, GetGlyphPositionAtCoordinateParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 50;
   text_style.letter_spacing = 1;
   text_style.word_spacing = 5;
   text_style.color = SK_ColorBLACK;
-  text_style.height = 1.5;
+  text_style.height = 1;
   builder.PushStyle(text_style);
 
   builder.AddText(u16_text);
@@ -930,11 +1006,11 @@ TEST_F(ParagraphTest, GetGlyphPositionAtCoordinateParagraph) {
             18ull);
   ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(20, -80).position, 1ull);
   ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(1, 90).position, 18ull);
-  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(1, 180).position, 36ull);
+  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(1, 170).position, 36ull);
   ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(10000, 180).position,
-            54ull);
-  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(70, 180).position, 38ull);
-  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(1, 270).position, 54ull);
+            72ull);
+  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(70, 180).position, 56ull);
+  ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(1, 270).position, 72ull);
   ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(35, 90).position, 19ull);
   ASSERT_EQ(paragraph->GetGlyphPositionAtCoordinate(10000, 10000).position,
             77ull);
@@ -955,7 +1031,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -981,15 +1057,20 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
   // Tests for GetRectsForRange()
   // NOTE: The base truth values may still need adjustment as the specifics
   // are adjusted.
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
   paint.setColor(SK_ColorRED);
   std::vector<txt::Paragraph::TextBox> boxes =
-      paragraph->GetRectsForRange(0, 0, Paragraph::RectStyle::kNone);
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 0ull);
 
-  boxes = paragraph->GetRectsForRange(0, 1, Paragraph::RectStyle::kNone);
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -1000,7 +1081,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
 
   paint.setColor(SK_ColorBLUE);
-  boxes = paragraph->GetRectsForRange(2, 8, Paragraph::RectStyle::kNone);
+  boxes =
+      paragraph->GetRectsForRange(2, 8, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -1011,7 +1093,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
 
   paint.setColor(SK_ColorGREEN);
-  boxes = paragraph->GetRectsForRange(8, 21, Paragraph::RectStyle::kNone);
+  boxes =
+      paragraph->GetRectsForRange(8, 21, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -1022,7 +1105,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
 
   paint.setColor(SK_ColorRED);
-  boxes = paragraph->GetRectsForRange(30, 100, Paragraph::RectStyle::kNone);
+  boxes =
+      paragraph->GetRectsForRange(30, 100, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -1040,7 +1124,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
   EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 295);
 
   paint.setColor(SK_ColorBLUE);
-  boxes = paragraph->GetRectsForRange(19, 22, Paragraph::RectStyle::kNone);
+  boxes =
+      paragraph->GetRectsForRange(19, 22, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -1051,7 +1136,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeParagraph)) {
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
 
   paint.setColor(SK_ColorRED);
-  boxes = paragraph->GetRectsForRange(21, 21, Paragraph::RectStyle::kNone);
+  boxes =
+      paragraph->GetRectsForRange(21, 21, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -1075,7 +1161,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeTight)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Noto Sans CJK JP";
+  text_style.font_families = std::vector<std::string>(1, "Noto Sans CJK JP");
   text_style.font_size = 50;
   text_style.letter_spacing = 0;
   text_style.font_weight = FontWeight::w500;
@@ -1101,15 +1187,20 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeTight)) {
   // Tests for GetRectsForRange()
   // NOTE: The base truth values may still need adjustment as the specifics
   // are adjusted.
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
   paint.setColor(SK_ColorRED);
   std::vector<txt::Paragraph::TextBox> boxes =
-      paragraph->GetRectsForRange(0, 0, Paragraph::RectStyle::kTight);
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
   EXPECT_EQ(boxes.size(), 0ull);
 
-  boxes = paragraph->GetRectsForRange(0, 1, Paragraph::RectStyle::kTight);
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -1120,7 +1211,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeTight)) {
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 74);
 
   paint.setColor(SK_ColorBLUE);
-  boxes = paragraph->GetRectsForRange(2, 8, Paragraph::RectStyle::kTight);
+  boxes =
+      paragraph->GetRectsForRange(2, 8, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -1130,7 +1222,8 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeTight)) {
   EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 74);
 
   paint.setColor(SK_ColorGREEN);
-  boxes = paragraph->GetRectsForRange(8, 21, Paragraph::RectStyle::kTight);
+  boxes =
+      paragraph->GetRectsForRange(8, 21, rect_height_style, rect_width_style);
   for (size_t i = 0; i < boxes.size(); ++i) {
     GetCanvas()->drawRect(boxes[i].rect, paint);
   }
@@ -1143,10 +1236,867 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeTight)) {
   ASSERT_TRUE(Snapshot());
 }
 
+TEST_F(ParagraphTest,
+       DISABLE_ON_WINDOWS(GetRectsForRangeIncludeLineSpacingMiddle)) {
+  // const char* text =
+  //     "12345,  \"67890\" 12345 67890 12345 67890 12345 67890 12345 67890
+  //     12345 " "67890 12345";
+  const char* text =
+      "(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)("
+      "　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)("
+      "　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.text_align = TextAlign::left;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  // text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 50;
+  text_style.letter_spacing = 0;
+  text_style.font_weight = FontWeight::w500;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1.3;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  // NOTE: The base truth values may still need adjustment as the specifics
+  // are adjusted.
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kIncludeLineSpacingMiddle;
+  Paragraph::RectWidthStyle rect_width_style = Paragraph::RectWidthStyle::kMax;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 17.429688);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 82.958008);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(2, 8, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 67.429688);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 190.00781);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 82.958008);
+
+  paint.setColor(SK_ColorGREEN);
+  boxes =
+      paragraph->GetRectsForRange(8, 21, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 508.0625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 82.958008);
+
+  paint.setColor(SK_ColorRED);
+  boxes =
+      paragraph->GetRectsForRange(30, 150, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 8ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 82.786133);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 525.6875);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 158.95801);
+
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 525.6875);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 82.786133);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 158.95801);
+
+  EXPECT_FLOAT_EQ(boxes[2].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[2].rect.top(), 158.78613);
+  EXPECT_FLOAT_EQ(boxes[2].rect.right(), 531.57422);
+  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 234.95801);
+
+  EXPECT_FLOAT_EQ(boxes[3].rect.left(), 531.57422);
+  EXPECT_FLOAT_EQ(boxes[3].rect.top(), 158.78613);
+  EXPECT_FLOAT_EQ(boxes[3].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 234.95801);
+
+  EXPECT_FLOAT_EQ(boxes[4].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[4].rect.top(), 234.78613);
+  EXPECT_FLOAT_EQ(boxes[4].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[4].rect.bottom(), 310.95801);
+
+  EXPECT_FLOAT_EQ(boxes[5].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[5].rect.top(), 310.78613);
+  EXPECT_FLOAT_EQ(boxes[5].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[5].rect.bottom(), 386.95801);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(19, 22, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 463.72656);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 530.23047);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 82.958008);
+
+  paint.setColor(SK_ColorRED);
+  boxes =
+      paragraph->GetRectsForRange(21, 21, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest,
+       DISABLE_ON_WINDOWS(GetRectsForRangeIncludeLineSpacingTop)) {
+  // const char* text =
+  //     "12345,  \"67890\" 12345 67890 12345 67890 12345 67890 12345 67890
+  //     12345 " "67890 12345";
+  const char* text =
+      "(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)("
+      "　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)("
+      "　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.text_align = TextAlign::left;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 50;
+  text_style.letter_spacing = 0;
+  text_style.font_weight = FontWeight::w500;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1.3;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  // NOTE: The base truth values may still need adjustment as the specifics
+  // are adjusted.
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kIncludeLineSpacingTop;
+  Paragraph::RectWidthStyle rect_width_style = Paragraph::RectWidthStyle::kMax;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 17.429688);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 76);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(2, 8, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 67.429688);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 190.00781);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 76);
+
+  paint.setColor(SK_ColorGREEN);
+  boxes =
+      paragraph->GetRectsForRange(8, 21, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 508.0625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 76);
+
+  paint.setColor(SK_ColorRED);
+  boxes =
+      paragraph->GetRectsForRange(30, 150, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 8ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 75.828125);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 525.6875);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 152);
+
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 525.6875);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 75.828125);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 152);
+
+  EXPECT_FLOAT_EQ(boxes[2].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[2].rect.top(), 151.82812);
+  EXPECT_FLOAT_EQ(boxes[2].rect.right(), 531.57422);
+  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 228);
+
+  EXPECT_FLOAT_EQ(boxes[3].rect.left(), 531.57422);
+  EXPECT_FLOAT_EQ(boxes[3].rect.top(), 151.82812);
+  EXPECT_FLOAT_EQ(boxes[3].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 228);
+
+  EXPECT_FLOAT_EQ(boxes[4].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[4].rect.top(), 227.82812);
+  EXPECT_FLOAT_EQ(boxes[4].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[4].rect.bottom(), 304);
+
+  EXPECT_FLOAT_EQ(boxes[5].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[5].rect.top(), 303.82812);
+  EXPECT_FLOAT_EQ(boxes[5].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[5].rect.bottom(), 380);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(19, 22, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 463.72656);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 530.23047);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 76);
+
+  paint.setColor(SK_ColorRED);
+  boxes =
+      paragraph->GetRectsForRange(21, 21, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest,
+       DISABLE_ON_WINDOWS(GetRectsForRangeIncludeLineSpacingBottom)) {
+  // const char* text =
+  //     "12345,  \"67890\" 12345 67890 12345 67890 12345 67890 12345 67890
+  //     12345 " "67890 12345";
+  const char* text =
+      "(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)("
+      "　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)("
+      "　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)(　´･‿･｀)";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.text_align = TextAlign::left;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 50;
+  text_style.letter_spacing = 0;
+  text_style.font_weight = FontWeight::w500;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1.3;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  // NOTE: The base truth values may still need adjustment as the specifics
+  // are adjusted.
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kIncludeLineSpacingBottom;
+  Paragraph::RectWidthStyle rect_width_style = Paragraph::RectWidthStyle::kMax;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 17.429688);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89.916016);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(2, 8, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 67.429688);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 190.00781);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89.916016);
+
+  paint.setColor(SK_ColorGREEN);
+  boxes =
+      paragraph->GetRectsForRange(8, 21, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 508.0625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89.916016);
+
+  paint.setColor(SK_ColorRED);
+  boxes =
+      paragraph->GetRectsForRange(30, 150, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 8ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 190.00781);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 89.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 525.6875);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 165.91602);
+
+  EXPECT_FLOAT_EQ(boxes[1].rect.left(), 525.6875);
+  EXPECT_FLOAT_EQ(boxes[1].rect.top(), 89.744141);
+  EXPECT_FLOAT_EQ(boxes[1].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[1].rect.bottom(), 165.91602);
+
+  EXPECT_FLOAT_EQ(boxes[2].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[2].rect.top(), 165.74414);
+  EXPECT_FLOAT_EQ(boxes[2].rect.right(), 531.57422);
+  EXPECT_FLOAT_EQ(boxes[2].rect.bottom(), 241.91602);
+
+  EXPECT_FLOAT_EQ(boxes[3].rect.left(), 531.57422);
+  EXPECT_FLOAT_EQ(boxes[3].rect.top(), 165.74414);
+  EXPECT_FLOAT_EQ(boxes[3].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[3].rect.bottom(), 241.91602);
+
+  EXPECT_FLOAT_EQ(boxes[4].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[4].rect.top(), 241.74414);
+  EXPECT_FLOAT_EQ(boxes[4].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[4].rect.bottom(), 317.91602);
+
+  EXPECT_FLOAT_EQ(boxes[5].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[5].rect.top(), 317.74414);
+  EXPECT_FLOAT_EQ(boxes[5].rect.right(), 570.02344);
+  EXPECT_FLOAT_EQ(boxes[5].rect.bottom(), 393.91602);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(19, 22, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 463.72656);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 13.744141);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 530.23047);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 89.916016);
+
+  paint.setColor(SK_ColorRED);
+  boxes =
+      paragraph->GetRectsForRange(21, 21, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, GetRectsForRangeIncludeCombiningCharacter) {
+  const char* text = "ดีสวัสดีชาวโลกที่น่ารัก";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.text_align = TextAlign::left;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 50;
+  text_style.letter_spacing = 1;
+  text_style.word_spacing = 5;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth() - 100);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  // Case when the sentence starts with a combining character
+  // We should get 0 box for ด because it's already been combined to ดี
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(1, 2, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 1ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 2, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 1ull);
+
+  // Case when the sentence contains a combining character
+  // We should get 0 box for ว because it's already been combined to วั
+  boxes =
+      paragraph->GetRectsForRange(3, 4, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(4, 5, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 1ull);
+
+  boxes =
+      paragraph->GetRectsForRange(3, 5, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 1ull);
+
+  // Case when the sentence contains a combining character that contain 3
+  // characters We should get 0 box for ท and ที because it's already been
+  // combined to ที่
+  boxes =
+      paragraph->GetRectsForRange(14, 15, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(15, 16, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(16, 17, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 1ull);
+
+  boxes =
+      paragraph->GetRectsForRange(14, 17, rect_height_style, rect_width_style);
+  EXPECT_EQ(boxes.size(), 1ull);
+}
+
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(GetRectsForRangeCenterParagraph)) {
+  const char* text = "01234  　 ";  // includes ideographic space
+                                    // and english space.
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.text_align = TextAlign::center;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 50;
+  text_style.letter_spacing = 0;
+  text_style.font_weight = FontWeight::w500;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 203.95508);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 232.37305);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(2, 4, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 260.79102);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 317.62695);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorGREEN);
+  boxes =
+      paragraph->GetRectsForRange(4, 6, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 2ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 317.62695);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 346.04492);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorBLACK);
+  boxes =
+      paragraph->GetRectsForRange(5, 6, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 346.04492);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 358.49414);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorRED);
+  boxes =
+      paragraph->GetRectsForRange(21, 21, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest,
+       DISABLE_ON_WINDOWS(GetRectsForRangeCenterParagraphNewlineCentered)) {
+  const char* text = "01234\n";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.text_align = TextAlign::center;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 50;
+  text_style.letter_spacing = 0;
+  text_style.font_weight = FontWeight::w500;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 203.95508);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 232.37305);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorGREEN);
+  boxes =
+      paragraph->GetRectsForRange(6, 7, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 275);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 275);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(),
+                  75);  // TODO(garyq): This value can be improved... Should be
+                        // taller, but we need a good way to obtain a height
+                        // without any glyphs on the line.
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest,
+       DISABLE_ON_WINDOWS(GetRectsForRangeCenterMultiLineParagraph)) {
+  const char* text = "01234  　 \n0123　        ";  // includes ideographic
+                                                    // space and english space.
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.text_align = TextAlign::center;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
+  text_style.font_size = 50;
+  text_style.letter_spacing = 0;
+  text_style.font_weight = FontWeight::w500;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 203.95508);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 232.37305);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorBLUE);
+  boxes =
+      paragraph->GetRectsForRange(2, 4, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 260.79102);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 317.62695);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorGREEN);
+  boxes =
+      paragraph->GetRectsForRange(4, 6, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 2ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 317.62695);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 346.04492);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorBLACK);
+  boxes =
+      paragraph->GetRectsForRange(5, 6, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 346.04492);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 0.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 358.49414);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 59);
+
+  paint.setColor(SK_ColorBLACK);
+  boxes =
+      paragraph->GetRectsForRange(10, 12, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 218.16406);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 59.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 275);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 118);
+
+  paint.setColor(SK_ColorBLACK);
+  boxes =
+      paragraph->GetRectsForRange(14, 18, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 331.83594);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 59.40625);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 419.18359);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 118);
+
+  paint.setColor(SK_ColorRED);
+  boxes =
+      paragraph->GetRectsForRange(21, 21, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  ASSERT_TRUE(Snapshot());
+}
+
 SkRect GetCoordinatesForGlyphPosition(const txt::Paragraph& paragraph,
                                       size_t pos) {
   std::vector<txt::Paragraph::TextBox> boxes =
-      paragraph.GetRectsForRange(pos, pos + 1, Paragraph::RectStyle::kNone);
+      paragraph.GetRectsForRange(pos, pos + 1, Paragraph::RectHeightStyle::kMax,
+                                 Paragraph::RectWidthStyle::kTight);
   return !boxes.empty() ? boxes.front().rect : SkRect::MakeEmpty();
 }
 
@@ -1164,7 +2114,7 @@ TEST_F(ParagraphTest, GetWordBoundaryParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 52;
   text_style.letter_spacing = 1.19039;
   text_style.word_spacing = 5;
@@ -1270,7 +2220,7 @@ TEST_F(ParagraphTest, SpacingParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 50;
   text_style.letter_spacing = 20;
   text_style.word_spacing = 0;
@@ -1359,7 +2309,7 @@ TEST_F(ParagraphTest, LongWordParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 31;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
@@ -1396,7 +2346,7 @@ TEST_F(ParagraphTest, KernScaleParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Droid Serif";
+  text_style.font_families = std::vector<std::string>(1, "Droid Serif");
   text_style.font_size = 100 / scale;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
@@ -1438,7 +2388,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(NewlineParagraph)) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 60;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
@@ -1485,7 +2435,7 @@ TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(EmojiParagraph)) {
 
   txt::TextStyle text_style;
   text_style.color = SK_ColorBLACK;
-  text_style.font_family = "Noto Color Emoji";
+  text_style.font_families = std::vector<std::string>(1, "Noto Color Emoji");
   text_style.font_size = 50;
   text_style.decoration = TextDecoration::kUnderline;
   builder.PushStyle(text_style);
@@ -1529,7 +2479,7 @@ TEST_F(ParagraphTest, HyphenBreakParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 31;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
@@ -1573,7 +2523,7 @@ TEST_F(ParagraphTest, RepeatLayoutParagraph) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.font_size = 31;
   text_style.letter_spacing = 0;
   text_style.word_spacing = 0;
@@ -1633,7 +2583,7 @@ TEST_F(ParagraphTest, Ellipsize) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorBLACK;
   builder.PushStyle(text_style);
   builder.AddText(u16_text);
@@ -1675,14 +2625,14 @@ TEST_F(ParagraphTest, UnderlineShiftParagraph) {
 
   txt::TextStyle text_style1;
   text_style1.color = SK_ColorBLACK;
-  text_style1.font_family = "Roboto";
+  text_style1.font_families = std::vector<std::string>(1, "Roboto");
   builder.PushStyle(text_style1);
 
   builder.AddText(u16_text1);
 
   txt::TextStyle text_style2;
   text_style2.color = SK_ColorBLACK;
-  text_style2.font_family = "Roboto";
+  text_style2.font_families = std::vector<std::string>(1, "Roboto");
   text_style2.decoration = TextDecoration::kUnderline;
   text_style2.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style2);
@@ -1718,9 +2668,12 @@ TEST_F(ParagraphTest, UnderlineShiftParagraph) {
                 paragraph->records_[1].GetRunWidth(),
             paragraph2->records_[0].GetRunWidth());
 
-  auto rects1 = paragraph->GetRectsForRange(0, 12, Paragraph::RectStyle::kNone);
+  auto rects1 =
+      paragraph->GetRectsForRange(0, 12, Paragraph::RectHeightStyle::kMax,
+                                  Paragraph::RectWidthStyle::kTight);
   auto rects2 =
-      paragraph2->GetRectsForRange(0, 12, Paragraph::RectStyle::kNone);
+      paragraph2->GetRectsForRange(0, 12, Paragraph::RectHeightStyle::kMax,
+                                   Paragraph::RectWidthStyle::kTight);
 
   for (size_t i = 0; i < 12; ++i) {
     auto r1 = GetCoordinatesForGlyphPosition(*paragraph, i);
@@ -1741,7 +2694,7 @@ TEST_F(ParagraphTest, SimpleShadow) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorBLACK;
   text_style.text_shadows.emplace_back(SK_ColorBLACK, SkPoint::Make(2.0, 2.0),
                                        1.0);
@@ -1780,7 +2733,7 @@ TEST_F(ParagraphTest, ComplexShadow) {
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
-  text_style.font_family = "Roboto";
+  text_style.font_families = std::vector<std::string>(1, "Roboto");
   text_style.color = SK_ColorBLACK;
   text_style.text_shadows.emplace_back(SK_ColorBLACK, SkPoint::Make(2.0, 2.0),
                                        1.0);
@@ -1851,14 +2804,14 @@ TEST_F(ParagraphTest, BaselineParagraph) {
   txt::ParagraphStyle paragraph_style;
   paragraph_style.max_lines = 14;
   paragraph_style.text_align = TextAlign::justify;
-  paragraph_style.line_height = 1.5;
+  paragraph_style.height = 1.5;
   txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
 
   txt::TextStyle text_style;
   text_style.color = SK_ColorBLACK;
   text_style.font_size = 55;
   text_style.letter_spacing = 2;
-  text_style.font_family = "Source Han Serif CN";
+  text_style.font_families = std::vector<std::string>(1, "Source Han Serif CN");
   text_style.decoration_style = txt::TextDecorationStyle::kSolid;
   text_style.decoration_color = SK_ColorBLACK;
   builder.PushStyle(text_style);
@@ -1886,8 +2839,623 @@ TEST_F(ParagraphTest, BaselineParagraph) {
   GetCanvas()->drawLine(0, paragraph->GetAlphabeticBaseline(),
                         paragraph->GetMaxWidth(),
                         paragraph->GetAlphabeticBaseline(), paint);
-  ASSERT_DOUBLE_EQ(paragraph->GetIdeographicBaseline(), 79.035003662109375);
+  ASSERT_DOUBLE_EQ(paragraph->GetIdeographicBaseline(), 79.035000801086426);
   ASSERT_DOUBLE_EQ(paragraph->GetAlphabeticBaseline(), 63.305000305175781);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+TEST_F(ParagraphTest, FontFallbackParagraph) {
+  const char* text = "Roboto 字典 ";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+  const char* text2 = "Homemade Apple 字典";
+  icu_text = icu::UnicodeString::fromUTF8(text2);
+  std::u16string u16_text2(icu_text.getBuffer(),
+                           icu_text.getBuffer() + icu_text.length());
+  const char* text3 = "Chinese 字典";
+  icu_text = icu::UnicodeString::fromUTF8(text3);
+  std::u16string u16_text3(icu_text.getBuffer(),
+                           icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  // No chinese fallback provided, should not be able to render the chinese.
+  text_style.font_families = std::vector<std::string>(1, "Not a real font");
+  text_style.font_families.push_back("Also a fake font");
+  text_style.font_families.push_back("So fake it is obvious");
+  text_style.font_families.push_back("Next one should be a real font...");
+  text_style.font_families.push_back("Roboto");
+  text_style.font_families.push_back("another fake one in between");
+  text_style.font_families.push_back("Homemade Apple");
+  text_style.color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text);
+
+  // Japanese version of the chinese should be rendered.
+  text_style.font_families = std::vector<std::string>(1, "Not a real font");
+  text_style.font_families.push_back("Also a fake font");
+  text_style.font_families.push_back("So fake it is obvious");
+  text_style.font_families.push_back("Homemade Apple");
+  text_style.font_families.push_back("Next one should be a real font...");
+  text_style.font_families.push_back("Roboto");
+  text_style.font_families.push_back("another fake one in between");
+  text_style.font_families.push_back("Noto Sans CJK JP");
+  text_style.font_families.push_back("Source Han Serif CN");
+  text_style.color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text2);
+
+  // Chinese font defiend first
+  text_style.font_families = std::vector<std::string>(1, "Not a real font");
+  text_style.font_families.push_back("Also a fake font");
+  text_style.font_families.push_back("So fake it is obvious");
+  text_style.font_families.push_back("Homemade Apple");
+  text_style.font_families.push_back("Next one should be a real font...");
+  text_style.font_families.push_back("Roboto");
+  text_style.font_families.push_back("another fake one in between");
+  text_style.font_families.push_back("Source Han Serif CN");
+  text_style.font_families.push_back("Noto Sans CJK JP");
+  text_style.color = SK_ColorBLACK;
+  builder.PushStyle(text_style);
+  builder.AddText(u16_text3);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(GetTestCanvasWidth());
+
+  paragraph->Paint(GetCanvas(), 10.0, 15.0);
+
+  ASSERT_TRUE(Snapshot());
+
+  ASSERT_EQ(paragraph->records_.size(), 5ull);
+  ASSERT_DOUBLE_EQ(paragraph->records_[0].GetRunWidth(), 64.19921875);
+  ASSERT_DOUBLE_EQ(paragraph->records_[1].GetRunWidth(), 167.1171875);
+  ASSERT_DOUBLE_EQ(paragraph->records_[2].GetRunWidth(), 167.1171875);
+  ASSERT_DOUBLE_EQ(paragraph->records_[3].GetRunWidth(), 90.24609375);
+  ASSERT_DOUBLE_EQ(paragraph->records_[4].GetRunWidth(), 90.24609375);
+  // When a different font is resolved, then the metrics are different.
+  ASSERT_TRUE(paragraph->records_[2].metrics().fTop -
+                  paragraph->records_[4].metrics().fTop !=
+              0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fAscent -
+                  paragraph->records_[4].metrics().fAscent !=
+              0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fDescent -
+                  paragraph->records_[4].metrics().fDescent !=
+              0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fBottom -
+                  paragraph->records_[4].metrics().fBottom !=
+              0);
+  ASSERT_TRUE(paragraph->records_[2].metrics().fAvgCharWidth -
+                  paragraph->records_[4].metrics().fAvgCharWidth !=
+              0);
+}
+
+// Disabled due to Skia depending on platform to get metrics, which
+// results in presubmit runs to have different values.
+//
+// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
+// consolidate skia font metric behavior.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph1)) {
+  // The chinese extra height should be absorbed by the strut.
+  const char* text = "01234満毎冠p来É本可\nabcd\n満毎É行p昼本可";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.strut_font_families = std::vector<std::string>(1, "BlahFake");
+  paragraph_style.strut_font_families.push_back("ahem");
+  paragraph_style.strut_font_size = 50;
+  paragraph_style.strut_height = 1.8;
+  paragraph_style.strut_leading = 0.1;
+  paragraph_style.strut_enabled = true;
+
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "ahem");
+  text_style.font_families.push_back("ahem");
+  text_style.font_size = 50;
+  text_style.letter_spacing = 0;
+  text_style.font_weight = FontWeight::w500;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = .5;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectHeightStyle rect_height_max_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 34.5, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_NEAR(boxes[0].rect.bottom(), 84.5, 0.0001);
+
+  boxes = paragraph->GetRectsForRange(0, 1, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 34.5, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 95);
+
+  boxes =
+      paragraph->GetRectsForRange(6, 10, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_NEAR(boxes[0].rect.top(), 34.5, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_NEAR(boxes[0].rect.bottom(), 84.5, 0.0001);
+  ;
+
+  boxes = paragraph->GetRectsForRange(6, 10, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_NEAR(boxes[0].rect.top(), 34.5, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 95);
+
+  boxes = paragraph->GetRectsForRange(14, 16, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 224.5, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 285);
+
+  boxes = paragraph->GetRectsForRange(20, 25, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 319.5);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 380);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+// Disabled due to Skia depending on platform to get metrics, which
+// results in presubmit runs to have different values.
+//
+// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
+// consolidate skia font metric behavior.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph2)) {
+  // This string is all one size and smaller than the strut metrics.
+  const char* text = "01234ABCDEFGH\nabcd\nABCDEFGH";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
+  paragraph_style.strut_font_size = 50;
+  paragraph_style.strut_height = 1.6;
+  paragraph_style.strut_enabled = true;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "ahem");
+  text_style.font_families.push_back("ahem");
+  text_style.font_size = 50;
+  text_style.letter_spacing = 0;
+  text_style.font_weight = FontWeight::w500;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectHeightStyle rect_height_max_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 24, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_NEAR(boxes[0].rect.bottom(), 74, 0.0001);
+
+  boxes = paragraph->GetRectsForRange(0, 1, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 24, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 80);
+
+  boxes =
+      paragraph->GetRectsForRange(6, 10, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_NEAR(boxes[0].rect.top(), 24, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_NEAR(boxes[0].rect.bottom(), 74, 0.0001);
+
+  boxes = paragraph->GetRectsForRange(6, 10, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_NEAR(boxes[0].rect.top(), 24, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 80);
+
+  boxes = paragraph->GetRectsForRange(14, 16, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 184, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 240);
+
+  boxes = paragraph->GetRectsForRange(20, 25, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 264);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 320);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+// Disabled due to Skia depending on platform to get metrics, which
+// results in presubmit runs to have different values.
+//
+// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
+// consolidate skia font metric behavior.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutParagraph3)) {
+  // The strut is too small to absorb the extra chinese height, but the english
+  // second line height is increased due to strut.
+  const char* text = "01234満毎p行来昼本可\nabcd\n満毎冠行来昼本可";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
+  paragraph_style.strut_font_size = 50;
+  paragraph_style.strut_height = 1.2;
+  paragraph_style.strut_enabled = true;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "ahem");
+  text_style.font_families.push_back("ahem");
+  text_style.font_size = 50;
+  text_style.letter_spacing = 0;
+  text_style.font_weight = FontWeight::w500;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectHeightStyle rect_height_max_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 8, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_NEAR(boxes[0].rect.bottom(), 58, 0.0001);
+
+  boxes = paragraph->GetRectsForRange(0, 1, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 8, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 60);
+
+  boxes =
+      paragraph->GetRectsForRange(6, 10, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_NEAR(boxes[0].rect.top(), 8, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_NEAR(boxes[0].rect.bottom(), 58, 0.0001);
+
+  boxes = paragraph->GetRectsForRange(6, 10, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_NEAR(boxes[0].rect.top(), 8, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 60);
+
+  boxes = paragraph->GetRectsForRange(14, 16, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 128);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 180);
+
+  boxes = paragraph->GetRectsForRange(20, 25, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 188);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 240);
+
+  ASSERT_TRUE(Snapshot());
+}
+
+// Disabled due to Skia depending on platform to get metrics, which
+// results in presubmit runs to have different values.
+//
+// TODO(garyq): Re-enable strut tests, allow font metric fakery, or
+// consolidate skia font metric behavior.
+TEST_F(ParagraphTest, DISABLE_ON_WINDOWS(StrutForceParagraph)) {
+  // The strut is too small to absorb the extra chinese height, but the english
+  // second line height is increased due to strut.
+  const char* text = "01234満毎冠行来昼本可\nabcd\n満毎冠行来昼本可";
+  auto icu_text = icu::UnicodeString::fromUTF8(text);
+  std::u16string u16_text(icu_text.getBuffer(),
+                          icu_text.getBuffer() + icu_text.length());
+
+  txt::ParagraphStyle paragraph_style;
+  paragraph_style.max_lines = 10;
+  paragraph_style.strut_font_families = std::vector<std::string>(1, "ahem");
+  paragraph_style.strut_font_size = 50;
+  paragraph_style.strut_height = 1.5;
+  paragraph_style.strut_leading = 0.1;
+  paragraph_style.force_strut_height = true;
+  paragraph_style.strut_enabled = true;
+  txt::ParagraphBuilder builder(paragraph_style, GetTestFontCollection());
+
+  txt::TextStyle text_style;
+  text_style.font_families = std::vector<std::string>(1, "ahem");
+  text_style.font_families.push_back("ahem");
+  text_style.font_size = 50;
+  text_style.letter_spacing = 0;
+  text_style.word_spacing = 0;
+  text_style.color = SK_ColorBLACK;
+  text_style.height = 1;
+  builder.PushStyle(text_style);
+
+  builder.AddText(u16_text);
+
+  builder.Pop();
+
+  auto paragraph = builder.Build();
+  paragraph->Layout(550);
+
+  paragraph->Paint(GetCanvas(), 0, 0);
+
+  SkPaint paint;
+  paint.setStyle(SkPaint::kStroke_Style);
+  paint.setAntiAlias(true);
+  paint.setStrokeWidth(1);
+
+  // Tests for GetRectsForRange()
+  Paragraph::RectHeightStyle rect_height_style =
+      Paragraph::RectHeightStyle::kTight;
+  Paragraph::RectHeightStyle rect_height_max_style =
+      Paragraph::RectHeightStyle::kMax;
+  Paragraph::RectWidthStyle rect_width_style =
+      Paragraph::RectWidthStyle::kTight;
+  paint.setColor(SK_ColorRED);
+  std::vector<txt::Paragraph::TextBox> boxes =
+      paragraph->GetRectsForRange(0, 0, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 0ull);
+
+  boxes =
+      paragraph->GetRectsForRange(0, 1, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 22.5, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_NEAR(boxes[0].rect.bottom(), 72.5, 0.0001);
+
+  boxes = paragraph->GetRectsForRange(0, 1, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 22.5, 0.0001);
+  ;
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 80);
+
+  boxes =
+      paragraph->GetRectsForRange(6, 10, rect_height_style, rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_NEAR(boxes[0].rect.top(), 22.5, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_NEAR(boxes[0].rect.bottom(), 72.5, 0.0001);
+
+  boxes = paragraph->GetRectsForRange(6, 10, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 300);
+  EXPECT_NEAR(boxes[0].rect.top(), 22.5, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 500);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 80);
+
+  boxes = paragraph->GetRectsForRange(14, 16, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 0);
+  EXPECT_NEAR(boxes[0].rect.top(), 182.5, 0.0001);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 100);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 240);
+
+  boxes = paragraph->GetRectsForRange(20, 25, rect_height_max_style,
+                                      rect_width_style);
+  for (size_t i = 0; i < boxes.size(); ++i) {
+    GetCanvas()->drawRect(boxes[i].rect, paint);
+  }
+  EXPECT_EQ(boxes.size(), 1ull);
+  EXPECT_FLOAT_EQ(boxes[0].rect.left(), 50);
+  EXPECT_FLOAT_EQ(boxes[0].rect.top(), 262.5);
+  EXPECT_FLOAT_EQ(boxes[0].rect.right(), 300);
+  EXPECT_FLOAT_EQ(boxes[0].rect.bottom(), 320);
 
   ASSERT_TRUE(Snapshot());
 }

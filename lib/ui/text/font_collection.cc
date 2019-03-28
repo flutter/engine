@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -67,7 +67,8 @@ std::shared_ptr<txt::FontCollection> FontCollection::GetFontCollection() const {
   return collection_;
 }
 
-void FontCollection::RegisterFonts(fml::RefPtr<AssetManager> asset_manager) {
+void FontCollection::RegisterFonts(
+    std::shared_ptr<AssetManager> asset_manager) {
   std::unique_ptr<fml::Mapping> manifest_mapping =
       asset_manager->GetAsMapping("FontManifest.json");
   if (manifest_mapping == nullptr) {
@@ -157,6 +158,7 @@ void FontCollection::LoadFontFromList(const uint8_t* font_data,
   } else {
     font_provider.RegisterTypeface(typeface, family_name);
   }
+  collection_->ClearFontFamilyCache();
 }
 
 }  // namespace blink

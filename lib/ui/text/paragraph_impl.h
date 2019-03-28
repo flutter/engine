@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -36,7 +36,8 @@ class ParagraphImpl {
   virtual std::vector<TextBox> getRectsForRange(
       unsigned start,
       unsigned end,
-      txt::Paragraph::RectStyle rect_style) = 0;
+      txt::Paragraph::RectHeightStyle rect_height_style,
+      txt::Paragraph::RectWidthStyle rect_width_style) = 0;
 
   virtual Dart_Handle getPositionForOffset(double dx, double dy) = 0;
 

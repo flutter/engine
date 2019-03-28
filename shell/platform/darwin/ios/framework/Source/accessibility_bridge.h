@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -26,6 +26,8 @@
 namespace shell {
 class AccessibilityBridge;
 }  // namespace shell
+
+@class FlutterPlatformViewSemanticsContainer;
 
 /**
  * A node in the iOS semantics tree.
@@ -71,6 +73,11 @@ class AccessibilityBridge;
  */
 @property(nonatomic, strong) NSMutableArray<SemanticsObject*>* children;
 
+/**
+ * Used if this SemanticsObject is for a platform view.
+ */
+@property(strong, nonatomic) FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer;
+
 - (BOOL)nodeWillCauseLayoutChange:(const blink::SemanticsNode*)node;
 
 #pragma mark - Designated initializers
@@ -108,12 +115,31 @@ class AccessibilityBridge;
 @interface FlutterSemanticsObject : SemanticsObject
 @end
 
+/**
+ * Designated to act as an accessibility container of a platform view.
+ *
+ * This object does not take any accessibility actions on its own, nor has any accessibility
+ * label/value/trait/hint... on its own. The accessibility data will be handled by the platform
+ * view.
+ *
+ * See also:
+ * * `SemanticsObject` for the other type of semantics objects.
+ * * `FlutterSemanticsObject` for default implementation of `SemanticsObject`.
+ */
+@interface FlutterPlatformViewSemanticsContainer : UIAccessibilityElement
+
+- (instancetype)init __attribute__((unavailable("Use initWithAccessibilityContainer: instead")));
+
+@end
+
 namespace shell {
 class PlatformViewIOS;
 
 class AccessibilityBridge final {
  public:
-  AccessibilityBridge(UIView* view, PlatformViewIOS* platform_view);
+  AccessibilityBridge(UIView* view,
+                      PlatformViewIOS* platform_view,
+                      FlutterPlatformViewsController* platform_views_controller);
   ~AccessibilityBridge();
 
   void UpdateSemantics(blink::SemanticsNodeUpdates nodes,
@@ -129,15 +155,21 @@ class AccessibilityBridge final {
 
   fml::WeakPtr<AccessibilityBridge> GetWeakPtr();
 
+  FlutterPlatformViewsController* GetPlatformViewsController() const {
+    return platform_views_controller_;
+  };
+
+  void clearState();
+
  private:
   SemanticsObject* GetOrCreateObject(int32_t id, blink::SemanticsNodeUpdates& updates);
   void VisitObjectsRecursivelyAndRemove(SemanticsObject* object,
                                         NSMutableArray<NSNumber*>* doomed_uids);
-  void ReleaseObjects(std::unordered_map<int, SemanticsObject*>& objects);
   void HandleEvent(NSDictionary<NSString*, id>* annotatedEvent);
 
   UIView* view_;
   PlatformViewIOS* platform_view_;
+  FlutterPlatformViewsController* platform_views_controller_;
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
   fml::WeakPtrFactory<AccessibilityBridge> weak_factory_;

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -123,6 +123,8 @@ class PlatformView {
   SkISize size_;
   fml::WeakPtrFactory<PlatformView> weak_factory_;
 
+  // Unlike all other methods on the platform view, this is called on the GPU
+  // task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
 
  private:

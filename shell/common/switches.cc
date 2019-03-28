@@ -1,4 +1,4 @@
-// Copyright 2013 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -9,9 +9,10 @@
 #include <sstream>
 #include <string>
 
+#include "flutter/common/version/version.h"
+#include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/string_view.h"
-#include "flutter/shell/version/version.h"
 
 // Include once for the default enum definition.
 #include "flutter/shell/common/switches.h"
@@ -45,11 +46,12 @@ void PrintUsage(const std::string& executable_name) {
 
   std::cerr << "Versions: " << std::endl << std::endl;
 
-  std::cerr << "Flutter Engine Version: " << GetFlutterEngineVersion()
+  std::cerr << "Flutter Engine Version: " << blink::GetFlutterEngineVersion()
             << std::endl;
-  std::cerr << "Skia Version: " << GetSkiaVersion() << std::endl;
+  std::cerr << "Skia Version: " << blink::GetSkiaVersion() << std::endl;
 
-  std::cerr << "Dart Version: " << GetDartVersion() << std::endl << std::endl;
+  std::cerr << "Dart Version: " << blink::GetDartVersion() << std::endl
+            << std::endl;
 
   std::cerr << "Available Flags:" << std::endl;
 
@@ -121,6 +123,33 @@ static bool GetSwitchValue(const fml::CommandLine& command_line,
   return false;
 }
 
+std::unique_ptr<fml::Mapping> GetSymbolMapping(std::string symbol_prefix,
+                                               std::string native_lib_path) {
+  const uint8_t* mapping;
+  intptr_t size;
+
+  auto lookup_symbol = [&mapping, &size, symbol_prefix](
+                           const fml::RefPtr<fml::NativeLibrary>& library) {
+    mapping = library->ResolveSymbol((symbol_prefix + "_start").c_str());
+    size = reinterpret_cast<intptr_t>(
+        library->ResolveSymbol((symbol_prefix + "_size").c_str()));
+  };
+
+  fml::RefPtr<fml::NativeLibrary> library =
+      fml::NativeLibrary::CreateForCurrentProcess();
+  lookup_symbol(library);
+
+  if (!(mapping && size)) {
+    // Symbol lookup for the current process fails on some devices.  As a
+    // fallback, try doing the lookup based on the path to the Flutter library.
+    library = fml::NativeLibrary::Create(native_lib_path.c_str());
+    lookup_symbol(library);
+  }
+
+  FML_CHECK(mapping && size) << "Unable to resolve symbols: " << symbol_prefix;
+  return std::make_unique<fml::NonOwnedMapping>(mapping, size);
+}
+
 blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   blink::Settings settings = {};
 
@@ -139,8 +168,8 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   }
 
   // Checked mode overrides.
-  settings.dart_non_checked_mode =
-      command_line.HasOption(FlagForSwitch(Switch::DartNonCheckedMode));
+  settings.disable_dart_asserts =
+      command_line.HasOption(FlagForSwitch(Switch::DisableDartAsserts));
 
   settings.ipv6 = command_line.HasOption(FlagForSwitch(Switch::IPv6));
 
@@ -169,12 +198,6 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   command_line.GetOptionValue(FlagForSwitch(Switch::FlutterAssetsDir),
                               &settings.assets_path);
-
-  command_line.GetOptionValue(FlagForSwitch(Switch::MainDartFile),
-                              &settings.main_dart_file_path);
-
-  command_line.GetOptionValue(FlagForSwitch(Switch::Packages),
-                              &settings.packages_file_path);
 
   std::string aot_shared_library_path;
   command_line.GetOptionValue(FlagForSwitch(Switch::AotSharedLibraryPath),
@@ -217,8 +240,20 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   command_line.GetOptionValue(FlagForSwitch(Switch::CacheDirPath),
                               &settings.temp_directory_path);
 
-  command_line.GetOptionValue(FlagForSwitch(Switch::ICUDataFilePath),
-                              &settings.icu_data_path);
+  if (settings.icu_initialization_required) {
+    command_line.GetOptionValue(FlagForSwitch(Switch::ICUDataFilePath),
+                                &settings.icu_data_path);
+    if (command_line.HasOption(FlagForSwitch(Switch::ICUSymbolPrefix))) {
+      std::string icu_symbol_prefix, native_lib_path;
+      command_line.GetOptionValue(FlagForSwitch(Switch::ICUSymbolPrefix),
+                                  &icu_symbol_prefix);
+      command_line.GetOptionValue(FlagForSwitch(Switch::ICUNativeLibPath),
+                                  &native_lib_path);
+      settings.icu_mapper = [icu_symbol_prefix, native_lib_path] {
+        return GetSymbolMapping(icu_symbol_prefix, native_lib_path);
+      };
+    }
+  }
 
   settings.use_test_fonts =
       command_line.HasOption(FlagForSwitch(Switch::UseTestFonts));
@@ -237,7 +272,12 @@ blink::Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_DYNAMIC_RELEASE
   settings.trace_skia =
       command_line.HasOption(FlagForSwitch(Switch::TraceSkia));
+  settings.trace_systrace =
+      command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
 #endif
+
+  settings.dump_skp_on_shader_compilation =
+      command_line.HasOption(FlagForSwitch(Switch::DumpSkpOnShaderCompilation));
 
   return settings;
 }

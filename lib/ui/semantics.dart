@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,6 +6,10 @@ part of dart.ui;
 
 /// The possible actions that can be conveyed from the operating system
 /// accessibility APIs to a semantics node.
+//
+// When changes are made to this class, the equivalent APIs in
+// `lib/ui/semantics/semantics_node.h` and in each of the embedders *must* be
+// updated.
 class SemanticsAction {
   const SemanticsAction._(this.index);
 
@@ -124,7 +128,7 @@ class SemanticsAction {
   /// Paste the current content of the clipboard.
   static const SemanticsAction paste = const SemanticsAction._(_kPasteIndex);
 
-  /// Indicates that the nodes has gained accessibility focus.
+  /// Indicates that the node has gained accessibility focus.
   ///
   /// This handler is invoked when the node annotated with this handler gains
   /// the accessibility focus. The accessibility focus is the
@@ -137,7 +141,7 @@ class SemanticsAction {
   /// Accessibility focus and input focus can be held by two different nodes!
   static const SemanticsAction didGainAccessibilityFocus = const SemanticsAction._(_kDidGainAccessibilityFocusIndex);
 
-  /// Indicates that the nodes has lost accessibility focus.
+  /// Indicates that the node has lost accessibility focus.
   ///
   /// This handler is invoked when the node annotated with this handler
   /// loses the accessibility focus. The accessibility focus is
@@ -161,7 +165,7 @@ class SemanticsAction {
   /// A [Snackbar], for example, may have a dismiss action to indicate to the
   /// user that it can be removed after it is no longer relevant. On Android,
   /// (with TalkBack) special hint text is spoken when focusing the node and
-  /// a custom action is availible in the local context menu. On iOS,
+  /// a custom action is available in the local context menu. On iOS,
   /// (with VoiceOver) users can perform a standard gesture to dismiss it.
   static const SemanticsAction dismiss = const SemanticsAction._(_kDismissIndex);
 
@@ -260,6 +264,10 @@ class SemanticsAction {
 }
 
 /// A Boolean value that can be associated with a semantics node.
+//
+// When changes are made to this class, the equivalent APIs in
+// `lib/ui/semantics/semantics_node.h` and in each of the embedders *must* be
+// updated.
 class SemanticsFlag {
   static const int _kHasCheckedStateIndex = 1 << 0;
   static const int _kIsCheckedIndex = 1 << 1;
@@ -404,7 +412,7 @@ class SemanticsFlag {
   /// that the node's semantic label can be used to announce an edge triggered
   /// semantics update.
   ///
-  /// Semantic nodes annotated with this flag will still recieve a11y focus.
+  /// Semantic nodes annotated with this flag will still receive a11y focus.
   ///
   /// Updating this label within the same active route subtree will not cause
   /// additional announcements.
@@ -470,9 +478,9 @@ class SemanticsFlag {
   /// to move focus to an offscreen child.
   ///
   /// For example, a [ListView] widget has implicit scrolling so that users can
-  /// easily move to the next visible set of children. A [TabBar] widget does
-  /// not have implicit scrolling, so that users can navigate into the tab
-  /// body when reaching the end of the tab bar.
+  /// easily move the accessibility focus to the next set of children. A
+  /// [PageView] widget does not have implicit scrolling, so that users don't
+  /// navigate to the next page when reaching the end of the current one.
   static const SemanticsFlag hasImplicitScrolling = const SemanticsFlag._(_kHasImplicitScrollingIndex);
 
   /// The possible semantics flags.
@@ -550,6 +558,7 @@ class SemanticsFlag {
 ///
 /// Once created, the [SemanticsUpdate] objects can be passed to
 /// [Window.updateSemantics] to update the semantics conveyed to the user.
+@pragma('vm:entry-point')
 class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// Creates an empty [SemanticsUpdateBuilder] object.
   @pragma('vm:entry-point')
@@ -592,6 +601,11 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// The fields 'textSelectionBase' and 'textSelectionExtent' describe the
   /// currently selected text within `value`.
   ///
+  /// The field `platformViewId` references the platform view, whose semantics
+  /// nodes will be added as children to this node. If a platform view is
+  /// specified, `childrenInHitTestOrder` and `childrenInTraversalOrder` must be
+  /// empty.
+  ///
   /// For scrollable nodes `scrollPosition` describes the current scroll
   /// position in logical pixel. `scrollExtentMax` and `scrollExtentMin`
   /// describe the maximum and minimum in-rage values that `scrollPosition` can
@@ -606,17 +620,28 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   ///
   /// The `transform` is a matrix that maps this node's coordinate system into
   /// its parent's coordinate system.
+  ///
+  /// The `elevation` describes the distance in z-direction between this node
+  /// and the `elevation` of the parent.
+  ///
+  /// The `thickness` describes how much space this node occupies in the
+  /// z-direction starting at `elevation`. Basically, in the z-direction the
+  /// node starts at `elevation` above the parent and ends at `elevation` +
+  /// `thickness` above the parent.
   void updateNode({
     int id,
     int flags,
     int actions,
     int textSelectionBase,
     int textSelectionExtent,
+    int platformViewId,
     int scrollChildren,
     int scrollIndex,
     double scrollPosition,
     double scrollExtentMax,
     double scrollExtentMin,
+    double elevation,
+    double thickness,
     Rect rect,
     String label,
     String hint,
@@ -627,8 +652,6 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     Float64List transform,
     Int32List childrenInTraversalOrder,
     Int32List childrenInHitTestOrder,
-    @Deprecated('use additionalActions instead')
-    Int32List customAcccessibilityActions,
     Int32List additionalActions,
   }) {
     if (transform.length != 16)
@@ -639,6 +662,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       actions,
       textSelectionBase,
       textSelectionExtent,
+      platformViewId,
       scrollChildren,
       scrollIndex,
       scrollPosition,
@@ -648,6 +672,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       rect.top,
       rect.right,
       rect.bottom,
+      elevation,
+      thickness,
       label,
       hint,
       value,
@@ -657,7 +683,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       transform,
       childrenInTraversalOrder,
       childrenInHitTestOrder,
-      additionalActions ?? customAcccessibilityActions,
+      additionalActions,
     );
   }
   void _updateNode(
@@ -666,6 +692,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     int actions,
     int textSelectionBase,
     int textSelectionExtent,
+    int platformViewId,
     int scrollChildren,
     int scrollIndex,
     double scrollPosition,
@@ -675,6 +702,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     double top,
     double right,
     double bottom,
+    double elevation,
+    double thickness,
     String label,
     String hint,
     String value,
@@ -689,7 +718,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
 
   /// Update the custom semantics action associated with the given `id`.
   ///
-  /// The name of the action exposed to the user is the `label`. For overriden
+  /// The name of the action exposed to the user is the `label`. For overridden
   /// standard actions this value is ignored.
   ///
   /// The `hint` should describe what happens when an action occurs, not the
@@ -699,7 +728,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// The text direction of the `hint` and `label` is the same as the global
   /// window.
   ///
-  /// For overriden standard actions, `overrideId` corresponds with a
+  /// For overridden standard actions, `overrideId` corresponds with a
   /// [SemanticsAction.index] value. For custom actions this argument should not be
   /// provided.
   void updateCustomAction({int id, String label, String hint, int overrideId = -1}) {
@@ -723,6 +752,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
 ///
 /// Semantics updates can be applied to the system's retained semantics tree
 /// using the [Window.updateSemantics] method.
+@pragma('vm:entry-point')
 class SemanticsUpdate extends NativeFieldWrapperClass2 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.

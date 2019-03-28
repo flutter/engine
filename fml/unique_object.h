@@ -1,4 +1,4 @@
-// Copyright 2018 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -14,10 +14,10 @@
 namespace fml {
 
 // struct UniqueFooTraits {
-//   // This function should be fast an inline.
+//   // This function should be fast and inline.
 //   static int InvalidValue() { return 0; }
 //
-//   // This function should be fast an inline.
+//   // This function should be fast and inline.
 //   static bool IsValid(const T& value) { return value != InvalidValue(); }
 //
 //   // This free function will not be called if f == InvalidValue()!
