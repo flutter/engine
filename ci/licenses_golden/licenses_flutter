@@ -686,8 +686,7 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_task_runner.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_task_runner.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_thread_host.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_thread_host.h
-FILE: ../../../flutter/shell/platform/embedder/fixtures/a11y_main.dart
-FILE: ../../../flutter/shell/platform/embedder/fixtures/simple_main.dart
+FILE: ../../../flutter/shell/platform/embedder/fixtures/main.dart
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.h
 FILE: ../../../flutter/shell/platform/embedder/vsync_waiter_embedder.cc
@@ -748,7 +747,9 @@ FILE: ../../../flutter/vulkan/vulkan_utilities.h
 FILE: ../../../flutter/vulkan/vulkan_window.cc
 FILE: ../../../flutter/vulkan/vulkan_window.h
 FILE: ../../../flutter/web_sdk/flutter_kernel_sdk.dart
+FILE: ../../../flutter/web_sdk/libraries.dart
 FILE: ../../../flutter/web_sdk/libraries.json
+FILE: ../../../flutter/web_sdk/make_combined_sdk.dart
 ----------------------------------------------------------------------------------------------------
 Copyright 2013 The Flutter Authors. All rights reserved.
 
