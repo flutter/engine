@@ -16,7 +16,7 @@ int main() {
   // Gather all public classes from each library. For now we are skiping
   // other top level members.
   _collectPublicClasses(uiUnit, uiClasses, 'lib/ui/');
-  _collectPublicClasses(webUnit, webClasses, 'lib/stub_ui/');
+  _collectPublicClasses(webUnit, webClasses, 'lib/stub_ui/lib/');
 
   if (uiClasses.isEmpty || webClasses.isEmpty) {
     print('Warning: did not resolve any classes.');
