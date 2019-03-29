@@ -47,21 +47,7 @@ prebuilt_dart_action("web_ui_sources") {
   ]
 
   outputs = [
-    "$root_out_dir/flutter_web_sdk/ui/lib/compositing.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/geometry.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/hash_codes.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/hooks.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/isolate_name_server.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/lerp.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/natives.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/painting.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/plugins.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/pointer.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/semantics.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/text.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/ui.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/versions.dart",
-    "$root_out_dir/flutter_web_sdk/ui/lib/window.dart",
+    "$root_out_dir/flutter_web_sdk_stamp",
   ]
 
   foreach(source_file, web_ui_sources) {
