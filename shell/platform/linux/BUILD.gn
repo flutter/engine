@@ -20,7 +20,7 @@ group("linux") {
 # the underlying issue is fixed.
 config("disable_fatal_link_warnings") {
   visibility = [ ":*" ]
-  ldflags = [ "-Wl,--no-fatal-warnings"]
+  ldflags = [ "-Wl,--no-fatal-warnings" ]
 }
 
 shared_library("flutter_linux") {
