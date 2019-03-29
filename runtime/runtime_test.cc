@@ -44,24 +44,29 @@ void RuntimeTest::SetSnapshotsAndAssets(Settings& settings) {
   if (!assets_dir_.is_valid()) {
     return;
   }
+
   settings.assets_dir = assets_dir_.get();
 
-  settings.vm_snapshot_data = [this]() {
-    return GetMapping(assets_dir_, "vm_snapshot_data", false);
-  };
-
-  settings.isolate_snapshot_data = [this]() {
-    return GetMapping(assets_dir_, "isolate_snapshot_data", false);
-  };
-
+  // In JIT execution, all snapshots are present within the binary itself and
+  // don't need to be explicitly suppiled by the embedder.
   if (DartVM::IsRunningPrecompiledCode()) {
-    settings.vm_snapshot_instr = [this]() {
-      return GetMapping(assets_dir_, "vm_snapshot_instr", true);
+    settings.vm_snapshot_data = [this]() {
+      return GetMapping(assets_dir_, "vm_snapshot_data", false);
     };
 
-    settings.isolate_snapshot_instr = [this]() {
-      return GetMapping(assets_dir_, "isolate_snapshot_instr", true);
+    settings.isolate_snapshot_data = [this]() {
+      return GetMapping(assets_dir_, "isolate_snapshot_data", false);
     };
+
+    if (DartVM::IsRunningPrecompiledCode()) {
+      settings.vm_snapshot_instr = [this]() {
+        return GetMapping(assets_dir_, "vm_snapshot_instr", true);
+      };
+
+      settings.isolate_snapshot_instr = [this]() {
+        return GetMapping(assets_dir_, "isolate_snapshot_instr", true);
+      };
+    }
   }
 }
 
