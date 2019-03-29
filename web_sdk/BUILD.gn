@@ -34,17 +34,13 @@ group("web_sdk") {
 }
 
 prebuilt_dart_action("web_ui_sources") {
-  inputs = web_ui_sources + [
-    "sdk_rewriter.dart",
-  ]
+  inputs = web_ui_sources + [ "sdk_rewriter.dart" ]
 
   packages = "//third_party/dart/.packages"
   script = "sdk_rewriter.dart"
-  output_dir =  rebase_path("$root_out_dir/flutter_web_sdk/lib/ui/")
+  output_dir = rebase_path("$root_out_dir/flutter_web_sdk/lib/ui/")
 
-  args = [
-    "--output-dir=$output_dir",
-  ]
+  args = [ "--output-dir=$output_dir" ]
 
   outputs = [
     "$root_out_dir/flutter_web_sdk_stamp",
@@ -52,7 +48,7 @@ prebuilt_dart_action("web_ui_sources") {
 
   foreach(source_file, web_ui_sources) {
     path = rebase_path(source_file)
-    args += ["--input=$path"]
+    args += [ "--input=$path" ]
   }
 }
 
