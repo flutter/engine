@@ -8,7 +8,7 @@ int main() {
   // These files just contain imports to the part files;
   final CompilationUnit uiUnit = parseDartFile('lib/ui/ui.dart',
       parseFunctionBodies: false, suppressErrors: false);
-  final CompilationUnit webUnit = parseDartFile('lib/stub_ui/ui.dart',
+  final CompilationUnit webUnit = parseDartFile('lib/stub_ui/lib/ui.dart',
       parseFunctionBodies: false, suppressErrors: false);
   final Map<String, ClassDeclaration> uiClasses = <String, ClassDeclaration>{};
   final Map<String, ClassDeclaration> webClasses = <String, ClassDeclaration>{};
