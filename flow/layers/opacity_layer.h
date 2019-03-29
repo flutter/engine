@@ -28,11 +28,13 @@ class OpacityLayer : public ContainerLayer {
   int alpha_;
   SkPoint offset_;
 
-  // Manually ensured that OpacityLayer has only one child so we can optimize
-  // the costly saveLayer.
+  // Restructure (if necessary) OpacityLayer to have only one child.
   //
-  // If there are multiple children, we'll create a new identity TransformLayer,
-  // set all children to be the children of that TransformLayer, and set that
+  // This is needed to ensure that retained rendering can always be applied to
+  // save the costly saveLayer.
+  //
+  // If there are multiple children, this creates a new identity TransformLayer,
+  // sets all children to be the TransformLayer's children, and sets that
   // TransformLayer as the single child of this OpacityLayer.
   void EnsureSingleChild();
 
