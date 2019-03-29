@@ -28,6 +28,14 @@ class OpacityLayer : public ContainerLayer {
   int alpha_;
   SkPoint offset_;
 
+  // Manually ensured that OpacityLayer has only one child so we can optimize
+  // the costly saveLayer.
+  //
+  // If there are multiple children, we'll create a new identity TransformLayer,
+  // set all children to be the children of that TransformLayer, and set that
+  // TransformLayer as the single child of this OpacityLayer.
+  void EnsureSingleChild();
+
   FML_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);
 };
 
