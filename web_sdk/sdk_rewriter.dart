@@ -16,7 +16,8 @@ const Pattern packagePartName = 'part of ui;';
 const Pattern coreLibraryName = 'library dart.ui;';
 const Pattern corePartName = 'part of dart.ui;';
 
-/// Rewrites the "package"-style web ui library into a dart:ui implementation.
+// Rewrites the "package"-style web ui library into a dart:ui implementation.
+// So far this only requires a replace of the library declarations.
 void main(List<String> arguments) {
   final ArgResults results = argParser.parse(arguments);
   final Directory directory = Directory(results['output-dir']);
