@@ -91,6 +91,8 @@ class FlutterPlatformViewsController {
   GrContext* overlays_gr_context_;
   SkISize frame_size_;
 
+  std::unordered_set<int64_t> views_waiting_to_dispose_;
+
   // A vector of embedded view IDs according to their composition order.
   // The last ID in this vector belond to the that is composited on top of all others.
   std::vector<int64_t> composition_order_;
