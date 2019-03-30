@@ -1,0 +1,9 @@
+# Copyright 2019 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# All classes under this file will be rewritten to private classes in the sdk.
+# This transformation is safe, provided that the package:ui is composed of a
+# single library.
+private:
+  - Example

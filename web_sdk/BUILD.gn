@@ -39,8 +39,12 @@ prebuilt_dart_action("web_ui_sources") {
   packages = "//third_party/dart/.packages"
   script = "sdk_rewriter.dart"
   output_dir = rebase_path("$root_out_dir/flutter_web_sdk/lib/ui/")
+  config_file = rebase_path("$flutter_root/lib/stub_ui/config.yaml")
 
-  args = [ "--output-dir=$output_dir" ]
+  args = [
+    "--output-dir=$output_dir",
+    "--config=$config_file",
+  ]
 
   outputs = [
     "$root_out_dir/flutter_web_sdk_stamp",

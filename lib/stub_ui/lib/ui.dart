@@ -36,3 +36,6 @@ part 'semantics.dart';
 part 'text.dart';
 part 'versions.dart';
 part 'window.dart';
+
+/// This class will be re-written to _Example.
+class Example {}
