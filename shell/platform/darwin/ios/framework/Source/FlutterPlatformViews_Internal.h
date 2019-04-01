@@ -110,14 +110,12 @@ class FlutterPlatformViewsController {
   void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
 
   void DetachUnusedLayers();
-  void DisposeViewWithID(int64_t viewId);
+  // Dispose the views in `views_to_dispose_`.
+  void DisposeViews();
   void EnsureOverlayInitialized(int64_t overlay_id);
   void EnsureGLOverlayInitialized(int64_t overlay_id,
                                   std::shared_ptr<IOSGLContext> gl_context,
                                   GrContext* gr_context);
-
-  // Dispose the views in `views_to_dispose_`.
-  void DisposeViews();
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
