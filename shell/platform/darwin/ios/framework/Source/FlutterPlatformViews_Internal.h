@@ -116,6 +116,9 @@ class FlutterPlatformViewsController {
                                   std::shared_ptr<IOSGLContext> gl_context,
                                   GrContext* gr_context);
 
+  // Dispose the views in `views_to_dispose_`.
+  void DisposeViews();
+
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
 

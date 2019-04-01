@@ -209,6 +209,8 @@ void FlutterPlatformViewsController::Reset() {
 bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
                                                  GrContext* gr_context,
                                                  std::shared_ptr<IOSGLContext> gl_context) {
+  DisposeViews();
+
   bool did_submit = true;
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
@@ -253,7 +255,21 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
 }
 
 void FlutterPlatformViewsController::DetachUnusedLayers() {
-  // Clean up disposed views.
+  std::unordered_set<int64_t> composition_order_set;
+
+  for (int64_t view_id : composition_order_) {
+    composition_order_set.insert(view_id);
+  }
+
+  for (int64_t view_id : active_composition_order_) {
+    if (composition_order_set.find(view_id) == composition_order_set.end()) {
+      [touch_interceptors_[view_id].get() removeFromSuperview];
+      [overlays_[view_id]->overlay_view.get() removeFromSuperview];
+    }
+  }
+}
+
+void FlutterPlatformViewsController::DisposeViews() {
   if (!views_to_dispose_.empty()) {
     for (std::vector<int64_t>::iterator it = active_composition_order_.begin();
          it != active_composition_order_.end();) {
@@ -268,19 +284,6 @@ void FlutterPlatformViewsController::DetachUnusedLayers() {
       DisposeViewWithID(viewId);
     }
     views_to_dispose_.clear();
-  }
-
-  std::unordered_set<int64_t> composition_order_set;
-
-  for (int64_t view_id : composition_order_) {
-    composition_order_set.insert(view_id);
-  }
-
-  for (int64_t view_id : active_composition_order_) {
-    if (composition_order_set.find(view_id) == composition_order_set.end()) {
-      [touch_interceptors_[view_id].get() removeFromSuperview];
-      [overlays_[view_id]->overlay_view.get() removeFromSuperview];
-    }
   }
 }
 
