@@ -74,11 +74,12 @@ class DartIsolate : public UIDartState {
                                    bool last_piece = true);
 
   FML_WARN_UNUSED_RESULT
-  bool Run(const std::string& entrypoint);
+  bool Run(const std::string& entrypoint, fml::closure on_run = nullptr);
 
   FML_WARN_UNUSED_RESULT
   bool RunFromLibrary(const std::string& library_name,
-                      const std::string& entrypoint);
+                      const std::string& entrypoint,
+                      fml::closure on_run = nullptr);
 
   FML_WARN_UNUSED_RESULT
   bool Shutdown();
@@ -138,8 +139,6 @@ class DartIsolate : public UIDartState {
       char** error);
 
   static Dart_Isolate DartCreateAndStartServiceIsolate(
-      const char* advisory_script_uri,
-      const char* advisory_script_entrypoint,
       const char* package_root,
       const char* package_config,
       Dart_IsolateFlags* flags,

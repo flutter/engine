@@ -22,12 +22,17 @@ source_set("embedder") {
     "embedder_external_texture_gl.cc",
     "embedder_external_texture_gl.h",
     "embedder_include.c",
+    "embedder_safe_access.h",
     "embedder_surface.cc",
     "embedder_surface.h",
     "embedder_surface_gl.cc",
     "embedder_surface_gl.h",
     "embedder_surface_software.cc",
     "embedder_surface_software.h",
+    "embedder_task_runner.cc",
+    "embedder_task_runner.h",
+    "embedder_thread_host.cc",
+    "embedder_thread_host.h",
     "platform_view_embedder.cc",
     "platform_view_embedder.h",
     "vsync_waiter_embedder.cc",
@@ -40,26 +45,18 @@ source_set("embedder") {
     "$flutter_root/common",
     "$flutter_root/flow",
     "$flutter_root/fml",
+    "$flutter_root/runtime:libdart",
     "$flutter_root/shell/common",
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
     "//third_party/tonic",
   ]
 
-  if (flutter_runtime_mode == "profile" || flutter_runtime_mode == "release") {
-    deps += [ "//third_party/dart/runtime:libdart_precompiled_runtime" ]
-  } else {
-    deps += [
-      "$flutter_root/lib/snapshot",
-      "//third_party/dart/runtime:libdart_jit",
-    ]
-  }
-
   public_configs = [ "$flutter_root:config" ]
 }
 
 test_fixtures("fixtures") {
-  fixtures = [ "fixtures/simple_main.dart" ]
+  fixtures = [ "fixtures/main.dart" ]
 }
 
 executable("embedder_unittests") {
@@ -68,39 +65,22 @@ executable("embedder_unittests") {
   include_dirs = [ "." ]
 
   sources = [
+    "tests/embedder_a11y_unittests.cc",
+    "tests/embedder_config_builder.cc",
+    "tests/embedder_config_builder.h",
+    "tests/embedder_context.cc",
+    "tests/embedder_context.h",
+    "tests/embedder_test.cc",
+    "tests/embedder_test.h",
     "tests/embedder_unittests.cc",
   ]
 
   deps = [
     ":embedder",
     ":fixtures",
-    "$flutter_root/testing",
-  ]
-
-  if (is_linux) {
-    ldflags = [ "-rdynamic" ]
-  }
-}
-
-test_fixtures("fixtures_a11y") {
-  fixtures = [ "fixtures/a11y_main.dart" ]
-}
-
-executable("embedder_a11y_unittests") {
-  testonly = true
-
-  include_dirs = [ "." ]
-
-  sources = [
-    "tests/embedder_a11y_unittests.cc",
-  ]
-
-  deps = [
-    ":embedder",
-    ":fixtures_a11y",
-    "$flutter_root/lib/ui:ui",
-    "$flutter_root/shell/common",
-    "$flutter_root/testing",
+    "$flutter_root/lib/ui",
+    "$flutter_root/runtime",
+    "$flutter_root/testing:dart",
     "//third_party/skia",
     "//third_party/tonic",
   ]

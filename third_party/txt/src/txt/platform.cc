@@ -10,4 +10,8 @@ std::string GetDefaultFontFamily() {
   return "Arial";
 }
 
+sk_sp<SkFontMgr> GetDefaultFontManager() {
+  return SkFontMgr::RefDefault();
+}
+
 }  // namespace txt

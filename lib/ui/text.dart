@@ -355,6 +355,11 @@ Int32List _encodeTextStyle(
 }
 
 /// An opaque object that determines the size, position, and rendering of text.
+///
+/// See also:
+///
+///  * [TextStyle](https://api.flutter.dev/flutter/painting/TextStyle-class.html), the class in the [painting] library.
+///
 class TextStyle {
   /// Creates a new TextStyle object.
   ///
@@ -795,6 +800,10 @@ ByteData _encodeStrut(
   return ByteData.view(data.buffer, 0,  byteCount);
 }
 
+/// See also:
+///
+///  * [StrutStyle](https://api.flutter.dev/flutter/painting/StrutStyle-class.html), the class in the [painting] library.
+///
 class StrutStyle {
   /// Creates a new StrutStyle object.
   ///
