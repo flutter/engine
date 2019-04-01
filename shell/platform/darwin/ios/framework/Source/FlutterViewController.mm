@@ -39,6 +39,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
+  NSMutableDictionary* _ongoingTouches;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -54,6 +55,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     _engineNeedsLaunch = NO;
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+    _ongoingTouches = [[NSMutableDictionary alloc] init];
 
     [self performCommonViewControllerInitialization];
     [engine setViewController:self];
@@ -75,6 +77,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
     [_engine.get() createShell:nil libraryURI:nil];
     _engineNeedsLaunch = YES;
+    _ongoingTouches = [[NSMutableDictionary alloc] init];
     [self loadDefaultSplashScreenView];
     [self performCommonViewControllerInitialization];
   }
@@ -427,6 +430,15 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   TRACE_EVENT0("flutter", "viewDidDisappear");
   [self surfaceUpdated:NO];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+  if (_ongoingTouches.count > 0) {
+    // If the view controller is going away, we want to flush cancel all the ongoing
+    // touches to the framework so nothing gets orphaned.
+    blink::PointerData::Change cancelChange = blink::PointerData::Change::kCancel;
+    [self dispatchTouches:[NSSet setWithArray:[_ongoingTouches allValues]]
+        pointerDataChangeOverride:&cancelChange];
+    [_ongoingTouches removeAllObjects];
+  }
+
   [super viewDidDisappear:animated];
 }
 
@@ -527,6 +539,27 @@ static blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) {
 
     pointer_data.physical_x = windowCoordinates.x * scale;
     pointer_data.physical_y = windowCoordinates.y * scale;
+
+    NSNumber* deviceKey = [NSNumber numberWithLongLong:pointer_data.device];
+    // Track touches that began and not yet stopped so we can flush them
+    // if the view controller goes away.
+    switch (pointer_data.change) {
+      case blink::PointerData::Change::kDown:
+        [_ongoingTouches setObject:touch forKey:deviceKey];
+        break;
+      case blink::PointerData::Change::kCancel:
+      case blink::PointerData::Change::kUp:
+        [_ongoingTouches removeObjectForKey:deviceKey];
+        break;
+      case blink::PointerData::Change::kHover:
+      case blink::PointerData::Change::kMove:
+        // We're only tracking starts and stops.
+        break;
+      case blink::PointerData::Change::kAdd:
+      case blink::PointerData::Change::kRemove:
+        // We don't use kAdd/kRemove.
+        break;
+    }
 
     // pressure_min is always 0.0
     if (@available(iOS 9, *)) {
