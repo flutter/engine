@@ -108,6 +108,7 @@ class FlutterPlatformViewsController {
   void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
 
   void DetachUnusedLayers();
+  void DisposeViewWithID(int64_t viewId);
   void EnsureOverlayInitialized(int64_t overlay_id);
   void EnsureGLOverlayInitialized(int64_t overlay_id,
                                   std::shared_ptr<IOSGLContext> gl_context,
