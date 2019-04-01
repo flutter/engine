@@ -101,7 +101,7 @@ void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterR
     return;
   }
   // We wait for next submitFrame to dispose views.
-  views_waiting_to_dispose_.insert(viewId);
+  views_to_dispose_.insert(viewId);
   result(nil);
 }
 
@@ -254,20 +254,20 @@ bool FlutterPlatformViewsController::SubmitFrame(bool gl_rendering,
 
 void FlutterPlatformViewsController::DetachUnusedLayers() {
   // Clean up disposed views.
-  if (!views_waiting_to_dispose_.empty()) {
+  if (!views_to_dispose_.empty()) {
     for (std::vector<int64_t>::iterator it = active_composition_order_.begin();
          it != active_composition_order_.end();) {
       int64_t viewId = *it;
-      if (views_waiting_to_dispose_.find(viewId) != views_waiting_to_dispose_.end()) {
+      if (views_to_dispose_.find(viewId) != views_to_dispose_.end()) {
         active_composition_order_.erase(it);
       } else {
         ++it;
       }
     }
-    for (int64_t viewId : views_waiting_to_dispose_) {
+    for (int64_t viewId : views_to_dispose_) {
       DisposeViewWithID(viewId);
     }
-    views_waiting_to_dispose_.clear();
+    views_to_dispose_.clear();
   }
 
   std::unordered_set<int64_t> composition_order_set;
