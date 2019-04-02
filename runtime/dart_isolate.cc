@@ -162,16 +162,10 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate, bool is_root_isolate) {
 
   tonic::DartIsolateScope scope(isolate());
 
-  if (is_root_isolate) {
-    if (auto task_runner = GetTaskRunners().GetUITaskRunner()) {
-      // Isolates may not have any particular thread affinity. Only initialize
-      // the task dispatcher if a task runner is explicitly specified.
-      tonic::DartMessageHandler::TaskDispatcher dispatcher =
-          [task_runner](std::function<void()> task) {
-            task_runner->PostTask(task);
-          };
-      message_handler().Initialize(dispatcher);
-    }
+  if (!SetMessageHandlingTaskRunner(GetTaskRunners().GetUITaskRunner(),
+                                    is_root_isolate)) {
+    FML_LOG(ERROR) << "Could not initialize the root message handler.";
+    return false;
   }
 
   if (tonic::LogIfError(
@@ -184,6 +178,25 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate, bool is_root_isolate) {
   }
 
   phase_ = Phase::Initialized;
+  return true;
+}
+
+fml::RefPtr<fml::TaskRunner> DartIsolate::GetMessageHandlingTaskRunner() const {
+  return message_handling_task_runner_;
+}
+
+bool DartIsolate::SetMessageHandlingTaskRunner(
+    fml::RefPtr<fml::TaskRunner> runner,
+    bool is_root_isolate) {
+  if (!is_root_isolate || !runner) {
+    return false;
+  }
+
+  message_handling_task_runner_ = runner;
+
+  message_handler().Initialize(
+      [runner](std::function<void()> task) { runner->PostTask(task); });
+
   return true;
 }
 
@@ -361,6 +374,34 @@ bool DartIsolate::PrepareForRunningFromKernel(
   return true;
 }
 
+FML_WARN_UNUSED_RESULT
+bool DartIsolate::PrepareForRunningFromKernels(
+    std::vector<std::shared_ptr<const fml::Mapping>> kernels) {
+  const auto count = kernels.size();
+  if (count == 0) {
+    return false;
+  }
+
+  for (size_t i = 0; i < count; ++i) {
+    bool last = (i == (count - 1));
+    if (!PrepareForRunningFromKernel(kernels[i], last)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+FML_WARN_UNUSED_RESULT
+bool DartIsolate::PrepareForRunningFromKernels(
+    std::vector<std::unique_ptr<const fml::Mapping>> kernels) {
+  std::vector<std::shared_ptr<const fml::Mapping>> shared_kernels;
+  for (auto& kernel : kernels) {
+    shared_kernels.emplace_back(std::move(kernel));
+  }
+  return PrepareForRunningFromKernels(shared_kernels);
+}
+
 bool DartIsolate::MarkIsolateRunnable() {
   TRACE_EVENT0("flutter", "DartIsolate::MarkIsolateRunnable");
   if (phase_ != Phase::LibrariesSetup) {
@@ -484,7 +525,6 @@ bool DartIsolate::Shutdown() {
     // the isolate to shutdown as a parameter.
     FML_DCHECK(Dart_CurrentIsolate() == nullptr);
     Dart_EnterIsolate(vm_isolate);
-    shutdown_callbacks_.clear();
     Dart_ShutdownIsolate();
     FML_DCHECK(Dart_CurrentIsolate() == nullptr);
   }
@@ -686,6 +726,8 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
     }
   }
 
+  DartVMRef::GetRunningVM()->RegisterActiveIsolate(*embedder_isolate);
+
   // The ownership of the embedder object is controlled by the Dart VM. So the
   // only reference returned to the caller is weak.
   embedder_isolate.release();
@@ -694,7 +736,9 @@ DartIsolate::CreateDartVMAndEmbedderObjectPair(
 
 // |Dart_IsolateShutdownCallback|
 void DartIsolate::DartIsolateShutdownCallback(
-    std::shared_ptr<DartIsolate>* embedder_isolate) {}
+    std::shared_ptr<DartIsolate>* embedder_isolate) {
+  embedder_isolate->get()->OnShutdownCallback();
+}
 
 // |Dart_IsolateCleanupCallback|
 void DartIsolate::DartIsolateCleanupCallback(
@@ -717,6 +761,12 @@ std::weak_ptr<DartIsolate> DartIsolate::GetWeakIsolatePtr() {
 void DartIsolate::AddIsolateShutdownCallback(fml::closure closure) {
   shutdown_callbacks_.emplace_back(
       std::make_unique<AutoFireClosure>(std::move(closure)));
+}
+
+void DartIsolate::OnShutdownCallback() {
+  shutdown_callbacks_.clear();
+  DartVMRef::GetRunningVM()->UnregisterActiveIsolate(
+      std::static_pointer_cast<DartIsolate>(shared_from_this()));
 }
 
 DartIsolate::AutoFireClosure::AutoFireClosure(fml::closure closure)
