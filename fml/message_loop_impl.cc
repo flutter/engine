@@ -14,6 +14,7 @@
 #include "flutter/fml/trace_event.h"
 
 #if OS_MACOSX
+#include "flutter/fml/platform/darwin/concurrent_message_loop_darwin.h"
 #include "flutter/fml/platform/darwin/message_loop_darwin.h"
 #elif OS_ANDROID
 #include "flutter/fml/platform/android/message_loop_android.h"
@@ -39,6 +40,14 @@ fml::RefPtr<MessageLoopImpl> MessageLoopImpl::Create() {
 #endif
 }
 
+fml::RefPtr<MessageLoopImpl> MessageLoopImpl::CreateConcurrent() {
+#if OS_MACOSX
+  return fml::MakeRefCounted<ConcurrentMessageLoopDarwin>();
+#else
+  return nullptr;
+#endif
+}
+
 MessageLoopImpl::MessageLoopImpl() : order_(0), terminated_(false) {}
 
 MessageLoopImpl::~MessageLoopImpl() = default;
@@ -46,10 +55,6 @@ MessageLoopImpl::~MessageLoopImpl() = default;
 void MessageLoopImpl::PostTask(fml::closure task, fml::TimePoint target_time) {
   FML_DCHECK(task != nullptr);
   RegisterTask(task, target_time);
-}
-
-void MessageLoopImpl::RunExpiredTasksNow() {
-  RunExpiredTasks();
 }
 
 void MessageLoopImpl::AddTaskObserver(intptr_t key, fml::closure callback) {
@@ -112,8 +117,8 @@ void MessageLoopImpl::RegisterTask(fml::closure task,
   WakeUp(delayed_tasks_.top().target_time);
 }
 
-void MessageLoopImpl::RunExpiredTasks() {
-  TRACE_EVENT0("fml", "MessageLoop::RunExpiredTasks");
+void MessageLoopImpl::FlushTasks(FlushType type) {
+  TRACE_EVENT0("fml", "MessageLoop::FlushTasks");
   std::vector<fml::closure> invocations;
 
   {
@@ -131,6 +136,9 @@ void MessageLoopImpl::RunExpiredTasks() {
       }
       invocations.emplace_back(std::move(top.task));
       delayed_tasks_.pop();
+      if (type == FlushType::kSingle) {
+        break;
+      }
     }
 
     WakeUp(delayed_tasks_.empty() ? fml::TimePoint::Max()
@@ -143,6 +151,14 @@ void MessageLoopImpl::RunExpiredTasks() {
       observer.second();
     }
   }
+}
+
+void MessageLoopImpl::RunExpiredTasksNow() {
+  FlushTasks(FlushType::kAll);
+}
+
+void MessageLoopImpl::RunSingleExpiredTaskNow() {
+  FlushTasks(FlushType::kSingle);
 }
 
 MessageLoopImpl::DelayedTask::DelayedTask(size_t p_order,

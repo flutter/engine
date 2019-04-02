@@ -45,6 +45,13 @@ MessageLoop::MessageLoop()
   FML_CHECK(task_runner_);
 }
 
+MessageLoop::MessageLoop(Type)
+    : loop_(MessageLoopImpl::CreateConcurrent()),
+      task_runner_(fml::MakeRefCounted<fml::TaskRunner>(loop_)) {
+  FML_CHECK(loop_);
+  FML_CHECK(task_runner_);
+}
+
 MessageLoop::~MessageLoop() = default;
 
 void MessageLoop::Run() {

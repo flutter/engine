@@ -93,6 +93,8 @@ source_set("fml") {
     sources += [
       "platform/darwin/cf_utils.cc",
       "platform/darwin/cf_utils.h",
+      "platform/darwin/concurrent_message_loop_darwin.h",
+      "platform/darwin/concurrent_message_loop_darwin.mm",
       "platform/darwin/message_loop_darwin.h",
       "platform/darwin/message_loop_darwin.mm",
       "platform/darwin/paths_darwin.mm",
