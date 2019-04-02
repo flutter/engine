@@ -4,10 +4,10 @@
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/paths.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/runtime_test.h"
-#include "flutter/fml/synchronization/waitable_event.h"
 
 namespace blink {
 namespace testing {
@@ -42,7 +42,7 @@ TEST_F(DartLifecycleTest, CanStartAndShutdownVMOverAndOver) {
 }
 
 static void CreateAndRunRootIsolate(
-    std::shared_ptr<DartIsolate> &isolate_result,
+    std::shared_ptr<DartIsolate>& isolate_result,
     const Settings& settings,
     const DartVMData& vm,
     fml::RefPtr<fml::TaskRunner> task_runner,
@@ -67,40 +67,40 @@ static void CreateAndRunRootIsolate(
 
   if (!isolate) {
     FML_LOG(ERROR) << "Could not create valid isolate.";
-    return ;
+    return;
   }
 
   if (DartVM::IsRunningPrecompiledCode()) {
     if (!isolate->PrepareForRunningFromPrecompiledCode()) {
       FML_LOG(ERROR)
           << "Could not prepare to run the isolate from precompiled code.";
-      return ;
+      return;
     }
 
   } else {
     if (!isolate->PrepareForRunningFromKernels(
             settings.application_kernels())) {
       FML_LOG(ERROR) << "Could not prepare isolate from application kernels.";
-      return ;
+      return;
     }
   }
 
   if (isolate->GetPhase() != DartIsolate::Phase::Ready) {
     FML_LOG(ERROR) << "Isolate was not ready.";
-    return ;
+    return;
   }
 
   if (!isolate->Run(entrypoint, settings.root_isolate_create_callback)) {
     FML_LOG(ERROR) << "Could not run entrypoint: " << entrypoint << ".";
-    return ;
+    return;
   }
 
   if (isolate->GetPhase() != DartIsolate::Phase::Running) {
     FML_LOG(ERROR) << "Isolate was not Running.";
-    return ;
+    return;
   }
 
-   isolate_result = isolate;
+  isolate_result = isolate;
 }
 
 static std::shared_ptr<DartIsolate> CreateAndRunRootIsolate(
@@ -110,7 +110,7 @@ static std::shared_ptr<DartIsolate> CreateAndRunRootIsolate(
     std::string entrypoint) {
   fml::AutoResetWaitableEvent latch;
   std::shared_ptr<DartIsolate> isolate;
-  fml::TaskRunner::RunNowOrPostTask(task_runner, [&](){
+  fml::TaskRunner::RunNowOrPostTask(task_runner, [&]() {
     CreateAndRunRootIsolate(isolate, settings, vm, task_runner, entrypoint);
     latch.Signal();
   });
@@ -134,7 +134,6 @@ TEST_F(DartLifecycleTest, ShuttingDownTheVMShutsDownTheIsolate) {
     ASSERT_EQ(vm_ref->GetIsolateCount(), 1u);
     vm_ref->ShutdownAllIsolates();
     ASSERT_EQ(vm_ref->GetIsolateCount(), 0u);
-
   }
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
