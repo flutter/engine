@@ -162,11 +162,8 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate, bool is_root_isolate) {
 
   tonic::DartIsolateScope scope(isolate());
 
-  if (!SetMessageHandlingTaskRunner(GetTaskRunners().GetUITaskRunner(),
-                                    is_root_isolate)) {
-    FML_LOG(ERROR) << "Could not initialize the root message handler.";
-    return false;
-  }
+  SetMessageHandlingTaskRunner(GetTaskRunners().GetUITaskRunner(),
+                               is_root_isolate);
 
   if (tonic::LogIfError(
           Dart_SetLibraryTagHandler(tonic::DartState::HandleLibraryTag))) {
@@ -185,19 +182,17 @@ fml::RefPtr<fml::TaskRunner> DartIsolate::GetMessageHandlingTaskRunner() const {
   return message_handling_task_runner_;
 }
 
-bool DartIsolate::SetMessageHandlingTaskRunner(
+void DartIsolate::SetMessageHandlingTaskRunner(
     fml::RefPtr<fml::TaskRunner> runner,
     bool is_root_isolate) {
   if (!is_root_isolate || !runner) {
-    return false;
+    return;
   }
 
   message_handling_task_runner_ = runner;
 
   message_handler().Initialize(
       [runner](std::function<void()> task) { runner->PostTask(task); });
-
-  return true;
 }
 
 // Updating thread names here does not change the underlying OS thread names.

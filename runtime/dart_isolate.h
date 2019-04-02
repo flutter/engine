@@ -132,8 +132,7 @@ class DartIsolate : public UIDartState {
   FML_WARN_UNUSED_RESULT
   bool Initialize(Dart_Isolate isolate, bool is_root_isolate);
 
-  FML_WARN_UNUSED_RESULT
-  bool SetMessageHandlingTaskRunner(fml::RefPtr<fml::TaskRunner> runner,
+  void SetMessageHandlingTaskRunner(fml::RefPtr<fml::TaskRunner> runner,
                                     bool is_root_isolate);
 
   FML_WARN_UNUSED_RESULT
