@@ -231,48 +231,38 @@ source_set("snapshot") {
             get_target_outputs(":platform_strong_dill_linkable")
 }
 
-compile_platform("non_strong_platform") {
-  single_root_scheme = "org-dartlang-sdk"
-  single_root_base = rebase_path("../../../")
-  libraries_specification_uri =
-      "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
+template("compile_flutter_platform") {
+  compile_platform(target_name) {
+    single_root_scheme = "org-dartlang-sdk"
+    single_root_base = rebase_path("../../../")
+    libraries_specification_uri =
+        "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
 
+    outputs = invoker.outputs
+
+    is_runtime_mode_release = flutter_runtime_mode == "release"
+    allow_causal_async_stacks = !is_runtime_mode_release
+    args = [
+      "--target=flutter",
+      "-Ddart.vm.product=$is_runtime_mode_release",
+      "-Ddart.developer.causal_async_stacks=$allow_causal_async_stacks",
+      "-Ddart.isVM=true",
+      "dart:core",
+    ]
+  }
+}
+
+compile_flutter_platform("non_strong_platform") {
   outputs = [
     "$root_out_dir/flutter_patched_sdk/platform.dill",
     "$root_out_dir/flutter_patched_sdk/vm_outline.dill",
   ]
-
-  is_runtime_mode_release = flutter_runtime_mode == "release"
-  allow_causal_async_stacks = !is_runtime_mode_release
-  args = [
-    "--target=flutter",
-    "-Ddart.vm.product=$is_runtime_mode_release",
-    "-Ddart.developer.causal_async_stacks=$allow_causal_async_stacks",
-    "-Ddart.isVM=true",
-    "dart:core",
-  ]
 }
 
-compile_platform("strong_platform") {
-  single_root_scheme = "org-dartlang-sdk"
-  single_root_base = rebase_path("../../../")
-  libraries_specification_uri =
-      "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
-
+compile_flutter_platform("strong_platform") {
   outputs = [
     "$root_out_dir/flutter_patched_sdk/platform_strong.dill",
     "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill",
-  ]
-
-
-  is_runtime_mode_release = flutter_runtime_mode == "release"
-  allow_causal_async_stacks = !is_runtime_mode_release
-  args = [
-    "--target=flutter",
-    "-Ddart.vm.product=$is_runtime_mode_release",
-    "-Ddart.developer.causal_async_stacks=$allow_causal_async_stacks",
-    "-Ddart.isVM=true",
-    "dart:core",
   ]
 }
 
