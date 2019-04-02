@@ -356,6 +356,8 @@ class Locale {
     'ZR': 'CD', // Zaire; deprecated 1997-07-14
   };
 
+  Iterable<String> get variants => const <String>[];
+
   @override
   bool operator ==(dynamic other) {
     if (identical(this, other))
@@ -375,7 +377,11 @@ class Locale {
   static String cachedLocaleString;
 
   @override
-  String toString() {
+  String toString() => _toLanguageTag('_');
+
+  String toLanguageTag() => _toLanguageTag();
+
+  String _toLanguageTag([String sep = '-']) {
     if (!identical(cachedLocale, this)) {
       cachedLocale = this;
       cachedLocaleString = _rawToString();
@@ -386,9 +392,9 @@ class Locale {
   String _rawToString() {
     final StringBuffer out = StringBuffer(languageCode);
     if (scriptCode != null)
-      out.write('_$scriptCode');
+      out.write('$sep$scriptCode');
     if (_countryCode != null)
-      out.write('_$countryCode');
+      out.write('$sep$countryCode');
     return out.toString();
   }
 }
