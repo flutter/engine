@@ -39,6 +39,7 @@ void ConcurrentMessageLoop::Run() {
 
 // |fml::MessageLoopImpl|
 void ConcurrentMessageLoop::Terminate() {
+  std::lock_guard<std::mutex> lock(wait_condition_mutex_);
   shutdown_ = true;
   wait_condition_.notify_all();
 }
@@ -55,7 +56,9 @@ void ConcurrentMessageLoop::WakeUp(fml::TimePoint time_point) {
 void ConcurrentMessageLoop::WorkerMain() {
   while (!shutdown_) {
     std::unique_lock<std::mutex> lock(wait_condition_mutex_);
-    wait_condition_.wait(lock);
+    if (!shutdown_) {
+      wait_condition_.wait(lock);
+    }
     TRACE_EVENT0("fml", "ConcurrentWorkerWake");
     RunSingleExpiredTaskNow();
   }
