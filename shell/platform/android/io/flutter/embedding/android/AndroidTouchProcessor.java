@@ -7,8 +7,8 @@ import android.view.MotionEvent;
 
 import java.nio.ByteBuffer;
 import java.util.*;
+import io.flutter.embedding.android.AndroidTouchConverter;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
-import io.flutter.embedding.engine.android.AndroidTouchConverter;
 
 /**
  * Sends touch information from Android to Flutter in a format that Flutter
@@ -94,7 +94,9 @@ public class AndroidTouchProcessor {
     // Mouse hover support is not implemented for API < 18.
     boolean isPointerEvent = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2
         && event.isFromSource(InputDevice.SOURCE_CLASS_POINTER);
-    if (!isPointerEvent || event.getActionMasked() != MotionEvent.ACTION_HOVER_MOVE) {
+    boolean isMovementEvent = (event.getActionMasked() == MotionEvent.ACTION_HOVER_MOVE
+        || event.getActionMasked() == MotionEvent.ACTION_SCROLL);
+    if (!isPointerEvent || !isMovementEvent) {
       return false;
     }
 
