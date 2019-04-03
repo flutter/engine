@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "flutter/fml/thread.h"
 #include "flutter/fml/trace_event.h"
 
 namespace fml {
@@ -15,7 +16,11 @@ ConcurrentMessageLoop::ConcurrentMessageLoop()
       shutdown_latch_(worker_count_),
       shutdown_(false) {
   for (size_t i = 0; i < worker_count_; ++i) {
-    workers_.emplace_back([this]() { WorkerMain(); });
+    workers_.emplace_back([i, this]() {
+      fml::Thread::SetCurrentThreadName(
+          std::string{"io.flutter.worker." + std::to_string(i + 1)});
+      WorkerMain();
+    });
   }
 }
 
@@ -48,9 +53,8 @@ void ConcurrentMessageLoop::WakeUp(fml::TimePoint time_point) {
 }
 
 void ConcurrentMessageLoop::WorkerMain() {
-  std::unique_lock<std::mutex> lock(wait_condition_mutex_);
-
   while (!shutdown_) {
+    std::unique_lock<std::mutex> lock(wait_condition_mutex_);
     wait_condition_.wait(lock);
     TRACE_EVENT0("fml", "ConcurrentWorkerWake");
     RunSingleExpiredTaskNow();
