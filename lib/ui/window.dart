@@ -389,20 +389,20 @@ class Locale {
   /// details.
   String toLanguageTag() => _toLanguageTag();
 
-  String _toLanguageTag([String sep = '-']) {
+  String _toLanguageTag([String separator = '-']) {
     if (!identical(cachedLocale, this)) {
       cachedLocale = this;
-      cachedLocaleString = _rawToString();
+      cachedLocaleString = _rawToString(separator);
     }
     return cachedLocaleString;
   }
 
-  String _rawToString() {
+  String _rawToString(String separator) {
     final StringBuffer out = StringBuffer(languageCode);
     if (scriptCode != null)
-      out.write('$sep$scriptCode');
+      out.write('$separator$scriptCode');
     if (_countryCode != null)
-      out.write('$sep$countryCode');
+      out.write('$separator$countryCode');
     return out.toString();
   }
 }
