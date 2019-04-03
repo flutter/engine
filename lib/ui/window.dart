@@ -356,6 +356,11 @@ class Locale {
     'ZR': 'CD', // Zaire; deprecated 1997-07-14
   };
 
+  /// Iterable of variant subtags.
+  ///
+  /// This is never null: in the absence of variant subtags, it will be an empty
+  /// [Iterable]. This class does not support variants. The getter exists as
+  /// part of the Locale interface, and can be supported by subclasses.
   Iterable<String> get variants => const <String>[];
 
   @override
@@ -376,9 +381,19 @@ class Locale {
   static Locale cachedLocale;
   static String cachedLocaleString;
 
+  /// Returns a string representing the locale.
+  ///
+  /// This identifier happens to be a valid Unicode Locale Identifier using
+  /// underscores as separator, however it is intended to be used for debugging
+  /// purposes only. For parseable results, use [toLanguageTag] instead.
   @override
   String toString() => _toLanguageTag('_');
 
+  /// Returns a syntactically valid Unicode BCP47 Locale Identifier.
+  ///
+  /// Some examples of such identifiers: "en", "es-419", "hi-Deva-IN" and
+  /// "zh-Hans-CN". See http://www.unicode.org/reports/tr35/ for technical
+  /// details.
   String toLanguageTag() => _toLanguageTag();
 
   String _toLanguageTag([String sep = '-']) {
