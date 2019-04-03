@@ -26,7 +26,6 @@ void main() {
     expect(const Locale.fromSubtags().languageCode, 'und');
     expect(const Locale.fromSubtags().scriptCode, null);
     expect(const Locale.fromSubtags().countryCode, null);
-    expect(const Locale.fromSubtags().variants, orderedEquals(<String>[]));
 
     expect(const Locale.fromSubtags(languageCode: 'en').toLanguageTag(), 'en');
     expect(const Locale.fromSubtags(languageCode: 'en').languageCode, 'en');
@@ -42,7 +41,6 @@ void main() {
     expect(const Locale.fromSubtags(languageCode: 'es', countryCode: '419').languageCode, 'es');
     expect(const Locale.fromSubtags(languageCode: 'es', countryCode: '419').scriptCode, null);
     expect(const Locale.fromSubtags(languageCode: 'es', countryCode: '419').countryCode, '419');
-    expect(const Locale.fromSubtags(languageCode: 'es', countryCode: '419').variants, orderedEquals(<String>[]));
 
     expect(const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN').toLanguageTag(), 'zh-Hans-CN');
     expect(const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN').toString(), 'zh_Hans_CN');

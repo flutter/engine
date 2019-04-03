@@ -356,13 +356,6 @@ class Locale {
     'ZR': 'CD', // Zaire; deprecated 1997-07-14
   };
 
-  /// Iterable of variant subtags.
-  ///
-  /// This is never null: in the absence of variant subtags, it will be an empty
-  /// [Iterable]. This class does not support variants. The getter exists as
-  /// part of the Locale interface, and can be supported by subclasses.
-  Iterable<String> get variants => const <String>[];
-
   @override
   bool operator ==(dynamic other) {
     if (identical(this, other))
