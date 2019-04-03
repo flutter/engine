@@ -14,7 +14,6 @@
 #include "flutter/fml/trace_event.h"
 
 #if OS_MACOSX
-#include "flutter/fml/platform/darwin/concurrent_message_loop_darwin.h"
 #include "flutter/fml/platform/darwin/message_loop_darwin.h"
 #elif OS_ANDROID
 #include "flutter/fml/platform/android/message_loop_android.h"
@@ -35,14 +34,6 @@ fml::RefPtr<MessageLoopImpl> MessageLoopImpl::Create() {
   return fml::MakeRefCounted<MessageLoopLinux>();
 #elif OS_WIN
   return fml::MakeRefCounted<MessageLoopWin>();
-#else
-  return nullptr;
-#endif
-}
-
-fml::RefPtr<MessageLoopImpl> MessageLoopImpl::CreateConcurrent() {
-#if OS_MACOSX
-  return fml::MakeRefCounted<ConcurrentMessageLoopDarwin>();
 #else
   return nullptr;
 #endif

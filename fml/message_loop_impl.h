@@ -25,8 +25,6 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
  public:
   static fml::RefPtr<MessageLoopImpl> Create();
 
-  static fml::RefPtr<MessageLoopImpl> CreateConcurrent();
-
   virtual ~MessageLoopImpl();
 
   virtual void Run() = 0;

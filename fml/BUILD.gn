@@ -12,6 +12,8 @@ source_set("fml") {
     "command_line.cc",
     "command_line.h",
     "compiler_specific.h",
+    "concurrent_message_loop.cc",
+    "concurrent_message_loop.h",
     "eintr_wrapper.h",
     "file.cc",
     "file.h",
@@ -93,8 +95,6 @@ source_set("fml") {
     sources += [
       "platform/darwin/cf_utils.cc",
       "platform/darwin/cf_utils.h",
-      "platform/darwin/concurrent_message_loop_darwin.h",
-      "platform/darwin/concurrent_message_loop_darwin.mm",
       "platform/darwin/message_loop_darwin.h",
       "platform/darwin/message_loop_darwin.mm",
       "platform/darwin/paths_darwin.mm",
