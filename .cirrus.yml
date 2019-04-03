@@ -60,6 +60,22 @@ task:
         mkdir javadoc_tmp
         ./flutter/tools/gen_javadoc.py --out-dir javadoc_tmp
 
+build_windows_task:
+  windows_container:
+    image: gcr.io/flutter-cirrus/build-engine-image-windows:latest
+    cpu: 4
+
+  env:
+    ENGINE_PATH: "c:/flutter/engine/"
+  gclient_sync_script: |
+    robocopy %CIRRUS_WORKING_DIR% %ENGINE_PATH%/flutter /MIR
+    cd %ENGINE_PATH%/src
+    gclient sync
+  compile_host_script: |
+    cd %ENGINE_PATH%/src
+    python flutter/tools/gn
+    ninja -C out/host_debug
+
 format_and_dart_test_task:
   container:
     image: gcr.io/flutter-cirrus/build-engine-image:latest
