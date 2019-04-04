@@ -52,6 +52,7 @@ FLUTTER_EXPORT void FlutterDesktopTerminate();
 FLUTTER_EXPORT FlutterDesktopWindowRef
 FlutterDesktopCreateWindow(int initial_width,
                            int initial_height,
+                           const char* title,
                            const char* assets_path,
                            const char* icu_data_path,
                            const char** arguments,
@@ -65,6 +66,11 @@ FlutterDesktopCreateWindow(int initial_width,
 FLUTTER_EXPORT void FlutterDesktopSetHoverEnabled(
     FlutterDesktopWindowRef flutter_window,
     bool enabled);
+
+// Sets the displayed title for |flutter_window|.
+FLUTTER_EXPORT void FlutterDesktopSetWindowTitle(
+    FlutterDesktopWindowRef flutter_window,
+    const char* title);
 
 // Loops on Flutter window events until the window is closed.
 //
