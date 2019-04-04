@@ -39,7 +39,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
   BOOL _initialized;
   BOOL _viewOpaque;
   BOOL _engineNeedsLaunch;
-  NSMutableSet* _ongoingTouches;
+  NSMutableSet<NSNumber*>* _ongoingTouches;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -441,7 +441,7 @@ NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemantics
     size_t pointer_index = 0;
     // If the view controller is going away, we want to flush cancel all the ongoing
     // touches to the framework so nothing gets orphaned.
-    for(NSNumber* device in _ongoingTouches) {
+    for (NSNumber* device in _ongoingTouches) {
       // Create fake PointerData to balance out each previously started one for the framework.
       blink::PointerData pointer_data;
       pointer_data.Clear();
