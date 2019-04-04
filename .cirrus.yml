@@ -80,11 +80,13 @@ build_windows_task:
 
     ENGINE_PATH: "c:/flutter/engine"
 
-  # robocopy can return 1 for successful copy; suppress its error code
+  # robocopy can return 1 for successful copy; suppress its error code.
+  # move somehow doesn't work as it complains that the file is being used by another process.
   gclient_sync_script: |
     robocopy %CIRRUS_WORKING_DIR% %ENGINE_PATH%/src/flutter /MIR || (cmd /s /c exit /b 0)
     cd %ENGINE_PATH%/src
     gclient sync
+  # Currently there's a problem with `flutter/tools/gn --unoptimized` so we omit --unoptimized for now
   compile_host_script: |
     cd %ENGINE_PATH%/src
     python flutter/tools/gn
