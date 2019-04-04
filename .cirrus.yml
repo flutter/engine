@@ -69,10 +69,17 @@ build_windows_task:
   #   region: westus
   #   platform: windows
   #   cpu: 4
-  windows_container:
-    image: gcr.io/flutter-cirrus/build-engine-image-windows:latest
-    os_version: 1803
-    cpu: 4
+  # windows_container:
+  #   image: gcr.io/flutter-cirrus/build-engine-image-windows:latest
+  #   os_version: 1803
+  #   cpu: 4
+  gce_instance:
+    image_project: flutter-cirrus
+    image_name: flutter-engine-windows-server-2016-core
+    zone: us-central1-a
+    cpu: 32
+    memory: 20Gb
+    disk: 50
 
   env:
     ENGINE_PATH: "c:/flutter/engine/"
